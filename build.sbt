@@ -50,3 +50,17 @@ lazy val webappJS = webapp.js
 lazy val webappJVM = webapp.jvm.settings(packageScalaJs(webappJS))
 
 
+lazy val maven = project
+  .settings(commonSettings: _*)
+  .settings(
+    libraryDependencies ++= Seq(
+      "org.apache.maven"  % "maven-model-builder" % "3.3.9",
+      "com.lihaoyi"      %% "utest"               % "0.4.3" % "test"
+    ),
+    securityManager in Backend := false,
+    timeout in Backend := {
+      import scala.concurrent.duration._
+      1.minute
+    }
+  ).enablePlugins(ScalaKataPlugin)
+
