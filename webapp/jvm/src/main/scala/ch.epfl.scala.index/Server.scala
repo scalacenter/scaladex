@@ -1,7 +1,6 @@
-package ch.epfl.scaladex
+package ch.epfl.scala.index
 
 import upickle.default.{Reader, Writer, write => uwrite, read => uread}
-
 
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
@@ -11,6 +10,7 @@ import akka.stream.ActorMaterializer
 import scala.concurrent.duration._
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
+import scala.util.Success
 
 object Server {
   def main(args: Array[String]): Unit = {
@@ -18,8 +18,13 @@ object Server {
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
+    val poms = maven.Poms.get.collect{ case Success(p) => maven.PomConvert(p) }
+    val simple = poms.map(p => SimpleModel(p.groupId)).distinct
+
     val api = new Api {
-      def hello(name: String): String = s"Hello, $name!"
+      def search(query: String): List[SimpleModel] = {
+        simple.filter(_.groupId.contains(query)).take(50)
+      }
     }
 
     val index = {
@@ -35,7 +40,7 @@ object Server {
         ),
         body(
           script(src:="/assets/webapp-fastopt.js"),
-          script("ch.epfl.scaladex.Client().main()")
+          script("ch.epfl.scala.index.Client().main()")
         )
       )
     }

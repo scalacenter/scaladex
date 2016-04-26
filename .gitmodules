@@ -1,0 +1,6 @@
+[submodule "index"]
+	path = index
+	url = git@github.com:scalacenter/scaladex-poms.git
+[submodule "contrib"]
+	path = contrib
+	url = git@github.com:scalacenter/scaladex-data.git

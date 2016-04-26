@@ -1,4 +1,4 @@
-package ch.epfl.scaladex
+package ch.epfl.scala.index
 
 import autowire._
 import scalajs.concurrent.JSExecutionContext.Implicits.queue
@@ -13,18 +13,21 @@ object Client {
   @JSExport
   def main(): Unit = {
     val box = input(`type`:="text", placeholder:="Type your name here!").render
-    val output = span.render
+    val output = div.render
 
     box.onkeyup = _ => {
-      AutowireClient[Api].hello(box.value).call().onSuccess{ case response ⇒
-        output.textContent = response
+      AutowireClient[Api].search(box.value).call().onSuccess{ case response ⇒
+        output.innerHTML = ""
+        output.appendChild(
+          ul(response.map(g => li(g.groupId))).render
+        )
       }
     }
 
     dom.document.body.appendChild(
       div(
-        div(box),
-        div(output)
+        box,
+        output
       ).render
     )
 
