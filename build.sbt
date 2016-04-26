@@ -82,4 +82,5 @@ lazy val data = project
     }
   )
   .enablePlugins(ScalaKataPlugin)
+  .dependsOn(model)
 

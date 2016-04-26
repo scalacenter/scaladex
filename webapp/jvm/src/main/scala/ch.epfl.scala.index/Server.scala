@@ -18,7 +18,9 @@ object Server {
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
-    val poms = maven.Poms.get.collect{ case Success(p) => maven.PomConvert(p) }
+    val poms = maven.Poms.get.collect{ 
+      case Success(p) => maven.PomConvert(p) 
+    }
     val simple = poms.map(p => SimpleModel(p.groupId)).distinct
 
     val api = new Api {
