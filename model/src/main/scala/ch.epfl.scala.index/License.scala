@@ -4,6 +4,7 @@ import java.net.URL
 
 sealed trait License {
   val name: String
+  def shortName = name
   val url: Option[URL]
 }
 
@@ -57,11 +58,14 @@ object License {
 case class RawLicense(
   val name: String,
   val url: Option[URL] = None
-) extends License
+) extends License {
+  override def shortName = name
+}
 
 sealed trait Spdx extends License {
   val url = Some(new URL(s"https://spdx.org/licenses/$spdxId.html"))
   def spdxId: String
+  override def shortName = spdxId
 }
 
 // inspired by: https://github.com/NixOS/nixpkgs/blob/master/lib/licenses.nix#L1
