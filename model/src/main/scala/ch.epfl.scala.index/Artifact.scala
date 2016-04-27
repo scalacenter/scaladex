@@ -9,8 +9,8 @@ case class ArtifactRef(
 case class Artifact(
   ref: ArtifactRef,
   dependencies: Set[ArtifactRef],
-  github: Option[GithubRepo],
-  license: License
+  github: Set[GithubRepo],
+  licenses: Set[License]
 )
 
 case class GithubRepo(user: String, repo: String)

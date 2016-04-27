@@ -1,5 +1,7 @@
 package ch.epfl.scala.index
 
+import cleanup._
+
 import upickle.default.{Reader, Writer, write => uwrite, read => uread}
 
 import akka.http.scaladsl._
@@ -21,11 +23,46 @@ object Server {
     val poms = maven.Poms.get.collect{ 
       case Success(p) => maven.PomConvert(p) 
     }
-    val simple = poms.map(p => SimpleModel(p.groupId)).distinct
+    val simple = poms.map{p =>
+      import p._
+
+      Artifact(
+        ArtifactRef(
+          groupId,
+          artifactId,
+          version
+        ),
+        dependencies.map{ d =>
+          import d._
+          ArtifactRef(
+            groupId,
+            artifactId,
+            version
+          )
+        }.toSet,
+        ScmCleanup.find(p),
+        LicenseCleanup.find(licenses)
+      )
+    }
 
     val api = new Api {
-      def search(query: String): List[SimpleModel] = {
-        simple.filter(_.groupId.contains(query)).take(50)
+      def search(query: String): List[Artifact] = {
+
+        val filtered =
+          if(query.isEmpty) simple
+          else simple.filter{p =>
+            import p._
+            import p.ref._
+
+            val githubInfo =
+              github.toList.flatMap{ case GithubRepo(user, repo) =>
+                List(user, repo)
+              }
+
+            (List(groupId, artifactId, version) ::: githubInfo).exists(s => s.contains(query))
+          }
+
+        filtered.take(100)
       }
     }
 

@@ -9,7 +9,7 @@ import fastparse.all._
 import fastparse.core.Parsed
 
 object ScmCleanup extends DefaultJsonProtocol {
-  private val file = Paths.get("..", "contrib", "claims.json").toFile
+  private val file = Paths.get("..", "..", "contrib", "claims.json").toFile
   private val source = scala.io.Source.fromFile(file)
   private val claims = source.mkString.parseJson.convertTo[Map[String, Option[String]]].toList.sorted
   private val matchers = claims.
@@ -42,7 +42,7 @@ object ScmCleanup extends DefaultJsonProtocol {
     }
   }
 
-  def find(d: maven.MavenModel): List[GithubRepo] = {
+  def find(d: maven.MavenModel): Set[GithubRepo] = {
     import d._
     def matches(m: matching.Regex, s: String): Boolean =
        m.unapplySeq(s).isDefined
@@ -64,7 +64,7 @@ object ScmCleanup extends DefaultJsonProtocol {
         matches(m, s"$groupId $artifactId $version")
       }.map(_._2).toList
     
-    (fromPoms ++ fromClaims).distinct
+    (fromPoms ++ fromClaims).toSet
   }
 
   // script to generate contrib/claims.json

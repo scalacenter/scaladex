@@ -15,13 +15,23 @@ object Client {
     val box = input(`type`:="text", placeholder:="Type your name here!").render
     val output = div.render
 
-    box.onkeyup = _ => {
-      AutowireClient[Api].search(box.value).call().onSuccess{ case response ⇒
-        output.innerHTML = ""
-        output.appendChild(
-          ul(response.map(g => li(g.groupId))).render
-        )
+    def update() = {
+      AutowireClient[Api].search(box.value).call().onSuccess{ case artifacts ⇒
+        render(artifacts)  
       }
+    }
+
+    def render(artifacts: List[Artifact]) = {
+      output.innerHTML = ""
+      output.appendChild(
+        ul(artifacts.map(
+          artifact => li(artifact.toString())
+        )).render
+      )
+    }
+
+    box.onkeyup = _ => {
+      update()
     }
 
     dom.document.body.appendChild(
