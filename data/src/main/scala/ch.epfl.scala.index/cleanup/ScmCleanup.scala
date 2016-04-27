@@ -53,7 +53,7 @@ object ScmCleanup extends DefaultJsonProtocol {
           import scmV._
           List(connection, developerConnection, url).
             flatten.
-            flatMap(cleanup.ScmCleanup.parseRepo).
+            flatMap(parseRepo).
             filter(g => g.user != "" && g.repo != "")
         }
         case None => List()

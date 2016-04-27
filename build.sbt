@@ -51,7 +51,7 @@ lazy val webapp = crossProject
       "com.typesafe.akka" %% "akka-http-experimental" % "2.4.4"
     ) 
   )
-
+  
 lazy val webappJS = webapp.js
   .dependsOn(model)
 
