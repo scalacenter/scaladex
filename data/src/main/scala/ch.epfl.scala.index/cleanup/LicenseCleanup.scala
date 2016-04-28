@@ -4,9 +4,9 @@ package cleanup
 import java.nio.file._
 import spray.json._
 
-object LicenseCleanup extends DefaultJsonProtocol {
+class LicenseCleanup extends DefaultJsonProtocol {
   private val byNameSource = scala.io.Source.fromFile(
-    Paths.get("..", "..", "contrib", "licenses", "byName.json").toFile
+    cleanupIndexBase.resolve(Paths.get("licenses", "byName.json")).toFile
   )
   private val byName = byNameSource.mkString.parseJson.convertTo[Map[String, List[String]]]
   byNameSource.close()

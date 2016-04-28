@@ -8,9 +8,10 @@ import java.nio.file._
 import fastparse.all._
 import fastparse.core.Parsed
 
-object ScmCleanup extends DefaultJsonProtocol {
-  private val file = Paths.get("..", "..", "contrib", "claims.json").toFile
-  private val source = scala.io.Source.fromFile(file)
+class ScmCleanup extends DefaultJsonProtocol {
+  private val source = scala.io.Source.fromFile(
+    cleanupIndexBase.resolve(Paths.get("claims.json")).toFile
+  )
   private val claims = source.mkString.parseJson.convertTo[Map[String, Option[String]]].toList.sorted
   private val matchers = claims.
     map{case (k, v) => v.map((k, _))}.flatten.

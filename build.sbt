@@ -58,6 +58,14 @@ lazy val webappJS = webapp.js
 lazy val webappJVM = webapp.jvm
   .settings(packageScalaJs(webappJS))
   .dependsOn(model, data)
+  .enablePlugins(ScalaKataPlugin)
+  .settings(
+    securityManager in Backend := false,
+    timeout in Backend := {
+      import scala.concurrent.duration._
+      1.minute
+    }
+  )
 
 lazy val model = project
   .settings(commonSettings: _*)
@@ -75,12 +83,8 @@ lazy val data = project
       "org.apache.maven"        % "maven-model-builder"               % "3.3.9",
       "com.lihaoyi"            %% "fastparse"                         % "0.3.7"
     ),
-    securityManager in Backend := false,
-    timeout in Backend := {
-      import scala.concurrent.duration._
-      1.minute
-    }
+    buildInfoPackage := "build.info",
+    buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild)
   )
-  .enablePlugins(ScalaKataPlugin)
+  .enablePlugins(BuildInfoPlugin)
   .dependsOn(model)
-

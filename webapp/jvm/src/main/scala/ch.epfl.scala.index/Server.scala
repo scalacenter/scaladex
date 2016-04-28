@@ -23,7 +23,10 @@ object Server {
     val poms = maven.Poms.get.collect{ 
       case Success(p) => maven.PomConvert(p) 
     }
-    val simple = poms.map{p =>
+    val scmCleanup = new ScmCleanup
+    val licenseCleanup = new LicenseCleanup
+    
+    val artifacts = poms.map{p =>
       import p._
 
       Artifact(
@@ -40,8 +43,8 @@ object Server {
             version
           )
         }.toSet,
-        ScmCleanup.find(p),
-        LicenseCleanup.find(licenses)
+        scmCleanup.find(p),
+        licenseCleanup.find(licenses)
       )
     }
 
@@ -49,8 +52,8 @@ object Server {
       def search(query: String): List[Artifact] = {
 
         val filtered =
-          if(query.isEmpty) simple
-          else simple.filter{p =>
+          if(query.isEmpty) artifacts
+          else artifacts.filter{p =>
             import p._
             import p.ref._
 

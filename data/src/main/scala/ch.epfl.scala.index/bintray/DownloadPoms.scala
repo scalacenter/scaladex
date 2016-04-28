@@ -85,7 +85,7 @@ class DownloadPoms(implicit system: ActorSystem, materializer: ActorMaterializer
         pw.close
       }
       case Left(e) => println(e)
-  }
+    }
 
   def run() = {
     progress.start()
