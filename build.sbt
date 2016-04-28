@@ -81,7 +81,8 @@ lazy val data = project
       "com.github.nscala-time" %% "nscala-time"                       % "2.10.0",
       "me.tongfei"              % "progressbar"                       % "0.4.0",
       "org.apache.maven"        % "maven-model-builder"               % "3.3.9",
-      "com.lihaoyi"            %% "fastparse"                         % "0.3.7"
+      "com.lihaoyi"            %% "fastparse"                         % "0.3.7",
+      "org.http4s"             %% "http4s-blaze-client"               % "0.13.2a"
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild)
