@@ -30,6 +30,7 @@ object PomConvert {
       getVersion,
       getPackaging,
       getName,
+      Option(getDescription),
       Option(getUrl),
       Option(getScm).map{scm =>
         import scm._

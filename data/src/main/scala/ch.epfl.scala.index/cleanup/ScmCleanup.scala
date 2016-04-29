@@ -43,7 +43,7 @@ class ScmCleanup extends DefaultJsonProtocol {
     }
   }
 
-  def find(d: maven.MavenModel): Set[GithubRepo] = {
+  def apply(d: maven.MavenModel): Set[GithubRepo] = {
     import d._
     def matches(m: matching.Regex, s: String): Boolean =
        m.unapplySeq(s).isDefined
@@ -72,7 +72,7 @@ class ScmCleanup extends DefaultJsonProtocol {
   def run() = {
     import scala.util._
     val poms = maven.Poms.get.collect{ case Success(p) => maven.PomConvert(p) }
-    val noUrl = poms.filter(p => find(p).size == 0)
+    val noUrl = poms.filter(p => apply(p).size == 0)
     val notClaimed = noUrl.map{d =>
         import d._
         (s"$groupId $artifactId $version", None)

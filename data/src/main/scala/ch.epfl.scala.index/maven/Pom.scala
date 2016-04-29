@@ -14,6 +14,7 @@ case class MavenModel(
   version: String,
   packaging: String,
   name: String,
+  description: Option[String]
   url: Option[String],
   scm: Option[SourceCodeManagment],
   issueManagement: Option[IssueManagement],

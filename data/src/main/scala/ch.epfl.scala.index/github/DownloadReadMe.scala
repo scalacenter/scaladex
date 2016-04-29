@@ -22,6 +22,9 @@ import java.util.Base64
 import java.nio.charset.StandardCharsets
 import java.nio.file._
 
+/*
+ We might implement this later
+ */
 class DownloadReadMe(implicit system: ActorSystem, materializer: ActorMaterializer) extends DefaultJsonProtocol {
   import system.dispatcher
 
@@ -31,7 +34,7 @@ class DownloadReadMe(implicit system: ActorSystem, materializer: ActorMaterializ
   private val githubRepos = {
     val poms = Poms.get.collect{ case Success(p) => PomConvert(p) }
     val scmCleanup = new ScmCleanup
-    val repos = poms.take(500).flatMap(p => scmCleanup.find(p).toList).toSet
+    val repos = poms.take(500).flatMap(p => scmCleanup(p).toList).toSet
     repos
   }
   println("github repos")

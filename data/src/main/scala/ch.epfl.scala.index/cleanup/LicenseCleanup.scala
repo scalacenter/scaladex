@@ -23,7 +23,7 @@ class LicenseCleanup extends DefaultJsonProtocol {
       xs.map((_, license))
     }
 
-  def find(ls: List[maven.License]): Set[License] = {
-    ls.map(l => variaNameToLicense.get(l.name)).flatten.toSet
+  def apply(d: maven.MavenModel): Set[License] = {
+    d.licenses.map(l => variaNameToLicense.get(l.name)).flatten.toSet
   }
 }

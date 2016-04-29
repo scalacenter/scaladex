@@ -58,14 +58,6 @@ lazy val webappJS = webapp.js
 lazy val webappJVM = webapp.jvm
   .settings(packageScalaJs(webappJS))
   .dependsOn(model, data)
-  .enablePlugins(ScalaKataPlugin)
-  .settings(
-    securityManager in Backend := false,
-    timeout in Backend := {
-      import scala.concurrent.duration._
-      1.minute
-    }
-  )
 
 lazy val model = project
   .settings(commonSettings: _*)
@@ -75,6 +67,7 @@ lazy val data = project
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
+      "com.sksamuel.elastic4s" %% "elastic4s-core"                    % "2.3.0",
       "com.typesafe.akka"      %% "akka-http-experimental"            % "2.4.4",
       "com.typesafe.akka"      %% "akka-http-spray-json-experimental" % "2.4.4",
       "org.scala-lang.modules" %% "scala-xml"                         % "1.0.5",
@@ -87,5 +80,12 @@ lazy val data = project
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild)
   )
-  .enablePlugins(BuildInfoPlugin)
+  .enablePlugins(BuildInfoPlugin, ScalaKataPlugin)
   .dependsOn(model)
+  .settings(
+    securityManager in Backend := false,
+    timeout in Backend := {
+      import scala.concurrent.duration._
+      1.minute
+    }
+  )

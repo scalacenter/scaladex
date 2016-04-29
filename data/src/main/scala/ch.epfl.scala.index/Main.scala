@@ -9,11 +9,11 @@ import akka.stream.ActorMaterializer
 
 object Main {
   def main(args: Array[String]): Unit = {
-    val (list, download, parent, github) = args.toList match {
+    val (list, download, parent, elastic) = args.toList match {
       case "list" :: Nil     => ( true, false, false, false)
       case "download" :: Nil => (false,  true, false, false)
       case "parent" :: Nil   => (false, false,  true, false)
-      case "github" :: Nil   => (false, false, false,  true)
+      case "elastic" :: Nil  => (false, false, false,  true)
       case _                 => ( true,  true,  true,  true)
     }
 
@@ -35,9 +35,9 @@ object Main {
       downloadParentPomsStep.run()
     }
 
-    if(github) {
-      val downloadReadMeStep = new DownloadReadMe
-      downloadReadMeStep.run()
+    if(elastic) {
+      // val seedElasticSearchStep = new SeedElasticSearch
+      // seedElasticSearchStep.run()
     }
 
     system.terminate()

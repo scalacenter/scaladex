@@ -20,52 +20,9 @@ object Server {
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
-    val poms = maven.Poms.get.collect{ 
-      case Success(p) => maven.PomConvert(p) 
-    }
-    val scmCleanup = new ScmCleanup
-    val licenseCleanup = new LicenseCleanup
-    
-    val artifacts = poms.map{p =>
-      import p._
-
-      Artifact(
-        ArtifactRef(
-          groupId,
-          artifactId,
-          version
-        ),
-        dependencies.map{ d =>
-          import d._
-          ArtifactRef(
-            groupId,
-            artifactId,
-            version
-          )
-        }.toSet,
-        scmCleanup.find(p),
-        licenseCleanup.find(licenses)
-      )
-    }
-
     val api = new Api {
       def search(query: String): List[Artifact] = {
-
-        val filtered =
-          if(query.isEmpty) artifacts
-          else artifacts.filter{p =>
-            import p._
-            import p.ref._
-
-            val githubInfo =
-              github.toList.flatMap{ case GithubRepo(user, repo) =>
-                List(user, repo)
-              }
-
-            (List(groupId, artifactId, version) ::: githubInfo).exists(s => s.contains(query))
-          }
-
-        filtered.take(100)
+        List()
       }
     }
 
