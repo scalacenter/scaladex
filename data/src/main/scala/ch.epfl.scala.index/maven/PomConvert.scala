@@ -5,7 +5,14 @@ object PomConvert {
   def apply(model: org.apache.maven.model.Model): MavenModel = {
     import model._
     import scala.collection.JavaConverters._
+    import scala.util.Try
 
+    def list[T](l: java.util.List[T]): List[T] =
+      Option(l).map(_.asScala.toList).getOrElse(List.empty[T])
+
+    def map(l: java.util.Properties): Map[String, String] =
+      Option(l).map(_.asScala.toMap).getOrElse(Map())
+    
     def convert(contributor: org.apache.maven.model.Contributor): Contributor = {
       import contributor._
       Contributor(
@@ -14,16 +21,13 @@ object PomConvert {
         Option(getUrl),
         Option(getOrganization),
         Option(getOrganizationUrl),
-        getRoles.asScala.toList,
+        list(getRoles),
         Option(getTimezone),
-        getProperties.asScala.toMap,
+        map(getProperties),
         Option(getId)
       )
     }
 
-    def list[T](l: java.util.List[T]): List[T] =
-      Option(l).map(_.asScala.toList).getOrElse(List.empty[T])
-    
     MavenModel(
       getGroupId,
       getArtifactId,
@@ -31,6 +35,7 @@ object PomConvert {
       getPackaging,
       getName,
       Option(getDescription),
+      Try(getInceptionYear).flatMap(y => Try(y.toInt)).toOption,
       Option(getUrl),
       Option(getScm).map{scm =>
         import scm._
