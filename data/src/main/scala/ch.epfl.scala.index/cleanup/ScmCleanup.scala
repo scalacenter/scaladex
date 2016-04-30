@@ -71,7 +71,7 @@ class ScmCleanup extends DefaultJsonProtocol {
   // script to generate contrib/claims.json
   def run() = {
     import scala.util._
-    val poms = maven.Poms.get.collect{ case Success(p) => maven.PomConvert(p) }
+    val poms = maven.Poms.get.collect{ case Success((p, _)) => maven.PomConvert(p) }
     val noUrl = poms.filter(p => apply(p).size == 0)
     val notClaimed = noUrl.map{d =>
         import d._

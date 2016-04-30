@@ -21,7 +21,7 @@ import scala.concurrent.Await
 
 import java.nio.file._
 
-class DownloadPoms(implicit system: ActorSystem, materializer: ActorMaterializer) extends BintrayProtocol {
+class DownloadPoms(implicit system: ActorSystem, materializer: ActorMaterializer) {
   import system.dispatcher
 
   private def download(search: BintraySearch) = {
@@ -51,14 +51,10 @@ class DownloadPoms(implicit system: ActorSystem, materializer: ActorMaterializer
     })
 
   private val source = scala.io.Source.fromFile(bintrayCheckpoint.toFile)
-  private val searchesBySha1 = 
-    source.mkString.split(nl).
-    toList.
-    map(_.parseJson.convertTo[BintraySearch]).
-    filter(s => !Files.exists(pomPath(s))). // todo make sure file matches sha1!
+  private val searchesBySha1 = BintrayMeta.get.
+    filter(s => !Files.exists(pomPath(s))). // todo make sure file content matches sha1!
     groupBy(_.sha1).                        // remove duplicates with sha1
     map{case (_, vs) => vs.head}
-  source.close()
 
   private val progress = new ProgressBar("Downloading POMs", searchesBySha1.size)
   

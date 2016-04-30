@@ -40,3 +40,15 @@ trait BintrayProtocol extends DefaultJsonProtocol {
   }
   implicit val bintraySearchFormat = jsonFormat10(BintraySearch)
 }
+
+object BintrayMeta extends BintrayProtocol {
+  lazy val get = {
+    val source = scala.io.Source.fromFile(bintrayCheckpoint.toFile)
+    val ret =
+      source.mkString.split(nl).
+      toList.
+      map(_.parseJson.convertTo[BintraySearch])
+    source.close()
+    ret
+  }
+}

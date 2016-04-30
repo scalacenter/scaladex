@@ -1,6 +1,7 @@
 package ch.epfl.scala.index
 
 import cleanup._
+import bintray._
 
 import upickle.default.{Reader, Writer, write => uwrite, read => uread}
 
@@ -20,9 +21,66 @@ object Server {
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
+    def keep(pom: maven.MavenModel, metas: List[BintraySearch]) = {
+      val packagingOfInterest = Set("aar", "jar")
+      val typesafeNonOSS = Set(
+        "for-subscribers-only",
+        "instrumented-reactive-platform",
+        "subscribers-early-access"
+      )
+      packagingOfInterest.contains(pom.packaging) &&
+      !metas.exists(meta => meta.owner == "typesafe" && typesafeNonOSS.contains(meta.repo))
+    }
+
+    val poms = maven.Poms.get.collect{ case Success((pom, metas)) =>
+      (maven.PomConvert(pom), metas) 
+    }.filter{ case (pom, metas) => keep(pom, metas)}
+
+    val scmCleanup = new ScmCleanup
+    val licenseCleanup = new LicenseCleanup
+    
+    val artifacts = poms.map{ case (pom, metas) =>
+      import pom._
+
+      Artifact(
+        name,
+        description,
+        ArtifactRef(
+          groupId,
+          artifactId,
+          version
+        ),
+        metas.map(meta => ISO_8601_Date(meta.created.toString)),
+        dependencies.map{ dependency =>
+          import dependency._
+          ArtifactRef(
+            groupId,
+            artifactId,
+            version
+          )
+        }.toSet,
+        scmCleanup(pom),
+        licenseCleanup(pom)
+      )
+    }
+
     val api = new Api {
-      def search(query: String): List[Artifact] = {
-        List()
+      def search(query: String): (Int, List[Artifact]) = {
+        val filtered =
+          if(query.isEmpty) artifacts
+          else artifacts.filter{p =>
+            import p._
+            import p.ref._
+
+            val githubInfo =
+              github.toList.flatMap{ case GithubRepo(user, repo) =>
+                List(user, repo)
+              }
+
+            (List(groupId, artifactId, version) ::: githubInfo).exists(s => s.contains(query))
+          }
+
+        (filtered.size, filtered.take(100))
       }
     }
 

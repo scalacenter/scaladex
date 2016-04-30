@@ -32,7 +32,7 @@ class DownloadReadMe(implicit system: ActorSystem, materializer: ActorMaterializ
   private implicit val readmeFormat = jsonFormat3(ReadMe)
 
   private val githubRepos = {
-    val poms = Poms.get.collect{ case Success(p) => PomConvert(p) }
+    val poms = Poms.get.collect{ case Success((p, _)) => PomConvert(p) }
     val scmCleanup = new ScmCleanup
     val repos = poms.take(500).flatMap(p => scmCleanup(p).toList).toSet
     repos

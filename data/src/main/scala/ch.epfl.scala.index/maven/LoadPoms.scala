@@ -1,6 +1,8 @@
 package ch.epfl.scala.index
 package maven
 
+import bintray._
+
 import me.tongfei.progressbar._
 
 import java.io.File
@@ -10,6 +12,18 @@ import java.util.Properties
 
 case class MissingParentPom(dep: maven.Dependency) extends Exception
 
+/*
+We have ~50 000 POMs in index/bintray
+~45 000 will load
+
+Common problems:
+* 1 600 duplicate tags
+* 2 200 duplicate repo id
+*   700 xmlns tags in invalid places
+
+https://github.com/sbt/sbt/issues/2566
+
+*/
 object Poms {
   import org.apache.maven.model._
   import resolution._
@@ -64,7 +78,9 @@ object Poms {
     builder.build(request).getEffectiveModel
   }
 
-  def load(): List[Try[Model]]  = {
+  def load(): List[Try[(Model, List[BintraySearch])]]  = {
+    val meta = BintrayMeta.get.groupBy(_.sha1)
+
     import scala.collection.JavaConverters._
 
     val s = Files.newDirectoryStream(bintray.bintrayPomBase)
@@ -73,10 +89,15 @@ object Poms {
     val progress = new ProgressBar("Reading POMs", poms.size)
     progress.start()
 
+    def sha1(path: Path) = path.getFileName().toString.dropRight(".pom".length)
+
     val parentPomsToDownload = 
       poms.map{p =>
         progress.step()
-        Try(resolve(p))
+        Try(resolve(p)).map(pom => (
+          pom, 
+          meta.get(sha1(p)).getOrElse(List())
+        ))
       }
     progress.stop()
     s.close()
