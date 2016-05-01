@@ -16,12 +16,12 @@ object Client {
     val output = div.render
 
     def update() = {
-      AutowireClient[Api].search(box.value).call().onSuccess{ case (totalSize, artifacts) ⇒
+      AutowireClient[Api].find(box.value).call().onSuccess{ case (totalSize, artifacts) ⇒
         render(totalSize, artifacts)  
       }
     }
 
-    def render(totalSize: Int, artifacts: List[Artifact]) = {
+    def render(totalSize: Long, artifacts: List[Artifact]) = {
       output.innerHTML = ""
       output.appendChild(
         div(

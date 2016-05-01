@@ -33,7 +33,7 @@ object PomConvert {
       getArtifactId,
       getVersion,
       getPackaging,
-      getName,
+      Option(getName),
       Option(getDescription),
       Try(getInceptionYear).flatMap(y => Try(y.toInt)).toOption,
       Option(getUrl),

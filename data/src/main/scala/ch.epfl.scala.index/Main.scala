@@ -3,6 +3,7 @@ package ch.epfl.scala.index
 import bintray._
 import maven._
 import github._
+import elastic._
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
@@ -36,8 +37,8 @@ object Main {
     }
 
     if(elastic) {
-      // val seedElasticSearchStep = new SeedElasticSearch
-      // seedElasticSearchStep.run()
+      val seedElasticSearchStep = new SeedElasticSearch
+      seedElasticSearchStep.run()
     }
 
     system.terminate()

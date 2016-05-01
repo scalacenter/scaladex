@@ -13,7 +13,7 @@ case class MavenModel(
   artifactId: String,
   version: String,
   packaging: String,
-  name: String,
+  name: Option[String],
   description: Option[String],
   inceptionYear: Option[Int],
   url: Option[String],

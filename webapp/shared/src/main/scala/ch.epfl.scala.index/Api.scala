@@ -1,5 +1,7 @@
 package ch.epfl.scala.index
 
+import scala.concurrent.Future
+
 trait Api {
-  def search(query: String): (Int, List[Artifact])
+  def find(q: String): Future[(Long, List[Artifact])]
 }

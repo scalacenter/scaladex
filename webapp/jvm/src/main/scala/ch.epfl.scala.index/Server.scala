@@ -3,6 +3,10 @@ package ch.epfl.scala.index
 import cleanup._
 import bintray._
 
+import elastic._
+import com.sksamuel.elastic4s._
+import ElasticDsl._
+
 import upickle.default.{Reader, Writer, write => uwrite, read => uread}
 
 import akka.http.scaladsl._
@@ -11,8 +15,8 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
 import scala.concurrent.duration._
-import scala.concurrent.Await
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Await, Future}
+// import scala.concurrent.ExecutionContext
 import scala.util.Success
 
 object Server {
@@ -21,72 +25,17 @@ object Server {
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
-    def keep(pom: maven.MavenModel, metas: List[BintraySearch]) = {
-      val packagingOfInterest = Set("aar", "jar")
-      val typesafeNonOSS = Set(
-        "for-subscribers-only",
-        "instrumented-reactive-platform",
-        "subscribers-early-access"
-      )
-      packagingOfInterest.contains(pom.packaging) &&
-      !metas.exists(meta => meta.owner == "typesafe" && typesafeNonOSS.contains(meta.repo))
-    }
-
-    val poms = maven.Poms.get.collect{ case Success((pom, metas)) =>
-      (maven.PomConvert(pom), metas) 
-    }.filter{ case (pom, metas) => keep(pom, metas)}
-
-    val scmCleanup = new ScmCleanup
-    val licenseCleanup = new LicenseCleanup
-    
-    val artifacts = poms.map{ case (pom, metas) =>
-      import pom._
-
-      Artifact(
-        name,
-        description,
-        ArtifactRef(
-          groupId,
-          artifactId,
-          version
-        ),
-        metas.map(meta => ISO_8601_Date(meta.created.toString)),
-        dependencies.map{ dependency =>
-          import dependency._
-          ArtifactRef(
-            groupId,
-            artifactId,
-            version
-          )
-        }.toSet,
-        scmCleanup(pom),
-        licenseCleanup(pom)
-      )
-    }
-
     val api = new Api {
-      def search(query: String): (Int, List[Artifact]) = {
-        val filtered =
-          if(query.isEmpty) artifacts
-          else artifacts.filter{p =>
-            import p._
-            import p.ref._
-
-            val githubInfo =
-              github.toList.flatMap{ case GithubRepo(user, repo) =>
-                List(user, repo)
-              }
-
-            (List(groupId, artifactId, version) ::: githubInfo).exists(s => s.contains(query))
-          }
-
-        (filtered.size, filtered.take(100))
+      def find(q: String): Future[(Long, List[Artifact])] = {
+        esClient.execute {
+          search.in(indexName / collectionName) query q
+        }.map(r => (r.totalHits, r.as[Artifact].toList))
       }
     }
 
     val index = {
       import scalatags.Text.all._
-      import scalatags.Text.tags2.{title, noscript}
+      import scalatags.Text.tags2.title
 
       "<!DOCTYPE html>" +
       html(

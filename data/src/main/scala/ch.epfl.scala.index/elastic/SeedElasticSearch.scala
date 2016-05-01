@@ -1,43 +1,101 @@
-// package ch.epfl.scala.index
-// package elastic
+package ch.epfl.scala.index
+package elastic
 
-// import com.sksamuel.elastic4s._, ElasticClient, ElasticDsl._
+import bintray._
+import cleanup._
 
-// import akka.actor.ActorSystem
-// import akka.stream.ActorMaterializer
+import me.tongfei.progressbar._
 
-// import scala.concurrent.duration._
-// import scala.concurrent.Await
-// import scala.util.Success
+import com.sksamuel.elastic4s._
+import ElasticDsl._
 
-// class SeedElasticSearch(implicit system: ActorSystem, materializer: ActorMaterializer) {
-//   import system.dispatcher
+import source.Indexable
+import spray.json._
 
-//   private val poms = maven.Poms.get.collect{ case Success(p) => maven.PomConvert(p) }
-//   private val scmCleanup = new ScmCleanup
-//   private val licenseCleanup = new LicenseCleanup
-//   private val artifacts = poms.map{p =>
-//     import p._
-//     Artifact(
-//       ArtifactRef(
-//         groupId,
-//         artifactId,
-//         version
-//       ),
-//       dependencies.map{ d =>
-//         import d._
-//         ArtifactRef(
-//           groupId,
-//           artifactId,
-//           version
-//         )
-//       },
-//       scmCleanup.find(p),
-//       licenseCleanup.find(licenses)
-//     )
-//   }
+import scala.concurrent.duration._
+import scala.concurrent.Await
+import scala.util.Success
 
-//   def run(): Unit = {
+trait ArtifactProtocol extends DefaultJsonProtocol {
+  implicit val formatArtifactRef = jsonFormat3(ArtifactRef)
+  implicit val formatLicense = jsonFormat3(License.apply)
+  implicit val formatISO_8601_Date = jsonFormat1(ISO_8601_Date)
+  implicit val formatGithubRepo = jsonFormat2(GithubRepo)
+  implicit val formatArtifact = jsonFormat8(Artifact)
 
-//   }
-// }
+  implicit object ArtifactAs extends HitAs[Artifact] {
+    override def as(hit: RichSearchHit): Artifact = {
+      hit.sourceAsString.parseJson.convertTo[Artifact]
+    }
+  }
+
+  implicit object ArtifactIndexable extends Indexable[Artifact] {
+    override def json(t: Artifact): String = t.toJson.compactPrint
+  }
+}
+
+class SeedElasticSearch extends ArtifactProtocol {
+  def run(): Unit = {
+    def keep(pom: maven.MavenModel, metas: List[BintraySearch]) = {
+      val packagingOfInterest = Set("aar", "jar")
+      val typesafeNonOSS = Set(
+        "for-subscribers-only",
+        "instrumented-reactive-platform",
+        "subscribers-early-access"
+      )
+      packagingOfInterest.contains(pom.packaging) &&
+      !metas.exists(meta => meta.owner == "typesafe" && typesafeNonOSS.contains(meta.repo))
+    }
+
+    val poms = maven.Poms.get.collect{ case Success((pom, metas)) =>
+      (maven.PomConvert(pom), metas) 
+    }.filter{ case (pom, metas) => keep(pom, metas)}
+
+    val scmCleanup = new ScmCleanup
+    val licenseCleanup = new LicenseCleanup
+
+    val progress = new ProgressBar("Convert POMs to Artifact", poms.size)
+    progress.start()
+
+    val artifacts = poms.map{ case (pom, metas) =>
+      import pom._
+
+      progress.step()
+
+      Artifact(
+        name,
+        description,
+        ArtifactRef(
+          groupId,
+          artifactId,
+          version
+        ),
+        metas.map(meta => ISO_8601_Date(meta.created.toString)), // +/- 3 days offset
+        metas.forall(meta => meta.owner == "bintray" && meta.repo == "jcenter"),
+        dependencies.map{ dependency =>
+          import dependency._
+          ArtifactRef(
+            groupId,
+            artifactId,
+            version
+          )
+        }.toSet,
+        scmCleanup(pom),
+        licenseCleanup(pom)
+      )
+    }
+    progress.stop()
+
+    Await.result(
+      esClient.execute {
+        bulk(
+          artifacts.map(artifact => 
+            index into indexName / collectionName source artifact
+          )
+        )
+      },
+      Duration.Inf
+    )
+    ()
+  }
+}

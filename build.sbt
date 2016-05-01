@@ -78,7 +78,8 @@ lazy val data = project
       "org.http4s"             %% "http4s-blaze-client"               % "0.13.2a"
     ),
     buildInfoPackage := "build.info",
-    buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild)
+    buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),
+    javaOptions in reStart += "-Xmx2g"
   )
   .enablePlugins(BuildInfoPlugin, ScalaKataPlugin)
   .dependsOn(model)
