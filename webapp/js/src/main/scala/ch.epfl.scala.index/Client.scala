@@ -1,67 +1,42 @@
 package ch.epfl.scala.index
 
-import autowire._
-import scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.scalajs.js.JSApp
 
 import org.scalajs.dom
-import scalajs.js.annotation.JSExport
+import scala.scalajs.js.JSApp
+import scala.scalajs.js.annotation.JSExport
+import japgolly.scalajs.react._, vdom.prefix_<^._
+import japgolly.scalajs.react.extra._
+import japgolly.scalajs.react.extra.router._
 
-import scalatags.JsDom.all._
+object HomePage {
+  val component = ReactComponentB.static("Home",
+    <.h1("Home")
+  ).build
+}
 
-@JSExport
-object Client {
+object Client extends JSApp {
+
+  sealed trait Page
+  case object Home extends Page
+
+  val routerConfig = RouterConfigDsl[Page].buildConfig { dsl =>
+    import dsl._
+    (trimSlashes | staticRoute(root, Home) ~> render(HomePage.component()))
+      .notFound(redirectToPage(Home)(Redirect.Replace))
+      .renderWith(layout)
+      .verify(Home)
+  }
+
+  def layout(c: RouterCtl[Page], r: Resolution[Page]) =
+    <.div(
+      <.div(^.cls := "container", r.render()))
+
   @JSExport
-  def main(): Unit = {
-    val box = input(`type`:="text", placeholder:="Type your name here!").render
-    val output = div.render
-
-    def update() = {
-      AutowireClient[Api].find(box.value).call().onSuccess{ case (totalSize, artifacts) ⇒
-        render(totalSize, artifacts)  
-      }
-    }
-
-    def render(totalSize: Long, artifacts: List[Artifact]) = {
-      output.innerHTML = ""
-      output.appendChild(
-        div(
-          span(totalSize),
-          ul(artifacts.map(
-            artifact => li(artifact.toString())
-          ))
-        ).render
-      )
-    }
-
-    box.onkeyup = _ => {
-      update()
-    }
-
-    dom.document.body.appendChild(
-      div(
-        box,
-        output
-      ).render
-    )
-
+  override def main(): Unit = {
+    dom.console.info("Router logging is enabled. Enjoy!")
+    val router = Router(BaseUrl.fromWindowOrigin_/, routerConfig.logToConsole)
+    router() render dom.document.body
     ()
   }
 }
-
-
-import upickle.default.{Reader, Writer, write => uwrite, read => uread}
-import scala.concurrent.Future
-
-
-object AutowireClient extends autowire.Client[String, Reader, Writer]{
-  override def doCall(req: Request): Future[String] = {
-    dom.ext.Ajax.post(
-      url = "/api/" + req.path.mkString("/"),
-      data = write(req.args)
-    ).map(_.responseText)
-  }
-
-  def read[T: Reader](p: String) = uread[T](p)
-  def write[T: Writer](r: T) = uwrite(r)
-}
-

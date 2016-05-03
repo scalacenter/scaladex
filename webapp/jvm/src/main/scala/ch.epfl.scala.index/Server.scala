@@ -45,6 +45,7 @@ object Server {
           meta(charset:="utf-8")
         ),
         body(
+          script(src:="/assets/webapp-jsdeps.js"),
           script(src:="/assets/webapp-fastopt.js"),
           script("ch.epfl.scala.index.Client().main()")
         )
