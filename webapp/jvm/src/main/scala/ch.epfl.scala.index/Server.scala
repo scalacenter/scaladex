@@ -16,7 +16,6 @@ import akka.stream.ActorMaterializer
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-// import scala.concurrent.ExecutionContext
 import scala.util.Success
 
 object Server {
@@ -77,7 +76,10 @@ object Server {
       }
     }
 
-    val setup = Http().bindAndHandle(route, "localhost", 8080)
+    val setup = for {
+      _ <- Http().bindAndHandle(route, "localhost", 8080)
+      _ <- esClient.execute { indexExists(indexName) }
+    } yield ()
     Await.result(setup, 20.seconds)
 
     ()

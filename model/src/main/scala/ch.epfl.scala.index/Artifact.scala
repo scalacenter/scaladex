@@ -21,6 +21,11 @@ case class Artifact(
   def scalaDocURI: Option[String] = {
     if(mavenCentral) {
       import ref._
+      // no frame
+      // hosted on s3 at:
+      // https://static.javadoc.io/$groupId/$artifactId/$version/index.html#package
+      // HEAD to check 403 vs 200
+
       Some(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version")
     } else None
   }
