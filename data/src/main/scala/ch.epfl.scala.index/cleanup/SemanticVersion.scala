@@ -12,9 +12,9 @@ case class ReleaseCandidate(digit: Long) extends PreRelease
 case class OtherPreRelease(value: String) extends PreRelease
 
 case class SemanticVersion(
-  major: Long, minor: Long, patch: Long,
-  preRelease: Option[PreRelease],
-  metadata: Option[String]
+  major: Long, minor: Long = 0, patch: Long = 0,
+  preRelease: Option[PreRelease] = None,
+  metadata: Option[String] = None
 ) {
   override def toString = {
     val preReleasePart = preRelease.map{
@@ -50,13 +50,15 @@ object SemanticVersion {
         (pr1, pr2) match {
           case (None, None)                                               => EQ
           case (None, Some(_))                                            => GT
+          case (Some(_), None)                                            => LT
           case (Some(ReleaseCandidate(rc1)), Some(ReleaseCandidate(rc2))) => lcmp.compare(rc1, rc2)
           case (Some(ReleaseCandidate(_))  , Some(Milestone(_)))          => GT
+          case (Some(Milestone(_))         , Some(ReleaseCandidate(_)))   => LT
           case (Some(Milestone(m1))        , Some(Milestone(m2)))         => lcmp.compare(m1, m2)
           case (Some(OtherPreRelease(pr1)) , Some(OtherPreRelease(pr2)))  => scmp.compare(pr1, pr2)
+          case (Some(OtherPreRelease(_))   , Some(Milestone(_)))          => LT
+          case (Some(OtherPreRelease(_))   , Some(ReleaseCandidate(_)))   => LT
           case (Some(_)                    , Some(OtherPreRelease(_)))    => GT
-          case (Some(_)                    , None)                        => LT
-          case _                                                          => preCmp(pr2, pr1)
         }
       }
       
@@ -65,14 +67,10 @@ object SemanticVersion {
       else cmp.compare(tv1, tv2)      
     }
   }
-}
-
-class VersionCleanup {
-  private val Alpha   = (CharIn('a' to 'z') | CharIn('A' to 'Z')).!
-  private val Digit   =  CharIn('0' to '9').!
-  private val Number  = Digit.rep(1).!.map(_.toLong)  
-
-  val SemanticVersioningParser = {
+  private val SemanticVersioningParser = {
+    val Alpha   = (CharIn('a' to 'z') | CharIn('A' to 'Z')).!
+    val Digit   =  CharIn('0' to '9').!
+    val Number  = Digit.rep(1).!.map(_.toLong)  
     val Major = Number
     
     // http://semver.org/#spec-item-9
@@ -89,8 +87,15 @@ class VersionCleanup {
     val MinorPart = ("." ~ Number).?.map(_.getOrElse(0L)) // not really valid SemVer
     val PatchPart = ("." ~ Number).?.map(_.getOrElse(0L)) // not really valid SemVer
 
-    (Start ~ "v".? ~ Major ~ MinorPart ~ PatchPart ~ PreRelease.? ~ MetaData.? ~ End).map(
-      (SemanticVersion.apply _).tupled
-    )
+    (Start ~ "v".? ~ Major ~ MinorPart ~ PatchPart ~ PreRelease.? ~ MetaData.? ~ End).map{
+      case (major, minor, patch, preRelease, metadata) =>
+        SemanticVersion(major, minor, patch, preRelease, metadata)
+    }
+  }
+  def apply(version: String): Option[SemanticVersion] = {
+    SemanticVersioningParser.parse(version) match {
+      case Parsed.Success(v, _) => Some(v)
+      case _ => None
+    }
   }
 }

@@ -22,15 +22,16 @@ trait ArtifactProtocol extends DefaultJsonProtocol {
   implicit val formatISO_8601_Date = jsonFormat1(ISO_8601_Date)
   implicit val formatGithubRepo = jsonFormat2(GithubRepo)
   implicit val formatArtifact = jsonFormat8(Artifact)
+  implicit val formatProject = jsonFormat3(Project)
 
-  implicit object ArtifactAs extends HitAs[Artifact] {
-    override def as(hit: RichSearchHit): Artifact = {
-      hit.sourceAsString.parseJson.convertTo[Artifact]
+  implicit object ProjectAs extends HitAs[Project] {
+    override def as(hit: RichSearchHit): Project = {
+      hit.sourceAsString.parseJson.convertTo[Project]
     }
   }
 
-  implicit object ArtifactIndexable extends Indexable[Artifact] {
-    override def json(t: Artifact): String = t.toJson.compactPrint
+  implicit object ProjectIndexable extends Indexable[Project] {
+    override def json(t: Project): String = t.toJson.compactPrint
   }
 }
 
@@ -84,13 +85,33 @@ class SeedElasticSearch extends ArtifactProtocol {
         licenseCleanup(pom)
       )
     }
+
+    def Desc[T : Ordering] = implicitly[Ordering[T]].reverse
+
+    val projects = artifacts.groupBy(a => (a.ref.groupId, a.ref.artifactId)).map{ case ((gid, aid), as) =>
+      Project(
+        gid,
+        aid,
+        try { 
+          as.toList.sortBy(a => SemanticVersion(a.ref.version))(Desc)
+        } catch {
+          case scala.util.control.NonFatal(e) => {
+            println("cannot sort:")
+            println(as.map(_.ref.version))
+            println("====")
+            throw e
+          }
+        }
+      )
+    }
+
     progress.stop()
 
     Await.result(
       esClient.execute {
         bulk(
-          artifacts.map(artifact => 
-            index into indexName / collectionName source artifact
+          projects.map(project => 
+            index into indexName / collectionName source project
           )
         )
       },

@@ -1,5 +1,7 @@
 # Scaladex
 
+https://waffle.io/scalacenter/scaladex2
+
 How to run:
 
 ```bash

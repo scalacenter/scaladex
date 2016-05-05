@@ -90,10 +90,11 @@ lazy val data = project
       "com.typesafe.akka"      %% "akka-http-spray-json-experimental" % "2.4.4",
       "org.scala-lang.modules" %% "scala-xml"                         % "1.0.5",
       "com.github.nscala-time" %% "nscala-time"                       % "2.10.0",
+      "com.lihaoyi"            %% "fastparse"                         % "0.3.7",
+      "org.http4s"             %% "http4s-blaze-client"               % "0.13.2a",
       "me.tongfei"              % "progressbar"                       % "0.4.0",
       "org.apache.maven"        % "maven-model-builder"               % "3.3.9",
-      "com.lihaoyi"            %% "fastparse"                         % "0.3.7",
-      "org.http4s"             %% "http4s-blaze-client"               % "0.13.2a"
+      "ch.qos.logback"          % "logback-classic"                   % "1.1.7"
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),

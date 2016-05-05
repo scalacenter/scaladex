@@ -8,6 +8,12 @@ case class ArtifactRef(
 
 case class ISO_8601_Date(value: String)
 
+case class Project(
+  groupId: String,
+  artifactId: String,
+  releases: List[Artifact] // sorted by version desc
+)
+
 case class Artifact(
   name: Option[String],
   description: Option[String],

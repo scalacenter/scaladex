@@ -27,10 +27,10 @@ object AutowireClient extends autowire.Client[String, Reader, Writer]{
   def write[T: Writer](r: T) = uwrite(r)
 }
 
-case class SearchState(filter: String, artifacts: List[Artifact])
+case class SearchState(filter: String, projects: List[Project])
 
 object Search {
-  val SearchBar = ReactComponentB[(String, Backend)]("SearchBar")
+  val ProjectSearch = ReactComponentB[(String, Backend)]("ProjectSearch")
     .render_P { case (s, b) =>
       form(
         input.text(
@@ -42,10 +42,10 @@ object Search {
     }
     .build
 
-  val ArtifactList = ReactComponentB[List[Artifact]]("SearchList")
-    .render_P(artifacts =>
-      ul(artifacts.map( artifact =>
-        li(artifact.name)
+  val ProjectList = ReactComponentB[List[Project]]("ProjectList")
+    .render_P(projects =>
+      ul(projects.map( project =>
+        li(project.artifactId)
       ))
     ).build
 
@@ -53,23 +53,23 @@ object Search {
     def onTextChange(e: ReactEventI) = {
       e.extract(_.target.value)(value =>
         Callback.future {
-          AutowireClient[Api].find(value).call().map{ case (total, artifacts) => 
-            $.modState(s => SearchState(value, artifacts))
+          AutowireClient[Api].find(value).call().map{ case (total, projects) => 
+            $.modState(s => SearchState(value, projects))
           }
         }
       )
     }
 
     def render(state: SearchState) = {
-      val SearchState(filter, artifacts) = state
+      val SearchState(filter, projects) = state
       div(
-        SearchBar((filter, this)),
-        ArtifactList(artifacts)
+        ProjectSearch((filter, this)),
+        ProjectList(projects)
       ) 
     }
   }
 
-  val ArtifactApp = ReactComponentB[Unit]("ArtifactApp")
+  val ProjectApp = ReactComponentB[Unit]("ArtifactApp")
     .initialState(SearchState("com.scalakata", Nil))
     .renderBackend[Backend]
     .componentDidMount(scope => Callback.future {
@@ -78,8 +78,6 @@ object Search {
       }
     })
     .build
-
-  val component = ArtifactApp
 }
 
 object Client extends JSApp {
@@ -90,7 +88,7 @@ object Client extends JSApp {
   val routerConfig = RouterConfigDsl[Page].buildConfig { dsl =>
     import dsl._
     (trimSlashes 
-    | staticRoute(root, Home) ~> render(Search.component())
+    | staticRoute(root, Home) ~> render(Search.ProjectApp())
     )
       .notFound(redirectToPage(Home)(Redirect.Replace))
       .renderWith(layout)

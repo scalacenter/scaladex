@@ -25,10 +25,10 @@ object Server {
     implicit val materializer = ActorMaterializer()
 
     val api = new Api {
-      def find(q: String): Future[(Long, List[Artifact])] = {
+      def find(q: String): Future[(Long, List[Project])] = {
         esClient.execute {
           search.in(indexName / collectionName) query q
-        }.map(r => (r.totalHits, r.as[Artifact].toList))
+        }.map(r => (r.totalHits, r.as[Project].toList))
       }
     }
 
