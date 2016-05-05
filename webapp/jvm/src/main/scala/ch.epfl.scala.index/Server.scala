@@ -10,7 +10,14 @@ import ElasticDsl._
 import upickle.default.{Reader, Writer, write => uwrite, read => uread}
 
 import akka.http.scaladsl._
-import akka.http.scaladsl.model._
+import akka.http.scaladsl.model._, HttpMethods.POST, headers._, Uri._, StatusCodes.TemporaryRedirect
+import akka.http.scaladsl.unmarshalling._
+import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+
+import spray.json._
+
+import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
@@ -18,7 +25,19 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.util.Success
 
-object Server {
+case class AccessTokenResponse(access_token: String)
+case class RepoResponse(full_name: String)
+case class UserResponse(login: String, name: String, avatar_url: String)
+// s: size in px (square)
+// https://avatars.githubusercontent.com/u/921490?v=2&s=40
+
+trait GithubProtocol extends DefaultJsonProtocol {
+  implicit val formatAccessTokenResponse = jsonFormat1(AccessTokenResponse)
+  implicit val formatRepoResponse = jsonFormat1(RepoResponse)
+  implicit val formatUserResponse = jsonFormat3(UserResponse)
+}
+
+object Server extends GithubProtocol {
   def main(args: Array[String]): Unit = {
     implicit val system = ActorSystem("scaladex")
     import system.dispatcher
@@ -51,6 +70,46 @@ object Server {
       )
     }
 
+    val clientId = "803749a6b539a950f01a"
+    val clientSecret = "80563c1ae6cd26f2327a346b4e8844680fee652e"
+    def info(code: String) = {
+      def access = {
+        Http().singleRequest(HttpRequest(
+          method = POST,
+          uri = Uri("https://github.com/login/oauth/access_token").withQuery(Query(
+            "client_id" -> clientId,
+            "client_secret" -> clientSecret,
+            "code" -> code,
+            "redirect_uri" -> "http://localhost:8080/callback/done"
+          )),
+          headers = List(Accept(MediaTypes.`application/json`))
+        )).flatMap(response =>
+          Unmarshal(response).to[AccessTokenResponse].map(_.access_token)
+        )
+      }
+      def fetchGithub(token: String, path: Path, query: Query = Query.Empty) = {
+        Http().singleRequest(HttpRequest(
+          uri = Uri(s"https://api.github.com").withPath(path),
+          headers = List(Authorization(GenericHttpCredentials("token", token)))
+        ))
+      }
+
+      def fetchRepos(token: String) =
+        fetchGithub(token, Path.Empty / "user" / "repos", Query("visibility" -> "public")).flatMap(response => 
+          Unmarshal(response).to[List[RepoResponse]]
+        )
+
+      def fetchUser(token: String) =
+        fetchGithub(token, Path.Empty / "user").flatMap(response => 
+          Unmarshal(response).to[UserResponse]
+        )        
+
+      for {
+        token         <- access
+        (user, repos) <- fetchRepos(token).zip(fetchUser(token))
+      } yield (user, repos)
+    }
+
     val route = {
       import akka.http.scaladsl._
       import server.Directives._
@@ -67,6 +126,27 @@ object Server {
         }
       } ~
       get {
+        path("login") {
+          redirect(Uri("https://github.com/login/oauth/authorize").withQuery(Query(
+            "client_id" -> clientId
+          )),TemporaryRedirect)
+        } ~
+        pathPrefix("callback") {
+          path("done") {
+            complete("OK")
+          } ~
+          pathEnd {
+            parameter('code) { code =>
+              complete(info(code))
+
+              // A popup was open for Oauth2
+              // We notify the opening window
+              // We close the popup
+              // complete(script("""|window.opener.oauth2()
+              //                    |window.close()"""))
+            }
+          }
+        } ~
         path("assets" / Rest) { path ⇒
           getFromResource(path)
         } ~
