@@ -11,30 +11,45 @@ import upickle.default.{Reader, Writer, write => uwrite, read => uread}
 
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._, HttpMethods.POST, headers._, Uri._, StatusCodes.TemporaryRedirect
+
 import akka.http.scaladsl.unmarshalling._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-
 import spray.json._
-
 import akka.http.scaladsl.model.MediaTypes.`application/json`
+
+import com.softwaremill.session._
+import com.softwaremill.session.CsrfDirectives._
+import com.softwaremill.session.CsrfOptions._
+import com.softwaremill.session.SessionDirectives._
+import com.softwaremill.session.SessionOptions._
+
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import scala.util.Success
+import scala.util.{Success, Try}
 
 case class AccessTokenResponse(access_token: String)
 case class RepoResponse(full_name: String)
 case class UserResponse(login: String, name: String, avatar_url: String)
-// s: size in px (square)
-// https://avatars.githubusercontent.com/u/921490?v=2&s=40
 
 trait GithubProtocol extends DefaultJsonProtocol {
   implicit val formatAccessTokenResponse = jsonFormat1(AccessTokenResponse)
   implicit val formatRepoResponse = jsonFormat1(RepoResponse)
   implicit val formatUserResponse = jsonFormat3(UserResponse)
+}
+
+case class UserState(repos: Set[GithubRepo], user: UserInfo)
+object UserState extends DefaultJsonProtocol {
+  implicit val formatGithubRepo = jsonFormat2(GithubRepo)
+  implicit val formatUserInfo = jsonFormat3(UserInfo)
+  implicit val formatUserState = jsonFormat2(UserState.apply)
+  implicit def serializer: SessionSerializer[UserState, String] = new SingleValueSessionSerializer(
+    _.toJson.compactPrint,
+    (in: String) => Try { in.parseJson.convertTo[UserState] }
+  )
 }
 
 object Server extends GithubProtocol {
@@ -43,13 +58,13 @@ object Server extends GithubProtocol {
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
-    val api = new Api {
-      def find(q: String): Future[(Long, List[Project])] = {
-        esClient.execute {
-          search.in(indexName / collectionName) query q
-        }.map(r => (r.totalHits, r.as[Project].toList))
-      }
+    val sessionConfig = SessionConfig.default("c05ll3lesrinf39t7mc5h6un6r0c69lgfno69dsak3vabeqamouq4328cuaekros401ajdpkh60rrtpd8ro24rbuqmgtnd1ebag6ljnb65i8a55d482ok7o0nch0bfbe")
+    implicit val sessionManager = new SessionManager[UserState](sessionConfig)
+    implicit val refreshTokenStorage = new InMemoryRefreshTokenStorage[UserState] {
+      def log(msg: String) = println(msg)
     }
+
+    
 
     val index = {
       import scalatags.Text.all._
@@ -106,9 +121,29 @@ object Server extends GithubProtocol {
 
       for {
         token         <- access
-        (user, repos) <- fetchRepos(token).zip(fetchUser(token))
-      } yield (user, repos)
+        (repos, user) <- fetchRepos(token).zip(fetchUser(token))
+      } yield {
+        val githubRepos = repos.map{ r =>
+          val List(user, repo) = r.full_name.split("/").toList
+          GithubRepo(user, repo)
+        }.toSet
+        val UserResponse(login, name, avatarUrl) = user
+
+        UserState(githubRepos, UserInfo(login, name, avatarUrl))
+      }
     }
+
+    def api(userState: Option[UserState]) =
+      new Api {
+        def find(q: String): Future[(Long, List[Project])] = {
+          esClient.execute {
+            search.in(indexName / collectionName) query q
+          }.map(r => (r.totalHits, r.as[Project].toList))
+        }
+        def userInfo(): Option[UserInfo] = {
+          userState.map(_.user)
+        }
+      }
 
     val route = {
       import akka.http.scaladsl._
@@ -117,10 +152,12 @@ object Server extends GithubProtocol {
       post {
         path("api" / Segments){ s ⇒
           entity(as[String]) { e ⇒
-            complete {
-              AutowireServer.route[Api](api)(
-                autowire.Core.Request(s, uread[Map[String, String]](e))
-              )
+            optionalSession(refreshable, usingCookies) { userState =>
+              complete {
+                AutowireServer.route[Api](api(userState))(
+                  autowire.Core.Request(s, uread[Map[String, String]](e))
+                )
+              }
             }
           }
         }
@@ -131,14 +168,27 @@ object Server extends GithubProtocol {
             "client_id" -> clientId
           )),TemporaryRedirect)
         } ~
+        path("logout") {
+          requiredSession(refreshable, usingCookies) { _ =>
+            invalidateSession(refreshable, usingCookies) { ctx =>
+              ctx.complete("{}")
+            }
+          }
+        } ~
         pathPrefix("callback") {
           path("done") {
             complete("OK")
           } ~
           pathEnd {
             parameter('code) { code =>
-              complete(info(code))
-
+              val userState = Await.result(info(code), 10.seconds)
+              setSession(refreshable, usingCookies, userState) {
+                setNewCsrfToken(checkHeader) { ctx => 
+                  ctx.complete("ok") 
+                }
+              }
+              
+              
               // A popup was open for Oauth2
               // We notify the opening window
               // We close the popup
@@ -167,6 +217,6 @@ object Server extends GithubProtocol {
 }
 
 object AutowireServer extends autowire.Server[String, Reader, Writer]{
-  def read[Result: Reader](p: String) = uread[Result](p)
+  def read[Result: Reader](p: String)  = uread[Result](p)
   def write[Result: Writer](r: Result) = uwrite(r)
 }

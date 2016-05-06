@@ -48,8 +48,9 @@ lazy val webapp = crossProject
   )
   .jvmSettings(
     libraryDependencies ++= Seq(
-      "com.github.japgolly.scalacss" %% "core"                   % "0.4.0",
-      "com.typesafe.akka"            %% "akka-http-experimental" % "2.4.4"
+      "com.github.japgolly.scalacss"       %% "core"                   % "0.4.0",
+      "com.typesafe.akka"                  %% "akka-http-experimental" % "2.4.4",
+      "com.softwaremill.akka-http-session" %% "core"                   % "0.2.6"
     )
   )
   
