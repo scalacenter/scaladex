@@ -40,7 +40,6 @@ lazy val webapp = crossProject
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
-      "com.github.japgolly.scalacss" %%% "core"      % "0.4.1",
       "com.lihaoyi"                  %%% "scalatags" % "0.5.2",
       "com.lihaoyi"                  %%% "upickle"   % "0.3.8",
       "com.lihaoyi"                  %%% "autowire"  % "0.2.5"
@@ -48,9 +47,9 @@ lazy val webapp = crossProject
   )
   .jvmSettings(
     libraryDependencies ++= Seq(
-      "com.github.japgolly.scalacss"       %% "core"                   % "0.4.0",
-      "com.typesafe.akka"                  %% "akka-http-experimental" % "2.4.4",
-      "com.softwaremill.akka-http-session" %% "core"                   % "0.2.6"
+      "com.typesafe.akka"                  %% "akka-http-experimental"                    % "2.4.4",
+      "com.softwaremill.akka-http-session" %% "core"                                      % "0.2.6",
+      "org.webjars.bower"                   % "masse-guillaume-mindsmash-source-sans-pro" % "1.3.0"
     )
   )
   
@@ -59,9 +58,12 @@ lazy val webappJS = webapp.js
   .settings(
     libraryDependencies ++= {
       val scalajsReactVersion = "0.11.1"
+      val scalaCssVersion = "0.4.1"
       Seq(
-        "com.github.japgolly.scalajs-react" %%% "core"  % scalajsReactVersion,
-        "com.github.japgolly.scalajs-react" %%% "extra" % scalajsReactVersion
+        "com.github.japgolly.scalacss"      %%% "core"      % scalaCssVersion,
+        "com.github.japgolly.scalacss"      %%% "ext-react" % scalaCssVersion,
+        "com.github.japgolly.scalajs-react" %%% "core"      % scalajsReactVersion,
+        "com.github.japgolly.scalajs-react" %%% "extra"     % scalajsReactVersion
       )
     },
     jsDependencies ++= {

@@ -64,8 +64,6 @@ object Server extends GithubProtocol {
       def log(msg: String) = println(msg)
     }
 
-    
-
     val index = {
       import scalatags.Text.all._
       import scalatags.Text.tags2.title
@@ -133,18 +131,17 @@ object Server extends GithubProtocol {
       }
     }
 
-    def api(userState: Option[UserState]) =
-      new Api {
-        def find(q: String): Future[(Long, List[Project])] = {
-          esClient.execute {
-            search.in(indexName / collectionName) query q
-          }.map(r => (r.totalHits, r.as[Project].toList))
-        }
-        def userInfo(): Option[UserInfo] = {
-          userState.map(_.user)
-        }
+    class ScaladexApi(userState: Option[UserState]) extends Api {
+      def find(q: String): Future[(Long, List[Project])] = {
+        esClient.execute {
+          search.in(indexName / collectionName) query q
+        }.map(r => (r.totalHits, r.as[Project].toList))
       }
-
+      def userInfo(): Option[UserInfo] = {
+        userState.map(_.user)
+      }
+    }
+    
     val route = {
       import akka.http.scaladsl._
       import server.Directives._
@@ -154,7 +151,7 @@ object Server extends GithubProtocol {
           entity(as[String]) { e ⇒
             optionalSession(refreshable, usingCookies) { userState =>
               complete {
-                AutowireServer.route[Api](api(userState))(
+                AutowireServer.route[Api](new ScaladexApi(userState))(
                   autowire.Core.Request(s, uread[Map[String, String]](e))
                 )
               }
@@ -187,7 +184,6 @@ object Server extends GithubProtocol {
                   ctx.complete("ok") 
                 }
               }
-              
               
               // A popup was open for Oauth2
               // We notify the opening window
