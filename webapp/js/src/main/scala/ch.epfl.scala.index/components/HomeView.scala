@@ -1,23 +1,23 @@
 package ch.epfl.scala.index
 package components
 
-import css._
-
 import japgolly.scalajs.react._, vdom.all._
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 
-object ProjectView {
+object HomeView {
   object Style extends StyleSheet.Inline {
     import dsl._
+    
+    val user = style(
+      
+    )
   }
 
-  val component = ReactComponentB[ProjectPage]("Project View")
-    .render_P{ case ProjectPage(g, a) =>
-      div(
-        div(s"$g/$a")
-      )
-    }
-    .build
+  val component = ReactComponentB.static("Home View",
+    p(Style.user, "Home View")
+  ).build
+
+  def apply() = component()
 }

@@ -14,6 +14,7 @@ object AppCSS {
     GlobalRegistry.register(
       GlobalStyle,
       Header.Style,
+      HomeView.Style,
       ProjectView.Style,
       Search.Style,
       User.Style

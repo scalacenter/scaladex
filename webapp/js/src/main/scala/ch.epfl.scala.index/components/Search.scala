@@ -9,6 +9,7 @@ import rpc._
 import scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 import japgolly.scalajs.react._, vdom.all._
+import japgolly.scalajs.react.extra.router._
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -45,35 +46,42 @@ object Search {
     }
     .build
 
-  private val ProjectList = ReactComponentB[List[Project]]("ProjectList")
-    .render_P(projects =>
+  private val ProjectList = ReactComponentB[(List[Project], RouterCtl[Page])]("ProjectList")
+    .render_P{ case (projects, ctl) =>
       ul(projects.map( project =>
-        li(project.artifactId)
+        li(ctl.link(ProjectPage(project.groupId, project.artifactId))(s"${project.groupId} ${project.artifactId}"))
       ))
-    ).build
+    }.build
 
-  private[Search] class Backend($: BackendScope[Unit, SearchState]) {
+  private[Search] class Backend($: BackendScope[Unit, (SearchState, RouterCtl[Page])]) {
     def onTextChange(e: ReactEventI) = {
       e.extract(_.target.value)(value =>
         Callback.future {
           AutowireClient[Api].find(value).call().map{ case (total, projects) => 
-            $.modState(s => SearchState(value, projects))
+            $.modState{ case (_, ctl) => (SearchState(value, projects), ctl)}
           }
         }
       )
     }
 
-    def render(state: SearchState) = {
-      val SearchState(filter, projects) = state
+    def render(state: (SearchState, RouterCtl[Page])) = {
+      val (SearchState(filter, projects), ctl) = state
       div(
         ProjectSearch((filter, this)),
-        ProjectList(projects)
+        ProjectList((projects, ctl))
       ) 
     }
   }
 
-  def apply() = ReactComponentB[Unit]("ProjectSearchApp")
-    .initialState(SearchState("", Nil))
-    .renderBackend[Backend]
-    .build()
+  def component(ctl: RouterCtl[Page]) = 
+    ReactComponentB[Unit]("ProjectSearchApp")
+      .initialState((SearchState("", Nil), ctl))
+      .renderBackend[Backend]
+      .build
+
+  def apply(ctl: RouterCtl[Page]) = {
+    val a = component(ctl)
+    a()
+  }
+
 }

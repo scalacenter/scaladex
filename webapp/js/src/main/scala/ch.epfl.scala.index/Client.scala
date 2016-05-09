@@ -18,10 +18,10 @@ object Client extends JSApp {
   val routerConfig = RouterConfigDsl[Page].buildConfig { dsl =>
     import dsl._
 
-    val part = string("[a-zA-Z0-9]+")
+    val part = string("[a-zA-Z0-9-_\\.]+")
 
     (trimSlashes 
-    | staticRoute(root, Home) ~> render(Header())
+    | staticRoute(root, Home) ~> render(HomeView())
     | dynamicRouteCT(("projects" / part / part).caseClass[ProjectPage]) ~> 
       dynRender(ProjectView.component(_))
     )
@@ -32,7 +32,7 @@ object Client extends JSApp {
 
   def layout(c: RouterCtl[Page], r: Resolution[Page]) =
     div(
-      c.link(ProjectPage("a", "b"))("a/b"),
+      Header.component(c),
       div(cls := "container", r.render())
     )
 

@@ -4,6 +4,7 @@ package components
 import css._
 
 import japgolly.scalajs.react._, vdom.all._
+import japgolly.scalajs.react.extra.router._
 
 import scalacss.Defaults._
 import scalacss.ScalaCssReact._
@@ -44,15 +45,14 @@ object Header {
     )
   }
 
-  val component = ReactComponentB.static("Header",
-    header(Style.header)(
-      div(Style.logo)(
-        img(src := "/assets/scala-logo-white.png", alt := "white scala logo")
-      ),
-      div(Style.search)(Search()),
-      div(Style.user)(User())
-    )
-  ).build
-
-  def apply() = component()
+  val component = ReactComponentB[RouterCtl[Page]]("Header")
+    .render_P( ctl =>
+      header(Style.header)(
+        div(Style.logo)(
+          img(src := "/assets/scala-logo-white.png", alt := "white scala logo")
+        ),
+        div(Style.search)(Search(ctl)),
+        div(Style.user)(User())
+      )
+    ).build
 }
