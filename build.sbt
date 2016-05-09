@@ -40,9 +40,9 @@ lazy val webapp = crossProject
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
-      "com.lihaoyi"                  %%% "scalatags" % "0.5.2",
-      "com.lihaoyi"                  %%% "upickle"   % "0.3.8",
-      "com.lihaoyi"                  %%% "autowire"  % "0.2.5"
+      "com.lihaoyi" %%% "scalatags" % "0.5.2",
+      "com.lihaoyi" %%% "upickle"   % "0.3.8",
+      "com.lihaoyi" %%% "autowire"  % "0.2.5"
     )
   )
   .jvmSettings(

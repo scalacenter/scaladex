@@ -2,15 +2,13 @@ package ch.epfl.scala.index
 package css
 
 import scalacss.Defaults._
+import scalacss.ext.CssReset
 
 object GlobalStyle extends StyleSheet.Inline {
   import dsl._
 
-  val scalaLang = new ScalaLangPalette
-
   style(unsafeRoot("body")(
     margin.`0`,
-    padding.`0`,
-    backgroundColor(scalaLang.darkerBlue)
-  ))
+    padding.`0`
+  )) + style(CssReset.normaliseCss)
 }

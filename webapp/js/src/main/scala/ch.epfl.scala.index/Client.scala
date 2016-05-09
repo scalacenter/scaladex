@@ -10,15 +10,20 @@ import japgolly.scalajs.react._, vdom.all._
 import japgolly.scalajs.react.extra._
 import japgolly.scalajs.react.extra.router._
 
+sealed trait Page
+case object Home extends Page
+case class ProjectPage(groupId: String, artifactId: String) extends Page
+
 object Client extends JSApp {
-
-  sealed trait Page
-  case object Home extends Page
-
   val routerConfig = RouterConfigDsl[Page].buildConfig { dsl =>
     import dsl._
+
+    val part = string("[a-zA-Z0-9]+")
+
     (trimSlashes 
-    | staticRoute(root, Home) ~> render(Search.ProjectApp())
+    | staticRoute(root, Home) ~> render(Header())
+    | dynamicRouteCT(("projects" / part / part).caseClass[ProjectPage]) ~> 
+      dynRender(ProjectView.component(_))
     )
       .notFound(redirectToPage(Home)(Redirect.Replace))
       .renderWith(layout)
@@ -27,6 +32,7 @@ object Client extends JSApp {
 
   def layout(c: RouterCtl[Page], r: Resolution[Page]) =
     div(
+      c.link(ProjectPage("a", "b"))("a/b"),
       div(cls := "container", r.render())
     )
 

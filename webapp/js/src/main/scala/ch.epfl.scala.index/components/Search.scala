@@ -1,35 +1,58 @@
 package ch.epfl.scala.index
 package components
 
+import scala.language.postfixOps
+import scala.concurrent.duration._
+
 import autowire._
 import rpc._
 import scalajs.concurrent.JSExecutionContext.Implicits.queue
 
 import japgolly.scalajs.react._, vdom.all._
 
+import scalacss.Defaults._
+import scalacss.ScalaCssReact._
+
 object Search {
   private[Search] case class SearchState(filter: String, projects: List[Project])
 
-  val ProjectSearch = ReactComponentB[(String, Backend)]("ProjectSearch")
+  object Style extends StyleSheet.Inline {
+    import dsl._
+
+    val searchInput =
+      style(
+        border.none,
+        height(2 em),
+        fontSize(1.5 em),
+        padding.`0`,
+        width(100 %%),
+        &.focus(
+          border.none,
+          outline.none
+        ),
+        backgroundColor.transparent
+      )
+  }
+
+  private val ProjectSearch = ReactComponentB[(String, Backend)]("ProjectSearch")
     .render_P { case (s, b) =>
-      form(
-        input.text(
-          placeholder := "Search Projects",
-          value       := s,
-          onChange   ==> b.onTextChange
-        )
+      input.text(
+        Style.searchInput,
+        placeholder := "Search Projects",
+        value       := s,
+        onChange   ==> b.onTextChange
       )
     }
     .build
 
-  val ProjectList = ReactComponentB[List[Project]]("ProjectList")
+  private val ProjectList = ReactComponentB[List[Project]]("ProjectList")
     .render_P(projects =>
       ul(projects.map( project =>
         li(project.artifactId)
       ))
     ).build
 
-  final class Backend($: BackendScope[Unit, SearchState]) {
+  private[Search] class Backend($: BackendScope[Unit, SearchState]) {
     def onTextChange(e: ReactEventI) = {
       e.extract(_.target.value)(value =>
         Callback.future {
@@ -49,13 +72,8 @@ object Search {
     }
   }
 
-  val ProjectApp = ReactComponentB[Unit]("ArtifactApp")
-    .initialState(SearchState("com.scalakata", Nil))
+  def apply() = ReactComponentB[Unit]("ProjectSearchApp")
+    .initialState(SearchState("", Nil))
     .renderBackend[Backend]
-    .componentDidMount(scope => Callback.future {
-      AutowireClient[Api].find("com.scalakata").call().map{ case (total, artifacts) => 
-        scope.modState(s => SearchState(s.filter, artifacts))
-      }
-    })
-    .build
+    .build()
 }

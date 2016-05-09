@@ -64,6 +64,7 @@ object Server extends GithubProtocol {
       def log(msg: String) = println(msg)
     }
 
+    
     val index = {
       import scalatags.Text.all._
       import scalatags.Text.tags2.title
@@ -82,6 +83,7 @@ object Server extends GithubProtocol {
         )
       )
     }
+    val home = HttpResponse(entity = HttpEntity(ContentTypes.`text/html(UTF-8)`, index))
 
     val clientId = "803749a6b539a950f01a"
     val clientSecret = "80563c1ae6cd26f2327a346b4e8844680fee652e"
@@ -197,14 +199,17 @@ object Server extends GithubProtocol {
           getFromResource(path)
         } ~
         pathSingleSlash {
-         complete(HttpResponse(entity = HttpEntity(ContentTypes.`text/html(UTF-8)`, index)))
+          complete(home)
+        } ~
+        path("projects" / Rest) { _ ⇒
+          complete(home)
         }
       }
     }
 
     val setup = for {
-      _ <- Http().bindAndHandle(route, "localhost", 8080)
       _ <- esClient.execute { indexExists(indexName) }
+      _ <- Http().bindAndHandle(route, "localhost", 8080)
     } yield ()
     Await.result(setup, 20.seconds)
 
