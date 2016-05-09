@@ -33,6 +33,22 @@ object Search {
         ),
         backgroundColor.transparent
       )
+
+    val projectList =
+      style(
+        paddingLeft.`0`
+      )
+
+    val projectElem =
+      style(
+        display.block
+      )
+
+    val projectLink =
+      style(
+        color.white,
+        textDecoration := "none"
+      )
   }
 
   private val ProjectSearch = ReactComponentB[(String, Backend)]("ProjectSearch")
@@ -46,10 +62,19 @@ object Search {
     }
     .build
 
+  private def target(project: Project) =
+    ProjectPage(project.groupId, project.artifactId)
+
   private val ProjectList = ReactComponentB[(List[Project], RouterCtl[Page])]("ProjectList")
     .render_P{ case (projects, ctl) =>
-      ul(projects.map( project =>
-        li(ctl.link(ProjectPage(project.groupId, project.artifactId))(s"${project.groupId} ${project.artifactId}"))
+      ul(Style.projectList)(projects.map( project =>
+        li(Style.projectElem)(
+          a(Style.projectLink, 
+            href := ctl.urlFor(target(project)).value,
+            ctl.setOnLinkClick(target(project)))(
+            s"${project.groupId} ${project.artifactId}"
+          )
+        )
       ))
     }.build
 

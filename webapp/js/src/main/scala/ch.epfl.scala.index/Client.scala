@@ -23,7 +23,7 @@ object Client extends JSApp {
     (trimSlashes 
     | staticRoute(root, Home) ~> render(HomeView())
     | dynamicRouteCT(("projects" / part / part).caseClass[ProjectPage]) ~> 
-      dynRender(ProjectView.component(_))
+        dynRender(ProjectView.component(_))
     )
       .notFound(redirectToPage(Home)(Redirect.Replace))
       .renderWith(layout)
