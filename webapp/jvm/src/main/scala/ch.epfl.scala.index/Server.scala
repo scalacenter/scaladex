@@ -63,7 +63,6 @@ object Server extends GithubProtocol {
     implicit val refreshTokenStorage = new InMemoryRefreshTokenStorage[UserState] {
       def log(msg: String) = println(msg)
     }
-
     
     val index = {
       import scalatags.Text.all._
@@ -133,6 +132,25 @@ object Server extends GithubProtocol {
       }
     }
 
+    def fetchReadme(githubRepo: GithubRepo) = {
+      // change
+      val token = "3309a24669ab11973c08517e5ddcfbc9a329cb44"
+      val GithubRepo(user, repo) = githubRepo
+
+      def request =
+        Http().singleRequest(HttpRequest(
+          uri = Uri(s"https://api.github.com").withPath(Path.Empty / "repos" / user / repo / "readme"),
+          headers = List(
+            Authorization(GenericHttpCredentials("token", token)),
+            Accept(List(MediaRange.custom("application/vnd.github.VERSION.html")))
+          )
+        ))
+
+      request.flatMap(response =>
+        Unmarshal(response).to[String]
+      )
+    }
+
     class ScaladexApi(userState: Option[UserState]) extends Api {
       def find(q: String): Future[(Long, List[Project])] = {
         esClient.execute {
@@ -141,6 +159,27 @@ object Server extends GithubProtocol {
       }
       def userInfo(): Option[UserInfo] = {
         userState.map(_.user)
+      }
+      def projectPage(groupId: String, artifactId: String): Future[Option[(Project, Option[String])]] = {
+        esClient.execute {
+          search.in(indexName / collectionName) query (
+            bool (
+              must(
+                termQuery("groupId", groupId),
+                termQuery("artifactId", artifactId)
+              )
+            )
+          )
+        }.map(r => r.as[Project].headOption).map(_.map{ project =>
+          (
+            project, 
+            project.releases.headOption.flatMap(_.github.headOption)
+          )
+        }).flatMap{ 
+          case Some((project, Some(repo))) => fetchReadme(repo).map(md => Some((project, Some(md))))
+          case Some((project, None)) => Future.successful(Some((project, None)))
+          case None => Future.successful(None)
+        }
       }
     }
     

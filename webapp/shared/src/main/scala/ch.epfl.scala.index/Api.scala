@@ -9,4 +9,5 @@ case class UserInfo(login: String, name: String, avatarUrl: String) {
 trait Api {
   def find(q: String): Future[(Long, List[Project])]
   def userInfo(): Option[UserInfo]
+  def projectPage(groupId: String, artifactId: String): Future[Option[(Project, Option[String])]]
 }
