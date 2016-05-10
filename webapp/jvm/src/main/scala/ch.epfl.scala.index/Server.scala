@@ -154,7 +154,7 @@ object Server extends GithubProtocol {
     class ScaladexApi(userState: Option[UserState]) extends Api {
       def find(q: String): Future[(Long, List[Project])] = {
         esClient.execute {
-          search.in(indexName / collectionName) query q
+          search.in(indexName / collectionName) query q limit 100
         }.map(r => (r.totalHits, r.as[Project].toList))
       }
       def userInfo(): Option[UserInfo] = {

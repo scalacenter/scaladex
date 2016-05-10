@@ -9,6 +9,9 @@ import me.tongfei.progressbar._
 import com.sksamuel.elastic4s._
 import ElasticDsl._
 
+import mappings.FieldType._
+
+
 import source.Indexable
 import spray.json._
 
@@ -109,6 +112,18 @@ class SeedElasticSearch extends ArtifactProtocol {
 
     Await.result(
       esClient.execute {
+        create.index(indexName).mappings(
+          mapping(collectionName) fields (
+            field("groupId") typed StringType index "not_analyzed",
+            field("artifactId") typed StringType index "not_analyzed"
+          )
+        )
+      },
+      Duration.Inf
+    )
+
+    Await.result(
+      esClient.execute {
         bulk(
           projects.map(project => 
             index into indexName / collectionName source project
@@ -117,6 +132,7 @@ class SeedElasticSearch extends ArtifactProtocol {
       },
       Duration.Inf
     )
+
     ()
   }
 }
