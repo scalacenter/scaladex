@@ -16,7 +16,7 @@ object HomeView {
   }
 
   val component = ReactComponentB.static("Home View",
-    p(Style.user, "Home View")
+    p(Style.user, "")
   ).build
 
   def apply() = component()

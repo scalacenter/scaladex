@@ -16,7 +16,7 @@ object User {
   }
 
   val component = ReactComponentB.static("User",
-    p(Style.user, "User")
+    p(Style.user, "")
   ).build
 
   def apply() = component()

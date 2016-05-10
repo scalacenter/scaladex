@@ -32,6 +32,10 @@ object ProjectView {
       overflow.hidden,
       verticalAlign.top
     )
+
+    val abc = style(
+      margin(5.px)
+    )
   }
 
   private val ProjectSearch = ReactComponentB[(String, Backend)]("ProjectSearch")
@@ -44,20 +48,27 @@ object ProjectView {
 
           import last.ref._
 
+          def deps(dependencies: Set[ArtifactRef]) =
+            ul(Style.abc)(dependencies.map(dep => (dep.groupId, dep.artifactId)).map{ case (gid, aid) =>
+              li(a(href := s"/projects/$gid/$aid", target := "_blank")(
+                s"$gid:$aid")
+              )
+            })
+
           div(
-            div(last.sbtInstall),
+            div(Style.abc)(last.sbtInstall),
             last.scalaDocURI match {
-              case Some(uri) => a(href := uri, target := "blank")("scaladoc")
-              case None => div("no scaladoc")
+              case Some(uri) => a(Style.abc, href := uri, target := "blank")("scaladoc")
+              case None => div(Style.abc)("no scaladoc")
             },
-            div(last.github.map{ case GithubRepo(user, repo) =>
+            div(Style.abc)(last.github.map{ case GithubRepo(user, repo) =>
               a(href := s"https://github.com/$user/$repo")(s"$user/$repo")
             }),
-            ul(last.reverseDependencies.map(dep =>
-              li(a(href := s"/projects/${dep.groupId}/${dep.artifactId}", target := "_blank")(
-                s"${dep.groupId}:${dep.artifactId}")
-              )
-            ))
+            div(Style.abc)("reverse dependecies"),
+            deps(last.reverseDependencies),
+            div(Style.abc)("dependecies"),
+            deps(last.dependencies)
+
           )
         }
         case None => div("no releases")
