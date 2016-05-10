@@ -24,7 +24,7 @@ trait ArtifactProtocol extends DefaultJsonProtocol {
   implicit val formatLicense = jsonFormat3(License.apply)
   implicit val formatISO_8601_Date = jsonFormat1(ISO_8601_Date)
   implicit val formatGithubRepo = jsonFormat2(GithubRepo)
-  implicit val formatArtifact = jsonFormat8(Artifact)
+  implicit val formatArtifact = jsonFormat9(Artifact)
   implicit val formatProject = jsonFormat3(Project)
 
   implicit object ProjectAs extends HitAs[Project] {
@@ -63,9 +63,7 @@ class SeedElasticSearch extends ArtifactProtocol {
 
     val artifacts = poms.map{ case (pom, metas) =>
       import pom._
-
       progress.step()
-
       Artifact(
         name,
         description,
@@ -84,14 +82,30 @@ class SeedElasticSearch extends ArtifactProtocol {
             version
           )
         }.toSet,
+        Set(),
         scmCleanup(pom),
         licenseCleanup(pom)
       )
     }
+    progress.stop()
+
+    val progress2 = new ProgressBar("Reverse Dep", artifacts.size)
+    progress2.start()
+    val artifacts2 = artifacts.map{ artifact =>
+      progress2.step()
+      artifact.copy(reverseDependencies = 
+        artifacts
+          .filter(_.dependencies.contains(artifact.ref))
+          .map(_.ref)
+          .toSet
+      )
+    }
+    progress2.stop()
 
     def Desc[T : Ordering] = implicitly[Ordering[T]].reverse
 
-    val projects = artifacts.groupBy(a => (a.ref.groupId, a.ref.artifactId)).map{ case ((gid, aid), as) =>
+    println("grouping")
+    val projects = artifacts2.groupBy(a => (a.ref.groupId, a.ref.artifactId)).map{ case ((gid, aid), as) =>
       Project(
         gid,
         aid,
@@ -108,8 +122,7 @@ class SeedElasticSearch extends ArtifactProtocol {
       )
     }
 
-    progress.stop()
-
+    println("mapping ES")
     Await.result(
       esClient.execute {
         create.index(indexName).mappings(
@@ -122,6 +135,7 @@ class SeedElasticSearch extends ArtifactProtocol {
       Duration.Inf
     )
 
+    println("indexing to ES")
     Await.result(
       esClient.execute {
         bulk(

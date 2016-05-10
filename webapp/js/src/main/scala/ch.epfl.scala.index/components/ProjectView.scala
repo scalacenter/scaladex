@@ -37,7 +37,31 @@ object ProjectView {
   private val ProjectSearch = ReactComponentB[(String, Backend)]("ProjectSearch")
   private val ProjectSideBar = ReactComponentB[Project]("ProjectSideBar")
     .render_P ( project =>
-      div(project.toString())
+      project.releases.headOption match {
+        case Some(last) => {
+          val name = last.name.getOrElse("")
+          val description = last.description.getOrElse("")
+
+          import last.ref._
+
+          div(
+            div(last.sbtInstall),
+            last.scalaDocURI match {
+              case Some(uri) => a(href := uri, target := "blank")("scaladoc")
+              case None => div("no scaladoc")
+            },
+            div(last.github.map{ case GithubRepo(user, repo) =>
+              a(href := s"https://github.com/$user/$repo")(s"$user/$repo")
+            }),
+            ul(last.reverseDependencies.map(dep =>
+              li(a(href := s"/projects/${dep.groupId}/${dep.artifactId}", target := "_blank")(
+                s"${dep.groupId}:${dep.artifactId}")
+              )
+            ))
+          )
+        }
+        case None => div("no releases")
+      }
     )
     .build
 
