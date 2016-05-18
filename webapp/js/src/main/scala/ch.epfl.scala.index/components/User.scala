@@ -8,7 +8,7 @@ import scalacss.ScalaCssReact._
 
 object User {
   object Style extends StyleSheet.Inline {
-    import dsl._
+    // import dsl._
     
     val user = style(
       

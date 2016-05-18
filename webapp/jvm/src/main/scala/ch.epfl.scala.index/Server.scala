@@ -1,9 +1,7 @@
 package ch.epfl.scala.index
 
-import cleanup._
-import bintray._
+import data.elastic._
 
-import elastic._
 import com.sksamuel.elastic4s._
 import ElasticDsl._
 
@@ -16,7 +14,6 @@ import akka.http.scaladsl.unmarshalling._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import spray.json._
-import akka.http.scaladsl.model.MediaTypes.`application/json`
 
 import com.softwaremill.session._
 import com.softwaremill.session.CsrfDirectives._
@@ -29,7 +26,8 @@ import akka.stream.ActorMaterializer
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import scala.util.{Success, Try}
+import scala.util.Try
+import scala.util.control.NonFatal
 
 case class AccessTokenResponse(access_token: String)
 case class RepoResponse(full_name: String)
@@ -176,7 +174,11 @@ object Server extends GithubProtocol {
             project.releases.headOption.flatMap(_.github.headOption)
           )
         }).flatMap{ 
-          case Some((project, Some(repo))) => fetchReadme(repo).map(md => Some((project, Some(md))))
+          case Some((project, Some(repo))) => fetchReadme(repo).map(
+            md => Some((project, Some(md)))
+          ).recover{
+            case NonFatal(_) => Some((project, None))
+          }
           case Some((project, None)) => Future.successful(Some((project, None)))
           case None => Future.successful(None)
         }

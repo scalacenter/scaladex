@@ -1,9 +1,8 @@
 package ch.epfl.scala.index
+package data
 package bintray
 
 import me.tongfei.progressbar._
-
-import spray.json._
 
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.Http
@@ -51,7 +50,7 @@ class DownloadPoms(implicit system: ActorSystem, materializer: ActorMaterializer
     })
 
   private val source = scala.io.Source.fromFile(bintrayCheckpoint.toFile)
-  private val searchesBySha1 = BintrayMeta.get.
+  private val searchesBySha1 = BintrayMeta.sortedByCreated(bintrayCheckpoint).
     filter(s => !Files.exists(pomPath(s))). // todo make sure file content matches sha1!
     groupBy(_.sha1).                        // remove duplicates with sha1
     map{case (_, vs) => vs.head}

@@ -1,7 +1,11 @@
 package ch.epfl.scala.index
+package data
 package bintray
 
 import spray.json._
+import java.nio.file.Path
+
+import com.github.nscala_time.time.Imports._
 
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
@@ -42,13 +46,14 @@ trait BintrayProtocol extends DefaultJsonProtocol {
 }
 
 object BintrayMeta extends BintrayProtocol {
-  lazy val get = {
-    val source = scala.io.Source.fromFile(bintrayCheckpoint.toFile)
+  def sortedByCreated(path: Path): List[BintraySearch] = {
+    val source = scala.io.Source.fromFile(path.toFile)
     val ret =
       source.mkString.split(nl).
-      toList.
-      map(_.parseJson.convertTo[BintraySearch])
+      toList
+      
     source.close()
-    ret
+
+    ret.map(_.parseJson.convertTo[BintraySearch]).sortBy(_.created)(Descending)
   }
 }

@@ -1,8 +1,8 @@
 package ch.epfl.scala.index
+package data
 
 import bintray._
 import maven._
-import github._
 import elastic._
 
 import akka.actor.ActorSystem

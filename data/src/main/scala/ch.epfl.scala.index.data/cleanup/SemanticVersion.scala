@@ -1,7 +1,6 @@
 package ch.epfl.scala.index
+package data
 package cleanup
-
-import scala.util._
 
 import fastparse.all._
 import fastparse.core.Parsed

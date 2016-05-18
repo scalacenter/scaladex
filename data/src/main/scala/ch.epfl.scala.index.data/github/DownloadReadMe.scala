@@ -1,4 +1,5 @@
 package ch.epfl.scala.index
+package data
 package github
 
 import maven._
@@ -12,14 +13,12 @@ import akka.stream.scaladsl._
 import akka.stream.ActorMaterializer
 import akka.actor.ActorSystem
 
-import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.concurrent.Await
 
 import scala.util.Success
 
 import java.util.Base64
-import java.nio.charset.StandardCharsets
 import java.nio.file._
 
 /*

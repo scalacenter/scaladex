@@ -1,4 +1,5 @@
 package ch.epfl.scala.index
+package data
 
 import java.nio.file.Paths
 

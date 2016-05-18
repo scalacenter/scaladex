@@ -1,4 +1,5 @@
 package ch.epfl.scala.index
+package data
 package elastic
 
 import bintray._
@@ -102,15 +103,13 @@ class SeedElasticSearch extends ArtifactProtocol {
     }
     progress2.stop()
 
-    def Desc[T : Ordering] = implicitly[Ordering[T]].reverse
-
     println("grouping")
     val projects = artifacts2.groupBy(a => (a.ref.groupId, a.ref.artifactId)).map{ case ((gid, aid), as) =>
       Project(
         gid,
         aid,
         try { 
-          as.toList.sortBy(a => SemanticVersion(a.ref.version))(Desc)
+          as.toList.sortBy(a => SemanticVersion(a.ref.version))(Descending)
         } catch {
           case scala.util.control.NonFatal(e) => {
             println("cannot sort:")

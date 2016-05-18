@@ -7,7 +7,6 @@ import scala.scalajs.js.JSApp
 import scala.scalajs.js.annotation.JSExport
 
 import japgolly.scalajs.react._, vdom.all._
-import japgolly.scalajs.react.extra._
 import japgolly.scalajs.react.extra.router._
 
 sealed trait Page

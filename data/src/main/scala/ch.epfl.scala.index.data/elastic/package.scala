@@ -1,4 +1,5 @@
 package ch.epfl.scala.index
+package data
 
 import org.elasticsearch.common.settings.Settings
 import com.sksamuel.elastic4s._

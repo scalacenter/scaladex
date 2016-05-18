@@ -1,4 +1,5 @@
 package ch.epfl.scala.index
+package data
 package maven
 
 // POM Model

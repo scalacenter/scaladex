@@ -22,12 +22,10 @@ val commonSettings = Seq(
     "-Yrangepos",
     "-Ywarn-dead-code",
     "-Ywarn-numeric-widen",
+    "-Ywarn-unused-import",
     "-Ywarn-value-discard"
   ),
-  scalacOptions in (Compile, console) --= Seq(
-    "-Yno-imports",
-    "-Ywarn-unused-import"
-  ),
+  scalacOptions in (Compile, console) -= "-Ywarn-unused-import",
   libraryDependencies ++= Seq(
     "com.lihaoyi" %% "utest" % "0.4.3" % "test"
   ),

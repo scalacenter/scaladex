@@ -1,7 +1,6 @@
 package ch.epfl.scala.index
 package rpc
 
-import autowire._
 import upickle.default.{Reader, Writer, write => uwrite, read => uread}
 import scala.concurrent.Future
 

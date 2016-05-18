@@ -1,4 +1,5 @@
 package ch.epfl.scala.index
+package data
 package maven
 
 import bintray._
@@ -79,7 +80,7 @@ object Poms {
   }
 
   def load(): List[Try[(Model, List[BintraySearch])]]  = {
-    val meta = BintrayMeta.get.groupBy(_.sha1)
+    val meta = BintrayMeta.sortedByCreated(bintrayCheckpoint).groupBy(_.sha1)
 
     import scala.collection.JavaConverters._
 

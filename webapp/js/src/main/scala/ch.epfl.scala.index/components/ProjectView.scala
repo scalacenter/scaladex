@@ -5,8 +5,6 @@ import autowire._
 import rpc._
 import scalajs.concurrent.JSExecutionContext.Implicits.queue
 
-import css._
-
 import japgolly.scalajs.react._, vdom.all._
 
 import scalacss.Defaults._
@@ -46,8 +44,6 @@ object ProjectView {
           val name = last.name.getOrElse("")
           val description = last.description.getOrElse("")
 
-          import last.ref._
-
           def deps(dependencies: Set[ArtifactRef]) =
             ul(Style.abc)(dependencies.map(dep => (dep.groupId, dep.artifactId)).map{ case (gid, aid) =>
               li(a(href := s"/projects/$gid/$aid", target := "_blank")(
@@ -85,7 +81,11 @@ object ProjectView {
             div(Style.side)(ProjectSideBar(project))
           )
 
-        case Some((project, None)) => div("no readme")
+        case Some((project, None)) =>
+          div(Style.container)(
+            div(Style.side)(ProjectSideBar(project))
+          )
+
         case None => div("not found")
       }
     }

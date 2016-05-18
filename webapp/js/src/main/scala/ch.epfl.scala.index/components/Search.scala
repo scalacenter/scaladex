@@ -2,7 +2,6 @@ package ch.epfl.scala.index
 package components
 
 import scala.language.postfixOps
-import scala.concurrent.duration._
 
 import autowire._
 import rpc._

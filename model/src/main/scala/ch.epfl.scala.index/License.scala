@@ -1,7 +1,5 @@
 package ch.epfl.scala.index
 
-import java.net.URL
-
 case class License(name: String, shortName: String, url: Option[String])
 
 object License {
