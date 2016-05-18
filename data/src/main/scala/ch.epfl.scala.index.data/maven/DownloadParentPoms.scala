@@ -60,7 +60,6 @@ class DownloadParentPoms(implicit system: ActorSystem, materializer: ActorMateri
               Files.createDirectories(pomPath.getParent)
               val printer = new scala.xml.PrettyPrinter(80, 2)
               val pw = new java.io.PrintWriter(pomPath.toFile)
-              println(pom)
               pw.println(printer.format(scala.xml.XML.loadString(pom)))
               pw.close
               0
