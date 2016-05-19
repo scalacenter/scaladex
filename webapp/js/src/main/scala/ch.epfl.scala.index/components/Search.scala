@@ -14,7 +14,7 @@ import scalacss.Defaults._
 import scalacss.ScalaCssReact._
 
 object Search {
-  private[Search] case class SearchState(filter: String, projects: List[Project])
+  private[Search] case class SearchState(query: String, projects: List[Project])
 
   object Style extends StyleSheet.Inline {
     import dsl._
@@ -80,11 +80,18 @@ object Search {
   private[Search] class Backend($: BackendScope[Unit, (SearchState, RouterCtl[Page])]) {
     def onTextChange(e: ReactEventI) = {
       e.extract(_.target.value)(value =>
-        Callback.future {
-          AutowireClient[Api].find(value).call().map{ case (total, projects) => 
-            $.modState{ case (_, ctl) => (SearchState(value, projects), ctl)}
+        for {
+          _ <- $.modState{ case (SearchState(_, projects), ctl) => 
+            (SearchState(value, projects), ctl)
           }
-        }
+          _ <- Callback.future {
+            AutowireClient[Api].find(value).call().map{ case (total, projects) => 
+              $.modState{ case (SearchState(query, _), ctl) => 
+                (SearchState(query, projects), ctl)
+              }
+            }
+          }
+        } yield ()
       )
     }
 
