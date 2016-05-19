@@ -2,6 +2,11 @@ import sbt._
 import Keys._
 import org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport._
 
+object Version {
+  val upickle = "0.4.0"
+  val akka = "2.4.4"
+}
+
 object Helper {
   def packageScalaJs(client: Project) = Seq(
     watchSources ++= (watchSources in client).value,

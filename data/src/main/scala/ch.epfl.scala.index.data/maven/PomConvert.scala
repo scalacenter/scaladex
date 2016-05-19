@@ -2,7 +2,7 @@ package ch.epfl.scala.index
 package data
 package maven
 
-object PomConvert {
+private[maven] object PomConvert {
   def apply(model: org.apache.maven.model.Model): MavenModel = {
     import model._
     import scala.collection.JavaConverters._
