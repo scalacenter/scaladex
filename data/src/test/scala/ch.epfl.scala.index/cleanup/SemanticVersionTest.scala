@@ -1,4 +1,5 @@
 package ch.epfl.scala.index
+package data
 package cleanup
 
 import utest._

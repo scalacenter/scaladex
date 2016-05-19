@@ -90,18 +90,19 @@ class SeedElasticSearch extends ArtifactProtocol {
     }
     progress.stop()
 
-    val progress2 = new ProgressBar("Reverse Dep", artifacts.size)
-    progress2.start()
-    val artifacts2 = artifacts.map{ artifact =>
-      progress2.step()
-      artifact.copy(reverseDependencies = 
-        artifacts
-          .filter(_.dependencies.contains(artifact.ref))
-          .map(_.ref)
-          .toSet
-      )
+    println("reverse deps")
+    val reverseCache = artifacts.foldLeft(Map[ArtifactRef, Set[ArtifactRef]]()){ case (reverse, artifact) =>
+      artifact.dependencies.foldLeft(reverse){ case (acc, d) =>
+        acc.get(d) match {
+          case Some(ds) => acc.updated(d, ds + artifact.ref)
+          case None     => acc.updated(d, Set(artifact.ref))
+        }
+      }
     }
-    progress2.stop()
+
+    val artifacts2 = artifacts.map(artifact => 
+      artifact.copy(reverseDependencies = reverseCache.get(artifact.ref).getOrElse(Set()))
+    )
 
     println("grouping")
     val projects = artifacts2.groupBy(a => (a.ref.groupId, a.ref.artifactId)).map{ case ((gid, aid), as) =>
