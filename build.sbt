@@ -23,7 +23,8 @@ val commonSettings = Seq(
     "-Ywarn-dead-code",
     "-Ywarn-numeric-widen",
     "-Ywarn-unused-import",
-    "-Ywarn-value-discard"
+    "-Ywarn-value-discard",
+    "-Xmax-classfile-name", "254" // upickle
   ),
   scalacOptions in (Compile, console) -= "-Ywarn-unused-import",
   libraryDependencies ++= Seq(
@@ -39,13 +40,14 @@ lazy val webapp = crossProject
   .settings(
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "scalatags" % "0.5.2",
-      "com.lihaoyi" %%% "upickle"   % "0.3.8",
+      "com.lihaoyi" %%% "upickle"   % Version.upickle,
+      "com.lihaoyi" %%% "pprint"    % Version.upickle, // for prototyping
       "com.lihaoyi" %%% "autowire"  % "0.2.5"
     )
   )
   .jvmSettings(
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"                  %% "akka-http-experimental"                    % "2.4.4",
+      "com.typesafe.akka"                  %% "akka-http-experimental"                    % Version.akka,
       "com.softwaremill.akka-http-session" %% "core"                                      % "0.2.6",
       "org.webjars.bower"                   % "masse-guillaume-mindsmash-source-sans-pro" % "1.3.0"
     )
@@ -80,6 +82,9 @@ lazy val webappJVM = webapp.jvm
 
 lazy val model = project
   .settings(commonSettings: _*)
+  .settings(
+    libraryDependencies += "com.lihaoyi" %% "upickle" % Version.upickle
+  )
   .enablePlugins(ScalaJSPlugin)
 
 lazy val data = project
@@ -87,8 +92,9 @@ lazy val data = project
   .settings(
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-core"                    % "2.3.0",
-      "com.typesafe.akka"      %% "akka-http-experimental"            % "2.4.4",
-      "com.typesafe.akka"      %% "akka-http-spray-json-experimental" % "2.4.4",
+      "com.typesafe.akka"      %% "akka-http-experimental"            % Version.akka,
+      "com.typesafe.akka"      %% "akka-http-spray-json-experimental" % Version.akka,
+      
       "org.scala-lang.modules" %% "scala-xml"                         % "1.0.5",
       "com.github.nscala-time" %% "nscala-time"                       % "2.10.0",
       "com.lihaoyi"            %% "fastparse"                         % "0.3.7",
@@ -96,6 +102,7 @@ lazy val data = project
       "me.tongfei"              % "progressbar"                       % "0.4.0",
       "org.apache.maven"        % "maven-model-builder"               % "3.3.9",
       "ch.qos.logback"          % "logback-classic"                   % "1.1.7"
+      
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),

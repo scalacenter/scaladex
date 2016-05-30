@@ -2,6 +2,8 @@ package ch.epfl.scala.index
 package data
 package cleanup
 
+import model._
+
 import java.nio.file._
 import spray.json._
 
