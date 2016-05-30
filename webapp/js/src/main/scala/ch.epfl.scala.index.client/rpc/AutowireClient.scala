@@ -11,7 +11,7 @@ import org.scalajs.dom
 object AutowireClient extends autowire.Client[String, Reader, Writer]{
   override def doCall(req: Request): Future[String] = {
     dom.ext.Ajax.post(
-      url = "/api/" + req.path.mkString("/"),
+      url = "/autowire/" + req.path.mkString("/"),
       data = write(req.args)
     ).map(_.responseText)
   }
