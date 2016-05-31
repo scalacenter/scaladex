@@ -1,0 +1,77 @@
+// -----------------------------------------------------------------------------
+// This file contains all application-wide Sass variables.
+// -----------------------------------------------------------------------------
+
+// Colors
+//------------------------------------------------------------------------------
+
+$brand-primary: rgb(242, 101, 39);
+$gray-darker: rgb(0, 43, 55);
+$gray-dark: rgb(34, 73, 81);
+$gray: rgb(88, 110, 117);
+$gray-light: rgb(125, 147, 154);
+$gray-lighter: rgb(237, 241, 241);
+
+
+// Scaffolding
+//------------------------------------------------------------------------------
+
+$text-color: $gray;
+
+//Typography
+//------------------------------------------------------------------------------
+
+// Source Sans Pro
+@import url(https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300,400italic,600,700);
+
+// Roboto Slab
+@import url(https://fonts.googleapis.com/css?family=Roboto+Slab:400,300,700);
+
+$font-family-sans-serif: "Source Sans Pro", sans-serif;
+$font-family-serif: "Roboto Slab", serif;
+$font-size-base: 16px;
+$line-height-base: 1.528571429;
+
+$font-size-h1: floor(($font-size-base * 2.1)); // 33
+$font-size-h2: floor(($font-size-base * 1.8)); // 28
+$font-size-h3: floor(($font-size-base * 1.5)); // 24
+$font-size-h4: floor(($font-size-base * 1.3)); // 20
+$font-size-h5: $font-size-base; // 16
+
+$headings-font-family: $font-family-serif;
+$headings-font-weight: 400;
+$headings-color: $gray-dark;
+
+
+// Components
+//------------------------------------------------------------------------------
+
+$border-radius-base: 2px;
+
+// Tooltips
+//------------------------------------------------------------------------------
+
+$tooltip-bg: $gray-darker;
+
+// Forms
+//------------------------------------------------------------------------------
+
+$input-color-placeholder: $gray-light;
+
+// Navs
+//------------------------------------------------------------------------------
+
+$nav-link-padding: 6px 16px;
+
+// Code
+//------------------------------------------------------------------------------
+
+$code-color: $brand-primary;
+$code-bg: $gray-lighter;
+$pre-bg: $gray-lighter; 
+$pre-color: $gray;
+
+
+// Bootstrap-select
+//------------------------------------------------------------------------------
+$width-default: 140px;

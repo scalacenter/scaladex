@@ -1,0 +1,95 @@
+// -----------------------------------------------------------------------------
+// This file contains all all CSS rules intended to re-declare some of
+// Bootstrap’s default CSS.
+// -----------------------------------------------------------------------------
+// Scaffolding
+//------------------------------------------------------------------------------
+body {
+    font-family: $font-family-base;
+    font-size: $font-size-base;
+    line-height: $line-height-base;
+    color: $text-color;
+    background-color: $body-bg;
+}
+
+// Forms
+//------------------------------------------------------------------------------
+.form-control {
+    border: none;
+    box-shadow: none !important;
+}
+
+.has-feedback {
+    display: inline-block;
+    width: 100%;
+    margin: 15px 0;
+    @media screen and (min-width: $screen-md-min) {
+        width: 83%;
+        margin: 0;
+    }
+    @media screen and (min-width: $screen-lg-min) {
+        width: 86%;
+    }
+    .form-control {
+        padding-left: $input-height-base;
+        padding-right: 0;
+    }
+}
+
+.form-control-feedback {
+    left: 0;
+}
+
+// Buttons
+//------------------------------------------------------------------------------
+.btn {
+    border: none;
+    @include button-size(($padding-base-vertical + 1), ($padding-base-horizontal + 8), $font-size-base, $line-height-base, $btn-border-radius-base);
+    &:active,
+    &.active {
+        outline: 0;
+        background-image: none;
+        @include box-shadow(none);
+    }
+}
+
+// Code
+//------------------------------------------------------------------------------
+code {
+    padding: 2px 4px;
+    font-size: 14px;
+    color: $code-color;
+    background-color: $code-bg;
+    border-radius: $border-radius-base;
+}
+
+pre {
+    padding: ($line-height-computed / 1.5);
+    margin: 0 0 $line-height-computed;
+    border: none;
+    font-size: ($font-size-base - 2);
+}
+
+// Tabs
+//------------------------------------------------------------------------------
+.nav-tabs {
+    border-bottom: none;
+    > li {
+        margin-bottom: 0;
+        > a {
+            background: rgba($gray-darker, 0.1);
+            border: none;
+            color: $gray;
+            &:hover {
+                background: rgba($gray-darker, 0.2);
+            }
+        }
+        &.active > a {
+            &,
+            &:hover,
+            &:focus {
+                border: none;
+            }
+        }
+    }
+}

@@ -31,6 +31,14 @@ val commonSettings = Seq(
   version      := "0.1.2"
 )
 
+lazy val template = project
+  .settings(commonSettings: _*)
+  .settings(
+    scalacOptions -= "-Ywarn-unused-import"
+  )
+  .dependsOn(model)
+  .enablePlugins(SbtTwirl)
+
 lazy val webapp = crossProject
   .settings(commonSettings: _*)
   .settings(
@@ -41,13 +49,7 @@ lazy val webapp = crossProject
       "com.lihaoyi" %%% "autowire"  % "0.2.5"
     )
   )
-  .jvmSettings(
-    libraryDependencies ++= Seq(
-      "com.typesafe.akka"                  %% "akka-http-experimental" % Version.akka,
-      "com.softwaremill.akka-http-session" %% "core"                   % "0.2.6"
-    )
-  )
-  
+
 lazy val webappJS = webapp.js
   .dependsOn(model)
   .settings(
@@ -73,7 +75,24 @@ lazy val webappJS = webapp.js
 
 lazy val webappJVM = webapp.jvm
   .settings(packageScalaJs(webappJS))
-  .dependsOn(model, data)
+  .settings(
+    resolvers ++= Seq(
+      Resolver.bintrayRepo("btomala", "maven"),
+      Resolver.bintrayRepo("hseeberger", "maven")
+    ),
+    libraryDependencies ++= Seq(
+      "com.typesafe.akka"                  %% "akka-http-experimental" % Version.akka,
+      "com.softwaremill.akka-http-session" %% "core"                   % "0.2.6",
+      "com.typesafe.scala-logging"         %% "scala-logging"          % "3.4.0",
+      "ch.qos.logback"                      % "logback-classic"        % "1.1.7",
+      "org.webjars.bower"                   % "bootstrap-sass"         % "3.3.6",
+      "org.webjars.bower"                   % "bootstrap-select"       % "1.10.0"
+    ),
+    reStart <<= reStart.dependsOn(WebKeys.assets in Assets),
+    unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value
+  )
+  .dependsOn(model, data, template)
+  .enablePlugins(SbtSass)
 
 lazy val model = project
   .settings(commonSettings: _*)

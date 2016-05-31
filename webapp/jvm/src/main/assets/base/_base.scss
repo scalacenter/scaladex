@@ -1,0 +1,10 @@
+// -----------------------------------------------------------------------------
+// This file contains very base styles.
+// -----------------------------------------------------------------------------
+
+.box {
+    background: #fff;
+    @include border-top-radius($border-radius-base);
+    @include border-bottom-radius($border-radius-base);
+    padding: 30px;
+}

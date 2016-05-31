@@ -1,0 +1,23 @@
+// 1. Utilities
+@import
+    'utilities/variables';
+
+// 2. Vendors
+@import
+    'lib/bootstrap-sass/assets/stylesheets/_bootstrap.scss',
+    'lib/bootstrap-select/sass/bootstrap-select.scss';
+
+// 3. Vendors Extensions
+@import
+    'vendors-extensions/bootstrap',
+    'vendors-extensions/bootstrap-select';
+  
+// 4. Base 
+@import
+    'base/base';
+
+// 5. Partials
+@import
+    'partials/header',
+    'partials/main',
+    'partials/footer';
