@@ -30,6 +30,9 @@ object ProjectConvert {
 
     println("Convert POMs to Project")
     val licenseCleanup = new LicenseCleanup
+
+    def pomToMavenReference(pom: maven.MavenModel) = MavenReference(pom.groupId, pom.artifactId, pom.version)
+
     val projects = pomsAndMetaClean
       .groupBy{ case (githubRepo, _, _, _, _, _) => githubRepo}
       .map{ case (GithubRepo(organization, repository), vs) =>
@@ -40,7 +43,7 @@ object ProjectConvert {
             val releases =
               rs.map{ case (_, _, targets, pom, metas, version) =>
                 Release(
-                  MavenReference(pom.groupId, pom.artifactId, pom.version),
+                  pomToMavenReference(pom),
                   Release.Reference(
                     organization,
                     artifactName,
@@ -60,18 +63,71 @@ object ProjectConvert {
         Project(Project.Reference(organization, repository), artifacts)
       }.toList
 
-    // TODO DEPS & Reverse DEPS
-    // println("reverse deps")
-    // val reverseCache = artifacts.foldLeft(Map[ArtifactRef, Set[ArtifactRef]]()){ case (reverse, artifact) =>
-    //   artifact.dependencies.foldLeft(reverse){ case (acc, d) =>
-    //     acc.get(d) match {
-    //       case Some(ds) => acc.updated(d, ds + artifact.ref)
-    //       case None     => acc.updated(d, Set(artifact.ref))
-    //     }
-    //   }
-    // }
+    println("Dependencies & Reverse Dependencies")
 
-    projects
-  }
-  
+    val releases =
+      for {
+        project  <- projects
+        artifact <- project.artifacts
+        release  <- artifact.releases
+      } yield release
+
+    val mavenReferenceToReleaseReference = releases.map(release =>
+      (release.maven, release.reference)
+    ).toMap
+
+    def dependencyToMaven(dependency: maven.Dependency) = 
+      MavenReference(dependency.groupId, dependency.artifactId, dependency.version)
+
+    val poms = pomsAndMetaClean.map{ case (_, _, _, pom, _, _) => pom }
+
+    def upsert[K, V](map: Map[K, Set[V]], k: K, v: V) = {
+      map.get(k) match {
+        case Some(vs) => map.updated(k, vs + v)
+        case None     => map.updated(k, Set(v))
+      }
+    }
+
+    def zip[A, B](a: Option[A], b: Option[B]) = a.zip(b).headOption
+    
+    def link(reverse: Boolean) = {
+      poms.foldLeft(Map[Release.Reference, Set[Release.Reference]]()){ case (cache, pom) =>
+        pom.dependencies.foldLeft(cache){ case (cache0, dependency) =>
+          zip(
+            mavenReferenceToReleaseReference.get(dependencyToMaven(dependency)), 
+            mavenReferenceToReleaseReference.get(pomToMavenReference(pom))
+           ) match {
+            case Some((depRef, pomRef)) => {
+              val (source, target) =
+                if(reverse) (depRef, pomRef)
+                else (pomRef, depRef)
+
+              upsert(cache0, source, target)
+            }
+            case None => cache0
+          }
+        }
+      }
+    }
+
+    val dependenciesCache = link(reverse = false)
+    val reverseDependenciesCache =  link(reverse = true)
+
+    def findDependencies(release: Release): Set[Release.Reference] =
+      dependenciesCache.get(release.reference).getOrElse(Set())
+
+    def findReverseDependencies(release: Release): Set[Release.Reference] =
+      reverseDependenciesCache.get(release.reference).getOrElse(Set())
+
+    projects.map(project =>
+      project.copy(artifacts = project.artifacts.map(artifact =>
+        artifact.copy(releases = artifact.releases.map(release =>
+          release.copy(
+            dependencies = findDependencies(release),
+            reverseDependencies = findReverseDependencies(release)
+          )
+        ))
+      ))
+    )
+  } 
 }
