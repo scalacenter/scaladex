@@ -139,6 +139,8 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
             val href = 
               if(e.attr(attr).startsWith("#")) root
               else blob
+
+            e.attr("target", "_blank")
             (attr, href)
           }
           else ("src", raw)

@@ -49,7 +49,6 @@ lazy val webapp = crossProject
     resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
     libraryDependencies ++= Seq(
       "com.typesafe.akka"                  %% "akka-http-experimental"                    % Version.akka,
-      "de.heikoseeberger"                  %% "akka-http-upickle"                         % "1.6.0",
       "com.softwaremill.akka-http-session" %% "core"                                      % "0.2.6",
       "org.webjars.bower"                   % "masse-guillaume-mindsmash-source-sans-pro" % "1.3.0",
       "org.jsoup"                           % "jsoup"                                     % "1.9.2"
