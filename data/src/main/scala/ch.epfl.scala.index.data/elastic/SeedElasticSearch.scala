@@ -16,6 +16,9 @@ import scala.util.Success
 class SeedElasticSearch extends ProjectProtocol {
   def run(): Unit = {
 
+    val exists = Await.result(esClient.execute { indexExists(indexName)}, Duration.Inf).isExists()
+    if(exists) Await.result(esClient.execute { deleteIndex(indexName)}, Duration.Inf)
+
     val projects = 
       ProjectConvert(
         PomsReader
