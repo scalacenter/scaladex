@@ -45,8 +45,10 @@ object UserState extends DefaultJsonProtocol {
 class Github(implicit system: ActorSystem, materializer: ActorMaterializer) extends GithubProtocol {
   import system.dispatcher
 
-  val clientId = "803749a6b539a950f01a"
-  val clientSecret = "80563c1ae6cd26f2327a346b4e8844680fee652e"
+  // scaladex user
+  val clientId = "62ce08c1867245d61742"
+  val clientSecret = "2e968758c2e512f3c1e7b51a3bb1677130a3c4f6"
+
   def info(code: String) = {
     def access = {
       Http().singleRequest(HttpRequest(
@@ -95,7 +97,7 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
 
   def fetchReadme(githubRepo: GithubRepo): Future[Option[GithubReadme]] = {
     // change
-    val token = "3309a24669ab11973c08517e5ddcfbc9a329cb44"
+    val token = "5e2ddeed0f9c6169d868121330599b8353ab0b55" // scaladex user
     val GithubRepo(user, repo) = githubRepo
 
     def request =

@@ -11,12 +11,14 @@ case class Project(
   // @ handle (ex: @akkateam, @typelevel)
   twitter: Option[String] = None,
   // github repo associated with a gitter.im chat
-  gitterIm: Boolean = false,
+  gitterIm: Option[Boolean] = None,
   // agglomerate of github organizations: lightbend(akka, play, ...), verizon(verizon, oncue), etc
   parentOrganization: Option[String] = None,
 
-  // absolute url to a logo (ex: http://typelevel.org/img/logo.svg)
-  logoImageUrl: Option[Url] = None
+  // absolute url to a logo (ex: http://spark.apache.org/images/spark-logo-trademark.png)
+  logoImageUrl: Option[Url] = None,
+
+  _id: Option[Int] = None
 ) {
   def github = GithubRepo(reference.organization, reference.repository)
 }

@@ -23,6 +23,8 @@ object ApiImplementation {
 }
 
 class ApiImplementation(github: Github, userState: Option[UserState])(implicit val ec: ExecutionContext) extends Api {
+  private def hideId(p: Project) = p.copy(_id = None)
+
   def userInfo(): Option[UserInfo] = userState.map(_.user)
   def find(q: String, page: PageIndex): Future[(Pagination, List[Project])] = {
     val perPage = 25
@@ -37,7 +39,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
         current = page,
         total = Math.ceil(r.totalHits / perPage.toDouble).toInt
       ),
-      r.as[Project].toList
+      r.as[Project].toList.map(hideId)
     ))
   }
 
@@ -72,6 +74,6 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
           )
         )
       ).limit(1)
-    }.map(r => r.as[Project].headOption)
+    }.map(r => r.as[Project].headOption.map(hideId))
   }
 }

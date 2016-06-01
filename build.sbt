@@ -6,14 +6,8 @@ val commonSettings = Seq(
     "-deprecation",
     "-encoding", "UTF-8",
     "-feature",
-    "-language:existentials",
-    "-language:experimental.macros",
-    "-language:higherKinds",
-    "-language:implicitConversions",
     "-unchecked",
-    "-Xexperimental",
     "-Xfatal-warnings",
-    "-Xfuture",
     "-Xlint",
     "-Ybackend:GenBCode",
     "-Ydelambdafy:method",
@@ -23,8 +17,7 @@ val commonSettings = Seq(
     "-Ywarn-dead-code",
     "-Ywarn-numeric-widen",
     "-Ywarn-unused-import",
-    "-Ywarn-value-discard",
-    "-Xmax-classfile-name", "254" // upickle
+    "-Ywarn-value-discard"
   ),
   scalacOptions in (Compile, console) -= "-Ywarn-unused-import",
   libraryDependencies ++= Seq(

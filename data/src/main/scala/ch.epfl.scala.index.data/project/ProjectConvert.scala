@@ -81,13 +81,6 @@ object ProjectConvert {
 
     val poms = pomsAndMetaClean.map{ case (_, _, _, pom, _, _) => pom }
 
-    def upsert[K, V](map: Map[K, Set[V]], k: K, v: V) = {
-      map.get(k) match {
-        case Some(vs) => map.updated(k, vs + v)
-        case None     => map.updated(k, Set(v))
-      }
-    }
-
     def zip[A, B](a: Option[A], b: Option[B]) = a.zip(b).headOption
     
     def link(reverse: Boolean) = {
