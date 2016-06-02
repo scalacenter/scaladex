@@ -9,7 +9,7 @@ $ git submodule init
 $ git submodule update
 $ sbt
 > data/reStart elastic
-> webappJVM/reStart
+> ~webappJVM/reStart
 open http://localhost:8080
 ```
 
@@ -39,4 +39,10 @@ Website
   Server
 
   Client
+
+Sbt Plugin
 ```
+
+## Sbt Plugin
+
+The idea behind sbt-scaladex is to notify the scala index of a new libraries being released. The final goal is to merge this plugin directly into sbt.

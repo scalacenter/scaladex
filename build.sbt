@@ -1,8 +1,14 @@
 import Helper._
 
+lazy val baseSettings = Seq(
+  organization := "ch.epfl.scala.index",
+  version      := "0.1.2"
+)
+
 val commonSettings = Seq(
+  resolvers += Resolver.typesafeIvyRepo("releases"),
   scalaVersion := "2.11.8",
-  scalacOptions ++= Seq(
+  scalacOptions := Seq(
     "-deprecation",
     "-encoding", "UTF-8",
     "-feature",
@@ -19,23 +25,18 @@ val commonSettings = Seq(
     "-Ywarn-unused-import",
     "-Ywarn-value-discard"
   ),
-  scalacOptions in (Compile, console) -= "-Ywarn-unused-import",
   scalacOptions in (Test, console) -= "-Ywarn-unused-import",
   libraryDependencies += "com.lihaoyi" % "ammonite-repl" % "0.6.0" % "test" cross CrossVersion.full,
   initialCommands in (Test, console) := """ammonite.repl.Main().run()""",
   libraryDependencies ++= Seq(
     "com.lihaoyi" %% "utest" % "0.4.3" % "test"
   ),
-  testFrameworks += new TestFramework("utest.runner.Framework"),
-  organization := "ch.epfl.scala.index",
-  version      := "0.1.2"
-)
+  testFrameworks += new TestFramework("utest.runner.Framework")
+) ++ baseSettings
 
 lazy val template = project
   .settings(commonSettings: _*)
-  .settings(
-    scalacOptions -= "-Ywarn-unused-import"
-  )
+  .settings(scalacOptions -= "-Ywarn-unused-import")
   .dependsOn(model)
   .enablePlugins(SbtTwirl)
 
@@ -126,3 +127,19 @@ lazy val data = project
   )
   .enablePlugins(BuildInfoPlugin)
   .dependsOn(model)
+
+lazy val sbtScaladex = project
+  .settings(baseSettings: _*)
+  .settings(ScriptedPlugin.scriptedSettings: _*)
+  .settings(
+    name := "sbt-scaladex",
+    sbtPlugin := true,
+    scalaVersion := "2.10.6",
+    scriptedLaunchOpts := scriptedLaunchOpts.value ++ Seq("-Xmx1024M", "-Dplugin.version=" + version.value),
+    scriptedBufferLog := false,
+
+    /* Dont publish */
+    publishArtifact in packageDoc := false,
+    sources in(Compile, doc) := Seq.empty,
+    publishArtifact in(Compile, packageDoc) := false
+  )
