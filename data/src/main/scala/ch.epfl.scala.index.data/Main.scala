@@ -18,6 +18,7 @@ object Main {
     }
 
     implicit val system = ActorSystem()
+    import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
     if(list) {

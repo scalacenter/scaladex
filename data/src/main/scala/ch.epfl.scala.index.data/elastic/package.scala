@@ -24,8 +24,12 @@ trait ProjectProtocol {
 }
 
 package object elastic extends ProjectProtocol {
+  val maxResultWindow = 10000 // <=> max amount of projects (June 1st 2016 ~ 2500 projects)
   private val home = System.getProperty("user.home")
-  val esSettings = Settings.settingsBuilder().put("path.home", home + "/.esdata")
+  val esSettings = Settings.settingsBuilder()
+    .put("path.home", home + "/.esdata")
+    .put("max_result_window", maxResultWindow)
+
   lazy val esClient = ElasticClient.local(esSettings.build)
 
   val indexName = "scaladex"

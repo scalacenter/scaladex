@@ -7,13 +7,13 @@ case class Release(
   // similar to maven but with a clean artifact name
   reference: Release.Reference,
   // human readable name (ex: Apache Spark)
-  name: Option[String],
-  description: Option[String],
+  name: Option[String] = None,
+  description: Option[String] = None,
   // potentially various dates because bintray allows republishing
-  releaseDates: List[ISO_8601_Date],
+  releaseDates: List[ISO_8601_Date] = Nil,
   // availability on the central repository
-  mavenCentral: Boolean,
-  licenses: Set[License],
+  mavenCentral: Boolean = false,
+  licenses: Set[License] = Set(),
   dependencies: Set[Release.Reference] = Set(),
   reverseDependencies: Set[Release.Reference] = Set()
 ) {
