@@ -5,6 +5,7 @@ package project
 import cleanup._
 import model._
 import bintray._
+import github._
 
 import me.tongfei.progressbar._
 
@@ -35,7 +36,7 @@ object ProjectConvert {
 
     val projects = pomsAndMetaClean
       .groupBy{ case (githubRepo, _, _, _, _, _) => githubRepo}
-      .map{ case (github @ GithubRepo(organization, repository), vs) =>
+      .map{ case (githubRepo @ GithubRepo(organization, repository), vs) =>
         
         val artifacts = 
           vs.groupBy{ case (_, artifactName, _, _, _, _) => artifactName}.map{ case (artifactName, rs) =>
@@ -60,7 +61,13 @@ object ProjectConvert {
             Artifact(Artifact.Reference(organization, artifactName), releases)
           }.toList
 
-        Project(Project.Reference(organization, repository), artifacts, Keywords(github))
+
+        Project(
+          Project.Reference(organization, repository),
+          artifacts,
+          GithubReader(githubRepo),
+          Keywords(github)
+        )
       }.toList
 
     println("Dependencies & Reverse Dependencies")

@@ -20,6 +20,9 @@ val commonSettings = Seq(
     "-Ywarn-value-discard"
   ),
   scalacOptions in (Compile, console) -= "-Ywarn-unused-import",
+  scalacOptions in (Test, console) -= "-Ywarn-unused-import",
+  libraryDependencies += "com.lihaoyi" % "ammonite-repl" % "0.6.0" % "test" cross CrossVersion.full,
+  initialCommands in (Test, console) := """ammonite.repl.Main().run()""",
   libraryDependencies ++= Seq(
     "com.lihaoyi" %% "utest" % "0.4.3" % "test"
   ),
@@ -39,12 +42,9 @@ lazy val webapp = crossProject
     )
   )
   .jvmSettings(
-    resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
     libraryDependencies ++= Seq(
-      "com.typesafe.akka"                  %% "akka-http-experimental"                    % Version.akka,
-      "com.softwaremill.akka-http-session" %% "core"                                      % "0.2.6",
-      "org.webjars.bower"                   % "masse-guillaume-mindsmash-source-sans-pro" % "1.3.0",
-      "org.jsoup"                           % "jsoup"                                     % "1.9.2"
+      "com.typesafe.akka"                  %% "akka-http-experimental" % Version.akka,
+      "com.softwaremill.akka-http-session" %% "core"                   % "0.2.6"
     )
   )
   
@@ -85,27 +85,25 @@ lazy val model = project
 lazy val data = project
   .settings(commonSettings: _*)
   .settings(
+    resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-core"                    % "2.3.0",
       "com.typesafe.akka"      %% "akka-http-experimental"            % Version.akka,
       "com.typesafe.akka"      %% "akka-http-spray-json-experimental" % Version.akka,
+      "de.heikoseeberger"      %% "akka-http-json4s"                  % "1.7.0",
+      "org.json4s"             %% "json4s-native"                     % "3.3.0",
+      "de.heikoseeberger"      %% "akka-http-circe"                   % "1.7.0",
       "org.scala-lang.modules" %% "scala-xml"                         % "1.0.5",
       "com.github.nscala-time" %% "nscala-time"                       % "2.10.0",
       "com.lihaoyi"            %% "fastparse"                         % "0.3.7",
       "me.tongfei"              % "progressbar"                       % "0.4.0",
       "org.apache.maven"        % "maven-model-builder"               % "3.3.9",
-      "ch.qos.logback"          % "logback-classic"                   % "1.1.7"
+      "ch.qos.logback"          % "logback-classic"                   % "1.1.7",
+      "org.jsoup"               % "jsoup"                             % "1.9.2"
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),
     javaOptions in reStart += "-Xmx2g"
   )
-  .enablePlugins(BuildInfoPlugin, ScalaKataPlugin)
+  .enablePlugins(BuildInfoPlugin)
   .dependsOn(model)
-  .settings(
-    securityManager in Backend := false,
-    timeout in Backend := {
-      import scala.concurrent.duration._
-      1.minute
-    }
-  )

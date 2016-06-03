@@ -4,7 +4,7 @@ import org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport._
 
 object Version {
   val upickle = "0.4.0"
-  val akka = "2.4.4"
+  val akka = "2.4.6"
 }
 
 object Helper {

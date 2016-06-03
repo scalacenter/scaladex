@@ -43,25 +43,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
     ))
   }
 
-  def projectPage(artifact: Artifact.Reference): Future[Option[(Project, Option[GithubReadme])]] = {
-    project(artifact).flatMap{ 
-      case Some(project) => 
-        github.fetchReadme(project.github).map(
-          readme => Some((project, readme))
-        )
-      case None => Future.successful(None)
-    }
-  }
-
-  def latest(artifact: Artifact.Reference): Future[Option[Release.Reference]] = {
-    project(artifact).map(_.flatMap(
-      _.artifacts
-        .find(_.reference == artifact)
-        .flatMap(_.releases.headOption.map(_.reference))
-    ))
-  }
-
-  private def project(artifact: Artifact.Reference): Future[Option[Project]] = {
+  def projectPage(artifact: Artifact.Reference): Future[Option[Project]] = {
     val Artifact.Reference(organization, artifactName) = artifact
     esClient.execute {
       search.in(indexName / collectionName).query(
@@ -75,5 +57,13 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
         )
       ).limit(1)
     }.map(r => r.as[Project].headOption.map(hideId))
+  }
+
+  def latest(artifact: Artifact.Reference): Future[Option[Release.Reference]] = {
+    projectPage(artifact).map(_.flatMap(
+      _.artifacts
+        .find(_.reference == artifact)
+        .flatMap(_.releases.headOption.map(_.reference))
+    ))
   }
 }

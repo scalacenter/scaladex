@@ -93,13 +93,13 @@ object Server {
             }
           }
         } ~
-        path("assets" / Rest) { path ⇒
+        path("assets" / Remaining) { path ⇒
           getFromResource(path)
         } ~
         pathSingleSlash {
           complete(Template.home)
         } ~
-        path("project" / Rest) { _ ⇒
+        path("project" / Remaining) { _ ⇒
           complete(Template.home)
         }
       }
