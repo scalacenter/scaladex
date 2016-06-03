@@ -15,10 +15,17 @@ object ProjectDelta {
     def unique[K, V](map: Map[K, List[V]]): Map[K, V] = map.collect{case (k, h :: Nil) => (k, h)}
     def groupByProjectReference(ps: List[Project]) = unique(ps.groupBy(_.reference))
     def groupByArtifactReference(p: Project) = unique(p.artifacts.groupBy(_.reference))
+    def groupByReleaseReference(a: Artifact) = unique(a.releases.groupBy(_.reference))
     
     def mergeArtifacts(liveArtifact: Artifact, updateArtifact: Artifact): Artifact = {
-      liveArtifact.copy(releases = 
-        (liveArtifact.releases.toSet ++ updateArtifact.releases.toSet).toList
+      val mergedReleases =
+        fullOuterJoin(
+          groupByReleaseReference(liveArtifact),
+          groupByReleaseReference(updateArtifact)
+        )((l, u) => l)(l => l)(u => u).values.toList
+
+      liveArtifact.copy(
+        releases = mergedReleases
       )
     }
 
