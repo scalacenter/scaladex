@@ -16,7 +16,7 @@ trait BintrayCredentials {
     val home = System.getProperty("user.home")
     val path = home + "/.bintray/.credentials2"
     val nl = System.lineSeparator
-    val source = io.Source.fromFile(path)
+    val source = scala.io.Source.fromFile(path)
 
     val info =
       source.mkString.split(nl).map{ v =>

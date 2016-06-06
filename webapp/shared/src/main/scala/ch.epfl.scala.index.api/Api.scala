@@ -12,13 +12,11 @@ package api {
     def sizedAvatarUrl(size: Int) = avatarUrl + "&s" + size.toString
   }
 
-  case class GithubReadme(html: String)
-
   case class Pagination(current: PageIndex, total: Int)
 
   trait Api {
     def userInfo(): Option[UserInfo]
     def find(q: String, page: PageIndex): Future[(Pagination, List[Project])]
-    def projectPage(artifact: Artifact.Reference): Future[Option[(Project, Option[GithubReadme])]]
+    def projectPage(artifact: Artifact.Reference): Future[Option[Project]]
   }
 }

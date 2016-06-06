@@ -17,9 +17,7 @@ import com.softwaremill.session._
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
-import scala.concurrent.Future
 import scala.util.Try
-import scala.util.control.NonFatal
 
 case class AccessTokenResponse(access_token: String)
 case class RepoResponse(full_name: String)
@@ -93,63 +91,5 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
 
       UserState(githubRepos, UserInfo(login, name, avatarUrl))
     }
-  }
-
-  def fetchReadme(githubRepo: GithubRepo): Future[Option[GithubReadme]] = {
-    // change
-    val token = "5e2ddeed0f9c6169d868121330599b8353ab0b55" // scaladex user
-    val GithubRepo(user, repo) = githubRepo
-
-    def request =
-      Http().singleRequest(HttpRequest(
-        uri = Uri(s"https://api.github.com").withPath(Path.Empty / "repos" / user / repo / "readme"),
-        headers = List(
-          Authorization(GenericHttpCredentials("token", token)),
-          Accept(List(MediaRange.custom("application/vnd.github.VERSION.html")))
-        )
-      ))
-
-    request
-      .flatMap(response => Unmarshal(response).to[String])
-      .map(html => Some(GithubReadme(absoluteUrl(html, githubRepo))))
-      .recover{case NonFatal(e) => {
-        println(e)
-        None
-      }}
-  }
-
-  private def absoluteUrl(readmeHtml: String, githubRepo: GithubRepo): String = {
-    val GithubRepo(user, repo) = githubRepo
-    import org.jsoup.Jsoup
-    
-    // github returns absolute url we need a "safe way" to replace the
-    val someUrl = "http://NTU1ZTAwY2U2YTljZGZjOTYyYjg5NGZh.com"
-
-    val doc = Jsoup.parse(readmeHtml, someUrl)
-
-    val root = s"https://github.com/$user/$repo"
-    def base(v: String) = s"$root/$v/master"
-    val raw = base("raw")
-    val blob = base("blob")
-    
-    doc.select("a, img").toArray
-      .map(_.asInstanceOf[org.jsoup.nodes.Element])
-      .foreach{e => 
-        val (at, replace) =
-          if(e.tagName == "a") {
-            val attr = "href"
-            val href = 
-              if(e.attr(attr).startsWith("#")) root
-              else blob
-
-            e.attr("target", "_blank")
-            (attr, href)
-          }
-          else ("src", raw)
-        
-        e.attr(at, e.absUrl(at).replaceAllLiterally(someUrl, replace))
-      }
-
-    doc.body.childNodes.toArray.mkString("")
   }
 }

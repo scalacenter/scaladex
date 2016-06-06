@@ -3,15 +3,20 @@ package ch.epfl.scala.index.model
 // typelevel/cats
 case class Project(
   reference: Project.Reference,
+
   artifacts: List[Artifact],
+
+  github: Option[GithubInfo] = None,
+
   // predefined keywords (ex: database)
   keywords: List[String] = Nil,
+  
   // http://stackoverflow.com/tags
   stackOverflowTags: List[String] = Nil,
+  
   // @ handle (ex: @akkateam, @typelevel)
   twitter: Option[String] = None,
-  // github repo associated with a gitter.im chat
-  gitterIm: Option[Boolean] = None,
+    
   // agglomerate of github organizations: lightbend(akka, play, ...), verizon(verizon, oncue), etc
   parentOrganization: Option[String] = None,
 
@@ -20,7 +25,7 @@ case class Project(
 
   _id: Option[Int] = None
 ) {
-  def github = GithubRepo(reference.organization, reference.repository)
+  def githubRepo = GithubRepo(reference.organization, reference.repository)
 }
 
 object Project{
@@ -38,3 +43,19 @@ case class Url(target: String)
 case class GithubRepo(organization: String, repo: String) {
   override def toString = s"$organization/$repo"
 }
+
+case class GithubInfo(
+  // html formatted
+  readme: Option[String] = None,
+
+  description: Option[String] = None,
+
+  // http://typelevel.org/cats/
+  homepage: Option[Url] = None,
+
+  logo: Option[Url] = None,
+
+  stars: Option[Int] = None,
+
+  forks: Option[Int] = None
+)

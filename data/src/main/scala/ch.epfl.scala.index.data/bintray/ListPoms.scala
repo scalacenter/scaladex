@@ -90,7 +90,7 @@ class ListPoms(implicit system: ActorSystem, materializer: ActorMaterializer) ex
       Flow[BintraySearch]
         .map(_.toJson.compactPrint)
         .map(s => ByteString(s + nl))
-        .toMat(FileIO.toFile(path.toFile))(Keep.right)
+        .toMat(FileIO.toPath(path))(Keep.right)
   
     Await.result(listPoms.runWith(listPomsCheckpoint(tempCheckpointPath)), Duration.Inf)
 

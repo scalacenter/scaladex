@@ -76,21 +76,16 @@ object ProjectView {
     )
     .build
 
-  private class Backend(scope: BackendScope[Unit, Option[(Project, Option[GithubReadme])]]) {
-    def render(a: Option[(Project, Option[GithubReadme])]) = {
+  private class Backend(scope: BackendScope[Unit, Option[Project]]) {
+    def render(a: Option[Project]) = {
       a match {
-        case Some((project, Some(GithubReadme(html)))) => {
+        case Some(project) => {
+          val readme = project.github.flatMap(_.readme).getOrElse("<p>readme not found</p>")
           div(Style.container)(
-            div(Style.readme, dangerouslySetInnerHtml(html)),
+            div(Style.readme, dangerouslySetInnerHtml(readme)),
             div(Style.side)(ProjectSideBar(project))
           )
         }
-
-        case Some((project, None)) =>
-          div(Style.container)(
-            div(Style.side)(ProjectSideBar(project))
-          )
-
         case None => div("not found")
       }
     }
@@ -98,7 +93,7 @@ object ProjectView {
 
   private def View(page: ProjectPage) = 
     ReactComponentB[Unit]("Project View")
-    .initialState(None: Option[(Project, Option[GithubReadme])])
+    .initialState(None: Option[Project])
     .renderBackend[Backend]
     .componentDidMount(scope =>
       Callback.future {
