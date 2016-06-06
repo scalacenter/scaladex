@@ -66,7 +66,7 @@ object ProjectConvert {
           Project.Reference(organization, repository),
           artifacts,
           GithubReader(githubRepo),
-          Keywords(github)
+          Keywords(githubRepo)
         )
       }.toList
 
