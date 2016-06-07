@@ -6,6 +6,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <title>Scaladex - @title</title>
+    <link rel="search" type="application/opensearchdescription+xml" title="Scala Index" href="/opensearch.xml">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Description...">
     <meta name="author" content="Author...">
@@ -35,8 +36,8 @@
                     </div>
                     <div class="col-md-10">
                         <div class="has-feedback">
-                            <form action="">
-                                <input id="search" type="text" class="form-control" placeholder="Search" onkeyup="ch.epfl.scala.index.client.OtherClient().runSearch();">
+                            <form action="/search" action="GET">
+                                <input name="q" id="search" type="text" class="form-control" placeholder="Search" onkeyup="ch.epfl.scala.index.client.Client().runSearch();">
                             </form>
                             <span class="form-control-feedback"><i class="fa fa-search"></i></span>
                             <div class="autocomplete">
@@ -111,9 +112,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.10.0/js/bootstrap-select.js"></script>
     <script src="/assets/webapp-jsdeps.js"></script>
     <script src="/assets/webapp-fastopt.js"></script>
-    <script>
-        ch.epfl.scala.index.client.OtherClient().main()
-    </script>
     <script>
         // Tooltips
             $(function () {

@@ -27,7 +27,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
 
   def userInfo(): Option[UserInfo] = userState.map(_.user)
   def find(q: String, page: PageIndex): Future[(Pagination, List[Project])] = {
-    val perPage = 25
+    val perPage = 10
     esClient.execute {
       search
         .in(indexName / collectionName)

@@ -44,35 +44,13 @@ lazy val webapp = crossProject
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "scalatags" % "0.5.2",
-      "com.lihaoyi" %%% "upickle"   % Version.upickle,
-      "com.lihaoyi" %%% "pprint"    % Version.upickle, // for prototyping
-      "com.lihaoyi" %%% "autowire"  % "0.2.5"
+      "com.lihaoyi" %%% "upickle"  % Version.upickle,
+      "com.lihaoyi" %%% "autowire" % "0.2.5"
     )
   )
 
 lazy val webappJS = webapp.js
   .dependsOn(model)
-  .settings(
-    libraryDependencies ++= {
-      val scalajsReactVersion = "0.11.1"
-      val scalaCssVersion = "0.4.1"
-      Seq(
-        "com.github.japgolly.scalacss"      %%% "core"      % scalaCssVersion,
-        "com.github.japgolly.scalacss"      %%% "ext-react" % scalaCssVersion,
-        "com.github.japgolly.scalajs-react" %%% "core"      % scalajsReactVersion,
-        "com.github.japgolly.scalajs-react" %%% "extra"     % scalajsReactVersion
-      )
-    },
-    jsDependencies ++= {
-      val react = "org.webjars.bower" % "react" % "15.0.1"
-      Seq(
-        react / "react-with-addons.js" minified "react-with-addons.min.js" commonJSName "React",
-        react / "react-dom.js"         minified "react-dom.min.js"         commonJSName "ReactDOM"       dependsOn "react-with-addons.js",
-        react / "react-dom-server.js"  minified "react-dom-server.min.js"  commonJSName "ReactDOMServer" dependsOn "react-dom.js"
-      )
-    }
-  )
 
 lazy val webappJVM = webapp.jvm
   .settings(packageScalaJs(webappJS))

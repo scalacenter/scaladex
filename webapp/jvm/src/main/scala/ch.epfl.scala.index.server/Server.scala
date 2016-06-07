@@ -98,21 +98,23 @@ object Server {
         path("assets" / Remaining) { path ⇒
           getFromResource(path)
         } ~
-        pathSingleSlash {
-          complete(Template.home)
+        path("search") {
+          parameter('q) { query =>
+            complete(views.html.searchresult(query))
+          }
         } ~
-        path("project" / Remaining) { _ ⇒
-          complete(Template.home)
-        } ~
-        path("poc" / Segment / Segment) { (owner:String, artifactName: String) =>
+        path(Segment / Segment) { (owner, artifactName) =>
           complete(
             sharedApi.projectPage(Artifact.Reference(owner, artifactName)).map(project =>
-              project.map(p => html.project.render(p))
+              project.map(p => views.html.project(p))
             )
           )
         } ~
-        path("search" / Segment) { query:String =>
-          complete(html.searchresult.render(query))
+        path("opensearch.xml") {
+          complete(views.xml.opensearch("http://localhost:8080/search?q={searchTerms}"))
+        } ~
+        pathSingleSlash {
+          complete(views.html.frontpage())
         }
       }
     }
