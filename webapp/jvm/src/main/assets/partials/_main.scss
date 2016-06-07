@@ -104,12 +104,8 @@
         margin-top: 0;
     }
     @media screen and (min-width: $screen-md-min) {
-        padding-top: 0;
+        padding-top: 20;
         padding-bottom: 80px;
-        .content-project,
-        .sidebar-project {
-            margin-top: -80px;
-        }
         .content-project {
             margin-bottom: 0;
         }
