@@ -1,5 +1,5 @@
-@import ch.epfl.scala.index.api.ProjectDataSet
-@(data:ProjectDataSet)
+@import ch.epfl.scala.index.model.Project
+@(project: Project)
 <!DOCTYPE HTML>
 
 <html lang="en">
@@ -58,17 +58,17 @@
           <div class="row">
             <div class="col-md-10">
               <div class="info-project">
-                <h1>@data.project.reference.organization / @data.project.reference.repository</h1>
-                <a href="https://github.com/@data.project.reference.organization/@data.project.reference.repository">
-                  <i class="fa fa-github fa-lg"></i> https://github.com/@data.project.reference.organization/@data.project.reference.repository
+                <h1>@project.reference.organization / @project.reference.repository</h1>
+                <a href="https://github.com/@project.reference.organization/@project.reference.repository">
+                  <i class="fa fa-github fa-lg"></i> https://github.com/@project.reference.organization/@project.reference.repository
                 </a>
-                <p>@data.project.artifacts.head.releases.head.description.getOrElse("Description not found")</p>
+                <p>@project.github.flatMap(_.description).getOrElse("-")</p>
               </div>
             </div>
             <div class="col-md-2">
               <div class="version-project">
                 <select class="selectpicker" data-style="btn-primary">
-                  @for(r <- data.project.artifacts.head.releases) {
+                  @for(r <- project.artifacts.head.releases) {
                     <option>@r.reference.artifact v.@r.maven.version</option>
                   }
                 </select>
@@ -88,9 +88,7 @@
         <div class="row">
           <div class="col-md-8">
             <div class="content-project box">
-
-              @Html(data.readme.html)
-
+              @Html(project.github.flatMap(_.readme).getOrElse(""))
             </div>
           </div>
           <div class="col-md-4">
@@ -126,19 +124,19 @@
                 </ul>
                 <div class="tab-content">
                   <div role="tabpanel" class="tab-pane active" id="sbt">
-                    <textarea class="form-control" rows="2" disabled>libraryDependencies += "@data.project.artifacts.head.releases.head.maven.groupId" %% "@data.project.artifacts.head.releases.head.maven.artifactId" %% "@data.project.artifacts.head.releases.head.maven.version"</textarea>
+                    <textarea class="form-control" rows="2" disabled>libraryDependencies += "@project.artifacts.head.releases.head.maven.groupId" %% "@project.artifacts.head.releases.head.maven.artifactId" % "@project.artifacts.head.releases.head.maven.version"</textarea>
                   </div>
                   <div role="tabpanel" class="tab-pane" id="maven">
                     <textarea class="form-control" rows="5" disabled>
 <dependency>
-  <groupId>@data.project.artifacts.head.releases.head.maven.groupId</groupId>
-  <artifactId>@data.project.artifacts.head.releases.head.maven.artifactId</artifactId>
-  <version>@data.project.artifacts.head.releases.head.maven.version</version>
+  <groupId>@project.artifacts.head.releases.head.maven.groupId</groupId>
+  <artifactId>@project.artifacts.head.releases.head.maven.artifactId</artifactId>
+  <version>@project.artifacts.head.releases.head.maven.version</version>
 </dependency>
                     </textarea>
                   </div>
                   <div role="tabpanel" class="tab-pane" id="gradle">
-                    <textarea class="form-control" rows="2" disabled>compile group: '@data.project.artifacts.head.releases.head.maven.groupId', name: '@data.project.artifacts.head.releases.head.maven.artifactId', version: '@data.project.artifacts.head.releases.head.maven.version'</textarea>
+                    <textarea class="form-control" rows="2" disabled>compile group: '@project.artifacts.head.releases.head.maven.groupId', name: '@project.artifacts.head.releases.head.maven.artifactId', version: '@project.artifacts.head.releases.head.maven.version'</textarea>
                   </div>
                 </div>
               </div>
