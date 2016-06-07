@@ -1,25 +1,54 @@
 import Helper._
 
+lazy val scalaOptions = scalacOptions ++= Seq(
+  "-deprecation",
+  "-encoding", "UTF-8",
+  "-feature",
+  "-unchecked",
+  "-Xfatal-warnings",
+  "-Xlint",
+  "-Ybackend:GenBCode",
+  "-Ydelambdafy:method",
+  "-Yinline-warnings",
+  "-Yno-adapted-args",
+  "-Yrangepos",
+  "-Ywarn-dead-code",
+  "-Ywarn-numeric-widen",
+  "-Ywarn-unused-import",
+  "-Ywarn-value-discard"
+  )
+
 val commonSettings = Seq(
   scalaVersion := "2.11.8",
-  scalacOptions ++= Seq(
-    "-deprecation",
-    "-encoding", "UTF-8",
-    "-feature",
-    "-unchecked",
-    "-Xfatal-warnings",
-    "-Xlint",
-    "-Ybackend:GenBCode",
-    "-Ydelambdafy:method",
-    "-Yinline-warnings",
-    "-Yno-adapted-args",
-    "-Yrangepos",
-    "-Ywarn-dead-code",
-    "-Ywarn-numeric-widen",
-    "-Ywarn-unused-import",
-    "-Ywarn-value-discard"
-  ),
   scalacOptions in (Compile, console) -= "-Ywarn-unused-import",
+lazy val scalaOptions = scalacOptions ++= Seq(
+  "-deprecation",
+  "-encoding", "UTF-8",
+  "-feature",
+  "-language:existentials",
+  "-language:experimental.macros",
+  "-language:higherKinds",
+  "-language:implicitConversions",
+  "-unchecked",
+  "-Xexperimental",
+  "-Xfatal-warnings",
+  "-Xfuture",
+  "-Xlint",
+  "-Ybackend:GenBCode",
+  "-Ydelambdafy:method",
+  "-Yinline-warnings",
+  "-Yno-adapted-args",
+  "-Yrangepos",
+  "-Ywarn-dead-code",
+  "-Ywarn-numeric-widen",
+  "-Ywarn-unused-import",
+  "-Ywarn-value-discard",
+  "-Xmax-classfile-name", "254" // upickle
+)
+
+val commonSettings = Seq(
+  resolvers += Resolver.typesafeIvyRepo("releases"),
+  scalaVersion := "2.11.8",
   scalacOptions in (Test, console) -= "-Ywarn-unused-import",
   libraryDependencies += "com.lihaoyi" % "ammonite-repl" % "0.6.0" % "test" cross CrossVersion.full,
   initialCommands in (Test, console) := """ammonite.repl.Main().run()""",
@@ -76,6 +105,7 @@ lazy val webappJVM = webapp.jvm
   .dependsOn(model, data)
 
 lazy val model = project
+  .settings(scalaOptions)
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies += "com.lihaoyi" %% "upickle" % Version.upickle
@@ -83,6 +113,7 @@ lazy val model = project
   .enablePlugins(ScalaJSPlugin)
 
 lazy val data = project
+  .settings(scalaOptions)
   .settings(commonSettings: _*)
   .settings(
     resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
@@ -107,3 +138,29 @@ lazy val data = project
   )
   .enablePlugins(BuildInfoPlugin)
   .dependsOn(model)
+  .settings(
+    securityManager in Backend := false,
+    timeout in Backend := {
+      import scala.concurrent.duration._
+      1.minute
+    }
+  )
+
+lazy val pluginSocial = project
+  .settings(commonSettings: _*)
+  .settings(ScriptedPlugin.scriptedSettings: _*)
+  .settings(
+    name := "scaladex-social",
+    sbtPlugin := true,
+    scalaVersion := "2.10.6",
+    scriptedLaunchOpts := {
+      scriptedLaunchOpts.value ++
+        Seq("-Xmx1024M", "-XX:MaxPermSize=256M", "-Dplugin.version=" + version.value)
+    },
+    scriptedBufferLog := false
+  )
+  .settings(
+    publishArtifact in packageDoc := false,
+    sources in(Compile, doc) := Seq.empty,
+    publishArtifact in(Compile, packageDoc) := false
+  )
