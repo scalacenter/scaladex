@@ -1,0 +1,394 @@
+@(query: String)
+<!DOCTYPE HTML>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Scaladex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Description...">
+    <meta name="author" content="Author...">
+    <!-- Shortcut icon -->
+    <link rel="icon" type="image/png" href="/assets/img/scaladex-favicon.png" />
+    <link rel="apple-touch-icon" href="/assets/img/scaladex-touch-icon-152x152.png">
+    <!-- CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.css">
+    <link rel="stylesheet" type="text/css" href="/assets/style/main.css" />
+
+</head>
+
+<body>
+    <!--[if IE]>
+        <script src="https://cdn.jsdelivr.net/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- Start coding here -->
+    <header id="top">
+        <nav>
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-2">
+                        <a href="#">
+                            <img src="/assets/img/scaladex-brand.svg" alt="">
+                        </a>
+                    </div>
+                    <div class="col-md-10">
+                        <div class="has-feedback">
+                            <form action="">
+                                <input id="search" type="text" class="form-control" placeholder="Search" onkeyup="ch.epfl.scala.index.client.OtherClient().runSearch();">
+                            </form>
+                            <span class="form-control-feedback"><i class="fa fa-search"></i></span>
+                            <div class="autocomplete">
+                                <ul id="list-result"></ul>
+                            </div>
+                        </div>
+                        <a class="btn btn-primary pull-right" href="#">
+                            <i class="fa fa-github fa-lg"></i> Login
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <main id="container-search">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-9">
+                    <ul class="filter-tag">
+                        <li><a class="active" href="#">All (13)</a></li>
+                        <li><a href="#">JSON (6)</a></li>
+                        <li><a href="#">Database (5)</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <div class="order-by">
+                        <span>Order by</span>
+                        <select class="selectpicker" data-style="btn-primary">
+                            <option>Stars</option>
+                            <option>Forks</option>
+                            <option>Views</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="list-result box">
+                        <div class="item-list">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <img src="/assets/img/avatar-list.png" alt="">
+                                    <h4><a href="#">json4s / json 4s</a></h4>
+                                    <p>A single AST to be used by other scala json libraries</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stats">
+                                        <span class="item-filter-tag">JSON</span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">674 <i class="fa fa-star"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">168 <i class="fa fa-code-fork"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Watches" href="#">34 <i class="fa fa-eye"></i></a>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="item-list">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <img src="/assets/img/avatar-list.png" alt="">
+                                    <h4><a href="#">json4s / json 4s</a></h4>
+                                    <p>A single AST to be used by other scala json libraries</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stats">
+                                       <span class="item-filter-tag">JSON</span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">674 <i class="fa fa-star"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">168 <i class="fa fa-code-fork"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Watches" href="#">34 <i class="fa fa-eye"></i></a>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="item-list">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <img src="/assets/img/avatar-list.png" alt="">
+                                    <h4><a href="#">json4s / json 4s</a></h4>
+                                    <p>A single AST to be used by other scala json libraries</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stats">
+                                        <span class="item-filter-tag">JSON</span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">674 <i class="fa fa-star"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">168 <i class="fa fa-code-fork"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Watches" href="#">34 <i class="fa fa-eye"></i></a>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="item-list">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <img src="/assets/img/avatar-list.png" alt="">
+                                    <h4><a href="#">json4s / json 4s</a></h4>
+                                    <p>A single AST to be used by other scala json libraries</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stats">
+                                        <span class="item-filter-tag">JSON</span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">674 <i class="fa fa-star"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">168 <i class="fa fa-code-fork"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Watches" href="#">34 <i class="fa fa-eye"></i></a>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="item-list">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <img src="/assets/img/avatar-list.png" alt="">
+                                    <h4><a href="#">json4s / json 4s</a></h4>
+                                    <p>A single AST to be used by other scala json libraries</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stats">
+                                        <span class="item-filter-tag">JSON</span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">674 <i class="fa fa-star"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">168 <i class="fa fa-code-fork"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Watches" href="#">34 <i class="fa fa-eye"></i></a>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="item-list">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <img src="/assets/img/avatar-list.png" alt="">
+                                    <h4><a href="#">json4s / json 4s</a></h4>
+                                    <p>A single AST to be used by other scala json libraries</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stats">
+                                        <span class="item-filter-tag">JSON</span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">674 <i class="fa fa-star"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">168 <i class="fa fa-code-fork"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Watches" href="#">34 <i class="fa fa-eye"></i></a>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="item-list">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <img src="/assets/img/avatar-list.png" alt="">
+                                    <h4><a href="#">json4s / json 4s</a></h4>
+                                    <p>A single AST to be used by other scala json libraries</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stats">
+                                        <span class="item-filter-tag">Database</span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">674 <i class="fa fa-star"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">168 <i class="fa fa-code-fork"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Watches" href="#">34 <i class="fa fa-eye"></i></a>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="item-list">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <img src="/assets/img/avatar-list.png" alt="">
+                                    <h4><a href="#">json4s / json 4s</a></h4>
+                                    <p>A single AST to be used by other scala json libraries</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stats">
+                                        <span class="item-filter-tag">Database</span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">674 <i class="fa fa-star"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">168 <i class="fa fa-code-fork"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Watches" href="#">34 <i class="fa fa-eye"></i></a>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="item-list">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <img src="/assets/img/avatar-list.png" alt="">
+                                    <h4><a href="#">json4s / json 4s</a></h4>
+                                    <p>A single AST to be used by other scala json libraries</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stats">
+                                        <span class="item-filter-tag">Database</span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">674 <i class="fa fa-star"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">168 <i class="fa fa-code-fork"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Watches" href="#">34 <i class="fa fa-eye"></i></a>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="item-list">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <img src="/assets/img/avatar-list.png" alt="">
+                                    <h4><a href="#">json4s / json 4s</a></h4>
+                                    <p>A single AST to be used by other scala json libraries</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="stats">
+                                        <span class="item-filter-tag">JSON</span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">674 <i class="fa fa-star"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">168 <i class="fa fa-code-fork"></i></a>
+                                        </span>
+                                        <span>
+                                            <a data-toggle="tooltip" data-placement="bottom" title="Watches" href="#">34 <i class="fa fa-eye"></i></a>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer id="bottom">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-2">
+                    <ul>
+                        <li>
+                            <h5>Scaladex</h5></li>
+                        <li><a href="#">FAQs</a></li>
+                        <li><a href="#">Jobs</a></li>
+                        <li><a href="#">Records</a></li>
+                        <li><a href="#">Get in Touch!</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2">
+                    <ul>
+                        <li>
+                            <h5>Community</h5></li>
+                        <li><a href="#">Community</a></li>
+                        <li><a href="#">Mailing Lists</a></li>
+                        <li><a href="#">Chat Rooms & More</a></li>
+                        <li><a href="#">Libraries and Tools</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2">
+                    <ul>
+                        <li>
+                            <h5>Contribute</h5></li>
+                        <li><a href="#">How to Help</a></li>
+                        <li><a href="#">Report an Issue</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2">
+                    <ul>
+                        <li>
+                            <h5>Scala</h5></li>
+                        <li><a href="#">Scala</a></li>
+                        <li><a href="#">Get Involved</a></li>
+                        <li><a href="#">Code of conduct</a></li>
+                        <li><a href="#">License</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <ul class="social">
+                        <li>
+                            <h5>Follow us:</h5></li>
+                        <li><a href="#"><i class="fa fa-twitter fa-lg"></i></a></li>
+                        <li><a href="#"><i class="fa fa-github fa-lg fa-lg"></i></a></li>
+                        <li><a href="#"><i class="fa fa-facebook-official fa-lg"></i></a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- Coding End -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.10.0/js/bootstrap-select.js"></script>
+    <script src="/assets/webapp-jsdeps.js"></script>
+    <script src="/assets/webapp-fastopt.js"></script>
+    <script>
+        ch.epfl.scala.index.client.OtherClient().main()
+    </script>
+    <script>
+        // Tooltips
+            $(function () {
+                $('[data-toggle="tooltip"]').tooltip()
+            })
+    </script>
+</body>
+
+</html>

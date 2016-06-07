@@ -110,6 +110,9 @@ object Server {
               project.map(p => html.project.render(p))
             )
           )
+        } ~
+        path("search" / Segment) { query:String =>
+          complete(html.searchresult.render(query))
         }
       }
     }
