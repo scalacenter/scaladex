@@ -59,3 +59,5 @@ case class GithubInfo(
 
   forks: Option[Int] = None
 )
+
+case class Pagination(current: PageIndex, total: Int)

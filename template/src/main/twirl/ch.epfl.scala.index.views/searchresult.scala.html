@@ -1,4 +1,7 @@
-@(query: String)
+@import ch.epfl.scala.index._
+@import ch.epfl.scala.index.model.{Project, Pagination}
+
+@(query: String, pagination: Pagination, projects: List[Project])
 @main(title = "Home") {
 <main id="container-search">
   <div class="container">
@@ -23,23 +26,38 @@
     <div class="row">
       <div class="col-md-12">
         <div class="list-result box">
-        @for(_ <- 1 to 10){
+        @for(project <- projects){
           <div class="item-list">
             <div class="row">
               <div class="col-md-8">
                   <img src="/assets/img/avatar-list.png" alt="">
-                  <h4><a href="#">json4s / json 4s</a></h4>
-                  <p>A single AST to be used by other scala json libraries</p>
+                  <h4><a href="/@project.githubRepo">@project.githubRepo</a></h4>
+                  @for(github <- project.github) {
+                    @for(description <- github.description) {
+                      <p class="description">@description</p>
+                    }
+                    @for(homepage <- github.homepage) {
+                      <a class="homepage" href="@homepage.target" target="_blank">@homepage.target</p>
+                    }
+                  }
               </div>
               <div class="col-md-4">
                 <div class="stats">
-                  <span class="item-filter-tag">JSON</span>
-                  <span>
-                    <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">674 <i class="fa fa-star"></i></a>
-                  </span>
-                    <span>
-                      <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">168 <i class="fa fa-code-fork"></i></a>
-                    </span>
+                  @for(keyword <- project.keywords) {
+                    <span class="item-filter-tag">@keyword</span>
+                  }
+                  @for(github <- project.github) {
+                    @for(stars <- github.stars) {
+                      <span>
+                        <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">@stars <i class="fa fa-star"></i></a>
+                      </span>
+                    }
+                    @for(forks <- github.forks) {
+                      <span>
+                        <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">@forks <i class="fa fa-code-fork"></i></a>
+                      </span>
+                    }
+                  }
                 </div>
               </div>
             </div>
@@ -49,5 +67,6 @@
       </div>
     </div>
   </div>
+  Pages: @pagination.current / @pagination.total
 </main>
 }

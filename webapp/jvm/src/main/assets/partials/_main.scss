@@ -47,9 +47,13 @@
             margin: 0;
             border-bottom: 1px solid rgba($gray-dark, 0.12);
             h4,
-            p {
+            .description {
                 padding-left: 42px;
                 margin-bottom: 0;
+                display: inline-block;
+            }
+            .homepage {
+                display: inline-block;
             }
             h4 {
                 margin-top: 0;

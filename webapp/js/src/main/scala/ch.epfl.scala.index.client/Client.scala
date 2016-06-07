@@ -48,7 +48,7 @@ object Client {
   }
 
 
-  def getProjects(query: String): Future[List[Project]] = AutowireClient[Api].find(query, page = 0).call().map{
+  def getProjects(query: String): Future[List[Project]] = AutowireClient[Api].find(query, page = 1).call().map{
     case (pagination, projects) => projects
     case _ => List.empty[Project]
   }

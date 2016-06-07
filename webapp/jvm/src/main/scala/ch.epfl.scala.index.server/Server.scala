@@ -99,8 +99,10 @@ object Server {
           getFromResource(path)
         } ~
         path("search") {
-          parameter('q) { query =>
-            complete(views.html.searchresult(query))
+          parameters('q, 'page.as[Int] ? 1) { (query, page) =>
+            complete(sharedApi.find(query, page).map{ case (pagination, projects) => 
+              views.html.searchresult(query, pagination, projects)
+            })
           }
         } ~
         path(Segment / Segment) { (owner, artifactName) =>
@@ -128,4 +130,3 @@ object Server {
     ()
   }
 }
-

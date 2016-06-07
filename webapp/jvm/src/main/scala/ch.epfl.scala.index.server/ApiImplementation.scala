@@ -28,15 +28,17 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
   def userInfo(): Option[UserInfo] = userState.map(_.user)
   def find(q: String, page: PageIndex): Future[(Pagination, List[Project])] = {
     val perPage = 10
+    val clampedPage = if(page <= 0) 1 else page
+
     esClient.execute {
       search
         .in(indexName / collectionName)
         .query(s"*$q*")
-        .start(perPage * page)
+        .start(perPage * (clampedPage - 1))
         .limit(perPage)
     }.map(r => (
       Pagination(
-        current = page,
+        current = clampedPage,
         total = Math.ceil(r.totalHits / perPage.toDouble).toInt
       ),
       r.as[Project].toList.map(hideId)

@@ -1,18 +1,12 @@
 package ch.epfl.scala.index
 
-import model.{Project, Artifact}
+import model._
 import scala.concurrent.Future
-
-package object api {
-  type PageIndex = Int
-}
 
 package api {
   case class UserInfo(login: String, name: String, avatarUrl: String) {
     def sizedAvatarUrl(size: Int) = avatarUrl + "&s" + size.toString
   }
-
-  case class Pagination(current: PageIndex, total: Int)
 
   trait Api {
     def userInfo(): Option[UserInfo]

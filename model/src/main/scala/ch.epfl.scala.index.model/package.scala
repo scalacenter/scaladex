@@ -22,4 +22,6 @@ package object model {
   implicit val rwUrl = macroRW[Url]
   implicit val rwGithubRepo = macroRW[GithubRepo]
   implicit val rwProject = macroRW[Project]
+
+  type PageIndex = Int
 }
