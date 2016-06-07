@@ -31,7 +31,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
     esClient.execute {
       search
         .in(indexName / collectionName)
-        .query(q)
+        .query(s"*$q*")
         .start(perPage * page)
         .limit(perPage)
     }.map(r => (

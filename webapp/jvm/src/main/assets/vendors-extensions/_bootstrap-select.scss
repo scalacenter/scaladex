@@ -1,0 +1,14 @@
+// -----------------------------------------------------------------------------
+// This file contains all all CSS rules intended to re-declare some of
+// Bootstrap’s Selects default CSS.
+// -----------------------------------------------------------------------------
+
+.bootstrap-select {
+    width: 100px;
+    
+    .dropdown-toggle:focus {
+    outline: none !important;
+    outline: none !important;
+  }
+}
+

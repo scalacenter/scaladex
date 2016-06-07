@@ -8,6 +8,7 @@ object Version {
 }
 
 object Helper {
+  
   def packageScalaJs(client: Project) = Seq(
     watchSources ++= (watchSources in client).value,
 

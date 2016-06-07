@@ -1,2 +1,4 @@
 target/
 core
+.sass-cache
+.idea

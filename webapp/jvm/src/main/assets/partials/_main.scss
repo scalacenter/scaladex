@@ -1,0 +1,128 @@
+// -----------------------------------------------------------------------------
+// This file contains all styles related to the main of the site/application.
+// -----------------------------------------------------------------------------
+// Home page
+// -----------------------------------------------------------------------------
+// Result page
+// -----------------------------------------------------------------------------
+// Project page
+// -----------------------------------------------------------------------------
+#container-project {
+    background: $gray-lighter;
+    padding: 40px 0;
+    .content-project,
+    .sidebar-project {
+        margin-top: 0;
+    }
+    @media screen and (min-width: $screen-md-min) {
+        padding-top: 0;
+        padding-bottom: 80px;
+        .content-project,
+        .sidebar-project {
+            margin-top: -80px;
+        }
+        .content-project {
+            margin-bottom: 0;
+        }
+    }
+    .content-project {
+        .markdown-body {
+            .anchor {
+                display: inline-block;
+                padding-right: 2px;
+                margin-left: -18px;
+            }
+            h1, h2, h3, h4, h5, h6 {
+                &:hover {
+                    .octicon-link {
+                        visibility: visible;
+                    }
+                }
+                .octicon-link {
+                    vertical-align: middle;
+                    visibility: hidden;
+                }
+            }
+        }
+        margin-bottom: 30px;
+        h3 {
+            margin-top: ($line-height-computed / 1.7);
+            margin-bottom: $line-height-computed;
+        }
+        p {
+            margin: 0 0 $line-height-computed;
+        }
+    }
+    .sidebar-project {
+        .box,
+        .install {
+            margin-bottom: 30px;
+        }
+        ul {
+            padding: 0;
+            margin: 0;
+            li {
+                list-style: none;
+            }
+        }
+        h4 {
+            margin-top: 0;
+            margin-bottom: ($line-height-computed / 1.5);
+        }
+        .statistic {
+            ul {
+                li {
+                    margin-bottom: 8px;
+                    a {
+                        color: $gray;
+                        &:hover,
+                        &:focus {
+                            text-decoration: $link-hover-decoration;
+                        }
+                        i {
+                            min-width: 25px;
+                        }
+                    }
+                }
+            }
+        }
+        .install {
+            .tab-pane {
+                background: #fff;
+                padding: 15px;
+                textarea {
+                    resize: none;
+                    font-size: ($font-size-small - 2);
+                    font-family: $font-family-monospace;
+                    &:disabled {
+                        background-color: transparent;
+                    }
+                }
+            }
+        }
+        .collaborators {
+            ul {
+                li {
+                    margin: 0 6px 6px 0;
+                    display: inline-block;
+                    img {
+                        @include border-top-radius($border-radius-base);
+                        @include border-bottom-radius($border-radius-base);
+                    }
+                    &:last-child {
+                        margin-right: 0;
+                    }
+                }
+            }
+        }
+        .dependencies,
+        .dependents {
+            overflow: hidden;
+            span {
+                i {
+                    font-size: 14px;
+                }
+            }
+        }
+    }
+}
