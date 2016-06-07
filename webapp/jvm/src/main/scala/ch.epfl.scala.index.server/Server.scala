@@ -98,18 +98,25 @@ object Server {
         path("assets" / Remaining) { path ⇒
           getFromResource(path)
         } ~
-        pathSingleSlash {
-          complete(Template.home)
+        path("search") {
+          parameters('q, 'page.as[Int] ? 1) { (query, page) =>
+            complete(sharedApi.find(query, page).map{ case (pagination, projects) => 
+              views.html.searchresult(query, pagination, projects)
+            })
+          }
         } ~
-        path("project" / Remaining) { _ ⇒
-          complete(Template.home)
-        } ~
-        path("poc" / Segment / Segment) { (owner:String, artifactName: String) =>
+        path(Segment / Segment) { (owner, artifactName) =>
           complete(
             sharedApi.projectPage(Artifact.Reference(owner, artifactName)).map(project =>
-              project.map(p => html.project.render(p))
+              project.map(p => views.html.project(p))
             )
           )
+        } ~
+        path("opensearch.xml") {
+          complete(views.xml.opensearch("http://localhost:8080/search?q={searchTerms}"))
+        } ~
+        pathSingleSlash {
+          complete(views.html.frontpage())
         }
       }
     }
@@ -123,4 +130,3 @@ object Server {
     ()
   }
 }
-

@@ -1,0 +1,125 @@
+@import ch.epfl.scala.index.model.Project
+@(project: Project)
+@main(title = "Home") {
+  <main id="container-project">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-8">
+          <div class="content-project box">
+            @Html(project.github.flatMap(_.readme).getOrElse(""))
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="sidebar-project">
+              <!-- Statistic -->
+            <div class="statistic box">
+              <h4>Statistic</h4>
+              <div class="row">
+                <div class="col-md-6 col-sm-6">
+                  <ul>
+                    <li><a href="#"><i class="fa fa-eye"></i>384 watchers</a></li>
+                    <li><a href="#"><i class="fa fa-star"></i>417 Stars</a></li>
+                    <li><a href="#"><i class="fa fa-history"></i>396 Commits</a></li>
+                    <li><a href="#"><i class="fa fa-tag"></i>13 Releases</a></li>
+                  </ul>
+                </div>
+                <div class="col-md-6 col-sm-6">
+                  <ul>
+                    <li><a href="#"><i class="fa fa-users"></i>8 Contributors</a></li>
+                    <li><a href="#"><i class="fa fa-code-fork"></i>27 Forks</a></li>
+                    <li><a href="#"><i class="fa fa-exclamation-circle"></i>19 Open issues</a></li>
+                    <li><a href="#"><i class="fa fa-sitemap"></i>8 Dependents</a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+              <!-- Install -->
+            <div class="install">
+              <ul class="nav nav-tabs" role="tablist">
+                <li role="presentation" class="active"><a href="#sbt" aria-controls="sbt" role="tab" data-toggle="tab">Sbt</a></li>
+                <li role="presentation"><a href="#maven" aria-controls="maven" role="tab" data-toggle="tab">Maven</a></li>
+                <li role="presentation"><a href="#gradle" aria-controls="gradle" role="tab" data-toggle="tab">Gradle</a></li>
+              </ul>
+              <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active" id="sbt">
+                  <textarea class="form-control" rows="2" disabled>libraryDependencies += "@project.artifacts.head.releases.head.maven.groupId" %% "@project.artifacts.head.releases.head.maven.artifactId" % "@project.artifacts.head.releases.head.maven.version"</textarea>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="maven">
+                  <textarea class="form-control" rows="5" disabled>
+<dependency>
+<groupId>@project.artifacts.head.releases.head.maven.groupId</groupId>
+<artifactId>@project.artifacts.head.releases.head.maven.artifactId</artifactId>
+<version>@project.artifacts.head.releases.head.maven.version</version>
+</dependency>
+                  </textarea>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="gradle">
+                  <textarea class="form-control" rows="2" disabled>compile group: '@project.artifacts.head.releases.head.maven.groupId', name: '@project.artifacts.head.releases.head.maven.artifactId', version: '@project.artifacts.head.releases.head.maven.version'</textarea>
+                </div>
+              </div>
+            </div>
+              <!-- Documentation -->
+            <div class="documentation box">
+              <h4>Documentation</h4>
+              <ul>
+                <li><a href="#">API Docs</a></li>
+                <li><a href="#">Supplementary docs</a></li>
+                <li><a href="#">Stack Overflow articles</a></li>
+              </ul>
+            </div>
+              <!-- License -->
+            <div class="license box">
+              <h4>License</h4>
+              <ul>
+                <li><a href="#">MIT</a></li>
+              </ul>
+            </div>
+              <!-- Keyword -->
+            <div class="license box">
+              <h4>Keyword</h4>
+              <a href="#">UI</a>, <a href="#">FP</a>, <a href="#">macros</a>
+            </div>
+              <!-- Collaborators -->
+            <div class="collaborators box">
+              <h4>Collaborators</h4>
+
+              <ul>
+                <li>
+                  <a href="#"><img data-toggle="tooltip" data-placement="bottom" title="Nick Elsberry" src="/assets/img/avatar01.jpg" alt=""></a>
+                </li>
+                <li>
+                  <a href="#"><img data-toggle="tooltip" data-placement="bottom" title="Raul Raja" src="/assets/img/avatar02.jpg" alt=""></a>
+                </li>
+                <li>
+                  <a href="#"><img data-toggle="tooltip" data-placement="bottom" title="Heather Miller" src="/assets/img/avatar03.jpg" alt=""></a>
+                </li>
+                <li>
+                  <a href="#"><img data-toggle="tooltip" data-placement="bottom" title="Javi Pacheco" src="/assets/img/avatar04.jpg" alt=""></a>
+                </li>
+                <li>
+                  <a href="#"><img data-toggle="tooltip" data-placement="bottom" title="Jorge Galindo" src="/assets/img/avatar05.jpg" alt=""></a>
+                </li>
+                <li>
+                  <a href="#"><img data-toggle="tooltip" data-placement="bottom" title="Nora Dhal" src="/assets/img/avatar06.jpg" alt=""></a>
+                </li>
+                <li>
+                  <a href="#"><img data-toggle="tooltip" data-placement="bottom" title="Melisa Aron" src="/assets/img/avatar07.jpg" alt=""></a>
+                </li>
+              </ul>
+            </div>
+              <!-- Dependencies -->
+            <div class="dependencies box">
+              <h4>5 Dependencies <span class="pull-right"><i class="fa fa-chevron-down"></i></span></h4>
+              <a href="#">akka/akka-actor</a>, <a href="#">jorg/config-lib</a>, <a href="#">jaixti/geotiles</a>, <a href="#">bauerj/frida-core</a>, <a href="#">maxp/acmecollections</a>
+            </div>
+              <!-- Dependents -->
+            <div class="dependents box">
+              <h4>12 Dependents <span class="pull-right"><i class="fa fa-chevron-down"></i></span></h4>
+              <a href="#">akka/akka-actor</a>, <a href="#">jorg/config-lib</a>, <a href="#">jaixti/geotiles</a>, <a href="#">bauerj/frida-core</a>, <a href="#">maxp/acmecollections</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+}

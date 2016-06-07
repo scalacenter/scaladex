@@ -2,13 +2,17 @@
 // This file contains all all CSS rules intended to re-declare some of
 // Bootstrap’s Selects default CSS.
 // -----------------------------------------------------------------------------
-
 .bootstrap-select {
-    width: 100px;
-    
     .dropdown-toggle:focus {
-    outline: none !important;
-    outline: none !important;
-  }
+        outline: none !important;
+        outline: none !important;
+    }
 }
 
+.order-by {
+    .bootstrap-select {
+        &:not([class*="col-"]):not([class*="form-control"]):not(.input-group-btn) {
+            width: 100px;
+        }
+    }
+}

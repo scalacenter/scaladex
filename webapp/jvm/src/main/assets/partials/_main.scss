@@ -5,6 +5,99 @@
 // -----------------------------------------------------------------------------
 // Result page
 // -----------------------------------------------------------------------------
+#container-search {
+    background: $gray-lighter;
+    padding: 30px 0 40px 0;
+    @media screen and (min-width: $screen-md-min) {
+        padding: 60px 0 80px 0;
+    }
+    .filter-tag {
+        margin: 0;
+        padding: 10px 0 0 0;
+        li {
+            display: inline-block;
+            margin-right: 10px;
+            .active {
+                color: $gray;
+                text-decoration: none;
+                cursor: default;
+            }
+        }
+    }
+    .order-by {
+        margin-top: 20px;
+        span {
+            margin-right: 8px;
+        }
+        .btn-primary {
+            @include button-variant($btn-primary-color, rgba($gray-darker, 0.7), $btn-primary-border);
+        }
+        .dropdown-menu {
+            border: none;
+        }
+        @media screen and (min-width: $screen-md-min) {
+            float: right;
+            margin-top: 0;
+        }
+    }
+    .list-result {
+        margin-top: 20px;
+        .item-list {
+            padding: 15px 0;
+            margin: 0;
+            border-bottom: 1px solid rgba($gray-dark, 0.12);
+            h4,
+            .description {
+                padding-left: 42px;
+                margin-bottom: 0;
+                display: inline-block;
+            }
+            .homepage {
+                display: inline-block;
+            }
+            h4 {
+                margin-top: 0;
+                a {
+                    color: $gray-darker;
+                }
+            }
+            img {
+                float: left;
+                width: 28px;
+                height: auto;
+            }
+            .stats {
+                padding-left: 22px;
+                margin-top: 12px;
+                span {
+                    margin-left: 20px;
+                    a {
+                        &:hover,
+                        &:focus {
+                            text-decoration: none;
+                        }
+                    }
+                }
+                .item-filter-tag {
+                    color: $gray-light;
+                    font-style: italic;
+                    font-weight: 300;
+                }
+                @media screen and (min-width: $screen-md-min) {
+                    text-align: right;
+                }
+            }
+            a {
+                color: $gray;
+                &:hover,
+                &:focus {
+                    color: $brand-primary;
+                }
+            }
+        }
+    }
+}
+
 // Project page
 // -----------------------------------------------------------------------------
 #container-project {
@@ -15,12 +108,8 @@
         margin-top: 0;
     }
     @media screen and (min-width: $screen-md-min) {
-        padding-top: 0;
+        padding-top: 20;
         padding-bottom: 80px;
-        .content-project,
-        .sidebar-project {
-            margin-top: -80px;
-        }
         .content-project {
             margin-bottom: 0;
         }
@@ -44,7 +133,12 @@
                 }
             }
         }
-        margin-bottom: 30px;
+
+        margin-bottom: 0;
+        @media screen and (min-width: $screen-md-min) {
+            margin-bottom: 30px;
+        }
+
         h3 {
             margin-top: ($line-height-computed / 1.7);
             margin-bottom: $line-height-computed;

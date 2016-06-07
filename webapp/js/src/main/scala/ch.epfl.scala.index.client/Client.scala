@@ -1,56 +1,74 @@
 package ch.epfl.scala.index
 package client
 
-import components._
+import api.Api
+import client.rpc.AutowireClient
+import model.Project
 
-import org.scalajs.dom
-import scala.scalajs.js.JSApp
+import autowire._
+
+import scalatags.JsDom.all._
+
+import org.scalajs.dom.document
 import scala.scalajs.js.annotation.JSExport
+import org.scalajs.dom.raw.{Node, HTMLInputElement, Element}
 
-import japgolly.scalajs.react._, vdom.all._
-import japgolly.scalajs.react.extra.router._
+import scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scala.concurrent.Future
+import scala.util.Try
 
-sealed trait Page
-case object Home extends Page
-case class ProjectPage(
-  organization: String,
-  artifact: String
-) extends Page
+@JSExport
+object Client {
 
-object Client extends JSApp {
-  val routerConfig = RouterConfigDsl[Page].buildConfig { dsl =>
-    import dsl._
+  val searchId = "search"
+  val resultElementId = "list-result"
 
-    val part = string("[a-zA-Z0-9-_\\.]+")
+  def getResultList: Option[Element] = getElement(resultElementId)
 
-    val organization = part
-    val artifact = part
-    val version = part
+  def getSearchInput: Option[HTMLInputElement] = getElement(searchId).map(_.getInput)
 
-    val projectRoute = ("project" / organization / artifact).caseClass[ProjectPage]
+  def getElement(id: String) : Option[Element] = Try(document.getElementById(id)).toOption
 
-    ( trimSlashes
-        | staticRoute(root, Home) ~> render(HomeView())
-        | dynamicRouteCT(projectRoute) ~> dynRender(ProjectView.component(_))
-    ) 
-      .notFound(redirectToPage(Home)(Redirect.Replace))
-      .renderWith(layout)
-      //.verify(Home, ProjectPage("typelevel", "cats"))
+  def appendResult(owner: String, repo: String, description: String): Option[Node] = for {
+    resultContainer <- getResultList
+    newItem = newProjectItem(owner, repo, description)
+  } yield resultContainer.appendChild(newItem)
+
+
+  def newProjectItem(owner: String, repo: String, description: String): Element = li(
+    a(href := s"/$owner/$repo")(
+      p(s"$owner / $repo"),
+      span(description)
+    )
+  ).render
+
+  def getQuery(input: Option[HTMLInputElement]): Option[String] = input match {
+    case Some(i) if i.value.length > 1 => Option(i.value)
+    case _ => None
   }
 
-  def layout(c: RouterCtl[Page], r: Resolution[Page]) =
-    div(
-      Header.component(c),
-      div(cls := "container", r.render())
-    )
+
+  def getProjects(query: String): Future[List[Project]] = AutowireClient[Api].find(query, page = 1).call().map{
+    case (pagination, projects) => projects
+    case _ => List.empty[Project]
+  }
+
+  def showResults(projects: List[Project]): List[Option[Node]] = projects.map(p => appendResult(
+    owner = p.reference.organization,
+    repo = p.reference.repository,
+    description = p.artifacts.head.releases.head.description.getOrElse(""))
+  )
+
+  def cleanResults(): Unit = getResultList.fold()(_.innerHTML = "")
 
   @JSExport
-  override def main(): Unit = {
-    css.AppCSS.load()
-    ReactDOM.render(
-      Router(BaseUrl.fromWindowOrigin_/, routerConfig.logToConsole)(),
-      dom.document.body
-    )
-    ()
+  def runSearch(): Future[List[Option[Node]]] = {
+    cleanResults()
+    getQuery(getSearchInput).fold(Future.successful(List.empty[Project]))(getProjects).map(showResults)
+  }
+
+  implicit class ElementOps(e: Element) {
+    def getInput: HTMLInputElement = get[HTMLInputElement]
+    def get[A <: Element]: A = e.asInstanceOf[A]
   }
 }
