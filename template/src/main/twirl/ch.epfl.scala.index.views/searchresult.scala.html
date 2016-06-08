@@ -37,7 +37,7 @@
                       <p class="description">@description</p>
                     }
                     @for(homepage <- github.homepage) {
-                      <a class="homepage" href="@homepage.target" target="_blank">@homepage.target</p>
+                      <a class="homepage" href="@homepage.target" target="_blank">@trimProtocol(homepage)</p>
                     }
                   }
               </div>
@@ -67,6 +67,13 @@
       </div>
     </div>
   </div>
-  Pages: @pagination.current / @pagination.total
+  
+  @for(page <- 1 to pagination.total){
+    @if(page == pagination.current) {
+      @page
+    } else {
+      <a href="/search?q=@query&page=@page">@page</a>
+    }
+  }
 </main>
 }
