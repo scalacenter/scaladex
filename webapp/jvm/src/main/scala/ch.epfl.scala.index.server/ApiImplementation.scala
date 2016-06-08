@@ -58,7 +58,9 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
           )
         )
       ).limit(1)
-    }.map(r => r.as[Project].headOption.map(hideId))
+    }.map(r => r.as[Project].headOption.map(hideId).map(project =>
+      project.copy(artifacts = project.artifacts.filter(_.reference == artifact))
+    ))
   }
 
   def latest(artifact: Artifact.Reference): Future[Option[Release.Reference]] = {
