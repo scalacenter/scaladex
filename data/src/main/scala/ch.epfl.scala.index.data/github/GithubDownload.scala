@@ -45,7 +45,7 @@ class GithubDownload(implicit system: ActorSystem, materializer: ActorMaterializ
       .map{ case GithubRepo(owner, repo) => GithubRepo(owner.toLowerCase, repo.toLowerCase) }
       .toSet
 
-  private val credentials = {
+  private def credentials = {
     val tokens = Array(
       "5e2ddeed0f9c6169d868121330599b8353ab0b55",
       "6e7364f7db333be44b5aa0416f5a0b33d8743b14",
