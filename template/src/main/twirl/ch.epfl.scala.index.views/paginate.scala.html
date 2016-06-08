@@ -1,0 +1,26 @@
+@(current: Int, total: Int, uri: String, bound: Int = 5)
+
+
+@defining(pagination(current, total)) { case (prev, sels, next) =>
+    @for(i <- prev){
+        <a href="@uri&page=@i">
+            <i class="fa fa-chevron-left"></i>
+        </a>
+    }
+
+    @for(i <- sels){
+        @if(i != current) {
+            <a href="@uri&page=@i">
+                @i
+            </a>
+        } else {
+            @i
+        }
+    }
+    
+    @for(i <- next){
+        <a href="@uri&page=@i">
+            <i class="fa fa-chevron-right"></i>
+        </a>
+    }
+}

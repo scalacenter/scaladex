@@ -70,15 +70,8 @@
         }
         </div>
       </div>
+      @paginate(pagination.current, pagination.total, s"/search?q=$query")
     </div>
   </div>
-  
-  @for(page <- 1 to pagination.total){
-    @if(page == pagination.current) {
-      @page
-    } else {
-      <a href="/search?q=@query&page=@page">@page</a>
-    }
-  }
 </main>
 }
