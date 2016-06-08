@@ -71,9 +71,7 @@
             </div>
 
           @for(artifact <- project.artifacts){
-            <h3>@artifact.reference.name</h3>
             @for(release <- artifact.releases.sortBy(_.reference.version)(Descending)){
-              <h4>@release.reference.version - @release.reference.targets</h4>
               <!-- Install -->
               <div class="install">
                 <ul class="nav nav-tabs" role="tablist">

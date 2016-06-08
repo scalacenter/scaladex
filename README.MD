@@ -18,9 +18,13 @@ Project Structure:
 
 Data Pipeline
   Extract
-  * Discover POMs
-  * Download POMs
-  * Download Parent POMs
+  * Bintray
+    * Discover POMs
+    * Download POMs
+    * Download Parent POMs
+  * Github
+    * README
+    * repo info
 
   Transform
   * Read POMs

@@ -7,6 +7,7 @@ import model._
 import data.elastic._
 import com.sksamuel.elastic4s._
 import ElasticDsl._
+import org.elasticsearch.search.sort.SortOrder
 
 import upickle.default.{Reader, Writer, write => uwrite, read => uread}
 
@@ -27,7 +28,16 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
 
   def userInfo(): Option[UserInfo] = userState.map(_.user)
   def autocomplete(q: String): Future[List[(String, String, String)]] = {
-    Future.successful(Nil)
+    find(q, 0).map{ case (_, projects) =>
+      (for {
+        project <- projects
+        artifact <- project.artifacts
+      } yield (
+        artifact.reference.organization,
+        artifact.reference.name,
+        project.github.flatMap(_.description).getOrElse("")
+      )).take(10)
+    }
   }
   def find(q: String, page: PageIndex): Future[(Pagination, List[Project])] = {
     val perPage = 10
@@ -36,9 +46,10 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
     esClient.execute {
       search
         .in(indexName / collectionName)
-        .query(s"*$q*")
+        .query(q)
         .start(perPage * (clampedPage - 1))
         .limit(perPage)
+        .sort(fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg)
     }.map(r => (
       Pagination(
         current = clampedPage,
