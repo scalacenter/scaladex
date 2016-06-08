@@ -2,7 +2,9 @@ package ch.epfl.scala.index
 package data
 package project
 
-import upickle.default.{read => uread}
+import org.json4s._
+import org.json4s.native.Serialization.read
+
 import build.info.BuildInfo
 
 import model.GithubRepo
@@ -10,11 +12,13 @@ import model.GithubRepo
 import java.nio.file.{Paths, Files}
 
 object Keywords {
+  implicit val formats = DefaultFormats
+  implicit val serialization = native.Serialization
 
   val keywordsFile = BuildInfo.baseDirectory.toPath.resolve(Paths.get("metadata", "keywords.json"))
 
   val cache: Map[GithubRepo, List[String]] = 
-    uread[Map[String, List[String]]](Files.readAllLines(keywordsFile).toArray.mkString(""))
+    read[Map[String, List[String]]](Files.readAllLines(keywordsFile).toArray.mkString(""))
     .map{ case (key, keywords) =>
       val Array(repo, org) = key.split("/")
       (GithubRepo(repo, org), keywords)

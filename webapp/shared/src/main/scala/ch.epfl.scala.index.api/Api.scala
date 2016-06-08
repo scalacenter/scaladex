@@ -1,6 +1,6 @@
 package ch.epfl.scala.index
 
-import model._
+// import model._
 import scala.concurrent.Future
 
 package api {
@@ -10,7 +10,6 @@ package api {
 
   trait Api {
     def userInfo(): Option[UserInfo]
-    def find(q: String, page: PageIndex): Future[(Pagination, List[Project])]
-    def projectPage(artifact: Artifact.Reference): Future[Option[Project]]
+    def autocomplete(q: String): Future[List[(String, String, String)]]
   }
 }

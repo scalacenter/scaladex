@@ -3,13 +3,17 @@ package data
 
 import model._
 
-import upickle.default._
-
 import org.elasticsearch.common.settings.Settings
 import com.sksamuel.elastic4s._
 import source.Indexable
 
+import org.json4s._
+import org.json4s.native.Serialization.{read, write}
+
 trait ProjectProtocol {
+  implicit val formats = DefaultFormats
+  implicit val serialization = native.Serialization
+
   implicit object ProjectAs extends HitAs[Project] {
     override def as(hit: RichSearchHit): Project = {
       read[Project](hit.sourceAsString)

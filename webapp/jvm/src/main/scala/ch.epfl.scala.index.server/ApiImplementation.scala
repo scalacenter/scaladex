@@ -26,6 +26,9 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
   private def hideId(p: Project) = p.copy(_id = None)
 
   def userInfo(): Option[UserInfo] = userState.map(_.user)
+  def autocomplete(q: String): Future[List[(String, String, String)]] = {
+    Future.successful(Nil)
+  }
   def find(q: String, page: PageIndex): Future[(Pagination, List[Project])] = {
     val perPage = 10
     val clampedPage = if(page <= 0) 1 else page

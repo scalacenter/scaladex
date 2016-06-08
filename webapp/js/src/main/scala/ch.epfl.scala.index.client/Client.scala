@@ -3,7 +3,6 @@ package client
 
 import api.Api
 import client.rpc.AutowireClient
-import model.Project
 
 import autowire._
 
@@ -48,23 +47,25 @@ object Client {
   }
 
 
-  def getProjects(query: String): Future[List[Project]] = AutowireClient[Api].find(query, page = 1).call().map{
-    case (pagination, projects) => projects
-    case _ => List.empty[Project]
-  }
+  def getProjects(query: String) = AutowireClient[Api].autocomplete(query).call()
 
-  def showResults(projects: List[Project]): List[Option[Node]] = projects.map(p => appendResult(
-    owner = p.reference.organization,
-    repo = p.reference.repository,
-    description = p.artifacts.head.releases.head.description.getOrElse(""))
-  )
+  def showResults(projects: List[(String, String, String)]): List[Option[Node]] = 
+    projects.map{ case (owner, artifact, description) =>
+      appendResult(
+        owner,
+        artifact,
+        description
+      )
+    }
 
   def cleanResults(): Unit = getResultList.fold()(_.innerHTML = "")
 
   @JSExport
   def runSearch(): Future[List[Option[Node]]] = {
     cleanResults()
-    getQuery(getSearchInput).fold(Future.successful(List.empty[Project]))(getProjects).map(showResults)
+    getQuery(getSearchInput).fold(
+      Future.successful(List.empty[(String, String, String)])
+    )(getProjects).map(showResults)
   }
 
   implicit class ElementOps(e: Element) {

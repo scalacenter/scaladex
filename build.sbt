@@ -76,9 +76,6 @@ lazy val webappJVM = webapp.jvm
 
 lazy val model = project
   .settings(commonSettings: _*)
-  .settings(
-    libraryDependencies += "com.lihaoyi" %% "upickle" % Version.upickle
-  )
   .enablePlugins(ScalaJSPlugin)
 
 lazy val data = project
