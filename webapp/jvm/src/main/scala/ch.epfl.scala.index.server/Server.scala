@@ -112,6 +112,13 @@ object Server {
             )
           )
         } ~
+        path("edit" / Segment / Segment) { (owner, artifactName) =>
+          complete(
+            sharedApi.projectPage(Artifact.Reference(owner, artifactName)).map(project =>
+              project.map(p => views.html.editproject(p))
+            )
+          )
+        } ~
         path("opensearch.xml") {
           complete(views.xml.opensearch("http://localhost:8080/search?q={searchTerms}"))
         } ~

@@ -1,0 +1,46 @@
+@import ch.epfl.scala.index.model.{Project, Descending}
+@(project: Project)
+@main(title = "Home") {
+  <main id="container-project">
+
+    @headproject(project)
+
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <div class="content-project box">
+
+            <h1>Edit project</h1>
+
+            <h3>Project</h3>
+
+            <pre>
+            keywords: List[String] = Nil,
+
+            // http://stackoverflow.com/tags
+            stackOverflowTags: List[String] = Nil,
+
+            // handle (ex: akkateam, typelevel)
+            twitter: Option[String] = None,
+
+            // agglomerate of github organizations: lightbend(akka, play, ...), verizon(verizon, oncue), etc
+            parentOrganization: Option[String] = None,
+
+            // absolute url to a logo (ex: http://spark.apache.org/images/spark-logo-trademark.png)
+            logoImageUrl: Option[Url] = None,
+            </pre>
+
+            <h3>Artifact</h3>
+
+            <pre>
+              deprecation: Option[Deprecation] = None
+            </pre>
+
+
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+}
