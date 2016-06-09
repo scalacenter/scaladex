@@ -15,6 +15,7 @@
     <link rel="apple-touch-icon" href="/assets/img/scaladex-touch-icon-152x152.png">
       <!-- CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css"  />
     <link rel="stylesheet" type="text/css" href="/assets/main.css" />
 
   </head>
@@ -106,12 +107,15 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.5/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.10.0/js/bootstrap-select.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
     <script src="/assets/webapp-jsdeps.js"></script>
     <script src="/assets/webapp-fastopt.js"></script>
     <script>
         // Tooltips
             $(function () {
-                $('[data-toggle="tooltip"]').tooltip()
+              $('[data-toggle="tooltip"]').tooltip();
+              $(".js-keywords-multiple").select2({tags: true});
+              $(".js-stackoverflowtags-multiple").select2({tags: true});
             })
     </script>
 </body>

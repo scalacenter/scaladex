@@ -2,35 +2,8 @@
 @(project: Project)
 @main(title = "Home") {
   <main id="container-project">
-    <div class="head-project">
-      <div class="container">
-        <div class="row">
-          <div class="col-md-10">
-            <div class="info-project">
-              <h1>@project.reference.organization / @project.reference.repository</h1>
-              <a href="https://github.com/@project.reference.organization/@project.reference.repository">
-                <i class="fa fa-github fa-lg"></i> https://github.com/@project.reference.organization/@project.reference.repository
-              </a>
-              <p>@project.github.flatMap(_.description).getOrElse("-")</p>
-            </div>
-          </div>
-          <div class="col-md-2">
-            <div class="version-project">
-              <select class="selectpicker" data-style="btn-primary">
-              @for(r <- project.artifacts.head.releases) {
-                <option>@r.reference.artifact v.@r.maven.version</option>
-              }
-              </select>
-              <div class="contributors-tag">
-                <a href="#">
-                  <img src="/assets/img/contributors_tag.png" alt="">
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+
+    @headproject(project)
 
     <div class="container">
       <div class="row">
@@ -139,7 +112,7 @@
                   }
                 </ul>
               </div>
-                
+
                 <!-- Dependencies -->
               <div class="dependencies box">
                 <h4>@release.dependencies.size Dependencies <span class="pull-right"><i class="fa fa-chevron-down"></i></span></h4>
