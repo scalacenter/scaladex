@@ -69,10 +69,16 @@ lazy val webappJVM = webapp.jvm
       "org.webjars.bower"                   % "bootstrap-select"       % "1.10.0"
     ),
     reStart <<= reStart.dependsOn(WebKeys.assets in Assets),
-    unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value
+    unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
+    javaOptions in Universal += "-Dproduction=true",
+    javaOptions in reStart += "-Dproduction=false",
+
+    maintainer := "Guillaume Masse <masgui@gmail.com>",
+    packageSummary := "The Scala Package Index",
+    packageDescription := "The Scala Package Index"
   )
   .dependsOn(model, data, template)
-  .enablePlugins(SbtSass)
+  .enablePlugins(SbtSass, JavaServerAppPackaging)
 
 lazy val model = project
   .settings(commonSettings: _*)

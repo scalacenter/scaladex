@@ -1,26 +1,36 @@
-@(current: Int, total: Int, uri: String, bound: Int = 5)
+@import ch.epfl.scala.index.model.Pagination
+@(pagination: Pagination, uri: String)
 
+<nav>
+  <ul class="pagination">
+    @defining(paginationRender(pagination.current, pagination.totalPages)) { case (prev, sels, next) =>
+      @for(i <- prev){
+        <li>
+          <a href="@uri&page=@i" aria-label="Previous">
+            <span aria-hidden="true">&laquo;</span>
+          </a>
+        </li>
+      }
 
-@defining(pagination(current, total)) { case (prev, sels, next) =>
-    @for(i <- prev){
-        <a href="@uri&page=@i">
-            <i class="fa fa-chevron-left"></i>
-        </a>
-    }
-
-    @for(i <- sels){
-        @if(i != current) {
+      @for(i <- sels){
+        @if(i != pagination.current) {
+          <li>
             <a href="@uri&page=@i">
                 @i
             </a>
+          </li>
         } else {
-            @i
+          <li class="active"><a href="#">@i <span class="sr-only">(current)</span></a></li>
         }
+      }
+      
+      @for(i <- next){
+        <li>
+          <a href="@uri&page=@i" aria-label="Next">
+            <span aria-hidden="true">&raquo;</span>
+          </a>
+        </li>
+      }
     }
-    
-    @for(i <- next){
-        <a href="@uri&page=@i">
-            <i class="fa fa-chevron-right"></i>
-        </a>
-    }
-}
+  </ul>
+</nav>

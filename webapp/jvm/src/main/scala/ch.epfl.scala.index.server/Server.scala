@@ -20,12 +20,15 @@ import akka.stream.ActorMaterializer
 
 import scala.concurrent.duration._
 import scala.concurrent.Await
+import scala.util.{Properties, Try}
 
 object Server {
   def main(args: Array[String]): Unit = {
     implicit val system = ActorSystem("scaladex")
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
+
+    val production = Try(Properties.envOrElse("production", "false").toBoolean).getOrElse(false)
 
     val github = new Github
 
@@ -101,14 +104,14 @@ object Server {
         path("search") {
           parameters('q, 'page.as[Int] ? 1) { (query, page) =>
             complete(sharedApi.find(query, page).map{ case (pagination, projects) => 
-              views.html.searchresult(query, pagination, projects)
+              views.html.searchresult(query, pagination, projects, production)
             })
           }
         } ~
         path(Segment / Segment) { (owner, artifactName) =>
           complete(
             sharedApi.projectPage(Artifact.Reference(owner, artifactName)).map(project =>
-              project.map(p => views.html.project(p))
+              project.map(p => views.html.project(p, production))
             )
           )
         } ~
@@ -120,17 +123,17 @@ object Server {
           )
         } ~
         path("opensearch.xml") {
-          complete(views.xml.opensearch("http://localhost:8080/search?q={searchTerms}"))
+          complete(views.xml.opensearch("https://index.scala-lang.org/search?q={searchTerms}"))
         } ~
         pathSingleSlash {
-          complete(views.html.frontpage())
+          complete(views.html.frontpage(production))
         }
       }
     }
 
     val setup = for {
       _ <- ApiImplementation.setup
-      _ <- Http().bindAndHandle(route, "localhost", 8080)
+      _ <- Http().bindAndHandle(route, "0.0.0.0", 8080)
     } yield ()
     Await.result(setup, 20.seconds)
 

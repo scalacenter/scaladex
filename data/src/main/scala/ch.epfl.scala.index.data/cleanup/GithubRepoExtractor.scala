@@ -44,7 +44,7 @@ class GithubRepoExtractor extends DefaultJsonProtocol {
 
   private def parseRepo(v: String): Option[GithubRepo] = {
     ScmUrl.parse(v) match {
-      case Parsed.Success((organization, repo), _) => Some(GithubRepo(organization.toLowerCase, repo.toLowerCase))
+      case Parsed.Success((organization, repo), _) => Some(GithubRepo(organization, repo))
       case _ => None
     }
   }
@@ -70,8 +70,10 @@ class GithubRepoExtractor extends DefaultJsonProtocol {
       matchers.find{case (m, _) => 
         matches(m, s"$groupId $artifactId $version")
       }.map(_._2).toList
-    
-    (fromPoms ++ fromClaims).toSet
+
+    (fromPoms ++ fromClaims).map{ 
+      case GithubRepo(organization, repo) => GithubRepo(organization.toLowerCase, repo.toLowerCase)
+    }.toSet
   }
 
   // script to generate contrib/claims.json

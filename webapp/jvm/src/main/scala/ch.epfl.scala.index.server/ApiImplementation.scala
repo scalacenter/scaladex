@@ -39,9 +39,18 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
       )).take(10)
     }
   }
-  def find(q: String, page: PageIndex): Future[(Pagination, List[Project])] = {
+  def find(q: String, page: PageIndex, sorting: Option[String] = None): Future[(Pagination, List[Project])] = {
     val perPage = 10
     val clampedPage = if(page <= 0) 1 else page
+
+    val sortQuery =
+      sorting match {
+        case Some("stars") => fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg
+        case Some("forks") => fieldSort("github.forks") missing "0" order SortOrder.DESC mode MultiMode.Avg
+        case Some("recent") => scoreSort
+        case Some("relevant") => scoreSort
+        case _ => scoreSort
+      }
 
     esClient.execute {
       search
@@ -49,11 +58,12 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
         .query(q)
         .start(perPage * (clampedPage - 1))
         .limit(perPage)
-        .sort(fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg)
+        .sort(sortQuery)
     }.map(r => (
       Pagination(
         current = clampedPage,
-        total = Math.ceil(r.totalHits / perPage.toDouble).toInt
+        totalPages = Math.ceil(r.totalHits / perPage.toDouble).toInt,
+        total = r.totalHits
       ),
       r.as[Project].toList.map(hideId)
     ))

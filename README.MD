@@ -50,3 +50,8 @@ Sbt Plugin
 ## Sbt Plugin
 
 The idea behind sbt-scaladex is to notify the scala index of a new libraries being released. The final goal is to merge this plugin directly into sbt.
+
+## Publishing
+
+* install [requirements](http://www.scala-sbt.org/sbt-native-packager/formats/debian.html?highlight=maintainer#requirements) (`fakeroot` and `dpkg`)
+* debian:packageBin

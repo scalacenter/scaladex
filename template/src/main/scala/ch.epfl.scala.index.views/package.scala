@@ -4,17 +4,7 @@ package views
 import model.Url
 
 package object html {
-  def trimProtocol(url: Url): String = {
-    val u = url.target
-    val http = "http://"
-    val https = "https://"
-
-    if(u.startsWith(http)) u.drop(http.length)
-    else if(u.startsWith(https)) u.drop(https.length)
-    else u
-  }
-
-  def pagination(current: Int, total: Int, window: Int): (Option[Int], List[Int], Option[Int]) = {
+  def paginationRender(current: Int, total: Int, window: Int = 10): (Option[Int], List[Int], Option[Int]) = {
     
     val prev =
       if(current == 1) None
@@ -29,7 +19,10 @@ package object html {
       if(current + delta <= total) {
         if(current - delta >= 1) (current - delta, current + delta)
         else (1, window + 1)
-      } else (total - window, total)
+      } else {
+        if(total < window) (1, total)
+        else (total - window, total)
+      }
 
     val sels = (start to end).toList
 
