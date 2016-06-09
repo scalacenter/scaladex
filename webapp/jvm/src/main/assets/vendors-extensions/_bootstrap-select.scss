@@ -5,7 +5,6 @@
 .bootstrap-select {
     .dropdown-toggle:focus {
         outline: none !important;
-        outline: none !important;
     }
 }
 
@@ -13,6 +12,14 @@
     .bootstrap-select {
         &:not([class*="col-"]):not([class*="form-control"]):not(.input-group-btn) {
             width: 100px;
+        }
+    }
+}
+
+.head-project {
+    .bootstrap-select {
+        &:not([class*="col-"]):not([class*="form-control"]):not(.input-group-btn) {
+            width: auto;
         }
     }
 }
