@@ -1,0 +1,9 @@
+<div class="has-feedback">
+    <form action="/search" action="GET">
+        <input autocomplete="off" name="q" id="search" type="text" class="form-control" placeholder="Search" onkeyup="ch.epfl.scala.index.client.Client().runSearch();">
+    </form>
+    <span class="form-control-feedback"><i class="fa fa-search"></i></span>
+    <div class="autocomplete">
+        <ul id="list-result"></ul>
+    </div>
+</div>

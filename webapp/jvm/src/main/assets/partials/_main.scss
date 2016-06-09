@@ -3,6 +3,144 @@
 // -----------------------------------------------------------------------------
 // Home page
 // -----------------------------------------------------------------------------
+#container-home {
+    .content-search-home {
+        background: url('../assets/img/head-project-background.png') no-repeat center top #0D343C;
+        padding: 80px 0 100px 0;
+        h1 {
+            font-size: 42px;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .tag {
+            padding: 0;
+            margin-top: 10px;
+            text-align: center;
+            li {
+                list-style: none;
+                display: inline-block;
+                a {
+                    color: #fff;
+                    text-decoration: underline;
+                    padding: 0 5px;
+                    &:hover,
+                    &:focus {
+                        text-decoration: none;
+                        color: rgba(255, 255, 255, 0.7);
+                    }
+                }
+            }
+        }
+        .has-feedback {
+            
+            width: 100%;
+            .autocomplete {
+                top: 64px;
+                ul {
+                    li {
+                        a {
+                            p {
+                                font-size: ($font-size-base * 1.3);
+                            }
+                        }
+                    }
+                }
+            }
+            .form-control {
+                font-size: 20px;
+                min-height: 60px;
+                padding-left: 60px;
+            }
+            .form-control-feedback {
+                font-size: 20px;
+                height: 60px;
+                width: 60px;
+                padding-top: 10px;
+            }
+        }
+    }
+    .recent-projects,
+    .recent-releases,
+    .contributors-wanted {
+        padding: 40px 0 80px 0;
+        h2 {
+            margin-bottom: ($line-height-computed * 1.5);
+        }
+    }
+    .recent-projects,
+    .recent-releases {
+        a {
+            p,
+            span {
+                color: $gray;
+            }
+            &:hover,
+            &:focus {
+                text-decoration: none;
+                h4 {
+                    color: $brand-primary;
+                    text-decoration: underline;
+                }
+            }
+        }
+    }
+    .recent-releases {
+        background: rgba($gray-dark, 0.07);
+    }
+    
+    .contributors-wanted {
+        .list-result {
+
+            .item-list {
+                p {
+                    margin-bottom: 16px;
+                    margin-top: 12px;
+                    margin-left: 44px;
+                    text-align: left;
+                }
+                
+                .stats {
+                    margin-top: 0;
+                }
+                
+                @media screen and (min-width: $screen-md-min) {
+                    
+                    p {
+                        margin: 0;
+                        text-align: center;
+                    }
+                    
+                }
+            }
+        }
+    }
+    .content-project {
+        height: 186px;
+        margin-bottom: 30px;
+        .content-project-header {
+            border-bottom: 1px solid rgba($gray-dark, 0.12);
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+            h4 {
+                margin: 0;
+                display: inline-block;
+                padding-left: 15px;
+            }
+            img {
+                width: 28px;
+                height: auto;
+                float: left;
+            }
+        }
+        .content-project-body {}
+        &:hover,
+        &:focus {
+            @include box-shadow(0 1px 15px rgba(0, 0, 0, 0.15));
+        }
+    }
+}
+
 // Result page
 // -----------------------------------------------------------------------------
 #container-search {
@@ -30,7 +168,9 @@
             margin-right: 8px;
         }
         .btn-primary {
-            @include button-variant($btn-primary-color, rgba($gray-darker, 0.7), $btn-primary-border);
+            @include button-variant($btn-primary-color,
+            rgba($gray-darker, 0.7),
+            $btn-primary-border);
         }
         .dropdown-menu {
             border: none;
@@ -40,59 +180,60 @@
             margin-top: 0;
         }
     }
-    .list-result {
-        margin-top: 20px;
-        .item-list {
-            padding: 15px 0;
-            margin: 0;
-            border-bottom: 1px solid rgba($gray-dark, 0.12);
-            h4,
-            .description {
-                padding-left: 42px;
-                margin-bottom: 0;
-                display: inline-block;
+}
+
+.list-result {
+    margin-top: 20px;
+    .item-list {
+        padding: 15px 0;
+        margin: 0;
+        border-bottom: 1px solid rgba($gray-dark, 0.12);
+        h4,
+        .description {
+            padding-left: 16px;
+            margin-bottom: 0;
+            display: inline-block;
+        }
+        .homepage {
+            display: inline-block;
+        }
+        h4 {
+            margin-top: 0;
+            a {
+                color: $gray-darker;
             }
-            .homepage {
-                display: inline-block;
-            }
-            h4 {
-                margin-top: 0;
+        }
+        img {
+            float: left;
+            width: 28px;
+            height: auto;
+        }
+        .stats {
+            padding-left: 22px;
+            margin-top: 12px;
+            span {
+                margin-left: 20px;
                 a {
-                    color: $gray-darker;
-                }
-            }
-            img {
-                float: left;
-                width: 28px;
-                height: auto;
-            }
-            .stats {
-                padding-left: 22px;
-                margin-top: 12px;
-                span {
-                    margin-left: 20px;
-                    a {
-                        &:hover,
-                        &:focus {
-                            text-decoration: none;
-                        }
+                    &:hover,
+                    &:focus {
+                        text-decoration: none;
                     }
                 }
-                .item-filter-tag {
-                    color: $gray-light;
-                    font-style: italic;
-                    font-weight: 300;
-                }
-                @media screen and (min-width: $screen-md-min) {
-                    text-align: right;
-                }
             }
-            a {
-                color: $gray;
-                &:hover,
-                &:focus {
-                    color: $brand-primary;
-                }
+            .item-filter-tag {
+                color: $gray-light;
+                font-style: italic;
+                font-weight: 300;
+            }
+            @media screen and (min-width: $screen-md-min) {
+                text-align: right;
+            }
+        }
+        a {
+            color: $gray;
+            &:hover,
+            &:focus {
+                color: $brand-primary;
             }
         }
     }
@@ -102,7 +243,7 @@
 // -----------------------------------------------------------------------------
 #container-project {
     background: $gray-lighter;
-    padding: 40px 0;
+    padding: 0 0 40px 0;
     .content-project,
     .sidebar-project {
         margin-top: 0;
@@ -114,6 +255,7 @@
             margin-bottom: 0;
         }
     }
+
     .content-project {
         .markdown-body {
             .anchor {
@@ -121,7 +263,12 @@
                 padding-right: 2px;
                 margin-left: -18px;
             }
-            h1, h2, h3, h4, h5, h6 {
+            h1,
+            h2,
+            h3,
+            h4,
+            h5,
+            h6 {
                 &:hover {
                     .octicon-link {
                         visibility: visible;
@@ -133,12 +280,12 @@
                 }
             }
         }
-
         margin-bottom: 0;
+        margin-top: 20px;
         @media screen and (min-width: $screen-md-min) {
             margin-bottom: 30px;
+            margin-top: -80px;
         }
-
         h3 {
             margin-top: ($line-height-computed / 1.7);
             margin-bottom: $line-height-computed;
@@ -148,6 +295,11 @@
         }
     }
     .sidebar-project {
+        margin-top: 20px;
+        @media screen and (min-width: $screen-md-min) {
+            margin-bottom: 30px;
+            margin-top: -80px;
+        }
         .box,
         .install {
             margin-bottom: 30px;
@@ -191,6 +343,12 @@
                     &:disabled {
                         background-color: transparent;
                     }
+
+
+                }
+
+                pre {
+                    background: #fff;
                 }
             }
         }
@@ -217,6 +375,59 @@
                     font-size: 14px;
                 }
             }
+        }
+    }
+}
+
+.head-project {
+    padding: 40px 0;
+    min-height: 271px;
+    background: url('../assets/img/head-project-background.png') no-repeat center top #0D343C;
+    color: #fff;
+    .bootstrap-select >  {
+        .dropdown-toggle {
+            width: auto;
+            min-width: 140px;
+            padding-right: 25px;
+            z-index: 1;
+        }
+    }
+    .info-project {
+        margin-bottom: 30px;
+        h1 {
+            margin-top: 0;
+            color: #fff;
+        }
+        i {
+            margin-right: 6px;
+        }
+        p {
+            font-size: $font-size-large;
+            margin-top: 10px;
+        }
+        @media screen and (min-width: $screen-md-min) {
+            margin-bottom: 0;
+        }
+    }
+    .version-project {
+        text-align: left;
+        @media screen and (min-width: $screen-md-min) {
+            text-align: right;
+        }
+        img {
+            width: 140px;
+            margin-top: 10px;
+            height: auto;
+        }
+        .btn-primary {
+            @include button-variant($btn-primary-color,
+                    rgba(255, 255, 255, 0.1),
+                    $btn-primary-border);
+        }
+        .dropdown-menu {
+            border: none;
+            background-color: rgba($gray-lighter, 0.7);
+            padding: 0;
         }
     }
 }

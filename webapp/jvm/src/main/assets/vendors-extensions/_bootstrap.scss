@@ -12,6 +12,7 @@ body {
     background-color: $body-bg;
 }
 
+
 // Forms
 //------------------------------------------------------------------------------
 .form-control {
@@ -89,6 +90,7 @@ pre {
             &:hover,
             &:focus {
                 border: none;
+                background: #fff;
             }
         }
     }
