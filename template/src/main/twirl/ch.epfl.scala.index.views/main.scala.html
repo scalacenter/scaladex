@@ -1,4 +1,4 @@
-@(title: String)(content: Html)
+@(title: String, showSearch: Boolean = true)(content: Html)
 
 <!DOCTYPE HTML>
 <html lang="en">
@@ -35,15 +35,11 @@
                         </a>
                     </div>
                     <div class="col-md-10">
-                        <div class="has-feedback">
-                            <form action="/search" action="GET">
-                                <input name="q" id="search" type="text" class="form-control" placeholder="Search" onkeyup="ch.epfl.scala.index.client.Client().runSearch();">
-                            </form>
-                            <span class="form-control-feedback"><i class="fa fa-search"></i></span>
-                            <div class="autocomplete">
-                                <ul id="list-result"></ul>
-                            </div>
-                        </div>
+                        
+                        @if(showSearch) {
+                            @searchinput()                        
+                        }
+                        
                         <a class="btn btn-primary pull-right" href="#">
                             <i class="fa fa-github fa-lg"></i> Login
                         </a>

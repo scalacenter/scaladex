@@ -3,6 +3,47 @@
 // -----------------------------------------------------------------------------
 // Home page
 // -----------------------------------------------------------------------------
+.autocomplete {
+    //display: none;
+    width: 100%;
+    background: #fff;
+    top: 42px;
+    left: 0;
+    position: absolute;
+    z-index: 9999;
+    @include box-shadow(0 2px 20px rgba(0, 0, 0, 0.2));
+    ul {
+        padding: 0;
+        margin: 0;
+        li {
+            padding: 15px;
+            list-style: none;
+            border-bottom: 1px solid rgba($gray-darker, 0.1);
+            &:last-child {
+                border-bottom: none;
+            }
+            a {
+                color: $gray;
+                &:hover,
+                &:active,
+                &:focus {
+                    text-decoration: none;
+                }
+                p {
+                    color: $gray-dark;
+                    margin: 0;
+                    font-weight: 400;
+                    font-family: $font-family-serif;
+                }
+            }
+            &:hover {
+                background: $gray-lighter;
+                cursor: default;
+            }
+        }
+    }
+}
+
 // Result page
 // -----------------------------------------------------------------------------
 // Project page
@@ -22,46 +63,7 @@
                 width: auto;
             }
         }
-        .has-feedback {
-            .autocomplete {
-                //display: none;
-                width: 100%;
-                background: #fff;
-                top: 42px;
-                left: 0;
-                position: absolute;
-                z-index: 9999;
-                @include box-shadow(0 2px 20px rgba(0, 0, 0, 0.2));
-                ul {
-                    padding: 0;
-                    margin: 0;
-                    li {
-                        padding: 15px;
-                        list-style: none;
-                        border-bottom: 1px solid rgba($gray-darker, 0.1);
-                        &:last-child {
-                            border-bottom: none;
-                        }
-                        a {
-                            color: $gray;
-                            &:hover, &:active, &:focus {
-                                text-decoration: none;
-                            }
-                            p {
-                                color: $gray-dark;
-                                margin: 0;
-                                font-weight: 700;
-                            }
-
-                        }
-                        &:hover {
-                            background: $gray-lighter;
-                            cursor: default;
-                        }
-                    }
-                }
-            }
-        }
+        .has-feedback {}
     }
     .head-project {
         padding: 40px 0;
