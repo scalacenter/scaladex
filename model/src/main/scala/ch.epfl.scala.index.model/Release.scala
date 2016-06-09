@@ -22,11 +22,23 @@ case class Release(
     val crossFull = reference.targets.scalaVersion.patch.isDefined
   
     val (artifactOperator, crossSuffix) =
-      if (scalaJs)       ("%%%",                        "")
-      else if(crossFull) (  "%", "cross CrossVersion.full")
-      else               ( "%%",                        "")
+      if (scalaJs)       ("%%%",                         "")
+      else if(crossFull) (  "%", " cross CrossVersion.full")
+      else               ( "%%",                         "")
 
-    maven.groupId + artifactOperator + reference.artifact + "%" + reference.version + crossSuffix
+    s"${maven.groupId} $artifactOperator ${reference.artifact} % ${reference.version}$crossSuffix"
+  }
+  def mavenInstall = {
+    import maven._
+    s"""|<dependency>
+        |  <groupId>$groupId</groupId>
+        |  <artifactId>$artifactId</artifactId>
+        |  <version>$version</version>
+        |</dependency>""".stripMargin
+  }
+  def gradleInstall = {
+    import maven._
+    s"compile group: '$groupId', name: '$artifactId', version: '$version'"
   }
   def scalaDocURI: Option[String] = {
     if(mavenCentral) {

@@ -4,6 +4,8 @@ package bintray
 
 import me.tongfei.progressbar._
 
+import model.Descending
+
 import com.github.nscala_time.time.Imports._
 
 import akka.http.scaladsl.model.{DateTime => _, _}

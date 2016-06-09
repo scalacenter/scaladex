@@ -1,5 +1,5 @@
 @import ch.epfl.scala.index._
-@import ch.epfl.scala.index.model.{Project, Pagination}
+@import ch.epfl.scala.index.model.{Project, Pagination, Url}
 
 @(query: String, pagination: Pagination, projects: List[Project])
 @main(title = "Home") {
@@ -30,16 +30,21 @@
           <div class="item-list">
             <div class="row">
               <div class="col-md-8">
-                  <img src="/assets/img/avatar-list.png" alt="">
-                  <h4><a href="/@project.githubRepo">@project.githubRepo</a></h4>
-                  @for(github <- project.github) {
-                    @for(description <- github.description) {
-                      <p class="description">@description</p>
-                    }
-                    @for(homepage <- github.homepage) {
-                      <a class="homepage" href="@homepage.target" target="_blank">@homepage.target</p>
-                    }
+                <img src="
+                @{ project.github.flatMap(_.logo) match {
+                  case Some(Url(v)) => v
+                  case None => "/assets/img/avatar-list.png"
+                }}" alt="project logo">
+
+                <h4><a href="/@project.githubRepo">@project.githubRepo</a></h4>
+                @for(github <- project.github) {
+                  @for(description <- github.description) {
+                    <p class="description">@description</p>
                   }
+                  @for(homepage <- github.homepage) {
+                    <a class="homepage" href="@homepage.target" target="_blank">@trimProtocol(homepage)</p>
+                  }
+                }
               </div>
               <div class="col-md-4">
                 <div class="stats">
@@ -67,6 +72,13 @@
       </div>
     </div>
   </div>
-  Pages: @pagination.current / @pagination.total
+  
+  @for(page <- 1 to pagination.total){
+    @if(page == pagination.current) {
+      @page
+    } else {
+      <a href="/search?q=@query&page=@page">@page</a>
+    }
+  }
 </main>
 }

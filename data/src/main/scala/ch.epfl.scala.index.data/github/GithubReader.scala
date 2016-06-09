@@ -13,7 +13,7 @@ object GithubReader {
   def apply(github: GithubRepo): Option[GithubInfo] = {
     val readmePath = githubReadmePath(github)
     val readmeHtml =
-      if(Files.exists(readmePath)) Try(Files.readAllLines(readmePath).toArray.mkString("")).toOption
+      if(Files.exists(readmePath)) Try(Files.readAllLines(readmePath).toArray.mkString(System.lineSeparator)).toOption
       else None
 
     val repoInfoPath = githubRepoInfoPath(github)

@@ -2,6 +2,8 @@ package ch.epfl.scala.index
 package data
 package bintray
 
+import model.Descending
+
 import spray.json._
 import java.nio.file.Path
 

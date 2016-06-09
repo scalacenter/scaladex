@@ -1,4 +1,4 @@
-@import ch.epfl.scala.index.model.Project
+@import ch.epfl.scala.index.model.{Project, Descending}
 @(project: Project)
 @main(title = "Home") {
   <main id="container-project">
@@ -11,7 +11,8 @@
         </div>
         <div class="col-md-4">
           <div class="sidebar-project">
-              <!-- Statistic -->
+
+            <!-- Statistic -->
             <div class="statistic box">
               <h4>Statistic</h4>
               <div class="row">
@@ -33,53 +34,14 @@
                 </div>
               </div>
             </div>
-              <!-- Install -->
-            <div class="install">
-              <ul class="nav nav-tabs" role="tablist">
-                <li role="presentation" class="active"><a href="#sbt" aria-controls="sbt" role="tab" data-toggle="tab">Sbt</a></li>
-                <li role="presentation"><a href="#maven" aria-controls="maven" role="tab" data-toggle="tab">Maven</a></li>
-                <li role="presentation"><a href="#gradle" aria-controls="gradle" role="tab" data-toggle="tab">Gradle</a></li>
-              </ul>
-              <div class="tab-content">
-                <div role="tabpanel" class="tab-pane active" id="sbt">
-                  <textarea class="form-control" rows="2" disabled>libraryDependencies += "@project.artifacts.head.releases.head.maven.groupId" %% "@project.artifacts.head.releases.head.maven.artifactId" % "@project.artifacts.head.releases.head.maven.version"</textarea>
-                </div>
-                <div role="tabpanel" class="tab-pane" id="maven">
-                  <textarea class="form-control" rows="5" disabled>
-<dependency>
-<groupId>@project.artifacts.head.releases.head.maven.groupId</groupId>
-<artifactId>@project.artifacts.head.releases.head.maven.artifactId</artifactId>
-<version>@project.artifacts.head.releases.head.maven.version</version>
-</dependency>
-                  </textarea>
-                </div>
-                <div role="tabpanel" class="tab-pane" id="gradle">
-                  <textarea class="form-control" rows="2" disabled>compile group: '@project.artifacts.head.releases.head.maven.groupId', name: '@project.artifacts.head.releases.head.maven.artifactId', version: '@project.artifacts.head.releases.head.maven.version'</textarea>
-                </div>
-              </div>
-            </div>
-              <!-- Documentation -->
-            <div class="documentation box">
-              <h4>Documentation</h4>
-              <ul>
-                <li><a href="#">API Docs</a></li>
-                <li><a href="#">Supplementary docs</a></li>
-                <li><a href="#">Stack Overflow articles</a></li>
-              </ul>
-            </div>
-              <!-- License -->
-            <div class="license box">
-              <h4>License</h4>
-              <ul>
-                <li><a href="#">MIT</a></li>
-              </ul>
-            </div>
-              <!-- Keyword -->
+
+            <!-- Keyword -->
             <div class="license box">
               <h4>Keyword</h4>
               <a href="#">UI</a>, <a href="#">FP</a>, <a href="#">macros</a>
             </div>
-              <!-- Collaborators -->
+
+            <!-- Collaborators -->
             <div class="collaborators box">
               <h4>Collaborators</h4>
 
@@ -107,16 +69,75 @@
                 </li>
               </ul>
             </div>
-              <!-- Dependencies -->
-            <div class="dependencies box">
-              <h4>5 Dependencies <span class="pull-right"><i class="fa fa-chevron-down"></i></span></h4>
-              <a href="#">akka/akka-actor</a>, <a href="#">jorg/config-lib</a>, <a href="#">jaixti/geotiles</a>, <a href="#">bauerj/frida-core</a>, <a href="#">maxp/acmecollections</a>
-            </div>
-              <!-- Dependents -->
-            <div class="dependents box">
-              <h4>12 Dependents <span class="pull-right"><i class="fa fa-chevron-down"></i></span></h4>
-              <a href="#">akka/akka-actor</a>, <a href="#">jorg/config-lib</a>, <a href="#">jaixti/geotiles</a>, <a href="#">bauerj/frida-core</a>, <a href="#">maxp/acmecollections</a>
-            </div>
+
+          @for(artifact <- project.artifacts){
+            @for(release <- artifact.releases.sortBy(_.reference.version)(Descending)){
+              <!-- Install -->
+              <div class="install">
+                <ul class="nav nav-tabs" role="tablist">
+                  <li role="presentation" class="active"><a href="#sbt" aria-controls="sbt" role="tab" data-toggle="tab">Sbt</a></li>
+                  <li role="presentation"><a href="#maven" aria-controls="maven" role="tab" data-toggle="tab">Maven</a></li>
+                  <li role="presentation"><a href="#gradle" aria-controls="gradle" role="tab" data-toggle="tab">Gradle</a></li>
+                </ul>
+                <div class="tab-content">
+                  <div role="tabpanel" class="tab-pane active" id="sbt">
+                    <pre>@release.sbtInstall</pre>
+                  </div>
+                  <div role="tabpanel" class="tab-pane" id="maven">
+                    <pre>@release.mavenInstall</pre>
+                  </div>
+                  <div role="tabpanel" class="tab-pane" id="gradle">
+                    <pre>@release.gradleInstall</pre>
+                  </div>
+                </div>
+              </div>
+                <!-- Documentation -->
+              <div class="documentation box">
+                <h4>Documentation</h4>
+                <ul>
+                  @for(scaladoc <- release.scalaDocURI){
+                    <li><a href="@scaladoc" target="_blank">Scaladoc</a></li>
+                  }
+                </ul>
+              </div>
+                <!-- License -->
+              <div class="license box">
+                <h4>License</h4>
+                <ul>
+                  @for(license <- release.licenses) {
+                    <li><a href='@license.url.getOrElse("#")'>@license.shortName</a></li>
+                  }
+                </ul>
+              </div>
+                
+                <!-- Dependencies -->
+              <div class="dependencies box">
+                <h4>@release.dependencies.size Dependencies <span class="pull-right"><i class="fa fa-chevron-down"></i></span></h4>
+                <ul>
+                @for(dependency <- release.dependencies){
+                  <li>
+                    <a href="/@dependency.organization/@dependency.artifact">
+                      @dependency.organization/@dependency.artifact
+                    </a>
+                  </li>
+                }
+                </ul>
+              </div>
+                <!-- Dependents -->
+              <div class="dependents box">
+                <h4>@release.reverseDependencies.size Dependents <span class="pull-right"><i class="fa fa-chevron-down"></i></span></h4>
+                <ul>
+                @for(dependency <- release.reverseDependencies){
+                  <li>
+                    <a href="/@dependency.organization/@dependency.artifact">
+                      @dependency.organization/@dependency.artifact
+                    </a>
+                  </li>
+                }
+                </ul>
+              </div>
+            }
+          }
           </div>
         </div>
       </div>

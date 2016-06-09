@@ -2,12 +2,11 @@ package ch.epfl.scala.index
 package server
 
 import model.Artifact
-import data.marshalling.UpickleSupport
 
 import akka.http.scaladsl._
 import server.Directives._
 
-class RestApi(sharedApi: ApiImplementation) extends UpickleSupport {
+class RestApi(sharedApi: ApiImplementation) extends Json4sSupport {
   val route = get {
     pathPrefix("api") {
       path("find") {
