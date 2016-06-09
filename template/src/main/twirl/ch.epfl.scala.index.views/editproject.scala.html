@@ -12,30 +12,73 @@
 
             <h1>Edit project</h1>
 
-            <h3>Project</h3>
+            <form>
+              <div class="form-group">
+                <label for="keywords_multiple">Keywords</label>
+                <select class="js-keywords-multiple js-states form-control" id="keywords_multiple" multiple="multiple">
+                  <option value="database" selected="selected">Database</option>
+                  <option value="json">JSON</option>
+                  <option value="distributed">Distributed</option>
+                  <option value="macros">Macros</option>
+                  <option value="sbt plugin">SBT Plugin</option>
+                  <option value="algebra">Algebra</option>
+                  <option value="web framework">Web Framework</option>
+                </select>
+              </div>
 
-            <pre>
-            keywords: List[String] = Nil,
+              <div class="form-group">
+                <label for="stackoverflowtags_multiple">Stackoverflow Tags</label>
+                <select class="js-stackoverflowtags-multiple js-states form-control" id="stackoverflowtags_multiple" multiple="multiple">
+                  <option value="database" selected="selected">Database</option>
+                  <option value="json">JSON</option>
+                  <option value="distributed">Distributed</option>
+                  <option value="macros">Macros</option>
+                  <option value="sbt plugin">SBT Plugin</option>
+                  <option value="algebra">Algebra</option>
+                  <option value="web framework">Web Framework</option>
+                </select>
+              </div>
 
-            // http://stackoverflow.com/tags
-            stackOverflowTags: List[String] = Nil,
+              <div class="form-group">
+                <label for="twitter">Twitter</label>
+                <input type="text" class="form-control" id="twitter" value="yourtwitter">
+              </div>
 
-            // handle (ex: akkateam, typelevel)
-            twitter: Option[String] = None,
+              <div class="form-group">
+                <label for="parent_organization">Parent organization</label>
+                <input type="text" class="form-control" id="parent_organization" value="Parent Organization LLC">
+              </div>
 
-            // agglomerate of github organizations: lightbend(akka, play, ...), verizon(verizon, oncue), etc
-            parentOrganization: Option[String] = None,
+              <div class="form-group">
+                <label for="logo_url">Logo URL</label>
+                <input type="text" class="form-control" id="logo_url" value="https://scala.epfl.ch/resources/img/scala-center-logo.png">
+              </div>
 
-            // absolute url to a logo (ex: http://spark.apache.org/images/spark-logo-trademark.png)
-            logoImageUrl: Option[Url] = None,
-            </pre>
+              <hr>
 
-            <h3>Artifact</h3>
+              <div class="row">
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label for="deprecation_since">Deprecation since</label>
+                    <input type="text" class="form-control" id="deprecation_since" value="10/10/2015">
+                  </div>
+                </div>
+                <div class="col-md-5">
+                  <div class="form-group">
+                    <label>Use instead</label>
+                    <input type="text" class="form-control" id="use_instead_organization" placeholder="organization">
+                  </div>
+                </div>
+                <div class="col-md-5">
+                  <div class="form-group">
+                    <label>&nbsp;</label>
+                    <input type="text" class="form-control" id="use_instead_name" placeholder="name">
+                  </div>
+                </div>
+              </div>
 
-            <pre>
-              deprecation: Option[Deprecation] = None
-            </pre>
-
+              <button type="submit" class="btn btn-primary">Update</button>
+            </form>
 
 
           </div>

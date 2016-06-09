@@ -66,7 +66,8 @@ lazy val webappJVM = webapp.jvm
       "com.typesafe.scala-logging"         %% "scala-logging"          % "3.4.0",
       "ch.qos.logback"                      % "logback-classic"        % "1.1.7",
       "org.webjars.bower"                   % "bootstrap-sass"         % "3.3.6",
-      "org.webjars.bower"                   % "bootstrap-select"       % "1.10.0"
+      "org.webjars.bower"                   % "bootstrap-select"       % "1.10.0",
+      "org.webjars.bower"                   % "select2"                % "4.0.3"
     ),
     reStart <<= reStart.dependsOn(WebKeys.assets in Assets),
     unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value
