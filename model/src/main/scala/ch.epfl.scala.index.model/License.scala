@@ -27,7 +27,7 @@ object License {
   val CreativeCommonsAttributionShareAlike_4_0 = spdx("CC-BY-SA-4.0", "Creative Commons Attribution Share Alike 4.0")
   val Eclipse = spdx("EPL-1.0", "Eclipse Public License 1.0")
   val GPL1 = spdx("GPL-1.0", "GNU General Public License v1.0 only")
-  val GPL1_Plus = spdx("GPL-1.0+", "GNU General Public License v1.0 or later")
+  val GPL1Plus = spdx("GPL-1.0+", "GNU General Public License v1.0 or later")
   val GPL2 = spdx("GPL-2.0", "GNU General Public License v2.0 only")
   val GPL2Plus = spdx("GPL-2.0+", "GNU General Public License v2.0 or later")
   val GPl3 = spdx("GPL-3.0", "GNU General Public License v3.0 only")
@@ -76,7 +76,7 @@ object License {
     CreativeCommonsAttributionShareAlike_4_0,
     Eclipse,
     GPL1,
-    GPL1_Plus,
+    GPL1Plus,
     GPL2,
     GPL2Plus,
     GPl3,

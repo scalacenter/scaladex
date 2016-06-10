@@ -1,6 +1,19 @@
 // -----------------------------------------------------------------------------
 // This file contains all styles related to the main of the site/application.
 // -----------------------------------------------------------------------------
+
+// Sticky Footer
+// -----------------------------------------------------------------------------
+body {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+main {
+  flex: 1;
+}
+
 // Home page
 // -----------------------------------------------------------------------------
 #container-home {
@@ -149,9 +162,12 @@
     @media screen and (min-width: $screen-md-min) {
         padding: 60px 0 80px 0;
     }
+    .result-count,
     .filter-tag {
         margin: 0;
         padding: 10px 0 0 0;
+    }
+    .filter-tag {
         li {
             display: inline-block;
             margin-right: 10px;
@@ -163,6 +179,7 @@
         }
     }
     .order-by {
+        width: 150px;
         margin-top: 20px;
         span {
             margin-right: 8px;
@@ -171,6 +188,9 @@
             @include button-variant($btn-primary-color,
             rgba($gray-darker, 0.7),
             $btn-primary-border);
+        }
+        .bootstrap-select {
+            width: 100%;
         }
         .dropdown-menu {
             border: none;
@@ -394,7 +414,7 @@
     }
     .info-project {
         margin-bottom: 30px;
-        h1 {
+        h1, .homepage {
             margin-top: 0;
             color: #fff;
         }
@@ -404,6 +424,12 @@
         p {
             font-size: $font-size-large;
             margin-top: 10px;
+        }
+        .description {
+            display: inline-block;
+        }
+        .homepage {
+            padding-left: 10px;
         }
         @media screen and (min-width: $screen-md-min) {
             margin-bottom: 0;

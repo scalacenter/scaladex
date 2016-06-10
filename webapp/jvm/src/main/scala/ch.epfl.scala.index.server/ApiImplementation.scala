@@ -39,21 +39,30 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
       )).take(10)
     }
   }
-  def find(q: String, page: PageIndex): Future[(Pagination, List[Project])] = {
+  def find(queryString: String, page: PageIndex, sorting: Option[String] = None): Future[(Pagination, List[Project])] = {
     val perPage = 10
     val clampedPage = if(page <= 0) 1 else page
+
+    val sortQuery =
+      sorting match {
+        case Some("stars") => fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg
+        case Some("forks") => fieldSort("github.forks") missing "0" order SortOrder.DESC mode MultiMode.Avg
+        case Some("relevant") => scoreSort
+        case _ => scoreSort
+      }
 
     esClient.execute {
       search
         .in(indexName / collectionName)
-        .query(q)
+        .query(queryString)
         .start(perPage * (clampedPage - 1))
         .limit(perPage)
-        .sort(fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg)
+        .sort(sortQuery)
     }.map(r => (
       Pagination(
         current = clampedPage,
-        total = Math.ceil(r.totalHits / perPage.toDouble).toInt
+        totalPages = Math.ceil(r.totalHits / perPage.toDouble).toInt,
+        total = r.totalHits
       ),
       r.as[Project].toList.map(hideId)
     ))
@@ -84,4 +93,22 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
         .flatMap(_.releases.headOption.map(_.reference))
     ))
   }
+
+  def keywords(): Future[Map[String, Long]] = {
+    import scala.collection.JavaConverters._
+    import org.elasticsearch.search.aggregations.bucket.terms.StringTerms
+    val aggregationName = "keywords_count"
+    esClient.execute {
+      search.in(indexName / collectionName).aggregations(
+        aggregation.terms(aggregationName).field("keywords").size(50)
+      )
+    }.map( resp => {
+      val agg = resp.aggregations.get[StringTerms](aggregationName)
+      agg.getBuckets.asScala.toList.collect{
+        case b: StringTerms.Bucket => b.getKeyAsString -> b.getDocCount
+      }.toMap
+    })
+  }
+
+
 }

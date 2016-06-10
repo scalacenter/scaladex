@@ -1,6 +1,6 @@
 @import ch.epfl.scala.index.model.{Project, Descending}
-@(project: Project)
-@main(title = "Home") {
+@(project: Project, production: Boolean)
+@main(title = "Home", production) {
   <main id="container-project">
 
     @headproject(project)
@@ -94,6 +94,7 @@
                   </div>
                 </div>
               </div>
+
                 <!-- Documentation -->
               <div class="documentation box">
                 <h4>Documentation</h4>

@@ -60,4 +60,4 @@ case class GithubInfo(
   forks: Option[Int] = None
 )
 
-case class Pagination(current: PageIndex, total: Int)
+case class Pagination(current: PageIndex, totalPages: Int, total: Long)

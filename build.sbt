@@ -25,6 +25,7 @@ val commonSettings = Seq(
     "-Ywarn-unused-import",
     "-Ywarn-value-discard"
   ),
+  console <<= console in Test,
   scalacOptions in (Test, console) -= "-Ywarn-unused-import",
   libraryDependencies += "com.lihaoyi" % "ammonite-repl" % "0.6.0" % "test" cross CrossVersion.full,
   initialCommands in (Test, console) := """ammonite.repl.Main().run()""",
@@ -36,7 +37,10 @@ val commonSettings = Seq(
 
 lazy val template = project
   .settings(commonSettings: _*)
-  .settings(scalacOptions -= "-Ywarn-unused-import")
+  .settings(
+    scalacOptions -= "-Ywarn-unused-import",
+    libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.12.0"
+  )
   .dependsOn(model)
   .enablePlugins(SbtTwirl)
 
@@ -69,10 +73,16 @@ lazy val webappJVM = webapp.jvm
       "org.webjars.bower"                   % "bootstrap-select"       % "1.10.0"
     ),
     reStart <<= reStart.dependsOn(WebKeys.assets in Assets),
-    unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value
+    unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
+    javaOptions in Universal += "-Dproduction=true",
+    javaOptions in reStart += "-Dproduction=false",
+
+    maintainer := "Guillaume Masse <masgui@gmail.com>",
+    packageSummary := "The Scala Package Index",
+    packageDescription := "The Scala Package Index"
   )
   .dependsOn(model, data, template)
-  .enablePlugins(SbtSass)
+  .enablePlugins(SbtSass, JavaServerAppPackaging)
 
 lazy val model = project
   .settings(commonSettings: _*)

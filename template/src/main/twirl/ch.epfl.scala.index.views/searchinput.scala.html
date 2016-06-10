@@ -1,6 +1,13 @@
+@(searchQuery: String = "")
+
 <div class="has-feedback">
     <form action="/search" action="GET">
-        <input autocomplete="off" name="q" id="search" type="text" class="form-control" placeholder="Search" onkeyup="ch.epfl.scala.index.client.Client().runSearch();">
+        <input autocomplete="off" autofocus
+          @if(!searchQuery.isEmpty){
+            value = "@searchQuery"
+          }
+          name="q" id="search" type="text" class="form-control" 
+          placeholder="Search" onkeyup="ch.epfl.scala.index.client.Client().runSearch();">
     </form>
     <span class="form-control-feedback"><i class="fa fa-search"></i></span>
     <div class="autocomplete">
