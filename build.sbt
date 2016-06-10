@@ -25,6 +25,7 @@ val commonSettings = Seq(
     "-Ywarn-unused-import",
     "-Ywarn-value-discard"
   ),
+  console <<= console in Test,
   scalacOptions in (Test, console) -= "-Ywarn-unused-import",
   libraryDependencies += "com.lihaoyi" % "ammonite-repl" % "0.6.0" % "test" cross CrossVersion.full,
   initialCommands in (Test, console) := """ammonite.repl.Main().run()""",
@@ -36,7 +37,10 @@ val commonSettings = Seq(
 
 lazy val template = project
   .settings(commonSettings: _*)
-  .settings(scalacOptions -= "-Ywarn-unused-import")
+  .settings(
+    scalacOptions -= "-Ywarn-unused-import",
+    libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.12.0"
+  )
   .dependsOn(model)
   .enablePlugins(SbtTwirl)
 

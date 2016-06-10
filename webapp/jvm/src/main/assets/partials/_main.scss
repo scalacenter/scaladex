@@ -414,7 +414,7 @@ main {
     }
     .info-project {
         margin-bottom: 30px;
-        h1 {
+        h1, .homepage {
             margin-top: 0;
             color: #fff;
         }
@@ -424,6 +424,12 @@ main {
         p {
             font-size: $font-size-large;
             margin-top: 10px;
+        }
+        .description {
+            display: inline-block;
+        }
+        .homepage {
+            padding-left: 10px;
         }
         @media screen and (min-width: $screen-md-min) {
             margin-bottom: 0;

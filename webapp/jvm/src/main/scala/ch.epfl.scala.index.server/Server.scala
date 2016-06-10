@@ -102,9 +102,9 @@ object Server {
           getFromResource(path)
         } ~
         path("search") {
-          parameters('q, 'page.as[Int] ? 1) { (query, page) =>
-            complete(sharedApi.find(query, page).map{ case (pagination, projects) => 
-              views.html.searchresult(query, pagination, projects, production)
+          parameters('q, 'page.as[Int] ? 1, 'sort.?) { (query, page, sorting) =>
+            complete(sharedApi.find(query, page, sorting).map{ case (pagination, projects) => 
+              views.html.searchresult(query, sorting, pagination, projects, production)
             })
           }
         } ~
