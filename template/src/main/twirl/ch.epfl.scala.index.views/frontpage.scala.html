@@ -1,4 +1,4 @@
-@(production: Boolean)
+@(production: Boolean, keywords: Map[String, Long])
 @main(title = "Home", production, showSearch = false) {
 <main id="container-home">
     <section class="content-search-home">
@@ -7,14 +7,9 @@
                 <div class="col-md-8 col-md-offset-2">
                     <h1>The Scala Library Index</h1> @searchinput()
                     <ul class="tag">
-                        <li><a href="#">Database (7)</a></li>
-                        <li><a href="#">JSON (7)</a></li>
-                        <li><a href="#">Distributed (22)</a></li>
-                        <li><a href="#">Macros (76)</a></li>
-                        <li><a href="#">SBT plugins (12)</a></li>
-                        <li><a href="#">Algebra (32)</a></li>
-                        <li><a href="#">Web framework (9)</a></li>
-
+                    @for((keyword, count) <- keywords) {
+                        <li><a href="/search?q=keywords:@keyword">@keyword (@count)</a></li>
+                    }
                     </ul>
                 </div>
             </div>

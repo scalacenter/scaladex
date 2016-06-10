@@ -126,7 +126,11 @@ object Server {
           complete(views.xml.opensearch("https://index.scala-lang.org/search?q={searchTerms}"))
         } ~
         pathSingleSlash {
-          complete(views.html.frontpage(production))
+          complete(
+            sharedApi.keywords().map(keywords =>
+              views.html.frontpage(production, keywords)
+            )
+          )
         }
       }
     }
