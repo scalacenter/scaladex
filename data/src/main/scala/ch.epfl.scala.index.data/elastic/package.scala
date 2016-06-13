@@ -35,6 +35,10 @@ package object elastic extends ProjectProtocol {
     .put("max_result_window", maxResultWindow)
 
   lazy val esClient = ElasticClient.local(esSettings.build)
+  // lazy val esClient = ElasticClient.transport(
+  //   Settings.builder.build,
+  //   ElasticsearchClientUri("localhost", 9300)
+  // )
 
   val indexName = "scaladex"
   val collectionName = "artifacts"
