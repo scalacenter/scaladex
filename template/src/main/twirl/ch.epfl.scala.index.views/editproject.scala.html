@@ -1,9 +1,9 @@
-@import ch.epfl.scala.index.model.{Project, Descending}
-@(project: Project)
-@main(title = "Home") {
+@import ch.epfl.scala.index.model.{Project, Descending, Artifact, SemanticVersion}
+@(project: Project, artifact: Artifact.Reference, version: Option[SemanticVersion], production: Boolean)
+@main(title = "Home", production) {
   <main id="container-project">
 
-    @headproject(project)
+    @headproject(project, artifact, version)
 
     <div class="container">
       <div class="row">

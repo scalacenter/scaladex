@@ -28,6 +28,13 @@ package object html {
     (prev, sels, next)
   }
 
+  def mainArtifact(project: Project) = {
+    project.artifacts.filter(_.reference == project.reference).headOption match {
+      case Some(v) => Some(v)
+      case None => project.artifacts.headOption
+    }
+  }
+
   def latestRelease(project: Project): String = {
     import com.github.nscala_time.time.Imports._
     import org.joda.time.format.ISODateTimeFormat

@@ -48,10 +48,15 @@
                     case None => "/assets/img/avatar-list.png"
                   }}" alt="project logo">
 
+                  @defining(mainArtifact(project)){ artifact =>
+                    @for(ar <- artifact) {
+                      <a href="/@ar.reference.organization/@ar.reference.name">
+                        <h4>@ar.reference.organization/@ar.reference.name</h4>
+                      </a>
+                    }
+                  }
                   @if(project.artifacts.size >= 1) {
-                    <a href="/@project.artifacts.head.reference.organization/@project.artifacts.head.reference.name">
-                      <h4>@project.githubRepo</h4>
-                    </a>
+                    
                   } else {
                     <h4>@project.githubRepo</h4>
                   }
@@ -67,17 +72,6 @@
                     @for(description <- github.description) {
                       <p class="description">@description</p>
                     }
-                  }
-                  @if(project.artifacts.size > 1) {
-                    <ul>
-                    @for(artifact <- project.artifacts) {
-                      <li>
-                        <a href="/@artifact.reference.organization/@artifact.reference.name">
-                          @artifact.reference.name
-                        </a>
-                      </li>
-                    }
-                    </ul>
                   }
                 </div>
                 <div class="col-md-4">
@@ -104,7 +98,7 @@
           }
           </div>
         </div>
-        @paginate(pagination, s"/search?q=$query")
+        @paginate(pagination, s"/search?q=$query" + sorting.map("&sort=" + _).getOrElse(""))
       } else {
         <h1>No Results</h1>
       }
