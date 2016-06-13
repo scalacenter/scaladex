@@ -353,6 +353,9 @@ main {
             }
         }
         .install {
+            .nav-tabs > li:not(.active) > a {
+                color: white;
+            }
             .tab-pane {
                 background: #fff;
                 padding: 15px;
@@ -418,6 +421,12 @@ main {
             margin-top: 0;
             color: #fff;
         }
+        .contributors-tag {
+            display: inline-block;
+            img {
+                height: 25px;
+            }
+        }
         i {
             margin-right: 6px;
         }
@@ -435,7 +444,7 @@ main {
             margin-bottom: 0;
         }
     }
-    .version-project {
+    .artifact-project {
         text-align: left;
         @media screen and (min-width: $screen-md-min) {
             text-align: right;
@@ -454,6 +463,13 @@ main {
             border: none;
             background-color: rgba($gray-lighter, 0.7);
             padding: 0;
+        }
+        .artifact-name {
+            margin-right: 10px;
+        }
+
+        form {
+            display: inline-block;
         }
     }
 }

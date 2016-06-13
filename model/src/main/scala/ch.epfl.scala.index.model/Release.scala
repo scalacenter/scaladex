@@ -26,7 +26,7 @@ case class Release(
       else if(crossFull) (  "%", " cross CrossVersion.full")
       else               ( "%%",                         "")
 
-    s"${maven.groupId} $artifactOperator ${reference.artifact} % ${reference.version}$crossSuffix"
+    s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""
   }
   def mavenInstall = {
     import maven._

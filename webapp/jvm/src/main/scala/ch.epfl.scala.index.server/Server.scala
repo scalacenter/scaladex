@@ -2,12 +2,13 @@ package ch.epfl.scala.index
 package server
 
 import api._
-import model.Artifact
+import model._
+import data.cleanup.SemanticVersionParser
 
 import upickle.default.{read => uread}
 
 import akka.http.scaladsl._
-import akka.http.scaladsl.model._, Uri._, StatusCodes.TemporaryRedirect
+import akka.http.scaladsl.model._, Uri._, StatusCodes._
 
 import com.softwaremill.session._
 import com.softwaremill.session.CsrfDirectives._
@@ -44,6 +45,28 @@ object Server {
     def reuseSharedApi(userState: Option[UserState]) =
       if(userState.isDefined) new ApiImplementation(github, userState)
       else sharedApi
+
+    def artifactPage(reference: Artifact.Reference, version: Option[SemanticVersion]) = {
+      def selectedRelease(project: Project): List[Release] = {
+        def latest(artifact: Artifact): Option[SemanticVersion] = {
+          version match {
+            case Some(v) => Some(v)
+            case None => artifact.releases.map(_.reference.version).sorted.reverse.headOption
+          }
+        }
+
+        for {
+          artifact <- project.artifacts.filter(_.reference == reference)
+          v <- latest(artifact).toList
+          release <- artifact.releases.filter(_.reference.version == v)
+        } yield release
+      }
+
+      sharedApi.projectPage(reference).map(project =>
+        project.map(p => (OK, views.html.artifact(p, reference, version, selectedRelease(p), production)))
+               .getOrElse((NotFound, views.html.notfound(production)))
+      )
+    }
 
     val route = {
       import akka.http.scaladsl._
@@ -109,21 +132,29 @@ object Server {
           }
         } ~
         path(Segment / Segment) { (owner, artifactName) =>
-          complete(
-            sharedApi.projectPage(Artifact.Reference(owner, artifactName)).map(project =>
-              project.map(p => views.html.project(p, production))
-            )
-          )
+          val reference = Artifact.Reference(owner, artifactName)
+          complete(artifactPage(reference, None))
+        } ~
+        path(Segment / Segment / Segment) { (owner, artifactName, version) =>
+          val reference = Artifact.Reference(owner, artifactName)
+          complete(artifactPage(reference, SemanticVersionParser(version)))
+        } ~
+        path(Segment) { owner =>
+          parameters('artifact, 'version.?){ (artifact, version) =>
+            val rest = version match {
+              case Some(v) if !v.isEmpty => "/" + v
+              case _ => ""
+            }
+            redirect(s"/$owner/$artifact$rest", StatusCodes.PermanentRedirect)           
+          }
         } ~
         path("edit" / Segment / Segment) { (owner, artifactName) =>
+          val reference = Artifact.Reference(owner, artifactName)
           complete(
-            sharedApi.projectPage(Artifact.Reference(owner, artifactName)).map(project =>
-              project.map(p => views.html.editproject(p))
+            sharedApi.projectPage(reference).map(project =>
+              project.map(p => views.html.editproject(p, reference, None, production))
             )
           )
-        } ~
-        path("opensearch.xml") {
-          complete(views.xml.opensearch("https://index.scala-lang.org/search?q={searchTerms}"))
         } ~
         pathSingleSlash {
           complete(

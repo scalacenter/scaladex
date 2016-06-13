@@ -1,9 +1,9 @@
-@import ch.epfl.scala.index.model.{Project, Descending}
-@(project: Project, production: Boolean)
+@import ch.epfl.scala.index.model.{Project, Descending, Artifact, SemanticVersion, Release}
+@(project: Project, artifact: Artifact.Reference, version: Option[SemanticVersion], selectedRelease: List[Release], production: Boolean)
 @main(title = "Home", production) {
   <main id="container-project">
 
-    @headproject(project)
+    @headproject(project, artifact, version)
 
     <div class="container">
       <div class="row">
@@ -16,7 +16,7 @@
           <div class="sidebar-project">
 
             <!-- Statistic -->
-            <div class="statistic box">
+            <!--div class="statistic box">
               <h4>Statistic</h4>
               <div class="row">
                 <div class="col-md-6 col-sm-6">
@@ -36,16 +36,10 @@
                   </ul>
                 </div>
               </div>
-            </div>
-
-            <!-- Keyword -->
-            <div class="license box">
-              <h4>Keyword</h4>
-              <a href="#">UI</a>, <a href="#">FP</a>, <a href="#">macros</a>
-            </div>
+            </div-->
 
             <!-- Collaborators -->
-            <div class="collaborators box">
+            <!--div class="collaborators box">
               <h4>Collaborators</h4>
 
               <ul>
@@ -71,10 +65,9 @@
                   <a href="#"><img data-toggle="tooltip" data-placement="bottom" title="Melisa Aron" src="/assets/img/avatar07.jpg" alt=""></a>
                 </li>
               </ul>
-            </div>
+            </div-->
 
-          @for(artifact <- project.artifacts){
-            @for(release <- artifact.releases.sortBy(_.reference.version)(Descending)){
+            @for(release <- selectedRelease){
               <!-- Install -->
               <div class="install">
                 <ul class="nav nav-tabs" role="tablist">
@@ -141,7 +134,6 @@
                 </ul>
               </div>
             }
-          }
           </div>
         </div>
       </div>
