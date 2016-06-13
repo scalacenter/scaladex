@@ -1,9 +1,9 @@
 package ch.epfl.scala.index.model
 
 sealed trait PreRelease
-case class Milestone(value: Long) extends PreRelease
-case class ReleaseCandidate(value: Long) extends PreRelease
-case class OtherPreRelease(value: String) extends PreRelease
+case class Milestone(m: Long) extends PreRelease
+case class ReleaseCandidate(rc: Long) extends PreRelease
+case class OtherPreRelease(o: String) extends PreRelease
 
 case class SemanticVersion(
   major: Long, minor: Long = 0, patch: Option[Long] = None,
