@@ -10,11 +10,11 @@
                 <i class="fa fa-github fa-lg"></i>
                 @project.reference.organization / @project.reference.repository
             </a>
-            <div class="contributors-tag">
+            <!--div class="contributors-tag">
               <a href="#">
                 <img src="/assets/img/contributors_tag.png" alt="">
               </a>
-            </div>
+            </div-->
           </h1>
           @for(github <- project.github) {
             @for(description <- github.description) {
@@ -41,7 +41,7 @@
         <div class="artifact-project">
           <form action="/@project.reference.organization" action="GET">
             <select name="artifact" class="selectpicker artifact-name" data-style="btn-primary" onchange="this.form.submit()">
-            @for(artifact <- project.artifacts) {
+            @for(artifact <- project.artifacts.sortBy(_.reference.name)) {
               <option @if(artifact.reference == artifactRef){ selected } value="@artifact.reference.name">
                 @artifact.reference.name
               </option>
