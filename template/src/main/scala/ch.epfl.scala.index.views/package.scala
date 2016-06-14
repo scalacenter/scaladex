@@ -1,7 +1,7 @@
 package ch.epfl.scala.index
 package views
 
-import model.{Url, Project, Descending}
+import model._
 
 package object html {
   def paginationRender(current: Int, total: Int, window: Int = 10): (Option[Int], List[Int], Option[Int]) = {   
@@ -35,22 +35,11 @@ package object html {
     }
   }
 
-  def latestRelease(project: Project): String = {
-    import com.github.nscala_time.time.Imports._
-    import org.joda.time.format.ISODateTimeFormat
-    import org.joda.time.format.DateTimeFormat
+  def formatDate(date: ISO_8601_Date): String = {
+    import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
+    val in = ISODateTimeFormat.dateTime.withOffsetParsed
+    val out = DateTimeFormat.forPattern("dd/MM/yyyy");
 
-    val format = DateTimeFormat.forPattern("dd/MM/yyyy")
-
-    val parser = ISODateTimeFormat.dateTime.withOffsetParsed
-
-    val dates =
-      for {
-        artifact <- project.artifacts
-        release  <- artifact.releases
-        date     <- release.releaseDates
-      } yield parser.parseDateTime(date.value)
-
-    dates.sorted(Descending[org.joda.time.DateTime]).headOption.map(format.print).getOrElse("")
+    out.print(in.parseDateTime(date.value))
   }
 }

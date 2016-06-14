@@ -55,11 +55,19 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
       require(done, s"Failed waiting on: $explain")
     }
 
+
     if(!exists) {
       println("creating index")
       Await.result(esClient.execute {
         create.index(indexName).mappings(mapping(collectionName).fields(
+          field("keywords") typed StringType,
           field("parentOrganization") typed StringType index "not_analyzed",
+          field("firstUpdate").nested(
+            field("value") typed(DateType)
+          ),
+          field("lastUpdate").nested(
+            field("value") typed(DateType)
+          ),
           field("reference").nested(
             field("organization") typed StringType index "not_analyzed",
             field("repository") typed StringType index "not_analyzed"
@@ -68,12 +76,6 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
             field("reference").nested(
               field("organization") typed StringType index "not_analyzed",
               field("name") typed StringType index "not_analyzed"
-            ),
-            field("releases").nested(
-              field("reference").nested(
-                field("organization") typed StringType index "not_analyzed",
-                field("artifact") typed StringType index "not_analyzed"
-              )
             )
           )
         ))
@@ -93,7 +95,6 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
     // see also: https://github.com/elastic/elasticsearch/issues/1063
     // blockUntilGreen()
     Thread.sleep(500)
-
 
     // XXX: at this point we would like to lock elasticsearch for updating
     // https://github.com/sksamuel/elastic4s/issues/578

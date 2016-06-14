@@ -158,9 +158,10 @@ object Server {
         } ~
         pathSingleSlash {
           complete(
-            sharedApi.keywords().map(keywords =>
-              views.html.frontpage(production, keywords)
-            )
+            for {
+              keywords <- sharedApi.keywords()
+              latestProjects <- sharedApi.latestProjects()
+            } yield views.html.frontpage(keywords, latestProjects, production)
           )
         }
       }

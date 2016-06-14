@@ -23,7 +23,12 @@ case class Project(
   // absolute url to a logo (ex: http://spark.apache.org/images/spark-logo-trademark.png)
   logoImageUrl: Option[Url] = None,
 
-  _id: Option[Int] = None
+  // for elasicsearch
+  _id: Option[Int] = None,
+
+  created: ISO_8601_Date,
+  
+  lastUpdate: ISO_8601_Date
 ) {
   def githubRepo = GithubRepo(reference.organization, reference.repository)
 }

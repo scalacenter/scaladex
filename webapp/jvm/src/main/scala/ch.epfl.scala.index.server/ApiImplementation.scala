@@ -92,6 +92,15 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
     ))
   }
 
+  def latestProjects(): Future[List[Project]] = {
+    esClient.execute {
+      search.in(indexName / collectionName)
+        .query(matchAllQuery)
+        .sort(fieldSort("created.value") order SortOrder.DESC)//.nestedPath("created"))
+        .limit(6)
+    }.map(r => r.as[Project].toList.map(hideId)) 
+  }
+
   def keywords(): Future[Map[String, Long]] = {
     import scala.collection.JavaConverters._
     import org.elasticsearch.search.aggregations.bucket.terms.StringTerms
@@ -107,6 +116,4 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
       }.toMap
     })
   }
-
-
 }
