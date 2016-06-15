@@ -8,10 +8,15 @@ import com.sksamuel.elastic4s._
 import source.Indexable
 
 import org.json4s._
+import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{read, write}
 
 trait ProjectProtocol {
-  implicit val formats = DefaultFormats
+  implicit val formats = Serialization.formats(ShortTypeHints(List(
+    classOf[Milestone],
+    classOf[ReleaseCandidate],
+    classOf[OtherPreRelease]
+  )))
   implicit val serialization = native.Serialization
 
   implicit object ProjectAs extends HitAs[Project] {

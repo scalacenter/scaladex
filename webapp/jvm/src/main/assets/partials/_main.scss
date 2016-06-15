@@ -92,6 +92,7 @@ main {
             &:focus {
                 text-decoration: none;
                 h4 {
+                    font-size: 16px;
                     color: $brand-primary;
                     text-decoration: underline;
                 }
@@ -99,10 +100,15 @@ main {
         }
     }
     .recent-releases {
+        .more-results {
+            margin-top: 20px;   
+        }
         background: rgba($gray-dark, 0.07);
     }
     
+    .recent-releases,
     .contributors-wanted {
+
         .list-result {
 
             .item-list {

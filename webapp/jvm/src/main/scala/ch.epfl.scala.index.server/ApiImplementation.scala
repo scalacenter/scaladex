@@ -39,7 +39,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
       )).take(10)
     }
   }
-  def find(queryString: String, page: PageIndex, sorting: Option[String] = None): Future[(Pagination, List[Project])] = {
+  def find(queryString: String, page: PageIndex, sorting: Option[String] = None, repos: Option[Set[GithubRepo]] = None): Future[(Pagination, List[Project])] = {
     val perPage = 10
     val clampedPage = if(page <= 0) 1 else page
 
@@ -48,6 +48,8 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
         case Some("stars") => fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg
         case Some("forks") => fieldSort("github.forks") missing "0" order SortOrder.DESC mode MultiMode.Avg
         case Some("relevant") => scoreSort
+        case Some("created") => fieldSort("created") order SortOrder.DESC
+        case Some("updated") => fieldSort("lastUpdate") order SortOrder.DESC
         case _ => scoreSort
       }
 
@@ -92,6 +94,35 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
     ))
   }
 
+  def latestProjects(): Future[List[Project]] = latest("created", 12)
+  def latestReleases(): Future[List[Release]] = {
+    import com.github.nscala_time.time.Imports._
+    import org.joda.time.format.ISODateTimeFormat
+    val format = ISODateTimeFormat.dateTime.withOffsetParsed
+
+    latest("updated", 12).map(projects =>
+      (for {
+        project  <- projects
+        artifact <- project.artifacts
+        release  <- artifact.releases
+      } yield release).sortBy(release => 
+        maxOption(release.releaseDates.map(
+          date => format.parseDateTime(date.value)
+        ))
+      )(Descending)
+    )
+  }
+  private def maxOption[T: Ordering](xs: List[T]): Option[T] = if(xs.isEmpty) None else Some(xs.max)
+
+  def latest(by: String, n: Int): Future[List[Project]] = {
+    esClient.execute {
+      search.in(indexName / collectionName)
+        .query(matchAllQuery)
+        .sort(fieldSort("created") order SortOrder.DESC)
+        .limit(n)
+    }.map(r => r.as[Project].toList.map(hideId)) 
+  }
+
   def keywords(): Future[Map[String, Long]] = {
     import scala.collection.JavaConverters._
     import org.elasticsearch.search.aggregations.bucket.terms.StringTerms
@@ -107,6 +138,4 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
       }.toMap
     })
   }
-
-
 }

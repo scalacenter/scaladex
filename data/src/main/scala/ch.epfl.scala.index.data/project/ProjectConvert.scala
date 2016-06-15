@@ -9,6 +9,8 @@ import github._
 
 import me.tongfei.progressbar._
 
+import org.joda.time.DateTime
+
 object ProjectConvert {
   def apply(pomsAndMeta: List[(maven.MavenModel, List[BintraySearch])]): List[Project] = {
     val githubRepoExtractor = new GithubRepoExtractor
@@ -33,6 +35,26 @@ object ProjectConvert {
     val licenseCleanup = new LicenseCleanup
 
     def pomToMavenReference(pom: maven.MavenModel) = MavenReference(pom.groupId, pom.artifactId, pom.version)
+
+    def maxMinRelease(artifacts: List[Artifact]): (String, String) = {
+      import com.github.nscala_time.time.Imports._
+      import org.joda.time.format.ISODateTimeFormat
+
+      val format = ISODateTimeFormat.dateTime.withOffsetParsed
+
+      val dates =
+        for {
+          artifact <- artifacts
+          release  <- artifact.releases
+          date     <- release.releaseDates
+        } yield format.parseDateTime(date.value)
+
+      val sorted = dates.sorted(Descending[DateTime])
+
+      def print(date: Option[DateTime]) = date.map(format.print).getOrElse("")
+
+      (print(sorted.headOption), print(sorted.lastOption))
+    }
 
     val projects = pomsAndMetaClean
       .groupBy{ case (githubRepo, _, _, _, _, _) => githubRepo}
@@ -61,12 +83,15 @@ object ProjectConvert {
             Artifact(Artifact.Reference(organization, artifactName), releases)
           }.toList
 
+        val (max, min) = maxMinRelease(artifacts)
 
         Project(
           Project.Reference(organization, repository),
           artifacts,
           GithubReader(githubRepo),
-          Keywords(githubRepo)
+          Keywords(githubRepo),
+          created = min,
+          lastUpdate = max
         )
       }.toList
 
