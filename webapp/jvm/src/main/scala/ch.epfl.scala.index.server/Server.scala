@@ -46,7 +46,15 @@ object Server {
       if(userState.isDefined) new ApiImplementation(github, userState)
       else sharedApi
 
-    def artifactPage(reference: Artifact.Reference, version: Option[SemanticVersion]) = {
+    def frontPage(userInfo: Option[UserInfo]) = {
+      for {
+        keywords <- sharedApi.keywords()
+        latestProjects <- sharedApi.latestProjects()
+        latestReleases <- sharedApi.latestReleases()
+      } yield views.html.frontpage(keywords, latestProjects, latestReleases, userInfo, production)
+    }
+
+    def artifactPage(reference: Artifact.Reference, version: Option[SemanticVersion], user: Option[UserInfo]) = {
       def selectedRelease(project: Project): List[Release] = {
         def latest(artifact: Artifact): Option[SemanticVersion] = {
           version match {
@@ -63,8 +71,8 @@ object Server {
       }
 
       sharedApi.projectPage(reference).map(project =>
-        project.map(p => (OK, views.html.artifact(p, reference, version, selectedRelease(p), production)))
-               .getOrElse((NotFound, views.html.notfound(production)))
+        project.map(p => (OK, views.html.artifact(p, reference, version, selectedRelease(p), user, production)))
+               .getOrElse((NotFound, views.html.notfound(user, production)))
       )
     }
 
@@ -96,7 +104,7 @@ object Server {
         path("logout") {
           requiredSession(refreshable, usingCookies) { _ =>
             invalidateSession(refreshable, usingCookies) { ctx =>
-              ctx.complete("{}")
+              ctx.complete(frontPage(None))
             }
           }
         } ~
@@ -109,15 +117,9 @@ object Server {
               val userState = Await.result(github.info(code), 10.seconds)
               setSession(refreshable, usingCookies, userState) {
                 setNewCsrfToken(checkHeader) { ctx =>
-                  ctx.complete("ok")
+                  ctx.complete(frontPage(Some(userState.user)))
                 }
               }
-
-              // A popup was open for Oauth2
-              // We notify the opening window
-              // We close the popup
-              // complete(script("""|window.opener.oauth2()
-              //                    |window.close()"""))
             }
           }
         } ~
@@ -125,19 +127,25 @@ object Server {
           getFromResource(path)
         } ~
         path("search") {
-          parameters('q, 'page.as[Int] ? 1, 'sort.?) { (query, page, sorting) =>
-            complete(sharedApi.find(query, page, sorting).map{ case (pagination, projects) => 
-              views.html.searchresult(query, sorting, pagination, projects, production)
-            })
+          optionalSession(refreshable, usingCookies) { userState =>
+            parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
+              complete(sharedApi.find(query, page, sorting, you.flatMap(_ => userState.map(_.repos))).map{ case (pagination, projects) => 
+                views.html.searchresult(query, sorting, pagination, projects, userState.map(_.user), production)
+              })
+            }
           }
         } ~
         path(Segment / Segment) { (owner, artifactName) =>
-          val reference = Artifact.Reference(owner, artifactName)
-          complete(artifactPage(reference, None))
+          optionalSession(refreshable, usingCookies) { userState =>
+            val reference = Artifact.Reference(owner, artifactName)
+            complete(artifactPage(reference, version = None, userState.map(_.user)))
+          }
         } ~
         path(Segment / Segment / Segment) { (owner, artifactName, version) =>
-          val reference = Artifact.Reference(owner, artifactName)
-          complete(artifactPage(reference, SemanticVersionParser(version)))
+          optionalSession(refreshable, usingCookies) { userState =>
+            val reference = Artifact.Reference(owner, artifactName)
+            complete(artifactPage(reference, SemanticVersionParser(version), userState.map(_.user)))
+          }
         } ~
         path(Segment) { owner =>
           parameters('artifact, 'version.?){ (artifact, version) =>
@@ -145,25 +153,23 @@ object Server {
               case Some(v) if !v.isEmpty => "/" + v
               case _ => ""
             }
-            redirect(s"/$owner/$artifact$rest", StatusCodes.PermanentRedirect)           
+            redirect(s"/$owner/$artifact$rest", StatusCodes.PermanentRedirect)
           }
         } ~
         path("edit" / Segment / Segment) { (owner, artifactName) =>
-          val reference = Artifact.Reference(owner, artifactName)
-          complete(
-            sharedApi.projectPage(reference).map(project =>
-              project.map(p => views.html.editproject(p, reference, None, production))
+          optionalSession(refreshable, usingCookies) { userState =>
+            val reference = Artifact.Reference(owner, artifactName)
+            complete(
+              sharedApi.projectPage(reference).map(project =>
+                project.map(p => views.html.editproject(p, reference, version = None, userState.map(_.user), production))
+              )
             )
-          )
+          }
         } ~
         pathSingleSlash {
-          complete(
-            for {
-              keywords <- sharedApi.keywords()
-              latestProjects <- sharedApi.latestProjects()
-              latestReleases <- sharedApi.latestReleases()
-            } yield views.html.frontpage(keywords, latestProjects, latestReleases, production)
-          )
+          optionalSession(refreshable, usingCookies) { userState =>
+            complete(frontPage(userState.map(_.user)))
+          }
         }
       }
     }

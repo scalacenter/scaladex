@@ -39,7 +39,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
       )).take(10)
     }
   }
-  def find(queryString: String, page: PageIndex, sorting: Option[String] = None): Future[(Pagination, List[Project])] = {
+  def find(queryString: String, page: PageIndex, sorting: Option[String] = None, repos: Option[Set[GithubRepo]] = None): Future[(Pagination, List[Project])] = {
     val perPage = 10
     val clampedPage = if(page <= 0) 1 else page
 

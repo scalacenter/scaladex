@@ -1,4 +1,5 @@
-@(title: String, prod: Boolean = false, showSearch: Boolean = true, searchQuery: String = "")(content: Html)
+@import ch.epfl.scala.index.model._
+@(title: String, showSearch: Boolean, searchQuery: String, user: Option[UserInfo], production: Boolean)(content: Html)
 
 <!DOCTYPE HTML>
 <html lang="en">
@@ -40,9 +41,16 @@
                             @searchinput(searchQuery)
                         }
 
-                        <a class="btn btn-primary pull-right" href="#">
-                            <i class="fa fa-github fa-lg"></i> Login
-                        </a>
+                        @user.map{ u =>
+                            <a class="btn btn-primary pull-right" href="/search?q=*&you">
+                                @u.login
+                                <img src="@u.sizedAvatarUrl(40)" alt="Your Avatar">
+                            </a>
+                        }.getOrElse {
+                            <a class="btn btn-primary pull-right" href="/login">
+                                <i class="fa fa-github fa-lg"></i> Login
+                            </a>
+                        }
                     </div>
                 </div>
             </div>
@@ -109,7 +117,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
     <script src="/assets/webapp-jsdeps.js"></script>
 
-    @if(prod) {
+    @if(production) {
         <script src="/assets/webapp-opt.js"></script>
     } else {
         <script src="/assets/webapp-fastopt.js"></script>

@@ -1,8 +1,7 @@
 package ch.epfl.scala.index
 package server
 
-import api._
-import model.GithubRepo
+import model._
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import spray.json._

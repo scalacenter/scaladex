@@ -1,5 +1,6 @@
-@(production: Boolean)
-@main(title = "Home", production, showSearch = true) {
+@import ch.epfl.scala.index.model._
+@(user: Option[UserInfo], production: Boolean)
+@main(title = "Not found", showSearch = true, searchQuery = "", user, production) {
 <main>
   <h1>Not found</h1>
 </main>
