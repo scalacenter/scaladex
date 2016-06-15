@@ -26,9 +26,9 @@ case class Project(
   // for elasicsearch
   _id: Option[Int] = None,
 
-  created: ISO_8601_Date,
+  created: String,
   
-  lastUpdate: ISO_8601_Date
+  lastUpdate: String
 ) {
   def githubRepo = GithubRepo(reference.organization, reference.repository)
 }

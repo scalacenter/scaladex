@@ -100,10 +100,15 @@ main {
         }
     }
     .recent-releases {
+        .more-results {
+            margin-top: 20px;   
+        }
         background: rgba($gray-dark, 0.07);
     }
     
+    .recent-releases,
     .contributors-wanted {
+
         .list-result {
 
             .item-list {

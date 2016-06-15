@@ -1,5 +1,5 @@
-@import ch.epfl.scala.index.model.{Project, Url}
-@(keywords: Map[String, Long], latestProjects: List[Project], production: Boolean)
+@import ch.epfl.scala.index.model.{Project, Url, Release}
+@(keywords: Map[String, Long], latestProjects: List[Project], latestReleases: List[Release], production: Boolean)
 @main(title = "Home", production, showSearch = false) {
 <main id="container-home">
     <section class="content-search-home">
@@ -50,97 +50,26 @@
                     </div>
                 }
             </div>
+            <a class="btn btn-default" href="/search?q=*&sort=creadted">More ...</a>
         </div>
     </section>
     <section class="recent-releases">
         <div class="container">
             <h2 class="text-center">Recent releases</h2>
-            <div class="row">
-                <div class="col-md-4 col-sm-6">
-                   <a href="#">
-                    <div class="content-project box">
-                        <div class="content-project-header">
-                            <img src="/assets/img/avatar-list.png" alt="">
-                            <h4>sjson</h4>
-                                <span class="pull-right">v3.4.0</span>
-                            </div>
-                            <div class="content-project-body">
-                                <p>Scala Json with capabilities for Scala Object Serialization</p>
-                            </div>
+            <div class="list-result box">
+                @for(release <- latestReleases){
+                <div class="item-list">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h4>@release.reference.organization - @release.reference.artifact</h4>
+                            <span class="pull-right">@release.reference.version</span>
                         </div>
-                    </a>
+                    </div>
                 </div>
-                <div class="col-md-4 col-sm-6">
-                    <a href="#">
-                        <div class="content-project box">
-                            <div class="content-project-header">
-                                <img src="/assets/img/avatar-list.png" alt="">
-                                <h4>json-lenses</h4>
-                                <span class="pull-right">v2.0.0</span>
-                            </div>
-                            <div class="content-project-body">
-                                <p>A library to query and update JSON data in Scala.</p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <a href="#">
-                        <div class="content-project box">
-                            <div class="content-project-header">
-                                <img src="/assets/img/avatar-list.png" alt="">
-                                <h4>jawn</h4>
-                                <span class="pull-right">v1.0.0</span>
-                            </div>
-                            <div class="content-project-body">
-                                <p>Jawn is for parsing jay-sawn (JSON)</p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <a href="#">
-                        <div class="content-project box">
-                            <div class="content-project-header">
-                                <img src="/assets/img/avatar-list.png" alt="">
-                                <h4>spray-json</h4>
-                                <span class="pull-right">v3.2.1</span>
-                            </div>
-                            <div class="content-project-body">
-                                <p>A lightweight, clean and simple JSON implementation in Scala</p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <a href="#">
-                        <div class="content-project box">
-                            <div class="content-project-header">
-                                <img src="/assets/img/avatar-list.png" alt="">
-                                <h4>circe</h4>
-                                <span class="pull-right">v3.2.1</span>
-                            </div>
-                            <div class="content-project-body">
-                                <p>Yet another JSON library for Scala</p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-                <div class="col-md-4 col-sm-6">
-                    <a href="#">
-                        <div class="content-project box">
-                            <div class="content-project-header">
-                                <img src="/assets/img/avatar-list.png" alt="">
-                                <h4>argonaut</h4>
-                                <span class="pull-right">v2.2.1</span>
-                            </div>
-                            <div class="content-project-body">
-                                <p>Purely functional JSON parser and library in scala.</p>
-                            </div>
-                        </div>
-                    </a>
-                </div>
+                }
             </div>
+
+            <a class="more-results btn btn-default" href="/search?q=*&sort=updated">More ...</a>
         </div>
     </section>
     <!--div class="contributors-wanted">
@@ -246,7 +175,7 @@
                 </div>
             </div>
         </div>
-    </div -->
+    </div-->
     
 </main>
 }

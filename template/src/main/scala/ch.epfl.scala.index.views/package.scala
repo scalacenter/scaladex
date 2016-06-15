@@ -35,11 +35,11 @@ package object html {
     }
   }
 
-  def formatDate(date: ISO_8601_Date): String = {
+  def formatDate(date: String): String = {
     import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
     val in = ISODateTimeFormat.dateTime.withOffsetParsed
     val out = DateTimeFormat.forPattern("dd/MM/yyyy");
 
-    out.print(in.parseDateTime(date.value))
+    out.print(in.parseDateTime(date))
   }
 }

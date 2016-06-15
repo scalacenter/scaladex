@@ -62,12 +62,8 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
         create.index(indexName).mappings(mapping(collectionName).fields(
           field("keywords") typed StringType,
           field("parentOrganization") typed StringType index "not_analyzed",
-          field("firstUpdate").nested(
-            field("value") typed(DateType)
-          ),
-          field("lastUpdate").nested(
-            field("value") typed(DateType)
-          ),
+          field("firstUpdate").typed(DateType),
+          field("lastUpdate").typed(DateType),
           field("reference").nested(
             field("organization") typed StringType index "not_analyzed",
             field("repository") typed StringType index "not_analyzed"

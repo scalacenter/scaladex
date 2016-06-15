@@ -161,7 +161,8 @@ object Server {
             for {
               keywords <- sharedApi.keywords()
               latestProjects <- sharedApi.latestProjects()
-            } yield views.html.frontpage(keywords, latestProjects, production)
+              latestReleases <- sharedApi.latestReleases()
+            } yield views.html.frontpage(keywords, latestProjects, latestReleases, production)
           )
         }
       }
