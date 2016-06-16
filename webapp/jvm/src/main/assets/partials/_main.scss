@@ -84,6 +84,9 @@ main {
     .recent-projects,
     .recent-releases {
         a {
+            h4 {
+                font-size: 16px;
+            }
             p,
             span {
                 color: $gray;
@@ -92,7 +95,6 @@ main {
             &:focus {
                 text-decoration: none;
                 h4 {
-                    font-size: 16px;
                     color: $brand-primary;
                     text-decoration: underline;
                 }
@@ -135,9 +137,17 @@ main {
         }
     }
     .content-project {
+        &.box {
+            padding: 10px;
+        }
         height: 186px;
         margin-bottom: 30px;
         .content-project-header {
+            & > img,
+            & > h4 {
+                display: inline-block;
+                vertical-align: middle;
+            }
             border-bottom: 1px solid rgba($gray-dark, 0.12);
             padding-bottom: 20px;
             margin-bottom: 20px;
@@ -145,6 +155,7 @@ main {
                 margin: 0;
                 display: inline-block;
                 padding-left: 15px;
+                width: 90%;
             }
             img {
                 width: 28px;
