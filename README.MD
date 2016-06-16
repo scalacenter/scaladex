@@ -1,5 +1,7 @@
 # Scaladex
 
+[![Join the chat at https://gitter.im/scalacenter/scaladex](https://badges.gitter.im/scalacenter/scaladex.svg)](https://gitter.im/scalacenter/scaladex?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 https://waffle.io/scalacenter/scaladex2
 
 How to run:
