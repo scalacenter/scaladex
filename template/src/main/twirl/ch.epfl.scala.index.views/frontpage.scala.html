@@ -48,7 +48,7 @@
                     }
                 }
             </div>
-            <a class="btn btn-default" href="/search?q=*&sort=creadted">More ...</a>
+            <a class="btn btn-default" href="/search?q=*&sort=created">More ...</a>
         </div>
     </section>
     <section class="recent-releases">
@@ -57,12 +57,14 @@
             <div class="list-result box">
                 @for(release <- latestReleases){
                 <div class="item-list">
-                    <div class="row">
-                        <div class="col-md-12">
-                            <h4>@release.reference.organization - @release.reference.artifact</h4>
-                            <span class="pull-right">@release.reference.version</span>
+                    <a href="/@release.reference.organization/@release.reference.artifact/@release.reference.version">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>@release.reference.organization - @release.reference.artifact</h4>
+                                <span class="pull-right">@release.reference.version</span>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                 </div>
                 }
             </div>
