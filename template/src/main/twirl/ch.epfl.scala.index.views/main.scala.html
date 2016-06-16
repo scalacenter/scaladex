@@ -42,9 +42,8 @@
                         }
 
                         @user.map{ u =>
-                            <a class="btn btn-primary pull-right" href="/search?q=*&you">
-                                @u.login
-                                <img src="@u.sizedAvatarUrl(40)" alt="Your Avatar">
+                            <a class="pull-right" href="/search?q=*&you">
+                                <img src="@u.sizedAvatarUrl(38)" alt="Your Avatar - @u.login">
                             </a>
                         }.getOrElse {
                             <a class="btn btn-primary pull-right" href="/login">
