@@ -95,7 +95,7 @@ object PomsReader {
     def sha1(path: Path) = path.getFileName().toString.dropRight(".pom".length)
 
     def keep(pom: maven.MavenModel, metas: List[BintraySearch]) = {
-      val packagingOfInterest = Set("aar", "jar")
+      val packagingOfInterest = Set("aar", "jar", "bundle")
       val typesafeNonOSS = Set(
         "for-subscribers-only",
         "instrumented-reactive-platform",
