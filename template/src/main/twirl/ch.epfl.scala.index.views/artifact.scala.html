@@ -113,7 +113,7 @@
                 <ul>
                 @for(dependency <- release.dependencies){
                   <li>
-                    <a href="/@dependency.organization/@dependency.artifact">
+                    <a href="/@dependency.organization/@dependency.artifact/@dependency.version">
                       @dependency.organization/@dependency.artifact
                     </a>
                   </li>
@@ -126,7 +126,7 @@
                 <ul>
                 @for(dependency <- release.reverseDependencies){
                   <li>
-                    <a href="/@dependency.organization/@dependency.artifact">
+                    <a href="/@dependency.organization/@dependency.artifact/@dependency.version">
                       @dependency.organization/@dependency.artifact
                     </a>
                   </li>

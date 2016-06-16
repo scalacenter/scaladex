@@ -1,7 +1,7 @@
 @import ch.epfl.scala.index.model._
 
 @(query: String, sorting: Option[String], pagination: Pagination, projects: List[Project], user: Option[UserInfo], production: Boolean)
-@main(title = s"Search $query", showSearch = false, searchQuery = "", user, production) {
+@main(title = s"Search $query", showSearch = true, searchQuery = "", user, production) {
 <main id="container-search">
   <div class="container">
     @if(pagination.total != 0 ) {
@@ -26,9 +26,9 @@
               <input type="hidden" name="q" value="@query">
               <input type="hidden" name="page" value="@pagination.current">
               <select name="sort" class="selectpicker" data-style="btn-primary" onchange="this.form.submit()">
+                <option @if(sorting == Some("relevant") || sorting.isEmpty) { selected } value="relevant">Most relevant</option>
                 <option @if(sorting == Some("created")) { selected } value="created">Most recent projects</option>
                 <option @if(sorting == Some("updated")) { selected } value="updated">Most recent releases</option>
-                <option @if(sorting == Some("relevant")) { selected } value="relevant">Most relevant</option>
                 <option @if(sorting == Some("stars")) { selected } value="stars">Stars</option>
                 <option @if(sorting == Some("forks")) { selected } value="forks">Forks</option>
               </select>
