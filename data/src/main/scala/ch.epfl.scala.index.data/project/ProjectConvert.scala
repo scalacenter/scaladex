@@ -36,7 +36,7 @@ object ProjectConvert {
 
     def pomToMavenReference(pom: maven.MavenModel) = MavenReference(pom.groupId, pom.artifactId, pom.version)
 
-    def maxMinRelease(artifacts: List[Artifact]): (String, String) = {
+    def maxMinRelease(artifacts: List[Artifact]): (Option[String], Option[String]) = {
       import com.github.nscala_time.time.Imports._
       import org.joda.time.format.ISODateTimeFormat
 
@@ -51,7 +51,7 @@ object ProjectConvert {
 
       val sorted = dates.sorted(Descending[DateTime])
 
-      def print(date: Option[DateTime]) = date.map(format.print).getOrElse("")
+      def print(date: Option[DateTime]) = date.map(format.print)
 
       (print(sorted.headOption), print(sorted.lastOption))
     }

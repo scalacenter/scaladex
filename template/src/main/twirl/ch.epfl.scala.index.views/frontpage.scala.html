@@ -39,7 +39,9 @@
                                                 <p class="description">@description</p>
                                               }
                                             }
-                                            @{formatDate(project.created)}
+                                            @for(created <- project.created) {
+                                                @{formatDate(created)}
+                                            }
                                         </div>
                                     </div>
                                 </a>

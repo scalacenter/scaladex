@@ -1,8 +1,8 @@
 # Scaladex
 
-[![Join the chat at https://gitter.im/scalacenter/scaladex](https://badges.gitter.im/scalacenter/scaladex.svg)](https://gitter.im/scalacenter/scaladex?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
-https://waffle.io/scalacenter/scaladex
+[![Travis](https://img.shields.io/travis/scalacenter/scaladex.svg?style=flat-square)](https://travis-ci.org/scalacenter/scaladex)
+[![Waffle.io](https://img.shields.io/waffle/label/scalacenter/scaladex/in%20progress.svg?style=flat-square)](https://waffle.io/scalacenter/scaladex)
+[![Gitter](https://img.shields.io/gitter/room/scalacenter/scaladex.svg?style=flat-square)](https://gitter.im/scalacenter/scaladex)
 
 How to run:
 
@@ -55,5 +55,4 @@ The idea behind sbt-scaladex is to notify the scala index of a new libraries bei
 
 ## Publishing
 
-* install [requirements](http://www.scala-sbt.org/sbt-native-packager/formats/debian.html?highlight=maintainer#requirements) (`fakeroot` and `dpkg`)
-* debian:packageBin
+* `sbt universal:packageBin`

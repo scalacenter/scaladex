@@ -75,13 +75,9 @@ lazy val webappJVM = webapp.jvm
     reStart <<= reStart.dependsOn(WebKeys.assets in Assets),
     unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
     javaOptions in Universal += "-Dproduction=true",
-    javaOptions in reStart += "-Dproduction=false",
-
-    maintainer := "Guillaume Masse <masgui@gmail.com>",
-    packageSummary := "The Scala Package Index",
-    packageDescription := "The Scala Package Index"
+    javaOptions in reStart += "-Dproduction=false"
   )
-  .dependsOn(model, data, template)
+  .dependsOn(template, data)
   .enablePlugins(SbtSass, JavaServerAppPackaging)
 
 lazy val model = project
