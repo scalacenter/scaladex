@@ -1,5 +1,5 @@
 @import ch.epfl.scala.index.model._
-@(title: String, showSearch: Boolean, searchQuery: String, user: Option[UserInfo], production: Boolean)(content: Html)
+@(title: String, showSearch: Boolean, searchQuery: String, user: Option[UserInfo])(content: Html)
 
 <!DOCTYPE HTML>
 <html lang="en">
@@ -8,14 +8,10 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <title>Scaladex - @title</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Description...">
-    <meta name="author" content="Author...">
-      <!-- Shortcut icon -->
+    <!--meta name="description" content="Description...">
+    <meta name="author" content="Author..."-->
     <link rel="shortcut icon" href="/assets/img/favicon.ico" />
     <link rel="apple-touch-icon" href="/assets/img/favicon.ico">
-      <!-- CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.min.css"  />
     <link rel="stylesheet" type="text/css" href="/assets/main.css" />
 
   </head>
@@ -85,17 +81,12 @@
         </div>
     </footer>
     <!-- Coding End -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.5/js/bootstrap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.10.0/js/bootstrap-select.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js"></script>
-    <script src="/assets/webapp-jsdeps.js"></script>
 
-    @if(production) {
-        <script src="/assets/webapp-opt.js"></script>
-    } else {
-        <script src="/assets/webapp-fastopt.js"></script>
-    }
+    <script src="/assets/lib/jQuery/dist/jquery.min.js"></script>
+    <script src="/assets/lib/bootstrap-sass/assets/javascripts/bootstrap.min.js"></script>
+    <script src="/assets/lib/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
+    <script src="/assets/lib/select2/dist/js/select2.min.js"></script>
+
     <script>
         // Tooltips
             $(function () {

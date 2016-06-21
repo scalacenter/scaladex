@@ -1,7 +1,7 @@
 @import ch.epfl.scala.index.model._
 
-@(query: String, sorting: Option[String], pagination: Pagination, projects: List[Project], user: Option[UserInfo], production: Boolean)
-@main(title = s"Search $query", showSearch = true, searchQuery = "", user, production) {
+@(query: String, sorting: Option[String], pagination: Pagination, projects: List[Project], user: Option[UserInfo])
+@main(title = s"Search $query", showSearch = true, searchQuery = "", user) {
 <main id="container-search">
   <div class="container">
     @if(pagination.total != 0 ) {

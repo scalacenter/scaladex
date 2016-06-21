@@ -1,11 +1,9 @@
-import Helper._
-
 lazy val baseSettings = Seq(
   organization := "ch.epfl.scala.index",
   version      := "0.1.2"
 )
 
-val commonSettings = Seq(
+lazy val commonSettings = Seq(
   resolvers += Resolver.typesafeIvyRepo("releases"),
   scalaVersion := "2.11.8",
   scalacOptions := Seq(
@@ -35,6 +33,8 @@ val commonSettings = Seq(
   testFrameworks += new TestFramework("utest.runner.Framework")
 ) ++ baseSettings
 
+lazy val akkaVersion = "2.4.7"
+
 lazy val template = project
   .settings(commonSettings: _*)
   .settings(
@@ -44,33 +44,20 @@ lazy val template = project
   .dependsOn(model)
   .enablePlugins(SbtTwirl)
 
-lazy val webapp = crossProject
+lazy val server = project
   .settings(commonSettings: _*)
   .settings(
+    resolvers += Resolver.bintrayRepo("btomala", "maven"),
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "scalatags" % "0.5.2",
-      "com.lihaoyi" %%% "upickle"  % Version.upickle,
-      "com.lihaoyi" %%% "autowire" % "0.2.5"
-    )
-  )
-
-lazy val webappJS = webapp.js
-  .dependsOn(model)
-
-lazy val webappJVM = webapp.jvm
-  .settings(packageScalaJs(webappJS))
-  .settings(
-    resolvers ++= Seq(
-      Resolver.bintrayRepo("btomala", "maven"),
-      Resolver.bintrayRepo("hseeberger", "maven")
-    ),
-    libraryDependencies ++= Seq(
-      "com.typesafe.akka"                  %% "akka-http-experimental" % Version.akka,
+      "com.typesafe.akka"                  %% "akka-http-experimental" % akkaVersion,
       "com.softwaremill.akka-http-session" %% "core"                   % "0.2.6",
       "com.typesafe.scala-logging"         %% "scala-logging"          % "3.4.0",
       "ch.qos.logback"                      % "logback-classic"        % "1.1.7",
       "org.webjars.bower"                   % "bootstrap-sass"         % "3.3.6",
-      "org.webjars.bower"                   % "bootstrap-select"       % "1.10.0"
+      "org.webjars.bower"                   % "bootstrap-select"       % "1.10.0",
+      "org.webjars.bower"                   % "font-awesome"           % "4.6.3",
+      "org.webjars.bower"                   % "jQuery"                 % "2.2.4",
+      "org.webjars.bower"                   % "select2"                % "4.0.3"
     ),
     reStart <<= reStart.dependsOn(WebKeys.assets in Assets),
     unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
@@ -82,7 +69,6 @@ lazy val webappJVM = webapp.jvm
 
 lazy val model = project
   .settings(commonSettings: _*)
-  .enablePlugins(ScalaJSPlugin)
 
 lazy val data = project
   .settings(commonSettings: _*)
@@ -90,8 +76,8 @@ lazy val data = project
     resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-core"                    % "2.3.0",
-      "com.typesafe.akka"      %% "akka-http-experimental"            % Version.akka,
-      "com.typesafe.akka"      %% "akka-http-spray-json-experimental" % Version.akka,
+      "com.typesafe.akka"      %% "akka-http-experimental"            % akkaVersion,
+      "com.typesafe.akka"      %% "akka-http-spray-json-experimental" % akkaVersion,
       "de.heikoseeberger"      %% "akka-http-json4s"                  % "1.7.0",
       "org.json4s"             %% "json4s-native"                     % "3.3.0",
       "de.heikoseeberger"      %% "akka-http-circe"                   % "1.7.0",

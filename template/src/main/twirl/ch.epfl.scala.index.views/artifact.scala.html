@@ -1,6 +1,6 @@
 @import ch.epfl.scala.index.model._
-@(project: Project, artifact: Artifact.Reference, version: Option[SemanticVersion], selectedRelease: List[Release], user: Option[UserInfo], production: Boolean)
-@main(title = artifact.name, showSearch = true, searchQuery = "", user, production) {
+@(project: Project, artifact: Artifact.Reference, version: Option[SemanticVersion], selectedRelease: List[Release], user: Option[UserInfo])
+@main(title = artifact.name, showSearch = true, searchQuery = "", user) {
   <main id="container-project">
 
     @headproject(project, artifact, version)

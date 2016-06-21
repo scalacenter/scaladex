@@ -1,11 +1,8 @@
 package ch.epfl.scala.index
 package server
 
-import api._
 import model._
 import data.cleanup.SemanticVersionParser
-
-import upickle.default.{read => uread}
 
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._, Uri._, StatusCodes._
@@ -21,7 +18,6 @@ import akka.stream.ActorMaterializer
 
 import scala.concurrent.duration._
 import scala.concurrent.Await
-import scala.util.{Properties, Try}
 
 object Server {
   def main(args: Array[String]): Unit = {
@@ -29,7 +25,7 @@ object Server {
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
-    val production = Try(Properties.envOrElse("production", "false").toBoolean).getOrElse(false)
+
 
     val github = new Github
 
@@ -51,7 +47,7 @@ object Server {
         keywords <- sharedApi.keywords()
         latestProjects <- sharedApi.latestProjects()
         latestReleases <- sharedApi.latestReleases()
-      } yield views.html.frontpage(keywords, latestProjects, latestReleases, userInfo, production)
+      } yield views.html.frontpage(keywords, latestProjects, latestReleases, userInfo)
     }
 
     def artifactPage(reference: Artifact.Reference, version: Option[SemanticVersion], user: Option[UserInfo]) = {
@@ -71,8 +67,8 @@ object Server {
       }
 
       sharedApi.projectPage(reference).map(project =>
-        project.map(p => (OK, views.html.artifact(p, reference, version, selectedRelease(p), user, production)))
-               .getOrElse((NotFound, views.html.notfound(user, production)))
+        project.map(p => (OK, views.html.artifact(p, reference, version, selectedRelease(p), user)))
+               .getOrElse((NotFound, views.html.notfound(user)))
       )
     }
 
@@ -81,19 +77,6 @@ object Server {
       import server.Directives._
       import TwirlSupport._
 
-      post {
-        path("autowire" / Segments){ s ⇒
-          entity(as[String]) { e ⇒
-            optionalSession(refreshable, usingCookies) { userState =>
-              complete {
-                AutowireServer.route[Api](reuseSharedApi(userState))(
-                  autowire.Core.Request(s, uread[Map[String, String]](e))
-                )
-              }
-            }
-          }
-        }
-      } ~
       rest.route ~
       get {
         path("login") {
@@ -126,11 +109,14 @@ object Server {
         path("assets" / Remaining) { path ⇒
           getFromResource(path)
         } ~
+        path("fonts" / Remaining) { path ⇒
+          getFromResource(path)
+        } ~
         path("search") {
           optionalSession(refreshable, usingCookies) { userState =>
             parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
               complete(sharedApi.find(query, page, sorting, you.flatMap(_ => userState.map(_.repos))).map{ case (pagination, projects) => 
-                views.html.searchresult(query, sorting, pagination, projects, userState.map(_.user), production)
+                views.html.searchresult(query, sorting, pagination, projects, userState.map(_.user))
               })
             }
           }
@@ -161,7 +147,7 @@ object Server {
             val reference = Artifact.Reference(owner, artifactName)
             complete(
               sharedApi.projectPage(reference).map(project =>
-                project.map(p => views.html.editproject(p, reference, version = None, userState.map(_.user), production))
+                project.map(p => views.html.editproject(p, reference, version = None, userState.map(_.user)))
               )
             )
           }
@@ -174,11 +160,7 @@ object Server {
       }
     }
 
-    val setup = for {
-      _ <- ApiImplementation.setup
-      _ <- Http().bindAndHandle(route, "0.0.0.0", 8080)
-    } yield ()
-    Await.result(setup, 20.seconds)
+    Await.result(Http().bindAndHandle(route, "0.0.0.0", 8080), 20.seconds)
 
     ()
   }

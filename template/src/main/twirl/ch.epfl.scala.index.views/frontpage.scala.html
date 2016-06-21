@@ -1,6 +1,6 @@
 @import ch.epfl.scala.index.model._
-@(keywords: Map[String, Long], latestProjects: List[Project], latestReleases: List[Release], user: Option[UserInfo], production: Boolean)
-@main(title = "Home", showSearch = false, searchQuery = "", user, production) {
+@(keywords: Map[String, Long], latestProjects: List[Project], latestReleases: List[Release], user: Option[UserInfo])
+@main(title = "Home", showSearch = false, searchQuery = "", user) {
 <main id="container-home">
     <section class="content-search-home">
         <div class="container">

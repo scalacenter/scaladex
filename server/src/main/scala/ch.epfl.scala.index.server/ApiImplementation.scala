@@ -1,7 +1,6 @@
 package ch.epfl.scala.index
 package server
 
-import api._
 import model._
 
 import data.elastic._
@@ -9,21 +8,10 @@ import com.sksamuel.elastic4s._
 import ElasticDsl._
 import org.elasticsearch.search.sort.SortOrder
 
-import upickle.default.{Reader, Writer, write => uwrite, read => uread}
-
 import scala.concurrent.{Future, ExecutionContext}
 import scala.language.reflectiveCalls
 
-object AutowireServer extends autowire.Server[String, Reader, Writer]{
-  def read[Result: Reader](p: String)  = uread[Result](p)
-  def write[Result: Writer](r: Result) = uwrite(r)
-}
-
-object ApiImplementation {
-  def setup = esClient.execute { indexExists(indexName) }
-}
-
-class ApiImplementation(github: Github, userState: Option[UserState])(implicit val ec: ExecutionContext) extends Api {
+class ApiImplementation(github: Github, userState: Option[UserState])(implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(_id = None)
 
   def userInfo(): Option[UserInfo] = userState.map(_.user)
