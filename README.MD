@@ -56,6 +56,10 @@ Website
 Sbt Plugin
 ```
 
+## Requirements
+
+To run the application the css compiler `sass` is required. If you don't have it follow the instructions on [sass install page](http://sass-lang.com/install).
+
 ## Sbt Plugin
 
 The idea behind sbt-scaladex is to notify the scala index of a new libraries being released. The final goal is to merge this plugin directly into sbt.
