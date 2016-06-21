@@ -17,7 +17,8 @@ $ git submodule init
 $ git submodule update
 $ sbt
 > data/reStart elastic
-> ~webappJVM/reStart
+> project server
+> ~re-start
 open http://localhost:8080
 ```
 
