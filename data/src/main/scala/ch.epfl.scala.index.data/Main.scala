@@ -26,7 +26,7 @@ object Main {
     if(list) {
       val listPomsStep = new ListPoms
       // TODO: should be located in a config file
-      val versions = List("2.10", "2.11")
+      val versions = List("2.10", "2.11", "2.12")
 
       for(version <- versions) {
 
