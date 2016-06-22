@@ -32,9 +32,7 @@ import java.nio.file._
 class ListPoms(implicit system: ActorSystem, materializer: ActorMaterializer) extends BintrayProtocol with BintrayCredentials {
   import system.dispatcher
 
-  def run() = {
-    // todo: config
-    val scalaVersion = "2.11"
+  def run(scalaVersion: String) = {
 
     val bintrayHttpFlow = Http().cachedHostConnectionPoolHttps[HttpRequest]("bintray.com")
     val progress = new ProgressBar("List POMs", 0)

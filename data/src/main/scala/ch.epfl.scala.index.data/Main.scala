@@ -25,7 +25,14 @@ object Main {
 
     if(list) {
       val listPomsStep = new ListPoms
-      listPomsStep.run()
+      // TODO: should be located in a config file
+      val versions = List("2.10", "2.11")
+
+      for(version <- versions) {
+
+        println(s"fetch scala version $version")
+        listPomsStep.run(version)
+      }
     }
 
     if(download) {
