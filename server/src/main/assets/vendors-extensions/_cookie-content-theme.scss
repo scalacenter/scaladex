@@ -1,0 +1,179 @@
+/**
+Cookie content theme, modified to the ci of the page.
+https://silktide.com/tools/cookie-consent/download/
+*/
+
+//urls
+$url_0: url(//cdnjs.cloudflare.com/ajax/libs/cookieconsent2/1.0.10/logo.png);
+
+//@extend-elements
+//original selectors
+//.cc_container .cc_btn, .cc_container .cc_btn:visited
+%extend_1 {
+    color: white;
+    background-color: #f26527;
+    transition: background 200ms ease-in-out, color 200ms ease-in-out, box-shadow 200ms ease-in-out;
+    border-radius: 2px;
+}
+
+//original selectors
+//.cc_container a, .cc_container a:visited
+%extend_2 {
+    text-decoration: none;
+    color: #31a8f0;
+    transition: 200ms color;
+}
+
+
+.cc_banner-wrapper {
+    z-index: 9001;
+    position: relative;
+}
+.cc_container {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    padding: 10px 20px;
+    background: $gray-darker;
+    color: white;
+    font-size: 17px;
+    box-sizing: border-box;
+    animation-duration: 0.8s;
+    animation-name: slideUp;
+    border-top: 1px solid white;
+    .cc_btn {
+        line-height: 1em;
+        padding: 8px 10px;
+        background-color: #f26527;
+        cursor: pointer;
+        transition: font-size 200ms;
+        text-align: center;
+        font-size: 0.6em;
+        display: block;
+        width: 33%;
+        margin-left: 10px;
+        float: right;
+        max-width: 120px;
+        @extend %extend_1;
+        &:visited {
+            @extend %extend_1;
+        }
+        &:hover {
+            background-color: #d94b0d;
+            color: white;
+        }
+        &:active {
+            background-color: #d94b0d;
+            color: white;
+        }
+    }
+    .cc_message {
+        margin: 0;
+        padding: 0;
+        line-height: 1.5em;
+        transition: font-size 200ms;
+        font-size: 0.6em;
+        display: block;
+    }
+    .cc_logo {
+        display: none;
+        text-indent: -1000px;
+        overflow: hidden;
+        width: 100px;
+        height: 22px;
+        background-size: cover;
+        background-image: $url_0;
+        opacity: 0.9;
+        transition: opacity 200ms;
+        &:hover {
+            opacity: 1;
+        }
+        &:active {
+            opacity: 1;
+        }
+    }
+    ::-moz-selection {
+        background: #ff5e99;
+        color: white;
+        text-shadow: none;
+    }
+    a {
+        @extend %extend_2;
+        &:visited {
+            @extend %extend_2;
+        }
+        &:hover {
+            color: #b2f7ff;
+        }
+        &:active {
+            color: #b2f7ff;
+        }
+    }
+}
+@media screen and(min-width: 500px) {
+    .cc_container {
+        .cc_btn {
+            font-size: 0.8em;
+        }
+        .cc_message {
+            font-size: 0.8em;
+            margin-top: 0.5em;
+        }
+    }
+}
+@media screen and(min-width: 768px) {
+    .cc_container {
+        padding: 15px 70px;
+        .cc_btn {
+            font-size: 1em;
+            padding: 8px 15px;
+        }
+        .cc_message {
+            font-size: 1em;
+            line-height: 1em;
+        }
+    }
+}
+@media screen and(min-width: 992px) {
+    .cc_container .cc_message {
+        font-size: 1em;
+    }
+}
+@media print {
+    .cc_banner-wrapper {
+        display: none;
+    }
+    .cc_container {
+        display: none;
+    }
+}
+@-webkit-keyframes slideUp {
+    0% {
+        //Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+        transform: translateY(66px);
+    }
+    100% {
+        //Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+        transform: translateY(0);
+    }
+}
+@keyframes slideUp {
+    0% {
+        //Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+        transform: translateY(66px);
+    }
+    100% {
+        //Instead of the line below you could use @include transform($scale, $rotate, $transx, $transy, $skewx, $skewy, $originx, $originy)
+        transform: translateY(0);
+    }
+}
+.cc_message {
+    animation-duration: 0.8s;
+    animation-name: slideUp;
+}
+.cc_btn {
+    animation-duration: 0.8s;
+    animation-name: slideUp;
+}
