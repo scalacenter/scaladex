@@ -68,6 +68,13 @@ case class MavenReference(
   version: String       // 0.6.0                 | 2.4.6
 )
 
-case class ScalaTargets(scalaVersion: SemanticVersion, scalaJsVersion: Option[SemanticVersion] = None)
+case class ScalaTargets(scalaVersion: SemanticVersion, scalaJsVersion: Option[SemanticVersion] = None) {
+
+  /** simple modifier for display a nice name */
+  lazy val name = scalaJsVersion.map(v => s"Scala.js ${v.toString} ($scalaVersion)").getOrElse(s"Scala $scalaVersion")
+
+  /** simple modifier for ordering */
+  lazy val orderName: String = scalaJsVersion.map(v => s"${scalaVersion.toString.replace(".", "")}_${v.toString.replace(".", "")}").getOrElse(scalaVersion.toString.replace(".", ""))
+}
 
 case class ISO_8601_Date(value: String) // 2016-05-20T12:48:52.533-04:00

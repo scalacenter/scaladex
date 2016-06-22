@@ -19,14 +19,14 @@ object ProjectConvert {
     progressMeta.start()
 
     val pomsAndMetaClean = pomsAndMeta
-      .map{ case (pom, metas) =>
+      .flatMap{ case (pom, metas) =>
         progressMeta.step()
         for {
           (artifactName, targets) <- ArtifactNameParser(pom.artifactId)
           version <- SemanticVersionParser(pom.version)
           github <- githubRepoExtractor(pom).headOption
         } yield (github, artifactName, targets, pom, metas, version)
-      }.flatten
+      }
 
     
     progressMeta.stop()

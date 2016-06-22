@@ -67,73 +67,88 @@
               </ul>
             </div-->
 
-            @for(release <- selectedRelease){
-              <!-- Install -->
-              <div class="install">
-                <ul class="nav nav-tabs" role="tablist">
-                  <li role="presentation" class="active"><a href="#sbt" aria-controls="sbt" role="tab" data-toggle="tab">Sbt</a></li>
-                  <li role="presentation"><a href="#maven" aria-controls="maven" role="tab" data-toggle="tab">Maven</a></li>
-                  <li role="presentation"><a href="#gradle" aria-controls="gradle" role="tab" data-toggle="tab">Gradle</a></li>
-                </ul>
-                <div class="tab-content">
-                  <div role="tabpanel" class="tab-pane active" id="sbt">
-                    <pre>@release.sbtInstall</pre>
+            <div class="targets box">
+              <h4>Targets</h4>
+
+              @for((release, index) <- selectedRelease.sortBy(_.reference.targets.orderName).zipWithIndex) {
+                <a href="#target-@release.reference.targets.orderName" data-target="#target-@release.reference.targets.orderName" class="btn btn-xs @if(0 == index) {btn-primary} else {btn-default}" name="@release.reference.targets.name" role="button" data-toggle="tab"aria-controls="target-@release.reference.targets.orderName" onclick="$('.targets a.btn').removeClass('btn-primary').addClass('btn-default'); $(this).addClass('btn-primary').removeClass('btn-default');">
+                    @release.reference.targets.name
+                </a>
+              }
+
+            </div>
+
+            <div id="#targets" class="tab-content">
+              @for((release, index) <- selectedRelease.sortBy(_.reference.targets.orderName).zipWithIndex) {
+                <div id="target-@release.reference.targets.orderName" class="tab-pane fade @if(0 == index) {in active}">
+                  <!-- Install -->
+                  <div class="install">
+                    <ul class="nav nav-tabs" role="tablist">
+                      <li role="presentation" class="active"><a href="#sbt" aria-controls="sbt" role="tab" data-toggle="tab">Sbt</a></li>
+                      <li role="presentation"><a href="#maven" aria-controls="maven" role="tab" data-toggle="tab">Maven</a></li>
+                      <li role="presentation"><a href="#gradle" aria-controls="gradle" role="tab" data-toggle="tab">Gradle</a></li>
+                    </ul>
+                    <div class="tab-content">
+                      <div role="tabpanel" class="tab-pane active" id="sbt">
+                        <pre>@release.sbtInstall</pre>
+                      </div>
+                      <div role="tabpanel" class="tab-pane" id="maven">
+                        <pre>@release.mavenInstall</pre>
+                      </div>
+                      <div role="tabpanel" class="tab-pane" id="gradle">
+                        <pre>@release.gradleInstall</pre>
+                      </div>
+                    </div>
                   </div>
-                  <div role="tabpanel" class="tab-pane" id="maven">
-                    <pre>@release.mavenInstall</pre>
+
+                  <!-- Documentation -->
+                  <div class="documentation box">
+                    <h4>Documentation</h4>
+                    <ul>
+                      @for(scaladoc <- release.scalaDocURI){
+                        <li><a href="@scaladoc" target="_blank">Scaladoc</a></li>
+                      }
+                    </ul>
                   </div>
-                  <div role="tabpanel" class="tab-pane" id="gradle">
-                    <pre>@release.gradleInstall</pre>
+                    <!-- License -->
+                  <div class="license box">
+                    <h4>License</h4>
+                    <ul>
+                      @for(license <- release.licenses) {
+                        <li><a href='@license.url.getOrElse("#")'>@license.shortName</a></li>
+                      }
+                    </ul>
+                  </div>
+
+                    <!-- Dependencies -->
+                  <div class="dependencies box">
+                    <h4>@release.dependencies.size Dependencies <span class="pull-right"><i class="fa fa-chevron-down"></i></span></h4>
+                    <ul>
+                    @for(dependency <- release.dependencies){
+                      <li>
+                        <a href="/@dependency.organization/@dependency.artifact/@dependency.version">
+                          @dependency.organization/@dependency.artifact
+                        </a>
+                      </li>
+                    }
+                    </ul>
+                  </div>
+                    <!-- Dependents -->
+                  <div class="dependents box">
+                    <h4>@release.reverseDependencies.size Dependents <span class="pull-right"><i class="fa fa-chevron-down"></i></span></h4>
+                    <ul>
+                    @for(dependency <- release.reverseDependencies){
+                      <li>
+                        <a href="/@dependency.organization/@dependency.artifact/@dependency.version">
+                          @dependency.organization/@dependency.artifact
+                        </a>
+                      </li>
+                    }
+                    </ul>
                   </div>
                 </div>
-              </div>
-
-                <!-- Documentation -->
-              <div class="documentation box">
-                <h4>Documentation</h4>
-                <ul>
-                  @for(scaladoc <- release.scalaDocURI){
-                    <li><a href="@scaladoc" target="_blank">Scaladoc</a></li>
-                  }
-                </ul>
-              </div>
-                <!-- License -->
-              <div class="license box">
-                <h4>License</h4>
-                <ul>
-                  @for(license <- release.licenses) {
-                    <li><a href='@license.url.getOrElse("#")'>@license.shortName</a></li>
-                  }
-                </ul>
-              </div>
-
-                <!-- Dependencies -->
-              <div class="dependencies box">
-                <h4>@release.dependencies.size Dependencies <span class="pull-right"><i class="fa fa-chevron-down"></i></span></h4>
-                <ul>
-                @for(dependency <- release.dependencies){
-                  <li>
-                    <a href="/@dependency.organization/@dependency.artifact/@dependency.version">
-                      @dependency.organization/@dependency.artifact
-                    </a>
-                  </li>
-                }
-                </ul>
-              </div>
-                <!-- Dependents -->
-              <div class="dependents box">
-                <h4>@release.reverseDependencies.size Dependents <span class="pull-right"><i class="fa fa-chevron-down"></i></span></h4>
-                <ul>
-                @for(dependency <- release.reverseDependencies){
-                  <li>
-                    <a href="/@dependency.organization/@dependency.artifact/@dependency.version">
-                      @dependency.organization/@dependency.artifact
-                    </a>
-                  </li>
-                }
-                </ul>
-              </div>
-            }
+              }
+            </div>
           </div>
         </div>
       </div>

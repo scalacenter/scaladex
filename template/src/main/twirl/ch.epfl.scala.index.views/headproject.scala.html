@@ -51,10 +51,10 @@
           <form action="/@project.reference.organization" action="GET">
             <input type="hidden" name="artifact" value="@artifactRef.name">
             <select name="version" class="selectpicker" data-style="btn-primary" onchange="this.form.submit()">
-            @for(artifact <- project.artifacts.filter(_.reference == artifactRef).headOption) {
-              @for(release <- artifact.releases.sortBy(_.reference.version)(Descending)) {
-                <option @if(version.map(_ == release.reference.version).getOrElse(false)){ selected }>
-                  @release.reference.version
+            @for(artifact <- project.artifacts.find(_.reference == artifactRef)) {
+              @for(release <- artifact.releases.sortBy(_.reference.version)(Descending).map(_.reference.version).distinct) {
+                <option @if(version.contains(release)){ selected }>
+                  @release
                 </option>
               }
             }
