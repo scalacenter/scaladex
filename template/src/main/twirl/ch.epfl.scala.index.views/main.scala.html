@@ -1,5 +1,5 @@
 @import ch.epfl.scala.index.model._
-@(title: String, showSearch: Boolean, searchQuery: String, user: Option[UserInfo])(content: Html)
+@(title: String, showSearch: Boolean, searchQuery: String, user: Option[UserInfo], staticJs: Option[Html] = None)(content: Html)
 
 <!DOCTYPE HTML>
 <html lang="en">
@@ -113,5 +113,6 @@
       ga('send', 'pageview');
 
     </script>
+    @staticJs
 </body>
 </html>

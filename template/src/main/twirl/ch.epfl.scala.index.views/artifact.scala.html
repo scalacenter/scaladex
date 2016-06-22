@@ -1,6 +1,21 @@
 @import ch.epfl.scala.index.model._
 @(project: Project, artifact: Artifact.Reference, version: Option[SemanticVersion], selectedRelease: List[Release], user: Option[UserInfo])
-@main(title = artifact.name, showSearch = true, searchQuery = "", user) {
+
+@staticJs = {
+  <script type="text/javascript">
+
+    $(document).ready(function() {
+
+      $("a.targets").on("click", function() {
+
+        $('.targets a.btn').removeClass('btn-primary').addClass('btn-default');
+        $(this).addClass('btn-primary').removeClass('btn-default');
+      });
+    });
+  </script>
+}
+
+@main(title = artifact.name, showSearch = true, searchQuery = "", user, Some(staticJs)) {
   <main id="container-project">
 
     @headproject(project, artifact, version)
@@ -71,7 +86,7 @@
               <h4>Targets</h4>
 
               @for((release, index) <- selectedRelease.sortBy(_.reference.targets.orderName).zipWithIndex) {
-                <a href="#target-@release.reference.targets.orderName" data-target="#target-@release.reference.targets.orderName" class="btn btn-xs @if(0 == index) {btn-primary} else {btn-default}" name="@release.reference.targets.name" role="button" data-toggle="tab"aria-controls="target-@release.reference.targets.orderName" onclick="$('.targets a.btn').removeClass('btn-primary').addClass('btn-default'); $(this).addClass('btn-primary').removeClass('btn-default');">
+                <a href="#target-@release.reference.targets.orderName" data-target="#target-@release.reference.targets.orderName" class="targets btn btn-xs @if(0 == index) {btn-primary} else {btn-default}" name="@release.reference.targets.name" role="button" data-toggle="tab"aria-controls="target-@release.reference.targets.orderName">
                     @release.reference.targets.name
                 </a>
               }
