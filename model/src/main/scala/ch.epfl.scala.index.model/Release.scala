@@ -79,10 +79,7 @@ case class Release(
     */
   def versionsForReverseDependencies(dep: ScalaDependency): Seq[SemanticVersion] =  {
 
-    val deps = reverseDependencies.filter(d => d.dependency.name == dep.dependency.name)
-
-    println(deps)
-    deps.map(_.dependency.version)
+    reverseDependencies.filter(d => d.dependency.name == dep.dependency.name).map(_.dependency.version)
   }
 }
 
