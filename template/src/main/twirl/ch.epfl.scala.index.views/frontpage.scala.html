@@ -1,4 +1,7 @@
-@import ch.epfl.scala.index.model._
+@import ch.epfl.scala.index.model.Project
+@import ch.epfl.scala.index.model.Release
+@import ch.epfl.scala.index.model.UserInfo
+@import ch.epfl.scala.index.model.Url
 @(keywords: Map[String, Long], latestProjects: List[Project], latestReleases: List[Release], user: Option[UserInfo])
 @main(title = "Home", showSearch = false, searchQuery = "", user) {
 <main id="container-home">
@@ -59,10 +62,10 @@
             <div class="list-result box">
                 @for(release <- latestReleases){
                 <div class="item-list">
-                    <a href="/@release.reference.organization/@release.reference.artifact/@release.reference.version">
+                    <a href="@release.reference.httpUrl">
                         <div class="row">
                             <div class="col-md-12">
-                                <h4>@release.reference.organization - @release.reference.artifact</h4>
+                                <h4>@release.reference.name</h4>
                                 <span class="pull-right">@release.reference.version</span>
                             </div>
                         </div>

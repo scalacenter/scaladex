@@ -97,7 +97,7 @@ object ProjectConvert {
 
     println("Dependencies & Reverse Dependencies")
 
-    val releases =
+    val releases: List[Release] =
       for {
         project  <- projects
         artifact <- project.artifacts
@@ -113,46 +113,69 @@ object ProjectConvert {
 
     val poms = pomsAndMetaClean.map{ case (_, _, _, pom, _, _) => pom }
 
-    def zip[A, B](a: Option[A], b: Option[B]) = a.zip(b).headOption
-    
     def link(reverse: Boolean) = {
-      poms.foldLeft(Map[Release.Reference, Set[Release.Reference]]()){ case (cache, pom) =>
+      poms.foldLeft(Map[Release.Reference, Seq[Dependency]]()){ case (cache, pom) =>
         pom.dependencies.foldLeft(cache){ case (cache0, dependency) =>
-          zip(
-            mavenReferenceToReleaseReference.get(dependencyToMaven(dependency)), 
-            mavenReferenceToReleaseReference.get(pomToMavenReference(pom))
-           ) match {
-            case Some((depRef, pomRef)) => {
-              val (source, target) =
-                if(reverse) (depRef, pomRef)
-                else (pomRef, depRef)
 
-              upsert(cache0, source, target)
-            }
-            case None => cache0
+          val scope: Option[Scope] = dependency.scope map Scope.apply
+          val depMavenRef = dependencyToMaven(dependency)
+          val pomMavenRef = pomToMavenReference(pom)
+          val depRef = mavenReferenceToReleaseReference.get(depMavenRef)
+          val pomRef = mavenReferenceToReleaseReference.get(pomMavenRef)
+
+          (depRef, pomRef) match {
+
+            /** We have both, scala -> scala reference */
+            case (Some(dependencyReference), Some(pomReference)) =>
+
+              val (source, target) = if (reverse) (dependencyReference, pomReference) else (pomReference, dependencyReference)
+              upsert(cache0, source, ScalaDependency(target, scope))
+
+            /** dependency is scala reference - works now only if reverse */
+            case (Some(dependencyReference), None) =>
+
+              if (reverse) upsert(cache0, dependencyReference, JavaDependency(pomMavenRef, scope))
+              else cache0
+
+            /** works only if not reverse */
+            case (None, Some(pomReference)) =>
+
+              if (!reverse) upsert(cache0, pomReference, JavaDependency(depMavenRef, scope))
+              else cache0
+
+            /** java -> java: should not happen actually */
+            case (None, None) =>
+              println(s"no reference discovered for $pomMavenRef -> $depMavenRef")
+              cache0
           }
         }
       }
     }
 
     val dependenciesCache = link(reverse = false)
-    val reverseDependenciesCache =  link(reverse = true)
+    val reverseDependenciesCache = link(reverse = true)
 
-    def findDependencies(release: Release): Set[Release.Reference] =
-      dependenciesCache.get(release.reference).getOrElse(Set())
+    def findDependencies(release: Release): Seq[Dependency] = {
 
-    def findReverseDependencies(release: Release): Set[Release.Reference] =
-      reverseDependenciesCache.get(release.reference).getOrElse(Set())
+      dependenciesCache.getOrElse(release.reference, Seq())
+    }
+
+    def findReverseDependencies(release: Release): Seq[Dependency] = {
+
+      reverseDependenciesCache.getOrElse(release.reference, Seq())
+    }
 
     projects.map(project =>
       project.copy(artifacts = project.artifacts.map(artifact =>
-        artifact.copy(releases = artifact.releases.map(release =>
+        artifact.copy(releases = artifact.releases.map { release =>
+          val dependencies = findDependencies(release)
           release.copy(
-            dependencies = findDependencies(release),
-            reverseDependencies = findReverseDependencies(release)
+            scalaDependencies = dependencies.collect { case sd: ScalaDependency => sd},
+            javaDependencies = dependencies.collect { case jd: JavaDependency => jd},
+            reverseDependencies = findReverseDependencies(release).collect { case sd: ScalaDependency => sd}
           )
-        ))
+        })
       ))
     )
-  } 
+  }
 }

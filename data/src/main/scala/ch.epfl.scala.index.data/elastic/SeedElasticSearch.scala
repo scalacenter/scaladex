@@ -17,8 +17,8 @@ import scala.util.Success
 
 class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtocol {
   def run(): Unit = {
-    val exists = Await.result(esClient.execute { indexExists(indexName)}, Duration.Inf).isExists()
 
+    val exists = Await.result(esClient.execute { indexExists(indexName)}, Duration.Inf).isExists
     val target = indexName / collectionName
 
     def blockUntilCount(expected: Int): Unit = {
@@ -56,7 +56,8 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
     }
 
 
-    if(!exists) {
+    if (!exists) {
+
       println("creating index")
       Await.result(esClient.execute {
         create.index(indexName).mappings(mapping(collectionName).fields(
@@ -95,21 +96,23 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
     // XXX: at this point we would like to lock elasticsearch for updating
     // https://github.com/sksamuel/elastic4s/issues/578
     val projectsLive = 
-      if(exists){
+      if (exists) {
+
         println("importing live data")
       
         Await.result(esClient.execute { 
           search
           .in(indexName / collectionName)
           .query(matchAllQuery)
-          .limit(maxResultWindow)
+          .limit(maxResultWindow) // TODO will be a problem if there are more than 10.000 projects
         }.map(_.as[Project].toList), Duration.Inf)
       } else {
+
         println("index is empty")
         List()
       }
 
-    println("calculating project deltas")
+    println(s"calculating project deltas of ${projectsUpdate.size} Projects")
     val deltas = ProjectDelta(live = projectsLive, update = projectsUpdate)
 
     val inserts = deltas.collect{ case NewProject(project) => index.into(target).source(project) }
@@ -118,10 +121,16 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
     }.flatten
 
     println("indexing deltas to ES")
-    if(!inserts.isEmpty) {
+    println(s"index ${inserts.size} new documents")
+
+    if (inserts.nonEmpty) {
+
       Await.result( esClient.execute {bulk(inserts)}, Duration.Inf)
     }
-    if(!updates.isEmpty) {
+
+    println(s"update ${updates.size} documents")
+    if (updates.nonEmpty) {
+
       Await.result( esClient.execute {bulk(updates)}, Duration.Inf)
     }
 

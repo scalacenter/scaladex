@@ -4,7 +4,6 @@ package data
 import bintray._
 import github._
 import elastic._
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
@@ -51,6 +50,7 @@ object Main {
     }
 
     if(elastic) {
+
       val seedElasticSearchStep = new SeedElasticSearch
       seedElasticSearchStep.run()
     }
