@@ -4,7 +4,7 @@ package project
 
 import utest._
 
-object UtilTest extends TestSuite{
+object UtilTests extends TestSuite{
   private val empty = Map.empty[Symbol, String]
 
   val tests = this{
@@ -43,12 +43,12 @@ object UtilTest extends TestSuite{
       }
     }
     "upsert"-{
-      val ma = Map('a -> Set(1))
+      val ma = Map('a -> Seq(1))
       "insert if key is not found"-{
-        upsert(ma, 'b, 1) ==> Map('a -> Set(1), 'b -> Set(1))
+        upsert(ma, 'b, 1) ==> Map('a -> Seq(1), 'b -> Seq(1))
       }
       "append if key is found"-{
-        upsert(ma, 'a, 2) ==> Map('a -> Set(1, 2))
+        upsert(ma, 'a, 2) ==> Map('a -> Seq(1, 2))
       }
     }
     "fullOuterJoin"-{
@@ -82,4 +82,5 @@ object UtilTest extends TestSuite{
       }
     }
   }
+
 }
