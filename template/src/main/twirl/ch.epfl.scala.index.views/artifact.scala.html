@@ -6,7 +6,7 @@
 @import ch.epfl.scala.index.model.Dependency
 @import ch.epfl.scala.index.model.JavaDependency
 @import ch.epfl.scala.index.model.ScalaDependency
-@(project: Project, artifact: Artifact.Reference, version: Option[SemanticVersion], selectedRelease: List[Release], user: Option[UserInfo])
+@(project: Project, artifact: Artifact.Reference, version: Option[SemanticVersion], latestStableReleaseOrSelect: List[Release], user: Option[UserInfo])
 
 @staticJs = {
   <script type="text/javascript">
@@ -110,7 +110,7 @@
             <div class="targets box">
               <h4>Targets</h4>
 
-              @for((release, index) <- selectedRelease.sortBy(_.reference.targets.orderName).zipWithIndex) {
+              @for((release, index) <- latestStableReleaseOrSelect.sortBy(_.reference.targets.orderName).zipWithIndex) {
                 <a href="#target-@release.reference.targets.orderName" data-target="#target-@release.reference.targets.orderName" class="targets btn btn-xs @if(0 == index) {btn-primary} else {btn-default}" name="@release.reference.targets.name" role="button" data-toggle="tab"aria-controls="target-@release.reference.targets.orderName">
                     @release.reference.targets.name
                 </a>
@@ -119,7 +119,7 @@
             </div>
 
             <div id="#targets" class="tab-content">
-              @for((release, index) <- selectedRelease.sortBy(_.reference.targets.orderName).zipWithIndex) {
+              @for((release, index) <- latestStableReleaseOrSelect.sortBy(_.reference.targets.orderName).zipWithIndex) {
                 <div id="target-@release.reference.targets.orderName" class="tab-pane fade @if(0 == index) {in active}">
 
                   <div class="install">
