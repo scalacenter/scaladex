@@ -170,8 +170,8 @@ object ProjectConvert {
         artifact.copy(releases = artifact.releases.map { release =>
           val dependencies = findDependencies(release)
           release.copy(
-            scalaDependencies = dependencies.filter(_.isInstanceOf[ScalaDependency]).map(_.asInstanceOf[ScalaDependency]),
-            javaDependencies = dependencies.filter(_.isInstanceOf[JavaDependency]).map(_.asInstanceOf[JavaDependency]),
+            scalaDependencies = dependencies.collect { case sd: ScalaDependency => sd},
+            javaDependencies = dependencies.collect { case jd: JavaDependency => jd},
             reverseDependencies = findReverseDependencies(release).filter(_.isInstanceOf[ScalaDependency]).map(_.asInstanceOf[ScalaDependency])
           )
         })

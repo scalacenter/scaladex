@@ -59,9 +59,11 @@ case class Release(
 
 }
 
+/**
+  * General Reference to Group MavenReference and Release.Reference
+  * to a category form simpler usage.
+  */
 sealed trait GeneralReference {
-  def groupId: String
-  def artifactId: String
 
   def name: String
   def httpUrl: String
@@ -88,7 +90,7 @@ case class MavenReference(
 ) extends GeneralReference {
 
   def name: String = s"$groupId/$artifactId"
-  def httpUrl: String = s"http://mvnrepository.com/artifact/$groupId/$artifactId/$version"
+  def httpUrl: String = s"http://search.maven.org/#artifactdetails|$groupId|$artifactId|$version|jar"
 }
 
 case class ScalaTargets(scalaVersion: SemanticVersion, scalaJsVersion: Option[SemanticVersion] = None) {
