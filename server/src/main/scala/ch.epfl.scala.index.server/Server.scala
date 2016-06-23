@@ -25,8 +25,6 @@ object Server {
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
-
-
     val github = new Github
 
     val sessionConfig = SessionConfig.default("c05ll3lesrinf39t7mc5h6un6r0c69lgfno69dsak3vabeqamouq4328cuaekros401ajdpkh60rrtpd8ro24rbuqmgtnd1ebag6ljnb65i8a55d482ok7o0nch0bfbe")
@@ -51,24 +49,44 @@ object Server {
     }
 
     def artifactPage(reference: Artifact.Reference, version: Option[SemanticVersion], user: Option[UserInfo]) = {
-      def selectedRelease(project: Project): List[Release] = {
-        def latest(artifact: Artifact): Option[SemanticVersion] = {
+      // This is a list because we still need to filter targets (scala 2.11 vs 2.10 or scalajs, ...)
+      def latestStableReleaseOrSelected(project: Project): List[Release] = {
+        def latestStableVersion(artifact: Artifact): Option[SemanticVersion] = {
           version match {
             case Some(v) => Some(v)
-            case None => artifact.releases.map(_.reference.version).sorted.reverse.headOption
+            case None => {
+              val versions =
+                artifact.releases
+                  .map(_.reference.version)
+                  .sorted.reverse
+
+              // select latest stable release version if applicable
+              if(versions.exists(_.preRelease.isEmpty))
+                versions.filter(_.preRelease.isEmpty).headOption
+              else
+                versions.headOption
+            }
           }
         }
 
         for {
           artifact <- project.artifacts.filter(_.reference == reference)
-          v <- latest(artifact).toList
-          release <- artifact.releases.filter(_.reference.version == v)
-        } yield release
+          stableVersion <- latestStableVersion(artifact).toList
+          stableRelease <- artifact.releases.filter(_.reference.version == stableVersion)
+        } yield stableRelease
       }
 
       sharedApi.projectPage(reference).map(project =>
-        project.map(p => (OK, views.html.artifact(p, reference, version, selectedRelease(p), user)))
-               .getOrElse((NotFound, views.html.notfound(user)))
+        project.map{p => 
+          val selectedRelease = latestStableReleaseOrSelected(p)
+          val selectedVersion =
+            version match {
+              case None => selectedRelease.headOption.map(_.reference.version)
+              case _ => version
+            }
+
+          (OK, views.html.artifact(p, reference, selectedVersion, selectedRelease, user))
+        }.getOrElse((NotFound, views.html.notfound(user)))
       )
     }
 
