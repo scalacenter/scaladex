@@ -59,8 +59,31 @@ case class Release(
 
   lazy val orderedDependencies = scalaDependencies.sortBy(_.scope.contains(Scope.Test))
   lazy val orderedJavaDependencies = javaDependencies.sortBy(_.scope.contains(Scope.Test))
+  lazy val orderedReverseDependencies = reverseDependencies.sortBy(_.scope.contains(Scope.Test))
+
+  /** collect all unique organization/artifact dependency */
+  lazy val uniqueOrderedReverseDependencies = {
+
+    orderedReverseDependencies.foldLeft(Seq[ScalaDependency]()) { (current, next) =>
+
+      if (current.exists(_.dependency.name == next.dependency.name)) current else current :+ next
+    }
+  }
+
   lazy val dependencyCount = scalaDependencies.size + javaDependencies.size
 
+  /**
+    * collect a list of version for a reverse dependency
+    * @param dep current looking dependency
+    * @return
+    */
+  def versionsForReverseDependencies(dep: ScalaDependency): Seq[SemanticVersion] =  {
+
+    val deps = reverseDependencies.filter(d => d.dependency.name == dep.dependency.name)
+
+    println(deps)
+    deps.map(_.dependency.version)
+  }
 }
 
 /**
