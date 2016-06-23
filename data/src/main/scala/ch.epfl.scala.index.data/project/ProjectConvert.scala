@@ -172,7 +172,7 @@ object ProjectConvert {
           release.copy(
             scalaDependencies = dependencies.collect { case sd: ScalaDependency => sd},
             javaDependencies = dependencies.collect { case jd: JavaDependency => jd},
-            reverseDependencies = findReverseDependencies(release).filter(_.isInstanceOf[ScalaDependency]).map(_.asInstanceOf[ScalaDependency])
+            reverseDependencies = findReverseDependencies(release).collect { case sd: ScalaDependency => sd}
           )
         })
       ))
