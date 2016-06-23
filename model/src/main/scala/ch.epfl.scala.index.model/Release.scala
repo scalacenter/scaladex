@@ -14,6 +14,10 @@ case class Release(
   // availability on the central repository
   mavenCentral: Boolean = false,
   licenses: Set[License] = Set(),
+
+  /** split dependencies in 2 fields because elastic can't handle 2 different types
+    * in one field. That is a simple workaround for that
+    */
   scalaDependencies: Seq[ScalaDependency] = Seq(),
   javaDependencies: Seq[JavaDependency] = Seq(),
   reverseDependencies: Seq[ScalaDependency] = Seq()
