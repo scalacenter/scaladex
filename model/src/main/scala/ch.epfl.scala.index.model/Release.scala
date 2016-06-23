@@ -14,8 +14,9 @@ case class Release(
   // availability on the central repository
   mavenCentral: Boolean = false,
   licenses: Set[License] = Set(),
-  dependencies: Set[Release.Reference] = Set(),
-  reverseDependencies: Set[Release.Reference] = Set()
+  scalaDependencies: Seq[ScalaDependency] = Seq(),
+  javaDependencies: Seq[JavaDependency] = Seq(),
+  reverseDependencies: Seq[ScalaDependency] = Seq()
 ) {
   def sbtInstall = {
     val scalaJs = reference.targets.scalaJsVersion.isDefined
@@ -26,7 +27,7 @@ case class Release(
       else if(crossFull) (  "%", " cross CrossVersion.full")
       else               ( "%%",                         "")
 
-    s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""
+    s""""${maven.groupId}" $artifactOperator "${reference.artifactId}" % "${reference.version}$crossSuffix""""
   }
   def mavenInstall = {
     import maven._
@@ -51,14 +52,32 @@ case class Release(
       Some(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version")
     } else None
   }
+
+  lazy val orderedDependencies = scalaDependencies.sortBy(_.scope.contains(Scope.Test))
+  lazy val orderedJavaDependencies = javaDependencies.sortBy(_.scope.contains(Scope.Test))
+  lazy val dependencyCount = scalaDependencies.size + javaDependencies.size
+
 }
+
+sealed trait GeneralReference {
+  def groupId: String
+  def artifactId: String
+
+  def name: String
+  def httpUrl: String
+}
+
 object Release{
   case class Reference(
-    organization: String,     // typelevel               | akka
-    artifact: String,         // cats-core               | akka-http-experimental
+    groupId: String, // typelevel               | akka
+    artifactId: String, // cats-core               | akka-http-experimental
     version: SemanticVersion, // 0.6.0                   | 2.4.6
-    targets: ScalaTargets     // scalajs 0.6, scala 2.11 | scala 2.11
-  )
+    targets: ScalaTargets // scalajs 0.6, scala 2.11 | scala 2.11
+  ) extends GeneralReference {
+
+    def name: String = s"$groupId/$artifactId"
+    def httpUrl: String = s"/$groupId/$artifactId/$version"
+  }
 }
 
 // com.typesafe.akka - akka-http-experimental_2.11 - 2.4.6 | org.typelevel - cats-core_sjs0.6_2.11 - 0.6.0
@@ -66,7 +85,11 @@ case class MavenReference(
   groupId: String,      // org.typelevel         | com.typesafe.akka
   artifactId: String,   // cats-core_sjs0.6_2.11 | akka-http-experimental_2.11
   version: String       // 0.6.0                 | 2.4.6
-)
+) extends GeneralReference {
+
+  def name: String = s"$groupId/$artifactId"
+  def httpUrl: String = s"http://mvnrepository.com/artifact/$groupId/$artifactId/$version"
+}
 
 case class ScalaTargets(scalaVersion: SemanticVersion, scalaJsVersion: Option[SemanticVersion] = None) {
 
@@ -78,3 +101,62 @@ case class ScalaTargets(scalaVersion: SemanticVersion, scalaJsVersion: Option[Se
 }
 
 case class ISO_8601_Date(value: String) // 2016-05-20T12:48:52.533-04:00
+
+sealed trait Scope {
+  def name: String
+}
+object Scope {
+
+  /** Sbt Scopes: http://www.scala-sbt.org/0.12.2/docs/Getting-Started/Scopes.html
+    * Maven Scopes: http://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#Dependency_Scope
+    */
+  case object Test extends Scope {
+    val name = "test"
+  }
+  case object Provided extends Scope {
+    val name = "provided"
+  }
+  case object Compile extends Scope {
+    val name = "compile"
+  }
+  case object Runtime extends Scope {
+    val name = "runtime"
+  }
+  case object Optional extends Scope {
+    val name = "optional"
+  }
+  case object System extends Scope {
+    val name = "system"
+  }
+  case object Import extends Scope {
+    val name = "import"
+  }
+
+  /**
+    * Convert String scope to Scope class
+    * @param scope the current scope
+    * @return
+    */
+  def apply(scope: String): Scope = scope.toLowerCase match {
+
+    case Test.name => Test
+    case Provided.name => Provided
+    case Compile.name => Compile
+    case Runtime.name => Runtime
+    case Optional.name => Optional
+    case System.name => System
+    case Import.name => Import
+
+    case unknown =>
+      throw new RuntimeException(s"unknown scope $unknown detected during pom parsing.")
+  }
+}
+
+sealed trait Dependency {
+
+  def dependency: GeneralReference
+  def scope: Option[Scope]
+}
+
+case class ScalaDependency(dependency: Release.Reference, scope: Option[Scope]) extends Dependency
+case class JavaDependency(dependency: MavenReference, scope: Option[Scope]) extends Dependency

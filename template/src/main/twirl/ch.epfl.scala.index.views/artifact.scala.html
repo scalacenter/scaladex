@@ -1,4 +1,11 @@
-@import ch.epfl.scala.index.model._
+@import ch.epfl.scala.index.model.Project
+@import ch.epfl.scala.index.model.Artifact
+@import ch.epfl.scala.index.model.SemanticVersion
+@import ch.epfl.scala.index.model.Release
+@import ch.epfl.scala.index.model.UserInfo
+@import ch.epfl.scala.index.model.Dependency
+@import ch.epfl.scala.index.model.JavaDependency
+@import ch.epfl.scala.index.model.ScalaDependency
 @(project: Project, artifact: Artifact.Reference, version: Option[SemanticVersion], selectedRelease: List[Release], user: Option[UserInfo])
 
 @staticJs = {
@@ -13,6 +20,24 @@
       });
     });
   </script>
+}
+
+@* reusable code block for dependency listing *@
+@dependencyBlock[D <: Dependency](dependencies: Seq[D]) = {
+  <ul>
+  @for(dependency <- dependencies){
+    <li>
+      <a href="@dependency.dependency.httpUrl" target="_blank">
+        @dependency.dependency.name
+      </a>
+      v@{dependency match {
+          case java: JavaDependency => java.dependency.version
+          case scala: ScalaDependency => scala.dependency.version.toString
+        }}
+      <span class="label label-primary">@dependency.scope</span>
+    </li>
+  }
+  </ul>
 }
 
 @main(title = artifact.name, showSearch = true, searchQuery = "", user, Some(staticJs)) {
@@ -96,7 +121,7 @@
             <div id="#targets" class="tab-content">
               @for((release, index) <- selectedRelease.sortBy(_.reference.targets.orderName).zipWithIndex) {
                 <div id="target-@release.reference.targets.orderName" class="tab-pane fade @if(0 == index) {in active}">
-                  <!-- Install -->
+
                   <div class="install">
                     <ul class="nav nav-tabs" role="tablist">
                       <li role="presentation" class="active"><a href="#sbt" aria-controls="sbt" role="tab" data-toggle="tab">Sbt</a></li>
@@ -116,7 +141,7 @@
                     </div>
                   </div>
 
-                  <!-- Documentation -->
+
                   <div class="documentation box">
                     <h4>Documentation</h4>
                     <ul>
@@ -125,7 +150,8 @@
                       }
                     </ul>
                   </div>
-                    <!-- License -->
+
+
                   <div class="license box">
                     <h4>License</h4>
                     <ul>
@@ -135,31 +161,22 @@
                     </ul>
                   </div>
 
-                    <!-- Dependencies -->
                   <div class="dependencies box">
-                    <h4>@release.dependencies.size Dependencies <span class="pull-right"><i class="fa fa-chevron-down"></i></span></h4>
-                    <ul>
-                    @for(dependency <- release.dependencies){
-                      <li>
-                        <a href="/@dependency.organization/@dependency.artifact/@dependency.version">
-                          @dependency.organization/@dependency.artifact
-                        </a>
-                      </li>
+
+                    <h4>@release.dependencyCount Dependencies</h4>
+                    @dependencyBlock(release.orderedDependencies)
+
+                    @if(release.javaDependencies.nonEmpty) {
+
+                      <h5>Java Dependencies</h5>
+                      @dependencyBlock(release.orderedJavaDependencies)
                     }
-                    </ul>
                   </div>
-                    <!-- Dependents -->
+
                   <div class="dependents box">
-                    <h4>@release.reverseDependencies.size Dependents <span class="pull-right"><i class="fa fa-chevron-down"></i></span></h4>
-                    <ul>
-                    @for(dependency <- release.reverseDependencies){
-                      <li>
-                        <a href="/@dependency.organization/@dependency.artifact/@dependency.version">
-                          @dependency.organization/@dependency.artifact
-                        </a>
-                      </li>
-                    }
-                    </ul>
+
+                    <h4>@release.reverseDependencies.size Dependents</h4>
+                    @dependencyBlock(release.reverseDependencies)
                   </div>
                 </div>
               }

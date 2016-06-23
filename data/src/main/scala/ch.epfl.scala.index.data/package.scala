@@ -13,10 +13,10 @@ package object data {
     }
   }
 
-  def upsert[K, V](map: Map[K, Set[V]], k: K, v: V) = {
+  def upsert[K, V](map: Map[K, Seq[V]], k: K, v: V) = {
     map.get(k) match {
-      case Some(vs) => map.updated(k, vs + v)
-      case None     => map.updated(k, Set(v))
+      case Some(vs) => map.updated(k, vs :+ v)
+      case None     => map.updated(k, Seq(v))
     }
   }
   
