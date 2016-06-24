@@ -31,7 +31,7 @@ case class Release(
       else if(crossFull) (  "%", " cross CrossVersion.full")
       else               ( "%%",                         "")
 
-    s""""${maven.groupId}" $artifactOperator "${reference.artifactId}" % "${reference.version}$crossSuffix""""
+    s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""
   }
   def mavenInstall = {
     import maven._
@@ -59,8 +59,28 @@ case class Release(
 
   lazy val orderedDependencies = scalaDependencies.sortBy(_.scope.contains(Scope.Test))
   lazy val orderedJavaDependencies = javaDependencies.sortBy(_.scope.contains(Scope.Test))
+  lazy val orderedReverseDependencies = reverseDependencies.sortBy(_.scope.contains(Scope.Test))
+
+  /** collect all unique organization/artifact dependency */
+  lazy val uniqueOrderedReverseDependencies = {
+
+    orderedReverseDependencies.foldLeft(Seq[ScalaDependency]()) { (current, next) =>
+
+      if (current.exists(_.dependency.name == next.dependency.name)) current else current :+ next
+    }
+  }
+
   lazy val dependencyCount = scalaDependencies.size + javaDependencies.size
 
+  /**
+    * collect a list of version for a reverse dependency
+    * @param dep current looking dependency
+    * @return
+    */
+  def versionsForReverseDependencies(dep: ScalaDependency): Seq[SemanticVersion] =  {
+
+    reverseDependencies.filter(d => d.dependency.name == dep.dependency.name).map(_.dependency.version)
+  }
 }
 
 /**
@@ -75,22 +95,22 @@ sealed trait GeneralReference {
 
 object Release{
   case class Reference(
-    groupId: String, // typelevel               | akka
-    artifactId: String, // cats-core               | akka-http-experimental
+    organization: String, // typelevel               | akka
+    artifact: String, // cats-core               | akka-http-experimental
     version: SemanticVersion, // 0.6.0                   | 2.4.6
     targets: ScalaTargets // scalajs 0.6, scala 2.11 | scala 2.11
   ) extends GeneralReference {
 
-    def name: String = s"$groupId/$artifactId"
-    def httpUrl: String = s"/$groupId/$artifactId/$version"
+    def name: String = s"$organization/$artifact"
+    def httpUrl: String = s"/$organization/$artifact/$version"
   }
 }
 
 // com.typesafe.akka - akka-http-experimental_2.11 - 2.4.6 | org.typelevel - cats-core_sjs0.6_2.11 - 0.6.0
 case class MavenReference(
-  groupId: String,      // org.typelevel         | com.typesafe.akka
-  artifactId: String,   // cats-core_sjs0.6_2.11 | akka-http-experimental_2.11
-  version: String       // 0.6.0                 | 2.4.6
+   groupId: String, // org.typelevel         | com.typesafe.akka
+   artifactId: String, // cats-core_sjs0.6_2.11 | akka-http-experimental_2.11
+   version: String // 0.6.0                 | 2.4.6
 ) extends GeneralReference {
 
   def name: String = s"$groupId/$artifactId"
@@ -140,6 +160,7 @@ object Scope {
 
   /**
     * Convert String scope to Scope class
+ *
     * @param scope the current scope
     * @return
     */

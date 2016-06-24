@@ -175,8 +175,20 @@
 
                   <div class="dependents box">
 
-                    <h4>@release.reverseDependencies.size Dependents</h4>
-                    @dependencyBlock(release.reverseDependencies)
+                    <h4>@release.uniqueOrderedReverseDependencies.size Dependents</h4>
+                    <ul>
+                    @for(dependency <- release.uniqueOrderedReverseDependencies){
+                      <li>
+                        <a href="@dependency.dependency.httpUrl" target="_blank">
+                        @dependency.dependency.name
+                        </a>
+                        <span class="label label-primary">@dependency.scope</span>
+                        <div class="versions">
+                          @release.versionsForReverseDependencies(dependency).map(version => s"v${version.toString}").mkString(", ")
+                        </div>
+                      </li>
+                    }
+                    </ul>
                   </div>
                 </div>
               }
