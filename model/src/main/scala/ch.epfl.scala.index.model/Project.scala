@@ -1,6 +1,6 @@
 package ch.epfl.scala.index.model
 
-import ch.epfl.scala.index.model.misc.{GithubInfo, GithubRepo, Url}
+import misc.{GithubInfo, GithubRepo, Url}
 
 /**
  * Project representation which contains all necessary meta data to

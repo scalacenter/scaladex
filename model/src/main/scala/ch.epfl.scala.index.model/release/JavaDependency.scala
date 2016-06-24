@@ -1,6 +1,7 @@
-package ch.epfl.scala.index.model.release
+package ch.epfl.scala.index.model
+package release
 
-import ch.epfl.scala.index.model.misc.MavenReference
+import misc.MavenReference
 
 /**
  * java / maven dependency

@@ -1,6 +1,5 @@
-package ch.epfl.scala.index.model.misc
-
-import ch.epfl.scala.index.model.PageIndex
+package ch.epfl.scala.index.model
+package misc
 
 /**
  * Pagination helper model

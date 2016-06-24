@@ -1,7 +1,7 @@
 package ch.epfl.scala.index.model
 
-import ch.epfl.scala.index.model.misc.{GeneralReference, ISO_8601_Date, MavenReference}
-import ch.epfl.scala.index.model.release._
+import misc.{GeneralReference, ISO_8601_Date, MavenReference}
+import release._
 
 /**
  * Artifact release representation

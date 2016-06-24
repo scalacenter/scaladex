@@ -1,6 +1,5 @@
-package ch.epfl.scala.index.model.release
-
-import ch.epfl.scala.index.model.Release
+package ch.epfl.scala.index.model
+package release
 
 /**
  * Scala dependency

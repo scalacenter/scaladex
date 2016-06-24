@@ -1,6 +1,6 @@
 package ch.epfl.scala.index.model
 
-import ch.epfl.scala.index.model.misc.ISO_8601_Date
+import misc.ISO_8601_Date
 
 /**
  * Deprecation class to mark an artifact as deprecated and point to a bunch of
