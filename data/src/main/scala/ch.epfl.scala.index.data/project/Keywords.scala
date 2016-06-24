@@ -4,12 +4,10 @@ package project
 
 import org.json4s._
 import org.json4s.native.Serialization.read
-
 import build.info.BuildInfo
+import java.nio.file.{Files, Paths}
 
-import model.GithubRepo
-
-import java.nio.file.{Paths, Files}
+import ch.epfl.scala.index.model.misc.GithubRepo
 
 object Keywords {
   implicit val formats = DefaultFormats

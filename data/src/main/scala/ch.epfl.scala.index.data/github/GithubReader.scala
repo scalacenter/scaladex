@@ -2,12 +2,12 @@ package ch.epfl.scala.index
 package data
 package github
 
-import model.{GithubRepo, GithubInfo, Url}
-
 import org.json4s.native.Serialization.read
 
 import scala.util.Try
 import java.nio.file.Files
+
+import ch.epfl.scala.index.model.misc.{GithubInfo, GithubRepo, Url}
 
 object GithubReader {
   def apply(github: GithubRepo): Option[GithubInfo] = {

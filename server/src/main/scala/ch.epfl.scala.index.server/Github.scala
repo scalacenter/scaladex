@@ -1,20 +1,18 @@
 package ch.epfl.scala.index
 package server
 
-import model._
-
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import spray.json._
-
 import akka.http.scaladsl._
-import akka.http.scaladsl.model._, HttpMethods.POST, headers._, Uri._
-
+import akka.http.scaladsl.model._
+import HttpMethods.POST
+import headers._
+import Uri._
 import akka.http.scaladsl.unmarshalling.Unmarshal
-
 import com.softwaremill.session._
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import ch.epfl.scala.index.model.misc.{GithubRepo, UserInfo}
 
 import scala.util.Try
 

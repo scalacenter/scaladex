@@ -4,6 +4,7 @@ package project
 
 import cleanup._
 import model._
+import model.misc._
 import bintray._
 import github._
 

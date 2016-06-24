@@ -1,7 +1,6 @@
 @import ch.epfl.scala.index.model.Project
 @import ch.epfl.scala.index.model.Release
-@import ch.epfl.scala.index.model.UserInfo
-@import ch.epfl.scala.index.model.Url
+@import ch.epfl.scala.index.model.misc.{Url, UserInfo}
 @(keywords: Map[String, Long], support: Map[String, Long], latestProjects: List[Project], latestReleases: List[Release], user: Option[UserInfo])
 @main(title = "Home", showSearch = false, searchQuery = "", user) {
 <main id="container-home">

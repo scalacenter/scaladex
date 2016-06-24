@@ -2,13 +2,13 @@ package ch.epfl.scala.index
 package server
 
 import model._
-
 import data.elastic._
 import com.sksamuel.elastic4s._
 import ElasticDsl._
+import ch.epfl.scala.index.model.misc.{GithubRepo, Pagination, UserInfo}
 import org.elasticsearch.search.sort.SortOrder
 
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ExecutionContext, Future}
 import scala.language.reflectiveCalls
 
 class ApiImplementation(github: Github, userState: Option[UserState])(implicit val ec: ExecutionContext) {

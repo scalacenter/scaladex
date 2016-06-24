@@ -2,12 +2,11 @@ package ch.epfl.scala.index
 package data
 package cleanup
 
-import model.GithubRepo
 import maven.PomsReader
-
 import spray.json._
 import java.nio.file._
 
+import ch.epfl.scala.index.model.misc.GithubRepo
 import fastparse.all._
 import fastparse.core.Parsed
 

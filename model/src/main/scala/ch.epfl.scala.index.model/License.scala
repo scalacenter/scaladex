@@ -1,12 +1,18 @@
 package ch.epfl.scala.index.model
 
+/**
+ * Licence representation
+ * @param name the licence name
+ * @param shortName the short name
+ * @param url the url for further reading
+ */
 case class License(name: String, shortName: String, url: Option[String])
 
 object License {
-  def spdx(id: String, name: String) = 
-    License(name, id, Some(s"https://spdx.org/licenses/$id.html"))
+
+  def spdx(id: String, name: String) = License(name, id, Some(s"https://spdx.org/licenses/$id.html"))
   
-  // inspired by: https://github.com/NixOS/nixpkgs/blob/master/lib/licenses.nix#L1
+  /** inspired by: https://github.com/NixOS/nixpkgs/blob/master/lib/licenses.nix#L1 */
   val Academic = spdx("AFL-3.0", "Academic Free License")
   val Affero = spdx("AGPL-3.0", "GNU Affero General Public License v3.0")
   val Apache2 = spdx("Apache-2.0", "Apache License 2.0")
@@ -55,6 +61,10 @@ object License {
   val W3C = spdx("W3C", "W3C Software Notice and License")
   val WTFPL = spdx("WTFPL", "Do What The F*ck You Want To Public License")
 
+  /**
+   * list of all licences
+   * @return
+   */
   def all = List(
     Academic,
     Affero,

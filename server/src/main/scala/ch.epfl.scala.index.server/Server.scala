@@ -3,18 +3,18 @@ package server
 
 import model._
 import data.cleanup.SemanticVersionParser
-
 import akka.http.scaladsl._
-import akka.http.scaladsl.model._, Uri._, StatusCodes._
-
+import akka.http.scaladsl.model._
+import Uri._
+import StatusCodes._
 import com.softwaremill.session._
 import com.softwaremill.session.CsrfDirectives._
 import com.softwaremill.session.CsrfOptions._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import ch.epfl.scala.index.model.misc.UserInfo
 
 import scala.concurrent.duration._
 import scala.concurrent.Await

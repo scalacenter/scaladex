@@ -3,29 +3,26 @@ package data
 package github
 
 import cleanup.GithubRepoExtractor
-import model.GithubRepo
 import maven.PomsReader
-
 import me.tongfei.progressbar._
-
 import org.json4s._
 import native.Serialization.writePretty
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport
-
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._, headers._
+import akka.http.scaladsl.model._
+import headers._
 import akka.http.scaladsl.unmarshalling.Unmarshal
-
 import akka.actor.ActorSystem
 import akka.stream.scaladsl._
 import akka.stream.ActorMaterializer
 
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
-
 import java.nio.file.Files
-import java.nio.charset.{StandardCharsets}
+import java.nio.charset.StandardCharsets
+
+import ch.epfl.scala.index.model.misc.GithubRepo
 
 object Json4s extends Json4sSupport {
   implicit val formats = DefaultFormats
