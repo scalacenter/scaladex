@@ -2,10 +2,8 @@
 @import ch.epfl.scala.index.model.Artifact
 @import ch.epfl.scala.index.model.SemanticVersion
 @import ch.epfl.scala.index.model.Release
-@import ch.epfl.scala.index.model.Dependency
-@import ch.epfl.scala.index.model.JavaDependency
-@import ch.epfl.scala.index.model.ScalaDependency
 @import ch.epfl.scala.index.model.misc.UserInfo
+@import ch.epfl.scala.index.model.release.{Dependency, JavaDependency, ScalaDependency}
 @(project: Project, artifact: Artifact.Reference, version: Option[SemanticVersion], latestStableReleaseOrSelect: List[Release], user: Option[UserInfo])
 
 @staticJs = {
