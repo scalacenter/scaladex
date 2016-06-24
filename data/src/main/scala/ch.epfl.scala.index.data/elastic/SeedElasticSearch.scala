@@ -18,7 +18,7 @@ import scala.util.Success
 class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtocol {
   def run(): Unit = {
 
-    val exists = Await.result(esClient.execute { indexExists(indexName)}, Duration.Inf).isExists
+    val exists = Await.result(esClient.execute { indexExists(indexName)}, Duration.Inf).isExists()
     val target = indexName / collectionName
 
     def blockUntilCount(expected: Int): Unit = {
