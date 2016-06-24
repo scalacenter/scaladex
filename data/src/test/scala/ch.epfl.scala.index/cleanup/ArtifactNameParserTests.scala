@@ -3,7 +3,6 @@ package data
 package cleanup
 
 import ch.epfl.scala.index.model.release.{ReleaseCandidate, ScalaTargets, SemanticVersion}
-import model._
 import utest._
 
 object ArtifactNameParserTest extends TestSuite{
