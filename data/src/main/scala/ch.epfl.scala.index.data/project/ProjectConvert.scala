@@ -12,6 +12,17 @@ import me.tongfei.progressbar._
 import org.joda.time.DateTime
 
 object ProjectConvert {
+
+  /** List of featured artifacts which are searched very often to show artifacts which
+   * depend on this
+   * key: the artifact name, dependencies should start with
+   * value: the key to index and search for
+   */
+  val featuredArtifacts = Map(
+    "apache/spark" -> "spark",
+    "akka/akka" -> "akka"
+  )
+
   def apply(pomsAndMeta: List[(maven.MavenModel, List[BintraySearch])]): List[Project] = {
     val githubRepoExtractor = new GithubRepoExtractor
     
@@ -165,17 +176,44 @@ object ProjectConvert {
       reverseDependenciesCache.getOrElse(release.reference, Seq())
     }
 
-    projects.map(project =>
-      project.copy(artifacts = project.artifacts.map(artifact =>
+    /** get the supported tags for a project artifact. supported means
+     * the scala target like scala_2.11 or scala.js_2.11_0.6 or even
+     * featured and very popular artifacts like spark. Featured artifacts are
+     * done by reverse lookup
+     *
+     * @param artifacts the current artifact to inspect
+     * @return
+     */
+    def extractSupportTags(artifacts: List[Artifact]): List[String] = {
+
+      artifacts.foldLeft(Seq[String]()) { (stack, artifact) =>
+        stack ++ artifact.releases.flatMap { r =>
+
+          /** scala target */
+          val target: String = r.reference.targets.supportName
+          val featured: Seq[String] = featuredArtifacts.filter { feat =>
+            r.reverseDependencies.exists(_.dependency.name.startsWith(feat._1))
+          }.values.toSeq
+          if (stack.contains(target)) featured else featured :+ target
+        }
+      }.foldLeft(Seq[String]()){ (stack, dep) => if (stack.contains(dep)) stack else stack :+ dep}
+      .toList
+    }
+
+    projects.map { project =>
+
+      val artifacts: List[Artifact] = project.artifacts.map(artifact =>
         artifact.copy(releases = artifact.releases.map { release =>
           val dependencies = findDependencies(release)
           release.copy(
-            scalaDependencies = dependencies.collect { case sd: ScalaDependency => sd},
-            javaDependencies = dependencies.collect { case jd: JavaDependency => jd},
-            reverseDependencies = findReverseDependencies(release).collect { case sd: ScalaDependency => sd}
+            scalaDependencies = dependencies.collect { case sd: ScalaDependency => sd },
+            javaDependencies = dependencies.collect { case jd: JavaDependency => jd },
+            reverseDependencies = findReverseDependencies(release).collect { case sd: ScalaDependency => sd }
           )
         })
-      ))
-    )
+      )
+
+      project.copy(artifacts = artifacts, support = extractSupportTags(artifacts))
+    }
   }
 }

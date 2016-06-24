@@ -43,9 +43,10 @@ object Server {
     def frontPage(userInfo: Option[UserInfo]) = {
       for {
         keywords <- sharedApi.keywords()
+        support <- sharedApi.support()
         latestProjects <- sharedApi.latestProjects()
         latestReleases <- sharedApi.latestReleases()
-      } yield views.html.frontpage(keywords, latestProjects, latestReleases, userInfo)
+      } yield views.html.frontpage(keywords, support, latestProjects, latestReleases, userInfo)
     }
 
     def artifactPage(reference: Artifact.Reference, version: Option[SemanticVersion], user: Option[UserInfo]) = {

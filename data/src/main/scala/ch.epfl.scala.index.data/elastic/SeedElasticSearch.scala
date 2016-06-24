@@ -61,7 +61,8 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
       println("creating index")
       Await.result(esClient.execute {
         create.index(indexName).mappings(mapping(collectionName).fields(
-          field("keywords") typed StringType,
+          field("keywords") typed StringType index "not_analyzed",
+          field("support") typed StringType index "not_analyzed",
           field("parentOrganization") typed StringType index "not_analyzed",
           field("firstUpdate").typed(DateType),
           field("lastUpdate").typed(DateType),

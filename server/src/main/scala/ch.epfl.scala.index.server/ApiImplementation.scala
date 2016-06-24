@@ -111,25 +111,42 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
     }.map(r => r.as[Project].toList.map(hideId)) 
   }
 
-  def keywords(): Future[Map[String, Long]] = {
+  /**
+   * get Keyword list
+   * @return
+   */
+  def keywords() = aggregations("keywords")
+
+  /**
+   * get suport tags list
+   * @return
+   */
+  def support(): Future[Map[String, Long]] = aggregations("support")
+
+  /**
+   * list all tags including number of facets
+   * @param field the field name
+   * @return
+   */
+  private def aggregations(field: String): Future[Map[String, Long]] = {
 
     import scala.collection.JavaConverters._
     import scala.collection.immutable.ListMap
     import org.elasticsearch.search.aggregations.bucket.terms.StringTerms
 
-    val aggregationName = "keywords_count"
+    val aggregationName = s"${field}_count"
 
     esClient.execute {
       search.in(indexName / collectionName).aggregations(
-        aggregation.terms(aggregationName).field("keywords").size(50)
+        aggregation.terms(aggregationName).field(field).size(50)
       )
     }.map( resp => {
 
       val agg = resp.aggregations.get[StringTerms](aggregationName)
-      val keywords = agg.getBuckets.asScala.toList.collect {
+      val aggs = agg.getBuckets.asScala.toList.collect {
         case b: StringTerms.Bucket => b.getKeyAsString -> b.getDocCount
       }
-      ListMap(keywords.sortBy(_._1): _*)
+      ListMap(aggs.sortBy(_._1): _*)
     })
   }
 }
