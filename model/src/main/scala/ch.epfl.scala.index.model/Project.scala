@@ -28,7 +28,10 @@ case class Project(
 
   created: Option[String] = None,
   
-  lastUpdate: Option[String] = None
+  lastUpdate: Option[String] = None,
+
+  /** add support for Scala_2.11, Scala_2.12, spark, scala-js */
+  support: List[String] = Nil
 ) {
   def githubRepo = GithubRepo(reference.organization, reference.repository)
 }

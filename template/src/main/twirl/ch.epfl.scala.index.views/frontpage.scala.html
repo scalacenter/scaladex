@@ -2,7 +2,7 @@
 @import ch.epfl.scala.index.model.Release
 @import ch.epfl.scala.index.model.UserInfo
 @import ch.epfl.scala.index.model.Url
-@(keywords: Map[String, Long], latestProjects: List[Project], latestReleases: List[Release], user: Option[UserInfo])
+@(keywords: Map[String, Long], support: Map[String, Long], latestProjects: List[Project], latestReleases: List[Release], user: Option[UserInfo])
 @main(title = "Home", showSearch = false, searchQuery = "", user) {
 <main id="container-home">
     <section class="content-search-home">
@@ -11,9 +11,16 @@
                 <div class="col-md-8 col-md-offset-2">
                     <h1>The Scala Library Index</h1> @searchinput()
                     <ul class="tag">
-                    @for((keyword, count) <- keywords) {
-                        <li><a href="/search?q=keywords:@keyword">@keyword (@count)</a></li>
-                    }
+                        <li><strong>Support:</strong></li>
+                        @for((sup, count) <- support) {
+                            <li><a href="/search?q=support:@sup.replace("/", """\/""")">@sup (@count)</a></li>
+                        }
+                    </ul>
+
+                    <ul class="tag">
+                        @for((keyword, count) <- keywords) {
+                            <li><a href="/search?q=keywords:@keyword">@keyword (@count)</a></li>
+                        }
                     </ul>
                 </div>
             </div>
