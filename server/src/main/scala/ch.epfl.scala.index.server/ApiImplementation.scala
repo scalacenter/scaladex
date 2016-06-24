@@ -112,18 +112,24 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
   }
 
   def keywords(): Future[Map[String, Long]] = {
+
     import scala.collection.JavaConverters._
+    import scala.collection.immutable.ListMap
     import org.elasticsearch.search.aggregations.bucket.terms.StringTerms
+
     val aggregationName = "keywords_count"
+
     esClient.execute {
       search.in(indexName / collectionName).aggregations(
         aggregation.terms(aggregationName).field("keywords").size(50)
       )
     }.map( resp => {
+
       val agg = resp.aggregations.get[StringTerms](aggregationName)
-      agg.getBuckets.asScala.toList.collect{
+      val keywords = agg.getBuckets.asScala.toList.collect {
         case b: StringTerms.Bucket => b.getKeyAsString -> b.getDocCount
-      }.toMap
+      }
+      ListMap(keywords.sortBy(_._1): _*)
     })
   }
 }
