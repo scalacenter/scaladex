@@ -1,5 +1,6 @@
 @import ch.epfl.scala.index.model._
 @import ch.epfl.scala.index.model.misc.UserInfo
+@import ch.epfl.scala.index.model.release.SemanticVersion
 @(project: Project, artifact: Artifact.Reference, version: Option[SemanticVersion], user: Option[UserInfo])
 @main(title = s"Edit ${artifact.name}", showSearch = true, searchQuery = "", user) {
   <main id="container-project">

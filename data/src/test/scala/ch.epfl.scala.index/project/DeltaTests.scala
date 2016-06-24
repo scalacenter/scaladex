@@ -3,7 +3,7 @@ package data
 package project
 
 import ch.epfl.scala.index.model.misc.MavenReference
-import ch.epfl.scala.index.model.release.ScalaTargets
+import ch.epfl.scala.index.model.release.{ScalaTargets, SemanticVersion}
 import model._
 import utest._
 

@@ -3,18 +3,25 @@ package ch.epfl.scala.index.model
 import ch.epfl.scala.index.model.misc.{GeneralReference, ISO_8601_Date, MavenReference}
 import ch.epfl.scala.index.model.release._
 
-// typelevel/cats-core (scalajs 0.6, scala 2.11) 0.6.0
+/**
+ * Artifact release representation
+ * @param maven famous maven triple: org.typelevel - cats-core_sjs0.6_2.11 - 0.6.0
+ * @param reference similar to maven but with a clean artifact name
+ * @param name human readable name (ex: Apache Spark)
+ * @param description the description of that release
+ * @param releaseDates potentially various dates because bintray allows republishing
+ * @param mavenCentral availability on the central repository
+ * @param licenses a bunch of licences
+ * @param scalaDependencies bunch of scala dependencies
+ * @param javaDependencies bunch of java dependencies
+ * @param reverseDependencies bunch of reversed dependencies
+ */
 case class Release(
-  // famous maven triple: org.typelevel - cats-core_sjs0.6_2.11 - 0.6.0
   maven: MavenReference,
-  // similar to maven but with a clean artifact name
   reference: Release.Reference,
-  // human readable name (ex: Apache Spark)
   name: Option[String] = None,
   description: Option[String] = None,
-  // potentially various dates because bintray allows republishing
   releaseDates: List[ISO_8601_Date] = Nil,
-  // availability on the central repository
   mavenCentral: Boolean = false,
   licenses: Set[License] = Set(),
 
@@ -25,7 +32,13 @@ case class Release(
   javaDependencies: Seq[JavaDependency] = Seq(),
   reverseDependencies: Seq[ScalaDependency] = Seq()
 ) {
+
+  /**
+   * string representation for sbt dependency
+   * @return
+   */
   def sbtInstall = {
+
     val scalaJs = reference.targets.scalaJsVersion.isDefined
     val crossFull = reference.targets.scalaVersion.patch.isDefined
 
@@ -37,6 +50,10 @@ case class Release(
     s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""
   }
 
+  /**
+   * string representation for maven dependency
+   * @return
+   */
   def mavenInstall = {
     import maven._
     s"""|<dependency>
@@ -46,25 +63,46 @@ case class Release(
         |</dependency>""".stripMargin
   }
 
+  /**
+   * string representation for gradle dependency
+   * @return
+   */
   def gradleInstall = {
     import maven._
     s"compile group: '$groupId', name: '$artifactId', version: '$version'"
   }
 
+  /**
+   * Url to the scala-docs.
+   * @return
+   */
   def scalaDocURI: Option[String] = {
     if (mavenCentral) {
-      import maven._
-      // no frame
-      // hosted on s3 at:
-      // https://static.javadoc.io/$groupId/$artifactId/$version/index.html#package
-      // HEAD to check 403 vs 200
 
+      import maven._
+
+      /** no frame
+       * hosted on s3 at:
+       *https://static.javadoc.io/$groupId/$artifactId/$version/index.html#package
+       * HEAD to check 403 vs 200
+       */
       Some(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version")
     } else None
   }
 
+  /**
+   * ordered scala dependencies - tests last
+   */
   lazy val orderedDependencies = scalaDependencies.sortBy(_.scope.contains(Scope.Test))
+
+  /**
+   * ordered java dependencies - tests last
+   */
   lazy val orderedJavaDependencies = javaDependencies.sortBy(_.scope.contains(Scope.Test))
+
+  /**
+   * ordered reverse scala dependencies - tests last
+   */
   lazy val orderedReverseDependencies = reverseDependencies.sortBy(_.scope.contains(Scope.Test))
 
   /** collect all unique organization/artifact dependency */
@@ -76,6 +114,9 @@ case class Release(
     }
   }
 
+  /**
+   * number of dependencies (java + scala)
+   */
   lazy val dependencyCount = scalaDependencies.size + javaDependencies.size
 
   /**
@@ -93,15 +134,30 @@ case class Release(
 
 object Release {
 
+  /**
+   * Release Reference representation
+   * @param organization the organisation name like typelevel | akka
+   * @param artifact the artifact name like cats-core | akka-http-experimental
+   * @param version the semantic version like 0.6.0 | 0.6.0-RC1
+   * @param targets the targets this reference can run on
+   */
   case class Reference(
-    organization: String, // typelevel               | akka
-    artifact: String, // cats-core               | akka-http-experimental
-    version: SemanticVersion, // 0.6.0                   | 2.4.6
-    targets: ScalaTargets // scalajs 0.6, scala 2.11 | scala 2.11
+    organization: String,
+    artifact: String,
+    version: SemanticVersion,
+    targets: ScalaTargets
   ) extends GeneralReference {
 
+    /**
+     * concated name of organisation/artifact
+     * @return
+     */
     def name: String = s"$organization/$artifact"
 
+    /**
+     * the http reference on index.scala-lang.org
+     * @return
+     */
     def httpUrl: String = s"/$organization/$artifact/$version"
   }
 

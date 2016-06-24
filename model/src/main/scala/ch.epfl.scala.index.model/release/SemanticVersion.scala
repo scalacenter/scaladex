@@ -1,19 +1,31 @@
-package ch.epfl.scala.index.model
+package ch.epfl.scala.index.model.release
 
-sealed trait PreRelease
-case class Milestone(m: Long) extends PreRelease
-case class ReleaseCandidate(rc: Long) extends PreRelease
-case class OtherPreRelease(o: String) extends PreRelease
-
-case class SemanticVersion(
-  major: Long, minor: Long = 0, patch: Option[Long] = None,
+/**
+ * Semantic version, separation of possible combinations
+ * @param major the major version number
+ * @param minor the minor version number
+ * @param patch the path version number
+ * @param preRelease the pre release name
+ * @param metadata the release metadata
+ */
+case class  SemanticVersion(
+  major: Long,
+  minor: Long = 0,
+  patch: Option[Long] = None,
   preRelease: Option[PreRelease] = None,
   metadata: Option[String] = None
 ) {
+
+  /**
+   * display correct and nice version as string eg: 1.0.0 | 1.2.1 | 1.2 | 1.2.0-RC1
+   * @return
+   */
   override def toString = {
+
     val patchPart = patch.map("." + _).getOrElse("")
 
     val preReleasePart = preRelease.map{
+
       case Milestone(d) => "M" + d.toString
       case ReleaseCandidate(d) => "RC" + d.toString
       case OtherPreRelease(v) => v.toString
@@ -26,6 +38,11 @@ case class SemanticVersion(
 }
 
 object SemanticVersion {
+
+  /**
+   * special ordering for versions
+   * @return
+   */
   implicit def ordering = new Ordering[SemanticVersion] {
     val LT = -1
     val GT =  1
@@ -57,6 +74,19 @@ object SemanticVersion {
           case (Some(OtherPreRelease(_))   , Some(Milestone(_)))          => LT
           case (Some(OtherPreRelease(_))   , Some(ReleaseCandidate(_)))   => LT
           case (Some(_)                    , Some(OtherPreRelease(_)))    => GT
+
+          /** TODO: fix that wildcard - there is a compiler error
+           * It would fail on the following inputs:
+           * (Some(??), Some(_))
+           * (Some(Milestone(_)), Some(_))
+           * (Some(OtherPreRelease(_)), Some(_))
+           * (Some(ReleaseCandidate(_)), Some(_))
+           * (Some(_), Some(??))
+           * (Some(_), Some(Milestone(_)))
+           * (Some(_), Some(ReleaseCandidate(_)))
+           * (Some(_), Some(_))
+           */
+          case _ => EQ
         }
       }
       

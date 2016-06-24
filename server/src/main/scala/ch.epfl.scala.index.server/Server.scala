@@ -15,6 +15,7 @@ import com.softwaremill.session.SessionOptions._
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.model.misc.UserInfo
+import ch.epfl.scala.index.model.release.SemanticVersion
 
 import scala.concurrent.duration._
 import scala.concurrent.Await

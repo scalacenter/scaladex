@@ -1,9 +1,8 @@
 package ch.epfl.scala.index.model.release
 
-import ch.epfl.scala.index.model.SemanticVersion
-
 /**
  * the scala target eg. version / environment
+ *
  * @param scalaVersion scala semantic version
  * @param scalaJsVersion the optional scalaJs semantic version
  */
