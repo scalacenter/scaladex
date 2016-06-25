@@ -20,8 +20,7 @@ import play.api.libs.ws.{WSRequest, WSResponse}
 
 class GithubDownload(implicit system: ActorSystem, implicit val materializer: ActorMaterializer) extends PlayWsDownloader {
 
-  implicit val formats = DefaultFormats
-  implicit val serialization = native.Serialization
+  import Json4s._
 
   private val githubRepoExtractor = new GithubRepoExtractor
   private val githubRepos = {
@@ -201,7 +200,8 @@ class GithubDownload(implicit system: ActorSystem, implicit val materializer: Ac
     download[GithubRepo, String]("Downloading Readme", githubRepos, githubReadmeUrl, applyReadmeHeaders, processReadmeResponse)
     /** todo: see https://github.com/scalacenter/scaladex/issues/115 comment 1 */
     // download[GithubRepo, String]("Downloading Collaborators", githubRepos, githubCollaboratorUrl, applyAcceptJsonHeaders, processCollaboratorResponse)
-    download[GithubRepo, String]("Downloading Issues", githubRepos, githubIssuesUrl, applyAcceptJsonHeaders, processIssuesResponse)
+    /** todo: for later @see #112 */
+    // download[GithubRepo, String]("Downloading Issues", githubRepos, githubIssuesUrl, applyAcceptJsonHeaders, processIssuesResponse)
     download[GithubRepo, String]("Downloading Contributors", githubRepos, githubContributorsUrl, applyAcceptJsonHeaders, processCointributorsResponse)
   }
 }

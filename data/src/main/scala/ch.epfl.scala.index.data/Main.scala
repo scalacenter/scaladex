@@ -44,9 +44,8 @@ object Main {
       downloadParentPomsStep.run()
     }
 
-    if(github){
-//      val githubDownload = new GithubDownload
-//      githubDownload.run()
+    if (github) {
+
       val githubDownload = new GithubDownload
       githubDownload.run()
     }
