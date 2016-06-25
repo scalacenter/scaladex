@@ -87,7 +87,8 @@ lazy val data = project
       "me.tongfei"              % "progressbar"                       % "0.4.0",
       "org.apache.maven"        % "maven-model-builder"               % "3.3.9",
       "ch.qos.logback"          % "logback-classic"                   % "1.1.7",
-      "org.jsoup"               % "jsoup"                             % "1.9.2"
+      "org.jsoup"               % "jsoup"                             % "1.9.2",
+      "com.typesafe.play"       % "play-ws_2.11"                      % "2.5.4"
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),
