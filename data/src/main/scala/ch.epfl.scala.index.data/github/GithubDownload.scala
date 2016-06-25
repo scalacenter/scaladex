@@ -53,6 +53,7 @@ class GithubDownload(implicit system: ActorSystem, implicit val materializer: Ac
    * @return the current request
    */
   def applyAcceptJsonHeaders(request: WSRequest): WSRequest = applyBasicHeaders(
+
     request.withHeaders("Accept" -> "application/json")
   )
 
@@ -96,18 +97,6 @@ class GithubDownload(implicit system: ActorSystem, implicit val materializer: Ac
   }
 
   /**
-   * Process the downloaded collaborator from repository info
-   * @param repo the current repo
-   * @param response the response
-   * @return
-   */
-  private def processCollaboratorResponse(repo: GithubRepo, response: WSResponse): String = {
-
-    saveJson(githubRepoCollaboratorPath(repo), repo, response)
-    response.body
-  }
-
-  /**
    * Process the downloaded issues data from repository info
    * @param repo the current repo
    * @param response the response
@@ -125,7 +114,7 @@ class GithubDownload(implicit system: ActorSystem, implicit val materializer: Ac
    * @param response the response
    * @return
    */
-  private def processCointributorsResponse(repo: GithubRepo, response: WSResponse): String = {
+  private def processContributorResponse(repo: GithubRepo, response: WSResponse): String = {
 
     saveJson(githubRepoContributorsPath(repo), repo, response)
     response.body
@@ -171,13 +160,6 @@ class GithubDownload(implicit system: ActorSystem, implicit val materializer: Ac
   private def githubReadmeUrl(repo: GithubRepo) = Url(mainGithubUrl(repo) + "/readme")
 
   /**
-   * get the Github collaborators url
-   * @param repo the current repository
-   * @return
-   */
-  private def githubCollaboratorUrl(repo: GithubRepo) = Url(mainGithubUrl(repo) + "/collaborators")
-
-  /**
    * get the Github issues url
    * @param repo the current repository
    * @return
@@ -198,10 +180,8 @@ class GithubDownload(implicit system: ActorSystem, implicit val materializer: Ac
 
     download[GithubRepo, String]("Downloading Repo Info", githubRepos, githubInfoUrl, applyAcceptJsonHeaders, processInfoResponse)
     download[GithubRepo, String]("Downloading Readme", githubRepos, githubReadmeUrl, applyReadmeHeaders, processReadmeResponse)
-    /** todo: see https://github.com/scalacenter/scaladex/issues/115 comment 1 */
-    // download[GithubRepo, String]("Downloading Collaborators", githubRepos, githubCollaboratorUrl, applyAcceptJsonHeaders, processCollaboratorResponse)
-    /** todo: for later @see #112 */
+    // todo: for later @see #112 */
     // download[GithubRepo, String]("Downloading Issues", githubRepos, githubIssuesUrl, applyAcceptJsonHeaders, processIssuesResponse)
-    download[GithubRepo, String]("Downloading Contributors", githubRepos, githubContributorsUrl, applyAcceptJsonHeaders, processCointributorsResponse)
+    download[GithubRepo, String]("Downloading Contributors", githubRepos, githubContributorsUrl, applyAcceptJsonHeaders, processContributorResponse)
   }
 }

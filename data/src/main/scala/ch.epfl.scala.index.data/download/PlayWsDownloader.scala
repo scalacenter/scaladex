@@ -1,8 +1,10 @@
-package ch.epfl.scala.index.data.download
+package ch.epfl.scala.index
+package data
+package download
 
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
-import ch.epfl.scala.index.model.Url
+import model.misc.Url
 import com.typesafe.config.ConfigFactory
 import me.tongfei.progressbar.ProgressBar
 import play.api.libs.ws.{WSConfigParser, WSRequest, WSResponse}

@@ -74,8 +74,8 @@ object SemanticVersion {
           case (Some(OtherPreRelease(_))   , Some(Milestone(_)))          => LT
           case (Some(OtherPreRelease(_))   , Some(ReleaseCandidate(_)))   => LT
           case (Some(_)                    , Some(OtherPreRelease(_)))    => GT
-
-          /** TODO: fix that wildcard - there is a compiler error
+          // todo: fix that wildcard - there is a compiler error
+          /**
            * It would fail on the following inputs:
            * (Some(??), Some(_))
            * (Some(Milestone(_)), Some(_))
