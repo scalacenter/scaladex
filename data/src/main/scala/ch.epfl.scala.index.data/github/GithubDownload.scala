@@ -76,7 +76,7 @@ class GithubDownload(implicit system: ActorSystem, implicit val materializer: Ac
    * @param repo the current repo
    * @param response the response
    */
-  private def saveJson(filePath: Path, repo: GithubRepo, response: WSResponse): Unit = {
+  private def saveJson(filePath: Path, repo: GithubRepo, response: WSResponse): Path = {
 
     val dir = path(repo)
     Files.createDirectories(dir)
