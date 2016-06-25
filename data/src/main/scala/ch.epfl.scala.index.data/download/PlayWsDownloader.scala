@@ -30,7 +30,7 @@ trait PlayWsDownloader {
         |ws.followRedirects = true
       """.stripMargin))
 
-    // If running in Play, environment should be injected
+    /** If running in Play, environment should be injected */
     val environment = Environment(new java.io.File("."), this.getClass.getClassLoader, Mode.Prod)
 
     val parser = new WSConfigParser(configuration, environment)
@@ -42,8 +42,17 @@ trait PlayWsDownloader {
     new AhcWSClient(ahcConfig)
   }
 
-  def applyHeaders(request: WSRequest): WSRequest = request
-
+  /**
+   * Actual download of bunch of documents. Will loop through all and display a status bar in the console output.
+   *
+   * @param message the message for the loader info
+   * @param toDownload the set of downloadable elements
+   * @param downloadUrl a function to get the url for the current element
+   * @param applyHeaders a function to apply headers to the request
+   * @param process a function to process the response in succes case
+   * @tparam T Input type
+   * @tparam R output type
+   */
   def download[T, R](
     message: String,
     toDownload: Set[T],
