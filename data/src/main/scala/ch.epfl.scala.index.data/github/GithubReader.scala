@@ -11,37 +11,30 @@ import ch.epfl.scala.index.model.misc.{GithubInfo, GithubRepo, Url}
 
 object GithubReader {
   def apply(github: GithubRepo): Option[GithubInfo] = {
-    val readmePath = githubReadmePath(github)
-    val readmeHtml =
-      if(Files.exists(readmePath)) Try(Files.readAllLines(readmePath).toArray.mkString(System.lineSeparator)).toOption
-      else None
 
-    val repoInfoPath = githubRepoInfoPath(github)
-    val repo =
-      if(Files.exists(repoInfoPath)) {
-        import Json4s._
-        
-        Try(Files.readAllLines(repoInfoPath).toArray.mkString("")).flatMap(info =>
-          Try(read[Repository](info))
-        ).toOption
-      } else None
+    info(github).map { info =>
 
-    convert(readmeHtml, repo)
+      info.copy(readme = readme(github).toOption)
+    }.toOption
   }
 
-  private def convert(readmeHtml: Option[String], repo: Option[Repository]): Option[GithubInfo] = {
-    if(readmeHtml.isEmpty && repo.isEmpty) None
-    else {
-      val info  = GithubInfo(readme = readmeHtml)
-      Some(repo.fold(info)( r =>
-        info.copy(
-          homepage = r.homepage.map(h => Url(h)),
-          description = Some(r.description),
-          logo = r.organization.map(o => Url(o.avatar_url)),
-          stars = Some(r.stargazers_count),
-          forks = Some(r.forks)
-        )
-      ))
-    }
+
+  def readme(github: GithubRepo): Try[String] = Try {
+
+    val readmePath = githubReadmePath(github)
+    Files.readAllLines(readmePath).toArray.mkString(System.lineSeparator)
+  }
+
+  def info(github: GithubRepo): Try[GithubInfo] = Try {
+
+    val repoInfoPath = githubRepoInfoPath(github)
+    val repository = read[Repository](Files.readAllLines(repoInfoPath).toArray.mkString(""))
+    GithubInfo(
+      homepage = repository.homepage.map(h => Url(h)),
+      description = Some(repository.description),
+      logo = repository.organization.map(o => Url(o.avatar_url)),
+      stars = Some(repository.stargazers_count),
+      forks = Some(repository.forks)
+    )
   }
 }
