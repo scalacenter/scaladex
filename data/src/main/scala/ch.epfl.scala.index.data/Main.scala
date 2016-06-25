@@ -47,7 +47,7 @@ object Main {
     if(github){
 //      val githubDownload = new GithubDownload
 //      githubDownload.run()
-      val githubDownload = new GithubDownloadPlayWs
+      val githubDownload = new GithubDownload
       githubDownload.run()
     }
 

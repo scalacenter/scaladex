@@ -13,4 +13,7 @@ package object github {
   }
   def githubReadmePath(github: GithubRepo) = path(github).resolve(Paths.get("README.html"))
   def githubRepoInfoPath(github: GithubRepo) = path(github).resolve(Paths.get("repo.json"))
+  def githubRepoCollaboratorPath(github: GithubRepo) = path(github).resolve(Paths.get("collaborators.json"))
+  def githubRepoIssuesPath(github: GithubRepo) = path(github).resolve(Paths.get("issues.json"))
+  def githubRepoContributorsPath(github: GithubRepo) = path(github).resolve(Paths.get("contributors.json"))
 }
