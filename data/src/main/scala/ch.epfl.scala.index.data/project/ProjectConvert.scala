@@ -4,11 +4,11 @@ package project
 
 import cleanup._
 import model._
+import model.misc._
 import bintray._
+import ch.epfl.scala.index.model.release.{Dependency, JavaDependency, ScalaDependency, Scope}
 import github._
-
 import me.tongfei.progressbar._
-
 import org.joda.time.DateTime
 
 object ProjectConvert {

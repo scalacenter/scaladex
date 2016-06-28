@@ -2,46 +2,86 @@ package ch.epfl.scala.index
 package data
 package github
 
-import model.{GithubRepo, GithubInfo, Url}
-
 import org.json4s.native.Serialization.read
 
 import scala.util.Try
 import java.nio.file.Files
 
+import model.misc.{GithubContributor, GithubInfo, GithubRepo, Url}
+
+/**
+ * Github reader - to read all related infos from downloaded github files
+ * and map / convert to GithubInfo object
+ */
 object GithubReader {
+
+  import Json4s._
+
+  /**
+   * read info from github files and convert to GithubInfo object
+   * @param github
+   * @return
+   */
   def apply(github: GithubRepo): Option[GithubInfo] = {
-    val readmePath = githubReadmePath(github)
-    val readmeHtml =
-      if(Files.exists(readmePath)) Try(Files.readAllLines(readmePath).toArray.mkString(System.lineSeparator)).toOption
-      else None
 
-    val repoInfoPath = githubRepoInfoPath(github)
-    val repo =
-      if(Files.exists(repoInfoPath)) {
-        import Json4s._
-        
-        Try(Files.readAllLines(repoInfoPath).toArray.mkString("")).flatMap(info =>
-          Try(read[Repository](info))
-        ).toOption
-      } else None
+    info(github).map { info =>
 
-    convert(readmeHtml, repo)
+      val contributorList = contributors(github).getOrElse(List())
+      info.copy(
+        readme = readme(github).toOption,
+        contributors = contributorList,
+        commits = Some(contributorList.foldLeft(0)(_ + _.contributions))
+      )
+    }.toOption
   }
 
-  private def convert(readmeHtml: Option[String], repo: Option[Repository]): Option[GithubInfo] = {
-    if(readmeHtml.isEmpty && repo.isEmpty) None
-    else {
-      val info  = GithubInfo(readme = readmeHtml)
-      Some(repo.fold(info)( r =>
-        info.copy(
-          homepage = r.homepage.map(h => Url(h)),
-          description = Some(r.description),
-          logo = r.organization.map(o => Url(o.avatar_url)),
-          stars = Some(r.stargazers_count),
-          forks = Some(r.forks)
-        )
-      ))
+  /**
+   * read the readme file if exists
+   * @param github the git repo
+   * @return
+   */
+  def readme(github: GithubRepo): Try[String] = Try {
+
+    val readmePath = githubReadmePath(github)
+    Files.readAllLines(readmePath).toArray.mkString(System.lineSeparator)
+  }
+
+  /**
+   * read the main info from file if exists
+   * @param github the git repo
+   * @return
+   */
+  def info(github: GithubRepo): Try[GithubInfo] = Try {
+
+    val repoInfoPath = githubRepoInfoPath(github)
+    val repository = read[Repository](Files.readAllLines(repoInfoPath).toArray.mkString(""))
+    GithubInfo(
+      homepage = repository.homepage.map(h => Url(h)),
+      description = Some(repository.description),
+      logo = repository.organization.map(o => Url(o.avatar_url)),
+      stars = Some(repository.stargazers_count),
+      forks = Some(repository.forks),
+      watchers = Some(repository.subscribers_count),
+      issues = Some(repository.open_issues)
+    )
+  }
+
+  /**
+   * extract the contributors of exists
+   * @param github the current repo
+   * @return
+   */
+  def contributors(github: GithubRepo): Try[List[GithubContributor]] = Try {
+
+    val repoInfoPath = githubRepoContributorsPath(github)
+    val repository = read[List[Contributor]](Files.readAllLines(repoInfoPath).toArray.mkString(""))
+    repository.map { contributor =>
+      GithubContributor(
+        contributor.login,
+        contributor.avatar_url,
+        Url(contributor.html_url),
+        contributor.contributions
+      )
     }
   }
 }

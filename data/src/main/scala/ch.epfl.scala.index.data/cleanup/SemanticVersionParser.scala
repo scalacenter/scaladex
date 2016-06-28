@@ -2,8 +2,7 @@ package ch.epfl.scala.index
 package data
 package cleanup
 
-import model._
-
+import ch.epfl.scala.index.model.release._
 import fastparse.all._
 import fastparse.core.Parsed
 

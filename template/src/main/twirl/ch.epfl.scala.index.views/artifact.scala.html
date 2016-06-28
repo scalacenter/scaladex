@@ -1,12 +1,10 @@
 @import ch.epfl.scala.index.model.Project
 @import ch.epfl.scala.index.model.Artifact
-@import ch.epfl.scala.index.model.SemanticVersion
 @import ch.epfl.scala.index.model.Release
-@import ch.epfl.scala.index.model.UserInfo
-@import ch.epfl.scala.index.model.Dependency
-@import ch.epfl.scala.index.model.JavaDependency
-@import ch.epfl.scala.index.model.ScalaDependency
-@(project: Project, artifact: Artifact.Reference, version: Option[SemanticVersion], latestStableReleaseOrSelect: List[Release], user: Option[UserInfo])
+@import ch.epfl.scala.index.model.misc.UserInfo
+@import ch.epfl.scala.index.model.release.{Dependency, JavaDependency, ScalaDependency, SemanticVersion}
+@import ch.epfl.scala.index.model.misc.GithubInfo
+@(project: Project, artifact: Artifact.Reference, version: Option[SemanticVersion], releases: List[Release], user: Option[UserInfo])
 
 @staticJs = {
   <script type="text/javascript">
@@ -40,6 +38,47 @@
   </ul>
 }
 
+@** Shows statistic block *@
+@statisticBlock(github: GithubInfo) = {
+
+  <div class="statistic box">
+    <h4>Statistic</h4>
+    <div class="row">
+      <div >
+        <ul class="row">
+          <li class="col-md-6 col-sm-6"><a href="#"><i class="fa fa-eye"></i>@github.watchers watchers</a></li>
+          <li class="col-md-6 col-sm-6"><a href="#"><i class="fa fa-users"></i>@github.contributors.size Contributors</a></li>
+          <li class="col-md-6 col-sm-6"><a href="#"><i class="fa fa-star"></i>@github.stars Stars</a></li>
+          <li class="col-md-6 col-sm-6"><a href="#"><i class="fa fa-code-fork"></i>@github.forks Forks</a></li>
+          <li class="col-md-6 col-sm-6"><a href="#"><i class="fa fa-history"></i>@github.commits Commits</a></li>
+          <li class="col-md-6 col-sm-6"><a href="#"><i class="fa fa-exclamation-circle"></i>@github.issues Open issues</a></li>
+          <li class="col-md-6 col-sm-6"><a href="#"><i class="fa fa-tag"></i>@project.artifacts.find(_.reference == artifact).map(_.releases.size).getOrElse(0) Releases</a></li>
+          <li class="col-md-6 col-sm-6"><a href="#"><i class="fa fa-sitemap"></i>@releases.find(rel => version.contains(rel.reference.version)).map(_.uniqueOrderedReverseDependencies.size).getOrElse(0) Dependents</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+}
+
+@** Contributor block *@
+@contributorsBlock(github: GithubInfo) = {
+    @if(github.contributors.nonEmpty) {
+      <div class="collaborators box">
+        <h4>Contributors</h4>
+
+        <ul>
+          @for(contributor <- github.contributors) {
+            <li>
+              <a href="@contributor.url.target" target="_blank">
+                <img data-toggle="tooltip" data-placement="bottom" width="32" title="@contributor.login" src="@contributor.sizedAvatarUrl(32)" alt="">
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+}
+
 @main(title = artifact.name, showSearch = true, searchQuery = "", user, Some(staticJs)) {
   <main id="container-project">
 
@@ -55,62 +94,12 @@
         <div class="col-md-4">
           <div class="sidebar-project">
 
-            <!-- Statistic -->
-            <!--div class="statistic box">
-              <h4>Statistic</h4>
-              <div class="row">
-                <div class="col-md-6 col-sm-6">
-                  <ul>
-                    <li><a href="#"><i class="fa fa-eye"></i>384 watchers</a></li>
-                    <li><a href="#"><i class="fa fa-star"></i>417 Stars</a></li>
-                    <li><a href="#"><i class="fa fa-history"></i>396 Commits</a></li>
-                    <li><a href="#"><i class="fa fa-tag"></i>13 Releases</a></li>
-                  </ul>
-                </div>
-                <div class="col-md-6 col-sm-6">
-                  <ul>
-                    <li><a href="#"><i class="fa fa-users"></i>8 Contributors</a></li>
-                    <li><a href="#"><i class="fa fa-code-fork"></i>27 Forks</a></li>
-                    <li><a href="#"><i class="fa fa-exclamation-circle"></i>19 Open issues</a></li>
-                    <li><a href="#"><i class="fa fa-sitemap"></i>8 Dependents</a></li>
-                  </ul>
-                </div>
-              </div>
-            </div-->
-
-            <!-- Collaborators -->
-            <!--div class="collaborators box">
-              <h4>Collaborators</h4>
-
-              <ul>
-                <li>
-                  <a href="#"><img data-toggle="tooltip" data-placement="bottom" title="Nick Elsberry" src="/assets/img/avatar01.jpg" alt=""></a>
-                </li>
-                <li>
-                  <a href="#"><img data-toggle="tooltip" data-placement="bottom" title="Raul Raja" src="/assets/img/avatar02.jpg" alt=""></a>
-                </li>
-                <li>
-                  <a href="#"><img data-toggle="tooltip" data-placement="bottom" title="Heather Miller" src="/assets/img/avatar03.jpg" alt=""></a>
-                </li>
-                <li>
-                  <a href="#"><img data-toggle="tooltip" data-placement="bottom" title="Javi Pacheco" src="/assets/img/avatar04.jpg" alt=""></a>
-                </li>
-                <li>
-                  <a href="#"><img data-toggle="tooltip" data-placement="bottom" title="Jorge Galindo" src="/assets/img/avatar05.jpg" alt=""></a>
-                </li>
-                <li>
-                  <a href="#"><img data-toggle="tooltip" data-placement="bottom" title="Nora Dhal" src="/assets/img/avatar06.jpg" alt=""></a>
-                </li>
-                <li>
-                  <a href="#"><img data-toggle="tooltip" data-placement="bottom" title="Melisa Aron" src="/assets/img/avatar07.jpg" alt=""></a>
-                </li>
-              </ul>
-            </div-->
+            @project.github.map(statisticBlock)
 
             <div class="targets box">
               <h4>Targets</h4>
 
-              @for((release, index) <- latestStableReleaseOrSelect.sortBy(_.reference.targets.orderName).zipWithIndex) {
+              @for((release, index) <- releases.sortBy(_.reference.targets.orderName).zipWithIndex) {
                 <a href="#target-@release.reference.targets.orderName" data-target="#target-@release.reference.targets.orderName" class="targets btn btn-xs @if(0 == index) {btn-primary} else {btn-default}" name="@release.reference.targets.name" role="button" data-toggle="tab"aria-controls="target-@release.reference.targets.orderName">
                     @release.reference.targets.name
                 </a>
@@ -119,7 +108,7 @@
             </div>
 
             <div id="#targets" class="tab-content">
-              @for((release, index) <- latestStableReleaseOrSelect.sortBy(_.reference.targets.orderName).zipWithIndex) {
+              @for((release, index) <- releases.sortBy(_.reference.targets.orderName).zipWithIndex) {
                 <div id="target-@release.reference.targets.orderName" class="tab-pane fade @if(0 == index) {in active}">
 
                   <div class="install">
@@ -141,6 +130,7 @@
                     </div>
                   </div>
 
+                  @project.github.map(contributorsBlock)
 
                   <div class="documentation box">
                     <h4>Documentation</h4>

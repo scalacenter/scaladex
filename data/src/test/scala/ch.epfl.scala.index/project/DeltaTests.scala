@@ -2,8 +2,9 @@ package ch.epfl.scala.index
 package data
 package project
 
+import ch.epfl.scala.index.model.misc.MavenReference
+import ch.epfl.scala.index.model.release.{ScalaTargets, SemanticVersion}
 import model._
-
 import utest._
 
 object DeltaTest extends TestSuite{

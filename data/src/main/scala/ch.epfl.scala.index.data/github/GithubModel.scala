@@ -2,6 +2,7 @@ package ch.epfl.scala.index
 package data
 package github
 
+// TODO: should be refactored to clean classes
 /*
 organization avatar_url <=> Logo
 */
@@ -35,4 +36,25 @@ case class Repository(
   default_branch: String, // master
   organization: Option[User],
   subscribers_count: Int // Watch
+)
+
+case class Contributor(
+  login: String,
+  id: Int,
+  avatar_url: String,
+  gravatar_id: String,
+  url: String,
+  html_url: String,
+  followers_url: String,
+  following_url: String,
+  gists_url: String,
+  starred_url: String,
+  subscriptions_url: String,
+  organizations_url: String,
+  repos_url: String,
+  events_url: String,
+  received_events_url: String,
+  `type`: String,
+  site_admin: Boolean,
+  contributions: Int
 )

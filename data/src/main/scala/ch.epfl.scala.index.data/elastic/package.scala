@@ -1,6 +1,7 @@
 package ch.epfl.scala.index
 package data
 
+import ch.epfl.scala.index.model.release.{Milestone, OtherPreRelease, ReleaseCandidate, Scope}
 import model._
 import org.elasticsearch.common.settings.Settings
 import com.sksamuel.elastic4s._
