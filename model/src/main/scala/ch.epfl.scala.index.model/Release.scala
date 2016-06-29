@@ -93,17 +93,17 @@ case class Release(
   /**
    * ordered scala dependencies - tests last
    */
-  lazy val orderedDependencies = scalaDependencies.sortBy(_.scope.contains(Scope.Test))
+  lazy val orderedDependencies = scalaDependencies.sortBy(_.scope.contains("test"))
 
   /**
    * ordered java dependencies - tests last
    */
-  lazy val orderedJavaDependencies = javaDependencies.sortBy(_.scope.contains(Scope.Test))
+  lazy val orderedJavaDependencies = javaDependencies.sortBy(_.scope.contains("test"))
 
   /**
    * ordered reverse scala dependencies - tests last
    */
-  lazy val orderedReverseDependencies = reverseDependencies.sortBy(_.scope.contains(Scope.Test))
+  lazy val orderedReverseDependencies = reverseDependencies.sortBy(_.scope.contains("test"))
 
   /** collect all unique organization/artifact dependency */
   lazy val uniqueOrderedReverseDependencies = {
@@ -136,9 +136,9 @@ object Release {
 
   /**
    * Release Reference representation
-   * @param organization the organisation name like typelevel | akka
-   * @param artifact the artifact name like cats-core | akka-http-experimental
-   * @param version the semantic version like 0.6.0 | 0.6.0-RC1
+   * @param organization the organisation name like    typelevel | akka
+   * @param artifact the artifact name like            cats-core | akka-http-experimental
+   * @param version the semantic version like              0.6.0 | 0.6.0-RC1
    * @param targets the targets this reference can run on
    */
   case class Reference(

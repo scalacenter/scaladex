@@ -128,7 +128,6 @@ object ProjectConvert {
       poms.foldLeft(Map[Release.Reference, Seq[Dependency]]()){ case (cache, pom) =>
         pom.dependencies.foldLeft(cache){ case (cache0, dependency) =>
 
-          val scope: Option[Scope] = dependency.scope map Scope.apply
           val depMavenRef = dependencyToMaven(dependency)
           val pomMavenRef = pomToMavenReference(pom)
           val depRef = mavenReferenceToReleaseReference.get(depMavenRef)
@@ -140,18 +139,18 @@ object ProjectConvert {
             case (Some(dependencyReference), Some(pomReference)) =>
 
               val (source, target) = if (reverse) (dependencyReference, pomReference) else (pomReference, dependencyReference)
-              upsert(cache0, source, ScalaDependency(target, scope))
+              upsert(cache0, source, ScalaDependency(target, dependency.scope))
 
             /** dependency is scala reference - works now only if reverse */
             case (Some(dependencyReference), None) =>
 
-              if (reverse) upsert(cache0, dependencyReference, JavaDependency(pomMavenRef, scope))
+              if (reverse) upsert(cache0, dependencyReference, JavaDependency(pomMavenRef, dependency.scope))
               else cache0
 
             /** works only if not reverse */
             case (None, Some(pomReference)) =>
 
-              if (!reverse) upsert(cache0, pomReference, JavaDependency(depMavenRef, scope))
+              if (!reverse) upsert(cache0, pomReference, JavaDependency(depMavenRef, dependency.scope))
               else cache0
 
             /** java -> java: should not happen actually */
