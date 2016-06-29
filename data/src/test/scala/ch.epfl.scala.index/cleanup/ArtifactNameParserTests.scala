@@ -2,7 +2,7 @@ package ch.epfl.scala.index
 package data
 package cleanup
 
-import model.release.{ReleaseCandidate, ScalaTargets, SemanticVersion}
+import model.release.{ReleaseCandidate, ScalaTarget, SemanticVersion}
 
 import utest._
 
@@ -12,13 +12,13 @@ object ArtifactNameParserTest extends TestSuite{
       "scalajs"-{
         assert(ArtifactNameParser("cats-core_sjs0.6_2.11") == Some((
           "cats-core",
-          ScalaTargets(SemanticVersion(2, 11), Some(SemanticVersion(0, 6)))
+          ScalaTarget(SemanticVersion(2, 11), Some(SemanticVersion(0, 6)))
         )))
       }
       "scala rc"-{
         assert(ArtifactNameParser("akka-remote-tests_2.11.0-RC4") == Some((
           "akka-remote-tests",
-          ScalaTargets(SemanticVersion(2, 11, Some(0), preRelease = Some(ReleaseCandidate(4))))
+          ScalaTarget(SemanticVersion(2, 11, Some(0), preRelease = Some(ReleaseCandidate(4))))
         )))
       }
       "not using sbt convention"-{
@@ -27,7 +27,7 @@ object ArtifactNameParserTest extends TestSuite{
       "special case"-{
         assert(ArtifactNameParser("banana_jvm_2.11") == Some((
           "banana_jvm",
-          ScalaTargets(SemanticVersion(2, 11))
+          ScalaTarget(SemanticVersion(2, 11))
         )))
       }
     }
