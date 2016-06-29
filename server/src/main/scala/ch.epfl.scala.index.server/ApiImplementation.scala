@@ -122,7 +122,9 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
   def targets(): Future[Map[String, Long]] = aggregations("targets")
 
   def dependencies(): Future[List[(String, Long)]] = {
-    val testOrLogin = Set(
+    // we remove testing or logging because they are always a dependency
+    // we could have another view to compare testing frameworks
+    val testOrLogging = Set(
       "scalatest/scalatest",
       "scoverage/scalac-scoverage-plugin",
       "rickynils/scalacheck",
@@ -146,7 +148,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
 
     aggregations("dependencies").map(agg =>
       agg.toList.sortBy(_._2)(Descending).filter{ case (ref, _) =>
-        !testOrLogin.contains(ref)
+        !testOrLogging.contains(ref)
       }
     )
   }
