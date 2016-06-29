@@ -1,7 +1,7 @@
 @import ch.epfl.scala.index.model.Project
 @import ch.epfl.scala.index.model.Release
 @import ch.epfl.scala.index.model.misc.{Url, UserInfo}
-@(keywords: Map[String, Long], support: Map[String, Long], latestProjects: List[Project], latestReleases: List[Release], user: Option[UserInfo])
+@(keywords: Map[String, Long], targets: Map[String, Long], dependencies: List[(String, Long)], latestProjects: List[Project], latestReleases: List[Release], user: Option[UserInfo])
 @main(title = "Home", showSearch = false, searchQuery = "", user) {
 <main id="container-home">
     <section class="content-search-home">
@@ -10,13 +10,20 @@
                 <div class="col-md-8 col-md-offset-2">
                     <h1>The Scala Library Index</h1> @searchinput()
                     <ul class="tag">
-                        <li><strong>Support:</strong></li>
-                        @for((sup, count) <- support) {
-                            <li><a href="/search?q=support:@sup.replace("/", """\/""")">@sup (@count)</a></li>
+                        <li><strong>Targets:</strong></li>
+                        @for((sup, count) <- targets) {
+                            <li><a href="/search?q=targets:@sup.replace("/", """\/""")">@sup (@count)</a></li>
+                        }
+                    </ul>
+                    <ul class="tag">
+                        <li><strong>Dependencies:</strong></li>
+                        @for((sup, count) <- dependencies) {
+                            <li><a href="/search?q=dependencies:@sup.replace("/", """\/""")">@sup (@count)</a></li>
                         }
                     </ul>
 
                     <ul class="tag">
+                        <li><strong>Keywords:</strong></li>
                         @for((keyword, count) <- keywords) {
                             <li><a href="/search?q=keywords:@keyword">@keyword (@count)</a></li>
                         }

@@ -2,23 +2,25 @@ package ch.epfl.scala.index
 package data
 package github
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
-
-import ch.epfl.scala.index.data.download.PlayWsDownloader
+import download.PlayWsDownloader
 import cleanup.GithubRepoExtractor
 import maven.PomsReader
 import model.misc.{GithubRepo, Url}
 
-import scala.util.Success
 import org.json4s._
-import org.json4s.native.JsonMethods._
+import native.JsonMethods._
 import native.Serialization.writePretty
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+
 import play.api.libs.ws.{WSRequest, WSResponse}
 
-class GithubDownload(implicit system: ActorSystem, implicit val materializer: ActorMaterializer) extends PlayWsDownloader {
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+
+import scala.util.Success
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path}
+
+class GithubDownload(implicit val system: ActorSystem, implicit val materializer: ActorMaterializer) extends PlayWsDownloader {
 
   import Json4s._
 

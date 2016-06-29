@@ -2,9 +2,10 @@ package ch.epfl.scala.index
 package data
 package project
 
-import ch.epfl.scala.index.model.misc.MavenReference
-import ch.epfl.scala.index.model.release.{ScalaTargets, SemanticVersion}
 import model._
+import model.misc.MavenReference
+import model.release.{ScalaTarget, SemanticVersion}
+
 import utest._
 
 object DeltaTest extends TestSuite{
@@ -21,7 +22,7 @@ object DeltaTest extends TestSuite{
                 "typelevel",
                 "cats-core",
                 SemanticVersion(0, 6, Some(0)),
-                ScalaTargets(SemanticVersion(2, 11))
+                ScalaTarget(SemanticVersion(2, 11))
               )
             )
           )
@@ -35,7 +36,7 @@ object DeltaTest extends TestSuite{
                 "typelevel",
                 "cats-free",
                 SemanticVersion(0, 6, Some(0)),
-                ScalaTargets(SemanticVersion(2, 11))
+                ScalaTarget(SemanticVersion(2, 11))
               )
             )
           )
@@ -63,7 +64,7 @@ object DeltaTest extends TestSuite{
                 "typelevel",
                 "cats-dogs",
                 SemanticVersion(0, 6, Some(0)),
-                ScalaTargets(SemanticVersion(2, 11))
+                ScalaTarget(SemanticVersion(2, 11))
               )
             )
           )
@@ -76,7 +77,7 @@ object DeltaTest extends TestSuite{
             "typelevel",
             "cats-free",
             SemanticVersion(0, 7, Some(0)),
-            ScalaTargets(SemanticVersion(2, 11))
+            ScalaTarget(SemanticVersion(2, 11))
           )
         )
 

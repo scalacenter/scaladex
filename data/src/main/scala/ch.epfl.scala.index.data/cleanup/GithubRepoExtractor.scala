@@ -2,11 +2,13 @@ package ch.epfl.scala.index
 package data
 package cleanup
 
+import model.misc.GithubRepo
+
 import maven.PomsReader
 import spray.json._
 import java.nio.file._
+import java.nio.charset.StandardCharsets
 
-import ch.epfl.scala.index.model.misc.GithubRepo
 import fastparse.all._
 import fastparse.core.Parsed
 
@@ -17,14 +19,15 @@ class GithubRepoExtractor extends DefaultJsonProtocol {
   private val source = scala.io.Source.fromFile(
     cleanupIndexBase.resolve(Paths.get("claims.json")).toFile
   )
-  private val claims = source.mkString.parseJson.convertTo[Map[String, Option[String]]].toList.sorted
-  private val matchers = claims.
+  private val claims = source.mkString.parseJson.convertTo[Map[String, Option[String]]]
+  private val matchers = claims.toList.sorted.
     map{case (k, v) => v.map((k, _))}.flatten.
     map{case (k, v) =>
       val regex = k.replaceAllLiterally("*", "(.*)").r
       val List(organization, repo) = v.split('/').toList
       (regex, GithubRepo(organization, repo))
     }
+
   source.close()
 
   // More info in Rfc3986
@@ -67,7 +70,7 @@ class GithubRepoExtractor extends DefaultJsonProtocol {
     
     val fromClaims =
       matchers.find{case (m, _) => 
-        matches(m, s"$groupId $artifactId $version")
+        matches(m, s"$groupId $artifactId")
       }.map(_._2).toList
 
     (fromPoms ++ fromClaims).map{ 
@@ -76,7 +79,7 @@ class GithubRepoExtractor extends DefaultJsonProtocol {
   }
 
   // script to generate contrib/claims.json
-  def run() = {
+  def run(): Unit = {
     val poms = PomsReader
       .load()
       .collect {case Success((pom, _)) => pom}
@@ -84,13 +87,21 @@ class GithubRepoExtractor extends DefaultJsonProtocol {
     val noUrl = poms.filter(p => apply(p).size == 0)
     val notClaimed = noUrl.map{d =>
         import d._
-        (s"$groupId $artifactId $version", None)
+        (s"$groupId $artifactId", None)
       }.toMap
     
     val nl = System.lineSeparator
 
-    (notClaimed ++ claims).toList.sorted.map{ case (k, v) =>
-      "  \"" + k + "\": " + v.map(x => "\"" + x + "\"").getOrElse("null")
-    }.mkString("{" + nl, "," + nl , nl + "}")
+    val out =
+      (notClaimed ++ claims).toList.sorted.map{ case (k, v) =>
+        "  \"" + k + "\": " + v.map(x => "\"" + x + "\"").getOrElse("null")
+      }.mkString("{" + nl, "," + nl , nl + "}")
+
+    Files.write(
+      cleanupIndexBase.resolve(Paths.get("claims_new.json")),
+      out.getBytes(StandardCharsets.UTF_8)
+    )
+
+    ()
   }
 }

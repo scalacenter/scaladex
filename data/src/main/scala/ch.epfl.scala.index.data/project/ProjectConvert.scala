@@ -6,22 +6,13 @@ import cleanup._
 import model._
 import model.misc._
 import bintray._
-import ch.epfl.scala.index.model.release.{Dependency, JavaDependency, ScalaDependency, Scope}
 import github._
+import release._
+
 import me.tongfei.progressbar._
 import org.joda.time.DateTime
 
 object ProjectConvert {
-
-  /** List of featured artifacts which are searched very often to show artifacts which
-   * depend on this
-   * key: the artifact name, dependencies should start with
-   * value: the key to index and search for
-   */
-  val featuredArtifacts = Map(
-    "apache/spark" -> "spark",
-    "akka/akka" -> "akka"
-  )
 
   def apply(pomsAndMeta: List[(maven.MavenModel, List[BintraySearch])]): List[Project] = {
     val githubRepoExtractor = new GithubRepoExtractor
@@ -128,7 +119,6 @@ object ProjectConvert {
       poms.foldLeft(Map[Release.Reference, Seq[Dependency]]()){ case (cache, pom) =>
         pom.dependencies.foldLeft(cache){ case (cache0, dependency) =>
 
-          val scope: Option[Scope] = dependency.scope map Scope.apply
           val depMavenRef = dependencyToMaven(dependency)
           val pomMavenRef = pomToMavenReference(pom)
           val depRef = mavenReferenceToReleaseReference.get(depMavenRef)
@@ -136,25 +126,25 @@ object ProjectConvert {
 
           (depRef, pomRef) match {
 
-            /** We have both, scala -> scala reference */
+            /* We have both, scala -> scala reference */
             case (Some(dependencyReference), Some(pomReference)) =>
 
               val (source, target) = if (reverse) (dependencyReference, pomReference) else (pomReference, dependencyReference)
-              upsert(cache0, source, ScalaDependency(target, scope))
+              upsert(cache0, source, ScalaDependency(target, dependency.scope))
 
-            /** dependency is scala reference - works now only if reverse */
+            /* dependency is scala reference - works now only if reverse */
             case (Some(dependencyReference), None) =>
 
-              if (reverse) upsert(cache0, dependencyReference, JavaDependency(pomMavenRef, scope))
+              if (reverse) upsert(cache0, dependencyReference, JavaDependency(pomMavenRef, dependency.scope))
               else cache0
 
-            /** works only if not reverse */
+            /* works only if not reverse */
             case (None, Some(pomReference)) =>
 
-              if (!reverse) upsert(cache0, pomReference, JavaDependency(depMavenRef, scope))
+              if (!reverse) upsert(cache0, pomReference, JavaDependency(depMavenRef, dependency.scope))
               else cache0
 
-            /** java -> java: should not happen actually */
+            /* java -> java: should not happen actually */
             case (None, None) =>
               println(s"no reference discovered for $pomMavenRef -> $depMavenRef")
               cache0
@@ -176,29 +166,18 @@ object ProjectConvert {
       reverseDependenciesCache.getOrElse(release.reference, Seq())
     }
 
-    /** get the supported tags for a project artifact. supported means
-     * the scala target like scala_2.11 or scala.js_2.11_0.6 or even
-     * featured and very popular artifacts like spark. Featured artifacts are
-     * done by reverse lookup
-     *
-     * @param artifacts the current artifact to inspect
-     * @return
-     */
-    def extractSupportTags(artifacts: List[Artifact]): List[String] = {
-
-      artifacts.foldLeft(Seq[String]()) { (stack, artifact) =>
-        stack ++ artifact.releases.flatMap { r =>
-
-          /** scala target */
-          val target: String = r.reference.targets.supportName
-          val featured: Seq[String] = featuredArtifacts.filter { feat =>
-            r.reverseDependencies.exists(_.dependency.name.startsWith(feat._1))
-          }.values.toSeq
-          if (stack.contains(target)) featured else featured :+ target
-        }
-      }.foldLeft(Seq[String]()){ (stack, dep) => if (stack.contains(dep)) stack else stack :+ dep}
-      .toList
+    def collectDependencies(artifacts: List[Artifact], f: Release.Reference => String): List[String] = {
+      for {
+        artifact <- artifacts
+        release <- artifact.releases
+        dependency <- release.scalaDependencies
+      } yield f(dependency.reference)
     }
+
+    def dependencies(artifacts: List[Artifact]): List[String] = collectDependencies(artifacts, _.name)
+
+    def targets(artifacts: List[Artifact]): List[String] = collectDependencies(artifacts, _.target.supportName)
+    
 
     projects.map { project =>
 
@@ -213,7 +192,11 @@ object ProjectConvert {
         })
       )
 
-      project.copy(artifacts = artifacts, support = extractSupportTags(artifacts))
+      project.copy(
+        artifacts = artifacts,
+        targets = targets(artifacts), 
+        dependencies = dependencies(artifacts)
+      )
     }
   }
 }

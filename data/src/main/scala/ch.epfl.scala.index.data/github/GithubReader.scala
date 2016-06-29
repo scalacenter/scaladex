@@ -2,12 +2,12 @@ package ch.epfl.scala.index
 package data
 package github
 
+import model.misc.{GithubContributor, GithubInfo, GithubRepo, Url}
+
 import org.json4s.native.Serialization.read
 
-import scala.util.Try
 import java.nio.file.Files
-
-import model.misc.{GithubContributor, GithubInfo, GithubRepo, Url}
+import scala.util.Try
 
 /**
  * Github reader - to read all related infos from downloaded github files

@@ -6,7 +6,7 @@ package ch.epfl.scala.index.model.release
  * @param scalaVersion scala semantic version
  * @param scalaJsVersion the optional scalaJs semantic version
  */
-case class ScalaTargets(
+case class ScalaTarget(
   scalaVersion: SemanticVersion,
   scalaJsVersion: Option[SemanticVersion] = None
 ) {

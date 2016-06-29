@@ -1,13 +1,12 @@
 package ch.epfl.scala.index
-package data
-package project
+package data.project
+
+import model.misc.GithubRepo
 
 import org.json4s._
 import org.json4s.native.Serialization.read
 import build.info.BuildInfo
 import java.nio.file.{Files, Paths}
-
-import ch.epfl.scala.index.model.misc.GithubRepo
 
 object Keywords {
   implicit val formats = DefaultFormats

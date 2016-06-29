@@ -62,7 +62,10 @@ lazy val server = project
     reStart <<= reStart.dependsOn(WebKeys.assets in Assets),
     unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
     javaOptions in Universal += "-Dproduction=true",
-    javaOptions in reStart += "-Dproduction=false"
+    javaOptions in reStart ++= Seq(
+      "-Dproduction=false",
+      "-Xmx3g"
+    )
   )
   .dependsOn(template, data)
   .enablePlugins(SbtSass, JavaServerAppPackaging)
@@ -92,7 +95,7 @@ lazy val data = project
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),
-    javaOptions in reStart += "-Xmx2g"
+    javaOptions in reStart += "-Xmx4g"
   )
   .enablePlugins(BuildInfoPlugin)
   .dependsOn(model)

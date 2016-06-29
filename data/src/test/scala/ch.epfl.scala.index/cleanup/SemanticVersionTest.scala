@@ -2,7 +2,8 @@ package ch.epfl.scala.index
 package data
 package cleanup
 
-import ch.epfl.scala.index.model.release.{Milestone, OtherPreRelease, ReleaseCandidate, SemanticVersion}
+import model.release.{Milestone, OtherPreRelease, ReleaseCandidate, SemanticVersion}
+
 import utest._
 
 object SemanticVersionTest extends TestSuite{

@@ -25,12 +25,12 @@
   <ul>
   @for(dependency <- dependencies){
     <li>
-      <a href="@dependency.dependency.httpUrl" target="_blank">
-        @dependency.dependency.name
+      <a href="@dependency.reference.httpUrl" target="_blank">
+        @dependency.reference.name
       </a>
       v@{dependency match {
-          case java: JavaDependency => java.dependency.version
-          case scala: ScalaDependency => scala.dependency.version.toString
+          case java: JavaDependency => java.reference.version
+          case scala: ScalaDependency => scala.reference.version.toString
         }}
       <span class="label label-primary">@dependency.scope</span>
     </li>
@@ -46,14 +46,14 @@
     <div class="row">
       <div >
         <ul class="row">
-          <li class="col-md-6 col-sm-6"><a href="#"><i class="fa fa-eye"></i>@github.watchers watchers</a></li>
-          <li class="col-md-6 col-sm-6"><a href="#"><i class="fa fa-users"></i>@github.contributors.size Contributors</a></li>
-          <li class="col-md-6 col-sm-6"><a href="#"><i class="fa fa-star"></i>@github.stars Stars</a></li>
-          <li class="col-md-6 col-sm-6"><a href="#"><i class="fa fa-code-fork"></i>@github.forks Forks</a></li>
-          <li class="col-md-6 col-sm-6"><a href="#"><i class="fa fa-history"></i>@github.commits Commits</a></li>
-          <li class="col-md-6 col-sm-6"><a href="#"><i class="fa fa-exclamation-circle"></i>@github.issues Open issues</a></li>
-          <li class="col-md-6 col-sm-6"><a href="#"><i class="fa fa-tag"></i>@project.artifacts.find(_.reference == artifact).map(_.releases.size).getOrElse(0) Releases</a></li>
-          <li class="col-md-6 col-sm-6"><a href="#"><i class="fa fa-sitemap"></i>@releases.find(rel => version.contains(rel.reference.version)).map(_.uniqueOrderedReverseDependencies.size).getOrElse(0) Dependents</a></li>
+          <li class="col-md-6 col-sm-6"><i class="fa fa-eye"></i>@github.watchers watchers</li>
+          <li class="col-md-6 col-sm-6"><i class="fa fa-users"></i>@github.contributors.size Contributors</li>
+          <li class="col-md-6 col-sm-6"><i class="fa fa-star"></i>@github.stars Stars</li>
+          <li class="col-md-6 col-sm-6"><i class="fa fa-code-fork"></i>@github.forks Forks</li>
+          <li class="col-md-6 col-sm-6"><i class="fa fa-history"></i>@github.commits Commits</li>
+          <li class="col-md-6 col-sm-6"><i class="fa fa-exclamation-circle"></i>@github.issues Open issues</li>
+          <li class="col-md-6 col-sm-6"><i class="fa fa-tag"></i>@project.artifacts.find(_.reference == artifact).map(_.releases.size).getOrElse(0) Releases</li>
+          <li class="col-md-6 col-sm-6"><i class="fa fa-sitemap"></i>@releases.find(rel => version.contains(rel.reference.version)).map(_.uniqueOrderedReverseDependencies.size).getOrElse(0) Dependents</li>
         </ul>
       </div>
     </div>
@@ -99,17 +99,17 @@
             <div class="targets box">
               <h4>Targets</h4>
 
-              @for((release, index) <- releases.sortBy(_.reference.targets.orderName).zipWithIndex) {
-                <a href="#target-@release.reference.targets.orderName" data-target="#target-@release.reference.targets.orderName" class="targets btn btn-xs @if(0 == index) {btn-primary} else {btn-default}" name="@release.reference.targets.name" role="button" data-toggle="tab"aria-controls="target-@release.reference.targets.orderName">
-                    @release.reference.targets.name
+              @for((release, index) <- releases.sortBy(_.reference.target.orderName).zipWithIndex) {
+                <a href="#target-@release.reference.target.orderName" data-target="#target-@release.reference.target.orderName" class="targets btn btn-xs @if(0 == index) {btn-primary} else {btn-default}" name="@release.reference.target.name" role="button" data-toggle="tab"aria-controls="target-@release.reference.target.orderName">
+                    @release.reference.target.name
                 </a>
               }
 
             </div>
 
             <div id="#targets" class="tab-content">
-              @for((release, index) <- releases.sortBy(_.reference.targets.orderName).zipWithIndex) {
-                <div id="target-@release.reference.targets.orderName" class="tab-pane fade @if(0 == index) {in active}">
+              @for((release, index) <- releases.sortBy(_.reference.target.orderName).zipWithIndex) {
+                <div id="target-@release.reference.target.orderName" class="tab-pane fade @if(0 == index) {in active}">
 
                   <div class="install">
                     <ul class="nav nav-tabs" role="tablist">
@@ -169,8 +169,8 @@
                     <ul>
                     @for(dependency <- release.uniqueOrderedReverseDependencies){
                       <li>
-                        <a href="@dependency.dependency.httpUrl" target="_blank">
-                        @dependency.dependency.name
+                        <a href="@dependency.reference.httpUrl" target="_blank">
+                        @dependency.reference.name
                         </a>
                         <span class="label label-primary">@dependency.scope</span>
                         <div class="versions">

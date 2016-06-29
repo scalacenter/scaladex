@@ -4,25 +4,23 @@ package data
 import bintray._
 import github._
 import elastic._
+import cleanup._
+
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
 object Main {
   def main(args: Array[String]): Unit = {
-    val (list, download, parent, github, elastic) = args.toList match {
-      case "list" :: Nil     => ( true, false, false, false, false)
-      case "download" :: Nil => (false,  true, false, false, false)
-      case "parent" :: Nil   => (false, false,  true, false, false)
-      case "github" :: Nil   => (false, false, false,  true, false)
-      case "elastic" :: Nil  => (false, false, false, false,  true)
-      case _                 => ( true,  true,  true,  true,  true)
-    }
-
     implicit val system = ActorSystem()
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
-    if(list) {
+    def claims(): Unit = {
+      val githubRepoExtractor = new GithubRepoExtractor
+      githubRepoExtractor.run()
+    }
+
+    def list(): Unit = {
       val listPomsStep = new ListPoms
       // TODO: should be located in a config file
       val versions = List("2.10", "2.11", "2.12")
@@ -34,27 +32,39 @@ object Main {
       }
     }
 
-    if(download) {
+    def download(): Unit = {
       val downloadPomsStep = new DownloadPoms
       downloadPomsStep.run()
     }
 
-    if(parent) {
+    def parent(): Unit = {
       val downloadParentPomsStep = new DownloadParentPoms
       downloadParentPomsStep.run()
     }
 
-    if (github) {
-
+    def github(): Unit = {
       val githubDownload = new GithubDownload
       githubDownload.run()
     }
 
-    if(elastic) {
-
+    def elastic(): Unit = {
       val seedElasticSearchStep = new SeedElasticSearch
       seedElasticSearchStep.run()
     }
+
+    val steps = Map(
+      "list"     -> list _,
+      "download" -> download _,
+      "parent"   -> parent _,
+      "github"   -> github _,
+      "elastic"  -> elastic _
+    )
+
+    (args.toList match {
+      case "all" :: Nil => steps.values
+      case "claims" :: Nil => List(claims _)
+      case _ => args.toList.flatMap(steps.get)
+    }).foreach(step => step())
 
     system.terminate()
     ()

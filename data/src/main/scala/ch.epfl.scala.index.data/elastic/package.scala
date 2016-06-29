@@ -1,8 +1,9 @@
 package ch.epfl.scala.index
 package data
 
-import ch.epfl.scala.index.model.release.{Milestone, OtherPreRelease, ReleaseCandidate, Scope}
 import model._
+import release._
+
 import org.elasticsearch.common.settings.Settings
 import com.sksamuel.elastic4s._
 import source.Indexable
@@ -16,7 +17,7 @@ trait ProjectProtocol {
     classOf[Milestone],
     classOf[ReleaseCandidate],
     classOf[OtherPreRelease]
-  ))) ++ List(ScopeSerializer)
+  )))
 
   implicit val serialization = native.Serialization
 
@@ -29,19 +30,6 @@ trait ProjectProtocol {
 
     override def json(project: Project): String = write(project)
   }
-
-  /**
-    * Scope serializer, since Scope is not a case class json4s can't handle this by default
-    *
-    */
-  object ScopeSerializer extends CustomSerializer[Scope]( format => (
-    {
-      case JString(scope) => Scope(scope)
-    },
-    {
-      case scope: Scope => JString(scope.name)
-    }
-  ))
 }
 
 package object elastic extends ProjectProtocol {
