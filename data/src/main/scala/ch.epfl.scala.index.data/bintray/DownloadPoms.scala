@@ -82,8 +82,9 @@ class DownloadPoms(implicit system: ActorSystem, materializer: ActorMaterializer
       case Left(e) => println(e)
     }
 
-  def run() = {
+  def run(): Unit = {
     progress.start()
     Await.result(downloadPoms.runForeach(_ => ()), Duration.Inf)
+    ()
   }
 }
