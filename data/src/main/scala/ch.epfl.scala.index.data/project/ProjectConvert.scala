@@ -166,30 +166,6 @@ object ProjectConvert {
       reverseDependenciesCache.getOrElse(release.reference, Seq())
     }
 
-    // /* get the supported tags for a project artifact. supported means
-    //  * the scala target like scala_2.11 or scala.js_2.11_0.6 or even
-    //  * featured and very popular artifacts like spark. Featured artifacts are
-    //  * done by reverse lookup
-    //  *
-    //  * @param artifacts the current artifact to inspect
-    //  * @return
-    //  */
-    // def extractSupportTags(artifacts: List[Artifact]): List[String] = {
-
-    //   artifacts.foldLeft(Seq[String]()) { (stack, artifact) =>
-    //     stack ++ artifact.releases.flatMap { r =>
-
-    //       /* scala target */
-    //       val target: String = r.reference.targets.supportName
-    //       val featured: Seq[String] = featuredArtifacts.filter { feat =>
-    //         r.reverseDependencies.exists(_.dependency.name.startsWith(feat._1))
-    //       }.values.toSeq
-    //       if (stack.contains(target)) featured else featured :+ target
-    //     }
-    //   }.foldLeft(Seq[String]()){ (stack, dep) => if (stack.contains(dep)) stack else stack :+ dep}
-    //   .toList
-    // }
-
     def collectDependencies(artifacts: List[Artifact], f: Release.Reference => String): List[String] = {
       for {
         artifact <- artifacts

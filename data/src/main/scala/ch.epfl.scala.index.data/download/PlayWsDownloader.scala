@@ -19,7 +19,6 @@ import play.api.{Configuration, Environment, Mode}
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
-// import scala.concurrent.ExecutionContext.Implicits.global
 
 trait PlayWsDownloader {
 
