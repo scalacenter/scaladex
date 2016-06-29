@@ -94,10 +94,10 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
    * @param response the response
    * @return
    */
-  private def processInfoResponse(repo: GithubRepo, response: WSResponse): String = {
+  private def processInfoResponse(repo: GithubRepo, response: WSResponse): Unit = {
 
     saveJson(githubRepoInfoPath(repo), repo, response)
-    response.body
+    ()
   }
 
   /**
@@ -106,10 +106,10 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
    * @param response the response
    * @return
    */
-  private def processIssuesResponse(repo: GithubRepo, response: WSResponse): String = {
+  private def processIssuesResponse(repo: GithubRepo, response: WSResponse): Unit = {
 
     saveJson(githubRepoIssuesPath(repo), repo, response)
-    response.body
+    ()
   }
 
   /**
@@ -118,10 +118,10 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
    * @param response the response
    * @return
    */
-  private def processContributorResponse(repo: GithubRepo, response: WSResponse): String = {
+  private def processContributorResponse(repo: GithubRepo, response: WSResponse): Unit = {
 
     saveJson(githubRepoContributorsPath(repo), repo, response)
-    response.body
+    ()
   }
 
   /**
@@ -130,7 +130,7 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
    * @param response the response
    * @return
    */
-  private def processReadmeResponse(repo: GithubRepo, response: WSResponse): String = {
+  private def processReadmeResponse(repo: GithubRepo, response: WSResponse): Unit = {
 
     val dir = path(repo)
     Files.createDirectories(dir)
@@ -138,8 +138,7 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
       githubReadmePath(repo),
       GithubReadme.absoluteUrl(response.body, repo, "master").getBytes(StandardCharsets.UTF_8)
     )
-
-    response.body
+    ()
   }
 
   /**
@@ -194,12 +193,14 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
   /**
    * process all downloads
    */
-  def run() = {
+  def run(): Unit = {
 
-    download[GithubRepo, String]("Downloading Repo Info", githubRepos, githubInfoUrl, processInfoResponse)
-    download[GithubRepo, String]("Downloading Readme", githubRepos, githubReadmeUrl, processReadmeResponse)
+    download[GithubRepo, Unit]("Downloading Repo Info", githubRepos, githubInfoUrl, processInfoResponse)
+    download[GithubRepo, Unit]("Downloading Readme", githubRepos, githubReadmeUrl, processReadmeResponse)
     // todo: for later @see #112 */
-    // download[GithubRepo, String]("Downloading Issues", githubRepos, githubIssuesUrl, processIssuesResponse)
-    download[GithubRepo, String]("Downloading Contributors", githubRepos, githubContributorsUrl, processContributorResponse)
+    // download[GithubRepo, Unit]("Downloading Issues", githubRepos, githubIssuesUrl, processIssuesResponse)
+    download[GithubRepo, Unit]("Downloading Contributors", githubRepos, githubContributorsUrl, processContributorResponse)
+
+    ()
   }
 }

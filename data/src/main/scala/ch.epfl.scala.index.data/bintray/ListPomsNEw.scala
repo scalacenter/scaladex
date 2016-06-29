@@ -1,21 +1,33 @@
-package ch.epfl.scala.index.data.bintray
+package ch.epfl.scala.index
+package data
+package bintray
+
+import java.nio.file.Files
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import ch.epfl.scala.index.data.download.PlayWsDownloader
+import akka.stream.scaladsl.{FileIO, Flow, Keep, Source}
+import akka.util.ByteString
+import com.github.nscala_time.time.Imports._
+import model._
+import download.PlayWsDownloader
 import play.api.libs.ws.{WSRequest, WSResponse}
 import play.api.libs.ws.ahc.AhcWSClient
 import org.json4s._
 import org.json4s.native.JsonMethods._
+import org.json4s.native.Serialization.write
 
+import scala.concurrent.Await
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
 
-class ListPomsNew(implicit system: ActorSystem, implicit val materializer: ActorMaterializer)
+class ListPomsNew(implicit val system: ActorSystem, implicit val materializer: ActorMaterializer)
   extends BintrayProtocol with BintrayCredentials with PlayWsDownloader {
 
+  import system.dispatcher
   /**
    * Internal pagination class
+   *
    * @param numberOfPages the maximum number of pages
    * @param itemPerPage the max items per page
    */
@@ -32,6 +44,7 @@ class ListPomsNew(implicit system: ActorSystem, implicit val materializer: Actor
 
   /** paginated search query for bintray - append the query string to
    * the request object
+   *
    * @param client The play ws client
    * @param page the page credentials to download
    * @return
@@ -56,7 +69,7 @@ class ListPomsNew(implicit system: ActorSystem, implicit val materializer: Actor
 
     val request = discover(wsClient, PomListDownload(scalaVersion, 0))
 
-    request.get.flatMap { response =>
+    request.head.flatMap { response =>
 
       response.status match {
 
@@ -76,28 +89,37 @@ class ListPomsNew(implicit system: ActorSystem, implicit val materializer: Actor
 
   def processPomDownload(page: PomListDownload, response: WSResponse): List[BintraySearch] = {
 
-//    println(response.body)
-
     parse(response.body).extract[List[BintraySearch]]
+//    parse(response.body.replaceAll("""(\.[0-9]{3,}Z)""", "Z")).extract[List[BintraySearch]]
   }
 
-  def run(scalaVersion: String) = {
+  def writeToFile(merged: List[BintraySearch]) = {
+    Files.delete(bintrayCheckpoint)
+
+    val flow = Flow[BintraySearch]
+      .map(bintray => write[BintraySearch](bintray))
+      .map(s => ByteString(s + nl))
+      .toMat(FileIO.toPath(bintrayCheckpoint))(Keep.right)
+
+    Await.result(Source(merged).runWith(flow), Duration.Inf)
+  }
+
+  def run(scalaVersion: String): Unit = {
 
     println(s"mostRecentQueriedDate: ${mostRecentQueriedDate.map(_.toLocalDateTime.toString)}Z")
 
-//    val pagination = getNumberOfPages(scalaVersion)
-//    pagination.onFailure { case ex: Throwable => println(ex.getMessage)}
+    val page: InternalBintrayPagination = Await.result(getNumberOfPages(scalaVersion), Duration.Inf)
 
-//    pagination map { page =>
+    val requestCount = Math.ceil(page.numberOfPages.toDouble / page.itemPerPage.toDouble).toInt
+    val toDownload = List.tabulate(requestCount)(p => PomListDownload(scalaVersion, p)).toSet
 
-//      println(page)
-//      val requestCount = Math.floor(page.numberOfPages.toDouble / page.numberOfPages.toDouble).toInt
-      val toDownload = List.tabulate(1)(p => PomListDownload(scalaVersion, p)).toSet
+    val newQueried: Seq[List[BintraySearch]] = download[PomListDownload, List[BintraySearch]]("Download Poms", toDownload, discover, processPomDownload)
 
-      println(toDownload)
-      val newQueried = download[PomListDownload, List[BintraySearch]]("Download Poms", toDownload, discover, processPomDownload)
+    val merged = newQueried.foldLeft(queried)((oldList, newList) => oldList ++ newList).sortBy(_.created)(Descending)
 
-      println(newQueried)
-//    }
+    print("writing Files ... ")
+    writeToFile(merged)
+    println("done")
+    ()
   }
 }

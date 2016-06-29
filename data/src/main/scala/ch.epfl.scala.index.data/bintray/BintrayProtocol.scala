@@ -45,16 +45,33 @@ trait BintrayProtocol extends DefaultJsonProtocol {
   }
   implicit val bintraySearchFormat = jsonFormat10(BintraySearch)
 
-  implicit val formats = DefaultFormats ++ org.json4s.ext.JodaTimeSerializers.all
+  implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
   implicit val serialization = native.Serialization
+
+  /**
+   * Scope serializer, since Scope is not a case class json4s can't handle this by default
+   *
+   */
+  object DateTimeSerializer extends CustomSerializer[DateTime]( format => (
+    {
+      case JString(dateTime) => {
+        val parser = ISODateTimeFormat.dateTimeParser
+        parser.parseDateTime(dateTime)
+      }
+    },
+    {
+      case dateTime: DateTime => {
+        val formatter = ISODateTimeFormat.dateTime
+        JString(formatter.print(dateTime))
+      }
+    }
+  ))
 }
 
 object BintrayMeta extends BintrayProtocol {
   def sortedByCreated(path: Path): List[BintraySearch] = {
     val source = scala.io.Source.fromFile(path.toFile)
-    val ret =
-      source.mkString.split(nl).
-      toList
+    val ret = source.mkString.split(nl).toList
       
     source.close()
 

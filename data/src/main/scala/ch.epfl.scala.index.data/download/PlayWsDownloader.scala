@@ -2,8 +2,6 @@ package ch.epfl.scala.index
 package data
 package download
 
-import model.misc.Url
-
 import me.tongfei.progressbar.ProgressBar
 
 import akka.actor.ActorSystem
