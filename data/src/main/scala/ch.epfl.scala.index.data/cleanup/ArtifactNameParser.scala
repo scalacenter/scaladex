@@ -2,7 +2,8 @@ package ch.epfl.scala.index
 package data
 package cleanup
 
-import ch.epfl.scala.index.model.release.ScalaTargets
+import model.release._
+
 import fastparse.all._
 import fastparse.core.Parsed
 
@@ -13,17 +14,17 @@ object ArtifactNameParser {
     val Scala = "_" ~ SemanticVersioning
     val ScalaJs = "_sjs" ~ SemanticVersioning
     
-    val ScalaTarget = (ScalaJs.? ~ Scala).map{case (scalaJsVersion, scalaVersion) => 
-      ScalaTargets(scalaVersion, scalaJsVersion)
+    val ScalaTargetParser = (ScalaJs.? ~ Scala).map{case (scalaJsVersion, scalaVersion) => 
+      ScalaTarget(scalaVersion, scalaJsVersion)
     }
 
     Start ~
-    (Alpha | Digit | "-".! | ".".! | (!(ScalaTarget ~ End) ~ "_")).rep.! ~ // must end with scala target
-    ScalaTarget ~
+    (Alpha | Digit | "-".! | ".".! | (!(ScalaTargetParser ~ End) ~ "_")).rep.! ~ // must end with scala target
+    ScalaTargetParser ~
     End
   }
   
-  def apply(artifactId: String): Option[(String, ScalaTargets)] = {
+  def apply(artifactId: String): Option[(String, ScalaTarget)] = {
     ArtifactNameParser.parse(artifactId) match {
       case Parsed.Success(v, _) => Some(v)
       case _ => None

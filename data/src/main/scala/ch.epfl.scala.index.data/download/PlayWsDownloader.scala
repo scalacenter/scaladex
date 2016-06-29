@@ -2,11 +2,16 @@ package ch.epfl.scala.index
 package data
 package download
 
+import model.misc.Url
+
+import me.tongfei.progressbar.ProgressBar
+
+import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Source
-import model.misc.Url
+
 import com.typesafe.config.ConfigFactory
-import me.tongfei.progressbar.ProgressBar
+
 import play.api.libs.ws.{WSConfigParser, WSRequest, WSResponse}
 import play.api.libs.ws.ahc.{AhcConfigBuilder, AhcWSClient, AhcWSClientConfig}
 import play.api.{Configuration, Environment, Mode}
@@ -14,10 +19,12 @@ import play.api.{Configuration, Environment, Mode}
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
-import scala.concurrent.ExecutionContext.Implicits.global
+// import scala.concurrent.ExecutionContext.Implicits.global
 
 trait PlayWsDownloader {
 
+  implicit val system: ActorSystem
+  import system.dispatcher
   implicit val materializer: ActorMaterializer
 
   /**
@@ -32,7 +39,7 @@ trait PlayWsDownloader {
         |ws.followRedirects = true
       """.stripMargin))
 
-    /** If running in Play, environment should be injected */
+    /* If running in Play, environment should be injected */
     val environment = Environment(new java.io.File("."), this.getClass.getClassLoader, Mode.Prod)
 
     val parser = new WSConfigParser(configuration, environment)

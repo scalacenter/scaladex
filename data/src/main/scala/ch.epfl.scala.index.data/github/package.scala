@@ -1,9 +1,9 @@
 package ch.epfl.scala.index
 package data
 
-import java.nio.file.Paths
+import model.misc.GithubRepo
 
-import ch.epfl.scala.index.model.misc.GithubRepo
+import java.nio.file.Paths
 
 package object github {
   private[github] val githubBase = build.info.BuildInfo.baseDirectory.toPath.resolve(Paths.get("index", "github"))

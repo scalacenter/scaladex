@@ -3,6 +3,10 @@ package server
 
 import model._
 import data.cleanup.SemanticVersionParser
+import model.misc.UserInfo
+import model.release.SemanticVersion
+
+
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import Uri._
@@ -14,8 +18,6 @@ import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import ch.epfl.scala.index.model.misc.UserInfo
-import ch.epfl.scala.index.model.release.SemanticVersion
 
 import scala.concurrent.duration._
 import scala.concurrent.Await
@@ -44,10 +46,11 @@ object Server {
     def frontPage(userInfo: Option[UserInfo]) = {
       for {
         keywords <- sharedApi.keywords()
-        support <- sharedApi.support()
+        targets <- sharedApi.targets()
+        dependencies <- sharedApi.dependencies()
         latestProjects <- sharedApi.latestProjects()
         latestReleases <- sharedApi.latestReleases()
-      } yield views.html.frontpage(keywords, support, latestProjects, latestReleases, userInfo)
+      } yield views.html.frontpage(keywords, targets, dependencies, latestProjects, latestReleases, userInfo)
     }
 
     def artifactPage(reference: Artifact.Reference, version: Option[SemanticVersion], user: Option[UserInfo]) = {

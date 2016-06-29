@@ -2,10 +2,11 @@ package ch.epfl.scala.index
 package server
 
 import model._
+import misc.{GithubRepo, Pagination, UserInfo}
+
 import data.elastic._
 import com.sksamuel.elastic4s._
 import ElasticDsl._
-import ch.epfl.scala.index.model.misc.{GithubRepo, Pagination, UserInfo}
 import org.elasticsearch.search.sort.SortOrder
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -117,11 +118,38 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
    */
   def keywords() = aggregations("keywords")
 
-  /**
-   * get suport tags list
-   * @return
-   */
-  def support(): Future[Map[String, Long]] = aggregations("support")
+  
+  def targets(): Future[Map[String, Long]] = aggregations("targets")
+
+  def dependencies(): Future[List[(String, Long)]] = {
+    val testOrLogin = Set(
+      "scalatest/scalatest",
+      "scoverage/scalac-scoverage-plugin",
+      "rickynils/scalacheck",
+      "scoverage/scalac-scoverage-runtime",
+      "etorreborre/specs2",
+      "etorreborre/specs2-core",
+      "akka/akka-testkit",
+      "playframework/play-test",
+      "typesafehub/scala-logging",
+      "paulbutcher/scalamock-scalatest-support",
+      "typesafehub/scala-logging-slf4j",
+      "scopt/scopt",
+      "etorreborre/specs2-junit",
+      "etorreborre/specs2-mock",
+      "akka/akka-slf4j",
+      "etorreborre/specs2-scalacheck",
+      "scalaz/scalaz-scalacheck-binding",
+      "spray/spray-testkit",
+      "playframework/play-specs2"
+    )
+
+    aggregations("dependencies").map(agg =>
+      agg.toList.sortBy(_._2)(Descending).filter{ case (ref, _) =>
+        !testOrLogin.contains(ref)
+      }
+    )
+  }
 
   /**
    * list all tags including number of facets

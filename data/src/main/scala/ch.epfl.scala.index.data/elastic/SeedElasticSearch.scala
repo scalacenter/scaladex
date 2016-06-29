@@ -4,6 +4,7 @@ package elastic
 
 import model.Project
 import project._
+
 import maven.PomsReader
 
 import com.sksamuel.elastic4s._
@@ -62,7 +63,8 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
       Await.result(esClient.execute {
         create.index(indexName).mappings(mapping(collectionName).fields(
           field("keywords") typed StringType index "not_analyzed",
-          field("support") typed StringType index "not_analyzed",
+          field("targets") typed StringType index "not_analyzed",
+          field("dependencies") typed StringType index "not_analyzed",
           field("parentOrganization") typed StringType index "not_analyzed",
           field("firstUpdate").typed(DateType),
           field("lastUpdate").typed(DateType),

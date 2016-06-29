@@ -10,14 +10,15 @@ import misc.{GithubInfo, GithubRepo, Url}
  * @param artifacts the artifact representation itself
  * @param github github information representation
  * @param keywords predefined keywords (ex: database)
- * @param stackOverflowTags http://stackoverflow.com/tags
+ * @param stackOverflowTags see http://stackoverflow.com/tags (ex: akka)
  * @param twitter @ handle (ex: @akkateam, @typelevel)
  * @param parentOrganization agglomerate of github organizations: lightbend(akka, play, ...), verizon(verizon, oncue), etc
  * @param logoImageUrl absolute url to a logo (ex: http://spark.apache.org/images/spark-logo-trademark.png)
- * @param _id elastic search id
- * @param created created date representation
- * @param lastUpdate last update representation
- * @param support elastic support tags for ex(scala_2.11, scala_2.12, spark, scala-js_0.5)
+ * @param _id elasticsearch id only used for updating projects
+ * @param created date of the first release
+ * @param lastUpdate date of the last release
+ * @param targets (ex: scala_2.11, scala_2.12, scala-js_0.5)
+ * @param dependencies to aggregate most dependended uppon libs (ex: spark, playframework, ...)
  */
 case class Project(
   reference: Project.Reference,
@@ -31,7 +32,8 @@ case class Project(
   _id: Option[Int] = None,
   created: Option[String] = None,
   lastUpdate: Option[String] = None,
-  support: List[String] = Nil
+  targets: List[String] = Nil,
+  dependencies: List[String] = Nil
 ) {
 
   /**

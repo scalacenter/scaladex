@@ -25,7 +25,7 @@ case class Release(
   mavenCentral: Boolean = false,
   licenses: Set[License] = Set(),
 
-  /** split dependencies in 2 fields because elastic can't handle 2 different types
+  /* split dependencies in 2 fields because elastic can't handle 2 different types
    * in one field. That is a simple workaround for that
    */
   scalaDependencies: Seq[ScalaDependency] = Seq(),
@@ -39,8 +39,8 @@ case class Release(
    */
   def sbtInstall = {
 
-    val scalaJs = reference.targets.scalaJsVersion.isDefined
-    val crossFull = reference.targets.scalaVersion.patch.isDefined
+    val scalaJs = reference.target.scalaJsVersion.isDefined
+    val crossFull = reference.target.scalaVersion.patch.isDefined
 
     val (artifactOperator, crossSuffix) =
       if (scalaJs) ("%%%", "")
@@ -81,7 +81,7 @@ case class Release(
 
       import maven._
 
-      /** no frame
+      /* no frame
        * hosted on s3 at:
        *https://static.javadoc.io/$groupId/$artifactId/$version/index.html#package
        * HEAD to check 403 vs 200
@@ -109,8 +109,7 @@ case class Release(
   lazy val uniqueOrderedReverseDependencies = {
 
     orderedReverseDependencies.foldLeft(Seq[ScalaDependency]()) { (current, next) =>
-
-      if (current.exists(_.dependency.name == next.dependency.name)) current else current :+ next
+      if (current.exists(_.reference.name == next.reference.name)) current else current :+ next
     }
   }
 
@@ -127,7 +126,7 @@ case class Release(
    */
   def versionsForReverseDependencies(dep: ScalaDependency): Seq[SemanticVersion] = {
 
-    reverseDependencies.filter(d => d.dependency.name == dep.dependency.name).map(_.dependency.version)
+    reverseDependencies.filter(d => d.reference.name == dep.reference.name).map(_.reference.version)
   }
 }
 
@@ -139,13 +138,13 @@ object Release {
    * @param organization the organisation name like    typelevel | akka
    * @param artifact the artifact name like            cats-core | akka-http-experimental
    * @param version the semantic version like              0.6.0 | 0.6.0-RC1
-   * @param targets the targets this reference can run on
+   * @param target the target this reference can run on
    */
   case class Reference(
     organization: String,
     artifact: String,
     version: SemanticVersion,
-    targets: ScalaTargets
+    target: ScalaTarget
   ) extends GeneralReference {
 
     /**
