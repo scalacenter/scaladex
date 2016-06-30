@@ -1,9 +1,8 @@
-@import ch.epfl.scala.index.model.Project
-@import ch.epfl.scala.index.model.Artifact
-@import ch.epfl.scala.index.model.Release
+@import ch.epfl.scala.index.model.{Release, Project, Artifact}
 @import ch.epfl.scala.index.model.misc.UserInfo
 @import ch.epfl.scala.index.model.release.{Dependency, JavaDependency, ScalaDependency, SemanticVersion}
 @import ch.epfl.scala.index.model.misc.GithubInfo
+
 @(project: Project, artifact: Artifact.Reference, version: Option[SemanticVersion], releases: List[Release], user: Option[UserInfo])
 
 @staticJs = {
@@ -94,28 +93,38 @@
         <div class="col-md-4">
           <div class="sidebar-project">
 
-            @project.github.map(statisticBlock)
-
             <div class="targets box">
               <h4>Targets</h4>
 
-              @for((release, index) <- releases.sortBy(_.reference.target.orderName).zipWithIndex) {
-                <a href="#target-@release.reference.target.orderName" data-target="#target-@release.reference.target.orderName" class="targets btn btn-xs @if(0 == index) {btn-primary} else {btn-default}" name="@release.reference.target.name" role="button" data-toggle="tab"aria-controls="target-@release.reference.target.orderName">
+              @for((release, index) <- releases.sortBy(_.reference.target.orderName).zipWithIndex.reverse) {
+                <a href="#target-@release.reference.target.orderName" 
+                   data-target="#target-@release.reference.target.orderName"
+                   class="targets btn btn-xs @if(releases.size - 1 == index) {btn-primary} else {btn-default}" 
+                   name="@release.reference.target.name" 
+                   role="button" 
+                   data-toggle="tab"
+                   aria-controls="target-@release.reference.target.orderName">
                     @release.reference.target.name
                 </a>
               }
-
             </div>
 
             <div id="#targets" class="tab-content">
               @for((release, index) <- releases.sortBy(_.reference.target.orderName).zipWithIndex) {
-                <div id="target-@release.reference.target.orderName" class="tab-pane fade @if(0 == index) {in active}">
+                <div id="target-@release.reference.target.orderName" 
+                     class="tab-pane fade @if(releases.size - 1 == index) {in active}">
 
                   <div class="install">
                     <ul class="nav nav-tabs" role="tablist">
-                      <li role="presentation" class="active"><a href="#sbt" aria-controls="sbt" role="tab" data-toggle="tab">Sbt</a></li>
-                      <li role="presentation"><a href="#maven" aria-controls="maven" role="tab" data-toggle="tab">Maven</a></li>
-                      <li role="presentation"><a href="#gradle" aria-controls="gradle" role="tab" data-toggle="tab">Gradle</a></li>
+                      <li role="presentation" class="active">
+                        <a href="#sbt" aria-controls="sbt" role="tab" data-toggle="tab">Sbt</a>
+                      </li>
+                      <li role="presentation">
+                        <a href="#maven" aria-controls="maven" role="tab" data-toggle="tab">Maven</a>
+                      </li>
+                      <li role="presentation">
+                        <a href="#gradle" aria-controls="gradle" role="tab" data-toggle="tab">Gradle</a>
+                      </li>
                     </ul>
                     <div class="tab-content">
                       <div role="tabpanel" class="tab-pane active" id="sbt">
@@ -130,8 +139,6 @@
                     </div>
                   </div>
 
-                  @project.github.map(contributorsBlock)
-
                   <div class="documentation box">
                     <h4>Documentation</h4>
                     <ul>
@@ -141,6 +148,9 @@
                     </ul>
                   </div>
 
+                  @project.github.map(contributorsBlock)
+
+                  @project.github.map(statisticBlock)
 
                   <div class="license box">
                     <h4>License</h4>

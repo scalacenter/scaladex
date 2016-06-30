@@ -125,25 +125,26 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
     // we remove testing or logging because they are always a dependency
     // we could have another view to compare testing frameworks
     val testOrLogging = Set(
-      "scalatest/scalatest",
-      "scoverage/scalac-scoverage-plugin",
-      "rickynils/scalacheck",
-      "scoverage/scalac-scoverage-runtime",
+      "akka/akka-slf4j",
+      "akka/akka-testkit",
       "etorreborre/specs2",
       "etorreborre/specs2-core",
-      "akka/akka-testkit",
-      "playframework/play-test",
-      "typesafehub/scala-logging",
-      "paulbutcher/scalamock-scalatest-support",
-      "typesafehub/scala-logging-slf4j",
-      "scopt/scopt",
       "etorreborre/specs2-junit",
       "etorreborre/specs2-mock",
-      "akka/akka-slf4j",
       "etorreborre/specs2-scalacheck",
+      "lihaoyi/utest",
+      "paulbutcher/scalamock-scalatest-support",
+      "playframework/play-specs2",
+      "playframework/play-test",
+      "rickynils/scalacheck",
+      "scalatest/scalatest",
       "scalaz/scalaz-scalacheck-binding",
+      "scopt/scopt",
+      "scoverage/scalac-scoverage-plugin",
+      "scoverage/scalac-scoverage-runtime",
       "spray/spray-testkit",
-      "playframework/play-specs2"
+      "typesafehub/scala-logging",
+      "typesafehub/scala-logging-slf4j"
     )
 
     aggregations("dependencies").map(agg =>
