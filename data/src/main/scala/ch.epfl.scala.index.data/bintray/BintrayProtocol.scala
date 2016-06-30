@@ -56,6 +56,6 @@ object BintrayMeta extends BintrayProtocol {
       
     source.close()
 
-    ret.map(_.parseJson.convertTo[BintraySearch]).sortBy(_.created)(Descending)
+    ret.filter(_ != "").map(_.parseJson.convertTo[BintraySearch]).sortBy(_.created)(Descending)
   }
 }
