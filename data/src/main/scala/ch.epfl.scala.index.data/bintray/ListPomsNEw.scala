@@ -2,17 +2,21 @@ package ch.epfl.scala.index
 package data
 package bintray
 
+import model._
+import download.PlayWsDownloader
+
 import java.nio.file.Files
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Flow, Keep, Source}
 import akka.util.ByteString
+
 import com.github.nscala_time.time.Imports._
-import model._
-import download.PlayWsDownloader
+
 import play.api.libs.ws.{WSRequest, WSResponse}
 import play.api.libs.ws.ahc.AhcWSClient
+
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization.write
@@ -25,6 +29,7 @@ class ListPomsNew(implicit val system: ActorSystem, implicit val materializer: A
   extends BintrayProtocol with BintrayCredentials with PlayWsDownloader {
 
   import system.dispatcher
+
   /**
    * Internal pagination class
    *
@@ -34,6 +39,7 @@ class ListPomsNew(implicit val system: ActorSystem, implicit val materializer: A
   case class InternalBintrayPagination(numberOfPages: Int, itemPerPage: Int)
 
   case class PomListDownload(scalaVersion: String, page: Int)
+  
   /**
    * List of already fetched poms
    */
