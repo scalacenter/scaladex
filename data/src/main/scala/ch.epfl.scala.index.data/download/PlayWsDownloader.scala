@@ -18,7 +18,6 @@ import play.api.{Configuration, Environment, Mode}
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scala.util.{Failure, Success}
 
 trait PlayWsDownloader {
 
@@ -71,18 +70,10 @@ trait PlayWsDownloader {
 
     def processDownloads = {
 
-      Source(toDownload).map { item =>
-
+      Source(toDownload).mapAsync(1){ item =>
         val url = downloadUrl(item)
         val response = applyHeaders(wsClient.url(url.target)).get
-
-        response.onComplete {
-
-          case Success(data) => process(item, data)
-          case Failure(e) => println(s"error on downloading content from ${url.target}: ${e.getMessage}")
-        }
-
-        response
+        response.map(data => process(item, data))
       }
     }
 
