@@ -11,11 +11,9 @@ import org.json4s._
 import native.JsonMethods._
 import native.Serialization.writePretty
 
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
-import play.api.libs.ws.ahc.AhcWSClient
 import play.api.libs.ws.{WSRequest, WSResponse}
 
 import scala.util.Success
@@ -150,44 +148,46 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
 
   /**
    * get the Github Info url
-   * @param client The play Ws client
+   *
    * @param repo the current repository
    * @return
    */
-  private def githubInfoUrl(client: AhcWSClient, repo: GithubRepo): WSRequest = {
+  private def githubInfoUrl(repo: GithubRepo): WSRequest = {
 
-    applyAcceptJsonHeaders(client.url(mainGithubUrl(repo)))
+    applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo)))
   }
 
   /**
    * get the Github readme url
-   * @param client The play Ws client
+   *
    * @param repo the current repository
    * @return
    */
-  private def githubReadmeUrl(client: AhcWSClient, repo: GithubRepo): WSRequest = {
+  private def githubReadmeUrl(repo: GithubRepo): WSRequest = {
 
-    applyReadmeHeaders(client.url(mainGithubUrl(repo) + "/readme"))
+    applyReadmeHeaders(wsClient.url(mainGithubUrl(repo) + "/readme"))
   }
 
   /**
    * get the Github issues url
+   *
    * @param repo the current repository
    * @return
    */
-  private def githubIssuesUrl(client: AhcWSClient, repo: GithubRepo): WSRequest = {
+  private def githubIssuesUrl(repo: GithubRepo): WSRequest = {
 
-    applyAcceptJsonHeaders(client.url(mainGithubUrl(repo) + "/issues"))
+    applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo) + "/issues"))
   }
 
   /**
    * get the Github contributors url
+   *
    * @param repo the current repository
    * @return
    */
-  private def githubContributorsUrl(client: AhcWSClient, repo: GithubRepo): WSRequest = {
+  private def githubContributorsUrl(repo: GithubRepo): WSRequest = {
 
-    applyAcceptJsonHeaders(client.url(mainGithubUrl(repo) + "/contributors"))
+    applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo) + "/contributors"))
   }
 
   /**

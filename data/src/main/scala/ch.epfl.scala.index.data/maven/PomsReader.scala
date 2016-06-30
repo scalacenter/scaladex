@@ -82,7 +82,7 @@ object PomsReader {
   }
 
   def load(): List[Try[(MavenModel, List[BintraySearch])]]  = {
-    val meta = BintrayMeta.sortedByCreated(bintrayCheckpoint).groupBy(_.sha1)
+    val meta = BintrayMeta.readQueriedPoms(bintrayCheckpoint).groupBy(_.sha1)
 
     import scala.collection.JavaConverters._
 

@@ -60,7 +60,7 @@ trait PlayWsDownloader {
   def download[T, R](
     message: String,
     toDownload: Set[T],
-    downloadUrl: (AhcWSClient, T) => WSRequest,
+    downloadUrl: T => WSRequest,
     process: (T, WSResponse) => R
   ): Seq[R] = {
 
@@ -70,7 +70,7 @@ trait PlayWsDownloader {
 
       Source(toDownload).mapAsync(1) { item =>
 
-        val request = downloadUrl(wsClient, item)
+        val request = downloadUrl(item)
         val response = request.get
 
         response.onFailure {

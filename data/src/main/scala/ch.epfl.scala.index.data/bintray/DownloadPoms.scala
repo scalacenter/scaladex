@@ -20,7 +20,7 @@ import scala.concurrent.Await
 
 import java.nio.file._
 
-class DownloadPoms(implicit system: ActorSystem, materializer: ActorMaterializer) {
+class DownloadPoms  (implicit system: ActorSystem, materializer: ActorMaterializer) {
   import system.dispatcher
 
   private def download(search: BintraySearch) = {
@@ -50,7 +50,7 @@ class DownloadPoms(implicit system: ActorSystem, materializer: ActorMaterializer
     })
 
   private val source = scala.io.Source.fromFile(bintrayCheckpoint.toFile)
-  private val searchesBySha1 = BintrayMeta.sortedByCreated(bintrayCheckpoint).
+  private val searchesBySha1 = BintrayMeta.readQueriedPoms(bintrayCheckpoint).
     filter(s => !Files.exists(pomPath(s))). // todo make sure file content matches sha1!
     groupBy(_.sha1).                        // remove duplicates with sha1
     map{case (_, vs) => vs.head}
