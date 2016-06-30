@@ -79,4 +79,4 @@ $width-default: 140px;
 
 // font awesome
 //------------------------------------------------------------------------------
-$fa-font-path: "/assets/lib/font-awesome/fonts/";
+$fa-font-path: "/assets/lib/font-awesome/fonts"; /* no slash at the end it's added by font-awesome */
