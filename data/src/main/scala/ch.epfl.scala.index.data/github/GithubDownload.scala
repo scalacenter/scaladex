@@ -5,16 +5,18 @@ package github
 import download.PlayWsDownloader
 import cleanup.GithubRepoExtractor
 import maven.PomsReader
-import model.misc.{GithubRepo, Url}
+import model.misc.GithubRepo
 
 import org.json4s._
 import native.JsonMethods._
 import native.Serialization.writePretty
 
-import play.api.libs.ws.{WSRequest, WSResponse}
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+
+import play.api.libs.ws.ahc.AhcWSClient
+import play.api.libs.ws.{WSRequest, WSResponse}
 
 import scala.util.Success
 import java.nio.charset.StandardCharsets
@@ -149,41 +151,55 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
 
   /**
    * get the Github Info url
+   * @param client The play Ws client
    * @param repo the current repository
    * @return
    */
-  private def githubInfoUrl(repo: GithubRepo) = Url(mainGithubUrl(repo))
+  private def githubInfoUrl(client: AhcWSClient, repo: GithubRepo): WSRequest = {
+
+    applyAcceptJsonHeaders(client.url(mainGithubUrl(repo)))
+  }
 
   /**
    * get the Github readme url
+   * @param client The play Ws client
    * @param repo the current repository
    * @return
    */
-  private def githubReadmeUrl(repo: GithubRepo) = Url(mainGithubUrl(repo) + "/readme")
+  private def githubReadmeUrl(client: AhcWSClient, repo: GithubRepo): WSRequest = {
+
+    applyReadmeHeaders(client.url(mainGithubUrl(repo) + "/readme"))
+  }
 
   /**
    * get the Github issues url
    * @param repo the current repository
    * @return
    */
-  private def githubIssuesUrl(repo: GithubRepo) = Url(mainGithubUrl(repo) + "/issues")
+  private def githubIssuesUrl(client: AhcWSClient, repo: GithubRepo): WSRequest = {
+
+    applyAcceptJsonHeaders(client.url(mainGithubUrl(repo) + "/issues"))
+  }
 
   /**
    * get the Github contributors url
    * @param repo the current repository
    * @return
    */
-  private def githubContributorsUrl(repo: GithubRepo) = Url(mainGithubUrl(repo) + "/contributors")
+  private def githubContributorsUrl(client: AhcWSClient, repo: GithubRepo): WSRequest = {
+
+    applyAcceptJsonHeaders(client.url(mainGithubUrl(repo) + "/contributors"))
+  }
 
   /**
    * process all downloads
    */
   def run() = {
 
-    download[GithubRepo, String]("Downloading Repo Info", githubRepos, githubInfoUrl, applyAcceptJsonHeaders, processInfoResponse)
-    download[GithubRepo, String]("Downloading Readme", githubRepos, githubReadmeUrl, applyReadmeHeaders, processReadmeResponse)
+    download[GithubRepo, String]("Downloading Repo Info", githubRepos, githubInfoUrl, processInfoResponse)
+    download[GithubRepo, String]("Downloading Readme", githubRepos, githubReadmeUrl, processReadmeResponse)
     // todo: for later @see #112 */
-    // download[GithubRepo, String]("Downloading Issues", githubRepos, githubIssuesUrl, applyAcceptJsonHeaders, processIssuesResponse)
-    download[GithubRepo, String]("Downloading Contributors", githubRepos, githubContributorsUrl, applyAcceptJsonHeaders, processContributorResponse)
+    // download[GithubRepo, String]("Downloading Issues", githubRepos, githubIssuesUrl, processIssuesResponse)
+    download[GithubRepo, String]("Downloading Contributors", githubRepos, githubContributorsUrl, processContributorResponse)
   }
 }

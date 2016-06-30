@@ -8,7 +8,7 @@ import me.tongfei.progressbar.ProgressBar
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.{Sink, Source}
 
 import com.typesafe.config.ConfigFactory
 
@@ -30,7 +30,7 @@ trait PlayWsDownloader {
    *
    * @see https://www.playframework.com/documentation/2.5.x/ScalaWS
    */
-  private val wsClient = {
+  val wsClient = {
 
     val configuration = Configuration.reference ++ Configuration(ConfigFactory.parseString(
       """
@@ -54,8 +54,7 @@ trait PlayWsDownloader {
    *
    * @param message the message for the loader info
    * @param toDownload the set of downloadable elements
-   * @param downloadUrl a function to get the url for the current element
-   * @param applyHeaders a function to apply headers to the request
+   * @param downloadUrl a function to get the WsRequest for the current element
    * @param process a function to process the response in succes case
    * @tparam T Input type
    * @tparam R output type
@@ -63,24 +62,37 @@ trait PlayWsDownloader {
   def download[T, R](
     message: String,
     toDownload: Set[T],
-    downloadUrl: T => Url,
-    applyHeaders: WSRequest => WSRequest,
+    downloadUrl: (AhcWSClient, T) => WSRequest,
     process: (T, WSResponse) => R
-  ): Unit = {
+  ): Seq[R] = {
+
+    val progress = new ProgressBar(message, toDownload.size)
 
     def processDownloads = {
 
-      Source(toDownload).mapAsync(1){ item =>
-        val url = downloadUrl(item)
-        val response = applyHeaders(wsClient.url(url.target)).get
-        response.map(data => process(item, data))
+      Source(toDownload).mapAsync(1) { item =>
+
+        val request = downloadUrl(wsClient, item)
+        val response = request.get
+
+        response.onFailure {
+
+          case e: Throwable => println(s"error on downloading content from ${request.url}: ${e.getMessage}")
+        }
+
+        response.map { data =>
+
+          progress.step()
+          process(item, data)
+        }
       }
     }
 
-    val progress = new ProgressBar(message, toDownload.size)
     progress.start()
-    Await.result(processDownloads.runForeach(_ => progress.step()), Duration.Inf)
+    val response = Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
     progress.stop()
+
+    response
   }
 
 }

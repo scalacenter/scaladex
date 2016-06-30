@@ -83,6 +83,7 @@ lazy val data = project
       "com.typesafe.akka"      %% "akka-http-spray-json-experimental" % akkaVersion,
       "de.heikoseeberger"      %% "akka-http-json4s"                  % "1.7.0",
       "org.json4s"             %% "json4s-native"                     % "3.3.0",
+      "org.json4s"             %% "json4s-ext"                        % "3.3.0",
       "de.heikoseeberger"      %% "akka-http-circe"                   % "1.7.0",
       "org.scala-lang.modules" %% "scala-xml"                         % "1.0.5",
       "com.github.nscala-time" %% "nscala-time"                       % "2.10.0",

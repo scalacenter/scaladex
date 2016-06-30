@@ -21,15 +21,19 @@ object Main {
     }
 
     def list(): Unit = {
-      val listPomsStep = new ListPoms
-      // TODO: should be located in a config file
-      val versions = List("2.10", "2.11", "2.12")
 
-      for(version <- versions) {
+//      val listPomsStep = new ListPoms
+//      // TODO: should be located in a config file
+//      val versions = List("2.10", "2.11", "2.12")
+//
+//      for(version <- versions) {
+//
+//        println(s"fetch scala version $version")
+//        listPomsStep.run(version)
+//      }
 
-        println(s"fetch scala version $version")
-        listPomsStep.run(version)
-      }
+        val listPoms = new ListPomsNew()
+        listPoms.run("2.11")
     }
 
     def download(): Unit = {

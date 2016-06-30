@@ -3,14 +3,13 @@ package data
 package bintray
 
 import model.Descending
-
 import spray.json._
 import java.nio.file.Path
 
 import com.github.nscala_time.time.Imports._
-
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
+import org.json4s._
 
 case class BintraySearch(
   sha1: String,
@@ -45,6 +44,9 @@ trait BintrayProtocol extends DefaultJsonProtocol {
     }
   }
   implicit val bintraySearchFormat = jsonFormat10(BintraySearch)
+
+  implicit val formats = DefaultFormats ++ org.json4s.ext.JodaTimeSerializers.all
+  implicit val serialization = native.Serialization
 }
 
 object BintrayMeta extends BintrayProtocol {
