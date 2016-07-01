@@ -183,7 +183,7 @@ object Server {
       }
     }
 
-    /** wait for elastic to start */
+    /* wait for elastic to start */
     blockUntilYellow()
 
     Await.result(Http().bindAndHandle(route, "0.0.0.0", 8080), 20.seconds)
