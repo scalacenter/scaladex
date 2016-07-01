@@ -1,11 +1,12 @@
 package ch.epfl.scala.index
 package data
 
+import com.sksamuel.elastic4s.ElasticDsl.{get, _}
 import model._
 import release._
-
 import org.elasticsearch.common.settings.Settings
 import com.sksamuel.elastic4s._
+import org.elasticsearch.cluster.health.ClusterHealthStatus
 import source.Indexable
 import org.json4s._
 import org.json4s.native.Serialization
@@ -46,4 +47,52 @@ package object elastic extends ProjectProtocol {
 
   val indexName = "scaladex"
   val collectionName = "artifacts"
+
+  private def blockUntil(explain: String)(predicate: () => Boolean): Unit = {
+
+    var backoff = 0
+    var done = false
+    while (backoff <= 16 && !done) {
+      if (backoff > 0) Thread.sleep(200L * backoff)
+      backoff = backoff + 1
+      done = predicate()
+    }
+    require(done, s"Failed waiting on: $explain")
+  }
+
+  def blockUntilYellow(): Unit = {
+
+    import ElasticDsl._
+
+    blockUntil("Expected cluster to have green status") { () =>
+      esClient.execute {
+        get cluster health
+      }.await.getStatus == ClusterHealthStatus.YELLOW
+    }
+  }
+
+  def blockUntilCount(expected: Int): Unit = {
+    blockUntil(s"Expected count of $expected") {
+      () =>
+        expected <= {
+          val res = esClient.execute {
+            search
+              .in(indexName / collectionName)
+              .query(matchAllQuery)
+              .size(0)
+          }.await.totalHits
+          println(res)
+          res
+        }
+
+    }
+  }
+
+  def blockUntilGreen(): Unit = {
+    blockUntil("Expected cluster to have green status") { () =>
+      esClient.execute {
+        get cluster health
+      }.await.getStatus == ClusterHealthStatus.GREEN
+    }
+  }
 }
