@@ -1,90 +1,130 @@
-package ch.epfl.scala.index
-package data
+package ch.epfl.scala.index.data
 package bintray
 
-import me.tongfei.progressbar._
+import download.PlayWsDownloader
 
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path}
 
-import akka.stream.scaladsl._
-import akka.stream.ActorMaterializer
-import akka.stream.FlowShape
 import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import play.api.libs.ws.{WSRequest, WSResponse}
 
-import scala.util.{Try, Success, Failure}
-import scala.concurrent.Future
-import scala.concurrent.duration._
-import scala.concurrent.Await
+class DownloadPoms  (implicit val system: ActorSystem, implicit val materializer: ActorMaterializer) extends PlayWsDownloader {
 
-import java.nio.file._
-
-class DownloadPoms  (implicit system: ActorSystem, materializer: ActorMaterializer) {
-  import system.dispatcher
-
-  private def download(search: BintraySearch) = {
-    import search._
-    def escape(v: String) = v.replace(" ", "%20")
-    val downloadUri =
-      if(repo == "jcenter" && owner == "bintray") Uri(escape(s"https://jcenter.bintray.com/$path"))
-      else Uri(escape(s"https://dl.bintray.com/$owner/$repo/$path"))
-    HttpRequest(uri = downloadUri)
-  }
-  
-  val jcenterBintrayHttpFlow = Http().cachedHostConnectionPoolHttps[BintraySearch]("jcenter.bintray.com")
-  val dlBintrayHttpFlow      = Http().cachedHostConnectionPoolHttps[BintraySearch]("dl.bintray.com")
-  val splitConnectionPool =
-    Flow.fromGraph(GraphDSL.create() { implicit b =>
-      import GraphDSL.Implicits._
-      val broadcast = b.add(Broadcast[(HttpRequest, BintraySearch)](2))
-      val merge     = b.add(Merge[(Try[HttpResponse], BintraySearch)](2))
-
-      def hostIs(host: String)(in: (HttpRequest, BintraySearch)) = {
-        val (request, _) = in
-        request.uri.authority.host.toString == host
-      }
-      broadcast.out(0).filter(hostIs("jcenter.bintray.com")).via(jcenterBintrayHttpFlow) ~> merge.in(0)
-      broadcast.out(1).filter(hostIs("dl.bintray.com"))     .via(dlBintrayHttpFlow)      ~> merge.in(1)
-      FlowShape(broadcast.in, merge.out)
-    })
-
-  private val source = scala.io.Source.fromFile(bintrayCheckpoint.toFile)
-  private val searchesBySha1 = BintrayMeta.readQueriedPoms(bintrayCheckpoint).
-    filter(s => !Files.exists(pomPath(s))). // todo make sure file content matches sha1!
-    groupBy(_.sha1).                        // remove duplicates with sha1
-    map{case (_, vs) => vs.head}
-
-  private val progress = new ProgressBar("Downloading POMs", searchesBySha1.size)
-  
+  /**
+   * resolve the filename for a specific pom by sha1
+   *
+   * @param search the bintray search object
+   * @return
+   */
   private def pomPath(search: BintraySearch) = bintrayPomBase.resolve(s"${search.sha1}.pom")
-  
-  private val downloadPoms = Source(searchesBySha1)
-    .map(s => (download(s), s))
-    .via(splitConnectionPool)
-    .mapAsync(1){
-      case (Success(response), search) => {
-        Unmarshal(response).to[String].map(body =>
-          if(response.status == StatusCodes.OK) Right((body, search))
-          else Left((body, search))
-        )
-      }
-      case (Failure(e), _) => Future.failed(e)
-    }.map{
-      case Right((pom, search)) => {
-        progress.step()
 
-        val printer = new scala.xml.PrettyPrinter(80, 2)
-        val pw = new java.io.PrintWriter(pomPath(search).toFile)
-        pw.println(printer.format(scala.xml.XML.loadString(pom)))
-        pw.close
-      }
-      case Left(e) => println(e)
+  /**
+   * will compute ans sha1 hash from given string and verify that against
+   * given compare hash
+   * @param toVerify the string to compute
+   * @param sha1 the verify hash
+   * @return
+   */
+  def verifyChecksum(toVerify: String, sha1: String) = {
+
+    val md = java.security.MessageDigest.getInstance("SHA-1")
+    val computed = md.digest(toVerify.getBytes("UTF-8")).map("%02x".format(_)).mkString
+
+    computed == sha1
+  }
+
+  /**
+   * verify the sha1 file hash
+   * @param path the path to the file to verify
+   * @param sha1 the sha1 hash
+   * @return
+   */
+  private def verifySHA1FileHash(path: Path, sha1: String): Boolean = {
+
+    val source = scala.io.Source.fromFile(path.toFile)
+    val content = source.mkString.split(nl).mkString("")
+    source.close()
+
+    verifyChecksum(content, sha1)
+  }
+  /**
+   * get a list of bintraySearch object where no sha1 file exists
+   */
+  private val searchesBySha1: Set[BintraySearch] = {
+
+    BintrayMeta.readQueriedPoms(bintrayCheckpoint)
+      .filter(s => !Files.exists(pomPath(s)) || !verifySHA1FileHash(pomPath(s), s.sha1))
+      .groupBy(_.sha1)                         // remove duplicates with sha1
+      .map { case (_, vs) => vs.head }
+      .toSet
+  }
+
+  /**
+   * partly url encode - replaces only spaces
+   *
+   * @param url the url to "encode"
+   * @return
+   */
+  private def escape(url: String) = url.replace(" ", "%20")
+
+  /**
+   * get the download request object
+   * downloads pom from
+   * - jcenter.bintray.com or
+   * - dl.bintray.com
+   *
+   * @param search the bintray Search
+   * @return
+   */
+  private def downloadRequest(search: BintraySearch): WSRequest = {
+
+    if (search.repo == "jcenter" && search.owner == "bintray") {
+
+      wsClient.url(escape(s"https://jcenter.bintray.com/${search.path}"))
+    } else {
+
+      wsClient.url(escape(s"https://dl.bintray.com/${search.owner}/${search.repo}/${search.path}"))
     }
+  }
 
+  /**
+   * handle the downloaded pom and write it to file
+   * @param search the bintray search
+   * @param response the download response
+   */
+  private def processPomDownload(search: BintraySearch, response: WSResponse): Unit = {
+
+    if (200 == response.status) {
+
+      val path = pomPath(search)
+
+      if (Files.exists(path)) {
+
+        Files.delete(path)
+      }
+
+      if (verifyChecksum(response.body, search.sha1)) {
+
+        Files.write(path, response.body.getBytes(StandardCharsets.UTF_8))
+      }
+
+      ()
+    } else {
+
+      println("Pom download failed")
+      println(search)
+      println(response.body)
+    }
+  }
+
+  /**
+   * main run method
+   */
   def run(): Unit = {
-    progress.start()
-    Await.result(downloadPoms.runForeach(_ => ()), Duration.Inf)
+
+    download[BintraySearch, Unit]("Downloading POMs", searchesBySha1, downloadRequest, processPomDownload)
     ()
   }
 }
