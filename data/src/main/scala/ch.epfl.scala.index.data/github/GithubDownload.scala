@@ -29,7 +29,6 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
     PomsReader.load()
       .collect { case Success((pom, _)) => githubRepoExtractor(pom) }
       .flatten
-      .map { case GithubRepo(owner, repo) => GithubRepo(owner.toLowerCase, repo.toLowerCase) }
       .toSet
   }
 
