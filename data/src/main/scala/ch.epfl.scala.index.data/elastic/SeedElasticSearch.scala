@@ -55,17 +55,7 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
           .load()
           .collect {case Success(pomAndMeta) => pomAndMeta}
       )
-
-//    val investigate = List("scyks", "scala-graph")
-//    projectsUpdate
-//      .filter(p => investigate.contains(p.reference.organization))
-//      .foreach{p =>
-//        println(p.githubRepo)
-//        println(p.reference.organization + "/" + p.reference.repository)
-//        p.artifacts.foreach(a => println(a.reference.organization + "/" + a.reference.name))
-//        println("")
-//      }
-
+    
     // NB: if you get "at org.elasticsearch.action.search.AbstractSearchAsyncAction.onFirstPhaseResult"
     //     elasticsearch is just not yet ready for querying
     // see also: https://github.com/elastic/elasticsearch/issues/1063
