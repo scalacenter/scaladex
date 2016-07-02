@@ -41,18 +41,18 @@
 @statisticBlock(github: GithubInfo) = {
 
   <div class="statistic box">
-    <h4>Statistic</h4>
+    <h4>Statistics</h4>
     <div class="row">
       <div >
         <ul class="row">
-          <li class="col-md-6 col-sm-6"><i class="fa fa-eye"></i>@github.watchers watchers</li>
-          <li class="col-md-6 col-sm-6"><i class="fa fa-users"></i>@github.contributors.size Contributors</li>
-          <li class="col-md-6 col-sm-6"><i class="fa fa-star"></i>@github.stars Stars</li>
-          <li class="col-md-6 col-sm-6"><i class="fa fa-code-fork"></i>@github.forks Forks</li>
-          <li class="col-md-6 col-sm-6"><i class="fa fa-history"></i>@github.commits Commits</li>
-          <li class="col-md-6 col-sm-6"><i class="fa fa-exclamation-circle"></i>@github.issues Open issues</li>
-          <li class="col-md-6 col-sm-6"><i class="fa fa-tag"></i>@project.artifacts.find(_.reference == artifact).map(_.releases.size).getOrElse(0) Releases</li>
-          <li class="col-md-6 col-sm-6"><i class="fa fa-sitemap"></i>@releases.find(rel => version.contains(rel.reference.version)).map(_.uniqueOrderedReverseDependencies.size).getOrElse(0) Dependents</li>
+          <li class="col-md-6 col-sm-6"><i class="fa fa-eye"></i> @github.watchers watchers</li>
+          <li class="col-md-6 col-sm-6"><i class="fa fa-users"></i> @github.contributors.size Contributors</li>
+          <li class="col-md-6 col-sm-6"><i class="fa fa-star"></i> @github.stars Stars</li>
+          <li class="col-md-6 col-sm-6"><i class="fa fa-code-fork"></i> @github.forks Forks</li>
+          <li class="col-md-6 col-sm-6"><i class="fa fa-history"></i> @github.commits Commits</li>
+          <li class="col-md-6 col-sm-6"><i class="fa fa-exclamation-circle"></i> @github.issues Open issues</li>
+          <li class="col-md-6 col-sm-6"><i class="fa fa-tag"></i> @project.artifacts.find(_.reference == artifact).map(_.releases.size).getOrElse(0) Releases</li>
+          <li class="col-md-6 col-sm-6"><i class="fa fa-sitemap"></i> @releases.find(rel => version.contains(rel.reference.version)).map(_.uniqueOrderedReverseDependencies.size).getOrElse(0) Dependents</li>
         </ul>
       </div>
     </div>
@@ -97,11 +97,11 @@
               <h4>Targets</h4>
 
               @for((release, index) <- releases.sortBy(_.reference.target.orderName).zipWithIndex.reverse) {
-                <a href="#target-@release.reference.target.orderName" 
+                <a href="#target-@release.reference.target.orderName"
                    data-target="#target-@release.reference.target.orderName"
-                   class="targets btn btn-xs @if(releases.size - 1 == index) {btn-primary} else {btn-default}" 
-                   name="@release.reference.target.name" 
-                   role="button" 
+                   class="targets btn btn-xs @if(releases.size - 1 == index) {btn-primary} else {btn-default}"
+                   name="@release.reference.target.name"
+                   role="button"
                    data-toggle="tab"
                    aria-controls="target-@release.reference.target.orderName">
                     @release.reference.target.name
@@ -111,8 +111,10 @@
 
             <div id="#targets" class="tab-content">
               @for((release, index) <- releases.sortBy(_.reference.target.orderName).zipWithIndex) {
-                <div id="target-@release.reference.target.orderName" 
+                <div id="target-@release.reference.target.orderName"
                      class="tab-pane fade @if(releases.size - 1 == index) {in active}">
+
+                  @project.github.map(statisticBlock)
 
                   <div class="install">
                     <ul class="nav nav-tabs" role="tablist">
@@ -149,8 +151,6 @@
                   </div>
 
                   @project.github.map(contributorsBlock)
-
-                  @project.github.map(statisticBlock)
 
                   <div class="license box">
                     <h4>License</h4>
