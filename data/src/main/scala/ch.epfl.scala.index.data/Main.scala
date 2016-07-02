@@ -10,12 +10,15 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
 object Main {
+
   def main(args: Array[String]): Unit = {
+
     implicit val system = ActorSystem()
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
     def claims(): Unit = {
+
       val githubRepoExtractor = new GithubRepoExtractor
       githubRepoExtractor.run()
     }
@@ -34,21 +37,25 @@ object Main {
     }
 
     def download(): Unit = {
+
       val downloadPomsStep = new DownloadPoms
       downloadPomsStep.run()
     }
 
     def parent(): Unit = {
+
       val downloadParentPomsStep = new DownloadParentPoms
       downloadParentPomsStep.run()
     }
 
     def github(): Unit = {
+
       val githubDownload = new GithubDownload
       githubDownload.run()
     }
 
     def elastic(): Unit = {
+
       val seedElasticSearchStep = new SeedElasticSearch
       seedElasticSearchStep.run()
     }
@@ -62,6 +69,7 @@ object Main {
     )
 
     (args.toList match {
+
       case "all" :: Nil => steps.values
       case "claims" :: Nil => List(claims _)
       case _ => args.toList.flatMap(steps.get)
