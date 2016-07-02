@@ -279,7 +279,7 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
 
     download[GithubRepo, Unit]("Downloading Repo Info", githubRepos, githubInfoUrl, processInfoResponse)
     download[GithubRepo, Unit]("Downloading Readme", githubRepos, githubReadmeUrl, processReadmeResponse)
-    // todo: for later @see #112 */
+    // todo: for later @see #112 - remember that issues are paginated - see contributors */
     // download[GithubRepo, Unit]("Downloading Issues", githubRepos, githubIssuesUrl, processIssuesResponse)
     download[PaginatedGithub, Unit]("Downloading Contributors", paginatedGithubRepos, githubContributorsUrl, processContributorResponse)
 
