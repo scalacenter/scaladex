@@ -56,6 +56,16 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
           .collect {case Success(pomAndMeta) => pomAndMeta}
       )
 
+//    val investigate = List("scyks", "scala-graph")
+//    projectsUpdate
+//      .filter(p => investigate.contains(p.reference.organization))
+//      .foreach{p =>
+//        println(p.githubRepo)
+//        println(p.reference.organization + "/" + p.reference.repository)
+//        p.artifacts.foreach(a => println(a.reference.organization + "/" + a.reference.name))
+//        println("")
+//      }
+
     // NB: if you get "at org.elasticsearch.action.search.AbstractSearchAsyncAction.onFirstPhaseResult"
     //     elasticsearch is just not yet ready for querying
     // see also: https://github.com/elastic/elasticsearch/issues/1063
@@ -64,12 +74,12 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
 
     // XXX: at this point we would like to lock elasticsearch for updating
     // https://github.com/sksamuel/elastic4s/issues/578
-    val projectsLive = 
+    val projectsLive =
       if (exists) {
 
         println("importing live data")
-      
-        Await.result(esClient.execute { 
+
+        Await.result(esClient.execute {
           search
           .in(indexName / collectionName)
           .query(matchAllQuery)
@@ -85,7 +95,7 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
     val deltas = ProjectDelta(live = projectsLive, update = projectsUpdate)
 
     val inserts = deltas.collect{ case NewProject(project) => index.into(target).source(project) }
-    val updates = deltas.collect{ 
+    val updates = deltas.collect{
       case UpdatedProject(project) => project._id.map(id => update.id(id).in(target).doc(project))
     }.flatten
 

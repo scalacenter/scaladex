@@ -153,6 +153,8 @@ object ProjectConvert extends BintrayProtocol {
 
     println("Dependencies & Reverse Dependencies")
 
+
+
     val releases: List[Release] =
       for {
         project  <- projects
