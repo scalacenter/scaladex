@@ -16,47 +16,47 @@ object ProjectConvert extends BintrayProtocol {
 
   type cleanPomAndMata = List[(GithubRepo, String, ScalaTarget, MavenModel, List[BintraySearch], SemanticVersion)]
 
+  /**
+   * fix non standard published artifacts, create a list of supported scala version
+   * and return a list of artifact ids
+   *
+   * @param pom the current maven model
+   * @return
+   */
+  def checkNonStandardLib(pom: MavenModel): List[String] = {
+
+    getNonStandardLib(pom) match {
+
+      case Some(nonStandardLib) => nonStandardLib.scalaVersions.map(v => s"${nonStandardLib.artifactId}_$v")
+      case None => List(pom.artifactId)
+    }
+  }
+
+  /**
+   * try to find a non standard publish lib by comparing
+   * - group id
+   * - artifact id
+   * - version
+   *
+   * with references ins contrib/non-standard.json
+   *
+   * @param pom
+   * @return
+   */
+  def getNonStandardLib(pom: MavenModel): Option[NonStandardLib] = {
+
+    nonStandardLibs.find { n =>
+      n.groupId == pom.groupId &&
+        n.artifactId == pom.artifactId &&
+        n.version == pom.version
+    }
+  }
+
   def apply(pomsAndMeta: List[(maven.MavenModel, List[BintraySearch])]): List[Project] = {
     val githubRepoExtractor = new GithubRepoExtractor
     
     val progressMeta = new ProgressBar("collecting metadata", pomsAndMeta.size)
     progressMeta.start()
-
-    /**
-     * fix non standard published artifacts, create a list of supported scala version
-     * and return a list of artifact ids
-     *
-     * @param pom the current maven model
-     * @return
-     */
-    def checkNonStandardLib(pom: MavenModel): List[String] = {
-
-      getNonStandardLib(pom) match {
-
-        case Some(nonStandardLib) => nonStandardLib.scalaVersions.map(v => s"${nonStandardLib.artifactId}_$v")
-        case None => List(pom.artifactId)
-      }
-    }
-
-    /**
-     * try to find a non standard publish lib by comparing
-     * - group id
-     * - artifact id
-     * - version
-     *
-     * with references ins contrib/non-standard.json
-     *
-     * @param pom
-     * @return
-     */
-    def getNonStandardLib(pom: MavenModel): Option[NonStandardLib] = {
-
-      nonStandardLibs.find { n =>
-        n.groupId == pom.groupId &&
-        n.artifactId == pom.artifactId &&
-        n.version == pom.version
-      }
-    }
 
     val pomsAndMetaClean: cleanPomAndMata = pomsAndMeta
       .flatMap{ case (pom, metas) =>
