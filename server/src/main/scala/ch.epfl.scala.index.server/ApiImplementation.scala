@@ -77,7 +77,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
     }.map(r => r.as[Project].headOption.map(hideId))
   }
 
-  def organizationPage(organization: String, page: PageIndex, sorting: Option[String] = None ): Future[(Pagination, List[Project])] = {
+  def organizationPage(organization: String, page: PageIndex, sorting: Option[String] = None): Future[(Pagination, List[Project])] = {
     val clampedPage = if(page <= 0) 1 else page
     esClient.execute {
       search.in(indexName / collectionName).query(
