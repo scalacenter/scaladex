@@ -27,7 +27,14 @@ object ProjectConvert extends BintrayProtocol {
 
     getNonStandardLib(pom) match {
 
-      case Some(nonStandardLib) => nonStandardLib.scalaVersions.map(v => s"${nonStandardLib.artifactId}_$v")
+      case Some(nonStandardLib) =>
+        if ("org.scala-lang" == nonStandardLib.groupId) {
+
+          List(s"${nonStandardLib.artifactId}_${pom.version}")
+        } else {
+
+          nonStandardLib.scalaVersions.map(v => s"${nonStandardLib.artifactId}_$v")
+        }
       case None => List(pom.artifactId)
     }
   }
@@ -66,7 +73,7 @@ object ProjectConvert extends BintrayProtocol {
          * a reference for each scala version to fix wrong
          * published libs.
          */
-        checkNonStandardLib(pom) map {artifactId =>
+        checkNonStandardLib(pom) map { artifactId =>
 
           for {
             (artifactName, targets) <- ArtifactNameParser(artifactId)

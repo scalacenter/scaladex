@@ -84,13 +84,7 @@ trait BintrayProtocol extends DefaultJsonProtocol {
         case (artifact, scalaVersion) =>
 
           val List(groupId, artifactId, version) = artifact.split(" ").toList
-          if ("org.scala-lang" == groupId) {
-
-            NonStandardLib(groupId, artifactId, version, List(version))
-          } else {
-
-            NonStandardLib(groupId, artifactId, version, scalaVersion)
-          }
+          NonStandardLib(groupId, artifactId, version, scalaVersion)
       }.toList
     } else {
 
