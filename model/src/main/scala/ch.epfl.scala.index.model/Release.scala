@@ -24,6 +24,7 @@ case class Release(
   releaseDates: List[ISO_8601_Date] = Nil,
   mavenCentral: Boolean = false,
   licenses: Set[License] = Set(),
+  nonStandardLib: Boolean = false,
 
   /* split dependencies in 2 fields because elastic can't handle 2 different types
    * in one field. That is a simple workaround for that
@@ -43,7 +44,8 @@ case class Release(
     val crossFull = reference.target.scalaVersion.patch.isDefined
 
     val (artifactOperator, crossSuffix) =
-      if (scalaJs) ("%%%", "")
+      if (nonStandardLib) ("%", "")
+      else if (scalaJs) ("%%%", "")
       else if (crossFull) ("%", " cross CrossVersion.full")
       else ("%%", "")
 
