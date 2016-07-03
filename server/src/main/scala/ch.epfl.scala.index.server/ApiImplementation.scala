@@ -15,6 +15,8 @@ import scala.language.reflectiveCalls
 class ApiImplementation(github: Github, userState: Option[UserState])(implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(_id = None)
 
+  val resultsPerPage: Int = 10
+
   def userInfo(): Option[UserInfo] = userState.map(_.user)
   def autocomplete(q: String): Future[List[(String, String, String)]] = {
     find(q, 0).map{ case (_, projects) =>
@@ -28,31 +30,31 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
       )).take(10)
     }
   }
-  def find(queryString: String, page: PageIndex, sorting: Option[String] = None, repos: Option[Set[GithubRepo]] = None): Future[(Pagination, List[Project])] = {
-    val perPage = 10
-    val clampedPage = if(page <= 0) 1 else page
 
-    val sortQuery =
-      sorting match {
-        case Some("stars") => fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg
-        case Some("forks") => fieldSort("github.forks") missing "0" order SortOrder.DESC mode MultiMode.Avg
-        case Some("relevant") => scoreSort
-        case Some("created") => fieldSort("created") order SortOrder.DESC
-        case Some("updated") => fieldSort("lastUpdate") order SortOrder.DESC
-        case _ => scoreSort
-      }
+  val sortQuery = (sorting: Option[String]) =>
+    sorting match {
+      case Some("stars") => fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg
+      case Some("forks") => fieldSort("github.forks") missing "0" order SortOrder.DESC mode MultiMode.Avg
+      case Some("relevant") => scoreSort
+      case Some("created") => fieldSort("created") order SortOrder.DESC
+      case Some("updated") => fieldSort("lastUpdate") order SortOrder.DESC
+      case _ => scoreSort
+    }
+
+  def find(queryString: String, page: PageIndex, sorting: Option[String] = None, repos: Option[Set[GithubRepo]] = None): Future[(Pagination, List[Project])] = {
+    val clampedPage = if(page <= 0) 1 else page
 
     esClient.execute {
       search
         .in(indexName / collectionName)
         .query(queryString)
-        .start(perPage * (clampedPage - 1))
-        .limit(perPage)
-        .sort(sortQuery)
+        .start(resultsPerPage * (clampedPage - 1))
+        .limit(resultsPerPage)
+        .sort(sortQuery(sorting))
     }.map(r => (
       Pagination(
         current = clampedPage,
-        totalPages = Math.ceil(r.totalHits / perPage.toDouble).toInt,
+        totalPages = Math.ceil(r.totalHits / resultsPerPage.toDouble).toInt,
         total = r.totalHits
       ),
       r.as[Project].toList.map(hideId)
@@ -75,6 +77,31 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
     }.map(r => r.as[Project].headOption.map(hideId))
   }
 
+  def organizationPage(organization: String, page: PageIndex, sorting: Option[String] = None): Future[(Pagination, List[Project])] = {
+    val clampedPage = if(page <= 0) 1 else page
+    esClient.execute {
+      search.in(indexName / collectionName).query(
+        nestedQuery("artifacts.reference").query(
+          bool (
+            must(
+              termQuery("artifacts.reference.organization", organization)
+            )
+          )
+        )
+      ).start(resultsPerPage * (clampedPage - 1))
+       .limit(resultsPerPage)
+       .sort(sortQuery(sorting))
+    }.map(r => (
+      Pagination(
+        current = clampedPage,
+        totalPages = Math.ceil(r.totalHits / resultsPerPage.toDouble).toInt,
+        total = r.totalHits
+      ),
+      r.as[Project].toList.map(hideId)
+      ))
+  }
+
+
   def latest(artifact: Artifact.Reference): Future[Option[Release.Reference]] = {
     projectPage(artifact).map(_.flatMap(
       _.artifacts
@@ -94,7 +121,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
         project  <- projects
         artifact <- project.artifacts
         release  <- artifact.releases
-      } yield release).sortBy(release => 
+      } yield release).sortBy(release =>
         maxOption(release.releaseDates.map(
           date => format.parseDateTime(date.value)
         ))
@@ -109,7 +136,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
         .query(matchAllQuery)
         .sort(fieldSort("created") order SortOrder.DESC)
         .limit(n)
-    }.map(r => r.as[Project].toList.map(hideId)) 
+    }.map(r => r.as[Project].toList.map(hideId))
   }
 
   /**
@@ -118,7 +145,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
    */
   def keywords() = aggregations("keywords")
 
-  
+
   def targets(): Future[Map[String, Long]] = aggregations("targets")
 
   def dependencies(): Future[List[(String, Long)]] = {

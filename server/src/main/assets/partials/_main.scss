@@ -46,7 +46,7 @@ main {
             }
         }
         .has-feedback {
-            
+
             width: 100%;
             .autocomplete {
                 top: 64px;
@@ -103,11 +103,11 @@ main {
     }
     .recent-releases {
         .more-results {
-            margin-top: 20px;   
+            margin-top: 20px;
         }
         background: rgba($gray-dark, 0.07);
     }
-    
+
     .recent-releases,
     .contributors-wanted {
 
@@ -120,18 +120,18 @@ main {
                     margin-left: 44px;
                     text-align: left;
                 }
-                
+
                 .stats {
                     margin-top: 0;
                 }
-                
+
                 @media screen and (min-width: $screen-md-min) {
-                    
+
                     p {
                         margin: 0;
                         text-align: center;
                     }
-                    
+
                 }
             }
         }
@@ -443,7 +443,7 @@ main {
         margin-bottom: 30px;
         h1, .homepage {
             margin-top: 0;
-            color: #fff;
+            color: $brand-primary; 
         }
         .contributors-tag {
             display: inline-block;
