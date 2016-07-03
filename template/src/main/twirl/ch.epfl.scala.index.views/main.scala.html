@@ -45,6 +45,7 @@
                             @searchinput(searchQuery)
                         }
 
+                        @*
                         @user.map{ u =>
                             <a class="pull-right" href="/search?q=*&you">
                                 <img src="@u.sizedAvatarUrl(38)" alt="Your Avatar - @u.login">
@@ -54,6 +55,7 @@
                                 <i class="fa fa-github fa-lg"></i> Login
                             </a>
                         }
+                        @*
                     </div>
                 </div>
             </div>
