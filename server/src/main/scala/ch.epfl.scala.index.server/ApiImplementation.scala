@@ -15,6 +15,8 @@ import scala.language.reflectiveCalls
 class ApiImplementation(github: Github, userState: Option[UserState])(implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(_id = None)
 
+  val resultsPerPage: Int = 10
+
   def userInfo(): Option[UserInfo] = userState.map(_.user)
   def autocomplete(q: String): Future[List[(String, String, String)]] = {
     find(q, 0).map{ case (_, projects) =>
@@ -29,7 +31,6 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
     }
   }
   def find(queryString: String, page: PageIndex, sorting: Option[String] = None, repos: Option[Set[GithubRepo]] = None): Future[(Pagination, List[Project])] = {
-    val perPage = 10
     val clampedPage = if(page <= 0) 1 else page
 
     val sortQuery =
@@ -46,13 +47,13 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
       search
         .in(indexName / collectionName)
         .query(queryString)
-        .start(perPage * (clampedPage - 1))
-        .limit(perPage)
+        .start(resultsPerPage * (clampedPage - 1))
+        .limit(resultsPerPage)
         .sort(sortQuery)
     }.map(r => (
       Pagination(
         current = clampedPage,
-        totalPages = Math.ceil(r.totalHits / perPage.toDouble).toInt,
+        totalPages = Math.ceil(r.totalHits / resultsPerPage.toDouble).toInt,
         total = r.totalHits
       ),
       r.as[Project].toList.map(hideId)
@@ -75,7 +76,8 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
     }.map(r => r.as[Project].headOption.map(hideId))
   }
 
-  def organizationPage(organization: String): Future[List[Project]] = {
+  def organizationPage(organization: String, page: PageIndex): Future[(Pagination, List[Project])] = {
+    val clampedPage = if(page <= 0) 1 else page
     esClient.execute {
       search.in(indexName / collectionName).query(
         nestedQuery("artifacts.reference").query(
@@ -86,7 +88,14 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
           )
         )
       )
-    }.map(r => r.as[Project].toList.map(hideId))
+    }.map(r => (
+      Pagination(
+        current = clampedPage,
+        totalPages = Math.ceil(r.totalHits / resultsPerPage.toDouble).toInt,
+        total = r.totalHits
+      ),
+      r.as[Project].toList.map(hideId)
+      ))
   }
 
 

@@ -138,17 +138,24 @@ object Server {
         path("search") {
           optionalSession(refreshable, usingCookies) { userState =>
             parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
-              complete(sharedApi.find(query, page, sorting, you.flatMap(_ => userState.map(_.repos))).map{ case (pagination, projects) =>
-                views.html.searchresult(query, sorting, pagination, projects, userState.map(_.user))
-              })
+              complete {
+                sharedApi.find(query, page, sorting, you.flatMap(_ => userState.map(_.repos)))
+                  .map { case (pagination, projects) =>
+                    views.html.searchresult(query, sorting, pagination, projects, userState.map(_.user))
+                  }
+              }
             }
           }
         } ~
         path(Segment) { owner =>
           optionalSession(refreshable, usingCookies) { userState =>
-            complete {
-              val projects = Await.result(sharedApi.organizationPage(owner), Duration.Inf)
-              views.html.organizationpage(owner, None, projects, userState.map(_.user))
+            parameters('page.as[Int] ? 1, 'sort.?) { (page, sorting) =>
+              complete {
+                sharedApi.organizationPage(owner, page)
+                  .map { case (pagination, projects) =>
+                    views.html.organizationpage(owner, sorting, pagination, projects, userState.map(_.user))
+                  }
+              }
             }
           }
         } ~
