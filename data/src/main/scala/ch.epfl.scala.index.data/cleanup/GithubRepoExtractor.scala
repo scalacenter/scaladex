@@ -20,8 +20,8 @@ class GithubRepoExtractor extends DefaultJsonProtocol {
     cleanupIndexBase.resolve(Paths.get("claims.json")).toFile
   )
   private val claims = source.mkString.parseJson.convertTo[Map[String, Option[String]]]
-  private val matchers = claims.toList.sorted.
-    map{case (k, v) => v.map((k, _))}.flatten.
+  private val matchers = claims.toList.sorted
+    .flatMap { case (k, v) => v.map((k, _)) }.
     map{case (k, v) =>
       val regex = k.replaceAllLiterally("*", "(.*)").r
       val List(organization, repo) = v.split('/').toList
@@ -53,8 +53,8 @@ class GithubRepoExtractor extends DefaultJsonProtocol {
 
   def apply(d: maven.MavenModel): Set[GithubRepo] = {
     import d._
-    def matches(m: Regex, s: String): Boolean =
-       m.unapplySeq(s).isDefined
+
+    def matches(m: Regex, s: String): Boolean = m.unapplySeq(s).isDefined
 
     def fixInterpolationIssue(s: String): String = {
 
@@ -78,7 +78,8 @@ class GithubRepoExtractor extends DefaultJsonProtocol {
         matches(m, s"$groupId $artifactId")
       }.map(_._2).toList
 
-    (fromPoms ++ fromClaims).map{
+    /* use claims first - because project indexing uses only the head github repo */
+    (fromClaims ++ fromPoms).map{
 
       case GithubRepo(organization, repo) =>
 
