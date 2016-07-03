@@ -40,7 +40,7 @@ object ProjectConvert extends BintrayProtocol {
    *
    * with references ins contrib/non-standard.json
    *
-   * @param pom
+   * @param pom the current maven model
    * @return
    */
   def getNonStandardLib(pom: MavenModel): Option[NonStandardLib] = {
@@ -48,7 +48,7 @@ object ProjectConvert extends BintrayProtocol {
     nonStandardLibs.find { n =>
       n.groupId == pom.groupId &&
         n.artifactId == pom.artifactId &&
-        n.version == pom.version
+        pom.version.matches(n.versionRegex)
     }
   }
 

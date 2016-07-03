@@ -52,7 +52,11 @@ case class PomListDownload(scalaVersion: String, page: Int, lastSearchDate: Opti
  * @param version  the current artifact version
  * @param scalaVersions the scala version this lib work with
  */
-case class NonStandardLib(groupId: String, artifactId: String, version: String, scalaVersions: List[String])
+case class NonStandardLib(groupId: String, artifactId: String, version: String, scalaVersions: List[String]) {
+
+  /** converting to a real regex */
+  lazy val versionRegex = version.replace(".", """\.""").replace("*", ".*")
+}
 
 /**
  * Bintray protocol
@@ -80,7 +84,13 @@ trait BintrayProtocol extends DefaultJsonProtocol {
         case (artifact, scalaVersion) =>
 
           val List(groupId, artifactId, version) = artifact.split(" ").toList
-          NonStandardLib(groupId, artifactId, version, scalaVersion)
+          if ("org.scala-lang" == groupId) {
+
+            NonStandardLib(groupId, artifactId, version, List(version))
+          } else {
+
+            NonStandardLib(groupId, artifactId, version, scalaVersion)
+          }
       }.toList
     } else {
 
