@@ -3,14 +3,15 @@ package data
 package bintray
 
 import model.Descending
-
 import spray.json._
 import java.nio.file.Path
 
 import com.github.nscala_time.time.Imports._
-
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
+
+import org.json4s._
+import org.json4s.native.JsonMethods._
 
 case class BintraySearch(
   sha1: String,
@@ -25,37 +26,68 @@ case class BintraySearch(
   created: DateTime
 )
 
-trait BintrayProtocol extends DefaultJsonProtocol {
-  implicit object DateTimeFormat extends RootJsonFormat[DateTime] {
-    val parser = ISODateTimeFormat.dateTimeParser
-    val formatter = ISODateTimeFormat.dateTime
-    def write(obj: DateTime): JsValue = JsString(formatter.print(obj))
-    def read(json: JsValue): DateTime = json match {
-      case JsString(s) => 
-        try {
-          parser.parseDateTime(s)
-        }
-        catch { case scala.util.control.NonFatal(e) => error(e.toString) }
-      case _ => error(json.toString())
-    }
+/**
+ * Internal pagination class
+ *
+ * @param numberOfPages the maximum number of pages
+ * @param itemPerPage the max items per page
+ */
+case class InternalBintrayPagination(numberOfPages: Int, itemPerPage: Int)
 
-    def error(v: Any): DateTime = {
-      val example = formatter.print(0)
-      deserializationError(f"'$v' is not a valid date value. Dates must be in compact ISO-8601 format, e.g. '$example'")
+/**
+ * Pom list download class to map the version and the scala version for
+ * the search query
+ * @param scalaVersion the current scala version
+ * @param page the current page
+ * @param lastSe
+ */
+case class PomListDownload(scalaVersion: String, page: Int, lastSearchDate: Option[DateTime])
+
+/**
+ * Bintray protocol
+ */
+trait BintrayProtocol extends DefaultJsonProtocol {
+
+  /**
+   * json4s formats
+   */
+  implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
+  implicit val serialization = native.Serialization
+
+  /**
+   * Scope serializer, since Scope is not a case class json4s can't handle this by default
+   *
+   */
+  object DateTimeSerializer extends CustomSerializer[DateTime]( format => (
+    {
+      case JString(dateTime) => {
+        val parser = ISODateTimeFormat.dateTimeParser
+        parser.parseDateTime(dateTime)
+      }
+    },
+    {
+      case dateTime: DateTime => {
+        val formatter = ISODateTimeFormat.dateTime
+        JString(formatter.print(dateTime))
+      }
     }
-  }
-  implicit val bintraySearchFormat = jsonFormat10(BintraySearch)
+  ))
 }
 
 object BintrayMeta extends BintrayProtocol {
-  def sortedByCreated(path: Path): List[BintraySearch] = {
+
+  /**
+   * read all currently downloaded poms and convert them to BintraySearch object
+   * @param path the file path
+   * @return
+   */
+  def readQueriedPoms(path: Path): List[BintraySearch] = {
+
     val source = scala.io.Source.fromFile(path.toFile)
-    val ret =
-      source.mkString.split(nl).
-      toList
+    val ret = source.mkString.split(nl).toList
       
     source.close()
 
-    ret.filter(_ != "").map(_.parseJson.convertTo[BintraySearch]).sortBy(_.created)(Descending)
+    ret.filter(_ != "").map(json => parse(json).extract[BintraySearch]).sortBy(_.created)(Descending)
   }
 }

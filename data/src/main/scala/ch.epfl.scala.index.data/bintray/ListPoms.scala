@@ -2,122 +2,153 @@ package ch.epfl.scala.index
 package data
 package bintray
 
-import me.tongfei.progressbar._
+import model._
+import download.PlayWsDownloader
 
-import model.Descending
+import java.nio.file.Files
+
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{FileIO, Flow, Keep, Source}
+import akka.util.ByteString
 
 import com.github.nscala_time.time.Imports._
 
-import akka.http.scaladsl.model.{DateTime => _, _}
-import Uri.Query
-import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.unmarshalling._
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import spray.json._
+import play.api.libs.ws.{WSRequest, WSResponse}
 
-import akka.stream.scaladsl._
-import akka.stream.ActorMaterializer
-import akka.util.ByteString
-import akka.actor.ActorSystem
+import org.json4s._
+import org.json4s.native.JsonMethods._
+import org.json4s.native.Serialization.write
 
-import scala.concurrent.Future
-import scala.util.{Success, Failure}
-import scala.concurrent.duration.Duration
 import scala.concurrent.Await
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
-import java.nio.file._
+class ListPoms(implicit val system: ActorSystem, implicit val materializer: ActorMaterializer)
+  extends BintrayProtocol with BintrayCredentials with PlayWsDownloader {
 
-class ListPoms(implicit system: ActorSystem, materializer: ActorMaterializer) extends BintrayProtocol with BintrayCredentials {
   import system.dispatcher
 
-  def run(scalaVersion: String) = {
+  /**
+   * The url to search at
+   */
+  val binTrayUri = "https://bintray.com/api/v1/search/file"
 
-    val bintrayHttpFlow = Http().cachedHostConnectionPoolHttps[HttpRequest]("bintray.com")
-    val progress = new ProgressBar("List POMs", 0)
+  /** paginated search query for bintray - append the query string to
+   * the request object
+   *
+   * @param page the page credentials to download
+   * @return
+   */
+  private def discover(page: PomListDownload): WSRequest = {
 
-    val queried = BintrayMeta.sortedByCreated(bintrayCheckpoint)
+    val query = page.lastSearchDate.fold(Seq[(String, String)]())(after =>
 
-    val mostRecentQueriedDate = queried.headOption.map(_.created)
-    println(s"mostRecentQueriedDate: $mostRecentQueriedDate")
+      Seq("created_after" -> (after.toLocalDateTime.toString + "Z"))
+    ) ++ Seq("name" -> s"*_${page.scalaVersion}*.pom", "start_pos" -> page.page.toString)
 
-    val query = discover(scalaVersion, createdAfter = mostRecentQueriedDate) _
-
-    // Find the pom total count
-    val search0 = {
-      val totalHeader = "X-RangeLimit-Total"
-      Http().singleRequest(query(0)).map(
-        _.headers.find(_.name == totalHeader).map(_.value.toInt).getOrElse(0)
-      )
-    }
-    
-    val perRequest = 50
-    val searchRequests =
-      Source.fromFuture(search0).flatMapConcat{totalPoms =>
-        progress.start()
-        progress.maxHint(totalPoms)
-        
-        val requestCount = Math.floor(totalPoms.toDouble / perRequest.toDouble).toInt
-        Source((0 to requestCount).map(i => 
-          cachedWithoutAuthorization(withAuthorization(query(i * perRequest)))
-        ))
-      }
-
-    // https pipeline & json extraction
-    val listPoms =
-      searchRequests
-        .via(bintrayHttpFlow)
-        .mapAsync(1){
-          case (Success(response), request) => {
-            progress.stepBy(perRequest)
-            Unmarshal(response).to[List[BintraySearch]].recover {
-              case Unmarshaller.UnsupportedContentTypeException(_) => {
-                // we will get some 500
-
-                // see https://github.com/akka/akka/issues/20192
-                response.entity.dataBytes.runWith(Sink.ignore)
-                List()
-              }
-            }
-          }
-          case (Failure(e), _) => Future.failed(e)
-        }.mapConcat(identity)
-
-    val tempCheckpointPath = bintrayIndexBase.resolve(s"bintray_${DateTime.now}.json")
-    
-    def listPomsCheckpoint(path: Path) = 
-      Flow[BintraySearch]
-        .map(_.toJson.compactPrint)
-        .map(s => ByteString(s + nl))
-        .toMat(FileIO.toPath(path))(Keep.right)
-  
-    Await.result(listPoms.runWith(listPomsCheckpoint(tempCheckpointPath)), Duration.Inf)
-
-    val newlyQueried = BintrayMeta.sortedByCreated(tempCheckpointPath).toSet
-    val merged = (queried.toSet ++ newlyQueried).toList.sortBy(_.created)(Descending)
-    val tempMergedCheckpointPath = bintrayIndexBase.resolve(s"bintray_merged_${DateTime.now}.json")
-
-    Await.result(Source(merged).runWith(listPomsCheckpoint(tempMergedCheckpointPath)), Duration.Inf)
-
-    Files.delete(bintrayCheckpoint)  // old
-    Files.delete(tempCheckpointPath) // unmerged new
-    Files.move(tempMergedCheckpointPath, bintrayCheckpoint)
+    withAuth(wsClient.url(binTrayUri)).withQueryString(query: _*)
   }
 
-  private def cachedWithoutAuthorization(request: HttpRequest) =
-    (request, request.copy(headers = request.headers.filterNot{ case Authorization(_) => true}))
+  /** Fetch bintray first, to find out the number of pages and items to iterate
+   * them over
+   *
+   * @param scalaVersion the current scala version
+   * @return
+   */
+  def getNumberOfPages(scalaVersion: String, lastCheckDate: Option[DateTime]): Future[InternalBintrayPagination] = {
 
-  private def discover(scalaVersion: String, createdAfter: Option[DateTime])(at: Int) = {
-    val query0 = Query(
-      "name" -> s"*_$scalaVersion*.pom",
-      "start_pos" -> at.toString
-    )
+    val request = discover(PomListDownload(scalaVersion, 0, lastCheckDate))
 
-    val query = createdAfter.fold(query0)(after => 
-      ("created_after", after.toLocalDateTime.toString + "Z") +: query0
-    )
+    request.get.flatMap { response =>
 
-    HttpRequest(uri = Uri("https://bintray.com/api/v1/search/file").withQuery(query))
+      if (200 == response.status) {
+       Future.successful{
+
+          (response.header("X-RangeLimit-Total"), response.header("X-RangeLimit-EndPos")) match {
+
+            case (Some(totalPages), Some(limit)) => InternalBintrayPagination(totalPages.toInt, limit.toInt)
+            case (Some(totalPages), None) => InternalBintrayPagination(totalPages.toInt, 50)
+            case _ => InternalBintrayPagination(0, 50)
+          }
+        }
+      } else {
+
+        Future.failed(new Exception(response.statusText))
+      }
+    }
+  }
+
+  /**
+   * Convert the json response to BintraySearch class
+   *
+   * @param page the current page object
+   * @param response the current response
+   * @return
+   */
+  def processPomDownload(page: PomListDownload, response: WSResponse): List[BintraySearch] = {
+
+    parse(response.body).extract[List[BintraySearch]]
+  }
+
+  /**
+   * write the list of BintraySerch classes back to a file
+   *
+   * @param merged the merged list
+   * @return
+   */
+  def writeMergedPoms(merged: List[BintraySearch]) = {
+
+    Files.delete(bintrayCheckpoint)
+
+    val flow = Flow[BintraySearch]
+      .map(bintray => write[BintraySearch](bintray))
+      .map(s => ByteString(s + nl))
+      .toMat(FileIO.toPath(bintrayCheckpoint))(Keep.right)
+
+    Await.result(Source(merged).runWith(flow), Duration.Inf)
+  }
+
+  /**
+   * run task to:
+   * - read current downloaded poms
+   * - check how many pages there are for the search
+   * - fetch all pages
+   * - merge current Search results with new results
+   * - write them back to file
+   *
+   * @param scalaVersion the scala version to search for new artifacts
+   */
+  def run(scalaVersion: String): Unit = {
+
+    val queried = BintrayMeta.readQueriedPoms(bintrayCheckpoint)
+
+    val mostRecentQueriedDate = queried.find(_.name.contains(scalaVersion))map(_.created)
+    println(s"mostRecentQueriedDate: ${mostRecentQueriedDate.getOrElse("None")}")
+
+    /* check first how many pages there are */
+    val page: InternalBintrayPagination = Await.result(getNumberOfPages(scalaVersion, mostRecentQueriedDate), Duration.Inf)
+
+    val requestCount = Math.ceil(page.numberOfPages.toDouble / page.itemPerPage.toDouble).toInt
+
+    if (0 < requestCount) {
+
+      val toDownload = List.tabulate(requestCount)(p => PomListDownload(scalaVersion, p, mostRecentQueriedDate)).toSet
+
+      /* fetch all data from bintray */
+      val newQueried: Seq[List[BintraySearch]] = download[PomListDownload, List[BintraySearch]]("Download Poms", toDownload, discover, processPomDownload)
+
+      /* maybe we have here a problem with dublicated poms */
+      val merged = newQueried.foldLeft(queried)((oldList, newList) => oldList ++ newList).sortBy(_.created)(Descending)
+
+      print("writing Files ... ")
+      writeMergedPoms(merged)
+      println("done")
+    } else {
+
+      println("no new files found ... continue")
+    }
+
+    ()
   }
 }

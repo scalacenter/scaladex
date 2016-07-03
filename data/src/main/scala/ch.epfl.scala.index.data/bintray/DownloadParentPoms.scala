@@ -2,79 +2,82 @@ package ch.epfl.scala.index
 package data
 package bintray
 
-import maven.{PomsReader, MissingParentPom}
+import download.PlayWsDownloader
+import maven._
 
-import me.tongfei.progressbar._
-
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import java.nio.file.Files
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl._
 
-import java.nio.file._
-import scala.util._
+import play.api.libs.ws.{WSRequest, WSResponse}
 
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration._
-import scala.util.{Success, Failure}
+import scala.util.Failure
 
-class DownloadParentPoms(implicit system: ActorSystem, materializer: ActorMaterializer) {
-  import system.dispatcher
+class DownloadParentPoms(implicit val system: ActorSystem, implicit val materializer: ActorMaterializer) extends PlayWsDownloader {
 
-  private def downloadRequest(dep: maven.Dependency) = {
-    (HttpRequest(uri = Uri(s"https://repo.jfrog.org/artifactory/libs-release-bintray//${PomsReader.path(dep)}")), dep)
+  /**
+   * get the play-ws request by using the dependency
+   * @param dep the current depenency
+   * @return
+   */
+  def downloadRequest(dep: Dependency): WSRequest = {
+
+    wsClient.url(s"https://repo.jfrog.org/artifactory/libs-release-bintray/${PomsReader.path(dep)}")
   }
-  private val dlBintrayHttpFlow = Http().cachedHostConnectionPoolHttps[maven.Dependency]("repo.jfrog.org")
 
+  /**
+   * process the HTTP response - save the file to disk it status is 200 (OK)
+   * otherwise return 1 for failed download
+   *
+   * @param dep the current dependency
+   * @param response the current response
+   * @return
+   */
+  def processResponse(dep: Dependency, response: WSResponse): Int = {
+
+    if (200 == response.status) {
+
+      val pomPath = PomsReader.parentPomsBase.resolve(PomsReader.path(dep))
+      Files.createDirectories(pomPath.getParent)
+
+      val printer = new scala.xml.PrettyPrinter(80, 2)
+      val pw = new java.io.PrintWriter(pomPath.toFile)
+
+      pw.println(printer.format(scala.xml.XML.loadString(response.body)))
+      pw.close()
+
+      0
+    } else 1
+  }
+
+  /**
+   * do the main run
+   *
+   * @param lastFailedToDownload the number of last failed downloads
+   */
   def run(lastFailedToDownload: Int = 0): Unit = {
-    val parentPomsToDownload =
-      PomsReader.load().collect {
-        case Failure(m: MissingParentPom) => m.dep
-      }
+
+    /* load poms */
+    val parentPomsToDownload: Set[Dependency] = PomsReader.load().collect {
+
+      case Failure(m: MissingParentPom) => m.dep
+    }.toSet
 
     println(s"to download: ${parentPomsToDownload.size}")
     println(s"last failed: $lastFailedToDownload")
-    if(parentPomsToDownload.size <= lastFailedToDownload) ()
-    else {
-      
-      val progress2 = new ProgressBar("Downloading POMs", parentPomsToDownload.size)
-      progress2.start()
 
-      val downloadPoms =
-        Source(parentPomsToDownload)
-          .map(downloadRequest)
-          .via(dlBintrayHttpFlow)
-          .mapAsync(1){ 
-            case (Success(response), dep) => 
-              Unmarshal(response).to[String].map(body =>
-                if(response.status == StatusCodes.OK) Right((body, dep))
-                else Left(body)
-              )
-            case (Failure(e), _) => Future.failed(e)
-          }
-          .map{ 
-            case Right((pom, dep)) => {
-              progress2.step()
-              val pomPath = PomsReader.parentPomsBase.resolve(PomsReader.path(dep))
-              Files.createDirectories(pomPath.getParent)
-              val printer = new scala.xml.PrettyPrinter(80, 2)
-              val pw = new java.io.PrintWriter(pomPath.toFile)
-              pw.println(printer.format(scala.xml.XML.loadString(pom)))
-              pw.close
-              0
-            }
-            case Left(err) => {
-              println(err)
-              1
-            }
-          }
+    if (parentPomsToDownload.size > lastFailedToDownload) {
 
-      val failedToDownload = Await.result(downloadPoms.runFold(0)(_ + _), Duration.Inf)
-      progress2.stop()
-      run(failedToDownload) // grand-parent poms, etc
+      val downloaded = download[Dependency, Int]("Download parent POMs", parentPomsToDownload, downloadRequest, processResponse)
+      val failedDownloads = downloaded.sum
+
+      println(s"failed downloads: $failedDownloads")
+
+      if (0 < failedDownloads && parentPomsToDownload.size != failedDownloads) {
+
+        run(failedDownloads) // grand-parent poms, etc
+      }
     }
   }
 }

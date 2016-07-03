@@ -5,24 +5,23 @@ package github
 import download.PlayWsDownloader
 import cleanup.GithubRepoExtractor
 import maven.PomsReader
-import model.misc.{GithubRepo, Url}
-
+import model.misc.GithubRepo
 import org.json4s._
 import native.JsonMethods._
-import native.Serialization.writePretty
-
-import play.api.libs.ws.{WSRequest, WSResponse}
-
+import native.Serialization._
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import play.api.libs.ws.{WSRequest, WSResponse}
 
-import scala.util.Success
+import scala.util._
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 class GithubDownload(implicit val system: ActorSystem, implicit val materializer: ActorMaterializer) extends PlayWsDownloader {
 
   import Json4s._
+
+  case class PaginatedGithub(repo: GithubRepo, page: Int)
 
   private val githubRepoExtractor = new GithubRepoExtractor
   private val githubRepos = {
@@ -31,6 +30,7 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
       .flatten
       .toSet
   }
+  private val paginatedGithubRepos = githubRepos.map(repo => PaginatedGithub(repo, 1))
 
   private def credentials = {
     val tokens = Array(
@@ -42,7 +42,22 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
   }
 
   /**
+   * extracts the last page from a given link string
+   * - <https://api.github.com/repositories/130013/issues?page=2>; rel="next", <https://api.github.com/repositories/130013/issues?page=23>; rel="last"
+   *
+   * @param links the links
+   * @return
+   */
+  private def extractLastPage(links: String): Int = {
+
+    val pattern = """page=([0-9]+)>; rel="([^"]+)""".r
+    val pages = pattern.findAllIn(links).matchData.map(x => x.group(2) -> x.group(1).toInt).toMap
+    pages.getOrElse("last", 1)
+  }
+
+  /**
    * Apply github authentication strategy
+   *
    * @param request the current request
    * @return
    */
@@ -50,6 +65,7 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
 
   /**
    * basic Authentication header + Accept application jsob
+   *
    * @param request
    * @return the current request
    */
@@ -60,6 +76,7 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
 
   /**
    * Apply github authentication strategy and set response header to html
+   *
    * @param request the current request
    * @return
    */
@@ -70,77 +87,142 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
 
   /**
    * Save the json response to directory
+   *
    * @param filePath the file path to save the file
    * @param repo the current repo
-   * @param response the response
+   * @param data the response data
    */
-  private def saveJson(filePath: Path, repo: GithubRepo, response: WSResponse): Path = {
+  private def saveJson(filePath: Path, repo: GithubRepo, data: String): Path = {
 
     val dir = path(repo)
     Files.createDirectories(dir)
 
     Files.write(
       filePath,
-      writePretty(parse(response.body)).getBytes(StandardCharsets.UTF_8)
+      writePretty(parse(data)).getBytes(StandardCharsets.UTF_8)
     )
   }
 
   /**
    * Process the downloaded data from repository info
+   *
    * @param repo the current repo
    * @param response the response
    * @return
    */
-  private def processInfoResponse(repo: GithubRepo, response: WSResponse): String = {
+  private def processInfoResponse(repo: GithubRepo, response: WSResponse): Unit = {
 
-    saveJson(githubRepoInfoPath(repo), repo, response)
-    response.body
+    if (200 == response.status) {
+
+      saveJson(githubRepoInfoPath(repo), repo, response.body)
+    }
+
+    ()
   }
 
   /**
    * Process the downloaded issues data from repository info
+   *
    * @param repo the current repo
    * @param response the response
    * @return
    */
-  private def processIssuesResponse(repo: GithubRepo, response: WSResponse): String = {
+  private def processIssuesResponse(repo: GithubRepo, response: WSResponse): Unit = {
 
-    saveJson(githubRepoIssuesPath(repo), repo, response)
-    response.body
+    if (200 == response.status) {
+
+      saveJson(githubRepoIssuesPath(repo), repo, response.body)
+    }
+
+    ()
+  }
+
+  /**
+   * Convert contributor response to a List of Contributors
+   *
+   * @param repo
+   * @param response
+   * @return
+   */
+  private def convertContributorResponse(repo: PaginatedGithub, response: WSResponse): List[Contributor] = {
+
+    Try(read[List[Contributor]](response.body)) match {
+
+      case Success(contributors) => contributors
+      case Failure(ex) => List()
+    }
   }
 
   /**
    * Process the downloaded contributors data from repository info
+   *
    * @param repo the current repo
    * @param response the response
    * @return
    */
-  private def processContributorResponse(repo: GithubRepo, response: WSResponse): String = {
+  private def processContributorResponse(repo: PaginatedGithub, response: WSResponse): Unit = {
 
-    saveJson(githubRepoContributorsPath(repo), repo, response)
-    response.body
+    /*
+     * Github api contributor response is just a list of 30 entries, to make sure we get
+     * all, wee need to extract the "Link" header, count all pages (there is a List rel)
+     * and download all pages. These pages are converted to a List[Contributor] and
+     * get returned. if there is only one page, return an empty list
+     */
+    def downloadAllPages: List[Contributor] = {
+
+      val lastPage = response.header("Link").map(extractLastPage).getOrElse(1)
+
+      if (1 == repo.page && 1 < lastPage) {
+
+        val pages = List.range(2, lastPage + 1).map(page => PaginatedGithub(repo.repo, page)).toSet
+
+        val pagedContributors = download[PaginatedGithub, List[Contributor]](
+          "Download contributor Pages",
+          pages,
+          githubContributorsUrl,
+          convertContributorResponse
+        )
+
+        pagedContributors.flatten.toList
+      } else List()
+    }
+
+    if (200 == response.status) {
+
+      /* current contributors + all other pages in  amount of contributions order */
+      val contributors = (convertContributorResponse(repo, response) ++ downloadAllPages).sortBy(_.contributions).reverse
+
+      saveJson(githubRepoContributorsPath(repo.repo), repo.repo, writePretty(contributors))
+    }
+
+    ()
   }
 
   /**
    * Process the downloaded data from repository info
+   *
    * @param repo the current repo
    * @param response the response
    * @return
    */
-  private def processReadmeResponse(repo: GithubRepo, response: WSResponse): String = {
+  private def processReadmeResponse(repo: GithubRepo, response: WSResponse): Unit = {
 
-    val dir = path(repo)
-    Files.createDirectories(dir)
-    Files.write(
-      githubReadmePath(repo),
-      GithubReadme.absoluteUrl(response.body, repo, "master").getBytes(StandardCharsets.UTF_8)
-    )
+    if (200 == response.status) {
 
-    response.body
+      val dir = path(repo)
+      Files.createDirectories(dir)
+      Files.write(
+        githubReadmePath(repo),
+        GithubReadme.absoluteUrl(response.body, repo, "master").getBytes(StandardCharsets.UTF_8)
+      )
+    }
+
+    ()
   }
 
   /**
    * main github url to the api
+   *
    * @param repo the current github repo
    * @return
    */
@@ -148,41 +230,59 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
 
   /**
    * get the Github Info url
+   *
    * @param repo the current repository
    * @return
    */
-  private def githubInfoUrl(repo: GithubRepo) = Url(mainGithubUrl(repo))
+  private def githubInfoUrl(repo: GithubRepo): WSRequest = {
+
+    applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo)))
+  }
 
   /**
    * get the Github readme url
+   *
    * @param repo the current repository
    * @return
    */
-  private def githubReadmeUrl(repo: GithubRepo) = Url(mainGithubUrl(repo) + "/readme")
+  private def githubReadmeUrl(repo: GithubRepo): WSRequest = {
+
+    applyReadmeHeaders(wsClient.url(mainGithubUrl(repo) + "/readme"))
+  }
 
   /**
    * get the Github issues url
+   *
    * @param repo the current repository
    * @return
    */
-  private def githubIssuesUrl(repo: GithubRepo) = Url(mainGithubUrl(repo) + "/issues")
+  private def githubIssuesUrl(repo: GithubRepo): WSRequest = {
+
+    applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo) + "/issues"))
+  }
 
   /**
    * get the Github contributors url
+   *
    * @param repo the current repository
    * @return
    */
-  private def githubContributorsUrl(repo: GithubRepo) = Url(mainGithubUrl(repo) + "/contributors")
+  private def githubContributorsUrl(repo: PaginatedGithub): WSRequest = {
+
+    applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo.repo) + s"/contributors?page=${repo.page}"))
+  }
 
   /**
    * process all downloads
    */
-  def run() = {
+  def run(): Unit = {
 
-    download[GithubRepo, String]("Downloading Repo Info", githubRepos, githubInfoUrl, applyAcceptJsonHeaders, processInfoResponse)
-    download[GithubRepo, String]("Downloading Readme", githubRepos, githubReadmeUrl, applyReadmeHeaders, processReadmeResponse)
-    // todo: for later @see #112 */
-    // download[GithubRepo, String]("Downloading Issues", githubRepos, githubIssuesUrl, applyAcceptJsonHeaders, processIssuesResponse)
-    download[GithubRepo, String]("Downloading Contributors", githubRepos, githubContributorsUrl, applyAcceptJsonHeaders, processContributorResponse)
+    download[GithubRepo, Unit]("Downloading Repo Info", githubRepos, githubInfoUrl, processInfoResponse)
+    download[GithubRepo, Unit]("Downloading Readme", githubRepos, githubReadmeUrl, processReadmeResponse)
+    // todo: for later @see #112 - remember that issues are paginated - see contributors */
+    // download[GithubRepo, Unit]("Downloading Issues", githubRepos, githubIssuesUrl, processIssuesResponse)
+    download[PaginatedGithub, Unit]("Downloading Contributors", paginatedGithubRepos, githubContributorsUrl, processContributorResponse)
+
+    ()
   }
 }
