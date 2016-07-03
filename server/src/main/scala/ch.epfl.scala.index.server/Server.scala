@@ -151,7 +151,7 @@ object Server {
           optionalSession(refreshable, usingCookies) { userState =>
             parameters('page.as[Int] ? 1, 'sort.?) { (page, sorting) =>
               complete {
-                sharedApi.organizationPage(owner, page)
+                sharedApi.organizationPage(owner, page, sorting)
                   .map { case (pagination, projects) =>
                     views.html.organizationpage(owner, sorting, pagination, projects, userState.map(_.user))
                   }
