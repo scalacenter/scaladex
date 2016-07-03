@@ -195,6 +195,7 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
 
       saveJson(githubRepoContributorsPath(repo.repo), repo.repo, writePretty(contributors))
     }
+
     ()
   }
 
