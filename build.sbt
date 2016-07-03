@@ -1,6 +1,6 @@
 lazy val baseSettings = Seq(
   organization := "ch.epfl.scala.index",
-  version      := "0.1.2"
+  version      := "0.1.3"
 )
 
 lazy val commonSettings = Seq(
