@@ -2,10 +2,10 @@ package ch.epfl.scala.index
 package server
 
 import model._
-import data.cleanup.SemanticVersionParser
 import model.misc.UserInfo
 import model.release.SemanticVersion
-
+import data.cleanup.SemanticVersionParser
+import data.elastic._
 
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
@@ -182,6 +182,9 @@ object Server {
         }
       }
     }
+
+    /* wait for elastic to start */
+    blockUntilYellow()
 
     Await.result(Http().bindAndHandle(route, "0.0.0.0", 8080), 20.seconds)
 

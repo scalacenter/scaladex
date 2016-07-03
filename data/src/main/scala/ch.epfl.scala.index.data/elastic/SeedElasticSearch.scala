@@ -10,7 +10,6 @@ import maven.PomsReader
 import com.sksamuel.elastic4s._
 import ElasticDsl._
 import mappings.FieldType._
-import org.elasticsearch.cluster.health.ClusterHealthStatus
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
@@ -22,39 +21,6 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
     val exists = Await.result(esClient.execute { indexExists(indexName)}, Duration.Inf).isExists()
     val target = indexName / collectionName
 
-    def blockUntilCount(expected: Int): Unit = {
-      blockUntil(s"Expected count of $expected") {
-        () =>
-          expected <= {
-            val res = esClient.execute {
-              search
-                .in(indexName / collectionName)
-                .query(matchAllQuery)
-                .size(0)
-            }.await.totalHits
-            println(res)
-            res
-          }
-
-      }
-    }
-    def blockUntilGreen(): Unit = {
-      blockUntil("Expected cluster to have green status") { () =>
-        esClient.execute {
-          get cluster health
-        }.await.getStatus == ClusterHealthStatus.GREEN
-      }
-    }
-    def blockUntil(explain: String)(predicate: () => Boolean): Unit = {
-      var backoff = 0
-      var done = false
-      while (backoff <= 16 && !done) {
-        if (backoff > 0) Thread.sleep(200L * backoff)
-        backoff = backoff + 1
-        done = predicate()
-      }
-      require(done, s"Failed waiting on: $explain")
-    }
 
 
     if (!exists) {
