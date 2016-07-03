@@ -45,7 +45,8 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
     val query = page.lastSearchDate.fold(Seq[(String, String)]())(after =>
 
       Seq("created_after" -> (after.toLocalDateTime.toString + "Z"))
-    ) ++ Seq("name" -> s"*_${page.scalaVersion}*.pom", "start_pos" -> page.page.toString)
+    ) ++ Seq("name" -> s"${page.scalaVersion}*.pom", "start_pos" -> page.page.toString)
+
 
     withAuth(wsClient.url(binTrayUri)).withQueryString(query: _*)
   }
@@ -123,27 +124,75 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
 
     val queried = BintrayMeta.readQueriedPoms(bintrayCheckpoint)
 
-    val mostRecentQueriedDate = queried.find(_.name.contains(scalaVersion))map(_.created)
+    val mostRecentQueriedDate = queried.find(_.name.contains(scalaVersion)).map(_.created)
+
+    performSearchAndDownload(s"Download POMs for scala $scalaVersion", queried, s"*_$scalaVersion", mostRecentQueriedDate)
+  }
+
+  /**
+   * search for non standard published artifacts and apply a filter later to make sure that
+   * the page name is identical.
+   * @param groupId the current group id
+   * @param artifact the artifact name
+   */
+  def run(groupId: String, artifact: String): Unit = {
+
+    val queried = BintrayMeta.readQueriedPoms(bintrayCheckpoint)
+
+    /* the filter to make sure only this artifact get's added */
+    def filter(bintray: BintraySearch): Boolean = bintray.`package` == s"$groupId:$artifact"
+
+    val mostRecentQueriedDate = queried.find(filter).map(_.created)
+
+    performSearchAndDownload(s"Download Poms for $groupId:$artifact", queried, artifact, mostRecentQueriedDate, Some(filter))
+  }
+
+  /**
+   * do the actual search on bintray for files
+   * @param infoMessage the message to display for downloading
+   * @param queried the list of currently fetched searches
+   * @param search the search string
+   * @param mostRecentQueriedDate the last fetched date
+   * @param filter an optional filter, to filter the response before adding
+   */
+  def performSearchAndDownload(
+    infoMessage: String,
+    queried: List[BintraySearch],
+    search: String,
+    mostRecentQueriedDate: Option[DateTime],
+    filter: Option[BintraySearch => Boolean] = None
+  ) = {
+
+
+    def applyFilter(bintray: List[BintraySearch]): List[BintraySearch] = {
+
+      filter match {
+        case Some(f) => bintray.filter(f)
+        case None => bintray
+      }
+    }
+
     println(s"mostRecentQueriedDate: ${mostRecentQueriedDate.getOrElse("None")}")
 
     /* check first how many pages there are */
-    val page: InternalBintrayPagination = Await.result(getNumberOfPages(scalaVersion, mostRecentQueriedDate), Duration.Inf)
+    val page: InternalBintrayPagination = Await.result(getNumberOfPages(search, mostRecentQueriedDate), Duration.Inf)
 
     val requestCount = Math.ceil(page.numberOfPages.toDouble / page.itemPerPage.toDouble).toInt
 
     if (0 < requestCount) {
 
-      val toDownload = List.tabulate(requestCount)(p => PomListDownload(scalaVersion, p, mostRecentQueriedDate)).toSet
+      val toDownload = List.tabulate(requestCount)(p => PomListDownload(search, p, mostRecentQueriedDate)).toSet
 
       /* fetch all data from bintray */
-      val newQueried: Seq[List[BintraySearch]] = download[PomListDownload, List[BintraySearch]]("Download Poms", toDownload, discover, processPomDownload)
+      val newQueried: Seq[List[BintraySearch]] = download[PomListDownload, List[BintraySearch]](infoMessage, toDownload, discover, processPomDownload)
 
       /* maybe we have here a problem with dublicated poms */
-      val merged = newQueried.foldLeft(queried)((oldList, newList) => oldList ++ newList).sortBy(_.created)(Descending)
+      val merged = newQueried.foldLeft(queried)((oldList, newList) => oldList ++ applyFilter(newList)).sortBy(_.created)(Descending)
 
       print("writing Files ... ")
       writeMergedPoms(merged)
       println("done")
+
     } else {
 
       println("no new files found ... continue")

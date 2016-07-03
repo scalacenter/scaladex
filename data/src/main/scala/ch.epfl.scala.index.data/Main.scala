@@ -5,11 +5,10 @@ import bintray._
 import github._
 import elastic._
 import cleanup._
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
-object Main {
+object Main extends BintrayProtocol {
 
   def main(args: Array[String]): Unit = {
 
@@ -31,8 +30,13 @@ object Main {
 
       for(version <- versions) {
 
-        println(s"fetch scala version $version")
         listPomsStep.run(version)
+      }
+
+      /* do a search for non standard lib poms */
+      for (lib <-  uniqueNonStandardLibs) {
+
+        listPomsStep.run(lib.groupId, lib.artifactId)
       }
     }
 
