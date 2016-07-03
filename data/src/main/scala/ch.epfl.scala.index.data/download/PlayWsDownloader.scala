@@ -68,7 +68,7 @@ trait PlayWsDownloader {
 
     def processDownloads = {
 
-      Source(toDownload).mapAsync(1) { item =>
+      Source(toDownload).mapAsync(32) { item =>
 
         val request = downloadUrl(item)
         val response = request.get

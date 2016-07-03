@@ -52,7 +52,7 @@ package object elastic extends ProjectProtocol {
 
     var backoff = 0
     var done = false
-    while (backoff <= 16 && !done) {
+    while (backoff <= 128 && !done) {
       if (backoff > 0) Thread.sleep(200L * backoff)
       backoff = backoff + 1
       done = predicate()
@@ -64,7 +64,7 @@ package object elastic extends ProjectProtocol {
 
     import ElasticDsl._
 
-    blockUntil("Expected cluster to have green status") { () =>
+    blockUntil("Expected cluster to have yellow status") { () =>
       esClient.execute {
         get cluster health
       }.await.getStatus == ClusterHealthStatus.YELLOW

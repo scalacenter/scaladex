@@ -137,6 +137,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
       "playframework/play-specs2",
       "playframework/play-test",
       "rickynils/scalacheck",
+      "scala/scala-library",
       "scalatest/scalatest",
       "scalaz/scalaz-scalacheck-binding",
       "scopt/scopt",
