@@ -44,6 +44,7 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
 
   /**
    * Apply github authentication strategy
+   *
    * @param request the current request
    * @return
    */
@@ -51,6 +52,7 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
 
   /**
    * basic Authentication header + Accept application jsob
+   *
    * @param request
    * @return the current request
    */
@@ -61,6 +63,7 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
 
   /**
    * Apply github authentication strategy and set response header to html
+   *
    * @param request the current request
    * @return
    */
@@ -71,6 +74,7 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
 
   /**
    * Save the json response to directory
+   *
    * @param filePath the file path to save the file
    * @param repo the current repo
    * @param response the response
@@ -88,59 +92,80 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
 
   /**
    * Process the downloaded data from repository info
+   *
    * @param repo the current repo
    * @param response the response
    * @return
    */
   private def processInfoResponse(repo: GithubRepo, response: WSResponse): Unit = {
 
-    saveJson(githubRepoInfoPath(repo), repo, response)
+    if (200 == response.status) {
+
+      saveJson(githubRepoInfoPath(repo), repo, response)
+    }
+
     ()
   }
 
   /**
    * Process the downloaded issues data from repository info
+   *
    * @param repo the current repo
    * @param response the response
    * @return
    */
   private def processIssuesResponse(repo: GithubRepo, response: WSResponse): Unit = {
 
-    saveJson(githubRepoIssuesPath(repo), repo, response)
+    if (200 == response.status) {
+
+      saveJson(githubRepoIssuesPath(repo), repo, response)
+    }
+
     ()
   }
 
   /**
    * Process the downloaded contributors data from repository info
+   *
    * @param repo the current repo
    * @param response the response
    * @return
    */
   private def processContributorResponse(repo: GithubRepo, response: WSResponse): Unit = {
 
-    saveJson(githubRepoContributorsPath(repo), repo, response)
+    if (200 == response.status) {
+
+      saveJson(githubRepoContributorsPath(repo), repo, response)
+    }
+
     ()
   }
 
   /**
    * Process the downloaded data from repository info
+   *
    * @param repo the current repo
    * @param response the response
    * @return
    */
   private def processReadmeResponse(repo: GithubRepo, response: WSResponse): Unit = {
 
-    val dir = path(repo)
-    Files.createDirectories(dir)
-    Files.write(
-      githubReadmePath(repo),
-      GithubReadme.absoluteUrl(response.body, repo, "master").getBytes(StandardCharsets.UTF_8)
-    )
+    if (200 == response.status) {
+
+      val dir = path(repo)
+      Files.createDirectories(dir)
+      Files.write(
+        githubReadmePath(repo),
+        GithubReadme.absoluteUrl(response.body, repo, "master").getBytes(StandardCharsets.UTF_8)
+      )
+    }
+    
     ()
   }
 
   /**
    * main github url to the api
+   *
    * @param repo the current github repo
    * @return
    */
