@@ -75,6 +75,21 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
     }.map(r => r.as[Project].headOption.map(hideId))
   }
 
+  def organizationPage(organization: String): Future[List[Project]] = {
+    esClient.execute {
+      search.in(indexName / collectionName).query(
+        nestedQuery("artifacts.reference").query(
+          bool (
+            must(
+              termQuery("artifacts.reference.organization", organization)
+            )
+          )
+        )
+      )
+    }.map(r => r.as[Project].toList.map(hideId))
+  }
+
+
   def latest(artifact: Artifact.Reference): Future[Option[Release.Reference]] = {
     projectPage(artifact).map(_.flatMap(
       _.artifacts
@@ -94,7 +109,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
         project  <- projects
         artifact <- project.artifacts
         release  <- artifact.releases
-      } yield release).sortBy(release => 
+      } yield release).sortBy(release =>
         maxOption(release.releaseDates.map(
           date => format.parseDateTime(date.value)
         ))
@@ -109,7 +124,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
         .query(matchAllQuery)
         .sort(fieldSort("created") order SortOrder.DESC)
         .limit(n)
-    }.map(r => r.as[Project].toList.map(hideId)) 
+    }.map(r => r.as[Project].toList.map(hideId))
   }
 
   /**
@@ -118,7 +133,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
    */
   def keywords() = aggregations("keywords")
 
-  
+
   def targets(): Future[Map[String, Long]] = aggregations("targets")
 
   def dependencies(): Future[List[(String, Long)]] = {

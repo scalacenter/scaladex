@@ -82,7 +82,7 @@ object Server {
       }
 
       sharedApi.projectPage(reference).map(project =>
-        project.map{p => 
+        project.map{p =>
           val selectedRelease = latestStableReleaseOrSelected(p)
           val selectedVersion =
             version match {
@@ -138,9 +138,17 @@ object Server {
         path("search") {
           optionalSession(refreshable, usingCookies) { userState =>
             parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
-              complete(sharedApi.find(query, page, sorting, you.flatMap(_ => userState.map(_.repos))).map{ case (pagination, projects) => 
+              complete(sharedApi.find(query, page, sorting, you.flatMap(_ => userState.map(_.repos))).map{ case (pagination, projects) =>
                 views.html.searchresult(query, sorting, pagination, projects, userState.map(_.user))
               })
+            }
+          }
+        } ~
+        path(Segment) { owner =>
+          optionalSession(refreshable, usingCookies) { userState =>
+            complete {
+              val projects = Await.result(sharedApi.organizationPage(owner), Duration.Inf)
+              views.html.organizationpage(owner, None, projects, userState.map(_.user))
             }
           }
         } ~
@@ -156,15 +164,15 @@ object Server {
             complete(artifactPage(reference, SemanticVersionParser(version), userState.map(_.user)))
           }
         } ~
-        path(Segment) { owner =>
-          parameters('artifact, 'version.?){ (artifact, version) =>
-            val rest = version match {
-              case Some(v) if !v.isEmpty => "/" + v
-              case _ => ""
-            }
-            redirect(s"/$owner/$artifact$rest", StatusCodes.PermanentRedirect)
-          }
-        } ~
+        // path(Segment) { owner =>
+        //   parameters('artifact, 'version.?){ (artifact, version) =>
+        //     val rest = version match {
+        //       case Some(v) if !v.isEmpty => "/" + v
+        //       case _ => ""
+        //     }
+        //     redirect(s"/$owner/$artifact$rest", StatusCodes.PermanentRedirect)
+        //   }
+        // } ~
         path("edit" / Segment / Segment) { (owner, artifactName) =>
           optionalSession(refreshable, usingCookies) { userState =>
             val reference = Artifact.Reference(owner, artifactName)

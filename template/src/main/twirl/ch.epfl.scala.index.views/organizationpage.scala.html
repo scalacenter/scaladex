@@ -1,21 +1,16 @@
 @import ch.epfl.scala.index.model.Project
-@import ch.epfl.scala.index.model.misc.Pagination
 @import ch.epfl.scala.index.model.misc.UserInfo
 @import ch.epfl.scala.index.model.misc.Url
 
-@(query: String, sorting: Option[String], pagination: Pagination, projects: List[Project], user: Option[UserInfo])
-@main(title = s"Search $query", showSearch = true, searchQuery = query, user) {
+@(organization: String, sorting: Option[String], projects: List[Project], user: Option[UserInfo])
+@main(title = organization, showSearch = true, searchQuery = "", user) {
 <main id="container-search">
   <div class="container">
-    @if(pagination.total != 0 ) {
+    @if(projects.length != 0 ) {
       <div class="row">
         <div class="col-md-2">
           <div class="result-count">
-            @if(pagination.current == 1) {
-              @pagination.total results
-            } else {
-              Page @pagination.current of @pagination.total results
-            }
+            @projects.length results
           </div>
         </div>
         <div class="col-md-7">
@@ -26,8 +21,6 @@
         <div class="col-md-3">
           <div class="order-by">
             <form action="/search" action="GET">
-              <input type="hidden" name="q" value="@query">
-              <input type="hidden" name="page" value="@pagination.current">
               <select name="sort" class="selectpicker" data-style="btn-primary" onchange="this.form.submit()">
                 <option @if(sorting == Some("relevant") || sorting.isEmpty) { selected } value="relevant">Most relevant</option>
                 <option @if(sorting == Some("created")) { selected } value="created">Most recent projects</option>
@@ -102,7 +95,6 @@
           }
           </div>
         </div>
-        @paginate(pagination, s"/search?q=$query" + sorting.map("&sort=" + _).getOrElse(""))
       } else {
         <h1>No Results</h1>
       }
