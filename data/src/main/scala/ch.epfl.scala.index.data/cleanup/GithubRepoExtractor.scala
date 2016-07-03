@@ -56,6 +56,11 @@ class GithubRepoExtractor extends DefaultJsonProtocol {
     def matches(m: Regex, s: String): Boolean =
        m.unapplySeq(s).isDefined
 
+    def fixInterpolationIssue(s: String): String = {
+
+      if (s.startsWith("$")) s.drop(1) else s
+    }
+
     val fromPoms =
       scm match {
         case Some(scmV) => {
@@ -73,8 +78,14 @@ class GithubRepoExtractor extends DefaultJsonProtocol {
         matches(m, s"$groupId $artifactId")
       }.map(_._2).toList
 
-    (fromPoms ++ fromClaims).map{ 
-      case GithubRepo(organization, repo) => GithubRepo(organization.toLowerCase, repo.toLowerCase)
+    (fromPoms ++ fromClaims).map{
+
+      case GithubRepo(organization, repo) =>
+
+        GithubRepo(
+          fixInterpolationIssue(organization.toLowerCase),
+          fixInterpolationIssue(repo.toLowerCase)
+        )
     }.toSet
   }
 
