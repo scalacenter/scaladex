@@ -28,17 +28,29 @@ package object html {
     (prev, sels, next)
   }
 
+  /**
+   * Get the main artifact
+   * - todo: default selected artifact
+   * - first check if there is -core artifact
+   * - check if name == organization
+   * - take the first one
+   * @param project the project to observe
+   * @return
+   */
   def mainArtifact(project: Project) = {
-    project.artifacts.filter(_.reference == project.reference).headOption match {
-      case Some(v) => Some(v)
-      case None => project.artifacts.headOption
-    }
+
+    List(
+      /* todo project default: project.artifact.find(_.reference.name == project.defaultArtifact) */
+      project.artifacts.find(_.reference.name.endsWith("-core")),
+      project.artifacts.find(r => r.reference.organization == r.reference.name),
+      project.artifacts.headOption
+    ).find(_.nonEmpty).flatten
   }
 
   def formatDate(date: String): String = {
     import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
     val in = ISODateTimeFormat.dateTime.withOffsetParsed
-    val out = DateTimeFormat.forPattern("dd/MM/yyyy");
+    val out = DateTimeFormat.forPattern("dd/MM/yyyy")
 
     out.print(in.parseDateTime(date))
   }
