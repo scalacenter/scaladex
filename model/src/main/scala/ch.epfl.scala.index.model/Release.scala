@@ -104,7 +104,11 @@ case class Release(
    * ordered java dependencies - tests last
    * - watch out the performance on /scala/scala-library
    */
-  lazy val orderedJavaDependencies = javaDependencies.sortBy(_.scope.contains("test")).sortBy(_.reference.name)
+  lazy val orderedJavaDependencies = {
+
+    val (a, b) = javaDependencies.sortBy(_.reference.name).partition(_.scope.contains("test"))
+    b.groupBy(b => b).values.flatten.toList ++ a
+  }
 
   /**
    * ordered reverse scala dependencies - tests last
