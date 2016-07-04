@@ -8,7 +8,7 @@
   <main id="container-search">
     <div class="container">
       @if(pagination.total != 0 ) {
-        @result("search", "", sorting, pagination, projects, user)
+        @result("search", "", query, sorting, pagination, projects, user)
         @paginate(pagination, s"/search?q=$query" + sorting.map("&sort=" + _).getOrElse(""))
       } else {
         <h1>No Results</h1>

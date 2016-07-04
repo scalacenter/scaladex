@@ -3,7 +3,7 @@
 @import ch.epfl.scala.index.model.misc.UserInfo
 @import ch.epfl.scala.index.model.misc.Url
 
-@(pagekind: String, organization: String = "", sorting: Option[String], pagination: Pagination, projects: List[Project], user: Option[UserInfo])
+@(pagekind: String, organization: String = "", query: String = "", sorting: Option[String], pagination: Pagination, projects: List[Project], user: Option[UserInfo])
   @defining(if (pagekind == "search") "search" else organization) { pagetype =>
     <div class="row">
       <div class="col-md-2">
@@ -23,6 +23,9 @@
       <div class="col-md-3">
         <div class="order-by">
           <form action="/@pagetype" action="GET">
+          @if(pagekind == "search") {
+            <input type="hidden" name="q" value="@query">
+          }
             <input type="hidden" name="page" value="@pagination.current">
             <select name="sort" class="selectpicker" data-style="btn-primary" onchange="this.form.submit()">
               <option @if(sorting == Some("relevant") || sorting.isEmpty) { selected } value="relevant">Most relevant</option>
