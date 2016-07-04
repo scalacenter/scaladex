@@ -73,12 +73,13 @@ object ProjectConvert extends BintrayProtocol {
          * a reference for each scala version to fix wrong
          * published libs.
          */
+        val repos = githubRepoExtractor(pom)
         checkNonStandardLib(pom) map { artifactId =>
 
           for {
             (artifactName, targets) <- ArtifactNameParser(artifactId)
             version <- SemanticVersionParser(pom.version)
-            github <- githubRepoExtractor(pom).headOption
+            github <- repos.find(githubRepoExtractor.claimedRepos.contains).orElse(repos.headOption)
           } yield (github, artifactName, targets, pom, metas, version)
         }
       }.flatten
