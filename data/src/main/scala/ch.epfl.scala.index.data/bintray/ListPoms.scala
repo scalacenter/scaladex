@@ -181,12 +181,12 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
 
     if (0 < requestCount) {
 
-      val toDownload = List.tabulate(requestCount)(p => PomListDownload(search, p, mostRecentQueriedDate)).toSet
+      val toDownload = List.tabulate(requestCount)(p => PomListDownload(search, p * page.itemPerPage + page.itemPerPage, mostRecentQueriedDate)).toSet
 
       /* fetch all data from bintray */
       val newQueried: Seq[List[BintraySearch]] = download[PomListDownload, List[BintraySearch]](infoMessage, toDownload, discover, processPomDownload)
 
-      /* maybe we have here a problem with dublicated poms */
+      /* maybe we have here a problem with duplicated poms */
       val merged = newQueried.foldLeft(queried)((oldList, newList) => oldList ++ applyFilter(newList)).sortBy(_.created)(Descending)
 
       print("writing Files ... ")
