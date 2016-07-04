@@ -160,7 +160,6 @@
                       }
                     </ul>
                   </div>
-
                   <div class="dependencies box">
 
                     <h4>@release.dependencyCount Dependencies</h4>
@@ -183,13 +182,11 @@
                         @dependency.reference.name
                         </a>
                         <span class="label label-primary">@dependency.scope</span>
-                        <div class="versions">
-                          @release.versionsForReverseDependencies(dependency).map(version => s"v${version.toString}").mkString(", ")
-                        </div>
                       </li>
                     }
                     </ul>
                   </div>
+
                 </div>
               }
             </div>
