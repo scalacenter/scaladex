@@ -20,7 +20,7 @@ class GithubRepoExtractor extends DefaultJsonProtocol {
     cleanupIndexBase.resolve(Paths.get("claims.json")).toFile
   )
   private val claims = source.mkString.parseJson.convertTo[Map[String, Option[String]]]
-  private val matchers = claims.toList.sorted
+  val claimedRepos = claims.toList.sorted
     .flatMap { case (k, v) => v.map((k, _)) }.
     map{case (k, v) =>
       val regex = k.replaceAllLiterally("*", "(.*)").r
@@ -74,7 +74,7 @@ class GithubRepoExtractor extends DefaultJsonProtocol {
       }
     
     val fromClaims =
-      matchers.find{case (m, _) => 
+      claimedRepos.find{case (m, _) =>
         matches(m, s"$groupId $artifactId")
       }.map(_._2).toList
 
