@@ -44,7 +44,7 @@ class DownloadPoms  (implicit val system: ActorSystem, implicit val materializer
   private def verifySHA1FileHash(path: Path, sha1: String): Boolean = {
 
     val source = scala.io.Source.fromFile(path.toFile)
-    val content = source.mkString.split(nl).mkString("")
+    val content = source.mkString
     source.close()
 
     verifyChecksum(content, sha1)
@@ -55,7 +55,7 @@ class DownloadPoms  (implicit val system: ActorSystem, implicit val materializer
   private val searchesBySha1: Set[BintraySearch] = {
 
     BintrayMeta.readQueriedPoms(bintrayCheckpoint)
-      .filter(s => !Files.exists(pomPath(s)))// || !verifySHA1FileHash(pomPath(s), s.sha1))
+      .filter(s => !Files.exists(pomPath(s)) || !verifySHA1FileHash(pomPath(s), s.sha1))
       .groupBy(_.sha1)                         // remove duplicates with sha1
       .map { case (_, vs) => vs.head }
       .toSet
