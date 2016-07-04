@@ -95,24 +95,37 @@ case class Release(
   /**
    * ordered scala dependencies - tests last
    */
-  lazy val orderedDependencies = scalaDependencies.sortBy(_.scope.contains("test"))
+  lazy val orderedDependencies = {
+    val (a, b) = scalaDependencies.sortBy(_.reference.name).partition(_.scope.contains("test"))
+    b.groupBy(b => b).values.flatten.toList ++ a
+  }
 
   /**
    * ordered java dependencies - tests last
+   * - watch out the performance on /scala/scala-library
    */
-  lazy val orderedJavaDependencies = javaDependencies.sortBy(_.scope.contains("test"))
+  lazy val orderedJavaDependencies = {
+
+    val (a, b) = javaDependencies.sortBy(_.reference.name).partition(_.scope.contains("test"))
+    b.groupBy(b => b).values.flatten.toList ++ a
+  }
 
   /**
    * ordered reverse scala dependencies - tests last
+   * - watch out the performance on /scala/scala-library
    */
-  lazy val orderedReverseDependencies = reverseDependencies.sortBy(_.scope.contains("test"))
+  lazy val orderedReverseDependencies = {
 
-  /** collect all unique organization/artifact dependency */
-  lazy val uniqueOrderedReverseDependencies = {
+    val (a, b) = reverseDependencies.partition(_.scope.contains("test"))
+    b.groupBy(b => b).values.flatten.toList ++ a
+  }
 
-    orderedReverseDependencies.foldLeft(Seq[ScalaDependency]()) { (current, next) =>
-      if (current.exists(_.reference.name == next.reference.name)) current else current :+ next
-    }
+  /** collect all unique organization/artifact dependency
+   * - watch out the performance on /scala/scala-library
+   */
+  lazy val uniqueOrderedReverseDependencies: Seq[ScalaDependency] = {
+
+    orderedReverseDependencies.groupBy(_.reference.name).values.map(_.head).toSeq.sortBy(_.reference.name)
   }
 
   /**
@@ -122,13 +135,14 @@ case class Release(
 
   /**
    * collect a list of version for a reverse dependency
+   * - watch out the performance on /scala/scala-library
    *
    * @param dep current looking dependency
    * @return
    */
   def versionsForReverseDependencies(dep: ScalaDependency): Seq[SemanticVersion] = {
 
-    reverseDependencies.filter(d => d.reference.name == dep.reference.name).map(_.reference.version)
+    orderedReverseDependencies.filter(d => d.reference.name == dep.reference.name).map(_.reference.version)
   }
 }
 
