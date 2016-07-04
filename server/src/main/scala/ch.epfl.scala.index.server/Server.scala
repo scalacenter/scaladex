@@ -149,6 +149,13 @@ object Server {
         } ~
         path(Segment) { owner =>
           optionalSession(refreshable, usingCookies) { userState =>
+            parameters('artifact, 'version.?){ (artifact, version) =>
+              val rest = version match {
+                case Some(v) if !v.isEmpty => "/" + v
+                case _ => ""
+              }
+              redirect(s"/$owner/$artifact$rest", StatusCodes.PermanentRedirect)
+            } ~
             parameters('page.as[Int] ? 1, 'sort.?) { (page, sorting) =>
               complete {
                 sharedApi.organizationPage(owner, page, sorting)
@@ -171,15 +178,6 @@ object Server {
             complete(artifactPage(reference, SemanticVersionParser(version), userState.map(_.user)))
           }
         } ~
-        // path(Segment) { owner =>
-        //   parameters('artifact, 'version.?){ (artifact, version) =>
-        //     val rest = version match {
-        //       case Some(v) if !v.isEmpty => "/" + v
-        //       case _ => ""
-        //     }
-        //     redirect(s"/$owner/$artifact$rest", StatusCodes.PermanentRedirect)
-        //   }
-        // } ~
         path("edit" / Segment / Segment) { (owner, artifactName) =>
           optionalSession(refreshable, usingCookies) { userState =>
             val reference = Artifact.Reference(owner, artifactName)
