@@ -69,7 +69,7 @@
   @githubInfo.map { github =>
     @if(github.contributors.nonEmpty) {
       <div class="collaborators box">
-        <h4>@github.contributors.size Contributors</h4>
+        <h4>Contributors (@github.contributors.size)</h4>
 
         <ul>
         @for(contributor <- github.contributors.take(100)) {
