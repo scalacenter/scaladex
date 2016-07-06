@@ -8,10 +8,12 @@ import release._
  * @param maven famous maven triple: org.typelevel - cats-core_sjs0.6_2.11 - 0.6.0
  * @param reference similar to maven but with a clean artifact name
  * @param name human readable name (ex: Apache Spark)
+ * @param resolver if not on maven central (ex: Bintray)
  * @param description the description of that release
  * @param releaseDates potentially various dates because bintray allows republishing
  * @param mavenCentral availability on the central repository
  * @param licenses a bunch of licences
+ * @param nonStandardLib if not using artifactName_scalaVersion convention
  * @param scalaDependencies bunch of scala dependencies
  * @param javaDependencies bunch of java dependencies
  * @param reverseDependencies bunch of reversed dependencies
@@ -19,6 +21,8 @@ import release._
 case class Release(
   maven: MavenReference,
   reference: Release.Reference,
+  project: Project.Reference,
+  resolver: Option[Resolver],
   name: Option[String] = None,
   description: Option[String] = None,
   releaseDates: List[ISO_8601_Date] = Nil,

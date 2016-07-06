@@ -92,7 +92,7 @@ object ProjectConvert extends BintrayProtocol {
 
     def pomToMavenReference(pom: maven.MavenModel) = MavenReference(pom.groupId, pom.artifactId, pom.version)
 
-    def maxMinRelease(artifacts: List[Artifact]): (Option[String], Option[String]) = {
+    def maxMinRelease(releases: List[Release]): (Option[String], Option[String]) = {
       import com.github.nscala_time.time.Imports._
       import org.joda.time.format.ISODateTimeFormat
 
@@ -100,8 +100,7 @@ object ProjectConvert extends BintrayProtocol {
 
       val dates =
         for {
-          artifact <- artifacts
-          release  <- artifact.releases
+          release  <- releases
           date     <- release.releaseDates
         } yield format.parseDateTime(date.value)
 
@@ -112,44 +111,46 @@ object ProjectConvert extends BintrayProtocol {
       (print(sorted.headOption), print(sorted.lastOption))
     }
 
-    val projects = pomsAndMetaClean
+    val projectsAndReleases = pomsAndMetaClean
       .groupBy{ case (githubRepo, _, _, _, _, _) => githubRepo}
       .map{ case (githubRepo @ GithubRepo(organization, repository), vs) =>
-        
-        val artifacts = 
-          vs.groupBy{ case (_, artifactName, _, _, _, _) => artifactName}.map{ case (artifactName, rs) =>
-            
-            val releases =
-              rs.map{ case (_, _, targets, pom, metas, version) =>
-                Release(
-                  pomToMavenReference(pom),
-                  Release.Reference(
-                    organization,
-                    artifactName,
-                    version,
-                    targets
-                  ),
-                  pom.name,
-                  pom.description,
-                  metas.map(meta => ISO_8601_Date(meta.created.toString)), // +/- 3 days offset
-                  metas.forall(meta => meta.owner == "bintray" && meta.repo == "jcenter"),
-                  licenseCleanup(pom),
-                  getNonStandardLib(pom).nonEmpty /* check if this is a fixed scala dep */
-                )
-              }
-            Artifact(Artifact.Reference(organization, artifactName), releases)
-          }.toList
+        val releases =
+          vs.map{ case (_, _, targets, pom, metas, version) =>
+            val mavenCentral = metas.forall(meta => meta.owner == "bintray" && meta.repo == "jcenter")
 
-        val (max, min) = maxMinRelease(artifacts)
+            Release(
+              maven = pomToMavenReference(pom),
+              reference = Release.Reference(
+                organization,
+                artifactName,
+                version,
+                targets
+              ),
+              project = projectReference,
+              resolver = if(mavenCentral) None else Some(Bintray(meta.owner, meta.repo)),
+              name = pom.name,
+              description = pom.description,
+              releaseDates = metas.map(meta => ISO_8601_Date(meta.created.toString)), // +/- 3 days offset
+              mavenCentral = mavenCentral,
+              licenses = licenseCleanup(pom),
+              nonStandardLib = getNonStandardLib(pom).nonEmpty
+            )
+          }
 
-        Project(
-          Project.Reference(organization, repository),
-          artifacts,
-          GithubReader(githubRepo),
-          Keywords(githubRepo),
-          created = min,
-          lastUpdate = max
+        val (max, min) = maxMinRelease(releases)
+        val projectReference = Project.Reference(organization, repository)
+
+        (
+          Project(
+            projectReference,
+            GithubReader(githubRepo),
+            Keywords(githubRepo),
+            created = min,
+            lastUpdate = max
+          ),
+          releases
         )
+
       }.toList
 
     println("Dependencies & Reverse Dependencies")
