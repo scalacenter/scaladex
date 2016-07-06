@@ -16,10 +16,10 @@ package object html {
     val delta = (window - 1) / 2
     val (start, end) =
       if(current + delta <= total) {
-        if(current - delta >= 1) (current - delta, current + delta)
-        else (1, window + 1)
+        if(current - delta-1 >= 1) (current - delta-1, current + delta)
+        else (1, window)
       } else {
-        if(total < window) (1, total)
+        if(total <= window) (1, total)
         else (total - window, total)
       }
 
