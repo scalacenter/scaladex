@@ -58,7 +58,7 @@ object GithubReader {
     GithubInfo(
       homepage = repository.homepage.map(h => Url(h)),
       description = Some(repository.description),
-      logo = repository.organization.map(o => Url(o.avatar_url)),
+      logo = Some(Url(repository.owner.avatar_url)),
       stars = Some(repository.stargazers_count),
       forks = Some(repository.forks),
       watchers = Some(repository.subscribers_count),
