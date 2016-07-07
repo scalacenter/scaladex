@@ -1,7 +1,7 @@
 package ch.epfl.scala.index
 package server
 
-import model._
+// import model._
 import model.misc.UserInfo
 import release.SemanticVersion
 import data.cleanup.SemanticVersionParser
@@ -48,7 +48,7 @@ object Server {
       } yield views.html.frontpage(keywords, targets, dependencies, latestProjects, latestReleases, userInfo)
     }
 
-    def projectPage(owner: String, repo: String, artifact: Option[String] = None, 
+    def projectPage(owner: String, repo: String, artifact: Option[String] = None,
         version: Option[SemanticVersion], userState: Option[UserState] = None) = {
       val user = userState.map(_.user)
       api.projectPage(Project.Reference(owner, repo), artifact, version).map(
