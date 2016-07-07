@@ -1,6 +1,6 @@
 package ch.epfl.scala.index.model
 
-import misc.{GeneralReference, ISO_8601_Date, MavenReference}
+import misc.{GeneralReference, MavenReference}
 import release._
 
 /**
@@ -10,7 +10,7 @@ import release._
  * @param name human readable name (ex: Apache Spark)
  * @param resolver if not on maven central (ex: Bintray)
  * @param description the description of that release
- * @param releaseDates potentially various dates because bintray allows republishing
+ * @param released first release date
  * @param mavenCentral availability on the central repository
  * @param licenses a bunch of licences
  * @param nonStandardLib if not using artifactName_scalaVersion convention
@@ -25,7 +25,7 @@ case class Release(
   resolver: Option[Resolver],
   name: Option[String] = None,
   description: Option[String] = None,
-  releaseDates: List[ISO_8601_Date] = Nil,
+  released: Option[String] = None,
   mavenCentral: Boolean = false,
   licenses: Set[License] = Set(),
   nonStandardLib: Boolean = false,
@@ -150,6 +150,17 @@ case class Release(
   }
 }
 
+object Artifact {
+  /**
+   * Release Reference representation
+   * @param organization the organisation name like    typelevel | akka
+   * @param artifact the artifact name like            cats-core | akka-http-experimental
+   */
+  case class Reference(
+    organization: String,
+    artifact: String
+  )
+}
 
 object Release {
 

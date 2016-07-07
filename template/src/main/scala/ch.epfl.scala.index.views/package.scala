@@ -28,24 +28,24 @@ package object html {
     (prev, sels, next)
   }
 
-  /**
-   * Get the main artifact
-   * - todo: default selected artifact
-   * - first check if there is -core artifact
-   * - check if name == organization
-   * - take the first one
-   * @param project the project to observe
-   * @return
-   */
-  def mainArtifact(project: Project) = {
+  // /**
+  //  * Get the main artifact
+  //  * - todo: default selected artifact
+  //  * - first check if there is -core artifact
+  //  * - check if name == organization
+  //  * - take the first one
+  //  * @param project the project to observe
+  //  * @return
+  //  */
+  // def mainArtifact(project: Project) = {
 
-    List(
-      /* todo project default: project.artifact.find(_.reference.name == project.defaultArtifact) */
-      project.artifacts.find(_.reference.name.endsWith("-core")),
-      project.artifacts.find(r => r.reference.organization == r.reference.name),
-      project.artifacts.headOption
-    ).find(_.nonEmpty).flatten
-  }
+  //   List(
+  //     //todo project default: project.artifact.find(_.reference.name == project.defaultArtifact) 
+  //     project.artifacts.find(_.reference.name.endsWith("-core")),
+  //     project.artifacts.find(r => r.reference.organization == r.reference.name),
+  //     project.artifacts.headOption
+  //   ).find(_.nonEmpty).flatten
+  // }
 
   def formatDate(date: String): String = {
     import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}

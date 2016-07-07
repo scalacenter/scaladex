@@ -2,7 +2,7 @@ package ch.epfl.scala.index
 package server
 
 import model._
-import misc.{GithubRepo, Pagination, UserInfo}
+import misc.{GithubRepo, Pagination}
 
 import data.elastic._
 import com.sksamuel.elastic4s._
@@ -12,24 +12,23 @@ import org.elasticsearch.search.sort.SortOrder
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.reflectiveCalls
 
-class ApiImplementation(github: Github, userState: Option[UserState])(implicit val ec: ExecutionContext) {
+class ApiImplementation(github: Github)(implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(_id = None)
 
   val resultsPerPage: Int = 10
 
-  def userInfo(): Option[UserInfo] = userState.map(_.user)
-  def autocomplete(q: String): Future[List[(String, String, String)]] = {
-    find(q, 0).map{ case (_, projects) =>
-      (for {
-        project <- projects
-        artifact <- project.artifacts
-      } yield (
-        artifact.reference.organization,
-        artifact.reference.name,
-        project.github.flatMap(_.description).getOrElse("")
-      )).take(10)
-    }
-  }
+  // def autocomplete(q: String): Future[List[(String, String, String)]] = {
+  //   find(q, 0).map{ case (_, projects) =>
+  //     (for {
+  //       project <- projects
+  //       artifact <- project.artifacts
+  //     } yield (
+  //       artifact.reference.organization,
+  //       artifact.reference.name,
+  //       project.github.flatMap(_.description).getOrElse("")
+  //     )).take(10)
+  //   }
+  // }
 
   val sortQuery = (sorting: Option[String]) =>
     sorting match {
@@ -41,12 +40,14 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
       case _ => scoreSort
     }
 
-  def find(queryString: String, page: PageIndex, sorting: Option[String] = None, repos: Option[Set[GithubRepo]] = None): Future[(Pagination, List[Project])] = {
+  def find(queryString: String, page: PageIndex, sorting: Option[String] = None,
+           repos: Option[Set[GithubRepo]] = None): Future[(Pagination, List[Project])] = {
+
     val clampedPage = if(page <= 0) 1 else page
 
     esClient.execute {
       search
-        .in(indexName / collectionName)
+        .in(indexName / projectsCollection)
         .query(queryString)
         .start(resultsPerPage * (clampedPage - 1))
         .limit(resultsPerPage)
@@ -64,7 +65,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
   def projectPage(artifact: Artifact.Reference): Future[Option[Project]] = {
     val Artifact.Reference(organization, artifactName) = artifact
     esClient.execute {
-      search.in(indexName / collectionName).query(
+      search.in(indexName / projectsCollection).query(
         nestedQuery("artifacts.reference").query(
           bool (
             must(
@@ -80,7 +81,7 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
   def organizationPage(organization: String, page: PageIndex, sorting: Option[String] = None): Future[(Pagination, List[Project])] = {
     val clampedPage = if(page <= 0) 1 else page
     esClient.execute {
-      search.in(indexName / collectionName).query(
+      search.in(indexName / projectsCollection).query(
         nestedQuery("artifacts.reference").query(
           bool (
             must(
@@ -102,53 +103,29 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
   }
 
 
-  def latest(artifact: Artifact.Reference): Future[Option[Release.Reference]] = {
-    projectPage(artifact).map(_.flatMap(
-      _.artifacts
-        .find(_.reference == artifact)
-        .flatMap(_.releases.headOption.map(_.reference))
-    ))
-  }
+  // def latest(artifact: Artifact.Reference): Future[Option[Release.Reference]] = {
+  //   projectPage(artifact).map(_.flatMap(
+  //     _.artifacts
+  //       .find(_.reference == artifact)
+  //       .flatMap(_.releases.headOption.map(_.reference))
+  //   ))
+  // }
 
-  def latestProjects(): Future[List[Project]] = latest("created", 12)
-  def latestReleases(): Future[List[Release]] = {
-    import com.github.nscala_time.time.Imports._
-    import org.joda.time.format.ISODateTimeFormat
-    val format = ISODateTimeFormat.dateTime.withOffsetParsed
+  def latestProjects() = latest[Project](projectsCollection, "created", 12).map(_.map(hideId))
+  def latestReleases() = latest[Release](releasesCollection, "released", 12)
 
-    latest("updated", 12).map(projects =>
-      (for {
-        project  <- projects
-        artifact <- project.artifacts
-        release  <- artifact.releases
-      } yield release).sortBy(release =>
-        maxOption(release.releaseDates.map(
-          date => format.parseDateTime(date.value)
-        ))
-      )(Descending)
-    )
-  }
-  private def maxOption[T: Ordering](xs: List[T]): Option[T] = if(xs.isEmpty) None else Some(xs.max)
-
-  def latest(by: String, n: Int): Future[List[Project]] = {
+  def latest[T: HitAs : Manifest](collection: String, by: String, n: Int): Future[List[T]] = {
     esClient.execute {
-      search.in(indexName / collectionName)
+      search.in(indexName / collection)
         .query(matchAllQuery)
-        .sort(fieldSort("created") order SortOrder.DESC)
+        .sort(fieldSort(by) order SortOrder.DESC)
         .limit(n)
-    }.map(r => r.as[Project].toList.map(hideId))
+    }.map(r => r.as[T].toList)
   }
 
-  /**
-   * get Keyword list
-   * @return
-   */
   def keywords() = aggregations("keywords")
-
-
-  def targets(): Future[Map[String, Long]] = aggregations("targets")
-
-  def dependencies(): Future[List[(String, Long)]] = {
+  def targets() = aggregations("targets")
+  def dependencies() = {
     // we remove testing or logging because they are always a dependency
     // we could have another view to compare testing frameworks
     val testOrLogging = Set(
@@ -190,22 +167,22 @@ class ApiImplementation(github: Github, userState: Option[UserState])(implicit v
   private def aggregations(field: String): Future[Map[String, Long]] = {
 
     import scala.collection.JavaConverters._
-    import scala.collection.immutable.ListMap
     import org.elasticsearch.search.aggregations.bucket.terms.StringTerms
 
     val aggregationName = s"${field}_count"
 
     esClient.execute {
-      search.in(indexName / collectionName).aggregations(
+      search.in(indexName / projectsCollection).aggregations(
         aggregation.terms(aggregationName).field(field).size(50)
       )
     }.map( resp => {
-
       val agg = resp.aggregations.get[StringTerms](aggregationName)
-      val aggs = agg.getBuckets.asScala.toList.collect {
+      agg.getBuckets.asScala.toList.collect {
         case b: StringTerms.Bucket => b.getKeyAsString -> b.getDocCount
-      }
-      ListMap(aggs.sortBy(_._1): _*)
+      }.toMap
+
     })
   }
+
+  private def maxOption[T: Ordering](xs: List[T]): Option[T] = if(xs.isEmpty) None else Some(xs.max)
 }

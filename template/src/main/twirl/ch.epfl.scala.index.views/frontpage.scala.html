@@ -37,33 +37,29 @@
             <h2 class="text-center">Recent projects</h2>
             <div class="row">
                 @for(project <- latestProjects){
-                    @defining(mainArtifact(project)){ artifact =>
-                        @for(ar <- artifact) {
-                            <div class="col-md-4 col-sm-6">
-                                <a href="/@ar.reference.organization/@ar.reference.name">
-                                    <div class="content-project box">
-                                        <div class="content-project-header">
-                                            <img src="@{ project.github.flatMap(_.logo) match {
-                                                case Some(Url(v)) => v
-                                                case None => "/assets/img/avatar-list.png"
-                                              }}" alt="project logo">    
-                                            <h4>@project.reference.organization/@project.reference.repository</h4>
-                                        </div>
-                                        <div class="content-project-body">
-                                            @for(github <- project.github) {
-                                              @for(description <- github.description) {
-                                                <p class="description">@description</p>
-                                              }
-                                            }
-                                            @for(created <- project.created) {
-                                                @{formatDate(created)}
-                                            }
-                                        </div>
-                                    </div>
-                                </a>
+                    <div class="col-md-4 col-sm-6">
+                        <a href="/@project.reference.organization/@project.reference.repository">
+                            <div class="content-project box">
+                                <div class="content-project-header">
+                                    <img src="@{ project.github.flatMap(_.logo) match {
+                                        case Some(Url(v)) => v
+                                        case None => "/assets/img/avatar-list.png"
+                                      }}" alt="project logo">    
+                                    <h4>@project.reference.organization/@project.reference.repository</h4>
+                                </div>
+                                <div class="content-project-body">
+                                    @for(github <- project.github) {
+                                      @for(description <- github.description) {
+                                        <p class="description">@description</p>
+                                      }
+                                    }
+                                    @for(created <- project.created) {
+                                        @{formatDate(created)}
+                                    }
+                                </div>
                             </div>
-                        }
-                    }
+                        </a>
+                    </div>
                 }
             </div>
             <a class="btn btn-default" href="/search?q=*&sort=created">More ...</a>

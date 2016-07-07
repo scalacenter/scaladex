@@ -7,6 +7,6 @@ trait Resolver{
 }
 
 case class Bintray(owner: String, repo: String) extends Resolver {
-  def name = s"Bintray $onwer $repo"
+  def name = s"Bintray $owner $repo"
   def url = s"https://dl.bintray.com/$owner/$repo"
 }

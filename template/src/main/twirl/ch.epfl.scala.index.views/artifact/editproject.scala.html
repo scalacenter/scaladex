@@ -1,11 +1,13 @@
+@import ch.epfl.scala.index.views.html.main
+
 @import ch.epfl.scala.index.model._
 @import ch.epfl.scala.index.model.misc.UserInfo
 @import ch.epfl.scala.index.model.release.SemanticVersion
 @(project: Project, artifact: Artifact.Reference, version: Option[SemanticVersion], user: Option[UserInfo])
-@main(title = s"Edit ${artifact.name}", showSearch = true, searchQuery = "", user) {
+@main(title = s"Edit", showSearch = true, searchQuery = "", user) {
   <main id="container-project">
 
-    @headproject(project, artifact, version)
+    @headproject(project, Nil, Nil, None, None)
 
     <div class="container">
       <div class="row">

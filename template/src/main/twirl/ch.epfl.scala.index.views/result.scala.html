@@ -51,18 +51,9 @@
                   case None => "/assets/img/avatar-list.png"
                 }}" alt="project logo">
 
-                @defining(mainArtifact(project)){ artifact =>
-                  @for(ar <- artifact) {
-                    <a href="/@ar.reference.organization/@ar.reference.name">
-                      <h4>@project.reference.organization/@project.reference.repository</h4>
-                    </a>
-                  }
-                }
-                @if(project.artifacts.size >= 1) {
-
-                } else {
-                  <h4>@project.githubRepo</h4>
-                }
+                <a href="/@project.reference.organization/@project.reference.repository">
+                  <h4>@project.reference.organization/@project.reference.repository</h4>
+                </a>
 
                 @for(github <- project.github) {
                   @for(homepage <- github.homepage) {

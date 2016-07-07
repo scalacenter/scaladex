@@ -1,10 +1,10 @@
 package ch.epfl.scala.index
 package server
 
-import model._
+// import model._
 import model.misc.UserInfo
-import model.release.SemanticVersion
-import data.cleanup.SemanticVersionParser
+// import model.release.SemanticVersion
+// import data.cleanup.SemanticVersionParser
 import data.elastic._
 
 import akka.http.scaladsl._
@@ -36,12 +36,8 @@ object Server {
       def log(msg: String) = println(msg)
     }
 
-    val sharedApi = new ApiImplementation(github, None)
-    val rest = new RestApi(sharedApi)
-
-    def reuseSharedApi(userState: Option[UserState]) =
-      if(userState.isDefined) new ApiImplementation(github, userState)
-      else sharedApi
+    val sharedApi = new ApiImplementation(github)
+    // val rest = new RestApi(sharedApi)
 
     def frontPage(userInfo: Option[UserInfo]) = {
       for {
@@ -53,54 +49,54 @@ object Server {
       } yield views.html.frontpage(keywords, targets, dependencies, latestProjects, latestReleases, userInfo)
     }
 
-    def artifactPage(reference: Artifact.Reference, version: Option[SemanticVersion], user: Option[UserInfo]) = {
-      // This is a list because we still need to filter targets (scala 2.11 vs 2.10 or scalajs, ...)
-      def latestStableReleaseOrSelected(project: Project): List[Release] = {
-        def latestStableVersion(artifact: Artifact): Option[SemanticVersion] = {
-          version match {
-            case Some(v) => Some(v)
-            case None => {
-              val versions =
-                artifact.releases
-                  .map(_.reference.version)
-                  .sorted.reverse
+    // def artifactPage(reference: Artifact.Reference, version: Option[SemanticVersion]) = {
+    //   // This is a list because we still need to filter targets (scala 2.11 vs 2.10 or scalajs, ...)
+    //   def latestStableReleaseOrSelected(releases: List[Release]): List[Release] = {
+    //     def latestStableVersion(artifact: Artifact): Option[SemanticVersion] = {
+    //       version match {
+    //         case Some(v) => Some(v)
+    //         case None => {
+    //           val versions =
+    //             artifact.releases
+    //               .map(_.reference.version)
+    //               .sorted.reverse
 
-              // select latest stable release version if applicable
-              if(versions.exists(_.preRelease.isEmpty))
-                versions.filter(_.preRelease.isEmpty).headOption
-              else
-                versions.headOption
-            }
-          }
-        }
+    //           // select latest stable release version if applicable
+    //           if(versions.exists(_.preRelease.isEmpty))
+    //             versions.filter(_.preRelease.isEmpty).headOption
+    //           else
+    //             versions.headOption
+    //         }
+    //       }
+    //     }
 
-        for {
-          artifact <- project.artifacts.filter(_.reference == reference)
-          stableVersion <- latestStableVersion(artifact).toList
-          stableRelease <- artifact.releases.filter(_.reference.version == stableVersion)
-        } yield stableRelease
-      }
+    //     for {
+    //       artifact <- project.artifacts.filter(_.reference == reference)
+    //       stableVersion <- latestStableVersion(artifact).toList
+    //       stableRelease <- artifact.releases.filter(_.reference.version == stableVersion)
+    //     } yield stableRelease
+    //   }
 
-      sharedApi.projectPage(reference).map(project =>
-        project.map{p =>
-          val selectedRelease = latestStableReleaseOrSelected(p)
-          val selectedVersion =
-            version match {
-              case None => selectedRelease.headOption.map(_.reference.version)
-              case _ => version
-            }
+    //   sharedApi.projectPage(reference).map(project =>
+    //     project.map{p =>
+    //       val selectedRelease = latestStableReleaseOrSelected(p)
+    //       val selectedVersion =
+    //         version match {
+    //           case None => selectedRelease.headOption.map(_.reference.version)
+    //           case _ => version
+    //         }
 
-          (OK, views.html.artifact(p, reference, selectedVersion, selectedRelease, user))
-        }.getOrElse((NotFound, views.html.notfound(user)))
-      )
-    }
+    //       (OK, views.html.artifact(p, reference, selectedVersion, selectedRelease, user))
+    //     }.getOrElse((NotFound, views.html.notfound(user)))
+    //   )
+    // }
 
     val route = {
       import akka.http.scaladsl._
       import server.Directives._
       import TwirlSupport._
 
-      rest.route ~
+      // rest.route ~
       get {
         path("login") {
           redirect(Uri("https://github.com/login/oauth/authorize").withQuery(Query(
@@ -135,59 +131,59 @@ object Server {
         path("fonts" / Remaining) { path ⇒
           getFromResource(path)
         } ~
-        path("search") {
-          optionalSession(refreshable, usingCookies) { userState =>
-            parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
-              complete {
-                sharedApi.find(query, page, sorting, you.flatMap(_ => userState.map(_.repos)))
-                  .map { case (pagination, projects) =>
-                    views.html.searchresult(query, sorting, pagination, projects, userState.map(_.user))
-                  }
-              }
-            }
-          }
-        } ~
-        path(Segment) { owner =>
-          optionalSession(refreshable, usingCookies) { userState =>
-            parameters('artifact, 'version.?){ (artifact, version) =>
-              val rest = version match {
-                case Some(v) if !v.isEmpty => "/" + v
-                case _ => ""
-              }
-              redirect(s"/$owner/$artifact$rest", StatusCodes.PermanentRedirect)
-            } ~
-            parameters('page.as[Int] ? 1, 'sort.?) { (page, sorting) =>
-              complete {
-                sharedApi.organizationPage(owner, page, sorting)
-                  .map { case (pagination, projects) =>
-                    views.html.organizationpage(owner, sorting, pagination, projects, userState.map(_.user))
-                  }
-              }
-            }
-          }
-        } ~
-        path(Segment / Segment) { (owner, artifactName) =>
-          optionalSession(refreshable, usingCookies) { userState =>
-            val reference = Artifact.Reference(owner, artifactName)
-            complete(artifactPage(reference, version = None, userState.map(_.user)))
-          }
-        } ~
-        path(Segment / Segment / Segment) { (owner, artifactName, version) =>
-          optionalSession(refreshable, usingCookies) { userState =>
-            val reference = Artifact.Reference(owner, artifactName)
-            complete(artifactPage(reference, SemanticVersionParser(version), userState.map(_.user)))
-          }
-        } ~
-        path("edit" / Segment / Segment) { (owner, artifactName) =>
-          optionalSession(refreshable, usingCookies) { userState =>
-            val reference = Artifact.Reference(owner, artifactName)
-            complete(
-              sharedApi.projectPage(reference).map(project =>
-                project.map(p => views.html.editproject(p, reference, version = None, userState.map(_.user)))
-              )
-            )
-          }
-        } ~
+        // path("search") {
+        //   optionalSession(refreshable, usingCookies) { userState =>
+        //     parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
+        //       complete {
+        //         sharedApi.find(query, page, sorting, you.flatMap(_ => userState.map(_.repos)))
+        //           .map { case (pagination, projects) =>
+        //             views.html.searchresult(query, sorting, pagination, projects, userState.map(_.user))
+        //           }
+        //       }
+        //     }
+        //   }
+        // } ~
+        // path(Segment) { owner =>
+        //   optionalSession(refreshable, usingCookies) { userState =>
+        //     parameters('artifact, 'version.?){ (artifact, version) =>
+        //       val rest = version match {
+        //         case Some(v) if !v.isEmpty => "/" + v
+        //         case _ => ""
+        //       }
+        //       redirect(s"/$owner/$artifact$rest", StatusCodes.PermanentRedirect)
+        //     } ~
+        //     parameters('page.as[Int] ? 1, 'sort.?) { (page, sorting) =>
+        //       complete {
+        //         sharedApi.organizationPage(owner, page, sorting)
+        //           .map { case (pagination, projects) =>
+        //             views.html.organizationpage(owner, sorting, pagination, projects, userState.map(_.user))
+        //           }
+        //       }
+        //     }
+        //   }
+        // } ~
+        // path(Segment / Segment) { (owner, artifactName) =>
+        //   optionalSession(refreshable, usingCookies) { userState =>
+        //     val reference = Artifact.Reference(owner, artifactName)
+        //     complete(artifactPage(reference, version = None, userState.map(_.user)))
+        //   }
+        // } ~
+        // path(Segment / Segment / Segment) { (owner, artifactName, version) =>
+        //   optionalSession(refreshable, usingCookies) { userState =>
+        //     val reference = Artifact.Reference(owner, artifactName)
+        //     complete(artifactPage(reference, SemanticVersionParser(version), userState.map(_.user)))
+        //   }
+        // } ~
+        // path("edit" / Segment / Segment) { (owner, artifactName) =>
+        //   optionalSession(refreshable, usingCookies) { userState =>
+        //     val reference = Artifact.Reference(owner, artifactName)
+        //     complete(
+        //       sharedApi.projectPage(reference).map(project =>
+        //         project.map(p => views.html.editproject(p, reference, version = None, userState.map(_.user)))
+        //       )
+        //     )
+        //   }
+        // } ~
         pathSingleSlash {
           optionalSession(refreshable, usingCookies) { userState =>
             complete(frontPage(userState.map(_.user)))
@@ -196,8 +192,9 @@ object Server {
       }
     }
 
-    /* wait for elastic to start */
+    println("waiting for elastic to start")
     blockUntilYellow()
+    println("ready")
 
     Await.result(Http().bindAndHandle(route, "0.0.0.0", 8080), 20.seconds)
 

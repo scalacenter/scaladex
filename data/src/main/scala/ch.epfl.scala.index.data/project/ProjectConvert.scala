@@ -59,7 +59,7 @@ object ProjectConvert extends BintrayProtocol {
     }
   }
 
-  def apply(pomsAndMeta: List[(maven.MavenModel, List[BintraySearch])]): List[Project] = {
+  def apply(pomsAndMeta: List[(maven.MavenModel, List[BintraySearch])]): List[(Project, List[Release])] = {
     val githubRepoExtractor = new GithubRepoExtractor
     
     val progressMeta = new ProgressBar("collecting metadata", pomsAndMeta.size)
@@ -92,81 +92,83 @@ object ProjectConvert extends BintrayProtocol {
 
     def pomToMavenReference(pom: maven.MavenModel) = MavenReference(pom.groupId, pom.artifactId, pom.version)
 
-    def maxMinRelease(releases: List[Release]): (Option[String], Option[String]) = {
-      import com.github.nscala_time.time.Imports._
-      import org.joda.time.format.ISODateTimeFormat
+    import com.github.nscala_time.time.Imports._
+    import org.joda.time.format.ISODateTimeFormat
+    val format = ISODateTimeFormat.dateTime.withOffsetParsed
 
-      val format = ISODateTimeFormat.dateTime.withOffsetParsed
+    def maxMinRelease(releases: List[Release]): (Option[String], Option[String]) = {
+      def sortDate(rawDates: List[String]): List[String] = {
+        rawDates.map(format.parseDateTime).sorted(Descending[DateTime]).map(format.print)
+      }
 
       val dates =
         for {
           release  <- releases
-          date     <- release.releaseDates
-        } yield format.parseDateTime(date.value)
+          date     <- release.released.toList
+        } yield date
 
-      val sorted = dates.sorted(Descending[DateTime])
-
-      def print(date: Option[DateTime]) = date.map(format.print)
-
-      (print(sorted.headOption), print(sorted.lastOption))
+      val sorted = sortDate(dates)
+      (sorted.headOption, sorted.lastOption)
     }
 
-    val projectsAndReleases = pomsAndMetaClean
-      .groupBy{ case (githubRepo, _, _, _, _, _) => githubRepo}
-      .map{ case (githubRepo @ GithubRepo(organization, repository), vs) =>
-        val releases =
-          vs.map{ case (_, _, targets, pom, metas, version) =>
-            val mavenCentral = metas.forall(meta => meta.owner == "bintray" && meta.repo == "jcenter")
 
-            Release(
-              maven = pomToMavenReference(pom),
-              reference = Release.Reference(
-                organization,
-                artifactName,
-                version,
-                targets
-              ),
-              project = projectReference,
-              resolver = if(mavenCentral) None else Some(Bintray(meta.owner, meta.repo)),
-              name = pom.name,
-              description = pom.description,
-              releaseDates = metas.map(meta => ISO_8601_Date(meta.created.toString)), // +/- 3 days offset
-              mavenCentral = mavenCentral,
-              licenses = licenseCleanup(pom),
-              nonStandardLib = getNonStandardLib(pom).nonEmpty
-            )
-          }
 
-        val (max, min) = maxMinRelease(releases)
-        val projectReference = Project.Reference(organization, repository)
+    val projectsAndReleases = 
+      pomsAndMetaClean
+        .groupBy{ case (githubRepo, _, _, _, _, _) => githubRepo}
+        .map{ case (githubRepo @ GithubRepo(organization, repository), vs) =>
+          val projectReference = Project.Reference(organization, repository)
+          
+          val releases =
+            vs.map{ case (_, artifactName, targets, pom, metas, version) =>
+              val mavenCentral = metas.forall(meta => meta.owner == "bintray" && meta.repo == "jcenter")
+              val resolver = 
+                if(mavenCentral) None 
+                else metas.map(meta => Bintray(meta.owner, meta.repo)).headOption
 
-        (
-          Project(
-            projectReference,
-            GithubReader(githubRepo),
-            Keywords(githubRepo),
-            created = min,
-            lastUpdate = max
-          ),
-          releases
-        )
+              Release(
+                maven = pomToMavenReference(pom),
+                reference = Release.Reference(
+                  organization,
+                  artifactName,
+                  version,
+                  targets
+                ),
+                project = projectReference,
+                resolver = resolver,
+                name = pom.name,
+                description = pom.description,
+                released = metas.map(_.created).sorted.headOption.map(format.print), // +/- 3 days offset
+                mavenCentral = mavenCentral,
+                licenses = licenseCleanup(pom),
+                nonStandardLib = getNonStandardLib(pom).nonEmpty
+              )
+            }
 
-      }.toList
+          val (max, min) = maxMinRelease(releases)
+          
+
+          (
+            Project(
+              projectReference,
+              GithubReader(githubRepo),
+              Keywords(githubRepo),
+              created = min,
+              updated = max
+            ),
+            releases
+          )
+
+        }.toList
 
     println("Dependencies & Reverse Dependencies")
 
-
-
-    val releases: List[Release] =
-      for {
-        project  <- projects
-        artifact <- project.artifacts
-        release  <- artifact.releases
-      } yield release
-
-    val mavenReferenceToReleaseReference = releases.map(release =>
-      (release.maven, release.reference)
-    ).toMap
+    val mavenReferenceToReleaseReference = 
+      projectsAndReleases
+        .flatMap{ case (project, releases) => releases}
+        .map(release =>
+          (release.maven, release.reference)
+        ).toMap
 
     def dependencyToMaven(dependency: maven.Dependency) = 
       MavenReference(dependency.groupId, dependency.artifactId, dependency.version)
@@ -215,45 +217,42 @@ object ProjectConvert extends BintrayProtocol {
     val reverseDependenciesCache = link(reverse = true)
 
     def findDependencies(release: Release): Seq[Dependency] = {
-
       dependenciesCache.getOrElse(release.reference, Seq())
     }
 
     def findReverseDependencies(release: Release): Seq[Dependency] = {
-
       reverseDependenciesCache.getOrElse(release.reference, Seq())
     }
 
-    def collectDependencies(artifacts: List[Artifact], f: Release.Reference => String): List[String] = {
+    def collectDependencies(releases: List[Release], f: Release.Reference => String): List[String] = {
       for {
-        artifact <- artifacts
-        release <- artifact.releases
+        release <- releases
         dependency <- release.scalaDependencies
       } yield f(dependency.reference)
     }
 
-    def dependencies(artifacts: List[Artifact]): List[String] = collectDependencies(artifacts, _.name)
+    def dependencies(releases: List[Release]): List[String] = collectDependencies(releases, _.name)
 
-    def targets(artifacts: List[Artifact]): List[String] = collectDependencies(artifacts, _.target.supportName)
+    def targets(releases: List[Release]): List[String] = collectDependencies(releases, _.target.supportName)
     
-
-    projects.map { project =>
-
-      val artifacts: List[Artifact] = project.artifacts.map(artifact =>
-        artifact.copy(releases = artifact.releases.map { release =>
+    projectsAndReleases.map { case (project, releases) =>
+      
+      val releasesWithDependencies =
+        releases.map{release =>
           val dependencies = findDependencies(release)
           release.copy(
             scalaDependencies = dependencies.collect { case sd: ScalaDependency => sd },
             javaDependencies = dependencies.collect { case jd: JavaDependency => jd },
             reverseDependencies = findReverseDependencies(release).collect { case sd: ScalaDependency => sd }
           )
-        })
-      )
+        }
 
-      project.copy(
-        artifacts = artifacts,
-        targets = targets(artifacts), 
-        dependencies = dependencies(artifacts)
+      (
+        project.copy(
+          targets = targets(releasesWithDependencies), 
+          dependencies = dependencies(releasesWithDependencies)
+        ),
+        releasesWithDependencies
       )
     }
   }
