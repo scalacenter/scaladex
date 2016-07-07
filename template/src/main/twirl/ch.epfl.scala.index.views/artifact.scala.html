@@ -38,44 +38,56 @@
 }
 
 @** Shows statistic block *@
-@statisticBlock(github: GithubInfo) = {
+@statisticBlock(githubInfo: Option[GithubInfo]) = {
 
-  <div class="statistic box">
-    <h4>Statistics</h4>
-    <div class="row">
-      <div >
-        <ul class="row">
-          <li class="col-md-6 col-sm-6"><i class="fa fa-eye"></i> @github.watchers watchers</li>
-          <li class="col-md-6 col-sm-6"><i class="fa fa-users"></i> @github.contributors.size Contributors</li>
-          <li class="col-md-6 col-sm-6"><i class="fa fa-star"></i> @github.stars Stars</li>
-          <li class="col-md-6 col-sm-6"><i class="fa fa-code-fork"></i> @github.forks Forks</li>
-          <li class="col-md-6 col-sm-6"><i class="fa fa-history"></i> @github.commits Commits</li>
-          <li class="col-md-6 col-sm-6"><i class="fa fa-exclamation-circle"></i> @github.issues Open issues</li>
-          <li class="col-md-6 col-sm-6"><i class="fa fa-tag"></i> @project.artifacts.find(_.reference == artifact).map(_.releases.size).getOrElse(0) Releases</li>
-          <li class="col-md-6 col-sm-6"><i class="fa fa-sitemap"></i> @releases.find(rel => version.contains(rel.reference.version)).map(_.uniqueOrderedReverseDependencies.size).getOrElse(0) Dependents</li>
-        </ul>
+  @githubInfo.map { github =>
+    <div class="statistic box">
+      <h4>Statistics</h4>
+      <div class="row">
+        <div >
+          <ul class="row">
+            <li class="col-md-6 col-sm-6"><i class="fa fa-eye"></i> @github.watchers watchers</li>
+            <li class="col-md-6 col-sm-6"><i class="fa fa-users"></i> @github.contributors.size Contributors</li>
+            <li class="col-md-6 col-sm-6"><i class="fa fa-star"></i> @github.stars Stars</li>
+            <li class="col-md-6 col-sm-6"><i class="fa fa-code-fork"></i> @github.forks Forks</li>
+            <li class="col-md-6 col-sm-6"><i class="fa fa-history"></i> @github.commits Commits</li>
+            <li class="col-md-6 col-sm-6"><i class="fa fa-exclamation-circle"></i> @github.issues Open issues</li>
+            <li class="col-md-6 col-sm-6"><i class="fa fa-tag"></i> @project.artifacts.find(_.reference == artifact).map(_.releases.size).getOrElse(0)
+              Releases</li>
+            <li class="col-md-6 col-sm-6"><i class="fa fa-sitemap"></i> @releases.find(rel => version.contains(rel.reference.version)).map(_.uniqueOrderedReverseDependencies.size).getOrElse(0)
+              Dependents</li>
+          </ul>
+        </div>
       </div>
     </div>
-  </div>
+  }.getOrElse("")
 }
 
 @** Contributor block *@
-@contributorsBlock(github: GithubInfo) = {
+@contributorsBlock(githubInfo: Option[GithubInfo]) = {
+
+  @githubInfo.map { github =>
     @if(github.contributors.nonEmpty) {
       <div class="collaborators box">
-        <h4>Contributors</h4>
+        <h4>Contributors (@github.contributors.size)</h4>
 
         <ul>
-          @for(contributor <- github.contributors) {
-            <li>
-              <a href="@contributor.url.target" target="_blank">
-                <img data-toggle="tooltip" data-placement="bottom" width="32" title="@contributor.login" src="@contributor.sizedAvatarUrl(32)" alt="">
-              </a>
-            </li>
-          }
+        @for(contributor <- github.contributors.take(100)) {
+          <li>
+            <a href="@contributor.url.target" target="_blank">
+              <img data-toggle="tooltip" data-placement="bottom" width="32" title="@contributor.login" src="@contributor.sizedAvatarUrl(32)" alt="">
+            </a>
+          </li>
+        }
+
         </ul>
+        @if(100 < github.contributors.size) {
+
+          <span>There are another @{github.contributors.size - 100} contributors</span>
+        }
       </div>
     }
+  }.getOrElse("")
 }
 
 @main(title = artifact.name, showSearch = true, searchQuery = "", user, Some(staticJs)) {
@@ -87,7 +99,7 @@
       <div class="row">
         <div class="col-md-8">
           <div class="content-project box">
-            @Html(project.github.flatMap(_.readme).getOrElse(""))
+          @Html(project.github.flatMap(_.readme).getOrElse(""))
           </div>
         </div>
         <div class="col-md-4">
@@ -98,97 +110,109 @@
 
               @for((release, index) <- releases.sortBy(_.reference.target.orderName).zipWithIndex.reverse) {
                 <a href="#target-@release.reference.target.orderName"
-                   data-target="#target-@release.reference.target.orderName"
-                   class="targets btn btn-xs @if(releases.size - 1 == index) {btn-primary} else {btn-default}"
-                   name="@release.reference.target.name"
-                   role="button"
-                   data-toggle="tab"
-                   aria-controls="target-@release.reference.target.orderName">
-                    @release.reference.target.name
+                data-target="#target-@release.reference.target.orderName"
+                class="targets btn btn-xs @if(releases.size - 1 == index) {btn-primary} else {btn-default}"
+                name="@release.reference.target.name"
+                role="button"
+                data-toggle="tab"
+                aria-controls="target-@release.reference.target.orderName">
+                @release.reference.target.name
                 </a>
               }
             </div>
 
             <div id="#targets" class="tab-content">
-              @for((release, index) <- releases.sortBy(_.reference.target.orderName).zipWithIndex) {
-                <div id="target-@release.reference.target.orderName"
-                     class="tab-pane fade @if(releases.size - 1 == index) {in active}">
 
-                  @project.github.map(statisticBlock)
+            @* use defining here, to render the github stuff just once *@
+            @defining(statisticBlock(project.github)) { statistics =>
+              @defining(contributorsBlock(project.github)) { contributors =>
 
-                  <div class="install">
-                    <ul class="nav nav-tabs" role="tablist">
-                      <li role="presentation" class="active">
-                        <a href="#sbt" aria-controls="sbt" role="tab" data-toggle="tab">Sbt</a>
-                      </li>
-                      <li role="presentation">
-                        <a href="#maven" aria-controls="maven" role="tab" data-toggle="tab">Maven</a>
-                      </li>
-                      <li role="presentation">
-                        <a href="#gradle" aria-controls="gradle" role="tab" data-toggle="tab">Gradle</a>
-                      </li>
-                    </ul>
-                    <div class="tab-content">
-                      <div role="tabpanel" class="tab-pane active" id="sbt">
-                        <pre>@release.sbtInstall</pre>
-                      </div>
-                      <div role="tabpanel" class="tab-pane" id="maven">
-                        <pre>@release.mavenInstall</pre>
-                      </div>
-                      <div role="tabpanel" class="tab-pane" id="gradle">
-                        <pre>@release.gradleInstall</pre>
+                @for((release, index) <- releases.sortBy(_.reference.target.orderName).zipWithIndex) {
+                  <div id="target-@release.reference.target.orderName"
+                  class="tab-pane fade @if(releases.size - 1 == index) {in active}">
+
+                    @statistics
+
+                    <div class="install">
+                      <ul class="nav nav-tabs" role="tablist">
+                        <li role="presentation" class="active">
+                          <a href="#sbt" aria-controls="sbt" role="tab" data-toggle="tab">Sbt</a>
+                        </li>
+                        <li role="presentation">
+                          <a href="#maven" aria-controls="maven" role="tab" data-toggle="tab">Maven</a>
+                        </li>
+                        <li role="presentation">
+                          <a href="#gradle" aria-controls="gradle" role="tab" data-toggle="tab">Gradle</a>
+                        </li>
+                      </ul>
+                      <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active" id="sbt">
+                          <pre>@release.sbtInstall</pre>
+                        </div>
+                        <div role="tabpanel" class="tab-pane" id="maven">
+                          <pre>@release.mavenInstall</pre>
+                        </div>
+                        <div role="tabpanel" class="tab-pane" id="gradle">
+                          <pre>@release.gradleInstall</pre>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div class="documentation box">
-                    <h4>Documentation</h4>
-                    <ul>
-                      @for(scaladoc <- release.scalaDocURI){
+                    <div class="documentation box">
+                      <h4>Documentation</h4>
+                      <ul>
+                      @for(scaladoc <- release.scalaDocURI) {
                         <li><a href="@scaladoc" target="_blank">Scaladoc</a></li>
                       }
-                    </ul>
-                  </div>
+                      </ul>
+                    </div>
 
-                  @project.github.map(contributorsBlock)
+                    @contributors
 
-                  <div class="license box">
-                    <h4>License</h4>
-                    <ul>
+                    <div class="license box">
+                      <h4>License</h4>
+                      <ul>
                       @for(license <- release.licenses) {
                         <li><a href='@license.url.getOrElse("#")'>@license.shortName</a></li>
                       }
-                    </ul>
+                      </ul>
+                    </div>
+                    <div class="dependencies box">
+
+                      <h4>@release.dependencyCount Dependencies</h4>
+                      @dependencyBlock(release.orderedDependencies)
+
+                      @if(release.javaDependencies.nonEmpty) {
+
+                        <h5>Java Dependencies</h5>
+                        @dependencyBlock(release.orderedJavaDependencies)
+                      }
+                    </div>
+
+                    <div class="dependents box">
+
+                      <h4>@release.uniqueOrderedReverseDependencies.size Dependents</h4>
+                      <ul>
+                        @for(dependency <- release.uniqueOrderedReverseDependencies.take(100)) {
+                          <li>
+                            <a href="@dependency.reference.httpUrl" target="_blank">
+                              @dependency.reference.name
+                            </a>
+                            <span class="label label-primary">@dependency.scope</span>
+                          </li>
+                        }
+
+                        @if(100 < release.uniqueOrderedReverseDependencies.size) {
+
+                          <li>&nbsp;</li>
+                          <li><a href="/search?q=dependencies:@artifact.organization\/@artifact.name">show all dependents</a></li>
+                        }
+                      </ul>
+                    </div>
                   </div>
-                  <div class="dependencies box">
-
-                    <h4>@release.dependencyCount Dependencies</h4>
-                    @dependencyBlock(release.orderedDependencies)
-
-                    @if(release.javaDependencies.nonEmpty) {
-
-                      <h5>Java Dependencies</h5>
-                      @dependencyBlock(release.orderedJavaDependencies)
-                    }
-                  </div>
-
-                  <div class="dependents box">
-
-                    <h4>@release.uniqueOrderedReverseDependencies.size Dependents</h4>
-                    <ul>
-                    @for(dependency <- release.uniqueOrderedReverseDependencies){
-                      <li>
-                        <a href="@dependency.reference.httpUrl" target="_blank">
-                        @dependency.reference.name
-                        </a>
-                        <span class="label label-primary">@dependency.scope</span>
-                      </li>
-                    }
-                    </ul>
-                  </div>
-
-                </div>
+                }
               }
+            }
             </div>
           </div>
         </div>
