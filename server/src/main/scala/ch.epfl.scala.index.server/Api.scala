@@ -2,7 +2,7 @@ package ch.epfl.scala.index
 package server
 
 import model._
-import misc.{GithubRepo, Pagination}
+import misc.Pagination
 
 import data.elastic._
 import com.sksamuel.elastic4s._
@@ -40,15 +40,12 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
       case _ => scoreSort
     }
 
-  def find(queryString: String, page: PageIndex, sorting: Option[String] = None,
-           repos: Option[Set[GithubRepo]] = None): Future[(Pagination, List[Project])] = {
-
+  private def query(q: QueryDefinition, page: PageIndex, sorting: Option[String]): Future[(Pagination, List[Project])] = {
     val clampedPage = if(page <= 0) 1 else page
-
     esClient.execute {
       search
         .in(indexName / projectsCollection)
-        .query(queryString)
+        .query(q)
         .start(resultsPerPage * (clampedPage - 1))
         .limit(resultsPerPage)
         .sort(sortQuery(sorting))
@@ -61,6 +58,33 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
       r.as[Project].toList.map(hideId)
     ))
   }
+
+  def find(queryString: String, page: PageIndex, sorting: Option[String] = None) = 
+    query(queryString, page, sorting)
+
+  def dependent(what: String, page: PageIndex, sorting: Option[String] = None) =
+    query(
+      bool (
+        must(
+          termQuery("dependencies", what)
+        )
+      ),
+      page,
+      sorting
+    )
+
+  def organization(organization: String, page: PageIndex, sorting: Option[String] = None) =
+    query(
+      nestedQuery("reference").query(
+        // bool (
+        //   must(
+            termQuery("reference.organization", organization)
+        //   )
+        // )
+      ),
+      page,
+      sorting
+    )
 
   def releases(project: Project.Reference): Future[List[Release]] = {
     esClient.execute {
@@ -91,31 +115,6 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
       ).limit(1)
     }.map(r => r.as[Project].headOption.map(hideId))
   }
-
-  def organizationPage(organization: String, page: PageIndex, sorting: Option[String] = None): Future[(Pagination, List[Project])] = {
-    val clampedPage = if(page <= 0) 1 else page
-    esClient.execute {
-      search.in(indexName / projectsCollection).query(
-        nestedQuery("artifacts.reference").query(
-          bool (
-            must(
-              termQuery("artifacts.reference.organization", organization)
-            )
-          )
-        )
-      ).start(resultsPerPage * (clampedPage - 1))
-       .limit(resultsPerPage)
-       .sort(sortQuery(sorting))
-    }.map(r => (
-      Pagination(
-        current = clampedPage,
-        totalPages = Math.ceil(r.totalHits / resultsPerPage.toDouble).toInt,
-        total = r.totalHits
-      ),
-      r.as[Project].toList.map(hideId)
-      ))
-  }
-
 
   // def latest(artifact: Artifact.Reference): Future[Option[Release.Reference]] = {
   //   projectPage(artifact).map(_.flatMap(

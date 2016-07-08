@@ -170,7 +170,8 @@ object Server {
           optionalSession(refreshable, usingCookies) { userState =>
             parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
               complete {
-                api.find(query, page, sorting, you.flatMap(_ => userState.map(_.repos)))
+                // you.flatMap(_ => userState.map(_.repos))
+                api.find(query, page, sorting)
                   .map { case (pagination, projects) =>
                     views.html.searchresult(query, sorting, pagination, projects, userState.map(_.user))
                   }
@@ -178,25 +179,37 @@ object Server {
             }
           }
         } ~
-        // path(Segment) { owner =>
-        //   optionalSession(refreshable, usingCookies) { userState =>
-        //     parameters('artifact, 'version.?){ (artifact, version) =>
-        //       val rest = version match {
-        //         case Some(v) if !v.isEmpty => "/" + v
-        //         case _ => ""
-        //       }
-        //       redirect(s"/$owner/$artifact$rest", StatusCodes.PermanentRedirect)
-        //     } ~
-        //     parameters('page.as[Int] ? 1, 'sort.?) { (page, sorting) =>
-        //       complete {
-        //         api.organizationPage(owner, page, sorting)
-        //           .map { case (pagination, projects) =>
-        //             views.html.organizationpage(owner, sorting, pagination, projects, userState.map(_.user))
-        //           }
-        //       }
-        //     }
-        //   }
-        // } ~
+        path("test" / Segment / Segment){ (t1, t2) =>
+          optionalSession(refreshable, usingCookies) { userState =>
+            parameters('page.as[Int] ? 1, 'sort.?) { (page, sorting) =>
+              complete {
+                api.dependent(t1 + "/" + t2, page, sorting)
+                  .map { case (pagination, projects) =>
+                    views.html.searchresult("", sorting, pagination, projects, userState.map(_.user))
+                  }
+              }
+            }
+          }
+        } ~
+        path(Segment) { owner =>
+          optionalSession(refreshable, usingCookies) { userState =>
+            parameters('artifact, 'version.?){ (artifact, version) =>
+              val rest = version match {
+                case Some(v) if !v.isEmpty => "/" + v
+                case _ => ""
+              }
+              redirect(s"/$owner/$artifact$rest", StatusCodes.PermanentRedirect)
+            } ~
+            parameters('page.as[Int] ? 1, 'sort.?) { (page, sorting) =>
+              complete {
+                api.organization(owner, page, sorting)
+                  .map { case (pagination, projects) =>
+                    views.html.searchresult(owner, sorting, pagination, projects, userState.map(_.user))
+                  }
+              }
+            }
+          }
+        } ~
         path(Segment / Segment) { (owner, part2) =>
           optionalSession(refreshable, usingCookies) { userState =>
             complete(projectPage(owner, part2, version = None, userState.map(_.user)))

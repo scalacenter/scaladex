@@ -30,8 +30,8 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
               field("repository") typed StringType index "not_analyzed"
             ),
             field("keywords") typed StringType index "not_analyzed",
-            field("created").typed(DateType),
-            field("updated").typed(DateType),
+            field("created") typed(DateType),
+            field("updated") typed(DateType),
             field("targets") typed StringType index "not_analyzed",
             field("dependencies") typed StringType index "not_analyzed"          
           ),
