@@ -1,13 +1,14 @@
 @import ch.epfl.scala.index.views.html.main
 
-@import ch.epfl.scala.index.model.{Release, Project}
+@import ch.epfl.scala.index.model._
 @import ch.epfl.scala.index.model.misc.UserInfo
+@import ch.epfl.scala.index.model.release.SemanticVersion
 
-@(project: Project, release: Option[Release], releasesCount: Int, dependentsCount: Int, user: Option[UserInfo])
+@(project: Project, artifacts: List[String], versions: List[SemanticVersion], release: Release, releasesCount: Int, user: Option[UserInfo])
 
 @main(title = project.reference.repository, showSearch = true, searchQuery = "", user) {
   <main id="container-project">
-    @* @headproject(project, artifact, version) *@
+    @headproject(project, artifacts, versions, release)
     <div class="container">
       <div class="row">
         <div class="col-md-8">
@@ -17,14 +18,12 @@
         </div>
         <div class="col-md-4">
           <div class="sidebar-project">
-            @*
             @install(release)
             @documentation(release)
-            @project.github.map(contributorsBlock)
-            @license()
-            @dependencies
-            @dependant
-            *@
+            @project.github.map(gh => contributors(gh.contributors))
+            @license(release)
+            @dependencies(release)
+            @dependents(project, release)
           </div>
         </div>
       </div>

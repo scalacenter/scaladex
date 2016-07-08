@@ -71,7 +71,11 @@
               <div class="col-md-4">
                 <div class="stats">
                   @for(keyword <- project.keywords) {
-                    <span class="item-filter-tag">@keyword</span>
+                    <span class="item-filter-tag">
+                      <a href="/search?q=keywords:@keyword">
+                        @keyword
+                      </a>
+                    </span>
                   }
                   @for(github <- project.github) {
                     @for(stars <- github.stars) {

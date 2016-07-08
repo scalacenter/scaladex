@@ -12,7 +12,7 @@ import org.elasticsearch.search.sort.SortOrder
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.reflectiveCalls
 
-class ApiImplementation(github: Github)(implicit val ec: ExecutionContext) {
+class Api(github: Github)(implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(_id = None)
 
   val resultsPerPage: Int = 10
@@ -62,15 +62,29 @@ class ApiImplementation(github: Github)(implicit val ec: ExecutionContext) {
     ))
   }
 
-  def projectPage(artifact: Artifact.Reference): Future[Option[Project]] = {
-    val Artifact.Reference(organization, artifactName) = artifact
+  def releases(project: Project.Reference): Future[List[Release]] = {
     esClient.execute {
-      search.in(indexName / projectsCollection).query(
-        nestedQuery("artifacts.reference").query(
+      search.in(indexName / releasesCollection).query(
+        nestedQuery("project").query(
           bool (
             must(
-              termQuery("artifacts.reference.organization", organization),
-              termQuery("artifacts.reference.name", artifactName)
+              termQuery("project.organization", project.organization),
+              termQuery("project.repository", project.repository)
+            )
+          )
+        )
+      ).limit(1000)
+    }.map(r => r.as[Release].toList)
+  }
+
+  def project(project: Project.Reference): Future[Option[Project]] = {
+    esClient.execute {
+      search.in(indexName / projectsCollection).query(
+        nestedQuery("reference").query(
+          bool (
+            must(
+              termQuery("reference.organization", project.organization),
+              termQuery("reference.repository", project.repository)
             )
           )
         )
@@ -112,7 +126,7 @@ class ApiImplementation(github: Github)(implicit val ec: ExecutionContext) {
   // }
 
   def latestProjects() = latest[Project](projectsCollection, "created", 12).map(_.map(hideId))
-  def latestReleases() = latest[Release](releasesCollection, "released", 12)
+  def latestReleases() = latest[Release](releasesCollection, "released", 100)
 
   def latest[T: HitAs : Manifest](collection: String, by: String, n: Int): Future[List[T]] = {
     esClient.execute {

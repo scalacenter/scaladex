@@ -1,6 +1,14 @@
-@import ch.epfl.scala.index.model.Release
-@(release: Release)
+@import ch.epfl.scala.index.model.{Release, Project}
+@(project: Project, release: Release)
 <div class="dependents box">
+  <h4>
+    <a href="/search?q=dependencies:@project.reference.organization\/@project.reference.repository">
+      Project Dependents
+    </a>
+  </h4>
+  
+  <hr>
+
   <h4>@release.uniqueOrderedReverseDependencies.size Dependents</h4>
   <ul>
   @for(dependency <- release.uniqueOrderedReverseDependencies){
@@ -11,5 +19,5 @@
       <span class="label label-primary">@dependency.scope</span>
     </li>
   }
-  </ul>
+  </ul>  
 </div>

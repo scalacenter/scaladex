@@ -1,14 +1,14 @@
 @import ch.epfl.scala.index.model._
 @import ch.epfl.scala.index.model.release.SemanticVersion
-@(project: Project, artifacts: List[Artifact.Reference], versions: List[SemanticVersion], 
-                    selectedArtifact: Option[Artifact.Reference], selectedVersion: Option[SemanticVersion])
+
+@(project: Project, artifacts: List[String], versions: List[SemanticVersion], release: Release)
 <div class="head-project">
   <div class="container">
     <div class="row">
       <div class="col-md-8">
         <div class="info-project">
           <h1>
-            <a href="@project.reference.organization>@project.reference.organization</a> / 
+            <a href="/@project.reference.organization">@project.reference.organization</a> / 
             <a href="https://github.com/@project.reference.organization/@project.reference.repository" 
               target="_blank">
               <i class="fa fa-github fa-lg"></i>
@@ -17,7 +17,9 @@
           </h1>
           @for(github <- project.github) {
             @for(description <- github.description) {
-              <p class="description">@description</p>
+              @if(!description.isEmpty) {
+                <p class="description">@description</p>
+              }
             }
           }
           @for(github <- project.github) {
@@ -29,11 +31,13 @@
               }
             }
           }
-          <ul class="list-inline">
-          @for(keyword <- project.keywords) {
-            <li><a href="/search?q=keywords:@keyword">@keyword</a></li>
+          @if(!project.keywords.isEmpty) {
+            <ul class="list-inline">
+            @for(keyword <- project.keywords) {
+              <li><a href="/search?q=keywords:@keyword">@keyword</a></li>
+            }
+            </ul>
           }
-          </ul>
         </div>
       </div>
       <div class="col-md-4">
@@ -44,17 +48,14 @@
               onchange="this.form.submit()"
               class="selectpicker artifact-name" data-style="btn-primary">
             @for(artifact <- artifacts) {
-              <option value="@artifact" @if(Some(artifact) == selectedArtifact){ selected }>
+              <option value="@artifact" @if(artifact == release.reference.artifact){ selected }>
                 @artifact
               </option>
             }
             </select>
           </form>
-          <form action="/@project.reference.organization" action="GET">
-            
-            @selectedArtifact.map{artifact =>
-              <input type="hidden" name="artifact" value="@artifact">
-            }.getOrElse("")
+          <form action="/@project.reference.organization" action="GET">           
+            <input type="hidden" name="artifact" value="@release.reference.artifact">
 
             <select
               name="version"
@@ -62,7 +63,7 @@
               class="selectpicker" data-style="btn-primary">
 
             @for(version <- versions){
-              <option value="@version" @if(Some(version) == selectedVersion){ selected }>
+              <option value="@version" @if(version == release.reference.version){ selected }>
                 @version
               </option>
             }

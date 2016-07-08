@@ -178,6 +178,8 @@ object Release {
     target: ScalaTarget
   ) extends GeneralReference {
 
+    def artifactReference = Artifact.Reference(organization, artifact)
+
     /**
      * concated name of organisation/artifact
      * @return

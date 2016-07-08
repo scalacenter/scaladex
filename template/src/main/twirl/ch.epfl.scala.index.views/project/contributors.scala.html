@@ -1,0 +1,17 @@
+@import ch.epfl.scala.index.model.misc.GithubContributor
+
+@(contributors: List[GithubContributor])
+@if(contributors.nonEmpty) {
+  <div class="collaborators box">
+    <h4>Contributors</h4>
+    <ul>
+      @for(contributor <- contributors) {
+        <li>
+          <a href="@contributor.url.target" target="_blank">
+            <img data-toggle="tooltip" data-placement="bottom" width="32" title="@contributor.login" src="@contributor.sizedAvatarUrl(32)" alt="">
+          </a>
+        </li>
+      }
+    </ul>
+  </div>
+}

@@ -6,10 +6,11 @@ import misc.{GithubInfo, GithubRepo, Url}
  * Project representation which contains all necessary meta data to
  * the project.
  *
- * @param reference simplified reference name ex(typelevel/cats-core)
+ * @param reference simplified reference name (ex: typelevel/cats-core)
  * @param github github information representation
  * @param keywords predefined keywords (ex: database)
  * @param stackOverflowTags see http://stackoverflow.com/tags (ex: akka)
+ * @param defaultArtifact when we land on a project page (ex: typelevel/cats) specify an artifact to select by default
  * @param twitter @ handle (ex: @akkateam, @typelevel)
  * @param parentOrganization agglomerate of github organizations: lightbend(akka, play, ...), verizon(verizon, oncue), etc
  * @param logoImageUrl absolute url to a logo (ex: http://spark.apache.org/images/spark-logo-trademark.png)
@@ -24,6 +25,7 @@ case class Project(
   github: Option[GithubInfo] = None,
   keywords: List[String] = Nil,
   stackOverflowTags: List[String] = Nil,
+  defaultArtifact: Option[String] = None,
   twitter: Option[String] = None,
   parentOrganization: Option[String] = None,
   logoImageUrl: Option[Url] = None,

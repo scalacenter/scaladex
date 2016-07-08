@@ -231,9 +231,9 @@ object ProjectConvert extends BintrayProtocol {
       } yield f(dependency.reference)
     }
 
-    def dependencies(releases: List[Release]): List[String] = collectDependencies(releases, _.name)
+    def dependencies(releases: List[Release]): List[String] = collectDependencies(releases, _.name).distinct
 
-    def targets(releases: List[Release]): List[String] = collectDependencies(releases, _.target.supportName)
+    def targets(releases: List[Release]): List[String] = collectDependencies(releases, _.target.supportName).distinct
     
     projectsAndReleases.map { case (project, releases) =>
       

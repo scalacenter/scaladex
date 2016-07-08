@@ -1,9 +1,9 @@
 package ch.epfl.scala.index
 package server
 
-// import model._
+import model._
 import model.misc.UserInfo
-// import model.release.SemanticVersion
+import model.release.SemanticVersion
 // import data.cleanup.SemanticVersionParser
 import data.elastic._
 
@@ -36,60 +36,95 @@ object Server {
       def log(msg: String) = println(msg)
     }
 
-    val sharedApi = new ApiImplementation(github)
-    // val rest = new RestApi(sharedApi)
+    val api = new Api(github)
+    // val rest = new RestApi(api)
 
     def frontPage(userInfo: Option[UserInfo]) = {
       for {
-        keywords <- sharedApi.keywords()
-        targets <- sharedApi.targets()
-        dependencies <- sharedApi.dependencies()
-        latestProjects <- sharedApi.latestProjects()
-        latestReleases <- sharedApi.latestReleases()
+        keywords <- api.keywords()
+        targets <- api.targets()
+        dependencies <- api.dependencies()
+        latestProjects <- api.latestProjects()
+        latestReleases <- api.latestReleases()
       } yield views.html.frontpage(keywords, targets, dependencies, latestProjects, latestReleases, userInfo)
     }
 
-    // def artifactPage(reference: Artifact.Reference, version: Option[SemanticVersion]) = {
-    //   // This is a list because we still need to filter targets (scala 2.11 vs 2.10 or scalajs, ...)
-    //   def latestStableReleaseOrSelected(releases: List[Release]): List[Release] = {
-    //     def latestStableVersion(artifact: Artifact): Option[SemanticVersion] = {
-    //       version match {
-    //         case Some(v) => Some(v)
-    //         case None => {
-    //           val versions =
-    //             artifact.releases
-    //               .map(_.reference.version)
-    //               .sorted.reverse
+    // owner: akka
+    // part2: akka (project) or akka-http (artifact)
+    def projectPage(owner: String, part2: String, version: Option[SemanticVersion], user: Option[UserInfo]) = {
+      val projectRef = Project.Reference(owner, part2)
 
-    //           // select latest stable release version if applicable
-    //           if(versions.exists(_.preRelease.isEmpty))
-    //             versions.filter(_.preRelease.isEmpty).headOption
-    //           else
-    //             versions.headOption
-    //         }
-    //       }
-    //     }
+      val projectAndReleases =
+        for {
+          project <- api.project(projectRef)
+          releases <- api.releases(projectRef)
+        } yield (project, releases)
 
-    //     for {
-    //       artifact <- project.artifacts.filter(_.reference == reference)
-    //       stableVersion <- latestStableVersion(artifact).toList
-    //       stableRelease <- artifact.releases.filter(_.reference.version == stableVersion)
-    //     } yield stableRelease
-    //   }
+      def finds[A, B](xs: List[(A, B)], fs: List[A => Boolean]): Option[(A, B)] = {
+        fs match {
+          case Nil => None
+          case f :: h =>
+            xs.find{ case (a, b) => f(a) } match {
+              case None => finds(xs, h)
+              case s    => s
+            }
+        }
+      }
 
-    //   sharedApi.projectPage(reference).map(project =>
-    //     project.map{p =>
-    //       val selectedRelease = latestStableReleaseOrSelected(p)
-    //       val selectedVersion =
-    //         version match {
-    //           case None => selectedRelease.headOption.map(_.reference.version)
-    //           case _ => version
-    //         }
+      def defaultRelease(project: Project, releases: List[Release]): Option[(Release, List[SemanticVersion])] = {
+        val artifacts = releases.groupBy(_.reference.artifact).toList
+        
+        def projectDefault(artifact: String): Boolean = Some(artifact) == project.defaultArtifact
+        def core(artifact: String): Boolean = artifact.endsWith("-core")
+        def projectRepository(artifact: String): Boolean = project.reference.repository == artifact
 
-    //       (OK, views.html.artifact(p, reference, selectedVersion, selectedRelease, user))
-    //     }.getOrElse((NotFound, views.html.notfound(user)))
-    //   )
-    // }
+        def alphabetically = artifacts.sortBy(_._1).headOption
+
+        (finds(artifacts, List(projectDefault _, core _, projectRepository _)) match {
+          case None => alphabetically
+          case x => x
+        }).flatMap{ case (_, releases) =>
+          val sortedByVersion = releases.sortBy(_.reference.version)(Descending)
+
+          // select last non preRelease release if possible (ex: 1.1.0 over 1.2.0-RC1)
+          val lastNonPreRelease =
+            if(sortedByVersion.exists(_.reference.version.preRelease.isEmpty)){
+              sortedByVersion.filter(_.reference.version.preRelease.isEmpty)
+            } else {
+              sortedByVersion
+            }
+
+          // select latest stable target if possible (ex: scala 2.11 over 2.12 and scala-js)
+          val latestStableTarget =
+            (
+              if(lastNonPreRelease.exists(_.reference.target.scalaJsVersion.isEmpty)) {
+                lastNonPreRelease.filter(_.reference.target.scalaJsVersion.isEmpty)
+              } else lastNonPreRelease
+            ).sortBy(_.reference.target.scalaVersion).headOption
+
+          latestStableTarget.headOption.map(r =>
+            (r, sortedByVersion.map(_.reference.version).distinct)
+          )
+        }
+      }
+
+      projectAndReleases.map{ case (p, releases) =>
+        p.flatMap(project =>
+          defaultRelease(project, releases).map{ case (selectedRelease, versions) =>
+            val artifacts = releases.groupBy(_.reference.artifactReference).keys.toList.map(_.artifact)
+
+            (OK, views.project.html.project(
+              project,
+              artifacts,
+              versions,
+              selectedRelease,
+              releases.size,
+              user
+            ))
+          }
+        ).getOrElse((NotFound, views.html.notfound(user)))
+      }
+    }
 
     val route = {
       import akka.http.scaladsl._
@@ -131,18 +166,18 @@ object Server {
         path("fonts" / Remaining) { path ⇒
           getFromResource(path)
         } ~
-        // path("search") {
-        //   optionalSession(refreshable, usingCookies) { userState =>
-        //     parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
-        //       complete {
-        //         sharedApi.find(query, page, sorting, you.flatMap(_ => userState.map(_.repos)))
-        //           .map { case (pagination, projects) =>
-        //             views.html.searchresult(query, sorting, pagination, projects, userState.map(_.user))
-        //           }
-        //       }
-        //     }
-        //   }
-        // } ~
+        path("search") {
+          optionalSession(refreshable, usingCookies) { userState =>
+            parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
+              complete {
+                api.find(query, page, sorting, you.flatMap(_ => userState.map(_.repos)))
+                  .map { case (pagination, projects) =>
+                    views.html.searchresult(query, sorting, pagination, projects, userState.map(_.user))
+                  }
+              }
+            }
+          }
+        } ~
         // path(Segment) { owner =>
         //   optionalSession(refreshable, usingCookies) { userState =>
         //     parameters('artifact, 'version.?){ (artifact, version) =>
@@ -154,7 +189,7 @@ object Server {
         //     } ~
         //     parameters('page.as[Int] ? 1, 'sort.?) { (page, sorting) =>
         //       complete {
-        //         sharedApi.organizationPage(owner, page, sorting)
+        //         api.organizationPage(owner, page, sorting)
         //           .map { case (pagination, projects) =>
         //             views.html.organizationpage(owner, sorting, pagination, projects, userState.map(_.user))
         //           }
@@ -162,12 +197,11 @@ object Server {
         //     }
         //   }
         // } ~
-        // path(Segment / Segment) { (owner, artifactName) =>
-        //   optionalSession(refreshable, usingCookies) { userState =>
-        //     val reference = Artifact.Reference(owner, artifactName)
-        //     complete(artifactPage(reference, version = None, userState.map(_.user)))
-        //   }
-        // } ~
+        path(Segment / Segment) { (owner, part2) =>
+          optionalSession(refreshable, usingCookies) { userState =>
+            complete(projectPage(owner, part2, version = None, userState.map(_.user)))
+          }
+        } ~
         // path(Segment / Segment / Segment) { (owner, artifactName, version) =>
         //   optionalSession(refreshable, usingCookies) { userState =>
         //     val reference = Artifact.Reference(owner, artifactName)
@@ -178,7 +212,7 @@ object Server {
         //   optionalSession(refreshable, usingCookies) { userState =>
         //     val reference = Artifact.Reference(owner, artifactName)
         //     complete(
-        //       sharedApi.projectPage(reference).map(project =>
+        //       api.projectPage(reference).map(project =>
         //         project.map(p => views.html.editproject(p, reference, version = None, userState.map(_.user)))
         //       )
         //     )

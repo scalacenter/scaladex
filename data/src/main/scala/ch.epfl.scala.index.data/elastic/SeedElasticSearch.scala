@@ -36,6 +36,10 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
             field("dependencies") typed StringType index "not_analyzed"          
           ),
           mapping(releasesCollection).fields(
+            field("project").nested(
+              field("organization") typed StringType index "not_analyzed",
+              field("repository") typed StringType index "not_analyzed"
+            ),
             field("reference").nested(
               field("organization") typed StringType index "not_analyzed",
               field("artifact") typed StringType index "not_analyzed"
