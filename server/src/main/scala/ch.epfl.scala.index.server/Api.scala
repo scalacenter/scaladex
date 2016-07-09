@@ -2,6 +2,7 @@ package ch.epfl.scala.index
 package server
 
 import model._
+import release.SemanticVersion
 import misc.Pagination
 
 import data.elastic._
@@ -76,11 +77,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
   def organization(organization: String, page: PageIndex, sorting: Option[String] = None) =
     query(
       nestedQuery("reference").query(
-        // bool (
-        //   must(
-            termQuery("reference.organization", organization)
-        //   )
-        // )
+        termQuery("reference.organization", organization)
       ),
       page,
       sorting
@@ -114,6 +111,73 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
         )
       ).limit(1)
     }.map(r => r.as[Project].headOption.map(hideId))
+  }
+  
+  def projectPage(projectRef: Project.Reference): 
+    Future[Option[(Project, List[String], List[SemanticVersion], Release, Int)]] = {
+
+    val projectAndReleases =
+      for {
+        project <- project(projectRef)
+        releases <- releases(projectRef)
+      } yield (project, releases)
+
+    def finds[A, B](xs: List[(A, B)], fs: List[A => Boolean]): Option[(A, B)] = {
+      fs match {
+        case Nil => None
+        case f :: h =>
+          xs.find{ case (a, b) => f(a) } match {
+            case None => finds(xs, h)
+            case s    => s
+          }
+      }
+    }
+
+    def defaultRelease(project: Project, releases: List[Release]): Option[(Release, List[SemanticVersion])] = {
+      val artifacts = releases.groupBy(_.reference.artifact).toList
+      
+      def projectDefault(artifact: String): Boolean = Some(artifact) == project.defaultArtifact
+      def core(artifact: String): Boolean = artifact.endsWith("-core")
+      def projectRepository(artifact: String): Boolean = project.reference.repository == artifact
+
+      def alphabetically = artifacts.sortBy(_._1).headOption
+
+      (finds(artifacts, List(projectDefault _, core _, projectRepository _)) match {
+        case None => alphabetically
+        case x => x
+      }).flatMap{ case (_, releases) =>
+        val sortedByVersion = releases.sortBy(_.reference.version)(Descending)
+
+        // select last non preRelease release if possible (ex: 1.1.0 over 1.2.0-RC1)
+        val lastNonPreRelease =
+          if(sortedByVersion.exists(_.reference.version.preRelease.isEmpty)){
+            sortedByVersion.filter(_.reference.version.preRelease.isEmpty)
+          } else {
+            sortedByVersion
+          }
+
+        // select latest stable target if possible (ex: scala 2.11 over 2.12 and scala-js)
+        val latestStableTarget =
+          (
+            if(lastNonPreRelease.exists(_.reference.target.scalaJsVersion.isEmpty)) {
+              lastNonPreRelease.filter(_.reference.target.scalaJsVersion.isEmpty)
+            } else lastNonPreRelease
+          ).sortBy(_.reference.target.scalaVersion).headOption
+
+        latestStableTarget.headOption.map(r =>
+          (r, sortedByVersion.map(_.reference.version).distinct)
+        )
+      }
+    }
+
+    projectAndReleases.map{ case (p, releases) =>
+      p.flatMap(project =>
+        defaultRelease(project, releases).map{ case (release, versions) =>
+          val artifacts = releases.groupBy(_.reference.artifactReference).keys.toList.map(_.artifact)
+          (project, artifacts, versions, release, releases.size)
+        }
+      )
+    }
   }
 
   // def latest(artifact: Artifact.Reference): Future[Option[Release.Reference]] = {
