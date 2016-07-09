@@ -3,7 +3,8 @@ package server
 
 import model._
 import model.misc.UserInfo
-// import data.cleanup.SemanticVersionParser
+import release.SemanticVersion
+import data.cleanup.SemanticVersionParser
 import data.elastic._
 
 import akka.http.scaladsl._
@@ -46,6 +47,23 @@ object Server {
         latestProjects <- api.latestProjects()
         latestReleases <- api.latestReleases()
       } yield views.html.frontpage(keywords, targets, dependencies, latestProjects, latestReleases, userInfo)
+    }
+
+    def projectPage(owner: String, repo: String, artifact: Option[String] = None, 
+        version: Option[SemanticVersion], userState: Option[UserState] = None) = {
+      val user = userState.map(_.user)
+      api.projectPage(Project.Reference(owner, repo), artifact, version).map(
+        _.map{ case (project, artifacts, versions, release, releaseCount) =>
+          (OK, views.project.html.project(
+            project,
+            artifacts,
+            versions,
+            release,
+            releaseCount,
+            user
+          ))
+        }.getOrElse((NotFound, views.html.notfound(user)))
+      )
     }
 
     val route = {
@@ -115,13 +133,6 @@ object Server {
         } ~
         path(Segment) { owner =>
           optionalSession(refreshable, usingCookies) { userState =>
-            parameters('artifact, 'version.?){ (artifact, version) =>
-              val rest = version match {
-                case Some(v) if !v.isEmpty => "/" + v
-                case _ => ""
-              }
-              redirect(s"/$owner/$artifact$rest", StatusCodes.PermanentRedirect)
-            } ~
             parameters('page.as[Int] ? 1, 'sort.?) { (page, sorting) =>
               complete {
                 api.organization(owner, page, sorting)
@@ -134,28 +145,26 @@ object Server {
         } ~
         path(Segment / Segment) { (owner, repo) =>
           optionalSession(refreshable, usingCookies) { userState =>
-            val projectRef = Project.Reference(owner, repo)
-            val user = userState.map(_.user)
-
-            complete(api.projectPage(projectRef).map(
-              _.map{ case (project, artifacts, versions, release, releaseCount) =>
-                (OK, views.project.html.project(
-                  project,
-                  artifacts,
-                  versions,
-                  release,
-                  releaseCount,
-                  user
-                ))
-              }.getOrElse((NotFound, views.html.notfound(user))))
-            )
+            parameters('artifact, 'version.?){ (artifact, version) =>
+              val rest = version match {
+                case Some(v) if !v.isEmpty => "/" + v
+                case _ => ""
+              }
+              redirect(s"/$owner/$repo/$artifact$rest", StatusCodes.PermanentRedirect)
+            } ~
+            pathEnd {
+              complete(projectPage(owner, repo, None, None, userState))
+            }
           }
         } ~
-        path(Segment / Segment / Segment) { (owner, artifact, version) =>
+        path(Segment / Segment / Segment ) { (owner, repo, artifact) =>
           optionalSession(refreshable, usingCookies) { userState =>
-            // val reference = Artifact.Reference(owner, artifactName)
-            // complete(artifactPage(reference, SemanticVersionParser(version), userState.map(_.user)))
-            complete("OK")
+            complete(projectPage(owner, repo, Some(artifact), None, userState))
+          }
+        } ~
+        path(Segment / Segment / Segment / Segment) { (owner, repo, artifact, version) =>
+          optionalSession(refreshable, usingCookies) { userState =>
+            complete(projectPage(owner, repo, Some(artifact), SemanticVersionParser(version), userState))
           }
         } ~
         path("edit" / Segment / Segment) { (owner, artifactName) =>

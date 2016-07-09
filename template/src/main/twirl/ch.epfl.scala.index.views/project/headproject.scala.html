@@ -42,7 +42,7 @@
       </div>
       <div class="col-md-4">
         <div class="artifact-project">
-          <form action="/@project.reference.organization" action="GET">
+          <form action="/@project.reference.organization/@project.reference.repository" action="GET">
             <select
               name="artifact"
               onchange="this.form.submit()"
@@ -54,7 +54,7 @@
             }
             </select>
           </form>
-          <form action="/@project.reference.organization" action="GET">           
+          <form action="/@project.reference.organization/@project.reference.repository" action="GET">           
             <input type="hidden" name="artifact" value="@release.reference.artifact">
 
             <select

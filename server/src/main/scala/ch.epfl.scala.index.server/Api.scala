@@ -112,8 +112,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
       ).limit(1)
     }.map(r => r.as[Project].headOption.map(hideId))
   }
-  
-  def projectPage(projectRef: Project.Reference): 
+  def projectPage(projectRef: Project.Reference, selectedArtifact: Option[String] = None, selectedVersion: Option[SemanticVersion] = None): 
     Future[Option[(Project, List[String], List[SemanticVersion], Release, Int)]] = {
 
     val projectAndReleases =
@@ -136,24 +135,40 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     def defaultRelease(project: Project, releases: List[Release]): Option[(Release, List[SemanticVersion])] = {
       val artifacts = releases.groupBy(_.reference.artifact).toList
       
+      def specified(artifact: String): Boolean = Some(artifact) == selectedArtifact
       def projectDefault(artifact: String): Boolean = Some(artifact) == project.defaultArtifact
       def core(artifact: String): Boolean = artifact.endsWith("-core")
       def projectRepository(artifact: String): Boolean = project.reference.repository == artifact
 
       def alphabetically = artifacts.sortBy(_._1).headOption
 
-      (finds(artifacts, List(projectDefault _, core _, projectRepository _)) match {
-        case None => alphabetically
-        case x => x
-      }).flatMap{ case (_, releases) =>
+      val artifact: Option[(String, List[Release])] =
+        if(selectedArtifact.isDefined) {
+          // artifact provided by user
+          finds(artifacts, List(specified _))
+        } else {
+          // find artifact by heuristic
+          finds(artifacts, List(specified _, projectDefault _, core _, projectRepository _)) match {
+            case None => alphabetically
+            case s => s
+          }
+        }
+
+      artifact.flatMap{ case (_, releases) =>
         val sortedByVersion = releases.sortBy(_.reference.version)(Descending)
+
+        // version provided by user
+        val versionSelected =
+          selectedVersion
+            .map(version => sortedByVersion.filter(_.reference.version == version))
+            .getOrElse(sortedByVersion)
 
         // select last non preRelease release if possible (ex: 1.1.0 over 1.2.0-RC1)
         val lastNonPreRelease =
-          if(sortedByVersion.exists(_.reference.version.preRelease.isEmpty)){
-            sortedByVersion.filter(_.reference.version.preRelease.isEmpty)
+          if(versionSelected.exists(_.reference.version.preRelease.isEmpty)){
+            versionSelected.filter(_.reference.version.preRelease.isEmpty)
           } else {
-            sortedByVersion
+            versionSelected
           }
 
         // select latest stable target if possible (ex: scala 2.11 over 2.12 and scala-js)
@@ -162,7 +177,9 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
             if(lastNonPreRelease.exists(_.reference.target.scalaJsVersion.isEmpty)) {
               lastNonPreRelease.filter(_.reference.target.scalaJsVersion.isEmpty)
             } else lastNonPreRelease
-          ).sortBy(_.reference.target.scalaVersion).headOption
+          )
+          .filter(_.reference.target.scalaVersion.preRelease.isEmpty)
+          .sortBy(_.reference.target.scalaVersion)(Descending).headOption
 
         latestStableTarget.headOption.map(r =>
           (r, sortedByVersion.map(_.reference.version).distinct)
