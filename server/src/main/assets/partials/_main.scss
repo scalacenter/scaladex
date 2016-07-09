@@ -293,6 +293,25 @@ main {
         }
     }
 
+    & > .container {
+        width: 100%;
+        .col-md-8 {
+            width: inherit;
+            min-width: 958px;
+            .content-project {
+                padding-left: 20px;
+                padding-right: 20px;
+                #readme {
+                    width: 888px;
+                }
+            }
+        }
+        .col-md-4 {
+            width: 390px;
+            padding-left: 0px;
+        }
+    }
+
     .content-project {
         .markdown-body {
             .anchor {
@@ -431,6 +450,9 @@ main {
     min-height: 271px;
     background: url('../assets/img/head-project-background.png') no-repeat center top #0D343C;
     color: #fff;
+    .container {
+        width: 100%;
+    }
     .bootstrap-select >  {
         .dropdown-toggle {
             width: auto;
