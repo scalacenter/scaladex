@@ -128,6 +128,11 @@ object PomsReader {
     poms
   }
 
+  def load(path: Path) = {
+
+    val pom = resolve(path)
+    PomConvert(pom)
+  }
   // Useful in ScalaKata to play with the data
   lazy val loadOnceToExperiment = load()
 }

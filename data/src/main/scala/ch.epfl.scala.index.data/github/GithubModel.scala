@@ -7,6 +7,8 @@ package github
 organization avatar_url <=> Logo
 */
 
+case class GithubCredentials(username: String, password: String)
+
 case class User(
   login: String,
   avatar_url: String // https://avatars.githubusercontent.com/u/3731824?v=3

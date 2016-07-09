@@ -9,4 +9,7 @@ package object bintray {
   val bintrayCheckpoint = bintrayIndexBase.resolve("bintray.json")
   val bintrayCheckpoint2 = bintrayIndexBase.resolve("bintray2.json")
   val bintrayPomBase = bintrayIndexBase.resolve("poms_sha")
+
+  val indexBase = build.info.BuildInfo.baseDirectory.toPath.resolve(Paths.get("index"))
+  val tmpBase = indexBase.resolve("tmp")
 }

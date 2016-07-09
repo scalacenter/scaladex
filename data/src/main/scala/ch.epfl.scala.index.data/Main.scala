@@ -54,7 +54,7 @@ object Main extends BintrayProtocol {
 
     def github(): Unit = {
 
-      val githubDownload = new GithubDownload
+      val githubDownload = new GithubDownload(None, system, materializer)
       githubDownload.run()
     }
 

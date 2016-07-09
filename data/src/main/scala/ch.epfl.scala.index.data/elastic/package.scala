@@ -24,7 +24,8 @@ trait ProjectProtocol {
   implicit val serialization = native.Serialization
 
   implicit object ProjectAs extends HitAs[Project] {
-    override def as(hit: RichSearchHit): Project = read[Project](hit.sourceAsString)
+
+    override def as(hit: RichSearchHit): Project = read[Project](hit.sourceAsString).copy(_id = Some(hit.getId))
   }
 
   implicit object ProjectIndexable extends Indexable[Project] {

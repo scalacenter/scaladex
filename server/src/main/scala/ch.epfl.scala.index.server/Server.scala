@@ -6,7 +6,6 @@ import model.misc.UserInfo
 import release.SemanticVersion
 import data.cleanup.SemanticVersionParser
 import data.elastic._
-
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import Uri._
@@ -17,7 +16,10 @@ import com.softwaremill.session.CsrfOptions._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.headers.HttpCredentials
+import akka.http.scaladsl.server.directives.Credentials.{Missing, Provided}
 import akka.stream.ActorMaterializer
+import ch.epfl.scala.index.data.github.GithubCredentials
 
 import scala.concurrent.duration._
 import scala.concurrent.Await
@@ -66,12 +68,54 @@ object Server {
       )
     }
 
+    val publishProcess = new PublishProcess()
+
     val route = {
       import akka.http.scaladsl._
       import server.Directives._
       import TwirlSupport._
 
+      def myAuthenticator(credentials: Option[HttpCredentials]): Authenticator[GithubCredentials] = {
+
+        case p@Provided(username) =>
+
+          credentials match {
+            case None => None
+            case Some(cred) =>
+
+              val upw = new String(new sun.misc.BASE64Decoder().decodeBuffer(cred.token()))
+              val userPass = upw.split(":")
+              val githubCredentials = GithubCredentials(userPass(0), userPass(1))
+              // todo - catch errors
+              if (publishProcess.authenticate(githubCredentials)) {
+
+                Some(githubCredentials)
+              } else {
+
+                None
+              }
+          }
+        case Missing => None
+      }
+
+      put {
+        path("publish" / Remaining) { path =>
+          entity(as[String]) { str =>
+            extractCredentials { credentials =>
+              authenticateBasic(realm = "scaladex Realm", myAuthenticator(credentials)) { cred =>
+
+                publishProcess.writeFiles(path, str, cred)
+                complete(Created)
+              }
+            }
+          }
+        }
+      } ~
       get {
+        path("publish" / Remaining) { path =>
+//          println(s"GET $path")
+          complete(NotFound)
+        } ~
         path("login") {
           redirect(Uri("https://github.com/login/oauth/authorize").withQuery(Query(
             "client_id" -> github.clientId

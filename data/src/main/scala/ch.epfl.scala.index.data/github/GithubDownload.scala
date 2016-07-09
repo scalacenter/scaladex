@@ -21,20 +21,20 @@ import scala.util._
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-class GithubDownload(implicit val system: ActorSystem, implicit val materializer: ActorMaterializer) extends PlayWsDownloader {
+class GithubDownload(privateCredentials: Option[GithubCredentials], implicit val system: ActorSystem, implicit val materializer: ActorMaterializer) extends PlayWsDownloader {
 
   import Json4s._
 
   case class PaginatedGithub(repo: GithubRepo, page: Int)
 
-  private val githubRepoExtractor = new GithubRepoExtractor
-  private val githubRepos = {
+  private lazy val githubRepoExtractor = new GithubRepoExtractor
+  private lazy val githubRepos = {
     PomsReader.load()
       .collect { case Success((pom, _)) => githubRepoExtractor(pom) }
       .flatten
       .toSet
   }
-  private val paginatedGithubRepos = githubRepos.map(repo => PaginatedGithub(repo, 1))
+  private lazy val paginatedGithubRepos = githubRepos.map(repo => PaginatedGithub(repo, 1))
 
   private def credentials = {
     val tokens = Array(
@@ -65,7 +65,11 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
    * @param request the current request
    * @return
    */
-  def applyBasicHeaders(request: WSRequest): WSRequest = request.withHeaders("Authorization" -> s"token $credentials")
+  def applyBasicHeaders(request: WSRequest): WSRequest = {
+
+    privateCredentials.map(cred => request.withAuth(cred.username, cred.password, WSAuthScheme.BASIC))
+    .getOrElse(request.withHeaders("Authorization" -> s"token $credentials"))
+  }
 
   /**
    * basic Authentication header + Accept application jsob
@@ -289,4 +293,16 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
 
     ()
   }
+
+  def run(repo: GithubRepo): Unit = {
+
+    download[GithubRepo, Unit]("Downloading Repo Info", Set(repo), githubInfoUrl, processInfoResponse)
+    download[GithubRepo, Unit]("Downloading Readme", Set(repo), githubReadmeUrl, processReadmeResponse)
+
+    val paginated = Set(PaginatedGithub(repo, 1))
+    download[PaginatedGithub, Unit]("Downloading Contributors", paginated, githubContributorsUrl, processContributorResponse)
+    ()
+  }
+
+
 }
