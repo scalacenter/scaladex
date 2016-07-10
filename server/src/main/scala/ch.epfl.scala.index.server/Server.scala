@@ -98,7 +98,7 @@ object Server {
         case Missing => None
       }
 
-      /**
+      /*
        * extract a maven reference from path like
        * /com/github/scyks/playacl_2.11/0.8.0/playacl_2.11-0.8.0.pom =>
        * MavenReference("com.github.scyks", "playacl_2.11", "0.8.0")
