@@ -8,51 +8,51 @@ object ScaladexPlugin extends AutoPlugin {
 
   object autoImport {
 
-    lazy val scaladex = TaskKey[Unit]("scaladex-publish", "Publishes to scaladex")
+    lazy val Scaladex = config("Scaladex") extend Compile
     lazy val scaladexKeywords = settingKey[Seq[String]]("list of keywords for your package")
     lazy val scaladexDownloadReadme = settingKey[Boolean]("defines if scaladex should download the readme file")
     lazy val scaladexDownloadInfo = settingKey[Boolean]("defines if scaladex should download the project info")
     lazy val scaladexDownloadContributors = settingKey[Boolean]("defines if scaladex should download the contributors lost")
+
+    lazy val baseScaladexSettings = Seq(
+      scaladexKeywords := Seq(),
+      scaladexDownloadContributors := false,
+      scaladexDownloadInfo := false,
+      scaladexDownloadReadme := false
+    ) ++
+      inConfig(Scaladex)(Seq(
+        publishTo := Some("Scaladex" at s"http://localhost:8080/publish?readme=${scaladexDownloadReadme.value}&info=${scaladexDownloadInfo.value}&contributors=${scaladexDownloadContributors.value}${scaladexKeywords.value.map(key => s"&keywords=$key").mkString("")}&path="),
+        publishArtifact in packageBin := false,
+        publishArtifact in packageDoc := false,
+        publishArtifact in packageSrc := false,
+        credentials += Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials")
+
+      ))
   }
 
   import autoImport._
 
-  lazy val baseScaladexSettings: Seq[Def.Setting[_]] = Seq(
-    scaladexKeywords := List(),
-    scaladexDownloadReadme := true,
-    scaladexDownloadInfo := true,
-    scaladexDownloadContributors := true
-  )
+  override def trigger = allRequirements
+
   override lazy val projectSettings = baseScaladexSettings
 
-  lazy val publishScaladexCommand = Command.command("publish-scaladex") { (state: State) =>
 
-    val extracted = Project.extract(state)
+  publish in Scaladex := {
 
-    Project.runTask(
-      publish in Compile,
-      extracted.append(List(
-        publishTo := Some(scaladexUrl(extracted)),
-        publishArtifact in (Compile, packageBin) := false,
-        publishArtifact in (Compile, packageDoc) := false,
-        publishArtifact in (Compile, packageSrc) := false
-      ), state),
-      true
-    )
-
-    state
+    println("publish in Scaladex")
+    (publish in Compile).value
   }
 
-  private def scaladexUrl(extracted: Extracted): Resolver = {
+  //	def scaladexResolver: Resolver = {
 
-    val readme = extracted.get(scaladexDownloadReadme)
-    val info = extracted.get(scaladexDownloadInfo)
-    val contributors = extracted.get(scaladexDownloadContributors)
-    val keywords = extracted.get(scaladexKeywords).map(key => s"&keywords=$key").mkString("")
+  //		val readme = scaladexDownloadReadme.value
+  //		val info = scaladexDownloadInfo.value
+  //		val contributors = scaladexDownloadContributors.value
+  //		val keywords = scaladexKeywords.value.map(key => s"&keywords=$key").mkString("")
+  //
+  //		val url = "http://localhost:8080/publish"
 
-    val url = "http://localhost:8080/publish"
-
-    "Scaladex" at s"$url?readme=$readme&info=$info&contributors=$contributors$keywords&path="
-  }
+  //		"Scaladex" at s"http://localhost:8080/publish?readme=${scaladexDownloadReadme.value}&info=${scaladexDownloadInfo.value}&contributors=${scaladexDownloadContributors.value}${scaladexKeywords.value.map(key => s"&keywords=$key").mkString("")}&path="
+  //	}
 
 }
