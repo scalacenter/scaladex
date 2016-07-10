@@ -22,7 +22,7 @@ import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.data.github.GithubCredentials
 
 import scala.concurrent.duration._
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 
 object Server {
   def main(args: Array[String]): Unit = {
@@ -102,6 +102,7 @@ object Server {
        * extract a maven reference from path like
        * /com/github/scyks/playacl_2.11/0.8.0/playacl_2.11-0.8.0.pom =>
        * MavenReference("com.github.scyks", "playacl_2.11", "0.8.0")
+       *
        * @param path the real publishing path
        * @return MavenReference
        */
@@ -128,12 +129,22 @@ object Server {
             'info.as[Boolean] ? true,
             'keywords.as[String].*
           ) { (path, readme, contributors, info, keywords) =>
-            entity(as[String]) { str =>
+            entity(as[String]) { data =>
               extractCredentials { credentials =>
                 authenticateBasic(realm = "scaladex Realm", myAuthenticator(credentials)) { cred =>
 
-                  publishProcess.writeFiles(path, str, cred)
-                  complete(Created)
+                  val publishData = PublishData(path, data, cred, info, contributors, readme, keywords.toList)
+
+                  complete {
+                    println(s"PUT $path")
+                    if (publishData.isPom) {
+
+                      publishProcess.writeFiles(publishData)
+
+                    } else {
+                      Future(Created)
+                    }
+                  }
                 }
               }
             }
@@ -150,6 +161,7 @@ object Server {
             'keywords.as[String].*
           ) { (path, readme, contributors, info, keywords) =>
 
+            println(s"GET $path")
             complete {
 
               /* check if the release already exists - sbt will handle HTTP-Status codes

@@ -294,13 +294,24 @@ class GithubDownload(privateCredentials: Option[GithubCredentials], implicit val
     ()
   }
 
-  def run(repo: GithubRepo): Unit = {
+  def run(repo: GithubRepo, info: Boolean, readme: Boolean, contributors: Boolean): Unit = {
 
-    download[GithubRepo, Unit]("Downloading Repo Info", Set(repo), githubInfoUrl, processInfoResponse)
-    download[GithubRepo, Unit]("Downloading Readme", Set(repo), githubReadmeUrl, processReadmeResponse)
+    if (info) {
 
-    val paginated = Set(PaginatedGithub(repo, 1))
-    download[PaginatedGithub, Unit]("Downloading Contributors", paginated, githubContributorsUrl, processContributorResponse)
+      download[GithubRepo, Unit]("Downloading Repo Info", Set(repo), githubInfoUrl, processInfoResponse)
+    }
+
+    if (readme) {
+
+      download[GithubRepo, Unit]("Downloading Readme", Set(repo), githubReadmeUrl, processReadmeResponse)
+    }
+
+    if (contributors) {
+
+      val paginated = Set(PaginatedGithub(repo, 1))
+      download[PaginatedGithub, Unit]("Downloading Contributors", paginated, githubContributorsUrl, processContributorResponse)
+    }
+
     ()
   }
 

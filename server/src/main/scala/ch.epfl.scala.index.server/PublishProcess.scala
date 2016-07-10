@@ -5,22 +5,21 @@ import data.bintray._
 import data.cleanup.GithubRepoExtractor
 import data.download.PlayWsDownloader
 import data.elastic._
-import data.github.{GithubCredentials, GithubDownload}
-import data.maven.PomsReader
+import ch.epfl.scala.index.data.github._
+import data.maven.{MavenModel, PomsReader}
 import data.project.ProjectConvert
-
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-
+import akka.http.scaladsl.model.StatusCodes._
 import org.joda.time.DateTime
-
 import play.api.libs.ws.WSAuthScheme
-
 import com.sksamuel.elastic4s._
 import ElasticDsl._
+import akka.http.scaladsl.model.StatusCode
+import ch.epfl.scala.index.model.misc.GithubRepo
 
 import scala.concurrent.{Await, Future}
 
@@ -32,150 +31,91 @@ class PublishProcess(
 
   import system.dispatcher
 
-  /**
-   * resolve the filename for a specific pom by sha1
-   *
-   * @param sha1 the sha1 hash of the file
-   * @return
-   */
-  private def pomPath(sha1: String) = bintrayPomBase.resolve(s"$sha1.pom")
-  private def tmpPath(sha1: String) = tmpBase.resolve(s"$sha1.pom")
+  def writeFiles(data: PublishData): Future[StatusCode] = Future {
 
-  private def computeSha1(data: String): String = {
+    if (data.isPom) {
 
-    val md = java.security.MessageDigest.getInstance("SHA-1")
-    md.digest(data.getBytes("UTF-8")).map("%02x".format(_)).mkString
-  }
+      data.writeTemp()
+      val pom = getPom(data)
+      val repos = getGithubRepo(pom)
 
-  /**
-   * verify the sha1 file hash
-   *
-   * @param path the path to the file to verify
-   * @param sha1 the sha1 hash
-   * @return
-   */
-  private def verifySHA1FileHash(path: Path, sha1: String): Boolean = {
+      if (1 < repos.size) {
 
-    val source = scala.io.Source.fromFile(path.toFile)
-    val content = source.mkString
-    source.close()
-
-    verifyChecksum(content, sha1)
-  }
-  /**
-   * will compute ans sha1 hash from given string and verify that against
-   * given compare hash
-   *
-   * @param toVerify the string to compute
-   * @param sha1 the verify hash
-   * @return
-   */
-  def verifyChecksum(toVerify: String, sha1: String) = {
-
-    computeSha1(toVerify) == sha1
-  }
-
-  def writeFiles(fileName: String, data: String, credentials: GithubCredentials) = Future {
-
-
-    val tmpName = fileName.replace(".sha1", "").replace(".pom", "")
-    //println(s"Receive: $tmpName")
-    val hash = computeSha1(tmpName)
-    val path = tmpPath(hash)
-
-    if (fileName matches """.*\.pom.sha1""") {
-
-      if (verifySHA1FileHash(path, data)) {
-
-        val pomfilePath = pomPath(data)
-//        println("valid sha1 - move file to pom directory")
-
-        if (!Files.exists(pomfilePath)) {
-
-          Files.move(path, pomfilePath)
-        }
-
-        extractPomData(pomfilePath, data, credentials)
-
+        data.deleteTemp()
+        MultipleChoices
       } else {
 
-        println("invalid sha1 - delete file")
-        Files.delete(path)
-      }
-    } else if (fileName matches """.*\.pom""") {
+        val repo = repos.head
 
-      if (Files.exists(path)) {
+        if (hasWriteAccess(data.credentials, repo)) {
 
-        Files.delete(path)
+          updateIndex(repo, pom, data)
+          Created
+        } else {
+
+          Forbidden
+        }
       }
-//      println("write file to disk")
-      Files.write(path, data.getBytes(StandardCharsets.UTF_8))
     } else {
 
-//      println("ignored ...")
+      /* ignore the file at this case */
+      Created
     }
   }
 
-  def extractPomData(path: Path, sha1: String, githubCredentials: GithubCredentials) = {
+  def getPom(data: PublishData): MavenModel = PomsReader.load(data.savePath)
+  def getGithubRepo(pom: MavenModel): Set[GithubRepo] = (new GithubRepoExtractor).apply(pom)
 
-    val pom = PomsReader.load(path)
-    val githubRepoExtractor = new GithubRepoExtractor
-    val githubRepo = githubRepoExtractor(pom)
+  def updateIndex(repo: GithubRepo, pom: MavenModel, data: PublishData) = {
 
-    githubRepo.map {repo =>
+    new GithubDownload(Some(data.credentials), system, materializer).run(repo, data.downloadInfo, data.downloadReadme, data.downloadContributors)
 
-      new GithubDownload(Some(githubCredentials), system, materializer).run(repo)
+    val bintray = BintraySearch(data.hash, None, s"${pom.groupId}:${pom.artifactId}", pom.artifactId, "", 0, pom.version, pom.groupId, pom.artifactId, new DateTime())
 
-      val bintray = BintraySearch(
-        sha1,
-        None,
-        s"${pom.groupId}:${pom.artifactId}",
-        pom.artifactId,
-        "",
-        0,
-        pom.version,
-        pom.groupId,
-        pom.artifactId,
-        new DateTime()
-      )
+    val (newProject, newReleases) = ProjectConvert(List((pom, List(bintray)))).head
 
-      val (newProject, newReleases) = ProjectConvert(List((pom, List(bintray)))).head
+    val updatedProject = newProject.copy(keywords = data.keywords)
+    val projectSearch = api.projectPage(newProject.reference)
+    val releaseSearch = api.releases(newProject.reference)
 
-      val projectSearch = api.projectPage(newProject.reference)
-      val releaseSearch = api.releases(newProject.reference)
+    for {
+      projectResult <- projectSearch
+      releases <- releaseSearch
+    } yield {
 
-      for {
-        projectResult <- projectSearch
-        releases <- releaseSearch
-      } yield {
+      projectResult match {
 
-        projectResult match {
+        case Some((project, _, versions, release, _)) =>
 
-          case Some((project, _, versions, release, _)) =>
+          println(project._id)
+          project._id.map { id =>
 
-            println(project._id)
-            project._id.map { id =>
+            println("update project with new reference")
+            esClient.execute(update(id) in (indexName / projectsCollection) doc updatedProject)
+          }
+        case None =>
 
-              println("update project with new reference")
-              esClient.execute(update(id) in(indexName / projectsCollection) doc newProject)
-            }
-          case None =>
-
-            println("index new project")
-            esClient.execute(index.into(indexName / projectsCollection).source(newProject))
-        }
-
-
-        releases.foreach{rel => println(s"Release ${rel.reference.version}")}
-        /* there can be only one release */
-        if (!releases.exists(r => r.reference == newReleases.head.reference)) {
-
-          println("add new release")
-          esClient.execute(index.into(indexName / releasesCollection).source(newReleases.head))
-        }
+          println("index new project")
+          esClient.execute(index.into(indexName / projectsCollection).source(updatedProject))
       }
 
-      pom
+
+      releases.foreach { rel => println(s"Release ${rel.reference.version}") }
+      /* there can be only one release */
+      if (!releases.exists(r => r.reference == newReleases.head.reference)) {
+
+        println("add new release")
+        esClient.execute(index.into(indexName / releasesCollection).source(newReleases.head))
+      } else {
+
+        for {
+          release <- releases.find(r => r.reference == newReleases.head.reference)
+          id <- release._id
+        } yield {
+
+          esClient.execute(update(id).in(indexName / releasesCollection) doc newReleases.head)
+        }
+      }
     }
   }
 
@@ -187,4 +127,76 @@ class PublishProcess(
 
     200 == response.status
   }
+
+  def hasWriteAccess(githubCredentials: GithubCredentials, repository: GithubRepo): Boolean = {
+
+    import scala.concurrent.duration._
+    import ch.epfl.scala.index.data.github.Json4s._
+    import org.json4s.native.Serialization.read
+
+    val req = wsClient
+      .url(s"https://api.github.repos/${repository.organization}/${repository.repo}")
+      .withAuth(githubCredentials.username, githubCredentials.password, WSAuthScheme.BASIC)
+      .withHeaders("Accept" -> "application/vnd.github.v3+json")
+    val response = Await.result(req.get, 5.seconds)
+
+    val githubRepo = read[Repository](response.body)
+
+    githubRepo.permissions.exists(_.push)
+  }
+}
+
+case class PublishData(
+  path: String,
+  data: String,
+  credentials: GithubCredentials,
+  downloadInfo: Boolean,
+  downloadContributors: Boolean,
+  downloadReadme: Boolean,
+  keywords: List[String]
+) {
+
+  lazy val isPom: Boolean = path matches """.*\.pom"""
+  lazy val hash = computeSha1(data)
+  lazy val tempPath = tmpPath(hash)
+  lazy val savePath = pomPath(hash)
+
+  private def write(writePath: Path): Unit = {
+
+    delete(writePath)
+    Files.write(writePath, data.getBytes(StandardCharsets.UTF_8))
+    ()
+  }
+
+  private def delete(deletePath: Path): Unit = {
+
+    if (Files.exists(deletePath)) {
+
+      Files.delete(deletePath)
+    }
+    ()
+  }
+
+  def writeTemp() = write(tempPath)
+  def writePom() = write(savePath)
+
+  def deleteTemp() = delete(tempPath)
+  def deletePom() = delete(savePath)
+
+  /**
+   * resolve the filename for a specific pom by sha1
+   *
+   * @param sha1 the sha1 hash of the file
+   * @return
+   */
+  private def pomPath(sha1: String) = bintrayPomBase.resolve(s"$sha1.pom")
+
+  private def tmpPath(sha1: String) = tmpBase.resolve(s"$sha1.pom")
+
+  private def computeSha1(data: String): String = {
+
+    val md = java.security.MessageDigest.getInstance("SHA-1")
+    md.digest(data.getBytes("UTF-8")).map("%02x".format(_)).mkString
+  }
+
 }

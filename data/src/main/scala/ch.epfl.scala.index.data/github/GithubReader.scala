@@ -2,11 +2,10 @@ package ch.epfl.scala.index
 package data
 package github
 
-import model.misc.{GithubContributor, GithubInfo, GithubRepo, Url}
-
+import ch.epfl.scala.index.model.misc._
 import org.json4s.native.Serialization.read
-
 import java.nio.file.Files
+
 import scala.util.Try
 
 /**

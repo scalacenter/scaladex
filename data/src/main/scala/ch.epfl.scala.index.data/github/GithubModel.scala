@@ -37,8 +37,11 @@ case class Repository(
   open_issues: Int,
   default_branch: String, // master
   organization: Option[User],
-  subscribers_count: Int // Watch
+  subscribers_count: Int, // Watch
+  permissions: Option[Permissions]
 )
+
+case class Permissions(admin: Boolean, push: Boolean, pull: Boolean)
 
 case class Contributor(
   login: String,

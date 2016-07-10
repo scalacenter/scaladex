@@ -33,7 +33,7 @@ trait ProjectProtocol {
   }
 
   implicit object ReleaseAs extends HitAs[Release] {
-    override def as(hit: RichSearchHit): Release = read[Release](hit.sourceAsString)
+    override def as(hit: RichSearchHit): Release = read[Release](hit.sourceAsString).copy(_id = Some(hit.getId))
   }
 
   implicit object ReleaseIndexable extends Indexable[Release] {
