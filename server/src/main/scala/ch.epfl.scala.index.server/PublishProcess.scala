@@ -27,7 +27,7 @@ import scala.concurrent.{Await, Future}
 class PublishProcess(
   implicit val system: ActorSystem,
   implicit val materializer: ActorMaterializer,
-  implicit val api: ApiImplementation
+  implicit val api: Api
 ) extends PlayWsDownloader {
 
   import system.dispatcher
@@ -139,51 +139,41 @@ class PublishProcess(
         new DateTime()
       )
 
-      val newProject = ProjectConvert(List((pom, List(bintray)))).head
-      val artifact = newProject.artifacts.head
+      val (newProject, newReleases) = ProjectConvert(List((pom, List(bintray)))).head
 
+      val projectSearch = api.projectPage(newProject.reference)
+      val releaseSearch = api.releases(newProject.reference)
 
-      val search = api.projectPage(artifact.reference)
-      search onSuccess {
-        case Some(project) =>
+      for {
+        projectResult <- projectSearch
+        releases <- releaseSearch
+      } yield {
 
-          println("found")
-          val artifacts = if (project.artifacts.exists(a => a.reference == artifact.reference)) {
-            project.artifacts.map { art =>
-              if (art.reference == artifact.reference) {
-                art.copy(releases = art.releases ++ artifact.releases)
-              } else {
+        projectResult match {
 
-                art
-              }
+          case Some((project, _, versions, release, _)) =>
+
+            println(project._id)
+            project._id.map { id =>
+
+              println("update project with new reference")
+              esClient.execute(update(id) in(indexName / projectsCollection) doc newProject)
             }
-          } else {
-            project.artifacts :+ artifact
-          }
+          case None =>
+
+            println("index new project")
+            esClient.execute(index.into(indexName / projectsCollection).source(newProject))
+        }
 
 
-          val modified = project.copy(artifacts = artifacts)
-          println(s"update projects ${modified._id}")
-          modified.artifacts.foreach(a => println(s"${a.reference.name} ${a.releases.map(_.reference.version).mkString(", ")}"))
-          modified._id.map{id =>
+        releases.foreach{rel => println(s"Release ${rel.reference.version}")}
+        /* there can be only one release */
+        if (!releases.exists(r => r.reference == newReleases.head.reference)) {
 
-            println("update")
-            esClient.execute(update(id).in(indexName / collectionName).doc(modified.copy(_id = None)))
-          }
-
-        case None =>
-          println("nothing found")
-          esClient.execute(index.into(indexName / collectionName).source(newProject))
-
+          println("add new release")
+          esClient.execute(index.into(indexName / releasesCollection).source(newReleases.head))
+        }
       }
-      search onFailure {
-        case msg => println(msg)
-      }
-
-      println("Pom")
-      println(pom)
-      println("Github repo")
-      println(repo)
 
       pom
     }

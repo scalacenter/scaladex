@@ -88,7 +88,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
           )
         )
       ).limit(1)
-    }.map(r => r.as[Project].headOption.map(hideId))
+    }.map(r => r.as[Project].headOption)
   }
   def projectPage(projectRef: Project.Reference, selectedArtifact: Option[String] = None, selectedVersion: Option[SemanticVersion] = None):
     Future[Option[(Project, List[String], List[SemanticVersion], List[(ScalaTarget, MavenReference)], Release, Int)]] = {

@@ -1,7 +1,7 @@
 package ch.epfl.scala.index
 package server
 
-// import model._
+import model._
 import model.misc.UserInfo
 import release.SemanticVersion
 import data.cleanup.SemanticVersionParser
