@@ -49,7 +49,10 @@ class PublishProcess(
 
         if (hasWriteAccess(data.credentials, repo)) {
 
+          data.writePom()
+          data.deleteTemp()
           updateIndex(repo, pom, data)
+
           Created
         } else {
 
@@ -63,10 +66,10 @@ class PublishProcess(
     }
   }
 
-  def getPom(data: PublishData): MavenModel = PomsReader.load(data.savePath)
+  def getPom(data: PublishData): MavenModel = PomsReader.load(data.tempPath)
   def getGithubRepo(pom: MavenModel): Set[GithubRepo] = (new GithubRepoExtractor).apply(pom)
 
-  def updateIndex(repo: GithubRepo, pom: MavenModel, data: PublishData) = {
+  def updateIndex(repo: GithubRepo, pom: MavenModel, data: PublishData) = Future {
 
     new GithubDownload(Some(data.credentials), system, materializer).run(repo, data.downloadInfo, data.downloadReadme, data.downloadContributors)
 
@@ -135,7 +138,7 @@ class PublishProcess(
     import org.json4s.native.Serialization.read
 
     val req = wsClient
-      .url(s"https://api.github.repos/${repository.organization}/${repository.repo}")
+      .url(s"https://api.github.com/repos/${repository.organization}/${repository.repo}")
       .withAuth(githubCredentials.username, githubCredentials.password, WSAuthScheme.BASIC)
       .withHeaders("Accept" -> "application/vnd.github.v3+json")
     val response = Await.result(req.get, 5.seconds)
@@ -181,7 +184,6 @@ case class PublishData(
   def writePom() = write(savePath)
 
   def deleteTemp() = delete(tempPath)
-  def deletePom() = delete(savePath)
 
   /**
    * resolve the filename for a specific pom by sha1
