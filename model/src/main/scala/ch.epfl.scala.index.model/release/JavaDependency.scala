@@ -1,8 +1,6 @@
 package ch.epfl.scala.index.model
 package release
 
-import misc.MavenReference
-
 /**
  * java / maven dependency
  * @param reference contains group- and artifact id

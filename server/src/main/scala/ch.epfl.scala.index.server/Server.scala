@@ -52,12 +52,13 @@ object Server {
         version: Option[SemanticVersion], userState: Option[UserState] = None) = {
       val user = userState.map(_.user)
       api.projectPage(Project.Reference(owner, repo), artifact, version).map(
-        _.map{ case (project, artifacts, versions, release, releaseCount) =>
+        _.map{ case (project, artifacts, versions, release, targets, releaseCount) =>
           (OK, views.project.html.project(
             project,
             artifacts,
             versions,
             release,
+            targets,
             releaseCount,
             user
           ))

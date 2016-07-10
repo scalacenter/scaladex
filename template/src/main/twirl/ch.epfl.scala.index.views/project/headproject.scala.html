@@ -1,7 +1,8 @@
 @import ch.epfl.scala.index.model._
-@import ch.epfl.scala.index.model.release.SemanticVersion
+@import ch.epfl.scala.index.model.release.{SemanticVersion, ScalaTarget, MavenReference}
 
-@(project: Project, artifacts: List[String], versions: List[SemanticVersion], release: Release)
+@(project: Project, artifacts: List[String], versions: List[SemanticVersion], 
+  targets: List[(ScalaTarget, MavenReference)], release: Release)
 <div class="head-project">
   <div class="container">
     <div class="row">
@@ -65,6 +66,20 @@
             @for(version <- versions){
               <option value="@version" @if(version == release.reference.version){ selected }>
                 @version
+              </option>
+            }
+            </select>
+          </form>
+          <form action="/@project.reference.organization/@project.reference.repository" action="GET">           
+            <input type="hidden" name="version" value="@release.reference.version">
+            <select
+              name="artifact"
+              onchange="this.form.submit()"
+              class="selectpicker" data-style="btn-primary">
+
+            @for((target, maven) <- targets){
+              <option value="@maven.artifactId" @if(maven == release.maven){ selected }>
+                @target.render
               </option>
             }
             </select>

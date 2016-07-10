@@ -2,10 +2,12 @@ package ch.epfl.scala.index
 package server
 
 import model._
-import release.SemanticVersion
+import release.{SemanticVersion, ScalaTarget, MavenReference}
 import misc.Pagination
 
 import data.elastic._
+import data.cleanup.ArtifactNameParser
+
 import com.sksamuel.elastic4s._
 import ElasticDsl._
 import org.elasticsearch.search.sort.SortOrder
@@ -81,8 +83,8 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
             )
           )
         )
-      ).limit(1000)
-    }.map(r => r.as[Release].toList)
+      ).size(1000)
+    }.map(_.as[Release].toList)
   }
 
   def project(project: Project.Reference): Future[Option[Project]] = {
@@ -100,7 +102,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     }.map(r => r.as[Project].headOption.map(hideId))
   }
   def projectPage(projectRef: Project.Reference, selectedArtifact: Option[String] = None, selectedVersion: Option[SemanticVersion] = None):
-    Future[Option[(Project, List[String], List[SemanticVersion], Release, Int)]] = {
+    Future[Option[(Project, List[String], List[SemanticVersion], List[(ScalaTarget, MavenReference)], Release, Int)]] = {
 
     val projectAndReleases =
       for {
@@ -119,7 +121,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
       }
     }
 
-    def defaultRelease(project: Project, releases: List[Release]): Option[(Release, List[SemanticVersion])] = {
+    def defaultRelease(project: Project, releases: List[Release]): Option[(Release, List[SemanticVersion], List[(ScalaTarget, MavenReference)])] = {
       val artifacts = releases.groupBy(_.reference.artifact).toList
 
       def specified(artifact: String): Boolean = Some(artifact) == selectedArtifact
@@ -129,56 +131,85 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
 
       def alphabetically = artifacts.sortBy(_._1).headOption
 
-      val artifact: Option[(String, List[Release])] =
-        if(selectedArtifact.isDefined) {
-          // artifact provided by user
-          finds(artifacts, List(specified _))
-        } else {
-          // find artifact by heuristic
-          finds(artifacts, List(specified _, projectDefault _, core _, projectRepository _)) match {
-            case None => alphabetically
-            case s => s
+      val artifact: Option[(String, List[Release], Option[ScalaTarget])] =
+        selectedArtifact match {
+          case Some(a) => {
+            // artifact provided by the user
+            // it can have a scala target or not
+            ArtifactNameParser(a) match {
+              case Some((name, target)) => {
+                artifacts.find{ case (a, b) => a == name}.map{ case (a, b) => (a, b, Some(target))}
+              }
+              case None => finds(artifacts, List(specified _)).map{ case (a, b) => (a, b, None)}
+            }  
+          }
+          case None => {
+            // find artifact by heuristic
+            (finds(artifacts, List(projectDefault _, core _, projectRepository _)) match {
+              case None => alphabetically
+              case s => s
+            }).map{ case (a, b) => (a, b, None)}
           }
         }
 
-      artifact.flatMap{ case (_, releases) =>
+      artifact.flatMap{ case (_, releases, selectedTarget) =>
+
         val sortedByVersion = releases.sortBy(_.reference.version)(Descending)
 
-        // version provided by user
+        // version provided by the user
         val versionSelected =
           selectedVersion
             .map(version => sortedByVersion.filter(_.reference.version == version))
             .getOrElse(sortedByVersion)
 
-        // select last non preRelease release if possible (ex: 1.1.0 over 1.2.0-RC1)
-        val lastNonPreRelease =
-          if(versionSelected.exists(_.reference.version.preRelease.isEmpty)){
-            versionSelected.filter(_.reference.version.preRelease.isEmpty)
-          } else {
-            versionSelected
+        val lastNonPreReleases: List[Release] = {
+          // select last non preRelease release if possible (ex: 1.1.0 over 1.2.0-RC1)
+          val nonPreRelease=
+            if(versionSelected.exists(_.reference.version.preRelease.isEmpty)){
+              versionSelected.filter(_.reference.version.preRelease.isEmpty)
+            } else {
+              versionSelected
+            }
+
+          val sorted = nonPreRelease.sortBy(_.reference.version)(Descending)
+
+          // (ex: collect all 1.1.0 releases)
+          sorted.headOption.map(v =>
+            sorted.filter(_.reference.version == v.reference.version)
+          ).getOrElse(Nil)
+        }
+
+        val latestStableTarget: Option[Release] =
+          selectedTarget match {
+            case None =>
+              // select latest stable target if possible (ex: scala 2.11 over 2.12 and scala-js)
+              (
+                if(lastNonPreReleases.exists(_.reference.target.scalaJsVersion.isEmpty)) {
+                  lastNonPreReleases.filter(_.reference.target.scalaJsVersion.isEmpty)
+                } else lastNonPreReleases
+              )
+              .filter(_.reference.target.scalaVersion.preRelease.isEmpty)
+              .sortBy(_.reference.target.scalaVersion)(Descending).headOption
+            case Some(target) => 
+              // target provided by the user
+              lastNonPreReleases.filter(_.reference.target == target).headOption
           }
 
-        // select latest stable target if possible (ex: scala 2.11 over 2.12 and scala-js)
-        val latestStableTarget =
+        latestStableTarget.map(r =>
           (
-            if(lastNonPreRelease.exists(_.reference.target.scalaJsVersion.isEmpty)) {
-              lastNonPreRelease.filter(_.reference.target.scalaJsVersion.isEmpty)
-            } else lastNonPreRelease
+            r,
+            sortedByVersion.map(_.reference.version).distinct,
+            lastNonPreReleases.map(r => (r.reference.target, r.maven))
           )
-          .filter(_.reference.target.scalaVersion.preRelease.isEmpty)
-          .sortBy(_.reference.target.scalaVersion)(Descending).headOption
-
-        latestStableTarget.headOption.map(r =>
-          (r, sortedByVersion.map(_.reference.version).distinct)
         )
       }
     }
 
     projectAndReleases.map{ case (p, releases) =>
       p.flatMap(project =>
-        defaultRelease(project, releases).map{ case (release, versions) =>
+        defaultRelease(project, releases).map{ case (release, versions, targets) =>
           val artifacts = releases.groupBy(_.reference.artifactReference).keys.toList.map(_.artifact)
-          (project, artifacts, versions, release, releases.size)
+          (project, artifacts, versions, targets, release, releases.size)
         }
       )
     }

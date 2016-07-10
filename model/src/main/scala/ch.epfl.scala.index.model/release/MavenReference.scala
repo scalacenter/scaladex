@@ -1,4 +1,5 @@
-package ch.epfl.scala.index.model.misc
+package ch.epfl.scala.index.model
+package release
 
 /**
  * Reference to a maven artifact

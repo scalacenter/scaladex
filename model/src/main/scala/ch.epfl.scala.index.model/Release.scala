@@ -1,6 +1,5 @@
 package ch.epfl.scala.index.model
 
-import misc.{GeneralReference, MavenReference}
 import release._
 
 /**
