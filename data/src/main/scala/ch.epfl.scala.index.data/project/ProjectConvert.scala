@@ -61,7 +61,7 @@ object ProjectConvert extends BintrayProtocol {
 
   def apply(pomsAndMeta: List[(maven.MavenModel, List[BintraySearch])]): List[(Project, List[Release])] = {
     val githubRepoExtractor = new GithubRepoExtractor
-    
+
     val progressMeta = new ProgressBar("collecting metadata", pomsAndMeta.size)
     progressMeta.start()
 
@@ -84,7 +84,7 @@ object ProjectConvert extends BintrayProtocol {
         }
       }.flatten
 
-    
+
     progressMeta.stop()
 
     println("Convert POMs to Project")
@@ -111,30 +111,28 @@ object ProjectConvert extends BintrayProtocol {
       (sorted.headOption, sorted.lastOption)
     }
 
-
-
-    val projectsAndReleases = 
+    val projectsAndReleases =
       pomsAndMetaClean
         .groupBy{ case (githubRepo, _, _, _, _, _) => githubRepo}
         .map{ case (githubRepo @ GithubRepo(organization, repository), vs) =>
           val projectReference = Project.Reference(organization, repository)
-          
+
           val releases =
             vs.map{ case (_, artifactName, targets, pom, metas, version) =>
               val mavenCentral = metas.forall(meta => meta.owner == "bintray" && meta.repo == "jcenter")
-              val resolver = 
-                if(mavenCentral) None 
-                else metas.map(meta => Bintray(meta.owner, meta.repo)).headOption
+              val resolver =
+                if(mavenCentral) None
+                else metas.map(meta => BintrayResolver(meta.owner, meta.repo)).headOption
 
               Release(
                 maven = pomToMavenReference(pom),
                 reference = Release.Reference(
                   organization,
+                  repository,
                   artifactName,
                   version,
                   targets
                 ),
-                project = projectReference,
                 resolver = resolver,
                 name = pom.name,
                 description = pom.description,
@@ -146,7 +144,6 @@ object ProjectConvert extends BintrayProtocol {
             }
 
           val (max, min) = maxMinRelease(releases)
-          
 
           (
             Project(
@@ -163,14 +160,14 @@ object ProjectConvert extends BintrayProtocol {
 
     println("Dependencies & Reverse Dependencies")
 
-    val mavenReferenceToReleaseReference = 
+    val mavenReferenceToReleaseReference =
       projectsAndReleases
         .flatMap{ case (project, releases) => releases}
         .map(release =>
           (release.maven, release.reference)
         ).toMap
 
-    def dependencyToMaven(dependency: maven.Dependency) = 
+    def dependencyToMaven(dependency: maven.Dependency) =
       MavenReference(dependency.groupId, dependency.artifactId, dependency.version)
 
     val poms = pomsAndMetaClean.map{ case (_, _, _, pom, _, _) => pom }
@@ -234,9 +231,9 @@ object ProjectConvert extends BintrayProtocol {
     def dependencies(releases: List[Release]): List[String] = collectDependencies(releases, _.name).distinct
 
     def targets(releases: List[Release]): List[String] = collectDependencies(releases, _.target.supportName).distinct
-    
+
     projectsAndReleases.map { case (project, releases) =>
-      
+
       val releasesWithDependencies =
         releases.map{release =>
           val dependencies = findDependencies(release)
@@ -249,7 +246,7 @@ object ProjectConvert extends BintrayProtocol {
 
       (
         project.copy(
-          targets = targets(releasesWithDependencies), 
+          targets = targets(releasesWithDependencies),
           dependencies = dependencies(releasesWithDependencies)
         ),
         releasesWithDependencies

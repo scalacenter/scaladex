@@ -18,19 +18,6 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
 
   val resultsPerPage: Int = 10
 
-  // def autocomplete(q: String): Future[List[(String, String, String)]] = {
-  //   find(q, 0).map{ case (_, projects) =>
-  //     (for {
-  //       project <- projects
-  //       artifact <- project.artifacts
-  //     } yield (
-  //       artifact.reference.organization,
-  //       artifact.reference.name,
-  //       project.github.flatMap(_.description).getOrElse("")
-  //     )).take(10)
-  //   }
-  // }
-
   val sortQuery = (sorting: Option[String]) =>
     sorting match {
       case Some("stars") => fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg
@@ -60,8 +47,8 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     ))
   }
 
-  def find(queryString: String, page: PageIndex, sorting: Option[String] = None) = 
-    query(queryString, page, sorting)
+  def find(queryString: String, page: PageIndex, sorting: Option[String] = None) =
+    query(new QueryStringQueryDefinition(queryString.replaceAllLiterally("/", "\\/")), page, sorting)
 
   def dependent(what: String, page: PageIndex, sorting: Option[String] = None) =
     query(
@@ -86,11 +73,11 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
   def releases(project: Project.Reference): Future[List[Release]] = {
     esClient.execute {
       search.in(indexName / releasesCollection).query(
-        nestedQuery("project").query(
+        nestedQuery("reference").query(
           bool (
             must(
-              termQuery("project.organization", project.organization),
-              termQuery("project.repository", project.repository)
+              termQuery("reference.organization", project.organization),
+              termQuery("reference.repository", project.repository)
             )
           )
         )
@@ -112,7 +99,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
       ).limit(1)
     }.map(r => r.as[Project].headOption.map(hideId))
   }
-  def projectPage(projectRef: Project.Reference, selectedArtifact: Option[String] = None, selectedVersion: Option[SemanticVersion] = None): 
+  def projectPage(projectRef: Project.Reference, selectedArtifact: Option[String] = None, selectedVersion: Option[SemanticVersion] = None):
     Future[Option[(Project, List[String], List[SemanticVersion], Release, Int)]] = {
 
     val projectAndReleases =
@@ -134,7 +121,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
 
     def defaultRelease(project: Project, releases: List[Release]): Option[(Release, List[SemanticVersion])] = {
       val artifacts = releases.groupBy(_.reference.artifact).toList
-      
+
       def specified(artifact: String): Boolean = Some(artifact) == selectedArtifact
       def projectDefault(artifact: String): Boolean = Some(artifact) == project.defaultArtifact
       def core(artifact: String): Boolean = artifact.endsWith("-core")
@@ -197,23 +184,16 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     }
   }
 
-  // def latest(artifact: Artifact.Reference): Future[Option[Release.Reference]] = {
-  //   projectPage(artifact).map(_.flatMap(
-  //     _.artifacts
-  //       .find(_.reference == artifact)
-  //       .flatMap(_.releases.headOption.map(_.reference))
-  //   ))
-  // }
-
   def latestProjects() = latest[Project](projectsCollection, "created", 12).map(_.map(hideId))
-  def latestReleases() = latest[Release](releasesCollection, "released", 100)
+  def latestReleases() = latest[Release](releasesCollection, "released", 12)
 
-  def latest[T: HitAs : Manifest](collection: String, by: String, n: Int): Future[List[T]] = {
+  private def latest[T: HitAs : Manifest](collection: String, by: String, n: Int): Future[List[T]] = {
     esClient.execute {
       search.in(indexName / collection)
         .query(matchAllQuery)
         .sort(fieldSort(by) order SortOrder.DESC)
         .limit(n)
+
     }.map(r => r.as[T].toList)
   }
 

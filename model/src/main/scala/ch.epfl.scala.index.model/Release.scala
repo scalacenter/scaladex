@@ -21,7 +21,6 @@ import release._
 case class Release(
   maven: MavenReference,
   reference: Release.Reference,
-  project: Project.Reference,
   resolver: Option[Resolver],
   name: Option[String] = None,
   description: Option[String] = None,
@@ -53,7 +52,10 @@ case class Release(
       else if (crossFull) ("%", " cross CrossVersion.full")
       else ("%%", "")
 
-    s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""
+    List(
+      Some(s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""),
+      resolver.map("resolvers += " + _)
+    ).flatten.mkString(System.lineSeparator)
   }
 
   /**
@@ -152,9 +154,8 @@ case class Release(
 
 object Artifact {
   /**
-   * Release Reference representation
-   * @param organization the organisation name like    typelevel | akka
-   * @param artifact the artifact name like            cats-core | akka-http-experimental
+   * @param organization (ex: typelevel | akka)
+   * @param artifact (ex: cats-core | akka-http-experimental)
    */
   case class Reference(
     organization: String,
@@ -165,32 +166,21 @@ object Artifact {
 object Release {
 
   /**
-   * Release Reference representation
-   * @param organization the organisation name like    typelevel | akka
-   * @param artifact the artifact name like            cats-core | akka-http-experimental
-   * @param version the semantic version like              0.6.0 | 0.6.0-RC1
-   * @param target the target this reference can run on
+   * @param organization (ex: typelevel | akka)
+   * @param repository (ex: cats | akka)
+   * @param artifact (ex: cats-core | akka-http-experimental)
    */
   case class Reference(
     organization: String,
+    repository: String,
     artifact: String,
     version: SemanticVersion,
     target: ScalaTarget
   ) extends GeneralReference {
 
     def artifactReference = Artifact.Reference(organization, artifact)
-
-    /**
-     * concated name of organisation/artifact
-     * @return
-     */
-    def name: String = s"$organization/$artifact"
-
-    /**
-     * the http reference on index.scala-lang.org
-     * @return
-     */
-    def httpUrl: String = s"/$organization/$artifact/$version"
+    def projectReference = Project.Reference(organization, repository)
+    def name = s"$organization/$artifact"
+    def httpUrl = s"/$organization/$repository/$artifact/$version"
   }
-
 }

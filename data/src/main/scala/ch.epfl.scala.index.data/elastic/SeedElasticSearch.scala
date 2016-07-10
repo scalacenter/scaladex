@@ -33,15 +33,12 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
             field("created") typed(DateType),
             field("updated") typed(DateType),
             field("targets") typed StringType index "not_analyzed",
-            field("dependencies") typed StringType index "not_analyzed"          
+            field("dependencies") typed StringType index "not_analyzed"
           ),
           mapping(releasesCollection).fields(
-            field("project").nested(
-              field("organization") typed StringType index "not_analyzed",
-              field("repository") typed StringType index "not_analyzed"
-            ),
             field("reference").nested(
               field("organization") typed StringType index "not_analyzed",
+              field("repository") typed StringType index "not_analyzed",
               field("artifact") typed StringType index "not_analyzed"
             ),
             field("maven").nested(
@@ -56,7 +53,7 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
     }
 
     println("loading update data")
-    val newData = 
+    val newData =
       ProjectConvert(
         PomsReader
           .load()

@@ -37,7 +37,6 @@ object Server {
     }
 
     val api = new Api(github)
-    // val rest = new RestApi(api)
 
     def frontPage(userInfo: Option[UserInfo]) = {
       for {
@@ -71,7 +70,6 @@ object Server {
       import server.Directives._
       import TwirlSupport._
 
-      // rest.route ~
       get {
         path("login") {
           redirect(Uri("https://github.com/login/oauth/authorize").withQuery(Query(

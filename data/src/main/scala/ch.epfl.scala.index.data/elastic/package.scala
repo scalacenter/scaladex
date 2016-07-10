@@ -17,7 +17,8 @@ trait ProjectProtocol {
   implicit val formats = Serialization.formats(ShortTypeHints(List(
     classOf[Milestone],
     classOf[ReleaseCandidate],
-    classOf[OtherPreRelease]
+    classOf[OtherPreRelease],
+    classOf[BintrayResolver]
   )))
 
   implicit val serialization = native.Serialization
