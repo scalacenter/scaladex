@@ -3,7 +3,7 @@ package server
 
 import model._
 import model.misc.UserInfo
-import release.SemanticVersion
+import release.{MavenReference, SemanticVersion}
 import data.cleanup.SemanticVersionParser
 import data.elastic._
 import akka.http.scaladsl._
@@ -98,23 +98,71 @@ object Server {
         case Missing => None
       }
 
-      put {
-        path("publish" / Remaining) { path =>
-          entity(as[String]) { str =>
-            extractCredentials { credentials =>
-              authenticateBasic(realm = "scaladex Realm", myAuthenticator(credentials)) { cred =>
+      /**
+       * extract a maven reference from path like
+       * /com/github/scyks/playacl_2.11/0.8.0/playacl_2.11-0.8.0.pom =>
+       * MavenReference("com.github.scyks", "playacl_2.11", "0.8.0")
+       * @param path the real publishing path
+       * @return MavenReference
+       */
+      def mavenPathExtractor(path: String): MavenReference = {
 
-                publishProcess.writeFiles(path, str, cred)
-                complete(Created)
+        val segments = path.split("/").toList
+        val size = segments.size
+        val takeFrom = if(segments.head.isEmpty) 1 else 0
+
+        val artifactId = segments(size - 3)
+        val version = segments(size - 2)
+        val groupId = segments.slice(takeFrom, size - 3).mkString(".")
+
+        MavenReference(groupId, artifactId, version)
+      }
+
+//      rest.route ~
+      put {
+        path("publish") {
+          parameters(
+            'path,
+            'readme.as[Boolean] ? true,
+            'contributors.as[Boolean] ? true,
+            'info.as[Boolean] ? true,
+            'keywords.as[String].*
+          ) { (path, readme, contributors, info, keywords) =>
+            entity(as[String]) { str =>
+              extractCredentials { credentials =>
+                authenticateBasic(realm = "scaladex Realm", myAuthenticator(credentials)) { cred =>
+
+                  publishProcess.writeFiles(path, str, cred)
+                  complete(Created)
+                }
               }
             }
           }
         }
       } ~
       get {
-        path("publish" / Remaining) { path =>
-//          println(s"GET $path")
-          complete(NotFound)
+        path("publish") {
+          parameters(
+            'path,
+            'readme.as[Boolean] ? true,
+            'contributors.as[Boolean] ? true,
+            'info.as[Boolean] ? true,
+            'keywords.as[String].*
+          ) { (path, readme, contributors, info, keywords) =>
+
+            complete {
+
+              /* check if the release already exists - sbt will handle HTTP-Status codes
+               * 404 -> allowed to write
+               * 200 -> only allowed if isSnapshot := true
+               */
+              api.maven(mavenPathExtractor(path)) map {
+
+                case Some(release) => OK
+                case None => NotFound
+              }
+            }
+          }
         } ~
         path("login") {
           redirect(Uri("https://github.com/login/oauth/authorize").withQuery(Query(

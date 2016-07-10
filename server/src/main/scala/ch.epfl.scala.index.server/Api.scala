@@ -76,6 +76,28 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     }.map(_.as[Release].toList)
   }
 
+  /**
+   * search for a maven artifact
+   * @param maven
+   * @return
+   */
+  def maven(maven: MavenReference): Future[Option[Release]] = {
+
+    esClient.execute {
+      search.in(indexName / releasesCollection).query(
+        nestedQuery("maven").query(
+          bool (
+            must(
+              termQuery("maven.groupId", maven.groupId),
+              termQuery("maven.artifactId", maven.artifactId),
+              termQuery("maven.version", maven.version)
+            )
+          )
+        )
+      ).limit(1)
+    }.map(r => r.as[Release].headOption)
+  }
+
   def project(project: Project.Reference): Future[Option[Project]] = {
     esClient.execute {
       search.in(indexName / projectsCollection).query(
@@ -131,7 +153,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
                 artifacts.find{ case (a, b) => a == name}.map{ case (a, b) => (a, b, Some(target))}
               }
               case None => finds(artifacts, List(specified _)).map{ case (a, b) => (a, b, None)}
-            }  
+            }
           }
           case None => {
             // find artifact by heuristic
@@ -168,7 +190,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
 
               preReleaseOut.sortBy(_.reference.target.scalaVersion)(Descending)
             }
-            case Some(target) => 
+            case Some(target) =>
               // target provided by the user
               versionSelected.filter(_.reference.target == target)
           }
