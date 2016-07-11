@@ -26,7 +26,7 @@ object Main extends BintrayProtocol {
 
       val listPomsStep = new ListPoms
       // TODO: should be located in a config file
-      val versions = List("2.10", "2.11", "2.12")
+      val versions = List("2.12", "2.11", "2.10")
 
       for(version <- versions) {
 
@@ -64,7 +64,7 @@ object Main extends BintrayProtocol {
       seedElasticSearchStep.run()
     }
 
-    val steps = Map(
+    val steps = List(
       "list"     -> list _,
       "download" -> download _,
       "parent"   -> parent _,
@@ -72,11 +72,13 @@ object Main extends BintrayProtocol {
       "elastic"  -> elastic _
     )
 
+    val stepsMap = steps.toMap
+
     (args.toList match {
 
-      case "all" :: Nil => steps.values
+      case "all" :: Nil => steps.map(_._2)
       case "claims" :: Nil => List(claims _)
-      case _ => args.toList.flatMap(steps.get)
+      case _ => args.toList.flatMap(stepsMap.get)
     }).foreach(step => step())
 
     system.terminate()
