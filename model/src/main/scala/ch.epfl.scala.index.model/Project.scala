@@ -4,7 +4,7 @@ import misc.{GithubInfo, GithubRepo, Url}
 
 /**
  * Project representation which contains all necessary meta data to
- * the project.
+ * the project. Equivalent to a github repository or a sbt build.
  *
  * @param reference simplified reference name (ex: typelevel/cats-core)
  * @param github github information representation

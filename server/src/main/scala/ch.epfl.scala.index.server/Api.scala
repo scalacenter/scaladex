@@ -52,17 +52,6 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
   def find(queryString: String, page: PageIndex, sorting: Option[String] = None) =
     query(new QueryStringQueryDefinition(queryString.replaceAllLiterally("/", "\\/")), page, sorting)
 
-  def dependent(what: String, page: PageIndex, sorting: Option[String] = None) =
-    query(
-      bool (
-        must(
-          termQuery("dependencies", what)
-        )
-      ),
-      page,
-      sorting
-    )
-
   def organization(organization: String, page: PageIndex, sorting: Option[String] = None) =
     query(
       nestedQuery("reference").query(
