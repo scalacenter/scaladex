@@ -26,7 +26,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
       case Some("forks") => fieldSort("github.forks") missing "0" order SortOrder.DESC mode MultiMode.Avg
       case Some("relevant") => scoreSort
       case Some("created") => fieldSort("created") order SortOrder.DESC
-      case Some("updated") => fieldSort("lastUpdate") order SortOrder.DESC
+      case Some("updated") => fieldSort("updated") order SortOrder.DESC
       case _ => scoreSort
     }
 
@@ -110,6 +110,8 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
         releases <- releases(projectRef)
       } yield (project, releases)
 
+
+
     def finds[A, B](xs: List[(A, B)], fs: List[A => Boolean]): Option[(A, B)] = {
       fs match {
         case Nil => None
@@ -126,7 +128,6 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
 
       def specified(artifact: String): Boolean = Some(artifact) == selectedArtifact
       def projectDefault(artifact: String): Boolean = Some(artifact) == project.defaultArtifact
-      def core(artifact: String): Boolean = artifact.endsWith("-core")
       def projectRepository(artifact: String): Boolean = project.reference.repository == artifact
 
       def alphabetically = artifacts.sortBy(_._1).headOption
@@ -145,7 +146,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
           }
           case None => {
             // find artifact by heuristic
-            (finds(artifacts, List(projectDefault _, core _, projectRepository _)) match {
+            (finds(artifacts, List(projectDefault _, projectRepository _)) match {
               case None => alphabetically
               case s => s
             }).map{ case (a, b) => (a, b, None)}
@@ -162,13 +163,35 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
             .map(version => sortedByVersion.filter(_.reference.version == version))
             .getOrElse(sortedByVersion)
 
-        val lastNonPreReleases: List[Release] = {
+        val latestStableTarget = {
+          selectedTarget match {
+            case None => {
+              // select latest stable target if possible (ex: scala 2.11 over 2.12 and scala-js)
+              val scalaJsOut =
+                if(versionSelected.exists(_.reference.target.scalaJsVersion.isEmpty)) {
+                  versionSelected.filter(_.reference.target.scalaJsVersion.isEmpty)
+                } else versionSelected
+
+              val preReleaseOut =
+                if(scalaJsOut.exists(_.reference.target.scalaVersion.preRelease.isEmpty)) {
+                  scalaJsOut.filter(_.reference.target.scalaVersion.preRelease.isEmpty)
+                } else scalaJsOut
+
+              preReleaseOut.sortBy(_.reference.target.scalaVersion)(Descending)
+            }
+            case Some(target) => 
+              // target provided by the user
+              versionSelected.filter(_.reference.target == target)
+          }
+        }
+
+        val lastNonPreReleases = {
           // select last non preRelease release if possible (ex: 1.1.0 over 1.2.0-RC1)
           val nonPreRelease=
-            if(versionSelected.exists(_.reference.version.preRelease.isEmpty)){
-              versionSelected.filter(_.reference.version.preRelease.isEmpty)
+            if(latestStableTarget.exists(_.reference.version.preRelease.isEmpty)){
+              latestStableTarget.filter(_.reference.version.preRelease.isEmpty)
             } else {
-              versionSelected
+              latestStableTarget
             }
 
           val sorted = nonPreRelease.sortBy(_.reference.version)(Descending)
@@ -179,23 +202,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
           ).getOrElse(Nil)
         }
 
-        val latestStableTarget: Option[Release] =
-          selectedTarget match {
-            case None =>
-              // select latest stable target if possible (ex: scala 2.11 over 2.12 and scala-js)
-              (
-                if(lastNonPreReleases.exists(_.reference.target.scalaJsVersion.isEmpty)) {
-                  lastNonPreReleases.filter(_.reference.target.scalaJsVersion.isEmpty)
-                } else lastNonPreReleases
-              )
-              .filter(_.reference.target.scalaVersion.preRelease.isEmpty)
-              .sortBy(_.reference.target.scalaVersion)(Descending).headOption
-            case Some(target) => 
-              // target provided by the user
-              lastNonPreReleases.filter(_.reference.target == target).headOption
-          }
-
-        latestStableTarget.map(r =>
+        lastNonPreReleases.headOption.map(r =>
           (
             r,
             sortedByVersion.map(_.reference.version).distinct,
