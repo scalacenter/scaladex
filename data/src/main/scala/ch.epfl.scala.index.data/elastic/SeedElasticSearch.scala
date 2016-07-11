@@ -2,7 +2,6 @@ package ch.epfl.scala.index
 package data
 package elastic
 
-// import model.Project
 import project._
 
 import maven.PomsReader
@@ -77,55 +76,6 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
     Await.result( esClient.execute {
       bulk(projects.map(project => index.into(indexName / projectsCollection).source(project)))
     }, Duration.Inf)
-
-    // NB: if you get "at org.elasticsearch.action.search.AbstractSearchAsyncAction.onFirstPhaseResult"
-    //     elasticsearch is just not yet ready for querying
-    // see also: https://github.com/elastic/elasticsearch/issues/1063
-    // blockUntilGreen()
-    // Thread.sleep(500)
-
-    // XXX: at this point we would like to lock elasticsearch for updating
-    // https://github.com/sksamuel/elastic4s/issues/578
-    // val projectsLive =
-    //   if (exists) {
-
-    //     println("importing live data")
-
-    //     Await.result(esClient.execute {
-    //       search
-    //       .in(indexName / collectionName)
-    //       .query(matchAllQuery)
-    //       .limit(maxResultWindow) // TODO will be a problem if there are more than 10.000 projects
-    //     }.map(_.as[Project].toList), Duration.Inf)
-    //   } else {
-
-    //     println("index is empty")
-    //     List()
-    //   }
-
-    // println(s"calculating project deltas of ${projectsUpdate.size} Projects")
-    // val deltas = ProjectDelta(live = projectsLive, update = projectsUpdate)
-
-    // val inserts = deltas.collect{ case NewProject(project) => index.into(target).source(project) }
-    // val updates = deltas.collect{
-    //   case UpdatedProject(project) => project._id.map(id => update.id(id).in(target).doc(project))
-    // }.flatten
-
-    // println("indexing deltas to ES")
-    // println(s"index ${inserts.size} new documents")
-
-    // if (inserts.nonEmpty) {
-
-    //   Await.result( esClient.execute {bulk(inserts)}, Duration.Inf)
-    // }
-
-    // println(s"update ${updates.size} documents")
-    // if (updates.nonEmpty) {
-
-    //   Await.result( esClient.execute {bulk(updates)}, Duration.Inf)
-    // }
-
-    // blockUntilCount(inserts.size)
 
     ()
   }

@@ -125,8 +125,7 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
 
     val queried = BintrayMeta.readQueriedPoms(bintrayCheckpoint)
 
-    // val mostRecentQueriedDate = queried.find(_.name.contains(scalaVersion)).map(_.created)
-    val mostRecentQueriedDate = None
+    val mostRecentQueriedDate = queried.find(_.name.contains(scalaVersion)).map(_.created)
 
     performSearchAndDownload(s"Download POMs for scala $scalaVersion", queried, s"*_$scalaVersion", mostRecentQueriedDate)
   }
