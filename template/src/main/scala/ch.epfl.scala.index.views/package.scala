@@ -4,48 +4,40 @@ package views
 import model._
 
 package object html {
-  def paginationRender(current: Int, total: Int, window: Int = 10): (Option[Int], List[Int], Option[Int]) = {   
-    val prev =
-      if(current == 1) None
-      else Some(current -1)
+  // https://www.reddit.com/r/scala/comments/4n73zz/scala_puzzle_gooooooogle_pagination/d41jor5
+  def paginationRender(selected: Int, max: Int, toShow: Int = 10): (Option[Int], List[Int], Option[Int]) = {
+    if(selected == max && max == 1) (None, List(1), None)
+    else {
+      val min = 1
+      require(min to max contains selected, "cannot select something outside the range")
+      require(min <= max, "min must not be greater than max")
+      require(max > 0 && selected > 0 && toShow > 0, "all arguments must be positive")
 
-    val next =
-      if(current == total) None
-      else Some(current + 1)
-        
-    val delta = (window - 1) / 2
-    val (start, end) =
-      if(current + delta <= total) {
-        if(current - delta-1 >= 1) (current - delta-1, current + delta)
-        else (1, window)
-      } else {
-        if(total <= window) (1, total)
-        else (total - window, total)
-      }
+      val window = (max min toShow) / 2
+      val left = selected - window
+      val right = selected + window
 
-    val sels = (start to end).toList
+      val (minToShow, maxToShow) =
+        if(max < toShow) (min, max)
+        else {
+          (left, right) match {
+            case (l, r) if l < min => (min, min + toShow - 1)
+            case (l, r) if r > max => (max - toShow + 1, max)
+            case (l, r) => (l, r - 1 + toShow % 2)
+          }
+        }
 
-    (prev, sels, next)
+      val prev =
+        if(selected == 1) None
+        else Some(selected -1)
+
+      val next =
+        if(selected == max) None
+        else Some(selected + 1)
+
+      (prev, (minToShow to maxToShow).toList, next)
+    }
   }
-
-  // /**
-  //  * Get the main artifact
-  //  * - todo: default selected artifact
-  //  * - first check if there is -core artifact
-  //  * - check if name == organization
-  //  * - take the first one
-  //  * @param project the project to observe
-  //  * @return
-  //  */
-  // def mainArtifact(project: Project) = {
-
-  //   List(
-  //     //todo project default: project.artifact.find(_.reference.name == project.defaultArtifact) 
-  //     project.artifacts.find(_.reference.name.endsWith("-core")),
-  //     project.artifacts.find(r => r.reference.organization == r.reference.name),
-  //     project.artifacts.headOption
-  //   ).find(_.nonEmpty).flatten
-  // }
 
   def formatDate(date: String): String = {
     import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
