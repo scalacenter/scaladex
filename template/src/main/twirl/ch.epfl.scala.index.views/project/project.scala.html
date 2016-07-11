@@ -19,6 +19,7 @@
         </div>
         <div class="col-md-4">
           <div class="sidebar-project">
+            @project.github.map(gh => statistic(gh, releasesCount, release.reverseDependencies.size))
             @install(release)
             @documentation(release)
             @project.github.map(gh => contributors(gh.contributors))
