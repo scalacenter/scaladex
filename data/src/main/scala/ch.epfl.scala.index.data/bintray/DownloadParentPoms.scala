@@ -11,6 +11,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
 import play.api.libs.ws.{WSRequest, WSResponse}
+import play.api.libs.ws.ahc.AhcWSClient
 
 import scala.util.Failure
 
@@ -21,8 +22,7 @@ class DownloadParentPoms(implicit val system: ActorSystem, implicit val material
    * @param dep the current depenency
    * @return
    */
-  def downloadRequest(dep: Dependency): WSRequest = {
-
+  def downloadRequest(wsClient: AhcWSClient, dep: Dependency): WSRequest = {
     wsClient.url(s"https://repo.jfrog.org/artifactory/libs-release-bintray/${PomsReader.path(dep)}")
   }
 

@@ -6,12 +6,16 @@ import download.PlayWsDownloader
 import cleanup.GithubRepoExtractor
 import maven.PomsReader
 import model.misc.GithubRepo
+
 import org.json4s._
 import native.JsonMethods._
 import native.Serialization._
+
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+
 import play.api.libs.ws.{WSRequest, WSResponse}
+import play.api.libs.ws.ahc.AhcWSClient
 
 import scala.util._
 import java.nio.charset.StandardCharsets
@@ -234,7 +238,7 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
    * @param repo the current repository
    * @return
    */
-  private def githubInfoUrl(repo: GithubRepo): WSRequest = {
+  private def githubInfoUrl(wsClient: AhcWSClient, repo: GithubRepo): WSRequest = {
 
     applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo)))
   }
@@ -245,7 +249,7 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
    * @param repo the current repository
    * @return
    */
-  private def githubReadmeUrl(repo: GithubRepo): WSRequest = {
+  private def githubReadmeUrl(wsClient: AhcWSClient, repo: GithubRepo): WSRequest = {
 
     applyReadmeHeaders(wsClient.url(mainGithubUrl(repo) + "/readme"))
   }
@@ -256,7 +260,7 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
    * @param repo the current repository
    * @return
    */
-  private def githubIssuesUrl(repo: GithubRepo): WSRequest = {
+  private def githubIssuesUrl(wsClient: AhcWSClient, repo: GithubRepo): WSRequest = {
 
     applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo) + "/issues"))
   }
@@ -267,7 +271,7 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
    * @param repo the current repository
    * @return
    */
-  private def githubContributorsUrl(repo: PaginatedGithub): WSRequest = {
+  private def githubContributorsUrl(wsClient: AhcWSClient, repo: PaginatedGithub): WSRequest = {
 
     applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo.repo) + s"/contributors?page=${repo.page}"))
   }

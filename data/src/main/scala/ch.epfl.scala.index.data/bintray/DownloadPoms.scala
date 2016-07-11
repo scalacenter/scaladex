@@ -9,6 +9,7 @@ import java.nio.file.{Files, Path}
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import play.api.libs.ws.{WSRequest, WSResponse}
+import play.api.libs.ws.ahc.AhcWSClient
 
 class DownloadPoms  (implicit val system: ActorSystem, implicit val materializer: ActorMaterializer) extends PlayWsDownloader {
 
@@ -78,7 +79,7 @@ class DownloadPoms  (implicit val system: ActorSystem, implicit val materializer
    * @param search the bintray Search
    * @return
    */
-  private def downloadRequest(search: BintraySearch): WSRequest = {
+  private def downloadRequest(wsClient: AhcWSClient, search: BintraySearch): WSRequest = {
 
     if (search.repo == "jcenter" && search.owner == "bintray") {
 
