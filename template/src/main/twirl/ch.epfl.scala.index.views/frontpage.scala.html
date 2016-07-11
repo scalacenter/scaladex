@@ -10,6 +10,12 @@
                 <div class="col-md-8 col-md-offset-2">
                     <h1>The Scala Library Index</h1> @searchinput()
                     <ul class="tag">
+                        <li><strong>Keywords:</strong></li>
+                        @for((keyword, count) <- keywords) {
+                            <li><a href="/search?q=keywords:@keyword">@keyword (@count)</a></li>
+                        }
+                    </ul>
+                    <ul class="tag">
                         <li><strong>Targets:</strong></li>
                         @for((sup, count) <- targets) {
                             <li><a href="/search?q=targets:@sup">@sup (@count)</a></li>
@@ -19,13 +25,6 @@
                         <li><strong>Dependencies:</strong></li>
                         @for((sup, count) <- dependencies) {
                             <li><a href="/search?q=dependencies:@sup">@sup (@count)</a></li>
-                        }
-                    </ul>
-
-                    <ul class="tag">
-                        <li><strong>Keywords:</strong></li>
-                        @for((keyword, count) <- keywords) {
-                            <li><a href="/search?q=keywords:@keyword">@keyword (@count)</a></li>
                         }
                     </ul>
                 </div>
