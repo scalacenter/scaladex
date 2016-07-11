@@ -68,7 +68,7 @@ object Server {
       )
     }
 
-    val publishProcess = new PublishProcess()
+    val publishProcess = new PublishProcess(api, system, materializer)
 
     val route = {
       import akka.http.scaladsl._

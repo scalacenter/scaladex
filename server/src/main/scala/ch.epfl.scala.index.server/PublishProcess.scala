@@ -24,9 +24,9 @@ import ch.epfl.scala.index.model.misc.GithubRepo
 import scala.concurrent.{Await, Future}
 
 class PublishProcess(
+  api: Api,
   implicit val system: ActorSystem,
-  implicit val materializer: ActorMaterializer,
-  implicit val api: Api
+  implicit val materializer: ActorMaterializer
 ) extends PlayWsDownloader {
 
   import system.dispatcher
@@ -88,7 +88,7 @@ class PublishProcess(
 
       projectResult match {
 
-        case Some((project, _, versions, release, _)) =>
+        case Some((project, versions, _, _, release, _)) =>
 
           println(project._id)
           project._id.map { id =>

@@ -5,13 +5,13 @@
 // Sticky Footer
 // -----------------------------------------------------------------------------
 body {
-  display: flex;
-  min-height: 100vh;
-  flex-direction: column;
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
 }
 
 main {
-  flex: 1;
+    flex: 1;
 }
 
 // Home page
@@ -203,8 +203,8 @@ main {
         }
         .btn-primary {
             @include button-variant($btn-primary-color,
-            rgba($gray-darker, 0.7),
-            $btn-primary-border);
+                    rgba($gray-darker, 0.7),
+                    $btn-primary-border);
         }
         .bootstrap-select {
             width: 100%;
@@ -290,25 +290,6 @@ main {
         padding-bottom: 80px;
         .content-project {
             margin-bottom: 0;
-        }
-    }
-
-    & > .container {
-        width: 100%;
-        .col-md-8 {
-            width: inherit;
-            min-width: 958px;
-            .content-project {
-                padding-left: 20px;
-                padding-right: 20px;
-                #readme {
-                    width: 888px;
-                }
-            }
-        }
-        .col-md-4 {
-            width: 390px;
-            padding-left: 0px;
         }
     }
 
@@ -450,9 +431,6 @@ main {
     min-height: 271px;
     background: url('../assets/img/head-project-background.png') no-repeat center top #0D343C;
     color: #fff;
-    .container {
-        width: 100%;
-    }
     .bootstrap-select >  {
         .dropdown-toggle {
             width: auto;
@@ -465,7 +443,7 @@ main {
         margin-bottom: 30px;
         h1, .homepage {
             margin-top: 0;
-            color: $brand-primary; 
+            color: $brand-primary;
         }
         .contributors-tag {
             display: inline-block;

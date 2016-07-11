@@ -14,7 +14,7 @@ import native.Serialization._
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
-import play.api.libs.ws.{WSRequest, WSResponse}
+import play.api.libs.ws._
 import play.api.libs.ws.ahc.AhcWSClient
 
 import scala.util._
