@@ -1,0 +1,91 @@
+@import ch.epfl.scala.index.model._
+@import ch.epfl.scala.index.model.release.{SemanticVersion, ScalaTarget, MavenReference}
+
+@(project: Project, artifacts: List[String], versions: List[SemanticVersion], 
+  targets: List[(ScalaTarget, MavenReference)], release: Release)
+<div class="head-project">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8">
+        <div class="info-project">
+          <h1>
+            <a href="/@project.reference.organization">@project.reference.organization</a> / 
+            <a href="https://github.com/@project.reference.organization/@project.reference.repository" 
+              target="_blank">
+              <i class="fa fa-github fa-lg"></i>
+              @project.reference.repository
+            </a>
+          </h1>
+          @for(github <- project.github) {
+            @for(description <- github.description) {
+              @if(!description.isEmpty) {
+                <p class="description">@description</p>
+              }
+            }
+          }
+          @for(github <- project.github) {
+            @for(homepage <- github.homepage) {
+              @if(!homepage.target.isEmpty) {
+                <a class="homepage" href="@homepage.target" target="_blank">
+                  Website <i class="fa fa-globe" aria-hidden="true"></i>
+                </a>
+              }
+            }
+          }
+          @if(!project.keywords.isEmpty) {
+            <ul class="list-inline">
+            @for(keyword <- project.keywords) {
+              <li><a href="/search?q=keywords:@keyword">@keyword</a></li>
+            }
+            </ul>
+          }
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="artifact-project">
+          <form action="/@project.reference.organization/@project.reference.repository" action="GET">
+            <select
+              name="artifact"
+              onchange="this.form.submit()"
+              class="selectpicker artifact-name" data-style="btn-primary">
+            @for(artifact <- artifacts) {
+              <option value="@artifact" @if(artifact == release.reference.artifact){ selected }>
+                @artifact
+              </option>
+            }
+            </select>
+          </form>
+          <form action="/@project.reference.organization/@project.reference.repository" action="GET">           
+            <input type="hidden" name="artifact" value="@release.reference.artifact">
+
+            <select
+              name="version"
+              onchange="this.form.submit()"
+              class="selectpicker" data-style="btn-primary">
+
+            @for(version <- versions){
+              <option value="@version" @if(version == release.reference.version){ selected }>
+                @version
+              </option>
+            }
+            </select>
+          </form>
+          <form action="/@project.reference.organization/@project.reference.repository" action="GET">           
+            <input type="hidden" name="version" value="@release.reference.version">
+            <select
+              name="artifact"
+              onchange="this.form.submit()"
+              class="selectpicker" data-style="btn-primary">
+
+            @for((target, maven) <- targets){
+              <option value="@maven.artifactId" @if(maven == release.maven){ selected }>
+                @target.render
+              </option>
+            }
+            </select>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

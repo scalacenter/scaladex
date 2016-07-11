@@ -8,7 +8,7 @@ package ch.epfl.scala.index.model.release
  * @param preRelease the pre release name
  * @param metadata the release metadata
  */
-case class  SemanticVersion(
+case class SemanticVersion(
   major: Long,
   minor: Long = 0,
   patch: Option[Long] = None,

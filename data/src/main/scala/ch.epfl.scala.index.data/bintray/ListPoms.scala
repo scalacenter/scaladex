@@ -15,6 +15,7 @@ import akka.util.ByteString
 import com.github.nscala_time.time.Imports._
 
 import play.api.libs.ws.{WSRequest, WSResponse}
+import play.api.libs.ws.ahc.AhcWSClient
 
 import org.json4s._
 import org.json4s.native.JsonMethods._
@@ -40,7 +41,7 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
    * @param page the page credentials to download
    * @return
    */
-  private def discover(page: PomListDownload): WSRequest = {
+  private def discover(wsClient: AhcWSClient, page: PomListDownload): WSRequest = {
 
     val query = page.lastSearchDate.fold(Seq[(String, String)]())(after =>
 
@@ -58,8 +59,8 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
    * @return
    */
   def getNumberOfPages(scalaVersion: String, lastCheckDate: Option[DateTime]): Future[InternalBintrayPagination] = {
-
-    val request = discover(PomListDownload(scalaVersion, 0, lastCheckDate))
+    val client = wsClient
+    val request = discover(client, PomListDownload(scalaVersion, 0, lastCheckDate))
 
     request.get.flatMap { response =>
 
@@ -77,7 +78,7 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
 
         Future.failed(new Exception(response.statusText))
       }
-    }
+    }.map(v => {client.close; v})
   }
 
   /**

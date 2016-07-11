@@ -1,0 +1,26 @@
+@import ch.epfl.scala.index.model.{Release, Project}
+@(project: Project, release: Release)
+<div class="dependents box">
+  <h4>
+    <a href="/search?q=dependencies:@project.reference.organization/@release.reference.artifact">
+      Artifact Dependents
+    </a>
+  </h4>
+  
+  <hr>
+
+  <h4>@release.uniqueOrderedReverseDependencies.size Dependents</h4>
+  <ul>
+  @for(dependency <- release.uniqueOrderedReverseDependencies.take(100)){
+    <li>
+      <a href="@dependency.reference.httpUrl" target="_blank">
+      @dependency.reference.name
+      </a>
+      <span class="label label-primary">@dependency.scope</span>
+    </li>
+  }
+  @if(100 < release.uniqueOrderedReverseDependencies.size) {
+    <p>Only showing 100 dependents</p>
+  }
+  </ul>  
+</div>

@@ -10,22 +10,21 @@
                 <div class="col-md-8 col-md-offset-2">
                     <h1>The Scala Library Index</h1> @searchinput()
                     <ul class="tag">
+                        <li><strong>Keywords:</strong></li>
+                        @for((keyword, count) <- keywords) {
+                            <li><a href="/search?q=keywords:@keyword">@keyword (@count)</a></li>
+                        }
+                    </ul>
+                    <ul class="tag">
                         <li><strong>Targets:</strong></li>
                         @for((sup, count) <- targets) {
-                            <li><a href="/search?q=targets:@sup.replace("/", """\/""")">@sup (@count)</a></li>
+                            <li><a href="/search?q=targets:@sup">@sup (@count)</a></li>
                         }
                     </ul>
                     <ul class="tag">
                         <li><strong>Dependencies:</strong></li>
                         @for((sup, count) <- dependencies) {
-                            <li><a href="/search?q=dependencies:@sup.replace("/", """\/""")">@sup (@count)</a></li>
-                        }
-                    </ul>
-
-                    <ul class="tag">
-                        <li><strong>Keywords:</strong></li>
-                        @for((keyword, count) <- keywords) {
-                            <li><a href="/search?q=keywords:@keyword">@keyword (@count)</a></li>
+                            <li><a href="/search?q=dependencies:@sup">@sup (@count)</a></li>
                         }
                     </ul>
                 </div>
@@ -37,33 +36,29 @@
             <h2 class="text-center">Recent projects</h2>
             <div class="row">
                 @for(project <- latestProjects){
-                    @defining(mainArtifact(project)){ artifact =>
-                        @for(ar <- artifact) {
-                            <div class="col-md-4 col-sm-6">
-                                <a href="/@ar.reference.organization/@ar.reference.name">
-                                    <div class="content-project box">
-                                        <div class="content-project-header">
-                                            <img src="@{ project.github.flatMap(_.logo) match {
-                                                case Some(Url(v)) => v
-                                                case None => "/assets/img/avatar-list.png"
-                                              }}" alt="project logo">    
-                                            <h4>@project.reference.organization/@project.reference.repository</h4>
-                                        </div>
-                                        <div class="content-project-body">
-                                            @for(github <- project.github) {
-                                              @for(description <- github.description) {
-                                                <p class="description">@description</p>
-                                              }
-                                            }
-                                            @for(created <- project.created) {
-                                                @{formatDate(created)}
-                                            }
-                                        </div>
-                                    </div>
-                                </a>
+                    <div class="col-md-4 col-sm-6">
+                        <a href="/@project.reference.organization/@project.reference.repository">
+                            <div class="content-project box">
+                                <div class="content-project-header">
+                                    <img src="@{ project.github.flatMap(_.logo) match {
+                                        case Some(Url(v)) => v
+                                        case None => "/assets/img/avatar-list.png"
+                                      }}" alt="project logo">
+                                    <h4>@project.reference.organization/@project.reference.repository</h4>
+                                </div>
+                                <div class="content-project-body">
+                                    @for(github <- project.github) {
+                                      @for(description <- github.description) {
+                                        <p class="description">@description</p>
+                                      }
+                                    }
+                                    @for(created <- project.created) {
+                                        @{formatDate(created)}
+                                    }
+                                </div>
                             </div>
-                        }
-                    }
+                        </a>
+                    </div>
                 }
             </div>
             <a class="btn btn-default" href="/search?q=*&sort=created">More ...</a>
@@ -90,110 +85,5 @@
             <a class="more-results btn btn-default" href="/search?q=*&sort=updated">More ...</a>
         </div>
     </section>
-    <!--div class="contributors-wanted">
-        <div class="container">
-            <h2 class="text-center">Contributors wanted</h2>
-
-            <div class="list-result box">
-                <div class="item-list">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <img src="/assets/img/avatar-list.png" alt="">
-                            <h4><a href="#">47deg / macroid</a></h4>
-                        </div>
-                        <div class="col-md-6">
-                            <p>Help wanted with unit tests, compiler, CI integration.</p>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stats">
-                                <span>
-                                    <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">21 <i class="fa fa-star"></i></a>
-                                </span>
-                                <span>
-                                    <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">34 <i class="fa fa-code-fork"></i></a>
-                                </span>
-                                <span>
-                                    <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">45 <i class="fa fa-eye"></i></a>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="item-list">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <img src="/assets/img/avatar-list.png" alt="">
-                            <h4><a href="#">47deg / macroid</a></h4>
-                        </div>
-                        <div class="col-md-6">
-                            <p>Help wanted with unit tests, compiler, CI integration.</p>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stats">
-                                <span>
-                                    <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">21 <i class="fa fa-star"></i></a>
-                                </span>
-                                <span>
-                                    <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">34 <i class="fa fa-code-fork"></i></a>
-                                </span>
-                                <span>
-                                    <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">45 <i class="fa fa-eye"></i></a>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="item-list">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <img src="/assets/img/avatar-list.png" alt="">
-                            <h4><a href="#">47deg / macroid</a></h4>
-                        </div>
-                        <div class="col-md-6">
-                            <p>Help wanted with unit tests, compiler, CI integration.</p>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stats">
-                                <span>
-                                    <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">21 <i class="fa fa-star"></i></a>
-                                </span>
-                                <span>
-                                    <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">34 <i class="fa fa-code-fork"></i></a>
-                                </span>
-                                <span>
-                                    <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">45 <i class="fa fa-eye"></i></a>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="item-list">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <img src="/assets/img/avatar-list.png" alt="">
-                            <h4><a href="#">47deg / macroid</a></h4>
-                        </div>
-                        <div class="col-md-6">
-                            <p>Help wanted with unit tests, compiler, CI integration.</p>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="stats">
-                                <span>
-                                    <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">21 <i class="fa fa-star"></i></a>
-                                </span>
-                                <span>
-                                    <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">34 <i class="fa fa-code-fork"></i></a>
-                                </span>
-                                <span>
-                                    <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">45 <i class="fa fa-eye"></i></a>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div-->
-    
 </main>
 }

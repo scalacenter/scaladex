@@ -28,7 +28,7 @@ trait PlayWsDownloader {
    *
    * @see https://www.playframework.com/documentation/2.5.x/ScalaWS
    */
-  val wsClient = {
+  def wsClient = {
 
     val configuration = Configuration.reference ++ Configuration(ConfigFactory.parseString(
       """
@@ -60,17 +60,18 @@ trait PlayWsDownloader {
   def download[T, R](
     message: String,
     toDownload: Set[T],
-    downloadUrl: T => WSRequest,
+    downloadUrl: (AhcWSClient, T) => WSRequest,
     process: (T, WSResponse) => R
   ): Seq[R] = {
 
+    val client = wsClient
     val progress = new ProgressBar(message, toDownload.size)
 
     def processDownloads = {
 
       Source(toDownload).mapAsync(32) { item =>
 
-        val request = downloadUrl(item)
+        val request = downloadUrl(client, item)
         val response = request.get
 
         response.onFailure {
@@ -89,6 +90,7 @@ trait PlayWsDownloader {
     progress.start()
     val response = Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
     progress.stop()
+    wsClient.close()
 
     response
   }

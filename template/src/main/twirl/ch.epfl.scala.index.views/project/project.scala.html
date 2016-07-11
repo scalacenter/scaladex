@@ -1,0 +1,34 @@
+@import ch.epfl.scala.index.views.html.main
+
+@import ch.epfl.scala.index.model._
+@import ch.epfl.scala.index.model.misc.UserInfo
+@import ch.epfl.scala.index.model.release.{SemanticVersion, ScalaTarget, MavenReference}
+
+@(project: Project, artifacts: List[String], versions: List[SemanticVersion], 
+  targets: List[(ScalaTarget, MavenReference)], release: Release, releasesCount: Int, user: Option[UserInfo])
+
+@main(title = project.reference.repository, showSearch = true, searchQuery = "", user) {
+  <main id="container-project">
+    @headproject(project, artifacts, versions, targets, release)
+    <div class="container">
+      <div class="row">
+        <div class="col-md-8">
+          <div class="content-project box">
+            @Html(project.github.flatMap(_.readme).getOrElse(""))
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="sidebar-project">
+            @project.github.map(gh => statistic(gh, releasesCount, release.reverseDependencies.size))
+            @install(release)
+            @documentation(release)
+            @project.github.map(gh => contributors(gh.contributors))
+            @license(release)
+            @dependencies(release)
+            @dependents(project, release)
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+}

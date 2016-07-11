@@ -51,24 +51,15 @@
                   case None => "/assets/img/avatar-list.png"
                 }}" alt="project logo">
 
-                @defining(mainArtifact(project)){ artifact =>
-                  @for(ar <- artifact) {
-                    <a href="/@ar.reference.organization/@ar.reference.name">
-                      <h4>@project.reference.organization/@project.reference.repository</h4>
-                    </a>
-                  }
-                }
-                @if(project.artifacts.size >= 1) {
-
-                } else {
-                  <h4>@project.githubRepo</h4>
-                }
+                <a href="/@project.reference.organization/@project.reference.repository">
+                  <h4>@project.reference.organization/@project.reference.repository</h4>
+                </a>
 
                 @for(github <- project.github) {
                   @for(homepage <- github.homepage) {
                     @if(!homepage.target.isEmpty) {
                       <a class="homepage" href="@homepage.target" target="_blank">
-                        <i class="fa fa-globe" aria-hidden="true"></i>
+                        Website <i class="fa fa-globe" aria-hidden="true"></i>
                       </a>
                     }
                   }
@@ -80,7 +71,11 @@
               <div class="col-md-4">
                 <div class="stats">
                   @for(keyword <- project.keywords) {
-                    <span class="item-filter-tag">@keyword</span>
+                    <span class="item-filter-tag">
+                      <a href="/search?q=keywords:@keyword">
+                        @keyword
+                      </a>
+                    </span>
                   }
                   @for(github <- project.github) {
                     @for(stars <- github.stars) {

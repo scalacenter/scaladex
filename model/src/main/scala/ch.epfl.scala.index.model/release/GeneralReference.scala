@@ -1,4 +1,4 @@
-package ch.epfl.scala.index.model.misc
+package ch.epfl.scala.index.model.release
 
 /**
  * General Reference to Group MavenReference and Release.Reference

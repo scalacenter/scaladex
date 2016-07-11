@@ -1,11 +1,17 @@
+@import ch.epfl.scala.index.views.html.main
+
 @import ch.epfl.scala.index.model._
 @import ch.epfl.scala.index.model.misc.UserInfo
-@import ch.epfl.scala.index.model.release.SemanticVersion
-@(project: Project, artifact: Artifact.Reference, version: Option[SemanticVersion], user: Option[UserInfo])
-@main(title = s"Edit ${artifact.name}", showSearch = true, searchQuery = "", user) {
+@import ch.epfl.scala.index.model.release.{SemanticVersion, ScalaTarget, MavenReference}
+
+@(project: Project, artifacts: List[String], versions: List[SemanticVersion], 
+  targets: List[(ScalaTarget, MavenReference)], release: Release, releasesCount: Int, user: Option[UserInfo])
+
+
+@main(title = s"Edit", showSearch = true, searchQuery = "", user) {
   <main id="container-project">
 
-    @headproject(project, artifact, version)
+    @headproject(project, artifacts, versions, targets, release)
 
     <div class="container">
       <div class="row">

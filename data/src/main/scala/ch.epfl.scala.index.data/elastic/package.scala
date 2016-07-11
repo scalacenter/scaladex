@@ -17,19 +17,26 @@ trait ProjectProtocol {
   implicit val formats = Serialization.formats(ShortTypeHints(List(
     classOf[Milestone],
     classOf[ReleaseCandidate],
-    classOf[OtherPreRelease]
+    classOf[OtherPreRelease],
+    classOf[BintrayResolver]
   )))
 
   implicit val serialization = native.Serialization
 
   implicit object ProjectAs extends HitAs[Project] {
-
     override def as(hit: RichSearchHit): Project = read[Project](hit.sourceAsString)
   }
 
   implicit object ProjectIndexable extends Indexable[Project] {
-
     override def json(project: Project): String = write(project)
+  }
+
+  implicit object ReleaseAs extends HitAs[Release] {
+    override def as(hit: RichSearchHit): Release = read[Release](hit.sourceAsString)
+  }
+
+  implicit object ReleaseIndexable extends Indexable[Release] {
+    override def json(release: Release): String = write(release)
   }
 }
 
@@ -46,7 +53,8 @@ package object elastic extends ProjectProtocol {
   lazy val esClient = ElasticClient.local(esSettings.build)
 
   val indexName = "scaladex"
-  val collectionName = "artifacts"
+  val projectsCollection = "projects"
+  val releasesCollection = "releases"
 
   private def blockUntil(explain: String)(predicate: () => Boolean): Unit = {
 
@@ -77,7 +85,7 @@ package object elastic extends ProjectProtocol {
         expected <= {
           val res = esClient.execute {
             search
-              .in(indexName / collectionName)
+              .in(indexName / releasesCollection)
               .query(matchAllQuery)
               .size(0)
           }.await.totalHits
