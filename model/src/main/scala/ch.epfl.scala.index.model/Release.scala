@@ -53,7 +53,7 @@ case class Release(
 
     List(
       Some(s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""),
-      resolver.map("resolvers += " + _)
+      resolver.map("resolvers += " + _.sbt)
     ).flatten.mkString(System.lineSeparator)
   }
 
