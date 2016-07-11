@@ -75,7 +75,12 @@ object Server {
       import server.Directives._
       import TwirlSupport._
 
-      def myAuthenticator(credentials: Option[HttpCredentials]): Authenticator[GithubCredentials] = {
+      /*
+       * verifying a login to github
+       * @param credentials the credentials
+       * @return
+       */
+      def githubAuthenticator(credentials: Option[HttpCredentials]): Authenticator[GithubCredentials] = {
 
         case p@Provided(username) =>
 
@@ -131,17 +136,18 @@ object Server {
           ) { (path, readme, contributors, info, keywords) =>
             entity(as[String]) { data =>
               extractCredentials { credentials =>
-                authenticateBasic(realm = "scaladex Realm", myAuthenticator(credentials)) { cred =>
+                authenticateBasic(realm = "scaladex Realm", githubAuthenticator(credentials)) { cred =>
 
                   val publishData = PublishData(path, data, cred, info, contributors, readme, keywords.toList)
 
                   complete {
-                    println(s"PUT $path")
+
                     if (publishData.isPom) {
 
                       publishProcess.writeFiles(publishData)
 
                     } else {
+
                       Future(Created)
                     }
                   }
