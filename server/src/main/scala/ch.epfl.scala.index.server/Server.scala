@@ -112,19 +112,7 @@ object Server {
                 // you.flatMap(_ => userState.map(_.repos))
                 api.find(query, page, sorting)
                   .map { case (pagination, projects) =>
-                    views.html.searchresult(query, sorting, pagination, projects, userState.map(_.user))
-                  }
-              }
-            }
-          }
-        } ~
-        path("test" / Segment / Segment){ (t1, t2) =>
-          optionalSession(refreshable, usingCookies) { userState =>
-            parameters('page.as[Int] ? 1, 'sort.?) { (page, sorting) =>
-              complete {
-                api.dependent(t1 + "/" + t2, page, sorting)
-                  .map { case (pagination, projects) =>
-                    views.html.searchresult("", sorting, pagination, projects, userState.map(_.user))
+                    views.html.searchresult(query, "search", sorting, pagination, projects, userState.map(_.user))
                   }
               }
             }
@@ -136,7 +124,7 @@ object Server {
               complete {
                 api.organization(owner, page, sorting)
                   .map { case (pagination, projects) =>
-                    views.html.searchresult(owner, sorting, pagination, projects, userState.map(_.user))
+                    views.html.searchresult(owner, owner,sorting, pagination, projects, userState.map(_.user))
                   }
               }
             }
