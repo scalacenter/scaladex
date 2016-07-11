@@ -39,10 +39,10 @@ class PublishProcess(
       val pom = getPom(data)
       val repos = getGithubRepo(pom)
 
-      if (1 < repos.size) {
+      if (0 < repos.size) {
 
         data.deleteTemp()
-        MultipleChoices
+        NoContent
       } else {
 
         val repo = repos.head
