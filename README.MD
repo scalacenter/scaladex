@@ -1,3 +1,8 @@
+[SBT-Credentials]: http://www.scala-sbt.org/0.13/docs/Publishing.html#Credentials
+[SBT-POM-Meta]: http://www.scala-sbt.org/1.0/docs/Using-Sonatype.html#Third+-+POM+Metadata
+[gitter.im channel]: https://gitter.im/scalacenter/scaladex
+[scaladex-metadata]: (https://github.com/scalacenter/scaladex-metadata)
+[scaladex-data]: https://github.com/scalacenter/scaladex-data
 # Scaladex
 
 [![Travis](https://img.shields.io/travis/scalacenter/scaladex.svg?style=flat-square)](https://travis-ci.org/scalacenter/scaladex)
@@ -6,11 +11,72 @@
 
 ## How to contribute:
 
-* adding keywords: submit a PR to [scaladex-metadata](https://github.com/scalacenter/scaladex-metadata)
-* claiming you project: submit a PR to [scaladex-data](https://github.com/scalacenter/scaladex-data)
-* improving the index: join the [gitter.im channel](https://gitter.im/scalacenter/scaladex)
+* [Deprecated](#How-to-publish-on-scaladex) adding keywords: submit a PR to [scaladex-metadata]
+* [Deprecated](#How-to-publish-on-scaladex) claiming you project: submit a PR to [scaladex-data]
+* improving the index: join the [gitter.im channel]
 
-## How to run:
+## Hot to publish on scaladex
+
+The easiest way to publish your artifact to Scaladex is using the Scaladex SBT plugin. The publish workflow is
+pretty much the same as you might know already. One difference is, that Scaladex plugin will only publish
+the POM file. Your packages, docs and sources are not send to Scaladex.
+
+For Scaladex is necessary to have a SCM tag in the Pom file. To do this you can follow the guidelines of SBT.
+[SBT Documentation - POM Metadata][SBT-POM-Meta]
+
+** TODO: add Decision of #178 to the description** 
+
+### Install the plugin
+
+To get the Scaladex plugin, you only need to add `addSbtPlugin("org.scala_lang.index" % "scaladex-sbt" % "x.x.x")` to
+your `plugin.sbt` file.
+
+### Publish Credentials
+
+To publish to Scaladex you need to add some user authentication. Scaladex uses GitHub to authenticate your publish
+process and verify that you have push permission to the defined repository (SCM Tag). You can see
+[SBT Credentials documentation][SBT-Credentials] for how to add the login credentials.
+
+### Configure the publish process
+
+There are some settings for the Plugin to control the output on Scaladex a bit, like adding keywords, show GitHub info,
+show GitHub Readme file, show gitHub contributors.
+
+* scaladexBaseUrl: This is the main url to publish to _default_: (`https://index.scala-lang.org`)
+* scaladexKeywords: List of keywords for your artifact _default_: (`empty`)
+* scaladexDownloadReadme: A flag to download the README from GitHub. _default_: (`true`)
+* scaladexDownloadInfo: A flag to download the repository info from GitHub (eg: stars, forks, ...). _default_: (`true`)
+* scaladexDownloadContributors: A flag to download the contributors info from GitHub. _default_: (`true`)
+* [Credentials][SBT-Credentials] (SBT default): Configuration for your GitHub credentials to verify write access to the SCM Tag in the Pom file.
+
+**SBT Simple Example**
+```
+scaladexKeywords in Scaladex := Seq("Foo", "Bar", "Baz")
+Credentials in Scaladex := Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials")
+```
+
+**Disable Readme, Info, or Contributors**
+```
+scaladexDownloadReadme in Scaladex := false
+scaladexDownloadInfo in Scaladex := false
+scaladexDownloadContributors in Scaladex := false
+```
+### Response codes / Messages
+
+Maybe, you get an error during publishing. This explanation will help you to solve problems you might have.
+
+* **Forbidden** - You don't have push permission to the GitHub repository. You're not allowed to publish.
+* **NoContent** - The SCM Tag in POM file is Missing. See [SBT Documentation][SBT-POM-Metadata] for how to solve.
+* **Unauthorized** - Your login credentials are not right. Check your configuration if you provide 
+credentials and also check if they're correct.
+
+### Run Publish process
+
+The command to publish your artifact to Scaladex is straight forward. If you have the configuration done
+(don't forget to call `reload`) you can simply trigger the SBT-task `scaladex:publish`. If you have trouble
+doing this, have a look at the **Response codes / Messages** section. 
+
+## How to run Scaladex:
 
 ```bash
 $ git submodule init

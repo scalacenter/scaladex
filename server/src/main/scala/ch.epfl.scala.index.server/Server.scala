@@ -136,7 +136,7 @@ object Server {
           ) { (path, readme, contributors, info, keywords) =>
             entity(as[String]) { data =>
               extractCredentials { credentials =>
-                authenticateBasic(realm = "scaladex Realm", githubAuthenticator(credentials)) { cred =>
+                authenticateBasic(realm = "Scaladex Realm", githubAuthenticator(credentials)) { cred =>
 
                   val publishData = PublishData(path, data, cred, info, contributors, readme, keywords.toList)
 
