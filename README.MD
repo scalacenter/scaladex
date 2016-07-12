@@ -15,7 +15,7 @@
 * [Deprecated](#How-to-publish-on-scaladex) claiming you project: submit a PR to [scaladex-data]
 * improving the index: join the [gitter.im channel]
 
-## Hot to publish on scaladex
+## How to publish on scaladex
 
 The easiest way to publish your artifact to Scaladex is using the Scaladex SBT plugin. The publish workflow is
 pretty much the same as you might know already. One difference is, that Scaladex plugin will only publish
@@ -42,21 +42,21 @@ process and verify that you have push permission to the defined repository (SCM 
 There are some settings for the Plugin to control the output on Scaladex a bit, like adding keywords, show GitHub info,
 show GitHub Readme file, show gitHub contributors.
 
-* scaladexBaseUrl: This is the main url to publish to _default_: (`https://index.scala-lang.org`)
-* scaladexKeywords: List of keywords for your artifact _default_: (`empty`)
-* scaladexDownloadReadme: A flag to download the README from GitHub. _default_: (`true`)
-* scaladexDownloadInfo: A flag to download the repository info from GitHub (eg: stars, forks, ...). _default_: (`true`)
-* scaladexDownloadContributors: A flag to download the contributors info from GitHub. _default_: (`true`)
-* [Credentials][SBT-Credentials] (SBT default): Configuration for your GitHub credentials to verify write access to the SCM Tag in the Pom file.
+* **scaladexBaseUrl**: This is the main url to publish to _default_: `https://index.scala-lang.org`
+* **scaladexKeywords**: List of keywords for your artifact _default_: `empty`
+* **scaladexDownloadReadme**: A flag to download the README from GitHub. _default_: `true`
+* **scaladexDownloadInfo**: A flag to download the repository info from GitHub (eg: stars, forks, ...). _default_: `true`
+* **scaladexDownloadContributors**: A flag to download the contributors info from GitHub. _default_: `true`
+* **[Credentials][SBT-Credentials] (SBT default)**: Configuration for your GitHub credentials to verify write access to the SCM Tag in the Pom file.
 
 **SBT Simple Example**
-```
+```scala
 scaladexKeywords in Scaladex := Seq("Foo", "Bar", "Baz")
 Credentials in Scaladex := Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials")
 ```
 
 **Disable Readme, Info, or Contributors**
-```
+```scala
 scaladexDownloadReadme in Scaladex := false
 scaladexDownloadInfo in Scaladex := false
 scaladexDownloadContributors in Scaladex := false
@@ -65,16 +65,22 @@ scaladexDownloadContributors in Scaladex := false
 
 Maybe, you get an error during publishing. This explanation will help you to solve problems you might have.
 
-* **Forbidden** - You don't have push permission to the GitHub repository. You're not allowed to publish.
+* **Forbidden** - You don't have push permission to the GitHub repository.
 * **NoContent** - The SCM Tag in POM file is Missing. See [SBT Documentation][SBT-POM-Metadata] for how to solve.
 * **Unauthorized** - Your login credentials are not right. Check your configuration if you provide 
 credentials and also check if they're correct.
+* **destination file exists and overwrite == false** - The Version exists already on Scaladex. Overriding is
+only allowed for Snapshots.
 
 ### Run Publish process
 
 The command to publish your artifact to Scaladex is straight forward. If you have the configuration done
 (don't forget to call `reload`) you can simply trigger the SBT-task `scaladex:publish`. If you have trouble
 doing this, have a look at the **Response codes / Messages** section. 
+
+```bash
+sbt scaladex:publish
+```
 
 ## How to run Scaladex:
 
