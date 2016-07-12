@@ -1,2 +1,4 @@
-# check if hello plugin works.
-> hello
+> startServer
+> scaladex:publish
+> checkNewRelease
+> stopServer

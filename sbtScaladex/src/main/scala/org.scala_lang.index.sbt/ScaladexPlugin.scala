@@ -22,13 +22,15 @@ object ScaladexPlugin extends AutoPlugin {
     lazy val scaladexDownloadReadme = settingKey[Boolean]("defines if scaladex should download the readme file from the defined scm tag")
     lazy val scaladexDownloadInfo = settingKey[Boolean]("defines if scaladex should download the project info from the defined scm tag")
     lazy val scaladexDownloadContributors = settingKey[Boolean]("defines if scaladex should download the contributors from the defined scm tag")
+    lazy val scaladexBaseUrl = settingKey[String]("scaladex server location and path")
 
     /** define base scaladex options */
     lazy val baseScaladexSettings = Seq(
       scaladexKeywords := Seq(),
       scaladexDownloadContributors := true,
       scaladexDownloadInfo := true,
-      scaladexDownloadReadme := true
+      scaladexDownloadReadme := true,
+      scaladexBaseUrl := "https://index.scala-lang.org"
     ) ++
     inConfig(Scaladex)(
       /** import ivy publishing settings */
@@ -38,7 +40,9 @@ object ScaladexPlugin extends AutoPlugin {
         publishTo := {
 
           /** prepare the url to publish on scaladex */
-          val baseUrl = "https://index.scala-lang.org/publish?"
+          val baseUrl = scaladexBaseUrl.value
+          val basePath = "/publish?"
+
           val params = List(
             "readme" -> scaladexDownloadReadme.value,
             "info" -> scaladexDownloadInfo.value,
@@ -47,7 +51,7 @@ object ScaladexPlugin extends AutoPlugin {
           )
           val keywords = scaladexKeywords.value.map(key => "keywords" -> key)
 
-          val url = baseUrl + (keywords ++ params).map {
+          val url = baseUrl + basePath + (keywords ++ params).map {
 
             case(k,v) => s"$k=$v"
           }.mkString("&")
