@@ -56,6 +56,10 @@ Credentials in Scaladex := Credentials(Path.userHome / ".ivy2" / ".scaladex.cred
 ```
 
 **Disable Readme, Info, or Contributors**
+
+This might be important for private repositories. With the Plugin we're able to index private repositories
+and fetch Contributors, Readme and the Repository Info. If there is critical info configure the access.
+
 ```scala
 scaladexDownloadReadme in Scaladex := false
 scaladexDownloadInfo in Scaladex := false
