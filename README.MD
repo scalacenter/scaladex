@@ -1,7 +1,7 @@
 [SBT-Credentials]: http://www.scala-sbt.org/0.13/docs/Publishing.html#Credentials
 [SBT-POM-Meta]: http://www.scala-sbt.org/1.0/docs/Using-Sonatype.html#Third+-+POM+Metadata
 [gitter.im channel]: https://gitter.im/scalacenter/scaladex
-[scaladex-metadata]: (https://github.com/scalacenter/scaladex-metadata)
+[scaladex-metadata]: https://github.com/scalacenter/scaladex-metadata
 [scaladex-data]: https://github.com/scalacenter/scaladex-data
 # Scaladex
 
@@ -11,8 +11,8 @@
 
 ## How to contribute:
 
-* [Deprecated](#How-to-publish-on-scaladex) adding keywords: submit a PR to [scaladex-metadata]
-* [Deprecated](#How-to-publish-on-scaladex) claiming you project: submit a PR to [scaladex-data]
+* [Deprecated](#how-to-publish-on-scaladex) adding keywords: submit a PR to [scaladex-metadata]
+* [Deprecated](#how-to-publish-on-scaladex) claiming you project: submit a PR to [scaladex-data]
 * improving the index: join the [gitter.im channel]
 
 ## How to publish on scaladex
@@ -24,7 +24,7 @@ the POM file. Your packages, docs and sources are not send to Scaladex.
 For Scaladex is necessary to have a SCM tag in the Pom file. To do this you can follow the guidelines of SBT.
 [SBT Documentation - POM Metadata][SBT-POM-Meta]
 
-** TODO: add Decision of #178 to the description** 
+**TODO: add Decision of #178 to the description** 
 
 ### Install the plugin
 
@@ -69,7 +69,7 @@ Maybe, you get an error during publishing. This explanation will help you to sol
 * **NoContent** - The SCM Tag in POM file is Missing. See [SBT Documentation][SBT-POM-Metadata] for how to solve.
 * **Unauthorized** - Your login credentials are not right. Check your configuration if you provide 
 credentials and also check if they're correct.
-* **destination file exists and overwrite == false** - The Version exists already on Scaladex. Overriding is
+* **destination file exists and overwrite == false** - The version exists already on Scaladex. Overriding is
 only allowed for Snapshots.
 
 ### Run Publish process
