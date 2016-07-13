@@ -1,6 +1,8 @@
 package ch.epfl.scala.index
 package server
 
+import java.io.File
+
 import data.bintray._
 import data.cleanup.GithubRepoExtractor
 import data.download.PlayWsDownloader
@@ -9,7 +11,6 @@ import data.github._
 import data.maven.{MavenModel, PomsReader}
 import data.project.ProjectConvert
 import model.misc.GithubRepo
-
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
@@ -17,10 +18,8 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.StatusCode
-
 import org.joda.time.DateTime
 import play.api.libs.ws.WSAuthScheme
-
 import com.sksamuel.elastic4s._
 import ElasticDsl._
 
@@ -284,7 +283,7 @@ case class PublishData(
    * @param sha1 the sha1 hash
    * @return
    */
-  private def tmpPath(sha1: String) = tmpBase.resolve(s"$sha1.pom")
+  private def tmpPath(sha1: String) = File.createTempFile(sha1, ".pom").toPath
 
   /**
    * generate SHA1 hash from a given String

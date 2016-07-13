@@ -11,5 +11,4 @@ package object bintray {
   val bintrayPomBase = bintrayIndexBase.resolve("poms_sha")
 
   val indexBase = build.info.BuildInfo.baseDirectory.toPath.resolve(Paths.get("index"))
-  val tmpBase = indexBase.resolve("tmp")
 }
