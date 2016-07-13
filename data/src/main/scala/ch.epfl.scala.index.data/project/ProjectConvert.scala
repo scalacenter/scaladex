@@ -147,7 +147,8 @@ object ProjectConvert extends BintrayProtocol {
 
           (
             Project(
-              projectReference,
+              organization,
+              repository,
               GithubReader(githubRepo),
               Keywords(githubRepo),
               created = min,

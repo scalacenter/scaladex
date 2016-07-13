@@ -49,17 +49,23 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     ))
   }
 
-  def find(queryString: String, page: PageIndex, sorting: Option[String] = None) =
-    query(new QueryStringQueryDefinition(queryString.replaceAllLiterally("/", "\\/")), page, sorting)
-
-  def organization(organization: String, page: PageIndex, sorting: Option[String] = None) =
+  def find(queryString: String, page: PageIndex, sorting: Option[String] = None) = {
+    val escaped = queryString.replaceAllLiterally("/", "\\/")
     query(
-      nestedQuery("reference").query(
-        termQuery("reference.organization", organization)
+      bool(
+        should(
+          termQuery("repository", escaped),
+          termQuery("organization", escaped),
+          termQuery("keywords", escaped),
+          termQuery("github.description", escaped),
+          termQuery("github.readme", escaped),
+          stringQuery(escaped)
+        )
       ),
       page,
       sorting
     )
+  }
 
   def releases(project: Project.Reference): Future[List[Release]] = {
     esClient.execute {
@@ -79,12 +85,10 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
   def project(project: Project.Reference): Future[Option[Project]] = {
     esClient.execute {
       search.in(indexName / projectsCollection).query(
-        nestedQuery("reference").query(
-          bool (
-            must(
-              termQuery("reference.organization", project.organization),
-              termQuery("reference.repository", project.repository)
-            )
+        bool (
+          must(
+            termQuery("organization", project.organization),
+            termQuery("repository", project.repository)
           )
         )
       ).limit(1)
@@ -117,7 +121,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
 
       def specified(artifact: String): Boolean = Some(artifact) == selectedArtifact
       def projectDefault(artifact: String): Boolean = Some(artifact) == project.defaultArtifact
-      def projectRepository(artifact: String): Boolean = project.reference.repository == artifact
+      def projectRepository(artifact: String): Boolean = project.repository == artifact
 
       def alphabetically = artifacts.sortBy(_._1).headOption
 

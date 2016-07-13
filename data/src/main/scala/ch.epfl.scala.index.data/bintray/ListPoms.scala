@@ -33,7 +33,7 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
   /**
    * The url to search at
    */
-  val binTrayUri = "https://bintray.com/api/v1/search/file"
+  private val bintrayUri = "https://bintray.com/api/v1/search/file"
 
   /** paginated search query for bintray - append the query string to
    * the request object
@@ -42,14 +42,13 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
    * @return
    */
   private def discover(wsClient: AhcWSClient, page: PomListDownload): WSRequest = {
-
     val query = page.lastSearchDate.fold(Seq[(String, String)]())(after =>
 
       Seq("created_after" -> (after.toLocalDateTime.toString + "Z"))
     ) ++ Seq("name" -> s"${page.scalaVersion}*.pom", "start_pos" -> page.page.toString)
 
 
-    withAuth(wsClient.url(binTrayUri)).withQueryString(query: _*)
+    withAuth(wsClient.url(bintrayUri)).withQueryString(query: _*)
   }
 
   /** Fetch bintray first, to find out the number of pages and items to iterate
@@ -65,17 +64,10 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
     request.get.flatMap { response =>
 
       if (200 == response.status) {
-       Future.successful{
-
-          (response.header("X-RangeLimit-Total"), response.header("X-RangeLimit-EndPos")) match {
-
-            case (Some(totalPages), Some(limit)) => InternalBintrayPagination(totalPages.toInt, limit.toInt)
-            case (Some(totalPages), None) => InternalBintrayPagination(totalPages.toInt, 50)
-            case _ => InternalBintrayPagination(0, 50)
-          }
+        Future.successful{
+          InternalBintrayPagination(response.header("X-RangeLimit-Total").map(_.toInt).getOrElse(0))
         }
       } else {
-
         Future.failed(new Exception(response.statusText))
       }
     }.map(v => {client.close; v})
@@ -89,8 +81,14 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
    * @return
    */
   def processPomDownload(page: PomListDownload, response: WSResponse): List[BintraySearch] = {
-
-    parse(response.body).extract[List[BintraySearch]]
+    try {
+      parse(response.body).extract[List[BintraySearch]]
+    } catch {
+      case scala.util.control.NonFatal(e) => {
+        println(e)
+        List()
+      }
+    }
   }
 
   /**
@@ -127,7 +125,7 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
 
     val mostRecentQueriedDate = queried.find(_.name.contains(scalaVersion)).map(_.created)
 
-    performSearchAndDownload(s"Download POMs for scala $scalaVersion", queried, s"*_$scalaVersion", mostRecentQueriedDate)
+    performSearchAndDownload(s"List POMs for scala $scalaVersion", queried, s"*_$scalaVersion", mostRecentQueriedDate)
   }
 
   /**
@@ -145,7 +143,7 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
 
     val mostRecentQueriedDate = queried.find(filter).map(_.created)
 
-    performSearchAndDownload(s"Download Poms for $groupId:$artifact", queried, artifact, mostRecentQueriedDate, Some(filter))
+    performSearchAndDownload(s"List Poms for $groupId:$artifact", queried, artifact, mostRecentQueriedDate, Some(filter))
   }
 
   /**
@@ -172,8 +170,6 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
         case None => bintray
       }
     }
-
-    println(s"mostRecentQueriedDate: ${mostRecentQueriedDate.getOrElse("None")}")
 
     /* check first how many pages there are */
     val page: InternalBintrayPagination = Await.result(getNumberOfPages(search, mostRecentQueriedDate), Duration.Inf)

@@ -69,7 +69,7 @@ trait PlayWsDownloader {
 
     def processDownloads = {
 
-      Source(toDownload).mapAsync(32) { item =>
+      Source(toDownload).mapAsyncUnordered(32) { item =>
 
         val request = downloadUrl(client, item)
         val response = request.get
@@ -80,16 +80,21 @@ trait PlayWsDownloader {
         }
 
         response.map { data =>
-
-          progress.step()
+          if(toDownload.size > 1) {
+            progress.step()
+          }
           process(item, data)
         }
       }
     }
 
-    progress.start()
+    if(toDownload.size > 1) {
+      progress.start()
+    }
     val response = Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
-    progress.stop()
+    if(toDownload.size > 1) {
+      progress.stop()
+    }
     wsClient.close()
 
     response

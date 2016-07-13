@@ -32,7 +32,7 @@ case class BintraySearch(
  * @param numberOfPages the maximum number of pages
  * @param itemPerPage the max items per page
  */
-case class InternalBintrayPagination(numberOfPages: Int, itemPerPage: Int)
+case class InternalBintrayPagination(numberOfPages: Int, itemPerPage: Int = 50)
 
 /**
  * Pom list download class to map the version and the scala version for

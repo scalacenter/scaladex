@@ -6,7 +6,8 @@ import misc.{GithubInfo, GithubRepo, Url}
  * Project representation which contains all necessary meta data to
  * the project. Equivalent to a github repository or a sbt build.
  *
- * @param reference simplified reference name (ex: typelevel/cats-core)
+ * @param organization (ex: typelevel)
+ * @param repository (ex: spark)
  * @param github github information representation
  * @param keywords predefined keywords (ex: database)
  * @param stackOverflowTags see http://stackoverflow.com/tags (ex: akka)
@@ -21,7 +22,8 @@ import misc.{GithubInfo, GithubRepo, Url}
  * @param dependencies to aggregate most dependended uppon libs (ex: spark, playframework, ...)
  */
 case class Project(
-  reference: Project.Reference,
+  organization: String,
+  repository: String,
   github: Option[GithubInfo] = None,
   keywords: List[String] = Nil,
   stackOverflowTags: List[String] = Nil,
@@ -35,6 +37,8 @@ case class Project(
   targets: List[String] = Nil,
   dependencies: List[String] = Nil
 ) {
+
+  def reference = Project.Reference(organization, repository)
 
   /**
    * create github representation for the repository
