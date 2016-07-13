@@ -228,6 +228,13 @@ object Server {
             }
           }
         } ~
+        path("howtopublish") {
+          optionalSession(refreshable, usingCookies) { userState =>
+            complete {
+             views.html.howtopublish(userState.map(_.user))
+            }
+          }
+        } ~
         path(Segment / Segment) { (owner, repo) =>
           optionalSession(refreshable, usingCookies) { userState =>
             parameters('artifact, 'version.?){ (artifact, version) =>
