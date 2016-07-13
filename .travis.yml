@@ -12,6 +12,7 @@ cache:
 script:
   - sbt test
   - sbt server/universal:packageBin
+  # - sbt sbtScaladex/scripted
 
 git:
   submodules: false

@@ -5,13 +5,13 @@
 // Sticky Footer
 // -----------------------------------------------------------------------------
 body {
-  display: flex;
-  min-height: 100vh;
-  flex-direction: column;
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
 }
 
 main {
-  flex: 1;
+    flex: 1;
 }
 
 // Home page
@@ -203,8 +203,8 @@ main {
         }
         .btn-primary {
             @include button-variant($btn-primary-color,
-            rgba($gray-darker, 0.7),
-            $btn-primary-border);
+                    rgba($gray-darker, 0.7),
+                    $btn-primary-border);
         }
         .bootstrap-select {
             width: 100%;
@@ -443,7 +443,7 @@ main {
         margin-bottom: 30px;
         h1, .homepage {
             margin-top: 0;
-            color: $brand-primary; 
+            color: $brand-primary;
         }
         .contributors-tag {
             display: inline-block;

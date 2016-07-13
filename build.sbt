@@ -101,6 +101,12 @@ lazy val data = project
   .enablePlugins(BuildInfoPlugin)
   .dependsOn(model)
 
+// to publish plugin
+// follow: http://www.scala-sbt.org/0.13/docs/Bintray-For-Plugins.html
+// then add a new package ()
+// name: sbt-scaladex, license: MIT, version control: git@github.com:scalacenter/scaladex.git
+// to be available without a resolver
+// follow: http://www.scala-sbt.org/0.13/docs/Bintray-For-Plugins.html#Linking+your+package+to+the+sbt+organization
 lazy val sbtScaladex = project
   .settings(baseSettings: _*)
   .settings(ScriptedPlugin.scriptedSettings: _*)
@@ -111,8 +117,7 @@ lazy val sbtScaladex = project
     scriptedLaunchOpts := scriptedLaunchOpts.value ++ Seq("-Xmx1024M", "-Dplugin.version=" + version.value),
     scriptedBufferLog := false,
 
-    /* Dont publish */
-    publishArtifact in packageDoc := false,
-    sources in(Compile, doc) := Seq.empty,
-    publishArtifact in(Compile, packageDoc) := false
-  )
+    bintrayRepository := "sbt-plugins",
+    bintrayOrganization := None
+
+  ).enablePlugins(BintrayPlugin)

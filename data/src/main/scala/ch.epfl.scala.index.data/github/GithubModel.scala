@@ -7,6 +7,8 @@ package github
 organization avatar_url <=> Logo
 */
 
+case class GithubCredentials(username: String, password: String)
+
 case class User(
   login: String,
   avatar_url: String // https://avatars.githubusercontent.com/u/3731824?v=3
@@ -35,8 +37,11 @@ case class Repository(
   open_issues: Int,
   default_branch: String, // master
   organization: Option[User],
-  subscribers_count: Int // Watch
+  subscribers_count: Int, // Watch
+  permissions: Option[Permissions]
 )
+
+case class Permissions(admin: Boolean, push: Boolean, pull: Boolean)
 
 case class Contributor(
   login: String,

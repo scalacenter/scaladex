@@ -14,27 +14,29 @@ import native.Serialization._
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
-import play.api.libs.ws.{WSRequest, WSResponse}
+import play.api.libs.ws._
 import play.api.libs.ws.ahc.AhcWSClient
 
 import scala.util._
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-class GithubDownload(implicit val system: ActorSystem, implicit val materializer: ActorMaterializer) extends PlayWsDownloader {
+class GithubDownload(privateCredentials: Option[GithubCredentials] = None)
+  (implicit val system: ActorSystem, implicit val materializer: ActorMaterializer)
+extends PlayWsDownloader {
 
   import Json4s._
 
   case class PaginatedGithub(repo: GithubRepo, page: Int)
 
-  private val githubRepoExtractor = new GithubRepoExtractor
-  private val githubRepos = {
+  private lazy val githubRepoExtractor = new GithubRepoExtractor
+  private lazy val githubRepos = {
     PomsReader.load()
       .collect { case Success((pom, _)) => githubRepoExtractor(pom) }
       .flatten
       .toSet
   }
-  private val paginatedGithubRepos = githubRepos.map(repo => PaginatedGithub(repo, 1))
+  private lazy val paginatedGithubRepos = githubRepos.map(repo => PaginatedGithub(repo, 1))
 
   private def credentials = {
     val tokens = Array(
@@ -65,7 +67,11 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
    * @param request the current request
    * @return
    */
-  def applyBasicHeaders(request: WSRequest): WSRequest = request.withHeaders("Authorization" -> s"token $credentials")
+  def applyBasicHeaders(request: WSRequest): WSRequest = {
+
+    privateCredentials.map(cred => request.withAuth(cred.username, cred.password, WSAuthScheme.BASIC))
+    .getOrElse(request.withHeaders("Authorization" -> s"token $credentials"))
+  }
 
   /**
    * basic Authentication header + Accept application jsob
@@ -289,4 +295,35 @@ class GithubDownload(implicit val system: ActorSystem, implicit val materializer
 
     ()
   }
+
+  /**
+   * Download github info for specific repository
+   *
+   * @param repo the github repository
+   * @param info flag if info can be downloaded
+   * @param readme flag if readme can be downloaded
+   * @param contributors flag if contributors can be downloaded
+   */
+  def run(repo: GithubRepo, info: Boolean, readme: Boolean, contributors: Boolean): Unit = {
+
+    if (info) {
+
+      download[GithubRepo, Unit]("Downloading Repo Info", Set(repo), githubInfoUrl, processInfoResponse)
+    }
+
+    if (readme) {
+
+      download[GithubRepo, Unit]("Downloading Readme", Set(repo), githubReadmeUrl, processReadmeResponse)
+    }
+
+    if (contributors) {
+
+      val paginated = Set(PaginatedGithub(repo, 1))
+      download[PaginatedGithub, Unit]("Downloading Contributors", paginated, githubContributorsUrl, processContributorResponse)
+    }
+
+    ()
+  }
+
+
 }

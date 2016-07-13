@@ -31,7 +31,7 @@ case class Project(
   twitter: Option[String] = None,
   parentOrganization: Option[String] = None,
   logoImageUrl: Option[Url] = None,
-  _id: Option[Int] = None,
+  _id: Option[String] = None,
   created: Option[String] = None,
   updated: Option[String] = None,
   targets: List[String] = Nil,

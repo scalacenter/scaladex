@@ -3,10 +3,9 @@ package server
 
 import model._
 import model.misc.UserInfo
-import release.SemanticVersion
+import release.{MavenReference, SemanticVersion}
 import data.cleanup.SemanticVersionParser
 import data.elastic._
-
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import Uri._
@@ -17,10 +16,13 @@ import com.softwaremill.session.CsrfOptions._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.headers.HttpCredentials
+import akka.http.scaladsl.server.directives.Credentials.{Missing, Provided}
 import akka.stream.ActorMaterializer
+import ch.epfl.scala.index.data.github.GithubCredentials
 
 import scala.concurrent.duration._
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 
 object Server {
   def main(args: Array[String]): Unit = {
@@ -48,7 +50,7 @@ object Server {
       } yield views.html.frontpage(keywords, targets, dependencies, latestProjects, latestReleases, userInfo)
     }
 
-    def projectPage(owner: String, repo: String, artifact: Option[String] = None, 
+    def projectPage(owner: String, repo: String, artifact: Option[String] = None,
         version: Option[SemanticVersion], userState: Option[UserState] = None) = {
       val user = userState.map(_.user)
       api.projectPage(Project.Reference(owner, repo), artifact, version).map(
@@ -66,12 +68,120 @@ object Server {
       )
     }
 
+    val publishProcess = new PublishProcess(api, system, materializer)
+
     val route = {
       import akka.http.scaladsl._
       import server.Directives._
       import TwirlSupport._
 
+      /*
+       * verifying a login to github
+       * @param credentials the credentials
+       * @return
+       */
+      def githubAuthenticator(credentials: Option[HttpCredentials]): Authenticator[GithubCredentials] = {
+
+        case p@Provided(username) =>
+
+          credentials match {
+            case None => None
+            case Some(cred) =>
+
+              val upw = new String(new sun.misc.BASE64Decoder().decodeBuffer(cred.token()))
+              val userPass = upw.split(":")
+              val githubCredentials = GithubCredentials(userPass(0), userPass(1))
+              // todo - catch errors
+              if (publishProcess.authenticate(githubCredentials)) {
+
+                Some(githubCredentials)
+              } else {
+
+                None
+              }
+          }
+        case Missing => None
+      }
+
+      /*
+       * extract a maven reference from path like
+       * /com/github/scyks/playacl_2.11/0.8.0/playacl_2.11-0.8.0.pom =>
+       * MavenReference("com.github.scyks", "playacl_2.11", "0.8.0")
+       *
+       * @param path the real publishing path
+       * @return MavenReference
+       */
+      def mavenPathExtractor(path: String): MavenReference = {
+
+        val segments = path.split("/").toList
+        val size = segments.size
+        val takeFrom = if(segments.head.isEmpty) 1 else 0
+
+        val artifactId = segments(size - 3)
+        val version = segments(size - 2)
+        val groupId = segments.slice(takeFrom, size - 3).mkString(".")
+
+        MavenReference(groupId, artifactId, version)
+      }
+
+//      rest.route ~
+      put {
+        path("publish") {
+          parameters(
+            'path,
+            'readme.as[Boolean] ? true,
+            'contributors.as[Boolean] ? true,
+            'info.as[Boolean] ? true,
+            'keywords.as[String].*
+          ) { (path, readme, contributors, info, keywords) =>
+            entity(as[String]) { data =>
+              extractCredentials { credentials =>
+                authenticateBasic(realm = "Scaladex Realm", githubAuthenticator(credentials)) { cred =>
+
+                  val publishData = PublishData(path, data, cred, info, contributors, readme, keywords.toList)
+
+                  complete {
+
+                    if (publishData.isPom) {
+
+                      publishProcess.writeFiles(publishData)
+
+                    } else {
+
+                      Future(Created)
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      } ~
       get {
+        path("publish") {
+          parameters(
+            'path,
+            'readme.as[Boolean] ? true,
+            'contributors.as[Boolean] ? true,
+            'info.as[Boolean] ? true,
+            'keywords.as[String].*
+          ) { (path, readme, contributors, info, keywords) =>
+
+            println(s"GET $path")
+            complete {
+
+              /* check if the release already exists - sbt will handle HTTP-Status codes
+               * 404 -> allowed to write
+               * 200 -> only allowed if isSnapshot := true
+               */
+              api.maven(mavenPathExtractor(path)) map {
+
+                case Some(release) => OK
+                case None => NotFound
+              }
+            }
+          }
+        } ~
         path("login") {
           redirect(Uri("https://github.com/login/oauth/authorize").withQuery(Query(
             "client_id" -> github.clientId

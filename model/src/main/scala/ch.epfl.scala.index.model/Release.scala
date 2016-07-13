@@ -13,6 +13,7 @@ import release._
  * @param mavenCentral availability on the central repository
  * @param licenses a bunch of licences
  * @param nonStandardLib if not using artifactName_scalaVersion convention
+ * @param _id Elastic search id
  * @param scalaDependencies bunch of scala dependencies
  * @param javaDependencies bunch of java dependencies
  * @param reverseDependencies bunch of reversed dependencies
@@ -27,6 +28,7 @@ case class Release(
   mavenCentral: Boolean = false,
   licenses: Set[License] = Set(),
   nonStandardLib: Boolean = false,
+  _id: Option[String] = None,
 
   /* split dependencies in 2 fields because elastic can't handle 2 different types
    * in one field. That is a simple workaround for that
