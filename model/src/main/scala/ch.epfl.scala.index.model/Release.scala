@@ -21,7 +21,7 @@ import release._
 case class Release(
   maven: MavenReference,
   reference: Release.Reference,
-  resolver: Option[Resolver],
+  resolver: Option[Resolver] = None,
   name: Option[String] = None,
   description: Option[String] = None,
   released: Option[String] = None,
@@ -153,17 +153,6 @@ case class Release(
   }
 }
 
-object Artifact {
-  /**
-   * @param organization (ex: typelevel | akka)
-   * @param artifact (ex: cats-core | akka-http-experimental)
-   */
-  case class Reference(
-    organization: String,
-    artifact: String
-  )
-}
-
 object Release {
 
   /**
@@ -179,7 +168,6 @@ object Release {
     target: ScalaTarget
   ) extends GeneralReference {
 
-    def artifactReference = Artifact.Reference(organization, artifact)
     def projectReference = Project.Reference(organization, repository)
     def name = s"$organization/$artifact"
     def httpUrl = s"/$organization/$repository/$artifact/$version"

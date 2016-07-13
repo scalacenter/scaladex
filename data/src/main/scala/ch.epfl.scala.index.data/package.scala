@@ -4,9 +4,6 @@ import fastparse.all._
 
 package object data {
 
-  val Alpha = (CharIn('a' to 'z') | CharIn('A' to 'Z')).!
-  val Digit =  CharIn('0' to '9').!
-
   def innerJoin[K, A, B, Z](m1: Map[K, A], m2: Map[K, B])(f: (A, B) => Z): Map[K, Z] = {
     m1.flatMap{ case (k, a) => 
       m2.get(k).map(b => Map(k -> f(a, b))).getOrElse(Map.empty[K, Z])

@@ -1,18 +1,14 @@
-package ch.epfl.scala.index
-package data
-package cleanup
-
-import model.release._
+package ch.epfl.scala.index.model
 
 import fastparse.all._
 import fastparse.core.Parsed
 
-object ArtifactNameParser {
-  private val ArtifactNameParser = {
-    val SemanticVersioning = SemanticVersionParser.Parser
+import release.ScalaTarget
 
-    val Scala = "_" ~ SemanticVersioning
-    val ScalaJs = "_sjs" ~ SemanticVersioning
+object Artifact extends Parsers {
+  private val ArtifactNameParser = {
+    val Scala = "_" ~ SemanticVersion.Parser
+    val ScalaJs = "_sjs" ~ SemanticVersion.Parser
     
     val ScalaTargetParser = (ScalaJs.? ~ Scala).map{case (scalaJsVersion, scalaVersion) => 
       ScalaTarget(scalaVersion, scalaJsVersion)

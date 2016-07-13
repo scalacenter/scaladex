@@ -1,4 +1,5 @@
-package ch.epfl.scala.index.model.release
+package ch.epfl.scala.index.model
+package release
 
 /**
  * the scala target eg. version / environment

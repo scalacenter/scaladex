@@ -28,7 +28,8 @@ lazy val commonSettings = Seq(
   libraryDependencies += "com.lihaoyi" % "ammonite-repl" % "0.6.0" % "test" cross CrossVersion.full,
   initialCommands in (Test, console) := """ammonite.repl.Main().run()""",
   libraryDependencies ++= Seq(
-    "com.lihaoyi" %% "utest" % "0.4.3" % "test"
+    "com.lihaoyi" %% "utest" % "0.4.3" % "test",
+    "ai.x"        %% "diff"  % "1.1.0" % "test"
   ),
   testFrameworks += new TestFramework("utest.runner.Framework")
 ) ++ baseSettings
@@ -72,6 +73,9 @@ lazy val server = project
 
 lazy val model = project
   .settings(commonSettings: _*)
+  .settings(
+    libraryDependencies += "com.lihaoyi" %% "fastparse" % "0.3.7"
+  )
 
 lazy val data = project
   .settings(commonSettings: _*)
@@ -87,7 +91,6 @@ lazy val data = project
       "de.heikoseeberger"      %% "akka-http-circe"                   % "1.7.0",
       "org.scala-lang.modules" %% "scala-xml"                         % "1.0.5",
       "com.github.nscala-time" %% "nscala-time"                       % "2.10.0",
-      "com.lihaoyi"            %% "fastparse"                         % "0.3.7",
       "me.tongfei"              % "progressbar"                       % "0.4.0",
       "org.apache.maven"        % "maven-model-builder"               % "3.3.9",
       "ch.qos.logback"          % "logback-classic"                   % "1.1.7",
