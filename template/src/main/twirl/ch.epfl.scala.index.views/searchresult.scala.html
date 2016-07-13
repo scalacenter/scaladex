@@ -3,13 +3,13 @@
 @import ch.epfl.scala.index.model.misc.UserInfo
 @import ch.epfl.scala.index.model.misc.Url
 
-@(query: String, uri: String, sorting: Option[String], pagination: Pagination, projects: List[Project], user: Option[UserInfo])
+@(query: String, sorting: Option[String], pagination: Pagination, projects: List[Project], user: Option[UserInfo])
 @main(title = s"Search $query", showSearch = true, searchQuery = query, user) {
   <main id="container-search">
     <div class="container">
       @if(pagination.total != 0 ) {
         @result("search", "", query, sorting, pagination, projects, user)
-        @paginate(pagination, s"/$uri?q=$query" + sorting.map("&sort=" + _).getOrElse(""))
+        @paginate(pagination, s"/search?q=$query" + sorting.map("&sort=" + _).getOrElse(""))
       } else {
         <h1>No Results</h1>
       }

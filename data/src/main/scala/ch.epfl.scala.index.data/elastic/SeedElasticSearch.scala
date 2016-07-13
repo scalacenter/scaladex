@@ -24,10 +24,8 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
       Await.result(esClient.execute {
         create.index(indexName).mappings(
           mapping(projectsCollection).fields(
-            field("reference").nested(
-              field("organization") typed StringType index "not_analyzed",
-              field("repository") typed StringType index "not_analyzed"
-            ),
+            field("organization") typed StringType index "not_analyzed",
+            field("repository") typed StringType   index "not_analyzed",
             field("keywords") typed StringType index "not_analyzed",
             field("created") typed(DateType),
             field("updated") typed(DateType),
@@ -39,7 +37,7 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
               field("organization") typed StringType index "not_analyzed",
               field("repository") typed StringType index "not_analyzed",
               field("artifact") typed StringType index "not_analyzed"
-            ),
+            ).includeInRoot(true),
             field("maven").nested(
               field("groupId") typed StringType index "not_analyzed",
               field("artifactId") typed StringType index "not_analyzed",

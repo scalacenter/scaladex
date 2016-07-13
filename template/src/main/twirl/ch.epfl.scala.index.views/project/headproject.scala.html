@@ -9,11 +9,11 @@
       <div class="col-md-8">
         <div class="info-project">
           <h1>
-            <a href="/@project.reference.organization">@project.reference.organization</a> / 
-            <a href="https://github.com/@project.reference.organization/@project.reference.repository" 
+            <a href="/search?q=organization:@project.organization">@project.organization</a> / 
+            <a href="https://github.com/@project.organization/@project.repository" 
               target="_blank">
               <i class="fa fa-github fa-lg"></i>
-              @project.reference.repository
+              @project.repository
             </a>
           </h1>
           @for(github <- project.github) {
