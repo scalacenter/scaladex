@@ -294,6 +294,14 @@ class GithubDownload(privateCredentials: Option[GithubCredentials], implicit val
     ()
   }
 
+  /**
+   * Download github info for specific repository
+   *
+   * @param repo the github repository
+   * @param info flag if info can be downloaded
+   * @param readme flag if readme can be downloaded
+   * @param contributors flag if contributors can be downloaded
+   */
   def run(repo: GithubRepo, info: Boolean, readme: Boolean, contributors: Boolean): Unit = {
 
     if (info) {
