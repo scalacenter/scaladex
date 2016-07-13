@@ -21,7 +21,9 @@ import scala.util._
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-class GithubDownload(privateCredentials: Option[GithubCredentials], implicit val system: ActorSystem, implicit val materializer: ActorMaterializer) extends PlayWsDownloader {
+class GithubDownload(privateCredentials: Option[GithubCredentials] = None)
+  (implicit val system: ActorSystem, implicit val materializer: ActorMaterializer)
+extends PlayWsDownloader {
 
   import Json4s._
 

@@ -132,7 +132,7 @@ class PublishProcess(
    */
   private def updateIndex(repo: GithubRepo, pom: MavenModel, data: PublishData) = Future {
 
-    new GithubDownload(Some(data.credentials), system, materializer).run(repo, data.downloadInfo, data.downloadReadme, data.downloadContributors)
+    new GithubDownload(Some(data.credentials)).run(repo, data.downloadInfo, data.downloadReadme, data.downloadContributors)
     val bintray = BintraySearch(data.hash, None, s"${pom.groupId}:${pom.artifactId}", pom.artifactId, "", 0, pom.version, pom.groupId, pom.artifactId, new DateTime())
     val (newProject, newReleases) = ProjectConvert(List((pom, List(bintray)))).head
 
