@@ -29,13 +29,11 @@ object Main extends BintrayProtocol {
       val versions = List("2.12", "2.11", "2.10")
 
       for(version <- versions) {
-
         listPomsStep.run(version)
       }
 
       /* do a search for non standard lib poms */
       for (lib <-  uniqueNonStandardLibs) {
-
         listPomsStep.run(lib.groupId, lib.artifactId)
       }
     }
