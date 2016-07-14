@@ -77,8 +77,8 @@ object ProjectConvert extends BintrayProtocol {
         checkNonStandardLib(pom) map { artifactId =>
 
           for {
-            (artifactName, targets) <- ArtifactNameParser(artifactId)
-            version <- SemanticVersionParser(pom.version)
+            (artifactName, targets) <- Artifact(artifactId)
+            version <- SemanticVersion(pom.version)
             github <- repos.find(githubRepoExtractor.claimedRepos.contains).orElse(repos.headOption)
           } yield (github, artifactName, targets, pom, metas, version)
         }

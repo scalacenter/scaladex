@@ -50,7 +50,7 @@ object DefaultReleaseTests extends TestSuite{
           )
         }
 
-      val result = DefaultRelease(Project(organization, repository), ReleaseSelection(None, None, None), releases)
+      val result = DefaultRelease(Project(organization, repository), ReleaseSelection(None, None), releases)
       val expected =
         Some(ReleaseOptions(
           artifacts = List(

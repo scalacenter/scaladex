@@ -1,7 +1,5 @@
 package ch.epfl.scala.index
 
-import fastparse.all._
-
 package object data {
 
   def innerJoin[K, A, B, Z](m1: Map[K, A], m2: Map[K, B])(f: (A, B) => Z): Map[K, Z] = {

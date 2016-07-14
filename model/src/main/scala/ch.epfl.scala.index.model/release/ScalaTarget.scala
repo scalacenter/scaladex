@@ -22,6 +22,10 @@ case class ScalaTarget(
     v => s"scala.js_${v.major}.${v.minor}"
   ).getOrElse(s"scala_${scalaVersion.major}.${scalaVersion.minor}")
 
+  def sbt(artifact: String) = {
+    artifact + scalaJsVersion.map("_sjs" + _).getOrElse("") + "_" + scalaVersion
+  }
+
   def render = {
     scalaJsVersion match {
       case Some(v) => s"scala-js ${v.toString()} (scala ${scalaVersion.toString()})"
