@@ -1,6 +1,6 @@
 package ch.epfl.scala.index.model.release
 
 /**
- * Pre release trait
- */
+  * Pre release trait
+  */
 trait PreRelease

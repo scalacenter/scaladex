@@ -11,23 +11,24 @@ object ArtifactNameParser {
   private val ArtifactNameParser = {
     val SemanticVersioning = SemanticVersionParser.Parser
 
-    val Scala = "_" ~ SemanticVersioning
+    val Scala   = "_" ~ SemanticVersioning
     val ScalaJs = "_sjs" ~ SemanticVersioning
-    
-    val ScalaTargetParser = (ScalaJs.? ~ Scala).map{case (scalaJsVersion, scalaVersion) => 
-      ScalaTarget(scalaVersion, scalaJsVersion)
+
+    val ScalaTargetParser = (ScalaJs.? ~ Scala).map {
+      case (scalaJsVersion, scalaVersion) =>
+        ScalaTarget(scalaVersion, scalaJsVersion)
     }
 
     Start ~
-    (Alpha | Digit | "-".! | ".".! | (!(ScalaTargetParser ~ End) ~ "_")).rep.! ~ // must end with scala target
-    ScalaTargetParser ~
-    End
+      (Alpha | Digit | "-".! | ".".! | (!(ScalaTargetParser ~ End) ~ "_")).rep.! ~ // must end with scala target
+      ScalaTargetParser ~
+      End
   }
-  
+
   def apply(artifactId: String): Option[(String, ScalaTarget)] = {
     ArtifactNameParser.parse(artifactId) match {
       case Parsed.Success(v, _) => Some(v)
-      case _ => None
+      case _                    => None
     }
   }
 }

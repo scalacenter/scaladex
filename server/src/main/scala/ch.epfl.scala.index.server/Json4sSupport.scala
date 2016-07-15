@@ -1,7 +1,6 @@
 package ch.epfl.scala.index
 package server
 
-
 /*
  * Copyright 2015 Heiko Seeberger
  *
@@ -18,7 +17,6 @@ package server
  * limitations under the License.
  */
 
-
 import java.lang.reflect.InvocationTargetException
 
 import akka.http.scaladsl.marshalling.{Marshaller, ToEntityMarshaller}
@@ -27,42 +25,48 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import org.json4s._
 
 /**
- * Automatic to and from JSON marshalling/unmarshalling using an in-scope *Json4s* protocol.
- */
+  * Automatic to and from JSON marshalling/unmarshalling using an in-scope *Json4s* protocol.
+  */
 @Deprecated
 object Json4sSupport extends Json4sSupport
 
 /**
- * Automatic to and from JSON marshalling/unmarshalling using an in-scope *Json4s* protocol.
- */
+  * Automatic to and from JSON marshalling/unmarshalling using an in-scope *Json4s* protocol.
+  */
 @Deprecated
 trait Json4sSupport {
-  implicit val formats = DefaultFormats
+  implicit val formats       = DefaultFormats
   implicit val serialization = native.Serialization
 
   /**
-   * HTTP entity => `A`
-   *
-   * @tparam A type to decode
-   * @return unmarshaller for `A`
-   */
-  implicit def json4sUnmarshaller[A: Manifest](implicit serialization: Serialization, formats: Formats): FromEntityUnmarshaller[A] =
-    Unmarshaller
-      .byteStringUnmarshaller
+    * HTTP entity => `A`
+    *
+    * @tparam A type to decode
+    * @return unmarshaller for `A`
+    */
+  implicit def json4sUnmarshaller[A: Manifest](
+      implicit serialization: Serialization,
+      formats: Formats): FromEntityUnmarshaller[A] =
+    Unmarshaller.byteStringUnmarshaller
       .forContentTypes(`application/json`)
       .mapWithCharset { (data, charset) =>
         try serialization.read(data.decodeString(charset.nioCharset.name))
         catch {
-          case MappingException("unknown error", ite: InvocationTargetException) => throw ite.getCause
+          case MappingException("unknown error",
+                                ite: InvocationTargetException) =>
+            throw ite.getCause
         }
       }
 
   /**
-   * `A` => HTTP entity
-   *
-   * @tparam A type to encode, must be upper bounded by `AnyRef`
-   * @return marshaller for any `A` value
-   */
-  implicit def json4sMarshaller[A <: AnyRef](implicit serialization: Serialization, formats: Formats): ToEntityMarshaller[A] =
-    Marshaller.StringMarshaller.wrap(`application/json`)(serialization.writePretty[A])
+    * `A` => HTTP entity
+    *
+    * @tparam A type to encode, must be upper bounded by `AnyRef`
+    * @return marshaller for any `A` value
+    */
+  implicit def json4sMarshaller[A <: AnyRef](
+      implicit serialization: Serialization,
+      formats: Formats): ToEntityMarshaller[A] =
+    Marshaller.StringMarshaller.wrap(`application/json`)(
+        serialization.writePretty[A])
 }
