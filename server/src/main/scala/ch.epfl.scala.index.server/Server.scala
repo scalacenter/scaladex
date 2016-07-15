@@ -217,44 +217,49 @@ object Server {
         } ~
         path("search") {
           optionalSession(refreshable, usingCookies) { userState =>
-            parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
-              complete {
-                // you.flatMap(_ => userState.map(_.repos))
-                api.find(query, page, sorting)
-                  .map { case (pagination, projects) =>
-                    views.html.searchresult(query, sorting, pagination, projects, userState.map(_.user))
-                  }
-              }
+            parameters('q, 'page.as[Int] ? 1, 'sort.?) { (query, page, sorting) =>
+              complete(
+                api.find(query, page, sorting).map{ case (pagination, projects) =>
+                  views.html.searchresult(query, "search", sorting, pagination, projects, userState.map(_.user))
+                }
+              )
             }
           }
         } ~
-        path(Segment / Segment) { (owner, repo) =>
+        path(Segment) { organization =>
+          optionalSession(refreshable, usingCookies) { userState =>
+            parameters('page.as[Int] ? 1, 'sort.?) { (page, sorting) =>
+              val query = s"organization:$organization"
+              complete(
+                api.find(query, page, sorting).map { case (pagination, projects) =>
+                  views.html.searchresult(query, organization, sorting, pagination, projects, userState.map(_.user))
+                }
+              )
+            }
+          }
+        } ~
+        path(Segment / Segment) { (organization, repository) =>
           optionalSession(refreshable, usingCookies) { userState =>
             parameters('artifact, 'version.?){ (artifact, version) =>
               val rest = version match {
                 case Some(v) if !v.isEmpty => "/" + v
                 case _ => ""
               }
-              redirect(s"/$owner/$repo/$artifact$rest", StatusCodes.PermanentRedirect)
+              redirect(s"/$organization/$repository/$artifact$rest", StatusCodes.PermanentRedirect)
             } ~
             pathEnd {
-              complete(projectPage(owner, repo, None, None, userState))
+              complete(projectPage(organization, repository, None, None, userState))
             }
           }
         } ~
-        path(Segment / Segment / Segment ) { (owner, repo, artifact) =>
+        path(Segment / Segment / Segment ) { (organization, repository, artifact) =>
           optionalSession(refreshable, usingCookies) { userState =>
-            complete(projectPage(owner, repo, Some(artifact), None, userState))
+            complete(projectPage(organization, repository, Some(artifact), None, userState))
           }
         } ~
-        path(Segment / Segment / Segment / Segment) { (owner, repo, artifact, version) =>
+        path(Segment / Segment / Segment / Segment) { (organization, repository, artifact, version) =>
           optionalSession(refreshable, usingCookies) { userState =>
-            complete(projectPage(owner, repo, Some(artifact), SemanticVersion(version), userState))
-          }
-        } ~
-        path("edit" / Segment / Segment) { (owner, artifactName) =>
-          optionalSession(refreshable, usingCookies) { userState =>
-            complete("OK")
+            complete(projectPage(organization, repository, Some(artifact), SemanticVersion(version), userState))
           }
         } ~
         pathSingleSlash {
