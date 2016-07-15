@@ -27,10 +27,7 @@ lazy val commonSettings = Seq(
   scalacOptions in (Test, console) -= "-Ywarn-unused-import",
   libraryDependencies += "com.lihaoyi" % "ammonite-repl" % "0.6.0" % "test" cross CrossVersion.full,
   initialCommands in (Test, console) := """ammonite.repl.Main().run()""",
-  libraryDependencies ++= Seq(
-    "com.lihaoyi" %% "utest" % "0.4.3" % "test",
-    "ai.x"        %% "diff"  % "1.1.0" % "test"
-  ),
+  libraryDependencies += "com.lihaoyi" %% "utest" % "0.4.3" % "test",
   testFrameworks += new TestFramework("utest.runner.Framework")
 ) ++ baseSettings
 

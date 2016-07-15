@@ -2,13 +2,12 @@ package ch.epfl.scala.index.model
 package release
 
 import utest._
-import ai.x.diff.DiffShow
-import ai.x.diff.conversions._
 
 object DefaultReleaseTests extends TestSuite{
 
   val tests = this{
     "latest version pre release scala"-{
+      
       val organization = "typelevel"
       val repository = "cats"
       val groupdId = "org.typelevel"
@@ -66,8 +65,8 @@ object DefaultReleaseTests extends TestSuite{
           ),
           targets = List(
             ScalaTarget(SemanticVersion("2.11").get),
-            ScalaTarget(SemanticVersion("2.10").get),
             ScalaTarget(SemanticVersion("2.11").get, Some(SemanticVersion("0.6").get)),
+            ScalaTarget(SemanticVersion("2.10").get),
             ScalaTarget(SemanticVersion("2.10").get, Some(SemanticVersion("0.6").get))
           ),
           release = Release(
@@ -82,12 +81,7 @@ object DefaultReleaseTests extends TestSuite{
           )
         ))
 
-      implicit def longDiffShow = DiffShow.primitive[Long](_.toString)
-      implicit def semanticVersionShow = DiffShow.primitive[SemanticVersion](_.toString)
-
-      if(result != expected){
-        println(DiffShow.diff[Option[ReleaseOptions]](expected, result).string)
-      }
+      expected ==> result
     }
   }
 }
