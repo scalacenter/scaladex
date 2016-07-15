@@ -1,0 +1,196 @@
+@import ch.epfl.scala.index.model.misc.UserInfo
+@(user: Option[UserInfo])
+@main(title = "How to publish on scaladex", showSearch = true, searchQuery = "", user) {
+
+  <main id="container-project">
+    <div class="head-project">
+      <div class="container">
+        <div class="row">
+          <div class="col-md-12">
+            <div class="info-project">
+              <h1>How to publish to Scaladex</h1>
+              <p class="description">Description how to bring your artifacts to Scaladex.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+
+          <div class="content-project box">
+            <div class="announce instapaper_body MD" data-path="README.MD" id="readme">
+              <article class="markdown-body entry-content" itemprop="text">
+                <h2>
+                  <a id="user-content-how-to-publish-on-scaladex" class="anchor" href="#how-to-publish-on-scaladex" aria-hidden="true">
+                    <svg aria-hidden="true" class="octicon octicon-link" height="16" version="1.1" viewBox="0 0 16 16" width="16">
+                      <path d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path>
+                    </svg>
+                  </a>How to publish to scaladex
+                </h2>
+                <ul>
+                  <li>adding keywords: submit a PR to
+                    <a href="https://github.com/scalacenter/scaladex-metadata">scaladex-metadata</a> or use the Scaladex SBT Plugin
+                  </li>
+                  <li>claiming you project: submit a PR to
+                    <a href="https://github.com/scalacenter/scaladex-data">scaladex-data</a> or use the Scaladex SBT Plugin
+                  </li>
+                  <li>improving the index: join the
+                    <a href="https://gitter.im/scalacenter/scaladex">gitter.im channel</a>
+                  </li>
+                </ul>
+
+                <p>The fastest way to publish your artifact to Scaladex is using the Scaladex SBT plugin. The publish workflow is
+                  pretty much the same as you might know already. One difference is, that Scaladex plugin will only publish
+                  the POM file. Your packages, docs and sources are not send to Scaladex.  If you don't want to use the plugin, you can
+                  just wait until Scaladex reindex itself. This process could maybe take some days so please be patient.</p>
+                <p>For Scaladex is necessary to have a SCM tag in the Pom file. SCM means source control management. It's also required at
+                  the moment that you have your source code published on
+                  <a href="https://github.com">GitHub</a>.
+                  To add an SCM tag to your project you can follow the guidelines of SBT.
+                  <a href="http://www.scala-sbt.org/1.0/docs/Using-Sonatype.html#Third+-+POM+Metadata">SBT Documentation - POM Metadata</a>
+                </p>
+                <h3>
+                  <a id="user-content-install-the-plugin" class="anchor" href="#install-the-plugin" aria-hidden="true">
+                    <svg aria-hidden="true" class="octicon octicon-link" height="16" version="1.1" viewBox="0 0 16 16" width="16">
+                      <path d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path>
+                    </svg>
+                  </a>Install the plugin
+                </h3>
+                <p>To get the Scaladex plugin, you only need to add
+                  <code>addSbtPlugin("ch.epfl.scala.index" % "sbt-scaladex" % "0.1.3")</code> to
+                  your
+                  <code>plugin.sbt</code> file.
+                </p>
+                <h3>
+                  <a id="user-content-publish-credentials" class="anchor" href="#publish-credentials" aria-hidden="true">
+                    <svg aria-hidden="true" class="octicon octicon-link" height="16" version="1.1" viewBox="0 0 16 16" width="16">
+                      <path d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path>
+                    </svg>
+                  </a>Publish Credentials
+                </h3>
+                <p>To publish to Scaladex you need to add some user authentication. Scaladex uses
+                  <a href="https://github.com">GitHub</a> to authenticate your publish
+                  process and verify that you have push permission to the defined repository (SCM Tag). You can see
+                  <a href="http://www.scala-sbt.org/0.13/docs/Publishing.html#Credentials">SBT Credentials documentation</a> for how to add the login credentials.
+                </p>
+                <h3>
+                  <a id="user-content-configure-the-publish-process" class="anchor" href="#configure-the-publish-process" aria-hidden="true">
+                    <svg aria-hidden="true" class="octicon octicon-link" height="16" version="1.1" viewBox="0 0 16 16" width="16">
+                      <path d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path>
+                    </svg>
+                  </a>Configure the publish process
+                </h3>
+                <p>There are some settings for the Plugin to control the output on Scaladex a bit, like adding keywords, show
+                  <a href="https://github.com">GitHub</a> info,
+                  show
+                  <a href="https://github.com">GitHub</a> Readme file, show
+                  <a href="https://github.com">GitHub</a> contributors.
+                </p>
+                <ul>
+                  <li>
+                    <strong>scaladexBaseUrl</strong>: This is the main url to publish to
+                    <em>default</em>:
+                    <code>https://index.scala-lang.org</code>
+                  </li>
+                  <li>
+                    <strong>scaladexKeywords</strong>: List of keywords for your artifact
+                    <em>default</em>:
+                    <code>empty</code>
+                  </li>
+                  <li>
+                    <strong>scaladexDownloadReadme</strong>: A flag to download the README from
+                    <a href="https://github.com">GitHub</a>.
+                    <em>default</em>:
+                    <code>true</code>
+                  </li>
+                  <li>
+                    <strong>scaladexDownloadInfo</strong>: A flag to download the repository info from GitHub.
+                    <em>default</em>:
+                    <code>true</code>
+                  </li>
+                  <li>
+                    <strong>scaladexDownloadContributors</strong>: A flag to download the contributors info from
+                    <a href="https://github.com">GitHub</a>.
+                    <em>default</em>:
+                    <code>true</code>
+                  </li>
+                  <li>
+                    <strong>
+                      <a href="http://www.scala-sbt.org/0.13/docs/Publishing.html#Credentials">Credentials</a> (SBT default)
+                    </strong>: Configuration for your
+                    <a href="https://github.com">GitHub</a> credentials to verify write access to the SCM Tag in the Pom file.
+                  </li>
+                </ul>
+                <p>
+                  <strong>SBT Simple Example</strong>
+                </p>
+                <div class="highlight highlight-source-scala">
+                  <pre>scaladexKeywords in <span class="pl-en">Scaladex</span> <span class="pl-k">:</span> <span class="pl-k">=</span> <span class="pl-en">Seq</span>(<span class="pl-s"><span class="pl-pds">"</span>Foo<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>Bar<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>Baz<span class="pl-pds">"</span></span>)
+<span class="pl-en">Credentials</span> in <span class="pl-en">Scaladex</span> <span class="pl-k">:</span> <span class="pl-k">=</span> <span class="pl-en">Credentials</span>(<span class="pl-en">Path</span>.userHome<span class="pl-k">/</span><span class="pl-s"><span class="pl-pds">"</span>.ivy2<span class="pl-pds">"</span></span><span class="pl-k">/</span><span class="pl-s"><span class="pl-pds">"</span>.scaladex.credentials<span class="pl-pds">"</span></span>)
+                  </pre>
+                </div>
+                <p>
+                  <strong>Disable Readme, Info, or Contributors</strong>
+                </p>
+                <p>This might be important for private repositories. With the Plugin we're able to index private repositories
+                  and fetch Contributors, Readme and the Repository Info. If there is critical info configure the access.</p>
+                <div class="highlight highlight-source-scala">
+                  <pre>scaladexDownloadReadme in <span class="pl-en">Scaladex</span> <span class="pl-k">:</span> <span class="pl-k">=</span> <span class="pl-c1">false</span>
+scaladexDownloadInfo in <span class="pl-en">Scaladex</span> <span class="pl-k">:</span> <span class="pl-k">=</span> <span class="pl-c1">false</span>
+scaladexDownloadContributors in <span class="pl-en">Scaladex</span> <span class="pl-k">:</span> <span class="pl-k">=</span> <span class="pl-c1">false</span>
+                  </pre>
+                </div>
+                <h3>
+                  <a id="user-content-response-codes--messages" class="anchor" href="#response-codes--messages" aria-hidden="true">
+                    <svg aria-hidden="true" class="octicon octicon-link" height="16" version="1.1" viewBox="0 0 16 16" width="16">
+                      <path d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path>
+                    </svg>
+                  </a>Response codes / Messages
+                </h3>
+                <p>Maybe, you get an error during publishing. This explanation will help you to solve problems you might have.</p>
+                <ul>
+                  <li>
+                    <strong>Forbidden</strong> - You don't have push permission to the
+                    <a href="https://github.com">GitHub</a> repository.
+                  </li>
+                  <li>
+                    <strong>NoContent</strong> - The SCM Tag in POM file is Missing. See [SBT Documentation][SBT-POM-Metadata] for how to solve.
+                  </li>
+                  <li>
+                    <strong>Unauthorized</strong> - Your login credentials are not right. Check your configuration if you provide
+                    credentials and also check if they're correct.
+                  </li>
+                  <li>
+                    <strong>destination file exists and overwrite == false</strong> - The version exists already on Scaladex. Overriding is
+                    only allowed for Snapshots.
+                  </li>
+                </ul>
+                <h3>
+                  <a id="user-content-run-publish-process" class="anchor" href="#run-publish-process" aria-hidden="true">
+                    <svg aria-hidden="true" class="octicon octicon-link" height="16" version="1.1" viewBox="0 0 16 16" width="16">
+                      <path d="M4 9h1v1H4c-1.5 0-3-1.69-3-3.5S2.55 3 4 3h4c1.45 0 3 1.69 3 3.5 0 1.41-.91 2.72-2 3.25V8.59c.58-.45 1-1.27 1-2.09C10 5.22 8.98 4 8 4H4c-.98 0-2 1.22-2 2.5S3 9 4 9zm9-3h-1v1h1c1 0 2 1.22 2 2.5S13.98 12 13 12H9c-.98 0-2-1.22-2-2.5 0-.83.42-1.64 1-2.09V6.25c-1.09.53-2 1.84-2 3.25C6 11.31 7.55 13 9 13h4c1.45 0 3-1.69 3-3.5S14.5 6 13 6z"></path>
+                    </svg>
+                  </a>Run Publish process
+                </h3>
+                <p>The command to publish your artifact to Scaladex is straight forward. If you have the configuration done
+                  (don't forget to call
+                  <code>reload</code>) you can simply trigger the SBT-task
+                  <code>scaladex:publish</code>. If you have trouble
+                  doing this, have a look at the
+                  <strong>Response codes / Messages</strong> section.
+                </p>
+                <div class="highlight highlight-source-shell">
+                  <pre>sbt scaladex:publish</pre>
+                </div>
+
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+}
