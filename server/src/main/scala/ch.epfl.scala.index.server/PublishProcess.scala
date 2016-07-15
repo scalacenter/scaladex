@@ -136,7 +136,7 @@ class PublishProcess(
     val (newProject, newReleases) = ProjectConvert(List((pom, List(bintray)))).head
 
     val updatedProject = newProject.copy(keywords = data.keywords)
-    val projectSearch = api.projectPage(newProject.reference)
+    val projectSearch = api.project(newProject.reference)
     val releaseSearch = api.releases(newProject.reference)
 
     for {
@@ -146,7 +146,7 @@ class PublishProcess(
 
       projectResult match {
 
-        case Some((project, versions, _, _, release, _)) =>
+        case Some(project) =>
 
           project._id.map { id =>
 

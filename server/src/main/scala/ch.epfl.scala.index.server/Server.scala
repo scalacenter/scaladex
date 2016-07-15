@@ -4,7 +4,7 @@ package server
 import model._
 import model.misc._
 import release._
-import github.GithubCredentials
+import data.github.GithubCredentials
 import data.elastic._
 
 import akka.http.scaladsl._
