@@ -93,16 +93,4 @@ object DefaultRelease {
       )
     }
   }
-
-
-  private def finds[A, B](xs: List[(A, B)], fs: List[A => Boolean]): Option[(A, B)] = {
-    fs match {
-      case Nil => None
-      case f :: h =>
-        xs.find{ case (a, b) => f(a) } match {
-          case None => finds(xs, h)
-          case s    => s
-        }
-    }
-  }
 }
