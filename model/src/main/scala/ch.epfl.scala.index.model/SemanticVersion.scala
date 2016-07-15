@@ -1,4 +1,9 @@
-package ch.epfl.scala.index.model.release
+package ch.epfl.scala.index.model
+
+sealed trait PreRelease
+case class ReleaseCandidate(rc: Long) extends PreRelease
+case class Milestone(m: Long) extends PreRelease
+case class OtherPreRelease(o: String) extends PreRelease
 
 /**
  * Semantic version, separation of possible combinations
@@ -37,7 +42,7 @@ case class SemanticVersion(
   }
 }
 
-object SemanticVersion {
+object SemanticVersion extends Parsers {
 
   /**
    * special ordering for versions
@@ -93,6 +98,40 @@ object SemanticVersion {
       // Milestone < Release Candidate < Released
       if(cmp.equiv(tv1, tv2)) preCmp(v1.preRelease, v2.preRelease) 
       else cmp.compare(tv1, tv2)      
+    }
+  }
+
+  import fastparse.all._
+  import fastparse.core.Parsed
+
+  val Parser = {
+    val Number  = Digit.rep(1).!.map(_.toLong)  
+    val Major = Number
+    
+    // http://semver.org/#spec-item-9
+    val PreRelease: P[PreRelease] =
+      "-" ~ (
+        (("M" | "m") ~ &(Digit)               ~ Number).map(n => Milestone(n)) |
+        (("R" | "r") ~ ("C" | "c") ~ &(Digit) ~ Number).map(n => ReleaseCandidate(n)) |
+        (Digit | Alpha | "." | "-").rep.!.              map(s => OtherPreRelease(s))
+      )
+
+    // http://semver.org/#spec-item-10
+    val MetaData = "+" ~ AnyChar.rep.!
+    
+    val MinorP = ("." ~ Number).?.map(_.getOrElse(0L)) // not really valid SemVer
+    val PatchP = ("." ~ Number).?                      // not really valid SemVer
+
+    ("v".? ~ Major ~ MinorP ~ PatchP ~ PreRelease.? ~ MetaData.?).map{
+      case (major, minor, patch, preRelease, metadata) =>
+        SemanticVersion(major, minor, patch, preRelease, metadata)
+    }
+  }
+  private val FullParser = Start ~ Parser ~ End
+  def apply(version: String): Option[SemanticVersion] = {
+    FullParser.parse(version) match {
+      case Parsed.Success(v, _) => Some(v)
+      case _ => None
     }
   }
 }

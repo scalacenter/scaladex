@@ -2,11 +2,9 @@ package ch.epfl.scala.index
 package server
 
 import model._
-import release.{SemanticVersion, ScalaTarget, MavenReference}
+import release._
 import misc.Pagination
-
 import data.elastic._
-import data.cleanup.ArtifactNameParser
 
 import com.sksamuel.elastic4s._
 import ElasticDsl._
@@ -54,10 +52,10 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     query(
       bool(
         should(
-          termQuery("repository", escaped),
-          termQuery("organization", escaped),
           termQuery("keywords", escaped),
           termQuery("github.description", escaped),
+          termQuery("repository", escaped),
+          termQuery("organization", escaped),
           termQuery("github.readme", escaped),
           stringQuery(escaped)
         )
@@ -116,123 +114,16 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
       ).limit(1)
     }.map(r => r.as[Project].headOption)
   }
-  def projectPage(projectRef: Project.Reference, selectedArtifact: Option[String] = None, selectedVersion: Option[SemanticVersion] = None):
-    Future[Option[(Project, List[String], List[SemanticVersion], List[(ScalaTarget, MavenReference)], Release, Int)]] = {
-
+  def projectPage(projectRef: Project.Reference, selection: ReleaseSelection): Future[Option[(Project, Int, ReleaseOptions)]] = {
     val projectAndReleases =
       for {
         project <- project(projectRef)
         releases <- releases(projectRef)
       } yield (project, releases)
 
-
-
-    def finds[A, B](xs: List[(A, B)], fs: List[A => Boolean]): Option[(A, B)] = {
-      fs match {
-        case Nil => None
-        case f :: h =>
-          xs.find{ case (a, b) => f(a) } match {
-            case None => finds(xs, h)
-            case s    => s
-          }
-      }
-    }
-
-    def defaultRelease(project: Project, releases: List[Release]): Option[(Release, List[SemanticVersion], List[(ScalaTarget, MavenReference)])] = {
-      val artifacts = releases.groupBy(_.reference.artifact).toList
-
-      def specified(artifact: String): Boolean = Some(artifact) == selectedArtifact
-      def projectDefault(artifact: String): Boolean = Some(artifact) == project.defaultArtifact
-      def projectRepository(artifact: String): Boolean = project.repository == artifact
-
-      def alphabetically = artifacts.sortBy(_._1).headOption
-
-      val artifact: Option[(String, List[Release], Option[ScalaTarget])] =
-        selectedArtifact match {
-          case Some(a) => {
-            // artifact provided by the user
-            // it can have a scala target or not
-            ArtifactNameParser(a) match {
-              case Some((name, target)) => {
-                artifacts.find{ case (a, b) => a == name}.map{ case (a, b) => (a, b, Some(target))}
-              }
-              case None => finds(artifacts, List(specified _)).map{ case (a, b) => (a, b, None)}
-            }
-          }
-          case None => {
-            // find artifact by heuristic
-            (finds(artifacts, List(projectDefault _, projectRepository _)) match {
-              case None => alphabetically
-              case s => s
-            }).map{ case (a, b) => (a, b, None)}
-          }
-        }
-
-      artifact.flatMap{ case (_, releases, selectedTarget) =>
-
-        val sortedByVersion = releases.sortBy(_.reference.version)(Descending)
-
-        // version provided by the user
-        val versionSelected =
-          selectedVersion
-            .map(version => sortedByVersion.filter(_.reference.version == version))
-            .getOrElse(sortedByVersion)
-
-        val latestStableTarget = {
-          selectedTarget match {
-            case None => {
-              // select latest stable target if possible (ex: scala 2.11 over 2.12 and scala-js)
-              val scalaJsOut =
-                if(versionSelected.exists(_.reference.target.scalaJsVersion.isEmpty)) {
-                  versionSelected.filter(_.reference.target.scalaJsVersion.isEmpty)
-                } else versionSelected
-
-              val preReleaseOut =
-                if(scalaJsOut.exists(_.reference.target.scalaVersion.preRelease.isEmpty)) {
-                  scalaJsOut.filter(_.reference.target.scalaVersion.preRelease.isEmpty)
-                } else scalaJsOut
-
-              preReleaseOut.sortBy(_.reference.target.scalaVersion)(Descending)
-            }
-            case Some(target) =>
-              // target provided by the user
-              versionSelected.filter(_.reference.target == target)
-          }
-        }
-
-        val lastNonPreReleases = {
-          // select last non preRelease release if possible (ex: 1.1.0 over 1.2.0-RC1)
-          val nonPreRelease=
-            if(latestStableTarget.exists(_.reference.version.preRelease.isEmpty)){
-              latestStableTarget.filter(_.reference.version.preRelease.isEmpty)
-            } else {
-              latestStableTarget
-            }
-
-          val sorted = nonPreRelease.sortBy(_.reference.version)(Descending)
-
-          // (ex: collect all 1.1.0 releases)
-          sorted.headOption.map(v =>
-            sorted.filter(_.reference.version == v.reference.version)
-          ).getOrElse(Nil)
-        }
-
-        lastNonPreReleases.headOption.map(r =>
-          (
-            r,
-            sortedByVersion.map(_.reference.version).distinct,
-            lastNonPreReleases.map(r => (r.reference.target, r.maven))
-          )
-        )
-      }
-    }
-
     projectAndReleases.map{ case (p, releases) =>
       p.flatMap(project =>
-        defaultRelease(project, releases).map{ case (release, versions, targets) =>
-          val artifacts = releases.groupBy(_.reference.artifactReference).keys.toList.map(_.artifact)
-          (project, artifacts, versions, targets, release, releases.size)
-        }
+        DefaultRelease(project, selection, releases).map((project, releases.size, _))
       )
     }
   }

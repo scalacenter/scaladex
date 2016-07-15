@@ -2,10 +2,11 @@ package ch.epfl.scala.index
 package server
 
 import model._
-import model.misc.UserInfo
-import release.{MavenReference, SemanticVersion}
-import data.cleanup.SemanticVersionParser
+import model.misc._
+import release._
+import data.github.GithubCredentials
 import data.elastic._
+
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import Uri._
@@ -19,7 +20,6 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.server.directives.Credentials.{Missing, Provided}
 import akka.stream.ActorMaterializer
-import ch.epfl.scala.index.data.github.GithubCredentials
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -53,14 +53,15 @@ object Server {
     def projectPage(owner: String, repo: String, artifact: Option[String] = None,
         version: Option[SemanticVersion], userState: Option[UserState] = None) = {
       val user = userState.map(_.user)
-      api.projectPage(Project.Reference(owner, repo), artifact, version).map(
-        _.map{ case (project, artifacts, versions, release, targets, releaseCount) =>
+      api.projectPage(Project.Reference(owner, repo), ReleaseSelection(artifact, version)).map(
+        _.map{ case (project, releaseCount, options) =>
+          import options._
           (OK, views.project.html.project(
             project,
             artifacts,
             versions,
-            release,
             targets,
+            release,
             releaseCount,
             user
           ))
@@ -124,7 +125,6 @@ object Server {
         MavenReference(groupId, artifactId, version)
       }
 
-//      rest.route ~
       put {
         path("publish") {
           parameters(
@@ -249,7 +249,7 @@ object Server {
         } ~
         path(Segment / Segment / Segment / Segment) { (owner, repo, artifact, version) =>
           optionalSession(refreshable, usingCookies) { userState =>
-            complete(projectPage(owner, repo, Some(artifact), SemanticVersionParser(version), userState))
+            complete(projectPage(owner, repo, Some(artifact), SemanticVersion(version), userState))
           }
         } ~
         path("edit" / Segment / Segment) { (owner, artifactName) =>

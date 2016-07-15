@@ -1,16 +1,12 @@
-package ch.epfl.scala.index
-package data
-package cleanup
-
-import model.release.{Milestone, OtherPreRelease, ReleaseCandidate, SemanticVersion}
+package ch.epfl.scala.index.model
 
 import utest._
 
-object SemanticVersionTest extends TestSuite{
+object SemanticVersionTests extends TestSuite{
   val tests = this{
     "ordering"-{
       def order(versions: List[String]) = 
-        versions.flatMap(v => SemanticVersionParser(v)).sorted(Ordering[SemanticVersion].reverse)
+        versions.flatMap(v => SemanticVersion(v)).sorted(Ordering[SemanticVersion].reverse)
 
       "small"-{
         val versions =
@@ -130,46 +126,46 @@ object SemanticVersionTest extends TestSuite{
     "parsing"-{
       // relaxed semantic version
       "major"-{
-        assert(SemanticVersionParser("1") == Some(SemanticVersion(1)))
+        SemanticVersion("1") ==> Some(SemanticVersion(1))
       }
 
       // relaxed semantic version
       "major.minor"-{
-        assert(SemanticVersionParser("1.1") == Some(SemanticVersion(1, 1)))
+        SemanticVersion("1.1") ==> Some(SemanticVersion(1, 1))
       }
 
       "major.minor.patch"-{
-        assert(SemanticVersionParser("1.1.1") == Some(SemanticVersion(1, 1, Some(1))))
+        SemanticVersion("1.1.1") ==> Some(SemanticVersion(1, 1, Some(1)))
       }
 
       "major.minor.patch-rc"-{
-        assert(SemanticVersionParser("1.1.1-RC1") == Some(SemanticVersion(1, 1, Some(1), Some(ReleaseCandidate(1)))))
+        SemanticVersion("1.1.1-RC1") ==> Some(SemanticVersion(1, 1, Some(1), Some(ReleaseCandidate(1))))
       }
 
       "major.minor.patch-m"-{
-        assert(SemanticVersionParser("1.1.1-M1") == Some(SemanticVersion(1, 1, Some(1), Some(Milestone(1)))))
+        SemanticVersion("1.1.1-M1") ==> Some(SemanticVersion(1, 1, Some(1), Some(Milestone(1))))
       }
 
       "major.minor.patch-xyz"-{
-        assert(SemanticVersionParser("1.1.1-xyz") == Some(SemanticVersion(1, 1, Some(1), Some(OtherPreRelease("xyz")))))
+        SemanticVersion("1.1.1-xyz") ==> Some(SemanticVersion(1, 1, Some(1), Some(OtherPreRelease("xyz"))))
       }
 
       "major.minor.patch+meta"-{
-        assert(SemanticVersionParser("1.1.1+some.meta~data") == Some(SemanticVersion(1, 1, Some(1), None, Some("some.meta~data"))))
+        SemanticVersion("1.1.1+some.meta~data") ==> Some(SemanticVersion(1, 1, Some(1), None, Some("some.meta~data")))
       }
 
       "git commit"-{
-        assert(SemanticVersionParser("13e7afa9c1817d45b2989e545b2e9ead21d00cef") == None)
+        SemanticVersion("13e7afa9c1817d45b2989e545b2e9ead21d00cef") ==> None
       }
 
       // we could support this one
       "epic.major.minor.patch"-{
-        assert(SemanticVersionParser("1.1.1.1") == None)
+        SemanticVersion("1.1.1.1") ==> None
       }
 
       // relaxed semantic version
       "v sufix"-{
-        assert(SemanticVersionParser("v1") == Some(SemanticVersion(1)))
+        SemanticVersion("v1") ==> Some(SemanticVersion(1))
       }
     }
   }

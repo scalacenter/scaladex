@@ -1,4 +1,5 @@
-package ch.epfl.scala.index.model.release
+package ch.epfl.scala.index.model
+package release
 
 /**
  * the scala target eg. version / environment
@@ -20,6 +21,10 @@ case class ScalaTarget(
   def supportName = scalaJsVersion.map(
     v => s"scala.js_${v.major}.${v.minor}"
   ).getOrElse(s"scala_${scalaVersion.major}.${scalaVersion.minor}")
+
+  def sbt(artifact: String) = {
+    artifact + scalaJsVersion.map("_sjs" + _).getOrElse("") + "_" + scalaVersion
+  }
 
   def render = {
     scalaJsVersion match {
