@@ -48,20 +48,6 @@ extends PlayWsDownloader {
   }
 
   /**
-   * extracts the last page from a given link string
-   * - <https://api.github.com/repositories/130013/issues?page=2>; rel="next", <https://api.github.com/repositories/130013/issues?page=23>; rel="last"
-   *
-   * @param links the links
-   * @return
-   */
-  private def extractLastPage(links: String): Int = {
-
-    val pattern = """page=([0-9]+)>; rel="([^"]+)""".r
-    val pages = pattern.findAllIn(links).matchData.map(x => x.group(2) -> x.group(1).toInt).toMap
-    pages.getOrElse("last", 1)
-  }
-
-  /**
    * Apply github authentication strategy
    *
    * @param request the current request
@@ -236,7 +222,7 @@ extends PlayWsDownloader {
    * @param repo the current github repo
    * @return
    */
-  private def mainGithubUrl(repo: GithubRepo): String = s"https://api.github.com/repos/${repo.organization}/${repo.repo}"
+  private def mainGithubUrl(repo: GithubRepo): String = s"https://api.github.com/repos/${repo.organization}/${repo.repository}"
 
   /**
    * get the Github Info url

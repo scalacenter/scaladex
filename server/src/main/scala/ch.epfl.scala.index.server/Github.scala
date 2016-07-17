@@ -1,7 +1,9 @@
 package ch.epfl.scala.index
 package server
 
-import model.misc.{GithubRepo, UserInfo}
+import model.misc._
+
+import data.github._
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import spray.json._
@@ -16,6 +18,8 @@ import com.softwaremill.session._
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+
+import scala.concurrent.Future
 
 import scala.util.Try
 
@@ -44,8 +48,8 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
   import system.dispatcher
 
   // scaladex user
-  val clientId = "62ce08c1867245d61742"
-  val clientSecret = "2e968758c2e512f3c1e7b51a3bb1677130a3c4f6"
+  val clientId = "931a921477e5f680cd55"
+  val clientSecret = "032aed922962b900b4c595be5fbc6185537a498b"
 
   def info(code: String) = {
     def access = {
@@ -64,15 +68,35 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
     }
     def fetchGithub(token: String, path: Path, query: Query = Query.Empty) = {
       Http().singleRequest(HttpRequest(
-        uri = Uri(s"https://api.github.com").withPath(path),
+        uri = Uri(s"https://api.github.com").withPath(path).withQuery(query),
         headers = List(Authorization(GenericHttpCredentials("token", token)))
       ))
     }
 
-    def fetchRepos(token: String) =
-      fetchGithub(token, Path.Empty / "user" / "repos", Query("visibility" -> "public")).flatMap(response => 
-        Unmarshal(response).to[List[RepoResponse]]
-      )
+    def fetchRepos(token: String): Future[List[RepoResponse]] = {
+      def request(page: Option[Int] = None) = {
+        val query = page.map(p =>  Query("visibility" -> "public", "page" -> p.toString()))
+                        .getOrElse(Query("visibility" -> "public"))
+        fetchGithub(token, Path.Empty / "user" / "repos", query)
+      }
+      request(None).flatMap{r1 => 
+        val lastPage = r1.headers.find(_.name == "Link").map(h => extractLastPage(h.value)).getOrElse(1)
+        Unmarshal(r1).to[List[RepoResponse]].map(repos =>
+          (repos, lastPage)
+        )
+      }.flatMap{ case(repos, lastPage) =>
+        val nextPagesRequests =
+          if(lastPage > 1) {
+            Future.sequence((2 to lastPage).map(page => request(Some(page)).flatMap(r2 =>
+              Unmarshal(r2).to[List[RepoResponse]]
+            ))).map(_.flatten)
+          } else Future.successful(Nil)
+
+        nextPagesRequests.map(repos2 =>
+          repos ++ repos2
+        )
+      }
+    }
 
     def fetchUser(token: String) =
       fetchGithub(token, Path.Empty / "user").flatMap(response => 

@@ -68,7 +68,7 @@ class GithubRepoExtractor extends DefaultJsonProtocol {
           List(connection, developerConnection, url).
             flatten.
             flatMap(parseRepo).
-            filter(g => g.organization != "" && g.repo != "")
+            filter(g => g.organization != "" && g.repository != "")
         }
         case None => List()
       }

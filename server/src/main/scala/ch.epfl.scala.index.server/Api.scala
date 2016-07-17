@@ -2,6 +2,7 @@ package ch.epfl.scala.index
 package server
 
 import model._
+import model.misc._
 import release._
 import misc.Pagination
 import data.elastic._
@@ -47,18 +48,36 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     ))
   }
 
-  def find(queryString: String, page: PageIndex, sorting: Option[String] = None) = {
+  def find(queryString: String, page: PageIndex, sorting: Option[String] = None, userRepos: Set[GithubRepo] = Set()) = {
     val escaped = queryString.replaceAllLiterally("/", "\\/")
+    val reposQueries =
+      if(!userRepos.isEmpty) {
+        userRepos.toList.map{ case GithubRepo(organization, repository)  =>
+          bool(
+            must(
+              termQuery("organization", organization.toLowerCase),
+              termQuery("repository", repository.toLowerCase)
+            )
+          )
+        }
+      } else List()
+
     query(
       bool(
-        should(
+        mustQueries = List(bool(
+          should(
+            reposQueries: _*
+          )
+        )),
+        shouldQueries = List(
           termQuery("keywords", escaped),
           termQuery("github.description", escaped),
           termQuery("repository", escaped),
           termQuery("organization", escaped),
           termQuery("github.readme", escaped),
           stringQuery(escaped)
-        )
+        ),
+        notQueries = List()
       ),
       page,
       sorting

@@ -45,17 +45,18 @@
                             @searchinput(searchQuery)
                         }
 
-                        @*
                         @user.map{ u =>
-                            <a class="pull-right" href="/search?q=*&you">
+                            <a class="btn btn-default pull-right" href="/logout">
+                                <i class="fa fa-sign-out fa-lg" aria-hidden="true"></i> Logout
+                            </a>
+                            <a class="pull-right you" href="/search?q=*&you">
                                 <img src="@u.sizedAvatarUrl(38)" alt="Your Avatar - @u.login">
                             </a>
                         }.getOrElse {
                             <a class="btn btn-primary pull-right" href="/login">
-                                <i class="fa fa-github fa-lg"></i> Login
+                                <i class="fa fa-github fa-lg" aria-hidden="true"></i> Login
                             </a>
                         }
-                        *@
                     </div>
                 </div>
             </div>

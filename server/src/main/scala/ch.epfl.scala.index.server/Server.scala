@@ -34,8 +34,10 @@ object Server {
 
     val sessionConfig = SessionConfig.default("c05ll3lesrinf39t7mc5h6un6r0c69lgfno69dsak3vabeqamouq4328cuaekros401ajdpkh60rrtpd8ro24rbuqmgtnd1ebag6ljnb65i8a55d482ok7o0nch0bfbe")
     implicit val sessionManager = new SessionManager[UserState](sessionConfig)
-    implicit val refreshTokenStorage = new InMemoryRefreshTokenStorage[UserState] {
-      def log(msg: String) = println(msg)
+    implicit val refreshTokenStorage = new InMemoryRefreshTokenStorage[UserState] {       
+      def log(msg: String) = 
+        if(msg.startsWith("Looking up token for selector")) () // borring
+        else println(msg)
     }
 
     val api = new Api(github)
@@ -184,8 +186,10 @@ object Server {
         } ~
         path("login") {
           redirect(Uri("https://github.com/login/oauth/authorize").withQuery(Query(
-            "client_id" -> github.clientId
-          )),TemporaryRedirect)
+            "client_id" -> github.clientId,
+            // this is required to see all repo with write permissions
+            "scope" -> "public_repo"
+          )), TemporaryRedirect)
         } ~
         path("logout") {
           requiredSession(refreshable, usingCookies) { _ =>
@@ -217,9 +221,9 @@ object Server {
         } ~
         path("search") {
           optionalSession(refreshable, usingCookies) { userState =>
-            parameters('q, 'page.as[Int] ? 1, 'sort.?) { (query, page, sorting) =>
+            parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
               complete(
-                api.find(query, page, sorting).map{ case (pagination, projects) =>
+                api.find(query, page, sorting, you.flatMap(_ => userState.map(_.repos)).getOrElse(Set())).map{ case (pagination, projects) =>
                   views.html.searchresult(query, "search", sorting, pagination, projects, userState.map(_.user))
                 }
               )
@@ -229,12 +233,14 @@ object Server {
         path(Segment) { organization =>
           optionalSession(refreshable, usingCookies) { userState =>
             parameters('page.as[Int] ? 1, 'sort.?) { (page, sorting) =>
-              val query = s"organization:$organization"
-              complete(
-                api.find(query, page, sorting).map { case (pagination, projects) =>
-                  views.html.searchresult(query, organization, sorting, pagination, projects, userState.map(_.user))
-                }
-              )
+              pathEnd {
+                val query = s"organization:$organization"
+                complete(
+                  api.find(query, page, sorting).map { case (pagination, projects) =>
+                    views.html.searchresult(query, organization, sorting, pagination, projects, userState.map(_.user))
+                  }
+                )
+              }
             }
           }
         } ~
