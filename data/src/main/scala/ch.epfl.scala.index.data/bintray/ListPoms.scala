@@ -186,9 +186,7 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
       /* maybe we have here a problem with duplicated poms */
       val merged = newQueried.foldLeft(queried)((oldList, newList) => oldList ++ applyFilter(newList)).sortBy(_.created)(Descending)
 
-      print("writing Files ... ")
       writeMergedPoms(merged)
-      println("done")
 
     } else {
 

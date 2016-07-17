@@ -193,7 +193,7 @@ class PublishProcess(
     import org.json4s.native.Serialization.read
 
     val req = wsClient
-      .url(s"https://api.github.com/repos/${repository.organization}/${repository.repo}")
+      .url(s"https://api.github.com/repos/${repository.organization}/${repository.repository}")
       .withAuth(githubCredentials.username, githubCredentials.password, WSAuthScheme.BASIC)
       .withHeaders("Accept" -> "application/vnd.github.v3+json")
     val response = Await.result(req.get, 5.seconds)
