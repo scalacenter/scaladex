@@ -23,6 +23,8 @@ import scala.concurrent.Future
 
 import scala.util.Try
 
+import com.typesafe.config.ConfigFactory
+
 case class AccessTokenResponse(access_token: String)
 case class RepoResponse(full_name: String)
 case class UserResponse(login: String, name: String, avatar_url: String)
@@ -47,9 +49,9 @@ object UserState extends DefaultJsonProtocol {
 class Github(implicit system: ActorSystem, materializer: ActorMaterializer) extends GithubProtocol {
   import system.dispatcher
 
-  // scaladex user
-  val clientId = "931a921477e5f680cd55"
-  val clientSecret = "032aed922962b900b4c595be5fbc6185537a498b"
+  val config = ConfigFactory.load().getConfig("org.scala_lang.index.oauth2")
+  val clientId = config.getString("client-id")
+  val clientSecret = config.getString("client-secret")
 
   def info(code: String) = {
     def access = {
