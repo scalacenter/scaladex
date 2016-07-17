@@ -52,6 +52,7 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
   val config = ConfigFactory.load().getConfig("org.scala_lang.index.oauth2")
   val clientId = config.getString("client-id")
   val clientSecret = config.getString("client-secret")
+  val redirectUri = config.getString("redirect-uri")
 
   def info(code: String) = {
     def access = {
@@ -61,7 +62,7 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
           "client_id" -> clientId,
           "client_secret" -> clientSecret,
           "code" -> code,
-          "redirect_uri" -> "http://localhost:8080/callback/done"
+          "redirect_uri" -> redirectUri
         )),
         headers = List(Accept(MediaTypes.`application/json`))
       )).flatMap(response =>
