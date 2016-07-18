@@ -4,3 +4,6 @@
 [submodule "metadata"]
 	path = metadata
 	url = git@github.com:scalacenter/scaladex-metadata.git
+[submodule "index"]
+	path = index
+	url = git@github.com:scalacenter/scaladex-index.git
