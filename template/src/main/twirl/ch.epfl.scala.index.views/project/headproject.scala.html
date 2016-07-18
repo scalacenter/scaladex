@@ -1,7 +1,7 @@
 @import ch.epfl.scala.index.model._
 @import ch.epfl.scala.index.model.release._
 
-@(project: Project, artifacts: List[String], versions: List[SemanticVersion], targets: List[ScalaTarget], release: Release)
+@(project: Project, artifacts: List[String], versions: List[SemanticVersion], targets: List[ScalaTarget], release: Release, canEdit: Boolean)
 <div class="head-project">
   <div class="container">
     <div class="row">
@@ -38,6 +38,11 @@
             }
             </ul>
           }
+          @if(canEdit){
+            <a href="/edit/@project.reference.organization/@project.reference.repository" class="btn btn-primary">
+              Edit
+            </a>
+          }
         </div>
       </div>
       <div class="col-md-4">
@@ -54,6 +59,7 @@
             }
             </select>
           </form>
+          
           <form action="/@project.reference.organization/@project.reference.repository" action="GET">           
             <input type="hidden" name="artifact" value="@release.reference.artifact">
 
@@ -69,6 +75,7 @@
             }
             </select>
           </form>
+        
           <form action="/@project.reference.organization/@project.reference.repository" action="GET">           
             <input type="hidden" name="version" value="@release.reference.version">
             <select

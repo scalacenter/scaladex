@@ -11,7 +11,7 @@
 @main(title = s"Edit", showSearch = true, searchQuery = "", user) {
   <main id="container-project">
 
-    @headproject(project, artifacts, versions, targets, release)
+    @headproject(project, artifacts, versions, targets, release, canEdit = false)
 
     <div class="container">
       <div class="row">
@@ -24,19 +24,6 @@
               <div class="form-group">
                 <label for="keywords_multiple">Keywords</label>
                 <select class="js-keywords-multiple js-states form-control" id="keywords_multiple" multiple="multiple">
-                  <option value="database" selected="selected">Database</option>
-                  <option value="json">JSON</option>
-                  <option value="distributed">Distributed</option>
-                  <option value="macros">Macros</option>
-                  <option value="sbt plugin">SBT Plugin</option>
-                  <option value="algebra">Algebra</option>
-                  <option value="web framework">Web Framework</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="stackoverflowtags_multiple">Stackoverflow Tags</label>
-                <select class="js-stackoverflowtags-multiple js-states form-control" id="stackoverflowtags_multiple" multiple="multiple">
                   <option value="database" selected="selected">Database</option>
                   <option value="json">JSON</option>
                   <option value="distributed">Distributed</option>
@@ -87,8 +74,6 @@
 
               <button type="submit" class="btn btn-primary">Update</button>
             </form>
-
-
           </div>
         </div>
       </div>

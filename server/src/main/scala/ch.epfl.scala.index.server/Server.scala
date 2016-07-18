@@ -64,20 +64,37 @@ object Server {
     }
 
     def projectPage(owner: String, repo: String, artifact: Option[String] = None,
-        version: Option[SemanticVersion], userState: Option[UserState] = None) = {
+        version: Option[SemanticVersion], userState: Option[UserState] = None, edit: Boolean = false) = {
       val user = userState.map(_.user)
+      val canEdit = userState.map(s =>
+        s.isAdmin || s.repos.contains(GithubRepo(owner, repo))
+      ).getOrElse(false)
       api.projectPage(Project.Reference(owner, repo), ReleaseSelection(artifact, version)).map(
         _.map{ case (project, releaseCount, options) =>
           import options._
-          (OK, views.project.html.project(
-            project,
-            artifacts,
-            versions,
-            targets,
-            release,
-            releaseCount,
-            user
-          ))
+
+          if(edit){
+            (OK, views.project.html.editproject(
+              project,
+              artifacts,
+              versions,
+              targets,
+              release,
+              releaseCount,
+              user
+            ))
+          } else {
+            (OK, views.project.html.project(
+              project,
+              artifacts,
+              versions,
+              targets,
+              release,
+              releaseCount,
+              user,
+              canEdit
+            ))
+          }
         }.getOrElse((NotFound, views.html.notfound(user)))
       )
     }
@@ -215,12 +232,13 @@ object Server {
           } ~
           pathEnd {
             parameter('code) { code =>
-              val userState = Await.result(github.info(code), 1.minute)
-              val uuid = java.util.UUID.randomUUID
-              users += uuid -> userState
-              setSession(refreshable, usingCookies, uuid) {
-                setNewCsrfToken(checkHeader) { ctx =>
-                  ctx.complete(frontPage(Some(userState.user)))
+              onSuccess(github.info(code)) { userState =>
+                val uuid = java.util.UUID.randomUUID
+                users += uuid -> userState
+                setSession(refreshable, usingCookies, uuid) {
+                  setNewCsrfToken(checkHeader) { ctx =>
+                    ctx.complete(frontPage(Some(userState.user)))
+                  }
                 }
               }
             }
@@ -240,6 +258,13 @@ object Server {
                   views.html.searchresult(query, "search", sorting, pagination, projects, getUser(userId).map(_.user))
                 }
               )
+            }
+          }
+        } ~
+        path("edit" / Segment / Segment) { (organization, repository) =>
+          optionalSession(refreshable, usingCookies) { userId =>
+            pathEnd {
+              complete(projectPage(organization, repository, None, None, getUser(userId), edit = true))
             }
           }
         } ~

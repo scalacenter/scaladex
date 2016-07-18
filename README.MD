@@ -24,8 +24,7 @@ pretty much the same as you might know already. One difference is, that Scaladex
 the POM file. Your packages, docs and sources are not send to Scaladex.  If you don't want to use the plugin, you can
 just wait until Scaladex reindex itself. This process could maybe take some days so please be patient.
 
-For Scaladex is necessary to have a SCM tag in the Pom file. SCM means source control management. It's also required at
-the moment that you have your source code published on [GitHub].
+For Scaladex is necessary to have a SCM tag in the Pom file. SCM means source control management. It's also required at the moment that you have your source code published on [GitHub].
 To add an SCM tag to your project you can follow the guidelines of SBT.
 [SBT Documentation - POM Metadata][SBT-POM-Meta]
 
@@ -111,40 +110,6 @@ $ sbt
 # api key: **********
 ```
 
-## Project Structure:
-
-```
-Data Pipeline
-  Extract
-  * Bintray
-    * Discover POMs
-    * Download POMs
-    * Download Parent POMs
-  * Github
-    * README
-    * repo info
-
-  Transform
-  * Read POMs
-  * Convert POMs to a POM Scala Model
-  * Cleanup
-    * Artifact Name
-    * Source Code Repository
-    * Licenses
-    * Version
-  * Convert POM Scala Model to Projects
-
-  Load
-  * Index to ElasticSearch
-
-Website
-  Server
-
-  Client
-
-Sbt Plugin
-```
-
 ## Requirements
 
 To run the application the css compiler `sass` is required. If you don't have it follow the instructions on [sass install page](http://sass-lang.com/install).
@@ -153,8 +118,10 @@ To run the application the css compiler `sass` is required. If you don't have it
 
 The idea behind sbt-scaladex is to notify the scala index of a new libraries being released. The final goal is to merge this plugin directly into sbt.
 
-## Publishing
+## Production Mode
 
-* `sbt universal:packageBin`
+```bash
+sbt server/universal:packageBin
 git clone git@github.com:scalacenter/scaladex.git
 nohup ~/webapp/bin/server -Dconfig.file=scaladex-credentials/application.conf &
+```
