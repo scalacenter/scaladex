@@ -488,12 +488,10 @@ main {
             background-color: rgba($gray-lighter, 0.7);
             padding: 0;
         }
-        .artifact-name {
-            margin-right: 10px;
-        }
 
         form {
-            display: inline-block;
+            display: block;
+            margin: 5px;
         }
     }
 }
