@@ -5,13 +5,27 @@ import utest._
 
 object DefaultReleaseTests extends TestSuite{
 
+  def prepare(organization: String, repository: String, groupdId: String, releases: List[(String, String)]) = {
+    releases.map{ case (artifactId, rawVersion) =>
+        for {
+          (artifact, target) <- Artifact(artifactId)
+          version <- SemanticVersion(rawVersion)
+        } yield   (artifactId, rawVersion, artifact, target, version)
+      }.flatten.map{ case (artifactId, rawVersion, artifact, target, version) =>
+        Release(
+          MavenReference(groupdId, artifactId, rawVersion),
+          Release.Reference(organization, repository, artifact, version, target)
+        )
+      }
+  }
+
   val tests = this{
     "latest version pre release scala"-{
       
       val organization = "typelevel"
       val repository = "cats"
       val groupdId = "org.typelevel"
-      val releases =
+      val releases = prepare(organization, repository, groupdId,
         List(
           ("cats-core_2.11"       , "0.6.0"   ),
           ("cats-core_2.11"       , "0.6.0-M2"),
@@ -37,17 +51,8 @@ object DefaultReleaseTests extends TestSuite{
           ("cats-core_sjs0.6_2.10", "0.5.0"   ),
           ("cats-core_sjs0.6_2.10", "0.4.1"   ),
           ("cats-core_sjs0.6_2.10", "0.4.0"   )
-        ).map{ case (artifactId, rawVersion) =>
-          for {
-            (artifact, target) <- Artifact(artifactId)
-            version <- SemanticVersion(rawVersion)
-          } yield   (artifactId, rawVersion, artifact, target, version)
-        }.flatten.map{ case (artifactId, rawVersion, artifact, target, version) =>
-          Release(
-            MavenReference(groupdId, artifactId, rawVersion),
-            Release.Reference(organization, repository, artifact, version, target)
-          )
-        }
+        )
+      ) 
 
       val result = DefaultRelease(Project(organization, repository), ReleaseSelection(None, None), releases)
       val expected =
@@ -82,6 +87,48 @@ object DefaultReleaseTests extends TestSuite{
         ))
 
       expected ==> result
+    }
+
+    "selected artifact"-{
+      val organization = "akka"
+      val repository = "akka"
+      val groupdId = "com.typesafe.akka"
+      val releases = prepare(organization, repository, groupdId,
+        List(
+          ("akka-distributed-data-experimental_2.11", "2.4.8"),
+          ("akka-actors_2.11", "2.4.8")
+        )
+      )
+
+      val result = DefaultRelease(
+        Project(organization, repository), 
+        ReleaseSelection(Some("akka-distributed-data-experimental"), None),
+        releases
+      )
+
+      val expected =
+        Some(ReleaseOptions(
+          artifacts = List(
+            "akka-actors",
+            "akka-distributed-data-experimental"
+          ),
+          versions = List(
+            SemanticVersion("2.4.8").get
+          ),
+          targets = List(
+            ScalaTarget(SemanticVersion("2.11").get)
+          ),
+          release = Release(
+            MavenReference(groupdId, "akka-distributed-data-experimental_2.11", "2.4.8"),
+            Release.Reference(
+              organization,
+              repository,
+              "akka-distributed-data-experimental",
+              SemanticVersion("2.4.8").get,
+              ScalaTarget(SemanticVersion("2.11").get)
+            )
+          )
+        ))
     }
   }
 }
