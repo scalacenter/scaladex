@@ -23,6 +23,10 @@ import akka.stream.ActorMaterializer
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import scala.util.Try
+
+import java.util.UUID
+import scala.collection.parallel.mutable.ParTrieMap
 
 object Server {
   def main(args: Array[String]): Unit = {
@@ -31,16 +35,23 @@ object Server {
     implicit val materializer = ActorMaterializer()
 
     val github = new Github
+    val users = ParTrieMap[UUID, UserState]()
 
     val sessionConfig = SessionConfig.default("c05ll3lesrinf39t7mc5h6un6r0c69lgfno69dsak3vabeqamouq4328cuaekros401ajdpkh60rrtpd8ro24rbuqmgtnd1ebag6ljnb65i8a55d482ok7o0nch0bfbe")
-    implicit val sessionManager = new SessionManager[UserState](sessionConfig)
-    implicit val refreshTokenStorage = new InMemoryRefreshTokenStorage[UserState] {       
+    implicit def serializer: SessionSerializer[UUID, String] = new SingleValueSessionSerializer(
+      _.toString(),
+      (id: String) => Try { UUID.fromString(id) }
+    )
+    implicit val sessionManager = new SessionManager[UUID](sessionConfig)
+    implicit val refreshTokenStorage = new InMemoryRefreshTokenStorage[UUID] {
       def log(msg: String) = 
         if(msg.startsWith("Looking up token for selector")) () // borring
         else println(msg)
     }
 
     val api = new Api(github)
+
+    def getUser(id: Option[UUID]): Option[UserState] = id.flatMap(users.get)
 
     def frontPage(userInfo: Option[UserInfo]) = {
       for {
@@ -204,8 +215,10 @@ object Server {
           } ~
           pathEnd {
             parameter('code) { code =>
-              val userState = Await.result(github.info(code), 10.seconds)
-              setSession(refreshable, usingCookies, userState) {
+              val userState = Await.result(github.info(code), 1.minute)
+              val uuid = java.util.UUID.randomUUID
+              users += uuid -> userState
+              setSession(refreshable, usingCookies, uuid) {
                 setNewCsrfToken(checkHeader) { ctx =>
                   ctx.complete(frontPage(Some(userState.user)))
                 }
@@ -220,24 +233,24 @@ object Server {
           getFromResource(path)
         } ~
         path("search") {
-          optionalSession(refreshable, usingCookies) { userState =>
+          optionalSession(refreshable, usingCookies) { userId =>
             parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
               complete(
-                api.find(query, page, sorting, you.flatMap(_ => userState.map(_.repos)).getOrElse(Set())).map{ case (pagination, projects) =>
-                  views.html.searchresult(query, "search", sorting, pagination, projects, userState.map(_.user))
+                api.find(query, page, sorting, you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set())).map{ case (pagination, projects) =>
+                  views.html.searchresult(query, "search", sorting, pagination, projects, getUser(userId).map(_.user))
                 }
               )
             }
           }
         } ~
         path(Segment) { organization =>
-          optionalSession(refreshable, usingCookies) { userState =>
+          optionalSession(refreshable, usingCookies) { userId =>
             parameters('page.as[Int] ? 1, 'sort.?) { (page, sorting) =>
               pathEnd {
                 val query = s"organization:$organization"
                 complete(
                   api.find(query, page, sorting).map { case (pagination, projects) =>
-                    views.html.searchresult(query, organization, sorting, pagination, projects, userState.map(_.user))
+                    views.html.searchresult(query, organization, sorting, pagination, projects, getUser(userId).map(_.user))
                   }
                 )
               }
@@ -245,7 +258,7 @@ object Server {
           }
         } ~
         path(Segment / Segment) { (organization, repository) =>
-          optionalSession(refreshable, usingCookies) { userState =>
+          optionalSession(refreshable, usingCookies) { userId =>
             parameters('artifact, 'version.?){ (artifact, version) =>
               val rest = version match {
                 case Some(v) if !v.isEmpty => "/" + v
@@ -254,23 +267,23 @@ object Server {
               redirect(s"/$organization/$repository/$artifact$rest", StatusCodes.PermanentRedirect)
             } ~
             pathEnd {
-              complete(projectPage(organization, repository, None, None, userState))
+              complete(projectPage(organization, repository, None, None, getUser(userId)))
             }
           }
         } ~
         path(Segment / Segment / Segment ) { (organization, repository, artifact) =>
-          optionalSession(refreshable, usingCookies) { userState =>
-            complete(projectPage(organization, repository, Some(artifact), None, userState))
+          optionalSession(refreshable, usingCookies) { userId =>
+            complete(projectPage(organization, repository, Some(artifact), None, getUser(userId)))
           }
         } ~
         path(Segment / Segment / Segment / Segment) { (organization, repository, artifact, version) =>
-          optionalSession(refreshable, usingCookies) { userState =>
-            complete(projectPage(organization, repository, Some(artifact), SemanticVersion(version), userState))
+          optionalSession(refreshable, usingCookies) { userId =>
+            complete(projectPage(organization, repository, Some(artifact), SemanticVersion(version), getUser(userId)))
           }
         } ~
         pathSingleSlash {
-          optionalSession(refreshable, usingCookies) { userState =>
-            complete(frontPage(userState.map(_.user)))
+          optionalSession(refreshable, usingCookies) { userId =>
+            complete(frontPage(getUser(userId).map(_.user)))
           }
         }
       }

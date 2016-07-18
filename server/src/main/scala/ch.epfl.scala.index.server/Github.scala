@@ -14,20 +14,16 @@ import headers._
 import Uri._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 
-import com.softwaremill.session._
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
 import scala.concurrent.Future
 
-import scala.util.Try
-
 import com.typesafe.config.ConfigFactory
 
 case class AccessTokenResponse(access_token: String)
 case class RepoResponse(full_name: String)
-case class UserResponse(login: String, name: String, avatar_url: String)
+case class UserResponse(login: String, name: Option[String], avatar_url: String)
 
 trait GithubProtocol extends DefaultJsonProtocol {
   implicit val formatAccessTokenResponse = jsonFormat1(AccessTokenResponse)
@@ -40,10 +36,6 @@ object UserState extends DefaultJsonProtocol {
   implicit val formatGithubRepo = jsonFormat2(GithubRepo)
   implicit val formatUserInfo = jsonFormat3(UserInfo)
   implicit val formatUserState = jsonFormat2(UserState.apply)
-  implicit def serializer: SessionSerializer[UserState, String] = new SingleValueSessionSerializer(
-    _.toJson.compactPrint,
-    (in: String) => Try { in.parseJson.convertTo[UserState] }
-  )
 }
 
 class Github(implicit system: ActorSystem, materializer: ActorMaterializer) extends GithubProtocol {
@@ -52,6 +44,7 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
   val config = ConfigFactory.load().getConfig("org.scala_lang.index.oauth2")
   val clientId = config.getString("client-id")
   val clientSecret = config.getString("client-secret")
+  val redirectUri = config.getString("redirect-uri")
 
   def info(code: String) = {
     def access = {
@@ -61,7 +54,7 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
           "client_id" -> clientId,
           "client_secret" -> clientSecret,
           "code" -> code,
-          "redirect_uri" -> "http://localhost:8080/callback/done"
+          "redirect_uri" -> redirectUri
         )),
         headers = List(Accept(MediaTypes.`application/json`))
       )).flatMap(response =>

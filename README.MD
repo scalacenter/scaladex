@@ -156,3 +156,5 @@ The idea behind sbt-scaladex is to notify the scala index of a new libraries bei
 ## Publishing
 
 * `sbt universal:packageBin`
+git clone git@github.com:scalacenter/scaladex.git
+nohup ~/webapp/bin/server -Dconfig.file=scaladex-credentials/application.conf &
