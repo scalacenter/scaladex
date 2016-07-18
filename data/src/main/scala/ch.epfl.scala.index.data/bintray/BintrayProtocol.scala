@@ -2,16 +2,16 @@ package ch.epfl.scala.index
 package data
 package bintray
 
+import cleanup._
 import model.Descending
-import spray.json._
-import java.nio.file._
 
-import ch.epfl.scala.index.data.cleanup._
 import com.github.nscala_time.time.Imports._
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 import org.json4s._
 import org.json4s.native.JsonMethods._
+
+import java.nio.file._
 
 case class BintraySearch(
   sha1: String,
@@ -61,13 +61,61 @@ case class NonStandardLib(groupId: String, artifactId: String, version: String, 
 /**
  * Bintray protocol
  */
-trait BintrayProtocol extends DefaultJsonProtocol {
+trait BintrayProtocol {
 
   /**
    * json4s formats
    */
-  implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
+  implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer, BintraySearchSerializer)
   implicit val serialization = native.Serialization
+
+  /**
+   * BintraySearchSerializer to keep the fields ordering
+   */
+  object BintraySearchSerializer extends CustomSerializer[BintraySearch]( format =>(
+    {
+      case in: JValue => {
+        implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
+        in.extract[BintraySearch]
+      }
+    },
+    {
+      case search: BintraySearch => {
+        implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
+        JObject(
+          JField("created", Extraction.decompose(search.created)),
+          JField("package", Extraction.decompose(search.`package`)),
+          JField("owner"  , Extraction.decompose(search.owner)),
+          JField("repo"   , Extraction.decompose(search.repo)),
+          JField("sha1"   , Extraction.decompose(search.sha1)),
+          JField("sha256" , Extraction.decompose(search.sha256)),
+          JField("name"   , Extraction.decompose(search.name)),
+          JField("path"   , Extraction.decompose(search.path)),
+          JField("size"   , Extraction.decompose(search.size)),
+          JField("version", Extraction.decompose(search.version))
+        )
+      }
+    }
+  ))
+
+   /**
+   * Scope serializer, since Scope is not a case class json4s can't handle this by default
+   *
+   */
+  object DateTimeSerializer extends CustomSerializer[DateTime]( format => (
+    {
+      case JString(dateTime) => {
+        val parser = ISODateTimeFormat.dateTimeParser
+        parser.parseDateTime(dateTime)
+      }
+    },
+    {
+      case dateTime: DateTime => {
+        val formatter = ISODateTimeFormat.dateTime
+        JString(formatter.print(dateTime))
+      }
+    }
+  ))
 
   /**
    * fetch non standard libs from json and map them to NonStandardLib
@@ -104,25 +152,6 @@ trait BintrayProtocol extends DefaultJsonProtocol {
       else stack :+ current
     }
   }
-
-  /**
-   * Scope serializer, since Scope is not a case class json4s can't handle this by default
-   *
-   */
-  object DateTimeSerializer extends CustomSerializer[DateTime]( format => (
-    {
-      case JString(dateTime) => {
-        val parser = ISODateTimeFormat.dateTimeParser
-        parser.parseDateTime(dateTime)
-      }
-    },
-    {
-      case dateTime: DateTime => {
-        val formatter = ISODateTimeFormat.dateTime
-        JString(formatter.print(dateTime))
-      }
-    }
-  ))
 }
 
 object BintrayMeta extends BintrayProtocol {
@@ -140,6 +169,18 @@ object BintrayMeta extends BintrayProtocol {
       
     source.close()
 
-    ret.filter(_ != "").map(json => parse(json).extract[BintraySearch]).sortBy(_.created)(Descending)
+    ret.filter(_ != "").map(json => 
+      try {
+        parse(json).extract[BintraySearch]
+      } catch {
+        case e: Throwable => {
+          println("***")
+          println(json)
+          println("***")
+          throw e
+        }
+
+      }
+    ).sortBy(_.created)(Descending)
   }
 }
