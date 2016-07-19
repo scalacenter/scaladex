@@ -94,11 +94,12 @@ sbt scaladex:publish
 $ git submodule init
 $ git submodule update
 $ sbt
-> data/reStart elastic
-> project server
+> data/reStart elastic # do only once to populate the indices
+> project scaladexJVM # this is the server
 > ~re-start
-open http://localhost:8080
 ```
+  
+Then, open `localhost:8080` in your browser.
 
 ## How to publish the Scaladex-Plugin
 
