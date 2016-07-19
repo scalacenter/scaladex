@@ -95,7 +95,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
             )
           )
         )
-      ).size(1000)
+      ).size(5000)
     }.map(_.as[Release].toList)
   }
 

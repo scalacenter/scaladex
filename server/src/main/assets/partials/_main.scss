@@ -469,10 +469,6 @@ main {
         }
     }
     .artifact-project {
-        text-align: left;
-        @media screen and (min-width: $screen-md-min) {
-            text-align: right;
-        }
         img {
             width: 140px;
             margin-top: 10px;

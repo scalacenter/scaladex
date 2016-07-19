@@ -2,3 +2,4 @@ target/
 core
 .sass-cache
 .idea
+.esdata/
