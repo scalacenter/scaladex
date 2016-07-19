@@ -46,10 +46,11 @@ package object elastic extends ProjectProtocol {
   /** @see https://github.com/sksamuel/elastic4s#client for configurations */
 
   val maxResultWindow = 10000 // <=> max amount of projects (June 1st 2016 ~ 2500 projects)
-  private val home = System.getProperty("user.home")
+  private val base = build.info.BuildInfo.baseDirectory.toPath
   val esSettings = Settings.settingsBuilder()
-    .put("path.home", home + "/.esdata")
+    .put("path.home", base.resolve(".esdata").toString())
     .put("max_result_window", maxResultWindow)
+    
 
   lazy val esClient = ElasticClient.local(esSettings.build)
 
