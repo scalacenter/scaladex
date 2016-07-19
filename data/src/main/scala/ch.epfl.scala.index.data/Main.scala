@@ -36,24 +36,32 @@ object Main extends BintrayProtocol {
       for (lib <-  uniqueNonStandardLibs) {
         listPomsStep.run(lib.groupId, lib.artifactId)
       }
+
+      println("list done")
     }
 
     def download(): Unit = {
 
       val downloadPomsStep = new DownloadPoms
       downloadPomsStep.run()
+
+      println("download done")
     }
 
     def parent(): Unit = {
 
       val downloadParentPomsStep = new DownloadParentPoms
       downloadParentPomsStep.run()
+
+      println("parent done")
     }
 
     def github(): Unit = {
 
       val githubDownload = new GithubDownload
       githubDownload.run()
+
+      println("github done")
     }
 
     def elastic(): Unit = {

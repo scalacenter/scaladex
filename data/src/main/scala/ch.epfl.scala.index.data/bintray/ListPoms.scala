@@ -184,7 +184,10 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
       val newQueried: Seq[List[BintraySearch]] = download[PomListDownload, List[BintraySearch]](infoMessage, toDownload, discover, processPomDownload)
 
       /* maybe we have here a problem with duplicated poms */
-      val merged = newQueried.foldLeft(queried)((oldList, newList) => oldList ++ applyFilter(newList)).sortBy(_.created)(Descending)
+      val merged = newQueried
+        .foldLeft(queried)((oldList, newList) => oldList ++ applyFilter(newList))
+        .distinct
+        .sortBy(_.created)(Descending)
 
       writeMergedPoms(merged)
 

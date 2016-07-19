@@ -15,7 +15,7 @@ object ReleaseSelection {
     val (artifact, target) = artifactRaw.
       flatMap(raw => Artifact(raw)).
       map{case (a, b) => (Some(a), Some(b))}.
-      getOrElse((None, None))
+      getOrElse((artifactRaw, None))
 
     new ReleaseSelection(artifact, version, target)
   }

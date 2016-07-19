@@ -31,7 +31,12 @@ trait GithubProtocol extends DefaultJsonProtocol {
   implicit val formatUserResponse = jsonFormat3(UserResponse)
 }
 
-case class UserState(repos: Set[GithubRepo], user: UserInfo)
+case class UserState(repos: Set[GithubRepo], user: UserInfo) {
+  def isAdmin = repos.exists{ case GithubRepo(organization, repository) => 
+    organization == "scalacenter" &&
+    repository == "scaladex"
+  }
+}
 object UserState extends DefaultJsonProtocol {
   implicit val formatGithubRepo = jsonFormat2(GithubRepo)
   implicit val formatUserInfo = jsonFormat3(UserInfo)
@@ -96,7 +101,7 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
     def fetchUser(token: String) =
       fetchGithub(token, Path.Empty / "user").flatMap(response => 
         Unmarshal(response).to[UserResponse]
-      )        
+      )
 
     for {
       token         <- access
