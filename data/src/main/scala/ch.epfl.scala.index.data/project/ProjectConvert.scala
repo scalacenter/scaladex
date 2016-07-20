@@ -29,7 +29,7 @@ object ProjectConvert extends BintrayProtocol {
             dep.artifactId == "scala-library"
           )
           .flatMap(dep => SemanticVersion(dep.version))
-          .map(version => (pom.artifactId, ScalaTarget(version), true))
+          .map(version => (pom.artifactId, ScalaTarget(version.copy(patch = None)), true))
 
       case Some(ScalaTargetFromVersion) => 
         SemanticVersion(pom.version)
