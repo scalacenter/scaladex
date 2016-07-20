@@ -143,6 +143,7 @@ lazy val sbtScaladex = project
     scriptedBufferLog := false,
 
     bintrayRepository := "sbt-plugins",
-    bintrayOrganization := None
+    bintrayOrganization := None,
+    scalafmt := {}
 
   ).enablePlugins(BintrayPlugin)
