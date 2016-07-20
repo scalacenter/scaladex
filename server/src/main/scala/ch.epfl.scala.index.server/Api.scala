@@ -17,7 +17,7 @@ import scala.language.reflectiveCalls
 class Api(github: Github)(implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(_id = None)
 
-  val resultsPerPage: Int = 10
+  val resultsPerPage: Int = 20
 
   val sortQuery = (sorting: Option[String]) =>
     sorting match {
