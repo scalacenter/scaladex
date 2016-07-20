@@ -14,16 +14,18 @@ trait BintrayCredentials {
     // user = xxxxxxxxxx
     // password = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-    val home = System.getProperty("user.home")
-    val path = home + "/.bintray/.credentials2"
-    val nl = System.lineSeparator
+    val home   = System.getProperty("user.home")
+    val path   = home + "/.bintray/.credentials2"
+    val nl     = System.lineSeparator
     val source = scala.io.Source.fromFile(path)
 
-    val info =
-      source.mkString.split(nl).map{ v =>
-        val (l, r) = v.span(_ != '=' )
+    val info = source.mkString
+      .split(nl)
+      .map { v =>
+        val (l, r) = v.span(_ != '=')
         (l.trim, r.drop(2).trim)
-      }.toMap
+      }
+      .toMap
     source.close()
 
     info
@@ -31,7 +33,8 @@ trait BintrayCredentials {
 
   def withAuthorization(request: HttpRequest) = {
     (bintray.get("user"), bintray.get("password")) match {
-      case (Some(user), Some(key)) => request.withHeaders(Authorization(BasicHttpCredentials(user, key)))
+      case (Some(user), Some(key)) =>
+        request.withHeaders(Authorization(BasicHttpCredentials(user, key)))
       case _ => request
     }
   }
@@ -39,7 +42,8 @@ trait BintrayCredentials {
   def withAuth(request: WSRequest) = {
 
     (bintray.get("user"), bintray.get("password")) match {
-      case (Some(user), Some(password)) => request.withAuth(user, password, WSAuthScheme.BASIC)
+      case (Some(user), Some(password)) =>
+        request.withAuth(user, password, WSAuthScheme.BASIC)
       case _ => request
     }
   }

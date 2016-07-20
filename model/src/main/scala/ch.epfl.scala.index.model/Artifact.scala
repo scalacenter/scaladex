@@ -7,23 +7,24 @@ import release.ScalaTarget
 
 object Artifact extends Parsers {
   private val ArtifactNameParser = {
-    val Scala = "_" ~ SemanticVersion.Parser
+    val Scala   = "_" ~ SemanticVersion.Parser
     val ScalaJs = "_sjs" ~ SemanticVersion.Parser
-    
-    val ScalaTargetParser = (ScalaJs.? ~ Scala).map{case (scalaJsVersion, scalaVersion) => 
-      ScalaTarget(scalaVersion, scalaJsVersion)
+
+    val ScalaTargetParser = (ScalaJs.? ~ Scala).map {
+      case (scalaJsVersion, scalaVersion) =>
+        ScalaTarget(scalaVersion, scalaJsVersion)
     }
 
     Start ~
-    (Alpha | Digit | "-".! | ".".! | (!(ScalaTargetParser ~ End) ~ "_")).rep.! ~ // must end with scala target
-    ScalaTargetParser ~
-    End
+      (Alpha | Digit | "-".! | ".".! | (!(ScalaTargetParser ~ End) ~ "_")).rep.! ~ // must end with scala target
+      ScalaTargetParser ~
+      End
   }
-  
+
   def apply(artifactId: String): Option[(String, ScalaTarget)] = {
     ArtifactNameParser.parse(artifactId) match {
       case Parsed.Success(v, _) => Some(v)
-      case _ => None
+      case _                    => None
     }
   }
 }

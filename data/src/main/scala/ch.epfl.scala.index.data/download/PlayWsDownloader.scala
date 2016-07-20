@@ -24,23 +24,25 @@ trait PlayWsDownloader {
   implicit val materializer: ActorMaterializer
 
   /**
-   * Creating a new WS Client - copied from Play website
-   *
-   * @see https://www.playframework.com/documentation/2.5.x/ScalaWS
-   */
+    * Creating a new WS Client - copied from Play website
+    *
+    * @see https://www.playframework.com/documentation/2.5.x/ScalaWS
+    */
   def wsClient = {
 
-    val configuration = Configuration.reference ++ Configuration(ConfigFactory.parseString(
-      """
+    val configuration = Configuration.reference ++ Configuration(
+          ConfigFactory.parseString("""
         |ws.followRedirects = true
       """.stripMargin))
 
     /* If running in Play, environment should be injected */
-    val environment = Environment(new java.io.File("."), this.getClass.getClassLoader, Mode.Prod)
+    val environment = Environment(new java.io.File("."),
+                                  this.getClass.getClassLoader,
+                                  Mode.Prod)
 
-    val parser = new WSConfigParser(configuration, environment)
-    val config = new AhcWSClientConfig(wsClientConfig = parser.parse())
-    val builder = new AhcConfigBuilder(config)
+    val parser     = new WSConfigParser(configuration, environment)
+    val config     = new AhcWSClientConfig(wsClientConfig = parser.parse())
+    val builder    = new AhcConfigBuilder(config)
     val ahcBuilder = builder.configure()
 
     val ahcConfig = ahcBuilder.build()
@@ -48,39 +50,40 @@ trait PlayWsDownloader {
   }
 
   /**
-   * Actual download of bunch of documents. Will loop through all and display a status bar in the console output.
-   *
-   * @param message the message for the loader info
-   * @param toDownload the set of downloadable elements
-   * @param downloadUrl a function to get the WsRequest for the current element
-   * @param process a function to process the response in succes case
-   * @tparam T Input type
-   * @tparam R output type
-   */
+    * Actual download of bunch of documents. Will loop through all and display a status bar in the console output.
+    *
+    * @param message the message for the loader info
+    * @param toDownload the set of downloadable elements
+    * @param downloadUrl a function to get the WsRequest for the current element
+    * @param process a function to process the response in succes case
+    * @tparam T Input type
+    * @tparam R output type
+    */
   def download[T, R](
-    message: String,
-    toDownload: Set[T],
-    downloadUrl: (AhcWSClient, T) => WSRequest,
-    process: (T, WSResponse) => R
+      message: String,
+      toDownload: Set[T],
+      downloadUrl: (AhcWSClient, T) => WSRequest,
+      process: (T, WSResponse) => R
   ): Seq[R] = {
 
-    val client = wsClient
+    val client   = wsClient
     val progress = new ProgressBar(message, toDownload.size)
 
     def processDownloads = {
 
       Source(toDownload).mapAsyncUnordered(32) { item =>
-
-        val request = downloadUrl(client, item)
+        val request  = downloadUrl(client, item)
         val response = request.get
 
         response.onFailure {
 
-          case e: Throwable => println(s"error on downloading content from ${request.url}: ${e.getMessage}")
+          case e: Throwable =>
+            println(
+                s"error on downloading content from ${request.url}: ${e.getMessage}")
         }
 
         response.map { data =>
-          if(toDownload.size > 1) {
+          if (toDownload.size > 1) {
             progress.step()
           }
           process(item, data)
@@ -88,11 +91,12 @@ trait PlayWsDownloader {
       }
     }
 
-    if(toDownload.size > 1) {
+    if (toDownload.size > 1) {
       progress.start()
     }
-    val response = Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
-    if(toDownload.size > 1) {
+    val response =
+      Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
+    if (toDownload.size > 1) {
       progress.stop()
     }
     wsClient.close()
