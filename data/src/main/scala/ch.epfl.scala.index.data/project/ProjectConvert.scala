@@ -17,6 +17,10 @@ object ProjectConvert extends BintrayProtocol {
 
   val nonStandardLibs = NonStandardLib.load()
   
+  /** artifactId is often use to express binary compatibility with a scala version (ScalaTarget)
+    * if the developer follow this convention we extract the relevant parts and we mark
+    * the library as standard. Otherwise we either have a library like gatling or the scala library itself
+    */
   def extractArtifactNameAndTarget(pom: MavenModel): Option[(String, ScalaTarget, Boolean)] = {
     nonStandardLibs.find(lib => 
       lib.groupId == pom.groupId && 
