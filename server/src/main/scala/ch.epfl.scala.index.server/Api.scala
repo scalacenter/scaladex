@@ -17,7 +17,7 @@ import scala.language.reflectiveCalls
 class Api(github: Github)(implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(_id = None)
 
-  val resultsPerPage: Int = 20
+  val resultsPerPage = 20
 
   val sortQuery = (sorting: Option[String]) =>
     sorting match {
@@ -29,26 +29,26 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
       case _ => scoreSort
     }
 
-  private def query(q: QueryDefinition, page: PageIndex, sorting: Option[String]): Future[(Pagination, List[Project])] = {
+  private def query(q: QueryDefinition, page: PageIndex, sorting: Option[String], total: Int): Future[(Pagination, List[Project])] = {
     val clampedPage = if(page <= 0) 1 else page
     esClient.execute {
       search
         .in(indexName / projectsCollection)
         .query(q)
-        .start(resultsPerPage * (clampedPage - 1))
-        .limit(resultsPerPage)
+        .start(total * (clampedPage - 1))
+        .limit(total)
         .sort(sortQuery(sorting))
     }.map(r => (
       Pagination(
         current = clampedPage,
-        totalPages = Math.ceil(r.totalHits / resultsPerPage.toDouble).toInt,
+        totalPages = Math.ceil(r.totalHits / total.toDouble).toInt,
         total = r.totalHits
       ),
       r.as[Project].toList.map(hideId)
     ))
   }
 
-  def find(queryString: String, page: PageIndex, sorting: Option[String] = None, userRepos: Set[GithubRepo] = Set()) = {
+  def find(queryString: String, page: PageIndex, sorting: Option[String] = None, userRepos: Set[GithubRepo] = Set(), total: Int = resultsPerPage) = {
     val escaped = queryString.replaceAllLiterally("/", "\\/")
     val reposQueries =
       if(!userRepos.isEmpty) {
@@ -80,7 +80,8 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
         notQueries = List()
       ),
       page,
-      sorting
+      sorting,
+      total
     )
   }
 

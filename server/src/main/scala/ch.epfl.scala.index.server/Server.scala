@@ -6,6 +6,7 @@ import model.misc._
 import release._
 import data.github.GithubCredentials
 import data.elastic._
+import api.Autocompletion
 
 import akka.http.scaladsl._
 import model._
@@ -24,7 +25,7 @@ import com.softwaremill.session.SessionOptions._
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import ch.epfl.scala.index.data.github.GithubCredentials
+
 import upickle.default.{write => uwrite}
 
 import scala.concurrent.duration._
@@ -253,11 +254,15 @@ object Server {
               parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) {
                 (query, page, sorting, you) =>
                   complete {
-                    api.find(query, page, sorting).map {
+                    api.find(query, page, sorting, total = 5).map {
                       case (pagination, projects) =>
-                        val summarisedProjects = projects.take(5).map(p =>
-                            p.reference ->
-                            p.github.flatMap(_.description).getOrElse(""))
+                        val summarisedProjects = projects.map(p =>
+                          Autocompletion(
+                            p.organization,
+                            p.repository,
+                            p.github.flatMap(_.description).getOrElse("")  
+                          )
+                        )
                         uwrite(summarisedProjects)
                     }
                   }

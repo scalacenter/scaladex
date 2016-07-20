@@ -2,20 +2,19 @@ package ch.epfl.scala.index
 package client
 
 import autowire._
-import api.Api
-import api.Api.Autocompletion
+import api._
 import rpc.AutowireClient
+
 import org.scalajs.dom
-
-import scalatags.JsDom.all._
 import org.scalajs.dom.{Event, document}
-
-import scala.scalajs.js.annotation.JSExport
 import org.scalajs.dom.raw.{Element, HTMLInputElement, Node}
 
+import scalatags.JsDom.all._
 import scalajs.concurrent.JSExecutionContext.Implicits.queue
+import scalajs.js.annotation.JSExport
+import scalajs.js.JSApp
+
 import scala.concurrent.Future
-import scala.scalajs.js.JSApp
 import scala.util.Try
 
 trait ClientBase {
@@ -57,17 +56,14 @@ trait ClientBase {
     case _ => None
   }
 
-  def getProjects(query: String) =
+  def getProjects(query: String): Future[List[Autocompletion]] =
     AutowireClient[Api].search(query).call()
 
-  def showResults(
-      projects: List[Autocompletion]): List[Option[Node]] =
-    projects.map {
-      case result =>
-        val (ref, description) = result
+  def showResults(projects: List[Autocompletion]): List[Option[Node]] =
+    projects.map { case Autocompletion(organization, repository, description) =>
         appendResult(
-          ref.organization,
-          ref.repository,
+          organization,
+          repository,
           description
         )
     }
