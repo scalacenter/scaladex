@@ -1,6 +1,8 @@
 import ScalaJSHelper._
 import org.scalajs.sbtplugin.cross.CrossProject
 
+scalafmtConfig in ThisBuild := Some(file(".scalafmt"))
+
 lazy val baseSettings = Seq(
   organization := "ch.epfl.scala.index",
   version      := "0.1.3"
