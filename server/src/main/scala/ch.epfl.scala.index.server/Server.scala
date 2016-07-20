@@ -20,6 +20,8 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.server.directives.Credentials.{Missing, Provided}
 import akka.stream.ActorMaterializer
+import ch.epfl.scala.index.data.github.GithubCredentials
+import upickle.default.{write => uwrite}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -249,6 +251,24 @@ object Server {
         } ~
         path("fonts" / Remaining) { path ⇒
           getFromResource(path)
+        } ~
+        pathPrefix("api") {
+          path("search") {
+            get {
+              parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) {
+                (query, page, sorting, you) =>
+                  complete {
+                    api.find(query, page, sorting).map {
+                      case (pagination, projects) =>
+                        val summarisedProjects = projects.take(5).map(p =>
+                            p.reference ->
+                            p.github.flatMap(_.description).getOrElse(""))
+                        uwrite(summarisedProjects)
+                    }
+                  }
+              }
+            }
+          }
         } ~
         path("search") {
           optionalSession(refreshable, usingCookies) { userId =>

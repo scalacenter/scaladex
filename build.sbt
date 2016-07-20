@@ -1,3 +1,6 @@
+import ScalaJSHelper._
+import org.scalajs.sbtplugin.cross.CrossProject
+
 lazy val baseSettings = Seq(
   organization := "ch.epfl.scala.index",
   version      := "0.1.3"
@@ -43,8 +46,21 @@ lazy val template = project
   .dependsOn(model)
   .enablePlugins(SbtTwirl)
 
-lazy val server = project
+lazy val scaladex =
+  CrossProject("server", "client", new File("."), CustomCrossType)
   .settings(commonSettings: _*)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.lihaoyi"                       %%% "scalatags"              % Version.scalatags,
+      "com.lihaoyi"                       %%% "upickle"                % Version.upickle,
+      "com.lihaoyi"                       %%% "autowire"               % Version.autowire
+    )
+  )
+
+lazy val client = scaladex.js.dependsOn(model)
+
+lazy val server = scaladex.jvm
+  .settings(packageScalaJS(client))
   .settings(
     resolvers += Resolver.bintrayRepo("btomala", "maven"),
     libraryDependencies ++= Seq(
@@ -56,7 +72,8 @@ lazy val server = project
       "org.webjars.bower"                   % "bootstrap-select"       % "1.10.0",
       "org.webjars.bower"                   % "font-awesome"           % "4.6.3",
       "org.webjars.bower"                   % "jQuery"                 % "2.2.4",
-      "org.webjars.bower"                   % "select2"                % "4.0.3"
+      "org.webjars.bower"                   % "select2"                % "4.0.3",
+      "com.lihaoyi"                       %%% "scalatags"              % "0.6.0"
     ),
     reStart <<= reStart.dependsOn(WebKeys.assets in Assets),
     unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
@@ -66,7 +83,7 @@ lazy val server = project
       "-Xmx3g"
     )
   )
-  .dependsOn(template, data)
+  .dependsOn(client, template, data)
   .enablePlugins(SbtSass, JavaServerAppPackaging)
 
 lazy val model = project
@@ -74,6 +91,7 @@ lazy val model = project
   .settings(
     libraryDependencies += "com.lihaoyi" %% "fastparse" % "0.3.7"
   )
+  .enablePlugins(ScalaJSPlugin)
 
 lazy val data = project
   .settings(commonSettings: _*)
