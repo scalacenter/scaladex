@@ -95,7 +95,7 @@ $ git submodule init
 $ git submodule update
 $ sbt
 > data/reStart elastic # do only once to populate the indices
-> project scaladexJVM # this is the server
+> project server
 > ~re-start
 ```
   

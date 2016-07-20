@@ -1,4 +1,5 @@
 import ScalaJSHelper._
+import org.scalajs.sbtplugin.cross.CrossProject
 
 lazy val baseSettings = Seq(
   organization := "ch.epfl.scala.index",
@@ -45,8 +46,8 @@ lazy val template = project
   .dependsOn(model)
   .enablePlugins(SbtTwirl)
 
-lazy val scaladex = crossProject.crossType(CustomCrossType)
-  .in(new File(".")) // use local dir to create "client" and "server" folders
+lazy val scaladex =
+  CrossProject("server", "client", new File("."), CustomCrossType)
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
@@ -82,7 +83,7 @@ lazy val server = scaladex.jvm
       "-Xmx3g"
     )
   )
-  .dependsOn(template, data)
+  .dependsOn(client, template, data)
   .enablePlugins(SbtSass, JavaServerAppPackaging)
 
 lazy val model = project

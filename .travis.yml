@@ -11,7 +11,7 @@ cache:
     - $HOME/.sbt/boot/
 script:
   - sbt test
-  - sbt scaladexJVM/universal:packageBin
+  - sbt server/universal:packageBin
   # - sbt sbtScaladex/scripted
 
 git:

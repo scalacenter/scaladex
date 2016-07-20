@@ -1,9 +1,10 @@
-package ch.epfl.scala.index.client
+package ch.epfl.scala.index
+package client
 
 import autowire._
-import ch.epfl.scala.index.api.Api
-import ch.epfl.scala.index.api.Api.Autocompletion
-import ch.epfl.scala.index.client.rpc.AutowireClient
+import api.Api
+import api.Api.Autocompletion
+import rpc.AutowireClient
 import org.scalajs.dom
 
 import scalatags.JsDom.all._

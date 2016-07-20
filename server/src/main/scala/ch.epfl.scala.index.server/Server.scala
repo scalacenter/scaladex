@@ -62,13 +62,7 @@ object Server {
         dependencies <- api.dependencies()
         latestProjects <- api.latestProjects()
         latestReleases <- api.latestReleases()
-      } yield
-        views.html.frontpage(keywords,
-                             targets,
-                             dependencies,
-                             latestProjects,
-                             latestReleases,
-                             userInfo)
+      } yield views.html.frontpage(keywords, targets, dependencies, latestProjects, latestReleases, userInfo)
     }
 
     def projectPage(owner: String, repo: String, artifact: Option[String] = None,
@@ -119,18 +113,17 @@ object Server {
        * @param credentials the credentials
        * @return
        */
-      def githubAuthenticator(credentials: Option[HttpCredentials])
-        : Authenticator[GithubCredentials] = {
+      def githubAuthenticator(credentials: Option[HttpCredentials]): Authenticator[GithubCredentials] = {
 
-        case p @ Provided(username) =>
+        case p@Provided(username) =>
+
           credentials match {
             case None => None
             case Some(cred) =>
-              val upw = new String(
-                  new sun.misc.BASE64Decoder().decodeBuffer(cred.token()))
+
+              val upw = new String(new sun.misc.BASE64Decoder().decodeBuffer(cred.token()))
               val userPass = upw.split(":")
-              val githubCredentials =
-                GithubCredentials(userPass(0), userPass(1))
+              val githubCredentials = GithubCredentials(userPass(0), userPass(1))
               // todo - catch errors
               if (publishProcess.authenticate(githubCredentials)) {
 
@@ -155,7 +148,7 @@ object Server {
 
         val segments = path.split("/").toList
         val size = segments.size
-        val takeFrom = if (segments.head.isEmpty) 1 else 0
+        val takeFrom = if(segments.head.isEmpty) 1 else 0
 
         val artifactId = segments(size - 3)
         val version = segments(size - 2)
@@ -167,23 +160,17 @@ object Server {
       put {
         path("publish") {
           parameters(
-              'path,
-              'readme.as[Boolean] ? true,
-              'contributors.as[Boolean] ? true,
-              'info.as[Boolean] ? true,
-              'keywords.as[String].*
+            'path,
+            'readme.as[Boolean] ? true,
+            'contributors.as[Boolean] ? true,
+            'info.as[Boolean] ? true,
+            'keywords.as[String].*
           ) { (path, readme, contributors, info, keywords) =>
             entity(as[String]) { data =>
               extractCredentials { credentials =>
-                authenticateBasic(realm = "Scaladex Realm",
-                                  githubAuthenticator(credentials)) { cred =>
-                  val publishData = PublishData(path,
-                                                data,
-                                                cred,
-                                                info,
-                                                contributors,
-                                                readme,
-                                                keywords.toList)
+                authenticateBasic(realm = "Scaladex Realm", githubAuthenticator(credentials)) { cred =>
+
+                  val publishData = PublishData(path, data, cred, info, contributors, readme, keywords.toList)
 
                   complete {
 
@@ -202,27 +189,27 @@ object Server {
           }
         }
       } ~
-        get {
-          path("publish") {
-            parameters(
-                'path,
-                'readme.as[Boolean] ? true,
-                'contributors.as[Boolean] ? true,
-                'info.as[Boolean] ? true,
-                'keywords.as[String].*
-            ) { (path, readme, contributors, info, keywords) =>
-              println(s"GET $path")
-              complete {
+      get {
+        path("publish") {
+          parameters(
+            'path,
+            'readme.as[Boolean] ? true,
+            'contributors.as[Boolean] ? true,
+            'info.as[Boolean] ? true,
+            'keywords.as[String].*
+          ) { (path, readme, contributors, info, keywords) =>
 
-                /* check if the release already exists - sbt will handle HTTP-Status codes
-                 * 404 -> allowed to write
-                 * 200 -> only allowed if isSnapshot := true
-                 */
-                api.maven(mavenPathExtractor(path)) map {
+            println(s"GET $path")
+            complete {
 
-                  case Some(release) => OK
-                  case None => NotFound
-                }
+              /* check if the release already exists - sbt will handle HTTP-Status codes
+               * 404 -> allowed to write
+               * 200 -> only allowed if isSnapshot := true
+               */
+              api.maven(mavenPathExtractor(path)) map {
+
+                case Some(release) => OK
+                case None => NotFound
               }
             }
           }
@@ -344,6 +331,7 @@ object Server {
             complete(frontPage(getUser(userId).map(_.user)))
           }
         }
+      }
     }
 
     println("waiting for elastic to start")

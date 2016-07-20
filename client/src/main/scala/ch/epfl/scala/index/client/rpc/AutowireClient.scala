@@ -1,4 +1,5 @@
-package ch.epfl.scala.index.client.rpc
+package ch.epfl.scala.index.client
+package rpc
 
 import upickle.default.{Reader, Writer, read => uread, write => uwrite}
 
@@ -16,11 +17,8 @@ object AutowireClient extends autowire.Client[String, Reader, Writer]{
 
   def buildQueryGet(args: Map[String, String]): String = {
     args.iterator.map{
-      pair => {
-        println(s"$pair")
-        val noQuotes = pair._2.toString.tail.init // removes quotes around
-        pair._1 + "=" + encode(noQuotes)
-      }
+      case (key, value) =>
+        key + "=" + encode(value.toString.tail.init) // removes quotes around
     }.mkString("&")
   }
 
