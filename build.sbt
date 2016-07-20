@@ -38,7 +38,7 @@ lazy val commonSettings = Seq(
 lazy val akkaVersion = "2.4.7"
 
 lazy val template = project
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
   .settings(
     scalacOptions -= "-Ywarn-unused-import",
     libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.12.0"
@@ -46,20 +46,25 @@ lazy val template = project
   .dependsOn(model)
   .enablePlugins(SbtTwirl)
 
-lazy val scaladex =
-  CrossProject("server", "client", new File("."), CustomCrossType)
+lazy val shared = crossProject
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
-      "com.lihaoyi"                       %%% "scalatags"              % Version.scalatags,
-      "com.lihaoyi"                       %%% "upickle"                % Version.upickle,
-      "com.lihaoyi"                       %%% "autowire"               % Version.autowire
+      "com.lihaoyi" %%% "scalatags" % Version.scalatags,
+      "com.lihaoyi" %%% "upickle"   % Version.upickle,
+      "com.lihaoyi" %%% "autowire"  % Version.autowire
     )
   )
+lazy val sharedJvm = shared.jvm
+lazy val sharedJs = shared.js
 
-lazy val client = scaladex.js.dependsOn(model)
+lazy val client = project
+  .settings(commonSettings)
+  .enablePlugins(ScalaJSPlugin)
+  .dependsOn(sharedJs)
 
-lazy val server = scaladex.jvm
+lazy val server = project
+  .settings(commonSettings)
   .settings(packageScalaJS(client))
   .settings(
     resolvers += Resolver.bintrayRepo("btomala", "maven"),
@@ -83,18 +88,18 @@ lazy val server = scaladex.jvm
       "-Xmx3g"
     )
   )
-  .dependsOn(client, template, data)
+  .dependsOn(template, data, sharedJvm)
   .enablePlugins(SbtSass, JavaServerAppPackaging)
 
 lazy val model = project
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
   .settings(
     libraryDependencies += "com.lihaoyi" %% "fastparse" % "0.3.7"
   )
-  .enablePlugins(ScalaJSPlugin)
+  
 
 lazy val data = project
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
   .settings(
     resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
     libraryDependencies ++= Seq(
@@ -126,8 +131,8 @@ lazy val data = project
 // to be available without a resolver
 // follow: http://www.scala-sbt.org/0.13/docs/Bintray-For-Plugins.html#Linking+your+package+to+the+sbt+organization
 lazy val sbtScaladex = project
-  .settings(baseSettings: _*)
-  .settings(ScriptedPlugin.scriptedSettings: _*)
+  .settings(baseSettings)
+  .settings(ScriptedPlugin.scriptedSettings)
   .settings(
     name := "sbt-scaladex",
     sbtPlugin := true,

@@ -10,21 +10,6 @@ object Version {
 }
 
 object ScalaJSHelper {
-
-  /** Tweak JS sbt config so that sources for javascript go into `client`,
-    * JVM sources into `server` * and shared sources into the `shared` folder.
-    */
-  object CustomCrossType extends CrossType {
-    override def projectDir(crossBase: File, projectType: String): File = {
-      if (projectType == "jvm") crossBase / "server"
-      else if (projectType == "js") crossBase / "client"
-      else throw new Error("Something wrong happened in the ScalaJS CrossType.")
-    }
-
-    override def sharedSrcDir(projectBase: File, conf: String): Option[File] =
-      Some(projectBase.getParentFile / "shared" / "src" / conf / "scala")
-  }
-
   def packageScalaJS(client: Project) = Seq(
     watchSources ++= (watchSources in client).value,
 
@@ -38,16 +23,22 @@ object ScalaJSHelper {
         jsdeps -> target.value / jsdeps.getName
       )).toSeq
     }.taskValue,
-    mappings in (Compile, packageBin) := (mappings in (Compile,packageBin))
-      .value.filterNot{ case (f, r) =>
-        f.getName.endsWith("-fastopt.js") ||
+    mappings in (Compile, packageBin) := {
+      val mappingExcludingNonOptimized =
+        (mappings in (Compile,packageBin)).value.filterNot{ case (f, r) =>
+          f.getName.endsWith("-fastopt.js") ||
           f.getName.endsWith("js.map")
-      } ++ {
-      val (js, map) = andSourceMap((fullOptJS in (client, Compile)).value.data)
-      Seq(
-        js -> js.getName,
-        map -> map.getName
-      )
+        }
+
+      val optimized = {
+        val (js, map) = andSourceMap((fullOptJS in (client, Compile)).value.data)
+        Seq(
+          js -> js.getName,
+          map -> map.getName
+        )
+      }
+
+      mappingExcludingNonOptimized ++ optimized
     }
   )
 
