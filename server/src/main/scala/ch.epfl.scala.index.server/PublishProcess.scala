@@ -39,13 +39,11 @@ class PublishProcess(
    * @param githubCredentials the GitHub credentials (username, password)
    * @return
    */
-  def authenticate(githubCredentials: GithubCredentials): Boolean = {
-
-    import scala.concurrent.duration._
+  def authenticate(githubCredentials: GithubCredentials): Future[Boolean] = {
     val req = wsClient.url("https://api.github.com/user").withAuth(githubCredentials.username, githubCredentials.password, WSAuthScheme.BASIC)
-    val response = Await.result(req.get, 5.seconds)
-
-    200 == response.status
+    req.get.map(response =>
+      200 == response.status
+    )
   }
 
   /**
@@ -69,8 +67,7 @@ class PublishProcess(
       val pom = getPom(data)
       val repos = getGithubRepo(pom)
 
-      if (0 < repos.size) {
-
+      if (repos.isEmpty) {
         data.deleteTemp()
         NoContent
       } else {
@@ -82,7 +79,6 @@ class PublishProcess(
           data.writePom()
           data.deleteTemp()
           updateIndex(repo, pom, data)
-
           Created
         } else {
 

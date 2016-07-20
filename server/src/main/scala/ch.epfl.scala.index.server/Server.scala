@@ -8,17 +8,21 @@ import data.github.GithubCredentials
 import data.elastic._
 
 import akka.http.scaladsl._
-import akka.http.scaladsl.model._
+import model._
+import headers.HttpCredentials
+import server.Directives._
+import server.directives._
 import Uri._
 import StatusCodes._
+import TwirlSupport._
+
 import com.softwaremill.session._
 import com.softwaremill.session.CsrfDirectives._
 import com.softwaremill.session.CsrfOptions._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
+
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.http.scaladsl.server.directives.Credentials.{Missing, Provided}
 import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.data.github.GithubCredentials
 import upickle.default.{write => uwrite}
@@ -26,7 +30,6 @@ import upickle.default.{write => uwrite}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.util.Try
-
 import java.util.UUID
 import scala.collection.parallel.mutable.ParTrieMap
 
@@ -102,61 +105,53 @@ object Server {
     }
 
     val publishProcess = new PublishProcess(api, system, materializer)
-
-    val route = {
-      import akka.http.scaladsl._
-      import server.Directives._
-      import TwirlSupport._
-
-      /*
-       * verifying a login to github
-       * @param credentials the credentials
-       * @return
-       */
-      def githubAuthenticator(credentials: Option[HttpCredentials]): Authenticator[GithubCredentials] = {
-
-        case p@Provided(username) =>
-
-          credentials match {
-            case None => None
-            case Some(cred) =>
-
-              val upw = new String(new sun.misc.BASE64Decoder().decodeBuffer(cred.token()))
-              val userPass = upw.split(":")
-              val githubCredentials = GithubCredentials(userPass(0), userPass(1))
-              // todo - catch errors
-              if (publishProcess.authenticate(githubCredentials)) {
-
-                Some(githubCredentials)
-              } else {
-
-                None
-              }
+    /*
+     * verifying a login to github
+     * @param credentials the credentials
+     * @return
+     */
+    def githubAuthenticator(credentialsHeader: Option[HttpCredentials]): Credentials => Future[Option[GithubCredentials]] = {
+      case Credentials.Provided(username) => {
+        credentialsHeader match {
+          case Some(cred) => {
+            val upw = new String(new sun.misc.BASE64Decoder().decodeBuffer(cred.token()))
+            val userPass = upw.split(":")
+            val githubCredentials = GithubCredentials(userPass(0), userPass(1))
+            // todo - catch errors
+            publishProcess.authenticate(githubCredentials).map(granted =>
+              if(granted) Some(githubCredentials)
+              else None
+            )
           }
-        case Missing => None
+          case _ => Future.successful(None)
+        }
       }
+      case _ => Future.successful(None)
+    }
 
-      /*
-       * extract a maven reference from path like
-       * /com/github/scyks/playacl_2.11/0.8.0/playacl_2.11-0.8.0.pom =>
-       * MavenReference("com.github.scyks", "playacl_2.11", "0.8.0")
-       *
-       * @param path the real publishing path
-       * @return MavenReference
-       */
-      def mavenPathExtractor(path: String): MavenReference = {
+    /*
+     * extract a maven reference from path like
+     * /com/github/scyks/playacl_2.11/0.8.0/playacl_2.11-0.8.0.pom =>
+     * MavenReference("com.github.scyks", "playacl_2.11", "0.8.0")
+     *
+     * @param path the real publishing path
+     * @return MavenReference
+     */
+    def mavenPathExtractor(path: String): MavenReference = {
 
-        val segments = path.split("/").toList
-        val size = segments.size
-        val takeFrom = if(segments.head.isEmpty) 1 else 0
+      val segments = path.split("/").toList
+      val size = segments.size
+      val takeFrom = if(segments.head.isEmpty) 1 else 0
 
-        val artifactId = segments(size - 3)
-        val version = segments(size - 2)
-        val groupId = segments.slice(takeFrom, size - 3).mkString(".")
+      val artifactId = segments(size - 3)
+      val version = segments(size - 2)
+      val groupId = segments.slice(takeFrom, size - 3).mkString(".")
 
-        MavenReference(groupId, artifactId, version)
-      }
+      MavenReference(groupId, artifactId, version)
+    }
 
+
+    val route = {     
       put {
         path("publish") {
           parameters(
@@ -168,7 +163,7 @@ object Server {
           ) { (path, readme, contributors, info, keywords) =>
             entity(as[String]) { data =>
               extractCredentials { credentials =>
-                authenticateBasic(realm = "Scaladex Realm", githubAuthenticator(credentials)) { cred =>
+                authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) { cred =>
 
                   val publishData = PublishData(path, data, cred, info, contributors, readme, keywords.toList)
 
