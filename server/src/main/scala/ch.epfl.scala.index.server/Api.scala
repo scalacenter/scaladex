@@ -73,14 +73,19 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
       }
     } else List()
 
+    val mustQueriesRepos =
+      if(userRepos.isEmpty) Nil
+      else
+        List(
+          bool(
+            should(
+                reposQueries: _*
+            )
+        ))
+
     query(
         bool(
-            mustQueries = List(
-                bool(
-                    should(
-                        reposQueries: _*
-                    )
-                )),
+            mustQueries = mustQueriesRepos,
             shouldQueries = List(
                 termQuery("keywords", escaped),
                 termQuery("github.description", escaped),
