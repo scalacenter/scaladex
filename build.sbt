@@ -1,6 +1,8 @@
 import ScalaJSHelper._
 import org.scalajs.sbtplugin.cross.CrossProject
 
+scalafmtConfig in ThisBuild := Some(file(".scalafmt"))
+
 lazy val baseSettings = Seq(
   organization := "ch.epfl.scala.index",
   version      := "0.1.3"
@@ -141,6 +143,7 @@ lazy val sbtScaladex = project
     scriptedBufferLog := false,
 
     bintrayRepository := "sbt-plugins",
-    bintrayOrganization := None
+    bintrayOrganization := None,
+    scalafmt := {}
 
   ).enablePlugins(BintrayPlugin)

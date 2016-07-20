@@ -20,47 +20,49 @@ We have ~50 000 POMs in index/bintray
 ~45 000 will load
 
 Common problems:
-* 1 600 duplicate tags
-* 2 200 duplicate repo id
-*   700 xmlns tags in invalid places
+ * 1 600 duplicate tags
+ * 2 200 duplicate repo id
+ *   700 xmlns tags in invalid places
 
 https://github.com/sbt/sbt/issues/2566
 
-*/
+ */
 object PomsReader {
   import org.apache.maven.model._
   import resolution._
   import io._
-  import building._ 
+  import building._
 
   val parentPomsBase = bintray.bintrayIndexBase.resolve("poms_parent")
 
-  private val builder = (new DefaultModelBuilderFactory).newInstance
+  private val builder   = (new DefaultModelBuilderFactory).newInstance
   private val processor = new DefaultModelProcessor
   processor.setModelReader(new DefaultModelReader)
 
   def path(dep: maven.Dependency) = {
     import dep._
     List(
-      groupId.replaceAllLiterally(".", "/"),
-      artifactId,
-      version,
-      artifactId + "-" + version + ".pom"
+        groupId.replaceAllLiterally(".", "/"),
+        artifactId,
+        version,
+        artifactId + "-" + version + ".pom"
     ).mkString(File.separator)
   }
 
   private val resolver = new ModelResolver {
     def addRepository(repo: Repository, replace: Boolean): Unit = ()
-    def addRepository(repo: Repository): Unit = ()
-    def newCopy(): resolution.ModelResolver = throw new Exception("copy")   
+    def addRepository(repo: Repository): Unit                   = ()
+    def newCopy(): resolution.ModelResolver                     = throw new Exception("copy")
     def resolveModel(parent: Parent): ModelSource2 = {
       resolveModel(parent.getGroupId, parent.getArtifactId, parent.getVersion)
     }
-    def resolveModel(groupId: String, artifactId: String, version: String): ModelSource2 = {
-      val dep = maven.Dependency(groupId, artifactId, version)
+    def resolveModel(groupId: String,
+                     artifactId: String,
+                     version: String): ModelSource2 = {
+      val dep    = maven.Dependency(groupId, artifactId, version)
       val target = parentPomsBase.resolve(path(dep))
 
-      if(Files.exists(target)) {
+      if (Files.exists(target)) {
         new FileModelSource(target.toFile)
       } else throw new MissingParentPom(dep)
     }
@@ -81,12 +83,12 @@ object PomsReader {
     builder.build(request).getEffectiveModel
   }
 
-  def load(): List[Try[(MavenModel, List[BintraySearch])]]  = {
+  def load(): List[Try[(MavenModel, List[BintraySearch])]] = {
     val meta = BintrayMeta.readQueriedPoms(bintrayCheckpoint).groupBy(_.sha1)
 
     import scala.collection.JavaConverters._
 
-    val s = Files.newDirectoryStream(bintray.bintrayPomBase)
+    val s       = Files.newDirectoryStream(bintray.bintrayPomBase)
     val rawPoms = s.asScala.toList
 
     val progress = new ProgressBar("Reading POMs", rawPoms.size)
@@ -97,31 +99,31 @@ object PomsReader {
     def keep(pom: maven.MavenModel, metas: List[BintraySearch]) = {
       val packagingOfInterest = Set("aar", "jar", "bundle")
       val typesafeNonOSS = Set(
-        "for-subscribers-only",
-        "instrumented-reactive-platform",
-        "subscribers-early-access"
+          "for-subscribers-only",
+          "instrumented-reactive-platform",
+          "subscribers-early-access"
       )
       packagingOfInterest.contains(pom.packaging) &&
-      !metas.exists(meta => meta.owner == "typesafe" && typesafeNonOSS.contains(meta.repo))
+      !metas.exists(meta =>
+            meta.owner == "typesafe" && typesafeNonOSS.contains(meta.repo))
     }
 
-    val poms = rawPoms
-      .map{p =>
-        progress.step()
-        Try(resolve(p)).map(pom => (
-          pom, 
-          meta.get(sha1(p)).getOrElse(List())
-        ))
-      }
-      .map{
-        case Success((pom, metas)) => Success((PomConvert(pom), metas))
-        case Failure(e) => Failure(e)
-      }
-      .filter{
-        case Success((pom, metas)) => keep(pom, metas)
-        case _ => true
-      }
-      
+    val poms = rawPoms.map { p =>
+      progress.step()
+      Try(resolve(p)).map(
+          pom =>
+            (
+                pom,
+                meta.get(sha1(p)).getOrElse(List())
+          ))
+    }.map {
+      case Success((pom, metas)) => Success((PomConvert(pom), metas))
+      case Failure(e)            => Failure(e)
+    }.filter {
+      case Success((pom, metas)) => keep(pom, metas)
+      case _                     => true
+    }
+
     progress.stop()
     s.close()
 

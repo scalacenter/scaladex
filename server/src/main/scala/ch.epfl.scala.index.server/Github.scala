@@ -23,91 +23,103 @@ import com.typesafe.config.ConfigFactory
 
 case class AccessTokenResponse(access_token: String)
 case class RepoResponse(full_name: String)
-case class UserResponse(login: String, name: Option[String], avatar_url: String)
+case class UserResponse(login: String,
+                        name: Option[String],
+                        avatar_url: String)
 
 trait GithubProtocol extends DefaultJsonProtocol {
   implicit val formatAccessTokenResponse = jsonFormat1(AccessTokenResponse)
-  implicit val formatRepoResponse = jsonFormat1(RepoResponse)
-  implicit val formatUserResponse = jsonFormat3(UserResponse)
+  implicit val formatRepoResponse        = jsonFormat1(RepoResponse)
+  implicit val formatUserResponse        = jsonFormat3(UserResponse)
 }
 
 case class UserState(repos: Set[GithubRepo], user: UserInfo) {
-  def isAdmin = repos.exists{ case GithubRepo(organization, repository) => 
-    organization == "scalacenter" &&
-    repository == "scaladex"
+  def isAdmin = repos.exists {
+    case GithubRepo(organization, repository) =>
+      organization == "scalacenter" &&
+        repository == "scaladex"
   }
 }
 object UserState extends DefaultJsonProtocol {
   implicit val formatGithubRepo = jsonFormat2(GithubRepo)
-  implicit val formatUserInfo = jsonFormat3(UserInfo)
-  implicit val formatUserState = jsonFormat2(UserState.apply)
+  implicit val formatUserInfo   = jsonFormat3(UserInfo)
+  implicit val formatUserState  = jsonFormat2(UserState.apply)
 }
 
-class Github(implicit system: ActorSystem, materializer: ActorMaterializer) extends GithubProtocol {
+class Github(implicit system: ActorSystem, materializer: ActorMaterializer)
+    extends GithubProtocol {
   import system.dispatcher
 
-  val config = ConfigFactory.load().getConfig("org.scala_lang.index.oauth2")
-  val clientId = config.getString("client-id")
+  val config       = ConfigFactory.load().getConfig("org.scala_lang.index.oauth2")
+  val clientId     = config.getString("client-id")
   val clientSecret = config.getString("client-secret")
-  val redirectUri = config.getString("redirect-uri")
+  val redirectUri  = config.getString("redirect-uri")
 
   def info(code: String) = {
     def access = {
-      Http().singleRequest(HttpRequest(
-        method = POST,
-        uri = Uri("https://github.com/login/oauth/access_token").withQuery(Query(
-          "client_id" -> clientId,
-          "client_secret" -> clientSecret,
-          "code" -> code,
-          "redirect_uri" -> redirectUri
-        )),
-        headers = List(Accept(MediaTypes.`application/json`))
-      )).flatMap(response =>
-        Unmarshal(response).to[AccessTokenResponse].map(_.access_token)
-      )
+      Http()
+        .singleRequest(
+            HttpRequest(
+                method = POST,
+                uri =
+                  Uri("https://github.com/login/oauth/access_token").withQuery(
+                      Query(
+                          "client_id"     -> clientId,
+                          "client_secret" -> clientSecret,
+                          "code"          -> code,
+                          "redirect_uri"  -> redirectUri
+                      )),
+                headers = List(Accept(MediaTypes.`application/json`))
+            ))
+        .flatMap(response =>
+              Unmarshal(response).to[AccessTokenResponse].map(_.access_token))
     }
     def fetchGithub(token: String, path: Path, query: Query = Query.Empty) = {
-      Http().singleRequest(HttpRequest(
-        uri = Uri(s"https://api.github.com").withPath(path).withQuery(query),
-        headers = List(Authorization(GenericHttpCredentials("token", token)))
-      ))
+      Http().singleRequest(
+          HttpRequest(
+              uri =
+                Uri(s"https://api.github.com").withPath(path).withQuery(query),
+              headers =
+                List(Authorization(GenericHttpCredentials("token", token)))
+          ))
     }
 
     def fetchRepos(token: String): Future[List[RepoResponse]] = {
       def request(page: Option[Int] = None) = {
-        val query = page.map(p =>  Query("visibility" -> "public", "page" -> p.toString()))
-                        .getOrElse(Query("visibility" -> "public"))
+        val query = page
+          .map(p => Query("visibility"  -> "public", "page" -> p.toString()))
+          .getOrElse(Query("visibility" -> "public"))
         fetchGithub(token, Path.Empty / "user" / "repos", query)
       }
-      request(None).flatMap{r1 => 
-        val lastPage = r1.headers.find(_.name == "Link").map(h => extractLastPage(h.value)).getOrElse(1)
-        Unmarshal(r1).to[List[RepoResponse]].map(repos =>
-          (repos, lastPage)
-        )
-      }.flatMap{ case(repos, lastPage) =>
-        val nextPagesRequests =
-          if(lastPage > 1) {
-            Future.sequence((2 to lastPage).map(page => request(Some(page)).flatMap(r2 =>
-              Unmarshal(r2).to[List[RepoResponse]]
-            ))).map(_.flatten)
+      request(None).flatMap { r1 =>
+        val lastPage = r1.headers
+          .find(_.name == "Link")
+          .map(h => extractLastPage(h.value))
+          .getOrElse(1)
+        Unmarshal(r1).to[List[RepoResponse]].map(repos => (repos, lastPage))
+      }.flatMap {
+        case (repos, lastPage) =>
+          val nextPagesRequests = if (lastPage > 1) {
+            Future
+              .sequence((2 to lastPage).map(page =>
+                        request(Some(page)).flatMap(r2 =>
+                              Unmarshal(r2).to[List[RepoResponse]])))
+              .map(_.flatten)
           } else Future.successful(Nil)
 
-        nextPagesRequests.map(repos2 =>
-          repos ++ repos2
-        )
+          nextPagesRequests.map(repos2 => repos ++ repos2)
       }
     }
 
     def fetchUser(token: String) =
-      fetchGithub(token, Path.Empty / "user").flatMap(response => 
-        Unmarshal(response).to[UserResponse]
-      )
+      fetchGithub(token, Path.Empty / "user").flatMap(response =>
+            Unmarshal(response).to[UserResponse])
 
     for {
       token         <- access
       (repos, user) <- fetchRepos(token).zip(fetchUser(token))
     } yield {
-      val githubRepos = repos.map{ r =>
+      val githubRepos = repos.map { r =>
         val List(user, repo) = r.full_name.split("/").toList
         GithubRepo(user, repo)
       }.toSet
