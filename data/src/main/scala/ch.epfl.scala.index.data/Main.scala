@@ -5,6 +5,7 @@ import bintray._
 import github._
 import elastic._
 import cleanup._
+
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
@@ -25,7 +26,7 @@ object Main extends BintrayProtocol {
     def list(): Unit = {
 
       val listPomsStep = new ListPoms
-      // TODO: should be located in a config file
+      // // TODO: should be located in a config file
       val versions = List("2.12", "2.11", "2.10")
 
       for (version <- versions) {
@@ -33,7 +34,7 @@ object Main extends BintrayProtocol {
       }
 
       /* do a search for non standard lib poms */
-      for (lib <- uniqueNonStandardLibs) {
+      for (lib <- NonStandardLib.load()) {
         listPomsStep.run(lib.groupId, lib.artifactId)
       }
 
