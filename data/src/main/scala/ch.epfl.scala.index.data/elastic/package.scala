@@ -48,7 +48,7 @@ package object elastic extends ProjectProtocol {
   val maxResultWindow = 10000 // <=> max amount of projects (June 1st 2016 ~ 2500 projects)
   private val base = build.info.BuildInfo.baseDirectory.toPath
   val esSettings = Settings.settingsBuilder()
-    .put("path.home", base.resolve(".esdata").toString())
+    .put("path.home", base + "/.esdata")
     .put("max_result_window", maxResultWindow)
     
 
