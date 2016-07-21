@@ -131,36 +131,44 @@ object SemanticVersionTests extends TestSuite{
 
       // relaxed semantic version
       "major.minor"-{
-        SemanticVersion("1.1") ==> Some(SemanticVersion(1, 1))
+        SemanticVersion("1.2") ==> Some(SemanticVersion(1, 2))
       }
 
       "major.minor.patch"-{
-        SemanticVersion("1.1.1") ==> Some(SemanticVersion(1, 1, Some(1)))
+        SemanticVersion("1.2.3") ==> Some(SemanticVersion(1, 2, Some(3)))
+      }
+
+      "major.minor.patch.patch2"-{
+        SemanticVersion("1.2.3.4") ==> Some(SemanticVersion(1, 2, Some(3), Some(4)))
       }
 
       "major.minor.patch-rc"-{
-        SemanticVersion("1.1.1-RC1") ==> Some(SemanticVersion(1, 1, Some(1), Some(ReleaseCandidate(1))))
+        SemanticVersion("1.2.3-RC5") ==> Some(SemanticVersion(1, 2, Some(3), None, Some(ReleaseCandidate(5))))
       }
 
       "major.minor.patch-m"-{
-        SemanticVersion("1.1.1-M1") ==> Some(SemanticVersion(1, 1, Some(1), Some(Milestone(1))))
+        SemanticVersion("1.2.3-M6") ==> Some(SemanticVersion(1, 2, Some(3), None, Some(Milestone(6))))
       }
 
       "major.minor.patch-xyz"-{
-        SemanticVersion("1.1.1-xyz") ==> Some(SemanticVersion(1, 1, Some(1), Some(OtherPreRelease("xyz"))))
+        SemanticVersion("1.1.1-xyz") ==> Some(SemanticVersion(1, 1, Some(1), None, Some(OtherPreRelease("xyz"))))
       }
 
       "major.minor.patch+meta"-{
-        SemanticVersion("1.1.1+some.meta~data") ==> Some(SemanticVersion(1, 1, Some(1), None, Some("some.meta~data")))
+        SemanticVersion("1.1.1+some.meta~data") ==> Some(
+          SemanticVersion(
+            major = 1,
+            minor = 1,
+            patch = Some(1),
+            patch2 = None,
+            preRelease = None,
+            metadata = Some("some.meta~data")
+          )
+        )
       }
 
       "git commit"-{
         SemanticVersion("13e7afa9c1817d45b2989e545b2e9ead21d00cef") ==> None
-      }
-
-      // we could support this one
-      "epic.major.minor.patch"-{
-        SemanticVersion("1.1.1.1") ==> None
       }
 
       // relaxed semantic version
