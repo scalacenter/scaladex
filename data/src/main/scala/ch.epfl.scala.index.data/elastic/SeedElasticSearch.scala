@@ -3,8 +3,9 @@ package data
 package elastic
 
 import project._
-
 import maven.PomsReader
+
+import me.tongfei.progressbar._
 
 import com.sksamuel.elastic4s._
 import ElasticDsl._
@@ -64,22 +65,23 @@ class SeedElasticSearch(implicit val ec: ExecutionContext)
     val (projects, projectReleases) = newData.unzip
     val releases                    = projectReleases.flatten
 
-    Await.result(esClient.execute {
-      index.into(indexName / releasesCollection).source(releases.head)
-    }, Duration.Inf)
-
-    println(s"indexing ${releases.size} releases")
-    Await.result(esClient.execute {
-      bulk(releases.map(release =>
-                index.into(indexName / releasesCollection).source(release)))
-    }, Duration.Inf)
-
-    println(s"indexing ${projects.size} projects")
-
-    Await.result(esClient.execute {
-      bulk(projects.map(project =>
-                index.into(indexName / projectsCollection).source(project)))
-    }, Duration.Inf)
+    val progress = new ProgressBar("Indexing releases", releases.size)
+    progress.start()
+    val bunch = 1000
+    releases.grouped(bunch).foreach{group =>
+      Await.result(esClient.execute {
+        bulk(group.map(release => index.into(indexName / releasesCollection).source(release)))
+      }, Duration.Inf)
+      progress.stepBy(bunch)
+    }
+    
+    val bunch2 = 100
+    println(s"Indexing projects (${projects.size})")
+    projects.grouped(bunch2).foreach{group =>
+      Await.result(esClient.execute {
+        bulk(group.map(project => index.into(indexName / projectsCollection).source(project)))
+      }, Duration.Inf)
+    }
 
     ()
   }

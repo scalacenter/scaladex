@@ -26,7 +26,8 @@ lazy val commonSettings = Seq(
     "-Ywarn-dead-code",
     "-Ywarn-numeric-widen",
     "-Ywarn-unused-import",
-    "-Ywarn-value-discard"
+    "-Ywarn-value-discard",
+    "-Xmax-classfile-name", "78"
   ),
   console <<= console in Test,
   scalacOptions in (Test, console) -= "-Ywarn-unused-import",
@@ -106,12 +107,8 @@ lazy val data = project
     resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-core"                    % "2.3.0",
-      "com.typesafe.akka"      %% "akka-http-experimental"            % akkaVersion,
-      "com.typesafe.akka"      %% "akka-http-spray-json-experimental" % akkaVersion,
-      "de.heikoseeberger"      %% "akka-http-json4s"                  % "1.7.0",
+      "com.typesafe.akka"      %% "akka-stream"                       % akkaVersion,
       "org.json4s"             %% "json4s-native"                     % "3.4.0",
-      "de.heikoseeberger"      %% "akka-http-circe"                   % "1.7.0",
-      "org.scala-lang.modules" %% "scala-xml"                         % "1.0.5",
       "com.github.nscala-time" %% "nscala-time"                       % "2.12.0",
       "me.tongfei"              % "progressbar"                       % "0.4.0",
       "org.apache.maven"        % "maven-model-builder"               % "3.3.9",

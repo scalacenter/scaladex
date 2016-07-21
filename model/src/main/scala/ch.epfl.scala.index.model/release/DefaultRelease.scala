@@ -38,17 +38,11 @@ object DefaultRelease {
             selection: ReleaseSelection,
             releases: List[Release]): Option[ReleaseOptions] = {
 
-    val selectedReleases = releases.filter(
-        release =>
-          selection.artifact
-            .map(_ == release.reference.artifact)
-            .getOrElse(true) &&
-            selection.target
-              .map(_ == release.reference.target)
-              .getOrElse(true) &&
-            selection.version
-              .map(_ == release.reference.version)
-              .getOrElse(true))
+    val selectedReleases = releases.filter(release =>
+      selection.artifact.map(_ == release.reference.artifact).getOrElse(true) &&
+      selection.target.map(_ == release.reference.target).getOrElse(true) &&
+      selection.version.map(_ == release.reference.version).getOrElse(true)
+    )
 
     // descending ordering for versions
     implicit def ordering = implicitly[Ordering[SemanticVersion]].reverse

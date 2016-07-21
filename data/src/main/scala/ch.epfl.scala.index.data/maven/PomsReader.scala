@@ -16,16 +16,12 @@ import java.util.Properties
 case class MissingParentPom(dep: maven.Dependency) extends Exception
 
 /*
-We have ~50 000 POMs in index/bintray
-~45 000 will load
+~ 90% will load
 
 Common problems:
- * 1 600 duplicate tags
- * 2 200 duplicate repo id
- *   700 xmlns tags in invalid places
-
-https://github.com/sbt/sbt/issues/2566
-
+ * 4% duplicate tags (sbt issue #2566)
+ * 4% duplicate repo id (sbt issue #2566)
+ * 2% xmlns tags in invalid places (HMRC release process is bogus)
  */
 object PomsReader {
   import org.apache.maven.model._
@@ -101,11 +97,11 @@ object PomsReader {
       val typesafeNonOSS = Set(
           "for-subscribers-only",
           "instrumented-reactive-platform",
-          "subscribers-early-access"
+          "subscribers-early-access",
+          "maven-releases" // too much noise
       )
       packagingOfInterest.contains(pom.packaging) &&
-      !metas.exists(meta =>
-            meta.owner == "typesafe" && typesafeNonOSS.contains(meta.repo))
+      !metas.exists(meta => meta.owner == "typesafe" && typesafeNonOSS.contains(meta.repo))
     }
 
     val poms = rawPoms.map { p =>
@@ -131,10 +127,7 @@ object PomsReader {
   }
 
   def load(path: Path) = {
-
     val pom = resolve(path)
     PomConvert(pom)
   }
-  // Useful in ScalaKata to play with the data
-  lazy val loadOnceToExperiment = load()
 }

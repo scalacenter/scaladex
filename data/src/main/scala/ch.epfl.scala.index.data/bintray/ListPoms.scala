@@ -178,6 +178,10 @@ class ListPoms(implicit val system: ActorSystem,
       filter: Option[BintraySearch => Boolean] = None
   ) = {
 
+    if(queried.size == 1) {
+      println(infoMessage)
+    }
+
     def applyFilter(bintray: List[BintraySearch]): List[BintraySearch] = {
 
       filter match {

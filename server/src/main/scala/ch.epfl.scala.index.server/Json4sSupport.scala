@@ -27,13 +27,6 @@ import org.json4s._
 /**
   * Automatic to and from JSON marshalling/unmarshalling using an in-scope *Json4s* protocol.
   */
-@Deprecated
-object Json4sSupport extends Json4sSupport
-
-/**
-  * Automatic to and from JSON marshalling/unmarshalling using an in-scope *Json4s* protocol.
-  */
-@Deprecated
 trait Json4sSupport {
   implicit val formats       = DefaultFormats
   implicit val serialization = native.Serialization

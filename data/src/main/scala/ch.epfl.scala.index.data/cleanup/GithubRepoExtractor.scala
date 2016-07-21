@@ -3,111 +3,112 @@ package data
 package cleanup
 
 import model.misc.GithubRepo
-
 import maven.PomsReader
-import spray.json._
+
+import org.json4s._
+import org.json4s.native.Serialization.{read, writePretty}
+
 import java.nio.file._
 import java.nio.charset.StandardCharsets
-
-import fastparse.all._
-import fastparse.core.Parsed
 
 import scala.util.Success
 import scala.util.matching.Regex
 
-class GithubRepoExtractor extends DefaultJsonProtocol {
-  private val source = scala.io.Source.fromFile(
-      cleanupIndexBase.resolve(Paths.get("claims.json")).toFile
-  )
-  private val claims =
-    source.mkString.parseJson.convertTo[Map[String, Option[String]]]
-  val claimedRepos = claims.toList.sorted.flatMap {
-    case (k, v) => v.map((k, _))
-  }.map {
-    case (k, v) =>
-      val regex                    = k.replaceAllLiterally("*", "(.*)").r
-      val List(organization, repo) = v.split('/').toList
-      (regex, GithubRepo(organization, repo))
-  }
+class GithubRepoExtractor {
+  
+  case class Claims(claims: Map[String, Option[String]])
+  object ClaimsSerializer extends CustomSerializer[Claims](format => (
+    {
+      case JObject(obj) => {
+        implicit val formats = DefaultFormats
+        Claims(obj.map{ case (k, v) => (k, v.extract[Option[String]])}.toMap)
+      }
+    },
+    {
+      case c: Claims =>
+        JObject(
+          c.claims.toList.sorted.map{ case (k, v) =>
+            JField(k, v.map(s => JString(s)).getOrElse(JNull))
+          }
+        )
+    }
+   ))
 
+  /**
+    * json4s formats
+    */
+  implicit private val formats = DefaultFormats ++ Seq(ClaimsSerializer)
+  implicit private val serialization = native.Serialization
+
+  private val source = scala.io.Source.fromFile(cleanupIndexBase.resolve(Paths.get("claims.json")).toFile)
+  private val claims = read[Claims](source.mkString).claims
+  private def matches(m: Regex, s: String): Boolean = m.unapplySeq(s).isDefined
+
+  val claimedRepos = claims.toList.sorted
+    .flatMap{ case (k, v) => v.map((k, _))}
+    .map { case (k, v) =>
+      val List(groupId, artifactIdRawRegex) = k.split(" ").toList
+      val artifactIdRegex = artifactIdRawRegex.replaceAllLiterally("*", "(.*)").r
+      val matcher: (maven.MavenModel => Boolean) = pom => {
+        def artifactMatches =
+          artifactIdRawRegex == "*" ||
+          matches(artifactIdRegex, pom.artifactId)
+
+        def groupIdMaches = groupId == pom.groupId
+
+        groupIdMaches && artifactMatches
+      }
+
+      val List(organization, repo) = v.split('/').toList
+
+      (matcher, GithubRepo(organization, repo))
+    }
   source.close()
 
-  // More info in Rfc3986
-  private val Alpha      = (CharIn('a' to 'z') | CharIn('A' to 'Z')).!
-  private val Digit      = CharIn('0' to '9').!
-  private val Unreserved = P(Alpha | Digit | "-".! | ".".! | "_".! | "~".!).!
-  private val Segment    = P(Unreserved | SubDelims | ":" | "@").!
-  private def SubDelims = CharIn("!$&'()*+,;=").!
-
-  private def removeDotGit(v: String) =
-    if (v.endsWith(".git")) v.dropRight(".git".length)
-    else v
-
-  private val ScmUrl = P(
-      "scm:".? ~ "git:".? ~ ("git@" | "https://" | "git://" | "//") ~
-        "github.com" ~ (":" | "/") ~ Segment.rep.! ~ "/" ~ Segment.rep.!
-        .map(removeDotGit))
-
-  private def parseRepo(v: String): Option[GithubRepo] = {
-    ScmUrl.parse(v) match {
-      case Parsed.Success((organization, repo), _) =>
-        Some(GithubRepo(organization, repo))
-      case _ => None
-    }
-  }
-
-  def apply(d: maven.MavenModel): Set[GithubRepo] = {
-    import d._
-
-    def matches(m: Regex, s: String): Boolean = m.unapplySeq(s).isDefined
-
-    def fixInterpolationIssue(s: String): String = {
-
-      if (s.startsWith("$")) s.drop(1) else s
-    }
-
-    val fromPoms = scm match {
-      case Some(scmV) => {
-        import scmV._
-        List(connection, developerConnection, url).flatten
-          .flatMap(parseRepo)
+  def apply(pom: maven.MavenModel): Option[GithubRepo] = {
+    val fromPoms = pom.scm match {
+      case Some(scm) => {
+        List(scm.connection, scm.developerConnection, scm.url).flatten
+          .flatMap(ScmInfoParser.parse)
           .filter(g => g.organization != "" && g.repository != "")
       }
       case None => List()
     }
 
-    val fromClaims = claimedRepos.find {
-      case (m, _) =>
-        matches(m, s"$groupId $artifactId")
-    }.map(_._2).toList
+    val fromClaims = claimedRepos
+      .find{ case (matcher, _) => matcher(pom)}
+      .map { case (_, repo) => repo}
 
-    /* use claims first - because project indexing uses only the head github repo */
-    (fromClaims ++ fromPoms).map {
+    /* use claims first because it can be used to rewrite scmInfo */
+    val repo =
+      fromClaims match {
+        case None => fromPoms.headOption
+        case s => s
+      }
 
-      case GithubRepo(organization, repo) =>
-        GithubRepo(
-            fixInterpolationIssue(organization.toLowerCase),
-            fixInterpolationIssue(repo.toLowerCase)
-        )
-    }.toSet
+    // scala xml interpolation is <url>{someVar}<url> and it's often wrong like <url>${someVar}<url>
+    // after interpolation it look like <url>$thevalue<url>
+    def fixInterpolationIssue(s: String): String = {
+      if (s.startsWith("$")) s.drop(1) else s
+    }
+
+    repo.map{ case GithubRepo(organization, repo) =>
+      GithubRepo(
+        fixInterpolationIssue(organization.toLowerCase),
+        fixInterpolationIssue(repo.toLowerCase)
+      )
+    }
   }
 
   // script to generate contrib/claims.json
   def run(): Unit = {
     val poms = PomsReader.load().collect { case Success((pom, _)) => pom }
 
-    val noUrl = poms.filter(p => apply(p).size == 0)
-    val notClaimed = noUrl.map { d =>
-      import d._
-      (s"$groupId $artifactId", None)
-    }.toMap
-
-    val nl = System.lineSeparator
-
-    val out = (notClaimed ++ claims).toList.sorted.map {
-      case (k, v) =>
-        "  \"" + k + "\": " + v.map(x => "\"" + x + "\"").getOrElse("null")
-    }.mkString("{" + nl, "," + nl, nl + "}")
+    val noUrl = poms.filter(pom => apply(pom).isEmpty)
+    val notClaimed = noUrl.map(pom => (s"${pom.groupId} ${pom.artifactId}", None)).toMap
+    val out = writePretty(Claims(notClaimed ++ claims))
+      .replaceAllLiterally("\":\"", "\": \"")       // make json breath
+      .replaceAllLiterally("\":null", "\": null")
 
     Files.write(
         cleanupIndexBase.resolve(Paths.get("claims_new.json")),

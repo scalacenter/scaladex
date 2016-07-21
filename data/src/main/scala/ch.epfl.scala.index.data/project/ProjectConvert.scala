@@ -6,93 +6,57 @@ import cleanup._
 import model._
 import model.misc._
 import bintray._
-import ch.epfl.scala.index.data.maven.MavenModel
+import maven.MavenModel
 import github._
 import release._
-import me.tongfei.progressbar._
+
 import org.joda.time.DateTime
 
 object ProjectConvert extends BintrayProtocol {
 
-  type cleanPomAndMata = List[(GithubRepo,
-                               String,
-                               ScalaTarget,
-                               MavenModel,
-                               List[BintraySearch],
-                               SemanticVersion)]
-
-  /**
-    * fix non standard published artifacts, create a list of supported scala version
-    * and return a list of artifact ids
-    *
-    * @param pom the current maven model
-    * @return
+  val nonStandardLibs = NonStandardLib.load()
+  
+  /** artifactId is often use to express binary compatibility with a scala version (ScalaTarget)
+    * if the developer follow this convention we extract the relevant parts and we mark
+    * the library as standard. Otherwise we either have a library like gatling or the scala library itself
     */
-  def checkNonStandardLib(pom: MavenModel): List[String] = {
+  def extractArtifactNameAndTarget(pom: MavenModel): Option[(String, ScalaTarget, Boolean)] = {
+    nonStandardLibs.find(lib => 
+      lib.groupId == pom.groupId && 
+      lib.artifactId == pom.artifactId).map(_.lookup) match {
 
-    getNonStandardLib(pom) match {
+      case Some(ScalaTargetFromPom) =>
+        pom.dependencies
+          .find(dep =>
+            dep.groupId == "org.scala-lang" &&
+            dep.artifactId == "scala-library"
+          )
+          .flatMap(dep => SemanticVersion(dep.version))
+          .map(version => (pom.artifactId, ScalaTarget(version.copy(patch = None)), true))
 
-      case Some(nonStandardLib) =>
-        if ("org.scala-lang" == nonStandardLib.groupId) {
+      case Some(ScalaTargetFromVersion) => 
+        SemanticVersion(pom.version)
+          .map(version => (pom.artifactId, ScalaTarget(version), true))
 
-          List(s"${nonStandardLib.artifactId}_${pom.version}")
-        } else {
-
-          nonStandardLib.scalaVersions.map(v =>
-                s"${nonStandardLib.artifactId}_$v")
-        }
-      case None => List(pom.artifactId)
+      case None =>
+        Artifact(pom.artifactId).map{ case (artifactName, target) => (artifactName, target, false) }
     }
   }
 
-  /**
-    * try to find a non standard publish lib by comparing
-    * - group id
-    * - artifact id
-    * - version
-    *
-    * with references ins contrib/non-standard.json
-    *
-    * @param pom the current maven model
-    * @return
-    */
-  def getNonStandardLib(pom: MavenModel): Option[NonStandardLib] = {
-
-    nonStandardLibs.find { n =>
-      n.groupId == pom.groupId &&
-      n.artifactId == pom.artifactId &&
-      pom.version.matches(n.versionRegex)
-    }
-  }
-
-  def apply(pomsAndMeta: List[(maven.MavenModel, List[BintraySearch])])
-    : List[(Project, List[Release])] = {
+  def apply(pomsAndMeta: List[(MavenModel, List[BintraySearch])]): List[(Project, List[Release])] = {
     val githubRepoExtractor = new GithubRepoExtractor
 
-    val progressMeta = new ProgressBar("collecting metadata", pomsAndMeta.size)
-    progressMeta.start()
+    println("Collecting Metadata")
+    
 
-    val pomsAndMetaClean: cleanPomAndMata = pomsAndMeta.flatMap {
+    val pomsAndMetaClean = pomsAndMeta.flatMap {
       case (pom, metas) =>
-        progressMeta.step()
-
-        /* check for a non standard published artifact and create
-         * a reference for each scala version to fix wrong
-         * published libs.
-         */
-        val repos = githubRepoExtractor(pom)
-        checkNonStandardLib(pom) map { artifactId =>
-          for {
-            (artifactName, targets) <- Artifact(artifactId)
-            version                 <- SemanticVersion(pom.version)
-            github <- repos
-                       .find(githubRepoExtractor.claimedRepos.contains)
-                       .orElse(repos.headOption)
-          } yield (github, artifactName, targets, pom, metas, version)
-        }
-    }.flatten
-
-    progressMeta.stop()
+        for {
+          (artifactName, targets, nonStandardLib) <- extractArtifactNameAndTarget(pom)
+          version <- SemanticVersion(pom.version)
+          github <- githubRepoExtractor(pom)
+        } yield (github, artifactName, targets, pom, metas, version, nonStandardLib)
+    }
 
     println("Convert POMs to Project")
     val licenseCleanup = new LicenseCleanup
@@ -104,8 +68,7 @@ object ProjectConvert extends BintrayProtocol {
     import org.joda.time.format.ISODateTimeFormat
     val format = ISODateTimeFormat.dateTime.withOffsetParsed
 
-    def maxMinRelease(
-        releases: List[Release]): (Option[String], Option[String]) = {
+    def maxMinRelease(releases: List[Release]): (Option[String], Option[String]) = {
       def sortDate(rawDates: List[String]): List[String] = {
         rawDates
           .map(format.parseDateTime)
@@ -122,44 +85,40 @@ object ProjectConvert extends BintrayProtocol {
       (sorted.headOption, sorted.lastOption)
     }
 
-    val projectsAndReleases = pomsAndMetaClean.groupBy {
-      case (githubRepo, _, _, _, _, _) => githubRepo
-    }.map {
-      case (githubRepo @ GithubRepo(organization, repository), vs) =>
+    val projectsAndReleases = pomsAndMetaClean
+      .groupBy {case (githubRepo, _, _, _, _, _, _) => githubRepo}
+      .map { case (githubRepo @ GithubRepo(organization, repository), vs) =>
         val projectReference = Project.Reference(organization, repository)
+        val releases = vs.map { case (_, artifactName, targets, pom, metas, version, nonStandardLib) =>
+          val mavenCentral = metas.forall(meta => meta.owner == "bintray" && meta.repo == "jcenter")
+          val resolver =
+            if (mavenCentral) None
+            else
+              metas
+                .map(meta => BintrayResolver(meta.owner, meta.repo))
+                .headOption
 
-        val releases = vs.map {
-          case (_, artifactName, targets, pom, metas, version) =>
-            val mavenCentral = metas.forall(meta =>
-                  meta.owner == "bintray" && meta.repo == "jcenter")
-            val resolver =
-              if (mavenCentral) None
-              else
-                metas
-                  .map(meta => BintrayResolver(meta.owner, meta.repo))
-                  .headOption
-
-            Release(
-                maven = pomToMavenReference(pom),
-                reference = Release.Reference(
-                    organization,
-                    repository,
-                    artifactName,
-                    version,
-                    targets
-                ),
-                resolver = resolver,
-                name = pom.name,
-                description = pom.description,
-                released = metas
-                  .map(_.created)
-                  .sorted
-                  .headOption
-                  .map(format.print), // +/- 3 days offset
-                mavenCentral = mavenCentral,
-                licenses = licenseCleanup(pom),
-                nonStandardLib = getNonStandardLib(pom).nonEmpty
-            )
+          Release(
+              maven = pomToMavenReference(pom),
+              reference = Release.Reference(
+                  organization,
+                  repository,
+                  artifactName,
+                  version,
+                  targets
+              ),
+              resolver = resolver,
+              name = pom.name,
+              description = pom.description,
+              released = metas
+                .map(_.created)
+                .sorted
+                .headOption
+                .map(format.print), // +/- 3 days offset
+              mavenCentral = mavenCentral,
+              licenses = licenseCleanup(pom),
+              nonStandardLib = nonStandardLib
+          )
         }
 
         val (max, min) = maxMinRelease(releases)
@@ -189,7 +148,7 @@ object ProjectConvert extends BintrayProtocol {
                      dependency.artifactId,
                      dependency.version)
 
-    val poms = pomsAndMetaClean.map { case (_, _, _, pom, _, _) => pom }
+    val poms = pomsAndMetaClean.map { case (_, _, _, pom, _, _, _) => pom }
 
     def link(reverse: Boolean) = {
       poms.foldLeft(Map[Release.Reference, Seq[Dependency]]()) {
@@ -230,8 +189,7 @@ object ProjectConvert extends BintrayProtocol {
 
                 /* java -> java: should not happen actually */
                 case (None, None) =>
-                  println(
-                      s"no reference discovered for $pomMavenRef -> $depMavenRef")
+                  println(s"no reference discovered for $pomMavenRef -> $depMavenRef")
                   cache0
               }
           }
@@ -249,8 +207,7 @@ object ProjectConvert extends BintrayProtocol {
       reverseDependenciesCache.getOrElse(release.reference, Seq())
     }
 
-    def collectDependencies(releases: List[Release],
-                            f: Release.Reference => String): List[String] = {
+    def collectDependencies(releases: List[Release], f: Release.Reference => String): List[String] = {
       for {
         release    <- releases
         dependency <- release.scalaDependencies
@@ -268,12 +225,8 @@ object ProjectConvert extends BintrayProtocol {
         val releasesWithDependencies = releases.map { release =>
           val dependencies = findDependencies(release)
           release.copy(
-              scalaDependencies = dependencies.collect {
-                case sd: ScalaDependency => sd
-              },
-              javaDependencies = dependencies.collect {
-                case jd: JavaDependency => jd
-              },
+              scalaDependencies = dependencies.collect { case sd: ScalaDependency => sd},
+              javaDependencies = dependencies.collect { case jd: JavaDependency => jd},
               reverseDependencies = findReverseDependencies(release).collect {
                 case sd: ScalaDependency => sd
               }
