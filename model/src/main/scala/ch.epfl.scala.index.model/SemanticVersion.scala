@@ -10,6 +10,7 @@ case class OtherPreRelease(o: String) extends PreRelease
   * @param major the major version number
   * @param minor the minor version number
   * @param patch the path version number
+  * @param patch2 the path version number (to support a.b.c.d)
   * @param preRelease the pre release name
   * @param metadata the release metadata
   */
@@ -17,6 +18,7 @@ case class SemanticVersion(
     major: Long,
     minor: Long = 0,
     patch: Option[Long] = None,
+    patch2: Option[Long] = None,
     preRelease: Option[PreRelease] = None,
     metadata: Option[String] = None
 ) {
@@ -28,6 +30,7 @@ case class SemanticVersion(
   override def toString = {
 
     val patchPart = patch.map("." + _).getOrElse("")
+    val patch2Part = patch2.map("." + _).getOrElse("")
 
     val preReleasePart = preRelease.map {
 
@@ -38,7 +41,7 @@ case class SemanticVersion(
 
     val metadataPart = metadata.map("+" + _).getOrElse("")
 
-    major + "." + minor + patchPart + preReleasePart + metadataPart
+    major + "." + minor + patchPart + patch2Part + preReleasePart + metadataPart
   }
 }
 
@@ -55,12 +58,12 @@ object SemanticVersion extends Parsers {
 
     val lcmp = implicitly[Ordering[Long]]
     val scmp = implicitly[Ordering[String]]
-    val cmp  = implicitly[Ordering[(Long, Long, Option[Long])]]
+    val cmp  = implicitly[Ordering[(Long, Long, Option[Long], Option[Long])]]
 
     def compare(v1: SemanticVersion, v2: SemanticVersion): Int = {
       def tupled(v: SemanticVersion) = {
         import v._
-        (major, minor, patch)
+        (major, minor, patch, patch2)
       }
 
       val tv1 = tupled(v1)
@@ -101,21 +104,21 @@ object SemanticVersion extends Parsers {
     // http://semver.org/#spec-item-9
     val PreRelease: P[PreRelease] =
       "-" ~ (
-          (("M" | "m") ~ &(Digit) ~ Number).map(n => Milestone(n)) |
-            (("R" | "r") ~ ("C" | "c") ~ &(Digit) ~ Number).map(n =>
-                  ReleaseCandidate(n)) |
-            (Digit | Alpha | "." | "-").rep.!.map(s => OtherPreRelease(s))
+        (("M" | "m") ~ &(Digit) ~ Number).map(n => Milestone(n)) |
+        (("R" | "r") ~ ("C" | "c") ~ &(Digit) ~ Number).map(n =>ReleaseCandidate(n)) |
+        (Digit | Alpha | "." | "-").rep.!.map(s => OtherPreRelease(s))
       )
 
     // http://semver.org/#spec-item-10
     val MetaData = "+" ~ AnyChar.rep.!
 
-    val MinorP = ("." ~ Number).?.map(_.getOrElse(0L)) // not really valid SemVer
-    val PatchP = ("." ~ Number).?                      // not really valid SemVer
+    val MinorP  = ("." ~ Number).?.map(_.getOrElse(0L)) // not really valid SemVer
+    val PatchP  = ("." ~ Number).?                      // not really valid SemVer
+    val Patch2P = ("." ~ Number).?                      // not really valid SemVer
 
-    ("v".? ~ Major ~ MinorP ~ PatchP ~ PreRelease.? ~ MetaData.?).map {
-      case (major, minor, patch, preRelease, metadata) =>
-        SemanticVersion(major, minor, patch, preRelease, metadata)
+    ("v".? ~ Major ~ MinorP ~ PatchP ~ Patch2P ~ PreRelease.? ~ MetaData.?).map {
+      case (major, minor, patch, patch2, preRelease, metadata) =>
+        SemanticVersion(major, minor, patch, patch2, preRelease, metadata)
     }
   }
   private val FullParser = Start ~ Parser ~ End
