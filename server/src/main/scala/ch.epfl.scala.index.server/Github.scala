@@ -2,17 +2,14 @@ package ch.epfl.scala.index
 package server
 
 import model.misc._
-
 import data.github._
 
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import spray.json._
 import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import HttpMethods.POST
 import headers._
 import Uri._
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import unmarshalling.Unmarshal
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
@@ -27,12 +24,6 @@ case class UserResponse(login: String,
                         name: Option[String],
                         avatar_url: String)
 
-trait GithubProtocol extends DefaultJsonProtocol {
-  implicit val formatAccessTokenResponse = jsonFormat1(AccessTokenResponse)
-  implicit val formatRepoResponse        = jsonFormat1(RepoResponse)
-  implicit val formatUserResponse        = jsonFormat3(UserResponse)
-}
-
 case class UserState(repos: Set[GithubRepo], user: UserInfo) {
   def isAdmin = repos.exists {
     case GithubRepo(organization, repository) =>
@@ -40,14 +31,8 @@ case class UserState(repos: Set[GithubRepo], user: UserInfo) {
         repository == "scaladex"
   }
 }
-object UserState extends DefaultJsonProtocol {
-  implicit val formatGithubRepo = jsonFormat2(GithubRepo)
-  implicit val formatUserInfo   = jsonFormat3(UserInfo)
-  implicit val formatUserState  = jsonFormat2(UserState.apply)
-}
 
-class Github(implicit system: ActorSystem, materializer: ActorMaterializer)
-    extends GithubProtocol {
+class Github(implicit system: ActorSystem, materializer: ActorMaterializer) extends Json4sSupport {
   import system.dispatcher
 
   val config       = ConfigFactory.load().getConfig("org.scala_lang.index.oauth2")
