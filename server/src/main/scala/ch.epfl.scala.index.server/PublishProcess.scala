@@ -42,9 +42,7 @@ class PublishProcess(
   def authenticate(githubCredentials: GithubCredentials): Future[Boolean] = {
     val req = wsClient
       .url("https://api.github.com/user")
-      .withAuth(githubCredentials.username,
-                githubCredentials.password,
-                WSAuthScheme.BASIC)
+      .withAuth(githubCredentials.username, githubCredentials.password, WSAuthScheme.BASIC)
     req.get.map(response => 200 == response.status)
   }
 
@@ -121,14 +119,10 @@ class PublishProcess(
     * @param data the main publish data
     * @return
     */
-  private def updateIndex(repo: GithubRepo,
-                          pom: MavenModel,
-                          data: PublishData) = Future {
+  private def updateIndex(repo: GithubRepo, pom: MavenModel, data: PublishData) = Future {
 
-    new GithubDownload(Some(data.credentials)).run(repo,
-                                                   data.downloadInfo,
-                                                   data.downloadReadme,
-                                                   data.downloadContributors)
+    new GithubDownload(Some(data.credentials))
+      .run(repo, data.downloadInfo, data.downloadReadme, data.downloadContributors)
     val bintray = BintraySearch(data.hash,
                                 None,
                                 s"${pom.groupId}:${pom.artifactId}",
@@ -139,8 +133,7 @@ class PublishProcess(
                                 pom.groupId,
                                 pom.artifactId,
                                 new DateTime())
-    val (newProject, newReleases) =
-      ProjectConvert(List((pom, List(bintray)))).head
+    val (newProject, newReleases) = ProjectConvert(List((pom, List(bintray)))).head
 
     val updatedProject = newProject.copy(keywords = data.keywords)
     val projectSearch  = api.project(newProject.reference)
@@ -155,14 +148,10 @@ class PublishProcess(
 
         case Some(project) =>
           project._id.map { id =>
-            esClient.execute(
-                update(id) in (indexName / projectsCollection) doc updatedProject)
+            esClient.execute(update(id) in (indexName / projectsCollection) doc updatedProject)
           }
         case None =>
-          esClient.execute(
-              index
-                .into(indexName / projectsCollection)
-                .source(updatedProject))
+          esClient.execute(index.into(indexName / projectsCollection).source(updatedProject))
       }
 
       releases.foreach { rel =>
@@ -171,22 +160,16 @@ class PublishProcess(
       /* there can be only one release */
       if (!releases.exists(r => r.reference == newReleases.head.reference)) {
 
-        esClient.execute(
-            index
-              .into(indexName / releasesCollection)
-              .source(newReleases.head))
+        esClient.execute(index.into(indexName / releasesCollection).source(newReleases.head))
       } else {
 
         for {
 
-          release <- releases.find(r =>
-                          r.reference == newReleases.head.reference)
-          id <- release._id
+          release <- releases.find(r => r.reference == newReleases.head.reference)
+          id      <- release._id
         } yield {
 
-          esClient.execute(
-              update(id)
-                .in(indexName / releasesCollection) doc newReleases.head)
+          esClient.execute(update(id).in(indexName / releasesCollection) doc newReleases.head)
         }
       }
     }
@@ -201,19 +184,15 @@ class PublishProcess(
     * @param repository the provided GitHub repository
     * @return
     */
-  private def hasWriteAccess(githubCredentials: GithubCredentials,
-                             repository: GithubRepo): Boolean = {
+  private def hasWriteAccess(githubCredentials: GithubCredentials, repository: GithubRepo): Boolean = {
 
     import scala.concurrent.duration._
     import ch.epfl.scala.index.data.github.Json4s._
     import org.json4s.native.Serialization.read
 
     val req = wsClient
-      .url(
-          s"https://api.github.com/repos/${repository.organization}/${repository.repository}")
-      .withAuth(githubCredentials.username,
-                githubCredentials.password,
-                WSAuthScheme.BASIC)
+      .url(s"https://api.github.com/repos/${repository.organization}/${repository.repository}")
+      .withAuth(githubCredentials.username, githubCredentials.password, WSAuthScheme.BASIC)
       .withHeaders("Accept" -> "application/vnd.github.v3+json")
     val response = Await.result(req.get, 5.seconds)
 

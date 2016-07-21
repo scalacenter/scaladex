@@ -43,9 +43,7 @@ case class InternalBintrayPagination(numberOfPages: Int, itemPerPage: Int = 50)
   * @param page the current page
   * @param lastSearchDate the last searched date
   */
-case class PomListDownload(scalaVersion: String,
-                           page: Int,
-                           lastSearchDate: Option[DateTime])
+case class PomListDownload(scalaVersion: String, page: Int, lastSearchDate: Option[DateTime])
 
 /**
   * Bintray protocol
@@ -55,8 +53,7 @@ trait BintrayProtocol {
   /**
     * json4s formats
     */
-  implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer,
-                                               BintraySearchSerializer)
+  implicit val formats       = DefaultFormats ++ Seq(DateTimeSerializer, BintraySearchSerializer)
   implicit val serialization = native.Serialization
 
   /**
@@ -73,8 +70,7 @@ trait BintrayProtocol {
               }
             }, {
               case search: BintraySearch => {
-                implicit val formats = DefaultFormats ++ Seq(
-                      DateTimeSerializer)
+                implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
                 JObject(
                     JField("created", Extraction.decompose(search.created)),
                     JField("package", Extraction.decompose(search.`package`)),
@@ -125,9 +121,6 @@ object BintrayMeta extends BintrayProtocol {
     val source = scala.io.Source.fromFile(path.toFile)
     val ret    = source.mkString.split(nl).toList
     source.close()
-    ret
-      .filter(_ != "")
-      .map(json => parse(json).extract[BintraySearch])
-      .sortBy(_.created)(Descending)
+    ret.filter(_ != "").map(json => parse(json).extract[BintraySearch]).sortBy(_.created)(Descending)
   }
 }

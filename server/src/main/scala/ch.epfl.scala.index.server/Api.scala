@@ -74,14 +74,14 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     } else List()
 
     val mustQueriesRepos =
-      if(userRepos.isEmpty) Nil
+      if (userRepos.isEmpty) Nil
       else
         List(
-          bool(
-            should(
-                reposQueries: _*
-            )
-        ))
+            bool(
+                should(
+                    reposQueries: _*
+                )
+            ))
 
     query(
         bool(
@@ -110,8 +110,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
             nestedQuery("reference").query(
                 bool(
                     must(
-                        termQuery("reference.organization",
-                                  project.organization),
+                        termQuery("reference.organization", project.organization),
                         termQuery("reference.repository", project.repository)
                     )
                 )
@@ -161,8 +160,8 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
         .limit(1)
     }.map(r => r.as[Project].headOption)
   }
-  def projectPage(projectRef: Project.Reference, selection: ReleaseSelection)
-    : Future[Option[(Project, Int, ReleaseOptions)]] = {
+  def projectPage(projectRef: Project.Reference,
+                  selection: ReleaseSelection): Future[Option[(Project, Int, ReleaseOptions)]] = {
     val projectAndReleases = for {
       project  <- project(projectRef)
       releases <- releases(projectRef)
@@ -170,10 +169,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
 
     projectAndReleases.map {
       case (p, releases) =>
-        p.flatMap(
-            project =>
-              DefaultRelease(project, selection, releases).map(
-                  (project, releases.size, _)))
+        p.flatMap(project => DefaultRelease(project, selection, releases).map((project, releases.size, _)))
     }
   }
 
@@ -181,15 +177,9 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     latest[Project](projectsCollection, "created", 12).map(_.map(hideId))
   def latestReleases() = latest[Release](releasesCollection, "released", 12)
 
-  private def latest[T: HitAs: Manifest](collection: String,
-                                         by: String,
-                                         n: Int): Future[List[T]] = {
+  private def latest[T: HitAs: Manifest](collection: String, by: String, n: Int): Future[List[T]] = {
     esClient.execute {
-      search
-        .in(indexName / collection)
-        .query(matchAllQuery)
-        .sort(fieldSort(by) order SortOrder.DESC)
-        .limit(n)
+      search.in(indexName / collection).query(matchAllQuery).sort(fieldSort(by) order SortOrder.DESC).limit(n)
 
     }.map(r => r.as[T].toList)
   }

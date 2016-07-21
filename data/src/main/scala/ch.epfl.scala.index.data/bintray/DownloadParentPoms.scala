@@ -15,8 +15,7 @@ import play.api.libs.ws.ahc.AhcWSClient
 
 import scala.util.Failure
 
-class DownloadParentPoms(implicit val system: ActorSystem,
-                         implicit val materializer: ActorMaterializer)
+class DownloadParentPoms(implicit val system: ActorSystem, implicit val materializer: ActorMaterializer)
     extends PlayWsDownloader {
 
   /**
@@ -25,8 +24,7 @@ class DownloadParentPoms(implicit val system: ActorSystem,
     * @return
     */
   def downloadRequest(wsClient: AhcWSClient, dep: Dependency): WSRequest = {
-    wsClient.url(
-        s"https://repo.jfrog.org/artifactory/libs-release-bintray/${PomsReader.path(dep)}")
+    wsClient.url(s"https://repo.jfrog.org/artifactory/libs-release-bintray/${PomsReader.path(dep)}")
   }
 
   /**
@@ -75,10 +73,8 @@ class DownloadParentPoms(implicit val system: ActorSystem,
 
     if (parentPomsToDownload.size > lastFailedToDownload) {
 
-      val downloaded = download[Dependency, Int]("Download parent POMs",
-                                                 parentPomsToDownload,
-                                                 downloadRequest,
-                                                 processResponse)
+      val downloaded =
+        download[Dependency, Int]("Download parent POMs", parentPomsToDownload, downloadRequest, processResponse)
       val failedDownloads = downloaded.sum
 
       println(s"failed downloads: $failedDownloads")

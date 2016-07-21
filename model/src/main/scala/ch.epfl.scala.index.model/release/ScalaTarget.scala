@@ -14,9 +14,7 @@ case class ScalaTarget(
 
   /** simple modifier for display a nice name */
   def name =
-    scalaJsVersion
-      .map(v => s"Scala.js ${v.toString} ($scalaVersion)")
-      .getOrElse(s"Scala $scalaVersion")
+    scalaJsVersion.map(v => s"Scala.js ${v.toString} ($scalaVersion)").getOrElse(s"Scala $scalaVersion")
 
   /** converting the scala version for support tags in elastic  - only major.minor to have small list */
   def supportName =
@@ -27,9 +25,7 @@ case class ScalaTarget(
       .getOrElse(s"scala_${scalaVersion.major}.${scalaVersion.minor}")
 
   def sbt(artifact: String) = {
-    artifact + scalaJsVersion
-      .map("_sjs" + _)
-      .getOrElse("") + "_" + scalaVersion
+    artifact + scalaJsVersion.map("_sjs" + _).getOrElse("") + "_" + scalaVersion
   }
 
   def render = {

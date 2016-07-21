@@ -52,8 +52,7 @@ object GithubReader {
   def info(github: GithubRepo): Try[GithubInfo] = Try {
 
     val repoInfoPath = githubRepoInfoPath(github)
-    val repository =
-      read[Repository](Files.readAllLines(repoInfoPath).toArray.mkString(""))
+    val repository   = read[Repository](Files.readAllLines(repoInfoPath).toArray.mkString(""))
     GithubInfo(
         homepage = repository.homepage.map(h => Url(h)),
         description = Some(repository.description),
@@ -73,8 +72,7 @@ object GithubReader {
   def contributors(github: GithubRepo): Try[List[GithubContributor]] = Try {
 
     val repoInfoPath = githubRepoContributorsPath(github)
-    val repository = read[List[Contributor]](
-        Files.readAllLines(repoInfoPath).toArray.mkString(""))
+    val repository   = read[List[Contributor]](Files.readAllLines(repoInfoPath).toArray.mkString(""))
     repository.map { contributor =>
       GithubContributor(
           contributor.login,

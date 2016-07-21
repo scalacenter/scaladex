@@ -88,10 +88,7 @@ package object elastic extends ProjectProtocol {
     blockUntil(s"Expected count of $expected") { () =>
       expected <= {
         val res = esClient.execute {
-          search
-            .in(indexName / releasesCollection)
-            .query(matchAllQuery)
-            .size(0)
+          search.in(indexName / releasesCollection).query(matchAllQuery).size(0)
         }.await.totalHits
         println(res)
         res

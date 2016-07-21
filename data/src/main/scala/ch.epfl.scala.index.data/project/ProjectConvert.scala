@@ -15,31 +15,31 @@ import org.joda.time.DateTime
 object ProjectConvert extends BintrayProtocol {
 
   val nonStandardLibs = NonStandardLib.load()
-  
+
   /** artifactId is often use to express binary compatibility with a scala version (ScalaTarget)
     * if the developer follow this convention we extract the relevant parts and we mark
     * the library as standard. Otherwise we either have a library like gatling or the scala library itself
     */
   def extractArtifactNameAndTarget(pom: MavenModel): Option[(String, ScalaTarget, Boolean)] = {
-    nonStandardLibs.find(lib => 
-      lib.groupId == pom.groupId && 
-      lib.artifactId == pom.artifactId).map(_.lookup) match {
+    nonStandardLibs
+      .find(lib =>
+            lib.groupId == pom.groupId &&
+              lib.artifactId == pom.artifactId)
+      .map(_.lookup) match {
 
       case Some(ScalaTargetFromPom) =>
         pom.dependencies
           .find(dep =>
-            dep.groupId == "org.scala-lang" &&
-            dep.artifactId == "scala-library"
-          )
+                dep.groupId == "org.scala-lang" &&
+                  dep.artifactId == "scala-library")
           .flatMap(dep => SemanticVersion(dep.version))
           .map(version => (pom.artifactId, ScalaTarget(version.copy(patch = None)), true))
 
-      case Some(ScalaTargetFromVersion) => 
-        SemanticVersion(pom.version)
-          .map(version => (pom.artifactId, ScalaTarget(version), true))
+      case Some(ScalaTargetFromVersion) =>
+        SemanticVersion(pom.version).map(version => (pom.artifactId, ScalaTarget(version), true))
 
-      case None =>
-        Artifact(pom.artifactId).map{ case (artifactName, target) => (artifactName, target, false) }
+      case None                                                    =>
+        Artifact(pom.artifactId).map { case (artifactName, target) => (artifactName, target, false) }
     }
   }
 
@@ -47,14 +47,13 @@ object ProjectConvert extends BintrayProtocol {
     val githubRepoExtractor = new GithubRepoExtractor
 
     println("Collecting Metadata")
-    
 
     val pomsAndMetaClean = pomsAndMeta.flatMap {
       case (pom, metas) =>
         for {
           (artifactName, targets, nonStandardLib) <- extractArtifactNameAndTarget(pom)
-          version <- SemanticVersion(pom.version)
-          github <- githubRepoExtractor(pom)
+          version                                 <- SemanticVersion(pom.version)
+          github                                  <- githubRepoExtractor(pom)
         } yield (github, artifactName, targets, pom, metas, version, nonStandardLib)
     }
 
@@ -70,10 +69,7 @@ object ProjectConvert extends BintrayProtocol {
 
     def maxMinRelease(releases: List[Release]): (Option[String], Option[String]) = {
       def sortDate(rawDates: List[String]): List[String] = {
-        rawDates
-          .map(format.parseDateTime)
-          .sorted(Descending[DateTime])
-          .map(format.print)
+        rawDates.map(format.parseDateTime).sorted(Descending[DateTime]).map(format.print)
       }
 
       val dates = for {
@@ -85,40 +81,34 @@ object ProjectConvert extends BintrayProtocol {
       (sorted.headOption, sorted.lastOption)
     }
 
-    val projectsAndReleases = pomsAndMetaClean
-      .groupBy {case (githubRepo, _, _, _, _, _, _) => githubRepo}
-      .map { case (githubRepo @ GithubRepo(organization, repository), vs) =>
+    val projectsAndReleases = pomsAndMetaClean.groupBy { case (githubRepo, _, _, _, _, _, _) => githubRepo }.map {
+      case (githubRepo @ GithubRepo(organization, repository), vs) =>
         val projectReference = Project.Reference(organization, repository)
-        val releases = vs.map { case (_, artifactName, targets, pom, metas, version, nonStandardLib) =>
-          val mavenCentral = metas.forall(meta => meta.owner == "bintray" && meta.repo == "jcenter")
-          val resolver =
-            if (mavenCentral) None
-            else
-              metas
-                .map(meta => BintrayResolver(meta.owner, meta.repo))
-                .headOption
+        val releases = vs.map {
+          case (_, artifactName, targets, pom, metas, version, nonStandardLib) =>
+            val mavenCentral = metas.forall(meta => meta.owner == "bintray" && meta.repo == "jcenter")
+            val resolver =
+              if (mavenCentral) None
+              else
+                metas.map(meta => BintrayResolver(meta.owner, meta.repo)).headOption
 
-          Release(
-              maven = pomToMavenReference(pom),
-              reference = Release.Reference(
-                  organization,
-                  repository,
-                  artifactName,
-                  version,
-                  targets
-              ),
-              resolver = resolver,
-              name = pom.name,
-              description = pom.description,
-              released = metas
-                .map(_.created)
-                .sorted
-                .headOption
-                .map(format.print), // +/- 3 days offset
-              mavenCentral = mavenCentral,
-              licenses = licenseCleanup(pom),
-              nonStandardLib = nonStandardLib
-          )
+            Release(
+                maven = pomToMavenReference(pom),
+                reference = Release.Reference(
+                    organization,
+                    repository,
+                    artifactName,
+                    version,
+                    targets
+                ),
+                resolver = resolver,
+                name = pom.name,
+                description = pom.description,
+                released = metas.map(_.created).sorted.headOption.map(format.print), // +/- 3 days offset
+                mavenCentral = mavenCentral,
+                licenses = licenseCleanup(pom),
+                nonStandardLib = nonStandardLib
+            )
         }
 
         val (max, min) = maxMinRelease(releases)
@@ -144,9 +134,7 @@ object ProjectConvert extends BintrayProtocol {
     }.map(release => (release.maven, release.reference)).toMap
 
     def dependencyToMaven(dependency: maven.Dependency) =
-      MavenReference(dependency.groupId,
-                     dependency.artifactId,
-                     dependency.version)
+      MavenReference(dependency.groupId, dependency.artifactId, dependency.version)
 
     val poms = pomsAndMetaClean.map { case (_, _, _, pom, _, _, _) => pom }
 
@@ -167,24 +155,18 @@ object ProjectConvert extends BintrayProtocol {
                   val (source, target) =
                     if (reverse) (dependencyReference, pomReference)
                     else (pomReference, dependencyReference)
-                  upsert(cache0,
-                         source,
-                         ScalaDependency(target, dependency.scope))
+                  upsert(cache0, source, ScalaDependency(target, dependency.scope))
 
                 /* dependency is scala reference - works now only if reverse */
                 case (Some(dependencyReference), None) =>
                   if (reverse)
-                    upsert(cache0,
-                           dependencyReference,
-                           JavaDependency(pomMavenRef, dependency.scope))
+                    upsert(cache0, dependencyReference, JavaDependency(pomMavenRef, dependency.scope))
                   else cache0
 
                 /* works only if not reverse */
                 case (None, Some(pomReference)) =>
                   if (!reverse)
-                    upsert(cache0,
-                           pomReference,
-                           JavaDependency(depMavenRef, dependency.scope))
+                    upsert(cache0, pomReference, JavaDependency(depMavenRef, dependency.scope))
                   else cache0
 
                 /* java -> java: should not happen actually */
@@ -225,8 +207,8 @@ object ProjectConvert extends BintrayProtocol {
         val releasesWithDependencies = releases.map { release =>
           val dependencies = findDependencies(release)
           release.copy(
-              scalaDependencies = dependencies.collect { case sd: ScalaDependency => sd},
-              javaDependencies = dependencies.collect { case jd: JavaDependency => jd},
+              scalaDependencies = dependencies.collect { case sd: ScalaDependency => sd },
+              javaDependencies = dependencies.collect { case jd: JavaDependency   => jd },
               reverseDependencies = findReverseDependencies(release).collect {
                 case sd: ScalaDependency => sd
               }

@@ -2,8 +2,7 @@ package ch.epfl.scala.index
 
 package object data {
 
-  def innerJoin[K, A, B, Z](m1: Map[K, A], m2: Map[K, B])(
-      f: (A, B) => Z): Map[K, Z] = {
+  def innerJoin[K, A, B, Z](m1: Map[K, A], m2: Map[K, B])(f: (A, B) => Z): Map[K, Z] = {
     m1.flatMap {
       case (k, a) =>
         m2.get(k).map(b => Map(k -> f(a, b))).getOrElse(Map.empty[K, Z])
@@ -17,8 +16,7 @@ package object data {
     }
   }
 
-  def fullOuterJoin[K, A, B, Z](m1: Map[K, A], m2: Map[K, B])(f: (A, B) => Z)(
-      da: A => Z)(db: B => Z): Map[K, Z] = {
+  def fullOuterJoin[K, A, B, Z](m1: Map[K, A], m2: Map[K, B])(f: (A, B) => Z)(da: A => Z)(db: B => Z): Map[K, Z] = {
     val km1 = m1.keySet
     val km2 = m2.keySet
 

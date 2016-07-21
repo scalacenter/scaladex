@@ -56,8 +56,7 @@ case class Release(
       else ("%%", "")
 
     List(
-        Some(
-            s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""),
+        Some(s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""),
         resolver.map("resolvers += " + _.sbt)
     ).flatten.mkString(System.lineSeparator)
   }
@@ -91,7 +90,7 @@ case class Release(
   def scalaDocURL(customScalaDocUrl: Option[String]): Option[URL] = {
     util.Try {
       customScalaDocUrl match {
-        case None => 
+        case None =>
           if (mavenCentral) {
             import maven._
             /* no frame
@@ -107,9 +106,14 @@ case class Release(
   }
 
   def documentationURLs(documentationLinks: Map[String, String]): Map[String, URL] = {
-    documentationLinks.mapValues(evalLink).map{ case (label, url) =>
-      util.Try((label, new URL(url)))
-    }.collect{ case util.Success(v) => v}.toMap
+    documentationLinks
+      .mapValues(evalLink)
+      .map {
+        case (label, url) =>
+          util.Try((label, new URL(url)))
+      }
+      .collect { case util.Success(v) => v }
+      .toMap
   }
 
   /** Documentation link are often related to a release version
@@ -129,9 +133,7 @@ case class Release(
     * ordered scala dependencies - tests last
     */
   lazy val orderedDependencies = {
-    val (a, b) = scalaDependencies
-      .sortBy(_.reference.name)
-      .partition(_.scope.contains("test"))
+    val (a, b) = scalaDependencies.sortBy(_.reference.name).partition(_.scope.contains("test"))
     b.groupBy(b => b).values.flatten.toList ++ a
   }
 
@@ -141,9 +143,7 @@ case class Release(
     */
   lazy val orderedJavaDependencies = {
 
-    val (a, b) = javaDependencies
-      .sortBy(_.reference.name)
-      .partition(_.scope.contains("test"))
+    val (a, b) = javaDependencies.sortBy(_.reference.name).partition(_.scope.contains("test"))
     b.groupBy(b => b).values.flatten.toList ++ a
   }
 
@@ -162,12 +162,7 @@ case class Release(
     */
   lazy val uniqueOrderedReverseDependencies: Seq[ScalaDependency] = {
 
-    orderedReverseDependencies
-      .groupBy(_.reference.name)
-      .values
-      .map(_.head)
-      .toSeq
-      .sortBy(_.reference.name)
+    orderedReverseDependencies.groupBy(_.reference.name).values.map(_.head).toSeq.sortBy(_.reference.name)
   }
 
   /**
@@ -182,12 +177,9 @@ case class Release(
     * @param dep current looking dependency
     * @return
     */
-  def versionsForReverseDependencies(
-      dep: ScalaDependency): Seq[SemanticVersion] = {
+  def versionsForReverseDependencies(dep: ScalaDependency): Seq[SemanticVersion] = {
 
-    orderedReverseDependencies
-      .filter(d => d.reference.name == dep.reference.name)
-      .map(_.reference.version)
+    orderedReverseDependencies.filter(d => d.reference.name == dep.reference.name).map(_.reference.version)
   }
 }
 

@@ -30,15 +30,12 @@ trait PlayWsDownloader {
     */
   def wsClient = {
 
-    val configuration = Configuration.reference ++ Configuration(
-          ConfigFactory.parseString("""
+    val configuration = Configuration.reference ++ Configuration(ConfigFactory.parseString("""
         |ws.followRedirects = true
       """.stripMargin))
 
     /* If running in Play, environment should be injected */
-    val environment = Environment(new java.io.File("."),
-                                  this.getClass.getClassLoader,
-                                  Mode.Prod)
+    val environment = Environment(new java.io.File("."), this.getClass.getClassLoader, Mode.Prod)
 
     val parser     = new WSConfigParser(configuration, environment)
     val config     = new AhcWSClientConfig(wsClientConfig = parser.parse())
@@ -78,8 +75,7 @@ trait PlayWsDownloader {
         response.onFailure {
 
           case e: Throwable =>
-            println(
-                s"error on downloading content from ${request.url}: ${e.getMessage}")
+            println(s"error on downloading content from ${request.url}: ${e.getMessage}")
         }
 
         response.map { data =>
@@ -94,8 +90,7 @@ trait PlayWsDownloader {
     if (toDownload.size > 1) {
       progress.start()
     }
-    val response =
-      Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
+    val response = Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
     if (toDownload.size > 1) {
       progress.stop()
     }

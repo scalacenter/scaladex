@@ -15,13 +15,10 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
 import scala.util.Success
 
-class SeedElasticSearch(implicit val ec: ExecutionContext)
-    extends ProjectProtocol {
+class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtocol {
   def run(): Unit = {
 
-    val exists = Await
-      .result(esClient.execute { indexExists(indexName) }, Duration.Inf)
-      .isExists()
+    val exists = Await.result(esClient.execute { indexExists(indexName) }, Duration.Inf).isExists()
 
     if (!exists) {
       println("creating index")
@@ -68,16 +65,16 @@ class SeedElasticSearch(implicit val ec: ExecutionContext)
     val progress = new ProgressBar("Indexing releases", releases.size)
     progress.start()
     val bunch = 1000
-    releases.grouped(bunch).foreach{group =>
+    releases.grouped(bunch).foreach { group =>
       Await.result(esClient.execute {
         bulk(group.map(release => index.into(indexName / releasesCollection).source(release)))
       }, Duration.Inf)
       progress.stepBy(bunch)
     }
-    
+
     val bunch2 = 100
     println(s"Indexing projects (${projects.size})")
-    projects.grouped(bunch2).foreach{group =>
+    projects.grouped(bunch2).foreach { group =>
       Await.result(esClient.execute {
         bulk(group.map(project => index.into(indexName / projectsCollection).source(project)))
       }, Duration.Inf)

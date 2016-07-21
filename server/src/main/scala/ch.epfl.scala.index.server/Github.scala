@@ -20,9 +20,7 @@ import com.typesafe.config.ConfigFactory
 
 case class AccessTokenResponse(access_token: String)
 case class RepoResponse(full_name: String)
-case class UserResponse(login: String,
-                        name: Option[String],
-                        avatar_url: String)
+case class UserResponse(login: String, name: Option[String], avatar_url: String)
 
 case class UserState(repos: Set[GithubRepo], user: UserInfo) {
   def isAdmin = repos.exists {
@@ -46,26 +44,22 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
         .singleRequest(
             HttpRequest(
                 method = POST,
-                uri =
-                  Uri("https://github.com/login/oauth/access_token").withQuery(
-                      Query(
-                          "client_id"     -> clientId,
-                          "client_secret" -> clientSecret,
-                          "code"          -> code,
-                          "redirect_uri"  -> redirectUri
-                      )),
+                uri = Uri("https://github.com/login/oauth/access_token").withQuery(
+                    Query(
+                        "client_id"     -> clientId,
+                        "client_secret" -> clientSecret,
+                        "code"          -> code,
+                        "redirect_uri"  -> redirectUri
+                    )),
                 headers = List(Accept(MediaTypes.`application/json`))
             ))
-        .flatMap(response =>
-              Unmarshal(response).to[AccessTokenResponse].map(_.access_token))
+        .flatMap(response => Unmarshal(response).to[AccessTokenResponse].map(_.access_token))
     }
     def fetchGithub(token: String, path: Path, query: Query = Query.Empty) = {
       Http().singleRequest(
           HttpRequest(
-              uri =
-                Uri(s"https://api.github.com").withPath(path).withQuery(query),
-              headers =
-                List(Authorization(GenericHttpCredentials("token", token)))
+              uri = Uri(s"https://api.github.com").withPath(path).withQuery(query),
+              headers = List(Authorization(GenericHttpCredentials("token", token)))
           ))
     }
 
@@ -77,18 +71,14 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
         fetchGithub(token, Path.Empty / "user" / "repos", query)
       }
       request(None).flatMap { r1 =>
-        val lastPage = r1.headers
-          .find(_.name == "Link")
-          .map(h => extractLastPage(h.value))
-          .getOrElse(1)
+        val lastPage = r1.headers.find(_.name == "Link").map(h => extractLastPage(h.value)).getOrElse(1)
         Unmarshal(r1).to[List[RepoResponse]].map(repos => (repos, lastPage))
       }.flatMap {
         case (repos, lastPage) =>
           val nextPagesRequests = if (lastPage > 1) {
             Future
-              .sequence((2 to lastPage).map(page =>
-                        request(Some(page)).flatMap(r2 =>
-                              Unmarshal(r2).to[List[RepoResponse]])))
+              .sequence(
+                  (2 to lastPage).map(page => request(Some(page)).flatMap(r2 => Unmarshal(r2).to[List[RepoResponse]])))
               .map(_.flatten)
           } else Future.successful(Nil)
 
@@ -97,8 +87,7 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
     }
 
     def fetchUser(token: String) =
-      fetchGithub(token, Path.Empty / "user").flatMap(response =>
-            Unmarshal(response).to[UserResponse])
+      fetchGithub(token, Path.Empty / "user").flatMap(response => Unmarshal(response).to[UserResponse])
 
     for {
       token         <- access

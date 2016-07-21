@@ -68,13 +68,7 @@ object Server {
         dependencies   <- api.dependencies()
         latestProjects <- api.latestProjects()
         latestReleases <- api.latestReleases()
-      } yield
-        views.html.frontpage(keywords,
-                             targets,
-                             dependencies,
-                             latestProjects,
-                             latestReleases,
-                             userInfo)
+      } yield views.html.frontpage(keywords, targets, dependencies, latestProjects, latestReleases, userInfo)
     }
 
     def projectPage(owner: String,
@@ -83,13 +77,10 @@ object Server {
                     version: Option[SemanticVersion],
                     userState: Option[UserState] = None,
                     edit: Boolean = false) = {
-      val user = userState.map(_.user)
-      val canEdit = userState
-        .map(s => s.isAdmin || s.repos.contains(GithubRepo(owner, repo)))
-        .getOrElse(false)
+      val user    = userState.map(_.user)
+      val canEdit = userState.map(s => s.isAdmin || s.repos.contains(GithubRepo(owner, repo))).getOrElse(false)
       api
-        .projectPage(Project.Reference(owner, repo),
-                     ReleaseSelection(artifact, version))
+        .projectPage(Project.Reference(owner, repo), ReleaseSelection(artifact, version))
         .map(
             _.map {
               case (project, releaseCount, options) =>
@@ -129,13 +120,12 @@ object Server {
      * @param credentials the credentials
      * @return
      */
-    def githubAuthenticator(credentialsHeader: Option[HttpCredentials])
-      : Credentials => Future[Option[GithubCredentials]] = {
+    def githubAuthenticator(
+        credentialsHeader: Option[HttpCredentials]): Credentials => Future[Option[GithubCredentials]] = {
       case Credentials.Provided(username) => {
         credentialsHeader match {
           case Some(cred) => {
-            val upw = new String(
-                new sun.misc.BASE64Decoder().decodeBuffer(cred.token()))
+            val upw               = new String(new sun.misc.BASE64Decoder().decodeBuffer(cred.token()))
             val userPass          = upw.split(":")
             val githubCredentials = GithubCredentials(userPass(0), userPass(1))
             // todo - catch errors
@@ -184,28 +174,20 @@ object Server {
           ) { (path, readme, contributors, info, keywords) =>
             entity(as[String]) { data =>
               extractCredentials { credentials =>
-                authenticateBasicAsync(realm = "Scaladex Realm",
-                                       githubAuthenticator(credentials)) {
-                  cred =>
-                    val publishData = PublishData(path,
-                                                  data,
-                                                  cred,
-                                                  info,
-                                                  contributors,
-                                                  readme,
-                                                  keywords.toList)
+                authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) { cred =>
+                  val publishData = PublishData(path, data, cred, info, contributors, readme, keywords.toList)
 
-                    complete {
+                  complete {
 
-                      if (publishData.isPom) {
+                    if (publishData.isPom) {
 
-                        publishProcess.writeFiles(publishData)
+                      publishProcess.writeFiles(publishData)
 
-                      } else {
+                    } else {
 
-                        Future(Created)
-                      }
+                      Future(Created)
                     }
+                  }
                 }
               }
             }
@@ -237,12 +219,11 @@ object Server {
             }
           } ~
             path("login") {
-              redirect(Uri("https://github.com/login/oauth/authorize")
-                         .withQuery(Query(
-                                 "client_id" -> github.clientId,
-                                 // this is required to see all repo with write permissions
-                                 "scope" -> "public_repo"
-                             )),
+              redirect(Uri("https://github.com/login/oauth/authorize").withQuery(Query(
+                               "client_id" -> github.clientId,
+                               // this is required to see all repo with write permissions
+                               "scope" -> "public_repo"
+                           )),
                        TemporaryRedirect)
             } ~
             path("logout") {
@@ -279,62 +260,46 @@ object Server {
             pathPrefix("api") {
               path("search") {
                 get {
-                  parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) {
-                    (query, page, sorting, you) =>
-                      complete {
-                        api.find(query, page, sorting, total = 5).map {
-                          case (pagination, projects) =>
-                            val summarisedProjects = projects.map(p =>
-                                  Autocompletion(
-                                      p.organization,
-                                      p.repository,
-                                      p.github
-                                        .flatMap(_.description)
-                                        .getOrElse("")
-                                ))
-                            uwrite(summarisedProjects)
-                        }
+                  parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
+                    complete {
+                      api.find(query, page, sorting, total = 5).map {
+                        case (pagination, projects) =>
+                          val summarisedProjects = projects.map(p =>
+                                Autocompletion(
+                                    p.organization,
+                                    p.repository,
+                                    p.github.flatMap(_.description).getOrElse("")
+                              ))
+                          uwrite(summarisedProjects)
                       }
+                    }
                   }
                 }
               }
             } ~
             path("search") {
               optionalSession(refreshable, usingCookies) { userId =>
-                parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) {
-                  (query, page, sorting, you) =>
-                    complete(
-                        api
-                          .find(query,
-                                page,
-                                sorting,
-                                you
-                                  .flatMap(_ => getUser(userId).map(_.repos))
-                                  .getOrElse(Set()))
-                          .map {
-                            case (pagination, projects) =>
-                              views.html.searchresult(
-                                  query,
-                                  "search",
-                                  sorting,
-                                  pagination,
-                                  projects,
-                                  getUser(userId).map(_.user))
-                          }
-                    )
+                parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
+                  complete(
+                      api
+                        .find(query, page, sorting, you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set()))
+                        .map {
+                          case (pagination, projects) =>
+                            views.html.searchresult(query,
+                                                    "search",
+                                                    sorting,
+                                                    pagination,
+                                                    projects,
+                                                    getUser(userId).map(_.user))
+                        }
+                  )
                 }
               }
             } ~
             path("edit" / Segment / Segment) { (organization, repository) =>
               optionalSession(refreshable, usingCookies) { userId =>
                 pathEnd {
-                  complete(
-                      projectPage(organization,
-                                  repository,
-                                  None,
-                                  None,
-                                  getUser(userId),
-                                  edit = true))
+                  complete(projectPage(organization, repository, None, None, getUser(userId), edit = true))
                 }
               }
             } ~
@@ -346,13 +311,12 @@ object Server {
                     complete(
                         api.find(query, page, sorting).map {
                           case (pagination, projects) =>
-                            views.html.searchresult(
-                                query,
-                                organization,
-                                sorting,
-                                pagination,
-                                projects,
-                                getUser(userId).map(_.user))
+                            views.html.searchresult(query,
+                                                    organization,
+                                                    sorting,
+                                                    pagination,
+                                                    projects,
+                                                    getUser(userId).map(_.user))
                         }
                     )
                   }
@@ -366,40 +330,23 @@ object Server {
                     case Some(v) if !v.isEmpty => "/" + v
                     case _                     => ""
                   }
-                  redirect(s"/$organization/$repository/$artifact$rest",
-                           StatusCodes.PermanentRedirect)
+                  redirect(s"/$organization/$repository/$artifact$rest", StatusCodes.PermanentRedirect)
                 } ~
                   pathEnd {
-                    complete(
-                        projectPage(organization,
-                                    repository,
-                                    None,
-                                    None,
-                                    getUser(userId)))
+                    complete(projectPage(organization, repository, None, None, getUser(userId)))
                   }
               }
             } ~
-            path(Segment / Segment / Segment) {
-              (organization, repository, artifact) =>
-                optionalSession(refreshable, usingCookies) { userId =>
-                  complete(
-                      projectPage(organization,
-                                  repository,
-                                  Some(artifact),
-                                  None,
-                                  getUser(userId)))
-                }
+            path(Segment / Segment / Segment) { (organization, repository, artifact) =>
+              optionalSession(refreshable, usingCookies) { userId =>
+                complete(projectPage(organization, repository, Some(artifact), None, getUser(userId)))
+              }
             } ~
-            path(Segment / Segment / Segment / Segment) {
-              (organization, repository, artifact, version) =>
-                optionalSession(refreshable, usingCookies) { userId =>
-                  complete(
-                      projectPage(organization,
-                                  repository,
-                                  Some(artifact),
-                                  SemanticVersion(version),
-                                  getUser(userId)))
-                }
+            path(Segment / Segment / Segment / Segment) { (organization, repository, artifact, version) =>
+              optionalSession(refreshable, usingCookies) { userId =>
+                complete(
+                    projectPage(organization, repository, Some(artifact), SemanticVersion(version), getUser(userId)))
+              }
             } ~
             pathSingleSlash {
               optionalSession(refreshable, usingCookies) { userId =>

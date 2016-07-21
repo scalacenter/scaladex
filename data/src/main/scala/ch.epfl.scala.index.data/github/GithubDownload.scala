@@ -32,14 +32,9 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
 
   private lazy val githubRepoExtractor = new GithubRepoExtractor
   private lazy val githubRepos = {
-    PomsReader
-      .load()
-      .collect { case Success((pom, _)) => githubRepoExtractor(pom) }
-      .flatten
-      .toSet
+    PomsReader.load().collect { case Success((pom, _)) => githubRepoExtractor(pom) }.flatten.toSet
   }
-  private lazy val paginatedGithubRepos =
-    githubRepos.map(repo => PaginatedGithub(repo, 1))
+  private lazy val paginatedGithubRepos = githubRepos.map(repo => PaginatedGithub(repo, 1))
 
   private def credentials = {
     val tokens = Array(
@@ -59,8 +54,7 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
   def applyBasicHeaders(request: WSRequest): WSRequest = {
 
     privateCredentials
-      .map(cred =>
-            request.withAuth(cred.username, cred.password, WSAuthScheme.BASIC))
+      .map(cred => request.withAuth(cred.username, cred.password, WSAuthScheme.BASIC))
       .getOrElse(request.withHeaders("Authorization" -> s"token $credentials"))
   }
 
@@ -83,8 +77,7 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     */
   def applyReadmeHeaders(request: WSRequest): WSRequest = {
 
-    applyBasicHeaders(
-        request.withHeaders("Accept" -> "application/vnd.github.VERSION.html"))
+    applyBasicHeaders(request.withHeaders("Accept" -> "application/vnd.github.VERSION.html"))
   }
 
   /**
@@ -112,8 +105,7 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     * @param response the response
     * @return
     */
-  private def processInfoResponse(repo: GithubRepo,
-                                  response: WSResponse): Unit = {
+  private def processInfoResponse(repo: GithubRepo, response: WSResponse): Unit = {
 
     if (200 == response.status) {
 
@@ -130,8 +122,7 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     * @param response the response
     * @return
     */
-  private def processIssuesResponse(repo: GithubRepo,
-                                    response: WSResponse): Unit = {
+  private def processIssuesResponse(repo: GithubRepo, response: WSResponse): Unit = {
 
     if (200 == response.status) {
 
@@ -148,9 +139,7 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     * @param response
     * @return
     */
-  private def convertContributorResponse(
-      repo: PaginatedGithub,
-      response: WSResponse): List[Contributor] = {
+  private def convertContributorResponse(repo: PaginatedGithub, response: WSResponse): List[Contributor] = {
 
     Try(read[List[Contributor]](response.body)) match {
 
@@ -166,8 +155,7 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     * @param response the response
     * @return
     */
-  private def processContributorResponse(repo: PaginatedGithub,
-                                         response: WSResponse): Unit = {
+  private def processContributorResponse(repo: PaginatedGithub, response: WSResponse): Unit = {
 
     /*
      * Github api contributor response is just a list of 30 entries, to make sure we get
@@ -181,10 +169,7 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
 
       if (1 == repo.page && 1 < lastPage) {
 
-        val pages = List
-          .range(2, lastPage + 1)
-          .map(page => PaginatedGithub(repo.repo, page))
-          .toSet
+        val pages = List.range(2, lastPage + 1).map(page => PaginatedGithub(repo.repo, page)).toSet
 
         val pagedContributors = download[PaginatedGithub, List[Contributor]](
             "Download contributor Pages",
@@ -201,13 +186,9 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
 
       /* current contributors + all other pages in  amount of contributions order */
       val contributors =
-        (convertContributorResponse(repo, response) ++ downloadAllPages)
-          .sortBy(_.contributions)
-          .reverse
+        (convertContributorResponse(repo, response) ++ downloadAllPages).sortBy(_.contributions).reverse
 
-      saveJson(githubRepoContributorsPath(repo.repo),
-               repo.repo,
-               writePretty(contributors))
+      saveJson(githubRepoContributorsPath(repo.repo), repo.repo, writePretty(contributors))
     }
 
     ()
@@ -220,8 +201,7 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     * @param response the response
     * @return
     */
-  private def processReadmeResponse(repo: GithubRepo,
-                                    response: WSResponse): Unit = {
+  private def processReadmeResponse(repo: GithubRepo, response: WSResponse): Unit = {
 
     if (200 == response.status) {
 
@@ -229,9 +209,7 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
       Files.createDirectories(dir)
       Files.write(
           githubReadmePath(repo),
-          GithubReadme
-            .absoluteUrl(response.body, repo, "master")
-            .getBytes(StandardCharsets.UTF_8)
+          GithubReadme.absoluteUrl(response.body, repo, "master").getBytes(StandardCharsets.UTF_8)
       )
     }
 
@@ -253,8 +231,7 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     * @param repo the current repository
     * @return
     */
-  private def githubInfoUrl(wsClient: AhcWSClient,
-                            repo: GithubRepo): WSRequest = {
+  private def githubInfoUrl(wsClient: AhcWSClient, repo: GithubRepo): WSRequest = {
 
     applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo)))
   }
@@ -265,8 +242,7 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     * @param repo the current repository
     * @return
     */
-  private def githubReadmeUrl(wsClient: AhcWSClient,
-                              repo: GithubRepo): WSRequest = {
+  private def githubReadmeUrl(wsClient: AhcWSClient, repo: GithubRepo): WSRequest = {
 
     applyReadmeHeaders(wsClient.url(mainGithubUrl(repo) + "/readme"))
   }
@@ -277,8 +253,7 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     * @param repo the current repository
     * @return
     */
-  private def githubIssuesUrl(wsClient: AhcWSClient,
-                              repo: GithubRepo): WSRequest = {
+  private def githubIssuesUrl(wsClient: AhcWSClient, repo: GithubRepo): WSRequest = {
 
     applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo) + "/issues"))
   }
@@ -289,12 +264,9 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     * @param repo the current repository
     * @return
     */
-  private def githubContributorsUrl(wsClient: AhcWSClient,
-                                    repo: PaginatedGithub): WSRequest = {
+  private def githubContributorsUrl(wsClient: AhcWSClient, repo: PaginatedGithub): WSRequest = {
 
-    applyAcceptJsonHeaders(
-        wsClient.url(
-            mainGithubUrl(repo.repo) + s"/contributors?page=${repo.page}"))
+    applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo.repo) + s"/contributors?page=${repo.page}"))
   }
 
   /**
@@ -302,14 +274,8 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     */
   def run(): Unit = {
 
-    download[GithubRepo, Unit]("Downloading Repo Info",
-                               githubRepos,
-                               githubInfoUrl,
-                               processInfoResponse)
-    download[GithubRepo, Unit]("Downloading Readme",
-                               githubRepos,
-                               githubReadmeUrl,
-                               processReadmeResponse)
+    download[GithubRepo, Unit]("Downloading Repo Info", githubRepos, githubInfoUrl, processInfoResponse)
+    download[GithubRepo, Unit]("Downloading Readme", githubRepos, githubReadmeUrl, processReadmeResponse)
     // todo: for later @see #112 - remember that issues are paginated - see contributors */
     // download[GithubRepo, Unit]("Downloading Issues", githubRepos, githubIssuesUrl, processIssuesResponse)
     download[PaginatedGithub, Unit]("Downloading Contributors",
@@ -328,25 +294,16 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     * @param readme flag if readme can be downloaded
     * @param contributors flag if contributors can be downloaded
     */
-  def run(repo: GithubRepo,
-          info: Boolean,
-          readme: Boolean,
-          contributors: Boolean): Unit = {
+  def run(repo: GithubRepo, info: Boolean, readme: Boolean, contributors: Boolean): Unit = {
 
     if (info) {
 
-      download[GithubRepo, Unit]("Downloading Repo Info",
-                                 Set(repo),
-                                 githubInfoUrl,
-                                 processInfoResponse)
+      download[GithubRepo, Unit]("Downloading Repo Info", Set(repo), githubInfoUrl, processInfoResponse)
     }
 
     if (readme) {
 
-      download[GithubRepo, Unit]("Downloading Readme",
-                                 Set(repo),
-                                 githubReadmeUrl,
-                                 processReadmeResponse)
+      download[GithubRepo, Unit]("Downloading Readme", Set(repo), githubReadmeUrl, processReadmeResponse)
     }
 
     if (contributors) {
