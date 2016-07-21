@@ -53,15 +53,10 @@ object ProjectConvert extends BintrayProtocol {
     val pomsAndMetaClean = pomsAndMeta.flatMap {
       case (pom, metas) =>
         progressMeta.step()
-
-        val repos = githubRepoExtractor(pom)
-        
         for {
           (artifactName, targets, nonStandardLib) <- extractArtifactNameAndTarget(pom)
           version <- SemanticVersion(pom.version)
-          github <- repos
-                     .find(githubRepoExtractor.claimedRepos.contains)
-                     .orElse(repos.headOption)
+          github <- githubRepoExtractor(pom)
         } yield (github, artifactName, targets, pom, metas, version, nonStandardLib)
     }
 
