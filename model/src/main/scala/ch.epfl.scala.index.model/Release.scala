@@ -31,7 +31,6 @@ case class Release(
     mavenCentral: Boolean = false,
     licenses: Set[License] = Set(),
     nonStandardLib: Boolean = false,
-    customScalaDocUrl: Option[URL] = None,
     _id: Option[String] = None,
     /* split dependencies in 2 fields because elastic can't handle 2 different types
      * in one field. That is a simple workaround for that
@@ -89,20 +88,41 @@ case class Release(
     * Url to the scala-docs.
     * @return
     */
-  def scalaDocURL: Option[URL] = {
-    customScalaDocUrl match {
-      case None => 
-        if (mavenCentral) {
-          import maven._
-          /* no frame
-           * hosted on s3 at:
-           *https://static.javadoc.io/$groupId/$artifactId/$version/index.html#package
-           * HEAD to check 403 vs 200
-           */
-          Some(new URL(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version"))
-        } else None
-      case s => s
-    }
+  def scalaDocURL(customScalaDocUrl: Option[String]): Option[URL] = {
+    util.Try {
+      customScalaDocUrl match {
+        case None => 
+          if (mavenCentral) {
+            import maven._
+            /* no frame
+             * hosted on s3 at:
+             *https://static.javadoc.io/$groupId/$artifactId/$version/index.html#package
+             * HEAD to check 403 vs 200
+             */
+            Some(new URL(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version"))
+          } else None
+        case Some(rawLink) => util.Try(new URL(evalLink(rawLink))).toOption
+      }
+    }.toOption.flatten
+  }
+
+  def documentationURLs(documentationLinks: Map[String, String]): Map[String, URL] = {
+    documentationLinks.mapValues(evalLink).map{ case (label, url) =>
+      util.Try((label, new URL(url)))
+    }.collect{ case util.Success(v) => v}.toMap
+  }
+
+  /** Documentation link are often related to a release version
+    * for example: https://playframework.com/documentation/2.6.x/Home
+    * we want to substitute input such as
+    * https://playframework.com/documentation/[major].[minor].x/Home
+    */
+  private def evalLink(rawLink: String): String = {
+    rawLink
+      .replaceAllLiterally("[version]", reference.version.toString)
+      .replaceAllLiterally("[major]", reference.version.major.toString)
+      .replaceAllLiterally("[minor]", reference.version.minor.toString)
+      .replaceAllLiterally("[name]", reference.artifact)
   }
 
   /**

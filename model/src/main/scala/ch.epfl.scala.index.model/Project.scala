@@ -10,10 +10,9 @@ import misc.{GithubInfo, GithubRepo, Url}
   * @param repository (ex: spark)
   * @param github github information representation
   * @param keywords predefined keywords (ex: database)
-  * @param stackOverflowTags see http://stackoverflow.com/tags (ex: akka)
   * @param defaultArtifact when we land on a project page (ex: typelevel/cats) specify an artifact to select by default
-  * @param twitter @ handle (ex: @akkateam, @typelevel)
-  * @param parentOrganization agglomerate of github organizations: lightbend(akka, play, ...), verizon(verizon, oncue), etc
+  * @param customScalaDocUrl expression to subsitute scaladoc
+  * @param documentationLinks user documentation & etc
   * @param logoImageUrl absolute url to a logo (ex: http://spark.apache.org/images/spark-logo-trademark.png)
   * @param _id elasticsearch id only used for updating projects
   * @param created date of the first release
@@ -26,10 +25,9 @@ case class Project(
     repository: String,
     github: Option[GithubInfo] = None,
     keywords: List[String] = Nil,
-    stackOverflowTags: List[String] = Nil,
     defaultArtifact: Option[String] = None,
-    twitter: Option[String] = None,
-    parentOrganization: Option[String] = None,
+    customScalaDocUrl: Option[String] = None,
+    documentationLinks: Map[String, String] = Map(),
     logoImageUrl: Option[Url] = None,
     _id: Option[String] = None,
     created: Option[String] = None,

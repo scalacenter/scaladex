@@ -21,7 +21,7 @@
           <div class="sidebar-project">
             @project.github.map(gh => statistic(gh, releasesCount, release.reverseDependencies.size))
             @install(release)
-            @documentation(release)
+            @documentation(release, project)
             @project.github.map(gh => contributors(gh.contributors))
             @license(release)
             @dependencies(release)
