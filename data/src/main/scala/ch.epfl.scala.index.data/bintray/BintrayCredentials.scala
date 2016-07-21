@@ -2,8 +2,6 @@ package ch.epfl.scala.index
 package data
 package bintray
 
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers._
 import play.api.libs.ws.{WSAuthScheme, WSRequest}
 
 trait BintrayCredentials {
@@ -31,16 +29,7 @@ trait BintrayCredentials {
     info
   }
 
-  def withAuthorization(request: HttpRequest) = {
-    (bintray.get("user"), bintray.get("password")) match {
-      case (Some(user), Some(key)) =>
-        request.withHeaders(Authorization(BasicHttpCredentials(user, key)))
-      case _ => request
-    }
-  }
-
   def withAuth(request: WSRequest) = {
-
     (bintray.get("user"), bintray.get("password")) match {
       case (Some(user), Some(password)) =>
         request.withAuth(user, password, WSAuthScheme.BASIC)

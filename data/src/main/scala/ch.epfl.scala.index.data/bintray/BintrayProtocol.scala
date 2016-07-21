@@ -5,8 +5,10 @@ package bintray
 import model.Descending
 
 import com.github.nscala_time.time.Imports._
+
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
+
 import org.json4s._
 import org.json4s.native.JsonMethods._
 
@@ -66,8 +68,7 @@ trait BintrayProtocol {
             (
                 {
               case in: JValue => {
-                implicit val formats = DefaultFormats ++ Seq(
-                      DateTimeSerializer)
+                implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
                 in.extract[BintraySearch]
               }
             }, {

@@ -62,36 +62,28 @@ class PublishProcess(
     * @return
     */
   def writeFiles(data: PublishData): Future[StatusCode] = Future {
-
     if (data.isPom) {
-
       data.writeTemp()
-      val pom   = getPom(data)
-      val repos = getGithubRepo(pom)
-
-      if (repos.isEmpty) {
-        data.deleteTemp()
-        NoContent
-      } else {
-
-        val repo = repos.head
-
-        if (hasWriteAccess(data.credentials, repo)) {
-
-          data.writePom()
+      val pom = getPom(data)
+      getGithubRepo(pom) match {
+        case None => {
           data.deleteTemp()
-          updateIndex(repo, pom, data)
-          Created
-        } else {
-
-          data.deleteTemp()
-          Forbidden
+          NoContent
+        }
+        case Some(repo) => {
+          if (hasWriteAccess(data.credentials, repo)) {
+            data.writePom()
+            data.deleteTemp()
+            updateIndex(repo, pom, data)
+            Created
+          } else {
+            data.deleteTemp()
+            Forbidden
+          }
         }
       }
     } else {
-
-      /* ignore the file at this case */
-      Created
+      Created /* ignore the file at this case */
     }
   }
 
@@ -110,7 +102,7 @@ class PublishProcess(
     * @param pom the Maven model
     * @return
     */
-  private def getGithubRepo(pom: MavenModel): Set[GithubRepo] =
+  private def getGithubRepo(pom: MavenModel): Option[GithubRepo] =
     (new GithubRepoExtractor).apply(pom)
 
   /**
