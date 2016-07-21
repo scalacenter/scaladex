@@ -3,8 +3,8 @@
 <div class="documentation box">
   <h4>Documentation</h4>
   <ul>
-    @for(scaladoc <- release.scalaDocURI){
-      <li><a href="@scaladoc" target="_blank">Scaladoc</a></li>
+    @for(scaladoc <- release.scalaDocURL){
+      <li><a href="@scaladoc.toString()" target="_blank">Scaladoc</a></li>
     }
   </ul>
 </div>
