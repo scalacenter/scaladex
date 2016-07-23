@@ -244,7 +244,13 @@ object Server {
                       users += uuid -> userState
                       setSession(refreshable, usingCookies, uuid) {
                         setNewCsrfToken(checkHeader) { ctx =>
-                          ctx.complete(frontPage(Some(userState.user)))
+                          ctx.complete(
+                            HttpResponse(
+                              status = TemporaryRedirect,
+                              headers = headers.Location(Uri("/")) :: Nil,
+                              entity = HttpEntity.Empty
+                            )
+                          )
                         }
                       }
                     }
@@ -335,6 +341,11 @@ object Server {
                   pathEnd {
                     complete(projectPage(organization, repository, None, None, getUser(userId)))
                   }
+              }
+            } ~
+            path(Segment / Segment / "edit") { (organization, repository) =>
+              optionalSession(refreshable, usingCookies) { userId =>
+                complete("Edit")                 
               }
             } ~
             path(Segment / Segment / Segment) { (organization, repository, artifact) =>
