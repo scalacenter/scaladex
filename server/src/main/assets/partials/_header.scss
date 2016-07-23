@@ -65,7 +65,11 @@
         }
         .has-feedback {}
         .you {
+            img {
+                padding-right: 5px;   
+            }
             margin-right: 10px;
+            padding: 0 10px 0 0;
         }
     }
 }

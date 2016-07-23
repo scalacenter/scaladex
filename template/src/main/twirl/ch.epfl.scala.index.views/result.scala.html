@@ -15,25 +15,20 @@
           }
         </div>
       </div>
-      <div class="col-md-7">
-        <ul class="filter-tag">
-
-        </ul>
-      </div>
-      <div class="col-md-3">
+      <div class="col-md-10">
         <div class="order-by">
           <form action="/@pagetype" action="GET">
           @if(pagekind == "search") {
             <input type="hidden" name="q" value="@query">
           }
             <input type="hidden" name="page" value="@pagination.current">
-            <select name="sort" class="selectpicker" data-style="btn-primary" onchange="this.form.submit()">
-              <option @if(sorting.contains("relevant") || sorting.isEmpty) { selected } value="relevant">Most relevant</option>
-              <option @if(sorting.contains("created")) { selected } value="created">Most recent projects</option>
-              <option @if(sorting.contains("updated")) { selected } value="updated">Most recent releases</option>
-              <option @if(sorting.contains("stars")) { selected } value="stars">Stars</option>
-              <option @if(sorting.contains("forks")) { selected } value="forks">Forks</option>
-            </select>
+            <div class="btn-group" role="group" aria-label="sorting">
+              <button name="sort" value="relevant" type="submit" class="btn btn-default @if(sorting.contains("relevant") || sorting.isEmpty) { active }">Relevant</button>
+              <button name="sort" value="created"  type="submit" class="btn btn-default @if(sorting.contains("created")) { active }">Created</button>
+              <button name="sort" value="updated"  type="submit" class="btn btn-default @if(sorting.contains("updated")) { active }">Updated</button>
+              <button name="sort" value="stars"    type="submit" class="btn btn-default @if(sorting.contains("stars")) { active }">Stars</button>
+              <button name="sort" value="forks"    type="submit" class="btn btn-default @if(sorting.contains("forks")) { active }">Forks</button>
+            </div>
           </form>
         </div>
       </div>

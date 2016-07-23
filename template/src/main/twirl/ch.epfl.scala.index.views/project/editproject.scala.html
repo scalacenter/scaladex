@@ -7,11 +7,8 @@
 @(project: Project, artifacts: List[String], versions: List[SemanticVersion], 
   targets: List[ScalaTarget], release: Release, releasesCount: Int, user: Option[UserInfo])
 
-
-@main(title = s"Edit", showSearch = true, searchQuery = "", user) {
+@main(title = s"Edit ${project.repository}", showSearch = true, searchQuery = "", user) {
   <main id="container-project">
-
-    @headproject(project, artifacts, versions, targets, release, canEdit = false)
 
     <div class="container">
       <div class="row">
