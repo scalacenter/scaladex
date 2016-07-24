@@ -14,6 +14,24 @@ import org.elasticsearch.search.sort.SortOrder
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.reflectiveCalls
 
+case class ProjectForm(
+  // project
+  contributorsWanted: Option[Boolean] = None,
+  keywords: Set[String] = Set(),
+  defaultArtifact: Option[String] = None,
+  deprecated: Boolean = false,
+  artifactDeprecations: Set[String] = Set(),
+
+  // documentation
+  customScalaDoc: Option[String] = None,
+  documentationLinks: Map[String, String] = Map(),
+  
+  // apperance
+  logoImageUrl: Option[String] = None,
+  background: Option[String] = None,
+  foregroundColor: Option[String] = None
+)
+
 class Api(github: Github)(implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(_id = None)
 
@@ -168,6 +186,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
         .limit(1)
     }.map(r => r.as[Project].headOption)
   }
+
   def projectPage(projectRef: Project.Reference,
                   selection: ReleaseSelection): Future[Option[(Project, ReleaseOptions)]] = {
     val projectAndReleases = for {
@@ -181,6 +200,12 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
             DefaultRelease(project.repository, selection, releases, project.defaultArtifact)
               .map(sel => (project, sel.copy(artifacts = project.artifacts))))
     }
+  }
+
+  def updateProject(projectRef: Project.Reference, form: ProjectForm): Future[Unit] = {
+    project(projectRef).map(project =>
+      println(form)
+    )
   }
 
   def latestProjects() =

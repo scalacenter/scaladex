@@ -95,14 +95,15 @@ object Server {
                     repo: String,
                     artifact: Option[String],
                     version: Option[SemanticVersion],
-                    userState: Option[UserState]) = {
+                    userState: Option[UserState],
+                    statusCode: StatusCode = OK) = {
 
       val user = userState.map(_.user)
       api
         .projectPage(Project.Reference(owner, repo), ReleaseSelection(artifact, version))
         .map(_.map {case (project, options) =>
           import options._
-          (OK,
+          (statusCode,
            views.project.html.project(
                project,
                artifacts,
@@ -164,37 +165,97 @@ object Server {
     }
 
     val route = {
-      put {
-        path("publish") {
-          parameters(
-              'path,
-              'readme.as[Boolean] ? true,
-              'contributors.as[Boolean] ? true,
-              'info.as[Boolean] ? true,
-              'keywords.as[String].*
-          ) { (path, readme, contributors, info, keywords) =>
-            entity(as[String]) { data =>
-              extractCredentials { credentials =>
-                authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) { cred =>
-                  val publishData = PublishData(path, data, cred, info, contributors, readme, keywords.toSet)
+        post {
+          path("edit" / Segment / Segment) { (organization, repository) =>
+            optionalSession(refreshable, usingCookies) { userId =>
+              pathEnd {
+                formFields(
+                  'contributorsWanted.as[Boolean].?,
+                  'keywords.*,
+                  'defaultArtifact.?,
+                  'deprecated.as[Boolean] ? false,
+                  'artifactDeprecations.*,
 
-                  complete {
+                  'customScalaDoc.?,
+                  'documentationLinks.*,
+                  
+                  'logoImageUrl.?,
+                  'background.?,
+                  'foregroundColor.?
+                ) { (
+                  contributorsWanted,
+                  keywords,
+                  defaultArtifact,
+                  deprecated,
+                  artifactDeprecations,
 
-                    if (publishData.isPom) {
+                  customScalaDoc,
+                  documentationLinks,
+                  
+                  logoImageUrl,
+                  background,
+                  foregroundColor
+                ) =>
+                  complete(
+                    for {
+                      _ <- api.updateProject(
+                          Project.Reference(organization, repository),
+                          ProjectForm(
+                            contributorsWanted,
+                            keywords.toSet,
+                            defaultArtifact,
+                            deprecated,
+                            artifactDeprecations.toSet,
 
-                      publishProcess.writeFiles(publishData)
+                            // documentation
+                            customScalaDoc,
+                            documentationLinks.zipWithIndex.map{case (url, i) => (url, s"link $i")}.toMap,
+                            
+                            // apperance
+                            logoImageUrl,
+                            background,
+                            foregroundColor
+                          )
+                        )
+                      response <- projectPage(organization, repository, None, None, getUser(userId), Created)
+                    } yield response
+                  )
+                }
+              }
+            }
+          } 
+        } ~
+        put {
+          path("publish") {
+            parameters(
+                'path,
+                'readme.as[Boolean] ? true,
+                'contributors.as[Boolean] ? true,
+                'info.as[Boolean] ? true,
+                'keywords.as[String].*
+            ) { (path, readme, contributors, info, keywords) =>
+              entity(as[String]) { data =>
+                extractCredentials { credentials =>
+                  authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) { cred =>
+                    val publishData = PublishData(path, data, cred, info, contributors, readme, keywords.toSet)
 
-                    } else {
+                    complete {
 
-                      Future(Created)
+                      if (publishData.isPom) {
+
+                        publishProcess.writeFiles(publishData)
+
+                      } else {
+
+                        Future(Created)
+                      }
                     }
                   }
                 }
               }
             }
           }
-        }
-      } ~
+        } ~
         get {
           path("publish") {
             parameters(
@@ -342,11 +403,6 @@ object Server {
                   pathEnd {
                     complete(projectPage(organization, repository, None, None, getUser(userId)))
                   }
-              }
-            } ~
-            path(Segment / Segment / "edit") { (organization, repository) =>
-              optionalSession(refreshable, usingCookies) { userId =>
-                complete("Edit")                 
               }
             } ~
             path(Segment / Segment / Segment) { (organization, repository, artifact) =>
