@@ -135,7 +135,7 @@ class PublishProcess(
                                 new DateTime())
     val (newProject, newReleases) = ProjectConvert(List((pom, List(bintray)))).head
 
-    val updatedProject = newProject.copy(keywords = data.keywords)
+    val updatedProject = newProject.copy(keywords = data.keywords, liveData = true)
     val projectSearch  = api.project(newProject.reference)
     val releaseSearch  = api.releases(newProject.reference)
 
@@ -147,7 +147,7 @@ class PublishProcess(
       projectResult match {
 
         case Some(project) =>
-          project._id.map { id =>
+          project.id.map { id =>
             esClient.execute(update(id) in (indexName / projectsCollection) doc updatedProject)
           }
         case None =>
@@ -166,7 +166,7 @@ class PublishProcess(
         for {
 
           release <- releases.find(r => r.reference == newReleases.head.reference)
-          id      <- release._id
+          id      <- release.id
         } yield {
 
           esClient.execute(update(id).in(indexName / releasesCollection) doc newReleases.head)

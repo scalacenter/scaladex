@@ -2,8 +2,6 @@ package ch.epfl.scala.index.model
 
 import release._
 
-import java.net.URL
-
 /**
   * Artifact release representation
   * @param maven famous maven triple: org.typelevel - cats-core_sjs0.6_2.11 - 0.6.0
@@ -16,7 +14,7 @@ import java.net.URL
   * @param licenses a bunch of licences
   * @param nonStandardLib if not using artifactName_scalaVersion convention
   * @param customScalaDocUrl override javadoc.io scaladoc url
-  * @param _id Elastic search id
+  * @param id Elastic search id
   * @param scalaDependencies bunch of scala dependencies
   * @param javaDependencies bunch of java dependencies
   * @param reverseDependencies bunch of reversed dependencies
@@ -31,7 +29,7 @@ case class Release(
     mavenCentral: Boolean = false,
     licenses: Set[License] = Set(),
     nonStandardLib: Boolean = false,
-    _id: Option[String] = None,
+    id: Option[String] = None,
     /* split dependencies in 2 fields because elastic can't handle 2 different types
      * in one field. That is a simple workaround for that
      */
@@ -87,33 +85,24 @@ case class Release(
     * Url to the scala-docs.
     * @return
     */
-  def scalaDocURL(customScalaDoc: Option[String]): Option[URL] = {
-    util.Try {
-      customScalaDoc match {
-        case None =>
-          if (mavenCentral) {
-            import maven._
-            /* no frame
-             * hosted on s3 at:
-             *https://static.javadoc.io/$groupId/$artifactId/$version/index.html#package
-             * HEAD to check 403 vs 200
-             */
-            Some(new URL(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version"))
-          } else None
-        case Some(rawLink) => util.Try(new URL(evalLink(rawLink))).toOption
-      }
-    }.toOption.flatten
+  def scalaDocURL(customScalaDoc: Option[String]): Option[String] = {
+    customScalaDoc match {
+      case None =>
+        if (mavenCentral) {
+          import maven._
+          /* no frame
+           * hosted on s3 at:
+           *https://static.javadoc.io/$groupId/$artifactId/$version/index.html#package
+           * HEAD to check 403 vs 200
+           */
+          Some(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version")
+        } else None
+      case Some(rawLink) => Some(evalLink(rawLink))
+    }
   }
 
-  def documentationURLs(documentationLinks: Map[String, String]): Map[String, URL] = {
-    documentationLinks
-      .mapValues(evalLink)
-      .map {
-        case (label, url) =>
-          util.Try((label, new URL(url)))
-      }
-      .collect { case util.Success(v) => v }
-      .toMap
+  def documentationURLs(documentationLinks: List[String]): List[String] = {
+    documentationLinks.map(evalLink)
   }
 
   /** Documentation link are often related to a release version

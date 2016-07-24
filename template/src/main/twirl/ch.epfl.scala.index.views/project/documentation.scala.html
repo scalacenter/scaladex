@@ -6,8 +6,8 @@
     @for(scaladoc <- release.scalaDocURL(project.customScalaDoc)){
       <li><a href="@scaladoc.toString()" target="_blank">Scaladoc</a></li>
     }
-    @for((label, url) <- release.documentationURLs(project.documentationLinks)){
-      <li><a href="@url.toString()" target="_blank">label</a></li>
+    @for(url <- release.documentationURLs(project.documentationLinks)){
+      <li><a href="@url.toString()" target="_blank">@url</a></li>
     }
   </ul>
 </div>

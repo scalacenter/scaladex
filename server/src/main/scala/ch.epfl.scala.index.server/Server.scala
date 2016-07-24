@@ -10,7 +10,7 @@ import api.Autocompletion
 
 import akka.http.scaladsl._
 import model._
-import headers.HttpCredentials
+import headers.{HttpCredentials, Referer}
 import server.Directives._
 import server.directives._
 import Uri._
@@ -170,7 +170,7 @@ object Server {
             optionalSession(refreshable, usingCookies) { userId =>
               pathEnd {
                 formFields(
-                  'contributorsWanted.as[Boolean].?,
+                  'contributorsWanted.as[Boolean] ? false,
                   'keywords.*,
                   'defaultArtifact.?,
                   'deprecated.as[Boolean] ? false,
@@ -196,30 +196,30 @@ object Server {
                   background,
                   foregroundColor
                 ) =>
-                  complete(
-                    for {
-                      _ <- api.updateProject(
-                          Project.Reference(organization, repository),
-                          ProjectForm(
-                            contributorsWanted,
-                            keywords.toSet,
-                            defaultArtifact,
-                            deprecated,
-                            artifactDeprecations.toSet,
+                  onSuccess(
+                    api.updateProject(
+                      Project.Reference(organization, repository),
+                      ProjectForm(
+                        contributorsWanted,
+                        keywords.toSet,
+                        defaultArtifact,
+                        deprecated,
+                        artifactDeprecations.toSet,
 
-                            // documentation
-                            customScalaDoc,
-                            documentationLinks.zipWithIndex.map{case (url, i) => (url, s"link $i")}.toMap,
-                            
-                            // apperance
-                            logoImageUrl,
-                            background,
-                            foregroundColor
-                          )
-                        )
-                      response <- projectPage(organization, repository, None, None, getUser(userId), Created)
-                    } yield response
-                  )
+                        // documentation
+                        customScalaDoc,
+                        documentationLinks.toList,
+                        
+                        // apperance
+                        logoImageUrl,
+                        background,
+                        foregroundColor
+                      )
+                    )
+                  ){ ret =>
+                    Thread.sleep(1000) // oh yeah
+                    redirect(Uri(s"/$organization/$repository"), SeeOther)
+                  }
                 }
               }
             }
@@ -265,7 +265,6 @@ object Server {
                 'info.as[Boolean] ? true,
                 'keywords.as[String].*
             ) { (path, readme, contributors, info, keywords) =>
-              println(s"GET $path")
               complete {
 
                 /* check if the release already exists - sbt will handle HTTP-Status codes
@@ -281,17 +280,30 @@ object Server {
             }
           } ~
             path("login") {
-              redirect(Uri("https://github.com/login/oauth/authorize").withQuery(Query(
-                               "client_id" -> github.clientId,
-                               // this is required to see all repo with write permissions
-                               "scope" -> "public_repo"
-                           )),
-                       TemporaryRedirect)
+              headerValueByType[Referer](){ referer =>
+                redirect(Uri("https://github.com/login/oauth/authorize")
+                  .withQuery(Query(
+                    "client_id" -> github.clientId,
+                    // this is required to see all repo with write permissions
+                    "scope" -> "public_repo",
+                    "state" -> referer.value
+                  )),
+                  TemporaryRedirect
+                )
+              }
             } ~
             path("logout") {
-              requiredSession(refreshable, usingCookies) { _ =>
-                invalidateSession(refreshable, usingCookies) { ctx =>
-                  ctx.complete(frontPage(None))
+              headerValueByType[Referer](){ referer =>
+                requiredSession(refreshable, usingCookies) { _ =>
+                  invalidateSession(refreshable, usingCookies) { ctx =>
+                    ctx.complete(
+                      HttpResponse(
+                        status = TemporaryRedirect,
+                        headers = headers.Location(Uri(referer.value)) :: Nil,
+                        entity = HttpEntity.Empty
+                      )
+                    )
+                  }
                 }
               }
             } ~
@@ -300,8 +312,9 @@ object Server {
                 complete("OK")
               } ~
                 pathEnd {
-                  parameter('code) { code =>
+                  parameters('code, 'state.?) { (code, state) =>
                     onSuccess(github.info(code)) { userState =>
+
                       val uuid = java.util.UUID.randomUUID
                       users += uuid -> userState
                       setSession(refreshable, usingCookies, uuid) {
@@ -309,7 +322,7 @@ object Server {
                           ctx.complete(
                             HttpResponse(
                               status = TemporaryRedirect,
-                              headers = headers.Location(Uri("/")) :: Nil,
+                              headers = headers.Location(Uri(state.getOrElse("/"))) :: Nil,
                               entity = HttpEntity.Empty
                             )
                           )

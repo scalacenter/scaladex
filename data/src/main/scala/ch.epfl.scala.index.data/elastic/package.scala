@@ -28,7 +28,7 @@ trait ProjectProtocol {
   implicit object ProjectAs extends HitAs[Project] {
 
     override def as(hit: RichSearchHit): Project =
-      read[Project](hit.sourceAsString).copy(_id = Some(hit.getId))
+      read[Project](hit.sourceAsString).copy(id = Some(hit.getId))
   }
 
   implicit object ProjectIndexable extends Indexable[Project] {
@@ -37,7 +37,7 @@ trait ProjectProtocol {
 
   implicit object ReleaseAs extends HitAs[Release] {
     override def as(hit: RichSearchHit): Release =
-      read[Release](hit.sourceAsString).copy(_id = Some(hit.getId))
+      read[Release](hit.sourceAsString).copy(id = Some(hit.getId))
   }
 
   implicit object ReleaseIndexable extends Indexable[Release] {

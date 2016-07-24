@@ -16,7 +16,7 @@ import scala.language.reflectiveCalls
 
 case class ProjectForm(
   // project
-  contributorsWanted: Option[Boolean] = None,
+  contributorsWanted: Boolean = false,
   keywords: Set[String] = Set(),
   defaultArtifact: Option[String] = None,
   deprecated: Boolean = false,
@@ -24,7 +24,7 @@ case class ProjectForm(
 
   // documentation
   customScalaDoc: Option[String] = None,
-  documentationLinks: Map[String, String] = Map(),
+  documentationLinks: List[String] = List(),
   
   // apperance
   logoImageUrl: Option[String] = None,
@@ -33,7 +33,7 @@ case class ProjectForm(
 )
 
 class Api(github: Github)(implicit val ec: ExecutionContext) {
-  private def hideId(p: Project) = p.copy(_id = None)
+  private def hideId(p: Project) = p.copy(id = None)
 
   val resultsPerPage = 20
 
@@ -202,10 +202,36 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     }
   }
 
-  def updateProject(projectRef: Project.Reference, form: ProjectForm): Future[Unit] = {
-    project(projectRef).map(project =>
-      println(form)
-    )
+  def updateProject(projectRef: Project.Reference, form: ProjectForm): Future[Boolean] = {
+    import form._
+
+    for {
+      updatedProject <- project(projectRef).map(project =>
+        project.map(_.copy(
+          contributorsWanted = contributorsWanted,
+          keywords = form.keywords,
+          defaultArtifact = defaultArtifact,
+          deprecated = deprecated,
+          artifactDeprecations = artifactDeprecations,
+
+          // documentation
+          customScalaDoc = customScalaDoc,
+          documentationLinks = documentationLinks,
+          
+          // apperance
+          logoImageUrl = logoImageUrl,
+          background = background,
+          foregroundColor = foregroundColor,
+
+          liveData = true
+        ))
+      )
+      ret <- updatedProject.flatMap( project =>
+        project.id.map(id =>
+          esClient.execute(update(id) in (indexName / projectsCollection) doc project).map(_ => true)
+        )
+      ).getOrElse(Future.successful(false))
+    } yield ret
   }
 
   def latestProjects() =

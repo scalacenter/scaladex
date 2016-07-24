@@ -107,9 +107,9 @@
 
                 <fieldset class="documentation-link">
                   <legend>Documentation links</legend>
-                  @for((label, url) <- project.documentationLinks){
+                  @for(url <- project.documentationLinks){
                     <label>
-                      @label
+                      @url
                       <input name="documentationLinks" value="@url" class="form-control">
                     </label>
                   }

@@ -1,6 +1,6 @@
 package ch.epfl.scala.index.model
 
-import misc.{GithubInfo, GithubRepo, Url}
+import misc.{GithubInfo, GithubRepo}
 
 /**
   * Project representation which contains all necessary meta data to
@@ -18,7 +18,8 @@ import misc.{GithubInfo, GithubRepo, Url}
   * @param logoImageUrl absolute url to a logo (ex: http://spark.apache.org/images/spark-logo-trademark.png)
   * @param background background css attributes (see https://developer.mozilla.org/en/docs/Web/CSS/background)
   * @param foregroundColor color css attribute (see https://developer.mozilla.org/en-US/docs/Web/CSS/color)
-  * @param _id elasticsearch id only used for updating projects
+  * @param liveData the project was updated/created by a user
+  * @param id elasticsearch id only used for updating projects
   * @param created date of the first release
   * @param updated date of the last release
   * @param targets (ex: scala_2.11, scala_2.12, scala-js_0.5)
@@ -33,14 +34,15 @@ case class Project(
     artifacts: List[String] = Nil,
     releaseCount: Int = 0,
     customScalaDoc: Option[String] = None,
-    documentationLinks: Map[String, String] = Map(),
+    documentationLinks: List[String] = List(),
     deprecated: Boolean = false,
     contributorsWanted: Boolean = false,
     artifactDeprecations: Set[String] = Set(),
-    logoImageUrl: Option[Url] = None,
+    logoImageUrl: Option[String] = None,
     background: Option[String] = None,
     foregroundColor: Option[String] = None,
-    _id: Option[String] = None,
+    liveData: Boolean = false,
+    id: Option[String] = None,
     created: Option[String] = None,
     updated: Option[String] = None,
     targets: List[String] = Nil,

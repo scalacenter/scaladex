@@ -26,30 +26,36 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
         create
           .index(indexName)
           .mappings(
-              mapping(projectsCollection).fields(
-                  field("organization") typed StringType index "not_analyzed",
-                  field("repository") typed StringType index "not_analyzed",
-                  field("keywords") typed StringType index "not_analyzed",
-                  field("created") typed (DateType),
-                  field("updated") typed (DateType),
-                  field("targets") typed StringType index "not_analyzed",
-                  field("dependencies") typed StringType index "not_analyzed"
+            mapping(projectsCollection).fields(
+              field("organization").typed(StringType).index("not_analyzed"),
+              field("repository").typed(StringType).index("not_analyzed"),
+              field("keywords").typed(StringType).index("not_analyzed"),
+              field("created").typed(DateType),
+              field("updated").typed(DateType),
+              field("targets").typed(StringType).index("not_analyzed"),
+              field("dependencies").typed(StringType).index("not_analyzed"),
+
+              field("defaultArtifact").typed(StringType).index("no"),
+              field("customScalaDoc").typed(StringType).index("no"),
+              field("documentationLinks").typed(StringType).index("no"),
+              field("artifactDeprecations").typed(StringType).index("no"),
+              field("logoImageUrl").typed(StringType).index("no"),
+              field("background").typed(StringType).index("no"),
+              field("foregroundColor").typed(StringType).index("no")
+            ),
+            mapping(releasesCollection).fields(
+              field("reference").nested(
+                  field("organization").typed(StringType).index("not_analyzed"),
+                  field("repository").typed(StringType).index("not_analyzed"),
+                  field("artifact").typed(StringType).index("not_analyzed")
+              ).includeInRoot(true),
+              field("maven").nested(
+                field("groupId").typed(StringType).index("not_analyzed"),
+                field("artifactId").typed(StringType).index("not_analyzed"),
+                field("version").typed(StringType).index("not_analyzed")
               ),
-              mapping(releasesCollection).fields(
-                  field("reference")
-                    .nested(
-                        field("organization") typed StringType index "not_analyzed",
-                        field("repository") typed StringType index "not_analyzed",
-                        field("artifact") typed StringType index "not_analyzed"
-                    )
-                    .includeInRoot(true),
-                  field("maven").nested(
-                      field("groupId") typed StringType index "not_analyzed",
-                      field("artifactId") typed StringType index "not_analyzed",
-                      field("version") typed StringType index "not_analyzed"
-                  ),
-                  field("released").typed(DateType)
-              )
+              field("released").typed(DateType)
+            )
           )
       }, Duration.Inf)
     }

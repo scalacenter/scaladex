@@ -5,11 +5,11 @@
 <div class="head-project">
   @for((background, foreground) <- project.background.zip(project.foregroundColor)) {
   <style>
-    .head-project {
-      background: @background; 
+    .head-project, .head-project * {
+      background: @background !important;
     }
-    .head-project *, .head-project * * {
-      color: @foreground;
+    .head-project * {
+      color: @foreground !important;
     }
   </style>
   }
@@ -25,6 +25,14 @@
               <i class="fa fa-github fa-lg"></i>
               @project.repository
             </a>
+            @if(canEdit){
+              <a href="/edit/@project.reference.organization/@project.reference.repository" class="btn btn-primary">
+                Edit
+              </a>
+            }
+            @if(project.contributorsWanted){
+              <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">
+            }
           </h1>
           @for(github <- project.github) {
             @for(description <- github.description) {
@@ -48,13 +56,6 @@
               <li><a href="/search?q=keywords:@keyword">@keyword</a></li>
             }
             </ul>
-          }
-          @if(canEdit){
-            <div>
-              <a href="/edit/@project.reference.organization/@project.reference.repository" class="btn btn-primary">
-                Edit
-              </a>
-            </div>
           }
         </div>
       </div>
