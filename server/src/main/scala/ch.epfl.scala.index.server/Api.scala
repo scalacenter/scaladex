@@ -21,10 +21,8 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
 
   val sortQuery = (sorting: Option[String]) =>
     sorting match {
-      case Some("stars") =>
-        fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg
-      case Some("forks") =>
-        fieldSort("github.forks") missing "0" order SortOrder.DESC mode MultiMode.Avg
+      case Some("stars")    => fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg
+      case Some("forks")    => fieldSort("github.forks") missing "0" order SortOrder.DESC mode MultiMode.Avg
       case Some("relevant") => scoreSort
       case Some("created")  => fieldSort("created") order SortOrder.DESC
       case Some("updated")  => fieldSort("updated") order SortOrder.DESC
@@ -102,7 +100,18 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     )
   }
 
-  def releases(project: Project.Reference): Future[List[Release]] = {
+  def releases(project: Project.Reference, defaultArtifact: Option[String] = None): Future[List[Release]] = {
+
+    val artifactReference = 
+      defaultArtifact.map(artifact =>
+        List(termQuery("reference.artifact", artifact))
+      ).getOrElse(List())
+
+    val references = List(
+      termQuery("reference.organization", project.organization),
+      termQuery("reference.repository", project.repository)
+    ) ::: artifactReference
+
     esClient.execute {
       search
         .in(indexName / releasesCollection)
@@ -110,13 +119,12 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
             nestedQuery("reference").query(
                 bool(
                     must(
-                        termQuery("reference.organization", project.organization),
-                        termQuery("reference.repository", project.repository)
+                      references
                     )
                 )
             )
         )
-        .size(5000)
+        .size(500)
     }.map(_.as[Release].toList)
   }
 
@@ -161,15 +169,17 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     }.map(r => r.as[Project].headOption)
   }
   def projectPage(projectRef: Project.Reference,
-                  selection: ReleaseSelection): Future[Option[(Project, Int, ReleaseOptions)]] = {
+                  selection: ReleaseSelection): Future[Option[(Project, ReleaseOptions)]] = {
     val projectAndReleases = for {
       project  <- project(projectRef)
-      releases <- releases(projectRef)
+      releases <- releases(projectRef, project.flatMap(_.defaultArtifact))
     } yield (project, releases)
 
     projectAndReleases.map {
       case (p, releases) =>
-        p.flatMap(project => DefaultRelease(project, selection, releases).map((project, releases.size, _)))
+        p.flatMap(project => 
+            DefaultRelease(project.repository, selection, releases, project.defaultArtifact)
+              .map(sel => (project, sel.copy(artifacts = project.artifacts))))
     }
   }
 

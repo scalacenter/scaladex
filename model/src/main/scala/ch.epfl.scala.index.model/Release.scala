@@ -87,9 +87,9 @@ case class Release(
     * Url to the scala-docs.
     * @return
     */
-  def scalaDocURL(customScalaDocUrl: Option[String]): Option[URL] = {
+  def scalaDocURL(customScalaDoc: Option[String]): Option[URL] = {
     util.Try {
-      customScalaDocUrl match {
+      customScalaDoc match {
         case None =>
           if (mavenCentral) {
             import maven._
@@ -123,6 +123,8 @@ case class Release(
     */
   private def evalLink(rawLink: String): String = {
     rawLink
+      .replaceAllLiterally("[groupId]", maven.groupId.toString)
+      .replaceAllLiterally("[artifactId]", maven.artifactId.toString)
       .replaceAllLiterally("[version]", reference.version.toString)
       .replaceAllLiterally("[major]", reference.version.major.toString)
       .replaceAllLiterally("[minor]", reference.version.minor.toString)

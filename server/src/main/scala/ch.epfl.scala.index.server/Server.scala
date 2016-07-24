@@ -71,47 +71,48 @@ object Server {
       } yield views.html.frontpage(keywords, targets, dependencies, latestProjects, latestReleases, userInfo)
     }
 
+    def canEdit(owner: String, repo: String, userState: Option[UserState]) = {
+      userState.map(s => s.isAdmin || s.repos.contains(GithubRepo(owner, repo))).getOrElse(false)
+    }
+
+    def editPage(owner: String, repo: String, userState: Option[UserState]) = {
+      val user = userState.map(_.user)
+      // if(canEdit(owner, repo, userState)) 
+      // {
+        for {
+          keywords <- api.keywords()
+          project <- api.project(Project.Reference(owner, repo))
+        } yield {
+          project.map(p =>
+            (OK, views.project.html.editproject(p, keywords.keys.toList.sorted, user))
+          ).getOrElse((NotFound, views.html.notfound(user)))
+        }
+      // }
+      // else Future.successful((Forbidden, views.html.forbidden(user)))
+    }
+
     def projectPage(owner: String,
                     repo: String,
-                    artifact: Option[String] = None,
+                    artifact: Option[String],
                     version: Option[SemanticVersion],
-                    userState: Option[UserState] = None,
-                    edit: Boolean = false) = {
-      val user    = userState.map(_.user)
-      val canEdit = userState.map(s => s.isAdmin || s.repos.contains(GithubRepo(owner, repo))).getOrElse(false)
+                    userState: Option[UserState]) = {
+
+      val user = userState.map(_.user)
       api
         .projectPage(Project.Reference(owner, repo), ReleaseSelection(artifact, version))
-        .map(
-            _.map {
-              case (project, releaseCount, options) =>
-                import options._
-
-                if (edit) {
-                  (OK,
-                   views.project.html.editproject(
-                       project,
-                       artifacts,
-                       versions,
-                       targets,
-                       release,
-                       releaseCount,
-                       user
-                   ))
-                } else {
-                  (OK,
-                   views.project.html.project(
-                       project,
-                       artifacts,
-                       versions,
-                       targets,
-                       release,
-                       releaseCount,
-                       user,
-                       canEdit
-                   ))
-                }
-            }.getOrElse((NotFound, views.html.notfound(user)))
-        )
+        .map(_.map {case (project, options) =>
+          import options._
+          (OK,
+           views.project.html.project(
+               project,
+               artifacts,
+               versions,
+               targets,
+               release,
+               user,
+               canEdit(owner, repo, userState)
+           ))
+        }.getOrElse((NotFound, views.html.notfound(user))))
     }
 
     val publishProcess = new PublishProcess(api, system, materializer)
@@ -175,7 +176,7 @@ object Server {
             entity(as[String]) { data =>
               extractCredentials { credentials =>
                 authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) { cred =>
-                  val publishData = PublishData(path, data, cred, info, contributors, readme, keywords.toList)
+                  val publishData = PublishData(path, data, cred, info, contributors, readme, keywords.toSet)
 
                   complete {
 
@@ -305,7 +306,7 @@ object Server {
             path("edit" / Segment / Segment) { (organization, repository) =>
               optionalSession(refreshable, usingCookies) { userId =>
                 pathEnd {
-                  complete(projectPage(organization, repository, None, None, getUser(userId), edit = true))
+                  complete(editPage(organization, repository, getUser(userId)))
                 }
               }
             } ~

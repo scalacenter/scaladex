@@ -5,7 +5,7 @@
 @import ch.epfl.scala.index.model.release._
 
 @(project: Project, artifacts: List[String], versions: List[SemanticVersion], 
-  targets: List[ScalaTarget], release: Release, releasesCount: Int, user: Option[UserInfo], canEdit: Boolean)
+  targets: List[ScalaTarget], release: Release, user: Option[UserInfo], canEdit: Boolean)
 
 @main(title = project.repository, showSearch = true, searchQuery = "", user) {
   <main id="container-project">
@@ -19,7 +19,7 @@
         </div>
         <div class="col-md-4">
           <div class="sidebar-project">
-            @project.github.map(gh => statistic(gh, releasesCount, release.reverseDependencies.size))
+            @project.github.map(gh => statistic(gh, project.releaseCount, release.reverseDependencies.size))
             @install(release)
             @documentation(release, project)
             @project.github.map(gh => contributors(gh.contributors))

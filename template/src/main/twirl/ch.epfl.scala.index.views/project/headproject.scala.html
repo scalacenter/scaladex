@@ -3,6 +3,17 @@
 
 @(project: Project, artifacts: List[String], versions: List[SemanticVersion], targets: List[ScalaTarget], release: Release, canEdit: Boolean)
 <div class="head-project">
+  @for((background, foreground) <- project.background.zip(project.foregroundColor)) {
+  <style>
+    .head-project {
+      background: @background; 
+    }
+    .head-project *, .head-project * * {
+      color: @foreground;
+    }
+  </style>
+  }
+
   <div class="container">
     <div class="row">
       <div class="col-md-8">
@@ -38,13 +49,13 @@
             }
             </ul>
           }
-          @*
           @if(canEdit){
-            <a href="/edit/@project.reference.organization/@project.reference.repository" class="btn btn-primary">
-              Edit
-            </a>
+            <div>
+              <a href="/edit/@project.reference.organization/@project.reference.repository" class="btn btn-primary">
+                Edit
+              </a>
+            </div>
           }
-          *@
         </div>
       </div>
       <div class="col-md-4">

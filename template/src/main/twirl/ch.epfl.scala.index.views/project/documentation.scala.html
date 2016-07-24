@@ -3,7 +3,7 @@
 <div class="documentation box">
   <h4>Documentation</h4>
   <ul>
-    @for(scaladoc <- release.scalaDocURL(project.customScalaDocUrl)){
+    @for(scaladoc <- release.scalaDocURL(project.customScalaDoc)){
       <li><a href="@scaladoc.toString()" target="_blank">Scaladoc</a></li>
     }
     @for((label, url) <- release.documentationURLs(project.documentationLinks)){

@@ -4,8 +4,7 @@
 @import ch.epfl.scala.index.model.misc._
 @import ch.epfl.scala.index.model.release._
 
-@(project: Project, artifacts: List[String], versions: List[SemanticVersion], 
-  targets: List[ScalaTarget], release: Release, releasesCount: Int, user: Option[UserInfo])
+@(project: Project, keywords: List[String], user: Option[UserInfo])
 
 @main(title = s"Edit ${project.repository}", showSearch = true, searchQuery = "", user) {
   <main id="container-project">
@@ -13,61 +12,136 @@
     <div class="container">
       <div class="row">
         <div class="col-md-12">
-          <div class="content-project box">
+          <div class="edit-project box">
 
             <h1>Edit project</h1>
 
-            <form>
+            <form action="/edit/@project.organization/@project.repository" method="POST">
+              <div class="form-group">
+                <input type="checkbox" name="contributorsWanted" @if(project.contributorsWanted){ checked }> 
+                <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">
+              </div>
+
               <div class="form-group">
                 <label for="keywords_multiple">Keywords</label>
-                <select class="js-keywords-multiple js-states form-control" id="keywords_multiple" multiple="multiple">
-                  <option value="database" selected="selected">Database</option>
-                  <option value="json">JSON</option>
-                  <option value="distributed">Distributed</option>
-                  <option value="macros">Macros</option>
-                  <option value="sbt plugin">SBT Plugin</option>
-                  <option value="algebra">Algebra</option>
-                  <option value="web framework">Web Framework</option>
+                <select 
+                  class="js-keywords-multiple js-states form-control"
+                  id="keywords_multiple"
+                  multiple="multiple">
+                @for(keyword <- keywords) {
+                  <option value="@keyword" @if(project.keywords.contains(keyword)){selected}>@keyword</option>
+                }
                 </select>
               </div>
 
               <div class="form-group">
-                <label for="twitter">Twitter</label>
-                <input type="text" class="form-control" id="twitter" value="yourtwitter">
+                <label for="deprecations">Deprecations</label>
+                <select 
+                  class="js-keywords-multiple js-states form-control"
+                  id="deprecations"
+                  multiple="multiple">
+                @for(artifact <- project.artifacts) {
+                  <option
+                    value="@artifact" 
+                    @if(project.artifactDeprecations.contains(artifact)){selected}>
+                      @artifact
+                  </option>
+                }
+                </select>
               </div>
 
               <div class="form-group">
-                <label for="parent_organization">Parent organization</label>
-                <input type="text" class="form-control" id="parent_organization" value="Parent Organization LLC">
+                <label for="defaultArtifact">Default Artifact</label>
+                <p>
+                  When a project has lots of artifacts you can hint the index on what artifact to choose in the drop down.
+                See <a target="_blank" href="https://github.com/scalacenter/scaladex/blob/master/model/src/main/scala/ch.epfl.scala.index.model/release/DefaultRelease.scala">
+                  DefaultRelease.scala
+                </a> for more details.
+                </p>
+                <select
+                  id="defaultArtifact"
+                  name="artifact"
+                  data-live-search="true"
+                  class="selectpicker" data-style="btn-primary">
+
+                @for(artifact <- project.artifacts){
+                  <option 
+                    value="@artifact"
+                    @if(artifact == project.defaultArtifact){ selected }>
+                    @artifact
+                  </option>
+                }
+                </select>
               </div>
 
-              <div class="form-group">
-                <label for="logo_url">Logo URL</label>
-                <input type="text" class="form-control" id="logo_url" value="https://scala.epfl.ch/resources/img/scala-center-logo.png">
-              </div>
+              <fieldset>
+                <legend>Documentation</legend>
 
-              <hr>
+                <pre>
+[groupId]    org.example
+[artifactId] foo_2.11
+[version]    1.2.3
+[major]      1
+[minor]      2
+[name]       foo
+                </pre>
+                
+                <div class="form-group">
+                  <label for="customScalaDocUrl">Custom Scaladoc URL</label>
+                  <p>Default: <code>https://www.javadoc.io/doc/[groupId]/[artifactId]/[version]</code></p>
+                  <input name="customScalaDocUrl" 
+                    value="@project.customScalaDoc.map(_.toString).getOrElse("")"
+                    placeholder="http://example.org/api/[name]/[version]"
+                    type="text" 
+                    class="form-control" id="customScalaDocUrl">
+                </div>
 
-              <div class="row">
-                <div class="col-md-2">
-                  <div class="form-group">
-                    <label for="deprecation_since">Deprecation since</label>
-                    <input type="text" class="form-control" id="deprecation_since" value="10/10/2015">
-                  </div>
+                <fieldset class="documentation-link">
+                  <legend>Documentation links</legend>
+                  @for((label, url) <- project.documentationLinks){
+                    <label>
+                      @label
+                      <input name="documentationLinks" value="@url" class="form-control">
+                    </label>
+                  }
+                  <ul>
+                  @for((i) <- (1 to 5)) {
+                    <li class="list-group">
+                      <input
+                        name="documentationLinks" value=""
+                        placeholder="http://example.org/guide/[major].x"
+                        class="form-control list-group-item">
+                    </li>
+                  }
+                  </ul>
+                </fieldset>
+              </fieldset>
+
+              <fieldset>
+                <legend>Appearance</legend>
+                <div class="form-group">
+                  <label for="logoImageUrl">Logo URL</label>
+                  <input
+                    name="logoImageUrl" value="@project.logoImageUrl.map(_.toString).getOrElse("")"
+                   type="text" class="form-control" id="logoImageUrl">
                 </div>
-                <div class="col-md-5">
-                  <div class="form-group">
-                    <label>Use instead</label>
-                    <input type="text" class="form-control" id="use_instead_organization" placeholder="organization">
-                  </div>
+
+                <div class="form-group">
+                  <label for="background">Background css</label>
+                  <input
+                    name="background" value="@project.background.getOrElse("")"
+                    placeholder="#F95A66 url('http://typelevel.org/img/bg-pattern.svg') repeat-x"
+                    type="text" class="form-control" id="background">
                 </div>
-                <div class="col-md-5">
-                  <div class="form-group">
-                    <label>&nbsp;</label>
-                    <input type="text" class="form-control" id="use_instead_name" placeholder="name">
-                  </div>
+
+                <div class="form-group">
+                  <label for="foregroundColor">Foreground color</label>
+                  <input
+                    name="foregroundColor" value="@project.foregroundColor.getOrElse("")"
+                    placeholder="#35444D"
+                    type="text" class="form-control" id="foregroundColor">
                 </div>
-              </div>
+              </fieldset>
 
               <button type="submit" class="btn btn-primary">Update</button>
             </form>

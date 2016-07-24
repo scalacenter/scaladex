@@ -11,9 +11,13 @@ import misc.{GithubInfo, GithubRepo, Url}
   * @param github github information representation
   * @param keywords predefined keywords (ex: database)
   * @param defaultArtifact when we land on a project page (ex: typelevel/cats) specify an artifact to select by default
+  * @param artifacts names for this project (ex: cats-core, cats-free, ...)
+  * @param releaseCount how many distinct versions we can find
   * @param customScalaDocUrl expression to subsitute scaladoc
   * @param documentationLinks user documentation & etc
   * @param logoImageUrl absolute url to a logo (ex: http://spark.apache.org/images/spark-logo-trademark.png)
+  * @param background background css attributes (see https://developer.mozilla.org/en/docs/Web/CSS/background)
+  * @param foregroundColor color css attribute (see https://developer.mozilla.org/en-US/docs/Web/CSS/color)
   * @param _id elasticsearch id only used for updating projects
   * @param created date of the first release
   * @param updated date of the last release
@@ -24,11 +28,18 @@ case class Project(
     organization: String,
     repository: String,
     github: Option[GithubInfo] = None,
-    keywords: List[String] = Nil,
+    keywords: Set[String] = Set(),
     defaultArtifact: Option[String] = None,
-    customScalaDocUrl: Option[String] = None,
+    artifacts: List[String] = Nil,
+    releaseCount: Int = 0,
+    customScalaDoc: Option[String] = None,
     documentationLinks: Map[String, String] = Map(),
+    deprecated: Boolean = false,
+    contributorsWanted: Boolean = false,
+    artifactDeprecations: Set[String] = Set(),
     logoImageUrl: Option[Url] = None,
+    background: Option[String] = None,
+    foregroundColor: Option[String] = None,
     _id: Option[String] = None,
     created: Option[String] = None,
     updated: Option[String] = None,

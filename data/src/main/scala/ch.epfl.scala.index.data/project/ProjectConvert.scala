@@ -111,14 +111,21 @@ object ProjectConvert extends BintrayProtocol {
             )
         }
 
+        val releaseCount = releases.map(_.reference.version).toSet.size
+
         val (max, min) = maxMinRelease(releases)
+
+        val releaseOptions = DefaultRelease(repository, ReleaseSelection(None, None, None), releases, None)
 
         (
             Project(
-                organization,
-                repository,
-                GithubReader(githubRepo),
-                Keywords(githubRepo),
+                organization = organization,
+                repository = repository,
+                github = GithubReader(githubRepo),
+                keywords = Keywords(githubRepo),
+                artifacts = releaseOptions.map(_.artifacts.sorted).getOrElse(Nil),
+                releaseCount = releaseCount,
+                defaultArtifact = releaseOptions.map(_.release.reference.artifact),
                 created = min,
                 updated = max
             ),

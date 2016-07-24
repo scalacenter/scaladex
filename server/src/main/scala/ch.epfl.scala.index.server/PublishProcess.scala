@@ -224,7 +224,7 @@ case class PublishData(
     downloadInfo: Boolean,
     downloadContributors: Boolean,
     downloadReadme: Boolean,
-    keywords: List[String]
+    keywords: Set[String]
 ) {
 
   lazy val isPom: Boolean = path matches """.*\.pom"""
