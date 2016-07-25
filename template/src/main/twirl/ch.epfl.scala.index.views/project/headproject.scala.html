@@ -5,22 +5,6 @@
 
 @(project: Project, artifacts: List[String], versions: List[SemanticVersion], targets: List[ScalaTarget], release: Release, canEdit: Boolean)
 <div class="head-project">
-  @for((background, foreground) <- project.background.zip(project.foregroundColor)) {
-  <style>
-    .head-project {
-      background: @{Html(unescapeBackground(background))} !important;
-    }
-    @if(!background.contains("url")) {
-      .head-project * {
-        background: @background !important;
-      }
-    }
-    .head-project * {
-      color: @foreground !important;
-    }
-  </style>
-  }
-
   <div class="container">
     <div class="row">
       <div class="col-md-8">

@@ -16,8 +16,6 @@ import misc.{GithubInfo, GithubRepo}
   * @param customScalaDocUrl expression to subsitute scaladoc
   * @param documentationLinks user documentation & etc
   * @param logoImageUrl absolute url to a logo (ex: http://spark.apache.org/images/spark-logo-trademark.png)
-  * @param background background css attributes (see https://developer.mozilla.org/en/docs/Web/CSS/background)
-  * @param foregroundColor color css attribute (see https://developer.mozilla.org/en-US/docs/Web/CSS/color)
   * @param liveData the project was updated/created by a user
   * @param id elasticsearch id only used for updating projects
   * @param created date of the first release
@@ -38,9 +36,6 @@ case class Project(
     deprecated: Boolean = false,
     contributorsWanted: Boolean = false,
     artifactDeprecations: Set[String] = Set(),
-    logoImageUrl: Option[String] = None,
-    background: Option[String] = None,
-    foregroundColor: Option[String] = None,
     liveData: Boolean = false,
     id: Option[String] = None,
     created: Option[String] = None,

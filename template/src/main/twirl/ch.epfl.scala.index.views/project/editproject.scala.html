@@ -125,32 +125,6 @@
                 </fieldset>
               </fieldset>
 
-              <fieldset>
-                <legend>Appearance</legend>
-                <div class="form-group">
-                  <label for="logoImageUrl">Logo URL</label>
-                  <input
-                    name="logoImageUrl" value="@project.logoImageUrl.map(_.toString).getOrElse("")"
-                   type="text" class="form-control" id="logoImageUrl">
-                </div>
-
-                <div class="form-group">
-                  <label for="background">Background css</label>
-                  <input
-                    name="background" value="@project.background.getOrElse("")"
-                    placeholder="#F95A66 url('http://typelevel.org/img/bg-pattern.svg') repeat-x"
-                    type="text" class="form-control" id="background">
-                </div>
-
-                <div class="form-group">
-                  <label for="foregroundColor">Foreground color</label>
-                  <input
-                    name="foregroundColor" value="@project.foregroundColor.getOrElse("")"
-                    placeholder="#35444D"
-                    type="text" class="form-control" id="foregroundColor">
-                </div>
-              </fieldset>
-
               <button type="submit" class="btn btn-primary">Update</button>
               <a class="btn btn-default" href="/@project.organization/@project.repository">Cancel</a>
             </form>

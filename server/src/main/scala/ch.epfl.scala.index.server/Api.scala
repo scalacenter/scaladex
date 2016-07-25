@@ -24,12 +24,7 @@ case class ProjectForm(
 
   // documentation
   customScalaDoc: Option[String] = None,
-  documentationLinks: List[String] = List(),
-  
-  // apperance
-  logoImageUrl: Option[String] = None,
-  background: Option[String] = None,
-  foregroundColor: Option[String] = None
+  documentationLinks: List[String] = List()
 )
 
 class Api(github: Github)(implicit val ec: ExecutionContext) {
@@ -213,11 +208,6 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
           // documentation
           customScalaDoc = customScalaDoc,
           documentationLinks = documentationLinks.filterNot(_ == ""),
-          
-          // apperance
-          logoImageUrl = logoImageUrl,
-          background = background,
-          foregroundColor = foregroundColor,
 
           liveData = true
         ))

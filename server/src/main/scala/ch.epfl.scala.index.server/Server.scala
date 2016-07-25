@@ -176,11 +176,7 @@ object Server {
                   'artifactDeprecations.*,
 
                   'customScalaDoc.?,
-                  'documentationLinks.*,
-                  
-                  'logoImageUrl.?,
-                  'background.?,
-                  'foregroundColor.?
+                  'documentationLinks.*
                 ) { (
                   contributorsWanted,
                   keywords,
@@ -189,11 +185,7 @@ object Server {
                   artifactDeprecations,
 
                   customScalaDoc,
-                  documentationLinks,
-                  
-                  logoImageUrl,
-                  background,
-                  foregroundColor
+                  documentationLinks
                 ) =>
                   onSuccess(
                     api.updateProject(
@@ -207,12 +199,7 @@ object Server {
 
                         // documentation
                         customScalaDoc,
-                        documentationLinks.toList,
-                        
-                        // apperance
-                        logoImageUrl,
-                        background,
-                        foregroundColor
+                        documentationLinks.toList
                       )
                     )
                   ){ ret =>
