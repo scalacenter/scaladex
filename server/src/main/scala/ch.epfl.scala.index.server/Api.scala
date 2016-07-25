@@ -101,7 +101,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
 
     query(
         bool(
-            mustQueries = mustQueriesRepos,
+            mustQueries = mustQueriesRepos ++ List(termQuery("deprecated", false)),
             shouldQueries = List(
                 termQuery("keywords", escaped),
                 termQuery("github.description", escaped),

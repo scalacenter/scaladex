@@ -77,7 +77,7 @@
               onchange="this.form.submit()"
               data-live-search="true"
               class="selectpicker artifact-name" data-style="btn-primary">
-            @for(artifact <- artifacts) {
+            @for(artifact <- artifacts.filterNot(project.artifactDeprecations.contains)) {
               <option value="@artifact" @if(artifact == release.reference.artifact){ selected }>
                 @artifact
               </option>
