@@ -7,8 +7,7 @@ import model.misc.GithubRepo
 import java.nio.file.Paths
 
 package object github extends Parsers {
-  private[github] val githubBase = build.info.BuildInfo.baseDirectory.toPath
-    .resolve(Paths.get("index", "github"))
+  private[github] val githubBase = build.info.BuildInfo.baseDirectory.toPath.resolve(Paths.get("index", "github"))
   private[github] def path(github: GithubRepo) = {
     val GithubRepo(user, repo) = github
     githubBase.resolve(Paths.get(user, repo))
@@ -31,11 +30,7 @@ package object github extends Parsers {
     */
   def extractLastPage(links: String): Int = {
     val pattern = """page=([0-9]+)>; rel=["]?([a-z]+)["]?""".r
-    val pages = pattern
-      .findAllIn(links)
-      .matchData
-      .map(x => x.group(2) -> x.group(1).toInt)
-      .toMap
+    val pages   = pattern.findAllIn(links).matchData.map(x => x.group(2) -> x.group(1).toInt).toMap
     pages.getOrElse("last", 1)
   }
 }

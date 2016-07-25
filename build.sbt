@@ -36,7 +36,8 @@ lazy val commonSettings = Seq(
   initialCommands in (Test, console) := """ammonite.repl.Main().run()""",
   libraryDependencies += "com.lihaoyi" %% "utest" % "0.4.3" % "test",
   testFrameworks += new TestFramework("utest.runner.Framework")
-) ++ baseSettings
+) ++ baseSettings ++ 
+  addCommandAlias("start", "reStart")
 
 lazy val akkaVersion = "2.4.7"
 

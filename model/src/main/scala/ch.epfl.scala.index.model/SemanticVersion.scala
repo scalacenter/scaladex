@@ -29,7 +29,7 @@ case class SemanticVersion(
     */
   override def toString = {
 
-    val patchPart = patch.map("." + _).getOrElse("")
+    val patchPart  = patch.map("." + _).getOrElse("")
     val patch2Part = patch2.map("." + _).getOrElse("")
 
     val preReleasePart = preRelease.map {
@@ -104,9 +104,9 @@ object SemanticVersion extends Parsers {
     // http://semver.org/#spec-item-9
     val PreRelease: P[PreRelease] =
       "-" ~ (
-        (("M" | "m") ~ &(Digit) ~ Number).map(n => Milestone(n)) |
-        (("R" | "r") ~ ("C" | "c") ~ &(Digit) ~ Number).map(n =>ReleaseCandidate(n)) |
-        (Digit | Alpha | "." | "-").rep.!.map(s => OtherPreRelease(s))
+          (("M" | "m") ~ &(Digit) ~ Number).map(n => Milestone(n)) |
+            (("R" | "r") ~ ("C" | "c") ~ &(Digit) ~ Number).map(n => ReleaseCandidate(n)) |
+            (Digit | Alpha | "." | "-").rep.!.map(s => OtherPreRelease(s))
       )
 
     // http://semver.org/#spec-item-10

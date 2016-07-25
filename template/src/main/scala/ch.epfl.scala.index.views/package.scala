@@ -44,6 +44,13 @@ package object html {
     }
   }
 
+  def unescapeBackground(in: String) = {
+    play.twirl.api.HtmlFormat.escape(in)
+      .toString
+      .replaceAllLiterally("url(&#x27;", "url('")
+      .replaceAllLiterally("&#x27;)", "')")
+  }
+
   def formatDate(date: String): String = {
     import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
     val in  = ISODateTimeFormat.dateTime.withOffsetParsed

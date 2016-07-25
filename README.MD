@@ -54,7 +54,16 @@ show [GitHub] Readme file, show [GitHub] contributors.
 **SBT Simple Example**
 ```scala
 scaladexKeywords in Scaladex := Seq("Foo", "Bar", "Baz")
-Credentials in Scaladex := Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials")
+credentials in Scaladex := Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials")
+/*
+realm=Scaladex Realm
+host=localhost
+user=<github username>
+password=<github password>
+*/
+
+// or 
+credentials in Scaladex += Credentials("Scaladex Realm", "localhost", "<github username>", "<github password>")
 ```
 
 **Disable Readme, Info, or Contributors**

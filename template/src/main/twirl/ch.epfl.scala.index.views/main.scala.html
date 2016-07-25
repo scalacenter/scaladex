@@ -47,10 +47,10 @@
 
                         @user.map{ u =>
                             <a class="btn btn-default pull-right" href="/logout">
-                                <i class="fa fa-sign-out fa-lg" aria-hidden="true"></i> Logout
+                                Logout
                             </a>
-                            <a class="pull-right you" href="/search?q=*&you">
-                                <img src="@u.sizedAvatarUrl(38)" alt="Your Avatar - @u.login">
+                            <a class="btn btn-default pull-right you" href="/search?q=*&you">
+                                <img src="@u.sizedAvatarUrl(38)" alt="Your Avatar - @u.login"> Projects
                             </a>
                         }.getOrElse {
                             <a class="btn btn-primary pull-right" href="/login">

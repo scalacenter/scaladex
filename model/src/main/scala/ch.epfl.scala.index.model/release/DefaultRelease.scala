@@ -12,8 +12,7 @@ object ReleaseSelection {
   /**
     * @param artifactRaw either an artifact (ex: cats-core) or an artifactId (ex: cats-core_2.11)
     */
-  def apply(artifactRaw: Option[String] = None,
-            version: Option[SemanticVersion] = None) = {
+  def apply(artifactRaw: Option[String] = None, version: Option[SemanticVersion] = None) = {
     val (artifact, target) = artifactRaw
       .flatMap(raw => Artifact(raw))
       .map { case (a, b) => (Some(a), Some(b)) }
@@ -34,15 +33,16 @@ case class ReleaseOptions(
 )
 
 object DefaultRelease {
-  def apply(project: Project,
-            selection: ReleaseSelection,
-            releases: List[Release]): Option[ReleaseOptions] = {
+  def apply(projectRepository: String, 
+            selection: ReleaseSelection, 
+            releases: List[Release],
+            defaultArtifact: Option[String]): Option[ReleaseOptions] = {
 
-    val selectedReleases = releases.filter(release =>
-      selection.artifact.map(_ == release.reference.artifact).getOrElse(true) &&
-      selection.target.map(_ == release.reference.target).getOrElse(true) &&
-      selection.version.map(_ == release.reference.version).getOrElse(true)
-    )
+    val selectedReleases = releases.filter(
+        release =>
+          selection.artifact.map(_ == release.reference.artifact).getOrElse(true) &&
+            selection.target.map(_ == release.reference.target).getOrElse(true) &&
+            selection.version.map(_ == release.reference.version).getOrElse(true))
 
     // descending ordering for versions
     implicit def ordering = implicitly[Ordering[SemanticVersion]].reverse
@@ -53,9 +53,9 @@ object DefaultRelease {
           // artifact
 
           // match default artifact (ex: akka-actors is the default for akka/akka)
-          project.defaultArtifact == Some(artifact),
+          defaultArtifact == Some(artifact),
           // match project repository (ex: shapeless)
-          project.repository == artifact,
+          projectRepository == artifact,
           // alphabetically
           artifact,
           // target
@@ -72,14 +72,11 @@ object DefaultRelease {
     }
 
     releasesSorted.headOption.map { release =>
-      val artifacts = releases.map(_.reference.artifact).distinct.sorted
-      val releasesForArtifact =
-        releases.filter(_.reference.artifact == release.reference.artifact)
+      val artifacts           = releases.map(_.reference.artifact).distinct.sorted
+      val releasesForArtifact = releases.filter(_.reference.artifact == release.reference.artifact)
 
-      val versions =
-        releasesForArtifact.map(_.reference.version).distinct.sorted
-      val releasesForArtifactVersion = releasesForArtifact.filter(
-          _.reference.version == release.reference.version)
+      val versions                   = releasesForArtifact.map(_.reference.version).distinct.sorted
+      val releasesForArtifactVersion = releasesForArtifact.filter(_.reference.version == release.reference.version)
 
       val targets = releasesForArtifactVersion
         .map(_.reference.target)

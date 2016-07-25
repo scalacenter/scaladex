@@ -14,17 +14,28 @@ import org.elasticsearch.search.sort.SortOrder
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.reflectiveCalls
 
+case class ProjectForm(
+  // project
+  contributorsWanted: Boolean = false,
+  keywords: Set[String] = Set(),
+  defaultArtifact: Option[String] = None,
+  deprecated: Boolean = false,
+  artifactDeprecations: Set[String] = Set(),
+
+  // documentation
+  customScalaDoc: Option[String] = None,
+  documentationLinks: List[String] = List()
+)
+
 class Api(github: Github)(implicit val ec: ExecutionContext) {
-  private def hideId(p: Project) = p.copy(_id = None)
+  private def hideId(p: Project) = p.copy(id = None)
 
   val resultsPerPage = 20
 
   val sortQuery = (sorting: Option[String]) =>
     sorting match {
-      case Some("stars") =>
-        fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg
-      case Some("forks") =>
-        fieldSort("github.forks") missing "0" order SortOrder.DESC mode MultiMode.Avg
+      case Some("stars")    => fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg
+      case Some("forks")    => fieldSort("github.forks") missing "0" order SortOrder.DESC mode MultiMode.Avg
       case Some("relevant") => scoreSort
       case Some("created")  => fieldSort("created") order SortOrder.DESC
       case Some("updated")  => fieldSort("updated") order SortOrder.DESC
@@ -74,18 +85,18 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     } else List()
 
     val mustQueriesRepos =
-      if(userRepos.isEmpty) Nil
+      if (userRepos.isEmpty) Nil
       else
         List(
-          bool(
-            should(
-                reposQueries: _*
-            )
-        ))
+            bool(
+                should(
+                    reposQueries: _*
+                )
+            ))
 
     query(
         bool(
-            mustQueries = mustQueriesRepos,
+            mustQueries = mustQueriesRepos ++ List(termQuery("deprecated", false)),
             shouldQueries = List(
                 termQuery("keywords", escaped),
                 termQuery("github.description", escaped),
@@ -102,7 +113,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     )
   }
 
-  def releases(project: Project.Reference): Future[List[Release]] = {
+  def releases(project: Project.Reference, artifact: Option[String]): Future[List[Release]] = {
     esClient.execute {
       search
         .in(indexName / releasesCollection)
@@ -110,14 +121,14 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
             nestedQuery("reference").query(
                 bool(
                     must(
-                        termQuery("reference.organization",
-                                  project.organization),
-                        termQuery("reference.repository", project.repository)
+                      termQuery("reference.organization", project.organization),
+                      termQuery("reference.repository", project.repository),
+                      termQuery("reference.artifact", artifact.getOrElse("*"))
                     )
                 )
             )
         )
-        .size(5000)
+        .size(500)
     }.map(_.as[Release].toList)
   }
 
@@ -161,35 +172,61 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
         .limit(1)
     }.map(r => r.as[Project].headOption)
   }
-  def projectPage(projectRef: Project.Reference, selection: ReleaseSelection)
-    : Future[Option[(Project, Int, ReleaseOptions)]] = {
+
+  def projectPage(projectRef: Project.Reference,
+                  selection: ReleaseSelection): Future[Option[(Project, ReleaseOptions)]] = {
     val projectAndReleases = for {
       project  <- project(projectRef)
-      releases <- releases(projectRef)
+      releases <- releases(projectRef, 
+        selection.artifact match {
+          case None => project.flatMap(_.defaultArtifact)
+          case s => s
+        }
+      )
     } yield (project, releases)
 
     projectAndReleases.map {
       case (p, releases) =>
-        p.flatMap(
-            project =>
-              DefaultRelease(project, selection, releases).map(
-                  (project, releases.size, _)))
+        p.flatMap(project => 
+            DefaultRelease(project.repository, selection, releases, project.defaultArtifact)
+              .map(sel => (project, sel.copy(artifacts = project.artifacts))))
     }
+  }
+
+  def updateProject(projectRef: Project.Reference, form: ProjectForm): Future[Boolean] = {
+    import form._
+
+    for {
+      updatedProject <- project(projectRef).map(project =>
+        project.map(_.copy(
+          contributorsWanted = contributorsWanted,
+          keywords = form.keywords,
+          defaultArtifact = defaultArtifact,
+          deprecated = deprecated,
+          artifactDeprecations = artifactDeprecations,
+
+          // documentation
+          customScalaDoc = customScalaDoc,
+          documentationLinks = documentationLinks.filterNot(_ == ""),
+
+          liveData = true
+        ))
+      )
+      ret <- updatedProject.flatMap( project =>
+        project.id.map(id =>
+          esClient.execute(update(id) in (indexName / projectsCollection) doc project).map(_ => true)
+        )
+      ).getOrElse(Future.successful(false))
+    } yield ret
   }
 
   def latestProjects() =
     latest[Project](projectsCollection, "created", 12).map(_.map(hideId))
   def latestReleases() = latest[Release](releasesCollection, "released", 12)
 
-  private def latest[T: HitAs: Manifest](collection: String,
-                                         by: String,
-                                         n: Int): Future[List[T]] = {
+  private def latest[T: HitAs: Manifest](collection: String, by: String, n: Int): Future[List[T]] = {
     esClient.execute {
-      search
-        .in(indexName / collection)
-        .query(matchAllQuery)
-        .sort(fieldSort(by) order SortOrder.DESC)
-        .limit(n)
+      search.in(indexName / collection).query(matchAllQuery).sort(fieldSort(by) order SortOrder.DESC).limit(n)
 
     }.map(r => r.as[T].toList)
   }

@@ -196,7 +196,6 @@ main {
         }
     }
     .order-by {
-        width: 150px;
         margin-top: 20px;
         span {
             margin-right: 8px;
@@ -424,6 +423,26 @@ main {
             }
         }
     }
+    .edit-project {
+        h1 {
+            margin-top: 0;
+            margin-bottom: 40px;
+        }
+        margin-top: 20px;
+        fieldset fieldset legend {
+            font-size: 16px;
+        }
+        input[name="contributorsWanted"] {
+            width: 20px;
+            height: 20px;
+            vertical-align: middle;
+            margin-right: 20px;
+
+            & + img {
+                background-color: #002b37;
+            }
+        }
+    }
 }
 
 .head-project {
@@ -489,5 +508,14 @@ main {
             display: block;
             margin: 5px;
         }
+    }
+}
+
+.documentation-link {
+    ul {
+        padding-left: 0;
+    }
+    li {
+        display: block;
     }
 }

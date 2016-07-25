@@ -52,9 +52,7 @@ object PomsReader {
     def resolveModel(parent: Parent): ModelSource2 = {
       resolveModel(parent.getGroupId, parent.getArtifactId, parent.getVersion)
     }
-    def resolveModel(groupId: String,
-                     artifactId: String,
-                     version: String): ModelSource2 = {
+    def resolveModel(groupId: String, artifactId: String, version: String): ModelSource2 = {
       val dep    = maven.Dependency(groupId, artifactId, version)
       val target = parentPomsBase.resolve(path(dep))
 
@@ -71,10 +69,7 @@ object PomsReader {
 
   private def resolve(pom: Path) = {
     val request = new DefaultModelBuildingRequest
-    request
-      .setModelResolver(resolver)
-      .setSystemProperties(jdk)
-      .setPomFile(pom.toFile)
+    request.setModelResolver(resolver).setSystemProperties(jdk).setPomFile(pom.toFile)
 
     builder.build(request).getEffectiveModel
   }

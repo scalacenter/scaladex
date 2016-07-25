@@ -1,6 +1,8 @@
 @import ch.epfl.scala.index.model._
 @import ch.epfl.scala.index.model.release._
 
+@import ch.epfl.scala.index.views.html.unescapeBackground
+
 @(project: Project, artifacts: List[String], versions: List[SemanticVersion], targets: List[ScalaTarget], release: Release, canEdit: Boolean)
 <div class="head-project">
   <div class="container">
@@ -14,6 +16,17 @@
               <i class="fa fa-github fa-lg"></i>
               @project.repository
             </a>
+            @if(canEdit){
+              <a href="/edit/@project.reference.organization/@project.reference.repository" class="btn btn-primary">
+                Edit
+              </a>
+            }
+            @if(project.contributorsWanted){
+              <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">
+            }
+            @if(project.deprecated){
+              [DEPRECATED]
+            }
           </h1>
           @for(github <- project.github) {
             @for(description <- github.description) {
@@ -38,13 +51,6 @@
             }
             </ul>
           }
-          @*
-          @if(canEdit){
-            <a href="/edit/@project.reference.organization/@project.reference.repository" class="btn btn-primary">
-              Edit
-            </a>
-          }
-          *@
         </div>
       </div>
       <div class="col-md-4">
@@ -55,7 +61,7 @@
               onchange="this.form.submit()"
               data-live-search="true"
               class="selectpicker artifact-name" data-style="btn-primary">
-            @for(artifact <- artifacts) {
+            @for(artifact <- artifacts.filterNot(project.artifactDeprecations.contains)) {
               <option value="@artifact" @if(artifact == release.reference.artifact){ selected }>
                 @artifact
               </option>

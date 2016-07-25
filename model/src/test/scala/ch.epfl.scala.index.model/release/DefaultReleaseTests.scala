@@ -54,7 +54,7 @@ object DefaultReleaseTests extends TestSuite{
         )
       ) 
 
-      val result = DefaultRelease(Project(organization, repository), ReleaseSelection(None, None), releases)
+      val result = DefaultRelease(repository, ReleaseSelection(None, None), releases, None)
       val expected =
         Some(ReleaseOptions(
           artifacts = List(
@@ -101,9 +101,10 @@ object DefaultReleaseTests extends TestSuite{
       )
 
       val result = DefaultRelease(
-        Project(organization, repository), 
+        repository,
         ReleaseSelection(Some("akka-distributed-data-experimental"), None),
-        releases
+        releases,
+        None
       )
 
       val expected =

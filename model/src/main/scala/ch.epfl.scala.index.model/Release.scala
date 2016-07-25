@@ -13,7 +13,8 @@ import release._
   * @param mavenCentral availability on the central repository
   * @param licenses a bunch of licences
   * @param nonStandardLib if not using artifactName_scalaVersion convention
-  * @param _id Elastic search id
+  * @param customScalaDocUrl override javadoc.io scaladoc url
+  * @param id Elastic search id
   * @param scalaDependencies bunch of scala dependencies
   * @param javaDependencies bunch of java dependencies
   * @param reverseDependencies bunch of reversed dependencies
@@ -28,7 +29,7 @@ case class Release(
     mavenCentral: Boolean = false,
     licenses: Set[License] = Set(),
     nonStandardLib: Boolean = false,
-    _id: Option[String] = None,
+    id: Option[String] = None,
     /* split dependencies in 2 fields because elastic can't handle 2 different types
      * in one field. That is a simple workaround for that
      */
@@ -53,8 +54,7 @@ case class Release(
       else ("%%", "")
 
     List(
-        Some(
-            s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""),
+        Some(s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""),
         resolver.map("resolvers += " + _.sbt)
     ).flatten.mkString(System.lineSeparator)
   }
@@ -85,27 +85,46 @@ case class Release(
     * Url to the scala-docs.
     * @return
     */
-  def scalaDocURI: Option[String] = {
-    if (mavenCentral) {
+  def scalaDocURL(customScalaDoc: Option[String]): Option[String] = {
+    customScalaDoc match {
+      case None =>
+        if (mavenCentral) {
+          import maven._
+          /* no frame
+           * hosted on s3 at:
+           *https://static.javadoc.io/$groupId/$artifactId/$version/index.html#package
+           * HEAD to check 403 vs 200
+           */
+          Some(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version")
+        } else None
+      case Some(rawLink) => Some(evalLink(rawLink))
+    }
+  }
 
-      import maven._
+  def documentationURLs(documentationLinks: List[String]): List[String] = {
+    documentationLinks.map(evalLink)
+  }
 
-      /* no frame
-       * hosted on s3 at:
-       *https://static.javadoc.io/$groupId/$artifactId/$version/index.html#package
-       * HEAD to check 403 vs 200
-       */
-      Some(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version")
-    } else None
+  /** Documentation link are often related to a release version
+    * for example: https://playframework.com/documentation/2.6.x/Home
+    * we want to substitute input such as
+    * https://playframework.com/documentation/[major].[minor].x/Home
+    */
+  private def evalLink(rawLink: String): String = {
+    rawLink
+      .replaceAllLiterally("[groupId]", maven.groupId.toString)
+      .replaceAllLiterally("[artifactId]", maven.artifactId.toString)
+      .replaceAllLiterally("[version]", reference.version.toString)
+      .replaceAllLiterally("[major]", reference.version.major.toString)
+      .replaceAllLiterally("[minor]", reference.version.minor.toString)
+      .replaceAllLiterally("[name]", reference.artifact)
   }
 
   /**
     * ordered scala dependencies - tests last
     */
   lazy val orderedDependencies = {
-    val (a, b) = scalaDependencies
-      .sortBy(_.reference.name)
-      .partition(_.scope.contains("test"))
+    val (a, b) = scalaDependencies.sortBy(_.reference.name).partition(_.scope.contains("test"))
     b.groupBy(b => b).values.flatten.toList ++ a
   }
 
@@ -115,9 +134,7 @@ case class Release(
     */
   lazy val orderedJavaDependencies = {
 
-    val (a, b) = javaDependencies
-      .sortBy(_.reference.name)
-      .partition(_.scope.contains("test"))
+    val (a, b) = javaDependencies.sortBy(_.reference.name).partition(_.scope.contains("test"))
     b.groupBy(b => b).values.flatten.toList ++ a
   }
 
@@ -136,12 +153,7 @@ case class Release(
     */
   lazy val uniqueOrderedReverseDependencies: Seq[ScalaDependency] = {
 
-    orderedReverseDependencies
-      .groupBy(_.reference.name)
-      .values
-      .map(_.head)
-      .toSeq
-      .sortBy(_.reference.name)
+    orderedReverseDependencies.groupBy(_.reference.name).values.map(_.head).toSeq.sortBy(_.reference.name)
   }
 
   /**
@@ -156,12 +168,9 @@ case class Release(
     * @param dep current looking dependency
     * @return
     */
-  def versionsForReverseDependencies(
-      dep: ScalaDependency): Seq[SemanticVersion] = {
+  def versionsForReverseDependencies(dep: ScalaDependency): Seq[SemanticVersion] = {
 
-    orderedReverseDependencies
-      .filter(d => d.reference.name == dep.reference.name)
-      .map(_.reference.version)
+    orderedReverseDependencies.filter(d => d.reference.name == dep.reference.name).map(_.reference.version)
   }
 }
 

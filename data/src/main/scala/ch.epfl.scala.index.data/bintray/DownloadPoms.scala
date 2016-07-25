@@ -11,8 +11,7 @@ import akka.stream.ActorMaterializer
 import play.api.libs.ws.{WSRequest, WSResponse}
 import play.api.libs.ws.ahc.AhcWSClient
 
-class DownloadPoms(implicit val system: ActorSystem,
-                   implicit val materializer: ActorMaterializer)
+class DownloadPoms(implicit val system: ActorSystem, implicit val materializer: ActorMaterializer)
     extends PlayWsDownloader {
 
   /**
@@ -33,9 +32,8 @@ class DownloadPoms(implicit val system: ActorSystem,
     */
   def verifyChecksum(toVerify: String, sha1: String) = {
 
-    val md = java.security.MessageDigest.getInstance("SHA-1")
-    val computed =
-      md.digest(toVerify.getBytes("UTF-8")).map("%02x".format(_)).mkString
+    val md       = java.security.MessageDigest.getInstance("SHA-1")
+    val computed = md.digest(toVerify.getBytes("UTF-8")).map("%02x".format(_)).mkString
 
     computed == sha1
   }
@@ -62,9 +60,7 @@ class DownloadPoms(implicit val system: ActorSystem,
 
     BintrayMeta
       .readQueriedPoms(bintrayCheckpoint)
-      .filter(s =>
-            !Files.exists(pomPath(s)) || !verifySHA1FileHash(pomPath(s),
-                                                             s.sha1))
+      .filter(s => !Files.exists(pomPath(s)) || !verifySHA1FileHash(pomPath(s), s.sha1))
       .groupBy(_.sha1) // remove duplicates with sha1
       .map { case (_, vs) => vs.head }
       .toSet
@@ -87,17 +83,14 @@ class DownloadPoms(implicit val system: ActorSystem,
     * @param search the bintray Search
     * @return
     */
-  private def downloadRequest(wsClient: AhcWSClient,
-                              search: BintraySearch): WSRequest = {
+  private def downloadRequest(wsClient: AhcWSClient, search: BintraySearch): WSRequest = {
 
     if (search.repo == "jcenter" && search.owner == "bintray") {
 
       wsClient.url(escape(s"https://jcenter.bintray.com/${search.path}"))
     } else {
 
-      wsClient.url(
-          escape(
-              s"https://dl.bintray.com/${search.owner}/${search.repo}/${search.path}"))
+      wsClient.url(escape(s"https://dl.bintray.com/${search.owner}/${search.repo}/${search.path}"))
     }
   }
 
@@ -106,8 +99,7 @@ class DownloadPoms(implicit val system: ActorSystem,
     * @param search the bintray search
     * @param response the download response
     */
-  private def processPomDownload(search: BintraySearch,
-                                 response: WSResponse): Unit = {
+  private def processPomDownload(search: BintraySearch, response: WSResponse): Unit = {
 
     if (200 == response.status) {
 
@@ -137,10 +129,7 @@ class DownloadPoms(implicit val system: ActorSystem,
     */
   def run(): Unit = {
 
-    download[BintraySearch, Unit]("Downloading POMs",
-                                  searchesBySha1,
-                                  downloadRequest,
-                                  processPomDownload)
+    download[BintraySearch, Unit]("Downloading POMs", searchesBySha1, downloadRequest, processPomDownload)
     ()
   }
 }
