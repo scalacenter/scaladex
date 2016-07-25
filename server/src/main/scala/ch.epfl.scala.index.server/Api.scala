@@ -118,18 +118,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     )
   }
 
-  def releases(project: Project.Reference, defaultArtifact: Option[String] = None): Future[List[Release]] = {
-
-    val artifactReference = 
-      defaultArtifact.map(artifact =>
-        List(termQuery("reference.artifact", artifact))
-      ).getOrElse(List())
-
-    val references = List(
-      termQuery("reference.organization", project.organization),
-      termQuery("reference.repository", project.repository)
-    ) ::: artifactReference
-
+  def releases(project: Project.Reference, artifact: Option[String]): Future[List[Release]] = {
     esClient.execute {
       search
         .in(indexName / releasesCollection)
@@ -137,7 +126,9 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
             nestedQuery("reference").query(
                 bool(
                     must(
-                      references
+                      termQuery("reference.organization", project.organization),
+                      termQuery("reference.repository", project.repository),
+                      termQuery("reference.artifact", artifact.getOrElse("*"))
                     )
                 )
             )
@@ -191,7 +182,12 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
                   selection: ReleaseSelection): Future[Option[(Project, ReleaseOptions)]] = {
     val projectAndReleases = for {
       project  <- project(projectRef)
-      releases <- releases(projectRef, project.flatMap(_.defaultArtifact))
+      releases <- releases(projectRef, 
+        selection.artifact match {
+          case None => project.flatMap(_.defaultArtifact)
+          case s => s
+        }
+      )
     } yield (project, releases)
 
     projectAndReleases.map {

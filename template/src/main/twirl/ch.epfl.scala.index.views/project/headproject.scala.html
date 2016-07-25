@@ -40,6 +40,9 @@
             @if(project.contributorsWanted){
               <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">
             }
+            @if(project.deprecated){
+              [DEPRECATED]
+            }
           </h1>
           @for(github <- project.github) {
             @for(description <- github.description) {

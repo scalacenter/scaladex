@@ -137,7 +137,7 @@ class PublishProcess(
 
     val updatedProject = newProject.copy(keywords = data.keywords, liveData = true)
     val projectSearch  = api.project(newProject.reference)
-    val releaseSearch  = api.releases(newProject.reference)
+    val releaseSearch  = api.releases(newProject.reference, None)
 
     for {
       projectResult <- projectSearch

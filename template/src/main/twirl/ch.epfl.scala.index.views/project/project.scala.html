@@ -19,6 +19,11 @@
         </div>
         <div class="col-md-4">
           <div class="sidebar-project">
+            @if(project.artifactDeprecations.contains(release.reference.artifact)) {
+            <div class="box">
+              <h1>[DEPRECATED]</h1>
+            </div>
+            }
             @project.github.map(gh => statistic(gh, project.releaseCount, release.reverseDependencies.size))
             @install(release)
             @documentation(release, project)
