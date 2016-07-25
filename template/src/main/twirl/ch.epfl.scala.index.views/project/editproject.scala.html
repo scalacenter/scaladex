@@ -107,13 +107,12 @@
 
                 <fieldset class="documentation-link">
                   <legend>Documentation links</legend>
-                  @for(url <- project.documentationLinks){
-                    <label>
-                      @url
-                      <input name="documentationLinks" value="@url" class="form-control">
-                    </label>
-                  }
                   <ul>
+                  @for(url <- project.documentationLinks){
+                    <li class="list-group">
+                      <input name="documentationLinks" value="@url" class="form-control form-control list-group-item">
+                    </li>
+                  }
                   @for((i) <- (1 to 5)) {
                     <li class="list-group">
                       <input
@@ -153,6 +152,7 @@
               </fieldset>
 
               <button type="submit" class="btn btn-primary">Update</button>
+              <a class="btn btn-default" href="/@project.organization/@project.repository">Cancel</a>
             </form>
           </div>
         </div>

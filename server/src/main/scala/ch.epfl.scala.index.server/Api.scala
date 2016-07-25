@@ -216,7 +216,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
 
           // documentation
           customScalaDoc = customScalaDoc,
-          documentationLinks = documentationLinks,
+          documentationLinks = documentationLinks.filterNot(_ == ""),
           
           // apperance
           logoImageUrl = logoImageUrl,

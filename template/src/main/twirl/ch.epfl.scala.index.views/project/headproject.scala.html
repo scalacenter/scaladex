@@ -1,12 +1,19 @@
 @import ch.epfl.scala.index.model._
 @import ch.epfl.scala.index.model.release._
 
+@import ch.epfl.scala.index.views.html.unescapeBackground
+
 @(project: Project, artifacts: List[String], versions: List[SemanticVersion], targets: List[ScalaTarget], release: Release, canEdit: Boolean)
 <div class="head-project">
   @for((background, foreground) <- project.background.zip(project.foregroundColor)) {
   <style>
-    .head-project, .head-project * {
-      background: @background !important;
+    .head-project {
+      background: @{Html(unescapeBackground(background))} !important;
+    }
+    @if(!background.contains("url")) {
+      .head-project * {
+        background: @background !important;
+      }
     }
     .head-project * {
       color: @foreground !important;

@@ -77,8 +77,7 @@ object Server {
 
     def editPage(owner: String, repo: String, userState: Option[UserState]) = {
       val user = userState.map(_.user)
-      // if(canEdit(owner, repo, userState)) 
-      // {
+      if(canEdit(owner, repo, userState)) {
         for {
           keywords <- api.keywords()
           project <- api.project(Project.Reference(owner, repo))
@@ -87,8 +86,8 @@ object Server {
             (OK, views.project.html.editproject(p, keywords.keys.toList.sorted, user))
           ).getOrElse((NotFound, views.html.notfound(user)))
         }
-      // }
-      // else Future.successful((Forbidden, views.html.forbidden(user)))
+      }
+      else Future.successful((Forbidden, views.html.forbidden(user)))
     }
 
     def projectPage(owner: String,
