@@ -96,7 +96,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
 
     query(
         bool(
-            mustQueries = mustQueriesRepos ++ List(termQuery("deprecated", false)),
+            mustQueries = mustQueriesRepos,
             shouldQueries = List(
                 termQuery("keywords", escaped),
                 termQuery("github.description", escaped),
@@ -105,7 +105,9 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
                 termQuery("github.readme", escaped),
                 stringQuery(escaped)
             ),
-            notQueries = List()
+            notQueries = List(
+              termQuery("deprecated", true)
+            )
         ),
         page,
         sorting,
