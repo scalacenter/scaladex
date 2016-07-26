@@ -1,11 +1,3 @@
-
-
-[gitter.im channel]: https://gitter.im/scalacenter/scaladex
-[scaladex-metadata]: https://github.com/scalacenter/scaladex-metadata
-[scaladex-data]: https://github.com/scalacenter/scaladex-data
-[Scaladex SBT Plugin]: /doc/plugin.md
-[GitHub]: https://github.com
-
 # Scaladex
 
 [![Travis](https://img.shields.io/travis/scalacenter/scaladex.svg?style=flat-square)](https://travis-ci.org/scalacenter/scaladex)
@@ -33,7 +25,4 @@ metadata directly to the Scaladex](/doc/user/publish-scaladex.md).
 
 ## How to contribute
 
-* adding keywords: submit a PR to [scaladex-metadata] or use the [Scaladex SBT Plugin]
-* claiming you project: submit a PR to [scaladex-data] or use the [Scaladex SBT Plugin]
-* improving the index: join the [gitter.im channel]
-* read the [developper guide](/doc/dev/README.md)
+Join the [gitter.im channel](https://gitter.im/scalacenter/scaladex) and read the [developper guide](/doc/dev/README.md)
