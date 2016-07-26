@@ -9,7 +9,7 @@ import akka.http.scaladsl.model._
 import HttpMethods.POST
 import headers._
 import Uri._
-import unmarshalling.Unmarshal
+import unmarshalling.{Unmarshal, Unmarshaller}
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
@@ -18,9 +18,14 @@ import scala.concurrent.Future
 
 import com.typesafe.config.ConfigFactory
 
-case class AccessTokenResponse(access_token: String)
-case class RepoResponse(full_name: String)
-case class UserResponse(login: String, name: Option[String], avatar_url: String)
+
+object Response {
+  case class Permissions(admin: Boolean, push: Boolean, pull: Boolean)
+  case class AccessToken(access_token: String)
+  case class Repo(full_name: String, permissions: Permissions)
+  case class User(login: String, name: Option[String], avatar_url: String)
+  case class Organization(login: String)
+}
 
 case class UserState(repos: Set[GithubRepo], user: UserInfo) {
   def isAdmin = repos.exists {
@@ -53,7 +58,7 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
                     )),
                 headers = List(Accept(MediaTypes.`application/json`))
             ))
-        .flatMap(response => Unmarshal(response).to[AccessTokenResponse].map(_.access_token))
+        .flatMap(response => Unmarshal(response).to[Response.AccessToken].map(_.access_token))
     }
     def fetchGithub(token: String, path: Path, query: Query = Query.Empty) = {
       Http().singleRequest(
@@ -63,41 +68,61 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
           ))
     }
 
-    def fetchRepos(token: String): Future[List[RepoResponse]] = {
+    def fetchUserRepos(token: String): Future[List[Response.Repo]] = {
+      paginated[Response.Repo](token, Path.Empty / "user" / "repos")
+    }
+
+    def fetchOrgs(token: String): Future[List[Response.Organization]] = {
+      paginated[Response.Organization](token, Path.Empty / "user" / "orgs")
+    }
+
+    def fetchOrgRepos(token: String, org: String): Future[List[Response.Repo]] = {
+      paginated[Response.Repo](token, Path.Empty / "orgs" / org / "repos")
+    }
+
+    def paginated[T](token: String, path: Path)(implicit ev: Unmarshaller[HttpResponse, List[T]]): Future[List[T]] = {
       def request(page: Option[Int] = None) = {
         val query = page
-          .map(p => Query("visibility"  -> "public", "page" -> p.toString()))
-          .getOrElse(Query("visibility" -> "public"))
-        fetchGithub(token, Path.Empty / "user" / "repos", query)
+          .map(p => Query("page" -> p.toString()))
+          .getOrElse(Query())
+
+        fetchGithub(token, path, query)
       }
       request(None).flatMap { r1 =>
         val lastPage = r1.headers.find(_.name == "Link").map(h => extractLastPage(h.value)).getOrElse(1)
-        Unmarshal(r1).to[List[RepoResponse]].map(repos => (repos, lastPage))
+        Unmarshal(r1).to[List[T]].map(vs => (vs, lastPage))
       }.flatMap {
-        case (repos, lastPage) =>
+        case (vs, lastPage) =>
           val nextPagesRequests = if (lastPage > 1) {
             Future
               .sequence(
-                  (2 to lastPage).map(page => request(Some(page)).flatMap(r2 => Unmarshal(r2).to[List[RepoResponse]])))
+                  (2 to lastPage).map(page => request(Some(page)).flatMap(r2 => Unmarshal(r2).to[List[T]])))
               .map(_.flatten)
           } else Future.successful(Nil)
 
-          nextPagesRequests.map(repos2 => repos ++ repos2)
+          nextPagesRequests.map(vs2 => vs ++ vs2)
       }
     }
 
     def fetchUser(token: String) =
-      fetchGithub(token, Path.Empty / "user").flatMap(response => Unmarshal(response).to[UserResponse])
+      fetchGithub(token, Path.Empty / "user").flatMap(response => Unmarshal(response).to[Response.User])
 
     for {
-      token         <- access
-      (repos, user) <- fetchRepos(token).zip(fetchUser(token))
+      token               <- access
+      ((repos, user), orgs) <- fetchUserRepos(token).zip(fetchUser(token)).zip(fetchOrgs(token))
+      orgRepos            <- Future.sequence(orgs.map(org => fetchOrgRepos(token, org.login)))
     } yield {
-      val githubRepos = repos.map { r =>
-        val List(user, repo) = r.full_name.split("/").toList
-        GithubRepo(user, repo)
-      }.toSet
-      val UserResponse(login, name, avatarUrl) = user
+
+      val allRepos = repos ::: orgRepos.flatten
+
+      val githubRepos = allRepos
+        .filter(repo => repo.permissions.push || repo.permissions.admin)
+        .map { r =>
+          val List(owner, repo) = r.full_name.split("/").toList
+          GithubRepo(owner.toLowerCase, repo.toLowerCase)
+        }.toSet
+
+      val Response.User(login, name, avatarUrl) = user
 
       UserState(githubRepos, UserInfo(login, name, avatarUrl))
     }
