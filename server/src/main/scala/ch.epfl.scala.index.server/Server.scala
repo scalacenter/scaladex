@@ -244,13 +244,7 @@ object Server {
         } ~
         get {
           path("publish") {
-            parameters(
-                'path,
-                'readme.as[Boolean] ? true,
-                'contributors.as[Boolean] ? true,
-                'info.as[Boolean] ? true,
-                'keywords.as[String].*
-            ) { (path, readme, contributors, info, keywords) =>
+            parameter('path) { path =>
               complete {
 
                 /* check if the release already exists - sbt will handle HTTP-Status codes

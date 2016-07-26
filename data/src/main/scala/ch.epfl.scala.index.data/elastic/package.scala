@@ -48,60 +48,49 @@ trait ProjectProtocol {
 package object elastic extends ProjectProtocol {
 
   /** @see https://github.com/sksamuel/elastic4s#client for configurations */
-  val maxResultWindow = 10000 // <=> max amount of projects (June 1st 2016 ~ 2500 projects)
-  private val base    = build.info.BuildInfo.baseDirectory.toPath
-  val esSettings = Settings
-    .settingsBuilder()
-    .put("path.home", base.resolve(".esdata").toString())
-    .put("max_result_window", maxResultWindow)
+  lazy val esClient = {
+    val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
+    val elasticsearch = config.getString("elasticsearch")
 
-  lazy val esClient = ElasticClient.local(esSettings.build)
+    println(s"elasticsearch $elasticsearch")
+    if(elasticsearch == "remote") {
+      ElasticClient.transport(ElasticsearchClientUri("localhost", 9300))
+    } else if(elasticsearch == "local") {
+      val base = build.info.BuildInfo.baseDirectory.toPath
+      val esSettings = Settings.settingsBuilder()
+        .put("path.home", base.resolve(".esdata").toString())
+      ElasticClient.local(esSettings.build)
+    } else {
+      sys.error(s"org.scala_lang.index.data.elasticsearch should be remote or local: $elasticsearch")
+    }
+  }
 
   val indexName          = "scaladex"
   val projectsCollection = "projects"
   val releasesCollection = "releases"
 
-  private def blockUntil(explain: String)(predicate: () => Boolean): Unit = {
-
-    var backoff = 0
-    var done    = false
-    while (backoff <= 128 && !done) {
-      if (backoff > 0) Thread.sleep(200L * backoff)
-      backoff = backoff + 1
-      done = predicate()
-    }
-    require(done, s"Failed waiting on: $explain")
-  }
-
   def blockUntilYellow(): Unit = {
+    def blockUntil(explain: String)(predicate: () => Boolean): Unit = {
+      var backoff = 0
+      var done    = false
+      while (backoff <= 128 && !done) {
+        if (backoff > 0) Thread.sleep(200L * backoff)
+        backoff = backoff + 1
+        done = predicate()
+      }
+      require(done, s"Failed waiting on: $explain")
+    }
 
     import ElasticDsl._
 
     blockUntil("Expected cluster to have yellow status") { () =>
-      esClient.execute {
-        get cluster health
-      }.await.getStatus == ClusterHealthStatus.YELLOW
-    }
-  }
+      val status =
+        esClient.execute {
+          get cluster health
+        }.await.getStatus 
 
-  def blockUntilCount(expected: Int): Unit = {
-    blockUntil(s"Expected count of $expected") { () =>
-      expected <= {
-        val res = esClient.execute {
-          search.in(indexName / releasesCollection).query(matchAllQuery).size(0)
-        }.await.totalHits
-        println(res)
-        res
-      }
-
-    }
-  }
-
-  def blockUntilGreen(): Unit = {
-    blockUntil("Expected cluster to have green status") { () =>
-      esClient.execute {
-        get cluster health
-      }.await.getStatus == ClusterHealthStatus.GREEN
+      status == ClusterHealthStatus.YELLOW ||
+      status == ClusterHealthStatus.GREEN
     }
   }
 }
