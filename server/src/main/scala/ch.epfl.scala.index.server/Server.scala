@@ -270,8 +270,6 @@ object Server {
                 redirect(Uri("https://github.com/login/oauth/authorize")
                   .withQuery(Query(
                     "client_id" -> github.clientId,
-                    // this is required to see all repo with write permissions
-                    "scope" -> "public_repo",
                     "state" -> referer.value
                   )),
                   TemporaryRedirect
