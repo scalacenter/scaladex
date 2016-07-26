@@ -16,6 +16,8 @@ Add the following to your sbt project/plugins.sbt file:
 addSbtPlugin("ch.epfl.scala.index" % "sbt-scaladex" % "0.1.3")
 ```
 
+Add the following to your build.sbt file:
+
 ```scala
 scaladexKeywords in Scaladex := Seq("Foo", "Bar", "Baz")
 credentials in Scaladex := Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials")
@@ -29,6 +31,8 @@ password=<github password>
 // or 
 credentials in Scaladex += Credentials("Scaladex Realm", "localhost", "<github username>", "<github password>")
 ```
+
+To publish run the following command:
 
 ```bash
 sbt scaladex:publish

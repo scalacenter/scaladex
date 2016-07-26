@@ -319,9 +319,9 @@ object Server {
             pathPrefix("api") {
               path("search") {
                 get {
-                  parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
+                  parameter('q) { query =>
                     complete {
-                      api.find(query, page, sorting, total = 5).map {
+                      api.find(query, page = 1, sorting = None, total = 5).map {
                         case (pagination, projects) =>
                           val summarisedProjects = projects.map(p =>
                                 Autocompletion(
@@ -349,7 +349,8 @@ object Server {
                                                     sorting,
                                                     pagination,
                                                     projects,
-                                                    getUser(userId).map(_.user))
+                                                    getUser(userId).map(_.user),
+                                                    !you.isEmpty)
                         }
                   )
                 }
@@ -375,7 +376,8 @@ object Server {
                                                     sorting,
                                                     pagination,
                                                     projects,
-                                                    getUser(userId).map(_.user))
+                                                    getUser(userId).map(_.user),
+                                                    you = false)
                         }
                     )
                   }
