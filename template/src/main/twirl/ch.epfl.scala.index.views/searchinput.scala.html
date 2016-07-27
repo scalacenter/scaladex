@@ -1,4 +1,4 @@
-@(searchQuery: String = "")
+@(searchQuery: String = "", you: Boolean = false)
 
 <div class="has-feedback">
     <form action="/search" action="GET">
@@ -8,6 +8,9 @@
           }
           name="q" id="search" type="text" class="form-control" 
           placeholder="Search">
+        @if(you){
+          <input type="hidden" name="you" value="">
+        }
     </form>
     <span class="form-control-feedback"><i class="fa fa-search"></i></span>
     <div class="autocomplete">

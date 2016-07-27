@@ -244,13 +244,7 @@ object Server {
         } ~
         get {
           path("publish") {
-            parameters(
-                'path,
-                'readme.as[Boolean] ? true,
-                'contributors.as[Boolean] ? true,
-                'info.as[Boolean] ? true,
-                'keywords.as[String].*
-            ) { (path, readme, contributors, info, keywords) =>
+            parameter('path) { path =>
               complete {
 
                 /* check if the release already exists - sbt will handle HTTP-Status codes
@@ -325,9 +319,9 @@ object Server {
             pathPrefix("api") {
               path("search") {
                 get {
-                  parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
+                  parameter('q) { query =>
                     complete {
-                      api.find(query, page, sorting, total = 5).map {
+                      api.find(query, page = 1, sorting = None, total = 5).map {
                         case (pagination, projects) =>
                           val summarisedProjects = projects.map(p =>
                                 Autocompletion(
@@ -355,7 +349,8 @@ object Server {
                                                     sorting,
                                                     pagination,
                                                     projects,
-                                                    getUser(userId).map(_.user))
+                                                    getUser(userId).map(_.user),
+                                                    !you.isEmpty)
                         }
                   )
                 }
@@ -381,7 +376,8 @@ object Server {
                                                     sorting,
                                                     pagination,
                                                     projects,
-                                                    getUser(userId).map(_.user))
+                                                    getUser(userId).map(_.user),
+                                                    you = false)
                         }
                     )
                   }

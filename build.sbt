@@ -71,7 +71,6 @@ lazy val server = project
   .settings(commonSettings)
   .settings(packageScalaJS(client))
   .settings(
-    resolvers += Resolver.bintrayRepo("btomala", "maven"),
     libraryDependencies ++= Seq(
       "com.typesafe.akka"                  %% "akka-http-experimental" % akkaVersion,
       "com.softwaremill.akka-http-session" %% "core"                   % "0.2.6",
@@ -86,11 +85,7 @@ lazy val server = project
     ),
     reStart <<= reStart.dependsOn(WebKeys.assets in Assets),
     unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
-    javaOptions in Universal += "-Dproduction=true",
-    javaOptions in reStart ++= Seq(
-      "-Dproduction=false",
-      "-Xmx3g"
-    )
+    javaOptions in reStart += "-Xmx3g"
   )
   .dependsOn(template, data, sharedJvm)
   .enablePlugins(SbtSass, JavaServerAppPackaging)

@@ -52,7 +52,10 @@ main {
                 top: 64px;
                 ul {
                     li {
+                        padding: 0;
                         a {
+                            display: block;
+                            padding: 15px;
                             p {
                                 font-size: ($font-size-base * 1.3);
                             }
