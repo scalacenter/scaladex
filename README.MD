@@ -11,7 +11,7 @@ We run this process every day:
 * Discovery:
   * We discover Scala release published on Maven Central as well as on Bintray. A common practice is to include the scala compiler version in the artifactId. We search for `.pom files` containing `_2.10`, `_2.11` and `_2.12`.
   * If you dont follow this convention add your releases to [non-standard.json](https://github.com/scalacenter/scaladex-data/blob/master/non-standard.json)
-  * Read [`How to Publish`](/doc/how-to-publish.md) for more details.
+  * Read [`How to Publish`](/doc/user/how-to-publish.md) for more details.
 
 * Download:
   * We download pom and parent poms
