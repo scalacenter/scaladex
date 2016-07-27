@@ -23,6 +23,8 @@ import com.softwaremill.session.CsrfOptions._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 
+import com.typesafe.config.ConfigFactory
+
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
@@ -40,11 +42,13 @@ object Server {
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
+    val config = ConfigFactory.load().getConfig("org.scala_lang.index.server")
+    val sessionSecret = config.getString("sesssion-secret")
+
     val github = new Github
     val users  = ParTrieMap[UUID, UserState]()
 
-    val sessionConfig = SessionConfig.default(
-        "c05ll3lesrinf39t7mc5h6un6r0c69lgfno69dsak3vabeqamouq4328cuaekros401ajdpkh60rrtpd8ro24rbuqmgtnd1ebag6ljnb65i8a55d482ok7o0nch0bfbe")
+    val sessionConfig = SessionConfig.default(sessionSecret)
     implicit def serializer: SessionSerializer[UUID, String] =
       new SingleValueSessionSerializer(
           _.toString(),
