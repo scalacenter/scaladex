@@ -268,6 +268,7 @@ object Server {
                 redirect(Uri("https://github.com/login/oauth/authorize")
                   .withQuery(Query(
                     "client_id" -> github.clientId,
+                    "scope" -> "read:org",
                     "state" -> referer.value
                   )),
                   TemporaryRedirect
