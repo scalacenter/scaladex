@@ -71,7 +71,10 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
            sorting: Option[String] = None,
            userRepos: Set[GithubRepo] = Set(),
            total: Int = resultsPerPage) = {
-    val escaped = queryString.replaceAllLiterally("/", "\\/")
+    val escaped = 
+      if(queryString.isEmpty) "*"
+      else queryString.replaceAllLiterally("/", "\\/")
+
     val reposQueries = if (!userRepos.isEmpty) {
       userRepos.toList.map {
         case GithubRepo(organization, repository) =>
