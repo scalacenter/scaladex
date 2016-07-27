@@ -25,8 +25,7 @@ If you have an elasticsearch service installed use:
 
 ```
 $ sbt
-> set javaOptions in reStart := Seq("-DELASTICSEARCH=remote", "-Xmx2g")
-> ~server/reStart
+> set javaOptions in reStart := Seq("-DELASTICSEARCH=remote", "-Xmx3g")
 ```
 
 ## Data Pipeline
@@ -66,6 +65,7 @@ This step will download poms from Bintray
 $ sbt
 > project data
 > reStart download
+# wait for task to complete
 > reStart parent
 ```
 
