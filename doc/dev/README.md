@@ -96,29 +96,34 @@ $ sbt
 
 ## How to deploy Scaladex
 
-* request access to alaska.epfl.ch and github.com/scalacenter/scaladex-credentials
+* request ssh access to alaska.epfl.ch and github.com/scalacenter/scaladex-credentials
 
 ```bash
-sbt server/universal:packageBin
-scp server/target/universal/server-0.1.3.zip scaladex@alaska.epfl.ch:app.zip
-ssh scaladex@alaska.epfl.ch
+$ sbt server/universal:packageBin
+$ scp server/target/universal/server-0.1.3.zip scaladex@alaska.epfl.ch:app.zip
+$ ssh scaladex@alaska.epfl.ch
 
 # first time
-# git clone git@github.com:scalacenter/scaladex.git
-# git clone git@github.com:scalacenter/scaladex-credentials.git
-# cd ~/scaladex
-# git submodule init
-# git submodule update
+$ git clone git@github.com:scalacenter/scaladex.git
+$ git clone git@github.com:scalacenter/scaladex-credentials.git
+$ cd ~/scaladex
+$ git submodule init
+$ git submodule update
 
 # Kill server
-jps
+$ jps
 # kill -9 (Server pid)
-rm -rf ~/.esdata/data/
-rm -rf server-*/
-cd ~/scaladex
-sbt data/reStart elastic
+$ rm -rf ~/.esdata/data/
+$ rm -rf server-*/
+$ cd ~/scaladex-credentials
+$ git pull
+$ cd ~/scaladex
+$ git pull
+$ sbt
+> set javaOptions in reStart := Seq("-DELASTICSEARCH=remote", "-Xmx3g")
+> data/reStart elastic
 
-unzip app.zip
+$ unzip app.zip
 
-nohup ~/webapp/bin/server -Dconfig.file=scaladex-credentials/application.conf &
+$ nohup ~/webapp/bin/server -Dconfig.file=scaladex-credentials/application.conf &
 ```
