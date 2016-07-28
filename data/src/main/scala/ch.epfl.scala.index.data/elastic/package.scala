@@ -58,6 +58,9 @@ package object elastic extends ProjectProtocol {
     if(elasticsearch == "remote") {
       ElasticClient.transport(ElasticsearchClientUri("localhost", 9300))
     } else if(elasticsearch == "local") {
+      // val home = System.getProperty("user.home")
+      // val esSettings = Settings.settingsBuilder()
+      //   .put("path.home", home + "/.esdata") //base.resolve(".esdata").toString())
       val base = build.info.BuildInfo.baseDirectory.toPath
       val esSettings = Settings.settingsBuilder()
         .put("path.home", base.resolve(".esdata").toString())
