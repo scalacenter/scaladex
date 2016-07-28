@@ -169,7 +169,7 @@ class PublishProcess(
           id      <- release.id
         } yield {
 
-          esClient.execute(update(id).in(indexName / releasesCollection) doc newReleases.head)
+          esClient.execute(update(id).in(indexName / releasesCollection) doc newReleases.head.copy(liveData = true))
         }
       }
     }

@@ -30,6 +30,7 @@ case class Release(
     licenses: Set[License] = Set(),
     nonStandardLib: Boolean = false,
     id: Option[String] = None,
+    liveData: Boolean = true,
     /* split dependencies in 2 fields because elastic can't handle 2 different types
      * in one field. That is a simple workaround for that
      */

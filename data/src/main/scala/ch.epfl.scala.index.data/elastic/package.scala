@@ -1,18 +1,22 @@
 package ch.epfl.scala.index
 package data
 
-import com.sksamuel.elastic4s.ElasticDsl.{get, _}
 import model._
 import release._
-import org.elasticsearch.common.settings.Settings
+
 import com.sksamuel.elastic4s._
+import com.sksamuel.elastic4s.ElasticDsl.{get, _}
+import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.cluster.health.ClusterHealthStatus
 import source.Indexable
+
 import org.json4s._
 import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{read, write}
 
 import com.typesafe.config.ConfigFactory
+
+import java.nio.file.Paths
 
 trait ProjectProtocol {
 
@@ -49,6 +53,8 @@ trait ProjectProtocol {
 
 package object elastic extends ProjectProtocol {
 
+  val liveIndexBase = build.info.BuildInfo.baseDirectory.toPath.resolve(Paths.get("index", "live"))
+
   /** @see https://github.com/sksamuel/elastic4s#client for configurations */
   lazy val esClient = {
     val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
@@ -62,6 +68,7 @@ package object elastic extends ProjectProtocol {
       // val esSettings = Settings.settingsBuilder()
       //   .put("path.home", home + "/.esdata") //base.resolve(".esdata").toString())
       val base = build.info.BuildInfo.baseDirectory.toPath
+      println(base.resolve(".esdata").toString())
       val esSettings = Settings.settingsBuilder()
         .put("path.home", base.resolve(".esdata").toString())
       ElasticClient.local(esSettings.build)

@@ -67,8 +67,11 @@ object Main extends BintrayProtocol {
 
     def elastic(): Unit = {
 
-      val seedElasticSearchStep = new SeedElasticSearch
-      seedElasticSearchStep.run()
+      val liveStep = new SaveLiveData
+      liveStep.run()
+
+      // val seedElasticSearchStep = new SeedElasticSearch
+      // seedElasticSearchStep.run()
     }
 
     val steps = List(

@@ -14,19 +14,6 @@ import org.elasticsearch.search.sort.SortOrder
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.reflectiveCalls
 
-case class ProjectForm(
-  // project
-  contributorsWanted: Boolean = false,
-  keywords: Set[String] = Set(),
-  defaultArtifact: Option[String] = None,
-  deprecated: Boolean = false,
-  artifactDeprecations: Set[String] = Set(),
-
-  // documentation
-  customScalaDoc: Option[String] = None,
-  documentationLinks: List[String] = List()
-)
-
 class Api(github: Github)(implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(id = None)
 
@@ -199,24 +186,8 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
   }
 
   def updateProject(projectRef: Project.Reference, form: ProjectForm): Future[Boolean] = {
-    import form._
-
     for {
-      updatedProject <- project(projectRef).map(project =>
-        project.map(_.copy(
-          contributorsWanted = contributorsWanted,
-          keywords = form.keywords,
-          defaultArtifact = defaultArtifact,
-          deprecated = deprecated,
-          artifactDeprecations = artifactDeprecations,
-
-          // documentation
-          customScalaDoc = customScalaDoc,
-          documentationLinks = documentationLinks.filterNot(_ == ""),
-
-          liveData = true
-        ))
-      )
+      updatedProject <- project(projectRef).map(_.map(form.update))
       ret <- updatedProject.flatMap( project =>
         project.id.map(id =>
           esClient.execute(update(id) in (indexName / projectsCollection) doc project).map(_ => true)

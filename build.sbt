@@ -85,6 +85,7 @@ lazy val server = project
     ),
     reStart <<= reStart.dependsOn(WebKeys.assets in Assets),
     unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
+    unmanagedResourceDirectories in (Compile, packageBin) <<= unmanagedResourceDirectories in Compile,
     javaOptions in reStart += "-Xmx3g"
   )
   .dependsOn(template, data, sharedJvm)
@@ -95,7 +96,6 @@ lazy val model = project
   .settings(
     libraryDependencies += "com.lihaoyi" %% "fastparse" % "0.3.7"
   )
-  
 
 lazy val data = project
   .settings(commonSettings)
