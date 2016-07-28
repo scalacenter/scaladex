@@ -182,7 +182,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     projectAndReleases.map {
       case (p, releases) =>
         p.flatMap(project => 
-            DefaultRelease(project.repository, selection, releases, project.defaultArtifact)
+            DefaultRelease(project.repository, selection, releases.toSet, project.defaultArtifact)
               .map(sel => (project, sel.copy(artifacts = project.artifacts))))
     }
   }

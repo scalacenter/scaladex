@@ -45,7 +45,7 @@ object ProjectConvert extends BintrayProtocol {
     }
   }
 
-  def apply(pomsAndMeta: List[(MavenModel, List[BintraySearch])]): List[(Project, Set[Release])] = {
+  def apply(pomsAndMeta: List[(MavenModel, List[BintraySearch])], stored: Boolean = true): List[(Project, Set[Release])] = {
     val githubRepoExtractor = new GithubRepoExtractor
 
     println("Collecting Metadata")
@@ -90,6 +90,10 @@ object ProjectConvert extends BintrayProtocol {
       case (githubRepo @ GithubRepo(organization, repository), vs) =>
         val projectReference = Project.Reference(organization, repository)
 
+        val storedReleasesForProject =
+          if(stored) storedReleases.get(projectReference).getOrElse(Set())
+          else Set()
+
         val releases = vs.map {
           case (_, artifactName, targets, pom, metas, version, nonStandardLib) =>
             val mavenCentral = metas.forall(meta => meta.owner == "bintray" && meta.repo == "jcenter")
@@ -115,7 +119,8 @@ object ProjectConvert extends BintrayProtocol {
                 licenses = licenseCleanup(pom),
                 nonStandardLib = nonStandardLib
             )
-        }.toSet ++ storedReleases.get(projectReference).getOrElse(Set())
+        }.toSet ++ storedReleasesForProject
+
 
         val releaseCount = releases.map(_.reference.version).toSet.size
 
@@ -135,15 +140,14 @@ object ProjectConvert extends BintrayProtocol {
                 updated = max
             )
 
-        val updatedProject = storedProjects.get(project.reference)
-          .map(form => form.update(project))
-          .getOrElse(project)
+        val updatedProject = 
+          if(stored) {
+            storedProjects.get(project.reference)
+              .map(form => form.update(project))
+              .getOrElse(project)
+          } else project
 
-        (
-            updatedProject,
-            releases
-        )
-
+        (updatedProject, releases)
     }.toList
 
     println("Dependencies & Reverse Dependencies")

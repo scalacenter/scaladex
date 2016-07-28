@@ -22,10 +22,6 @@ import scala.util.Success
 
 // this allows us to save project as json object sorted by keys
 case class LiveProjects(projects: Map[Project.Reference, ProjectForm])
-object LiveProjects {
-  implicit val formats       = DefaultFormats ++ Seq(LiveProjectsSerializer)
-  implicit val serialization = native.Serialization
-}
 object LiveProjectsSerializer extends CustomSerializer[LiveProjects](format => (
   {
     case JObject(obj) => {
@@ -52,7 +48,14 @@ object LiveProjectsSerializer extends CustomSerializer[LiveProjects](format => (
   }
 ))
 
-object SaveLiveData {
+trait LiveProjectsProtocol {
+  implicit val formats       = DefaultFormats ++ Seq(LiveProjectsSerializer)
+  implicit val serialization = native.Serialization
+}
+
+object SaveLiveData extends LiveProjectsProtocol {
+  
+
   val releasesFile = liveIndexBase.resolve(Paths.get("releases.json"))
   val storedReleases = read[Set[Release]](Files.readAllLines(releasesFile).toArray.mkString(""))
 
@@ -60,56 +63,56 @@ object SaveLiveData {
   val storedProjects = read[LiveProjects](Files.readAllLines(projectsFile).toArray.mkString("")).projects
 }
 
-class SaveLiveData(implicit val ec: ExecutionContext) {
+class SaveLiveData(implicit val ec: ExecutionContext) extends LiveProjectsProtocol {
   import SaveLiveData._
 
   def run(): Unit = {
     val exists = Await.result(esClient.execute { indexExists(indexName) }, Duration.Inf).isExists()
 
-    val newData = ProjectConvert(
-      PomsReader.load().collect { case Success(pomAndMeta) => pomAndMeta }
-    )
-    val (projects, projectReleases) = newData.unzip
-    val releases                    = projectReleases.flatten
+    if(exists) {
+      val newData = ProjectConvert(
+        PomsReader.load().collect { case Success(pomAndMeta) => pomAndMeta },
+        stored = false
+      )
+      val (projects, projectReleases) = newData.unzip
+      val releases                    = projectReleases.flatten
 
-    val limit = 5000
-    val liveReleases = 
-      Await.result(esClient.execute {
-        search
-          .in(indexName / releasesCollection)
-          .query(termQuery("liveData", true))
-          .size(limit)
-      }.map(_.as[Release].toSet), Duration.Inf)
+      val limit = 5000
+      val liveReleases = 
+        Await.result(esClient.execute {
+          search
+            .in(indexName / releasesCollection)
+            .query(termQuery("liveData", true))
+            .size(limit)
+        }.map(_.as[Release].toSet), Duration.Inf)
 
-    assert(liveReleases.size < limit, "too many new releases")
+      assert(liveReleases.size < limit, "too many new releases")
 
-    val mavens = releases.map(_.maven).toSet
-    val keepReleases = 
-      (storedReleases ++ liveReleases)
-        .filter(release => !mavens.contains(release.maven))
-        .toList
-        .sortBy(r => (r.maven.groupId, r.maven.artifactId, r.maven.version))
-        .map(_.copy(liveData = false))
+      val mavens = releases.map(_.maven).toSet
+      val keepReleases = 
+        (storedReleases ++ liveReleases)
+          .filter(release => !mavens.contains(release.maven))
+          .toList
+          .sortBy(r => (r.maven.groupId, r.maven.artifactId, r.maven.version))
+          .map(_.copy(liveData = false))
 
-    Files.write(releasesFile, writePretty(keepReleases).getBytes(StandardCharsets.UTF_8))
+      Files.write(releasesFile, writePretty(keepReleases).getBytes(StandardCharsets.UTF_8))
 
-    val liveProjects =
-      Await.result(esClient.execute {
-        search
-          .in(indexName / projectsCollection)
-          .query(termQuery("liveData", true))
-          .size(limit)
-      }.map(_.as[Project].toList), Duration.Inf)
+      val liveProjects =
+        Await.result(esClient.execute {
+          search
+            .in(indexName / projectsCollection)
+            .query(termQuery("liveData", true))
+            .size(limit)
+        }.map(_.as[Project].toList), Duration.Inf)
 
-    val liveProjectsForms = liveProjects.map(project => (project.reference, ProjectForm(project))).toMap
+      val liveProjectsForms = liveProjects.map(project => (project.reference, ProjectForm(project))).toMap
 
-    val keepProjects = LiveProjects(storedProjects ++ liveProjectsForms)
-      
-    Files.write(
-      liveIndexBase.resolve(Paths.get("projects.json")),
-      writePretty(keepProjects).getBytes(StandardCharsets.UTF_8)
-    )
+      val keepProjects = LiveProjects(storedProjects ++ liveProjectsForms)
+        
+      Files.write(projectsFile, writePretty(keepProjects).getBytes(StandardCharsets.UTF_8))
 
-    ()
+      ()
+    }
   }
 }

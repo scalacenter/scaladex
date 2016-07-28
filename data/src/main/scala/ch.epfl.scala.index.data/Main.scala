@@ -65,13 +65,16 @@ object Main extends BintrayProtocol {
       println("github done")
     }
 
-    def elastic(): Unit = {
+    def live(): Unit = {
 
       val liveStep = new SaveLiveData
       liveStep.run()
+    }
 
-      // val seedElasticSearchStep = new SeedElasticSearch
-      // seedElasticSearchStep.run()
+    def elastic(): Unit = {
+
+      val seedElasticSearchStep = new SeedElasticSearch
+      seedElasticSearchStep.run()
     }
 
     val steps = List(
@@ -79,6 +82,7 @@ object Main extends BintrayProtocol {
         "download" -> download _,
         "parent"   -> parent _,
         "github"   -> github _,
+        "live"     -> live _,
         "elastic"  -> elastic _
     )
 
