@@ -43,7 +43,10 @@ object ProjectConvert extends BintrayProtocol {
     }
   }
 
-  def apply(pomsAndMeta: List[(MavenModel, List[BintraySearch])]): List[(Project, List[Release])] = {
+  def apply(pomsAndMeta: List[(MavenModel, List[BintraySearch])], 
+            liveProjects: List[ProjectForm],
+            liveReleases: List[Release]): List[(Project, List[Release])] = {
+
     val githubRepoExtractor = new GithubRepoExtractor
 
     println("Collecting Metadata")
@@ -122,7 +125,6 @@ object ProjectConvert extends BintrayProtocol {
                 organization = organization,
                 repository = repository,
                 github = GithubReader(githubRepo),
-                keywords = Keywords(githubRepo),
                 artifacts = releaseOptions.map(_.artifacts.sorted).getOrElse(Nil),
                 releaseCount = releaseCount,
                 defaultArtifact = releaseOptions.map(_.release.reference.artifact),

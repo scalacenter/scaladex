@@ -3,6 +3,8 @@ package server
 
 import model._
 import model.misc._
+import data.project.ProjectForm
+
 import release._
 import data.github.GithubCredentials
 import data.elastic._

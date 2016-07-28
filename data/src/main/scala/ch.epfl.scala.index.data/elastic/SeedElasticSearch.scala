@@ -62,7 +62,8 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
 
     println("loading update data")
     val newData = ProjectConvert(
-        PomsReader.load().collect { case Success(pomAndMeta) => pomAndMeta }
+        PomsReader.load().collect { case Success(pomAndMeta) => pomAndMeta },
+        List(), List()
     )
 
     val (projects, projectReleases) = newData.unzip

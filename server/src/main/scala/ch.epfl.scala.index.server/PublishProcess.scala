@@ -133,7 +133,7 @@ class PublishProcess(
                                 pom.groupId,
                                 pom.artifactId,
                                 new DateTime())
-    val (newProject, newReleases) = ProjectConvert(List((pom, List(bintray)))).head
+    val (newProject, newReleases) = ProjectConvert(List((pom, List(bintray))), List(), List()).head
 
     val updatedProject = newProject.copy(keywords = data.keywords, liveData = true)
     val projectSearch  = api.project(newProject.reference)
