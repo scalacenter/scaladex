@@ -22,6 +22,10 @@ import scala.util.Success
 
 // this allows us to save project as json object sorted by keys
 case class LiveProjects(projects: Map[Project.Reference, ProjectForm])
+object LiveProjects {
+  implicit val formats       = DefaultFormats ++ Seq(LiveProjectsSerializer)
+  implicit val serialization = native.Serialization
+}
 object LiveProjectsSerializer extends CustomSerializer[LiveProjects](format => (
   {
     case JObject(obj) => {
@@ -48,19 +52,22 @@ object LiveProjectsSerializer extends CustomSerializer[LiveProjects](format => (
   }
 ))
 
-class SaveLiveData(implicit val ec: ExecutionContext) {
+object SaveLiveData {
+  val releasesFile = liveIndexBase.resolve(Paths.get("releases.json"))
+  val storedReleases = read[Set[Release]](Files.readAllLines(releasesFile).toArray.mkString(""))
 
-  
-  implicit val formats       = DefaultFormats ++ Seq(LiveProjectsSerializer)
-  implicit val serialization = native.Serialization
+  val projectsFile = liveIndexBase.resolve(Paths.get("projects.json"))
+  val storedProjects = read[LiveProjects](Files.readAllLines(projectsFile).toArray.mkString("")).projects
+}
+
+class SaveLiveData(implicit val ec: ExecutionContext) {
+  import SaveLiveData._
 
   def run(): Unit = {
-
     val exists = Await.result(esClient.execute { indexExists(indexName) }, Duration.Inf).isExists()
 
     val newData = ProjectConvert(
-      PomsReader.load().collect { case Success(pomAndMeta) => pomAndMeta },
-      List(), List()
+      PomsReader.load().collect { case Success(pomAndMeta) => pomAndMeta }
     )
     val (projects, projectReleases) = newData.unzip
     val releases                    = projectReleases.flatten
@@ -76,16 +83,13 @@ class SaveLiveData(implicit val ec: ExecutionContext) {
 
     assert(liveReleases.size < limit, "too many new releases")
 
-    val releasesFile = liveIndexBase.resolve(Paths.get("releases.json"))
-
-    val storedReleases = read[Set[Release]](Files.readAllLines(releasesFile).toArray.mkString(""))
-
     val mavens = releases.map(_.maven).toSet
     val keepReleases = 
       (storedReleases ++ liveReleases)
         .filter(release => !mavens.contains(release.maven))
         .toList
         .sortBy(r => (r.maven.groupId, r.maven.artifactId, r.maven.version))
+        .map(_.copy(liveData = false))
 
     Files.write(releasesFile, writePretty(keepReleases).getBytes(StandardCharsets.UTF_8))
 
@@ -96,10 +100,6 @@ class SaveLiveData(implicit val ec: ExecutionContext) {
           .query(termQuery("liveData", true))
           .size(limit)
       }.map(_.as[Project].toList), Duration.Inf)
-
-    val projectsFile = liveIndexBase.resolve(Paths.get("projects.json"))
-
-    val storedProjects = read[LiveProjects](Files.readAllLines(projectsFile).toArray.mkString("")).projects
 
     val liveProjectsForms = liveProjects.map(project => (project.reference, ProjectForm(project))).toMap
 

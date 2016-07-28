@@ -5,10 +5,12 @@ package project
 import cleanup._
 import model._
 import model.misc._
-import bintray._
+import model.release._
+
 import maven.MavenModel
+import bintray._
 import github._
-import release._
+import elastic.SaveLiveData
 
 import org.joda.time.DateTime
 
@@ -43,10 +45,7 @@ object ProjectConvert extends BintrayProtocol {
     }
   }
 
-  def apply(pomsAndMeta: List[(MavenModel, List[BintraySearch])], 
-            liveProjects: List[ProjectForm],
-            liveReleases: List[Release]): List[(Project, List[Release])] = {
-
+  def apply(pomsAndMeta: List[(MavenModel, List[BintraySearch])]): List[(Project, Set[Release])] = {
     val githubRepoExtractor = new GithubRepoExtractor
 
     println("Collecting Metadata")
@@ -70,13 +69,13 @@ object ProjectConvert extends BintrayProtocol {
     import org.joda.time.format.ISODateTimeFormat
     val format = ISODateTimeFormat.dateTime.withOffsetParsed
 
-    def maxMinRelease(releases: List[Release]): (Option[String], Option[String]) = {
+    def maxMinRelease(releases: Set[Release]): (Option[String], Option[String]) = {
       def sortDate(rawDates: List[String]): List[String] = {
         rawDates.map(format.parseDateTime).sorted(Descending[DateTime]).map(format.print)
       }
 
       val dates = for {
-        release <- releases
+        release <- releases.toList
         date    <- release.released.toList
       } yield date
 
@@ -84,9 +83,13 @@ object ProjectConvert extends BintrayProtocol {
       (sorted.headOption, sorted.lastOption)
     }
 
+    val storedReleases = SaveLiveData.storedReleases.groupBy(_.reference.projectReference)
+    val storedProjects = SaveLiveData.storedProjects
+
     val projectsAndReleases = pomsAndMetaClean.groupBy { case (githubRepo, _, _, _, _, _, _) => githubRepo }.map {
       case (githubRepo @ GithubRepo(organization, repository), vs) =>
         val projectReference = Project.Reference(organization, repository)
+
         val releases = vs.map {
           case (_, artifactName, targets, pom, metas, version, nonStandardLib) =>
             val mavenCentral = metas.forall(meta => meta.owner == "bintray" && meta.repo == "jcenter")
@@ -112,7 +115,7 @@ object ProjectConvert extends BintrayProtocol {
                 licenses = licenseCleanup(pom),
                 nonStandardLib = nonStandardLib
             )
-        }
+        }.toSet ++ storedReleases.get(projectReference).getOrElse(Set())
 
         val releaseCount = releases.map(_.reference.version).toSet.size
 
@@ -120,8 +123,8 @@ object ProjectConvert extends BintrayProtocol {
 
         val releaseOptions = DefaultRelease(repository, ReleaseSelection(None, None, None), releases, None)
 
-        (
-            Project(
+        val project =
+          Project(
                 organization = organization,
                 repository = repository,
                 github = GithubReader(githubRepo),
@@ -130,7 +133,14 @@ object ProjectConvert extends BintrayProtocol {
                 defaultArtifact = releaseOptions.map(_.release.reference.artifact),
                 created = min,
                 updated = max
-            ),
+            )
+
+        val updatedProject = storedProjects.get(project.reference)
+          .map(form => form.update(project))
+          .getOrElse(project)
+
+        (
+            updatedProject,
             releases
         )
 
@@ -198,18 +208,18 @@ object ProjectConvert extends BintrayProtocol {
       reverseDependenciesCache.getOrElse(release.reference, Seq())
     }
 
-    def collectDependencies(releases: List[Release], f: Release.Reference => String): List[String] = {
+    def collectDependencies(releases: Set[Release], f: Release.Reference => String): Set[String] = {
       for {
         release    <- releases
         dependency <- release.scalaDependencies
       } yield f(dependency.reference)
     }
 
-    def dependencies(releases: List[Release]): List[String] =
-      collectDependencies(releases, _.name).distinct
+    def dependencies(releases: Set[Release]): Set[String] =
+      collectDependencies(releases, _.name)
 
-    def targets(releases: List[Release]): List[String] =
-      collectDependencies(releases, _.target.supportName).distinct
+    def targets(releases: Set[Release]): Set[String] =
+      collectDependencies(releases, _.target.supportName)
 
     projectsAndReleases.map {
       case (project, releases) =>
