@@ -70,7 +70,7 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
       } else {
         Future.failed(new Exception(response.statusText))
       }
-    }.map(v => { client.close; v })
+    }.map(v => { client.close(); v })
   }
 
   /**
