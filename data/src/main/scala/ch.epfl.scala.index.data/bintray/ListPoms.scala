@@ -123,7 +123,7 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
 
     val queried = BintrayMeta.readQueriedPoms(bintrayCheckpoint)
 
-    val mostRecentQueriedDate = queried.find(_.name.contains(scalaVersion)).map(_.created)
+    val mostRecentQueriedDate = queried.find(_.name.contains(scalaVersion)).map(_.created - 1.month)
 
     performSearchAndDownload(s"List POMs for scala $scalaVersion", queried, s"*_$scalaVersion", mostRecentQueriedDate)
   }
@@ -142,7 +142,7 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
     def filter(bintray: BintraySearch): Boolean =
       bintray.`package` == s"$groupId:$artifact"
 
-    val mostRecentQueriedDate = queried.find(filter).map(_.created)
+    val mostRecentQueriedDate = queried.find(filter).map(_.created - 1.month)
 
     performSearchAndDownload(s"List Poms for $groupId:$artifact",
                              queried,
