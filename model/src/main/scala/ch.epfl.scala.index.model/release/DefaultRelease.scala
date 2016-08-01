@@ -35,7 +35,7 @@ case class ReleaseOptions(
 object DefaultRelease {
   def apply(projectRepository: String, 
             selection: ReleaseSelection, 
-            releases: List[Release],
+            releases: Set[Release],
             defaultArtifact: Option[String]): Option[ReleaseOptions] = {
 
     val selectedReleases = releases.filter(
@@ -47,7 +47,7 @@ object DefaultRelease {
     // descending ordering for versions
     implicit def ordering = implicitly[Ordering[SemanticVersion]].reverse
 
-    val releasesSorted = selectedReleases.sortBy { release =>
+    val releasesSorted = selectedReleases.toList.sortBy { release =>
       import release.reference._
       (
           // artifact
@@ -72,15 +72,15 @@ object DefaultRelease {
     }
 
     releasesSorted.headOption.map { release =>
-      val artifacts           = releases.map(_.reference.artifact).distinct.sorted
+      val artifacts           = releases.map(_.reference.artifact).toList.sorted
       val releasesForArtifact = releases.filter(_.reference.artifact == release.reference.artifact)
 
-      val versions                   = releasesForArtifact.map(_.reference.version).distinct.sorted
+      val versions                   = releasesForArtifact.map(_.reference.version).toList.sorted
       val releasesForArtifactVersion = releasesForArtifact.filter(_.reference.version == release.reference.version)
 
       val targets = releasesForArtifactVersion
         .map(_.reference.target)
-        .distinct
+        .toList
         .sortBy(target => (target.scalaVersion, target.scalaJsVersion))
 
       ReleaseOptions(

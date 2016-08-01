@@ -5,7 +5,6 @@ package cleanup
 import model._
 
 import java.nio.file._
-// import spray.json._
 
 import org.json4s._
 import org.json4s.native.Serialization.read
@@ -15,7 +14,7 @@ class LicenseCleanup {
   implicit private val serialization = native.Serialization
 
   private val byNameSource = scala.io.Source.fromFile(
-      cleanupIndexBase.resolve(Paths.get("licenses", "byName.json")).toFile
+      cleanupIndexBase.resolve(Paths.get("licensesByName.json")).toFile
   )
   private val byName = read[Map[String, List[String]]](byNameSource.mkString)
   byNameSource.close()

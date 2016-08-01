@@ -17,12 +17,7 @@ object Main extends BintrayProtocol {
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
-    def claims(): Unit = {
-
-      val githubRepoExtractor = new GithubRepoExtractor
-      githubRepoExtractor.run()
-    }
-
+    
     def list(): Unit = {
 
       val listPomsStep = new ListPoms
@@ -57,12 +52,23 @@ object Main extends BintrayProtocol {
       println("parent done")
     }
 
+    def claims(): Unit = {
+      val githubRepoExtractor = new GithubRepoExtractor
+      githubRepoExtractor.run()
+    }
+
     def github(): Unit = {
 
       val githubDownload = new GithubDownload
       githubDownload.run()
 
       println("github done")
+    }
+
+    def live(): Unit = {
+
+      val liveStep = new SaveLiveData
+      liveStep.run()
     }
 
     def elastic(): Unit = {
@@ -75,17 +81,17 @@ object Main extends BintrayProtocol {
         "list"     -> list _,
         "download" -> download _,
         "parent"   -> parent _,
+        "claims"   -> claims _,
         "github"   -> github _,
+        "live"     -> live _,
         "elastic"  -> elastic _
     )
 
     val stepsMap = steps.toMap
 
     (args.toList match {
-
-      case "all" :: Nil    => steps.map(_._2)
-      case "claims" :: Nil => List(claims _)
-      case _               => args.toList.flatMap(stepsMap.get)
+      case "all" :: Nil => steps.map(_._2)
+      case _            => args.toList.flatMap(stepsMap.get)
     }).foreach(step => step())
 
     system.terminate()

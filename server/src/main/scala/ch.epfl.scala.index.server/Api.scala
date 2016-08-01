@@ -3,6 +3,8 @@ package server
 
 import model._
 import model.misc._
+import data.project.ProjectForm
+
 import release._
 import misc.Pagination
 import data.elastic._
@@ -13,19 +15,6 @@ import org.elasticsearch.search.sort.SortOrder
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.reflectiveCalls
-
-case class ProjectForm(
-  // project
-  contributorsWanted: Boolean = false,
-  keywords: Set[String] = Set(),
-  defaultArtifact: Option[String] = None,
-  deprecated: Boolean = false,
-  artifactDeprecations: Set[String] = Set(),
-
-  // documentation
-  customScalaDoc: Option[String] = None,
-  documentationLinks: List[String] = List()
-)
 
 class Api(github: Github)(implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(id = None)
@@ -193,30 +182,14 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
     projectAndReleases.map {
       case (p, releases) =>
         p.flatMap(project => 
-            DefaultRelease(project.repository, selection, releases, project.defaultArtifact)
+            DefaultRelease(project.repository, selection, releases.toSet, project.defaultArtifact)
               .map(sel => (project, sel.copy(artifacts = project.artifacts))))
     }
   }
 
   def updateProject(projectRef: Project.Reference, form: ProjectForm): Future[Boolean] = {
-    import form._
-
     for {
-      updatedProject <- project(projectRef).map(project =>
-        project.map(_.copy(
-          contributorsWanted = contributorsWanted,
-          keywords = form.keywords,
-          defaultArtifact = defaultArtifact,
-          deprecated = deprecated,
-          artifactDeprecations = artifactDeprecations,
-
-          // documentation
-          customScalaDoc = customScalaDoc,
-          documentationLinks = documentationLinks.filterNot(_ == ""),
-
-          liveData = true
-        ))
-      )
+      updatedProject <- project(projectRef).map(_.map(form.update))
       ret <- updatedProject.flatMap( project =>
         project.id.map(id =>
           esClient.execute(update(id) in (indexName / projectsCollection) doc project).map(_ => true)

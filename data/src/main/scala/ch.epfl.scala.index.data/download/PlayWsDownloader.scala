@@ -29,7 +29,6 @@ trait PlayWsDownloader {
     * @see https://www.playframework.com/documentation/2.5.x/ScalaWS
     */
   def wsClient = {
-
     val configuration = Configuration.reference ++ Configuration(ConfigFactory.parseString("""
         |ws.followRedirects = true
       """.stripMargin))
@@ -94,7 +93,7 @@ trait PlayWsDownloader {
     if (toDownload.size > 1) {
       progress.stop()
     }
-    wsClient.close()
+    client.close()
 
     response
   }

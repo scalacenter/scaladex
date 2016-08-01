@@ -15,6 +15,7 @@ import scala.util.Success
 import scala.util.matching.Regex
 
 class GithubRepoExtractor {
+  private val claimsFile = cleanupIndexBase.resolve(Paths.get("claims.json"))
 
   case class Claims(claims: Map[String, Option[String]])
   object ClaimsSerializer
@@ -43,7 +44,7 @@ class GithubRepoExtractor {
   implicit private val formats       = DefaultFormats ++ Seq(ClaimsSerializer)
   implicit private val serialization = native.Serialization
 
-  private val source = scala.io.Source.fromFile(cleanupIndexBase.resolve(Paths.get("claims.json")).toFile)
+  private val source = scala.io.Source.fromFile(claimsFile.toFile)
   private val claims = read[Claims](source.mkString).claims
   private def matches(m: Regex, s: String): Boolean = m.unapplySeq(s).isDefined
 
@@ -110,10 +111,8 @@ class GithubRepoExtractor {
       .replaceAllLiterally("\":\"", "\": \"") // make json breath
       .replaceAllLiterally("\":null", "\": null")
 
-    Files.write(
-        cleanupIndexBase.resolve(Paths.get("claims_new.json")),
-        out.getBytes(StandardCharsets.UTF_8)
-    )
+    Files.delete(claimsFile)
+    Files.write(claimsFile,out.getBytes(StandardCharsets.UTF_8))
 
     ()
   }

@@ -85,6 +85,7 @@ lazy val server = project
     ),
     reStart <<= reStart.dependsOn(WebKeys.assets in Assets),
     unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
+    unmanagedResourceDirectories in (Compile, packageBin) <<= unmanagedResourceDirectories in Compile,
     javaOptions in reStart += "-Xmx3g"
   )
   .dependsOn(template, data, sharedJvm)
@@ -95,7 +96,6 @@ lazy val model = project
   .settings(
     libraryDependencies += "com.lihaoyi" %% "fastparse" % "0.3.7"
   )
-  
 
 lazy val data = project
   .settings(commonSettings)
@@ -114,7 +114,7 @@ lazy val data = project
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),
-    javaOptions in reStart += "-Xmx4g"
+    javaOptions in reStart += "-Xmx3g"
   )
   .enablePlugins(BuildInfoPlugin)
   .dependsOn(model)

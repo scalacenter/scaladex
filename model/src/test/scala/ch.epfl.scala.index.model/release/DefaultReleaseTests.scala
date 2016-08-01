@@ -16,7 +16,7 @@ object DefaultReleaseTests extends TestSuite{
           MavenReference(groupdId, artifactId, rawVersion),
           Release.Reference(organization, repository, artifact, version, target)
         )
-      }
+      }.toSet
   }
 
   val tests = this{

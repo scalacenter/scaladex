@@ -133,6 +133,7 @@ class PublishProcess(
                                 pom.groupId,
                                 pom.artifactId,
                                 new DateTime())
+
     val (newProject, newReleases) = ProjectConvert(List((pom, List(bintray)))).head
 
     val updatedProject = newProject.copy(keywords = data.keywords, liveData = true)
@@ -169,7 +170,7 @@ class PublishProcess(
           id      <- release.id
         } yield {
 
-          esClient.execute(update(id).in(indexName / releasesCollection) doc newReleases.head)
+          esClient.execute(update(id).in(indexName / releasesCollection) doc newReleases.head.copy(liveData = true))
         }
       }
     }

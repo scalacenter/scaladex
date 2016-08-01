@@ -21,9 +21,6 @@
                 Edit
               </a>
             }
-            @if(project.contributorsWanted){
-              <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">
-            }
             @if(project.deprecated){
               [DEPRECATED]
             }
@@ -55,6 +52,9 @@
       </div>
       <div class="col-md-4">
         <div class="artifact-project">
+          @if(project.contributorsWanted){
+            <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">
+          }
           <form action="/@project.reference.organization/@project.reference.repository" action="GET">
             <select
               name="artifact"
