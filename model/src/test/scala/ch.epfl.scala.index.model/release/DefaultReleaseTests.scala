@@ -1,9 +1,7 @@
 package ch.epfl.scala.index.model
 package release
 
-import utest._
-
-object DefaultReleaseTests extends TestSuite{
+object DefaultReleaseTests extends org.specs2.mutable.Specification {
 
   def prepare(organization: String, repository: String, groupdId: String, releases: List[(String, String)]) = {
     releases.map{ case (artifactId, rawVersion) =>
@@ -19,8 +17,8 @@ object DefaultReleaseTests extends TestSuite{
       }.toSet
   }
 
-  val tests = this{
-    "latest version pre release scala"-{
+  "Default Release" >> {
+    "latest version pre release scala" >> {
       
       val organization = "typelevel"
       val repository = "cats"
@@ -55,7 +53,7 @@ object DefaultReleaseTests extends TestSuite{
       ) 
 
       val result = DefaultRelease(repository, ReleaseSelection(None, None), releases, None)
-      val expected =
+      val expected: Option[ReleaseOptions] =
         Some(ReleaseOptions(
           artifacts = List(
             "cats-core"
@@ -86,10 +84,10 @@ object DefaultReleaseTests extends TestSuite{
           )
         ))
 
-      expected ==> result
+      expected ==== result
     }
 
-    "selected artifact"-{
+    "selected artifact" >> {
       val organization = "akka"
       val repository = "akka"
       val groupdId = "com.typesafe.akka"
@@ -130,6 +128,8 @@ object DefaultReleaseTests extends TestSuite{
             )
           )
         ))
+
+      result ==== expected
     }
   }
 }

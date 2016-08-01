@@ -1,14 +1,12 @@
 package ch.epfl.scala.index.model
 
-import utest._
-
-object SemanticVersionTests extends TestSuite{
-  val tests = this{
-    "ordering"-{
+object SemanticVersionTests extends org.specs2.mutable.Specification {
+  "semantic versionning" >> {
+    "ordering" >> {
       def order(versions: List[String]) = 
         versions.flatMap(v => SemanticVersion(v)).sorted(Ordering[SemanticVersion].reverse)
 
-      "small"-{
+      "small" >> {
         val versions =
           "1.1.1" :: 
           "1.0.1-RC2" ::
@@ -19,9 +17,10 @@ object SemanticVersionTests extends TestSuite{
           "1.0.1" ::
           Nil
 
-        order(versions)
+        !order(versions).isEmpty
       }
-      "large"-{
+
+      "large" >> {
         val versions =
           "0.10.0-2bc5c07" ::
           "0.10.0-7f595d5" ::
@@ -119,44 +118,45 @@ object SemanticVersionTests extends TestSuite{
           "0.10.0-09f5951" ::
           "0.10.0-b2fbb2f" ::
           Nil 
-        order(versions)
+        !order(versions).isEmpty
       }
+
     }
 
-    "parsing"-{
+    "parsing" >> {
       // relaxed semantic version
-      "major"-{
-        SemanticVersion("1") ==> Some(SemanticVersion(1))
-      }
-
-      // relaxed semantic version
-      "major.minor"-{
-        SemanticVersion("1.2") ==> Some(SemanticVersion(1, 2))
-      }
-
-      "major.minor.patch"-{
-        SemanticVersion("1.2.3") ==> Some(SemanticVersion(1, 2, Some(3)))
+      "major" >> {
+        SemanticVersion("1") ==== Some(SemanticVersion(1))
       }
 
       // relaxed semantic version
-      "major.minor.patch.patch2"-{
-        SemanticVersion("1.2.3.4") ==> Some(SemanticVersion(1, 2, Some(3), Some(4)))
+      "major.minor" >> {
+        SemanticVersion("1.2") ==== Some(SemanticVersion(1, 2))
       }
 
-      "major.minor.patch-rc"-{
-        SemanticVersion("1.2.3-RC5") ==> Some(SemanticVersion(1, 2, Some(3), None, Some(ReleaseCandidate(5))))
+      "major.minor.patch" >> {
+        SemanticVersion("1.2.3") ==== Some(SemanticVersion(1, 2, Some(3)))
       }
 
-      "major.minor.patch-m"-{
-        SemanticVersion("1.2.3-M6") ==> Some(SemanticVersion(1, 2, Some(3), None, Some(Milestone(6))))
+      // relaxed semantic version
+      "major.minor.patch.patch2" >> {
+        SemanticVersion("1.2.3.4") ==== Some(SemanticVersion(1, 2, Some(3), Some(4)))
       }
 
-      "major.minor.patch-xyz"-{
-        SemanticVersion("1.1.1-xyz") ==> Some(SemanticVersion(1, 1, Some(1), None, Some(OtherPreRelease("xyz"))))
+      "major.minor.patch-rc" >> {
+        SemanticVersion("1.2.3-RC5") ==== Some(SemanticVersion(1, 2, Some(3), None, Some(ReleaseCandidate(5))))
       }
 
-      "major.minor.patch+meta"-{
-        SemanticVersion("1.1.1+some.meta~data") ==> Some(
+      "major.minor.patch-m" >> {
+        SemanticVersion("1.2.3-M6") ==== Some(SemanticVersion(1, 2, Some(3), None, Some(Milestone(6))))
+      }
+
+      "major.minor.patch-xyz" >> {
+        SemanticVersion("1.1.1-xyz") ==== Some(SemanticVersion(1, 1, Some(1), None, Some(OtherPreRelease("xyz"))))
+      }
+
+      "major.minor.patch+meta" >> {
+        SemanticVersion("1.1.1+some.meta~data") ==== Some(
           SemanticVersion(
             major = 1,
             minor = 1,
@@ -168,13 +168,13 @@ object SemanticVersionTests extends TestSuite{
         )
       }
 
-      "git commit"-{
-        SemanticVersion("13e7afa9c1817d45b2989e545b2e9ead21d00cef") ==> None
+      "git commit" >> {
+        SemanticVersion("13e7afa9c1817d45b2989e545b2e9ead21d00cef") ==== None
       }
 
       // relaxed semantic version
-      "v sufix"-{
-        SemanticVersion("v1") ==> Some(SemanticVersion(1))
+      "v sufix" >> {
+        SemanticVersion("v1") ==== Some(SemanticVersion(1))
       }
     }
   }
