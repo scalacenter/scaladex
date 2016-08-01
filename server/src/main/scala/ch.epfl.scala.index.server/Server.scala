@@ -88,9 +88,10 @@ object Server {
           keywords <- api.keywords()
           project <- api.project(Project.Reference(owner, repo))
         } yield {
-          project.map(p =>
-            (OK, views.project.html.editproject(p, keywords.keys.toList.sorted, user))
-          ).getOrElse((NotFound, views.html.notfound(user)))
+          project.map{p =>
+            val allKeywords = (p.keywords ++ keywords.keys.toSet).toList.sorted
+            (OK, views.project.html.editproject(p, allKeywords, user))
+          }.getOrElse((NotFound, views.html.notfound(user)))
         }
       }
       else Future.successful((Forbidden, views.html.forbidden(user)))
