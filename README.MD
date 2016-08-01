@@ -26,3 +26,4 @@ metadata directly to the Scaladex](/doc/user/publish-scaladex.md).
 ## How to contribute
 
 Join the [gitter.im channel](https://gitter.im/scalacenter/scaladex) and read the [developper guide](/doc/dev/README.md)
+
