@@ -114,7 +114,7 @@ lazy val data = project
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),
-    javaOptions in reStart += "-Xmx2g"
+    javaOptions in reStart += "-Xmx3g"
   )
   .enablePlugins(BuildInfoPlugin)
   .dependsOn(model)

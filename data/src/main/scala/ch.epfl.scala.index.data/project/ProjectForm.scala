@@ -20,7 +20,9 @@ case class ProjectForm(
     project.copy(
       contributorsWanted = contributorsWanted,
       keywords = keywords,
-      defaultArtifact = defaultArtifact,
+      defaultArtifact = 
+        if(!defaultArtifact.isEmpty) defaultArtifact 
+        else project.defaultArtifact,
       deprecated = deprecated,
       artifactDeprecations = artifactDeprecations,
 
