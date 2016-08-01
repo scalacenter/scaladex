@@ -14,7 +14,7 @@ git pull origin master
 popd
 
 export JVM_OPTS="-Xms1G -Xmx3G -XX:ReservedCodeCacheSize=256m -XX:+TieredCompilation -XX:+CMSClassUnloadingEnabled -XX:+UseConcMarkSweepGC"
-./sbt "data/run all"
+./sbt ";clean ;data/run all"
 
 # publish the latest data
 pushd contrib
