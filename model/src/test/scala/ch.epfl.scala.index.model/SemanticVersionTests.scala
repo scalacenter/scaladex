@@ -138,6 +138,7 @@ object SemanticVersionTests extends TestSuite{
         SemanticVersion("1.2.3") ==> Some(SemanticVersion(1, 2, Some(3)))
       }
 
+      // relaxed semantic version
       "major.minor.patch.patch2"-{
         SemanticVersion("1.2.3.4") ==> Some(SemanticVersion(1, 2, Some(3), Some(4)))
       }
