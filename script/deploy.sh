@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ "`git rev-parse --abbrev-ref HEAD`" == "master" ];
+if [ "`git rev-parse --abbrev-ref HEAD`" -eq "master" ];
 then
 
 source $(dirname $0)/base.sh
