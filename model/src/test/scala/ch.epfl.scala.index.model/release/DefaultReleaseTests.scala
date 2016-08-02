@@ -53,25 +53,32 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
       ) 
 
       val result = DefaultRelease(repository, ReleaseSelection(None, None), releases, None)
+      
+      val versions: List[SemanticVersion] =
+        List(
+          SemanticVersion("0.6.0"   ).get,
+          SemanticVersion("0.6.0-M2").get,
+          SemanticVersion("0.6.0-M1").get,
+          SemanticVersion("0.5.0"   ).get,
+          SemanticVersion("0.4.1"   ).get,
+          SemanticVersion("0.4.0"   ).get
+        )
+
+      val targets: List[ScalaTarget] = 
+        List(
+          ScalaTarget(SemanticVersion("2.11").get),
+          ScalaTarget(SemanticVersion("2.11").get, Some(SemanticVersion("0.6").get)),
+          ScalaTarget(SemanticVersion("2.10").get),
+          ScalaTarget(SemanticVersion("2.10").get, Some(SemanticVersion("0.6").get))
+        )
+
       val expected: Option[ReleaseOptions] =
         Some(ReleaseOptions(
           artifacts = List(
             "cats-core"
           ),
-          versions = List(
-            SemanticVersion("0.6.0"   ).get,
-            SemanticVersion("0.6.0-M2").get,
-            SemanticVersion("0.6.0-M1").get,
-            SemanticVersion("0.5.0"   ).get,
-            SemanticVersion("0.4.1"   ).get,
-            SemanticVersion("0.4.0"   ).get
-          ),
-          targets = List(
-            ScalaTarget(SemanticVersion("2.11").get),
-            ScalaTarget(SemanticVersion("2.11").get, Some(SemanticVersion("0.6").get)),
-            ScalaTarget(SemanticVersion("2.10").get),
-            ScalaTarget(SemanticVersion("2.10").get, Some(SemanticVersion("0.6").get))
-          ),
+          versions = versions,
+          targets = targets,
           release = Release(
             MavenReference(groupdId, "cats-core_2.11", "0.6.0"),
             Release.Reference(
