@@ -2,13 +2,11 @@ package ch.epfl.scala.index
 package data
 package project
 
-import utest._
-
-object UtilTests extends TestSuite{
+object UtilTests extends org.specs2.mutable.Specification {
   private val empty = Map.empty[Symbol, String]
 
-  val tests = this{
-    "innerJoin"-{
+  "utils" >> {
+    "innerJoin" >> {
       val left = Map(
         'a -> "la",
         'b -> "lb",
@@ -20,38 +18,38 @@ object UtilTests extends TestSuite{
         'b -> "rb",
         'c -> "rc"
       )
-      "example"-{
-        innerJoin(left, right)((a, b) => (a, b)) ==>
+      "example" >> {
+        innerJoin(left, right)((a, b) => (a, b)) ====
           Map('a -> (("la", "ra")), 'b -> (("lb", "rb")), 'c -> (("lc", "rc")))
       }
-      "discard missing left keys"-{
-        innerJoin(left - 'a, right)((_, _)) ==>
+      "discard missing left keys" >> {
+        innerJoin(left - 'a, right)((_, _)) ====
           Map('b -> (("lb", "rb")), 'c -> (("lc", "rc")))
       }
-      "discard missing right keys"-{
-        innerJoin(left, right - 'a)((_, _)) ==>
+      "discard missing right keys" >> {
+        innerJoin(left, right - 'a)((_, _)) ====
           Map('b -> (("lb", "rb")), 'c -> (("lc", "rc")))
       }
-      "left empty"-{
-        innerJoin(empty, right)(_ + _) ==> empty
+      "left empty" >> {
+        innerJoin(empty, right)(_ + _) ==== empty
       }
-      "right empty"-{
-        innerJoin(left, empty)(_ + _) ==> empty
+      "right empty" >> {
+        innerJoin(left, empty)(_ + _) ==== empty
       }
-      "empty empty"-{
-        innerJoin(empty, empty)(_ + _) ==> empty
+      "empty empty" >> {
+        innerJoin(empty, empty)(_ + _) ==== empty
       }
     }
-    "upsert"-{
+    "upsert" >> {
       val ma = Map('a -> Seq(1))
-      "insert if key is not found"-{
-        upsert(ma, 'b, 1) ==> Map('a -> Seq(1), 'b -> Seq(1))
+      "insert if key is not found" >> {
+        upsert(ma, 'b, 1) ==== Map('a -> Seq(1), 'b -> Seq(1))
       }
-      "append if key is found"-{
-        upsert(ma, 'a, 2) ==> Map('a -> Seq(1, 2))
+      "append if key is found" >> {
+        upsert(ma, 'a, 2) ==== Map('a -> Seq(1, 2))
       }
     }
-    "fullOuterJoin"-{
+    "fullOuterJoin" >> {
       val left = Map(
         'a -> "la",
         'b -> "lb",
@@ -63,17 +61,17 @@ object UtilTests extends TestSuite{
         'c -> "rc",
         'd -> "rd"
       )
-      "left empty"-{
-        fullOuterJoin(empty, right)(_ + _)(l => l)(r => r) ==> right
+      "left empty" >> {
+        fullOuterJoin(empty, right)(_ + _)(l => l)(r => r) ==== right
       }
-      "right empty"-{
-        fullOuterJoin(left, empty)(_ + _)(l => l)(r => r) ==> left
+      "right empty" >> {
+        fullOuterJoin(left, empty)(_ + _)(l => l)(r => r) ==== left
       }
-      "empty empty"-{
-        fullOuterJoin(empty, empty)(_ + _)(l => l)(r => r) ==> empty
+      "empty empty" >> {
+        fullOuterJoin(empty, empty)(_ + _)(l => l)(r => r) ==== empty
       }
-      "example"-{
-        fullOuterJoin(left, right)(_ + _)(l => l)(r => r) ==> Map(
+      "example" >> {
+        fullOuterJoin(left, right)(_ + _)(l => l)(r => r) ==== Map(
           'a -> "la",
           'b -> "lbrb",
           'c -> "lcrc",

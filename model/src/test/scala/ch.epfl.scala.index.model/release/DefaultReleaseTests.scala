@@ -1,9 +1,7 @@
 package ch.epfl.scala.index.model
 package release
 
-import utest._
-
-object DefaultReleaseTests extends TestSuite{
+object DefaultReleaseTests extends org.specs2.mutable.Specification {
 
   def prepare(organization: String, repository: String, groupdId: String, releases: List[(String, String)]) = {
     releases.map{ case (artifactId, rawVersion) =>
@@ -19,8 +17,8 @@ object DefaultReleaseTests extends TestSuite{
       }.toSet
   }
 
-  val tests = this{
-    "latest version pre release scala"-{
+  "Default Release" >> {
+    "latest version pre release scala" >> {
       
       val organization = "typelevel"
       val repository = "cats"
@@ -55,25 +53,32 @@ object DefaultReleaseTests extends TestSuite{
       ) 
 
       val result = DefaultRelease(repository, ReleaseSelection(None, None), releases, None)
-      val expected =
+      
+      val versions: List[SemanticVersion] =
+        List(
+          SemanticVersion("0.6.0"   ).get,
+          SemanticVersion("0.6.0-M2").get,
+          SemanticVersion("0.6.0-M1").get,
+          SemanticVersion("0.5.0"   ).get,
+          SemanticVersion("0.4.1"   ).get,
+          SemanticVersion("0.4.0"   ).get
+        )
+
+      val targets: List[ScalaTarget] = 
+        List(
+          ScalaTarget(SemanticVersion("2.11").get),
+          ScalaTarget(SemanticVersion("2.11").get, Some(SemanticVersion("0.6").get)),
+          ScalaTarget(SemanticVersion("2.10").get),
+          ScalaTarget(SemanticVersion("2.10").get, Some(SemanticVersion("0.6").get))
+        )
+
+      val expected: Option[ReleaseOptions] =
         Some(ReleaseOptions(
           artifacts = List(
             "cats-core"
           ),
-          versions = List(
-            SemanticVersion("0.6.0"   ).get,
-            SemanticVersion("0.6.0-M2").get,
-            SemanticVersion("0.6.0-M1").get,
-            SemanticVersion("0.5.0"   ).get,
-            SemanticVersion("0.4.1"   ).get,
-            SemanticVersion("0.4.0"   ).get
-          ),
-          targets = List(
-            ScalaTarget(SemanticVersion("2.11").get),
-            ScalaTarget(SemanticVersion("2.11").get, Some(SemanticVersion("0.6").get)),
-            ScalaTarget(SemanticVersion("2.10").get),
-            ScalaTarget(SemanticVersion("2.10").get, Some(SemanticVersion("0.6").get))
-          ),
+          versions = versions,
+          targets = targets,
           release = Release(
             MavenReference(groupdId, "cats-core_2.11", "0.6.0"),
             Release.Reference(
@@ -86,10 +91,10 @@ object DefaultReleaseTests extends TestSuite{
           )
         ))
 
-      expected ==> result
+      expected ==== result
     }
 
-    "selected artifact"-{
+    "selected artifact" >> {
       val organization = "akka"
       val repository = "akka"
       val groupdId = "com.typesafe.akka"
@@ -130,6 +135,8 @@ object DefaultReleaseTests extends TestSuite{
             )
           )
         ))
+
+      result ==== expected
     }
   }
 }
