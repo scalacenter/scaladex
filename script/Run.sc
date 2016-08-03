@@ -32,8 +32,10 @@ implicit val readCiType: scopt.Read[Job.Value] = scopt.Read.reads(Job withName _
     Process("chmod" :: "a+x" :: "sbt" :: Nil).!
   }
 
-  val credentialsDest = home / "scaladex-credentials"
-  if(!exists(credentialsDest)) {
+
+  val credentialsDest = home
+  val credentialsFolder = credentialsDest / "scaladex-credentials"
+  if(!exists(credentialsFolder)) {
     Process(
       "git" :: "clone" :: "git@github.com:scalacenter/scaladex-credentials.git" :: Nil, 
       Some(credentialsDest.toIO)
@@ -41,7 +43,7 @@ implicit val readCiType: scopt.Read[Job.Value] = scopt.Read.reads(Job withName _
   } else {
     Process(
       "git" :: "pull" :: "origin" :: "master" :: Nil,
-      Some(credentialsDest.toIO)
+      Some(credentialsFolder.toIO)
     ).!
   }
 
@@ -52,12 +54,12 @@ implicit val readCiType: scopt.Read[Job.Value] = scopt.Read.reads(Job withName _
 
   val searchCredentialsFolder = bintrayCredentialsFolder / ".credentials2"
   if(!exists(searchCredentialsFolder)){
-    cp(credentialsDest / "search-credentials", searchCredentialsFolder)
+    cp(credentialsFolder / "search-credentials", searchCredentialsFolder)
   }
 
   val publishPluginCredentialsFolder = bintrayCredentialsFolder / ".credentials"
   if(!exists(publishPluginCredentialsFolder)){
-    cp(credentialsDest / "sbt-plugin-credentials", publishPluginCredentialsFolder)
+    cp(credentialsFolder / "sbt-plugin-credentials", publishPluginCredentialsFolder)
   }
 
   Process("git" :: "submodule" :: "init" :: Nil).!
