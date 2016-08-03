@@ -156,7 +156,8 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 
       val pidFile = currentLink / "PID"
       if(exists(pidFile)) {
-        run("kill", s"`cat ${pidFile.toString}`")
+        val pid = runSlurp("cat", "pidFile.toString")
+        run("kill", pid)
       }
 
       rm(currentLink)
