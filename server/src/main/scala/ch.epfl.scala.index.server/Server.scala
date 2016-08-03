@@ -37,14 +37,29 @@ import scala.concurrent.{Await, Future}
 import scala.util.Try
 import java.util.UUID
 import scala.collection.parallel.mutable.ParTrieMap
+import java.lang.management.ManagementFactory
+
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths}
 
 object Server {
   def main(args: Array[String]): Unit = {
+    val config = ConfigFactory.load().getConfig("org.scala_lang.index.server")
+    val production = config.getBoolean("production")
+
+    if(production) {
+      val pid = ManagementFactory.getRuntimeMXBean().getName().split("@").head
+      val pidFile = Paths.get("PID") 
+      Files.write(pidFile, pid.getBytes(StandardCharsets.UTF_8))
+      sys.addShutdownHook {
+        Files.delete(pidFile)
+      }
+    }
+
     implicit val system = ActorSystem("scaladex")
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
-    val config = ConfigFactory.load().getConfig("org.scala_lang.index.server")
     val sessionSecret = config.getString("sesssion-secret")
 
     val github = new Github
