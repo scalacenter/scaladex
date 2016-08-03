@@ -29,6 +29,12 @@ def sbt(commands: String*): Unit = {
   runEnv("./sbt", ("clean" :: commands.toList).mkString(";", " ;", ""))(("JVM_OPTS", jvmOpts.mkString(" ")))
 }
 
+def datetime = {
+  import java.text.SimpleDateFormat
+  import java.util.Calendar
+  new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()) 
+}
+
 def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
   submodules.foreach{ submodule =>
     runD("git", "checkout", "master")(submodule)
@@ -37,11 +43,12 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 
   // run index
   f()
-    
+
+
   // publish the latest data
   submodules.foreach{ submodule =>
     runD("git", "add", "-A")(submodule)
-    runD("git", "commit", "-m", "\"`date`\"")(submodule)
+    runD("git", "commit", "-m", '"' + datetime + '"' )(submodule)
     runD("git", "push", "origin", "master")(submodule)
   }
 }
