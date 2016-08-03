@@ -83,10 +83,12 @@ lazy val server = project
       "org.webjars.bower"                   % "select2"                % "4.0.3",
       "com.lihaoyi"                       %%% "scalatags"              % "0.6.0"
     ),
+    packageBin in Universal <<= (packageBin in Universal).dependsOn(WebKeys.assets in Assets),
     reStart <<= reStart.dependsOn(WebKeys.assets in Assets),
     unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
-    unmanagedResourceDirectories in (Compile, packageBin) <<= unmanagedResourceDirectories in Compile,
-    javaOptions in reStart += "-Xmx3g"
+    // unmanagedResourceDirectories in (Compile, packageBin) <<= unmanagedResourceDirectories in Compile,
+    javaOptions in reStart += "-Xmx3g",
+    packageName in Universal := "scaladex"
   )
   .dependsOn(template, data, sharedJvm)
   .enablePlugins(SbtSass, JavaServerAppPackaging)
