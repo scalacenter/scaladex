@@ -189,7 +189,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
 
   def updateProject(projectRef: Project.Reference, form: ProjectForm): Future[Boolean] = {
     for {
-      updatedProject <- project(projectRef).map(_.map(form.update))
+      updatedProject <- project(projectRef).map(_.map(p => form.update(p)))
       ret <- updatedProject.flatMap( project =>
         project.id.map(id =>
           esClient.execute(update(id) in (indexName / projectsCollection) doc project).map(_ => true)

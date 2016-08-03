@@ -143,7 +143,7 @@ object ProjectConvert extends BintrayProtocol {
         val updatedProject = 
           if(stored) {
             storedProjects.get(project.reference)
-              .map(form => form.update(project))
+              .map(form => form.update(project, live = false))
               .getOrElse(project)
           } else project
 

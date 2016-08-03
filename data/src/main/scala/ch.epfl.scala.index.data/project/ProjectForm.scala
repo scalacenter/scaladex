@@ -16,7 +16,7 @@ case class ProjectForm(
   customScalaDoc: Option[String] = None,
   documentationLinks: List[String] = List()
 ) {
-  def update(project: Project): Project = {
+  def update(project: Project, live: Boolean = true): Project = {
     project.copy(
       contributorsWanted = contributorsWanted,
       keywords = keywords,
@@ -30,7 +30,7 @@ case class ProjectForm(
       customScalaDoc = customScalaDoc,
       documentationLinks = documentationLinks.filterNot(_ == ""),
 
-      liveData = true
+      liveData = live
     )
   }
 }
