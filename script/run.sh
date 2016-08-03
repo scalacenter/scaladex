@@ -7,6 +7,4 @@ then
   chmod a+x amm
 fi
 
-printenv
-
 ./amm script/Run.sc $GIT_BRANCH "$@"

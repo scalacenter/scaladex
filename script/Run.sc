@@ -29,14 +29,14 @@ def sbt(commands: String*): Unit = {
   runEnv("./sbt", ("clean" :: commands.toList).mkString(";", " ;", ""))(("JVM_OPTS", jvmOpts.mkString(" ")))
 }
 
-def updatingSubmodules(submodules: List[Path])(f: => Unit): Unit = {
+def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
   submodules.foreach{ submodule =>
     runD("git", "checkout", "master")(submodule)
     runD("git", "pull", "origin", "master")(submodule)
   }
 
   // run index
-  f
+  f()
     
   // publish the latest data
   submodules.foreach{ submodule =>
@@ -137,7 +137,7 @@ def updatingSubmodules(submodules: List[Path])(f: => Unit): Unit = {
 
     mkdir(destGitDescribe)
 
-    val packageBin = cwd / "target" / "universal" / "scaladex.zip"
+    val packageBin = cwd / "server" / "target" / "universal" / "scaladex.zip"
 
     run("unzip", packageBin.toString, "-d", destGitDescribe.toString)
 
