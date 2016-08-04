@@ -158,6 +158,7 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
       val pidFile = currentLink / "PID"
       if(exists(pidFile)) {
         val pid = runSlurp("cat", "pidFile.toString")
+        println(s"killing $pid")
         run("kill", pid)
       }
 
@@ -172,6 +173,9 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
     val serverBin = (currentLink / "scaladex" / "bin" / "server").toString
     val config = "-Dconfig.file=" + configFile.toString
 
-    runDetached(s"nohup $serverBin $config")
+    val toRun = s"nohup $serverBin $config"
+    println(s"running: $toRun")
+
+    runDetached(toRun)
   }
 }
