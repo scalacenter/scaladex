@@ -8,7 +8,7 @@ object Job extends Enumeration {
 
 implicit val readCiType: scopt.Read[Job.Value] = scopt.Read.reads(Job withName _)
 
-def runDetached(args: String*): Unit = Process(args.toList).run()
+def runDetached(command: String): Unit = Runtime.getRuntime().exec(command)
 def run(args: String*): Unit = Process(args.toList).!
 def runD(args: String*)(dir: Path): Unit = Process(args.toList, Some(dir.toIO)).!
 def runSlurp(args: String*): String = Process(args.toList).lineStream.toList.headOption.getOrElse("")
@@ -169,10 +169,9 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 
     val configFile = credentialsFolder / "application.conf"
 
-    runDetached(
-      "nohup",
-      (currentLink / "scaladex" / "bin" / "server").toString,
-      "-Dconfig.file=" + configFile.toString
-    )
+    val serverBin = (currentLink / "scaladex" / "bin" / "server").toString
+    val config = "-Dconfig.file=" + configFile.toString
+
+    runDetached(s"nohup $serverBin $config")
   }
 }
