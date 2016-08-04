@@ -36,7 +36,7 @@
                     font-family: $font-family-serif;
                 }
             }
-            &:hover {
+            &:hover, &.selected {
                 background: $gray-lighter;
                 cursor: default;
             }
