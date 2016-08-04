@@ -88,21 +88,23 @@ trait ClientBase {
   }
 
   def navigate(event: KeyboardEvent): Unit = {
-    if (event.keyCode == 38 && completionSelection.choices.nonEmpty) { // Up
+    if (event.keyCode == 38 /* Up */ && completionSelection.choices.nonEmpty) {
       moveSelection(
         completionSelection.selected.map(_ - 1).filter(_ >= 0)
       )
-    } else if (event.keyCode == 40 && completionSelection.choices.nonEmpty) { // Down
+    } else if (event.keyCode == 40 /* Down */ && completionSelection.choices.nonEmpty) {
       moveSelection(
         completionSelection.selected
           .fold[Option[Int]](Some(0))(i => Some(math.min(i + 1, completionSelection.choices.size - 1)))
       )
-    } else if (event.keyCode == 13) { // Enter
+    } else if (event.keyCode == 13 /* Enter */) {
       completionSelection.selected.foreach { selected =>
         event.preventDefault()
         val Autocompletion(owner, repo, _) = completionSelection.choices(selected)
         dom.window.location.assign(s"/$owner/$repo")
       }
+    } else if (event.keyCode == 27 /* Esc */) {
+      cleanResults()
     } else ()
 
     def moveSelection(newSelected: Option[Int]): Unit = {
