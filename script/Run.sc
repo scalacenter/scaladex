@@ -136,12 +136,12 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
     val scaladex = home / "scaladex"
     if(!exists(scaladex)) mkdir(scaladex)
 
-    // val scaladexReleases = scaladex / "releases"
-    // if(!exists(scaladexReleases)) mkdir(scaladexReleases)
+    val scaladexReleases = scaladex / "releases"
+    if(!exists(scaladexReleases)) mkdir(scaladexReleases)
 
-    // val gitDescribe = runSlurp("git", "describe", "--tags")
-    // val destGitDescribe = scaladexReleases / gitDescribe
-    // if(exists(destGitDescribe)) rm(destGitDescribe)
+    val gitDescribe = runSlurp("git", "describe", "--tags")
+    val destGitDescribe = scaladexReleases / gitDescribe
+    if(exists(destGitDescribe)) rm(destGitDescribe)
 
     // mkdir(destGitDescribe)
 
