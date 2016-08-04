@@ -125,29 +125,29 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 
   } else if(job == Deploy) {
 
-    updatingSubmodules(List(indexFolder)){ () =>
-      sbt(
-        "data/run live",
-        "data/run elastic",
-        "server/universal:packageBin"
-      )
-    }
+    // updatingSubmodules(List(indexFolder)){ () =>
+    //   sbt(
+    //     "data/run live",
+    //     "data/run elastic",
+    //     "server/universal:packageBin"
+    //   )
+    // }
     
     val scaladex = home / "scaladex"
     if(!exists(scaladex)) mkdir(scaladex)
 
-    val scaladexReleases = scaladex / "releases"
-    if(!exists(scaladexReleases)) mkdir(scaladexReleases)
+    // val scaladexReleases = scaladex / "releases"
+    // if(!exists(scaladexReleases)) mkdir(scaladexReleases)
 
-    val gitDescribe = runSlurp("git", "describe", "--tags")
-    val destGitDescribe = scaladexReleases / gitDescribe
-    if(exists(destGitDescribe)) rm(destGitDescribe)
+    // val gitDescribe = runSlurp("git", "describe", "--tags")
+    // val destGitDescribe = scaladexReleases / gitDescribe
+    // if(exists(destGitDescribe)) rm(destGitDescribe)
 
-    mkdir(destGitDescribe)
+    // mkdir(destGitDescribe)
 
-    val packageBin = cwd / "server" / "target" / "universal" / "scaladex.zip"
+    // val packageBin = cwd / "server" / "target" / "universal" / "scaladex.zip"
 
-    run("unzip", packageBin.toString, "-d", destGitDescribe.toString)
+    // run("unzip", packageBin.toString, "-d", destGitDescribe.toString)
 
     val current = "current"
     val currentLink = scaladex / current
@@ -173,7 +173,7 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
     val serverBin = (currentLink / "scaladex" / "bin" / "server").toString
     val config = "-Dconfig.file=" + configFile.toString
 
-    val toRun = s"nohup $serverBin $config"
+    val toRun = s"nohup $serverBin $config &"
     println(s"running: $toRun")
 
     runDetached(toRun)
