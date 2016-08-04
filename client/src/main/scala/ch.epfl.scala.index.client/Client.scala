@@ -5,6 +5,7 @@ import autowire._
 import api._
 import rpc.AutowireClient
 import org.scalajs.dom
+import org.scalajs.dom.ext.KeyCode
 import org.scalajs.dom.{Event, KeyboardEvent, document}
 import org.scalajs.dom.raw.{Element, HTMLInputElement, HTMLUListElement, Node}
 
@@ -88,22 +89,22 @@ trait ClientBase {
   }
 
   def navigate(event: KeyboardEvent): Unit = {
-    if (event.keyCode == 38 /* Up */ && completionSelection.choices.nonEmpty) {
+    if (event.keyCode == KeyCode.Up && completionSelection.choices.nonEmpty) {
       moveSelection(
         completionSelection.selected.map(_ - 1).filter(_ >= 0)
       )
-    } else if (event.keyCode == 40 /* Down */ && completionSelection.choices.nonEmpty) {
+    } else if (event.keyCode == KeyCode.Down && completionSelection.choices.nonEmpty) {
       moveSelection(
         completionSelection.selected
           .fold[Option[Int]](Some(0))(i => Some(math.min(i + 1, completionSelection.choices.size - 1)))
       )
-    } else if (event.keyCode == 13 /* Enter */) {
+    } else if (event.keyCode == KeyCode.Enter) {
       completionSelection.selected.foreach { selected =>
         event.preventDefault()
         val Autocompletion(owner, repo, _) = completionSelection.choices(selected)
         dom.window.location.assign(s"/$owner/$repo")
       }
-    } else if (event.keyCode == 27 /* Esc */) {
+    } else if (event.keyCode == KeyCode.Escape) {
       cleanResults()
     } else ()
 
