@@ -27,7 +27,7 @@ case class ProjectForm(
       artifactDeprecations = artifactDeprecations,
 
       // documentation
-      customScalaDoc = customScalaDoc,
+      customScalaDoc = customScalaDoc.filterNot(_ == ""),
       documentationLinks = documentationLinks.filterNot(_ == ""),
 
       liveData = live
