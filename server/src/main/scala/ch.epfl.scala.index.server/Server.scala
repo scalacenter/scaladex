@@ -44,6 +44,11 @@ import java.nio.file.{Files, Paths}
 
 object Server {
   def main(args: Array[String]): Unit = {
+
+    val port = 
+      if(args.isEmpty) 8080
+      else args.head.toInt
+
     val config = ConfigFactory.load().getConfig("org.scala_lang.index.server")
     val production = config.getBoolean("production")
 
@@ -444,7 +449,10 @@ object Server {
     blockUntilYellow()
     println("ready")
 
-    Await.result(Http().bindAndHandle(route, "0.0.0.0", 8080), 20.seconds)
+    Await.result(Http().bindAndHandle(route, "0.0.0.0", port), 20.seconds)
+
+    println(s"port: $port")
+
 
     ()
   }
