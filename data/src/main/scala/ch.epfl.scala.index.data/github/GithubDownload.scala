@@ -21,6 +21,9 @@ import scala.util._
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
+import com.typesafe.config.ConfigFactory
+
+
 class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer)
@@ -36,12 +39,10 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
   }
   private lazy val paginatedGithubRepos = githubRepos.map(repo => PaginatedGithub(repo, 1))
 
+  private val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
+  private val tokens = config.getStringList("github").toArray
+
   private def credentials = {
-    val tokens = Array(
-        "5e2ddeed0f9c6169d868121330599b8353ab0b55",
-        "6e7364f7db333be44b5aa0416f5a0b33d8743b14",
-        "6518021b0dbf82757717c9793906425adc779eb3"
-    )
     tokens(scala.util.Random.nextInt(tokens.length))
   }
 
