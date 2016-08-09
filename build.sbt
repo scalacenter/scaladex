@@ -45,7 +45,10 @@ lazy val template = project
   .settings(commonSettings)
   .settings(
     scalacOptions -= "-Ywarn-unused-import",
-    libraryDependencies += "com.github.nscala-time" %% "nscala-time" % "2.12.0"
+    libraryDependencies ++= Seq(
+      "com.typesafe" % "config" % "1.3.0",
+      "com.github.nscala-time" %% "nscala-time" % "2.12.0"
+    )
   )
   .dependsOn(model)
   .enablePlugins(SbtTwirl)

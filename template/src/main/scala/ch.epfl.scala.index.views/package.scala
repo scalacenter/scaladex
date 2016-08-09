@@ -2,6 +2,7 @@ package ch.epfl.scala.index
 package views
 
 import model._
+import com.typesafe.config.ConfigFactory
 
 package object html {
   // https://www.reddit.com/r/scala/comments/4n73zz/scala_puzzle_gooooooogle_pagination/d41jor5
@@ -44,6 +45,9 @@ package object html {
     }
   }
 
+  val config = ConfigFactory.load().getConfig("org.scala_lang.index.server")
+  val production = config.getBoolean("production")
+  
   def unescapeBackground(in: String) = {
     play.twirl.api.HtmlFormat.escape(in)
       .toString

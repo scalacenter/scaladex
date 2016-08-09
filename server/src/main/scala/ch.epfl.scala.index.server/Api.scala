@@ -59,7 +59,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
            page: PageIndex,
            sorting: Option[String] = None,
            userRepos: Set[GithubRepo] = Set(),
-           total: Int = resultsPerPage) = {
+           total: Int = resultsPerPage): Future[(Pagination, List[Project])] = {
     val escaped = 
       if(queryString.isEmpty) "*"
       else queryString.replaceAllLiterally("/", "\\/")
@@ -86,16 +86,21 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
                 )
             ))
 
+    val stringQ =
+      if(escaped.contains(":")) stringQuery(escaped)
+      else stringQuery(escaped + "~").fuzzyPrefixLength(3).defaultOperator("AND")
+
     query(
         bool(
             mustQueries = mustQueriesRepos,
             shouldQueries = List(
-                termQuery("keywords", escaped),
-                termQuery("github.description", escaped),
-                termQuery("repository", escaped),
-                termQuery("organization", escaped),
-                termQuery("github.readme", escaped),
-                stringQuery(escaped)
+                fuzzyQuery("keywords", escaped),
+                fuzzyQuery("github.description", escaped),
+                fuzzyQuery("repository", escaped),
+                fuzzyQuery("organization", escaped),
+                fuzzyQuery("artifacts", escaped),
+                fuzzyQuery("github.readme", escaped),
+                stringQ
             ),
             notQueries = List(
               termQuery("deprecated", true)
@@ -164,7 +169,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
             )
         )
         .limit(1)
-    }.map(r => r.as[Project].headOption)
+    }.map(_.as[Project].headOption)
   }
 
   def projectPage(projectRef: Project.Reference,
