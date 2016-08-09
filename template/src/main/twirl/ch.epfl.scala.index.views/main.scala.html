@@ -102,8 +102,12 @@
     </footer>
     <!-- Coding End -->
     <script src="/assets/client-jsdeps.js"></script>
-    <script src="/assets/client-fastopt.js"></script>
-    <script src="/assets/client-opt.js"></script>
+
+    @if(production) {
+        <script src="/assets/client-opt.js"></script>
+    } else {
+        <script src="/assets/client-fastopt.js"></script>
+    }
 
     <script src="/assets/lib/jQuery/dist/jquery.min.js"></script>
     <script src="/assets/lib/bootstrap-sass/assets/javascripts/bootstrap.min.js"></script>
