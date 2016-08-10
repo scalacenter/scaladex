@@ -34,7 +34,7 @@ case class Project(
     artifacts: List[String] = Nil,
     releaseCount: Int = 0,
     customScalaDoc: Option[String] = None,
-    documentationLinks: List[String] = List(),
+    documentationLinks: List[(String, String)] = List(),
     deprecated: Boolean = false,
     contributorsWanted: Boolean = false,
     artifactDeprecations: Set[String] = Set(),
