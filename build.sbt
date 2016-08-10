@@ -80,6 +80,7 @@ lazy val server = project
       "com.typesafe.scala-logging"         %% "scala-logging"          % "3.4.0",
       "ch.qos.logback"                      % "logback-classic"        % "1.1.7",
       "org.webjars.bower"                   % "bootstrap-sass"         % "3.3.6",
+      "org.webjars.bower"                   % "bootstrap-switch"       % "3.3.2",
       "org.webjars.bower"                   % "bootstrap-select"       % "1.10.0",
       "org.webjars.bower"                   % "font-awesome"           % "4.6.3",
       "org.webjars.bower"                   % "jQuery"                 % "2.2.4",
