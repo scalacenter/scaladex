@@ -199,6 +199,7 @@ object Server {
                   'contributorsWanted.as[Boolean] ? false,
                   'keywords.*,
                   'defaultArtifact.?,
+                  'defaultStableVersion.as[Boolean] ? false,
                   'deprecated.as[Boolean] ? false,
                   'artifactDeprecations.*,
 
@@ -208,6 +209,7 @@ object Server {
                   contributorsWanted,
                   keywords,
                   defaultArtifact,
+                  defaultStableVersion,
                   deprecated,
                   artifactDeprecations,
 
@@ -221,6 +223,7 @@ object Server {
                         contributorsWanted,
                         keywords.toSet,
                         defaultArtifact,
+                        defaultStableVersion,
                         deprecated,
                         artifactDeprecations.toSet,
 

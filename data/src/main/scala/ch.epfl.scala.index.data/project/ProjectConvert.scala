@@ -126,7 +126,11 @@ object ProjectConvert extends BintrayProtocol {
 
         val (max, min) = maxMinRelease(releases)
 
-        val releaseOptions = DefaultRelease(repository, ReleaseSelection(None, None, None), releases, None)
+        val defaultStableVersion = 
+          if(stored) storedProjects.get(Project.Reference(organization, repository)).map(_.defaultStableVersion).getOrElse(true)
+          else true
+
+        val releaseOptions = DefaultRelease(repository, ReleaseSelection(None, None, None), releases, None, defaultStableVersion)
 
         val project =
           Project(

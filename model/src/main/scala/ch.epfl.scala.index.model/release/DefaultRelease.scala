@@ -36,7 +36,8 @@ object DefaultRelease {
   def apply(projectRepository: String, 
             selection: ReleaseSelection, 
             releases: Set[Release],
-            defaultArtifact: Option[String]): Option[ReleaseOptions] = {
+            defaultArtifact: Option[String],
+            defaultStableVersion: Boolean): Option[ReleaseOptions] = {
 
     val selectedReleases = releases.filter(
         release =>
@@ -66,7 +67,7 @@ object DefaultRelease {
           target.scalaVersion,
           target.scalaJsVersion,
           // version
-          !version.preRelease.isEmpty,
+          defaultStableVersion && !version.preRelease.isEmpty,
           version
       )
     }

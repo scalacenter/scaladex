@@ -9,6 +9,7 @@ case class ProjectForm(
   contributorsWanted: Boolean = false,
   keywords: Set[String] = Set(),
   defaultArtifact: Option[String] = None,
+  defaultStableVersion: Boolean = true,
   deprecated: Boolean = false,
   artifactDeprecations: Set[String] = Set(),
 
@@ -23,6 +24,7 @@ case class ProjectForm(
       defaultArtifact = 
         if(!defaultArtifact.isEmpty) defaultArtifact 
         else project.defaultArtifact,
+      defaultStableVersion = defaultStableVersion,
       deprecated = deprecated,
       artifactDeprecations = artifactDeprecations,
 
@@ -42,6 +44,7 @@ object ProjectForm {
       contributorsWanted,
       keywords,
       defaultArtifact,
+      defaultStableVersion,
       deprecated,
       artifactDeprecations,
       customScalaDoc,
