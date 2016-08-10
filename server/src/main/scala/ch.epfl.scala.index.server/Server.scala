@@ -195,46 +195,58 @@ object Server {
           path("edit" / Segment / Segment) { (organization, repository) =>
             optionalSession(refreshable, usingCookies) { userId =>
               pathEnd {
-                formFields(
-                  'contributorsWanted.as[Boolean] ? false,
-                  'keywords.*,
-                  'defaultArtifact.?,
-                  'defaultStableVersion.as[Boolean] ? false,
-                  'deprecated.as[Boolean] ? false,
-                  'artifactDeprecations.*,
+                formFieldSeq { fields =>
+                  formFields(
+                    'contributorsWanted.as[Boolean] ? false,
+                    'keywords.*,
+                    'defaultArtifact.?,
+                    'defaultStableVersion.as[Boolean] ? false,
+                    'deprecated.as[Boolean] ? false,
+                    'artifactDeprecations.*,
+                    'customScalaDoc.?
+                  ) { (
+                    contributorsWanted,
+                    keywords,
+                    defaultArtifact,
+                    defaultStableVersion,
+                    deprecated,
+                    artifactDeprecations,
+                    customScalaDoc
+                  ) =>
+                    val name = "documentationLinks"
+                    val end = "]".head
 
-                  'customScalaDoc.?,
-                  'documentationLinks.*
-                ) { (
-                  contributorsWanted,
-                  keywords,
-                  defaultArtifact,
-                  defaultStableVersion,
-                  deprecated,
-                  artifactDeprecations,
+                    val documentationLinks =
+                      fields
+                        .filter{ case (key, _) => key.startsWith(name)}
+                        .groupBy{case (key, _) => key.drop("documentationLinks[".length).takeWhile(_ != end)}
+                        .values
+                        .map{ case Vector((a, b), (c, d)) =>
+                          if(a.contains("label")) (b, d)
+                          else (d, b)
+                        }
+                        .toList
 
-                  customScalaDoc,
-                  documentationLinks
-                ) =>
-                  onSuccess(
-                    api.updateProject(
-                      Project.Reference(organization, repository),
-                      ProjectForm(
-                        contributorsWanted,
-                        keywords.toSet,
-                        defaultArtifact,
-                        defaultStableVersion,
-                        deprecated,
-                        artifactDeprecations.toSet,
+                    onSuccess(
+                      api.updateProject(
+                        Project.Reference(organization, repository),
+                        ProjectForm(
+                          contributorsWanted,
+                          keywords.toSet,
+                          defaultArtifact,
+                          defaultStableVersion,
+                          deprecated,
+                          artifactDeprecations.toSet,
 
-                        // documentation
-                        customScalaDoc,
-                        documentationLinks.toList
+                          // documentation
+                          customScalaDoc,
+                          documentationLinks
+                        )
                       )
-                    )
-                  ){ ret =>
-                    Thread.sleep(1000) // oh yeah
-                    redirect(Uri(s"/$organization/$repository"), SeeOther)
+                    ){ ret =>
+                      Thread.sleep(1000) // oh yeah
+                      redirect(Uri(s"/$organization/$repository"), SeeOther)
+                    }
                   }
                 }
               }

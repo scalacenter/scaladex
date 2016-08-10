@@ -118,15 +118,28 @@
                 <fieldset class="documentation-link">
                   <legend>Documentation links</legend>
                   <ul>
-                  @for(url <- project.documentationLinks){
-                    <li class="list-group">
-                      <input name="documentationLinks" value="@url" class="form-control form-control list-group-item">
-                    </li>
-                  }
-                  @for((i) <- (1 to 5)) {
+                  @for(((label, url), i) <- project.documentationLinks.zipWithIndex){
                     <li class="list-group">
                       <input
-                        name="documentationLinks" value=""
+                        name="documentationLinks[@i].label" value="@label"
+                        placeholder="User Guide"
+                        class="form-control list-group-item">
+                      <input 
+                        name="documentationLinks[@i].url"
+                        value="@url"
+                        placeholder="http://example.org/guide/[major].x"
+                        class="form-control list-group-item">
+                    </li>
+                  }
+                  @for((i) <- ((project.documentationLinks.size) to (project.documentationLinks.size + 5))) {
+                    <li class="list-group">
+                      <input
+                        name="documentationLinks[@i].label" value=""
+                        placeholder="User Guide"
+                        class="form-control list-group-item">
+                      <input 
+                        name="documentationLinks[@i].url"
+                        value=""
                         placeholder="http://example.org/guide/[major].x"
                         class="form-control list-group-item">
                     </li>

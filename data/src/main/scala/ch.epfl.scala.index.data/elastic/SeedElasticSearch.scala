@@ -38,7 +38,6 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
             field("defaultArtifact").typed(StringType).index("no"),
             field("artifacts").typed(StringType).index("not_analyzed"),
             field("customScalaDoc").typed(StringType).index("no"),
-            field("documentationLinks").typed(StringType).index("no"),
             field("artifactDeprecations").typed(StringType).index("no"),
             field("created").typed(DateType),
             field("updated").typed(DateType),

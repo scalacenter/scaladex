@@ -102,8 +102,8 @@ case class Release(
     }
   }
 
-  def documentationURLs(documentationLinks: List[String]): List[String] = {
-    documentationLinks.map(evalLink)
+  def documentationURLs(documentationLinks: List[(String, String)]): List[(String, String)] = {
+    documentationLinks.map{ case(label, url) => (label, evalLink(url))}
   }
 
   /** Documentation link are often related to a release version
