@@ -126,8 +126,8 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 
     updatingSubmodules(List(indexFolder)){ () =>
       sbt(
-        // "data/run live",
-        // "data/run elastic",
+        "data/run live",
+        "data/run elastic",
         "server/universal:packageBin"
       )
     }
