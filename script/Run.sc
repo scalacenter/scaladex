@@ -8,7 +8,6 @@ object Job extends Enumeration {
 
 implicit val readCiType: scopt.Read[Job.Value] = scopt.Read.reads(Job withName _)
 
-def runDetached(command: String): Unit = Runtime.getRuntime().exec(command)
 def run(args: String*): Unit = Process(args.toList).!
 def runD(args: String*)(dir: Path): Unit = Process(args.toList, Some(dir.toIO)).!
 def runSlurp(args: String*): String = Process(args.toList).lineStream.toList.headOption.getOrElse("")
@@ -152,30 +151,13 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
     val current = "current"
     val currentLink = scaladex / current
     if(exists(currentLink)) {
-
-      // kill current server if running
-
-      val pidFile = currentLink / "PID"
-      if(exists(pidFile)) {
-        val pid = runSlurp("cat", "pidFile.toString")
-        println(s"killing $pid")
-        run("kill", pid)
-      }
-
       rm(currentLink)
     }
 
     // /scaladex/current -> /scaladex/releases/1.2.3-sha
     runD("ln", "-s", destGitDescribe.toString, current)(scaladex)
 
-    val configFile = credentialsFolder / "application.conf"
-
-    val serverBin = (currentLink / "scaladex" / "bin" / "server").toString
-    val config = "-Dconfig.file=" + configFile.toString
-
-    val toRun = s"nohup $serverBin $config &"
-    println(s"running: $toRun")
-
-    runDetached(toRun)
+    // /usr/bin/sudo -H -u scaladex /home/scaladex/bin/jenkins_redeploy.sh
+    // does the rest of the work
   }
 }
