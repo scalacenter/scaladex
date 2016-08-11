@@ -6,6 +6,12 @@
       <a href="#sbt" aria-controls="sbt" role="tab" data-toggle="tab">Sbt</a>
     </li>
     <li role="presentation">
+      <a href="#ammonite" aria-controls="ammonite" role="tab" data-toggle="tab">Amm</a>
+    </li>
+    <li role="presentation">
+      <a href="#coursier" aria-controls="coursier" role="tab" data-toggle="tab">Cour</a>
+    </li>
+    <li role="presentation">
       <a href="#maven" aria-controls="maven" role="tab" data-toggle="tab">Maven</a>
     </li>
     <li role="presentation">
@@ -15,6 +21,14 @@
   <div class="tab-content">
     <div role="tabpanel" class="tab-pane active" id="sbt">
       <pre>@release.sbtInstall</pre>
+    </div>
+    <div role="tabpanel" class="tab-pane" id="ammonite">
+      <a href="http://www.lihaoyi.com/Ammonite/#Ammonite-REPL">Ammonite REPL</a>
+      <pre>load.ivy(@release.sbtInstall)</pre>
+    </div>
+    <div role="tabpanel" class="tab-pane" id="coursier">
+      <a href="https://github.com/alexarchambault/coursier#command-line-1">Coursier</a>
+      <pre>./coursier launch @release.maven.groupId:@release.maven.artifactId:@release.maven.version</pre>
     </div>
     <div role="tabpanel" class="tab-pane" id="maven">
       <pre>@release.mavenInstall</pre>

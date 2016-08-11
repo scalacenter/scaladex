@@ -377,8 +377,14 @@ main {
             }
             .tab-pane {
                 background: #fff;
-                padding: 15px;
-                textarea {
+                padding: 7px;
+                a {
+                    display: block;
+                    margin-bottom: 10px;
+                }
+                pre {
+                    overflow: visible;
+                    padding: 0;
                     resize: none;
                     font-size: ($font-size-small - 2);
                     font-family: $font-family-monospace;
