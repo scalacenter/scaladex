@@ -354,7 +354,7 @@ object Server {
                 }
             } ~
             path("assets" / Remaining) { path ⇒
-              if(path == "reference.conf") Forbidden(";-)")
+              if(path == "reference.conf") complete((Forbidden, ";-)"))
               else getFromResource(path)
             } ~
             path("fonts" / Remaining) { path ⇒
