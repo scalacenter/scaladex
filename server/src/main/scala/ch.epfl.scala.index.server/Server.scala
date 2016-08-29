@@ -400,6 +400,28 @@ object Server {
                 }
               }
             } ~
+            // path(Segment / Segment / Segment / "latest.svg") { (organization, repository, artifact) =>
+            // } ~
+            path("count.svg") {
+              parameters('q, 'subject, 'color ? "green", 'style ? "flat-square", 'logo.?, 'logoWidth.as[Int] ? 40) { 
+                (query, subject, color, style, logo, logoWidth) =>
+
+                onSuccess(api.total(query)){ r =>
+                  val escapedSubject = subject
+                    .replaceAllLiterally("-", "--")
+                    .replaceAllLiterally("_", "__")
+
+                  val uri = Uri(s"https://img.shields.io/badge/$escapedSubject-${r.toString()}-$color.svg")
+                  val query = Map("style" -> style)
+
+                  val queryWithLogo =
+                    if(logo.isEmpty) query
+                    else query + (("logo", logo.get)) + (("logoWidth", logoWidth.toString()))
+
+                  redirect(uri.withQuery(Query(queryWithLogo)), TemporaryRedirect)
+                }
+              }
+            } ~
             path("edit" / Segment / Segment) { (organization, repository) =>
               optionalSession(refreshable, usingCookies) { userId =>
                 pathEnd {

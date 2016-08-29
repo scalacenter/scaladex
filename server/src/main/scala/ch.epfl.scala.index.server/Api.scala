@@ -55,11 +55,8 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
         ))
   }
 
-  def find(queryString: String,
-           page: PageIndex,
-           sorting: Option[String] = None,
-           userRepos: Set[GithubRepo] = Set(),
-           total: Int = resultsPerPage): Future[(Pagination, List[Project])] = {
+  private def getQuery(queryString: String, userRepos: Set[GithubRepo] = Set()) = {
+
     val escaped = 
       if(queryString.isEmpty) "*"
       else queryString.replaceAllLiterally("/", "\\/")
@@ -90,22 +87,40 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
       if(escaped.contains(":")) stringQuery(escaped)
       else stringQuery(escaped + "~").fuzzyPrefixLength(3).defaultOperator("AND")
 
+    bool(
+      mustQueries = mustQueriesRepos,
+      shouldQueries = List(
+          fuzzyQuery("keywords", escaped),
+          fuzzyQuery("github.description", escaped),
+          fuzzyQuery("repository", escaped),
+          fuzzyQuery("organization", escaped),
+          fuzzyQuery("artifacts", escaped),
+          fuzzyQuery("github.readme", escaped),
+          stringQ
+      ),
+      notQueries = List(
+        termQuery("deprecated", true)
+      )
+    )
+  }
+
+  def total(queryString: String): Future[Long] = {
+    esClient.execute {
+      search
+        .in(indexName / projectsCollection)
+        .query(getQuery(queryString))
+        .size(0)
+    }.map(_.totalHits)
+  }
+
+  def find(queryString: String,
+           page: PageIndex,
+           sorting: Option[String] = None,
+           userRepos: Set[GithubRepo] = Set(),
+           total: Int = resultsPerPage): Future[(Pagination, List[Project])] = {
+
     query(
-        bool(
-            mustQueries = mustQueriesRepos,
-            shouldQueries = List(
-                fuzzyQuery("keywords", escaped),
-                fuzzyQuery("github.description", escaped),
-                fuzzyQuery("repository", escaped),
-                fuzzyQuery("organization", escaped),
-                fuzzyQuery("artifacts", escaped),
-                fuzzyQuery("github.readme", escaped),
-                stringQ
-            ),
-            notQueries = List(
-              termQuery("deprecated", true)
-            )
-        ),
+        getQuery(queryString, userRepos),
         page,
         sorting,
         total
