@@ -193,12 +193,16 @@ object Server {
     val shields = parameters(('color.?, 'style.?, 'logo.?, 'logoWidth.as[Int].?))
     val shieldsSubject = shields & parameters('subject)
  
-    def shieldsSvg(rawSubject: String, status: String, rawColor: Option[String],
+    def shieldsSvg(rawSubject: String, rawStatus: String, rawColor: Option[String],
       style: Option[String], logo: Option[String], logoWidth: Option[Int]) = {
 
-      val subject = rawSubject
-              .replaceAllLiterally("-", "--")
-              .replaceAllLiterally("_", "__")
+      def shieldEscape(in: String): String = 
+        in
+          .replaceAllLiterally("-", "--")
+          .replaceAllLiterally("_", "__")
+
+      val subject = shieldEscape(rawSubject)
+      val status = shieldEscape(rawStatus)
 
       val color = rawColor.getOrElse("green") 
 
@@ -432,7 +436,7 @@ object Server {
                   ReleaseSelection(Some(artifact), None))){
 
                     case Some((_, options)) =>
-                      shieldsSvg(artifact, options.versions.head.toString(), color, style, logo, logoWidth)
+                      shieldsSvg(artifact, options.release.reference.version.toString(), color, style, logo, logoWidth)
                     case _ => 
                       complete((NotFound, ""))
 
