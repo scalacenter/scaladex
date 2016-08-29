@@ -190,6 +190,32 @@ object Server {
       MavenReference(groupId, artifactId, version)
     }
 
+    val shields = parameters(('color.?, 'style.?, 'logo.?, 'logoWidth.as[Int].?))
+    val shieldsSubject = shields & parameters('subject)
+ 
+    def shieldsSvg(rawSubject: String, status: String, rawColor: Option[String],
+      style: Option[String], logo: Option[String], logoWidth: Option[Int]) = {
+
+      val subject = rawSubject
+              .replaceAllLiterally("-", "--")
+              .replaceAllLiterally("_", "__")
+
+      val color = rawColor.getOrElse("green") 
+
+      // we need a specific encoding
+      val query = List(
+        style.map(("style", _)),
+        logo.map(l => ("logo", java.net.URLEncoder.encode(l, "ascii").replaceAllLiterally("+", "%2B") )),
+        logoWidth.map(w => ("logoWidth", w.toString))
+      ).flatten.map{case (k, v) => k + "=" + v }.mkString("?", "&", "")
+
+      redirect(
+        s"https://img.shields.io/badge/$subject-$status-$color.svg$query",
+        TemporaryRedirect
+      )
+      
+    }
+
     val route = {
         post {
           path("edit" / Segment / Segment) { (organization, repository) =>
@@ -400,25 +426,25 @@ object Server {
                 }
               }
             } ~
-            // path(Segment / Segment / Segment / "latest.svg") { (organization, repository, artifact) =>
-            // } ~
+            path(Segment / Segment / Segment / "latest.svg") { (organization, repository, artifact) =>
+              shields { (color, style, logo, logoWidth) =>
+                onSuccess(api.projectPage(Project.Reference(organization, repository), 
+                  ReleaseSelection(Some(artifact), None))){
+
+                    case Some((_, options)) =>
+                      shieldsSvg(artifact, options.versions.head.toString(), color, style, logo, logoWidth)
+                    case _ => 
+                      complete((NotFound, ""))
+
+                }
+              }
+            } ~
             path("count.svg") {
-              parameters('q, 'subject, 'color ? "green", 'style ? "flat-square", 'logo.?, 'logoWidth.as[Int] ? 40) { 
-                (query, subject, color, style, logo, logoWidth) =>
-
-                onSuccess(api.total(query)){ r =>
-                  val escapedSubject = subject
-                    .replaceAllLiterally("-", "--")
-                    .replaceAllLiterally("_", "__")
-
-                  val uri = Uri(s"https://img.shields.io/badge/$escapedSubject-${r.toString()}-$color.svg")
-                  val query = Map("style" -> style)
-
-                  val queryWithLogo =
-                    if(logo.isEmpty) query
-                    else query + (("logo", logo.get)) + (("logoWidth", logoWidth.toString()))
-
-                  redirect(uri.withQuery(Query(queryWithLogo)), TemporaryRedirect)
+              parameter('q) { query =>
+                shieldsSubject { (color, style, logo, logoWidth, subject) =>
+                  onSuccess(api.total(query))(count => 
+                    shieldsSvg(subject, count.toString, color, style, logo, logoWidth)
+                  )
                 }
               }
             } ~
