@@ -38,6 +38,8 @@ def datetime = {
 def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
   submodules.foreach{ submodule =>
     runD("git", "checkout", "master")(submodule)
+    runD("git", "remote", "update")(submodule)
+    runD("git", "reset", "--hard" "origin/master")(submodule)
     runD("git", "pull", "origin", "master")(submodule)
   }
 
