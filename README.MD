@@ -29,7 +29,7 @@ Join the [gitter.im channel](https://gitter.im/scalacenter/scaladex) and read th
 
 ## Badges API
 
-[![Count Badge](https://index.scala-lang.org/count.svg?q=dependencies:typelevel/cats&subject=cats&color=orange&style=flat-square)](https://index.scala-lang.org/search?q=dependencies:akka/akka-actor)
+[![Count Badge](https://index.scala-lang.org/count.svg?q=dependencies:typelevel/cats&subject=cats&color=orange&style=flat-square)](https://index.scala-lang.org/search?q=dependencies:typelevel/cats)
 
 [![Latest version](https://index.scala-lang.org/typelevel/cats/cats-core/latest.svg?color=orange&style=flat-square)](https://index.scala-lang.org/typelevel/cats/cats-core)
 
