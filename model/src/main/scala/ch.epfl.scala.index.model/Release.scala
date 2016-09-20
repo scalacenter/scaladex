@@ -61,6 +61,28 @@ case class Release(
   }
 
   /**
+    * string representation for Ammonite loading
+    * @return
+    */
+  def ammInstall = {
+
+    def addResolver(r: Resolver) = s"""import ammonite._, Resolvers._
+      |val res = Resolver.Http(
+      |  "${r.name}",
+      |  "${r.url}",
+      |  IvyPattern,
+      |  false)
+      |interp.resolvers() = interp.resolvers() :+ res""".stripMargin
+
+    val artifactOperator = if (nonStandardLib) ":" else "::"
+
+    List(
+        Some(s"import $$ivy.`${maven.groupId}$artifactOperator${reference.artifact}:${reference.version}`"),
+        resolver.map(addResolver)
+    ).flatten.mkString(System.lineSeparator)
+  }
+
+  /**
     * string representation for maven dependency
     * @return
     */
