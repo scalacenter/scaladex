@@ -1,7 +1,6 @@
 @import ch.epfl.scala.index.model.Project
 @import ch.epfl.scala.index.model.misc.Pagination
 @import ch.epfl.scala.index.model.misc.UserInfo
-@import ch.epfl.scala.index.model.misc.Url
 
 @(query: String, uri: String, sorting: Option[String], pagination: Pagination, projects: List[Project], user: Option[UserInfo], you: Boolean)
 @main(title = s"Search $query", showSearch = true, searchQuery = query, user, you) {
@@ -11,8 +10,7 @@
         @result("search", "", query, sorting, pagination, projects, user, you)
         @paginate(pagination, 
           s"/$uri?q=$query" + 
-            sorting.map("&sort=" + _).getOrElse("") + 
-            (if(you) "you" else "")
+            sorting.map("&sort=" + _).getOrElse("")
         )
       } else {
         <h1>No Results</h1>
