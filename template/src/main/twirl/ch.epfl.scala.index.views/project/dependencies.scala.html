@@ -11,6 +11,13 @@
   }
 </div>
 
+@if(release.internalDependencies.nonEmpty) {
+<div class="dependencies box">
+  <h4>@release.internalDependencyCount Internal Dependencies</h4>
+  @dependencyBlock(release.internalDependencies)
+</div>
+}
+
 @* reusable code block for dependency listing *@
 @dependencyBlock[D <: Dependency](dependencies: Seq[D]) = {
   <ul>

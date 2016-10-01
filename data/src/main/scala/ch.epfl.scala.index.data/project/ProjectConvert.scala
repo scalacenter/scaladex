@@ -229,16 +229,27 @@ object ProjectConvert extends BintrayProtocol {
     def targets(releases: Set[Release]): Set[String] =
       collectDependencies(releases, _.target.supportName)
 
+    def belongsTo(project: Project): Dependency => Boolean = {
+      //A scala project can only have scala internal dependencies
+      case scalaDependency: ScalaDependency =>
+        project.reference.organization == scalaDependency.reference.organization &&
+        project.reference.repository == scalaDependency.reference.repository
+      case _ => false
+    }
+
     projectsAndReleases.map {
       case (project, releases) =>
         val releasesWithDependencies = releases.map { release =>
           val dependencies = findDependencies(release)
+          val externalDependencies = dependencies.filterNot(belongsTo(project))
+          val internalDependencies = dependencies.filter(belongsTo(project))
           release.copy(
-              scalaDependencies = dependencies.collect { case sd: ScalaDependency => sd },
-              javaDependencies = dependencies.collect { case jd: JavaDependency   => jd },
+              scalaDependencies = externalDependencies.collect { case sd: ScalaDependency => sd },
+              javaDependencies = externalDependencies.collect { case jd: JavaDependency   => jd },
               reverseDependencies = findReverseDependencies(release).collect {
                 case sd: ScalaDependency => sd
-              }
+              },
+              internalDependencies = internalDependencies.collect { case sd: ScalaDependency => sd }
           )
         }
 

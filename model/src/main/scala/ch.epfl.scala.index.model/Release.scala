@@ -36,7 +36,8 @@ case class Release(
      */
     scalaDependencies: Seq[ScalaDependency] = Seq(),
     javaDependencies: Seq[JavaDependency] = Seq(),
-    reverseDependencies: Seq[ScalaDependency] = Seq()
+    reverseDependencies: Seq[ScalaDependency] = Seq(),
+    internalDependencies: Seq[ScalaDependency] = Seq()
 ) {
 
   /**
@@ -183,6 +184,11 @@ case class Release(
     * number of dependencies (java + scala)
     */
   lazy val dependencyCount = scalaDependencies.size + javaDependencies.size
+
+  /**
+    * number of internal dependencies
+    */
+  lazy val internalDependencyCount = internalDependencies.size
 
   /**
     * collect a list of version for a reverse dependency
