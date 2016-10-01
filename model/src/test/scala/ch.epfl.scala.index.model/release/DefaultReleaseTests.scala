@@ -52,7 +52,7 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
         )
       ) 
 
-      val result = DefaultRelease(repository, ReleaseSelection(None, None), releases, None)
+      val result = DefaultRelease(repository, ReleaseSelection(None, None), releases, None, true)
       
       val versions: List[SemanticVersion] =
         List(
@@ -109,7 +109,8 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
         repository,
         ReleaseSelection(Some("akka-distributed-data-experimental"), None),
         releases,
-        None
+        None,
+        true
       )
 
       val expected =
