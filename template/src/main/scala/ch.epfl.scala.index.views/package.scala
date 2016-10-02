@@ -4,7 +4,21 @@ package views
 import model._
 import com.typesafe.config.ConfigFactory
 
+import akka.http.scaladsl.model.Uri
+import Uri.Query
+
 package object html {
+
+  implicit class QueryAppend(uri: Uri) {
+    def appendQuery(kv: (String, String)): Uri = uri.withQuery(
+      Query(uri.query(java.nio.charset.Charset.forName("UTF-8")).toMap ++ Map(kv))
+    )
+    def appendQuery(k: String, on: Boolean): Uri = {
+      if(on) uri.appendQuery(k -> "✓")
+      else uri
+    }
+  }
+
   // https://www.reddit.com/r/scala/comments/4n73zz/scala_puzzle_gooooooogle_pagination/d41jor5
   def paginationRender(
       selected: Int,
@@ -47,7 +61,7 @@ package object html {
 
   val config = ConfigFactory.load().getConfig("org.scala_lang.index.server")
   val production = config.getBoolean("production")
-  
+
   def unescapeBackground(in: String) = {
     play.twirl.api.HtmlFormat.escape(in)
       .toString
