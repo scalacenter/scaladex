@@ -36,7 +36,7 @@ lazy val commonSettings = Seq(
   initialCommands in (Test, console) := """ammonite.repl.Main().run()""",
   libraryDependencies += "org.specs2" %% "specs2-core" % "3.8.4" % "test",
   scalacOptions in Test ++= Seq("-Yrangepos")
-) ++ baseSettings ++ 
+) ++ baseSettings ++
   addCommandAlias("start", "reStart")
 
 lazy val akkaVersion = "2.4.7"
@@ -46,8 +46,9 @@ lazy val template = project
   .settings(
     scalacOptions -= "-Ywarn-unused-import",
     libraryDependencies ++= Seq(
-      "com.typesafe" % "config" % "1.3.0",
-      "com.github.nscala-time" %% "nscala-time" % "2.12.0"
+      "com.typesafe"            % "config"         % "1.3.0",
+      "com.github.nscala-time" %% "nscala-time"    % "2.12.0",
+      "com.typesafe.akka"      %% "akka-http-core" % akkaVersion
     )
   )
   .dependsOn(model)
