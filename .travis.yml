@@ -1,0 +1,21 @@
+language: scala
+os:
+  - linux
+scala:
+  - 2.11.8
+jdk:
+  - oraclejdk8
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot/
+script:
+  - sbt test
+  - sbt server/universal:packageBin
+  # - sbt sbtScaladex/scripted
+
+git:
+  submodules: false
+
+before_script:
+  - 'gem install sass --version "=3.2.12"'
