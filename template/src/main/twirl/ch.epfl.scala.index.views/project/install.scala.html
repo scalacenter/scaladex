@@ -5,7 +5,7 @@
     <li role="presentation" class="active">
       <a href="#sbt" aria-controls="sbt" role="tab" data-toggle="tab">Sbt</a>
     </li>
-    @if(!release.isHostedOnBintray) {
+    @if(release.isOnMavenCentral) {
     <li role="presentation">
       <a href="#ammonite" aria-controls="ammonite" role="tab" data-toggle="tab">Amm</a>
     </li>
@@ -24,7 +24,7 @@
     <div role="tabpanel" class="tab-pane active" id="sbt">
       <pre>@release.sbtInstall</pre>
     </div>
-    @if(!release.isHostedOnBintray) {
+    @if(release.isOnMavenCentral) {
     <div role="tabpanel" class="tab-pane" id="ammonite">
       <a href="http://www.lihaoyi.com/Ammonite/#Ammonite-REPL">Ammonite REPL</a>
       <pre>@release.ammInstall</pre>

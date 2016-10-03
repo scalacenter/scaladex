@@ -204,12 +204,10 @@ case class Release(
   }
 
   /**
-    * True is these release artifact is hosted on Bintray but not Maven central
+    * True is this release artifact is hosted on Maven Central
     */
-  lazy val isHostedOnBintray = resolver.map {
-    case _: BintrayResolver => true
-    case _ => false
-  }
+  lazy val isOnMavenCentral = resolver.isEmpty
+
 }
 
 object Release {
