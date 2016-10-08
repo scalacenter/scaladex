@@ -383,9 +383,17 @@ object Server {
                   }
                 }
             } ~
-            path("assets" / Remaining) { path ⇒
-              if(path == "reference.conf") complete((Forbidden, ";-)"))
-              else getFromResource(path)
+            path("assets" / "lib" / Remaining) { path ⇒
+              getFromResource("lib/" + path)
+            } ~
+            path("assets" / "img" / Remaining) { path ⇒
+              getFromResource("img/" + path)
+            } ~
+            path("assets" / "css" / Remaining) { path ⇒
+              getFromResource("css/" + path)
+            } ~
+            path("assets" / "js" / """\w*[\-\w]*\.js[\.map]*""".r) { path ⇒
+              getFromResource(path)
             } ~
             path("fonts" / Remaining) { path ⇒
               getFromResource(path)
