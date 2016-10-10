@@ -243,10 +243,11 @@ object Server {
                     artifactDeprecations,
                     customScalaDoc
                   ) =>
-                    val name = "documentationLinks"
-                    val end = "]".head
 
-                    val documentationLinks =
+                    val documentationLinks = {
+                      val name = "documentationLinks"
+                      val end = "]".head
+
                       fields
                         .filter{ case (key, _) => key.startsWith(name)}
                         .groupBy{case (key, _) => key.drop("documentationLinks[".length).takeWhile(_ != end)}
@@ -256,6 +257,7 @@ object Server {
                           else (d, b)
                         }
                         .toList
+                    }
 
                     onSuccess(
                       api.updateProject(
@@ -426,6 +428,40 @@ object Server {
                           uwrite(summarisedProjects)
                       }
                     }
+                  }
+                }
+              } ~
+              path("scastie") {
+                get {
+                  parameters('q, 'target, 'scalaVersion, 'targetVersion.?) { 
+                    (q, target0, scalaVersion0, targetVersion0) =>
+
+                    val target1 = 
+                      (target0, SemanticVersion(scalaVersion0), targetVersion0.map(SemanticVersion(_))) match {
+                        case ("JVM", Some(scalaVersion), _) => 
+                          Some(ScalaTarget(scalaVersion))
+                        case ("JS", Some(scalaVersion), Some(scalaJsVersion)) => 
+                          Some(ScalaTarget(scalaVersion, scalaJsVersion))
+                        // NATIVE
+                        case _ =>
+                          None
+                      }
+
+                    def convert(project: Project): ScastieProject = {
+                      import project._
+                      ScastieProject(organization, repository, project.github.flatMap(_.logo.map(_.target)), artifacts)
+                    }
+
+                    complete(
+                      target1 match {
+                        case Some(target) => 
+                          (OK, api.find(q, targetFiltering = target1)
+                                  .map{case (_, ps) => ps.map(p => convert(p))}
+                                  .map(ps => uwrite(ps))
+                          )
+                        case None => (BadRequest, s"something is wrong: $target0 $scalaVersion0 $targetVersion0")
+                      }
+                    )
                   }
                 }
               }
