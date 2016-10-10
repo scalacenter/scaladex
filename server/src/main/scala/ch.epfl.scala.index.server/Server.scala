@@ -392,11 +392,23 @@ object Server {
             path("assets" / "css" / Remaining) { path ⇒
               getFromResource("css/" + path)
             } ~
-            path("assets" / "js" / """\w*[\-\w]*\.js[\.map]*""".r) { path ⇒
-              getFromResource(path)
+            path("assets" / "js" / Remaining) { path ⇒
+              getFromResource("js/" + path)
             } ~
-            path("fonts" / Remaining) { path ⇒
-              getFromResource(path)
+            path("assets" / "client-opt.js") {
+              getFromResource("client-opt.js")
+            } ~
+            path("assets" / "client-fastopt.js") {
+              getFromResource("client-fastopt.js")
+            } ~
+            path("assets" / "client-opt.js.map") {
+              getFromResource("client-opt.js.map")
+            } ~
+            path("assets" / "client-fastopt.js.map") {
+              getFromResource("client-fastopt.js.map")
+            } ~
+            path("assets" / "client-jsdeps.js") {
+              getFromResource("client-jsdeps.js")
             } ~
             pathPrefix("api") {
               path("search") {
