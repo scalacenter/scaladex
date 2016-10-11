@@ -39,7 +39,7 @@ lazy val commonSettings = Seq(
 ) ++ baseSettings ++
   addCommandAlias("start", "reStart")
 
-lazy val akkaVersion = "2.4.7"
+lazy val akkaVersion = "2.4.11"
 
 lazy val template = project
   .settings(commonSettings)
@@ -77,7 +77,8 @@ lazy val server = project
   .settings(
     libraryDependencies ++= Seq(
       "com.typesafe.akka"                  %% "akka-http-experimental" % akkaVersion,
-      "com.softwaremill.akka-http-session" %% "core"                   % "0.2.6",
+      "com.softwaremill.akka-http-session" %% "core"                   % "0.2.7",
+      "ch.megard"                          %% "akka-http-cors"         % "0.1.7",
       "com.typesafe.scala-logging"         %% "scala-logging"          % "3.4.0",
       "ch.qos.logback"                      % "logback-classic"        % "1.1.7",
       "org.webjars.bower"                   % "bootstrap-sass"         % "3.3.6",
