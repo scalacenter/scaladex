@@ -25,6 +25,8 @@ import com.softwaremill.session.CsrfOptions._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 
+import ch.megard.akka.http.cors.CorsDirectives._
+
 import com.typesafe.config.ConfigFactory
 
 import akka.actor.ActorSystem
@@ -433,35 +435,37 @@ object Server {
               } ~
               path("scastie") {
                 get {
-                  parameters('q, 'target, 'scalaVersion, 'targetVersion.?) { 
-                    (q, target0, scalaVersion0, targetVersion0) =>
+                  cors() {
+                    parameters('q, 'target, 'scalaVersion, 'targetVersion.?) { 
+                      (q, target0, scalaVersion0, targetVersion0) =>
 
-                    val target1 = 
-                      (target0, SemanticVersion(scalaVersion0), targetVersion0.map(SemanticVersion(_))) match {
-                        case ("JVM", Some(scalaVersion), _) => 
-                          Some(ScalaTarget(scalaVersion))
-                        case ("JS", Some(scalaVersion), Some(scalaJsVersion)) => 
-                          Some(ScalaTarget(scalaVersion, scalaJsVersion))
-                        // NATIVE
-                        case _ =>
-                          None
+                      val target1 = 
+                        (target0, SemanticVersion(scalaVersion0), targetVersion0.map(SemanticVersion(_))) match {
+                          case ("JVM", Some(scalaVersion), _) => 
+                            Some(ScalaTarget(scalaVersion))
+                          case ("JS", Some(scalaVersion), Some(scalaJsVersion)) => 
+                            Some(ScalaTarget(scalaVersion, scalaJsVersion))
+                          // NATIVE
+                          case _ =>
+                            None
+                        }
+
+                      def convert(project: Project): ScastieProject = {
+                        import project._
+                        ScastieProject(organization, repository, project.github.flatMap(_.logo.map(_.target)), artifacts)
                       }
 
-                    def convert(project: Project): ScastieProject = {
-                      import project._
-                      ScastieProject(organization, repository, project.github.flatMap(_.logo.map(_.target)), artifacts)
+                      complete(
+                        target1 match {
+                          case Some(target) => 
+                            (OK, api.find(q, targetFiltering = target1)
+                                    .map{case (_, ps) => ps.map(p => convert(p))}
+                                    .map(ps => uwrite(ps))
+                            )
+                          case None => (BadRequest, s"something is wrong: $target0 $scalaVersion0 $targetVersion0")
+                        }
+                      )
                     }
-
-                    complete(
-                      target1 match {
-                        case Some(target) => 
-                          (OK, api.find(q, targetFiltering = target1)
-                                  .map{case (_, ps) => ps.map(p => convert(p))}
-                                  .map(ps => uwrite(ps))
-                          )
-                        case None => (BadRequest, s"something is wrong: $target0 $scalaVersion0 $targetVersion0")
-                      }
-                    )
                   }
                 }
               }

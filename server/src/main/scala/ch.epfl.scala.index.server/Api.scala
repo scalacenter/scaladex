@@ -78,10 +78,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
 
     val mustQueryTarget =
       targetFiltering match {
-        case Some(t) => {
-          println(t.supportName)
-          List(bool(should(termQuery("targets", t.supportName))))
-        }
+        case Some(t) => List(bool(should(termQuery("targets", t.supportName))))
         case None => Nil
       }
 
