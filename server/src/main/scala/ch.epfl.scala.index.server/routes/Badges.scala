@@ -21,6 +21,7 @@ class Badges(dataRepository: DataRepository) {
       in
         .replaceAllLiterally("-", "--")
         .replaceAllLiterally("_", "__")
+        .replaceAllLiterally(" ", "_")
 
     val subject = shieldEscape(rawSubject)
     val status = shieldEscape(rawStatus)
@@ -51,7 +52,7 @@ class Badges(dataRepository: DataRepository) {
               case Some((_, options)) =>
                 shieldsSvg(artifact, options.release.reference.version.toString(), color, style, logo, logoWidth)
               case _ => 
-                complete((NotFound, ""))
+                shieldsSvg(artifact, "no published release", color orElse Some("lightgrey"), style, logo, logoWidth)
 
           }
         }
