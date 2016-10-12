@@ -18,20 +18,13 @@ import Uri._
 import StatusCodes._
 
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.collection.parallel.mutable.ParTrieMap
+import scala.concurrent.Future
 
-import java.util.UUID
-
-class ProjectPages(dataRepository: DataRepository, users: ParTrieMap[UUID, UserState],
-  implicit val sessionManager: SessionManager[UUID],
-  implicit val refreshTokenStorage: InMemoryRefreshTokenStorage[UUID],
-  implicit val executionContext: ExecutionContext) {
+class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
+  import session._
 
   private def canEdit(owner: String, repo: String, userState: Option[UserState]) =
     userState.map(s => s.isAdmin || s.repos.contains(GithubRepo(owner, repo))).getOrElse(false)
-
-  private def getUser(id: Option[UUID]): Option[UserState] = id.flatMap(users.get)
 
   private def editPage(owner: String, repo: String, userState: Option[UserState]) = {
     val user = userState.map(_.user)
@@ -163,7 +156,7 @@ class ProjectPages(dataRepository: DataRepository, users: ParTrieMap[UUID, UserS
       path(Segment / Segment / Segment / Segment) { (organization, repository, artifact, version) =>
         optionalSession(refreshable, usingCookies) { userId =>
           complete(
-              projectPage(organization, repository, Some(artifact), SemanticVersion(version), userId.flatMap(users.get)))
+              projectPage(organization, repository, Some(artifact), SemanticVersion(version), getUser(userId)))
         }
       } ~
       path("edit" / Segment / Segment) { (organization, repository) =>

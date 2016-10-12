@@ -20,7 +20,7 @@ import akka.stream.ActorMaterializer
 
 import scala.concurrent.Future
 
-class PublishApi(dataRepository: DataRepository, implicit val system: ActorSystem, implicit val materializer: ActorMaterializer) {
+class PublishApi(dataRepository: DataRepository)(implicit val system: ActorSystem, implicit val materializer: ActorMaterializer) {
   import system.dispatcher
 
   private val publishProcess = new impl.PublishProcess(dataRepository)

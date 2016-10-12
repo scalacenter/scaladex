@@ -2,7 +2,6 @@ package ch.epfl.scala.index
 package server
 package routes
 
-import com.softwaremill.session.{SessionManager, InMemoryRefreshTokenStorage}
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import com.softwaremill.session.CsrfDirectives._
@@ -15,14 +14,8 @@ import StatusCodes.TemporaryRedirect
 import headers.Referer
 import server.Directives._
 
-import scala.concurrent.ExecutionContext
-import scala.collection.parallel.mutable.ParTrieMap
-import java.util.UUID
-
-class OAuth2(github: Github, users: ParTrieMap[UUID, UserState],
-    implicit val sessionManager: SessionManager[UUID],
-    implicit val refreshTokenStorage: InMemoryRefreshTokenStorage[UUID],
-    implicit val executionContext: ExecutionContext) {
+class OAuth2(github: Github, session: GithubUserSession) {
+  import session._
 
   val routes = 
     get {
@@ -60,10 +53,7 @@ class OAuth2(github: Github, users: ParTrieMap[UUID, UserState],
         pathEnd {
           parameters('code, 'state.?) { (code, state) =>
             onSuccess(github.info(code)) { userState =>
-
-              val uuid = java.util.UUID.randomUUID
-              users += uuid -> userState
-              setSession(refreshable, usingCookies, uuid) {
+              setSession(refreshable, usingCookies, session.addUser(userState)) {
                 setNewCsrfToken(checkHeader) { ctx =>
                   ctx.complete(
                     HttpResponse(

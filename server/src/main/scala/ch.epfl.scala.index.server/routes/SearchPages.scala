@@ -12,20 +12,9 @@ import akka.http.scaladsl._
 import model._
 import server.Directives._
 import Uri._
-// import StatusCodes._
 
-import scala.collection.parallel.mutable.ParTrieMap
-import scala.concurrent.ExecutionContext
-
-import java.util.UUID
-
-
-class SearchPages(dataRepository: DataRepository, users: ParTrieMap[UUID, UserState],
-  implicit val sessionManager: SessionManager[UUID],
-  implicit val refreshTokenStorage: InMemoryRefreshTokenStorage[UUID],
-  implicit val executionContext: ExecutionContext) {
-
-  private def getUser(id: Option[UUID]): Option[UserState] = id.flatMap(users.get)
+class SearchPages(dataRepository: DataRepository, session: GithubUserSession){
+  import session._
 
   val routes =
     get {

@@ -11,8 +11,8 @@ import upickle.default.{write => uwrite}
 
 import scala.concurrent.ExecutionContext
 
-class ApiRouting(dataRepository: DataRepository)(implicit val executionContext: ExecutionContext) {
-  val route = 
+class SearchApi(dataRepository: DataRepository)(implicit val executionContext: ExecutionContext) {
+  val routes = 
     pathPrefix("api") {
       path("search") {
         get {

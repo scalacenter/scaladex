@@ -2,43 +2,22 @@ package ch.epfl.scala.index
 package server
 
 import routes._
+import routes.api._
 
-// import model._
-// import model.misc._
-// import data.project.ProjectForm
-
-// import release._
-// import data.github.GithubCredentials
 import data.elastic._
-// import api.Autocompletion
 
 import akka.http.scaladsl._
-// import model._
-// import headers.{HttpCredentials, Referer}
-// import server.Directives._
-// import server.directives._
-// import Uri._
-// import StatusCodes._
-// import TwirlSupport._
-
-import com.softwaremill.session._
-// import com.softwaremill.session.CsrfDirectives._
-// import com.softwaremill.session.CsrfOptions._
-// import com.softwaremill.session.SessionDirectives._
-// import com.softwaremill.session.SessionOptions._
+import server.Directives._
 
 import com.typesafe.config.ConfigFactory
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
-// import upickle.default.{write => uwrite}
 
 import scala.concurrent.duration._
 import scala.concurrent.Await
-import scala.util.Try
-import java.util.UUID
-import scala.collection.parallel.mutable.ParTrieMap
+
 import java.lang.management.ManagementFactory
 
 import java.nio.charset.StandardCharsets
@@ -67,38 +46,29 @@ object Server {
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
-    val sessionConfig = SessionConfig.default(config.getString("sesssion-secret"))
-
-    implicit def serializer: SessionSerializer[UUID, String] =
-      new SingleValueSessionSerializer(
-          _.toString(),
-          (id: String) => Try { UUID.fromString(id) }
-      )
-    implicit val sessionManager = new SessionManager[UUID](sessionConfig)
-    implicit val refreshTokenStorage = new InMemoryRefreshTokenStorage[UUID] {
-      def log(msg: String) =
-        if (msg.startsWith("Looking up token for selector")) () // borring
-        else println(msg)
-    }
-
+    
     val github = new Github
-    val api = new DataRepository(github)
+    val data = new DataRepository(github)
 
+    val session = new GithubUserSession(config)
 
-    val users = ParTrieMap[UUID, UserState]()
-    // def getUser(id: Option[UUID]): Option[UserState] = id.flatMap(users.get)
-
-    val route = Assets.routes
-        
+    val routes = 
+      new PublishApi(data).routes ~
+      new SearchApi(data).routes ~
+      Assets.routes ~
+      new Badges(data).routes ~
+      new FrontPage(data, session).routes ~
+      new OAuth2(github, session).routes ~
+      new ProjectPages(data, session).routes ~
+      new SearchPages(data, session).routes
 
     println("waiting for elastic to start")
     blockUntilYellow()
     println("ready")
 
-    Await.result(Http().bindAndHandle(route, "0.0.0.0", port), 20.seconds)
+    Await.result(Http().bindAndHandle(routes, "0.0.0.0", port), 20.seconds)
 
     println(s"port: $port")
-
 
     ()
   }
