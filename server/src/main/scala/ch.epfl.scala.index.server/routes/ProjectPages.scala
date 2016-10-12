@@ -134,6 +134,13 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
       } 
     } ~
     get {
+      path("edit" / Segment / Segment) { (organization, repository) =>
+        optionalSession(refreshable, usingCookies) { userId =>
+          pathEnd {
+            complete(editPage(organization, repository, getUser(userId)))
+          }
+        }
+      } ~
       path(Segment / Segment) { (organization, repository) =>
         optionalSession(refreshable, usingCookies) { userId =>
           parameters('artifact, 'version.?) { (artifact, version) =>
@@ -157,13 +164,6 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
         optionalSession(refreshable, usingCookies) { userId =>
           complete(
               projectPage(organization, repository, Some(artifact), SemanticVersion(version), getUser(userId)))
-        }
-      } ~
-      path("edit" / Segment / Segment) { (organization, repository) =>
-        optionalSession(refreshable, usingCookies) { userId =>
-          pathEnd {
-            complete(editPage(organization, repository, getUser(userId)))
-          }
         }
       }
     }

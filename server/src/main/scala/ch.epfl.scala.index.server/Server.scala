@@ -46,10 +46,8 @@ object Server {
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
-    
     val github = new Github
     val data = new DataRepository(github)
-
     val session = new GithubUserSession(config)
 
     val routes = 
