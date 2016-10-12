@@ -77,6 +77,7 @@ lazy val server = project
   .settings(
     libraryDependencies ++= Seq(
       "com.typesafe.akka"                  %% "akka-http-experimental" % akkaVersion,
+      "com.github.swagger-akka-http"       %% "swagger-akka-http"      % "0.7.2",
       "com.softwaremill.akka-http-session" %% "core"                   % "0.2.6",
       "com.typesafe.scala-logging"         %% "scala-logging"          % "3.4.0",
       "ch.qos.logback"                      % "logback-classic"        % "1.1.7",
