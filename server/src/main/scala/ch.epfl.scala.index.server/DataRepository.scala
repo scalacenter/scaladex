@@ -33,8 +33,8 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
   private def query(q: QueryDefinition,
                     page: PageIndex,
-                    sorting: Option[String],
-                    total: Int): Future[(Pagination, List[Project])] = {
+                    total: Int,
+                    sorting: Option[String]): Future[(Pagination, List[Project])] = {
     
     val clampedPage = if (page <= 0) 1 else page
 
@@ -57,11 +57,19 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
     )
   }
 
-  private def getQuery(queryString: String, userRepos: Set[GithubRepo] = Set()) = {
+  private def getQuery(queryString: String,
+                       userRepos: Set[GithubRepo] = Set(),
+                       targetFiltering: Option[ScalaTarget] = None) = {
 
     val escaped = 
       if(queryString.isEmpty) "*"
       else queryString.replaceAllLiterally("/", "\\/")
+
+    val mustQueryTarget =
+      targetFiltering match {
+        case Some(t) => List(bool(should(termQuery("targets", t.supportName))))
+        case None => Nil
+      }
 
     val reposQueries = if (!userRepos.isEmpty) {
       userRepos.toList.map {
@@ -84,7 +92,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
       else stringQuery(escaped + "~").fuzzyPrefixLength(3).defaultOperator("AND")
 
     bool(
-      mustQueries = mustQueriesRepos,
+      mustQueries = mustQueriesRepos ++ mustQueryTarget,
       shouldQueries = List(
           fuzzyQuery("keywords", escaped),
           fuzzyQuery("github.description", escaped),
@@ -108,16 +116,17 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
   }
 
   def find(queryString: String,
-           page: PageIndex,
+           page: PageIndex = 0,
            sorting: Option[String] = None,
            userRepos: Set[GithubRepo] = Set(),
-           total: Int = resultsPerPage): Future[(Pagination, List[Project])] = {
+           total: Int = resultsPerPage,
+           targetFiltering: Option[ScalaTarget] = None): Future[(Pagination, List[Project])] = {
 
     query(
-      getQuery(queryString, userRepos),
+      getQuery(queryString, userRepos, targetFiltering),
       page,
-      sorting,
-      total
+      total,
+      sorting
     )
   }
 

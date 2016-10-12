@@ -5,7 +5,13 @@ package api
 
 import ch.epfl.scala.index.api.Autocompletion
 
-import akka.http.scaladsl.server.Directives._
+import model._, release._
+
+import ch.megard.akka.http.cors.CorsDirectives._
+
+import akka.http.scaladsl._
+import server.Directives._
+import model.StatusCodes._
 
 import upickle.default.{write => uwrite}
 
@@ -28,6 +34,43 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
                       ))
                   uwrite(summarisedProjects)
               }
+            }
+          }
+        }
+      } ~
+      path("scastie") {
+        get {
+          cors() {
+            parameters('q, 'target, 'scalaVersion, 'targetVersion.?) { 
+              (q, target0, scalaVersion0, targetVersion0) =>
+
+              val target1 = 
+                (target0, SemanticVersion(scalaVersion0), targetVersion0.map(SemanticVersion(_))) match {
+                  case ("JVM", Some(scalaVersion), _) => 
+                    Some(ScalaTarget(scalaVersion))
+                  case ("JS", Some(scalaVersion), Some(scalaJsVersion)) => 
+                    Some(ScalaTarget(scalaVersion, scalaJsVersion))
+                  // NATIVE
+                  case _ =>
+                    None
+                }
+
+              def convert(project: Project): ScastieProject = {
+                import project._
+                ScastieProject(organization, repository, project.github.flatMap(_.logo.map(_.target)), artifacts)
+              }
+
+              complete(
+                target1 match {
+                  case Some(target) => 
+                    (OK, dataRepository
+                          .find(q, targetFiltering = target1)
+                          .map{case (_, ps) => ps.map(p => convert(p))}
+                          .map(ps => uwrite(ps))
+                    )
+                  case None => (BadRequest, s"something is wrong: $target0 $scalaVersion0 $targetVersion0")
+                }
+              )
             }
           }
         }

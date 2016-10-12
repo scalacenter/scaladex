@@ -3,12 +3,6 @@ import Keys._
 import org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport._
 import org.scalajs.sbtplugin.cross.CrossType
 
-object Version {
-  val upickle = "0.4.1"
-  val scalatags = "0.6.0"
-  val autowire = "0.2.5"
-}
-
 object ScalaJSHelper {
   def packageScalaJS(client: Project) = Seq(
     watchSources ++= (watchSources in client).value,
