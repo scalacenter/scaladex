@@ -18,7 +18,6 @@ import scala.concurrent.Future
 
 import com.typesafe.config.ConfigFactory
 
-
 object Response {
   case class Permissions(admin: Boolean, push: Boolean, pull: Boolean)
   case class AccessToken(access_token: String)
@@ -108,9 +107,9 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
       fetchGithub(token, Path.Empty / "user").flatMap(response => Unmarshal(response).to[Response.User])
 
     for {
-      token               <- access
+      token <- access
       ((repos, user), orgs) <- fetchUserRepos(token).zip(fetchUser(token)).zip(fetchOrgs(token))
-      orgRepos            <- Future.sequence(orgs.map(org => fetchOrgRepos(token, org.login)))
+      orgRepos <- Future.sequence(orgs.map(org => fetchOrgRepos(token, org.login)))
     } yield {
 
       val allRepos = repos ::: orgRepos.flatten

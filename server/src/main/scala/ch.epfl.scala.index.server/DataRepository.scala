@@ -16,7 +16,7 @@ import org.elasticsearch.search.sort.SortOrder
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.reflectiveCalls
 
-class Api(github: Github)(implicit val ec: ExecutionContext) {
+class DataRepository(github: Github)(private implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(id = None)
 
   val resultsPerPage = 20
@@ -33,9 +33,11 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
 
   private def query(q: QueryDefinition,
                     page: PageIndex,
-                    sorting: Option[String],
-                    total: Int): Future[(Pagination, List[Project])] = {
+                    total: Int,
+                    sorting: Option[String]): Future[(Pagination, List[Project])] = {
+    
     val clampedPage = if (page <= 0) 1 else page
+
     esClient.execute {
       search
         .in(indexName / projectsCollection)
@@ -43,52 +45,54 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
         .start(total * (clampedPage - 1))
         .limit(total)
         .sort(sortQuery(sorting))
-    }.map(
-        r =>
-          (
-              Pagination(
-                  current = clampedPage,
-                  totalPages = Math.ceil(r.totalHits / total.toDouble).toInt,
-                  total = r.totalHits
-              ),
-              r.as[Project].toList.map(hideId)
-        ))
+    }.map(r =>
+      (
+        Pagination(
+            current = clampedPage,
+            totalPages = Math.ceil(r.totalHits / total.toDouble).toInt,
+            total = r.totalHits
+        ),
+        r.as[Project].toList.map(hideId)
+      )
+    )
   }
 
-  private def getQuery(queryString: String, userRepos: Set[GithubRepo] = Set()) = {
+  private def getQuery(queryString: String,
+                       userRepos: Set[GithubRepo] = Set(),
+                       targetFiltering: Option[ScalaTarget] = None) = {
 
     val escaped = 
       if(queryString.isEmpty) "*"
       else queryString.replaceAllLiterally("/", "\\/")
 
+    val mustQueryTarget =
+      targetFiltering match {
+        case Some(t) => List(bool(should(termQuery("targets", t.supportName))))
+        case None => Nil
+      }
+
     val reposQueries = if (!userRepos.isEmpty) {
       userRepos.toList.map {
         case GithubRepo(organization, repository) =>
           bool(
-              must(
-                  termQuery("organization", organization.toLowerCase),
-                  termQuery("repository", repository.toLowerCase)
-              )
+            must(
+              termQuery("organization", organization.toLowerCase),
+              termQuery("repository", repository.toLowerCase)
+            )
           )
       }
     } else List()
 
     val mustQueriesRepos =
       if (userRepos.isEmpty) Nil
-      else
-        List(
-            bool(
-                should(
-                    reposQueries: _*
-                )
-            ))
+      else List(bool(should(reposQueries: _*)))
 
     val stringQ =
       if(escaped.contains(":")) stringQuery(escaped)
       else stringQuery(escaped + "~").fuzzyPrefixLength(3).defaultOperator("AND")
 
     bool(
-      mustQueries = mustQueriesRepos,
+      mustQueries = mustQueriesRepos ++ mustQueryTarget,
       shouldQueries = List(
           fuzzyQuery("keywords", escaped),
           fuzzyQuery("github.description", escaped),
@@ -98,9 +102,7 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
           fuzzyQuery("github.readme", escaped),
           stringQ
       ),
-      notQueries = List(
-        termQuery("deprecated", true)
-      )
+      notQueries = List(termQuery("deprecated", true))
     )
   }
 
@@ -114,16 +116,17 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
   }
 
   def find(queryString: String,
-           page: PageIndex,
+           page: PageIndex = 0,
            sorting: Option[String] = None,
            userRepos: Set[GithubRepo] = Set(),
-           total: Int = resultsPerPage): Future[(Pagination, List[Project])] = {
+           total: Int = resultsPerPage,
+           targetFiltering: Option[ScalaTarget] = None): Future[(Pagination, List[Project])] = {
 
     query(
-        getQuery(queryString, userRepos),
-        page,
-        sorting,
-        total
+      getQuery(queryString, userRepos, targetFiltering),
+      page,
+      total,
+      sorting
     )
   }
 
@@ -132,15 +135,15 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
       search
         .in(indexName / releasesCollection)
         .query(
-            nestedQuery("reference").query(
-                bool(
-                    must(
-                      termQuery("reference.organization", project.organization),
-                      termQuery("reference.repository", project.repository),
-                      termQuery("reference.artifact", artifact.getOrElse("*"))
-                    )
-                )
+          nestedQuery("reference").query(
+            bool(
+              must(
+                termQuery("reference.organization", project.organization),
+                termQuery("reference.repository", project.repository),
+                termQuery("reference.artifact", artifact.getOrElse("*"))
+              )
             )
+          )
         )
         .size(500)
     }.map(_.as[Release].toList)
@@ -157,15 +160,15 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
       search
         .in(indexName / releasesCollection)
         .query(
-            nestedQuery("maven").query(
-                bool(
-                    must(
-                        termQuery("maven.groupId", maven.groupId),
-                        termQuery("maven.artifactId", maven.artifactId),
-                        termQuery("maven.version", maven.version)
-                    )
-                )
+          nestedQuery("maven").query(
+            bool(
+              must(
+                termQuery("maven.groupId", maven.groupId),
+                termQuery("maven.artifactId", maven.artifactId),
+                termQuery("maven.version", maven.version)
+              )
             )
+          )
         )
         .limit(1)
     }.map(r => r.as[Release].headOption)
@@ -176,14 +179,13 @@ class Api(github: Github)(implicit val ec: ExecutionContext) {
       search
         .in(indexName / projectsCollection)
         .query(
-            bool(
-                must(
-                    termQuery("organization", project.organization),
-                    termQuery("repository", project.repository)
-                )
+          bool(
+            must(
+              termQuery("organization", project.organization),
+              termQuery("repository", project.repository)
             )
-        )
-        .limit(1)
+          )
+        ).limit(1)
     }.map(_.as[Project].headOption)
   }
 

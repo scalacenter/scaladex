@@ -3,6 +3,11 @@ import org.scalajs.sbtplugin.cross.CrossProject
 
 scalafmtConfig in ThisBuild := Some(file(".scalafmt"))
 
+lazy val akkaVersion = "2.4.7"
+lazy val upickleVersion = "0.4.1"
+lazy val scalatagsVersion = "0.6.0"
+lazy val autowireVersion = "0.2.5"
+
 lazy val baseSettings = Seq(
   organization := "ch.epfl.scala.index",
   version      := "1.0.0"
@@ -39,8 +44,6 @@ lazy val commonSettings = Seq(
 ) ++ baseSettings ++
   addCommandAlias("start", "reStart")
 
-lazy val akkaVersion = "2.4.7"
-
 lazy val template = project
   .settings(commonSettings)
   .settings(
@@ -58,9 +61,9 @@ lazy val shared = crossProject
   .settings(commonSettings: _*)
   .settings(
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "scalatags" % Version.scalatags,
-      "com.lihaoyi" %%% "upickle"   % Version.upickle,
-      "com.lihaoyi" %%% "autowire"  % Version.autowire
+      "com.lihaoyi" %%% "scalatags" % scalatagsVersion,
+      "com.lihaoyi" %%% "upickle"   % upickleVersion,
+      "com.lihaoyi" %%% "autowire"  % autowireVersion
     )
   )
 lazy val sharedJvm = shared.jvm
@@ -77,7 +80,9 @@ lazy val server = project
   .settings(
     libraryDependencies ++= Seq(
       "com.typesafe.akka"                  %% "akka-http-experimental" % akkaVersion,
-      "com.softwaremill.akka-http-session" %% "core"                   % "0.2.6",
+      "com.github.swagger-akka-http"       %% "swagger-akka-http"      % "0.7.2",
+      "ch.megard"                          %% "akka-http-cors"         % "0.1.7",
+      "com.softwaremill.akka-http-session" %% "core"                   % "0.2.7",
       "com.typesafe.scala-logging"         %% "scala-logging"          % "3.4.0",
       "ch.qos.logback"                      % "logback-classic"        % "1.1.7",
       "org.webjars.bower"                   % "bootstrap-sass"         % "3.3.6",
@@ -86,7 +91,7 @@ lazy val server = project
       "org.webjars.bower"                   % "font-awesome"           % "4.6.3",
       "org.webjars.bower"                   % "jQuery"                 % "2.2.4",
       "org.webjars.bower"                   % "select2"                % "4.0.3",
-      "com.lihaoyi"                       %%% "scalatags"              % "0.6.0"
+      "com.lihaoyi"                       %%% "scalatags"              % scalatagsVersion
     ),
     packageBin in Universal <<= (packageBin in Universal).dependsOn(WebKeys.assets in Assets),
     reStart <<= reStart.dependsOn(WebKeys.assets in Assets),
