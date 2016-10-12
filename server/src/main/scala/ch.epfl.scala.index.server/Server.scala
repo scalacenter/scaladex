@@ -200,6 +200,7 @@ object Server {
         in
           .replaceAllLiterally("-", "--")
           .replaceAllLiterally("_", "__")
+          .replaceAllLiterally(" ", "_")
 
       val subject = shieldEscape(rawSubject)
       val status = shieldEscape(rawStatus)
@@ -457,8 +458,8 @@ object Server {
 
                     case Some((_, options)) =>
                       shieldsSvg(artifact, options.release.reference.version.toString(), color, style, logo, logoWidth)
-                    case _ => 
-                      complete((NotFound, ""))
+                    case _ =>
+                      shieldsSvg(artifact, "no published release", color orElse Some("lightgrey"), style, logo, logoWidth)
 
                 }
               }
