@@ -18,11 +18,11 @@ object ScaladexPlugin extends AutoPlugin {
 
     /* defining the Scope Scaladex */
     lazy val Scaladex = config("scaladex") extend Compile
-    lazy val scaladexKeywords = settingKey[Seq[String]]("list of keywords for your package in scaladex")
-    lazy val scaladexDownloadReadme = settingKey[Boolean]("defines if scaladex should download the readme file from the defined scm tag")
-    lazy val scaladexDownloadInfo = settingKey[Boolean]("defines if scaladex should download the project info from the defined scm tag")
-    lazy val scaladexDownloadContributors = settingKey[Boolean]("defines if scaladex should download the contributors from the defined scm tag")
-    lazy val scaladexBaseUrl = settingKey[String]("scaladex server location and path")
+    lazy val scaladexKeywords             = settingKey[Seq[String]]("list of keywords for your package in scaladex")
+    lazy val scaladexDownloadReadme       = settingKey[Boolean]("should we download the readme file from the scm tag")
+    lazy val scaladexDownloadInfo         = settingKey[Boolean]("should we download the project info from the scm tag")
+    lazy val scaladexDownloadContributors = settingKey[Boolean]("should we download the contributors from the scm tag")
+    lazy val scaladexBaseUri              = settingKey[URI]("scaladex server location and path")
 
     /** define base scaladex options */
     lazy val baseScaladexSettings = Seq(
@@ -30,7 +30,7 @@ object ScaladexPlugin extends AutoPlugin {
       scaladexDownloadContributors := true,
       scaladexDownloadInfo := true,
       scaladexDownloadReadme := true,
-      scaladexBaseUrl := "https://index.scala-lang.org"
+      scaladexBaseUri := uri("https://index.scala-lang.org")
     ) ++
     inConfig(Scaladex)(
       /** import ivy publishing settings */
@@ -40,7 +40,7 @@ object ScaladexPlugin extends AutoPlugin {
         publishTo := {
 
           /** prepare the url to publish on scaladex */
-          val baseUrl = scaladexBaseUrl.value
+          val baseUri = scaladexBaseUri.value
           val basePath = "/publish?"
 
           val params = List(
@@ -51,7 +51,7 @@ object ScaladexPlugin extends AutoPlugin {
           )
           val keywords = scaladexKeywords.value.map(key => "keywords" -> key)
 
-          val url = baseUrl + basePath + (keywords ++ params).map {
+          val url = baseUri + basePath + (keywords ++ params).map {
 
             case(k,v) => s"$k=$v"
           }.mkString("&")

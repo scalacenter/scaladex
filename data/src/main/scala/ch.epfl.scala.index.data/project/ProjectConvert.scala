@@ -26,7 +26,7 @@ object ProjectConvert extends BintrayProtocol {
     nonStandardLibs
       .find(lib =>
             lib.groupId == pom.groupId &&
-              lib.artifactId == pom.artifactId)
+            lib.artifactId == pom.artifactId)
       .map(_.lookup) match {
 
       case Some(ScalaTargetFromPom) =>
@@ -40,7 +40,7 @@ object ProjectConvert extends BintrayProtocol {
       case Some(ScalaTargetFromVersion) =>
         SemanticVersion(pom.version).map(version => (pom.artifactId, ScalaTarget(version), true))
 
-      case None                                                    =>
+      case None =>
         Artifact(pom.artifactId).map { case (artifactName, target) => (artifactName, target, false) }
     }
   }

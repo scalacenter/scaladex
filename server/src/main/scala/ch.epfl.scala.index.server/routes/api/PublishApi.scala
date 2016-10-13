@@ -20,7 +20,8 @@ import akka.stream.ActorMaterializer
 
 import scala.concurrent.Future
 
-class PublishApi(dataRepository: DataRepository)(implicit val system: ActorSystem, implicit val materializer: ActorMaterializer) {
+class PublishApi(dataRepository: DataRepository, github: Github)(implicit val system: ActorSystem, 
+                                                 implicit val materializer: ActorMaterializer) {
   import system.dispatcher
 
   private val publishProcess = new impl.PublishProcess(dataRepository)
@@ -30,20 +31,20 @@ class PublishApi(dataRepository: DataRepository)(implicit val system: ActorSyste
    * @param credentials the credentials
    * @return
    */
-  private def githubAuthenticator(
-      credentialsHeader: Option[HttpCredentials]): Credentials => Future[Option[GithubCredentials]] = {
+  private def githubAuthenticator(credentialsHeader: Option[HttpCredentials]): 
+    Credentials => Future[Option[(GithubCredentials, UserState)]] = {
+
     case Credentials.Provided(username) => {
       credentialsHeader match {
         case Some(cred) => {
           val upw               = new String(new sun.misc.BASE64Decoder().decodeBuffer(cred.token()))
           val userPass          = upw.split(":")
-          val githubCredentials = GithubCredentials(userPass(0), userPass(1))
+
+          val token = userPass(1)
+          val credentials = GithubCredentials(token)
           // todo - catch errors
-          publishProcess
-            .authenticate(githubCredentials)
-            .map(granted =>
-                  if (granted) Some(githubCredentials)
-                  else None)
+
+          github.getUserStateWithToken(token).map(user => Some((credentials, user)))
         }
         case _ => Future.successful(None)
       }
@@ -102,15 +103,17 @@ class PublishApi(dataRepository: DataRepository)(implicit val system: ActorSyste
         ) { (path, readme, contributors, info, keywords) =>
           entity(as[String]) { data =>
             extractCredentials { credentials =>
-              authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) { cred =>
-                val publishData = impl.PublishData(path, data, cred, info, contributors, readme, keywords.toSet)
-                complete {
-                  if (publishData.isPom) {
-                    publishProcess.writeFiles(publishData)
-                  } else {
-                    Future(Created)
+              authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) { 
+                case (credentials, userState) =>
+
+                  val publishData = impl.PublishData(path, data, credentials, userState, info, contributors, readme, keywords.toSet)
+                  complete {
+                    if (publishData.isPom) {
+                      publishProcess.writeFiles(publishData)
+                    } else {
+                      Future(Created)
+                    }
                   }
-                }
               }
             }
           }

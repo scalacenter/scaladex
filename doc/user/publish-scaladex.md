@@ -1,5 +1,4 @@
 [SBT-POM-Meta]: http://www.scala-sbt.org/1.0/docs/Using-Sonatype.html#Third+-+POM+Metadata
-[SBT-Credentials]: http://www.scala-sbt.org/0.13/docs/Publishing.html#Credentials
 
 # Sbt Plugin
 
@@ -16,6 +15,9 @@ Add the following to your sbt project/plugins.sbt file:
 addSbtPlugin("ch.epfl.scala.index" % "sbt-scaladex" % "0.1.3")
 ```
 
+Generate a [GitHub personal access token](https://github.com/settings/tokens/new) with the `read:org` scope.
+
+
 Add the following to your build.sbt file:
 
 ```scala
@@ -24,12 +26,12 @@ credentials in Scaladex := Credentials(Path.userHome / ".ivy2" / ".scaladex.cred
 /*
 realm=Scaladex Realm
 host=localhost
-user=<github username>
-password=<github password>
+user=token
+password=<github personal access token>
 */
 
 // or 
-credentials in Scaladex += Credentials("Scaladex Realm", "localhost", "<github username>", "<github password>")
+credentials in Scaladex += Credentials("Scaladex Realm", "localhost", "token", "<github personal access token>")
 ```
 
 To publish run the following command:
@@ -38,18 +40,17 @@ To publish run the following command:
 sbt scaladex:publish
 ```
 
-### Publish Credentials
+### Publish Token
 
-To publish to Scaladex you need to add some user authentication. Scaladex uses GitHub to authenticate your publish
-process and verify that you have push permission to the defined repository (SCM Tag). Read
-[SBT Credentials documentation][SBT-Credentials] for instructions how to configure the login credentials.
+To publish to Scaladex you need to add a GitHub personal acces toekn. Scaladex uses GitHub to authenticate your publish
+process and verify that you have permission to the defined repository (SCM Tag)
 
 ### Configure the publish process
 
 There are some settings for the Plugin to control the output on Scaladex a bit, like adding keywords, show GitHub info,
 show GitHub Readme file, show GitHub contributors.
 
-* **scaladexBaseUrl**: This is the main url to publish to _default_: `https://index.scala-lang.org`
+* **scaladexBaseUri**: This is the main uri to publish to _default_: `https://index.scala-lang.org`
 * **scaladexKeywords**: List of keywords for your artifact _default_: `empty`
 * **scaladexDownloadReadme**: A flag to download the README from GitHub. _default_: `true`
 * **scaladexDownloadInfo**: A flag to download the repository info from GitHub (eg: stars, forks, ...). _default_: `true`

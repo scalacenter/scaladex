@@ -19,8 +19,6 @@ import akka.stream.ActorMaterializer
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.StatusCode
 
-import play.api.libs.ws.WSAuthScheme
-
 import com.sksamuel.elastic4s._
 import ElasticDsl._
 
@@ -30,28 +28,14 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 
-private[api] class PublishProcess(
-    dataRepository: DataRepository)(
+private[api] class PublishProcess(dataRepository: DataRepository)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer
 ) extends PlayWsDownloader {
 
   import system.dispatcher
-
-  /**
-    * Github authentication process. There is a check if the user is able to login to GitHub
-    *
-    * @param githubCredentials the GitHub credentials (username, password)
-    * @return
-    */
-  def authenticate(githubCredentials: GithubCredentials): Future[Boolean] = {
-    val req = wsClient
-      .url("https://api.github.com/user")
-      .withAuth(githubCredentials.username, githubCredentials.password, WSAuthScheme.BASIC)
-    req.get.map(response => 200 == response.status)
-  }
 
   /**
     * write the pom file to disk if it's a pom file (SBT will also send *.pom.sha1 and *.pom.md5)
@@ -76,7 +60,7 @@ private[api] class PublishProcess(
           NoContent
         }
         case Some(repo) => {
-          if (hasWriteAccess(data.credentials, repo)) {
+          if(data.userState.isSonatype || data.userState.repos.contains(repo)) {
             data.writePom()
             data.deleteTemp()
             updateIndex(repo, pom, data)
@@ -182,37 +166,6 @@ private[api] class PublishProcess(
       }
     }
   }
-
-  /**
-    * Check if the publishing user have write access to the provided GitHub repository.
-    * Therefore we're loading the repository for version 3 (including permissions)
-    * and verify the push permission.
-    *
-    * @param githubCredentials the provided github credentials
-    * @param repository the provided GitHub repository
-    * @return
-    */
-  private def hasWriteAccess(githubCredentials: GithubCredentials, repository: GithubRepo): Boolean = {
-
-    import scala.concurrent.duration._
-    import ch.epfl.scala.index.data.github.Json4s._
-    import org.json4s.native.Serialization.read
-
-    val req = wsClient
-      .url(s"https://api.github.com/repos/${repository.organization}/${repository.repository}")
-      .withAuth(githubCredentials.username, githubCredentials.password, WSAuthScheme.BASIC)
-      .withHeaders("Accept" -> "application/vnd.github.v3+json")
-    val response = Await.result(req.get, 5.seconds)
-
-    if (200 == response.status) {
-
-      val githubRepo = read[Repository](response.body)
-      githubRepo.permissions.exists(_.push)
-    } else {
-
-      false
-    }
-  }
 }
 
 /**
@@ -229,6 +182,7 @@ private[api] case class PublishData(
     path: String,
     data: String,
     credentials: GithubCredentials,
+    userState: UserState,
     downloadInfo: Boolean,
     downloadContributors: Boolean,
     downloadReadme: Boolean,
