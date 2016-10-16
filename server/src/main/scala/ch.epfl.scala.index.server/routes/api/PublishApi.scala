@@ -15,16 +15,17 @@ import server.directives._
 import StatusCodes._
 // import TwirlSupport._
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Props}
 import akka.stream.ActorMaterializer
+import akka.util.Timeout
 
 import scala.concurrent.Future
 
-class PublishApi(dataRepository: DataRepository, github: Github)(implicit val system: ActorSystem, 
-                                                 implicit val materializer: ActorMaterializer) {
+class PublishApi(dataRepository: DataRepository, github: Github)(
+    implicit val system: ActorSystem, 
+    implicit val materializer: ActorMaterializer) {
+  
   import system.dispatcher
-
-  private val publishProcess = new impl.PublishProcess(dataRepository)
 
   /*
    * verifying a login to github
@@ -73,6 +74,11 @@ class PublishApi(dataRepository: DataRepository, github: Github)(implicit val sy
     MavenReference(groupId, artifactId, version)
   }
 
+  import akka.pattern.ask
+  import scala.concurrent.duration._
+  implicit val timeout = Timeout(20.seconds)
+  private val actor = system.actorOf(Props(classOf[impl.PublishActor], dataRepository, system, materializer))
+
   val routes = 
     get {
       path("publish") {
@@ -114,13 +120,7 @@ class PublishApi(dataRepository: DataRepository, github: Github)(implicit val sy
                       info, contributors, readme, keywords.toSet, test
                     )
 
-                  complete {
-                    if (publishData.isPom) {
-                      publishProcess.writeFiles(publishData)
-                    } else {
-                      Future(Created)
-                    }
-                  }
+                  complete((actor ? publishData).mapTo[Unit].map(_ => ""))
             //   }
             // }
           }
