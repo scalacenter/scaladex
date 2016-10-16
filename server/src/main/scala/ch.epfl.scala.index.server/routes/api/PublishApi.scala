@@ -80,14 +80,15 @@ class PublishApi(dataRepository: DataRepository, github: Github)(implicit val sy
           complete {
 
             /* check if the release already exists - sbt will handle HTTP-Status codes
-             * 404 -> allowed to write
-             * 200 -> only allowed if isSnapshot := true
+             * NotFound -> allowed to write
+             * OK -> only allowed if isSnapshot := true
              */
-            dataRepository.maven(mavenPathExtractor(path)) map {
+            // dataRepository.maven(mavenPathExtractor(path)) map {
 
-              case Some(release) => OK
-              case None          => NotFound
-            }
+            //   case Some(release) => OK
+            //   case None          => NotFound
+            // }
+            NotFound
           }
         }
       }
@@ -99,14 +100,20 @@ class PublishApi(dataRepository: DataRepository, github: Github)(implicit val sy
             'readme.as[Boolean] ? true,
             'contributors.as[Boolean] ? true,
             'info.as[Boolean] ? true,
-            'keywords.as[String].*
-        ) { (path, readme, contributors, info, keywords) =>
+            'keywords.as[String].*,
+            'test.as[Boolean] ? false
+        ) { (path, readme, contributors, info, keywords, test) =>
           entity(as[String]) { data =>
-            extractCredentials { credentials =>
-              authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) { 
-                case (credentials, userState) =>
+            // extractCredentials { credentials =>
+            //   authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) { 
+            //     case (credentials, userState) =>
 
-                  val publishData = impl.PublishData(path, data, credentials, userState, info, contributors, readme, keywords.toSet)
+                  val publishData = impl.PublishData(
+                      path, data, 
+                      // credentials, userState,
+                      info, contributors, readme, keywords.toSet, test
+                    )
+
                   complete {
                     if (publishData.isPom) {
                       publishProcess.writeFiles(publishData)
@@ -114,8 +121,8 @@ class PublishApi(dataRepository: DataRepository, github: Github)(implicit val sy
                       Future(Created)
                     }
                   }
-              }
-            }
+            //   }
+            // }
           }
         }
       }

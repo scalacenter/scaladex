@@ -10,7 +10,7 @@ lazy val autowireVersion = "0.2.5"
 
 lazy val baseSettings = Seq(
   organization := "ch.epfl.scala.index",
-  version      := "1.0.0"
+  version      := "1.0.0-SNAPSHOT"
 )
 
 lazy val commonSettings = Seq(

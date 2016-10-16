@@ -102,7 +102,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
           fuzzyQuery("github.readme", escaped),
           stringQ
       ),
-      notQueries = List(termQuery("deprecated", true))
+      notQueries = List(termQuery("deprecated", true), termQuery("test", true))
     )
   }
 

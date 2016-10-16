@@ -23,6 +23,8 @@ object ScaladexPlugin extends AutoPlugin {
     lazy val scaladexDownloadInfo         = settingKey[Boolean]("should we download the project info from the scm tag")
     lazy val scaladexDownloadContributors = settingKey[Boolean]("should we download the contributors from the scm tag")
     lazy val scaladexBaseUri              = settingKey[URI]("scaladex server location and path")
+    lazy val scaladexTest                 = settingKey[Boolean]("testing the api")
+
 
     /** define base scaladex options */
     lazy val baseScaladexSettings = Seq(
@@ -30,6 +32,7 @@ object ScaladexPlugin extends AutoPlugin {
       scaladexDownloadContributors := true,
       scaladexDownloadInfo := true,
       scaladexDownloadReadme := true,
+      scaladexTest := false,
       scaladexBaseUri := uri("https://index.scala-lang.org")
     ) ++
     inConfig(Scaladex)(
