@@ -1,5 +1,5 @@
 create table scaladex.Keywords(
-  id identity primary key,
+  id integer not null primary key,
   name varchar(1024) not null
 );
 

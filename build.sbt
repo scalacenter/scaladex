@@ -110,18 +110,51 @@ lazy val model = project
     libraryDependencies += "com.lihaoyi" %% "fastparse" % "0.3.7"
   )
 
+/*
+sudo su -
+psql postgres
+CREATE DATABASE scaladex
+GRANT ALL PRIVILEGES ON DATABASE "scaladex" to scaladex;
+\c scaladex
+\dt scaladex.*
+*/
+
+lazy val schemaName = "SCALADEX"
 lazy val database = project
   .settings(commonSettings)
+  .settings(slickCodegenSettings)
   .settings(
-    flywaySchemas := Seq("SCALADEX"),
+    scalacOptions -= "-Ywarn-unused-import",
+    libraryDependencies ++= Seq(
+      "com.typesafe.slick" %% "slick"      % "3.1.0",
+      "org.postgresql"      % "postgresql" % "9.4-1201-jdbc41"
+    ),
+    slickCodegenDatabaseUrl      := (flywayUrl in flyway).value,
+    slickCodegenDatabaseUser     := (flywayUser in flyway).value,
+    slickCodegenDatabasePassword := (flywayPassword in flyway).value,
+    slickCodegenDriver           := slick.driver.PostgresDriver,
+    slickCodegenJdbcDriver       := "slick.jdbc.DatabaseUrlDataSource",
+    slickCodegenOutputPackage    := "ch.epfl.scala.index.database.generated",
+    slickCodegenExcludedTables   := Seq("schema_version"),
+    sourceGenerators in Compile <+= slickCodegen
+  ).dependsOn(flyway)
+
+lazy val flyway = project
+  .settings(commonSettings)
+  .settings(
+    flywaySchemas := Seq(schemaName),
     flywayLocations := {
       val dir = (resourceDirectory in Compile).value
       Seq(s"filesystem:$dir/db/migration")
     },
-    flywayUrl := "jdbc:h2:file:./target/foobar",
-    flywayUser := "SA",
-    libraryDependencies += "com.h2database" % "h2" % h2Version
-  )
+    flywayUrl := "jdbc:postgresql://localhost:5432/scaladex",
+    flywayUser := "scaladex",
+    flywayPassword := "scaladex",
+    libraryDependencies ++= Seq(
+      "com.typesafe.slick" %% "slick" % "3.1.0",
+      "com.h2database"      % "h2"    % h2Version
+    )
+  )  
 
 lazy val data = project
   .settings(commonSettings)

@@ -13,7 +13,7 @@ create table scaladex.Projects_Github(
 );
 
 create table scaladex.Contributors(
-  id identity primary key,
+  id integer not null primary key,
   login varchar(255) not null,
   avatar varchar(255) not null,
   url varchar(255) not null

@@ -1,5 +1,5 @@
 create table scaladex.Releases(
-  id identity primary key,
+  id integer not null primary key,
   groupId varchar(1024) not null,
   artifactId varchar(1024) not null,
   version varchar(1024) not null,

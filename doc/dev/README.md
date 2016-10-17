@@ -3,6 +3,19 @@
 * a jvm
 * sbt
 * css compiler [`sass`](http://sass-lang.com/install)
+* postgresql
+
+## Configuring Postgresql
+
+```bash
+sudo su -
+psql postgres
+```
+
+```sql
+CREATE DATABASE scaladex;
+GRANT ALL PRIVILEGES ON DATABASE "scaladex" to scaladex;
+```
 
 ## How to run Scaladex locally:
 

@@ -8,7 +8,7 @@ create table scaladex.Scala_Dependencies(
 );
 
 create table scaladex.Java_Dependencies(
-  id int not null,
+  id integer not null,
   foreign key(id) references scaladex.Releases(id),
   primary key(id),
   scope varchar(255),

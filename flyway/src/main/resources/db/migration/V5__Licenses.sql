@@ -1,5 +1,5 @@
 create table scaladex.Licenses(
-  id identity primary key,
+  id integer not null primary key,
   name varchar(1024) not null,
   shortName varchar(1024) not null,
   url varchar(1024)
