@@ -26,7 +26,7 @@ object ProjectConvert extends BintrayProtocol {
     nonStandardLibs
       .find(lib =>
             lib.groupId == pom.groupId &&
-              lib.artifactId == pom.artifactId)
+            lib.artifactId == pom.artifactId)
       .map(_.lookup) match {
 
       case Some(ScalaTargetFromPom) =>
@@ -40,12 +40,15 @@ object ProjectConvert extends BintrayProtocol {
       case Some(ScalaTargetFromVersion) =>
         SemanticVersion(pom.version).map(version => (pom.artifactId, ScalaTarget(version), true))
 
-      case None                                                    =>
+      case None =>
         Artifact(pom.artifactId).map { case (artifactName, target) => (artifactName, target, false) }
     }
   }
 
-  def apply(pomsAndMeta: List[(MavenModel, List[BintraySearch])], stored: Boolean = true): List[(Project, Set[Release])] = {
+  def apply(pomsAndMeta: List[(MavenModel, List[BintraySearch])],
+            stored: Boolean = true,
+            existingProject: Option[Project] = None,
+            existingReleases: List[Release] = Nil): List[(Project, Set[Release])] = {
     val githubRepoExtractor = new GithubRepoExtractor
 
     println("Collecting Metadata")
@@ -130,7 +133,7 @@ object ProjectConvert extends BintrayProtocol {
           if(stored) storedProjects.get(Project.Reference(organization, repository)).map(_.defaultStableVersion).getOrElse(true)
           else true
 
-        val releaseOptions = DefaultRelease(repository, ReleaseSelection(None, None, None), releases, None, defaultStableVersion)
+        val releaseOptions = DefaultRelease(repository, ReleaseSelection(None, None, None), releases ++ existingReleases, None, defaultStableVersion)
 
         val project =
           Project(
@@ -151,7 +154,17 @@ object ProjectConvert extends BintrayProtocol {
               .getOrElse(project)
           } else project
 
-        (updatedProject, releases)
+        val updatedProject2 =
+          existingProject match {
+            case Some(p) =>
+              updatedProject.copy(
+                artifacts = (p.artifacts.toSet ++ updatedProject.artifacts.toSet).toList
+              )
+
+            case None => updatedProject 
+          }
+
+        (updatedProject2, releases)
     }.toList
 
     println("Dependencies & Reverse Dependencies")

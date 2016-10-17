@@ -13,16 +13,16 @@ import data.maven.{MavenModel, PomsReader}
 import data.project.ProjectConvert
 
 import model.misc.GithubRepo
+import model.{Project, Release}
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.StatusCode
 
-import play.api.libs.ws.WSAuthScheme
-
 import com.sksamuel.elastic4s._
 import ElasticDsl._
+import org.elasticsearch.action.WriteConsistencyLevel
 
 import org.joda.time.DateTime
 
@@ -30,28 +30,14 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 
-private[api] class PublishProcess(
-    dataRepository: DataRepository)(
+private[api] class PublishProcess(dataRepository: DataRepository)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer
 ) extends PlayWsDownloader {
 
   import system.dispatcher
-
-  /**
-    * Github authentication process. There is a check if the user is able to login to GitHub
-    *
-    * @param githubCredentials the GitHub credentials (username, password)
-    * @return
-    */
-  def authenticate(githubCredentials: GithubCredentials): Future[Boolean] = {
-    val req = wsClient
-      .url("https://api.github.com/user")
-      .withAuth(githubCredentials.username, githubCredentials.password, WSAuthScheme.BASIC)
-    req.get.map(response => 200 == response.status)
-  }
 
   /**
     * write the pom file to disk if it's a pom file (SBT will also send *.pom.sha1 and *.pom.md5)
@@ -76,15 +62,15 @@ private[api] class PublishProcess(
           NoContent
         }
         case Some(repo) => {
-          if (hasWriteAccess(data.credentials, repo)) {
+          // if(data.userState.isSonatype || data.userState.repos.contains(repo)) {
             data.writePom()
             data.deleteTemp()
             updateIndex(repo, pom, data)
             Created
-          } else {
-            data.deleteTemp()
-            Forbidden
-          }
+          // } else {
+          //   data.deleteTemp()
+          //   Forbidden
+          // }
         }
       }
     } else {
@@ -126,92 +112,80 @@ private[api] class PublishProcess(
     * @param data the main publish data
     * @return
     */
-  private def updateIndex(repo: GithubRepo, pom: MavenModel, data: PublishData) = Future {
+  private def updateIndex(repo: GithubRepo, pom: MavenModel, data: PublishData): Future[Unit] = {
+    println("updating " + pom.artifactId)
 
-    new GithubDownload(Some(data.credentials))
-      .run(repo, data.downloadInfo, data.downloadReadme, data.downloadContributors)
-    val bintray = BintraySearch(data.hash,
-                                None,
-                                s"${pom.groupId}:${pom.artifactId}",
-                                pom.artifactId,
-                                "",
-                                0,
-                                pom.version,
-                                pom.groupId,
-                                pom.artifactId,
-                                new DateTime())
+    // new GithubDownload(Some(data.credentials))
+    //   .run(repo, data.downloadInfo, data.downloadReadme, data.downloadContributors)
 
-    val (newProject, newReleases) = ProjectConvert(List((pom, List(bintray)))).head
+    def updateProjectReleases(project: Option[Project], releases: List[Release]): Future[Unit] = {
 
-    val updatedProject = newProject.copy(keywords = data.keywords, liveData = true)
-    val projectSearch  = dataRepository.project(newProject.reference)
-    val releaseSearch  = dataRepository.releases(newProject.reference, None)
+      println(project.map(_.artifacts))
+
+      val bintray = BintraySearch(
+        created = new DateTime(),
+        `package` = s"${pom.groupId}:${pom.artifactId}",
+        owner = "bintray",
+        repo = "jcenter",
+        sha1 = data.hash,
+        sha256 = None,
+        name = pom.artifactId,
+        path = pom.groupId.replaceAllLiterally(".", "/") + "/" + pom.artifactId,
+        size = 0,
+        version = pom.version
+      )
+
+      val (newProject, newReleases) = ProjectConvert(List((pom, List(bintray))), existingProject = project, existingReleases = releases).head
+
+      val updatedProject = newProject.copy(keywords = data.keywords, liveData = true, test = data.test)
+
+      val projectUpdate =
+        project match {
+          case Some(project) => {
+
+            println(updatedProject.artifacts)
+
+            esClient.execute(
+              update(project.id.get)
+                .in(indexName / projectsCollection)
+                .doc(updatedProject)
+                .consistencyLevel(WriteConsistencyLevel.ALL) // make sure subsequent read are consistent
+            ).map(_ => println("updating project " + pom.artifactId))
+          }
+
+
+          case None =>
+            esClient.execute(
+              index
+                .into(indexName / projectsCollection)
+                .source(updatedProject)
+                // .consistencyLevel(WriteConsistencyLevel.ALL)
+              ).map(_ => println("inserting project " + pom.artifactId))
+        }
+
+      val releaseUpdate = 
+        if (!releases.exists(r => r.reference == newReleases.head.reference)) {
+          // create new release
+          esClient.execute(index.into(indexName / releasesCollection).source(
+            newReleases.head.copy(liveData = true, test = data.test)
+          )).map(_ => ())
+        } else { Future.successful(())} 
+
+      for {
+        _ <- projectUpdate
+        _ <- releaseUpdate
+      } yield ()
+    }
+
+    val githubRepoExtractor = new GithubRepoExtractor()
+    val Some(GithubRepo(organization, repository)) = githubRepoExtractor(pom)
+    val projectReference = Project.Reference(organization, repository)
 
     for {
-      projectResult <- projectSearch
-      releases      <- releaseSearch
-    } yield {
-
-      projectResult match {
-
-        case Some(project) =>
-          project.id.map { id =>
-            esClient.execute(update(id) in (indexName / projectsCollection) doc updatedProject)
-          }
-        case None =>
-          esClient.execute(index.into(indexName / projectsCollection).source(updatedProject))
-      }
-
-      releases.foreach { rel =>
-        println(s"Release ${rel.reference.version}")
-      }
-      /* there can be only one release */
-      if (!releases.exists(r => r.reference == newReleases.head.reference)) {
-
-        esClient.execute(index.into(indexName / releasesCollection).source(newReleases.head))
-      } else {
-
-        for {
-
-          release <- releases.find(r => r.reference == newReleases.head.reference)
-          id      <- release.id
-        } yield {
-
-          esClient.execute(update(id).in(indexName / releasesCollection) doc newReleases.head.copy(liveData = true))
-        }
-      }
-    }
-  }
-
-  /**
-    * Check if the publishing user have write access to the provided GitHub repository.
-    * Therefore we're loading the repository for version 3 (including permissions)
-    * and verify the push permission.
-    *
-    * @param githubCredentials the provided github credentials
-    * @param repository the provided GitHub repository
-    * @return
-    */
-  private def hasWriteAccess(githubCredentials: GithubCredentials, repository: GithubRepo): Boolean = {
-
-    import scala.concurrent.duration._
-    import ch.epfl.scala.index.data.github.Json4s._
-    import org.json4s.native.Serialization.read
-
-    val req = wsClient
-      .url(s"https://api.github.com/repos/${repository.organization}/${repository.repository}")
-      .withAuth(githubCredentials.username, githubCredentials.password, WSAuthScheme.BASIC)
-      .withHeaders("Accept" -> "application/vnd.github.v3+json")
-    val response = Await.result(req.get, 5.seconds)
-
-    if (200 == response.status) {
-
-      val githubRepo = read[Repository](response.body)
-      githubRepo.permissions.exists(_.push)
-    } else {
-
-      false
-    }
+      project  <- dataRepository.project(projectReference)
+      releases <- dataRepository.releases(projectReference, None)
+      _        <- updateProjectReleases(project, releases)
+    } yield ()
   }
 }
 
@@ -224,15 +198,18 @@ private[api] class PublishProcess(
   * @param downloadContributors flag for downloading contributors
   * @param downloadReadme flag for downloading the readme file
   * @param keywords the keywords for the project
+  * @param test to try the api
   */
 private[api] case class PublishData(
     path: String,
     data: String,
-    credentials: GithubCredentials,
+    // credentials: GithubCredentials,
+    // userState: UserState,
     downloadInfo: Boolean,
     downloadContributors: Boolean,
     downloadReadme: Boolean,
-    keywords: Set[String]
+    keywords: Set[String],
+    test: Boolean
 ) {
 
   lazy val isPom: Boolean = path matches """.*\.pom"""

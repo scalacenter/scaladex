@@ -26,12 +26,13 @@ object Response {
   case class Organization(login: String)
 }
 
-case class UserState(repos: Set[GithubRepo], user: UserInfo) {
+case class UserState(repos: Set[GithubRepo], orgs: Set[Response.Organization], user: UserInfo) {
   def isAdmin = repos.exists {
     case GithubRepo(organization, repository) =>
       organization == "scalacenter" &&
         repository == "scaladex"
   }
+  def isSonatype = orgs.contains(Response.Organization("sonatype"))
 }
 
 class Github(implicit system: ActorSystem, materializer: ActorMaterializer) extends Json4sSupport {
@@ -42,7 +43,8 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
   val clientSecret = config.getString("client-secret")
   val redirectUri  = config.getString("uri") + "/callback/done"
 
-  def info(code: String) = {
+  def getUserStateWithToken(token: String): Future[UserState] = info(token)
+  def getUserStateWithOauth2(code: String): Future[UserState] = {
     def access = {
       Http()
         .singleRequest(
@@ -59,7 +61,12 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
             ))
         .flatMap(response => Unmarshal(response).to[Response.AccessToken].map(_.access_token))
     }
-    def fetchGithub(token: String, path: Path, query: Query = Query.Empty) = {
+
+    access.flatMap(info)
+  }
+
+  private def info(token: String) = {
+    def fetchGithub(path: Path, query: Query = Query.Empty) = {
       Http().singleRequest(
           HttpRequest(
               uri = Uri(s"https://api.github.com").withPath(path).withQuery(query),
@@ -67,25 +74,25 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
           ))
     }
 
-    def fetchUserRepos(token: String): Future[List[Response.Repo]] = {
-      paginated[Response.Repo](token, Path.Empty / "user" / "repos")
+    def fetchUserRepos(): Future[List[Response.Repo]] = {
+      paginated[Response.Repo](Path.Empty / "user" / "repos")
     }
 
-    def fetchOrgs(token: String): Future[List[Response.Organization]] = {
-      paginated[Response.Organization](token, Path.Empty / "user" / "orgs")
+    def fetchOrgs(): Future[List[Response.Organization]] = {
+      paginated[Response.Organization](Path.Empty / "user" / "orgs")
     }
 
-    def fetchOrgRepos(token: String, org: String): Future[List[Response.Repo]] = {
-      paginated[Response.Repo](token, Path.Empty / "orgs" / org / "repos")
+    def fetchOrgRepos(org: String): Future[List[Response.Repo]] = {
+      paginated[Response.Repo](Path.Empty / "orgs" / org / "repos")
     }
 
-    def paginated[T](token: String, path: Path)(implicit ev: Unmarshaller[HttpResponse, List[T]]): Future[List[T]] = {
+    def paginated[T](path: Path)(implicit ev: Unmarshaller[HttpResponse, List[T]]): Future[List[T]] = {
       def request(page: Option[Int] = None) = {
         val query = page
           .map(p => Query("page" -> p.toString()))
           .getOrElse(Query())
 
-        fetchGithub(token, path, query)
+        fetchGithub(path, query)
       }
       request(None).flatMap { r1 =>
         val lastPage = r1.headers.find(_.name == "Link").map(h => extractLastPage(h.value)).getOrElse(1)
@@ -103,13 +110,12 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
       }
     }
 
-    def fetchUser(token: String) =
-      fetchGithub(token, Path.Empty / "user").flatMap(response => Unmarshal(response).to[Response.User])
+    def fetchUser() =
+      fetchGithub(Path.Empty / "user").flatMap(response => Unmarshal(response).to[Response.User])
 
     for {
-      token <- access
-      ((repos, user), orgs) <- fetchUserRepos(token).zip(fetchUser(token)).zip(fetchOrgs(token))
-      orgRepos <- Future.sequence(orgs.map(org => fetchOrgRepos(token, org.login)))
+      ((repos, user), orgs) <- fetchUserRepos().zip(fetchUser()).zip(fetchOrgs())
+      orgRepos <- Future.sequence(orgs.map(org => fetchOrgRepos(org.login)))
     } yield {
 
       val allRepos = repos ::: orgRepos.flatten
@@ -123,7 +129,7 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
 
       val Response.User(login, name, avatarUrl) = user
 
-      UserState(githubRepos, UserInfo(login, name, avatarUrl))
+      UserState(githubRepos, orgs.toSet, UserInfo(login, name, avatarUrl))
     }
   }
 }

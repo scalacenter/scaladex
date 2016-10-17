@@ -55,7 +55,7 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
   def applyBasicHeaders(request: WSRequest): WSRequest = {
 
     privateCredentials
-      .map(cred => request.withAuth(cred.username, cred.password, WSAuthScheme.BASIC))
+      .map(cred => request.withHeaders("Authorization" -> s"token ${cred.token}"))
       .getOrElse(request.withHeaders("Authorization" -> s"token $credentials"))
   }
 
