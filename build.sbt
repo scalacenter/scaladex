@@ -7,6 +7,7 @@ lazy val akkaVersion = "2.4.7"
 lazy val upickleVersion = "0.4.1"
 lazy val scalatagsVersion = "0.6.0"
 lazy val autowireVersion = "0.2.5"
+lazy val h2Version = "1.4.191"
 
 lazy val baseSettings = Seq(
   organization := "ch.epfl.scala.index",
@@ -109,6 +110,19 @@ lazy val model = project
     libraryDependencies += "com.lihaoyi" %% "fastparse" % "0.3.7"
   )
 
+lazy val database = project
+  .settings(commonSettings)
+  .settings(
+    flywaySchemas := Seq("SCALADEX"),
+    flywayLocations := {
+      val dir = (resourceDirectory in Compile).value
+      Seq(s"filesystem:$dir/db/migration")
+    },
+    flywayUrl := "jdbc:h2:file:./target/foobar",
+    flywayUser := "SA",
+    libraryDependencies += "com.h2database" % "h2" % h2Version
+  )
+
 lazy val data = project
   .settings(commonSettings)
   .settings(
@@ -122,6 +136,7 @@ lazy val data = project
       "org.apache.maven"        % "maven-model-builder"               % "3.3.9",
       "ch.qos.logback"          % "logback-classic"                   % "1.1.7",
       "org.jsoup"               % "jsoup"                             % "1.9.2",
+      
       "com.typesafe.play"      %% "play-ws"                           % "2.5.4"
     ),
     buildInfoPackage := "build.info",
@@ -129,7 +144,7 @@ lazy val data = project
     javaOptions in reStart += "-Xmx3g"
   )
   .enablePlugins(BuildInfoPlugin)
-  .dependsOn(model)
+  .dependsOn(model, database)
 
 // to publish plugin
 // follow: http://www.scala-sbt.org/0.13/docs/Bintray-For-Plugins.html
