@@ -22,6 +22,7 @@ import akka.http.scaladsl.model.StatusCode
 
 import com.sksamuel.elastic4s._
 import ElasticDsl._
+import org.elasticsearch.action.WriteConsistencyLevel
 
 import org.joda.time.DateTime
 
@@ -119,6 +120,8 @@ private[api] class PublishProcess(dataRepository: DataRepository)(
 
     def updateProjectReleases(project: Option[Project], releases: List[Release]): Future[Unit] = {
 
+      println(project.map(_.artifacts))
+
       val bintray = BintraySearch(
         created = new DateTime(),
         `package` = s"${pom.groupId}:${pom.artifactId}",
@@ -142,14 +145,22 @@ private[api] class PublishProcess(dataRepository: DataRepository)(
 
             println(updatedProject.artifacts)
 
-            esClient.execute(update(project.id.get).in(indexName / projectsCollection).doc(updatedProject))
-                    .map(_ => println("updating project " + pom.artifactId))
+            esClient.execute(
+              update(project.id.get)
+                .in(indexName / projectsCollection)
+                .doc(updatedProject)
+                .consistencyLevel(WriteConsistencyLevel.ALL) // make sure subsequent read are consistent
+            ).map(_ => println("updating project " + pom.artifactId))
           }
 
 
           case None =>
-            esClient.execute(index.into(indexName / projectsCollection).source(updatedProject))
-                    .map(_ => println("inserting project " + pom.artifactId))
+            esClient.execute(
+              index
+                .into(indexName / projectsCollection)
+                .source(updatedProject)
+                // .consistencyLevel(WriteConsistencyLevel.ALL)
+              ).map(_ => println("inserting project " + pom.artifactId))
         }
 
       val releaseUpdate = 
@@ -159,7 +170,6 @@ private[api] class PublishProcess(dataRepository: DataRepository)(
             newReleases.head.copy(liveData = true, test = data.test)
           )).map(_ => ())
         } else { Future.successful(())} 
-
 
       for {
         _ <- projectUpdate

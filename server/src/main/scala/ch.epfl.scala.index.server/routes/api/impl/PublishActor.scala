@@ -4,6 +4,8 @@ package routes
 package api
 package impl
 
+// import data.elastic._
+
 import akka.actor.{Actor, ActorSystem}
 import akka.stream.ActorMaterializer
 
@@ -24,6 +26,11 @@ class PublishActor(dataRepository: DataRepository,
       if (publishData.isPom) {
         Await.result(publishProcess.writeFiles(publishData), 10.seconds)
       }
+
+      println("block")
+      blockUntilGreen()
+      println("unblock")
+      // Thread.sleep(2000)
 
       sender.!(())
     }
