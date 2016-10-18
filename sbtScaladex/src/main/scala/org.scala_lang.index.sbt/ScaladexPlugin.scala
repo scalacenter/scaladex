@@ -47,6 +47,7 @@ object ScaladexPlugin extends AutoPlugin {
           val basePath = "/publish?"
 
           val params = List(
+            "test" -> scaladexTest.value,
             "readme" -> scaladexDownloadReadme.value,
             "info" -> scaladexDownloadInfo.value,
             "contributors" -> scaladexDownloadContributors.value,

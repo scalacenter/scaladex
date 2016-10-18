@@ -5,3 +5,4 @@ core
 .esdata/
 amm
 sbt
+server/scaladex.log

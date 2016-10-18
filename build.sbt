@@ -79,6 +79,7 @@ lazy val server = project
   .settings(packageScalaJS(client))
   .settings(
     libraryDependencies ++= Seq(
+      "ch.qos.logback"                      %   "logback-classic"      % "1.0.13",
       "com.typesafe.akka"                  %% "akka-http-experimental" % akkaVersion,
       "com.github.swagger-akka-http"       %% "swagger-akka-http"      % "0.7.2",
       "ch.megard"                          %% "akka-http-cors"         % "0.1.7",

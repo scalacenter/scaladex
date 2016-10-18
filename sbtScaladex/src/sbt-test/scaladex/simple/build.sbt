@@ -6,11 +6,12 @@ lazy val testSetup = Seq(
   organization := "ch.epfl.scala.superlib4",
   version      := "1.1.5",
   scalaVersion := "2.11.8",
-  scmInfo := Some(ScmInfo(url("https://github.com/scalacenter/hackathons"), "scm:git:git@github.com:scalacenter/hackathons.git")),
+
+  scmInfo := Some(ScmInfo(url("https://github.com/scalacenter/scaladex"), "scm:git:git@github.com:scalacenter/scaladex.git")),
  
-  scaladexBaseUri := uri("http://localhost:8080"),
+  scaladexBaseUri := uri("https://index.scala-lang.org"),
   scaladexTest := true,
-  credentials in Scaladex += Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials")
+  credentials in Scaladex += Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials2")
   // or 
   // credentials in Scaladex := Credentials("Scaladex Realm", "localhost", "<github username>", "<github password>"),
 
