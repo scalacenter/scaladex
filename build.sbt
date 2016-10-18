@@ -81,6 +81,7 @@ lazy val server = project
     libraryDependencies ++= Seq(
       "ch.qos.logback"                      %   "logback-classic"      % "1.0.13",
       "com.typesafe.akka"                  %% "akka-http-experimental" % akkaVersion,
+      "com.typesafe.akka"                  %% "akka-slf4j"             % akkaVersion,
       "com.github.swagger-akka-http"       %% "swagger-akka-http"      % "0.7.2",
       "ch.megard"                          %% "akka-http-cors"         % "0.1.7",
       "com.softwaremill.akka-http-session" %% "core"                   % "0.2.7",
