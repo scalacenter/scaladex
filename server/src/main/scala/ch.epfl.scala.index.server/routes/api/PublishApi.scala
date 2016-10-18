@@ -15,35 +15,37 @@ import server.directives._
 import StatusCodes._
 // import TwirlSupport._
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Props}
 import akka.stream.ActorMaterializer
+import akka.util.Timeout
 
 import scala.concurrent.Future
 
-class PublishApi(dataRepository: DataRepository)(implicit val system: ActorSystem, implicit val materializer: ActorMaterializer) {
+class PublishApi(dataRepository: DataRepository, github: Github)(
+    implicit val system: ActorSystem, 
+    implicit val materializer: ActorMaterializer) {
+  
   import system.dispatcher
-
-  private val publishProcess = new impl.PublishProcess(dataRepository)
 
   /*
    * verifying a login to github
    * @param credentials the credentials
    * @return
    */
-  private def githubAuthenticator(
-      credentialsHeader: Option[HttpCredentials]): Credentials => Future[Option[GithubCredentials]] = {
+  private def githubAuthenticator(credentialsHeader: Option[HttpCredentials]): 
+    Credentials => Future[Option[(GithubCredentials, UserState)]] = {
+
     case Credentials.Provided(username) => {
       credentialsHeader match {
         case Some(cred) => {
           val upw               = new String(new sun.misc.BASE64Decoder().decodeBuffer(cred.token()))
           val userPass          = upw.split(":")
-          val githubCredentials = GithubCredentials(userPass(0), userPass(1))
+
+          val token = userPass(1)
+          val credentials = GithubCredentials(token)
           // todo - catch errors
-          publishProcess
-            .authenticate(githubCredentials)
-            .map(granted =>
-                  if (granted) Some(githubCredentials)
-                  else None)
+
+          github.getUserStateWithToken(token).map(user => Some((credentials, user)))
         }
         case _ => Future.successful(None)
       }
@@ -72,6 +74,11 @@ class PublishApi(dataRepository: DataRepository)(implicit val system: ActorSyste
     MavenReference(groupId, artifactId, version)
   }
 
+  import akka.pattern.ask
+  import scala.concurrent.duration._
+  implicit val timeout = Timeout(20.seconds)
+  private val actor = system.actorOf(Props(classOf[impl.PublishActor], dataRepository, system, materializer))
+
   val routes = 
     get {
       path("publish") {
@@ -79,11 +86,10 @@ class PublishApi(dataRepository: DataRepository)(implicit val system: ActorSyste
           complete {
 
             /* check if the release already exists - sbt will handle HTTP-Status codes
-             * 404 -> allowed to write
-             * 200 -> only allowed if isSnapshot := true
+             * NotFound -> allowed to write
+             * OK -> only allowed if isSnapshot := true
              */
             dataRepository.maven(mavenPathExtractor(path)) map {
-
               case Some(release) => OK
               case None          => NotFound
             }
@@ -98,19 +104,21 @@ class PublishApi(dataRepository: DataRepository)(implicit val system: ActorSyste
             'readme.as[Boolean] ? true,
             'contributors.as[Boolean] ? true,
             'info.as[Boolean] ? true,
-            'keywords.as[String].*
-        ) { (path, readme, contributors, info, keywords) =>
+            'keywords.as[String].*,
+            'test.as[Boolean] ? false
+        ) { (path, readme, contributors, info, keywords, test) =>
           entity(as[String]) { data =>
             extractCredentials { credentials =>
-              authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) { cred =>
-                val publishData = impl.PublishData(path, data, cred, info, contributors, readme, keywords.toSet)
-                complete {
-                  if (publishData.isPom) {
-                    publishProcess.writeFiles(publishData)
-                  } else {
-                    Future(Created)
-                  }
-                }
+              authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) { 
+                case (credentials, userState) =>
+
+                  val publishData = impl.PublishData(
+                      path, data, 
+                      credentials, userState,
+                      info, contributors, readme, keywords.toSet, test
+                    )
+
+                  complete((actor ? publishData).mapTo[Unit].map(_ => ""))
               }
             }
           }

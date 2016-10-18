@@ -37,7 +37,9 @@ case class Release(
     scalaDependencies: Seq[ScalaDependency] = Seq(),
     javaDependencies: Seq[JavaDependency] = Seq(),
     reverseDependencies: Seq[ScalaDependency] = Seq(),
-    internalDependencies: Seq[ScalaDependency] = Seq()
+    internalDependencies: Seq[ScalaDependency] = Seq(),
+    
+    test: Boolean = false
 ) {
 
   /**

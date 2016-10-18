@@ -1,4 +1,1 @@
-> startServer
 > scaladex:publish
-> checkNewRelease
-> stopServer

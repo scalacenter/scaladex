@@ -51,7 +51,7 @@ object Server {
     val session = new GithubUserSession(config)
 
     val routes = 
-      new PublishApi(data).routes ~
+      new PublishApi(data, github).routes ~
       new SearchApi(data).routes ~
       Assets.routes ~
       new Badges(data).routes ~
