@@ -16,6 +16,13 @@ package object data {
     }
   }
 
+  def upserts[K, V](map: Map[K, Set[V]], k: K, vs: Set[V]) = {
+    map.get(k) match {
+      case Some(xs) => map.updated(k, vs ++ xs)
+      case None     => map.updated(k, vs)
+    }
+  }
+
   def fullOuterJoin[K, A, B, Z](m1: Map[K, A], m2: Map[K, B])(f: (A, B) => Z)(da: A => Z)(db: B => Z): Map[K, Z] = {
     val km1 = m1.keySet
     val km2 = m2.keySet

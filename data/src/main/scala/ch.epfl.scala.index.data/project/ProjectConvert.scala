@@ -26,7 +26,7 @@ object ProjectConvert extends BintrayProtocol {
     nonStandardLibs
       .find(lib =>
             lib.groupId == pom.groupId &&
-              lib.artifactId == pom.artifactId)
+            lib.artifactId == pom.artifactId)
       .map(_.lookup) match {
 
       case Some(ScalaTargetFromPom) =>
@@ -40,12 +40,19 @@ object ProjectConvert extends BintrayProtocol {
       case Some(ScalaTargetFromVersion) =>
         SemanticVersion(pom.version).map(version => (pom.artifactId, ScalaTarget(version), true))
 
-      case None                                                    =>
+      case None =>
         Artifact(pom.artifactId).map { case (artifactName, target) => (artifactName, target, false) }
     }
   }
 
-  def apply(pomsAndMeta: List[(MavenModel, List[BintraySearch])], stored: Boolean = true): List[(Project, Set[Release])] = {
+  /**
+    * @param pomsAndMeta poms and metadata associated to the search
+    * @param stored read user update projects and release from disk
+    * @param cachedReleases use previous released cached to workarround elasticsearch consistency (write, read)
+    */
+  def apply(pomsAndMeta: List[(MavenModel, List[BintraySearch])],
+            stored: Boolean = true,
+            cachedReleases: Map[Project.Reference, Set[Release]] = Map()): List[(Project, Set[Release])] = {
     val githubRepoExtractor = new GithubRepoExtractor
 
     println("Collecting Metadata")
@@ -94,6 +101,9 @@ object ProjectConvert extends BintrayProtocol {
           if(stored) storedReleases.get(projectReference).getOrElse(Set())
           else Set()
 
+        val cachedReleasesForProject = 
+          cachedReleases.get(projectReference).getOrElse(Set())
+
         val releases = vs.map {
           case (_, artifactName, targets, pom, metas, version, nonStandardLib) =>
             val mavenCentral = metas.forall(meta => meta.owner == "bintray" && meta.repo == "jcenter")
@@ -119,7 +129,7 @@ object ProjectConvert extends BintrayProtocol {
                 licenses = licenseCleanup(pom),
                 nonStandardLib = nonStandardLib
             )
-        }.toSet ++ storedReleasesForProject
+        }.toSet ++ storedReleasesForProject ++ cachedReleasesForProject
 
 
         val releaseCount = releases.map(_.reference.version).toSet.size
