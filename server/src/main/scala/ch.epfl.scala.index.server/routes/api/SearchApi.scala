@@ -64,7 +64,7 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
                 target1 match {
                   case Some(target) => 
                     (OK, dataRepository
-                          .find(q, targetFiltering = target1)
+                          .find(q, targetFiltering = target1, total = 10)
                           .map{case (_, ps) => ps.map(p => convert(p))}
                           .map(ps => uwrite(ps))
                     )
