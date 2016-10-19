@@ -58,15 +58,15 @@ private[api] class PublishProcess(dataRepository: DataRepository)(
           NoContent
         }
         case Some(repo) => {
-          // if(data.userState.isSonatype || data.userState.repos.contains(repo)) {
+          if(data.userState.isSonatype || data.userState.repos.contains(repo)) {
             data.writePom()
             data.deleteTemp()
             updateIndex(repo, pom, data)
             Created
-          // } else {
-          //   data.deleteTemp()
-          //   Forbidden
-          // }
+          } else {
+            data.deleteTemp()
+            Forbidden
+          }
         }
       }
     } else {
@@ -133,6 +133,8 @@ private[api] class PublishProcess(dataRepository: DataRepository)(
         version = pom.version
       )
 
+      BintrayMeta.append(bintray)
+
       val (newProject, newReleases) = ProjectConvert(
         pomsAndMeta = List((pom, List(bintray))),
         cachedReleases = cachedReleases
@@ -142,7 +144,6 @@ private[api] class PublishProcess(dataRepository: DataRepository)(
       
       val updatedProject = newProject.copy(
         keywords = data.keywords,
-        liveData = true,
         test = data.test
       )
 
@@ -169,7 +170,7 @@ private[api] class PublishProcess(dataRepository: DataRepository)(
         if (!releases.exists(r => r.reference == newReleases.head.reference)) {
           // create new release
           esClient.execute(index.into(indexName / releasesCollection).source(
-            newReleases.head.copy(liveData = true, test = data.test)
+            newReleases.head.copy(test = data.test)
           )).map(_ => ())
         } else { Future.successful(())} 
 

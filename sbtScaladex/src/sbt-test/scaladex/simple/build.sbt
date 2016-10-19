@@ -4,16 +4,16 @@ import Keys._
 // turn on testing in .travis.yml when this is resolve
 lazy val testSetup = Seq(
   organization := "ch.epfl.scala.superlib",
-  version      := "1.1.5",
+  version      := "1.1.8",
   scalaVersion := "2.11.8",
 
   scmInfo := Some(ScmInfo(url("https://github.com/scalacenter/scaladex"), "scm:git:git@github.com:scalacenter/scaladex.git")),
  
-  scaladexBaseUri := uri("https://index.scala-lang.org"),
-  // scaladexBaseUri := uri("http://localhost:8080"),
+  // scaladexBaseUri := uri("https://index.scala-lang.org"),
+  scaladexBaseUri := uri("http://localhost:8080"),
   scaladexTest := true,
-  credentials in Scaladex += Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials2")
-  // credentials in Scaladex += Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials")
+  // credentials in Scaladex += Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials2")
+  credentials in Scaladex += Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials")
   // or 
   // credentials in Scaladex := Credentials("Scaladex Realm", "localhost", "token", "<github personnal token>"),
 )

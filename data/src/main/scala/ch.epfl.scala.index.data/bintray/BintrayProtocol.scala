@@ -11,8 +11,10 @@ import org.joda.time.format.ISODateTimeFormat
 
 import org.json4s._
 import org.json4s.native.JsonMethods._
+import org.json4s.native.Serialization.write
 
 import java.nio.file._
+import java.nio.charset.StandardCharsets
 
 case class BintraySearch(
     sha1: String,
@@ -122,5 +124,15 @@ object BintrayMeta extends BintrayProtocol {
     val ret    = source.mkString.split(nl).toList
     source.close()
     ret.filter(_ != "").map(json => parse(json).extract[BintraySearch]).sortBy(_.created)(Descending)
+  }
+
+  def append(meta: BintraySearch): Unit = {
+    println("append " + meta)    
+    val all = readQueriedPoms(bintrayCheckpoint)
+    Files.delete(bintrayCheckpoint)
+    val sorted = (meta :: all).sortBy(_.created)(Descending)
+    val jsonPerLine = sorted.map(s => write(s)).mkString("", System.lineSeparator, System.lineSeparator)
+    Files.write(bintrayCheckpoint, jsonPerLine.getBytes(StandardCharsets.UTF_8))
+    ()
   }
 }
