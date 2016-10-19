@@ -220,14 +220,22 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
     } yield ret
   }
 
-  def latestProjects() =
-    latest[Project](projectsCollection, "created", 12).map(_.map(hideId))
+  def latestProjects() = latest[Project](projectsCollection, "created", 12).map(_.map(hideId))
   def latestReleases() = latest[Release](releasesCollection, "released", 12)
 
   private def latest[T: HitAs: Manifest](collection: String, by: String, n: Int): Future[List[T]] = {
     esClient.execute {
-      search.in(indexName / collection).query(matchAllQuery).sort(fieldSort(by) order SortOrder.DESC).limit(n)
-
+      search
+        .in(indexName / collection)
+        .query(
+          bool(
+            mustQueries = Nil,
+            shouldQueries = Nil,
+            notQueries = List(termQuery("deprecated", true), termQuery("test", true))
+          )
+        )
+        .sort(fieldSort(by).order(SortOrder.DESC))
+        .limit(n)
     }.map(r => r.as[T].toList)
   }
 

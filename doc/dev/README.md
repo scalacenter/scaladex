@@ -93,3 +93,12 @@ $ sbt
 # api key: **********
 > publish
 ```
+
+## Testing publish
+
+curl -d="@n_2.11-1.1.5.pom" \
+-XPUT \
+--user token:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+"http://localhost:8080/publish?test=true&readme=true&info=true&contributors=true&path=/org/example/test_2.11/1.2.3/test_2.11-1.2.3.pom"
+
+or via `sbt sbtScaladex/scripted`
