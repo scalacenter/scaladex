@@ -126,8 +126,7 @@ object BintrayMeta extends BintrayProtocol {
     ret.filter(_ != "").map(json => parse(json).extract[BintraySearch]).sortBy(_.created)(Descending)
   }
 
-  def append(meta: BintraySearch): Unit = {
-    println("append " + meta)    
+  def append(meta: BintraySearch): Unit = {    
     val all = readQueriedPoms(bintrayCheckpoint)
     Files.delete(bintrayCheckpoint)
     val sorted = (meta :: all).sortBy(_.created)(Descending)

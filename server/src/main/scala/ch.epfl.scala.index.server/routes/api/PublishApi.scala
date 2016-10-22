@@ -76,7 +76,7 @@ class PublishApi(dataRepository: DataRepository, github: Github)(
 
   import akka.pattern.ask
   import scala.concurrent.duration._
-  implicit val timeout = Timeout(20.seconds)
+  implicit val timeout = Timeout(40.seconds)
   private val actor = system.actorOf(Props(classOf[impl.PublishActor], dataRepository, system, materializer))
 
   val routes = 
@@ -118,7 +118,7 @@ class PublishApi(dataRepository: DataRepository, github: Github)(
                       info, contributors, readme, keywords.toSet, test
                     )
 
-                  complete((actor ? publishData).mapTo[Unit].map(_ => ""))
+                  complete((actor ? publishData).mapTo[StatusCode].map(s => s))
               }
             }
           }

@@ -27,12 +27,18 @@ object Response {
 }
 
 case class UserState(repos: Set[GithubRepo], orgs: Set[Response.Organization], user: UserInfo) {
+  private val scalacenter = "scalacenter" 
+
   def isAdmin = repos.exists {
     case GithubRepo(organization, repository) =>
-      organization == "scalacenter" &&
+      organization == scalacenter &&
         repository == "scaladex"
   }
-  def isSonatype = orgs.contains(Response.Organization("sonatype"))
+  def hasPublishingAuthority = {
+    val authorized = Set(scalacenter, "sonatype").map(s => Response.Organization(s))
+    !authorized.intersect(orgs).isEmpty
+  }
+
 }
 
 class Github(implicit system: ActorSystem, materializer: ActorMaterializer) extends Json4sSupport {

@@ -58,7 +58,7 @@ private[api] class PublishProcess(dataRepository: DataRepository)(
           NoContent
         }
         case Some(repo) => {
-          if(data.userState.isSonatype || data.userState.repos.contains(repo)) {
+          if(data.userState.hasPublishingAuthority || data.userState.repos.contains(repo)) {
             data.writePom()
             data.deleteTemp()
             updateIndex(repo, pom, data)
