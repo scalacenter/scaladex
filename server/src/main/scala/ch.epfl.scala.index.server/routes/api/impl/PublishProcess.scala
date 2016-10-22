@@ -144,7 +144,8 @@ private[api] class PublishProcess(dataRepository: DataRepository)(
       
       val updatedProject = newProject.copy(
         keywords = data.keywords,
-        test = data.test
+        test = data.test,
+        liveData = true
       )
 
       val projectUpdate =
@@ -170,7 +171,7 @@ private[api] class PublishProcess(dataRepository: DataRepository)(
         if (!releases.exists(r => r.reference == newReleases.head.reference)) {
           // create new release
           esClient.execute(index.into(indexName / releasesCollection).source(
-            newReleases.head.copy(test = data.test)
+            newReleases.head.copy(test = data.test, liveData = true)
           )).map(_ => ())
         } else { Future.successful(())} 
 
