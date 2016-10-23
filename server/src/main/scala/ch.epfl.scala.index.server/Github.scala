@@ -11,8 +11,10 @@ import headers._
 import Uri._
 import unmarshalling.{Unmarshal, Unmarshaller}
 
+
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import akka.stream.scaladsl._
 
 import scala.concurrent.Future
 
@@ -49,6 +51,8 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
   val clientSecret = config.getString("client-secret")
   val redirectUri  = config.getString("uri") + "/callback/done"
 
+  private val poolClientFlow = Http().cachedHostConnectionPoolHttps[HttpRequest]("api.github.com")
+
   def getUserStateWithToken(token: String): Future[UserState] = info(token)
   def getUserStateWithOauth2(code: String): Future[UserState] = {
     def access = {
@@ -73,11 +77,10 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
 
   private def info(token: String) = {
     def fetchGithub(path: Path, query: Query = Query.Empty) = {
-      Http().singleRequest(
-          HttpRequest(
-              uri = Uri(s"https://api.github.com").withPath(path).withQuery(query),
-              headers = List(Authorization(GenericHttpCredentials("token", token)))
-          ))
+      HttpRequest(
+        uri = Uri(s"https://api.github.com").withPath(path).withQuery(query),
+        headers = List(Authorization(GenericHttpCredentials("token", token)))
+      )
     }
 
     def fetchUserRepos(): Future[List[Response.Repo]] = {
@@ -89,35 +92,50 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
     }
 
     def fetchOrgRepos(org: String): Future[List[Response.Repo]] = {
-      paginated[Response.Repo](Path.Empty / "orgs" / org / "repos")
+      paginated[Response.Repo](Path.Empty / "orgs" / org / "repos", org = true)
     }
 
-    def paginated[T](path: Path)(implicit ev: Unmarshaller[HttpResponse, List[T]]): Future[List[T]] = {
+    def paginated[T](path: Path, org: Boolean = false)(implicit ev: Unmarshaller[HttpResponse, List[T]]): Future[List[T]] = {
       def request(page: Option[Int] = None) = {
         val query = page
           .map(p => Query("page" -> p.toString()))
           .getOrElse(Query())
 
-        fetchGithub(path, query)
+        val query2 =
+          if(org) ("type", "public") +: query
+          else query
+
+        fetchGithub(path, query2)
       }
-      request(None).flatMap { r1 =>
+      Http().singleRequest(request(None)).flatMap { r1 =>
         val lastPage = r1.headers.find(_.name == "Link").map(h => extractLastPage(h.value)).getOrElse(1)
-        Unmarshal(r1).to[List[T]].map(vs => (vs, lastPage))
+        val maxPages = 5
+        val clampedLastPage = if(lastPage > maxPages) maxPages else lastPage
+        println(clampedLastPage)
+        Unmarshal(r1).to[List[T]].map(vs => (vs, clampedLastPage))
       }.flatMap {
         case (vs, lastPage) =>
-          val nextPagesRequests = if (lastPage > 1) {
-            Future
-              .sequence(
-                  (2 to lastPage).map(page => request(Some(page)).flatMap(r2 => Unmarshal(r2).to[List[T]])))
-              .map(_.flatten)
-          } else Future.successful(Nil)
+          val nextPagesRequests = 
+            if (lastPage > 1) {
+              Source((2 to lastPage).map(page => request(Some(page))))
+                .map(r => (r, r)) 
+                .via(poolClientFlow)
+                .runWith(Sink.seq)
+                .map(_.toList)
+                .map(_.collect{ case (scala.util.Success(v), _) => v})
+                .flatMap(s => Future.sequence(s.map(r2 => Unmarshal(r2).to[List[T]])))
+                .map(_.flatten)
+            } else Future.successful(Nil)
 
           nextPagesRequests.map(vs2 => vs ++ vs2)
       }
     }
 
     def fetchUser() =
-      fetchGithub(Path.Empty / "user").flatMap(response => Unmarshal(response).to[Response.User])
+      Http().singleRequest(
+        fetchGithub(Path.Empty / "user"))
+          .flatMap(response => Unmarshal(response).to[Response.User]
+      )
 
     for {
       ((repos, user), orgs) <- fetchUserRepos().zip(fetchUser()).zip(fetchOrgs())
