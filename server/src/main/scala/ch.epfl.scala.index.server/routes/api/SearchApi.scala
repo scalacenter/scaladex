@@ -42,7 +42,7 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
         cors() {
           path("search") {
             get {
-              parameters('q, 'target, 'scalaVersion, 'targetVersion.?) {
+              parameters('q, 'target, 'scalaVersion, 'scalaJsVersion.?) {
                 (q, target0, scalaVersion0, targetVersion0) =>
 
                 val target1 = 
