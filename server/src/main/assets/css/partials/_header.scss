@@ -66,7 +66,10 @@
         .has-feedback {}
         .you {
             img {
-                padding-right: 5px;   
+                padding-right: 5px;
+                height: 38px;
+                border-top-left-radius: 2px;
+                border-bottom-left-radius: 2px;
             }
             margin-right: 10px;
             padding: 0 10px 0 0;
