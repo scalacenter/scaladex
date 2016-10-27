@@ -17,16 +17,16 @@ import java.nio.file._
 import java.nio.charset.StandardCharsets
 
 case class BintraySearch(
-    sha1: String,
-    sha256: Option[String],
-    `package`: String,
-    name: String,
-    path: String,
-    size: Int,
-    version: String,
-    owner: String,
-    repo: String,
-    created: DateTime
+  sha1: String,
+  sha256: Option[String],
+  `package`: String,
+  name: String,
+  path: String,
+  size: Int,
+  version: String,
+  owner: String,
+  repo: String,
+  created: DateTime
 )
 
 /**
