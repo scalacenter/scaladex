@@ -5,9 +5,11 @@
     <li role="presentation" class="active">
       <a href="#sbt" aria-controls="sbt" role="tab" data-toggle="tab">Sbt</a>
     </li>
+    @if(release.isOnMavenCentral) {
     <li role="presentation">
       <a href="#ammonite" aria-controls="ammonite" role="tab" data-toggle="tab">Amm</a>
     </li>
+    }
     <li role="presentation">
       <a href="#coursier" aria-controls="coursier" role="tab" data-toggle="tab">Cour</a>
     </li>
@@ -22,10 +24,12 @@
     <div role="tabpanel" class="tab-pane active" id="sbt">
       <pre>@release.sbtInstall</pre>
     </div>
+    @if(release.isOnMavenCentral) {
     <div role="tabpanel" class="tab-pane" id="ammonite">
       <a href="http://www.lihaoyi.com/Ammonite/#Ammonite-REPL">Ammonite REPL</a>
       <pre>@release.ammInstall</pre>
     </div>
+    }
     <div role="tabpanel" class="tab-pane" id="coursier">
       <a href="https://github.com/alexarchambault/coursier#command-line-1">Coursier</a>
       <pre>./coursier launch @release.maven.groupId:@release.maven.artifactId:@release.maven.version</pre>

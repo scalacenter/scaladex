@@ -18,6 +18,7 @@ import release._
   * @param scalaDependencies bunch of scala dependencies
   * @param javaDependencies bunch of java dependencies
   * @param reverseDependencies bunch of reversed dependencies
+  * @param internalDependencies dependencies of modules of the same project
   */
 case class Release(
     maven: MavenReference,
@@ -203,6 +204,12 @@ case class Release(
 
     orderedReverseDependencies.filter(d => d.reference.name == dep.reference.name).map(_.reference.version)
   }
+
+  /**
+    * True is this release artifact is hosted on Maven Central
+    */
+  lazy val isOnMavenCentral = resolver.isEmpty
+
 }
 
 object Release {
