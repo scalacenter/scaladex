@@ -18,7 +18,7 @@ import scala.util.Try
 
 trait ClientBase {
 
-  val searchId        = "search"
+  val searchId = "search"
   val resultElementId = "list-result"
   var completionSelection: CompletionSelection = CompletionSelection.empty
 
@@ -33,29 +33,25 @@ trait ClientBase {
   def getElement(id: String): Option[Element] =
     Try(document.getElementById(id)).toOption
 
-  def appendResult(owner: String,
-                   repo: String,
-                   description: String): Option[Node] = {
+  def appendResult(owner: String, repo: String, description: String): Option[Node] = {
     for {
       resultContainer <- getResultList
       newItem = newProjectItem(owner, repo, description)
     } yield resultContainer.appendChild(newItem)
   }
 
-  def newProjectItem(owner: String,
-                     repo: String,
-                     description: String): Element = {
+  def newProjectItem(owner: String, repo: String, description: String): Element = {
     li(
-        a(href := s"/$owner/$repo")(
-            p(s"$owner / $repo"),
-            span(description)
-        )
+      a(href := s"/$owner/$repo")(
+        p(s"$owner / $repo"),
+        span(description)
+      )
     ).render
   }
 
   def getQuery(input: Option[HTMLInputElement]): Option[String] = input match {
     case Some(i) if i.value.length > 1 => Option(i.value)
-    case _                             => None
+    case _ => None
   }
 
   def getProjects(query: String): Future[List[Autocompletion]] =
@@ -83,7 +79,7 @@ trait ClientBase {
     cleanResults()
     getQuery(getSearchInput)
       .fold(
-          Future.successful(List.empty[Autocompletion])
+        Future.successful(List.empty[Autocompletion])
       )(getProjects)
       .map(showResults)
   }
@@ -95,8 +91,8 @@ trait ClientBase {
       )
     } else if (event.keyCode == KeyCode.Down && completionSelection.choices.nonEmpty) {
       moveSelection(
-        completionSelection.selected
-          .fold[Option[Int]](Some(0))(i => Some(math.min(i + 1, completionSelection.choices.size - 1)))
+        completionSelection.selected.fold[Option[Int]](Some(0))(i =>
+          Some(math.min(i + 1, completionSelection.choices.size - 1)))
       )
     } else if (event.keyCode == KeyCode.Enter) {
       completionSelection.selected.foreach { selected =>
@@ -130,7 +126,7 @@ trait ClientBase {
 
   implicit class ElementOps(e: Element) {
     def getInput: HTMLInputElement = get[HTMLInputElement]
-    def get[A <: Element]: A       = e.asInstanceOf[A]
+    def get[A <: Element]: A = e.asInstanceOf[A]
   }
 
   case class CompletionSelection(selected: Option[Int], choices: List[Autocompletion])

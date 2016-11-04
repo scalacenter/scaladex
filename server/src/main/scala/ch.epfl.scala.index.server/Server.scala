@@ -4,6 +4,7 @@ package server
 import routes._
 import routes.api._
 
+import data.DataPaths
 import data.elastic._
 
 import akka.http.scaladsl._
@@ -14,7 +15,6 @@ import com.typesafe.config.ConfigFactory
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
-
 import scala.concurrent.duration._
 import scala.concurrent.Await
 
@@ -23,19 +23,20 @@ import java.lang.management.ManagementFactory
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
+// reStart 8080 /home/gui/center/scaladex/contrib /home/gui/center/scaladex-data-jungle
 object Server {
   def main(args: Array[String]): Unit = {
 
-    val port = 
-      if(args.isEmpty) 8080
+    val port =
+      if (args.isEmpty) 8080
       else args.head.toInt
 
     val config = ConfigFactory.load().getConfig("org.scala_lang.index.server")
     val production = config.getBoolean("production")
 
-    if(production) {
+    if (production) {
       val pid = ManagementFactory.getRuntimeMXBean().getName().split("@").head
-      val pidFile = Paths.get("PID") 
+      val pidFile = Paths.get("PID")
       Files.write(pidFile, pid.getBytes(StandardCharsets.UTF_8))
       sys.addShutdownHook {
         Files.delete(pidFile)
@@ -50,15 +51,17 @@ object Server {
     val data = new DataRepository(github)
     val session = new GithubUserSession(config)
 
-    val routes = 
-      new PublishApi(data, github).routes ~
-      new SearchApi(data).routes ~
-      Assets.routes ~
-      new Badges(data).routes ~
-      new FrontPage(data, session).routes ~
-      new OAuth2(github, session).routes ~
-      new ProjectPages(data, session).routes ~
-      new SearchPages(data, session).routes
+    val paths = DataPaths(args.toList.tail)
+
+    val routes =
+      new PublishApi(paths, data, github).routes ~
+        new SearchApi(data).routes ~
+        Assets.routes ~
+        new Badges(data).routes ~
+        new FrontPage(data, session).routes ~
+        new OAuth2(github, session).routes ~
+        new ProjectPages(data, session).routes ~
+        new SearchPages(data, session).routes
 
     println("waiting for elastic to start")
     blockUntilYellow()

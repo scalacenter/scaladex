@@ -11,8 +11,11 @@ import akka.stream.ActorMaterializer
 import play.api.libs.ws.{WSRequest, WSResponse}
 import play.api.libs.ws.ahc.AhcWSClient
 
-class DownloadPoms(implicit val system: ActorSystem, implicit val materializer: ActorMaterializer)
+class BintrayDownloadPoms(paths: DataPaths)(implicit val system: ActorSystem,
+                                            implicit val materializer: ActorMaterializer)
     extends PlayWsDownloader {
+
+  private val bintrayPomBase = paths.poms(LocalRepository.Bintray)
 
   /**
     * resolve the filename for a specific pom by sha1
@@ -32,7 +35,7 @@ class DownloadPoms(implicit val system: ActorSystem, implicit val materializer: 
     */
   def verifyChecksum(toVerify: String, sha1: String) = {
 
-    val md       = java.security.MessageDigest.getInstance("SHA-1")
+    val md = java.security.MessageDigest.getInstance("SHA-1")
     val computed = md.digest(toVerify.getBytes("UTF-8")).map("%02x".format(_)).mkString
 
     computed == sha1
@@ -46,7 +49,7 @@ class DownloadPoms(implicit val system: ActorSystem, implicit val materializer: 
     */
   private def verifySHA1FileHash(path: Path, sha1: String): Boolean = {
 
-    val source  = scala.io.Source.fromFile(path.toFile)
+    val source = scala.io.Source.fromFile(path.toFile)
     val content = source.mkString
     source.close()
 
@@ -59,7 +62,7 @@ class DownloadPoms(implicit val system: ActorSystem, implicit val materializer: 
   private val searchesBySha1: Set[BintraySearch] = {
 
     BintrayMeta
-      .readQueriedPoms(bintrayCheckpoint)
+      .load(paths)
       .filter(s => !Files.exists(pomPath(s)) || !verifySHA1FileHash(pomPath(s), s.sha1))
       .groupBy(_.sha1) // remove duplicates with sha1
       .map { case (_, vs) => vs.head }
@@ -85,11 +88,9 @@ class DownloadPoms(implicit val system: ActorSystem, implicit val materializer: 
     */
   private def downloadRequest(wsClient: AhcWSClient, search: BintraySearch): WSRequest = {
 
-    if (search.repo == "jcenter" && search.owner == "bintray") {
-
+    if (search.isJCenter) {
       wsClient.url(escape(s"https://jcenter.bintray.com/${search.path}"))
     } else {
-
       wsClient.url(escape(s"https://dl.bintray.com/${search.owner}/${search.repo}/${search.path}"))
     }
   }
@@ -129,7 +130,11 @@ class DownloadPoms(implicit val system: ActorSystem, implicit val materializer: 
     */
   def run(): Unit = {
 
-    download[BintraySearch, Unit]("Downloading POMs", searchesBySha1, downloadRequest, processPomDownload)
+    download[BintraySearch, Unit]("Downloading POMs",
+                                  searchesBySha1,
+                                  downloadRequest,
+                                  processPomDownload,
+                                  parallelism = 32)
     ()
   }
 }

@@ -1,9 +1,8 @@
 package ch.epfl.scala.index
 package data
-package bintray
+package maven
 
 import download.PlayWsDownloader
-import maven._
 
 import java.nio.file.Files
 
@@ -15,8 +14,15 @@ import play.api.libs.ws.ahc.AhcWSClient
 
 import scala.util.Failure
 
-class DownloadParentPoms(implicit val system: ActorSystem, implicit val materializer: ActorMaterializer)
+class DownloadParentPoms(repository: LocalRepository, paths: DataPaths)(
+    implicit val system: ActorSystem,
+    implicit val materializer: ActorMaterializer)
     extends PlayWsDownloader {
+
+  assert(repository == LocalRepository.MavenCentral || repository == LocalRepository.Bintray)
+
+  val parentPomsPath = paths.parentPoms(repository)
+  val pomReader = PomsReader(repository, paths)
 
   /**
     * get the play-ws request by using the dependency
@@ -24,7 +30,12 @@ class DownloadParentPoms(implicit val system: ActorSystem, implicit val material
     * @return
     */
   def downloadRequest(wsClient: AhcWSClient, dep: Dependency): WSRequest = {
-    wsClient.url(s"https://repo.jfrog.org/artifactory/libs-release-bintray/${PomsReader.path(dep)}")
+    val urlBase =
+      if (repository == LocalRepository.MavenCentral) "https://repo1.maven.org/maven2/"
+      else "https://jcenter.bintray.com/"
+
+    val fullUrl = s"$urlBase/${PomsReader.path(dep)}"
+    wsClient.url(fullUrl)
   }
 
   /**
@@ -39,11 +50,11 @@ class DownloadParentPoms(implicit val system: ActorSystem, implicit val material
 
     if (200 == response.status) {
 
-      val pomPath = PomsReader.parentPomsBase.resolve(PomsReader.path(dep))
+      val pomPath = parentPomsPath.resolve(PomsReader.path(dep))
       Files.createDirectories(pomPath.getParent)
 
       val printer = new scala.xml.PrettyPrinter(80, 2)
-      val pw      = new java.io.PrintWriter(pomPath.toFile)
+      val pw = new java.io.PrintWriter(pomPath.toFile)
 
       pw.println(printer.format(scala.xml.XML.loadString(response.body)))
       pw.close()
@@ -60,13 +71,13 @@ class DownloadParentPoms(implicit val system: ActorSystem, implicit val material
   def run(lastFailedToDownload: Int = 0): Unit = {
 
     /* load poms */
-    val parentPomsToDownload: Set[Dependency] = PomsReader
-      .load()
-      .collect {
-
-        case Failure(m: MissingParentPom) => m.dep
-      }
-      .toSet
+    val parentPomsToDownload: Set[Dependency] =
+      pomReader
+        .load()
+        .collect {
+          case Failure(m: MissingParentPom) => m.dep
+        }
+        .toSet
 
     println(s"to download: ${parentPomsToDownload.size}")
     println(s"last failed: $lastFailedToDownload")
@@ -74,7 +85,11 @@ class DownloadParentPoms(implicit val system: ActorSystem, implicit val material
     if (parentPomsToDownload.size > lastFailedToDownload) {
 
       val downloaded =
-        download[Dependency, Int]("Download parent POMs", parentPomsToDownload, downloadRequest, processResponse)
+        download[Dependency, Int]("Download parent POMs",
+                                  parentPomsToDownload,
+                                  downloadRequest,
+                                  processResponse,
+                                  parallelism = 32)
       val failedDownloads = downloaded.sum
 
       println(s"failed downloads: $failedDownloads")

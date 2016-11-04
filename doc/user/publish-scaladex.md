@@ -86,6 +86,7 @@ Requires Basic Authentication to Github (realm: "Scaladex Realm")
 
 ```
 PUT /publish
+  created=2016-11-07T18:26:40.127+01:00
   path=/org/example/foo_2.11/0.8.0/foo_2.11-0.8.0.pom
   readme=[true|false] (default: true)
   contributors=[true|false] (default: true)

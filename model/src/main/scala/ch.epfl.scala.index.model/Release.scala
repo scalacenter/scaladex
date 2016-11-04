@@ -10,7 +10,6 @@ import release._
   * @param resolver if not on maven central (ex: Bintray)
   * @param description the description of that release
   * @param released first release date
-  * @param mavenCentral availability on the central repository
   * @param licenses a bunch of licences
   * @param nonStandardLib if not using artifactName_scalaVersion convention
   * @param customScalaDocUrl override javadoc.io scaladoc url
@@ -26,7 +25,6 @@ case class Release(
     name: Option[String] = None,
     description: Option[String] = None,
     released: Option[String] = None,
-    mavenCentral: Boolean = false,
     licenses: Set[License] = Set(),
     nonStandardLib: Boolean = false,
     id: Option[String] = None,
@@ -38,7 +36,6 @@ case class Release(
     javaDependencies: Seq[JavaDependency] = Seq(),
     reverseDependencies: Seq[ScalaDependency] = Seq(),
     internalDependencies: Seq[ScalaDependency] = Seq(),
-    
     test: Boolean = false
 ) {
 
@@ -48,7 +45,7 @@ case class Release(
     */
   def sbtInstall = {
 
-    val scalaJs   = reference.target.scalaJsVersion.isDefined
+    val scalaJs = reference.target.scalaJsVersion.isDefined
     val crossFull = reference.target.scalaVersion.patch.isDefined
 
     val (artifactOperator, crossSuffix) =
@@ -58,8 +55,9 @@ case class Release(
       else ("%%", "")
 
     List(
-        Some(s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""),
-        resolver.map("resolvers += " + _.sbt)
+      Some(
+        s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""),
+      resolver.map("resolvers += " + _.sbt)
     ).flatten.mkString(System.lineSeparator)
   }
 
@@ -80,8 +78,9 @@ case class Release(
     val artifactOperator = if (nonStandardLib) ":" else "::"
 
     List(
-        Some(s"import $$ivy.`${maven.groupId}$artifactOperator${reference.artifact}:${reference.version}`"),
-        resolver.map(addResolver)
+      Some(
+        s"import $$ivy.`${maven.groupId}$artifactOperator${reference.artifact}:${reference.version}`"),
+      resolver.map(addResolver)
     ).flatten.mkString(System.lineSeparator)
   }
 
@@ -114,7 +113,7 @@ case class Release(
   def scalaDocURL(customScalaDoc: Option[String]): Option[String] = {
     customScalaDoc match {
       case None =>
-        if (mavenCentral) {
+        if (resolver.isEmpty) {
           import maven._
           /* no frame
            * hosted on s3 at:
@@ -128,7 +127,7 @@ case class Release(
   }
 
   def documentationURLs(documentationLinks: List[(String, String)]): List[(String, String)] = {
-    documentationLinks.map{ case(label, url) => (label, evalLink(url))}
+    documentationLinks.map { case (label, url) => (label, evalLink(url)) }
   }
 
   /** Documentation link are often related to a release version
@@ -179,7 +178,12 @@ case class Release(
     */
   lazy val uniqueOrderedReverseDependencies: Seq[ScalaDependency] = {
 
-    orderedReverseDependencies.groupBy(_.reference.name).values.map(_.head).toSeq.sortBy(_.reference.name)
+    orderedReverseDependencies
+      .groupBy(_.reference.name)
+      .values
+      .map(_.head)
+      .toSeq
+      .sortBy(_.reference.name)
   }
 
   /**
@@ -201,7 +205,9 @@ case class Release(
     */
   def versionsForReverseDependencies(dep: ScalaDependency): Seq[SemanticVersion] = {
 
-    orderedReverseDependencies.filter(d => d.reference.name == dep.reference.name).map(_.reference.version)
+    orderedReverseDependencies
+      .filter(d => d.reference.name == dep.reference.name)
+      .map(_.reference.version)
   }
 }
 
@@ -221,7 +227,7 @@ object Release {
   ) extends GeneralReference {
 
     def projectReference = Project.Reference(organization, repository)
-    def name             = s"$organization/$artifact"
-    def httpUrl          = s"/$organization/$repository/$artifact/$version"
+    def name = s"$organization/$artifact"
+    def httpUrl = s"/$organization/$repository/$artifact/$version"
   }
 }

@@ -16,18 +16,18 @@ import org.json4s.native.Serialization.{read, write}
 
 import com.typesafe.config.ConfigFactory
 
-import java.nio.file.Paths
+// import java.nio.file.Paths
 
 trait ProjectProtocol {
 
   implicit val formats = Serialization.formats(
-      ShortTypeHints(
-          List(
-              classOf[Milestone],
-              classOf[ReleaseCandidate],
-              classOf[OtherPreRelease],
-              classOf[BintrayResolver]
-          )))
+    ShortTypeHints(
+      List(
+        classOf[Milestone],
+        classOf[ReleaseCandidate],
+        classOf[OtherPreRelease],
+        classOf[BintrayResolver]
+      )))
 
   implicit val serialization = native.Serialization
 
@@ -53,38 +53,34 @@ trait ProjectProtocol {
 
 package object elastic extends ProjectProtocol {
 
-  val liveIndexBase = build.info.BuildInfo.baseDirectory.toPath.resolve(Paths.get("index", "live"))
-
   /** @see https://github.com/sksamuel/elastic4s#client for configurations */
   lazy val esClient = {
     val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
     val elasticsearch = config.getString("elasticsearch")
 
     println(s"elasticsearch $elasticsearch")
-    if(elasticsearch == "remote") {
+    if (elasticsearch == "remote") {
       ElasticClient.transport(ElasticsearchClientUri("localhost", 9300))
-    } else if(elasticsearch == "local") {
-      // val home = System.getProperty("user.home")
-      // val esSettings = Settings.settingsBuilder()
-      //   .put("path.home", home + "/.esdata") //base.resolve(".esdata").toString())
+    } else if (elasticsearch == "local") {
       val base = build.info.BuildInfo.baseDirectory.toPath
       println(base.resolve(".esdata").toString())
-      val esSettings = Settings.settingsBuilder()
-        .put("path.home", base.resolve(".esdata").toString())
+      val esSettings =
+        Settings.settingsBuilder().put("path.home", base.resolve(".esdata").toString())
       ElasticClient.local(esSettings.build)
     } else {
-      sys.error(s"org.scala_lang.index.data.elasticsearch should be remote or local: $elasticsearch")
+      sys.error(
+        s"org.scala_lang.index.data.elasticsearch should be remote or local: $elasticsearch")
     }
   }
 
-  val indexName          = "scaladex"
+  val indexName = "scaladex"
   val projectsCollection = "projects"
   val releasesCollection = "releases"
 
   def blockUntilYellow(): Unit = {
     def blockUntil(explain: String)(predicate: () => Boolean): Unit = {
       var backoff = 0
-      var done    = false
+      var done = false
       while (backoff <= 128 && !done) {
         if (backoff > 0) Thread.sleep(200L * backoff)
         backoff = backoff + 1
@@ -99,7 +95,7 @@ package object elastic extends ProjectProtocol {
       val status =
         esClient.execute {
           get cluster health
-        }.await.getStatus 
+        }.await.getStatus
 
       status == ClusterHealthStatus.YELLOW ||
       status == ClusterHealthStatus.GREEN

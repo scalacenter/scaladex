@@ -4,19 +4,19 @@ object SemanticVersionTests extends org.specs2.mutable.Specification {
   def parseVersion(v: String): Option[SemanticVersion] = SemanticVersion(v)
   "semantic versionning" >> {
     "ordering" >> {
-      def order(versions: List[String]): List[SemanticVersion] = 
+      def order(versions: List[String]): List[SemanticVersion] =
         versions.flatMap(v => parseVersion(v)).sorted(Descending[SemanticVersion])
 
       "small" >> {
-        val versions =
-          "1.0.1" ::
-          "1.0.1-M1" ::
-          "1.0.1-M2" ::
-          "1.0.1-RC2" ::
-          "1.1.1" :: 
-          "1.0.1-BLABLA" ::
-          "1.0.1-RC1" ::
-          Nil
+        val versions = List(
+          "1.0.1",
+          "1.0.1-M1",
+          "1.0.1-M2",
+          "1.0.1-RC2",
+          "1.1.1",
+          "1.0.1-BLABLA",
+          "1.0.1-RC1"
+        )
 
         order(versions) ==== List(
           SemanticVersion(1, 1, Some(1)),
@@ -51,15 +51,18 @@ object SemanticVersionTests extends org.specs2.mutable.Specification {
       }
 
       "major.minor.patch-rc" >> {
-        parseVersion("1.2.3-RC5") ==== Some(SemanticVersion(1, 2, Some(3), None, Some(ReleaseCandidate(5))))
+        parseVersion("1.2.3-RC5") ==== Some(
+          SemanticVersion(1, 2, Some(3), None, Some(ReleaseCandidate(5))))
       }
 
       "major.minor.patch-m" >> {
-        parseVersion("1.2.3-M6") ==== Some(SemanticVersion(1, 2, Some(3), None, Some(Milestone(6))))
+        parseVersion("1.2.3-M6") ==== Some(
+          SemanticVersion(1, 2, Some(3), None, Some(Milestone(6))))
       }
 
       "major.minor.patch-xyz" >> {
-        parseVersion("1.1.1-xyz") ==== Some(SemanticVersion(1, 1, Some(1), None, Some(OtherPreRelease("xyz"))))
+        parseVersion("1.1.1-xyz") ==== Some(
+          SemanticVersion(1, 1, Some(1), None, Some(OtherPreRelease("xyz"))))
       }
 
       "major.minor.patch+meta" >> {

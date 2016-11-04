@@ -26,11 +26,11 @@ object AutowireClient extends autowire.Client[String, Reader, Writer] {
   override def doCall(req: Request): Future[String] = {
     dom.ext.Ajax
       .get(
-          url = "/api/" + req.path.last + "?" + buildQueryGet(req.args)
+        url = "/api/" + req.path.last + "?" + buildQueryGet(req.args)
       )
       .map(_.responseText)
   }
 
   def read[T: Reader](p: String) = uread[T](p)
-  def write[T: Writer](r: T)     = uwrite(r)
+  def write[T: Writer](r: T) = uwrite(r)
 }

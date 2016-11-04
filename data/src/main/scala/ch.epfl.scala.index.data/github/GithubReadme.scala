@@ -16,7 +16,7 @@ private[github] object GithubReadme {
 
     val root = s"https://github.com/$user/$repo"
     def base(v: String) = s"$root/$v/$defaultBranch"
-    val raw  = base("raw")
+    val raw = base("raw")
     val blob = base("blob")
 
     doc.select("a, img").toArray.map(_.asInstanceOf[org.jsoup.nodes.Element]).foreach { e =>

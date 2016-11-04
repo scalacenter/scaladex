@@ -2,32 +2,23 @@ package ch.epfl.scala.index
 package data
 package bintray
 
-import model.Descending
-
-import com.github.nscala_time.time.Imports._
-
-import org.joda.time.DateTime
-import org.joda.time.format.ISODateTimeFormat
-
 import org.json4s._
-import org.json4s.native.JsonMethods._
-import org.json4s.native.Serialization.write
-
-import java.nio.file._
-import java.nio.charset.StandardCharsets
+import org.joda.time.DateTime
 
 case class BintraySearch(
-  sha1: String,
-  sha256: Option[String],
-  `package`: String,
-  name: String,
-  path: String,
-  size: Int,
-  version: String,
-  owner: String,
-  repo: String,
-  created: DateTime
-)
+    sha1: String,
+    sha256: Option[String],
+    `package`: String,
+    name: String,
+    path: String,
+    size: Int,
+    version: String,
+    owner: String,
+    repo: String,
+    created: DateTime
+) {
+  def isJCenter = repo == "jcenter" && owner == "bintray"
+}
 
 /**
   * Internal pagination class
@@ -55,7 +46,7 @@ trait BintrayProtocol {
   /**
     * json4s formats
     */
-  implicit val formats       = DefaultFormats ++ Seq(DateTimeSerializer, BintraySearchSerializer)
+  implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer, BintraySearchSerializer)
   implicit val serialization = native.Serialization
 
   /**
@@ -63,9 +54,9 @@ trait BintrayProtocol {
     */
   object BintraySearchSerializer
       extends CustomSerializer[BintraySearch](
-          format =>
-            (
-                {
+        format =>
+          (
+            {
               case in: JValue => {
                 implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
                 in.extract[BintraySearch]
@@ -74,64 +65,18 @@ trait BintrayProtocol {
               case search: BintraySearch => {
                 implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
                 JObject(
-                    JField("created", Extraction.decompose(search.created)),
-                    JField("package", Extraction.decompose(search.`package`)),
-                    JField("owner", Extraction.decompose(search.owner)),
-                    JField("repo", Extraction.decompose(search.repo)),
-                    JField("sha1", Extraction.decompose(search.sha1)),
-                    JField("sha256", Extraction.decompose(search.sha256)),
-                    JField("name", Extraction.decompose(search.name)),
-                    JField("path", Extraction.decompose(search.path)),
-                    JField("size", Extraction.decompose(search.size)),
-                    JField("version", Extraction.decompose(search.version))
+                  JField("created", Extraction.decompose(search.created)),
+                  JField("package", Extraction.decompose(search.`package`)),
+                  JField("owner", Extraction.decompose(search.owner)),
+                  JField("repo", Extraction.decompose(search.repo)),
+                  JField("sha1", Extraction.decompose(search.sha1)),
+                  JField("sha256", Extraction.decompose(search.sha256)),
+                  JField("name", Extraction.decompose(search.name)),
+                  JField("path", Extraction.decompose(search.path)),
+                  JField("size", Extraction.decompose(search.size)),
+                  JField("version", Extraction.decompose(search.version))
                 )
               }
             }
-          ))
-
-  /**
-    * Scope serializer, since Scope is not a case class json4s can't handle this by default
-    *
-    */
-  object DateTimeSerializer
-      extends CustomSerializer[DateTime](
-          format =>
-            (
-                {
-              case JString(dateTime) => {
-                val parser = ISODateTimeFormat.dateTimeParser
-                parser.parseDateTime(dateTime)
-              }
-            }, {
-              case dateTime: DateTime => {
-                val formatter = ISODateTimeFormat.dateTime
-                JString(formatter.print(dateTime))
-              }
-            }
-          ))
-}
-
-object BintrayMeta extends BintrayProtocol {
-
-  /**
-    * read all currently downloaded poms and convert them to BintraySearch object
-    *
-    * @param path the file path
-    * @return
-    */
-  def readQueriedPoms(path: Path): List[BintraySearch] = {
-    val source = scala.io.Source.fromFile(path.toFile)
-    val ret    = source.mkString.split(nl).toList
-    source.close()
-    ret.filter(_ != "").map(json => parse(json).extract[BintraySearch]).sortBy(_.created)(Descending)
-  }
-
-  def append(meta: BintraySearch): Unit = {    
-    val all = readQueriedPoms(bintrayCheckpoint)
-    Files.delete(bintrayCheckpoint)
-    val sorted = (meta :: all).sortBy(_.created)(Descending)
-    val jsonPerLine = sorted.map(s => write(s)).mkString("", System.lineSeparator, System.lineSeparator)
-    Files.write(bintrayCheckpoint, jsonPerLine.getBytes(StandardCharsets.UTF_8))
-    ()
-  }
+        ))
 }

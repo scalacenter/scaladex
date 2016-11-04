@@ -1,4 +1,5 @@
 language: scala
+dist: trusty
 os:
   - linux
 scala:
@@ -7,8 +8,11 @@ jdk:
   - oraclejdk8
 cache:
   directories:
-    - $HOME/.ivy2/cache
-    - $HOME/.sbt/boot/
+  - $HOME/.sbt/0.13/dependency
+  - $HOME/.sbt/boot/scala*
+  - $HOME/.sbt/launchers
+  - $HOME/.ivy2/cache
+  - $HOME/.coursier/
 script:
   - sbt test
   - sbt server/universal:packageBin

@@ -17,12 +17,14 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
   private def frontPage(userInfo: Option[UserInfo]) = {
     import dataRepository._
     for {
-      keywords       <- keywords()
-      targets        <- targets()
-      dependencies   <- dependencies()
+      keywords <- keywords()
+      targets <- targets()
+      dependencies <- dependencies()
       latestProjects <- latestProjects()
       latestReleases <- latestReleases()
-    } yield views.html.frontpage(keywords, targets, dependencies, latestProjects, latestReleases, userInfo)
+    } yield
+      views.html
+        .frontpage(keywords, targets, dependencies, latestProjects, latestReleases, userInfo)
   }
 
   val routes =

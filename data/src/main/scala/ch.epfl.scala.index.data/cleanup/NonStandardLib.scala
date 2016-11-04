@@ -19,7 +19,7 @@ case class NonStandardLib(groupId: String, artifactId: String, lookup: ScalaTarg
 
 sealed trait ScalaTargetLookup
 
-/** The version is encoded in the pom file 
+/** The version is encoded in the pom file
   * dependency on org.scala-lang:scala-library
   * ex: io.gatling : gatling-compiler : 2.2.2
   */
@@ -34,16 +34,17 @@ object NonStandardLib {
   /**
     * json4s formats
     */
-  implicit val formats       = DefaultFormats
+  implicit val formats = DefaultFormats
   implicit val serialization = native.Serialization
 
   /**
     * fetch non standard libs from json
     */
-  def load(): List[NonStandardLib] = {
-    val filePath = cleanupIndexBase.resolve(Paths.get("non-standard.json"))
+  def load(paths: DataPaths): List[NonStandardLib] = {
+    val filePath = paths.nonStandard
+
     if (Files.exists(filePath)) {
-      val source      = scala.io.Source.fromFile(filePath.toFile)
+      val source = scala.io.Source.fromFile(filePath.toFile)
       val nonStandard = parse(source.mkString).extract[Map[String, String]]
       source.close()
 

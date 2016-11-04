@@ -23,8 +23,7 @@ import java.nio.file.{Files, Path}
 
 import com.typesafe.config.ConfigFactory
 
-
-class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
+class GithubDownload(paths: DataPaths, privateCredentials: Option[GithubCredentials] = None)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer)
     extends PlayWsDownloader {
@@ -33,9 +32,13 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
 
   case class PaginatedGithub(repo: GithubRepo, page: Int)
 
-  private lazy val githubRepoExtractor = new GithubRepoExtractor
+  private lazy val githubRepoExtractor = new GithubRepoExtractor(paths)
   private lazy val githubRepos = {
-    PomsReader.load().collect { case Success((pom, _)) => githubRepoExtractor(pom) }.flatten.toSet
+    PomsReader
+      .loadAll(paths)
+      .collect { case Success((pom, _, _)) => githubRepoExtractor(pom) }
+      .flatten
+      .toSet
   }
   private lazy val paginatedGithubRepos = githubRepos.map(repo => PaginatedGithub(repo, 1))
 
@@ -67,7 +70,7 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     */
   def applyAcceptJsonHeaders(request: WSRequest): WSRequest =
     applyBasicHeaders(
-        request.withHeaders("Accept" -> "application/json")
+      request.withHeaders("Accept" -> "application/json")
     )
 
   /**
@@ -90,12 +93,12 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     */
   private def saveJson(filePath: Path, repo: GithubRepo, data: String): Path = {
 
-    val dir = path(repo)
+    val dir = path(paths, repo)
     Files.createDirectories(dir)
 
     Files.write(
-        filePath,
-        writePretty(parse(data)).getBytes(StandardCharsets.UTF_8)
+      filePath,
+      writePretty(parse(data)).getBytes(StandardCharsets.UTF_8)
     )
   }
 
@@ -110,7 +113,7 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
 
     if (200 == response.status) {
 
-      saveJson(githubRepoInfoPath(repo), repo, response.body)
+      saveJson(githubRepoInfoPath(paths, repo), repo, response.body)
     }
 
     ()
@@ -127,7 +130,7 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
 
     if (200 == response.status) {
 
-      saveJson(githubRepoIssuesPath(repo), repo, response.body)
+      saveJson(githubRepoIssuesPath(paths, repo), repo, response.body)
     }
 
     ()
@@ -140,12 +143,13 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     * @param response
     * @return
     */
-  private def convertContributorResponse(repo: PaginatedGithub, response: WSResponse): List[Contributor] = {
+  private def convertContributorResponse(repo: PaginatedGithub,
+                                         response: WSResponse): List[Contributor] = {
 
     Try(read[List[Contributor]](response.body)) match {
 
       case Success(contributors) => contributors
-      case Failure(ex)           => List()
+      case Failure(ex) => List()
     }
   }
 
@@ -173,10 +177,11 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
         val pages = List.range(2, lastPage + 1).map(page => PaginatedGithub(repo.repo, page)).toSet
 
         val pagedContributors = download[PaginatedGithub, List[Contributor]](
-            "Download contributor Pages",
-            pages,
-            githubContributorsUrl,
-            convertContributorResponse
+          "Download contributor Pages",
+          pages,
+          githubContributorsUrl,
+          convertContributorResponse,
+          parallelism = 32
         )
 
         pagedContributors.flatten.toList
@@ -187,9 +192,11 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
 
       /* current contributors + all other pages in  amount of contributions order */
       val contributors =
-        (convertContributorResponse(repo, response) ++ downloadAllPages).sortBy(_.contributions).reverse
+        (convertContributorResponse(repo, response) ++ downloadAllPages)
+          .sortBy(_.contributions)
+          .reverse
 
-      saveJson(githubRepoContributorsPath(repo.repo), repo.repo, writePretty(contributors))
+      saveJson(githubRepoContributorsPath(paths, repo.repo), repo.repo, writePretty(contributors))
     }
 
     ()
@@ -206,11 +213,11 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
 
     if (200 == response.status) {
 
-      val dir = path(repo)
+      val dir = path(paths, repo)
       Files.createDirectories(dir)
       Files.write(
-          githubReadmePath(repo),
-          GithubReadme.absoluteUrl(response.body, repo, "master").getBytes(StandardCharsets.UTF_8)
+        githubReadmePath(paths, repo),
+        GithubReadme.absoluteUrl(response.body, repo, "master").getBytes(StandardCharsets.UTF_8)
       )
     }
 
@@ -267,7 +274,8 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     */
   private def githubContributorsUrl(wsClient: AhcWSClient, repo: PaginatedGithub): WSRequest = {
 
-    applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo.repo) + s"/contributors?page=${repo.page}"))
+    applyAcceptJsonHeaders(
+      wsClient.url(mainGithubUrl(repo.repo) + s"/contributors?page=${repo.page}"))
   }
 
   /**
@@ -275,14 +283,23 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
     */
   def run(): Unit = {
 
-    download[GithubRepo, Unit]("Downloading Repo Info", githubRepos, githubInfoUrl, processInfoResponse)
-    download[GithubRepo, Unit]("Downloading Readme", githubRepos, githubReadmeUrl, processReadmeResponse)
+    download[GithubRepo, Unit]("Downloading Repo Info",
+                               githubRepos,
+                               githubInfoUrl,
+                               processInfoResponse,
+                               parallelism = 32)
+    download[GithubRepo, Unit]("Downloading Readme",
+                               githubRepos,
+                               githubReadmeUrl,
+                               processReadmeResponse,
+                               parallelism = 32)
     // todo: for later @see #112 - remember that issues are paginated - see contributors */
     // download[GithubRepo, Unit]("Downloading Issues", githubRepos, githubIssuesUrl, processIssuesResponse)
     download[PaginatedGithub, Unit]("Downloading Contributors",
                                     paginatedGithubRepos,
                                     githubContributorsUrl,
-                                    processContributorResponse)
+                                    processContributorResponse,
+                                    parallelism = 32)
 
     ()
   }
@@ -299,12 +316,20 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
 
     if (info) {
 
-      download[GithubRepo, Unit]("Downloading Repo Info", Set(repo), githubInfoUrl, processInfoResponse)
+      download[GithubRepo, Unit]("Downloading Repo Info",
+                                 Set(repo),
+                                 githubInfoUrl,
+                                 processInfoResponse,
+                                 parallelism = 32)
     }
 
     if (readme) {
 
-      download[GithubRepo, Unit]("Downloading Readme", Set(repo), githubReadmeUrl, processReadmeResponse)
+      download[GithubRepo, Unit]("Downloading Readme",
+                                 Set(repo),
+                                 githubReadmeUrl,
+                                 processReadmeResponse,
+                                 parallelism = 32)
     }
 
     if (contributors) {
@@ -313,7 +338,8 @@ class GithubDownload(privateCredentials: Option[GithubCredentials] = None)(
       download[PaginatedGithub, Unit]("Downloading Contributors",
                                       paginated,
                                       githubContributorsUrl,
-                                      processContributorResponse)
+                                      processContributorResponse,
+                                      parallelism = 32)
     }
 
     ()

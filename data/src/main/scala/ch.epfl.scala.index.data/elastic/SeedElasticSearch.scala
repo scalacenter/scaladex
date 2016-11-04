@@ -15,7 +15,8 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
 import scala.util.Success
 
-class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtocol {
+class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
+    extends ProjectProtocol {
   def run(): Unit = {
 
     val exists = Await.result(esClient.execute { indexExists(indexName) }, Duration.Inf).isExists()
@@ -26,47 +27,54 @@ class SeedElasticSearch(implicit val ec: ExecutionContext) extends ProjectProtoc
       }, Duration.Inf)
     }
 
+    val projectFields = List(
+      field("organization").typed(StringType).index("not_analyzed"),
+      field("repository").typed(StringType).index("not_analyzed"),
+      field("keywords").typed(StringType).index("not_analyzed"),
+      field("defaultArtifact").typed(StringType).index("no"),
+      field("artifacts").typed(StringType).index("not_analyzed"),
+      field("customScalaDoc").typed(StringType).index("no"),
+      field("artifactDeprecations").typed(StringType).index("no"),
+      field("created").typed(DateType),
+      field("updated").typed(DateType),
+      field("targets").typed(StringType).index("not_analyzed"),
+      field("dependencies").typed(StringType).index("not_analyzed")
+    )
+
+    val releasesFields = List(
+      field("reference")
+        .nested(
+          field("organization").typed(StringType).index("not_analyzed"),
+          field("repository").typed(StringType).index("not_analyzed"),
+          field("artifact").typed(StringType).index("not_analyzed")
+        )
+        .includeInRoot(true),
+      field("maven").nested(
+        field("groupId").typed(StringType).index("not_analyzed"),
+        field("artifactId").typed(StringType).index("not_analyzed"),
+        field("version").typed(StringType).index("not_analyzed")
+      ),
+      field("released").typed(DateType)
+    )
+
     println("creating index")
     Await.result(esClient.execute {
       create
         .index(indexName)
         .mappings(
-          mapping(projectsCollection).fields(
-            field("organization").typed(StringType).index("not_analyzed"),
-            field("repository").typed(StringType).index("not_analyzed"),
-            field("keywords").typed(StringType).index("not_analyzed"),
-            field("defaultArtifact").typed(StringType).index("no"),
-            field("artifacts").typed(StringType).index("not_analyzed"),
-            field("customScalaDoc").typed(StringType).index("no"),
-            field("artifactDeprecations").typed(StringType).index("no"),
-            field("created").typed(DateType),
-            field("updated").typed(DateType),
-            field("targets").typed(StringType).index("not_analyzed"),
-            field("dependencies").typed(StringType).index("not_analyzed")
-          ),
-          mapping(releasesCollection).fields(
-            field("reference").nested(
-                field("organization").typed(StringType).index("not_analyzed"),
-                field("repository").typed(StringType).index("not_analyzed"),
-                field("artifact").typed(StringType).index("not_analyzed")
-            ).includeInRoot(true),
-            field("maven").nested(
-              field("groupId").typed(StringType).index("not_analyzed"),
-              field("artifactId").typed(StringType).index("not_analyzed"),
-              field("version").typed(StringType).index("not_analyzed")
-            ),
-            field("released").typed(DateType)
-          )
+          mapping(projectsCollection).fields(projectFields: _*),
+          mapping(releasesCollection).fields(releasesFields: _*)
         )
     }, Duration.Inf)
 
     println("loading update data")
-    val newData = ProjectConvert(
-        PomsReader.load().collect { case Success(pomAndMeta) => pomAndMeta }
+    val projectConverter = new ProjectConvert(paths)
+    val newData = projectConverter(
+      PomsReader.loadAll(paths).collect { case Success(pomAndMeta) => pomAndMeta }
     )
 
     val (projects, projectReleases) = newData.unzip
-    val releases                    = projectReleases.flatten
+    val releases = projectReleases.flatten
 
     val progress = new ProgressBar("Indexing releases", releases.size)
     progress.start()

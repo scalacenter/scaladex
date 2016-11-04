@@ -2,59 +2,80 @@ package ch.epfl.scala.index
 package data
 package maven
 
-import bintray._
-
 import me.tongfei.progressbar._
 
 import java.io.File
 import java.nio.file._
 
-import scala.util.{Try, Success, Failure}
+import scala.util.{Try, Success}
 
 import java.util.Properties
 
 case class MissingParentPom(dep: maven.Dependency) extends Exception
 
-/*
-~ 90% will load
-
-Common problems:
- * 4% duplicate tags (sbt issue #2566)
- * 4% duplicate repo id (sbt issue #2566)
- * 2% xmlns tags in invalid places (HMRC release process is bogus)
- */
 object PomsReader {
+  def path(dep: maven.Dependency) = {
+    import dep._
+    List(
+      groupId.replaceAllLiterally(".", "/"),
+      artifactId,
+      version,
+      artifactId + "-" + version + ".pom"
+    ).mkString(File.separator)
+  }
+
+  def loadAll(paths: DataPaths): List[Try[(MavenModel, LocalRepository, String)]] = {
+    import LocalRepository._
+    val localRepositories = List(Bintray, MavenCentral, UserProvided)
+
+    val centralPoms = PomsReader(MavenCentral, paths).load()
+    val centralShas = centralPoms.collect{ case Success((_, _, sha)) => sha }.toSet
+
+    val bintrayPoms = PomsReader(Bintray, paths).load().filter{
+      case Success((_, _, sha)) => !centralShas.contains(sha)
+      case _ => true
+    }
+    val bintrayShas = bintrayPoms.collect{ case Success((_, _, sha)) => sha }.toSet
+ 
+    val usersPoms = PomsReader(UserProvided, paths).load().filter {
+      case Success((_, _, sha)) => !centralShas.contains(sha) && !bintrayShas.contains(sha)
+      case _ => true
+    }
+
+    centralPoms ::: bintrayPoms ::: usersPoms
+  }
+
+  def apply(repository: LocalRepository, paths: DataPaths): PomsReader = {
+    new PomsReader(paths.poms(repository), paths.parentPoms(repository), repository)
+  }
+
+  def tmp(paths: DataPaths, path: Path): PomsReader = {
+    new PomsReader(path,
+                   paths.parentPoms(LocalRepository.MavenCentral),
+                   LocalRepository.UserProvided)
+  }
+}
+
+private[maven] class PomsReader(pomsPath: Path, parentPomsPath: Path, repository: LocalRepository) {
   import org.apache.maven.model._
   import resolution._
   import io._
   import building._
 
-  val parentPomsBase = bintray.bintrayIndexBase.resolve("poms_parent")
-
-  private val builder   = (new DefaultModelBuilderFactory).newInstance
+  private val builder = (new DefaultModelBuilderFactory).newInstance
   private val processor = new DefaultModelProcessor
   processor.setModelReader(new DefaultModelReader)
 
-  def path(dep: maven.Dependency) = {
-    import dep._
-    List(
-        groupId.replaceAllLiterally(".", "/"),
-        artifactId,
-        version,
-        artifactId + "-" + version + ".pom"
-    ).mkString(File.separator)
-  }
-
   private val resolver = new ModelResolver {
     def addRepository(repo: Repository, replace: Boolean): Unit = ()
-    def addRepository(repo: Repository): Unit                   = ()
-    def newCopy(): resolution.ModelResolver                     = throw new Exception("copy")
+    def addRepository(repo: Repository): Unit = ()
+    def newCopy(): resolution.ModelResolver = throw new Exception("copy")
     def resolveModel(parent: Parent): ModelSource2 = {
       resolveModel(parent.getGroupId, parent.getArtifactId, parent.getVersion)
     }
     def resolveModel(groupId: String, artifactId: String, version: String): ModelSource2 = {
-      val dep    = maven.Dependency(groupId, artifactId, version)
-      val target = parentPomsBase.resolve(path(dep))
+      val dep = maven.Dependency(groupId, artifactId, version)
+      val target = parentPomsPath.resolve(PomsReader.path(dep))
 
       if (Files.exists(target)) {
         new FileModelSource(target.toFile)
@@ -74,12 +95,10 @@ object PomsReader {
     builder.build(request).getEffectiveModel
   }
 
-  def load(): List[Try[(MavenModel, List[BintraySearch])]] = {
-    val meta = BintrayMeta.readQueriedPoms(bintrayCheckpoint).groupBy(_.sha1)
-
+  def load(): List[Try[(MavenModel, LocalRepository, String)]] = {
     import scala.collection.JavaConverters._
 
-    val s       = Files.newDirectoryStream(bintray.bintrayPomBase)
+    val s = Files.newDirectoryStream(pomsPath)
     val rawPoms = s.asScala.toList
 
     val progress = new ProgressBar("Reading POMs", rawPoms.size)
@@ -87,42 +106,13 @@ object PomsReader {
 
     def sha1(path: Path) = path.getFileName().toString.dropRight(".pom".length)
 
-    def keep(pom: maven.MavenModel, metas: List[BintraySearch]) = {
-      val packagingOfInterest = Set("aar", "jar", "bundle")
-      val typesafeNonOSS = Set(
-          "for-subscribers-only",
-          "instrumented-reactive-platform",
-          "subscribers-early-access",
-          "maven-releases" // too much noise
-      )
-      packagingOfInterest.contains(pom.packaging) &&
-      !metas.exists(meta => meta.owner == "typesafe" && typesafeNonOSS.contains(meta.repo))
-    }
-
     val poms = rawPoms.map { p =>
       progress.step()
-      Try(resolve(p)).map(
-          pom =>
-            (
-                pom,
-                meta.get(sha1(p)).getOrElse(List())
-          ))
-    }.map {
-      case Success((pom, metas)) => Success((PomConvert(pom), metas))
-      case Failure(e)            => Failure(e)
-    }.filter {
-      case Success((pom, metas)) => keep(pom, metas)
-      case _                     => true
+      Try(resolve(p)).map(pom => (PomConvert(pom), repository, sha1(p)))
     }
-
     progress.stop()
     s.close()
 
     poms
-  }
-
-  def load(path: Path) = {
-    val pom = resolve(path)
-    PomConvert(pom)
   }
 }

@@ -2,7 +2,7 @@ package ch.epfl.scala.index.model
 
 sealed trait PreRelease
 case class ReleaseCandidate(rc: Long) extends PreRelease
-case class Milestone(m: Long)         extends PreRelease
+case class Milestone(m: Long) extends PreRelease
 case class OtherPreRelease(o: String) extends PreRelease
 
 /**
@@ -29,14 +29,14 @@ case class SemanticVersion(
     */
   override def toString = {
 
-    val patchPart  = patch.map("." + _).getOrElse("")
+    val patchPart = patch.map("." + _).getOrElse("")
     val patch2Part = patch2.map("." + _).getOrElse("")
 
     val preReleasePart = preRelease.map {
 
-      case Milestone(d)        => "M" + d.toString
+      case Milestone(d) => "M" + d.toString
       case ReleaseCandidate(d) => "RC" + d.toString
-      case OtherPreRelease(v)  => v.toString
+      case OtherPreRelease(v) => v.toString
     }.map("-" + _).getOrElse("")
 
     val metadataPart = metadata.map("+" + _).getOrElse("")
@@ -58,7 +58,7 @@ object SemanticVersion extends Parsers {
 
     val lcmp = implicitly[Ordering[Long]]
     val scmp = implicitly[Ordering[String]]
-    val cmp  = implicitly[Ordering[(Long, Long, Option[Long], Option[Long])]]
+    val cmp = implicitly[Ordering[(Long, Long, Option[Long], Option[Long])]]
 
     def compare(v1: SemanticVersion, v2: SemanticVersion): Int = {
       def tupled(v: SemanticVersion) = {
@@ -99,22 +99,22 @@ object SemanticVersion extends Parsers {
 
   val Parser = {
     val Number = Digit.rep(1).!.map(_.toLong)
-    val Major  = Number
+    val Major = Number
 
     // http://semver.org/#spec-item-9
     val PreRelease: P[PreRelease] =
       "-" ~ (
-          (("M" | "m") ~ &(Digit) ~ Number).map(n => Milestone(n)) |
-            (("R" | "r") ~ ("C" | "c") ~ &(Digit) ~ Number).map(n => ReleaseCandidate(n)) |
-            (Digit | Alpha | "." | "-").rep.!.map(s => OtherPreRelease(s))
+        (("M" | "m") ~ &(Digit) ~ Number).map(n => Milestone(n)) |
+          (("R" | "r") ~ ("C" | "c") ~ &(Digit) ~ Number).map(n => ReleaseCandidate(n)) |
+          (Digit | Alpha | "." | "-").rep.!.map(s => OtherPreRelease(s))
       )
 
     // http://semver.org/#spec-item-10
     val MetaData = "+" ~ AnyChar.rep.!
 
-    val MinorP  = ("." ~ Number).?.map(_.getOrElse(0L)) // not really valid SemVer
-    val PatchP  = ("." ~ Number).?                      // not really valid SemVer
-    val Patch2P = ("." ~ Number).?                      // not really valid SemVer
+    val MinorP = ("." ~ Number).?.map(_.getOrElse(0L)) // not really valid SemVer
+    val PatchP = ("." ~ Number).? // not really valid SemVer
+    val Patch2P = ("." ~ Number).? // not really valid SemVer
 
     ("v".? ~ Major ~ MinorP ~ PatchP ~ Patch2P ~ PreRelease.? ~ MetaData.?).map {
       case (major, minor, patch, patch2, preRelease, metadata) =>
@@ -125,7 +125,7 @@ object SemanticVersion extends Parsers {
   def apply(version: String): Option[SemanticVersion] = {
     FullParser.parse(version) match {
       case Parsed.Success(v, _) => Some(v)
-      case _                    => None
+      case _ => None
     }
   }
 }

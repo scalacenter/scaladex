@@ -16,18 +16,22 @@ import com.github.nscala_time.time.Imports._
 
 import play.api.libs.ws.{WSRequest, WSResponse}
 import play.api.libs.ws.ahc.AhcWSClient
+import play.api.libs.ws.WSAuthScheme
 
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization.write
 
+import com.typesafe.config.ConfigFactory
+
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
+import scala.util.Try
 
-class ListPoms(implicit val system: ActorSystem, implicit val materializer: ActorMaterializer)
+class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
+                                        implicit val materializer: ActorMaterializer)
     extends BintrayProtocol
-    with BintrayCredentials
     with PlayWsDownloader {
 
   import system.dispatcher
@@ -37,6 +41,18 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
     */
   private val bintrayUri = "https://bintray.com/api/v1/search/file"
 
+  private val config = ConfigFactory.load().getConfig("org.scala_lang.index.data.bintray")
+  val user = Try(config.getString("user")).toOption
+  val password = Try(config.getString("password")).toOption
+
+  private def withAuth(request: WSRequest) = {
+    (user, password) match {
+      case (Some(user), Some(password)) =>
+        request.withAuth(user, password, WSAuthScheme.BASIC)
+      case _ => request
+    }
+  }
+
   /** paginated search query for bintray - append the query string to
     * the request object
     *
@@ -45,9 +61,9 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
     */
   private def discover(wsClient: AhcWSClient, page: PomListDownload): WSRequest = {
     val query = page.lastSearchDate.fold(Seq[(String, String)]())(after =>
-            Seq("created_after" -> (after.toLocalDateTime.toString + "Z"))) ++ Seq(
-          "name"                -> s"${page.scalaVersion}*.pom",
-          "start_pos"           -> page.page.toString)
+        Seq("created_after" -> (after.toLocalDateTime.toString + "Z"))) ++ Seq(
+        "name" -> s"${page.scalaVersion}*.pom",
+        "start_pos" -> page.page.toString)
 
     withAuth(wsClient.url(bintrayUri)).withQueryString(query: _*)
   }
@@ -58,14 +74,16 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
     * @param scalaVersion the current scala version
     * @return
     */
-  def getNumberOfPages(scalaVersion: String, lastCheckDate: Option[DateTime]): Future[InternalBintrayPagination] = {
-    val client  = wsClient
+  def getNumberOfPages(scalaVersion: String,
+                       lastCheckDate: Option[DateTime]): Future[InternalBintrayPagination] = {
+    val client = wsClient
     val request = discover(client, PomListDownload(scalaVersion, 0, lastCheckDate))
 
     request.get.flatMap { response =>
       if (200 == response.status) {
         Future.successful {
-          InternalBintrayPagination(response.header("X-RangeLimit-Total").map(_.toInt).getOrElse(0))
+          InternalBintrayPagination(
+            response.header("X-RangeLimit-Total").map(_.toInt).getOrElse(0))
         }
       } else {
         Future.failed(new Exception(response.statusText))
@@ -80,7 +98,7 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
     * @param response the current response
     * @return
     */
-  def processPomDownload(page: PomListDownload, response: WSResponse): List[BintraySearch] = {
+  def processSearch(page: PomListDownload, response: WSResponse): List[BintraySearch] = {
     try {
       parse(response.body).extract[List[BintraySearch]]
     } catch {
@@ -98,13 +116,12 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
     * @return
     */
   def writeMergedPoms(merged: List[BintraySearch]) = {
-
-    Files.delete(bintrayCheckpoint)
+    Files.delete(BintrayMeta.path(paths))
 
     val flow = Flow[BintraySearch]
       .map(bintray => write[BintraySearch](bintray))
       .map(s => ByteString(s + nl))
-      .toMat(FileIO.toPath(bintrayCheckpoint))(Keep.right)
+      .toMat(FileIO.toPath(BintrayMeta.path(paths)))(Keep.right)
 
     Await.result(Source(merged).runWith(flow), Duration.Inf)
   }
@@ -121,11 +138,15 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
     */
   def run(scalaVersion: String): Unit = {
 
-    val queried = BintrayMeta.readQueriedPoms(bintrayCheckpoint)
+    val queried = BintrayMeta.load(paths)
 
-    val mostRecentQueriedDate = queried.find(_.name.contains(scalaVersion)).map(_.created - 2.month)
+    val mostRecentQueriedDate =
+      queried.find(_.name.contains(scalaVersion)).map(_.created - 2.month)
 
-    performSearchAndDownload(s"List POMs for scala $scalaVersion", queried, s"*_$scalaVersion", mostRecentQueriedDate)
+    performSearchAndDownload(s"List POMs for scala $scalaVersion",
+                             queried,
+                             s"*_$scalaVersion",
+                             mostRecentQueriedDate)
   }
 
   /**
@@ -136,7 +157,7 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
     */
   def run(groupId: String, artifact: String): Unit = {
 
-    val queried = BintrayMeta.readQueriedPoms(bintrayCheckpoint)
+    val queried = BintrayMeta.load(paths)
 
     /* the filter to make sure only this artifact get's added */
     def filter(bintray: BintraySearch): Boolean =
@@ -175,12 +196,13 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
 
       filter match {
         case Some(f) => bintray.filter(f)
-        case None    => bintray
+        case None => bintray
       }
     }
 
     /* check first how many pages there are */
-    val page: InternalBintrayPagination = Await.result(getNumberOfPages(search, mostRecentQueriedDate), Duration.Inf)
+    val page: InternalBintrayPagination =
+      Await.result(getNumberOfPages(search, mostRecentQueriedDate), Duration.Inf)
 
     val requestCount = Math.ceil(page.numberOfPages.toDouble / page.itemPerPage.toDouble).toInt
 
@@ -188,12 +210,16 @@ class ListPoms(implicit val system: ActorSystem, implicit val materializer: Acto
 
       val toDownload = List
         .tabulate(requestCount)(p =>
-              PomListDownload(search, p * page.itemPerPage + page.itemPerPage, mostRecentQueriedDate))
+          PomListDownload(search, p * page.itemPerPage + page.itemPerPage, mostRecentQueriedDate))
         .toSet
 
       /* fetch all data from bintray */
       val newQueried: Seq[List[BintraySearch]] =
-        download[PomListDownload, List[BintraySearch]](infoMessage, toDownload, discover, processPomDownload)
+        download[PomListDownload, List[BintraySearch]](infoMessage,
+                                                       toDownload,
+                                                       discover,
+                                                       processSearch,
+                                                       parallelism = 1)
 
       /* maybe we have here a problem with duplicated poms */
       val merged = newQueried
