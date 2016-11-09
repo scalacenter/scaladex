@@ -115,8 +115,8 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 
   val chmod = "chmod"
   
-  run(chmod, readWritePublic, "-R", indexFolder.toString)
-  run(chmod, readWritePublic, "-R", contribFolder.toString)
+  run(chmod, readWritePublic, "-R", indexFolder.toString, "&> /dev/null")
+  run(chmod, readWritePublic, "-R", contribFolder.toString, "&> /dev/null")
 
   if(job == Index){
 
@@ -136,8 +136,8 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 
     updatingSubmodules(List(indexFolder)){ () =>
       sbt(
-        "data/run live",
-        "data/run elastic",
+        s"data/run live ${contribFolder.toString} ${indexFolder.toString}",
+        s"data/run elastic ${contribFolder.toString} ${indexFolder.toString}",
         "server/universal:packageBin"
       )
     }
