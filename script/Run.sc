@@ -1,5 +1,6 @@
 import sys.process._
 import ammonite.ops._
+import java.io.File
 
 object Job extends Enumeration {
   type Job = Value
@@ -115,8 +116,8 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 
   val chmod = "chmod"
   
-  run(chmod, readWritePublic, "-R", indexFolder.toString, "&>", "/dev/null")
-  run(chmod, readWritePublic, "-R", contribFolder.toString, "&>", "/dev/null")
+  runPipe(chmod, readWritePublic, "-R", indexFolder.toString, "&>", new File("/dev/null"))
+  runPipe(chmod, readWritePublic, "-R", contribFolder.toString, "&>", new File("/dev/null"))
 
   if(job == Index){
 
