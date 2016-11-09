@@ -40,7 +40,7 @@ object LocalRepository {
   final case object MavenCentral extends LocalRepository
   final case object UserProvided extends LocalRepository
 }
- 
+
 // List("/home/gui/center/scaladex/contrib", "/home/gui/center/scaladex/index")
 object DataPaths {
   def apply(args: List[String]): DataPaths = new DataPaths(args)
@@ -55,7 +55,7 @@ class DataPaths(private[DataPaths] args: List[String]) {
       (base.resolve(Paths.get("contrib")), base.resolve(Paths.get("index")))
     }
   }
- 
+
   assert(Files.isDirectory(contrib))
   assert(Files.isDirectory(index))
 

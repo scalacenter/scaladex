@@ -26,5 +26,5 @@ case class BintrayResolver(owner: String, repo: String) extends Resolver {
 case object UserPublished extends Resolver {
   def name = "User Published"
   def url = None
-  def sbt = None 
+  def sbt = None
 }

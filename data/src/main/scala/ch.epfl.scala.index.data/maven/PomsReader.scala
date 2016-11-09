@@ -29,14 +29,14 @@ object PomsReader {
     val localRepositories = List(Bintray, MavenCentral, UserProvided)
 
     val centralPoms = PomsReader(MavenCentral, paths).load()
-    val centralShas = centralPoms.collect{ case Success((_, _, sha)) => sha }.toSet
+    val centralShas = centralPoms.collect { case Success((_, _, sha)) => sha }.toSet
 
-    val bintrayPoms = PomsReader(Bintray, paths).load().filter{
+    val bintrayPoms = PomsReader(Bintray, paths).load().filter {
       case Success((_, _, sha)) => !centralShas.contains(sha)
       case _ => true
     }
-    val bintrayShas = bintrayPoms.collect{ case Success((_, _, sha)) => sha }.toSet
- 
+    val bintrayShas = bintrayPoms.collect { case Success((_, _, sha)) => sha }.toSet
+
     val usersPoms = PomsReader(UserProvided, paths).load().filter {
       case Success((_, _, sha)) => !centralShas.contains(sha) && !bintrayShas.contains(sha)
       case _ => true

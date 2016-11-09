@@ -20,14 +20,14 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
 
   private val format = ISODateTimeFormat.dateTime.withOffsetParsed
 
-
   private val nonStandardLibs = NonStandardLib.load(paths)
 
   /** artifactId is often use to express binary compatibility with a scala version (ScalaTarget)
     * if the developer follow this convention we extract the relevant parts and we mark
     * the library as standard. Otherwise we either have a library like gatling or the scala library itself
     */
-  private def extractArtifactNameAndTarget(pom: MavenModel): Option[(String, ScalaTarget, Boolean)] = {
+  private def extractArtifactNameAndTarget(
+      pom: MavenModel): Option[(String, ScalaTarget, Boolean)] = {
     nonStandardLibs
       .find(
         lib =>
@@ -70,37 +70,34 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
     )
 
     def created(metas: List[DateTime]): Option[String] = metas.sorted.headOption.map(format.print)
-      pomsRepoSha.map{ case (pom, repo, sha1) => {
-        val default = (pom, None, None, true) 
+    pomsRepoSha.map {
+      case (pom, repo, sha1) => {
+        val default = (pom, None, None, true)
         repo match {
           case Bintray => {
             bintray.get(sha1) match {
               case Some(metas) => {
                 val resolver: Option[Resolver] =
-                  if(metas.forall(_.isJCenter)) Option(JCenter)
-                  else metas.headOption.map(meta => BintrayResolver(meta.owner, meta.repo)) 
+                  if (metas.forall(_.isJCenter)) Option(JCenter)
+                  else metas.headOption.map(meta => BintrayResolver(meta.owner, meta.repo))
 
                 (
                   pom,
-
                   // create
                   created(metas.map(_.created)),
-                  
                   // resolver
                   resolver,
-                  
                   // filter
-                  !metas.exists(meta => 
-                    meta.owner == "typesafe" && typesafeNonOSS.contains(meta.repo)
-                  )
+                  !metas.exists(meta =>
+                    meta.owner == "typesafe" && typesafeNonOSS.contains(meta.repo))
                 )
-              } 
+              }
               case None => {
                 println("no meta for pom: " + sha1)
                 default
               }
             }
-          } 
+          }
           case MavenCentral => {
             central.get(sha1) match {
               case Some(metas) => {
@@ -111,10 +108,10 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
                   true
                 )
               }
-             case None => {
+              case None => {
                 println("no meta for pom: " + sha1)
                 default
-             }
+              }
             }
           }
           case UserProvided =>
@@ -127,15 +124,16 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
                   true
                 )
               }
-              case None => { 
+              case None => {
                 println("no meta for pom: " + sha1)
                 default
               }
             }
         }
-      }}
-      .filter{ case (pom, _, _, keep) => packagingOfInterest.contains(pom.packaging) && keep}
-      .map{ case (pom, created, resolver, _) => (pom, created, resolver) }
+      }
+    }.filter { case (pom, _, _, keep) => packagingOfInterest.contains(pom.packaging) && keep }.map {
+      case (pom, created, resolver, _) => (pom, created, resolver)
+    }
   }
 
   /**
@@ -206,7 +204,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
               resolver = resolver,
               name = pom.name,
               description = pom.description,
-              released = created, 
+              released = created,
               licenses = licenseCleanup(pom),
               nonStandardLib = nonStandardLib
             )

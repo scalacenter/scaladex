@@ -123,7 +123,7 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
     def updateProjectReleases(project: Option[Project], releases: List[Release]): Future[Unit] = {
 
       val repository =
-        if(data.userState.hasPublishingAuthority) LocalRepository.MavenCentral
+        if (data.userState.hasPublishingAuthority) LocalRepository.MavenCentral
         else LocalRepository.UserProvided
 
       Meta.append(paths, Meta(data.hash, data.path, data.created), repository)
