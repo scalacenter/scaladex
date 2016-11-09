@@ -83,7 +83,7 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
   val credentialsDest = home
   val credentialsFolder = credentialsDest / "scaladex-credentials"
   if(!exists(credentialsFolder)) {
-    runD("git", "clone", "git@github.com:scalacenter/scaladex-credentials.git")(credentialsDest)
+    run("git", "clone", "git@github.com:scalacenter/scaladex-credentials.git", credentialsDest.toString)
   } else {
     runD("git", "pull", "origin", "master")(credentialsFolder)
   }
@@ -91,13 +91,13 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
   val indexDest = home
   val indexFolder = indexDest / "scaladex-index"
   if(!exists(indexFolder)) {
-    runD("git", "clone", "git@github.com:scalacenter/scaladex-index.git")(indexFolder)
+    run("git", "clone", "git@github.com:scalacenter/scaladex-index.git", indexFolder.toString)
   }
 
   val contribDest = home
   val contribFolder = contribDest / "scaladex-contrib"
   if(!exists(contribFolder)) {
-    runD("git", "clone", "git@github.com:scalacenter/scaladex-contrib.git")(contribFolder)
+    run("git", "clone", "git@github.com:scalacenter/scaladex-contrib.git", contribFolder.toString)
   }
 
   val bintrayCredentialsFolder = home / ".bintray"
