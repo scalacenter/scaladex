@@ -8,7 +8,6 @@ import model.release._
 import data.github._
 
 import org.joda.time.DateTime
-import org.joda.time.format.ISODateTimeFormat
 
 import akka.http.scaladsl._
 import model._
@@ -85,8 +84,7 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
     system.actorOf(Props(classOf[impl.PublishActor], paths, dataRepository, system, materializer))
 
   val DateTimeUn = Unmarshaller.strict[String, DateTime] { dateRaw =>
-    val parser = ISODateTimeFormat.dateTimeParser
-    parser.parseDateTime(dateRaw.replaceAllLiterally(" ", "+"))
+    new DateTime(dateRaw.toLong * 1000L)
   }
 
   val routes =
