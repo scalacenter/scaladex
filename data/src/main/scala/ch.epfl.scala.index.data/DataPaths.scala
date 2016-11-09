@@ -56,6 +56,9 @@ class DataPaths(private[DataPaths] args: List[String]) {
     }
   }
 
+  println(s"contrib folder: $contrib")
+  println(s"index folder: $index")
+
   assert(Files.isDirectory(contrib))
   assert(Files.isDirectory(index))
 

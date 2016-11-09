@@ -115,8 +115,8 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 
   val chmod = "chmod"
   
-  run(chmod, readWritePublic, "-R", indexFolder.toString, "&> /dev/null")
-  run(chmod, readWritePublic, "-R", contribFolder.toString, "&> /dev/null")
+  run(chmod, readWritePublic, "-R", indexFolder.toString, "&>", "/dev/null")
+  run(chmod, readWritePublic, "-R", contribFolder.toString, "&>", "/dev/null")
 
   if(job == Index){
 
