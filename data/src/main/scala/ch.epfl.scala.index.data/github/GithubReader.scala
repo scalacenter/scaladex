@@ -21,14 +21,14 @@ object GithubReader {
     * @param github
     * @return
     */
-  def apply(github: GithubRepo): Option[GithubInfo] = {
+  def apply(paths: DataPaths, github: GithubRepo): Option[GithubInfo] = {
 
-    info(github).map { info =>
-      val contributorList = contributors(github).getOrElse(List())
+    info(paths, github).map { info =>
+      val contributorList = contributors(paths, github).getOrElse(List())
       info.copy(
-          readme = readme(github).toOption,
-          contributors = contributorList,
-          commits = Some(contributorList.foldLeft(0)(_ + _.contributions))
+        readme = readme(paths, github).toOption,
+        contributors = contributorList,
+        commits = Some(contributorList.foldLeft(0)(_ + _.contributions))
       )
     }.toOption
   }
@@ -38,9 +38,9 @@ object GithubReader {
     * @param github the git repo
     * @return
     */
-  def readme(github: GithubRepo): Try[String] = Try {
+  def readme(paths: DataPaths, github: GithubRepo): Try[String] = Try {
 
-    val readmePath = githubReadmePath(github)
+    val readmePath = githubReadmePath(paths, github)
     Files.readAllLines(readmePath).toArray.mkString(System.lineSeparator)
   }
 
@@ -49,18 +49,18 @@ object GithubReader {
     * @param github the git repo
     * @return
     */
-  def info(github: GithubRepo): Try[GithubInfo] = Try {
+  def info(paths: DataPaths, github: GithubRepo): Try[GithubInfo] = Try {
 
-    val repoInfoPath = githubRepoInfoPath(github)
-    val repository   = read[Repository](Files.readAllLines(repoInfoPath).toArray.mkString(""))
+    val repoInfoPath = githubRepoInfoPath(paths, github)
+    val repository = read[Repository](Files.readAllLines(repoInfoPath).toArray.mkString(""))
     GithubInfo(
-        homepage = repository.homepage.map(h => Url(h)),
-        description = Some(repository.description),
-        logo = Some(Url(repository.owner.avatar_url)),
-        stars = Some(repository.stargazers_count),
-        forks = Some(repository.forks),
-        watchers = Some(repository.subscribers_count),
-        issues = Some(repository.open_issues)
+      homepage = repository.homepage.map(h => Url(h)),
+      description = Some(repository.description),
+      logo = Some(Url(repository.owner.avatar_url)),
+      stars = Some(repository.stargazers_count),
+      forks = Some(repository.forks),
+      watchers = Some(repository.subscribers_count),
+      issues = Some(repository.open_issues)
     )
   }
 
@@ -69,16 +69,16 @@ object GithubReader {
     * @param github the current repo
     * @return
     */
-  def contributors(github: GithubRepo): Try[List[GithubContributor]] = Try {
+  def contributors(paths: DataPaths, github: GithubRepo): Try[List[GithubContributor]] = Try {
 
-    val repoInfoPath = githubRepoContributorsPath(github)
-    val repository   = read[List[Contributor]](Files.readAllLines(repoInfoPath).toArray.mkString(""))
+    val repoInfoPath = githubRepoContributorsPath(paths, github)
+    val repository = read[List[Contributor]](Files.readAllLines(repoInfoPath).toArray.mkString(""))
     repository.map { contributor =>
       GithubContributor(
-          contributor.login,
-          contributor.avatar_url,
-          Url(contributor.html_url),
-          contributor.contributions
+        contributor.login,
+        contributor.avatar_url,
+        Url(contributor.html_url),
+        contributor.contributions
       )
     }
   }

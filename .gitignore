@@ -6,3 +6,5 @@ core
 amm
 sbt
 server/scaladex.log
+index/
+contrib/

@@ -28,7 +28,7 @@ import org.json4s._
   * Automatic to and from JSON marshalling/unmarshalling using an in-scope *Json4s* protocol.
   */
 trait Json4sSupport {
-  implicit val formats       = DefaultFormats
+  implicit val formats = DefaultFormats
   implicit val serialization = native.Serialization
 
   /**
@@ -39,12 +39,13 @@ trait Json4sSupport {
     */
   implicit def json4sUnmarshaller[A: Manifest](implicit serialization: Serialization,
                                                formats: Formats): FromEntityUnmarshaller[A] =
-    Unmarshaller.byteStringUnmarshaller.forContentTypes(`application/json`).mapWithCharset { (data, charset) =>
-      try serialization.read(data.decodeString(charset.nioCharset.name))
-      catch {
-        case MappingException("unknown error", ite: InvocationTargetException) =>
-          throw ite.getCause
-      }
+    Unmarshaller.byteStringUnmarshaller.forContentTypes(`application/json`).mapWithCharset {
+      (data, charset) =>
+        try serialization.read(data.decodeString(charset.nioCharset.name))
+        catch {
+          case MappingException("unknown error", ite: InvocationTargetException) =>
+            throw ite.getCause
+        }
     }
 
   /**

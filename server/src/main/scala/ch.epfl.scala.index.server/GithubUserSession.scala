@@ -18,8 +18,8 @@ class GithubUserSession(config: Config)(implicit val executionContext: Execution
 
   implicit def serializer: SessionSerializer[UUID, String] =
     new SingleValueSessionSerializer(
-        _.toString(),
-        (id: String) => Try { UUID.fromString(id) }
+      _.toString(),
+      (id: String) => Try { UUID.fromString(id) }
     )
   implicit val sessionManager = new SessionManager[UUID](sessionConfig)
   implicit val refreshTokenStorage = new InMemoryRefreshTokenStorage[UUID] {
@@ -35,6 +35,6 @@ class GithubUserSession(config: Config)(implicit val executionContext: Execution
     users += uuid -> userState
     uuid
   }
-  
+
   def getUser(id: Option[UUID]): Option[UserState] = id.flatMap(users.get)
 }

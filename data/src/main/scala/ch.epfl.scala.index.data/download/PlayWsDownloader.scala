@@ -29,16 +29,17 @@ trait PlayWsDownloader {
     * @see https://www.playframework.com/documentation/2.5.x/ScalaWS
     */
   def wsClient = {
-    val configuration = Configuration.reference ++ Configuration(ConfigFactory.parseString("""
-        |ws.followRedirects = true
+    val configuration = Configuration.reference ++ Configuration(
+        ConfigFactory.parseString("""
+        |plaw.ws.followRedirects = true
       """.stripMargin))
 
     /* If running in Play, environment should be injected */
     val environment = Environment(new java.io.File("."), this.getClass.getClassLoader, Mode.Prod)
 
-    val parser     = new WSConfigParser(configuration, environment)
-    val config     = new AhcWSClientConfig(wsClientConfig = parser.parse())
-    val builder    = new AhcConfigBuilder(config)
+    val parser = new WSConfigParser(configuration, environment)
+    val config = new AhcWSClientConfig(wsClientConfig = parser.parse())
+    val builder = new AhcConfigBuilder(config)
     val ahcBuilder = builder.configure()
 
     val ahcConfig = ahcBuilder.build()
@@ -59,16 +60,17 @@ trait PlayWsDownloader {
       message: String,
       toDownload: Set[T],
       downloadUrl: (AhcWSClient, T) => WSRequest,
-      process: (T, WSResponse) => R
+      process: (T, WSResponse) => R,
+      parallelism: Int
   ): Seq[R] = {
 
-    val client   = wsClient
+    val client = wsClient
     val progress = new ProgressBar(message, toDownload.size)
 
     def processDownloads = {
 
-      Source(toDownload).mapAsyncUnordered(32) { item =>
-        val request  = downloadUrl(client, item)
+      Source(toDownload).mapAsyncUnordered(parallelism) { item =>
+        val request = downloadUrl(client, item)
         val response = request.get
 
         response.onFailure {

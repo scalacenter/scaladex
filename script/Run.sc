@@ -19,10 +19,6 @@ def sbt(commands: String*): Unit = {
     "-DELASTICSEARCH=remote" ::
     "-Xms1G" ::
     "-Xmx3G" ::
-    "-XX:ReservedCodeCacheSize=256m" ::
-    "-XX:+TieredCompilation" ::
-    "-XX:+CMSClassUnloadingEnabled" ::
-    "-XX:+UseConcMarkSweepGC" ::
     Nil
 
   // run index
@@ -36,6 +32,13 @@ def datetime = {
 }
 
 def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
+  submodules.foreach{ submodule =>
+    runD("git", "checkout", "master")(submodule)
+    runD("git", "remote", "update")(submodule)
+    runD("git", "reset", "--hard", "origin/master")(submodule)
+    runD("git", "pull", "origin", "master")(submodule)
+  }
+
   // run index
   f()
 
@@ -85,38 +88,35 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
     runD("git", "pull", "origin", "master")(credentialsFolder)
   }
 
+  val indexDest = home
+  val indexFolder = indexDest / "scaladex-index"
+  if(!exists(indexFolder)) {
+    runD("git", "clone", "git@github.com:scalacenter/scaladex-index.git")(indexFolder)
+  }
+
+  val contribDest = home
+  val contribFolder = contribDest / "scaladex-contrib"
+  if(!exists(contribFolder)) {
+    runD("git", "clone", "git@github.com:scalacenter/scaladex-contrib.git")(contribFolder)
+  }
+
   val bintrayCredentialsFolder = home / ".bintray"
   if(!exists(bintrayCredentialsFolder)) {
     mkdir(bintrayCredentialsFolder)
-  }
-
-  val searchCredentialsFolder = bintrayCredentialsFolder / ".credentials2"
-  if(!exists(searchCredentialsFolder)){
-    cp(credentialsFolder / "search-credentials", searchCredentialsFolder)
   }
 
   val publishPluginCredentialsFolder = bintrayCredentialsFolder / ".credentials"
   if(!exists(publishPluginCredentialsFolder)){
     cp(credentialsFolder / "sbt-plugin-credentials", publishPluginCredentialsFolder)
   }
-
-  run("git", "submodule", "init")
-  run("git", "submodule", "update")
   
   val readPublic      = "705"
   val readWritePublic = "777"
 
-  val contribFolder = cwd / "contrib"
-  val indexFolder   = cwd / "index"
-  val bintrayFolder = indexFolder / "bintray"
-  val githubFolder  = indexFolder / "github"
   val chmod = "chmod"
   
-  run(chmod, readPublic, (home / "build").toString)
-  run(chmod, readPublic, (contribFolder / "claims.json").toString)
-  run(chmod, readWritePublic, (bintrayFolder / "poms_sha").toString)
-  run(chmod, readWritePublic, (bintrayFolder / "poms_parent").toString)
-  run(chmod, readWritePublic, "-R", githubFolder.toString)
+  run(chmod, readWritePublic, "-R", indexFolder.toString)
+  run(chmod, readWritePublic, "-R", contribFolder.toString)
 
   if(job == Index){
 
@@ -126,7 +126,7 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
     }
 
     // make shure indexed projects are accessible
-    runD(chmod, "-R", readWritePublic)(githubFolder)
+    run(chmod, readWritePublic, "-R", indexFolder.toString)
 
   } else if(job == Test) {
 
@@ -136,8 +136,8 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 
     updatingSubmodules(List(indexFolder)){ () =>
       sbt(
-        // "data/run live",
-        // "data/run elastic",
+        "data/run live",
+        "data/run elastic",
         "server/universal:packageBin"
       )
     }

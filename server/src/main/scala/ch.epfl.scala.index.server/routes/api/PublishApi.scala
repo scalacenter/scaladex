@@ -3,17 +3,21 @@ package server
 package routes
 package api
 
+import data.DataPaths
 import model.release._
 import data.github._
+
+import org.joda.time.DateTime
+import org.joda.time.format.ISODateTimeFormat
 
 import akka.http.scaladsl._
 import model._
 import headers._
 import server.Directives._
 import server.directives._
+import unmarshalling.Unmarshaller
 
 import StatusCodes._
-// import TwirlSupport._
 
 import akka.actor.{ActorSystem, Props}
 import akka.stream.ActorMaterializer
@@ -21,10 +25,10 @@ import akka.util.Timeout
 
 import scala.concurrent.Future
 
-class PublishApi(dataRepository: DataRepository, github: Github)(
-    implicit val system: ActorSystem, 
+class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Github)(
+    implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer) {
-  
+
   import system.dispatcher
 
   /*
@@ -32,14 +36,14 @@ class PublishApi(dataRepository: DataRepository, github: Github)(
    * @param credentials the credentials
    * @return
    */
-  private def githubAuthenticator(credentialsHeader: Option[HttpCredentials]): 
-    Credentials => Future[Option[(GithubCredentials, UserState)]] = {
+  private def githubAuthenticator(credentialsHeader: Option[HttpCredentials])
+    : Credentials => Future[Option[(GithubCredentials, UserState)]] = {
 
     case Credentials.Provided(username) => {
       credentialsHeader match {
         case Some(cred) => {
-          val upw               = new String(new sun.misc.BASE64Decoder().decodeBuffer(cred.token()))
-          val userPass          = upw.split(":")
+          val upw = new String(new sun.misc.BASE64Decoder().decodeBuffer(cred.token()))
+          val userPass = upw.split(":")
 
           val token = userPass(1)
           val credentials = GithubCredentials(token)
@@ -64,12 +68,12 @@ class PublishApi(dataRepository: DataRepository, github: Github)(
   private def mavenPathExtractor(path: String): MavenReference = {
 
     val segments = path.split("/").toList
-    val size     = segments.size
+    val size = segments.size
     val takeFrom = if (segments.head.isEmpty) 1 else 0
 
     val artifactId = segments(size - 3)
-    val version    = segments(size - 2)
-    val groupId    = segments.slice(takeFrom, size - 3).mkString(".")
+    val version = segments(size - 2)
+    val groupId = segments.slice(takeFrom, size - 3).mkString(".")
 
     MavenReference(groupId, artifactId, version)
   }
@@ -77,9 +81,15 @@ class PublishApi(dataRepository: DataRepository, github: Github)(
   import akka.pattern.ask
   import scala.concurrent.duration._
   implicit val timeout = Timeout(40.seconds)
-  private val actor = system.actorOf(Props(classOf[impl.PublishActor], dataRepository, system, materializer))
+  private val actor =
+    system.actorOf(Props(classOf[impl.PublishActor], paths, dataRepository, system, materializer))
 
-  val routes = 
+  val DateTimeUn = Unmarshaller.strict[String, DateTime] { dateRaw =>
+    val parser = ISODateTimeFormat.dateTimeParser
+    parser.parseDateTime(dateRaw.replaceAllLiterally(" ", "+"))
+  }
+
+  val routes =
     get {
       path("publish") {
         parameter('path) { path =>
@@ -91,38 +101,45 @@ class PublishApi(dataRepository: DataRepository, github: Github)(
              */
             dataRepository.maven(mavenPathExtractor(path)) map {
               case Some(release) => OK
-              case None          => NotFound
+              case None => NotFound
             }
           }
         }
       }
     } ~
-    put {
-      path("publish") {
-        parameters(
+      put {
+        path("publish") {
+          parameters(
             'path,
+            'created.as(DateTimeUn) ? DateTime.now,
             'readme.as[Boolean] ? true,
             'contributors.as[Boolean] ? true,
             'info.as[Boolean] ? true,
             'keywords.as[String].*,
             'test.as[Boolean] ? false
-        ) { (path, readme, contributors, info, keywords, test) =>
-          entity(as[String]) { data =>
-            extractCredentials { credentials =>
-              authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) { 
-                case (credentials, userState) =>
-
-                  val publishData = impl.PublishData(
-                      path, data, 
-                      credentials, userState,
-                      info, contributors, readme, keywords.toSet, test
+          ) { (path, created, readme, contributors, info, keywords, test) =>
+            entity(as[String]) { data =>
+              extractCredentials { credentials =>
+                authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) {
+                  case (credentials, userState) =>
+                    val publishData = impl.PublishData(
+                      path,
+                      created,
+                      data,
+                      credentials,
+                      userState,
+                      info,
+                      contributors,
+                      readme,
+                      keywords.toSet,
+                      test
                     )
 
-                  complete((actor ? publishData).mapTo[StatusCode].map(s => s))
+                    complete((actor ? publishData).mapTo[StatusCode].map(s => s))
+                }
               }
             }
           }
         }
       }
-    }
 }

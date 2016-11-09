@@ -17,10 +17,10 @@ object PaginationTests extends org.specs2.mutable.Specification {
 
       // < 1 *2* 3  4  5  6  7  8    9   10  >
       paginationRender(2, 12) ==== ((Some(1), List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), Some(3)))
-      
+
       // < 1  2  3  4  5 *6* 7  8    9   10  >
       paginationRender(6, 12) ==== ((Some(5), List(1, 2, 3, 4, 5, 6, 7, 8, 9, 10), Some(7)))
-      
+
       // < 2 3  4  5  6 *7* 8  9   10   11  >
       paginationRender(7, 12) ==== ((Some(6), List(2, 3, 4, 5, 6, 7, 8, 9, 10, 11), Some(8)))
 

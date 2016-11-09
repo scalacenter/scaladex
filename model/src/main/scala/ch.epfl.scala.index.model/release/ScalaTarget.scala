@@ -14,13 +14,15 @@ case class ScalaTarget(
 
   /** simple modifier for display a nice name */
   def name =
-    scalaJsVersion.map(v => s"Scala.js ${v.toString} ($scalaVersion)").getOrElse(s"Scala $scalaVersion")
+    scalaJsVersion
+      .map(v => s"Scala.js ${v.toString} ($scalaVersion)")
+      .getOrElse(s"Scala $scalaVersion")
 
   /** converting the scala version for support tags in elastic  - only major.minor to have small list */
   def supportName =
     scalaJsVersion
       .map(
-          v => s"scala.js_${v.major}.${v.minor}"
+        v => s"scala.js_${v.major}.${v.minor}"
       )
       .getOrElse(s"scala_${scalaVersion.major}.${scalaVersion.minor}")
 

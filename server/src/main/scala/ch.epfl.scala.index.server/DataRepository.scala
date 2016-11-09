@@ -23,19 +23,21 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
   val sortQuery = (sorting: Option[String]) =>
     sorting match {
-      case Some("stars")    => fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg
-      case Some("forks")    => fieldSort("github.forks") missing "0" order SortOrder.DESC mode MultiMode.Avg
+      case Some("stars") =>
+        fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg
+      case Some("forks") =>
+        fieldSort("github.forks") missing "0" order SortOrder.DESC mode MultiMode.Avg
       case Some("relevant") => scoreSort
-      case Some("created")  => fieldSort("created") order SortOrder.DESC
-      case Some("updated")  => fieldSort("updated") order SortOrder.DESC
-      case _                => scoreSort
+      case Some("created") => fieldSort("created") order SortOrder.DESC
+      case Some("updated") => fieldSort("updated") order SortOrder.DESC
+      case _ => scoreSort
   }
 
   private def query(q: QueryDefinition,
                     page: PageIndex,
                     total: Int,
                     sorting: Option[String]): Future[(Pagination, List[Project])] = {
-    
+
     val clampedPage = if (page <= 0) 1 else page
 
     esClient.execute {
@@ -45,24 +47,24 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
         .start(total * (clampedPage - 1))
         .limit(total)
         .sort(sortQuery(sorting))
-    }.map(r =>
-      (
-        Pagination(
+    }.map(
+      r =>
+        (
+          Pagination(
             current = clampedPage,
             totalPages = Math.ceil(r.totalHits / total.toDouble).toInt,
             total = r.totalHits
-        ),
-        r.as[Project].toList.map(hideId)
-      )
-    )
+          ),
+          r.as[Project].toList.map(hideId)
+      ))
   }
 
   private def getQuery(queryString: String,
                        userRepos: Set[GithubRepo] = Set(),
                        targetFiltering: Option[ScalaTarget] = None) = {
 
-    val escaped = 
-      if(queryString.isEmpty) "*"
+    val escaped =
+      if (queryString.isEmpty) "*"
       else queryString.replaceAllLiterally("/", "\\/")
 
     val mustQueryTarget =
@@ -88,30 +90,27 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
       else List(bool(should(reposQueries: _*)))
 
     val stringQ =
-      if(escaped.contains(":")) stringQuery(escaped)
+      if (escaped.contains(":")) stringQuery(escaped)
       else stringQuery(escaped + "~").fuzzyPrefixLength(3).defaultOperator("AND")
 
     bool(
       mustQueries = mustQueriesRepos ++ mustQueryTarget,
       shouldQueries = List(
-          fuzzyQuery("keywords", escaped),
-          fuzzyQuery("github.description", escaped),
-          fuzzyQuery("repository", escaped),
-          fuzzyQuery("organization", escaped),
-          fuzzyQuery("artifacts", escaped),
-          fuzzyQuery("github.readme", escaped),
-          stringQ
+        fuzzyQuery("keywords", escaped),
+        fuzzyQuery("github.description", escaped),
+        fuzzyQuery("repository", escaped),
+        fuzzyQuery("organization", escaped),
+        fuzzyQuery("artifacts", escaped),
+        fuzzyQuery("github.readme", escaped),
+        stringQ
       ),
-      notQueries = List(termQuery("deprecated", true), termQuery("test", true))
+      notQueries = List(termQuery("deprecated", true))
     )
   }
 
   def total(queryString: String): Future[Long] = {
     esClient.execute {
-      search
-        .in(indexName / projectsCollection)
-        .query(getQuery(queryString))
-        .size(0)
+      search.in(indexName / projectsCollection).query(getQuery(queryString)).size(0)
     }.map(_.totalHits)
   }
 
@@ -185,38 +184,46 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
               termQuery("repository", project.repository)
             )
           )
-        ).limit(1)
+        )
+        .limit(1)
     }.map(_.as[Project].headOption)
   }
 
   def projectPage(projectRef: Project.Reference,
                   selection: ReleaseSelection): Future[Option[(Project, ReleaseOptions)]] = {
     val projectAndReleases = for {
-      project  <- project(projectRef)
-      releases <- releases(projectRef, 
-        selection.artifact match {
-          case None => project.flatMap(_.defaultArtifact)
-          case s => s
-        }
-      )
+      project <- project(projectRef)
+      releases <- releases(projectRef, selection.artifact match {
+        case None => project.flatMap(_.defaultArtifact)
+        case s => s
+      })
     } yield (project, releases)
 
     projectAndReleases.map {
       case (p, releases) =>
-        p.flatMap(project => 
-            DefaultRelease(project.repository, selection, releases.toSet, project.defaultArtifact, project.defaultStableVersion)
-              .map(sel => (project, sel.copy(artifacts = project.artifacts))))
+        p.flatMap(
+          project =>
+            DefaultRelease(project.repository,
+                           selection,
+                           releases.toSet,
+                           project.defaultArtifact,
+                           project.defaultStableVersion).map(sel =>
+              (project, sel.copy(artifacts = project.artifacts))))
     }
   }
 
   def updateProject(projectRef: Project.Reference, form: ProjectForm): Future[Boolean] = {
     for {
       updatedProject <- project(projectRef).map(_.map(p => form.update(p)))
-      ret <- updatedProject.flatMap( project =>
-        project.id.map(id =>
-          esClient.execute(update(id) in (indexName / projectsCollection) doc project).map(_ => true)
-        )
-      ).getOrElse(Future.successful(false))
+      ret <- updatedProject
+        .flatMap(
+          project =>
+            project.id.map(
+              id =>
+                esClient
+                  .execute(update(id) in (indexName / projectsCollection) doc project)
+                  .map(_ => true)))
+        .getOrElse(Future.successful(false))
     } yield ret
   }
 
@@ -231,7 +238,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
           bool(
             mustQueries = Nil,
             shouldQueries = Nil,
-            notQueries = List(termQuery("deprecated", true), termQuery("test", true))
+            notQueries = List(termQuery("deprecated", true))
           )
         )
         .sort(fieldSort(by).order(SortOrder.DESC))
@@ -240,36 +247,36 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
   }
 
   def keywords() = aggregations("keywords")
-  def targets()  = aggregations("targets")
+  def targets() = aggregations("targets")
   def dependencies() = {
     // we remove testing or logging because they are always a dependency
     // we could have another view to compare testing frameworks
     val testOrLogging = Set(
-        "akka/akka-slf4j",
-        "akka/akka-testkit",
-        "etorreborre/specs2",
-        "etorreborre/specs2-core",
-        "etorreborre/specs2-junit",
-        "etorreborre/specs2-mock",
-        "etorreborre/specs2-scalacheck",
-        "lihaoyi/utest",
-        "paulbutcher/scalamock-scalatest-support",
-        "playframework/play-specs2",
-        "playframework/play-test",
-        "rickynils/scalacheck",
-        "scala/scala-library",
-        "scalatest/scalatest",
-        "scalaz/scalaz-scalacheck-binding",
-        "scopt/scopt",
-        "scoverage/scalac-scoverage-plugin",
-        "scoverage/scalac-scoverage-runtime",
-        "spray/spray-testkit",
-        "typesafehub/scala-logging",
-        "typesafehub/scala-logging-slf4j"
+      "akka/akka-slf4j",
+      "akka/akka-testkit",
+      "etorreborre/specs2",
+      "etorreborre/specs2-core",
+      "etorreborre/specs2-junit",
+      "etorreborre/specs2-mock",
+      "etorreborre/specs2-scalacheck",
+      "lihaoyi/utest",
+      "paulbutcher/scalamock-scalatest-support",
+      "playframework/play-specs2",
+      "playframework/play-test",
+      "rickynils/scalacheck",
+      "scala/scala-library",
+      "scalatest/scalatest",
+      "scalaz/scalaz-scalacheck-binding",
+      "scopt/scopt",
+      "scoverage/scalac-scoverage-plugin",
+      "scoverage/scalac-scoverage-runtime",
+      "spray/spray-testkit",
+      "typesafehub/scala-logging",
+      "typesafehub/scala-logging-slf4j"
     )
 
     aggregations("dependencies").map(agg =>
-          agg.toList.sortBy(_._2)(Descending).filter {
+      agg.toList.sortBy(_._2)(Descending).filter {
         case (ref, _) =>
           !testOrLogging.contains(ref)
     })
@@ -291,7 +298,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
       search
         .in(indexName / projectsCollection)
         .aggregations(
-            aggregation.terms(aggregationName).field(field).size(50)
+          aggregation.terms(aggregationName).field(field).size(50)
         )
     }.map(resp => {
       val agg = resp.aggregations.get[StringTerms](aggregationName)

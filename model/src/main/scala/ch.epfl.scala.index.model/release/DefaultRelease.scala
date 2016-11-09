@@ -33,17 +33,17 @@ case class ReleaseOptions(
 )
 
 object DefaultRelease {
-  def apply(projectRepository: String, 
-            selection: ReleaseSelection, 
+  def apply(projectRepository: String,
+            selection: ReleaseSelection,
             releases: Set[Release],
             defaultArtifact: Option[String],
             defaultStableVersion: Boolean): Option[ReleaseOptions] = {
 
     val selectedReleases = releases.filter(
-        release =>
-          selection.artifact.map(_ == release.reference.artifact).getOrElse(true) &&
-            selection.target.map(_ == release.reference.target).getOrElse(true) &&
-            selection.version.map(_ == release.reference.version).getOrElse(true))
+      release =>
+        selection.artifact.map(_ == release.reference.artifact).getOrElse(true) &&
+          selection.target.map(_ == release.reference.target).getOrElse(true) &&
+          selection.version.map(_ == release.reference.version).getOrElse(true))
 
     // descending ordering for versions
     implicit def ordering = implicitly[Ordering[SemanticVersion]].reverse
@@ -51,33 +51,34 @@ object DefaultRelease {
     val releasesSorted = selectedReleases.toList.sortBy { release =>
       import release.reference._
       (
-          // artifact
+        // artifact
 
-          // match default artifact (ex: akka-actors is the default for akka/akka)
-          defaultArtifact == Some(artifact),
-          // match project repository (ex: shapeless)
-          projectRepository == artifact,
-          // alphabetically
-          artifact,
-          // target
+        // match default artifact (ex: akka-actors is the default for akka/akka)
+        defaultArtifact == Some(artifact),
+        // match project repository (ex: shapeless)
+        projectRepository == artifact,
+        // alphabetically
+        artifact,
+        // target
 
-          // stable jvm targets first
-          !target.scalaJsVersion.isEmpty,
-          !target.scalaVersion.preRelease.isEmpty,
-          target.scalaVersion,
-          target.scalaJsVersion,
-          // version
-          defaultStableVersion && !version.preRelease.isEmpty,
-          version
+        // stable jvm targets first
+        !target.scalaJsVersion.isEmpty,
+        !target.scalaVersion.preRelease.isEmpty,
+        target.scalaVersion,
+        target.scalaJsVersion,
+        // version
+        defaultStableVersion && !version.preRelease.isEmpty,
+        version
       )
     }
 
     releasesSorted.headOption.map { release =>
-      val artifacts           = releases.map(_.reference.artifact).toList.sorted
+      val artifacts = releases.map(_.reference.artifact).toList.sorted
       val releasesForArtifact = releases.filter(_.reference.artifact == release.reference.artifact)
 
-      val versions                   = releasesForArtifact.map(_.reference.version).toList.sorted
-      val releasesForArtifactVersion = releasesForArtifact.filter(_.reference.version == release.reference.version)
+      val versions = releasesForArtifact.map(_.reference.version).toList.sorted
+      val releasesForArtifactVersion =
+        releasesForArtifact.filter(_.reference.version == release.reference.version)
 
       val targets = releasesForArtifactVersion
         .map(_.reference.target)
@@ -85,10 +86,10 @@ object DefaultRelease {
         .sortBy(target => (target.scalaVersion, target.scalaJsVersion))
 
       ReleaseOptions(
-          artifacts,
-          versions,
-          targets,
-          release
+        artifacts,
+        versions,
+        targets,
+        release
       )
     }
   }

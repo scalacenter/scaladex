@@ -43,8 +43,7 @@ case class Project(
     created: Option[String] = None,
     updated: Option[String] = None,
     targets: Set[String] = Set(),
-    dependencies: Set[String] = Set(),
-    test: Boolean = false
+    dependencies: Set[String] = Set()
 ) {
 
   def reference = Project.Reference(organization, repository)

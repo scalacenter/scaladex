@@ -7,8 +7,8 @@
     <description>test</description>
     <version>1.2.3</version>
     <scm>
-        <url>https://github.com/scalacenter/scaladex</url>
-        <connection>scm:git:git@github.com:scalacenter/scaladex.git</connection>
+        <url>https://github.com/foobarbuz/example</url>
+        <connection>scm:git:git@github.com:foobarbuz/example.git</connection>
     </scm>
     <dependencies>
         <dependency>

@@ -5,7 +5,7 @@ package api
 package impl
 
 import data._
-import data.bintray._
+// import data.bintray._
 import data.cleanup.GithubRepoExtractor
 import data.download.PlayWsDownloader
 import data.elastic._
@@ -24,11 +24,10 @@ import akka.http.scaladsl.model.StatusCode
 import com.sksamuel.elastic4s._
 import ElasticDsl._
 
-import org.joda.time.DateTime
-
 import scala.concurrent.Future
+import scala.util.{Try, Success}
 
-private[api] class PublishProcess(dataRepository: DataRepository)(
+private[api] class PublishProcess(paths: DataPaths, dataRepository: DataRepository)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer
 ) extends PlayWsDownloader {
@@ -51,23 +50,26 @@ private[api] class PublishProcess(dataRepository: DataRepository)(
   def writeFiles(data: PublishData): Future[StatusCode] = Future {
     if (data.isPom) {
       data.writeTemp()
-      val pom = getPom(data)
-      getGithubRepo(pom) match {
-        case None => {
-          data.deleteTemp()
-          NoContent
-        }
-        case Some(repo) => {
-          if(data.userState.hasPublishingAuthority || data.userState.repos.contains(repo)) {
-            data.writePom()
-            data.deleteTemp()
-            updateIndex(repo, pom, data)
-            Created
-          } else {
-            data.deleteTemp()
-            Forbidden
+      getTmpPom(data) match {
+        case List(Success((pom, _, _))) =>
+          getGithubRepo(pom) match {
+            case None => {
+              data.deleteTemp()
+              NoContent
+            }
+            case Some(repo) => {
+              if (data.userState.hasPublishingAuthority || data.userState.repos.contains(repo)) {
+                data.writePom(paths)
+                data.deleteTemp()
+                updateIndex(repo, pom, data)
+                Created
+              } else {
+                data.deleteTemp()
+                Forbidden
+              }
+            }
           }
-        }
+        case _ => BadRequest
       }
     } else {
       Created /* ignore the file at this case */
@@ -80,8 +82,8 @@ private[api] class PublishProcess(dataRepository: DataRepository)(
     * @param data the XML String data
     * @return
     */
-  private def getPom(data: PublishData): MavenModel =
-    PomsReader.load(data.tempPath)
+  private def getTmpPom(data: PublishData): List[Try[(MavenModel, LocalRepository, String)]] =
+    PomsReader.tmp(paths, data.tempPath.getParent).load()
 
   /**
     * try to extract a github repository from scm tag in Maven Model
@@ -90,7 +92,7 @@ private[api] class PublishProcess(dataRepository: DataRepository)(
     * @return
     */
   private def getGithubRepo(pom: MavenModel): Option[GithubRepo] =
-    (new GithubRepoExtractor).apply(pom)
+    (new GithubRepoExtractor(paths)).apply(pom)
 
   /**
     * Main task to update the scaladex index.
@@ -111,40 +113,32 @@ private[api] class PublishProcess(dataRepository: DataRepository)(
   private def updateIndex(repo: GithubRepo, pom: MavenModel, data: PublishData): Future[Unit] = {
     println("updating " + pom.artifactId)
 
-    new GithubDownload(Some(data.credentials))
+    new GithubDownload(paths, Some(data.credentials))
       .run(repo, data.downloadInfo, data.downloadReadme, data.downloadContributors)
 
-    val githubRepoExtractor = new GithubRepoExtractor()
+    val githubRepoExtractor = new GithubRepoExtractor(paths)
     val Some(GithubRepo(organization, repository)) = githubRepoExtractor(pom)
     val projectReference = Project.Reference(organization, repository)
 
     def updateProjectReleases(project: Option[Project], releases: List[Release]): Future[Unit] = {
 
-      val bintray = BintraySearch(
-        created = new DateTime(),
-        `package` = s"${pom.groupId}:${pom.artifactId}",
-        owner = "bintray",
-        repo = "jcenter",
-        sha1 = data.hash,
-        sha256 = None,
-        name = pom.artifactId,
-        path = pom.groupId.replaceAllLiterally(".", "/") + "/" + pom.artifactId,
-        size = 0,
-        version = pom.version
-      )
+      val repository =
+        if(data.userState.hasPublishingAuthority) LocalRepository.MavenCentral
+        else LocalRepository.UserProvided
 
-      BintrayMeta.append(bintray)
+      Meta.append(paths, Meta(data.hash, data.path, data.created), repository)
 
-      val (newProject, newReleases) = ProjectConvert(
-        pomsAndMeta = List((pom, List(bintray))),
+      val converter = new ProjectConvert(paths)
+
+      val (newProject, newReleases) = converter(
+        pomsRepoSha = List((pom, repository, data.hash)),
         cachedReleases = cachedReleases
       ).head
 
       cachedReleases = upserts(cachedReleases, projectReference, newReleases)
-      
+
       val updatedProject = newProject.copy(
         keywords = data.keywords,
-        test = data.test,
         liveData = true
       )
 
@@ -152,28 +146,33 @@ private[api] class PublishProcess(dataRepository: DataRepository)(
         project match {
           case Some(project) => {
 
-            esClient.execute(
-              update(project.id.get)
-                .in(indexName / projectsCollection)
-                .doc(updatedProject)
-            ).map(_ => println("updating project " + pom.artifactId))
+            esClient
+              .execute(
+                update(project.id.get).in(indexName / projectsCollection).doc(updatedProject)
+              )
+              .map(_ => println("updating project " + pom.artifactId))
           }
 
           case None =>
-            esClient.execute(
-              index
-                .into(indexName / projectsCollection)
-                .source(updatedProject)
-              ).map(_ => println("inserting project " + pom.artifactId))
+            esClient
+              .execute(
+                index.into(indexName / projectsCollection).source(updatedProject)
+              )
+              .map(_ => println("inserting project " + pom.artifactId))
         }
 
-      val releaseUpdate = 
+      val releaseUpdate =
         if (!releases.exists(r => r.reference == newReleases.head.reference)) {
           // create new release
-          esClient.execute(index.into(indexName / releasesCollection).source(
-            newReleases.head.copy(test = data.test, liveData = true)
-          )).map(_ => ())
-        } else { Future.successful(())} 
+          esClient
+            .execute(
+              index
+                .into(indexName / releasesCollection)
+                .source(
+                  newReleases.head.copy(test = data.test, liveData = true)
+                ))
+            .map(_ => ())
+        } else { Future.successful(()) }
 
       for {
         _ <- projectUpdate
@@ -182,17 +181,11 @@ private[api] class PublishProcess(dataRepository: DataRepository)(
     }
 
     for {
-      project  <- dataRepository.project(projectReference)
+      project <- dataRepository.project(projectReference)
       releases <- dataRepository.releases(projectReference, None)
-      _        <- updateProjectReleases(project, releases)
+      _ <- updateProjectReleases(project, releases)
     } yield ()
   }
 
   private var cachedReleases = Map.empty[Project.Reference, Set[Release]]
-  // private var cachedProjects = Map.empty[Project.Reference, Project]
-
-  // private def updateReleases(projectReference: Project.Reference, newReleases: Set[Release]): Unit = {
-  //   cachedReleases = upsert(cachedReleases, projectReference, newReleases)
-  // }
 }
-

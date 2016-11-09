@@ -23,7 +23,7 @@ case class Repository(
     created_at: String, // format: "2015-01-28T20:26:48Z",
     updated_at: String,
     homepage: Option[String], // http://typelevel.org/cats/
-    size: Int,             // 11602 repo size in Kb
+    size: Int, // 11602 repo size in Kb
     stargazers_count: Int, // stars
     // language: Option[String], // "Scala"
     // has_issues: Boolean,

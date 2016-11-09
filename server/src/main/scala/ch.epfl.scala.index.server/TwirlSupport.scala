@@ -22,7 +22,8 @@ trait TwirlSupport {
   implicit val twirlXmlMarshaller = twirlMarshaller[Xml](`text/xml`)
 
   /** Serialize Twirl formats to `String`. */
-  protected def twirlMarshaller[A <: AnyRef: Manifest](contentType: MediaType): ToEntityMarshaller[A] =
+  protected def twirlMarshaller[A <: AnyRef: Manifest](
+      contentType: MediaType): ToEntityMarshaller[A] =
     Marshaller.StringMarshaller.wrap(contentType)(_.toString)
 
 }
