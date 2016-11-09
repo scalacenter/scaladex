@@ -55,6 +55,8 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 @main def main(fullBranchName: String, job: Job.Value) = {
   import Job._
 
+  val chmod = "chmod"
+
   val branch = {
     val origin = "origin/"
     if(fullBranchName.startsWith(origin)) fullBranchName.drop(origin.length)
@@ -114,9 +116,9 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
   // }
   
   // val readPublic      = "705"
-  // val readWritePublic = "777"
+  val readWritePublic = "777"
 
-  // val chmod = "chmod"
+  
   
   // runPipe(chmod, readWritePublic, "-R", indexFolder.toString, "&>", new File("/dev/null"))
   // runPipe(chmod, readWritePublic, "-R", contribFolder.toString, "&>", new File("/dev/null"))
