@@ -95,33 +95,11 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 
   val indexDest = scaladexHome
   val indexFolder = indexDest / "scaladex-index"
-  // if(!exists(indexFolder)) {
-  //   run("git", "clone", "git@github.com:scalacenter/scaladex-index.git", indexFolder.toString)
-  // }
 
   val contribDest = scaladexHome
   val contribFolder = contribDest / "scaladex-contrib"
-  // if(!exists(contribFolder)) {
-  //   run("git", "clone", "git@github.com:scalacenter/scaladex-contrib.git", contribFolder.toString)
-  // }
-
-  // val bintrayCredentialsFolder = home / ".bintray"
-  // if(!exists(bintrayCredentialsFolder)) {
-  //   mkdir(bintrayCredentialsFolder)
-  // }
-
-  // val publishPluginCredentialsFolder = bintrayCredentialsFolder / ".credentials"
-  // if(!exists(publishPluginCredentialsFolder)){
-  //   cp(credentialsFolder / "sbt-plugin-credentials", publishPluginCredentialsFolder)
-  // }
   
-  // val readPublic      = "705"
   val readWritePublic = "777"
-
-  
-  
-  // runPipe(chmod, readWritePublic, "-R", indexFolder.toString, "&>", new File("/dev/null"))
-  // runPipe(chmod, readWritePublic, "-R", contribFolder.toString, "&>", new File("/dev/null"))
 
   if(job == Index){
 
@@ -129,10 +107,6 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
       // run index
       sbt("data/run all")
     }
-
-    // make shure indexed projects are accessible
-    run(chmod, readWritePublic, "-R", indexFolder.toString)
-
   } else if(job == Test) {
 
     sbt("test")
@@ -141,8 +115,6 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 
     updatingSubmodules(List(indexFolder)){ () =>
       sbt(
-        s"data/run live ${contribFolder.toString} ${indexFolder.toString}",
-        s"data/run elastic ${contribFolder.toString} ${indexFolder.toString}",
         "server/universal:packageBin"
       )
     }
