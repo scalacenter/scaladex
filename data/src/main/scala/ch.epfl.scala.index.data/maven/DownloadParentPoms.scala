@@ -4,7 +4,7 @@ package maven
 
 import download.PlayWsDownloader
 
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
@@ -14,7 +14,7 @@ import play.api.libs.ws.ahc.AhcWSClient
 
 import scala.util.Failure
 
-class DownloadParentPoms(repository: LocalRepository, paths: DataPaths)(
+class DownloadParentPoms(repository: LocalRepository, paths: DataPaths, tmp: Option[Path] = None)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer)
     extends PlayWsDownloader {
@@ -22,7 +22,11 @@ class DownloadParentPoms(repository: LocalRepository, paths: DataPaths)(
   assert(repository == LocalRepository.MavenCentral || repository == LocalRepository.Bintray)
 
   val parentPomsPath = paths.parentPoms(repository)
-  val pomReader = PomsReader(repository, paths)
+  val pomReader = 
+    tmp match {
+      case Some(path) => PomsReader.tmp(paths, path)
+      case None => PomsReader(repository, paths)
+    }
 
   /**
     * get the play-ws request by using the dependency
@@ -31,8 +35,8 @@ class DownloadParentPoms(repository: LocalRepository, paths: DataPaths)(
     */
   def downloadRequest(wsClient: AhcWSClient, dep: Dependency): WSRequest = {
     val urlBase =
-      if (repository == LocalRepository.MavenCentral) "https://repo1.maven.org/maven2/"
-      else "https://jcenter.bintray.com/"
+      if (repository == LocalRepository.MavenCentral) "https://repo1.maven.org/maven2"
+      else "https://jcenter.bintray.com"
 
     val fullUrl = s"$urlBase/${PomsReader.path(dep)}"
     wsClient.url(fullUrl)

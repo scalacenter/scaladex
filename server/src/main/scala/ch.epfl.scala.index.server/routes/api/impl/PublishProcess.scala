@@ -5,12 +5,11 @@ package api
 package impl
 
 import data._
-// import data.bintray._
 import data.cleanup.GithubRepoExtractor
 import data.download.PlayWsDownloader
 import data.elastic._
 import data.github._
-import data.maven.{MavenModel, PomsReader}
+import data.maven.{MavenModel, PomsReader, DownloadParentPoms}
 import data.project.ProjectConvert
 
 import model.misc.GithubRepo
@@ -82,8 +81,16 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
     * @param data the XML String data
     * @return
     */
-  private def getTmpPom(data: PublishData): List[Try[(MavenModel, LocalRepository, String)]] =
-    PomsReader.tmp(paths, data.tempPath.getParent).load()
+  private def getTmpPom(data: PublishData): List[Try[(MavenModel, LocalRepository, String)]] = {
+    val path = data.tempPath.getParent
+
+    val downloadParentPomsStep = 
+      new DownloadParentPoms(LocalRepository.MavenCentral, paths, Some(path))
+
+    downloadParentPomsStep.run()
+
+    PomsReader.tmp(paths, path).load()
+  }
 
   /**
     * try to extract a github repository from scm tag in Maven Model
