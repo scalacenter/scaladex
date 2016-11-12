@@ -55,7 +55,7 @@ trait ClientBase {
   }
 
   def getProjects(query: String): Future[List[Autocompletion]] =
-    AutowireClient[Api].search(query).call()
+    AutowireClient[Api].autocomplete(query).call()
 
   def showResults(projects: List[Autocompletion]): List[Option[Node]] = {
     completionSelection = CompletionSelection(None, projects)

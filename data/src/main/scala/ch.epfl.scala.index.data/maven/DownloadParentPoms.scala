@@ -22,7 +22,7 @@ class DownloadParentPoms(repository: LocalRepository, paths: DataPaths, tmp: Opt
   assert(repository == LocalRepository.MavenCentral || repository == LocalRepository.Bintray)
 
   val parentPomsPath = paths.parentPoms(repository)
-  val pomReader = 
+  val pomReader =
     tmp match {
       case Some(path) => PomsReader.tmp(paths, path)
       case None => PomsReader(repository, paths)

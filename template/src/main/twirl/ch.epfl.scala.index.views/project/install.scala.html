@@ -1,5 +1,5 @@
 @import ch.epfl.scala.index.model.Release
-@(release: Release)
+@(release: Release, cliArtifacts: Set[String])
 <div class="install">
   <ul class="nav nav-tabs" role="tablist">
     <li role="presentation" class="active">
@@ -8,9 +8,12 @@
     <li role="presentation">
       <a href="#ammonite" aria-controls="ammonite" role="tab" data-toggle="tab">Amm</a>
     </li>
-    <li role="presentation">
-      <a href="#coursier" aria-controls="coursier" role="tab" data-toggle="tab">Cour</a>
-    </li>
+    @if(cliArtifacts.contains(release.reference.artifact)) {
+      <li role="presentation">
+        <a href="#coursier" aria-controls="coursier" role="tab" data-toggle="tab">Cour</a>
+      </li>    
+    }
+
     <li role="presentation">
       <a href="#maven" aria-controls="maven" role="tab" data-toggle="tab">Maven</a>
     </li>
@@ -26,10 +29,12 @@
       <a href="http://www.lihaoyi.com/Ammonite/#Ammonite-REPL">Ammonite REPL</a>
       <pre>@release.ammInstall</pre>
     </div>
-    <div role="tabpanel" class="tab-pane" id="coursier">
-      <a href="https://github.com/alexarchambault/coursier#command-line-1">Coursier</a>
-      <pre>./coursier launch @release.maven.groupId:@release.maven.artifactId:@release.maven.version</pre>
-    </div>
+    @if(cliArtifacts.contains(release.reference.artifact)) {
+      <div role="tabpanel" class="tab-pane" id="coursier">
+        <a href="https://github.com/alexarchambault/coursier#command-line-1">Coursier</a>
+        <pre>./coursier launch @release.maven.groupId:@release.maven.artifactId:@release.maven.version</pre>
+      </div>
+    }
     <div role="tabpanel" class="tab-pane" id="maven">
       <pre>@release.mavenInstall</pre>
     </div>

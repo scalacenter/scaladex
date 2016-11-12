@@ -45,9 +45,9 @@ class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
     // user = xxxxxxxxxx
     // password = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-    val home   = System.getProperty("user.home")
-    val path   = home + "/.bintray/.credentials2"
-    val nl     = System.lineSeparator
+    val home = System.getProperty("user.home")
+    val path = home + "/.bintray/.credentials2"
+    val nl = System.lineSeparator
     val source = scala.io.Source.fromFile(path)
 
     val info = source.mkString

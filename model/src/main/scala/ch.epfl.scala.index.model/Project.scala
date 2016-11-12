@@ -38,6 +38,8 @@ case class Project(
     deprecated: Boolean = false,
     contributorsWanted: Boolean = false,
     artifactDeprecations: Set[String] = Set(),
+    cliArtifacts: Set[String] = Set(),
+    hasCli: Boolean = false,
     liveData: Boolean = false,
     id: Option[String] = None,
     created: Option[String] = None,

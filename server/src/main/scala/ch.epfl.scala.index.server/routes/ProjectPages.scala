@@ -80,10 +80,11 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
                 'defaultStableVersion.as[Boolean] ? false,
                 'deprecated.as[Boolean] ? false,
                 'artifactDeprecations.*,
+                'cliArtifacts.*,
                 'customScalaDoc.?
               ) {
                 (contributorsWanted, keywords, defaultArtifact, defaultStableVersion, deprecated,
-                 artifactDeprecations, customScalaDoc) =>
+                 artifactDeprecations, cliArtifacts, customScalaDoc) =>
                   val documentationLinks = {
                     val name = "documentationLinks"
                     val end = "]".head
@@ -107,6 +108,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
                         defaultStableVersion,
                         deprecated,
                         artifactDeprecations.toSet,
+                        cliArtifacts.toSet,
                         // documentation
                         customScalaDoc,
                         documentationLinks

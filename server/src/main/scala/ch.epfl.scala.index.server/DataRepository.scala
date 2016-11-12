@@ -61,7 +61,8 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
   private def getQuery(queryString: String,
                        userRepos: Set[GithubRepo] = Set(),
-                       targetFiltering: Option[ScalaTarget] = None) = {
+                       targetFiltering: Option[ScalaTarget] = None,
+                       cli: Boolean = false) = {
 
     val escaped =
       if (queryString.isEmpty) "*"
@@ -72,6 +73,10 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
         case Some(t) => List(bool(should(termQuery("targets", t.supportName))))
         case None => Nil
       }
+
+    val cliQuery =
+      if(cli) List(termQuery("hasCli", true))
+      else Nil
 
     val reposQueries = if (!userRepos.isEmpty) {
       userRepos.toList.map {
@@ -94,7 +99,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
       else stringQuery(escaped + "~").fuzzyPrefixLength(3).defaultOperator("AND")
 
     bool(
-      mustQueries = mustQueriesRepos ++ mustQueryTarget,
+      mustQueries = mustQueriesRepos ++ mustQueryTarget ++ cliQuery,
       shouldQueries = List(
         fuzzyQuery("keywords", escaped),
         fuzzyQuery("github.description", escaped),
@@ -119,10 +124,11 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
            sorting: Option[String] = None,
            userRepos: Set[GithubRepo] = Set(),
            total: Int = resultsPerPage,
-           targetFiltering: Option[ScalaTarget] = None): Future[(Pagination, List[Project])] = {
+           targetFiltering: Option[ScalaTarget] = None,
+           cli: Boolean = false): Future[(Pagination, List[Project])] = {
 
     query(
-      getQuery(queryString, userRepos, targetFiltering),
+      getQuery(queryString, userRepos, targetFiltering, cli),
       page,
       total,
       sorting

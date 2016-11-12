@@ -36,6 +36,23 @@
               </div>
 
               <div class="form-group">
+                <label for="cliArtifacts">Command Line Artifacts</label>
+                <select
+                  name="cliArtifacts"
+                  class="js-keywords-multiple js-states form-control"
+                  id="cliArtifacts"
+                  multiple="multiple">
+                @for(artifact <- project.artifacts) {
+                  <option
+                    value="@artifact" 
+                    @if(project.cliArtifacts.contains(artifact)){selected}>
+                      @artifact
+                  </option>
+                }
+                </select>
+              </div>
+
+              <div class="form-group">
                 <input type="checkbox" name="deprecated" @if(project.deprecated){ checked } id="deprecated">
                 <label label-for="deprecated">Project Deprecated</label>
               </div>

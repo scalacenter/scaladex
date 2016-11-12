@@ -84,7 +84,7 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
   private def getTmpPom(data: PublishData): List[Try[(MavenModel, LocalRepository, String)]] = {
     val path = data.tempPath.getParent
 
-    val downloadParentPomsStep = 
+    val downloadParentPomsStep =
       new DownloadParentPoms(LocalRepository.MavenCentral, paths, Some(path))
 
     downloadParentPomsStep.run()

@@ -35,6 +35,7 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
       field("artifacts").typed(StringType).index("not_analyzed"),
       field("customScalaDoc").typed(StringType).index("no"),
       field("artifactDeprecations").typed(StringType).index("no"),
+      field("cliArtifacts").typed(StringType).index("no"),
       field("created").typed(DateType),
       field("updated").typed(DateType),
       field("targets").typed(StringType).index("not_analyzed"),

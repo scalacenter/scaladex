@@ -25,7 +25,7 @@
             </div>
             }
             @project.github.map(gh => statistic(gh, project.releaseCount, release.reverseDependencies.size))
-            @install(release)
+            @install(release, project.cliArtifacts)
             @documentation(release, project)
             @project.github.map(gh => contributors(gh.contributors))
             @license(release)
