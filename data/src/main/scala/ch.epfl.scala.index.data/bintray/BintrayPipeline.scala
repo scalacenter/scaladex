@@ -10,7 +10,7 @@ import elastic.{SeedElasticSearch, SaveLiveData}
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
-object Main {
+object BintrayPipeline {
   def main(args: Array[String]): Unit = {
     implicit val system = ActorSystem()
     import system.dispatcher
@@ -91,7 +91,7 @@ object Main {
     val stepsMap = steps.toMap
 
     (args.toList match {
-      case "all" :: Nil => steps.map(_._2)
+      case "all" :: _ => steps.map(_._2)
       case _ => stepsMap.get(args.head).toList
     }).foreach(step => step())
 

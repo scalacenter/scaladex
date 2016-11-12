@@ -105,7 +105,7 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 
     updatingSubmodules(List(contribFolder, indexFolder)){ () =>
       // run index
-      sbt("data/run all")
+      sbt(s"data/run all $contribFolder $indexFolder")
     }
   } else if(job == Test) {
 
