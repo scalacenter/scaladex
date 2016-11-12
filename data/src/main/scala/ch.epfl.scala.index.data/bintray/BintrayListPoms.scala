@@ -22,12 +22,9 @@ import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization.write
 
-import com.typesafe.config.ConfigFactory
-
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
-import scala.util.Try
 
 class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
                                         implicit val materializer: ActorMaterializer)
@@ -41,13 +38,32 @@ class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
     */
   private val bintrayUri = "https://bintray.com/api/v1/search/file"
 
-  private val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
-  val user = Try(config.getString("bintray.user")).toOption.orElse(sys.props.get("BINTRAY_USER"))
-  val password = Try(config.getString("bintray.password")).toOption.orElse(sys.props.get("BINTRAY_PASSWORD"))
+  private val bintrayCredentials = {
+    // from bintray-sbt convention
+    // cat ~/.bintray/.credentials
+    // host = api.bintray.com
+    // user = xxxxxxxxxx
+    // password = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
+    val home   = System.getProperty("user.home")
+    val path   = home + "/.bintray/.credentials2"
+    val nl     = System.lineSeparator
+    val source = scala.io.Source.fromFile(path)
 
-  private def withAuth(request: WSRequest) = {
-    (user, password) match {
+    val info = source.mkString
+      .split(nl)
+      .map { v =>
+        val (l, r) = v.span(_ != '=')
+        (l.trim, r.drop(2).trim)
+      }
+      .toMap
+    source.close()
+
+    info
+  }
+
+  def withAuth(request: WSRequest) = {
+    (bintrayCredentials.get("user"), bintrayCredentials.get("password")) match {
       case (Some(user), Some(password)) =>
         request.withAuth(user, password, WSAuthScheme.BASIC)
       case _ => request

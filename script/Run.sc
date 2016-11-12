@@ -83,14 +83,25 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
     run("chmod", "a+x", "sbt")
   }
 
+  val bintrayCredentialsFolder = home / ".bintray"
+  if(!exists(bintrayCredentialsFolder)) {
+    mkdir(bintrayCredentialsFolder)
+  }
+
   val scaladexHome = root / "home" / "scaladex"
 
   val credentialsDest = scaladexHome
   val credentialsFolder = credentialsDest / "scaladex-credentials"
+
   if(!exists(credentialsFolder)) {
     run("git", "clone", "git@github.com:scalacenter/scaladex-credentials.git", credentialsDest.toString)
   } else {
     runD("git", "pull", "origin", "master")(credentialsFolder)
+  }
+
+  val searchCredentialsFolder = bintrayCredentialsFolder / ".credentials2"
+  if(!exists(searchCredentialsFolder)){
+    cp(credentialsFolder / "search-credentials", searchCredentialsFolder)
   }
 
   val indexDest = scaladexHome
