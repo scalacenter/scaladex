@@ -41,9 +41,10 @@ class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
     */
   private val bintrayUri = "https://bintray.com/api/v1/search/file"
 
-  private val config = ConfigFactory.load().getConfig("org.scala_lang.index.data.bintray")
-  val user = Try(config.getString("user")).toOption
-  val password = Try(config.getString("password")).toOption
+  private val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
+  val user = Try(config.getString("bintray.user")).toOption.orElse(sys.props.get("BINTRAY_USER"))
+  val password = Try(config.getString("bintray.password")).toOption.orElse(sys.props.get("BINTRAY_PASSWORD"))
+
 
   private def withAuth(request: WSRequest) = {
     (user, password) match {
