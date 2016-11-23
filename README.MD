@@ -8,8 +8,8 @@
 We pull poms from Bintray and we receive poms from Maven Central or to Scaladex directly.
 Your library has to be published to one of those repositories.
 
-* [`How to publish on Bintray`](/doc/user/publish-central.md)
-* [`How to publish on Maven Central`](/doc/user/publish-central.md)
+* [`How to publish on Bintray`](/doc/user/publish-bintray.md)
+* [`How to publish on Maven Central`](/doc/user/publish-maven-central.md)
 * [`How to publish on Scaladex`](/doc/user/publish-scaladex.md)
 
 Process:
