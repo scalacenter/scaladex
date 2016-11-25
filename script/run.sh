@@ -5,10 +5,10 @@ set -x #echo on
 HERE="`dirname $0`"
 
 # install ammonite repl
-if [ ! -f $HERE/amm ];
+if [ ! -f amm ];
 then
-  curl -L https://git.io/vKSOR > $HERE/amm
-  chmod a+x $HERE/amm
+  curl -L https://git.io/vKSOR > amm
+  chmod a+x amm
 fi
 
-./$HERE/amm $HERE/Run.sc "$@"
+./amm $HERE/Run.sc "$@"
