@@ -2,11 +2,13 @@
 
 set -x #echo on
 
+HERE="`dirname $0`"
+
 # install ammonite repl
-if [ ! -f amm ];
+if [ ! -f $HERE/amm ];
 then
-  curl -L https://git.io/vKSOR > amm
-  chmod a+x amm
+  curl -L https://git.io/vKSOR > $HERE/amm
+  chmod a+x $HERE/amm
 fi
 
-./amm script/Run.sc $GIT_BRANCH "$@"
+./$HERE/amm $HERE/Run.sc "$@"
