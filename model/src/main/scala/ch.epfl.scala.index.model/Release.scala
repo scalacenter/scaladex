@@ -45,8 +45,8 @@ case class Release(
     */
   def sbtInstall = {
 
-    val scalaJs = reference.target.scalaJsVersion.isDefined
-    val crossFull = reference.target.scalaVersion.patch.isDefined
+    val scalaJs = reference.target.flatMap(_.scalaJsVersion).isDefined
+    val crossFull = reference.target.flatMap(_.scalaVersion.patch).isDefined
 
     val (artifactOperator, crossSuffix) =
       if (nonStandardLib) ("%", "")
@@ -223,7 +223,7 @@ object Release {
       repository: String,
       artifact: String,
       version: SemanticVersion,
-      target: ScalaTarget
+      target: Option[ScalaTarget]
   ) extends GeneralReference {
 
     def projectReference = Project.Reference(organization, repository)

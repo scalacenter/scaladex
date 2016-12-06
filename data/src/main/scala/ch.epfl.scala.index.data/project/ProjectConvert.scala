@@ -26,8 +26,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
     * if the developer follow this convention we extract the relevant parts and we mark
     * the library as standard. Otherwise we either have a library like gatling or the scala library itself
     */
-  private def extractArtifactNameAndTarget(
-      pom: MavenModel): Option[(String, ScalaTarget, Boolean)] = {
+  private def extractArtifactNameAndTarget(pom: MavenModel): Option[(String, Option[ScalaTarget], Boolean)] = {
     nonStandardLibs
       .find(
         lib =>
@@ -41,14 +40,17 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
             dep.groupId == "org.scala-lang" &&
               dep.artifactId == "scala-library")
           .flatMap(dep => SemanticVersion(dep.version))
-          .map(version => (pom.artifactId, ScalaTarget(version.copy(patch = None)), true))
+          .map(version => (pom.artifactId, Some(ScalaTarget(version.copy(patch = None))), true))
+
+      case Some(NoScalaTargetPureJavaDependency) =>
+        Some((pom.artifactId, None, false))
 
       case Some(ScalaTargetFromVersion) =>
-        SemanticVersion(pom.version).map(version => (pom.artifactId, ScalaTarget(version), true))
+        SemanticVersion(pom.version).map(version => (pom.artifactId, Some(ScalaTarget(version)), true))
 
       case None =>
         Artifact(pom.artifactId).map {
-          case (artifactName, target) => (artifactName, target, false)
+          case (artifactName, target) => (artifactName, Some(target), false)
         }
     }
   }
@@ -326,7 +328,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
       collectDependencies(releases, _.name)
 
     def targets(releases: Set[Release]): Set[String] =
-      collectDependencies(releases, _.target.supportName)
+      collectDependencies(releases, _.target.map(_.supportName).getOrElse("")) // FIXME?
 
     def belongsTo(project: Project): Dependency => Boolean = {
       //A scala project can only have scala internal dependencies
