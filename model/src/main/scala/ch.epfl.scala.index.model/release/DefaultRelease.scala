@@ -62,12 +62,12 @@ object DefaultRelease {
         // target
 
         // stable jvm targets first
-        !target.scalaJsVersion.isEmpty,
-        !target.scalaVersion.preRelease.isEmpty,
-        target.scalaVersion,
-        target.scalaJsVersion,
+        target.flatMap(_.scalaJsVersion).isDefined,
+        target.flatMap(_.scalaVersion.preRelease).isDefined,
+        target.map(_.scalaVersion),
+        target.flatMap(_.scalaJsVersion),
         // version
-        defaultStableVersion && !version.preRelease.isEmpty,
+        defaultStableVersion && version.preRelease.isDefined,
         version
       )
     }
@@ -83,6 +83,7 @@ object DefaultRelease {
       val targets = releasesForArtifactVersion
         .map(_.reference.target)
         .toList
+        .flatten
         .sortBy(target => (target.scalaVersion, target.scalaJsVersion))
 
       ReleaseOptions(
