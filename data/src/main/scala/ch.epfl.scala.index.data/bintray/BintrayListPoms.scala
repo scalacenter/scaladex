@@ -79,22 +79,20 @@ class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
   private def discover(wsClient: AhcWSClient, page: PomListDownload): WSRequest = {
     val query = page.lastSearchDate.fold(Seq[(String, String)]())(after =>
         Seq("created_after" -> (after.toLocalDateTime.toString + "Z"))) ++ Seq(
-        "name" -> s"${page.scalaVersion}*.pom",
+        "name" -> s"${page.query}*.pom",
         "start_pos" -> page.page.toString)
+
 
     withAuth(wsClient.url(bintrayUri)).withQueryString(query: _*)
   }
 
   /** Fetch bintray first, to find out the number of pages and items to iterate
     * them over
-    *
-    * @param scalaVersion the current scala version
-    * @return
     */
-  def getNumberOfPages(scalaVersion: String,
+  def getNumberOfPages(query: String,
                        lastCheckDate: Option[DateTime]): Future[InternalBintrayPagination] = {
     val client = wsClient
-    val request = discover(client, PomListDownload(scalaVersion, 0, lastCheckDate))
+    val request = discover(client, PomListDownload(query, 0, lastCheckDate))
 
     request.get.flatMap { response =>
       if (200 == response.status) {
@@ -174,11 +172,14 @@ class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
     */
   def run(groupId: String, artifact: String): Unit = {
 
+    println(s"run $groupId $artifact")
+
     val queried = BintrayMeta.load(paths)
 
     /* the filter to make sure only this artifact get's added */
-    def filter(bintray: BintraySearch): Boolean =
-      bintray.`package` == s"$groupId:$artifact"
+    def filter(bintray: BintraySearch): Boolean = {
+      bintray.path.startsWith(groupId.replaceAllLiterally(".", "/") + "/" + artifact)
+    }
 
     val mostRecentQueriedDate = queried.find(filter).map(_.created - 2.month)
 
@@ -221,35 +222,27 @@ class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
     val page: InternalBintrayPagination =
       Await.result(getNumberOfPages(search, mostRecentQueriedDate), Duration.Inf)
 
-    val requestCount = Math.ceil(page.numberOfPages.toDouble / page.itemPerPage.toDouble).toInt
+    val requestCount = Math.floor(page.numberOfPages.toDouble / page.itemPerPage.toDouble).toInt + 1
 
-    if (0 < requestCount) {
+    val toDownload = (1 to requestCount).map( p =>
+      PomListDownload(search, (p - 1) * page.itemPerPage, mostRecentQueriedDate)
+    ).toSet
 
-      val toDownload = List
-        .tabulate(requestCount)(p =>
-          PomListDownload(search, p * page.itemPerPage + page.itemPerPage, mostRecentQueriedDate))
-        .toSet
+    /* fetch all data from bintray */
+    val newQueried: Seq[List[BintraySearch]] =
+      download[PomListDownload, List[BintraySearch]](infoMessage,
+                                                     toDownload,
+                                                     discover,
+                                                     processSearch,
+                                                     parallelism = 1)
 
-      /* fetch all data from bintray */
-      val newQueried: Seq[List[BintraySearch]] =
-        download[PomListDownload, List[BintraySearch]](infoMessage,
-                                                       toDownload,
-                                                       discover,
-                                                       processSearch,
-                                                       parallelism = 1)
+    /* maybe we have here a problem with duplicated poms */
+    val merged = newQueried
+      .foldLeft(queried)((oldList, newList) => oldList ++ applyFilter(newList))
+      .distinct
+      .sortBy(_.created)(Descending)
 
-      /* maybe we have here a problem with duplicated poms */
-      val merged = newQueried
-        .foldLeft(queried)((oldList, newList) => oldList ++ applyFilter(newList))
-        .distinct
-        .sortBy(_.created)(Descending)
-
-      writeMergedPoms(merged)
-
-    } else {
-
-      println("no new files found ... continue")
-    }
+    writeMergedPoms(merged)
 
     ()
   }

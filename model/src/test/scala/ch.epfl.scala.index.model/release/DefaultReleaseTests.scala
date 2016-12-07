@@ -7,17 +7,17 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
               repository: String,
               groupdId: String,
               releases: List[(String, String)]) = {
-    releases.map {
+    releases.flatMap {
       case (artifactId, rawVersion) =>
         for {
           (artifact, target) <- Artifact(artifactId)
           version <- SemanticVersion(rawVersion)
         } yield (artifactId, rawVersion, artifact, target, version)
-    }.flatten.map {
+    }.map {
       case (artifactId, rawVersion, artifact, target, version) =>
         Release(
           MavenReference(groupdId, artifactId, rawVersion),
-          Release.Reference(organization, repository, artifact, version, target)
+          Release.Reference(organization, repository, artifact, version, Some(target))
         )
     }.toSet
   }
@@ -93,7 +93,7 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
                 repository,
                 "cats-core",
                 SemanticVersion("0.6.0").get,
-                ScalaTarget(SemanticVersion("2.11").get)
+                Some(ScalaTarget(SemanticVersion("2.11").get))
               )
             )
           ))
@@ -141,7 +141,7 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
                 repository,
                 "akka-distributed-data-experimental",
                 SemanticVersion("2.4.8").get,
-                ScalaTarget(SemanticVersion("2.11").get)
+                Some(ScalaTarget(SemanticVersion("2.11").get))
               )
             )
           ))

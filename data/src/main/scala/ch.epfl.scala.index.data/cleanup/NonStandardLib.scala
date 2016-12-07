@@ -25,6 +25,11 @@ sealed trait ScalaTargetLookup
   */
 case object ScalaTargetFromPom extends ScalaTargetLookup
 
+/** The project is a plain-java project, thus no ScalaTarget.
+  * ex: com.typesafe : config : 1.3.1
+  */
+case object NoScalaTargetPureJavaDependency extends ScalaTargetLookup
+
 /** The version is encoded in the version (ex: scala-library itself)
   */
 case object ScalaTargetFromVersion extends ScalaTargetLookup
@@ -51,9 +56,12 @@ object NonStandardLib {
       nonStandard.map {
         case (artifact, rawLookup) =>
           val lookup =
-            if (rawLookup == "pom") ScalaTargetFromPom
-            else if (rawLookup == "version") ScalaTargetFromVersion
-            else sys.error("unknown lookup: " + rawLookup)
+            rawLookup match {
+              case "pom"     => ScalaTargetFromPom
+              case "java"    => NoScalaTargetPureJavaDependency
+              case "version" => ScalaTargetFromVersion
+              case _ => sys.error("unknown lookup: " + rawLookup)
+            }
 
           val List(groupId, artifactId) = artifact.split(" ").toList
 
