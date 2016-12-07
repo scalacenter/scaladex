@@ -4,7 +4,7 @@ import java.io.File
 
 object Job extends Enumeration {
   type Job = Value
-  val Index, Deploy, Test = Value
+  val Index, Deploy, Elastic, Test = Value
 }
 
 implicit val readCiType: scopt.Read[Job.Value] = scopt.Read.reads(Job withName _)
@@ -118,13 +118,18 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
       // run index
       sbt(s"data/run all $contribFolder $indexFolder")
     }
+  } else if(job == Elastic) {
+    updatingSubmodules(List(contribFolder, indexFolder)){ () =>
+      // run index
+      sbt(s"data/run elastic $contribFolder $indexFolder")
+    }
   } else if(job == Test) {
 
     sbt("test")
 
   } else if(job == Deploy) {
 
-    updatingSubmodules(List(indexFolder)){ () =>
+    updatingSubmodules(List(contribFolder, indexFolder)){ () =>
       sbt(
         "server/universal:packageBin"
       )
