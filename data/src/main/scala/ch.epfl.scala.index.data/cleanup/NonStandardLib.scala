@@ -60,7 +60,7 @@ object NonStandardLib {
               case "pom"     => ScalaTargetFromPom
               case "java"    => NoScalaTargetPureJavaDependency
               case "version" => ScalaTargetFromVersion
-              case _ => sys.error("unknown lookup: " + rawLookup)
+              case _ => sys.error("unknown lookup: '" + rawLookup + "'")
             }
 
           val List(groupId, artifactId) = artifact.split(" ").toList
