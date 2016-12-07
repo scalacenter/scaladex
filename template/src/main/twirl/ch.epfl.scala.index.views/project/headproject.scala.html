@@ -85,22 +85,24 @@
             }
             </select>
           </form>
-        
-          <form action="/@project.reference.organization/@project.reference.repository" action="GET">           
-            <input type="hidden" name="version" value="@release.reference.version">
-            <select
-              name="artifact"
-              onchange="this.form.submit()"
-              data-live-search="true"
-              class="selectpicker" data-style="btn-primary">
 
-            @for(target <- targets){
-              <option value="@target.sbt(release.reference.artifact)" @if(target == release.reference.target){ selected }>
-                @target.render
-              </option>
-            }
-            </select>
-          </form>
+          @if(!targets.isEmpty) {
+            <form action="/@project.reference.organization/@project.reference.repository" action="GET">           
+              <input type="hidden" name="version" value="@release.reference.version">
+              <select
+                name="artifact"
+                onchange="this.form.submit()"
+                data-live-search="true"
+                class="selectpicker" data-style="btn-primary">
+
+              @for(target <- targets){
+                <option value="@target.sbt(release.reference.artifact)" @if(target == release.reference.target){ selected }>
+                  @target.render
+                </option>
+              }
+              </select>
+            </form>
+          }        
         </div>
       </div>
     </div>

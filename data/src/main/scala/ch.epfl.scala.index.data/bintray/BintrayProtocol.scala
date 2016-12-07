@@ -32,11 +32,11 @@ case class InternalBintrayPagination(numberOfPages: Int, itemPerPage: Int = 50)
   * Pom list download class to map the version and the scala version for
   * the search query
   *
-  * @param scalaVersion the current scala version
+  * @param query
   * @param page the current page
   * @param lastSearchDate the last searched date
   */
-case class PomListDownload(scalaVersion: String, page: Int, lastSearchDate: Option[DateTime])
+case class PomListDownload(query: String, page: Int, lastSearchDate: Option[DateTime])
 
 /**
   * Bintray protocol

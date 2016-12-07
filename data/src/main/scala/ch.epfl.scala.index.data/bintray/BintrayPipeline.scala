@@ -16,13 +16,18 @@ object BintrayPipeline {
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
-    val paths = DataPaths(args.toList.tail)
+    val pathFromArgs =
+      if(args.isEmpty) Nil
+      else args.toList.tail
+
+    val paths = DataPaths(pathFromArgs)
     val bintray: LocalRepository = LocalRepository.Bintray
 
     def list(): Unit = {
 
       val listPomsStep = new BintrayListPoms(paths)
-      // // TODO: should be located in a config file
+
+      // TODO: should be located in a config file
       val versions = List("2.12", "2.11", "2.10")
 
       for (version <- versions) {

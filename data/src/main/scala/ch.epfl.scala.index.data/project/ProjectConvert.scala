@@ -155,10 +155,10 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
     val pomsAndMetaClean = extractMeta(pomsRepoSha).flatMap {
       case (pom, created, resolver) =>
         for {
-          (artifactName, targets, nonStandardLib) <- extractArtifactNameAndTarget(pom)
+          (artifactName, target, nonStandardLib) <- extractArtifactNameAndTarget(pom)
           version <- SemanticVersion(pom.version)
           github <- githubRepoExtractor(pom)
-        } yield (github, artifactName, targets, pom, created, resolver, version, nonStandardLib)
+        } yield (github, artifactName, target, pom, created, resolver, version, nonStandardLib)
     }
 
     println("Convert POMs to Project")
@@ -193,7 +193,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
           cachedReleases.get(projectReference).getOrElse(Set())
 
         val releases = vs.map {
-          case (_, artifactName, targets, pom, created, resolver, version, nonStandardLib) =>
+          case (_, artifactName, target, pom, created, resolver, version, nonStandardLib) =>
             Release(
               maven = pomToMavenReference(pom),
               reference = Release.Reference(
@@ -201,7 +201,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
                 repository,
                 artifactName,
                 version,
-                targets
+                target
               ),
               resolver = resolver,
               name = pom.name,
@@ -317,18 +317,19 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
       reverseDependenciesCache.getOrElse(release.reference, Seq())
     }
 
-    def collectDependencies(releases: Set[Release], f: Release.Reference => String): Set[String] = {
-      for {
-        release <- releases
-        dependency <- release.scalaDependencies
-      } yield f(dependency.reference)
+    def collectDependencies(releases: Set[Release], f: Release.Reference => Option[String]): Set[String] = {
+      (for {
+        release <- releases.toList
+        dependency <- release.scalaDependencies.toList
+        r <- f(dependency.reference).toList
+      } yield r).toSet
     }
 
     def dependencies(releases: Set[Release]): Set[String] =
-      collectDependencies(releases, _.name)
+      collectDependencies(releases, r => Some(r.name))
 
     def targets(releases: Set[Release]): Set[String] =
-      collectDependencies(releases, _.target.map(_.supportName).getOrElse("")) // FIXME?
+      collectDependencies(releases, _.target.map(_.supportName))
 
     def belongsTo(project: Project): Dependency => Boolean = {
       //A scala project can only have scala internal dependencies

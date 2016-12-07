@@ -16,9 +16,9 @@ sbt
 
 do only once to populate the index
 
-`data/reStart elastic /path/to/contrib /path/to/index`
+`data/reStart elastic`
 
-`~server/reStart 8080 /path/to/contrib /path/to/index``
+`~server/reStart`
  
 Then, open `localhost:8080` in your browser.
 
@@ -51,9 +51,9 @@ data/reStart list /path/to/contrib /path/to/index`
 This step will download poms from Bintray
 
 ```
-data/reStart download /path/to/contrib /path/to/index`
+data/reStart download`
 # wait for task to complete
-data/reStart parent /path/to/contrib /path/to/index`
+data/reStart parent`
 ```
 
 ### Github
@@ -61,7 +61,7 @@ data/reStart parent /path/to/contrib /path/to/index`
 This step will download GitHub metadata and content
 
 ```
-data/reStart github /path/to/contrib /path/to/index`
+data/reStart github`
 ```
 
 ## How to publish the Scaladex SBT Plugin

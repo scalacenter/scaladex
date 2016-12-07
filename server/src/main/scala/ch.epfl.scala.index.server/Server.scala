@@ -51,7 +51,11 @@ object Server {
     val data = new DataRepository(github)
     val session = new GithubUserSession(config)
 
-    val paths = DataPaths(args.toList.tail)
+    val pathFromArgs =
+      if(args.isEmpty) Nil
+      else args.toList.tail
+
+    val paths = DataPaths(pathFromArgs)
 
     val routes =
       new PublishApi(paths, data, github).routes ~
