@@ -370,6 +370,9 @@ main {
                     }
                 }
             }
+            a {
+                color: inherit;
+            }
         }
         .install {
             .nav-tabs > li:not(.active) > a {
