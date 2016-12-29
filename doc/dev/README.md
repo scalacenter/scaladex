@@ -7,9 +7,9 @@
 ## How to run Scaladex locally:
 
 ```bash
-git clone git@github.com:scalacenter/scaladex.git
-git clone git@github.com:scalacenter/scaladex-index.git index
-git clone git@github.com:scalacenter/scaladex-contrib.git contrib
+git clone https://github.com/scalacenter/scaladex.git
+git clone --depth=1 https://github.com/scalacenter/scaladex-index.git index
+git clone --depth=1 https://github.com/scalacenter/scaladex-contrib.git contrib
 cd scaladex
 sbt
 ```
