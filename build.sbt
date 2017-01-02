@@ -21,8 +21,7 @@ lazy val commonSettings = Seq(
     scalaVersion := "2.11.8",
     // 2.12.0
     // missing
-    //   akka-http-core
-    //   ammonite-repl
+    //   play-ws
     scalacOptions := Seq(
       "-deprecation",
       "-encoding",
