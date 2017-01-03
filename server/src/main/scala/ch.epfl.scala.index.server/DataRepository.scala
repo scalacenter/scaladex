@@ -260,7 +260,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
   def keywords() = aggregations("keywords")
   def targets() = aggregations("targets")
-  def dependencies() = {
+  def dependents() = {
     // we remove testing or logging because they are always a dependency
     // we could have another view to compare testing frameworks
     val testOrLogging = Set(
@@ -287,6 +287,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
       "typesafehub/scala-logging-slf4j"
     )
 
+    // We find dependent libraries by aggregating the dependency information
     aggregations("dependencies").map(agg =>
       agg.toList.sortBy(_._2)(Descending).filter {
         case (ref, _) =>
