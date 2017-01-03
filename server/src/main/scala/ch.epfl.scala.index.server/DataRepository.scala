@@ -143,9 +143,9 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
           nestedQuery("reference").query(
             bool(
               must(
-                termQuery("reference.organization", project.organization),
-                termQuery("reference.repository", project.repository),
-                termQuery("reference.artifact", artifact.getOrElse("*"))
+                artifact.map(termQuery("reference.artifact", _)) ++ List(
+                  termQuery("reference.organization", project.organization),
+                  termQuery("reference.repository", project.repository))
               )
             )
           )
