@@ -75,34 +75,11 @@
               </div>
 
               <fieldset>
-                <legend>Default Release Selection</legend>
+                <legend>Latest Version</legend>
                 <div class="form-group">
-                  <label for="defaultArtifact">Default Artifact</label>
-                  <p>
-                    When a project has lots of artifacts you can hint the index on what artifact to choose in the drop down.
-                  See <a target="_blank" href="https://github.com/scalacenter/scaladex/blob/master/model/src/main/scala/ch.epfl.scala.index.model/release/DefaultRelease.scala">
-                    DefaultRelease.scala
-                  </a> for more details.
-                  </p>
-                  <select
-                    id="defaultArtifact"
-                    name="defaultArtifact"
-                    data-live-search="true"
-                    class="selectpicker" data-style="btn-primary">
-
-                  @for(artifact <- project.artifacts){
-                    <option 
-                      value="@artifact">
-                      @artifact
-                    </option>
-                  }
-                  </select>
-                </div>
-
-                <div class="form-group">
-                  <p>If possible we do not use release candidate or milestones as the last version. For example, if the artifact has version 1.2.1 and version 2.0.0-RC1 by default we will use 1.2.1. If you would prefer to select 2.0.0-RC1 uncheck this box:</p>
+                  <p>When possible, we do not use release candidate or milestone releases as the last version. For example, if version 1.2.1 and version 2.0.0-RC1 of an artifact are released, we choose 1.2.1 as the latest version. If you would prefer we consider pre-release versions, such as 2.0.0-RC1, the latest version for this project's artifacts, disable this setting:</p>
                   <input type="checkbox" name="defaultStableVersion" @if(project.defaultStableVersion){ checked } id="defaultStableVersion">
-                  <label label-for="defaultStableVersion">Do not select pre-released versions</label>
+                  <label label-for="defaultStableVersion">Do not select pre-release versions</label>
                 </div>
 
 
