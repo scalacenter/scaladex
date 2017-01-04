@@ -22,7 +22,7 @@ Add the following to your build.sbt file:
 
 ```scala
 scaladexKeywords in Scaladex := Seq("Foo", "Bar", "Baz")
-credentials in Scaladex := Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials")
+credentials in Scaladex += Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials")
 /*
 realm=Scaladex Realm
 host=localhost
