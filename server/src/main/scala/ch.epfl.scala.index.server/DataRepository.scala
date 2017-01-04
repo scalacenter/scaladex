@@ -201,15 +201,17 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
     }.map(_.as[Project].headOption)
   }
 
+  def projectAndReleases(projectRef: Project.Reference,
+                         selection: ReleaseSelection): Future[(Option[Project], List[Release])] = {
+    for {
+      project <- project(projectRef)
+      releases <- releases(projectRef, selection.artifact)
+    } yield (project, releases)
+  }
+
   def projectPage(projectRef: Project.Reference,
                   selection: ReleaseSelection): Future[Option[(Project, ReleaseOptions)]] = {
-    val projectAndReleases = for {
-      project <- project(projectRef)
-      releases <- releases(projectRef, selection.artifact match {
-        case None => project.flatMap(_.defaultArtifact)
-        case s => s
-      })
-    } yield (project, releases)
+    val projectAndReleases = this.projectAndReleases(projectRef, selection)
 
     projectAndReleases.map {
       case (p, releases) =>
@@ -218,7 +220,6 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
             DefaultRelease(project.repository,
                            selection,
                            releases.toSet,
-                           project.defaultArtifact,
                            project.defaultStableVersion).map(sel =>
               (project, sel.copy(artifacts = project.artifacts))))
     }
@@ -241,6 +242,22 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
   def latestProjects() = latest[Project](projectsCollection, "created", 12).map(_.map(hideId))
   def latestReleases() = latest[Release](releasesCollection, "released", 12)
+
+  def artifactPage(projectRef: Project.Reference,
+                   selection: ReleaseSelection): Future[Option[(Project, List[Release], Release)]] = {
+    val projectAndReleases = this.projectAndReleases(projectRef, selection)
+
+    projectAndReleases.map {
+      case (p, releases) =>
+        p.flatMap(
+          project =>
+            DefaultRelease(project.repository,
+              selection,
+              releases.toSet,
+              project.defaultStableVersion).map(sel =>
+              (project, releases, sel.release)))
+    }
+  }
 
   private def latest[T: HitAs: Manifest](collection: String, by: String, n: Int): Future[List[T]] = {
     esClient.execute {
