@@ -25,13 +25,13 @@ scaladexKeywords in Scaladex := Seq("Foo", "Bar", "Baz")
 credentials in Scaladex += Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials")
 /*
 realm=Scaladex Realm
-host=localhost
+host=index.scala-lang.org
 user=token
 password=<github personal access token>
 */
 
 // or 
-credentials in Scaladex += Credentials("Scaladex Realm", "localhost", "token", "<github personal access token>")
+credentials in Scaladex += Credentials("Scaladex Realm", "index.scala-lang.org", "token", "<github personal access token>")
 ```
 
 To publish run the following command:
