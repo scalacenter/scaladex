@@ -10,11 +10,10 @@ import misc.{GithubInfo, GithubRepo}
   * @param repository (ex: spark)
   * @param github github information representation
   * @param keywords predefined keywords (ex: database)
-  * @param defaultArtifact when we land on a project page (ex: typelevel/cats) specify an artifact to select by default
   * @param defaultStableVersion when selecting a default version avoid preReleases if possible (otherwise select latest version)
   * @param artifacts names for this project (ex: cats-core, cats-free, ...)
   * @param releaseCount how many distinct versions we can find
-  * @param customScalaDoc expression to substitute scaladoc
+  * @param customScalaDocUrl expression to subsitute scaladoc
   * @param documentationLinks user documentation & etc
   * @param logoImageUrl absolute url to a logo (ex: http://spark.apache.org/images/spark-logo-trademark.png)
   * @param liveData the project was updated/created by a user
@@ -28,12 +27,11 @@ import misc.{GithubInfo, GithubRepo}
 case class Project(
     organization: String,
     repository: String,
-    github: Option[GithubInfo],
+    github: Option[GithubInfo] = None,
     keywords: Set[String] = Set.empty,
-    defaultArtifact: Option[String],
     defaultStableVersion: Boolean = true,
-    artifacts: List[String],
-    releaseCount: Int,
+    artifacts: List[String] = Nil,
+    releaseCount: Int = 0,
     customScalaDoc: Option[String] = None,
     documentationLinks: List[(String, String)] = List(),
     deprecated: Boolean = false,
