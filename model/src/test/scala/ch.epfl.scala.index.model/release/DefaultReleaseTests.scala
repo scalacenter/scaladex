@@ -58,7 +58,7 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
                                ("cats-core_sjs0.6_2.10", "0.4.0")
                              ))
 
-      val result = DefaultRelease(repository, ReleaseSelection(None, None), releases, None, true)
+      val result = DefaultRelease(repository, ReleaseSelection(None, None), releases, true)
 
       val versions: List[SemanticVersion] =
         List(
@@ -117,7 +117,6 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
         repository,
         ReleaseSelection(Some("akka-distributed-data-experimental"), None),
         releases,
-        None,
         true
       )
 

@@ -50,20 +50,38 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
     val user = userState.map(_.user)
 
     dataRepository
-      .projectPage(Project.Reference(owner, repo), ReleaseSelection(artifact, version))
+      .project(Project.Reference(owner, repo))
+      .map(_.map(project =>
+        (statusCode,
+          views.project.html.project(
+            project,
+            user,
+            canEdit(owner, repo, userState)
+          ))
+      ).getOrElse((NotFound, views.html.notfound(user))))
+  }
+
+  private def artifactPage(owner: String,
+                           repo: String,
+                           artifact: String,
+                           version: Option[SemanticVersion],
+                           userState: Option[UserState],
+                           statusCode: StatusCode = OK) = {
+
+    val user = userState.map(_.user)
+
+    dataRepository
+      .artifactPage(Project.Reference(owner, repo), ReleaseSelection(Some(artifact), version))
       .map(_.map {
-        case (project, options) =>
-          import options._
+        case (project, releases, release) =>
           (statusCode,
-           views.project.html.project(
-             project,
-             artifacts,
-             versions,
-             targets,
-             release,
-             user,
-             canEdit(owner, repo, userState)
-           ))
+            views.artifact.html.artifact(
+              project,
+              releases,
+              release,
+              user,
+              canEdit(owner, repo, userState)
+            ))
       }.getOrElse((NotFound, views.html.notfound(user))))
   }
 
@@ -104,7 +122,6 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
                       ProjectForm(
                         contributorsWanted,
                         keywords.toSet,
-                        defaultArtifact,
                         defaultStableVersion,
                         deprecated,
                         artifactDeprecations.toSet,
@@ -150,16 +167,16 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
           path(Segment / Segment / Segment) { (organization, repository, artifact) =>
             optionalSession(refreshable, usingCookies) { userId =>
               complete(
-                projectPage(organization, repository, Some(artifact), None, getUser(userId)))
+                artifactPage(organization, repository, artifact, None, getUser(userId)))
             }
           } ~
           path(Segment / Segment / Segment / Segment) {
             (organization, repository, artifact, version) =>
               optionalSession(refreshable, usingCookies) { userId =>
                 complete(
-                  projectPage(organization,
+                  artifactPage(organization,
                               repository,
-                              Some(artifact),
+                              artifact,
                               SemanticVersion(version),
                               getUser(userId)))
               }

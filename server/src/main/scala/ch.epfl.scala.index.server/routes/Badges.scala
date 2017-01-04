@@ -4,7 +4,6 @@ package routes
 
 import model._
 import release._
-
 import akka.http.scaladsl._
 import server.Directives._
 import model.StatusCodes._
@@ -51,12 +50,12 @@ class Badges(dataRepository: DataRepository) {
       path(Segment / Segment / Segment / "latest.svg") { (organization, repository, artifact) =>
         shields { (color, style, logo, logoWidth) =>
           onSuccess(
-            dataRepository.projectPage(Project.Reference(organization, repository),
-                                       ReleaseSelection(Some(artifact), None))) {
+            dataRepository.artifactPage(Project.Reference(organization, repository),
+                                        ReleaseSelection(Some(artifact), None))) {
 
-            case Some((_, options)) =>
+            case Some((_, _, release)) =>
               shieldsSvg(artifact,
-                         options.release.reference.version.toString(),
+                         release.reference.version.toString(),
                          color,
                          style,
                          logo,
