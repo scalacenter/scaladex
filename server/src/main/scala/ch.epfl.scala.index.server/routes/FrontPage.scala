@@ -19,12 +19,12 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
     for {
       keywords <- keywords()
       targets <- targets()
-      dependencies <- dependencies()
+      dependents <- dependents()
       latestProjects <- latestProjects()
       latestReleases <- latestReleases()
     } yield
       views.html
-        .frontpage(keywords, targets, dependencies, latestProjects, latestReleases, userInfo)
+        .frontpage(keywords, targets, dependents, latestProjects, latestReleases, userInfo)
   }
 
   val routes =

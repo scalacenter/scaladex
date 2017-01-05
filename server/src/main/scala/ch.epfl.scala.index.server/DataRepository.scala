@@ -63,10 +63,16 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
                        userRepos: Set[GithubRepo] = Set(),
                        targetFiltering: Option[ScalaTarget] = None,
                        cli: Boolean = false) = {
+    def replaceField(queryString: String, input: String, replacement: String) = {
+      val regex = s"(\\s|^)$input:".r
+      regex.replaceAllIn(queryString, s"$$1$replacement:")
+    }
+
+    val translated = replaceField(queryString, "depends-on", "dependencies")
 
     val escaped =
-      if (queryString.isEmpty) "*"
-      else queryString.replaceAllLiterally("/", "\\/")
+      if (translated.isEmpty) "*"
+      else translated.replaceAllLiterally("/", "\\/")
 
     val mustQueryTarget =
       targetFiltering match {
@@ -254,7 +260,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
   def keywords() = aggregations("keywords")
   def targets() = aggregations("targets")
-  def dependencies() = {
+  def dependents() = {
     // we remove testing or logging because they are always a dependency
     // we could have another view to compare testing frameworks
     val testOrLogging = Set(
@@ -281,6 +287,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
       "typesafehub/scala-logging-slf4j"
     )
 
+    // We find dependent libraries by aggregating the dependency information
     aggregations("dependencies").map(agg =>
       agg.toList.sortBy(_._2)(Descending).filter {
         case (ref, _) =>
