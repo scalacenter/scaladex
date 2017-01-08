@@ -274,6 +274,16 @@ main {
                 color: $brand-primary;
             }
         }
+        .artifacts-box {
+            a {
+                color: $brand-primary;
+                &:hover,
+                &:focus {
+                    color: $brand-primary;
+                }
+                margin: 5px;
+            }
+        }
     }
 }
 
