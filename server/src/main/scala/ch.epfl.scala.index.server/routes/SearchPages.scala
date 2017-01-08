@@ -2,7 +2,7 @@ package ch.epfl.scala.index
 package server
 package routes
 
-import views.html._
+import views.search.html._
 
 import com.softwaremill.session._, SessionDirectives._, SessionOptions._
 
@@ -23,20 +23,20 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
           parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
             complete(
               dataRepository
-                .find(query,
-                      page,
-                      sorting,
-                      you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set()))
+                .findWithReleases(query,
+                                  page,
+                                  sorting,
+                                  you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set()))
                 .map {
-                  case (pagination, projects) =>
+                  case (pagination, projectsAndReleases) =>
                     searchresult(
                       query,
                       "search",
                       sorting,
                       pagination,
-                      projects,
+                      projectsAndReleases,
                       getUser(userId).map(_.user),
-                      !you.isEmpty
+                      you.isDefined
                     )
                 }
             )
@@ -49,13 +49,13 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
               pathEnd {
                 val query = s"organization:$organization"
                 complete(
-                  dataRepository.find(query, page, sorting).map {
-                    case (pagination, projects) =>
+                  dataRepository.findWithReleases(query, page, sorting).map {
+                    case (pagination, projectsAndReleases) =>
                       searchresult(query,
                                    organization,
                                    sorting,
                                    pagination,
-                                   projects,
+                                   projectsAndReleases,
                                    getUser(userId).map(_.user),
                                    you = false)
                   }
