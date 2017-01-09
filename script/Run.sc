@@ -131,14 +131,15 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 
     updatingSubmodules(List(contribFolder, indexFolder)){ () =>
       sbt(
-        "server/universal:packageBin",
-        s"data/run elastic $contribFolder $indexFolder"
+        "server/universal:packageBin"//,
+        // s"data/run elastic $contribFolder $indexFolder"
       )
     }
     
     val scaladex = home / "scaladex"
     if(!exists(scaladex)) mkdir(scaladex)
 
+    val releases = "releases"
     val scaladexReleases = scaladex / "releases"
     if(!exists(scaladexReleases)) mkdir(scaladexReleases)
 
@@ -158,8 +159,8 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
       rm(currentLink)
     }
 
-    // /scaladex/current -> /scaladex/releases/1.2.3-sha
-    runD("ln", "-s", destGitDescribe.toString, current)(scaladex)
+    // current -> releases/1.2.3-sha
+    runD("ln", "-s", s"$releases/$gitDescribe", current)(scaladex) // relative link
 
     // /usr/bin/sudo -H -u scaladex /home/scaladex/bin/jenkins_redeploy.sh
     // does the rest of the work
