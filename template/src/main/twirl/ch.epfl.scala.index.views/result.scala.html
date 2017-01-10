@@ -52,7 +52,17 @@
                 <a href="/@project.reference.organization/@project.reference.repository">
                   <h4>@project.reference.organization/@project.reference.repository</h4>
                 </a>
-
+                @defining({
+                  val prefix = "scala_"
+                  project.targets
+                    .collect { case t if t.startsWith(prefix) => t.drop(prefix.length) }
+                    .to[List].sorted(Ordering.String.reverse)
+                    .mkString(", ")
+                }) { targets =>
+                  @if(targets.nonEmpty) {
+                    <span class="targets">@targets</span>
+                  }
+                }
                 @for(github <- project.github) {
                   @for(homepage <- github.homepage) {
                     @if(!homepage.target.isEmpty) {
