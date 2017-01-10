@@ -228,12 +228,11 @@ main {
         margin: 0;
         border-bottom: 1px solid rgba($gray-dark, 0.12);
         h4,
+        .targets,
+        .homepage,
         .description {
             padding-left: 16px;
             margin-bottom: 0;
-            display: inline-block;
-        }
-        .homepage {
             display: inline-block;
         }
         h4 {
