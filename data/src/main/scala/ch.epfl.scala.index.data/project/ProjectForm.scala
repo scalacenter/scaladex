@@ -13,7 +13,6 @@ case class ProjectForm(
     deprecated: Boolean = false,
     artifactDeprecations: Set[String] = Set(),
     cliArtifacts: Set[String] = Set(),
-
     // documentation
     customScalaDoc: Option[String] = None,
     documentationLinks: List[(String, String)] = List()
@@ -30,7 +29,6 @@ case class ProjectForm(
       artifactDeprecations = artifactDeprecations,
       cliArtifacts = cliArtifacts,
       hasCli = !cliArtifacts.isEmpty,
-
       // documentation
       customScalaDoc = customScalaDoc.filterNot(_ == ""),
       documentationLinks = documentationLinks.filterNot { case (_, link) => link == "" },

@@ -43,9 +43,7 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
             parameters('q, 'target, 'scalaVersion, 'scalaJsVersion.?, 'cli.as[Boolean] ? false) {
               (q, target0, scalaVersion0, targetVersion0, cli) =>
                 val target1 =
-                  (target0,
-                   SemanticVersion(scalaVersion0),
-                   targetVersion0.map(SemanticVersion(_))) match {
+                  (target0, SemanticVersion(scalaVersion0), targetVersion0.map(SemanticVersion(_))) match {
                     case ("JVM", Some(scalaVersion), _) =>
                       Some(ScalaTarget(scalaVersion))
                     case ("JS", Some(scalaVersion), Some(scalaJsVersion)) =>
@@ -59,13 +57,13 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
                   import project._
 
                   val artifacts0 =
-                    if(cli) cliArtifacts.toList
+                    if (cli) cliArtifacts.toList
                     else artifacts
 
                   Api.Project(organization,
-                                  repository,
-                                  project.github.flatMap(_.logo.map(_.target)),
-                                  artifacts0)
+                              repository,
+                              project.github.flatMap(_.logo.map(_.target)),
+                              artifacts0)
                 }
 
                 complete(
@@ -77,8 +75,7 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
                          .map { case (_, ps) => ps.map(p => convert(p)) }
                          .map(ps => write(ps)))
                     case None =>
-                      (BadRequest,
-                       s"something is wrong: $target0 $scalaVersion0 $targetVersion0")
+                      (BadRequest, s"something is wrong: $target0 $scalaVersion0 $targetVersion0")
                   }
                 )
             }
@@ -109,7 +106,7 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
               }
             }
           }
-        } ~
+      } ~
         path("autocomplete") {
           get {
             parameter('q) { query =>

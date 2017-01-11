@@ -24,7 +24,9 @@ import com.sksamuel.elastic4s._
 import ElasticDsl._
 
 import scala.concurrent.Future
-import scala.util.{Try, Success}
+import scala.util.{Try, Success, Failure}
+
+import java.io.{StringWriter, PrintWriter}
 
 private[api] class PublishProcess(paths: DataPaths, dataRepository: DataRepository)(
     implicit val system: ActorSystem,
@@ -46,7 +48,7 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
     * @param data the Publish data class holding all the data
     * @return
     */
-  def writeFiles(data: PublishData): Future[StatusCode] = Future {
+  def writeFiles(data: PublishData): Future[(StatusCode, String)] = Future {
     if (data.isPom) {
       data.writeTemp()
       getTmpPom(data) match {
@@ -54,24 +56,32 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
           getGithubRepo(pom) match {
             case None => {
               data.deleteTemp()
-              NoContent
+              (NoContent, "No Github Repo")
             }
             case Some(repo) => {
               if (data.userState.hasPublishingAuthority || data.userState.repos.contains(repo)) {
                 data.writePom(paths)
                 data.deleteTemp()
                 updateIndex(repo, pom, data)
-                Created
+                (Created, "Published release")
               } else {
                 data.deleteTemp()
-                Forbidden
+                (Forbidden, s"${data.userState.user.login} cannot publish to ${repo.toString}")
               }
             }
           }
-        case _ => BadRequest
+        case List(Failure(e)) => {
+          val sw = new StringWriter()
+          val pw = new PrintWriter(sw)
+          e.printStackTrace(pw)
+
+          (BadRequest, "Invalid pom: " + sw.toString())
+        }
+        case _ => (BadRequest, "Impossible ?")
       }
     } else {
-      Created /* ignore the file at this case */
+      if(data.userState.isSonatype) ((BadRequest, "Not a POM"))
+      else ((Created, "ignoring")) // for sbt, ignore SHA1, etc
     }
   }
 

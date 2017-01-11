@@ -9,7 +9,7 @@ lazy val testSetup = Seq(
   scmInfo := Some(
     ScmInfo(url("https://github.com/scalacenter/scaladex"),
             "scm:git:git@github.com:scalacenter/scaladex.git")),
-  // scaladexBaseUri := uri("https://index.scala-lang.org"),
+  // scaladexBaseUri := uri("https://scaladex.scala-lang.org"),
   scaladexBaseUri := uri("http://localhost:8080"),
   scaladexTest := true,
   // credentials in Scaladex += Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials2")

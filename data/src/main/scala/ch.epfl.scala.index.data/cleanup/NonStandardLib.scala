@@ -57,8 +57,8 @@ object NonStandardLib {
         case (artifact, rawLookup) =>
           val lookup =
             rawLookup match {
-              case "pom"     => ScalaTargetFromPom
-              case "java"    => NoScalaTargetPureJavaDependency
+              case "pom" => ScalaTargetFromPom
+              case "java" => NoScalaTargetPureJavaDependency
               case "version" => ScalaTargetFromVersion
               case _ => sys.error("unknown lookup: '" + rawLookup + "'")
             }

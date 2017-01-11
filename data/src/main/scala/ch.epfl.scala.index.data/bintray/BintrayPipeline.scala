@@ -17,7 +17,7 @@ object BintrayPipeline {
     implicit val materializer = ActorMaterializer()
 
     val pathFromArgs =
-      if(args.isEmpty) Nil
+      if (args.isEmpty) Nil
       else args.toList.tail
 
     val paths = DataPaths(pathFromArgs)

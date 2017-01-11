@@ -25,13 +25,13 @@ scaladexKeywords in Scaladex := Seq("Foo", "Bar", "Baz")
 credentials in Scaladex += Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials")
 /*
 realm=Scaladex Realm
-host=index.scala-lang.org
+host=scaladex.scala-lang.org
 user=token
 password=<github personal access token>
 */
 
 // or 
-credentials in Scaladex += Credentials("Scaladex Realm", "index.scala-lang.org", "token", "<github personal access token>")
+credentials in Scaladex += Credentials("Scaladex Realm", "scaladex.scala-lang.org", "token", "<github personal access token>")
 ```
 
 To publish run the following command:
@@ -50,7 +50,7 @@ process and verify that you have permission to the defined repository (SCM Tag)
 There are some settings for the Plugin to control the output on Scaladex a bit, like adding keywords, show GitHub info,
 show GitHub Readme file, show GitHub contributors.
 
-* **scaladexBaseUri**: This is the main uri to publish to _default_: `https://index.scala-lang.org`
+* **scaladexBaseUri**: This is the main uri to publish to _default_: `https://scaladex.scala-lang.org`
 * **scaladexKeywords**: List of keywords for your artifact _default_: `empty`
 * **scaladexDownloadReadme**: A flag to download the README from GitHub. _default_: `true`
 * **scaladexDownloadInfo**: A flag to download the repository info from GitHub (eg: stars, forks, ...). _default_: `true`

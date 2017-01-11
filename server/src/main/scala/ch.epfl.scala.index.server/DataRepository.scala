@@ -81,7 +81,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
       }
 
     val cliQuery =
-      if(cli) List(termQuery("hasCli", true))
+      if (cli) List(termQuery("hasCli", true))
       else Nil
 
     val reposQueries = if (!userRepos.isEmpty) {

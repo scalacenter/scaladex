@@ -26,7 +26,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
     * if the developer follow this convention we extract the relevant parts and we mark
     * the library as standard. Otherwise we either have a library like gatling or the scala library itself
     */
-  private def extractArtifactNameAndTarget(pom: MavenModel): Option[(String, Option[ScalaTarget], Boolean)] = {
+  private def extractArtifactNameAndTarget(
+      pom: MavenModel): Option[(String, Option[ScalaTarget], Boolean)] = {
     nonStandardLibs
       .find(
         lib =>
@@ -46,7 +47,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
         Some((pom.artifactId, None, false))
 
       case Some(ScalaTargetFromVersion) =>
-        SemanticVersion(pom.version).map(version => (pom.artifactId, Some(ScalaTarget(version)), true))
+        SemanticVersion(pom.version).map(version =>
+          (pom.artifactId, Some(ScalaTarget(version)), true))
 
       case None =>
         Artifact(pom.artifactId).map {
@@ -317,7 +319,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
       reverseDependenciesCache.getOrElse(release.reference, Seq())
     }
 
-    def collectDependencies(releases: Set[Release], f: Release.Reference => Option[String]): Set[String] = {
+    def collectDependencies(releases: Set[Release],
+                            f: Release.Reference => Option[String]): Set[String] = {
       (for {
         release <- releases.toList
         dependency <- release.scalaDependencies.toList

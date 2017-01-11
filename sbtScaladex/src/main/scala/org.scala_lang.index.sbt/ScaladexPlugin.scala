@@ -36,7 +36,7 @@ object ScaladexPlugin extends AutoPlugin {
         scaladexDownloadInfo := true,
         scaladexDownloadReadme := true,
         scaladexTest := false,
-        scaladexBaseUri := uri("https://index.scala-lang.org")
+        scaladexBaseUri := uri("https://scaladex.scala-lang.org")
       ) ++
         inConfig(Scaladex)(
           /** import ivy publishing settings */

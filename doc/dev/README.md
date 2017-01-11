@@ -78,18 +78,18 @@ $ sbt
 
 curl --data-binary "@test_2.11-1.1.5.pom" \
 -XPUT \
---user token:93e05bbfb39499d684749e7185ae739b456ecd55 \
+--user token:c61e65b80662c064abe923a407b936894b29fb55 \
 "http://localhost:8080/publish?test=true&created=1478668532&readme=true&info=true&contributors=true&path=/org/example/test_2.11/1.2.3/test_2.11-1.2.3.pom"
 
 curl --data-binary "@noscm_2.11-1.0.0.pom" \
 -XPUT \
---user token:93e05bbfb39499d684749e7185ae739b456ecd55 \
+--user token:c61e65b80662c064abe923a407b936894b29fb55 \
 "http://localhost:8080/publish?test=true&created=1478668532&readme=true&info=true&contributors=true&path=/org/example/noscm_2.11/1.0.0/noscm_2.11-1.0.0.pom"
 
 curl --data-binary "@test_2.11-1.1.5.pom" \
 -XPUT \
---user token:93e05bbfb39499d684749e7185ae739b456ecd55 \
-"https://index.scala-lang.org/publish?test=true&created=1478668532&readme=true&info=true&contributors=true&path=/org/example/test_2.11/1.2.3/test_2.11-1.2.3.pom"
+--user token:c61e65b80662c064abe923a407b936894b29fb55 \
+"https://scaladex.scala-lang.org/publish?test=true&created=1478668532&readme=true&info=true&contributors=true&path=/org/example/test_2.11/1.2.3/test_2.11-1.2.3.pom"
 
 
 or via `sbt sbtScaladex/scripted`
@@ -98,6 +98,6 @@ github test user:
 
 user: foobarbuz 
 pass: tLA4FN9O5jmPSnl/LDkSb0cYgJDe8HHdOMkY2yZO4m0=
-api:  93e05bbfb39499d684749e7185ae739b456ecd55
+api:  c61e65b80662c064abe923a407b936894b29fb55
 repo: git@github.com:foobarbuz/example.git
 

@@ -82,7 +82,6 @@ class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
         "name" -> s"${page.query}*.pom",
         "start_pos" -> page.page.toString)
 
-
     withAuth(wsClient.url(bintrayUri)).withQueryString(query: _*)
   }
 
@@ -222,11 +221,13 @@ class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
     val page: InternalBintrayPagination =
       Await.result(getNumberOfPages(search, mostRecentQueriedDate), Duration.Inf)
 
-    val requestCount = Math.floor(page.numberOfPages.toDouble / page.itemPerPage.toDouble).toInt + 1
+    val requestCount = Math
+        .floor(page.numberOfPages.toDouble / page.itemPerPage.toDouble)
+        .toInt + 1
 
-    val toDownload = (1 to requestCount).map( p =>
-      PomListDownload(search, (p - 1) * page.itemPerPage, mostRecentQueriedDate)
-    ).toSet
+    val toDownload = (1 to requestCount)
+      .map(p => PomListDownload(search, (p - 1) * page.itemPerPage, mostRecentQueriedDate))
+      .toSet
 
     /* fetch all data from bintray */
     val newQueried: Seq[List[BintraySearch]] =

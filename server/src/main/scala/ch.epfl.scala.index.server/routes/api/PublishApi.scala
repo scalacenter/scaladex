@@ -98,8 +98,8 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
              * OK -> only allowed if isSnapshot := true
              */
             dataRepository.maven(mavenPathExtractor(path)) map {
-              case Some(release) => OK
-              case None => NotFound
+              case Some(release) => (OK, "release already exists")
+              case None => (NotFound, "ok to publish")
             }
           }
         }
@@ -133,7 +133,7 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
                       test
                     )
 
-                    complete((actor ? publishData).mapTo[StatusCode].map(s => s))
+                    complete((actor ? publishData).mapTo[(StatusCode, String)].map(s => s))
                 }
               }
             }
