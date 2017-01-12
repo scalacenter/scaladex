@@ -150,6 +150,30 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
     )
   }
 
+  private def uniquelyNamedReleases(releases: List[Release]) =
+    releases.groupBy(r => r.reference.artifact).map { case (_, release) => release.head }.toList
+
+  def findWithReleases(queryString: String,
+                       page: PageIndex = 0,
+                       sorting: Option[String] = None,
+                       userRepos: Set[GithubRepo] = Set(),
+                       total: Int = resultsPerPage,
+                       targetFiltering: Option[ScalaTarget] = None,
+                       cli: Boolean = false): Future[(Pagination, List[(Project, List[Release])])] = {
+    val queryResults = find(queryString, page, sorting, userRepos, total, targetFiltering, cli)
+
+    queryResults.flatMap {
+      case (pagination, projects) => {
+        val projectsAndReleases = projects.map(
+          p => projectAndReleases(p.reference, ReleaseSelection(None, None, None)))
+
+        Future.sequence(projectsAndReleases).map(s => (pagination, s.collect {
+          case Some((project, releases)) => (project, uniquelyNamedReleases(releases))
+        }))
+      }
+    }
+  }
+
   def releases(project: Project.Reference, artifact: Option[String]): Future[List[Release]] = {
     esClient.execute {
       search
@@ -210,26 +234,26 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
     }.map(_.as[Project].headOption)
   }
 
+  def projectAndReleases(projectRef: Project.Reference,
+                         selection: ReleaseSelection): Future[Option[(Project, List[Release])]] = {
+    for {
+      project <- project(projectRef)
+      releases <- releases(projectRef, selection.artifact)
+    } yield project.map((_, releases))
+  }
+
   def projectPage(projectRef: Project.Reference,
                   selection: ReleaseSelection): Future[Option[(Project, ReleaseOptions)]] = {
-    val projectAndReleases = for {
-      project <- project(projectRef)
-      releases <- releases(projectRef, selection.artifact match {
-        case None => project.flatMap(_.defaultArtifact)
-        case s => s
-      })
-    } yield (project, releases)
+    val projectAndReleases = this.projectAndReleases(projectRef, selection)
 
-    projectAndReleases.map {
-      case (p, releases) =>
-        p.flatMap(
-          project =>
-            DefaultRelease(project.repository,
-                           selection,
-                           releases.toSet,
-                           project.defaultArtifact,
-                           project.defaultStableVersion).map(sel =>
-              (project, sel.copy(artifacts = project.artifacts))))
+    projectAndReleases.collect {
+      case Some((project, releases)) =>
+        DefaultRelease(project.repository,
+                       selection,
+                       releases.toSet,
+                       project.defaultStableVersion)
+          .map(sel =>
+            (project, sel.copy(artifacts = project.artifacts)))
     }
   }
 
@@ -250,6 +274,21 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
   def latestProjects() = latest[Project](projectsCollection, "created", 12).map(_.map(hideId))
   def latestReleases() = latest[Release](releasesCollection, "released", 12)
+
+  def artifactPage(projectRef: Project.Reference,
+                   selection: ReleaseSelection): Future[Option[(Project, List[Release], Release)]] = {
+    val projectAndReleases = this.projectAndReleases(projectRef, selection)
+
+    projectAndReleases.collect {
+      case Some((project, releases)) =>
+        DefaultRelease(project.repository,
+          selection,
+          releases.toSet,
+          project.defaultStableVersion)
+          .map(sel =>
+            (project, releases, sel.release))
+    }
+  }
 
   private def latest[T: HitAs: Manifest](collection: String, by: String, n: Int): Future[List[T]] = {
     esClient.execute {
