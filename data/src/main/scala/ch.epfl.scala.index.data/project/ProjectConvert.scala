@@ -239,7 +239,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
             releaseCount = releaseCount,
             defaultArtifact = releaseOptions.map(_.release.reference.artifact),
             created = min,
-            updated = max
+            updated = max,
+            dependentCount = 0 // We will compute them later because there is more convenient tooling
           )
 
         val updatedProject =
@@ -358,7 +359,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
         (
           project.copy(
             targets = targets(releasesWithDependencies),
-            dependencies = dependencies(releasesWithDependencies)
+            dependencies = dependencies(releasesWithDependencies),
+            dependentCount = releasesWithDependencies.view.flatMap(_.reverseDependencies.map(_.reference)).size // Note: we don’t need to call `.distinct` because `releases` is a `Set`
           ),
           releasesWithDependencies
         )
