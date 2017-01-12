@@ -14,7 +14,7 @@ import misc.{GithubInfo, GithubRepo}
   * @param defaultStableVersion when selecting a default version avoid preReleases if possible (otherwise select latest version)
   * @param artifacts names for this project (ex: cats-core, cats-free, ...)
   * @param releaseCount how many distinct versions we can find
-  * @param customScalaDocUrl expression to subsitute scaladoc
+  * @param customScalaDoc expression to substitute scaladoc
   * @param documentationLinks user documentation & etc
   * @param logoImageUrl absolute url to a logo (ex: http://spark.apache.org/images/spark-logo-trademark.png)
   * @param liveData the project was updated/created by a user
@@ -22,30 +22,32 @@ import misc.{GithubInfo, GithubRepo}
   * @param created date of the first release
   * @param updated date of the last release
   * @param targets (ex: scala_2.11, scala_2.12, scala-js_0.5)
-  * @param dependencies to aggregate most dependended uppon libs (ex: spark, playframework, ...)
+  * @param dependencies to aggregate most depended upon libs (ex: spark, play framework, ...)
+  * @param dependentCount Number of artifacts that depends on at least one release of at least one artifact of this project
   */
 case class Project(
     organization: String,
     repository: String,
-    github: Option[GithubInfo] = None,
-    keywords: Set[String] = Set(),
-    defaultArtifact: Option[String] = None,
+    github: Option[GithubInfo],
+    keywords: Set[String] = Set.empty,
+    defaultArtifact: Option[String],
     defaultStableVersion: Boolean = true,
-    artifacts: List[String] = Nil,
-    releaseCount: Int = 0,
+    artifacts: List[String],
+    releaseCount: Int,
     customScalaDoc: Option[String] = None,
     documentationLinks: List[(String, String)] = List(),
     deprecated: Boolean = false,
     contributorsWanted: Boolean = false,
     artifactDeprecations: Set[String] = Set(),
     cliArtifacts: Set[String] = Set(),
-    hasCli: Boolean = false,
+    hasCli: Boolean = false, // HACK This field exists only for the purpose of being indexed by ES but his value must be equal to “cliArtifacts.nonEmpty”
     liveData: Boolean = false,
     id: Option[String] = None,
-    created: Option[String] = None,
-    updated: Option[String] = None,
-    targets: Set[String] = Set(),
-    dependencies: Set[String] = Set()
+    created: Option[String],
+    updated: Option[String],
+    targets: Set[String],
+    dependencies: Set[String],
+    dependentCount: Int
 ) {
 
   def reference = Project.Reference(organization, repository)

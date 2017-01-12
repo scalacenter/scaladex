@@ -6,12 +6,11 @@ import cleanup._
 import model._
 import model.misc._
 import model.release._
-
 import maven.MavenModel
 import bintray._
+import ch.epfl.scala.index.data.project.ProjectConvert.ProjectSeed
 import github._
 import elastic.SaveLiveData
-
 import com.github.nscala_time.time.Imports._
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
@@ -232,8 +231,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
                                             None,
                                             defaultStableVersion)
 
-        val project =
-          Project(
+        val seed =
+          ProjectSeed(
             organization = organization,
             repository = repository,
             github = GithubReader(paths, githubRepo),
@@ -244,21 +243,13 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
             updated = max
           )
 
-        val updatedProject =
-          if (stored) {
-            storedProjects
-              .get(project.reference)
-              .map(form => form.update(project, live = false))
-              .getOrElse(project)
-          } else project
-
-        (updatedProject, releases)
+        (seed, releases)
     }.toList
 
     println("Dependencies & Reverse Dependencies")
 
     val mavenReferenceToReleaseReference = projectsAndReleases.flatMap {
-      case (project, releases) => releases
+      case (_, releases) => releases
     }.map(release => (release.maven, release.reference)).toMap
 
     def dependencyToMaven(dependency: maven.Dependency) =
@@ -334,20 +325,20 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
     def targets(releases: Set[Release]): Set[String] =
       collectDependencies(releases, _.target.map(_.supportName))
 
-    def belongsTo(project: Project): Dependency => Boolean = {
+    def belongsTo(reference: Project.Reference): Dependency => Boolean = {
       //A scala project can only have scala internal dependencies
       case scalaDependency: ScalaDependency =>
-        project.reference.organization == scalaDependency.reference.organization &&
-          project.reference.repository == scalaDependency.reference.repository
+        reference.organization == scalaDependency.reference.organization &&
+          reference.repository == scalaDependency.reference.repository
       case _ => false
     }
 
     projectsAndReleases.map {
-      case (project, releases) =>
+      case (seed, releases) =>
         val releasesWithDependencies = releases.map { release =>
           val dependencies = findDependencies(release)
-          val externalDependencies = dependencies.filterNot(belongsTo(project))
-          val internalDependencies = dependencies.filter(belongsTo(project))
+          val externalDependencies = dependencies.filterNot(belongsTo(seed.reference))
+          val internalDependencies = dependencies.filter(belongsTo(seed.reference))
           release.copy(
             scalaDependencies = externalDependencies.collect { case sd: ScalaDependency => sd },
             javaDependencies = externalDependencies.collect { case jd: JavaDependency => jd },
@@ -358,13 +349,56 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
           )
         }
 
-        (
-          project.copy(
+        val project =
+          seed.toProject(
             targets = targets(releasesWithDependencies),
-            dependencies = dependencies(releasesWithDependencies)
-          ),
-          releasesWithDependencies
-        )
+            dependencies = dependencies(releasesWithDependencies),
+            dependentCount = releasesWithDependencies.view.flatMap(_.reverseDependencies.map(_.reference)).size // Note: we don’t need to call `.distinct` because `releases` is a `Set`
+          )
+
+        val updatedProject =
+          if (stored) {
+            storedProjects
+              .get(project.reference)
+              .map(form => form.update(project, live = false))
+              .getOrElse(project)
+          } else project
+
+        (updatedProject, releasesWithDependencies)
     }
   }
+}
+
+object ProjectConvert {
+
+  /** Intermediate data structure */
+  case class ProjectSeed(
+    organization: String,
+    repository: String,
+    github: Option[GithubInfo],
+    defaultArtifact: Option[String],
+    artifacts: List[String],
+    releaseCount: Int,
+    created: Option[String],
+    updated: Option[String]
+  ) {
+
+    def reference = Project.Reference(organization, repository)
+
+    def toProject(targets: Set[String], dependencies: Set[String], dependentCount: Int): Project =
+      Project(
+        organization = organization,
+        repository = repository,
+        github = github,
+        defaultArtifact = defaultArtifact,
+        artifacts = artifacts,
+        releaseCount = releaseCount,
+        created = created,
+        updated = updated,
+        targets = targets,
+        dependencies = dependencies,
+        dependentCount = dependentCount
+      )
+  }
+
 }

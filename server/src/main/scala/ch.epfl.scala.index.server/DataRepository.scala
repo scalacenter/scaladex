@@ -4,13 +4,12 @@ package server
 import model._
 import model.misc._
 import data.project.ProjectForm
-
 import release._
 import misc.Pagination
 import data.elastic._
-
 import com.sksamuel.elastic4s._
 import ElasticDsl._
+import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.Modifier
 import org.elasticsearch.search.sort.SortOrder
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -104,19 +103,29 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
       if (escaped.contains(":")) stringQuery(escaped)
       else stringQuery(escaped + "~").fuzzyPrefixLength(3).defaultOperator("AND")
 
-    bool(
-      mustQueries = mustQueriesRepos ++ mustQueryTarget ++ cliQuery,
-      shouldQueries = List(
-        fuzzyQuery("keywords", escaped),
-        fuzzyQuery("github.description", escaped),
-        fuzzyQuery("repository", escaped),
-        fuzzyQuery("organization", escaped),
-        fuzzyQuery("artifacts", escaped),
-        fuzzyQuery("github.readme", escaped),
-        stringQ
-      ),
-      notQueries = List(termQuery("deprecated", true))
-    )
+    functionScoreQuery(
+      bool(
+        mustQueries = mustQueriesRepos ++ mustQueryTarget ++ cliQuery,
+        shouldQueries = List(
+          fuzzyQuery("keywords", escaped).boost(2),
+          fuzzyQuery("github.description", escaped).boost(1.7),
+          fuzzyQuery("repository", escaped),
+          fuzzyQuery("organization", escaped),
+          fuzzyQuery("artifacts", escaped),
+          stringQ.boost(0.01) // low boost because this query is applied to all the fields of the project (including the github readme)
+        ),
+        notQueries = List(termQuery("deprecated", true))
+      )
+    ).scorers(
+      // Add a small boost for project that seem to be “popular” (highly depended on or highly starred)
+      fieldFactorScore("dependentCount")
+        .modifier(Modifier.LOG1P)
+        .weight(0.3),
+      fieldFactorScore("github.stars")
+        .missing(0)
+        .modifier(Modifier.LOG1P)
+        .weight(0.1)
+    ).boostMode("sum")
   }
 
   def total(queryString: String): Future[Long] = {
