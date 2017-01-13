@@ -44,25 +44,8 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
         }
       } ~
         path(Segment) { organization =>
-          optionalSession(refreshable, usingCookies) { userId =>
-            parameters('page.as[Int] ? 1, 'sort.?) { (page, sorting) =>
-              pathEnd {
-                val query = s"organization:$organization"
-                complete(
-                  dataRepository.findWithReleases(query, page, sorting).map {
-                    case (pagination, projectsAndReleases) =>
-                      searchresult(query,
-                                   organization,
-                                   sorting,
-                                   pagination,
-                                   projectsAndReleases,
-                                   getUser(userId).map(_.user),
-                                   you = false)
-                  }
-                )
-              }
-            }
-          }
+          val query = s"organization:$organization"
+          redirect(s"/search?q=$query", StatusCodes.TemporaryRedirect)
         }
     }
 }
