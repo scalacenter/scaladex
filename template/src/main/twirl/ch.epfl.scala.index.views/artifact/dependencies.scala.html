@@ -3,17 +3,37 @@
 
 @(release: Release)
 <div class="dependencies box">
-  <h4>@release.dependencyCount Dependencies</h4>
+  <h4>
+    @{release.dependencyCount} 
+    
+    @if(release.dependencyCount > 1) { 
+      Dependencies 
+    } else { 
+      Dependency 
+    }
+  </h4>
   @dependencyBlock(release.orderedDependencies)
   @if(release.javaDependencies.nonEmpty) {
-    <h5>Java Dependencies</h5>
+    <h5>Java
+      @if(release.javaDependencies.size > 1) { 
+        Dependencies 
+      } else { 
+        Dependency 
+      }
+    </h5>
     @dependencyBlock(release.orderedJavaDependencies)
   }
 </div>
 
 @if(release.internalDependencies.nonEmpty) {
 <div class="dependencies box">
-  <h4>@release.internalDependencyCount Internal Dependencies</h4>
+  <h4>@release.internalDependencyCount Internal 
+    @if(release.internalDependencyCount > 1) {
+      Dependencies
+    } else { 
+      Dependency
+    }
+  </h4>
   @dependencyBlock(release.internalDependencies)
 </div>
 }
