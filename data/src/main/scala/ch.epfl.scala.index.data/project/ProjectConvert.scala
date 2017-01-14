@@ -225,20 +225,13 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
               .getOrElse(true)
           else true
 
-        val releaseOptions = DefaultRelease(repository,
-                                            ReleaseSelection(None, None, None),
-                                            releases,
-                                            None,
-                                            defaultStableVersion)
-
         val seed =
           ProjectSeed(
             organization = organization,
             repository = repository,
             github = GithubReader(paths, githubRepo),
-            artifacts = releaseOptions.map(_.artifacts.sorted).getOrElse(Nil),
+            artifacts = releases.map(_.reference.artifact).toList.sorted,
             releaseCount = releaseCount,
-            defaultArtifact = releaseOptions.map(_.release.reference.artifact),
             created = min,
             updated = max
           )
@@ -376,7 +369,6 @@ object ProjectConvert {
     organization: String,
     repository: String,
     github: Option[GithubInfo],
-    defaultArtifact: Option[String],
     artifacts: List[String],
     releaseCount: Int,
     created: Option[String],
@@ -390,7 +382,6 @@ object ProjectConvert {
         organization = organization,
         repository = repository,
         github = github,
-        defaultArtifact = defaultArtifact,
         artifacts = artifacts,
         releaseCount = releaseCount,
         created = created,
