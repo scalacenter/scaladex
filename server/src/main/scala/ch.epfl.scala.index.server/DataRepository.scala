@@ -246,7 +246,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
                   selection: ReleaseSelection): Future[Option[(Project, ReleaseOptions)]] = {
     val projectAndReleases = this.projectAndReleases(projectRef, selection)
 
-    projectAndReleases.collect {
+    projectAndReleases.map {
       case Some((project, releases)) =>
         DefaultRelease(project.repository,
                        selection,
@@ -254,6 +254,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
                        project.defaultStableVersion)
           .map(sel =>
             (project, sel.copy(artifacts = project.artifacts)))
+      case None => None
     }
   }
 
@@ -279,7 +280,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
                    selection: ReleaseSelection): Future[Option[(Project, List[Release], Release)]] = {
     val projectAndReleases = this.projectAndReleases(projectRef, selection)
 
-    projectAndReleases.collect {
+    projectAndReleases.map {
       case Some((project, releases)) =>
         DefaultRelease(project.repository,
           selection,
@@ -287,6 +288,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
           project.defaultStableVersion)
           .map(sel =>
             (project, releases, sel.release))
+      case None => None
     }
   }
 
