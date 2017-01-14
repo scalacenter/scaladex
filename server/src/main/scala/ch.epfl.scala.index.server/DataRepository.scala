@@ -155,27 +155,6 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
   private def uniquelyNamedReleases(releases: List[Release]) =
     releases.groupBy(r => r.reference.artifact).map { case (_, release) => release.head }.toList
 
-  def findWithReleases(queryString: String,
-                       page: PageIndex = 0,
-                       sorting: Option[String] = None,
-                       userRepos: Set[GithubRepo] = Set(),
-                       total: Int = resultsPerPage,
-                       targetFiltering: Option[ScalaTarget] = None,
-                       cli: Boolean = false): Future[(Pagination, List[(Project, List[Release])])] = {
-    val queryResults = find(queryString, page, sorting, userRepos, total, targetFiltering, cli)
-
-    queryResults.flatMap {
-      case (pagination, projects) => {
-        val projectsAndReleases = projects.map(
-          p => projectAndReleases(p.reference, ReleaseSelection(None, None, None)))
-
-        Future.sequence(projectsAndReleases).map(s => (pagination, s.collect {
-          case Some((project, releases)) => (project, uniquelyNamedReleases(releases))
-        }))
-      }
-    }
-  }
-
   def releases(project: Project.Reference, artifact: Option[String]): Future[List[Release]] = {
     esClient.execute {
       search

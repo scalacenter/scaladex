@@ -4,7 +4,7 @@
 @import ch.epfl.scala.index.model.misc.UserInfo
 @import ch.epfl.scala.index.model.misc.Url
 
-@(pagekind: String, organization: String = "", query: String = "", sorting: Option[String], pagination: Pagination, projectsAndReleases: List[(Project, List[Release])], user: Option[UserInfo], you: Boolean)
+@(pagekind: String, organization: String = "", query: String = "", sorting: Option[String], pagination: Pagination, projects: List[Project], user: Option[UserInfo], you: Boolean)
   @defining(if (pagekind == "search") "search" else organization) { pagetype =>
     <div class="row">
       <div class="col-md-2">
@@ -41,7 +41,7 @@
     <div class="row"> <!-- must be closed outside of results template -->
       <div class="col-md-12">
         <div class="list-result box">
-        @for((project, releases) <- projectsAndReleases){
+        @for(project <- projects){
           <div class="item-list">
             <div class="row">
               <div class="col-md-8">
@@ -102,19 +102,19 @@
                 </div>
               </div>
 
-              @defining(releases.size) { count =>
+              @defining(project.artifacts.size) { count =>
                 @defining(11) { maxArtifacts =>
                   <div class="artifacts-box col-md-10">
 
                     @if(count > maxArtifacts) {
-                      @artifacts(releases.sortBy(_.reference.artifact).take(maxArtifacts - 1))
+                      @artifacts(project, project.artifacts.sorted.take(maxArtifacts - 1))
                       and <a href="@project.reference.organization/@project.reference.repository#artifacts">
                         @{
                           count - (maxArtifacts - 1)
                         } more
                       </a>
                     } else {
-                      @artifacts(releases.sortBy(_.reference.artifact))
+                      @artifacts(project, project.artifacts.sorted)
                     }
                   </div>
                 }
@@ -126,10 +126,10 @@
       </div>
   }
 
-@artifacts(releases: List[Release]) = {
-  @for(release <- releases) {
-    <a href="@release.reference.organization/@release.reference.repository/@release.reference.artifact">
-    @release.reference.artifact
+@artifacts(project: Project, in: List[String]) = {
+  @for(artifact <- in) {
+    <a href="@project.reference.organization/@project.reference.repository/@artifact">
+    @artifact
     </a>
   }
 }

@@ -6,12 +6,12 @@
 @import akka.http.scaladsl.model.Uri
 
 @import ch.epfl.scala.index.model.Release
-@(query: String, uri: Uri, sorting: Option[String], pagination: Pagination, projectsAndReleases: List[(Project, List[Release])], user: Option[UserInfo], you: Boolean)
+@(query: String, uri: Uri, sorting: Option[String], pagination: Pagination, projects: List[Project], user: Option[UserInfo], you: Boolean)
 @main(title = s"Search $query", showSearch = true, searchQuery = query, user, you) {
   <main id="container-search">
     <div class="container">
       @if(pagination.total != 0 ) {
-        @result("search", "", query, sorting, pagination, projectsAndReleases, user, you)
+        @result("search", "", query, sorting, pagination, projects, user, you)
         @{paginate(pagination,
           sorting
             .map(s => uri.appendQuery("sort" -> s))
