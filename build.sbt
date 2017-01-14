@@ -4,6 +4,7 @@ import org.scalajs.sbtplugin.cross.CrossProject
 scalafmtConfig in ThisBuild := Some(file(".scalafmt"))
 
 lazy val akkaVersion = "2.4.11"
+lazy val akkaHttpVersion = "10.0.0"
 lazy val upickleVersion = "0.4.1"
 lazy val scalatagsVersion = "0.6.1"
 lazy val autowireVersion = "0.2.5"
@@ -57,7 +58,7 @@ lazy val template = project
     libraryDependencies ++= Seq(
       nscalaTime,
       "com.typesafe" % "config" % "1.3.1",
-      "com.typesafe.akka" %% "akka-http-core" % akkaVersion
+      "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
     )
   )
   .dependsOn(model)
@@ -83,10 +84,10 @@ lazy val server = project
   .settings(
     libraryDependencies ++= Seq(
       logback,
-      "com.typesafe.akka" %% "akka-http-experimental" % akkaVersion,
+      "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
-      "ch.megard" %% "akka-http-cors" % "0.1.8",
-      "com.softwaremill.akka-http-session" %% "core" % "0.2.7",
+      "ch.megard" %% "akka-http-cors" % "0.1.10",
+      "com.softwaremill.akka-http-session" %% "core" % "0.3.0",
       "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
       "org.webjars.bower" % "bootstrap-sass" % "3.3.6",
       "org.webjars.bower" % "bootstrap-switch" % "3.3.2",
