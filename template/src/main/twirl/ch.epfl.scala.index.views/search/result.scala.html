@@ -1,135 +1,51 @@
+@import akka.http.scaladsl.model.Uri
+
+@import ch.epfl.scala.index.views.html._
+
 @import ch.epfl.scala.index.model.Project
+@import ch.epfl.scala.index.model.misc.Pagination
 @import ch.epfl.scala.index.model.Release
 @import ch.epfl.scala.index.model.misc.Pagination
 @import ch.epfl.scala.index.model.misc.UserInfo
 @import ch.epfl.scala.index.model.misc.Url
 
-@(pagekind: String, organization: String = "", query: String = "", sorting: Option[String], pagination: Pagination, projects: List[Project], user: Option[UserInfo], you: Boolean)
-  @defining(if (pagekind == "search") "search" else organization) { pagetype =>
-    <div class="row">
-      <div class="col-md-2">
-        <div class="result-count">
-          @if(pagination.current == 1) {
-            @pagination.total results
-          } else {
-            Page @pagination.current of @pagination.total results
-          }
-        </div>
-      </div>
-      <div class="col-md-10">
-        <div class="order-by">
-          <form action="/@pagetype" action="GET">
-            @if(pagekind == "search") {
-              <input type="hidden" name="q" value="@query">
-            }
-            @if(you){
-              <input type="hidden" name="you" value="">
-            }
-            <input type="hidden" name="page" value="@pagination.current">
-            <div class="btn-group" role="group" aria-label="sorting">
-              <button name="sort" value="relevant" type="submit" class="btn btn-default @if(sorting.contains("relevant") || sorting.isEmpty) { active }">Relevant</button>
-              <button name="sort" value="dependentCount"  type="submit" class="btn btn-default @if(sorting.contains("dependentCount")) { active }">Dependent</button>
-              <button name="sort" value="created"  type="submit" class="btn btn-default @if(sorting.contains("created")) { active }">Created</button>
-              <button name="sort" value="updated"  type="submit" class="btn btn-default @if(sorting.contains("updated")) { active }">Updated</button>
-              <button name="sort" value="stars"    type="submit" class="btn btn-default @if(sorting.contains("stars")) { active }">Stars</button>
-              <button name="sort" value="forks"    type="submit" class="btn btn-default @if(sorting.contains("forks")) { active }">Forks</button>
-            </div>
-          </form>
-        </div>
-      </div>
+@(query: String = "",
+  uri: Uri,
+  sortBy: Option[String],
+  pagination: Pagination,
+  projects: List[Project],
+  user: Option[UserInfo],
+  you: Boolean,
+  keywords: Map[String, Long],
+  targets: Map[String, Long])
+
+
+<div class="row">
+  <div class="col-md-2">
+    <div class="result-count">
+      @if(pagination.current == 1) {
+        @pagination.total results
+      } else {
+        Page @pagination.current of @pagination.total results
+      }
     </div>
-    <div class="row"> <!-- must be closed outside of results template -->
-      <div class="col-md-12">
-        <div class="list-result box">
-        @for(project <- projects){
-          <div class="item-list">
-            <div class="row">
-              <div class="col-md-8">
-                <img src="
-                @{ project.github.flatMap(_.logo) match {
-                  case Some(Url(v)) => v
-                  case None => "/assets/img/avatar-list.png"
-                }}" alt="project logo">
-
-                <a href="/@project.reference.organization/@project.reference.repository">
-                  <h4>@project.reference.organization/@project.reference.repository</h4>
-                </a>
-                @defining({
-                  val prefix = "scala_"
-                  project.targets
-                    .collect { case t if t.startsWith(prefix) => t.drop(prefix.length) }
-                    .to[List].sorted(Ordering.String.reverse)
-                    .mkString(", ")
-                }) { targets =>
-                  @if(targets.nonEmpty) {
-                    <span class="targets">@targets</span>
-                  }
-                }
-                @for(github <- project.github) {
-                  @for(homepage <- github.homepage) {
-                    @if(!homepage.target.isEmpty) {
-                      <a class="homepage" href="@homepage.target" target="_blank">
-                        Website <i class="fa fa-globe" aria-hidden="true"></i>
-                      </a>
-                    }
-                  }
-                  @for(description <- github.description) {
-                    <p class="description">@description</p>
-                  }
-                }
-              </div>
-              <div class="col-md-4">
-                <div class="stats">
-                  @for(keyword <- project.keywords) {
-                    <span class="item-filter-tag">
-                      <a href="/search?q=keywords:@keyword">
-                        @keyword
-                      </a>
-                    </span>
-                  }
-                  @for(github <- project.github) {
-                    @for(stars <- github.stars) {
-                      <span>
-                        <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">@stars <i class="fa fa-star"></i></a>
-                      </span>
-                    }
-                    @for(forks <- github.forks) {
-                      <span>
-                        <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">@forks <i class="fa fa-code-fork"></i></a>
-                      </span>
-                    }
-                  }
-                </div>
-              </div>
-
-              @defining(project.artifacts.size) { count =>
-                @defining(11) { maxArtifacts =>
-                  <div class="artifacts-box col-md-10">
-
-                    @if(count > maxArtifacts) {
-                      @artifacts(project, project.artifacts.sorted.take(maxArtifacts - 1))
-                      and <a href="@project.reference.organization/@project.reference.repository#artifacts">
-                        @{
-                          count - (maxArtifacts - 1)
-                        } more
-                      </a>
-                    } else {
-                      @artifacts(project, project.artifacts.sorted)
-                    }
-                  </div>
-                }
-              }
-            </div>
-          </div>
-        }
-        </div>
-      </div>
-  }
-
-@artifacts(project: Project, in: List[String]) = {
-  @for(artifact <- in) {
-    <a href="@project.reference.organization/@project.reference.repository/@artifact">
-    @artifact
-    </a>
-  }
-}
+  </div>
+  <div class="col-md-10">
+    @sorting(query, sortBy, pagination, you)
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-3">
+    @filter(keywords, targets)
+  </div>      
+  <div class="col-md-9">
+    @resultList(projects)
+    @{paginate(pagination,
+      sortBy
+        .map(s => uri.appendQuery("sort" -> s))
+        .getOrElse(uri)
+        .appendQuery("you", you)
+        .appendQuery("q" -> query)
+    )}
+  </div>
+</div>

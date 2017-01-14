@@ -1,0 +1,61 @@
+@import ch.epfl.scala.index.views.html._
+@import ch.epfl.scala.index.model.Project
+@(projects: List[Project])
+
+<ol class="list-result box">
+  @for(project <- projects){
+  <li class="item-list">
+    <a href="/@project.reference.organization/@project.reference.repository">
+      <div class="row">
+        <div class="col-md-8">
+          <div>
+            <img src="@{project.github.flatMap(_.logo.map(_.target)).getOrElse("/assets/img/avatar-list.png")}"
+                 alt="project logo">            
+              <h4>@project.reference.organization/@project.reference.repository</h4>
+
+            @defining(renderTargets(project)) { targets =>
+              @if(targets.nonEmpty) {
+                <span class="targets">@targets</span>
+              }
+            }
+
+            @for(github <- project.github) {
+              @for(description <- github.description) {
+                <p class="description">@description</p>
+              }
+            }
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stats">
+            <div>
+            @for(keyword <- project.keywords) {
+              <span class="item-filter-tag">
+                <a href="/search?q=keywords:@keyword">
+                  @keyword
+                </a>
+              </span>
+            }
+            </div>
+
+            <div>
+            @for(github <- project.github) {
+              @for(stars <- github.stars) {
+                <span>
+                  <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">@stars <i class="fa fa-star"></i></a>
+                </span>
+              }
+              @for(forks <- github.forks) {
+                <span>
+                  <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">@forks <i class="fa fa-code-fork"></i></a>
+                </span>
+              }
+            }
+            </div>
+          </div>
+        </div>
+      </div>
+    </a>
+  </li>
+  }
+</div>

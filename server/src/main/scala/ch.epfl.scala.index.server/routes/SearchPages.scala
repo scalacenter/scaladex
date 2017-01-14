@@ -15,30 +15,34 @@ import Uri._
 
 class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
   import session._
+  import dataRepository._
 
   val routes =
     get {
       path("search") {
         optionalSession(refreshable, usingCookies) { userId =>
           parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
+            
+            val userRepos = you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set()) 
+            
             complete(
-              dataRepository
-                .find(query,
-                                  page,
-                                  sorting,
-                                  you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set()))
-                .map {
-                  case (pagination, projects) =>
-                    searchresult(
-                      query,
-                      "search",
-                      sorting,
-                      pagination,
-                      projects,
-                      getUser(userId).map(_.user),
-                      you.isDefined
-                    )
-                }
+              for {
+                (pagination, projects) <- find(query, page, sorting, userRepos)
+                keywords <- keywords(Some(query))
+                targets <- targets(Some(query))
+              } yield {
+                searchresult(
+                  query,
+                  "search",
+                  sorting,
+                  pagination,
+                  projects,
+                  getUser(userId).map(_.user),
+                  you.isDefined,
+                  keywords,
+                  targets
+                )
+              }
             )
           }
         }

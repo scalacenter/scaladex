@@ -29,7 +29,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
     val user = userState.map(_.user)
     if (canEdit(owner, repo, userState)) {
       for {
-        keywords <- dataRepository.keywords()
+        keywords <- dataRepository.keywords(None)
         project <- dataRepository.project(Project.Reference(owner, repo))
       } yield {
         project.map { p =>

@@ -1,0 +1,31 @@
+@(keywords: Map[String, Long], targets: Map[String, Long])
+
+<div class="filters">
+  <h3>Filters</h3>
+  <fieldset>
+    <legend>Scala Version</legend>
+    <ul>
+    @for((version, count) <- targets) {
+      <li>
+        <label>
+          <input type="checkbox">
+          @version (@count)
+        </label>
+      </li>
+    }
+    </ul>
+  </fieldset>
+  <fieldset>
+    <legend>Keywords</legend>
+    <ul>
+    @for((keyword, count) <- keywords.toList.sortBy(_._1)) {
+      <li>
+        <label>
+          <input type="checkbox">
+          @keyword (@count)
+        </label>
+      </li>
+    }
+    </ul>
+  </fieldset>
+</div>

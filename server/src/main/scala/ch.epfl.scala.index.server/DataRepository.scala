@@ -301,24 +301,40 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
     }.map(r => r.as[T].toList)
   }
 
-  def keywords() = aggregations("keywords")
-  def targets() = aggregations("targets")
+  def keywords(query: Option[String]) = aggregations(emptyToStar(query), "keywords")
+  def targets(query: Option[String]) = aggregations(emptyToStar(query), "targets")
+
+  private def emptyToStar(query: Option[String]) = {
+    query match {
+      case Some("") => Some("*")
+      case _ => query
+    }
+  } 
+
+
 
   /**
     * list all tags including number of facets
     * @param field the field name
     * @return
     */
-  private def aggregations(field: String): Future[Map[String, Long]] = {
+  private def aggregations(queryS: Option[String], field: String): Future[Map[String, Long]] = {
 
     import scala.collection.JavaConverters._
     import org.elasticsearch.search.aggregations.bucket.terms.StringTerms
 
     val aggregationName = s"${field}_count"
 
+    val query0 =
+      queryS match {
+        case Some(q) => stringQuery(q)
+        case None    => matchAllQuery
+      }
+
     esClient.execute {
       search
         .in(indexName / projectsCollection)
+        .query(query0)
         .aggregations(
           aggregation.terms(aggregationName).field(field).size(50)
         )
