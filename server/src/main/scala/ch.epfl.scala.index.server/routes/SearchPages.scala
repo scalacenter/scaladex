@@ -23,18 +23,18 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
           parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
             complete(
               dataRepository
-                .findWithReleases(query,
+                .find(query,
                                   page,
                                   sorting,
                                   you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set()))
                 .map {
-                  case (pagination, projectsAndReleases) =>
+                  case (pagination, projects) =>
                     searchresult(
                       query,
                       "search",
                       sorting,
                       pagination,
-                      projectsAndReleases,
+                      projects,
                       getUser(userId).map(_.user),
                       you.isDefined
                     )
