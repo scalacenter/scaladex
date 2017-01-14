@@ -1,7 +1,14 @@
 @import ch.epfl.scala.index.model.Project
 @import ch.epfl.scala.index.model.Release
 @import ch.epfl.scala.index.model.misc.{Url, UserInfo}
-@(keywords: Map[String, Long], targets: Map[String, Long], dependents: List[(String, Long)], latestProjects: List[Project], latestReleases: List[Release], user: Option[UserInfo])
+
+@(keywords: Map[String, Long],
+  targets: Map[String, Long], 
+  latestProjects: List[Project],
+  mostDependedUpon: List[Project],
+  latestReleases: List[Release],
+  user: Option[UserInfo])
+
 @main(title = "Home", showSearch = false, searchQuery = "", user) {
 <main id="container-home">
     <section class="content-search-home">
@@ -19,12 +26,6 @@
                         <li><strong>Targets:</strong></li>
                         @for((sup, count) <- targets) {
                             <li><a href="/search?q=targets:@sup">@sup (@count)</a></li>
-                        }
-                    </ul>
-                    <ul class="tag">
-                        <li><strong>Dependents:</strong></li>
-                        @for((sup, count) <- dependents) {
-                            <li><a href="/search?q=depends-on:@sup">@sup (@count)</a></li>
                         }
                     </ul>
                 </div>
@@ -62,6 +63,39 @@
                 }
             </div>
             <a class="btn btn-default" href="/search?q=*&sort=created">More ...</a>
+        </div>
+    </section>
+        <section class="recent-projects">
+        <div class="container">
+            <h2 class="text-center">Most depended-upon Projects</h2>
+            <div class="row">
+                @for(project <- mostDependedUpon){
+                    <div class="col-md-4 col-sm-6">
+                        <a href="/@project.reference.organization/@project.reference.repository">
+                            <div class="content-project box">
+                                <div class="content-project-header">
+                                    <img src="@{ project.github.flatMap(_.logo) match {
+                                        case Some(Url(v)) => v
+                                        case None => "/assets/img/avatar-list.png"
+                                      }}" alt="project logo">
+                                    <h4>@project.reference.organization/@project.reference.repository</h4>
+                                </div>
+                                <div class="content-project-body">
+                                    @for(github <- project.github) {
+                                      @for(description <- github.description) {
+                                        <p class="description">@description</p>
+                                      }
+                                    }
+                                    @for(created <- project.created) {
+                                        @{formatDate(created)}
+                                    }
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                }
+            </div>
+            <a class="btn btn-default" href="/search?q=*&sort=dependentCount">More ...</a>
         </div>
     </section>
     <section class="recent-releases">

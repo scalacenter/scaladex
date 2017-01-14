@@ -28,6 +28,7 @@
             <input type="hidden" name="page" value="@pagination.current">
             <div class="btn-group" role="group" aria-label="sorting">
               <button name="sort" value="relevant" type="submit" class="btn btn-default @if(sorting.contains("relevant") || sorting.isEmpty) { active }">Relevant</button>
+              <button name="sort" value="dependentCount"  type="submit" class="btn btn-default @if(sorting.contains("dependentCount")) { active }">Dependent</button>
               <button name="sort" value="created"  type="submit" class="btn btn-default @if(sorting.contains("created")) { active }">Created</button>
               <button name="sort" value="updated"  type="submit" class="btn btn-default @if(sorting.contains("updated")) { active }">Updated</button>
               <button name="sort" value="stars"    type="submit" class="btn btn-default @if(sorting.contains("stars")) { active }">Stars</button>

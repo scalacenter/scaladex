@@ -26,6 +26,8 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
         fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg
       case Some("forks") =>
         fieldSort("github.forks") missing "0" order SortOrder.DESC mode MultiMode.Avg
+      case Some("dependentCount") =>
+        fieldSort("dependentCount") missing "0" order SortOrder.DESC mode MultiMode.Avg
       case Some("relevant") => scoreSort
       case Some("created") => fieldSort("created") order SortOrder.DESC
       case Some("updated") => fieldSort("updated") order SortOrder.DESC
@@ -273,8 +275,20 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
     } yield ret
   }
 
-  def latestProjects() = latest[Project](projectsCollection, "created", 12).map(_.map(hideId))
-  def latestReleases() = latest[Release](releasesCollection, "released", 12)
+  private val frontPageCount = 12
+
+  def latestProjects() = latest[Project](projectsCollection, "created", frontPageCount).map(_.map(hideId))
+  def latestReleases() = latest[Release](releasesCollection, "released", frontPageCount)
+
+  def mostDependedUpon() = {
+    esClient.execute {
+      search
+        .in(indexName / projectsCollection)
+        .query(matchAllQuery)
+        .limit(frontPageCount)
+        .sort(sortQuery(Some("dependentCount")))
+    }.map(_.as[Project].toList)
+  }
 
   def artifactPage(projectRef: Project.Reference,
                    selection: ReleaseSelection): Future[Option[(Project, List[Release], Release)]] = {
@@ -310,40 +324,6 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
   def keywords() = aggregations("keywords")
   def targets() = aggregations("targets")
-  def dependents() = {
-    // we remove testing or logging because they are always a dependency
-    // we could have another view to compare testing frameworks
-    val testOrLogging = Set(
-      "akka/akka-slf4j",
-      "akka/akka-testkit",
-      "etorreborre/specs2",
-      "etorreborre/specs2-core",
-      "etorreborre/specs2-junit",
-      "etorreborre/specs2-mock",
-      "etorreborre/specs2-scalacheck",
-      "lihaoyi/utest",
-      "paulbutcher/scalamock-scalatest-support",
-      "playframework/play-specs2",
-      "playframework/play-test",
-      "rickynils/scalacheck",
-      "scala/scala-library",
-      "scalatest/scalatest",
-      "scalaz/scalaz-scalacheck-binding",
-      "scopt/scopt",
-      "scoverage/scalac-scoverage-plugin",
-      "scoverage/scalac-scoverage-runtime",
-      "spray/spray-testkit",
-      "typesafehub/scala-logging",
-      "typesafehub/scala-logging-slf4j"
-    )
-
-    // We find dependent libraries by aggregating the dependency information
-    aggregations("dependencies").map(agg =>
-      agg.toList.sortBy(_._2)(Descending).filter {
-        case (ref, _) =>
-          !testOrLogging.contains(ref)
-    })
-  }
 
   /**
     * list all tags including number of facets
