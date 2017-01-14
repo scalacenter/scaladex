@@ -9,7 +9,13 @@
   
   <hr>
 
-  <h4>@release.uniqueOrderedReverseDependencies.size Dependents</h4>
+  <h4>@release.uniqueOrderedReverseDependencies.size 
+    @if(release.uniqueOrderedReverseDependencies.size > 1) {
+      Dependents
+    } else {
+      Dependent
+    }
+  </h4>
   <ul>
   @for(dependency <- release.uniqueOrderedReverseDependencies.take(100)){
     <li>
