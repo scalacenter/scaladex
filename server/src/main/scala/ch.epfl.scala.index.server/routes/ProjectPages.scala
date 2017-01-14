@@ -20,6 +20,7 @@ import StatusCodes._
 import scala.concurrent.Future
 
 class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
+
   import session._
 
   private def canEdit(owner: String, repo: String, userState: Option[UserState]) =
@@ -85,7 +86,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
       }.getOrElse((NotFound, views.html.notfound(user))))
   }
 
-  val routes =
+  val routes = concat(
     post {
       path("edit" / Segment / Segment) { (organization, repository) =>
         optionalSession(refreshable, usingCookies) { userId =>
@@ -140,46 +141,51 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
           }
         }
       }
-    } ~
-      get {
+    },
+    get {
+      concat(
         path("edit" / Segment / Segment) { (organization, repository) =>
           optionalSession(refreshable, usingCookies) { userId =>
             pathEnd {
               complete(editPage(organization, repository, getUser(userId)))
             }
           }
-        } ~
-          path(Segment / Segment) { (organization, repository) =>
-            optionalSession(refreshable, usingCookies) { userId =>
+        },
+        path(Segment / Segment) { (organization, repository) =>
+          optionalSession(refreshable, usingCookies) { userId =>
+            concat(
               parameters('artifact, 'version.?) { (artifact, version) =>
                 val rest = version match {
                   case Some(v) if !v.isEmpty => "/" + v
                   case _ => ""
                 }
                 redirect(s"/$organization/$repository/$artifact$rest",
-                         StatusCodes.PermanentRedirect)
-              } ~
-                pathEnd {
-                  complete(projectPage(organization, repository, None, None, getUser(userId)))
-                }
-            }
-          } ~
-          path(Segment / Segment / Segment) { (organization, repository, artifact) =>
+                  StatusCodes.PermanentRedirect)
+              },
+              pathEnd {
+                complete(projectPage(organization, repository, None, None, getUser(userId)))
+              }
+            )
+          }
+        },
+        path(Segment / Segment / Segment) { (organization, repository, artifact) =>
+          optionalSession(refreshable, usingCookies) { userId =>
+            complete(
+              artifactPage(organization, repository, artifact, None, getUser(userId)))
+          }
+        },
+        path(Segment / Segment / Segment / Segment) {
+          (organization, repository, artifact, version) =>
             optionalSession(refreshable, usingCookies) { userId =>
               complete(
-                artifactPage(organization, repository, artifact, None, getUser(userId)))
+                artifactPage(organization,
+                  repository,
+                  artifact,
+                  SemanticVersion(version),
+                  getUser(userId)))
             }
-          } ~
-          path(Segment / Segment / Segment / Segment) {
-            (organization, repository, artifact, version) =>
-              optionalSession(refreshable, usingCookies) { userId =>
-                complete(
-                  artifactPage(organization,
-                              repository,
-                              artifact,
-                              SemanticVersion(version),
-                              getUser(userId)))
-              }
-          }
-      }
+        }
+      )
+    }
+  )
 }

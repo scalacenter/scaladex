@@ -25,8 +25,8 @@ import akka.util.Timeout
 import scala.concurrent.Future
 
 class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Github)(
-    implicit val system: ActorSystem,
-    implicit val materializer: ActorMaterializer) {
+  implicit val system: ActorSystem,
+  implicit val materializer: ActorMaterializer) {
 
   import system.dispatcher
 
@@ -36,7 +36,7 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
    * @return
    */
   private def githubAuthenticator(credentialsHeader: Option[HttpCredentials])
-    : Credentials => Future[Option[(GithubCredentials, UserState)]] = {
+  : Credentials => Future[Option[(GithubCredentials, UserState)]] = {
 
     case Credentials.Provided(username) => {
       credentialsHeader match {
@@ -79,6 +79,7 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
 
   import akka.pattern.ask
   import scala.concurrent.duration._
+
   implicit val timeout = Timeout(40.seconds)
   private val actor =
     system.actorOf(Props(classOf[impl.PublishActor], paths, dataRepository, system, materializer))
@@ -88,23 +89,24 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
   }
 
   val routes =
-    get {
-      path("publish") {
-        parameter('path) { path =>
-          complete {
+    concat(
+      get {
+        path("publish") {
+          parameter('path) { path =>
+            complete {
 
-            /* check if the release already exists - sbt will handle HTTP-Status codes
-             * NotFound -> allowed to write
-             * OK -> only allowed if isSnapshot := true
-             */
-            dataRepository.maven(mavenPathExtractor(path)) map {
-              case Some(release) => (OK, "release already exists")
-              case None => (NotFound, "ok to publish")
+              /* check if the release already exists - sbt will handle HTTP-Status codes
+               * NotFound -> allowed to write
+               * OK -> only allowed if isSnapshot := true
+               */
+              dataRepository.maven(mavenPathExtractor(path)) map {
+                case Some(release) => (OK, "release already exists")
+                case None => (NotFound, "ok to publish")
+              }
             }
           }
         }
-      }
-    } ~
+      },
       put {
         path("publish") {
           parameters(
@@ -140,4 +142,5 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
           }
         }
       }
+    )
 }

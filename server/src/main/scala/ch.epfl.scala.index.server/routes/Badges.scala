@@ -47,6 +47,7 @@ class Badges(dataRepository: DataRepository) {
 
   val routes =
     get {
+      concat(
       path(Segment / Segment / Segment / "latest.svg") { (organization, repository, artifact) =>
         shields { (color, style, logo, logoWidth) =>
           onSuccess(
@@ -70,7 +71,7 @@ class Badges(dataRepository: DataRepository) {
 
           }
         }
-      } ~
+      },
         path("count.svg") {
           parameter('q) { query =>
             shieldsSubject { (color, style, logo, logoWidth, subject) =>
@@ -79,5 +80,6 @@ class Badges(dataRepository: DataRepository) {
             }
           }
         }
+      )
     }
 }
