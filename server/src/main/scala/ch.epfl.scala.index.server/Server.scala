@@ -8,6 +8,7 @@ import data.DataPaths
 import data.elastic._
 
 import akka.http.scaladsl._
+import akka.http.scaladsl.model.StatusCodes
 import server.Directives._
 
 import com.typesafe.config.ConfigFactory
@@ -57,15 +58,27 @@ object Server {
 
     val paths = DataPaths(pathFromArgs)
 
-    val routes =
-      new PublishApi(paths, data, github).routes ~
-        new SearchApi(data).routes ~
-        Assets.routes ~
-        new Badges(data).routes ~
-        new FrontPage(data, session).routes ~
-        new OAuth2(github, session).routes ~
-        new ProjectPages(data, session).routes ~
-        new SearchPages(data, session).routes
+    val userFacingRoutes =
+      concat(
+        new FrontPage(data, session).routes,
+
+        redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
+          concat(
+            new ProjectPages(data, session).routes,
+            new SearchPages(data, session).routes
+          )
+        }
+      )
+
+    val programmaticRoutes = concat(
+      new PublishApi(paths, data, github).routes,
+      new SearchApi(data).routes,
+      Assets.routes,
+      new Badges(data).routes,
+      new OAuth2(github, session).routes
+    )
+
+    val routes = programmaticRoutes ~ userFacingRoutes
 
     println("waiting for elastic to start")
     blockUntilYellow()
