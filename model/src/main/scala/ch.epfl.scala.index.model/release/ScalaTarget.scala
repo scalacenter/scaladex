@@ -37,5 +37,19 @@ case class ScalaTarget(
       case None => s"scala ${scalaVersion.toString()}"
     }
   }
+}
 
+object ScalaTarget {
+  def fromSupportName(support: String): Option[(String, SemanticVersion)] = {
+    val scalaJs = "scala.js_"
+    val scala = "scala_"
+
+    if(support.startsWith(scalaJs)) {
+      SemanticVersion(support.stripPrefix(scalaJs)).map(version => ("Scala.js", version))
+    }
+    else if(support.startsWith(scala)) {
+      SemanticVersion(support.stripPrefix(scala)).map(version => ("Scala", version))
+    }
+    else None
+  }
 }

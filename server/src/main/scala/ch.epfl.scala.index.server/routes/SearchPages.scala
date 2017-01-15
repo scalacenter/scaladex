@@ -4,6 +4,8 @@ package routes
 
 import views.search.html._
 
+import model.release.ScalaTarget
+
 import com.softwaremill.session._, SessionDirectives._, SessionOptions._
 
 import TwirlSupport._
@@ -31,6 +33,12 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
                 keywords <- keywords(Some(query))
                 targets <- targets(Some(query))
               } yield {
+
+                val parsedTargets =
+                  targets.toList.map{case (name, count) =>
+                    ScalaTarget.fromSupportName(name).map{ case (label, version) => (label, version, count)}
+                  }.flatten.sorted
+
                 searchresult(
                   query,
                   "search",
@@ -40,7 +48,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
                   getUser(userId).map(_.user),
                   you.isDefined,
                   keywords,
-                  targets
+                  parsedTargets
                 )
               }
             )

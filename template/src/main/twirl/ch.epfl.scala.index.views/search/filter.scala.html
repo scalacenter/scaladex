@@ -1,15 +1,17 @@
-@(keywords: Map[String, Long], targets: Map[String, Long])
+@import ch.epfl.scala.index.model.SemanticVersion
+
+@(keywords: Map[String, Long], targets: List[(String, SemanticVersion, Long)])
 
 <div class="filters">
   <h3>Filters</h3>
   <fieldset>
     <legend>Scala Version</legend>
     <ul>
-    @for((version, count) <- targets) {
+    @for((target, version, count) <- targets) {
       <li>
         <label>
           <input type="checkbox">
-          @version (@count)
+          @target @version (@count)
         </label>
       </li>
     }

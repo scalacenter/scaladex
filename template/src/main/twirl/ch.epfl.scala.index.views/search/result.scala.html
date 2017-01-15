@@ -2,7 +2,7 @@
 
 @import ch.epfl.scala.index.views.html._
 
-@import ch.epfl.scala.index.model.Project
+@import ch.epfl.scala.index.model.{Project, SemanticVersion}
 @import ch.epfl.scala.index.model.misc.Pagination
 @import ch.epfl.scala.index.model.Release
 @import ch.epfl.scala.index.model.misc.Pagination
@@ -17,8 +17,7 @@
   user: Option[UserInfo],
   you: Boolean,
   keywords: Map[String, Long],
-  targets: Map[String, Long])
-
+  targets: List[(String, SemanticVersion, Long)])
 
 <div class="row">
   <div class="col-md-2">
