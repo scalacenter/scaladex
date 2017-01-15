@@ -4,9 +4,8 @@ package routes
 
 import views.search.html._
 
-import com.softwaremill.session._, SessionDirectives._, SessionOptions._
-
 import TwirlSupport._
+import GithubUserSessionDirective._
 
 import akka.http.scaladsl._
 import model._
@@ -18,7 +17,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
   import session._
 
   val valSearchPageRoute = path("search") {
-    optionalSession(refreshable, usingCookies) { userId =>
+    githubSession(session) { userId =>
       parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
         complete(
           dataRepository

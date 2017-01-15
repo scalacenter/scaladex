@@ -5,9 +5,7 @@ package routes
 import model.misc.UserInfo
 
 import TwirlSupport._
-
-import com.softwaremill.session.SessionDirectives._
-import com.softwaremill.session.SessionOptions._
+import GithubUserSessionDirective._
 
 import akka.http.scaladsl.server.Directives._
 
@@ -28,7 +26,7 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
 
   val routes =
     pathSingleSlash {
-      optionalSession(refreshable, usingCookies) { userId =>
+      githubSession(session) { userId =>
         complete(frontPage(getUser(userId).map(_.user)))
       }
     }

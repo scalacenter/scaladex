@@ -38,3 +38,5 @@ class GithubUserSession(config: Config)(implicit val executionContext: Execution
 
   def getUser(id: Option[UUID]): Option[UserState] = id.flatMap(users.get)
 }
+
+

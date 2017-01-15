@@ -7,9 +7,8 @@ import data.project.ProjectForm
 import release._
 import model.misc._
 
-import com.softwaremill.session._, SessionDirectives._, SessionOptions._
-
 import TwirlSupport._
+import GithubUserSessionDirective._
 
 import akka.http.scaladsl._
 import model._
@@ -89,7 +88,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
   val editRoutes = concat(
     post {
       path("edit" / Segment / Segment) { (organization, repository) =>
-        optionalSession(refreshable, usingCookies) { userId =>
+        githubSession(session) { userId =>
           pathEnd {
             formFieldSeq { fields =>
               formFields(
@@ -144,7 +143,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
     },
     get {
       path("edit" / Segment / Segment) { (organization, repository) =>
-        optionalSession(refreshable, usingCookies) { userId =>
+        githubSession(session) { userId =>
           pathEnd {
             complete(editPage(organization, repository, getUser(userId)))
           }
@@ -154,7 +153,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
   )
 
   val projectRoute = path(Segment / Segment) { (organization, repository) =>
-    optionalSession(refreshable, usingCookies) { userId =>
+    githubSession(session) { userId =>
       concat(
         parameters('artifact, 'version.?) { (artifact, version) =>
           val rest = version match {
@@ -172,7 +171,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
   }
 
   val artifactRoute = path(Segment / Segment / Segment) { (organization, repository, artifact) =>
-    optionalSession(refreshable, usingCookies) { userId =>
+    githubSession(session) { userId =>
       complete(
         artifactPage(organization, repository, artifact, None, getUser(userId)))
     }
@@ -180,7 +179,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
 
   val artifactVersionRoute = path(Segment / Segment / Segment / Segment) {
     (organization, repository, artifact, version) =>
-      optionalSession(refreshable, usingCookies) { userId =>
+      githubSession(session) { userId =>
         complete(
           artifactPage(organization,
             repository,
