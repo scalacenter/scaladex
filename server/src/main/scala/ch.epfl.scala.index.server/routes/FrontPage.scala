@@ -17,8 +17,8 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
   private def frontPage(userInfo: Option[UserInfo]) = {
     import dataRepository._
     for {
-      keywords <- keywords(None)
-      targets <- targets(None)
+      keywords <- keywords()
+      targets <- targets()
       mostDependedUpon <- mostDependedUpon()
       latestProjects <- latestProjects()
       latestReleases <- latestReleases()

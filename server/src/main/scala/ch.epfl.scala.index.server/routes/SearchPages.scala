@@ -26,18 +26,22 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
           parameters('q, 'page.as[Int] ? 1, 'sort.?, 'keywords.*, 'targets.*, 'you.?) { 
             (query, page, sorting, filterKeywords, filterTargets, you) =>
             
-            val userRepos = you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set()) 
+            val userRepos = you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set())
+
+            val params = SearchParams(
+              query,
+              page,
+              sorting,
+              userRepos,
+              keywords = filterKeywords.toList,
+              targets = filterTargets.toList
+            )
             
             complete(
               for {
-                (pagination, projects) <- find(query,
-                                               page,
-                                               sorting,
-                                               userRepos)//, 
-                                               // keywords = filterKeywords, 
-                                               // targets = filterTargets)
-                keywords <- keywords(Some(query))
-                targets <- targets(Some(query))
+                (pagination, projects) <- find(params)
+                keywords <- keywords(params)
+                targets <- targets(params)
               } yield {
 
                 val parsedTargets =

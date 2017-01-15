@@ -15,10 +15,24 @@ import org.elasticsearch.search.sort.SortOrder
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.reflectiveCalls
 
+object SearchParams {
+  val resultsPerPage = 20
+}
+
+case class SearchParams(
+  queryString: String = "*",
+  page: PageIndex = 0,
+  sorting: Option[String] = None,
+  userRepos: Set[GithubRepo] = Set(),
+  total: Int = SearchParams.resultsPerPage,
+  targetFiltering: Option[ScalaTarget] = None,
+  cli: Boolean = false,
+  keywords: List[String] = Nil,
+  targets: List[String] = Nil
+)
+
 class DataRepository(github: Github)(private implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(id = None)
-
-  val resultsPerPage = 20
 
   val sortQuery = (sorting: Option[String]) =>
     sorting match {
@@ -34,36 +48,35 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
       case _ => scoreSort
   }
 
-  private def query(q: QueryDefinition,
-                    page: PageIndex,
-                    total: Int,
-                    sorting: Option[String]): Future[(Pagination, List[Project])] = {
+  private def clamp(page: Int) = if (page <= 0) 1 else page
 
-    val clampedPage = if (page <= 0) 1 else page
+  private def query(q: QueryDefinition,
+                    params: SearchParams): Future[(Pagination, List[Project])] = {
+
+    import params._
 
     esClient.execute {
       search
         .in(indexName / projectsCollection)
         .query(q)
-        .start(total * (clampedPage - 1))
-        .limit(total)
+        .start(params.total * (clamp(page) - 1))
+        .limit(params.total)
         .sort(sortQuery(sorting))
     }.map(
       r =>
         (
           Pagination(
-            current = clampedPage,
-            totalPages = Math.ceil(r.totalHits / total.toDouble).toInt,
+            current = clamp(page),
+            totalPages = Math.ceil(r.totalHits / params.total.toDouble).toInt,
             total = r.totalHits
           ),
           r.as[Project].toList.map(hideId)
       ))
   }
 
-  private def getQuery(queryString: String,
-                       userRepos: Set[GithubRepo] = Set(),
-                       targetFiltering: Option[ScalaTarget] = None,
-                       cli: Boolean = false) = {
+  private def getQuery(params: SearchParams) = {
+    import params._
+
     def replaceField(queryString: String, input: String, replacement: String) = {
       val regex = s"(\\s|^)$input:".r
       regex.replaceAllIn(queryString, s"$$1$replacement:")
@@ -83,6 +96,14 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
     val cliQuery =
       if (cli) List(termQuery("hasCli", true))
+      else Nil
+
+    val keywordsQuery =
+      if(params.keywords.nonEmpty) params.keywords.toList.map(keyword => bool(should(termQuery("keywords", keyword))))
+      else Nil
+
+    val targetsQuery =
+      if(params.targets.nonEmpty) params.targets.toList.map(target => bool(should(termQuery("targets", target))))
       else Nil
 
     val reposQueries = if (!userRepos.isEmpty) {
@@ -107,7 +128,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
     functionScoreQuery(
       bool(
-        mustQueries = mustQueriesRepos ++ mustQueryTarget ++ cliQuery,
+        mustQueries = mustQueriesRepos ++ mustQueryTarget ++ cliQuery ++ keywordsQuery ++ targetsQuery,
         shouldQueries = List(
           fuzzyQuery("keywords", escaped).boost(2),
           fuzzyQuery("github.description", escaped).boost(1.7),
@@ -132,25 +153,12 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
   def total(queryString: String): Future[Long] = {
     esClient.execute {
-      search.in(indexName / projectsCollection).query(getQuery(queryString)).size(0)
+      search.in(indexName / projectsCollection).query(getQuery(SearchParams(queryString = queryString))).size(0)
     }.map(_.totalHits)
   }
 
-  def find(queryString: String,
-           page: PageIndex = 0,
-           sorting: Option[String] = None,
-           userRepos: Set[GithubRepo] = Set(),
-           total: Int = resultsPerPage,
-           targetFiltering: Option[ScalaTarget] = None,
-           cli: Boolean = false): Future[(Pagination, List[Project])] = {
-
-    query(
-      getQuery(queryString, userRepos, targetFiltering, cli),
-      page,
-      total,
-      sorting
-    )
-  }
+  def find(params: SearchParams): Future[(Pagination, List[Project])] =
+    query(getQuery(params), params)
 
   private def uniquelyNamedReleases(releases: List[Release]) =
     releases.groupBy(r => r.reference.artifact).map { case (_, release) => release.head }.toList
@@ -301,43 +309,21 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
     }.map(r => r.as[T].toList)
   }
 
-  def keywords(query: Option[String]) = aggregations(emptyToStar(query), "keywords")
-  def targets(query: Option[String]) = aggregations(emptyToStar(query), "targets")
+  def keywords(params: SearchParams = SearchParams()) = aggregations("keywords", params)
+  def targets(params: SearchParams = SearchParams()) = aggregations("targets", params)
 
-  private def emptyToStar(query: Option[String]) = {
-    query match {
-      case Some("") => Some("*")
-      case _ => query
-    }
-  } 
-
-
-
-  /**
-    * list all tags including number of facets
-    * @param field the field name
-    * @return
-    */
-  private def aggregations(queryS: Option[String], field: String): Future[Map[String, Long]] = {
+  private def aggregations(field: String, params: SearchParams): Future[Map[String, Long]] = {
 
     import scala.collection.JavaConverters._
     import org.elasticsearch.search.aggregations.bucket.terms.StringTerms
 
     val aggregationName = s"${field}_count"
 
-    val query0 =
-      queryS match {
-        case Some(q) => stringQuery(q)
-        case None    => matchAllQuery
-      }
-
     esClient.execute {
       search
         .in(indexName / projectsCollection)
-        .query(query0)
-        .aggregations(
-          aggregation.terms(aggregationName).field(field).size(50)
-        )
+        .query(getQuery(params))
+        .aggregations(aggregation.terms(aggregationName).field(field).size(50))
     }.map(resp => {
       val agg = resp.aggregations.get[StringTerms](aggregationName)
       agg.getBuckets.asScala.toList.collect {
