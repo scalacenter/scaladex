@@ -88,7 +88,8 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
   val editRoutes = concat(
     post {
       path("edit" / Segment / Segment) { (organization, repository) =>
-        githubSession(session) { userId =>
+        // TODO: The userId not being used seems suspicious, suggests there may actually be no authentication on the update
+        githubUser(session) { _ =>
           pathEnd {
             formFieldSeq { fields =>
               formFields(
@@ -143,9 +144,9 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
     },
     get {
       path("edit" / Segment / Segment) { (organization, repository) =>
-        githubSession(session) { userId =>
+        githubUser(session) { user =>
           pathEnd {
-            complete(editPage(organization, repository, getUser(userId)))
+            complete(editPage(organization, repository, user))
           }
         }
       }
@@ -153,7 +154,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
   )
 
   val projectRoute = path(Segment / Segment) { (organization, repository) =>
-    githubSession(session) { userId =>
+    githubUser(session) { user =>
       concat(
         parameters('artifact, 'version.?) { (artifact, version) =>
           val rest = version match {
@@ -164,28 +165,28 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
             StatusCodes.PermanentRedirect)
         },
         pathEnd {
-          complete(projectPage(organization, repository, None, None, getUser(userId)))
+          complete(projectPage(organization, repository, None, None, user))
         }
       )
     }
   }
 
   val artifactRoute = path(Segment / Segment / Segment) { (organization, repository, artifact) =>
-    githubSession(session) { userId =>
+    githubUser(session) { user =>
       complete(
-        artifactPage(organization, repository, artifact, None, getUser(userId)))
+        artifactPage(organization, repository, artifact, None, user))
     }
   }
 
   val artifactVersionRoute = path(Segment / Segment / Segment / Segment) {
     (organization, repository, artifact, version) =>
-      githubSession(session) { userId =>
+      githubUser(session) { user =>
         complete(
           artifactPage(organization,
             repository,
             artifact,
             SemanticVersion(version),
-            getUser(userId)))
+            user))
       }
   }
 

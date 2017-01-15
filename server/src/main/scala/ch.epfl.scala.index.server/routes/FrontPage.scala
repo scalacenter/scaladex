@@ -10,7 +10,7 @@ import GithubUserSessionDirective._
 import akka.http.scaladsl.server.Directives._
 
 class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
-  import session._
+  import session.executionContext
 
   private def frontPage(userInfo: Option[UserInfo]) = {
     import dataRepository._
@@ -26,8 +26,8 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
 
   val routes =
     pathSingleSlash {
-      githubSession(session) { userId =>
-        complete(frontPage(getUser(userId).map(_.user)))
+      githubUser(session) { user =>
+        complete(frontPage(user.map(_.user)))
       }
     }
 }

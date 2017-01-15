@@ -14,17 +14,17 @@ import Uri._
 
 class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
 
-  import session._
+  import session.executionContext
 
   val valSearchPageRoute = path("search") {
-    githubSession(session) { userId =>
+    githubUser(session) { user =>
       parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
         complete(
           dataRepository
             .find(query,
               page,
               sorting,
-              you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set()))
+              you.flatMap(_ => user.map(_.repos)).getOrElse(Set()))
             .map {
               case (pagination, projects) =>
                 searchresult(
@@ -33,7 +33,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
                   sorting,
                   pagination,
                   projects,
-                  getUser(userId).map(_.user),
+                  user.map(_.user),
                   you.isDefined
                 )
             }
