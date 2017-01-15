@@ -203,6 +203,12 @@ main {
         span {
             margin-right: 8px;
         }
+
+        h3 {
+            display: inline-block;
+            margin-right: 20px;
+        }
+
         .btn-primary {
             @include button-variant($btn-primary-color,
                     rgba($gray-darker, 0.7),
@@ -221,9 +227,26 @@ main {
     }
 }
 
-.list-result {
+.filters {
+    padding-left: 0;
+
+    li {
+        display: block;
+
+        input {
+            margin-right: 12px;
+        }
+    }
+}
+
+.filters, .list-result {
     margin-top: 20px;
+}
+
+.list-result {
     .item-list {
+        display: block;
+
         padding: 15px 0;
         margin: 0;
         border-bottom: 1px solid rgba($gray-dark, 0.12);
