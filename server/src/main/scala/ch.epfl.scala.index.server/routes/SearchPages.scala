@@ -23,20 +23,26 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
     get {
       path("search") {
         optionalSession(refreshable, usingCookies) { userId =>
-          parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
+          parameters('q, 'page.as[Int] ? 1, 'sort.?, 'keywords.*, 'targets.*, 'you.?) { 
+            (query, page, sorting, filterKeywords, filterTargets, you) =>
             
             val userRepos = you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set()) 
             
             complete(
               for {
-                (pagination, projects) <- find(query, page, sorting, userRepos)
+                (pagination, projects) <- find(query,
+                                               page,
+                                               sorting,
+                                               userRepos)//, 
+                                               // keywords = filterKeywords, 
+                                               // targets = filterTargets)
                 keywords <- keywords(Some(query))
                 targets <- targets(Some(query))
               } yield {
 
                 val parsedTargets =
                   targets.toList.map{case (name, count) =>
-                    ScalaTarget.fromSupportName(name).map{ case (label, version) => (label, version, count)}
+                    ScalaTarget.fromSupportName(name).map{ case (label, version) => (label, version, count, name)}
                   }.flatten.sorted
 
                 searchresult(
@@ -48,7 +54,9 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
                   getUser(userId).map(_.user),
                   you.isDefined,
                   keywords,
-                  parsedTargets
+                  parsedTargets,
+                  filterKeywords.toSet,
+                  filterTargets.toSet
                 )
               }
             )

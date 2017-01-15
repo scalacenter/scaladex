@@ -16,12 +16,15 @@
   user: Option[UserInfo],
   you: Boolean,
   keywords: Map[String, Long],
-  targets: List[(String, SemanticVersion, Long)])
+  targets: List[(String, SemanticVersion, Long, String)],
+  filterKeywords: Set[String],
+  filterTargets: Set[String])
 @main(title = s"Search $query", showSearch = true, searchQuery = query, user, you) {
   <main id="container-search">
     <div class="container">
       @if(pagination.total != 0 ) {
-        @result(query, uri,  sorting, pagination, projects, user, you, keywords, targets)
+        @result(query, uri,  sorting, pagination, projects, user, you, 
+                keywords, targets, filterKeywords, filterTargets)
       } else {
         <h1>No Results</h1>
       }
