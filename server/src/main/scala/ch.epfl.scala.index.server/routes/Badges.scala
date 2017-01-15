@@ -45,41 +45,39 @@ class Badges(dataRepository: DataRepository) {
 
   }
 
-  val routes =
-    get {
-      concat(
-      path(Segment / Segment / Segment / "latest.svg") { (organization, repository, artifact) =>
-        shields { (color, style, logo, logoWidth) =>
-          onSuccess(
-            dataRepository.artifactPage(Project.Reference(organization, repository),
-                                        ReleaseSelection(Some(artifact), None))) {
+  val versionBadge = path(Segment / Segment / Segment / "latest.svg") { (organization, repository, artifact) =>
+    shields { (color, style, logo, logoWidth) =>
+      onSuccess(
+        dataRepository.artifactPage(Project.Reference(organization, repository),
+          ReleaseSelection(Some(artifact), None))) {
 
-            case Some((_, _, release)) =>
-              shieldsSvg(artifact,
-                         release.reference.version.toString(),
-                         color,
-                         style,
-                         logo,
-                         logoWidth)
-            case _ =>
-              shieldsSvg(artifact,
-                         "no published release",
-                         color orElse Some("lightgrey"),
-                         style,
-                         logo,
-                         logoWidth)
+        case Some((_, _, release)) =>
+          shieldsSvg(artifact,
+            release.reference.version.toString(),
+            color,
+            style,
+            logo,
+            logoWidth)
+        case _ =>
+          shieldsSvg(artifact,
+            "no published release",
+            color orElse Some("lightgrey"),
+            style,
+            logo,
+            logoWidth)
 
-          }
-        }
-      },
-        path("count.svg") {
-          parameter('q) { query =>
-            shieldsSubject { (color, style, logo, logoWidth, subject) =>
-              onSuccess(dataRepository.total(query))(count =>
-                shieldsSvg(subject, count.toString, color, style, logo, logoWidth))
-            }
-          }
-        }
-      )
+      }
     }
+  }
+
+  val queryCountBadge = path("count.svg") {
+    parameter('q) { query =>
+      shieldsSubject { (color, style, logo, logoWidth, subject) =>
+        onSuccess(dataRepository.total(query))(count =>
+          shieldsSvg(subject, count.toString, color, style, logo, logoWidth))
+      }
+    }
+  }
+
+  val routes = get(versionBadge ~ queryCountBadge)
 }

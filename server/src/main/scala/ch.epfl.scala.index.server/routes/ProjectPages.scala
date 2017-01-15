@@ -86,7 +86,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
       }.getOrElse((NotFound, views.html.notfound(user))))
   }
 
-  val routes = concat(
+  val editRoutes = concat(
     post {
       path("edit" / Segment / Segment) { (organization, repository) =>
         optionalSession(refreshable, usingCookies) { userId =>
@@ -143,49 +143,61 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
       }
     },
     get {
+      path("edit" / Segment / Segment) { (organization, repository) =>
+        optionalSession(refreshable, usingCookies) { userId =>
+          pathEnd {
+            complete(editPage(organization, repository, getUser(userId)))
+          }
+        }
+      }
+    }
+  )
+
+  val projectRoute = path(Segment / Segment) { (organization, repository) =>
+    optionalSession(refreshable, usingCookies) { userId =>
       concat(
-        path("edit" / Segment / Segment) { (organization, repository) =>
-          optionalSession(refreshable, usingCookies) { userId =>
-            pathEnd {
-              complete(editPage(organization, repository, getUser(userId)))
-            }
+        parameters('artifact, 'version.?) { (artifact, version) =>
+          val rest = version match {
+            case Some(v) if !v.isEmpty => "/" + v
+            case _ => ""
           }
+          redirect(s"/$organization/$repository/$artifact$rest",
+            StatusCodes.PermanentRedirect)
         },
-        path(Segment / Segment) { (organization, repository) =>
-          optionalSession(refreshable, usingCookies) { userId =>
-            concat(
-              parameters('artifact, 'version.?) { (artifact, version) =>
-                val rest = version match {
-                  case Some(v) if !v.isEmpty => "/" + v
-                  case _ => ""
-                }
-                redirect(s"/$organization/$repository/$artifact$rest",
-                  StatusCodes.PermanentRedirect)
-              },
-              pathEnd {
-                complete(projectPage(organization, repository, None, None, getUser(userId)))
-              }
-            )
-          }
-        },
-        path(Segment / Segment / Segment) { (organization, repository, artifact) =>
-          optionalSession(refreshable, usingCookies) { userId =>
-            complete(
-              artifactPage(organization, repository, artifact, None, getUser(userId)))
-          }
-        },
-        path(Segment / Segment / Segment / Segment) {
-          (organization, repository, artifact, version) =>
-            optionalSession(refreshable, usingCookies) { userId =>
-              complete(
-                artifactPage(organization,
-                  repository,
-                  artifact,
-                  SemanticVersion(version),
-                  getUser(userId)))
-            }
+        pathEnd {
+          complete(projectPage(organization, repository, None, None, getUser(userId)))
         }
       )
     }
-  )
+  }
+
+  val artifactRoute = path(Segment / Segment / Segment) { (organization, repository, artifact) =>
+    optionalSession(refreshable, usingCookies) { userId =>
+      complete(
+        artifactPage(organization, repository, artifact, None, getUser(userId)))
+    }
+  }
+
+  val artifactVersionRoute = path(Segment / Segment / Segment / Segment) {
+    (organization, repository, artifact, version) =>
+      optionalSession(refreshable, usingCookies) { userId =>
+        complete(
+          artifactPage(organization,
+            repository,
+            artifact,
+            SemanticVersion(version),
+            getUser(userId)))
+      }
+  }
+
+  val viewRoutes =
+    get {
+      concat(
+        projectRoute,
+        artifactRoute,
+        artifactVersionRoute
+      )
+    }
+
+  val routes = editRoutes ~ viewRoutes
 }
