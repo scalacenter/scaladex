@@ -2,7 +2,6 @@ package ch.epfl.scala.index
 package server
 
 import routes._
-import routes.api._
 import data.DataPaths
 import data.elastic._
 import akka.http.scaladsl._
@@ -11,10 +10,12 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext}
+import scala.concurrent.Await
 import java.lang.management.ManagementFactory
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
+
+import ch.epfl.scala.index.server.GithubUserSessionDirective.githubUser
 
 // reStart 8080 /home/gui/center/scaladex/contrib /home/gui/center/scaladex-data-jungle
 object Server {
@@ -50,19 +51,8 @@ object Server {
 
     val paths: DataPaths = DataPaths(pathFromArgs)
 
-    def buildRoutes(data: DataRepository, session: GithubUserSession, github: Github, paths: DataPaths)
-                   (implicit system: ActorSystem, materializer: ActorMaterializer, executionContext: ExecutionContext) = {
-      new Routes(session,
-        new FrontPage(data, session),
-        new ProjectPages(data, session),
-        new SearchPages(data, session),
-        new PublishApi(paths, data, github),
-        new SearchApi(data),
-        new OAuth2(github, session),
-        new Badges(data)).routes
-    }
-
-    val routes = buildRoutes(data, session, github, paths)
+    val facade = ScaladexFacade.createStandardFacade(data, session, github, paths)
+    val routes = new ch.epfl.scala.index.server.routes.Paths(githubUser(session)).buildRoutes(facade)
 
     println("waiting for elastic to start")
     blockUntilYellow()

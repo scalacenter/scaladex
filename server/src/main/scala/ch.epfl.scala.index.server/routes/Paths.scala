@@ -1,30 +1,15 @@
 package ch.epfl.scala.index.server.routes
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Directives.{parameters, path, pathSingleSlash}
 import akka.http.scaladsl.server.PathMatchers.Segment
 import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.unmarshalling.Unmarshaller
-import akka.stream.ActorMaterializer
-import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.github.GithubCredentials
-import ch.epfl.scala.index.server.GithubUserSessionDirective.githubUser
-import ch.epfl.scala.index.server.{DataRepository, Github, GithubUserSession, UserState}
+import ch.epfl.scala.index.server.UserState
 import ch.megard.akka.http.cors.CorsDirectives.cors
 import org.joda.time.DateTime
-
-import scala.concurrent.ExecutionContext
-
-class Routes(data: DataRepository, session: GithubUserSession, github: Github, paths: DataPaths)
-            (implicit system: ActorSystem, materializer: ActorMaterializer, executionContext: ExecutionContext) {
-
-  private val facade = ScaladexFacade.createStandardFacade(data, session, github, paths)
-
-  val routes = new Paths(githubUser(session)).buildRoutes(facade)
-}
-
 
 class Paths(userState: Directive1[Option[UserState]]) {
 
