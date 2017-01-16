@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Directives.{parameters, path, pathSingleSlash}
 import akka.http.scaladsl.server.PathMatchers.Segment
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{Directive1, Route}
 import akka.http.scaladsl.server.directives.Credentials
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import ch.epfl.scala.index.data.github.GithubCredentials
@@ -17,10 +17,11 @@ import org.joda.time.DateTime
 import scala.concurrent.{ExecutionContext, Future}
 
 class Routes(session: GithubUserSession, frontPage: FrontPage, projectPages: ProjectPages, searchPages: SearchPages, publishApi: PublishApi, searchApi: SearchApi, oAuth2: OAuth2, badges: Badges) {
-  private val userState = githubUser(session)
+
+  val Paths = new Paths(githubUser(session))
 
   //Front Page
-  val frontPageRoute: Route = (Paths.frontPagePath & userState)(frontPage.frontPageBehavior)
+  val frontPageRoute: Route = Paths.frontPagePath(frontPage.frontPageBehavior)
 
   // Project Pages
   private val legacyArtifactQueryRoute = Paths.legacyArtifactQueryPath(session)(projectPages.legacyArtifactQueryBehavior)
@@ -91,7 +92,7 @@ class Routes(session: GithubUserSession, frontPage: FrontPage, projectPages: Pro
   val badgeRoutes = get(versionBadge ~ queryCountBadge)
 
   // Aggregation
-  private val userFacingRoutes =
+  private def userFacingRoutes =
     concat(
       frontPageRoute,
 
@@ -115,11 +116,12 @@ class Routes(session: GithubUserSession, frontPage: FrontPage, projectPages: Pro
 }
 
 
-object Paths {
-  def frontPagePath = pathSingleSlash
+class Paths(userState: Directive1[Option[UserState]]){
+
+  def frontPagePath = pathSingleSlash & userState
 
   def searchPath(session: GithubUserSession) =
-    path("search") & githubUser(session) & parameters(('q, 'page.as[Int] ? 1, 'sort.?, 'you.?))
+    path("search") & userState & parameters(('q, 'page.as[Int] ? 1, 'sort.?, 'you.?))
 
   val organizationPath = path(Segment)
 
@@ -129,7 +131,7 @@ object Paths {
 
   def versionBadgePath = path(Segment / Segment / Segment / "latest.svg") & shieldsParameters
 
-  def editUpdatePath(session: GithubUserSession) = post & path("edit" / Segment / Segment) & githubUser(session) & pathEnd & formFieldSeq & formFields((
+  def editUpdatePath(session: GithubUserSession) = post & path("edit" / Segment / Segment) & userState & pathEnd & formFieldSeq & formFields((
     'contributorsWanted.as[Boolean] ? false,
     'keywords.*,
     'defaultArtifact.?,
@@ -139,15 +141,15 @@ object Paths {
     'cliArtifacts.*,
     'customScalaDoc.?))
 
-  def editPath(session: GithubUserSession) = get & path("edit" / Segment / Segment) & githubUser(session) & pathEnd
+  def editPath(session: GithubUserSession) = get & path("edit" / Segment / Segment) & userState & pathEnd
 
-  def projectPath(session: GithubUserSession) = path(Segment / Segment) & githubUser(session) & pathEnd
+  def projectPath(session: GithubUserSession) = path(Segment / Segment) & userState & pathEnd
 
   def legacyArtifactQueryPath(session: GithubUserSession) = path(Segment / Segment) & parameters(('artifact, 'version.?))
 
-  def artifactPath(session: GithubUserSession) = path(Segment / Segment / Segment) & githubUser(session)
+  def artifactPath(session: GithubUserSession) = path(Segment / Segment / Segment) & userState
 
-  def artifactVersionPath(session: GithubUserSession) = path(Segment / Segment / Segment / Segment) & githubUser(session)
+  def artifactVersionPath(session: GithubUserSession) = path(Segment / Segment / Segment / Segment) & userState
 
   /*
  * verifying a login to github

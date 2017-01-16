@@ -2,13 +2,14 @@ package ch.epfl.scala.index.server.routes
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.testkit.{RouteTest, TestFrameworkInterface}
+import ch.epfl.scala.index.server.UserState
 import org.specs2.execute.{Failure, FailureException}
 
 
 object RouteTests extends org.specs2.mutable.Specification with SpecificationRouteTest {
   "routing of" >> {
     "/" >> {
-      val route = Paths.frontPagePath(complete("Home Page"))
+      val route = new Paths(provide[Option[UserState]](None)).frontPagePath(_ => complete("Home Page"))
 
       Get() ~> route ~> check {
         responseAs[String] ==== "Home Page"
