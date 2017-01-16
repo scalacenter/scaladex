@@ -6,7 +6,6 @@ package api
 import ch.epfl.scala.index.api.Autocompletion
 import model._
 import release._
-import ch.megard.akka.http.cors.CorsDirectives._
 import akka.http.scaladsl._
 import server.Directives._
 import model.StatusCodes._
@@ -36,7 +35,7 @@ object Api {
 class SearchApi(dataRepository: DataRepository)(implicit val executionContext: ExecutionContext) {
 
 
-  private def autocompleteBahavior(query: String) = {
+  def autocompleteBehavior(query: String) = {
     complete {
       dataRepository.find(query, page = 1, sorting = None, total = 5).map {
         case (pagination, projects) =>
@@ -52,7 +51,7 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
     }
   }
 
-  private def projectBehavior(organization: String, repository: String, artifact: Option[String]) = {
+  def projectBehavior(organization: String, repository: String, artifact: Option[String]) = {
     val reference = ch.epfl.scala.index.model.Project.Reference(organization, repository)
 
     def convert(options: release.ReleaseOptions): Api.ReleaseOptions = {
@@ -73,7 +72,7 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
       })
   }
 
-  private def searchBehavior(q: String, target0: String, scalaVersion0: String, targetVersion0: Option[String], cli: Boolean) = {
+  def searchBehavior(q: String, target0: String, scalaVersion0: String, targetVersion0: Option[String], cli: Boolean) = {
     val target1 =
       (target0, SemanticVersion(scalaVersion0), targetVersion0.map(SemanticVersion(_))) match {
         case ("JVM", Some(scalaVersion), _) =>
@@ -114,22 +113,5 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
     )
   }
 
-  private val autocompleteRoute = Routes.apiAutocompletePath(autocompleteBahavior)
 
-  private val projectsRoute = Routes.apiProjectPath(projectBehavior)
-
-  private val searchRoute = Routes.apiSearchPath(searchBehavior)
-
-  val routes =
-    pathPrefix("api") {
-      concat(
-        cors() {
-          concat(
-            searchRoute,
-            projectsRoute
-          )
-        },
-        autocompleteRoute
-      )
-    }
 }

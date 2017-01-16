@@ -8,7 +8,7 @@ import org.specs2.execute.{Failure, FailureException}
 object RouteTests extends org.specs2.mutable.Specification with SpecificationRouteTest {
   "routing of" >> {
     "/" >> {
-      val route = Routes.frontPagePath(complete("Home Page"))
+      val route = Paths.frontPagePath(complete("Home Page"))
 
       Get() ~> route ~> check {
         responseAs[String] ==== "Home Page"

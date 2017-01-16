@@ -10,3 +10,4 @@ index/
 contrib/
 bin/.coursier
 bin/.scalafmt
+scaladex.log

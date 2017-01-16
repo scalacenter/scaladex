@@ -17,7 +17,7 @@ import org.joda.time.DateTime
 
 import scala.concurrent.ExecutionContext
 
-class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Github)(
+class PublishApi(paths: DataPaths, dataRepository: DataRepository, val github: Github)(
   implicit val system: ActorSystem,
   implicit val materializer: ActorMaterializer) {
 
@@ -53,7 +53,7 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
   private val actor =
     system.actorOf(Props(classOf[impl.PublishActor], paths, dataRepository, system, materializer))
 
-  private def publishBehavior(path: String, created: DateTime, readme: Boolean, contributors: Boolean, info: Boolean, keywords: Iterable[String], test: Boolean, data: String, auth: (GithubCredentials, UserState)) = {
+  def publishBehavior(path: String, created: DateTime, readme: Boolean, contributors: Boolean, info: Boolean, keywords: Iterable[String], test: Boolean, data: String, auth: (GithubCredentials, UserState)) = {
     auth match {
       case (credentials, userState) =>
         val publishData = impl.PublishData(
@@ -73,7 +73,7 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
     }
   }
 
-  private def publishStatusBehavior(path: String) = {
+  def publishStatusBehavior(path: String) = {
     complete {
 
       /* check if the release already exists - sbt will handle HTTP-Status codes
@@ -87,7 +87,5 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
     }
   }
 
-  private val publishStatusRoute = Routes.publishStatusPath(publishStatusBehavior)
-  private val publishUpdateRoute = Routes.publishUpdateRoute(github)(implicitly[ExecutionContext])(publishBehavior)
-  val routes = concat(publishStatusRoute, publishUpdateRoute)
+  val executionContext = implicitly[ExecutionContext]
 }

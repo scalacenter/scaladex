@@ -4,17 +4,118 @@ import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Directives.{parameters, path, pathSingleSlash}
 import akka.http.scaladsl.server.PathMatchers.Segment
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives.Credentials
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import ch.epfl.scala.index.data.github.GithubCredentials
 import ch.epfl.scala.index.server.GithubUserSessionDirective.githubUser
+import ch.epfl.scala.index.server.routes.api.{PublishApi, SearchApi}
 import ch.epfl.scala.index.server.{Github, GithubUserSession, UserState}
+import ch.megard.akka.http.cors.CorsDirectives.cors
 import org.joda.time.DateTime
 
 import scala.concurrent.{ExecutionContext, Future}
 
+class Routes(session: GithubUserSession, frontPage: FrontPage, projectPages: ProjectPages, searchPages: SearchPages, publishApi: PublishApi, searchApi: SearchApi, oAuth2: OAuth2, badges: Badges) {
+  private val userState = githubUser(session)
 
-object Routes {
+  //Front Page
+  val frontPageRoute: Route = (Paths.frontPagePath & userState)(frontPage.frontPageBehavior)
+
+  // Project Pages
+  private val legacyArtifactQueryRoute = Paths.legacyArtifactQueryPath(session)(projectPages.legacyArtifactQueryBehavior)
+
+  private val projectRoute = Paths.projectPath(session)(projectPages.projectPageBehavior)
+
+  private val artifactRoute = Paths.artifactPath(session)(projectPages.artifactPageBehavior)
+
+  private val artifactVersionRoute = Paths.artifactVersionPath(session)(projectPages.artifactWithVersionBehavior)
+
+  private val editRoutes = concat(
+    Paths.editUpdatePath(session)(projectPages.updateProjectBehavior),
+    Paths.editPath(session)(projectPages.getEditPageBehavior))
+
+  private val viewRoutes =
+    get {
+      concat(
+        legacyArtifactQueryRoute,
+        projectRoute,
+        artifactRoute,
+        artifactVersionRoute
+      )
+    }
+
+  val projectRoutes = editRoutes ~ viewRoutes
+
+  // Search Page
+  private val searchPageRoute = Paths.searchPath(session)(searchPages.searchPageBehavior)
+
+  private val organizationRoute = Paths.organizationPath(searchPages.organizationBehavior)
+
+  val searchPageRoutes = get(searchPageRoute ~ organizationRoute)
+
+  // Publish API
+  private val publishStatusRoute = Paths.publishStatusPath(publishApi.publishStatusBehavior)
+  private val publishUpdateRoute = Paths.publishUpdateRoute(publishApi.github)(publishApi.executionContext)(publishApi.publishBehavior)
+  val publishApiRoutes = concat(publishStatusRoute, publishUpdateRoute)
+
+
+  // Search API
+  private val autocompleteRoute = Paths.apiAutocompletePath(searchApi.autocompleteBehavior)
+
+  private val projectsRoute = Paths.apiProjectPath(searchApi.projectBehavior)
+
+  private val searchRoute = Paths.apiSearchPath(searchApi.searchBehavior)
+
+  val searchApiRoute =
+    pathPrefix("api") {
+      concat(
+        cors() {
+          concat(
+            searchRoute,
+            projectsRoute
+          )
+        },
+        autocompleteRoute
+      )
+    }
+
+  // OAuth 2
+  val oAuth2routes = oAuth2.routes
+
+  // Badges
+  private val versionBadge = Paths.versionBadgePath(badges.versionBadgeBehavior)
+
+  private val queryCountBadge = Paths.queryBadgePath(badges.countBadgeBehavior)
+
+  val badgeRoutes = get(versionBadge ~ queryCountBadge)
+
+  // Aggregation
+  private val userFacingRoutes =
+    concat(
+      frontPageRoute,
+
+      redirectToNoTrailingSlashIfPresent(akka.http.scaladsl.model.StatusCodes.MovedPermanently) {
+        concat(
+          projectRoutes,
+          searchPageRoutes
+        )
+      }
+    )
+
+  private val programmaticRoutes = concat(
+    publishApiRoutes,
+    searchApiRoute,
+    Assets.routes,
+    badgeRoutes,
+    oAuth2routes
+  )
+
+  val routes = programmaticRoutes ~ userFacingRoutes
+}
+
+
+object Paths {
   def frontPagePath = pathSingleSlash
 
   def searchPath(session: GithubUserSession) =

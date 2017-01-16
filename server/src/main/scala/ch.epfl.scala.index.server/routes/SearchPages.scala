@@ -15,7 +15,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
 
   import session.executionContext
 
-  private def searchPageBehavior(user: Option[UserState], query: String, page: Int, sorting: Option[String], you: Option[String]) = {
+  def searchPageBehavior(user: Option[UserState], query: String, page: Int, sorting: Option[String], you: Option[String]) = {
     complete(
       dataRepository
         .find(query,
@@ -37,14 +37,8 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
     )
   }
 
-  private def organizationBehavior(organization: String) = {
+  def organizationBehavior(organization: String) = {
     val query = s"organization:$organization"
     redirect(s"/search?q=$query", StatusCodes.TemporaryRedirect)
   }
-
-  val searchPageRoute = Routes.searchPath(session)(searchPageBehavior)
-
-  val organizationRoute = Routes.organizationPath(organizationBehavior)
-
-  val routes = get(searchPageRoute ~ organizationRoute)
 }

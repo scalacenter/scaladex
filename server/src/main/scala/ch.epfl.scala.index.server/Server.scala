@@ -3,24 +3,16 @@ package server
 
 import routes._
 import routes.api._
-
 import data.DataPaths
 import data.elastic._
-
 import akka.http.scaladsl._
-import akka.http.scaladsl.model.StatusCodes
-import server.Directives._
-
 import com.typesafe.config.ConfigFactory
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
 import scala.concurrent.duration._
-import scala.concurrent.Await
-
+import scala.concurrent.{Await, ExecutionContext}
 import java.lang.management.ManagementFactory
-
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
@@ -56,34 +48,21 @@ object Server {
       if (args.isEmpty) Nil
       else args.toList.tail
 
+    val paths: DataPaths = DataPaths(pathFromArgs)
 
-    class Routes(data: DataRepository, session: GithubUserSession, github: Github) {
-      val userFacingRoutes =
-        concat(
-          new FrontPage(data, session).routes,
-
-          redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
-            concat(
-              new ProjectPages(data, session).routes,
-              new SearchPages(data, session).routes
-            )
-          }
-        )
-
-      val paths = DataPaths(pathFromArgs)
-
-      val programmaticRoutes = concat(
-        new PublishApi(paths, data, github).routes,
-        new SearchApi(data).routes,
-        Assets.routes,
-        new Badges(data).routes,
-        new OAuth2(github, session).routes
-      )
-
-      val routes = programmaticRoutes ~ userFacingRoutes
+    def buildRoutes(data: DataRepository, session: GithubUserSession, github: Github, paths: DataPaths)
+                   (implicit system: ActorSystem, materializer: ActorMaterializer, executionContext: ExecutionContext) = {
+      new Routes(session,
+        new FrontPage(data, session),
+        new ProjectPages(data, session),
+        new SearchPages(data, session),
+        new PublishApi(paths, data, github),
+        new SearchApi(data),
+        new OAuth2(github, session),
+        new Badges(data)).routes
     }
 
-    val routes = new Routes(data, session, github).routes
+    val routes = buildRoutes(data, session, github, paths)
 
     println("waiting for elastic to start")
     blockUntilYellow()
