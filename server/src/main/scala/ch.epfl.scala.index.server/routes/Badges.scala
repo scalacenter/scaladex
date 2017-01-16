@@ -42,7 +42,7 @@ class Badges(dataRepository: DataRepository) {
 
   }
 
-  val versionBadge = Routes.versionBadgePath { (organization, repository, artifact, color, style, logo, logoWidth) =>
+  private def versionBadgeBehavior(organization: String, repository: String, artifact: String, color: Option[String], style: Option[String], logo: Option[String], logoWidth: Option[Int]) = {
     onSuccess(
       dataRepository.artifactPage(Project.Reference(organization, repository),
         ReleaseSelection(Some(artifact), None))) {
@@ -65,12 +65,14 @@ class Badges(dataRepository: DataRepository) {
     }
   }
 
-
-  val queryCountBadge = Routes.queryBadgePath {
-    (query, color, style, logo, logoWidth, subject) =>
-      onSuccess(dataRepository.total(query))(count =>
-        shieldsSvg(subject, count.toString, color, style, logo, logoWidth))
+  private def countBadgeBehavior(query: String, color: Option[String], style: Option[String], logo: Option[String], logoWidth: Option[PageIndex], subject: String) = {
+    onSuccess(dataRepository.total(query))(count =>
+      shieldsSvg(subject, count.toString, color, style, logo, logoWidth))
   }
+
+  val versionBadge = Routes.versionBadgePath(versionBadgeBehavior)
+
+  val queryCountBadge = Routes.queryBadgePath(countBadgeBehavior)
 
   val routes = get(versionBadge ~ queryCountBadge)
 }

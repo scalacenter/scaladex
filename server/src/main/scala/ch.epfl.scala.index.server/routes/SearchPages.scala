@@ -15,32 +15,36 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
 
   import session.executionContext
 
-  val valSearchPageRoute = Routes.searchPath(session) { (user, query, page, sorting, you) =>
-        complete(
-          dataRepository
-            .find(query,
-              page,
+  private def searchPageBehavior(user: Option[UserState], query: String, page: Int, sorting: Option[String], you: Option[String]) = {
+    complete(
+      dataRepository
+        .find(query,
+          page,
+          sorting,
+          you.flatMap(_ => user.map(_.repos)).getOrElse(Set()))
+        .map {
+          case (pagination, projects) =>
+            searchresult(
+              query,
+              "search",
               sorting,
-              you.flatMap(_ => user.map(_.repos)).getOrElse(Set()))
-            .map {
-              case (pagination, projects) =>
-                searchresult(
-                  query,
-                  "search",
-                  sorting,
-                  pagination,
-                  projects,
-                  user.map(_.user),
-                  you.isDefined
-                )
-            }
-        )
-      }
+              pagination,
+              projects,
+              user.map(_.user),
+              you.isDefined
+            )
+        }
+    )
+  }
 
-  val organizationRoute = Routes.organizationPath { organization =>
+  private def organizationBehavior(organization: String) = {
     val query = s"organization:$organization"
     redirect(s"/search?q=$query", StatusCodes.TemporaryRedirect)
   }
 
-  val routes = get(valSearchPageRoute ~ organizationRoute)
+  val searchPageRoute = Routes.searchPath(session)(searchPageBehavior)
+
+  val organizationRoute = Routes.organizationPath(organizationBehavior)
+
+  val routes = get(searchPageRoute ~ organizationRoute)
 }

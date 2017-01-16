@@ -4,12 +4,12 @@ package routes
 
 import TwirlSupport._
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server._
 
 class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
 
-  import session.executionContext
-
   private def frontPage(user: Option[UserState]) = {
+    import session.executionContext
     val userInfo = user.map(_.user)
     import dataRepository._
     for {
@@ -22,5 +22,9 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
       views.html.frontpage(keywords, targets, latestProjects, mostDependedUpon, latestReleases, userInfo)
   }
 
-  val routes = Routes.frontPagePath(session) (user => complete(frontPage(user)))
+  val routes: Route = Routes.frontPagePath(session)(frontPageBehavior)
+
+  private def frontPageBehavior(user: Option[UserState]) = {
+    complete(frontPage(user))
+  }
 }

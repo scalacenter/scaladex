@@ -30,7 +30,7 @@ object Routes {
 
   def versionBadgePath = path(Segment / Segment / Segment / "latest.svg") & shieldsParameters
 
-  def editUpdatePath(session: GithubUserSession) = path("edit" / Segment / Segment) & githubUser(session) & pathEnd & formFieldSeq & formFields((
+  def editUpdatePath(session: GithubUserSession) = post & path("edit" / Segment / Segment) & githubUser(session) & pathEnd & formFieldSeq & formFields((
     'contributorsWanted.as[Boolean] ? false,
     'keywords.*,
     'defaultArtifact.?,
@@ -40,11 +40,11 @@ object Routes {
     'cliArtifacts.*,
     'customScalaDoc.?))
 
-  def editPath(session: GithubUserSession) = path("edit" / Segment / Segment) & githubUser(session) & pathEnd
+  def editPath(session: GithubUserSession) = get & path("edit" / Segment / Segment) & githubUser(session) & pathEnd
 
   def projectPath(session: GithubUserSession) = path(Segment / Segment) & githubUser(session) & pathEnd
 
-  def legacyArtifactQueryPath(session: GithubUserSession) = projectPath(session) & parameters(('artifact, 'version.?))
+  def legacyArtifactQueryPath(session: GithubUserSession) = path(Segment / Segment) & parameters(('artifact, 'version.?))
 
   def artifactPath(session: GithubUserSession) = path(Segment / Segment / Segment) & githubUser(session)
 

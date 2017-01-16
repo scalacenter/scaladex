@@ -12,6 +12,8 @@ import StatusCodes._
 import akka.actor.{ActorSystem, Props}
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
+import ch.epfl.scala.index.data.github.GithubCredentials
+import org.joda.time.DateTime
 
 import scala.concurrent.ExecutionContext
 
@@ -51,40 +53,41 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
   private val actor =
     system.actorOf(Props(classOf[impl.PublishActor], paths, dataRepository, system, materializer))
 
-  val routes =
-    concat(
-      Routes.publishStatusPath { path =>
-        complete {
+  private def publishBehavior(path: String, created: DateTime, readme: Boolean, contributors: Boolean, info: Boolean, keywords: Iterable[String], test: Boolean, data: String, auth: (GithubCredentials, UserState)) = {
+    auth match {
+      case (credentials, userState) =>
+        val publishData = impl.PublishData(
+          path,
+          created,
+          data,
+          credentials,
+          userState,
+          info,
+          contributors,
+          readme,
+          keywords.toSet,
+          test
+        )
 
-          /* check if the release already exists - sbt will handle HTTP-Status codes
+        complete((actor ? publishData).mapTo[(StatusCode, String)].map(s => s))
+    }
+  }
+
+  private def publishStatusBehavior(path: String) = {
+    complete {
+
+      /* check if the release already exists - sbt will handle HTTP-Status codes
            * NotFound -> allowed to write
            * OK -> only allowed if isSnapshot := true
            */
-          dataRepository.maven(mavenPathExtractor(path)) map {
-            case Some(release) => (OK, "release already exists")
-            case None => (NotFound, "ok to publish")
-          }
-        }
-      },
-      Routes.publishUpdateRoute(github)(implicitly[ExecutionContext]) {
-        (path, created, readme, contributors, info, keywords, test, data, auth) =>
-          auth match {
-            case (credentials, userState) =>
-              val publishData = impl.PublishData(
-                path,
-                created,
-                data,
-                credentials,
-                userState,
-                info,
-                contributors,
-                readme,
-                keywords.toSet,
-                test
-              )
-
-              complete((actor ? publishData).mapTo[(StatusCode, String)].map(s => s))
-          }
+      dataRepository.maven(mavenPathExtractor(path)) map {
+        case Some(release) => (OK, "release already exists")
+        case None => (NotFound, "ok to publish")
       }
-    )
+    }
+  }
+
+  private val publishStatusRoute = Routes.publishStatusPath(publishStatusBehavior)
+  private val publishUpdateRoute = Routes.publishUpdateRoute(github)(implicitly[ExecutionContext])(publishBehavior)
+  val routes = concat(publishStatusRoute, publishUpdateRoute)
 }

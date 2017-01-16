@@ -84,40 +84,33 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
       }.getOrElse((NotFound, views.html.notfound(user))))
   }
 
-  val editRoutes = concat(
-    post {
-      Routes.editUpdatePath(session) {
-        // TODO: The user argument not being used seems suspicious, suggests there may actually be no authentication on the update
-        (organization, repository, user, fields, contributorsWanted, keywords, defaultArtifact, defaultStableVersion, deprecated, artifactDeprecations, cliArtifacts, customScalaDoc) =>
+  // TODO: The user argument not being used seems suspicious, suggests there may actually be no authentication on the update
+  private def updateProjectBehavior(organization: String, repository: String, user: Option[UserState], fields: Seq[(String, String)], contributorsWanted: Boolean, keywords: Iterable[String], defaultArtifact: Option[String], defaultStableVersion: Boolean, deprecated: Boolean, artifactDeprecations: Iterable[String], cliArtifacts: Iterable[String], customScalaDoc: Option[String]) = {
+    val documentationLinks = getDocumentationLinks(fields)
 
-          val documentationLinks = getDocumentationLinks(fields)
-
-          onSuccess(
-            dataRepository.updateProject(
-              Project.Reference(organization, repository),
-              ProjectForm(
-                contributorsWanted,
-                keywords.toSet,
-                defaultStableVersion,
-                deprecated,
-                artifactDeprecations.toSet,
-                cliArtifacts.toSet,
-                customScalaDoc,
-                documentationLinks
-              )
-            )
-          ) { ret =>
-            Thread.sleep(1000) // oh yeah
-            redirect(Uri(s"/$organization/$repository"), SeeOther)
-          }
-      }
-    },
-    get {
-      Routes.editPath(session) { (organization, repository, user) =>
-        complete(editPage(organization, repository, user))
-      }
+    onSuccess(
+      dataRepository.updateProject(
+        Project.Reference(organization, repository),
+        ProjectForm(
+          contributorsWanted,
+          keywords.toSet,
+          defaultStableVersion,
+          deprecated,
+          artifactDeprecations.toSet,
+          cliArtifacts.toSet,
+          customScalaDoc,
+          documentationLinks
+        )
+      )
+    ) { ret =>
+      Thread.sleep(1000) // oh yeah
+      redirect(Uri(s"/$organization/$repository"), SeeOther)
     }
-  )
+  }
+
+  private def getEditPageBehavior(organization: String, repository: String, user: Option[UserState]) = {
+    complete(editPage(organization, repository, user))
+  }
 
   private def getDocumentationLinks(fields: Seq[(String, String)]) = {
     val documentationLinks = {
@@ -135,40 +128,49 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
     documentationLinks
   }
 
-  val projectRoute =
-    concat(
-      Routes.legacyArtifactQueryPath(session) { (organization, repository, user, artifact, version) =>
-        val rest = version match {
-          case Some(v) if !v.isEmpty => "/" + v
-          case _ => ""
-        }
-        redirect(s"/$organization/$repository/$artifact$rest",
-          StatusCodes.PermanentRedirect)
-      },
-      Routes.projectPath(session) { (organization, repository, user) =>
-        complete(projectPage(organization, repository, None, None, user))
-      }
-    )
-
-  val artifactRoute = Routes.artifactPath(session) {
-    (organization, repository, artifact, user) =>
-      complete(
-        artifactPage(organization, repository, artifact, None, user))
+  private def legacyArtifactQueryBehavior(organization: String, repository: String, artifact: String, version: Option[String]) = {
+    val rest = version match {
+      case Some(v) if !v.isEmpty => "/" + v
+      case _ => ""
+    }
+    redirect(s"/$organization/$repository/$artifact$rest",
+      StatusCodes.PermanentRedirect)
   }
 
-  val artifactVersionRoute = Routes.artifactVersionPath(session) {
-    (organization, repository, artifact, version, user) =>
-      complete(
-        artifactPage(organization,
-          repository,
-          artifact,
-          SemanticVersion(version),
-          user))
+  private def projectPageBehavior(organization: String, repository: String, user: Option[UserState]) = {
+    complete(projectPage(organization, repository, None, None, user))
   }
 
-  val viewRoutes =
+  private def artifactPageBehavior(organization: String, repository: String, artifact: String, user: Option[UserState]) = {
+    complete(
+      artifactPage(organization, repository, artifact, None, user))
+  }
+
+  private def artifactWithVersionBehavior(organization: String, repository: String, artifact: String, version: String, user: Option[UserState]) = {
+    complete(
+      artifactPage(organization,
+        repository,
+        artifact,
+        SemanticVersion(version),
+        user))
+  }
+
+  private val legacyArtifactQueryRoute = Routes.legacyArtifactQueryPath(session)(legacyArtifactQueryBehavior)
+
+  private val projectRoute = Routes.projectPath(session)(projectPageBehavior)
+
+  private val artifactRoute = Routes.artifactPath(session)(artifactPageBehavior)
+
+  private val artifactVersionRoute = Routes.artifactVersionPath(session)(artifactWithVersionBehavior)
+
+  private val editRoutes = concat(
+    Routes.editUpdatePath(session)(updateProjectBehavior),
+    Routes.editPath(session)(getEditPageBehavior))
+
+  private val viewRoutes =
     get {
       concat(
+        legacyArtifactQueryRoute,
         projectRoute,
         artifactRoute,
         artifactVersionRoute
