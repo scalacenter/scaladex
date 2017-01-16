@@ -6,9 +6,7 @@ import model._
 import data.project.ProjectForm
 import release._
 import model.misc._
-
 import TwirlSupport._
-import GithubUserSessionDirective._
 
 import akka.http.scaladsl._
 import model._
@@ -16,6 +14,7 @@ import server.Directives._
 import Uri._
 import StatusCodes._
 
+import scala.collection.immutable.Seq
 import scala.concurrent.Future
 
 class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
@@ -87,107 +86,84 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
 
   val editRoutes = concat(
     post {
-      path("edit" / Segment / Segment) { (organization, repository) =>
-        // TODO: The userId not being used seems suspicious, suggests there may actually be no authentication on the update
-        githubUser(session) { _ =>
-          pathEnd {
-            formFieldSeq { fields =>
-              formFields(
-                'contributorsWanted.as[Boolean] ? false,
-                'keywords.*,
-                'defaultArtifact.?,
-                'defaultStableVersion.as[Boolean] ? false,
-                'deprecated.as[Boolean] ? false,
-                'artifactDeprecations.*,
-                'cliArtifacts.*,
-                'customScalaDoc.?
-              ) {
-                (contributorsWanted, keywords, defaultArtifact, defaultStableVersion, deprecated,
-                 artifactDeprecations, cliArtifacts, customScalaDoc) =>
-                  val documentationLinks = {
-                    val name = "documentationLinks"
-                    val end = "]".head
+      Routes.editUpdatePath(session) {
+        // TODO: The user argument not being used seems suspicious, suggests there may actually be no authentication on the update
+        (organization, repository, user, fields, contributorsWanted, keywords, defaultArtifact, defaultStableVersion, deprecated, artifactDeprecations, cliArtifacts, customScalaDoc) =>
 
-                    fields.filter { case (key, _) => key.startsWith(name) }.groupBy {
-                      case (key, _) => key.drop("documentationLinks[".length).takeWhile(_ != end)
-                    }.values.map {
-                      case Vector((a, b), (c, d)) =>
-                        if (a.contains("label")) (b, d)
-                        else (d, b)
-                    }.toList
-                  }
+          val documentationLinks = getDocumentationLinks(fields)
 
-                  onSuccess(
-                    dataRepository.updateProject(
-                      Project.Reference(organization, repository),
-                      ProjectForm(
-                        contributorsWanted,
-                        keywords.toSet,
-                        defaultStableVersion,
-                        deprecated,
-                        artifactDeprecations.toSet,
-                        cliArtifacts.toSet,
-                        // documentation
-                        customScalaDoc,
-                        documentationLinks
-                      )
-                    )
-                  ) { ret =>
-                    Thread.sleep(1000) // oh yeah
-                    redirect(Uri(s"/$organization/$repository"), SeeOther)
-                  }
-              }
-            }
+          onSuccess(
+            dataRepository.updateProject(
+              Project.Reference(organization, repository),
+              ProjectForm(
+                contributorsWanted,
+                keywords.toSet,
+                defaultStableVersion,
+                deprecated,
+                artifactDeprecations.toSet,
+                cliArtifacts.toSet,
+                customScalaDoc,
+                documentationLinks
+              )
+            )
+          ) { ret =>
+            Thread.sleep(1000) // oh yeah
+            redirect(Uri(s"/$organization/$repository"), SeeOther)
           }
-        }
       }
     },
     get {
-      path("edit" / Segment / Segment) { (organization, repository) =>
-        githubUser(session) { user =>
-          pathEnd {
-            complete(editPage(organization, repository, user))
-          }
-        }
+      Routes.editPath(session) { (organization, repository, user) =>
+        complete(editPage(organization, repository, user))
       }
     }
   )
 
-  val projectRoute = path(Segment / Segment) { (organization, repository) =>
-    githubUser(session) { user =>
-      concat(
-        parameters('artifact, 'version.?) { (artifact, version) =>
-          val rest = version match {
-            case Some(v) if !v.isEmpty => "/" + v
-            case _ => ""
-          }
-          redirect(s"/$organization/$repository/$artifact$rest",
-            StatusCodes.PermanentRedirect)
-        },
-        pathEnd {
-          complete(projectPage(organization, repository, None, None, user))
-        }
-      )
+  private def getDocumentationLinks(fields: Seq[(String, String)]) = {
+    val documentationLinks = {
+      val name = "documentationLinks"
+      val end = "]".head
+
+      fields.filter { case (key, _) => key.startsWith(name) }.groupBy {
+        case (key, _) => key.drop("documentationLinks[".length).takeWhile(_ != end)
+      }.values.map {
+        case Vector((a, b), (c, d)) =>
+          if (a.contains("label")) (b, d)
+          else (d, b)
+      }.toList
     }
+    documentationLinks
   }
 
-  val artifactRoute = path(Segment / Segment / Segment) { (organization, repository, artifact) =>
-    githubUser(session) { user =>
+  val projectRoute =
+    concat(
+      Routes.legacyArtifactQueryPath(session) { (organization, repository, user, artifact, version) =>
+        val rest = version match {
+          case Some(v) if !v.isEmpty => "/" + v
+          case _ => ""
+        }
+        redirect(s"/$organization/$repository/$artifact$rest",
+          StatusCodes.PermanentRedirect)
+      },
+      Routes.projectPath(session) { (organization, repository, user) =>
+        complete(projectPage(organization, repository, None, None, user))
+      }
+    )
+
+  val artifactRoute = Routes.artifactPath(session) {
+    (organization, repository, artifact, user) =>
       complete(
         artifactPage(organization, repository, artifact, None, user))
-    }
   }
 
-  val artifactVersionRoute = path(Segment / Segment / Segment / Segment) {
-    (organization, repository, artifact, version) =>
-      githubUser(session) { user =>
-        complete(
-          artifactPage(organization,
-            repository,
-            artifact,
-            SemanticVersion(version),
-            user))
-      }
+  val artifactVersionRoute = Routes.artifactVersionPath(session) {
+    (organization, repository, artifact, version, user) =>
+      complete(
+        artifactPage(organization,
+          repository,
+          artifact,
+          SemanticVersion(version),
+          user))
   }
 
   val viewRoutes =

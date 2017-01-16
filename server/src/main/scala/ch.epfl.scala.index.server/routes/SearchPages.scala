@@ -5,7 +5,6 @@ package routes
 import views.search.html._
 
 import TwirlSupport._
-import GithubUserSessionDirective._
 
 import akka.http.scaladsl._
 import model._
@@ -16,9 +15,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
 
   import session.executionContext
 
-  val valSearchPageRoute = path("search") {
-    githubUser(session) { user =>
-      parameters('q, 'page.as[Int] ? 1, 'sort.?, 'you.?) { (query, page, sorting, you) =>
+  val valSearchPageRoute = Routes.searchPath(session) { (user, query, page, sorting, you) =>
         complete(
           dataRepository
             .find(query,
@@ -39,10 +36,8 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
             }
         )
       }
-    }
-  }
 
-  val organizationRoute = path(Segment) { organization =>
+  val organizationRoute = Routes.organizationPath { organization =>
     val query = s"organization:$organization"
     redirect(s"/search?q=$query", StatusCodes.TemporaryRedirect)
   }

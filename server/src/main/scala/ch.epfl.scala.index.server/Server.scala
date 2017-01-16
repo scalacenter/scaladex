@@ -56,29 +56,34 @@ object Server {
       if (args.isEmpty) Nil
       else args.toList.tail
 
-    val paths = DataPaths(pathFromArgs)
 
-    val userFacingRoutes =
-      concat(
-        new FrontPage(data, session).routes,
+    class Routes(data: DataRepository, session: GithubUserSession, github: Github) {
+      val userFacingRoutes =
+        concat(
+          new FrontPage(data, session).routes,
 
-        redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
-          concat(
-            new ProjectPages(data, session).routes,
-            new SearchPages(data, session).routes
-          )
-        }
+          redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
+            concat(
+              new ProjectPages(data, session).routes,
+              new SearchPages(data, session).routes
+            )
+          }
+        )
+
+      val paths = DataPaths(pathFromArgs)
+
+      val programmaticRoutes = concat(
+        new PublishApi(paths, data, github).routes,
+        new SearchApi(data).routes,
+        Assets.routes,
+        new Badges(data).routes,
+        new OAuth2(github, session).routes
       )
 
-    val programmaticRoutes = concat(
-      new PublishApi(paths, data, github).routes,
-      new SearchApi(data).routes,
-      Assets.routes,
-      new Badges(data).routes,
-      new OAuth2(github, session).routes
-    )
+      val routes = programmaticRoutes ~ userFacingRoutes
+    }
 
-    val routes = programmaticRoutes ~ userFacingRoutes
+    val routes = new Routes(data, session, github).routes
 
     println("waiting for elastic to start")
     blockUntilYellow()
