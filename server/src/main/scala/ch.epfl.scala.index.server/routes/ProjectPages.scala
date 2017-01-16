@@ -3,8 +3,8 @@ package server
 package routes
 
 import model._
-import data.project.ProjectForm
 import release._
+import data.project.ProjectForm
 import model.misc._
 
 import com.softwaremill.session._, SessionDirectives._, SessionOptions._
@@ -44,47 +44,29 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
                           repo: String,
                           artifact: Option[String],
                           version: Option[SemanticVersion],
-                          userState: Option[UserState],
-                          statusCode: StatusCode = OK) = {
+                          userState: Option[UserState]) = {
 
     val user = userState.map(_.user)
 
+    println(s"$owner $repo $artifact $version")
+    
     dataRepository
-      .project(Project.Reference(owner, repo))
-      .map(_.map(project =>
-        (statusCode,
+      .projectPage(Project.Reference(owner, repo), ReleaseSelection(artifact, version))
+      .map(_.map {
+        case (project, options) =>
+          import options._
+        (OK,
           views.project.html.project(
             project,
+            artifacts,
+            versions,
+            targets,
+            release,
             user,
             canEdit(owner, repo, userState)
           ))
-      ).getOrElse((NotFound, views.html.notfound(user))))
-  }
-
-  private def artifactPage(owner: String,
-                           repo: String,
-                           artifact: String,
-                           version: Option[SemanticVersion],
-                           userState: Option[UserState],
-                           statusCode: StatusCode = OK) = {
-
-    val user = userState.map(_.user)
-
-    dataRepository
-      .artifactPage(Project.Reference(owner, repo), ReleaseSelection(Some(artifact), version))
-      .map(_.map {
-        case (project, releases, release) =>
-          (statusCode,
-            views.artifact.html.artifact(
-              project,
-              releases,
-              release,
-              user,
-              canEdit(owner, repo, userState)
-            ))
       }.getOrElse((NotFound, views.html.notfound(user))))
   }
-
   val routes =
     post {
       path("edit" / Segment / Segment) { (organization, repository) =>
@@ -122,6 +104,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
                       ProjectForm(
                         contributorsWanted,
                         keywords.toSet,
+                        defaultArtifact,
                         defaultStableVersion,
                         deprecated,
                         artifactDeprecations.toSet,
@@ -167,18 +150,20 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
           path(Segment / Segment / Segment) { (organization, repository, artifact) =>
             optionalSession(refreshable, usingCookies) { userId =>
               complete(
-                artifactPage(organization, repository, artifact, None, getUser(userId)))
+                projectPage(organization, repository, Some(artifact), None, getUser(userId))
+              )
             }
           } ~
           path(Segment / Segment / Segment / Segment) {
             (organization, repository, artifact, version) =>
               optionalSession(refreshable, usingCookies) { userId =>
                 complete(
-                  artifactPage(organization,
+                  projectPage(organization,
                               repository,
-                              artifact,
+                              Some(artifact),
                               SemanticVersion(version),
-                              getUser(userId)))
+                              getUser(userId))
+                )
               }
           }
       }
