@@ -15,22 +15,6 @@ import org.elasticsearch.search.sort.SortOrder
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.reflectiveCalls
 
-object SearchParams {
-  val resultsPerPage = 20
-}
-
-case class SearchParams(
-  queryString: String = "*",
-  page: PageIndex = 0,
-  sorting: Option[String] = None,
-  userRepos: Set[GithubRepo] = Set(),
-  total: Int = SearchParams.resultsPerPage,
-  targetFiltering: Option[ScalaTarget] = None,
-  cli: Boolean = false,
-  keywords: List[String] = Nil,
-  targets: List[String] = Nil
-)
-
 class DataRepository(github: Github)(private implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(id = None)
 

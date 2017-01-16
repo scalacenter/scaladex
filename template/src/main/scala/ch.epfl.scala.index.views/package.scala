@@ -2,7 +2,7 @@ package ch.epfl.scala.index
 package views
 
 import model._
-import misc.Pagination
+import misc.{Pagination, SearchParams}
 
 import com.typesafe.config.ConfigFactory
 
@@ -34,20 +34,17 @@ package object html {
   }
 
   def paginationUri(
+    params: SearchParams,
     uri: Uri,
-    query: String,
     pagination: Pagination,
-    sorting: Option[String],
-    you: Boolean,
-    filterKeywords: Set[String],
-    filterTargets: Set[String]): Int => Uri = page => {
+    you: Boolean): Int => Uri = page => {
 
     uri
-      .appendQuery("sort", sorting)
-      .appendQuery("keywords", filterKeywords.toList)
-      .appendQuery("targets" , filterTargets.toList)
+      .appendQuery("sort", params.sorting)
+      .appendQuery("keywords", params.keywords.toList)
+      .appendQuery("targets" , params.targets.toList)
       .appendQuery("you", you)
-      .appendQuery("q" -> query)
+      .appendQuery("q" -> params.queryString)
       .appendQuery("page" -> page.toString)
   }
 

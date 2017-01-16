@@ -2,24 +2,18 @@
 
 @import ch.epfl.scala.index.views.html._
 
-@import ch.epfl.scala.index.model.{Project, SemanticVersion}
-@import ch.epfl.scala.index.model.misc.Pagination
 @import ch.epfl.scala.index.model.Release
-@import ch.epfl.scala.index.model.misc.Pagination
-@import ch.epfl.scala.index.model.misc.UserInfo
-@import ch.epfl.scala.index.model.misc.Url
+@import ch.epfl.scala.index.model.{Project, SemanticVersion}
+@import ch.epfl.scala.index.model.misc.{Pagination, UserInfo, SearchParams, Url}
 
-@(query: String = "",
+@(params: SearchParams,
   uri: Uri,
-  sortBy: Option[String],
   pagination: Pagination,
   projects: List[Project],
   user: Option[UserInfo],
   you: Boolean,
   keywords: Map[String, Long],
-  targets: List[(String, SemanticVersion, Long, String)],
-  filterKeywords: Set[String],
-  filterTargets: Set[String])
+  targets: List[(String, SemanticVersion, Long, String)])
 
 <div class="row">
   <div class="col-md-2">
@@ -32,15 +26,15 @@
     </div>
   </div>
   <div class="col-md-10">
-    @sorting(query, sortBy, pagination, you, filterKeywords.toList, filterTargets.toList)
+    @sorting(params, pagination, you)
   </div>
 </div>
 <div class="row">
   <div class="col-md-3">
-    @filter(keywords, targets, query, pagination, you, filterKeywords, filterTargets)
+    @filter(params, keywords, targets, pagination, you)
   </div>      
   <div class="col-md-9">
     @resultList(projects)
-    @paginate(pagination, paginationUri(uri, query, pagination, sortBy, you, filterKeywords, filterTargets))
+    @paginate(pagination, paginationUri(params, uri, pagination, you))
   </div>
 </div>

@@ -5,6 +5,7 @@ package api
 
 import ch.epfl.scala.index.api.Autocompletion
 
+import model.misc.SearchParams
 import model._, release._
 
 import ch.megard.akka.http.cors.CorsDirectives._

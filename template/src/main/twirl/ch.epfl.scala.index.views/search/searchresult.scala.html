@@ -1,30 +1,23 @@
 @import akka.http.scaladsl.model.Uri
 
 @import ch.epfl.scala.index.views.html._
-@import ch.epfl.scala.index.model.{Project, SemanticVersion}
-@import ch.epfl.scala.index.model.misc.Pagination
-@import ch.epfl.scala.index.model.misc.UserInfo
+@import ch.epfl.scala.index.model.{Project, SemanticVersion, Release}
+@import ch.epfl.scala.index.model.misc.{Pagination, UserInfo, SearchParams}
 
-
-@import ch.epfl.scala.index.model.Release
 @(
-  query: String,
+  params: SearchParams,
   uri: Uri,
-  sorting: Option[String],
   pagination: Pagination,
   projects: List[Project],
   user: Option[UserInfo],
   you: Boolean,
   keywords: Map[String, Long],
-  targets: List[(String, SemanticVersion, Long, String)],
-  filterKeywords: Set[String],
-  filterTargets: Set[String])
-@main(title = s"Search $query", showSearch = true, searchQuery = query, user, you) {
+  targets: List[(String, SemanticVersion, Long, String)])
+@main(title = s"Search ${params.queryString}", showSearch = true, searchQuery = params.queryString, user, you) {
   <main id="container-search">
     <div class="container">
       @if(pagination.total != 0 ) {
-        @result(query, uri,  sorting, pagination, projects, user, you, 
-                keywords, targets, filterKeywords, filterTargets)
+        @result(params, uri, pagination, projects, user, you, keywords, targets)
       } else {
         <h1>No Results</h1>
       }
