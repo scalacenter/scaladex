@@ -24,40 +24,29 @@ class Routes(session: GithubUserSession, frontPage: FrontPage, projectPages: Pro
   private def userFacingRoutes =
     concat(
       Paths.frontPagePath(frontPage.frontPageBehavior),
-
       redirectToNoTrailingSlashIfPresent(akka.http.scaladsl.model.StatusCodes.MovedPermanently) {
         concat(
-          concat(
-            Paths.editUpdatePath(session)(projectPages.updateProjectBehavior),
-            Paths.editPath(session)(projectPages.getEditPageBehavior)) ~
-            get {
-              concat(
-                Paths.legacyArtifactQueryPath(session)(projectPages.legacyArtifactQueryBehavior),
-                Paths.projectPath(session)(projectPages.projectPageBehavior),
-                Paths.artifactPath(session)(projectPages.artifactPageBehavior),
-                Paths.artifactVersionPath(session)(projectPages.artifactWithVersionBehavior)
-              )
-            },
-          get(Paths.searchPath(session)(searchPages.searchPageBehavior) ~ Paths.organizationPath(searchPages.organizationBehavior))
+          Paths.editUpdatePath(session)(projectPages.updateProjectBehavior),
+          Paths.editPath(session)(projectPages.getEditPageBehavior),
+          Paths.legacyArtifactQueryPath(session)(projectPages.legacyArtifactQueryBehavior),
+          Paths.projectPath(session)(projectPages.projectPageBehavior),
+          Paths.artifactPath(session)(projectPages.artifactPageBehavior),
+          Paths.artifactVersionPath(session)(projectPages.artifactWithVersionBehavior),
+          Paths.searchPath(session)(searchPages.searchPageBehavior),
+          Paths.organizationPath(searchPages.organizationBehavior)
         )
       }
     )
 
   private val programmaticRoutes = concat(
-    concat(Paths.publishStatusPath(publishApi.publishStatusBehavior), Paths.publishUpdateRoute(publishApi.github)(publishApi.executionContext)(publishApi.publishBehavior)),
-    pathPrefix("api") {
-      concat(
-        cors() {
-          concat(
-            Paths.apiSearchPath(searchApi.searchBehavior),
-            Paths.apiProjectPath(searchApi.projectBehavior)
-          )
-        },
-        Paths.apiAutocompletePath(searchApi.autocompleteBehavior)
-      )
-    },
+    Paths.publishStatusPath(publishApi.publishStatusBehavior),
+    Paths.publishUpdateRoute(publishApi.github)(publishApi.executionContext)(publishApi.publishBehavior),
+    Paths.apiSearchPath(searchApi.searchBehavior),
+    Paths.apiProjectPath(searchApi.projectBehavior),
+    Paths.apiAutocompletePath(searchApi.autocompleteBehavior),
     Assets.routes,
-    get(Paths.versionBadgePath(badges.versionBadgeBehavior) ~ Paths.queryBadgePath(badges.countBadgeBehavior)),
+    Paths.versionBadgePath(badges.versionBadgeBehavior),
+    Paths.queryBadgePath(badges.countBadgeBehavior),
     oAuth2.routes
   )
 
@@ -70,15 +59,15 @@ class Paths(userState: Directive1[Option[UserState]]) {
   def frontPagePath = pathSingleSlash & userState
 
   def searchPath(session: GithubUserSession) =
-    path("search") & userState & parameters(('q, 'page.as[Int] ? 1, 'sort.?, 'you.?))
+    get & path("search") & userState & parameters(('q, 'page.as[Int] ? 1, 'sort.?, 'you.?))
 
-  val organizationPath = path(Segment)
+  val organizationPath = get & path(Segment)
 
   private val shieldsParameters = parameters(('color.?, 'style.?, 'logo.?, 'logoWidth.as[Int].?))
 
-  val queryBadgePath = path("count.svg") & parameter('q) & shieldsParameters & parameters('subject)
+  val queryBadgePath = get & path("count.svg") & parameter('q) & shieldsParameters & parameters('subject)
 
-  def versionBadgePath = path(Segment / Segment / Segment / "latest.svg") & shieldsParameters
+  def versionBadgePath = get & path(Segment / Segment / Segment / "latest.svg") & shieldsParameters
 
   def editUpdatePath(session: GithubUserSession) = post & path("edit" / Segment / Segment) & userState & pathEnd & formFieldSeq & formFields((
     'contributorsWanted.as[Boolean] ? false,
@@ -92,13 +81,13 @@ class Paths(userState: Directive1[Option[UserState]]) {
 
   def editPath(session: GithubUserSession) = get & path("edit" / Segment / Segment) & userState & pathEnd
 
-  def projectPath(session: GithubUserSession) = path(Segment / Segment) & userState & pathEnd
+  def projectPath(session: GithubUserSession) = get & path(Segment / Segment) & userState & pathEnd
 
-  def legacyArtifactQueryPath(session: GithubUserSession) = path(Segment / Segment) & parameters(('artifact, 'version.?))
+  def legacyArtifactQueryPath(session: GithubUserSession) = get & path(Segment / Segment) & parameters(('artifact, 'version.?))
 
-  def artifactPath(session: GithubUserSession) = path(Segment / Segment / Segment) & userState
+  def artifactPath(session: GithubUserSession) = get & path(Segment / Segment / Segment) & userState
 
-  def artifactVersionPath(session: GithubUserSession) = path(Segment / Segment / Segment / Segment) & userState
+  def artifactVersionPath(session: GithubUserSession) = get & path(Segment / Segment / Segment / Segment) & userState
 
   /*
  * verifying a login to github
@@ -146,7 +135,9 @@ class Paths(userState: Directive1[Option[UserState]]) {
 
   val publishStatusPath = get & publish & parameter('path)
 
-  val apiAutocompletePath = path("autocomplete") & get & parameter('q)
-  val apiProjectPath = path("project") & get & parameters(('organization, 'repository, 'artifact.?))
-  val apiSearchPath = path("search") & get & parameters(('q, 'target, 'scalaVersion, 'scalaJsVersion.?, 'cli.as[Boolean] ? false))
+  private val apiPrefix = pathPrefix("api")
+
+  val apiAutocompletePath = apiPrefix & path("autocomplete") & get & parameter('q)
+  val apiProjectPath = apiPrefix & cors() & path("project") & get & parameters(('organization, 'repository, 'artifact.?))
+  val apiSearchPath = apiPrefix & cors() & path("search") & get & parameters(('q, 'target, 'scalaVersion, 'scalaJsVersion.?, 'cli.as[Boolean] ? false))
 }
