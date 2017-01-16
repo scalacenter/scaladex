@@ -85,6 +85,7 @@ lazy val server = project
     libraryDependencies ++= Seq(
       logback,
       "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
+      "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % "test",
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
       "ch.megard" %% "akka-http-cors" % "0.1.10",
       "com.softwaremill.akka-http-session" %% "core" % "0.3.0",

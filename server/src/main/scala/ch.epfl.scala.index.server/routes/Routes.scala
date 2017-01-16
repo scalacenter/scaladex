@@ -1,7 +1,6 @@
 package ch.epfl.scala.index.server.routes
 
 import akka.http.scaladsl.model.headers.HttpCredentials
-import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Directives.{parameters, path, pathSingleSlash}
 import akka.http.scaladsl.server.PathMatchers.Segment
@@ -16,8 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 
 object Routes {
-  def frontPagePath(session: GithubUserSession): Directive1[Option[UserState]] =
-    pathSingleSlash & githubUser(session)
+  def frontPagePath = pathSingleSlash
 
   def searchPath(session: GithubUserSession) =
     path("search") & githubUser(session) & parameters(('q, 'page.as[Int] ? 1, 'sort.?, 'you.?))
