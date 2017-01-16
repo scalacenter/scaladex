@@ -10,22 +10,22 @@ import org.joda.time.DateTime
 import scala.collection.immutable.Seq
 
 trait HttpBehavior {
-  val frontPageBehavior: (Option[UserState]) => StandardRoute
-  val updateProjectBehavior: (String, String, Option[UserState], Seq[(String, String)], Boolean, Iterable[String], Option[String], Boolean, Boolean, Iterable[String], Iterable[String], Option[String]) => Route
-  val getEditPageBehavior: (String, String, Option[UserState]) => StandardRoute
-  val legacyArtifactQueryBehavior: (String, String, String, Option[String]) => StandardRoute
-  val projectPageBehavior: (String, String, Option[UserState]) => StandardRoute
-  val artifactPageBehavior: (String, String, String, Option[UserState]) => StandardRoute
-  val artifactWithVersionBehavior: (String, String, String, String, Option[UserState]) => StandardRoute
-  val searchPageBehavior: (Option[UserState], String, Int, Option[String], Option[String]) => StandardRoute
-  val organizationBehavior: (String) => StandardRoute
-  val publishStatusBehavior: (String) => StandardRoute
-  val publishBehavior: (String, DateTime, Boolean, Boolean, Boolean, Iterable[String], Boolean, String, (GithubCredentials, UserState)) => StandardRoute
-  val searchBehavior: (String, String, String, Option[String], Boolean) => StandardRoute
-  val projectBehavior: (String, String, Option[String]) => StandardRoute
-  val autocompleteBehavior: (String) => StandardRoute
-  val versionBadgeBehavior: (String, String, String, Option[String], Option[String], Option[String], Option[Int]) => Route
-  val countBadgeBehavior: (String, Option[String], Option[String], Option[String], Option[PageIndex], String) => Route
+  val frontPage: (Option[UserState]) => StandardRoute
+  val updateProject: (String, String, Option[UserState], Seq[(String, String)], Boolean, Iterable[String], Option[String], Boolean, Boolean, Iterable[String], Iterable[String], Option[String]) => Route
+  val editProject: (String, String, Option[UserState]) => StandardRoute
+  val projectPageArtifactQuery: (String, String, String, Option[String]) => StandardRoute
+  val projectPage: (String, String, Option[UserState]) => StandardRoute
+  val artifactPage: (String, String, String, Option[UserState]) => StandardRoute
+  val artifactPageWithVersion: (String, String, String, String, Option[UserState]) => StandardRoute
+  val searchResultsPage: (Option[UserState], String, Int, Option[String], Option[String]) => StandardRoute
+  val organizationPage: (String) => StandardRoute
+  val releaseStatus: (String) => StandardRoute
+  val publishRelease: (String, DateTime, Boolean, Boolean, Boolean, Iterable[String], Boolean, String, (GithubCredentials, UserState)) => StandardRoute
+  val projectSearchApi: (String, String, String, Option[String], Boolean) => StandardRoute
+  val releaseInfoApi: (String, String, Option[String]) => StandardRoute
+  val autocomplete: (String) => StandardRoute
+  val versionBadge: (String, String, String, Option[String], Option[String], Option[String], Option[Int]) => Route
+  val countBadge: (String, Option[String], Option[String], Option[String], Option[PageIndex], String) => Route
   val oAuth2routes: Route
   val credentialsTransformation: (Option[HttpCredentials]) => Directive1[(GithubCredentials, UserState)]
 }

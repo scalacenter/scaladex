@@ -13,34 +13,34 @@ import org.joda.time.DateTime
 
 class Paths(userState: Directive1[Option[UserState]]) {
 
-  def buildRoutes(facade: HttpBehavior) = {
+  def buildRoutes(behavior: HttpBehavior) = {
     val userFacingRoutes = concat(
-      frontPagePath(facade.frontPageBehavior),
+      frontPagePath(behavior.frontPage),
       redirectToNoTrailingSlashIfPresent(akka.http.scaladsl.model.StatusCodes.MovedPermanently) {
         concat(
-          editUpdatePath(facade.updateProjectBehavior),
-          editPath(facade.getEditPageBehavior),
-          legacyArtifactQueryPath(facade.legacyArtifactQueryBehavior),
-          projectPath(facade.projectPageBehavior),
-          artifactPath(facade.artifactPageBehavior),
-          artifactVersionPath(facade.artifactWithVersionBehavior),
-          searchPath(facade.searchPageBehavior),
-          organizationPath(facade.organizationBehavior)
+          editUpdatePath(behavior.updateProject),
+          editPath(behavior.editProject),
+          legacyArtifactQueryPath(behavior.projectPageArtifactQuery),
+          projectPath(behavior.projectPage),
+          artifactPath(behavior.artifactPage),
+          artifactVersionPath(behavior.artifactPageWithVersion),
+          searchPath(behavior.searchResultsPage),
+          organizationPath(behavior.organizationPage)
         )
       }
     )
 
     val programmaticRoutes =
       concat(
-        publishStatusPath(facade.publishStatusBehavior),
-        publishUpdateRoute(facade.credentialsTransformation)(facade.publishBehavior),
-        apiSearchPath(facade.searchBehavior),
-        apiProjectPath(facade.projectBehavior),
-        apiAutocompletePath(facade.autocompleteBehavior),
+        publishStatusPath(behavior.releaseStatus),
+        publishUpdateRoute(behavior.credentialsTransformation)(behavior.publishRelease),
+        apiSearchPath(behavior.projectSearchApi),
+        apiProjectPath(behavior.releaseInfoApi),
+        apiAutocompletePath(behavior.autocomplete),
         Assets.routes,
-        versionBadgePath(facade.versionBadgeBehavior),
-        queryBadgePath(facade.countBadgeBehavior),
-        facade.oAuth2routes
+        versionBadgePath(behavior.versionBadge),
+        queryBadgePath(behavior.countBadge),
+        behavior.oAuth2routes
       )
 
     programmaticRoutes ~ userFacingRoutes

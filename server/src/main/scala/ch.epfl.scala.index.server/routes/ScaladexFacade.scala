@@ -13,7 +13,7 @@ import ch.epfl.scala.index.server.routes.api.{PublishApi, SearchApi}
 import scala.concurrent.ExecutionContext
 
 class ScaladexFacade(session: GithubUserSession,
-                     frontPage: FrontPage,
+                     frontPageSource: FrontPage,
                      projectPages: ProjectPages,
                      searchPages: SearchPages,
                      publishApi: PublishApi,
@@ -22,37 +22,37 @@ class ScaladexFacade(session: GithubUserSession,
                      badges: Badges,
                      override val credentialsTransformation: (Option[HttpCredentials]) => AuthenticationDirective[(GithubCredentials, UserState)]) extends HttpBehavior {
 
-  override val frontPageBehavior = frontPage.frontPageBehavior _
+  override val frontPage = frontPageSource.frontPageBehavior _
 
-  override val updateProjectBehavior = projectPages.updateProjectBehavior _
+  override val updateProject = projectPages.updateProjectBehavior _
 
-  override val getEditPageBehavior = projectPages.getEditPageBehavior _
+  override val editProject = projectPages.getEditPageBehavior _
 
-  override val legacyArtifactQueryBehavior = projectPages.legacyArtifactQueryBehavior _
+  override val projectPageArtifactQuery = projectPages.legacyArtifactQueryBehavior _
 
-  override val projectPageBehavior = projectPages.projectPageBehavior _
+  override val projectPage = projectPages.projectPageBehavior _
 
-  override val artifactPageBehavior = projectPages.artifactPageBehavior _
+  override val artifactPage = projectPages.artifactPageBehavior _
 
-  override val artifactWithVersionBehavior = projectPages.artifactWithVersionBehavior _
+  override val artifactPageWithVersion = projectPages.artifactWithVersionBehavior _
 
-  override val searchPageBehavior = searchPages.searchPageBehavior _
+  override val searchResultsPage = searchPages.searchPageBehavior _
 
-  override val organizationBehavior = searchPages.organizationBehavior _
+  override val organizationPage = searchPages.organizationBehavior _
 
-  override val publishStatusBehavior = publishApi.publishStatusBehavior _
+  override val releaseStatus = publishApi.publishStatusBehavior _
 
-  override val publishBehavior = publishApi.publishBehavior _
+  override val publishRelease = publishApi.publishBehavior _
 
-  override val searchBehavior = searchApi.searchBehavior _
+  override val projectSearchApi = searchApi.searchBehavior _
 
-  override val projectBehavior = searchApi.projectBehavior _
+  override val releaseInfoApi = searchApi.projectBehavior _
 
-  override val autocompleteBehavior = searchApi.autocompleteBehavior _
+  override val autocomplete = searchApi.autocompleteBehavior _
 
-  override val versionBadgeBehavior = badges.versionBadgeBehavior _
+  override val versionBadge = badges.versionBadgeBehavior _
 
-  override val countBadgeBehavior = badges.countBadgeBehavior _
+  override val countBadge = badges.countBadgeBehavior _
 
   override val oAuth2routes = oAuth2.routes
 }
