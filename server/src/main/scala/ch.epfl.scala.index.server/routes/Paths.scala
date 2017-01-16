@@ -1,64 +1,69 @@
 package ch.epfl.scala.index.server.routes
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.headers.HttpCredentials
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Directives.{parameters, path, pathSingleSlash}
 import akka.http.scaladsl.server.PathMatchers.Segment
-import akka.http.scaladsl.server.{Directive1}
-import akka.http.scaladsl.server.directives.Credentials
+import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.unmarshalling.Unmarshaller
+import akka.stream.ActorMaterializer
+import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.github.GithubCredentials
 import ch.epfl.scala.index.server.GithubUserSessionDirective.githubUser
-import ch.epfl.scala.index.server.routes.api.{PublishApi, SearchApi}
-import ch.epfl.scala.index.server.{Github, GithubUserSession, UserState}
+import ch.epfl.scala.index.server.{DataRepository, Github, GithubUserSession, UserState}
 import ch.megard.akka.http.cors.CorsDirectives.cors
 import org.joda.time.DateTime
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
-class Routes(session: GithubUserSession, frontPage: FrontPage, projectPages: ProjectPages, searchPages: SearchPages, publishApi: PublishApi, searchApi: SearchApi, oAuth2: OAuth2, badges: Badges) {
+class Routes(data: DataRepository, session: GithubUserSession, github: Github, paths: DataPaths)
+            (implicit system: ActorSystem, materializer: ActorMaterializer, executionContext: ExecutionContext) {
 
-  val Paths = new Paths(githubUser(session))
+  private val facade = ScaladexFacade.createStandardFacade(data, session, github, paths)
 
-  // Aggregation
-  private def userFacingRoutes =
-    concat(
-      Paths.frontPagePath(frontPage.frontPageBehavior),
-      redirectToNoTrailingSlashIfPresent(akka.http.scaladsl.model.StatusCodes.MovedPermanently) {
-        concat(
-          Paths.editUpdatePath(session)(projectPages.updateProjectBehavior),
-          Paths.editPath(session)(projectPages.getEditPageBehavior),
-          Paths.legacyArtifactQueryPath(session)(projectPages.legacyArtifactQueryBehavior),
-          Paths.projectPath(session)(projectPages.projectPageBehavior),
-          Paths.artifactPath(session)(projectPages.artifactPageBehavior),
-          Paths.artifactVersionPath(session)(projectPages.artifactWithVersionBehavior),
-          Paths.searchPath(session)(searchPages.searchPageBehavior),
-          Paths.organizationPath(searchPages.organizationBehavior)
-        )
-      }
-    )
-
-  private val programmaticRoutes = concat(
-    Paths.publishStatusPath(publishApi.publishStatusBehavior),
-    Paths.publishUpdateRoute(publishApi.github)(publishApi.executionContext)(publishApi.publishBehavior),
-    Paths.apiSearchPath(searchApi.searchBehavior),
-    Paths.apiProjectPath(searchApi.projectBehavior),
-    Paths.apiAutocompletePath(searchApi.autocompleteBehavior),
-    Assets.routes,
-    Paths.versionBadgePath(badges.versionBadgeBehavior),
-    Paths.queryBadgePath(badges.countBadgeBehavior),
-    oAuth2.routes
-  )
-
-  val routes = programmaticRoutes ~ userFacingRoutes
+  val routes = new Paths(githubUser(session)).buildRoutes(facade)
 }
 
 
 class Paths(userState: Directive1[Option[UserState]]) {
 
+  def buildRoutes(facade: HttpBehavior) = {
+    val userFacingRoutes = concat(
+      frontPagePath(facade.frontPageBehavior),
+      redirectToNoTrailingSlashIfPresent(akka.http.scaladsl.model.StatusCodes.MovedPermanently) {
+        concat(
+          editUpdatePath(facade.updateProjectBehavior),
+          editPath(facade.getEditPageBehavior),
+          legacyArtifactQueryPath(facade.legacyArtifactQueryBehavior),
+          projectPath(facade.projectPageBehavior),
+          artifactPath(facade.artifactPageBehavior),
+          artifactVersionPath(facade.artifactWithVersionBehavior),
+          searchPath(facade.searchPageBehavior),
+          organizationPath(facade.organizationBehavior)
+        )
+      }
+    )
+
+    val programmaticRoutes =
+      concat(
+        publishStatusPath(facade.publishStatusBehavior),
+        publishUpdateRoute(facade.credentialsTransformation)(facade.publishBehavior),
+        apiSearchPath(facade.searchBehavior),
+        apiProjectPath(facade.projectBehavior),
+        apiAutocompletePath(facade.autocompleteBehavior),
+        Assets.routes,
+        versionBadgePath(facade.versionBadgeBehavior),
+        queryBadgePath(facade.countBadgeBehavior),
+        facade.oAuth2routes
+      )
+
+    programmaticRoutes ~ userFacingRoutes
+  }
+
   def frontPagePath = pathSingleSlash & userState
 
-  def searchPath(session: GithubUserSession) =
+  def searchPath =
     get & path("search") & userState & parameters(('q, 'page.as[Int] ? 1, 'sort.?, 'you.?))
 
   val organizationPath = get & path(Segment)
@@ -69,7 +74,7 @@ class Paths(userState: Directive1[Option[UserState]]) {
 
   def versionBadgePath = get & path(Segment / Segment / Segment / "latest.svg") & shieldsParameters
 
-  def editUpdatePath(session: GithubUserSession) = post & path("edit" / Segment / Segment) & userState & pathEnd & formFieldSeq & formFields((
+  def editUpdatePath = post & path("edit" / Segment / Segment) & userState & pathEnd & formFieldSeq & formFields((
     'contributorsWanted.as[Boolean] ? false,
     'keywords.*,
     'defaultArtifact.?,
@@ -79,41 +84,15 @@ class Paths(userState: Directive1[Option[UserState]]) {
     'cliArtifacts.*,
     'customScalaDoc.?))
 
-  def editPath(session: GithubUserSession) = get & path("edit" / Segment / Segment) & userState & pathEnd
+  def editPath = get & path("edit" / Segment / Segment) & userState & pathEnd
 
-  def projectPath(session: GithubUserSession) = get & path(Segment / Segment) & userState & pathEnd
+  def projectPath = get & path(Segment / Segment) & userState & pathEnd
 
-  def legacyArtifactQueryPath(session: GithubUserSession) = get & path(Segment / Segment) & parameters(('artifact, 'version.?))
+  def legacyArtifactQueryPath = get & path(Segment / Segment) & parameters(('artifact, 'version.?))
 
-  def artifactPath(session: GithubUserSession) = get & path(Segment / Segment / Segment) & userState
+  def artifactPath = get & path(Segment / Segment / Segment) & userState
 
-  def artifactVersionPath(session: GithubUserSession) = get & path(Segment / Segment / Segment / Segment) & userState
-
-  /*
- * verifying a login to github
- * @param credentials the credentials
- * @return
- */
-  private def githubAuthenticator(github: Github, credentialsHeader: Option[HttpCredentials])(implicit ec: ExecutionContext)
-  : Credentials => Future[Option[(GithubCredentials, UserState)]] = {
-
-    case Credentials.Provided(username) => {
-      credentialsHeader match {
-        case Some(cred) => {
-          val upw = new String(new sun.misc.BASE64Decoder().decodeBuffer(cred.token()))
-          val userPass = upw.split(":")
-
-          val token = userPass(1)
-          val credentials = GithubCredentials(token)
-          // todo - catch errors
-
-          github.getUserStateWithToken(token).map(user => Some((credentials, user)))
-        }
-        case _ => Future.successful(None)
-      }
-    }
-    case _ => Future.successful(None)
-  }
+  def artifactVersionPath = get & path(Segment / Segment / Segment / Segment) & userState
 
   private val DateTimeUn = Unmarshaller.strict[String, DateTime] { dateRaw =>
     new DateTime(dateRaw.toLong * 1000L)
@@ -131,7 +110,9 @@ class Paths(userState: Directive1[Option[UserState]]) {
     'test.as[Boolean] ? false
   ))
 
-  def publishUpdateRoute(github: Github)(implicit ec: ExecutionContext) = put & publish & publishParameters & entity(as[String]) & extractCredentials.flatMap(credentials => authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(github, credentials)))
+  def publishUpdateRoute(credentialsTransformation: (Option[HttpCredentials]) => Directive1[(GithubCredentials, UserState)]) = {
+    put & publish & publishParameters & entity(as[String]) & extractCredentials.flatMap(credentialsTransformation)
+  }
 
   val publishStatusPath = get & publish & parameter('path)
 
