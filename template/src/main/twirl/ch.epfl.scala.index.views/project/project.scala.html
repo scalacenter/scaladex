@@ -4,11 +4,12 @@
 @import ch.epfl.scala.index.model.misc._
 @import ch.epfl.scala.index.model.release._
 
-@(project: Project, user: Option[UserInfo], canEdit: Boolean)
+@(project: Project, artifacts: List[String], versions: List[SemanticVersion], 
+  targets: List[ScalaTarget], release: Release, user: Option[UserInfo], canEdit: Boolean)
 
 @main(title = project.repository, showSearch = true, searchQuery = "", user) {
   <main id="container-project">
-    @headproject(project, None, canEdit)
+    @headproject(project, artifacts, versions, targets, release, canEdit)
     <div class="container">
       <div class="row">
         <div class="col-md-8">
@@ -18,9 +19,18 @@
         </div>
         <div class="col-md-4">
           <div class="sidebar-project">
-            @project.github.map(gh => statistic(gh, project.githubRepo, project.artifacts.size))
-            @artifacts(project)
+            @if(project.artifactDeprecations.contains(release.reference.artifact)) {
+            <div class="box">
+              <h1>[DEPRECATED]</h1>
+            </div>
+            }
+            @project.github.map(gh => statistic(gh, project.githubRepo, project.releaseCount, release.uniqueOrderedReverseDependencies.size))
+            @install(release, project.cliArtifacts)
+            @documentation(release, project)
             @project.github.map(gh => contributors(gh.contributors))
+            @license(release)
+            @dependencies(release)
+            @dependents(project, release)
           </div>
         </div>
       </div>

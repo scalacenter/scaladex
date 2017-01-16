@@ -144,9 +144,6 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
   def find(params: SearchParams): Future[(Pagination, List[Project])] =
     query(getQuery(params), params)
 
-  private def uniquelyNamedReleases(releases: List[Release]) =
-    releases.groupBy(r => r.reference.artifact).map { case (_, release) => release.head }.toList
-
   def releases(project: Project.Reference, artifact: Option[String]): Future[List[Release]] = {
     esClient.execute {
       search
@@ -162,7 +159,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
             )
           )
         )
-        .size(500)
+        .size(5000)
     }.map(_.as[Release].toList)
   }
 
@@ -217,16 +214,14 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
   def projectPage(projectRef: Project.Reference,
                   selection: ReleaseSelection): Future[Option[(Project, ReleaseOptions)]] = {
-    val projectAndReleases = this.projectAndReleases(projectRef, selection)
-
-    projectAndReleases.map {
+    projectAndReleases(projectRef, selection).map {
       case Some((project, releases)) =>
         DefaultRelease(project.repository,
                        selection,
                        releases.toSet,
-                       project.defaultStableVersion)
-          .map(sel =>
-            (project, sel.copy(artifacts = project.artifacts)))
+                       project.defaultArtifact,
+                       project.defaultStableVersion).map(sel =>
+          (project, sel.copy(artifacts = project.artifacts)))
       case None => None
     }
   }
@@ -259,22 +254,6 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
         .limit(frontPageCount)
         .sort(sortQuery(Some("dependentCount")))
     }.map(_.as[Project].toList)
-  }
-
-  def artifactPage(projectRef: Project.Reference,
-                   selection: ReleaseSelection): Future[Option[(Project, List[Release], Release)]] = {
-    val projectAndReleases = this.projectAndReleases(projectRef, selection)
-
-    projectAndReleases.map {
-      case Some((project, releases)) =>
-        DefaultRelease(project.repository,
-          selection,
-          releases.toSet,
-          project.defaultStableVersion)
-          .map(sel =>
-            (project, releases, sel.release))
-      case None => None
-    }
   }
 
   private def latest[T: HitAs: Manifest](collection: String, by: String, n: Int): Future[List[T]] = {
