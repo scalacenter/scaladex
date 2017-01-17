@@ -203,6 +203,12 @@ main {
         span {
             margin-right: 8px;
         }
+
+        h3 {
+            display: inline-block;
+            margin-right: 20px;
+        }
+
         .btn-primary {
             @include button-variant($btn-primary-color,
                     rgba($gray-darker, 0.7),
@@ -221,9 +227,26 @@ main {
     }
 }
 
-.list-result {
+.filters {
+    padding-left: 0;
+
+    li {
+        display: block;
+
+        input {
+            margin-right: 12px;
+        }
+    }
+}
+
+.filters, .list-result {
     margin-top: 20px;
+}
+
+.list-result {
     .item-list {
+        display: block;
+
         padding: 15px 0;
         margin: 0;
         border-bottom: 1px solid rgba($gray-dark, 0.12);
@@ -274,16 +297,6 @@ main {
                 color: $brand-primary;
             }
         }
-        .artifacts-box {
-            a {
-                color: $brand-primary;
-                &:hover,
-                &:focus {
-                    color: $brand-primary;
-                }
-                margin: 5px;
-            }
-        }
     }
 }
 
@@ -301,6 +314,29 @@ main {
         padding-bottom: 80px;
         .content-project {
             margin-bottom: 0;
+        }
+    }
+
+    .statistic {
+        margin-bottom: 30px;
+        ul {
+            li {
+                margin-bottom: 8px;
+                display: block;
+                a {
+                    color: $gray;
+                    &:hover,
+                    &:focus {
+                        text-decoration: $link-hover-decoration;
+                    }
+                    i {
+                        min-width: 25px;
+                    }
+                }
+            }
+        }
+        a {
+            color: inherit;
         }
     }
 
@@ -363,26 +399,6 @@ main {
             margin-top: 0;
             margin-bottom: ($line-height-computed / 1.5);
         }
-        .statistic {
-            ul {
-                li {
-                    margin-bottom: 8px;
-                    a {
-                        color: $gray;
-                        &:hover,
-                        &:focus {
-                            text-decoration: $link-hover-decoration;
-                        }
-                        i {
-                            min-width: 25px;
-                        }
-                    }
-                }
-            }
-            a {
-                color: inherit;
-            }
-        }
         .install {
             .nav-tabs > li:not(.active) > a {
                 color: white;
@@ -413,21 +429,6 @@ main {
                 }
             }
         }
-        .collaborators {
-            ul {
-                li {
-                    margin: 0 6px 6px 0;
-                    display: inline-block;
-                    img {
-                        @include border-top-radius($border-radius-base);
-                        @include border-bottom-radius($border-radius-base);
-                    }
-                    &:last-child {
-                        margin-right: 0;
-                    }
-                }
-            }
-        }
         .dependencies,
         .dependents {
             overflow: hidden;
@@ -442,6 +443,21 @@ main {
                 top: -2px;
                 position: relative;
                 margin-left: 5px;
+            }
+        }
+    }
+    .collaborators {
+        ul {
+            li {
+                margin: 0 6px 6px 0;
+                display: inline-block;
+                img {
+                    @include border-top-radius($border-radius-base);
+                    @include border-bottom-radius($border-radius-base);
+                }
+                &:last-child {
+                    margin-right: 0;
+                }
             }
         }
     }
@@ -474,7 +490,8 @@ main {
         }
     }
     .info-project {
-        margin-bottom: 30px;
+        margin-bottom: 100px;
+
         h1, .homepage {
             margin-top: 0;
             color: $brand-primary;
@@ -497,9 +514,6 @@ main {
         }
         .homepage {
             padding-left: 10px;
-        }
-        @media screen and (min-width: $screen-md-min) {
-            margin-bottom: 0;
         }
     }
     .artifact-project {

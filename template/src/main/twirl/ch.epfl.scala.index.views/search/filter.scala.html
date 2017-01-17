@@ -1,0 +1,48 @@
+@import ch.epfl.scala.index.model.SemanticVersion
+@import ch.epfl.scala.index.model.misc.{Pagination, SearchParams}
+
+@(params: SearchParams,
+  keywords: Map[String, Long],
+  targets: List[(String, SemanticVersion, Long, String)],
+  pagination: Pagination,
+  you: Boolean)
+
+<div class="filters">
+  <form action="/search" action="GET">
+    <h3>Filters</h3>
+    <fieldset>
+      <legend>Scala Target</legend>
+      <ul>
+      @for((target, version, count, supportName) <- targets) {
+        <li>
+          <label>
+            <input type="checkbox" @if(params.targets.contains(supportName)) { checked }
+                   name="targets" value="@supportName" onclick="this.form.submit()">
+            @target @version (@count)
+          </label>
+        </li>
+      }
+      </ul>
+    </fieldset>
+    <fieldset>
+      <legend>Keywords</legend>
+      <ul>
+      @for((keyword, count) <- keywords.toList.sortBy(_._1)) {
+        <li>
+          <label>
+            <input type="checkbox" @if(params.keywords.contains(keyword)) { checked }
+                   name="keywords" value="@keyword" onclick="this.form.submit()">
+            @keyword (@count)
+          </label>
+        </li>
+      }
+      </ul>
+    </fieldset>
+
+    <input type="hidden" name="q" value="@params.queryString">
+    <input type="hidden" name="page" value="@pagination.current">
+    @if(you){
+      <input type="hidden" name="you" value="">
+    }
+  </form>
+</div>

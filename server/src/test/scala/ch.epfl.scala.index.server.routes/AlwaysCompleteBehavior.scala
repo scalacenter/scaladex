@@ -18,7 +18,7 @@ class AlwaysCompleteBehavior extends HttpBehavior {
   val artifactPage: (String, String, String, Option[UserState]) => StandardRoute = (_, _ , _, _) => complete("")
   val artifactPageWithVersion: (String, String, String, String, Option[UserState]) => StandardRoute = (_, _ , _, _, _) => complete("")
   val searchResultsPage: (Option[UserState], String, Int, Option[String], Option[String]) => StandardRoute = (_, _ , _, _, _) => complete("")
-  val organizationPage: (String) => StandardRoute = _ => complete("")
+  val organizationPage: (String, Option[UserState]) => StandardRoute = (_, _) => complete("")
   val releaseStatus: (String) => StandardRoute = _ => complete("")
   val publishRelease: (String, DateTime, Boolean, Boolean, Boolean, Iterable[String], Boolean, String, (GithubCredentials, UserState)) => StandardRoute = (_, _ , _, _, _, _, _, _, _) => complete("")
   val projectSearchApi: (String, String, String, Option[String], Boolean) => StandardRoute = (_, _ , _, _, _) => complete("")

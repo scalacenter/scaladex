@@ -2,6 +2,8 @@ package ch.epfl.scala.index
 package views
 
 import model._
+import misc.{Pagination, SearchParams}
+
 import com.typesafe.config.ConfigFactory
 
 import akka.http.scaladsl.model.Uri
@@ -10,13 +12,40 @@ import Uri.Query
 package object html {
 
   implicit class QueryAppend(uri: Uri) {
+
     def appendQuery(kv: (String, String)): Uri = uri.withQuery(
-      Query(uri.query(java.nio.charset.Charset.forName("UTF-8")).toMap ++ Map(kv))
+      Query((uri.query(java.nio.charset.Charset.forName("UTF-8")) ++ Vector(kv)):_*)
     )
+
     def appendQuery(k: String, on: Boolean): Uri = {
       if (on) uri.appendQuery(k -> "✓")
       else uri
     }
+    def appendQuery(k: String, vs: List[String]): Uri =
+      vs.foldLeft(uri){ case (acc, v) =>
+        acc.appendQuery(k -> v)
+      }
+    def appendQuery(k: String, ov: Option[String]): Uri = {
+      ov match {
+        case Some(v) => appendQuery(k -> v) 
+        case None    => uri
+      }
+    }
+  }
+
+  def paginationUri(
+    params: SearchParams,
+    uri: Uri,
+    pagination: Pagination,
+    you: Boolean): Int => Uri = page => {
+
+    uri
+      .appendQuery("sort", params.sorting)
+      .appendQuery("keywords", params.keywords.toList)
+      .appendQuery("targets" , params.targets.toList)
+      .appendQuery("you", you)
+      .appendQuery("q" -> params.queryString)
+      .appendQuery("page" -> page.toString)
   }
 
   // https://www.reddit.com/r/scala/comments/4n73zz/scala_puzzle_gooooooogle_pagination/d41jor5
@@ -73,5 +102,13 @@ package object html {
     val out = DateTimeFormat.forPattern("dd/MM/yyyy")
 
     out.print(in.parseDateTime(date))
+  }
+
+  def renderTargets(project: Project): String = {
+    val prefix = "scala_"
+    project.targets
+      .collect { case t if t.startsWith(prefix) => t.drop(prefix.length) }
+      .to[List].sorted(Ordering.String.reverse)
+      .mkString(", ")
   }
 }

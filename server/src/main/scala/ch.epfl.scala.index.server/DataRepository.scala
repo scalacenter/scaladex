@@ -18,8 +18,6 @@ import scala.language.reflectiveCalls
 class DataRepository(github: Github)(private implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(id = None)
 
-  val resultsPerPage = 20
-
   val sortQuery = (sorting: Option[String]) =>
     sorting match {
       case Some("stars") =>
@@ -34,36 +32,35 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
       case _ => scoreSort
   }
 
-  private def query(q: QueryDefinition,
-                    page: PageIndex,
-                    total: Int,
-                    sorting: Option[String]): Future[(Pagination, List[Project])] = {
+  private def clamp(page: Int) = if (page <= 0) 1 else page
 
-    val clampedPage = if (page <= 0) 1 else page
+  private def query(q: QueryDefinition,
+                    params: SearchParams): Future[(Pagination, List[Project])] = {
+
+    import params._
 
     esClient.execute {
       search
         .in(indexName / projectsCollection)
         .query(q)
-        .start(total * (clampedPage - 1))
-        .limit(total)
+        .start(params.total * (clamp(page) - 1))
+        .limit(params.total)
         .sort(sortQuery(sorting))
     }.map(
       r =>
         (
           Pagination(
-            current = clampedPage,
-            totalPages = Math.ceil(r.totalHits / total.toDouble).toInt,
+            current = clamp(page),
+            totalPages = Math.ceil(r.totalHits / params.total.toDouble).toInt,
             total = r.totalHits
           ),
           r.as[Project].toList.map(hideId)
       ))
   }
 
-  private def getQuery(queryString: String,
-                       userRepos: Set[GithubRepo] = Set(),
-                       targetFiltering: Option[ScalaTarget] = None,
-                       cli: Boolean = false) = {
+  private def getQuery(params: SearchParams) = {
+    import params._
+
     def replaceField(queryString: String, input: String, replacement: String) = {
       val regex = s"(\\s|^)$input:".r
       regex.replaceAllIn(queryString, s"$$1$replacement:")
@@ -83,6 +80,14 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
     val cliQuery =
       if (cli) List(termQuery("hasCli", true))
+      else Nil
+
+    val keywordsQuery =
+      if(params.keywords.nonEmpty) params.keywords.toList.map(keyword => bool(should(termQuery("keywords", keyword))))
+      else Nil
+
+    val targetsQuery =
+      if(params.targets.nonEmpty) params.targets.toList.map(target => bool(should(termQuery("targets", target))))
       else Nil
 
     val reposQueries = if (!userRepos.isEmpty) {
@@ -107,7 +112,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
     functionScoreQuery(
       bool(
-        mustQueries = mustQueriesRepos ++ mustQueryTarget ++ cliQuery,
+        mustQueries = mustQueriesRepos ++ mustQueryTarget ++ cliQuery ++ keywordsQuery ++ targetsQuery,
         shouldQueries = List(
           fuzzyQuery("keywords", escaped).boost(2),
           fuzzyQuery("github.description", escaped).boost(1.7),
@@ -132,28 +137,12 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
   def total(queryString: String): Future[Long] = {
     esClient.execute {
-      search.in(indexName / projectsCollection).query(getQuery(queryString)).size(0)
+      search.in(indexName / projectsCollection).query(getQuery(SearchParams(queryString = queryString))).size(0)
     }.map(_.totalHits)
   }
 
-  def find(queryString: String,
-           page: PageIndex = 0,
-           sorting: Option[String] = None,
-           userRepos: Set[GithubRepo] = Set(),
-           total: Int = resultsPerPage,
-           targetFiltering: Option[ScalaTarget] = None,
-           cli: Boolean = false): Future[(Pagination, List[Project])] = {
-
-    query(
-      getQuery(queryString, userRepos, targetFiltering, cli),
-      page,
-      total,
-      sorting
-    )
-  }
-
-  private def uniquelyNamedReleases(releases: List[Release]) =
-    releases.groupBy(r => r.reference.artifact).map { case (_, release) => release.head }.toList
+  def find(params: SearchParams): Future[(Pagination, List[Project])] =
+    query(getQuery(params), params)
 
   def releases(project: Project.Reference, artifact: Option[String]): Future[List[Release]] = {
     esClient.execute {
@@ -170,7 +159,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
             )
           )
         )
-        .size(500)
+        .size(5000)
     }.map(_.as[Release].toList)
   }
 
@@ -225,16 +214,14 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
   def projectPage(projectRef: Project.Reference,
                   selection: ReleaseSelection): Future[Option[(Project, ReleaseOptions)]] = {
-    val projectAndReleases = this.projectAndReleases(projectRef, selection)
-
-    projectAndReleases.map {
+    projectAndReleases(projectRef, selection).map {
       case Some((project, releases)) =>
         DefaultRelease(project.repository,
                        selection,
                        releases.toSet,
-                       project.defaultStableVersion)
-          .map(sel =>
-            (project, sel.copy(artifacts = project.artifacts)))
+                       project.defaultArtifact,
+                       project.defaultStableVersion).map(sel =>
+          (project, sel.copy(artifacts = project.artifacts)))
       case None => None
     }
   }
@@ -269,22 +256,6 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
     }.map(_.as[Project].toList)
   }
 
-  def artifactPage(projectRef: Project.Reference,
-                   selection: ReleaseSelection): Future[Option[(Project, List[Release], Release)]] = {
-    val projectAndReleases = this.projectAndReleases(projectRef, selection)
-
-    projectAndReleases.map {
-      case Some((project, releases)) =>
-        DefaultRelease(project.repository,
-          selection,
-          releases.toSet,
-          project.defaultStableVersion)
-          .map(sel =>
-            (project, releases, sel.release))
-      case None => None
-    }
-  }
-
   private def latest[T: HitAs: Manifest](collection: String, by: String, n: Int): Future[List[T]] = {
     esClient.execute {
       search
@@ -301,15 +272,10 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
     }.map(r => r.as[T].toList)
   }
 
-  def keywords() = aggregations("keywords")
-  def targets() = aggregations("targets")
+  def keywords(params: SearchParams = SearchParams()) = aggregations("keywords", params)
+  def targets(params: SearchParams = SearchParams()) = aggregations("targets", params)
 
-  /**
-    * list all tags including number of facets
-    * @param field the field name
-    * @return
-    */
-  private def aggregations(field: String): Future[Map[String, Long]] = {
+  private def aggregations(field: String, params: SearchParams): Future[Map[String, Long]] = {
 
     import scala.collection.JavaConverters._
     import org.elasticsearch.search.aggregations.bucket.terms.StringTerms
@@ -319,9 +285,8 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
     esClient.execute {
       search
         .in(indexName / projectsCollection)
-        .aggregations(
-          aggregation.terms(aggregationName).field(field).size(50)
-        )
+        .query(getQuery(params))
+        .aggregations(aggregation.terms(aggregationName).field(field).size(50))
     }.map(resp => {
       val agg = resp.aggregations.get[StringTerms](aggregationName)
       agg.getBuckets.asScala.toList.collect {

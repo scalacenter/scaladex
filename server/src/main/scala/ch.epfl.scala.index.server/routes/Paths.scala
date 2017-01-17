@@ -57,7 +57,7 @@ class Paths(userState: Directive1[Option[UserState]]) {
               (get & path(Segment / Segment / Segment / Segment) & userState) (behavior.artifactPageWithVersion)
             ),
             (get & path("search") & userState & parameters(('q, 'page.as[Int] ? 1, 'sort.?, 'you.?))) (behavior.searchResultsPage),
-            (get & path(Segment)) (behavior.organizationPage)
+            (get & path(Segment) & userState) (behavior.organizationPage)
           )
         }
       )

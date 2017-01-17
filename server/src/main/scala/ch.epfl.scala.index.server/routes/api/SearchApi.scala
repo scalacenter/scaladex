@@ -4,6 +4,7 @@ package routes
 package api
 
 import ch.epfl.scala.index.api.Autocompletion
+import model.misc.SearchParams
 import model._
 import release._
 import akka.http.scaladsl._
@@ -34,10 +35,9 @@ object Api {
 
 class SearchApi(dataRepository: DataRepository)(implicit val executionContext: ExecutionContext) {
 
-
   def autocompleteBehavior(query: String) = {
     complete {
-      dataRepository.find(query, page = 1, sorting = None, total = 5).map {
+      dataRepository.find(SearchParams(queryString = query, page = 1, sorting = None, total = 5)).map {
         case (pagination, projects) =>
           val summarisedProjects = projects.map(
             p =>
@@ -52,9 +52,9 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
   }
 
   def projectBehavior(organization: String, repository: String, artifact: Option[String]) = {
-    val reference = ch.epfl.scala.index.model.Project.Reference(organization, repository)
+    val reference = Project.Reference(organization, repository)
 
-    def convert(options: release.ReleaseOptions): Api.ReleaseOptions = {
+    def convert(options: ReleaseOptions): Api.ReleaseOptions = {
       import options._
       Api.ReleaseOptions(
         artifacts,
@@ -84,13 +84,11 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
           None
       }
 
-    def convert(project: ch.epfl.scala.index.model.Project): Api.Project = {
+    def convert(project: Project): Api.Project = {
       import project._
 
       val artifacts0 =
-        if (cli) {
-          cliArtifacts.toList
-        }
+        if (cli) cliArtifacts.toList
         else artifacts
 
       Api.Project(organization,
@@ -104,7 +102,7 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
         case Some(target) =>
           (OK,
             dataRepository
-              .find(q, targetFiltering = target1, cli = cli, total = 10)
+              .find(SearchParams(queryString = q, targetFiltering = target1, cli = cli, total = 10))
               .map { case (_, ps) => ps.map(p => convert(p)) }
               .map(ps => write(ps)))
         case None =>
@@ -112,6 +110,4 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
       }
     )
   }
-
-
 }

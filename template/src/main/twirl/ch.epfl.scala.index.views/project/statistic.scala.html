@@ -1,6 +1,6 @@
 @import ch.epfl.scala.index.model.misc.GithubInfo
 @import ch.epfl.scala.index.model.misc.GithubRepo
-@(github: GithubInfo, repo: GithubRepo, artifactCount: Int)
+@(github: GithubInfo, repo: GithubRepo, releasesCount: Int, dependentsCount: Int)
 
 <div class="statistic box">
   <h4>Statistics</h4>
@@ -13,7 +13,8 @@
         <a href="https://github.com/@repo/network"><li class="col-md-6 col-sm-6"><i class="fa fa-code-fork"></i> @github.forks Forks</li></a>
         <a href="https://github.com/@repo/commits"><li class="col-md-6 col-sm-6"><i class="fa fa-history"></i> @github.commits Commits</li></a>
         <a href="https://github.com/@repo/issues"><li class="col-md-6 col-sm-6"><i class="fa fa-exclamation-circle"></i> @github.issues Open issues</li></a>
-        <a href="#artifacts"><li class="col-md-6 col-sm-6"><i class="fa fa-tag"></i> @artifactCount Artifacts</li></a>
+        <li class="col-md-6 col-sm-6"><i class="fa fa-tag"></i> @releasesCount Releases</li>
+        <a href="#dependents"><li class="col-md-6 col-sm-6"><i class="fa fa-sitemap"></i> @dependentsCount Dependents</li></a>
       </ul>
     </div>
   </div>

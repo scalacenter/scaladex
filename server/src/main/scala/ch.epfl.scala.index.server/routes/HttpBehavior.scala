@@ -17,8 +17,8 @@ trait HttpBehavior {
   val projectPage: (String, String, Option[UserState]) => StandardRoute
   val artifactPage: (String, String, String, Option[UserState]) => StandardRoute
   val artifactPageWithVersion: (String, String, String, String, Option[UserState]) => StandardRoute
-  val searchResultsPage: (Option[UserState], String, Int, Option[String], Option[String]) => StandardRoute
-  val organizationPage: (String) => StandardRoute
+  val searchResultsPage: (Option[UserState], String, Int, Option[String], Option[String]) => Route
+  val organizationPage: (String, Option[UserState]) => Route
   val releaseStatus: (String) => StandardRoute
   val publishRelease: (String, DateTime, Boolean, Boolean, Boolean, Iterable[String], Boolean, String, (GithubCredentials, UserState)) => StandardRoute
   val projectSearchApi: (String, String, String, Option[String], Boolean) => StandardRoute

@@ -1,4 +1,5 @@
-package ch.epfl.scala.index
+package ch.epfl.
+scala.index
 package server
 package routes
 
@@ -17,8 +18,14 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
       mostDependedUpon <- mostDependedUpon()
       latestProjects <- latestProjects()
       latestReleases <- latestReleases()
-    } yield
-      views.html.frontpage(keywords, targets, latestProjects, mostDependedUpon, latestReleases, userInfo)
+    } yield {
+      val excludeTargets = Set(
+        "scala_2.9",
+        "scala_2.8"
+      )
+      val targets0 = targets.filterNot{ case(target, _) => excludeTargets.contains(target)}
+      views.html.frontpage(keywords, targets0, latestProjects, mostDependedUpon, latestReleases, userInfo)
+    }
   }
 
   def frontPageBehavior(user: Option[UserState]) = {

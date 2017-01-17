@@ -41,11 +41,8 @@ lazy val commonSettings = Seq(
       "-Xmax-classfile-name",
       "78"
     ),
-    console <<= console in Test,
     scalacOptions in (Test, console) -= "-Ywarn-unused-import",
     scalacOptions in (Compile, consoleQuick) -= "-Ywarn-unused-import",
-    // libraryDependencies += "com.lihaoyi" % "ammonite-repl" % "0.7.8" % "test" cross CrossVersion.full,
-    // initialCommands in (Test, console) := """ammonite.repl.Main().run()""",
     libraryDependencies += "org.specs2" %% "specs2-core" % "3.8.6" % "test",
     scalacOptions in Test ++= Seq("-Yrangepos")
   ) ++ baseSettings ++
@@ -98,8 +95,8 @@ lazy val server = project
       "org.webjars.bower" % "select2" % "4.0.3",
       "com.lihaoyi" %%% "scalatags" % scalatagsVersion
     ),
-    packageBin in Universal <<= (packageBin in Universal).dependsOn(WebKeys.assets in Assets),
-    reStart <<= reStart.dependsOn(WebKeys.assets in Assets),
+    packageBin in Universal := (packageBin in Universal).dependsOn(WebKeys.assets in Assets).value,
+    reStart := reStart.dependsOn(WebKeys.assets in Assets).evaluated,
     unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
     javaOptions in reStart += "-Xmx3g",
     packageName in Universal := "scaladex"
