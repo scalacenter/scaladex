@@ -7,7 +7,8 @@
   latestProjects: List[Project],
   mostDependedUpon: List[Project],
   latestReleases: List[Release],
-  user: Option[UserInfo])
+  user: Option[UserInfo],
+  ecosystems: Map[String, String])
 
 @main(title = "Home", showSearch = false, searchQuery = "", user) {
 <main id="container-home">
@@ -26,6 +27,12 @@
                         <li><strong>Targets:</strong></li>
                         @for((sup, count) <- targets) {
                             <li><a href="/search?q=*&targets=@sup">@sup (@count)</a></li>
+                        }
+                    </ul>
+                    <ul class="tag">
+                        <li><strong>Ecosystems:</strong></li>
+                        @for((name, url) <- ecosystems) {
+                            <li><a href="/@url">@name</a></li>
                         }
                     </ul>
                 </div>
