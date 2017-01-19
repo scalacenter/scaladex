@@ -6,9 +6,6 @@ import model._
 import release._
 import data.project.ProjectForm
 import model.misc._
-
-import com.softwaremill.session._, SessionDirectives._, SessionOptions._
-
 import TwirlSupport._
 
 import akka.http.scaladsl._
@@ -17,9 +14,11 @@ import server.Directives._
 import Uri._
 import StatusCodes._
 
+import scala.collection.immutable.Seq
 import scala.concurrent.Future
 
 class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
+
   import session._
 
   private def canEdit(owner: String, repo: String, userState: Option[UserState]) =
@@ -49,7 +48,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
     val user = userState.map(_.user)
 
     println(s"$owner $repo $artifact $version")
-    
+
     dataRepository
       .projectPage(Project.Reference(owner, repo), ReleaseSelection(artifact, version))
       .map(_.map {
@@ -67,104 +66,78 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
           ))
       }.getOrElse((NotFound, views.html.notfound(user))))
   }
-  val routes =
-    post {
-      path("edit" / Segment / Segment) { (organization, repository) =>
-        optionalSession(refreshable, usingCookies) { userId =>
-          pathEnd {
-            formFieldSeq { fields =>
-              formFields(
-                'contributorsWanted.as[Boolean] ? false,
-                'keywords.*,
-                'defaultArtifact.?,
-                'defaultStableVersion.as[Boolean] ? false,
-                'deprecated.as[Boolean] ? false,
-                'artifactDeprecations.*,
-                'cliArtifacts.*,
-                'customScalaDoc.?
-              ) {
-                (contributorsWanted, keywords, defaultArtifact, defaultStableVersion, deprecated,
-                 artifactDeprecations, cliArtifacts, customScalaDoc) =>
-                  val documentationLinks = {
-                    val name = "documentationLinks"
-                    val end = "]".head
 
-                    fields.filter { case (key, _) => key.startsWith(name) }.groupBy {
-                      case (key, _) => key.drop("documentationLinks[".length).takeWhile(_ != end)
-                    }.values.map {
-                      case Vector((a, b), (c, d)) =>
-                        if (a.contains("label")) (b, d)
-                        else (d, b)
-                    }.toList
-                  }
+  // TODO: The user argument not being used seems suspicious, suggests there may actually be no authentication on the update
+  def updateProjectBehavior(organization: String, repository: String, user: Option[UserState], fields: Seq[(String, String)], contributorsWanted: Boolean, keywords: Iterable[String], defaultArtifact: Option[String], defaultStableVersion: Boolean, deprecated: Boolean, artifactDeprecations: Iterable[String], cliArtifacts: Iterable[String], customScalaDoc: Option[String]) = {
+    val documentationLinks = getDocumentationLinks(fields)
 
-                  onSuccess(
-                    dataRepository.updateProject(
-                      Project.Reference(organization, repository),
-                      ProjectForm(
-                        contributorsWanted,
-                        keywords.toSet,
-                        defaultArtifact,
-                        defaultStableVersion,
-                        deprecated,
-                        artifactDeprecations.toSet,
-                        cliArtifacts.toSet,
-                        // documentation
-                        customScalaDoc,
-                        documentationLinks
-                      )
-                    )
-                  ) { ret =>
-                    Thread.sleep(1000) // oh yeah
-                    redirect(Uri(s"/$organization/$repository"), SeeOther)
-                  }
-              }
-            }
-          }
-        }
-      }
-    } ~
-      get {
-        path("edit" / Segment / Segment) { (organization, repository) =>
-          optionalSession(refreshable, usingCookies) { userId =>
-            pathEnd {
-              complete(editPage(organization, repository, getUser(userId)))
-            }
-          }
-        } ~
-          path(Segment / Segment) { (organization, repository) =>
-            optionalSession(refreshable, usingCookies) { userId =>
-              parameters('artifact, 'version.?) { (artifact, version) =>
-                val rest = version match {
-                  case Some(v) if !v.isEmpty => "/" + v
-                  case _ => ""
-                }
-                redirect(s"/$organization/$repository/$artifact$rest",
-                         StatusCodes.PermanentRedirect)
-              } ~
-                pathEnd {
-                  complete(projectPage(organization, repository, None, None, getUser(userId)))
-                }
-            }
-          } ~
-          path(Segment / Segment / Segment) { (organization, repository, artifact) =>
-            optionalSession(refreshable, usingCookies) { userId =>
-              complete(
-                projectPage(organization, repository, Some(artifact), None, getUser(userId))
-              )
-            }
-          } ~
-          path(Segment / Segment / Segment / Segment) {
-            (organization, repository, artifact, version) =>
-              optionalSession(refreshable, usingCookies) { userId =>
-                complete(
-                  projectPage(organization,
-                              repository,
-                              Some(artifact),
-                              SemanticVersion(version),
-                              getUser(userId))
-                )
-              }
-          }
-      }
+    onSuccess(
+      dataRepository.updateProject(
+        Project.Reference(organization, repository),
+        ProjectForm(
+          contributorsWanted,
+          keywords.toSet,
+          defaultArtifact,
+          defaultStableVersion,
+          deprecated,
+          artifactDeprecations.toSet,
+          cliArtifacts.toSet,
+          customScalaDoc,
+          documentationLinks
+        )
+      )
+    ) { ret =>
+      Thread.sleep(1000) // oh yeah
+      redirect(Uri(s"/$organization/$repository"), SeeOther)
+    }
+  }
+
+  def getEditPageBehavior(organization: String, repository: String, user: Option[UserState]) = {
+    complete(editPage(organization, repository, user))
+  }
+
+  private def getDocumentationLinks(fields: Seq[(String, String)]) = {
+    val documentationLinks = {
+      val name = "documentationLinks"
+      val end = "]".head
+
+      fields.filter { case (key, _) => key.startsWith(name) }.groupBy {
+        case (key, _) => key.drop("documentationLinks[".length).takeWhile(_ != end)
+      }.values.map {
+        case Vector((a, b), (c, d)) =>
+          if (a.contains("label")) (b, d)
+          else (d, b)
+      }.toList
+    }
+    documentationLinks
+  }
+
+  def legacyArtifactQueryBehavior(organization: String, repository: String, artifact: String, version: Option[String]) = {
+    val rest = version match {
+      case Some(v) if !v.isEmpty => "/" + v
+      case _ => ""
+    }
+    redirect(s"/$organization/$repository/$artifact$rest",
+      StatusCodes.PermanentRedirect)
+  }
+
+  def projectPageBehavior(organization: String, repository: String, user: Option[UserState]) = {
+    complete(projectPage(organization, repository, None, None, user))
+  }
+
+  def artifactPageBehavior(organization: String, repository: String, artifact: String, user: Option[UserState]) = {
+    complete(
+      projectPage(organization, repository, Some(artifact), None, user)
+    )
+  }
+
+  def artifactWithVersionBehavior(organization: String, repository: String, artifact: String, version: String, user: Option[UserState]) = {
+    complete(
+      projectPage(organization,
+        repository,
+        Some(artifact),
+        SemanticVersion(version),
+        user)
+    )
+  }
 }

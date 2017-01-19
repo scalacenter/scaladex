@@ -2,27 +2,20 @@ package ch.epfl.scala.index
 package server
 
 import routes._
-import routes.api._
-
 import data.DataPaths
 import data.elastic._
-
 import akka.http.scaladsl._
-import akka.http.scaladsl.model.StatusCodes
-import server.Directives._
-
 import com.typesafe.config.ConfigFactory
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
 import scala.concurrent.duration._
 import scala.concurrent.Await
-
 import java.lang.management.ManagementFactory
-
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
+
+import ch.epfl.scala.index.server.GithubUserSessionDirective.githubUser
 
 // reStart 8080 /home/gui/center/scaladex/contrib /home/gui/center/scaladex-data-jungle
 object Server {
@@ -56,29 +49,10 @@ object Server {
       if (args.isEmpty) Nil
       else args.toList.tail
 
-    val paths = DataPaths(pathFromArgs)
+    val paths: DataPaths = DataPaths(pathFromArgs)
 
-    val userFacingRoutes =
-      concat(
-        new FrontPage(data, session).routes,
-
-        redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
-          concat(
-            new ProjectPages(data, session).routes,
-            new SearchPages(data, session).routes
-          )
-        }
-      )
-
-    val programmaticRoutes = concat(
-      new PublishApi(paths, data, github).routes,
-      new SearchApi(data).routes,
-      Assets.routes,
-      new Badges(data).routes,
-      new OAuth2(github, session).routes
-    )
-
-    val routes = programmaticRoutes ~ userFacingRoutes
+    val facade = ScaladexFacade.createStandardFacade(data, session, github, paths)
+    val routes = new ch.epfl.scala.index.server.routes.Paths(githubUser(session)).buildRoutes(facade)
 
     println("waiting for elastic to start")
     blockUntilYellow()

@@ -3,19 +3,14 @@ scala.index
 package server
 package routes
 
-import model.misc.UserInfo
-
 import TwirlSupport._
-
-import com.softwaremill.session.SessionDirectives._
-import com.softwaremill.session.SessionOptions._
-
 import akka.http.scaladsl.server.Directives._
 
 class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
-  import session._
 
-  private def frontPage(userInfo: Option[UserInfo]) = {
+  private def frontPage(user: Option[UserState]) = {
+    import session.executionContext
+    val userInfo = user.map(_.user)
     import dataRepository._
     for {
       keywords <- keywords()
@@ -44,10 +39,7 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
     }
   }
 
-  val routes =
-    pathSingleSlash {
-      optionalSession(refreshable, usingCookies) { userId =>
-        complete(frontPage(getUser(userId).map(_.user)))
-      }
-    }
+  def frontPageBehavior(user: Option[UserState]) = {
+    complete(frontPage(user))
+  }
 }

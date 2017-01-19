@@ -10,9 +10,6 @@ import model.StatusCodes._
 
 class Badges(dataRepository: DataRepository) {
 
-  private val shields = parameters(('color.?, 'style.?, 'logo.?, 'logoWidth.as[Int].?))
-  private val shieldsSubject = shields & parameters('subject)
-
   private def shieldsSvg(rawSubject: String,
                          rawStatus: String,
                          rawColor: Option[String],
@@ -45,39 +42,31 @@ class Badges(dataRepository: DataRepository) {
 
   }
 
-  val routes =
-    get {
-      path(Segment / Segment / Segment / "latest.svg") { (organization, repository, artifact) =>
-        shields { (color, style, logo, logoWidth) =>
-          onSuccess(
-            dataRepository.projectPage(Project.Reference(organization, repository),
-                                       ReleaseSelection(Some(artifact), None))) {
+  def versionBadgeBehavior(organization: String, repository: String, artifact: String, color: Option[String], style: Option[String], logo: Option[String], logoWidth: Option[Int]) = {
+    onSuccess(
+      dataRepository.projectPage(Project.Reference(organization, repository),
+        ReleaseSelection(Some(artifact), None))) {
 
-            case Some((_, options)) =>
-              shieldsSvg(artifact,
-                         options.release.reference.version.toString(),
-                         color,
-                         style,
-                         logo,
-                         logoWidth)
-            case _ =>
-              shieldsSvg(artifact,
-                         "no published release",
-                         color orElse Some("lightgrey"),
-                         style,
-                         logo,
-                         logoWidth)
+      case Some((_, options)) =>
+        shieldsSvg(artifact,
+          options.release.reference.version.toString(),
+          color,
+          style,
+          logo,
+          logoWidth)
+      case _ =>
+        shieldsSvg(artifact,
+          "no published release",
+          color orElse Some("lightgrey"),
+          style,
+          logo,
+          logoWidth)
 
-          }
-        }
-      } ~
-        path("count.svg") {
-          parameter('q) { query =>
-            shieldsSubject { (color, style, logo, logoWidth, subject) =>
-              onSuccess(dataRepository.total(query))(count =>
-                shieldsSvg(subject, count.toString, color, style, logo, logoWidth))
-            }
-          }
-        }
     }
+  }
+
+  def countBadgeBehavior(query: String, color: Option[String], style: Option[String], logo: Option[String], logoWidth: Option[PageIndex], subject: String) = {
+    onSuccess(dataRepository.total(query))(count =>
+      shieldsSvg(subject, count.toString, color, style, logo, logoWidth))
+  }
 }

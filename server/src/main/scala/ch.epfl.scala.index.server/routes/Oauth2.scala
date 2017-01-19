@@ -15,21 +15,23 @@ import headers.Referer
 import server.Directives._
 
 class OAuth2(github: Github, session: GithubUserSession) {
+
   import session._
 
   val routes =
     get {
-      path("login") {
-        headerValueByType[Referer]() { referer =>
-          redirect(Uri("https://github.com/login/oauth/authorize").withQuery(
-                     Query(
-                       "client_id" -> github.clientId,
-                       "scope" -> "read:org",
-                       "state" -> referer.value
-                     )),
-                   TemporaryRedirect)
-        }
-      } ~
+      concat(
+        path("login") {
+          headerValueByType[Referer]() { referer =>
+            redirect(Uri("https://github.com/login/oauth/authorize").withQuery(
+              Query(
+                "client_id" -> github.clientId,
+                "scope" -> "read:org",
+                "state" -> referer.value
+              )),
+              TemporaryRedirect)
+          }
+        },
         path("logout") {
           headerValueByType[Referer]() { referer =>
             requiredSession(refreshable, usingCookies) { _ =>
@@ -44,11 +46,12 @@ class OAuth2(github: Github, session: GithubUserSession) {
               }
             }
           }
-        } ~
+        },
         pathPrefix("callback") {
-          path("done") {
-            complete("OK")
-          } ~
+          concat(
+            path("done") {
+              complete("OK")
+            },
             pathEnd {
               parameters('code, 'state.?) { (code, state) =>
                 onSuccess(github.getUserStateWithOauth2(code)) { userState =>
@@ -66,6 +69,8 @@ class OAuth2(github: Github, session: GithubUserSession) {
                 }
               }
             }
+          )
         }
+      )
     }
 }

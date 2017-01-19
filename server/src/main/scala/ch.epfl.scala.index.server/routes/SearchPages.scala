@@ -7,8 +7,6 @@ import views.search.html._
 import model.release.ScalaTarget
 import model.misc.SearchParams
 
-import com.softwaremill.session._, SessionDirectives._, SessionOptions._
-
 import TwirlSupport._
 
 import akka.http.scaladsl._
@@ -17,13 +15,12 @@ import server._
 import server.Directives._
 import Uri._
 
-import java.util.UUID
-
 class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
-  import session._
-  import dataRepository._
 
-  private def search(params: SearchParams, userId: Option[UUID], uri: String) = {
+  import session.executionContext
+
+  private def search(params: SearchParams, user: Option[UserState], uri: String) = {
+    import dataRepository._
     complete(
       for {
         (pagination, projects) <- find(params)
@@ -41,7 +38,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
           uri,
           pagination,
           projects,
-          getUser(userId).map(_.user),
+          user.map(_.user),
           params.userRepos.nonEmpty,
           keywords,
           parsedTargets
@@ -50,11 +47,11 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
     )
   }
 
-  def searchParams(userId: Option[UUID]): Directive1[SearchParams] =
+  def searchParams(user: Option[UserState]): Directive1[SearchParams] =
     parameters(('q ? "*", 'page.as[Int] ? 1, 'sort.?, 'keywords.*, 'targets.*, 'you.?)).tmap{
           case ( q      ,  page            ,  sort  ,  keywords  ,  targets  ,  you) =>
 
-      val userRepos = you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set())
+      val userRepos = you.flatMap(_ => user.map(_.repos)).getOrElse(Set())
       SearchParams(
         q,
         page,
@@ -67,25 +64,19 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
 
   private val searchPath = "search"
 
-  val routes =
-    get {
-      path(searchPath) {
-        optionalSession(refreshable, usingCookies) { userId =>
-          searchParams(userId){ params =>
-            search(params, userId, searchPath)
-          }
-        }
-      } ~
-        path(Segment) { organization =>
-          optionalSession(refreshable, usingCookies) { userId =>
-            searchParams(userId){ params =>
-              search(
-                params.copy(queryString = s"${params.queryString} AND organization:$organization"),
-                userId,
-                organization
-              )
-            }
-          }
-        }
+  def searchPageBehavior(user: Option[UserState], query: String, page: Int, sorting: Option[String], you: Option[String]): Route = {
+    searchParams(user) { params =>
+      search(params, user, searchPath)
     }
+  }
+
+  def organizationBehavior(organization: String, user: Option[UserState]): Route = {
+      searchParams(user) { params =>
+        search(
+          params.copy(queryString = s"${params.queryString} AND organization:$organization"),
+          user,
+          organization
+        )
+    }
+  }
 }
