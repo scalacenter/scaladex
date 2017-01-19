@@ -108,7 +108,8 @@ package object html {
     val prefix = "scala_"
     project.targets
       .collect { case t if t.startsWith(prefix) => t.drop(prefix.length) }
-      .to[List].sorted(Ordering.String.reverse)
+      .map(SemanticVersion.apply).flatten
+      .to[List].sorted(SemanticVersion.ordering.reverse)
       .mkString(", ")
   }
 }
