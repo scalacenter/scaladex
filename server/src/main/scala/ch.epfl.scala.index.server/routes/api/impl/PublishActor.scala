@@ -27,7 +27,7 @@ class PublishActor(paths: DataPaths,
       if (publishData.isPom) {
         sender ! Await.result(publishProcess.writeFiles(publishData), 10.seconds)
       } else {
-        if(publishData.userState.isSonatype) sender ! ((BadRequest, "Not a POM"))
+        if (publishData.userState.isSonatype) sender ! ((BadRequest, "Not a POM"))
         else sender ! ((OK, "ignoring")) // for sbt, ignore SHA1, etc
       }
     }
