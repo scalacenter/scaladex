@@ -72,7 +72,11 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
                     case Some(target) =>
                       (OK,
                        dataRepository
-                         .find(SearchParams(queryString = q, targetFiltering = target1, cli = cli, total = 10))
+                         .find(
+                           SearchParams(queryString = q,
+                                        targetFiltering = target1,
+                                        cli = cli,
+                                        total = 10))
                          .map { case (_, ps) => ps.map(p => convert(p)) }
                          .map(ps => write(ps)))
                     case None =>
@@ -106,26 +110,28 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
                     })
               }
             }
-          }
-      } ~
-        path("autocomplete") {
-          get {
-            parameter('q) { query =>
-              complete {
-                dataRepository.find(SearchParams(queryString = query, page = 1, sorting = None, total = 5)).map {
-                  case (pagination, projects) =>
-                    val summarisedProjects = projects.map(
-                      p =>
-                        Autocompletion(
-                          p.organization,
-                          p.repository,
-                          p.github.flatMap(_.description).getOrElse("")
-                      ))
-                    write(summarisedProjects)
+          } ~
+          path("autocomplete") {
+            get {
+              parameter('q) { query =>
+                complete {
+                  dataRepository
+                    .find(SearchParams(queryString = query, page = 1, sorting = None, total = 5))
+                    .map {
+                      case (pagination, projects) =>
+                        val summarisedProjects = projects.map(
+                          p =>
+                            Autocompletion(
+                              p.organization,
+                              p.repository,
+                              p.github.flatMap(_.description).getOrElse("")
+                          ))
+                        write(summarisedProjects)
+                    }
                 }
               }
             }
           }
-        }
+      }
     }
 }

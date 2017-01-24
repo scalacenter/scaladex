@@ -80,7 +80,7 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
         case _ => (BadRequest, "Impossible ?")
       }
     } else {
-      if(data.userState.isSonatype) ((BadRequest, "Not a POM"))
+      if (data.userState.isSonatype) ((BadRequest, "Not a POM"))
       else ((Created, "ignoring")) // for sbt, ignore SHA1, etc
     }
   }
