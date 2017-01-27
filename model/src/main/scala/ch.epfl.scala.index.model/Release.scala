@@ -21,22 +21,26 @@ import release._
 case class Release(
     maven: MavenReference,
     reference: Release.Reference,
-    resolver: Option[Resolver] = None,
-    name: Option[String] = None,
-    description: Option[String] = None,
-    released: Option[String] = None,
-    licenses: Set[License] = Set(),
-    nonStandardLib: Boolean = false,
-    id: Option[String] = None,
-    liveData: Boolean = false,
+    resolver: Option[Resolver],
+    name: Option[String],
+    description: Option[String],
+    released: Option[String],
+    licenses: Set[License],
+    nonStandardLib: Boolean,
+    id: Option[String],
+    liveData: Boolean,
     /* split dependencies in 2 fields because elastic can't handle 2 different types
      * in one field. That is a simple workaround for that
      */
-    scalaDependencies: Seq[ScalaDependency] = Seq(),
-    javaDependencies: Seq[JavaDependency] = Seq(),
-    reverseDependencies: Seq[ScalaDependency] = Seq(),
-    internalDependencies: Seq[ScalaDependency] = Seq(),
-    test: Boolean = false
+    scalaDependencies: Seq[ScalaDependency],
+    javaDependencies: Seq[JavaDependency],
+    reverseDependencies: Seq[ScalaDependency],
+    internalDependencies: Seq[ScalaDependency],
+    // this part for elasticsearch search
+    targetType: String, // JVM, JS, Native, JAVA
+    scalaVersion: Option[String],
+    scalaJsVersion: Option[String],
+    scalaNativeVersion: Option[String]
 ) {
 
   /**

@@ -12,8 +12,11 @@
   projects: List[Project],
   user: Option[UserInfo],
   you: Boolean,
-  keywords: Map[String, Long],
-  targets: List[(String, SemanticVersion, Long, String)])
+  keywords: List[(String, Long)],
+  targetTypes: List[(String, Long)],
+  scalaVersions: List[(String, Long)],
+  scalaJsVersions: List[(String, Long)],
+  scalaNativeVersions: List[(String, Long)])
 
 <div class="row">
   <div class="col-md-2">
@@ -31,7 +34,16 @@
 </div>
 <div class="row">
   <div class="col-md-3">
-    @filter(params, keywords, targets, pagination, you)
+    @filter(
+      params,
+      keywords,
+      targetTypes,
+      scalaVersions,
+      scalaJsVersions,
+      scalaNativeVersions,
+      pagination,
+      you
+    )
   </div>      
   <div class="col-md-9">
     @resultList(projects)

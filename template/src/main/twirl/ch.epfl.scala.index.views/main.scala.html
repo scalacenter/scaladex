@@ -1,6 +1,7 @@
 @import ch.epfl.scala.index.model._
-@import ch.epfl.scala.index.model.misc.UserInfo
-@(title: String, showSearch: Boolean, searchQuery: String, user: Option[UserInfo], you: Boolean = false)(content: Html)
+@import ch.epfl.scala.index.model.misc.{UserInfo, SearchParams}
+
+@(title: String, showSearch: Boolean, user: Option[UserInfo], params: SearchParams = SearchParams(), you: Boolean = false)(content: Html)
 
 <!DOCTYPE HTML>
 <html lang="en">
@@ -49,7 +50,7 @@
                     <div class="col-md-10">
 
                         @if(showSearch) {
-                            @searchinput(searchQuery, you)
+                            @searchinput(params, you)
                         }
 
                         @user.map{ u =>
@@ -63,7 +64,7 @@
                                     btn-default
                                    }
                                "
-                               href="/search?q=@searchQuery@if(!you){&you=✓}"
+                               href="/search?q=@params.queryString@if(!you){&you=✓}"
                                
                                >
                                 <img src="@u.sizedAvatarUrl(38)" alt="Your Avatar - @u.login">

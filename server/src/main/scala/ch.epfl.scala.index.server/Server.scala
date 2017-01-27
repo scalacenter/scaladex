@@ -61,7 +61,6 @@ object Server {
     val userFacingRoutes =
       concat(
         new FrontPage(data, session).routes,
-
         redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
           concat(
             new ProjectPages(data, session).routes,

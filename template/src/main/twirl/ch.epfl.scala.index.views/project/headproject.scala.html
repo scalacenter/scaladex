@@ -59,7 +59,30 @@
           @if(project.contributorsWanted){
             <a href="/search?q=contributorsWanted:true"><img src="/assets/img/contributors_tag.png" alt="Contributors Wanted"></a>
           }
+          @if(!targets.isEmpty) {
+            <form action="/@project.reference.organization/@project.reference.repository" action="GET">
+              <input type="hidden" name="artifact" value="@release.reference.artifact">
+              
+              <select
+                name="target"
+                onchange="this.form.submit()"
+                data-live-search="true"
+                class="selectpicker" data-style="btn-primary">
+
+              @for(target <- targets){
+                <option value="@target.encode"
+                        @if(Some(target) == release.reference.target){ selected }>
+                  @target.render
+                </option>
+              }
+              </select>
+            </form>
+          }
           <form action="/@project.reference.organization/@project.reference.repository" action="GET">
+            @for(target <- release.reference.target) {
+              <input type="hidden" name="target" value="@target.encode">
+            }
+
             <select
               name="artifact"
               onchange="this.form.submit()"
@@ -73,7 +96,10 @@
             </select>
           </form>
           
-          <form action="/@project.reference.organization/@project.reference.repository" action="GET">           
+          <form action="/@project.reference.organization/@project.reference.repository" action="GET">
+            @for(target <- release.reference.target) {
+              <input type="hidden" name="target" value="@target.encode">
+            }
             <input type="hidden" name="artifact" value="@release.reference.artifact">
 
             <select
@@ -88,25 +114,7 @@
               </option>
             }
             </select>
-          </form>
-
-          @if(!targets.isEmpty) {
-            <form action="/@project.reference.organization/@project.reference.repository" action="GET">           
-              <input type="hidden" name="version" value="@release.reference.version">
-              <select
-                name="artifact"
-                onchange="this.form.submit()"
-                data-live-search="true"
-                class="selectpicker" data-style="btn-primary">
-
-              @for(target <- targets){
-                <option value="@target.sbt(release.reference.artifact)" @if(Some(target) == release.reference.target){ selected }>
-                  @target.render
-                </option>
-              }
-              </select>
-            </form>
-          }        
+          </form>        
         </div>
       </div>
     </div>

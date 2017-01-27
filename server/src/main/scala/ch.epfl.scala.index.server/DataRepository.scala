@@ -72,23 +72,21 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
       if (translated.isEmpty) "*"
       else translated.replaceAllLiterally("/", "\\/")
 
-    val mustQueryTarget =
-      targetFiltering match {
-        case Some(t) => List(bool(should(termQuery("targets", t.supportName))))
-        case None => Nil
-      }
+    val targetsQuery =
+      params.targetTypes.map(targetType => bool(should(termQuery("targetType", targetType)))) ++
+        params.scalaVersions.map(scalaVersion =>
+          bool(should(termQuery("scalaVersion", scalaVersion)))) ++
+        params.scalaJsVersions.map(scalaJsVersion =>
+          bool(should(termQuery("scalaJsVersion", scalaJsVersion)))) ++
+        params.scalaNativeVersions.map(scalaNativeVersion =>
+          bool(should(termQuery("scalaNativeVersion", scalaNativeVersion))))
 
     val cliQuery =
       if (cli) List(termQuery("hasCli", true))
       else Nil
 
     val keywordsQuery =
-      if(params.keywords.nonEmpty) params.keywords.toList.map(keyword => bool(should(termQuery("keywords", keyword))))
-      else Nil
-
-    val targetsQuery =
-      if(params.targets.nonEmpty) params.targets.toList.map(target => bool(should(termQuery("targets", target))))
-      else Nil
+      params.keywords.map(keyword => bool(should(termQuery("keywords", keyword))))
 
     val reposQueries = if (!userRepos.isEmpty) {
       userRepos.toList.map {
@@ -112,7 +110,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
     functionScoreQuery(
       bool(
-        mustQueries = mustQueriesRepos ++ mustQueryTarget ++ cliQuery ++ keywordsQuery ++ targetsQuery,
+        mustQueries = mustQueriesRepos ++ cliQuery ++ keywordsQuery ++ targetsQuery,
         shouldQueries = List(
           fuzzyQuery("keywords", escaped).boost(2),
           fuzzyQuery("github.description", escaped).boost(1.7),
@@ -124,27 +122,26 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
         notQueries = List(termQuery("deprecated", true))
       )
     ).scorers(
-      // Add a small boost for project that seem to be “popular” (highly depended on or highly starred)
-      fieldFactorScore("dependentCount")
-        .modifier(Modifier.LOG1P)
-        .weight(0.3),
-      fieldFactorScore("github.stars")
-        .missing(0)
-        .modifier(Modifier.LOG1P)
-        .weight(0.1)
-    ).boostMode("sum")
+        // Add a small boost for project that seem to be “popular” (highly depended on or highly starred)
+        fieldFactorScore("dependentCount").modifier(Modifier.LOG1P).weight(0.3),
+        fieldFactorScore("github.stars").missing(0).modifier(Modifier.LOG1P).weight(0.1)
+      )
+      .boostMode("sum")
   }
 
   def total(queryString: String): Future[Long] = {
     esClient.execute {
-      search.in(indexName / projectsCollection).query(getQuery(SearchParams(queryString = queryString))).size(0)
+      search
+        .in(indexName / projectsCollection)
+        .query(getQuery(SearchParams(queryString = queryString)))
+        .size(0)
     }.map(_.totalHits)
   }
 
   def find(params: SearchParams): Future[(Pagination, List[Project])] =
     query(getQuery(params), params)
 
-  def releases(project: Project.Reference, artifact: Option[String]): Future[List[Release]] = {
+  def releases(project: Project.Reference, selection: ReleaseSelection): Future[List[Release]] = {
     esClient.execute {
       search
         .in(indexName / releasesCollection)
@@ -152,9 +149,10 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
           nestedQuery("reference").query(
             bool(
               must(
-                artifact.map(termQuery("reference.artifact", _)) ++ List(
+                List(
                   termQuery("reference.organization", project.organization),
-                  termQuery("reference.repository", project.repository))
+                  termQuery("reference.repository", project.repository)
+                )
               )
             )
           )
@@ -208,20 +206,20 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
                          selection: ReleaseSelection): Future[Option[(Project, List[Release])]] = {
     for {
       project <- project(projectRef)
-      releases <- releases(projectRef, selection.artifact)
+      releases <- releases(projectRef, selection)
     } yield project.map((_, releases))
   }
 
   def projectPage(projectRef: Project.Reference,
                   selection: ReleaseSelection): Future[Option[(Project, ReleaseOptions)]] = {
     projectAndReleases(projectRef, selection).map {
-      case Some((project, releases)) =>
+      case Some((project, releases)) => {
         DefaultRelease(project.repository,
                        selection,
                        releases.toSet,
                        project.defaultArtifact,
-                       project.defaultStableVersion).map(sel =>
-          (project, sel.copy(artifacts = project.artifacts)))
+                       project.defaultStableVersion).map(sel => (project, sel))
+      }
       case None => None
     }
   }
@@ -243,7 +241,8 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
   private val frontPageCount = 12
 
-  def latestProjects() = latest[Project](projectsCollection, "created", frontPageCount).map(_.map(hideId))
+  def latestProjects() =
+    latest[Project](projectsCollection, "created", frontPageCount).map(_.map(hideId))
   def latestReleases() = latest[Release](releasesCollection, "released", frontPageCount)
 
   def mostDependedUpon() = {
@@ -272,8 +271,60 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
     }.map(r => r.as[T].toList)
   }
 
-  def keywords(params: SearchParams = SearchParams()) = aggregations("keywords", params)
-  def targets(params: SearchParams = SearchParams()) = aggregations("targets", params)
+  def keywords(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {
+    stringAggregations("keywords", params).map(addParamsIfMissing(params.keywords))
+  }
+
+  def targetTypes(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {
+    stringAggregations("targetType", params).map(addParamsIfMissing(params.targetTypes))
+  }
+
+  private def stringAggregations(field: String,
+                                 params: SearchParams): Future[List[(String, Long)]] = {
+    aggregations(field, params).map(_.toList.sortBy(_._1).toList)
+  }
+
+  def scalaVersions(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {
+    val minVer = SemanticVersion(2, 10)
+    versionAggregations("scalaVersion", params, _ > minVer)
+      .map(addParamsIfMissing(params.scalaVersions))
+  }
+
+  def scalaJsVersions(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {
+    versionAggregations("scalaJsVersion", params, _ => true)
+      .map(addParamsIfMissing(params.scalaJsVersions))
+  }
+
+  def scalaNativeVersions(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {
+    versionAggregations("scalaNativeVersion", params, _ => true)
+      .map(addParamsIfMissing(params.scalaNativeVersions))
+  }
+
+  private def addParamsIfMissing(params: List[String])(
+      result: List[(String, Long)]): List[(String, Long)] = {
+    val pSet = params.toSet
+    val rSet = result.map(_._1).toSet
+
+    val diff = pSet -- rSet
+
+    if (diff.nonEmpty) {
+      (diff.toList.map(label => (label, 0L)) ++ result).sortBy(_._1)
+    } else result
+  }
+
+  private def versionAggregations(
+      field: String,
+      params: SearchParams,
+      filterF: SemanticVersion => Boolean): Future[List[(String, Long)]] = {
+    def sortedByVersion(aggregation: Map[String, Long]): List[(String, Long)] = {
+      aggregation.toList.flatMap {
+        case (version, count) => SemanticVersion(version).map(v => (v, count))
+      }.filter { case (version, _) => filterF(version) }.groupBy {
+        case (version, _) => SemanticVersion(version.major, version.minor)
+      }.mapValues(_.map(_._2).sum).toList.sortBy(_._1).map { case (v, c) => (v.toString, c) }
+    }
+    aggregations(field, params).map(sortedByVersion)
+  }
 
   private def aggregations(field: String, params: SearchParams): Future[Map[String, Long]] = {
 
@@ -288,10 +339,19 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
         .query(getQuery(params))
         .aggregations(aggregation.terms(aggregationName).field(field).size(50))
     }.map(resp => {
-      val agg = resp.aggregations.get[StringTerms](aggregationName)
-      agg.getBuckets.asScala.toList.collect {
-        case b: StringTerms.Bucket => b.getKeyAsString -> b.getDocCount
-      }.toMap
+      try {
+        val agg = resp.aggregations.get[StringTerms](aggregationName)
+        agg.getBuckets.asScala.toList.collect {
+          case b: StringTerms.Bucket => b.getKeyAsString -> b.getDocCount
+        }.toMap
+      } catch {
+        case e: Exception => {
+          println(field)
+          e.printStackTrace()
+          Map()
+        }
+
+      }
 
     })
   }

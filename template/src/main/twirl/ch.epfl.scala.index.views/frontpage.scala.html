@@ -2,15 +2,18 @@
 @import ch.epfl.scala.index.model.Release
 @import ch.epfl.scala.index.model.misc.{Url, UserInfo}
 
-@(keywords: Map[String, Long],
-  targets: Map[String, Long], 
+@(keywords: List[(String, Long)],
+  targetTypes: List[(String, Long)],
+  scalaVersions: List[(String, Long)],
+  scalaJsVersions: List[(String, Long)],
+  scalaNativeVersions: List[(String, Long)], 
   latestProjects: List[Project],
   mostDependedUpon: List[Project],
   latestReleases: List[Release],
   user: Option[UserInfo],
   ecosystems: Map[String, String])
 
-@main(title = "Home", showSearch = false, searchQuery = "", user) {
+@main(title = "Home", showSearch = false, user) {
 <main id="container-home">
     <section class="content-search-home">
         <div class="container">
@@ -24,9 +27,37 @@
                         }
                     </ul>
                     <ul class="tag">
-                        <li><strong>Targets:</strong></li>
-                        @for((sup, count) <- targets) {
-                            <li><a href="/search?q=*&targets=@sup">@sup (@count)</a></li>
+                        <li><strong>Platforms:</strong></li>
+                        @for((targetType, count) <- targetTypes) {
+                            <li>
+                                <a href="/search?q=*&targetType=@targetType">@targetType (@count)</a>
+                            </li>
+                        }
+                    </ul>
+                    <ul class="tag">
+                        <li><strong>Scala Versions:</strong></li>
+                        @for((scalaVersion, count) <- scalaVersions) {
+                            <li>
+                                <a href="/search?q=*&scalaVersion=@scalaVersion">@scalaVersion (@count)</a>
+                            </li>
+                        }
+                    </ul>
+                    <ul class="tag">
+                        <li><strong>Scala.js Versions:</strong></li>
+                        @for((scalaJsVersion, count) <- scalaJsVersions) {
+                            <li>
+                                <a href="/search?q=*&scalaJsVersion=@scalaJsVersion">@scalaJsVersion (@count)</a>
+                            </li>
+                        }
+                    </ul>
+                    <ul class="tag">
+                        @if(scalaNativeVersions.nonEmpty) {
+                            <li><strong>Scala-Native Versions:</strong></li>
+                            @for((scalaNativeVersion, count) <- scalaNativeVersions) {
+                                <li>
+                                    <a href="/search?q=*&scalaNativeVersion=@scalaNativeVersion">@scalaNativeVersion (@count)</a>
+                                </li>
+                            }
                         }
                     </ul>
                     <ul class="tag">

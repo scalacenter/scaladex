@@ -2,24 +2,23 @@ package ch.epfl.scala.index.model
 package release
 
 case class ReleaseSelection(
+    target: Option[ScalaTarget],
     artifact: Option[String],
-    version: Option[SemanticVersion],
-    target: Option[ScalaTarget]
+    version: Option[SemanticVersion]
 )
 
 object ReleaseSelection {
+  def parse(target: Option[String],
+            artifactName: Option[String],
+            version: Option[String]): ReleaseSelection = {
 
-  /**
-    * @param artifactRaw either an artifact (ex: cats-core) or an artifactId (ex: cats-core_2.11)
-    */
-  def apply(artifactRaw: Option[String] = None, version: Option[SemanticVersion] = None): ReleaseSelection = {
-    val (artifact, target) = artifactRaw
-      .flatMap(raw => Artifact(raw))
-      .map { case (a, b) => (Some(a), Some(b)) }
-      .getOrElse((artifactRaw, None))
-
-    new ReleaseSelection(artifact, version, target)
+    new ReleaseSelection(
+      target.flatMap(ScalaTarget.decode),
+      artifactName,
+      version.flatMap(SemanticVersion.parse)
+    )
   }
+  def empty = new ReleaseSelection(None, None, None)
 }
 
 /**
@@ -39,11 +38,17 @@ object DefaultRelease {
             defaultArtifact: Option[String],
             defaultStableVersion: Boolean): Option[ReleaseOptions] = {
 
-    val selectedReleases = releases.filter(
-      release =>
-        selection.artifact.map(_ == release.reference.artifact).getOrElse(true) &&
-          selection.target.map(target => Some(target) == release.reference.target).getOrElse(true) &&
-          selection.version.map(_ == release.reference.version).getOrElse(true))
+    def filterTarget(release: Release): Boolean =
+      selection.target.map(target => Some(target) == release.reference.target).getOrElse(true)
+
+    def filterArtifact(release: Release): Boolean =
+      selection.artifact.map(_ == release.reference.artifact).getOrElse(true)
+
+    def filterVersion(release: Release): Boolean =
+      selection.version.map(_ == release.reference.version).getOrElse(true)
+
+    val selectedReleases = releases.filter(release =>
+      filterTarget(release) && filterArtifact(release) && filterVersion(release))
 
     // descending ordering for versions
     implicit def ordering = implicitly[Ordering[SemanticVersion]].reverse
@@ -71,18 +76,18 @@ object DefaultRelease {
     }
 
     releasesSorted.headOption.map { release =>
-      val artifacts = releases.map(_.reference.artifact).toList.sorted
-      val releasesForArtifact = releases.filter(_.reference.artifact == release.reference.artifact)
-
-      val versions = releasesForArtifact.map(_.reference.version).toList.sorted
-      val releasesForArtifactVersion =
-        releasesForArtifact.filter(_.reference.version == release.reference.version)
-
-      val targets = releasesForArtifactVersion
+      val targets = releases
         .map(_.reference.target)
         .toList
         .flatten
-        .sortBy(target => (target.scalaVersion, target.scalaJsVersion))
+        .sortBy(target => (target.targetType, target.scalaVersion, target.scalaJsVersion))
+
+      val artifacts = releases.filter(filterTarget).map(_.reference.artifact).toList.sorted
+
+      val releasesForArtifact =
+        releases.filter(release => filterTarget(release) && filterArtifact(release))
+
+      val versions = releasesForArtifact.map(_.reference.version).toList.sorted
 
       ReleaseOptions(
         artifacts,

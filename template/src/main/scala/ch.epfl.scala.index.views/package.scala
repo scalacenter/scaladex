@@ -14,7 +14,7 @@ package object html {
   implicit class QueryAppend(uri: Uri) {
 
     def appendQuery(kv: (String, String)): Uri = uri.withQuery(
-      Query((uri.query(java.nio.charset.Charset.forName("UTF-8")) ++ Vector(kv)):_*)
+      Query((uri.query(java.nio.charset.Charset.forName("UTF-8")) ++ Vector(kv)): _*)
     )
 
     def appendQuery(k: String, on: Boolean): Uri = {
@@ -22,27 +22,30 @@ package object html {
       else uri
     }
     def appendQuery(k: String, vs: List[String]): Uri =
-      vs.foldLeft(uri){ case (acc, v) =>
-        acc.appendQuery(k -> v)
+      vs.foldLeft(uri) {
+        case (acc, v) =>
+          acc.appendQuery(k -> v)
       }
     def appendQuery(k: String, ov: Option[String]): Uri = {
       ov match {
-        case Some(v) => appendQuery(k -> v) 
-        case None    => uri
+        case Some(v) => appendQuery(k -> v)
+        case None => uri
       }
     }
   }
 
-  def paginationUri(
-    params: SearchParams,
-    uri: Uri,
-    pagination: Pagination,
-    you: Boolean): Int => Uri = page => {
+  def paginationUri(params: SearchParams,
+                    uri: Uri,
+                    pagination: Pagination,
+                    you: Boolean): Int => Uri = page => {
 
     uri
       .appendQuery("sort", params.sorting)
       .appendQuery("keywords", params.keywords.toList)
-      .appendQuery("targets" , params.targets.toList)
+      .appendQuery("targetTypes", params.targetTypes.toList)
+      .appendQuery("scalaVersions", params.scalaVersions.toList)
+      .appendQuery("scalaJsVersions", params.scalaJsVersions.toList)
+      .appendQuery("scalaNativeVersions", params.scalaNativeVersions.toList)
       .appendQuery("you", you)
       .appendQuery("q" -> params.queryString)
       .appendQuery("page" -> page.toString)
@@ -52,11 +55,11 @@ package object html {
   def paginationRender(selected: Int,
                        max: Int,
                        toShow: Int = 10): (Option[Int], List[Int], Option[Int]) = {
+    val min = 1
+
     if (selected == max && max == 1) (None, List(1), None)
+    else if (!(min to max).contains(selected)) (None, List(), None)
     else {
-      val min = 1
-      require(min to max contains selected, "cannot select something outside the range")
-      require(min <= max, "min must not be greater than max")
       require(max > 0 && selected > 0 && toShow > 0, "all arguments must be positive")
 
       val window = (max min toShow) / 2
@@ -104,12 +107,13 @@ package object html {
     out.print(in.parseDateTime(date))
   }
 
-  def renderTargets(project: Project): String = {
-    val prefix = "scala_"
-    project.targets
-      .collect { case t if t.startsWith(prefix) => t.drop(prefix.length) }
-      .map(SemanticVersion.apply).flatten
-      .to[List].sorted(SemanticVersion.ordering.reverse)
-      .mkString(", ")
+  def sortVersions(versions: Set[String], scala: Boolean = false): List[String] = {
+    val minVersion = SemanticVersion(2, 10)
+    versions.toList
+      .flatMap(SemanticVersion.parse)
+      .filter(version => !scala || version >= minVersion)
+      .sorted
+      .map(version => SemanticVersion(version.major, version.minor).toString)
+      .distinct
   }
 }

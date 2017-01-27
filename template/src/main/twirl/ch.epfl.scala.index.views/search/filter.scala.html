@@ -2,8 +2,11 @@
 @import ch.epfl.scala.index.model.misc.{Pagination, SearchParams}
 
 @(params: SearchParams,
-  keywords: Map[String, Long],
-  targets: List[(String, SemanticVersion, Long, String)],
+  keywords: List[(String, Long)],
+  targetTypes: List[(String, Long)],
+  scalaVersions: List[(String, Long)],
+  scalaJsVersions: List[(String, Long)],
+  scalaNativeVersions: List[(String, Long)],
   pagination: Pagination,
   you: Boolean)
 
@@ -11,18 +14,65 @@
   <form action="/search" action="GET">
     <h3>Filters</h3>
     <fieldset>
-      <legend>Scala Target</legend>
+      <legend>Target</legend>
       <ul>
-      @for((target, version, count, supportName) <- targets) {
+      @for((targetType, count) <- targetTypes) {
         <li>
           <label>
-            <input type="checkbox" @if(params.targets.contains(supportName)) { checked }
-                   name="targets" value="@supportName" onclick="this.form.submit()">
-            @target @version (@count)
+            <input type="checkbox" @if(params.targetTypes.contains(targetType)) { checked }
+                   name="targetTypes" value="@targetType" onclick="this.form.submit()">
+            @if(targetType == "JVM") {
+              Scala (JVM)
+            } else {
+              @targetType 
+            }
+            (@count)
           </label>
         </li>
       }
       </ul>
+      @if(!scalaVersions.isEmpty) {
+        Scala
+        <ul>
+        @for((scalaVersion, count) <- scalaVersions) {
+          <li>
+            <label>
+              <input type="checkbox" @if(params.scalaVersions.contains(scalaVersion)) { checked }
+                     name="scalaVersions" value="@scalaVersion" onclick="this.form.submit()">
+              @scalaVersion (@count)
+            </label>
+          </li>
+        }
+        </ul>
+      }
+      @if(!scalaJsVersions.isEmpty) {
+        Scala.js
+        <ul>
+        @for((scalaJsVersion, count) <- scalaJsVersions) {
+          <li>
+            <label>
+              <input type="checkbox" @if(params.scalaJsVersions.contains(scalaJsVersion)) { checked }
+                     name="scalaJsVersions" value="@scalaJsVersion" onclick="this.form.submit()">
+              @scalaJsVersion (@count)
+            </label>
+          </li>
+        }
+        </ul>
+      }
+      @if(!scalaNativeVersions.isEmpty) {
+        Scala-Native
+        <ul>
+        @for((scalaNativeVersion, count) <- scalaNativeVersions) {
+          <li>
+            <label>
+              <input type="checkbox" @if(params.scalaNativeVersions.contains(scalaNativeVersion)) { checked }
+                     name="scalaNativeVersions" value="@scalaNativeVersion" onclick="this.form.submit()">
+              @scalaNativeVersion (@count)
+            </label>
+          </li>
+        }
+        </ul>
+      }
     </fieldset>
     <fieldset>
       <legend>Keywords</legend>

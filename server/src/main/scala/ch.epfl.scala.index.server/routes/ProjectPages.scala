@@ -33,7 +33,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
         project <- dataRepository.project(Project.Reference(owner, repo))
       } yield {
         project.map { p =>
-          val allKeywords = (p.keywords ++ keywords.keys.toSet).toList.sorted
+          val allKeywords = (p.keywords ++ keywords.map(_._1).toSet).toList.sorted
           (OK, views.project.html.editproject(p, allKeywords, user))
         }.getOrElse((NotFound, views.html.notfound(user)))
       }
@@ -42,29 +42,35 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
 
   private def projectPage(owner: String,
                           repo: String,
+                          target: Option[String],
                           artifact: Option[String],
-                          version: Option[SemanticVersion],
+                          version: Option[String],
                           userState: Option[UserState]) = {
 
     val user = userState.map(_.user)
 
-    println(s"$owner $repo $artifact $version")
-    
+    val selection = ReleaseSelection.parse(
+      target = target,
+      artifactName = artifact,
+      version = version
+    )
+
     dataRepository
-      .projectPage(Project.Reference(owner, repo), ReleaseSelection(artifact, version))
+      .projectPage(Project.Reference(owner, repo), selection)
       .map(_.map {
         case (project, options) =>
           import options._
-        (OK,
-          views.project.html.project(
-            project,
-            artifacts,
-            versions,
-            targets,
-            release,
-            user,
-            canEdit(owner, repo, userState)
-          ))
+
+          (OK,
+           views.project.html.project(
+             project,
+             options.artifacts,
+             versions,
+             targets,
+             release,
+             user,
+             canEdit(owner, repo, userState)
+           ))
       }.getOrElse((NotFound, views.html.notfound(user))))
   }
   val routes =
@@ -134,36 +140,53 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
         } ~
           path(Segment / Segment) { (organization, repository) =>
             optionalSession(refreshable, usingCookies) { userId =>
-              parameters('artifact, 'version.?) { (artifact, version) =>
-                val rest = version match {
-                  case Some(v) if !v.isEmpty => "/" + v
+              parameters('artifact.?, 'version.?, 'target.?) { (artifact, version, target) =>
+                val rest = (artifact, version) match {
+                  case (Some(a), Some(v)) => s"$a/$v"
+                  case (Some(a), None) => a
                   case _ => ""
                 }
-                redirect(s"/$organization/$repository/$artifact$rest",
-                         StatusCodes.PermanentRedirect)
-              } ~
-                pathEnd {
-                  complete(projectPage(organization, repository, None, None, getUser(userId)))
+                val targetQuery = target match {
+                  case Some(t) => s"?target=$t"
+                  case _ => ""
                 }
+                if (artifact.isEmpty && version.isEmpty) {
+                  complete(
+                    projectPage(organization, repository, target, None, None, getUser(userId)))
+                } else {
+                  redirect(s"/$organization/$repository/$rest$targetQuery",
+                           StatusCodes.PermanentRedirect)
+                }
+              }
             }
           } ~
           path(Segment / Segment / Segment) { (organization, repository, artifact) =>
             optionalSession(refreshable, usingCookies) { userId =>
-              complete(
-                projectPage(organization, repository, Some(artifact), None, getUser(userId))
-              )
+              parameter('target.?) { target =>
+                complete(
+                  projectPage(organization,
+                              repository,
+                              target,
+                              Some(artifact),
+                              None,
+                              getUser(userId))
+                )
+              }
             }
           } ~
           path(Segment / Segment / Segment / Segment) {
             (organization, repository, artifact, version) =>
               optionalSession(refreshable, usingCookies) { userId =>
-                complete(
-                  projectPage(organization,
-                              repository,
-                              Some(artifact),
-                              SemanticVersion(version),
-                              getUser(userId))
-                )
+                parameter('target.?) { target =>
+                  complete(
+                    projectPage(organization,
+                                repository,
+                                target,
+                                Some(artifact),
+                                Some(version),
+                                getUser(userId))
+                  )
+                }
               }
           }
       }
