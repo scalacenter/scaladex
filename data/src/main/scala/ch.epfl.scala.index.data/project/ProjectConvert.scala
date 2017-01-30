@@ -40,14 +40,16 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
             dep.groupId == "org.scala-lang" &&
               dep.artifactId == "scala-library")
           .flatMap(dep => SemanticVersion(dep.version))
-          .map(version => (pom.artifactId, Some(ScalaTarget(version.copy(patch = None))), true))
+          .map(version =>
+            // we assume binary compatibility
+            (pom.artifactId, Some(ScalaTarget.scala(version.copy(patch = None))), true))
 
       case Some(NoScalaTargetPureJavaDependency) =>
         Some((pom.artifactId, None, false))
 
       case Some(ScalaTargetFromVersion) =>
         SemanticVersion(pom.version).map(version =>
-          (pom.artifactId, Some(ScalaTarget(version)), true))
+          (pom.artifactId, Some(ScalaTarget.scala(version)), true))
 
       case None =>
         Artifact(pom.artifactId).map {
@@ -195,6 +197,9 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
 
         val releases = vs.map {
           case (_, artifactName, target, pom, created, resolver, version, nonStandardLib) =>
+            val (targetType, scalaVersion, scalaJsVersion, scalaNativeVersion) =
+              ScalaTarget.split(target)
+
             Release(
               maven = pomToMavenReference(pom),
               reference = Release.Reference(
@@ -209,7 +214,19 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
               description = pom.description,
               released = created,
               licenses = licenseCleanup(pom),
-              nonStandardLib = nonStandardLib
+              nonStandardLib = nonStandardLib,
+              id = None,
+              liveData = false,
+              scalaDependencies = Seq(),
+              javaDependencies = Seq(),
+              reverseDependencies = Seq(),
+              internalDependencies = Seq(),
+              targetType = targetType.getOrElse("JAVA"),
+              // for artifact publish with binary, full will return binary
+              // ex cats_2.11 => 2.11
+              scalaVersion = scalaVersion,
+              scalaJsVersion = scalaJsVersion,
+              scalaNativeVersion = scalaNativeVersion
             )
         }.toSet ++ cachedReleasesForProject
 
@@ -225,7 +242,6 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
               .getOrElse(true)
           else true
 
- 
         val releaseOptions = DefaultRelease(
           repository,
           ReleaseSelection(None, None, None),
@@ -233,7 +249,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
           None,
           defaultStableVersion
         )
- 
+
         val seed =
           ProjectSeed(
             organization = organization,
@@ -325,9 +341,6 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
     def dependencies(releases: Set[Release]): Set[String] =
       collectDependencies(releases, r => Some(r.name))
 
-    def targets(releases: Set[Release]): Set[String] =
-      collectDependencies(releases, _.target.map(_.supportName))
-
     def belongsTo(reference: Project.Reference): Dependency => Boolean = {
       //A scala project can only have scala internal dependencies
       case scalaDependency: ScalaDependency =>
@@ -354,9 +367,14 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
 
         val project =
           seed.toProject(
-            targets = targets(releasesWithDependencies),
+            targetType = releases.map(_.targetType).toSet,
+            scalaVersion = releases.flatMap(_.scalaVersion).toSet,
+            scalaJsVersion = releases.flatMap(_.scalaJsVersion).toSet,
+            scalaNativeVersion = releases.flatMap(_.scalaNativeVersion).toSet,
             dependencies = dependencies(releasesWithDependencies),
-            dependentCount = releasesWithDependencies.view.flatMap(_.reverseDependencies.map(_.reference)).size // Note: we don’t need to call `.distinct` because `releases` is a `Set`
+            dependentCount = releasesWithDependencies.view
+              .flatMap(_.reverseDependencies.map(_.reference))
+              .size // Note: we don’t need to call `.distinct` because `releases` is a `Set`
           )
 
         val updatedProject =
@@ -376,19 +394,24 @@ object ProjectConvert {
 
   /** Intermediate data structure */
   case class ProjectSeed(
-    organization: String,
-    repository: String,
-    github: Option[GithubInfo],
-    artifacts: List[String],
-    defaultArtifact: Option[String],
-    releaseCount: Int,
-    created: Option[String],
-    updated: Option[String]
+      organization: String,
+      repository: String,
+      github: Option[GithubInfo],
+      artifacts: List[String],
+      defaultArtifact: Option[String],
+      releaseCount: Int,
+      created: Option[String],
+      updated: Option[String]
   ) {
 
     def reference = Project.Reference(organization, repository)
 
-    def toProject(targets: Set[String], dependencies: Set[String], dependentCount: Int): Project =
+    def toProject(targetType: Set[String],
+                  scalaVersion: Set[String],
+                  scalaJsVersion: Set[String],
+                  scalaNativeVersion: Set[String],
+                  dependencies: Set[String],
+                  dependentCount: Int): Project =
       Project(
         organization = organization,
         repository = repository,
@@ -398,7 +421,10 @@ object ProjectConvert {
         releaseCount = releaseCount,
         created = created,
         updated = updated,
-        targets = targets,
+        targetType = targetType,
+        scalaVersion = scalaVersion,
+        scalaJsVersion = scalaJsVersion,
+        scalaNativeVersion = scalaNativeVersion,
         dependencies = dependencies,
         dependentCount = dependentCount
       )

@@ -48,26 +48,35 @@ class Badges(dataRepository: DataRepository) {
   val routes =
     get {
       path(Segment / Segment / Segment / "latest.svg") { (organization, repository, artifact) =>
-        shields { (color, style, logo, logoWidth) =>
-          onSuccess(
-            dataRepository.projectPage(Project.Reference(organization, repository),
-                                       ReleaseSelection(Some(artifact), None))) {
+        parameter('target.?) { target =>
+          shields { (color, style, logo, logoWidth) =>
+            onSuccess(
+              dataRepository.projectPage(
+                Project.Reference(organization, repository),
+                ReleaseSelection.parse(
+                  target = target,
+                  artifactName = Some(artifact),
+                  version = None
+                )
+              )
+            ) {
 
-            case Some((_, options)) =>
-              shieldsSvg(artifact,
-                         options.release.reference.version.toString(),
-                         color,
-                         style,
-                         logo,
-                         logoWidth)
-            case _ =>
-              shieldsSvg(artifact,
-                         "no published release",
-                         color orElse Some("lightgrey"),
-                         style,
-                         logo,
-                         logoWidth)
+              case Some((_, options)) =>
+                shieldsSvg(artifact,
+                           options.release.reference.version.toString(),
+                           color,
+                           style,
+                           logo,
+                           logoWidth)
+              case _ =>
+                shieldsSvg(artifact,
+                           "no published release",
+                           color orElse Some("lightgrey"),
+                           style,
+                           logo,
+                           logoWidth)
 
+            }
           }
         }
       } ~

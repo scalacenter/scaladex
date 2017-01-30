@@ -15,8 +15,20 @@
     @for(keyword <- params.keywords){
       <input type="hidden" name="keywords" value="@keyword">
     }
-    @for(target <- params.targets){
-      <input type="hidden" name="targets" value="@target">
+    @for(tpe <- params.targetTypes){
+      <input type="hidden" name="targetTypes" value="@tpe">
+    }
+
+    @for(scalaVersion <- params.scalaVersions){
+      <input type="hidden" name="scalaVersions" value="@scalaVersion">
+    }
+
+    @for(scalaJsVersion <- params.scalaJsVersions){
+      <input type="hidden" name="scalaJsVersions" value="@scalaJsVersion">
+    }
+
+    @for(scalaNativeVersion <- params.scalaNativeVersions){
+      <input type="hidden" name="scalaNativeVersions" value="@scalaNativeVersion">
     }
 
     <h3>Sorting</h3>

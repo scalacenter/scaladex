@@ -36,23 +36,48 @@ object Api {
 }
 
 class SearchApi(dataRepository: DataRepository)(implicit val executionContext: ExecutionContext) {
+
+  private def parseScalaTarget(targetType: Option[String],
+                               scalaVersion: Option[String],
+                               scalaJsVersion: Option[String],
+                               scalaNativeVersion: Option[String]): Option[ScalaTarget] = {
+    (targetType,
+     scalaVersion.flatMap(SemanticVersion.parse),
+     scalaJsVersion.flatMap(SemanticVersion.parse),
+     scalaNativeVersion.flatMap(SemanticVersion.parse)) match {
+
+      case (Some("JVM"), Some(scalaVersion), _, _) =>
+        Some(ScalaTarget.scala(scalaVersion))
+
+      case (Some("JS"), Some(scalaVersion), Some(scalaJsVersion), _) =>
+        Some(ScalaTarget.scalaJs(scalaVersion, scalaJsVersion))
+
+      case (Some("NATIVE"), Some(scalaVersion), _, Some(scalaNativeVersion)) =>
+        Some(ScalaTarget.scalaNative(scalaVersion, scalaNativeVersion))
+
+      case _ =>
+        None
+    }
+  }
+
   val routes =
     pathPrefix("api") {
       cors() {
         path("search") {
           get {
-            parameters('q, 'target, 'scalaVersion, 'scalaJsVersion.?, 'cli.as[Boolean] ? false) {
-              (q, target0, scalaVersion0, targetVersion0, cli) =>
-                val target1 =
-                  (target0, SemanticVersion(scalaVersion0), targetVersion0.map(SemanticVersion(_))) match {
-                    case ("JVM", Some(scalaVersion), _) =>
-                      Some(ScalaTarget(scalaVersion))
-                    case ("JS", Some(scalaVersion), Some(scalaJsVersion)) =>
-                      Some(ScalaTarget(scalaVersion, scalaJsVersion))
-                    // NATIVE
-                    case _ =>
-                      None
-                  }
+            parameters('q,
+                       'target,
+                       'scalaVersion,
+                       'scalaJsVersion.?,
+                       'scalaNativeVersion.?,
+                       'cli.as[Boolean] ? false) {
+
+              (q, targetType, scalaVersion, scalaJsVersion, scalaNativeVersion, cli) =>
+                val scalaTarget =
+                  parseScalaTarget(Some(targetType),
+                                   Some(scalaVersion),
+                                   scalaJsVersion,
+                                   scalaNativeVersion)
 
                 def convert(project: Project): Api.Project = {
                   import project._
@@ -68,19 +93,20 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
                 }
 
                 complete(
-                  target1 match {
+                  scalaTarget match {
                     case Some(target) =>
                       (OK,
                        dataRepository
                          .find(
                            SearchParams(queryString = q,
-                                        targetFiltering = target1,
+                                        targetFiltering = scalaTarget,
                                         cli = cli,
                                         total = 10))
                          .map { case (_, ps) => ps.map(p => convert(p)) }
                          .map(ps => write(ps)))
                     case None =>
-                      (BadRequest, s"something is wrong: $target0 $scalaVersion0 $targetVersion0")
+                      (BadRequest,
+                       s"something is wrong: $scalaTarget $scalaVersion $scalaJsVersion $scalaNativeVersion")
                   }
                 )
             }
@@ -88,9 +114,25 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
         } ~
           path("project") {
             get {
-              parameters('organization, 'repository, 'artifact.?) {
-                (organization, repository, artifact) =>
+              parameters('organization,
+                         'repository,
+                         'target.?,
+                         'scalaVersion.?,
+                         'scalaJsVersion.?,
+                         'scalaNativeVersion.?,
+                         'artifact.?) {
+                (organization, repository, targetType, scalaVersion, scalaJsVersion,
+                 scalaNativeVersion, artifact) =>
                   val reference = Project.Reference(organization, repository)
+
+                  val scalaTarget =
+                    parseScalaTarget(targetType, scalaVersion, scalaJsVersion, scalaNativeVersion)
+
+                  val selection = new ReleaseSelection(
+                    target = scalaTarget,
+                    artifact = artifact,
+                    version = None
+                  )
 
                   def convert(options: ReleaseOptions): Api.ReleaseOptions = {
                     import options._
@@ -103,11 +145,10 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
                     )
                   }
 
-                  complete(
-                    dataRepository.projectPage(reference, ReleaseSelection(artifact, None)).map {
-                      case Some((_, options)) => (OK, write(convert(options)))
-                      case None => (NotFound, "")
-                    })
+                  complete(dataRepository.projectPage(reference, selection).map {
+                    case Some((_, options)) => (OK, write(convert(options)))
+                    case None => (NotFound, "")
+                  })
               }
             }
           } ~

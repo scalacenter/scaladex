@@ -3,6 +3,28 @@ package release
 
 object DefaultReleaseTests extends org.specs2.mutable.Specification {
 
+  def emptyRelease(maven: MavenReference, reference: Release.Reference): Release =
+    Release(
+      maven,
+      reference,
+      resolver = None,
+      name = None,
+      description = None,
+      released = None,
+      licenses = Set(),
+      nonStandardLib = false,
+      id = None,
+      liveData = false,
+      scalaDependencies = Seq(),
+      javaDependencies = Seq(),
+      reverseDependencies = Seq(),
+      internalDependencies = Seq(),
+      targetType = "JVM",
+      scalaVersion = None,
+      scalaJsVersion = None,
+      scalaNativeVersion = None
+    )
+
   def prepare(organization: String,
               repository: String,
               groupdId: String,
@@ -15,7 +37,7 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
         } yield (artifactId, rawVersion, artifact, target, version)
     }.map {
       case (artifactId, rawVersion, artifact, target, version) =>
-        Release(
+        emptyRelease(
           MavenReference(groupdId, artifactId, rawVersion),
           Release.Reference(organization, repository, artifact, version, Some(target))
         )
@@ -58,7 +80,8 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
                                ("cats-core_sjs0.6_2.10", "0.4.0")
                              ))
 
-      val result = DefaultRelease(repository, ReleaseSelection(None, None), releases, None, true)
+      val result =
+        DefaultRelease(repository, ReleaseSelection(None, None, None), releases, None, true)
 
       val versions: List[SemanticVersion] =
         List(
@@ -72,10 +95,10 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
 
       val targets: List[ScalaTarget] =
         List(
-          ScalaTarget(SemanticVersion("2.11").get),
-          ScalaTarget(SemanticVersion("2.11").get, Some(SemanticVersion("0.6").get)),
-          ScalaTarget(SemanticVersion("2.10").get),
-          ScalaTarget(SemanticVersion("2.10").get, Some(SemanticVersion("0.6").get))
+          ScalaTarget.scalaJs(SemanticVersion("2.11").get, SemanticVersion("0.6").get),
+          ScalaTarget.scalaJs(SemanticVersion("2.10").get, SemanticVersion("0.6").get),
+          ScalaTarget.scala(SemanticVersion("2.11").get),
+          ScalaTarget.scala(SemanticVersion("2.10").get)
         )
 
       val expected: Option[ReleaseOptions] =
@@ -86,14 +109,14 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
             ),
             versions = versions,
             targets = targets,
-            release = Release(
+            release = emptyRelease(
               MavenReference(groupdId, "cats-core_2.11", "0.6.0"),
               Release.Reference(
                 organization,
                 repository,
                 "cats-core",
                 SemanticVersion("0.6.0").get,
-                Some(ScalaTarget(SemanticVersion("2.11").get))
+                Some(ScalaTarget.scala(SemanticVersion("2.11").get))
               )
             )
           ))
@@ -115,7 +138,9 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
 
       val result = DefaultRelease(
         repository,
-        ReleaseSelection(Some("akka-distributed-data-experimental"), None),
+        ReleaseSelection(artifact = Some("akka-distributed-data-experimental"),
+                         target = None,
+                         version = None),
         releases,
         None,
         true
@@ -132,16 +157,16 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
               SemanticVersion("2.4.8").get
             ),
             targets = List(
-              ScalaTarget(SemanticVersion("2.11").get)
+              ScalaTarget.scala(SemanticVersion("2.11").get)
             ),
-            release = Release(
+            release = emptyRelease(
               MavenReference(groupdId, "akka-distributed-data-experimental_2.11", "2.4.8"),
               Release.Reference(
                 organization,
                 repository,
                 "akka-distributed-data-experimental",
                 SemanticVersion("2.4.8").get,
-                Some(ScalaTarget(SemanticVersion("2.11").get))
+                Some(ScalaTarget.scala(SemanticVersion("2.11").get))
               )
             )
           ))

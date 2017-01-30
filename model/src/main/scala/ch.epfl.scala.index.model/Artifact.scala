@@ -9,10 +9,11 @@ object Artifact extends Parsers {
   private val ArtifactNameParser = {
     val Scala = "_" ~ SemanticVersion.Parser
     val ScalaJs = "_sjs" ~ SemanticVersion.Parser
+    val ScalaNative = "_native" ~ SemanticVersion.Parser
 
-    val ScalaTargetParser = (ScalaJs.? ~ Scala).map {
-      case (scalaJsVersion, scalaVersion) =>
-        ScalaTarget(scalaVersion, scalaJsVersion)
+    val ScalaTargetParser = (ScalaJs.? ~ ScalaNative.? ~ Scala).map {
+      case (scalaJsVersion, scalaNativeVersion, scalaVersion) =>
+        ScalaTarget(scalaVersion, scalaJsVersion, scalaNativeVersion)
     }
 
     Start ~

@@ -11,16 +11,17 @@
   projects: List[Project],
   user: Option[UserInfo],
   you: Boolean,
-  keywords: Map[String, Long],
-  targets: List[(String, SemanticVersion, Long, String)])
-@main(title = s"Search ${params.queryString}", showSearch = true, searchQuery = params.queryString, user, you) {
+  keywords: List[(String, Long)],
+  targetTypes: List[(String, Long)],
+  scalaVersions: List[(String, Long)],
+  scalaJsVersions: List[(String, Long)],
+  scalaNativeVersions: List[(String, Long)])
+@main(title = s"Search ${params.queryString}", showSearch = true, user, params, you) {
   <main id="container-search">
     <div class="container">
-      @if(pagination.total != 0 ) {
-        @result(params, uri, pagination, projects, user, you, keywords, targets)
-      } else {
-        <h1>No Results</h1>
-      }
+      @result(params, uri, pagination, projects,
+              user, you, keywords, targetTypes,
+              scalaVersions, scalaJsVersions, scalaNativeVersions)
       </div>
     </div>
   </main>

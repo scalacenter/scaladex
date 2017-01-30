@@ -45,7 +45,10 @@ case class Project(
     id: Option[String] = None,
     created: Option[String],
     updated: Option[String],
-    targets: Set[String],
+    targetType: Set[String],
+    scalaVersion: Set[String],
+    scalaJsVersion: Set[String],
+    scalaNativeVersion: Set[String],
     dependencies: Set[String],
     dependentCount: Int
 ) {

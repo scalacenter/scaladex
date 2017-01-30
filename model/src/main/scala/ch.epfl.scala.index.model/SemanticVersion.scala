@@ -21,19 +21,12 @@ case class SemanticVersion(
     patch2: Option[Long] = None,
     preRelease: Option[PreRelease] = None,
     metadata: Option[String] = None
-) {
-
-  /**
-    * display correct and nice version as string eg: 1.0.0 | 1.2.1 | 1.2 | 1.2.0-RC1
-    * @return
-    */
-  override def toString = {
-
+) extends Ordered[SemanticVersion] {
+  private def show(binary: Boolean): String = {
     val patchPart = patch.map("." + _).getOrElse("")
     val patch2Part = patch2.map("." + _).getOrElse("")
 
     val preReleasePart = preRelease.map {
-
       case Milestone(d) => "M" + d.toString
       case ReleaseCandidate(d) => "RC" + d.toString
       case OtherPreRelease(v) => v.toString
@@ -41,61 +34,66 @@ case class SemanticVersion(
 
     val metadataPart = metadata.map("+" + _).getOrElse("")
 
-    major + "." + minor + patchPart + patch2Part + preReleasePart + metadataPart
+    if (!binary || preReleasePart.nonEmpty)
+      major + "." + minor + patchPart + patch2Part + preReleasePart + metadataPart
+    else
+      major + "." + minor
+  }
+
+  def binary: String = show(binary = true)
+  def full: String = show(binary = false)
+
+  override def toString: String = full
+
+  private final val LT = -1
+  private final val GT = 1
+  private final val EQ = 0
+
+  private final val lcmp = implicitly[Ordering[Long]]
+  private final val scmp = implicitly[Ordering[String]]
+  private final val cmp = implicitly[Ordering[(Long, Long, Option[Long], Option[Long])]]
+
+  override def compare(that: SemanticVersion): Int = {
+    val v1 = this
+    val v2 = that
+
+    def tupled(v: SemanticVersion) = (v.major, v.minor, v.patch, v.patch2)
+    val tv1 = tupled(v1)
+    val tv2 = tupled(v2)
+
+    def preCmp(pr1: Option[PreRelease], pr2: Option[PreRelease]): Int = {
+      // format: off
+      (pr1, pr2) match {
+        case (None, None)                                               => EQ
+        case (None, Some(_))                                            => GT
+        case (Some(_), None)                                            => LT
+        case (Some(ReleaseCandidate(rc1)), Some(ReleaseCandidate(rc2))) => lcmp.compare(rc1, rc2)
+        case (Some(ReleaseCandidate(_))  , Some(Milestone(_)))          => GT
+        case (Some(Milestone(_))         , Some(ReleaseCandidate(_)))   => LT
+        case (Some(Milestone(m1))        , Some(Milestone(m2)))         => lcmp.compare(m1, m2)
+        case (Some(OtherPreRelease(pr1)) , Some(OtherPreRelease(pr2)))  => scmp.compare(pr1, pr2)
+        case (Some(OtherPreRelease(_))   , Some(Milestone(_)))          => LT
+        case (Some(OtherPreRelease(_))   , Some(ReleaseCandidate(_)))   => LT
+        case (Some(_)                    , Some(OtherPreRelease(_)))    => GT
+        case _                                                          => EQ
+      }
+      // format: on
+    }
+
+    // Milestone < Release Candidate < Released
+    if (cmp.equiv(tv1, tv2)) preCmp(v1.preRelease, v2.preRelease)
+    else cmp.compare(tv1, tv2)
   }
 }
 
 object SemanticVersion extends Parsers {
-
-  /**
-    * special ordering for versions
-    * @return
-    */
-  implicit def ordering = new Ordering[SemanticVersion] {
-    val LT = -1
-    val GT = 1
-    val EQ = 0
-
-    val lcmp = implicitly[Ordering[Long]]
-    val scmp = implicitly[Ordering[String]]
-    val cmp = implicitly[Ordering[(Long, Long, Option[Long], Option[Long])]]
-
-    def compare(v1: SemanticVersion, v2: SemanticVersion): Int = {
-      def tupled(v: SemanticVersion) = {
-        import v._
-        (major, minor, patch, patch2)
-      }
-
-      val tv1 = tupled(v1)
-      val tv2 = tupled(v2)
-
-      def preCmp(pr1: Option[PreRelease], pr2: Option[PreRelease]): Int = {
-        // format: off
-        (pr1, pr2) match {
-          case (None, None)                                               => EQ
-          case (None, Some(_))                                            => GT
-          case (Some(_), None)                                            => LT
-          case (Some(ReleaseCandidate(rc1)), Some(ReleaseCandidate(rc2))) => lcmp.compare(rc1, rc2)
-          case (Some(ReleaseCandidate(_))  , Some(Milestone(_)))          => GT
-          case (Some(Milestone(_))         , Some(ReleaseCandidate(_)))   => LT
-          case (Some(Milestone(m1))        , Some(Milestone(m2)))         => lcmp.compare(m1, m2)
-          case (Some(OtherPreRelease(pr1)) , Some(OtherPreRelease(pr2)))  => scmp.compare(pr1, pr2)
-          case (Some(OtherPreRelease(_))   , Some(Milestone(_)))          => LT
-          case (Some(OtherPreRelease(_))   , Some(ReleaseCandidate(_)))   => LT
-          case (Some(_)                    , Some(OtherPreRelease(_)))    => GT
-          case _                                                          => EQ
-        }
-        // format: on
-      }
-
-      // Milestone < Release Candidate < Released
-      if (cmp.equiv(tv1, tv2)) preCmp(v1.preRelease, v2.preRelease)
-      else cmp.compare(tv1, tv2)
-    }
-  }
-
   import fastparse.all._
   import fastparse.core.Parsed
+
+  implicit def ordering = new Ordering[SemanticVersion] {
+    def compare(v1: SemanticVersion, v2: SemanticVersion): Int =
+      v1.compare(v2)
+  }
 
   val Parser = {
     val Number = Digit.rep(1).!.map(_.toLong)
@@ -122,6 +120,7 @@ object SemanticVersion extends Parsers {
     }
   }
   private val FullParser = Start ~ Parser ~ End
+  def parse(version: String): Option[SemanticVersion] = apply(version)
   def apply(version: String): Option[SemanticVersion] = {
     FullParser.parse(version) match {
       case Parsed.Success(v, _) => Some(v)

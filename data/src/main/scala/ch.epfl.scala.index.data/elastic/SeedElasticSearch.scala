@@ -55,7 +55,12 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
         field("artifactId").typed(StringType).index("not_analyzed"),
         field("version").typed(StringType).index("not_analyzed")
       ),
-      field("released").typed(DateType)
+      field("released").typed(DateType),
+      field("version").typed(StringType).index("not_analyzed"),
+      field("targetType").typed(StringType).index("not_analyzed"),
+      field("scalaVersion").typed(StringType).index("not_analyzed"),
+      field("scalaJsVersion").typed(StringType).index("not_analyzed"),
+      field("scalaNativeVersion").typed(StringType).index("not_analyzed")
     )
 
     println("creating index")

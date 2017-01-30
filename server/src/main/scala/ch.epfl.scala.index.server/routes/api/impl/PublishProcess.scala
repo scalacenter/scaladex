@@ -14,6 +14,7 @@ import data.project.ProjectConvert
 
 import model.misc.GithubRepo
 import model.{Project, Release}
+import model.release.ReleaseSelection
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
@@ -186,7 +187,7 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
               index
                 .into(indexName / releasesCollection)
                 .source(
-                  newReleases.head.copy(test = data.test, liveData = true)
+                  newReleases.head.copy(liveData = true)
                 ))
             .map(_ => ())
         } else { Future.successful(()) }
@@ -199,7 +200,7 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
 
     for {
       project <- dataRepository.project(projectReference)
-      releases <- dataRepository.releases(projectReference, None)
+      releases <- dataRepository.releases(projectReference, ReleaseSelection.empty)
       _ <- updateProjectReleases(project, releases)
     } yield ()
   }

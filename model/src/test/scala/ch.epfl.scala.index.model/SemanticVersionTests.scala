@@ -1,7 +1,6 @@
 package ch.epfl.scala.index.model
 
 object SemanticVersionTests extends org.specs2.mutable.Specification {
-  def parseVersion(v: String): Option[SemanticVersion] = SemanticVersion(v)
   "semantic versionning" >> {
     "ordering" >> {
       def order(versions: List[String]): List[SemanticVersion] =
@@ -27,6 +26,100 @@ object SemanticVersionTests extends org.specs2.mutable.Specification {
           SemanticVersion(1, 0, Some(1), None, Some(Milestone(1))),
           SemanticVersion(1, 0, Some(1), None, Some(OtherPreRelease("BLABLA")))
         )
+      }
+    }
+
+    "show" >> {
+      "binary" >> {
+        // relaxed semantic version
+        "major" >> {
+          binary("1") ==== Some("1.0")
+        }
+
+        // relaxed semantic version
+        "major.minor" >> {
+          binary("1.2") ==== Some("1.2")
+        }
+
+        "major.minor.patch" >> {
+          binary("1.2.3") ==== Some("1.2")
+        }
+
+        // relaxed semantic version
+        "major.minor.patch.patch2" >> {
+          binary("1.2.3.4") ==== Some("1.2")
+        }
+
+        "major.minor.patch-rc" >> {
+          binary("1.2.3-RC5") ==== Some("1.2.3-RC5")
+        }
+
+        "major.minor.patch-m" >> {
+          binary("1.2.3-M6") ==== Some("1.2.3-M6")
+        }
+
+        "major.minor.patch-xyz" >> {
+          binary("1.1.1-xyz") ==== Some("1.1.1-xyz")
+        }
+
+        "major.minor.patch+meta" >> {
+          binary("1.1.1+some.meta~data") ==== Some("1.1")
+        }
+
+        "git commit" >> {
+          binary("13e7afa9c1817d45b2989e545b2e9ead21d00cef") ==== None
+        }
+
+        // relaxed semantic version
+        "v sufix" >> {
+          binary("v1") ==== Some("1.0")
+        }
+      }
+
+      "full or toString" >> {
+        // relaxed semantic version
+        "major" >> {
+          full("1") ==== Some("1.0")
+        }
+
+        // relaxed semantic version
+        "major.minor" >> {
+          full("1.2") ==== Some("1.2")
+        }
+
+        "major.minor.patch" >> {
+          full("1.2.3") ==== Some("1.2.3")
+        }
+
+        // relaxed semantic version
+        "major.minor.patch.patch2" >> {
+          full("1.2.3.4") ==== Some("1.2.3.4")
+        }
+
+        "major.minor.patch-rc" >> {
+          full("1.2.3-RC5") ==== Some("1.2.3-RC5")
+        }
+
+        "major.minor.patch-m" >> {
+          full("1.2.3-M6") ==== Some("1.2.3-M6")
+        }
+
+        "major.minor.patch-xyz" >> {
+          full("1.1.1-xyz") ==== Some("1.1.1-xyz")
+        }
+
+        "major.minor.patch+meta" >> {
+          full("1.1.1+some.meta~data") ==== Some("1.1.1+some.meta~data")
+        }
+
+        "git commit" >> {
+          full("13e7afa9c1817d45b2989e545b2e9ead21d00cef") ==== None
+        }
+
+        // relaxed semantic version
+        "v sufix" >> {
+          full("v1") ==== Some("1.0")
+        }
       }
     }
 
@@ -88,4 +181,8 @@ object SemanticVersionTests extends org.specs2.mutable.Specification {
       }
     }
   }
+
+  private def parseVersion(v: String): Option[SemanticVersion] = SemanticVersion(v)
+  private def binary(v: String): Option[String] = SemanticVersion(v).map(_.binary)
+  private def full(v: String): Option[String] = SemanticVersion(v).map(_.full)
 }
