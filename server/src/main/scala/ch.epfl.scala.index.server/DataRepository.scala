@@ -286,7 +286,7 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
 
   def scalaVersions(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {
     val minVer = SemanticVersion(2, 10)
-    versionAggregations("scalaVersion", params, _ > minVer)
+    versionAggregations("scalaVersion", params, _ >= minVer)
       .map(addParamsIfMissing(params.scalaVersions))
   }
 
