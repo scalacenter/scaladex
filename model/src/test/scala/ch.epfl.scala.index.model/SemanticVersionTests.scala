@@ -183,6 +183,6 @@ object SemanticVersionTests extends org.specs2.mutable.Specification {
   }
 
   private def parseVersion(v: String): Option[SemanticVersion] = SemanticVersion(v)
-  private def binary(v: String): Option[String] = SemanticVersion(v).map(_.binary)
-  private def full(v: String): Option[String] = SemanticVersion(v).map(_.full)
+  private def binary(v: String): Option[String] = SemanticVersion(v).map(_.binary.toString)
+  private def full(v: String): Option[String] = SemanticVersion(v).map(_.toString)
 }

@@ -69,9 +69,9 @@ object ScalaTarget {
   def split(target: Option[ScalaTarget])
     : (Option[String], Option[String], Option[String], Option[String]) = {
     val targetType = target.map(_.targetType)
-    val scalaVersion = target.map(_.scalaVersion.binary)
-    val scalaJsVersion = target.flatMap(_.scalaJsVersion.map(_.binary))
-    val scalaNativeVersion = target.flatMap(_.scalaNativeVersion.map(_.binary))
+    val scalaVersion = target.map(_.scalaVersion.forceBinary.toString)
+    val scalaJsVersion = target.flatMap(_.scalaJsVersion.map(_.forceBinary.toString))
+    val scalaNativeVersion = target.flatMap(_.scalaNativeVersion.map(_.forceBinary.toString))
 
     (targetType, scalaVersion, scalaJsVersion, scalaNativeVersion)
   }

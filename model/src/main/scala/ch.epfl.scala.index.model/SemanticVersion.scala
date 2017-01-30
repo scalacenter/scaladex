@@ -22,7 +22,8 @@ case class SemanticVersion(
     preRelease: Option[PreRelease] = None,
     metadata: Option[String] = None
 ) extends Ordered[SemanticVersion] {
-  private def show(binary: Boolean): String = {
+
+  override def toString: String = {
     val patchPart = patch.map("." + _).getOrElse("")
     val patch2Part = patch2.map("." + _).getOrElse("")
 
@@ -34,16 +35,14 @@ case class SemanticVersion(
 
     val metadataPart = metadata.map("+" + _).getOrElse("")
 
-    if (!binary || preReleasePart.nonEmpty)
-      major + "." + minor + patchPart + patch2Part + preReleasePart + metadataPart
-    else
-      major + "." + minor
+    major + "." + minor + patchPart + patch2Part + preReleasePart + metadataPart
   }
 
-  def binary: String = show(binary = true)
-  def full: String = show(binary = false)
+  def binary: SemanticVersion =
+    if (preRelease.nonEmpty) this
+    else forceBinary
 
-  override def toString: String = full
+  def forceBinary: SemanticVersion = SemanticVersion(major, minor)
 
   private final val LT = -1
   private final val GT = 1
