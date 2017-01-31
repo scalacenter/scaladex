@@ -21,13 +21,15 @@ class OAuth2(github: Github, session: GithubUserSession) {
     get {
       path("login") {
         headerValueByType[Referer]() { referer =>
-          redirect(Uri("https://github.com/login/oauth/authorize").withQuery(
-                     Query(
-                       "client_id" -> github.clientId,
-                       "scope" -> "read:org",
-                       "state" -> referer.value
-                     )),
-                   TemporaryRedirect)
+          redirect(
+            Uri("https://github.com/login/oauth/authorize").withQuery(
+              Query(
+                "client_id" -> github.clientId,
+                "scope" -> "read:org",
+                "state" -> referer.value
+              )),
+            TemporaryRedirect
+          )
         }
       } ~
         path("logout") {

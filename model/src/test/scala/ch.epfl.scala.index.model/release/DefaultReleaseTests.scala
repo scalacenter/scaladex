@@ -50,35 +50,37 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
       val organization = "typelevel"
       val repository = "cats"
       val groupdId = "org.typelevel"
-      val releases = prepare(organization,
-                             repository,
-                             groupdId,
-                             List(
-                               ("cats-core_2.11", "0.6.0"),
-                               ("cats-core_2.11", "0.6.0-M2"),
-                               ("cats-core_2.11", "0.6.0-M1"),
-                               ("cats-core_2.11", "0.5.0"),
-                               ("cats-core_2.11", "0.4.1"),
-                               ("cats-core_2.11", "0.4.0"),
-                               ("cats-core_2.10", "0.6.0"),
-                               ("cats-core_2.10", "0.6.0-M2"),
-                               ("cats-core_2.10", "0.6.0-M1"),
-                               ("cats-core_2.10", "0.5.0"),
-                               ("cats-core_2.10", "0.4.1"),
-                               ("cats-core_2.10", "0.4.0"),
-                               ("cats-core_sjs0.6_2.11", "0.6.0"),
-                               ("cats-core_sjs0.6_2.11", "0.6.0-M2"),
-                               ("cats-core_sjs0.6_2.11", "0.6.0-M1"),
-                               ("cats-core_sjs0.6_2.11", "0.5.0"),
-                               ("cats-core_sjs0.6_2.11", "0.4.1"),
-                               ("cats-core_sjs0.6_2.11", "0.4.0"),
-                               ("cats-core_sjs0.6_2.10", "0.6.0"),
-                               ("cats-core_sjs0.6_2.10", "0.6.0-M2"),
-                               ("cats-core_sjs0.6_2.10", "0.6.0-M1"),
-                               ("cats-core_sjs0.6_2.10", "0.5.0"),
-                               ("cats-core_sjs0.6_2.10", "0.4.1"),
-                               ("cats-core_sjs0.6_2.10", "0.4.0")
-                             ))
+      val releases = prepare(
+        organization,
+        repository,
+        groupdId,
+        List(
+          ("cats-core_2.11", "0.6.0"),
+          ("cats-core_2.11", "0.6.0-M2"),
+          ("cats-core_2.11", "0.6.0-M1"),
+          ("cats-core_2.11", "0.5.0"),
+          ("cats-core_2.11", "0.4.1"),
+          ("cats-core_2.11", "0.4.0"),
+          ("cats-core_2.10", "0.6.0"),
+          ("cats-core_2.10", "0.6.0-M2"),
+          ("cats-core_2.10", "0.6.0-M1"),
+          ("cats-core_2.10", "0.5.0"),
+          ("cats-core_2.10", "0.4.1"),
+          ("cats-core_2.10", "0.4.0"),
+          ("cats-core_sjs0.6_2.11", "0.6.0"),
+          ("cats-core_sjs0.6_2.11", "0.6.0-M2"),
+          ("cats-core_sjs0.6_2.11", "0.6.0-M1"),
+          ("cats-core_sjs0.6_2.11", "0.5.0"),
+          ("cats-core_sjs0.6_2.11", "0.4.1"),
+          ("cats-core_sjs0.6_2.11", "0.4.0"),
+          ("cats-core_sjs0.6_2.10", "0.6.0"),
+          ("cats-core_sjs0.6_2.10", "0.6.0-M2"),
+          ("cats-core_sjs0.6_2.10", "0.6.0-M1"),
+          ("cats-core_sjs0.6_2.10", "0.5.0"),
+          ("cats-core_sjs0.6_2.10", "0.4.1"),
+          ("cats-core_sjs0.6_2.10", "0.4.0")
+        )
+      )
 
       val result =
         DefaultRelease(repository, ReleaseSelection(None, None, None), releases, None, true)
