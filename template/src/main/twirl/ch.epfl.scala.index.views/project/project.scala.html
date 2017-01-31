@@ -4,10 +4,12 @@
 @import ch.epfl.scala.index.model.misc._
 @import ch.epfl.scala.index.model.release._
 
-@(project: Project, artifacts: List[String], versions: List[SemanticVersion], 
-  targets: List[ScalaTarget], release: Release, user: Option[UserInfo], canEdit: Boolean)
+@(project: Project, artifacts: List[String], versions: List[SemanticVersion],
+  targets: List[ScalaTarget], release: Release, user: Option[UserInfo],
+  canEdit: Boolean, twitterCard: Option[TwitterSummaryCard])
 
-@main(title = project.repository, showSearch = true, user) {
+@main(title = project.repository, showSearch = true, user,
+      extraMeta = twitterCard.toSeq.map(_.toHeadMeta).flatten) {
   <main id="container-project">
     @headproject(project, artifacts, versions, targets, release, canEdit)
     <div class="container">

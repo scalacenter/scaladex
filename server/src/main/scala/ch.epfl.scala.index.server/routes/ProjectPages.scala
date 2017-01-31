@@ -60,6 +60,16 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
       .map(_.map {
         case (project, options) =>
           import options._
+          val twitterCard = for {
+            github <- project.github
+            description <- github.description
+          } yield
+            TwitterSummaryCard(
+              site = "@scala_lang",
+              title = s"${project.organization}/${project.repository}",
+              description = description,
+              image = github.logo
+            )
 
           (OK,
            views.project.html.project(
@@ -69,10 +79,12 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
              targets,
              release,
              user,
-             canEdit(owner, repo, userState)
+             canEdit(owner, repo, userState),
+             twitterCard
            ))
       }.getOrElse((NotFound, views.html.notfound(user))))
   }
+
   val routes =
     post {
       path("edit" / Segment / Segment) { (organization, repository) =>
