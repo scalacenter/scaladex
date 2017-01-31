@@ -64,14 +64,17 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
     )
 
     println("creating index")
-    Await.result(esClient.execute {
-      create
-        .index(indexName)
-        .mappings(
-          mapping(projectsCollection).fields(projectFields: _*),
-          mapping(releasesCollection).fields(releasesFields: _*)
-        )
-    }, Duration.Inf)
+    Await.result(
+      esClient.execute {
+        create
+          .index(indexName)
+          .mappings(
+            mapping(projectsCollection).fields(projectFields: _*),
+            mapping(releasesCollection).fields(releasesFields: _*)
+          )
+      },
+      Duration.Inf
+    )
 
     println("loading update data")
     val projectConverter = new ProjectConvert(paths)

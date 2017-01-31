@@ -68,7 +68,8 @@ object License {
   val TypesafeSubscriptionAgreement = License(
     "Typesafe Subscription Agreement",
     "Typesafe Subscription Agreement",
-    Some("http://downloads.typesafe.com/website/legal/TypesafeSubscriptionAgreement.pdf"))
+    Some("http://downloads.typesafe.com/website/legal/TypesafeSubscriptionAgreement.pdf")
+  )
   val Unlicense = spdx("Unlicense", "The Unlicense")
   val W3C = spdx("W3C", "W3C Software Notice and License")
   val WTFPL = spdx("WTFPL", "Do What The F*ck You Want To Public License")

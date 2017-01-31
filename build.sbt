@@ -1,8 +1,6 @@
 import ScalaJSHelper._
 import org.scalajs.sbtplugin.cross.CrossProject
 
-scalafmtConfig in ThisBuild := Some(file(".scalafmt"))
-
 lazy val akkaVersion = "2.4.11"
 lazy val upickleVersion = "0.4.1"
 lazy val scalatagsVersion = "0.6.1"
@@ -147,7 +145,6 @@ lazy val sbtScaladex = project
                                                           "-Dplugin.version=" + version.value),
     scriptedBufferLog := false,
     bintrayRepository := "sbt-plugins",
-    bintrayOrganization := None,
-    scalafmt := {}
+    bintrayOrganization := None
   )
   .enablePlugins(BintrayPlugin)
