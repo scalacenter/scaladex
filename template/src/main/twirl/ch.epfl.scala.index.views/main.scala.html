@@ -1,7 +1,9 @@
 @import ch.epfl.scala.index.model._
-@import ch.epfl.scala.index.model.misc.{UserInfo, SearchParams}
+@import ch.epfl.scala.index.model.misc.{UserInfo, SearchParams, HeadMeta}
 
-@(title: String, showSearch: Boolean, user: Option[UserInfo], params: SearchParams = SearchParams(), you: Boolean = false)(content: Html)
+@(title: String, showSearch: Boolean, user: Option[UserInfo],
+  params: SearchParams = SearchParams(), you: Boolean = false,
+  extraMeta: Seq[HeadMeta] = Seq.empty)(content: Html)
 
 <!DOCTYPE HTML>
 <html lang="en">
@@ -30,6 +32,10 @@
     <!-- iOS Safari -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    @for(meta <- extraMeta) {
+      <meta name="@meta.name" content="@meta.content">
+    }
   </head>
 
   <body>
