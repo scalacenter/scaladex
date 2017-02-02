@@ -13,7 +13,11 @@ def run(args: String*): Unit = Process(args.toList).!
 def runD(args: String*)(dir: Path): Unit = Process(args.toList, Some(dir.toIO)).!
 def runSlurp(args: String*): String = Process(args.toList).lineStream.toList.headOption.getOrElse("")
 def runPipe(args: String*)(file: Path) = (Process(args.toList) #> file.toIO).!
-def runEnv(args: String*)(envs: (String, String)*) = Process(command = args.toList, cwd = None, extraEnv = envs: _*).!
+def runEnv(args: String*)(envs: (String, String)*) = {
+  println(args.toList)
+  println(envs)
+  Process(command = args.toList, cwd = None, extraEnv = envs: _*).!
+}
 
 def sbt(commands: String*): Unit = {
   val jvmOpts =
