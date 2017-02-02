@@ -4,6 +4,13 @@ package data
 import java.nio.file.{Paths, Files}
 
 /*
+The contrib folder is read-only from the point of view of Scaladex. We receive PR, we merge them.
+We can use GithubRepoExtractor.run() to manually set the claims.json up to date. We update them via
+a PR.
+
+The index folder is write-only. We don't accept PR. Users have to login on Scaladex and update via
+the UI.
+
 index
 ├── poms
 │   ├── bintray
