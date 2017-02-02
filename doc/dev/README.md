@@ -8,8 +8,8 @@
 
 ```bash
 git clone https://github.com/scalacenter/scaladex.git
-git clone --depth=1 https://github.com/scalacenter/scaladex-index.git index
-git clone --depth=1 https://github.com/scalacenter/scaladex-contrib.git contrib
+git clone --depth=1 https://github.com/scalacenter/scaladex-index.git
+git clone --depth=1 https://github.com/scalacenter/scaladex-contrib.git
 cd scaladex
 sbt
 ```
@@ -27,6 +27,19 @@ Then, open `localhost:8080` in your browser.
 If you have an elasticsearch service installed use the following sbt command when indexing/running the server:
 
 `set javaOptions in reStart += "-DELASTICSEARCH=remote"`
+
+## Overview
+
+![](http://knsv.github.io/mermaid/live_editor/#/view/Z3JhcGggTFIKICBqZW5raW5zIC0tIGluZGV4aW5nIGpvYiAtLT4gaW5kZXguZ2l0CiAgdXNlcnMvc29uYXR5cGUgLS0gZWRpdCBQT01zIG9yIHByb2plY3RzIC0tPiBzY2FsYWRleAogIGluZGV4LmdpdAogIHVzZXJzL3NvbmF0eXBlIC0tIGNsYWltIHByb2plY3RzIC0tPiBjb250cmliLmdpdAogIHNjYWxhZGV4IC0tIHdyaXRlIGVkaXRzIC0tPiBpbmRleC5naXQKICBzY2FsYWRleCAtLSBmdWxsIHRleHQgc2VhcmNoIC0tPiBlbGFzdGljLXNlYXJjaAogIHNjYWxhZGV4IC0tIHJlYWQgY2xhaW1zIC0tPiBjb250cmliLmdpdA)
+
+As shown in the above diagram, Scaladex uses two Git repositories (`contrib` and `index`) as
+persistence mechanisms, and ElasticSearch to power the full-text search.
+
+The `contrib.git` repository is read-only for the Scaladex application (users can write on it,
+on Github).
+
+Data of the `index.git` repository are written *only* by Scaladex. This repository contains the POMs
+and project information added by users (e.g. keywords).
 
 ## Bintray Data Pipeline
 

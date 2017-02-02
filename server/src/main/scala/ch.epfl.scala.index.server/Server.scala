@@ -3,24 +3,18 @@ package server
 
 import routes._
 import routes.api._
-
 import data.DataPaths
 import data.elastic._
-
 import akka.http.scaladsl._
 import akka.http.scaladsl.model.StatusCodes
 import server.Directives._
-
 import com.typesafe.config.ConfigFactory
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
 import scala.concurrent.duration._
 import scala.concurrent.Await
-
 import java.lang.management.ManagementFactory
-
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
@@ -48,15 +42,15 @@ object Server {
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
-    val github = new Github
-    val data = new DataRepository(github)
-    val session = new GithubUserSession(config)
-
     val pathFromArgs =
       if (args.isEmpty) Nil
       else args.toList.tail
 
     val paths = DataPaths(pathFromArgs)
+
+    val github = new Github
+    val data = new DataRepository(github, paths)
+    val session = new GithubUserSession(config)
 
     val userFacingRoutes =
       concat(

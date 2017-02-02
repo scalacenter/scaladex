@@ -9,13 +9,18 @@ import misc.Pagination
 import data.elastic._
 import com.sksamuel.elastic4s._
 import ElasticDsl._
+import ch.epfl.scala.index.data.DataPaths
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.Modifier
 import org.elasticsearch.search.sort.SortOrder
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.reflectiveCalls
 
-class DataRepository(github: Github)(private implicit val ec: ExecutionContext) {
+/**
+  * @param github  Github client
+  * @param paths   Paths to the files storing the index
+  */
+class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(id = None)
 
   val sortQuery = (sorting: Option[String]) =>
@@ -230,13 +235,16 @@ class DataRepository(github: Github)(private implicit val ec: ExecutionContext) 
     for {
       updatedProject <- project(projectRef).map(_.map(p => form.update(p)))
       ret <- updatedProject
-        .flatMap(
-          project =>
-            project.id.map(
-              id =>
-                esClient
-                  .execute(update(id) in (indexName / projectsCollection) doc project)
-                  .map(_ => true)))
+        .flatMap { project =>
+            project.id.map { id =>
+              val esUpdate =
+                esClient.execute(update(id) in (indexName / projectsCollection) doc project)
+
+              val indexUpdate = SaveLiveData.saveProject(project, paths)
+
+              esUpdate.zip(indexUpdate).map(_ => true)
+            }
+        }
         .getOrElse(Future.successful(false))
     } yield ret
   }

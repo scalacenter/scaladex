@@ -32,27 +32,26 @@ def datetime = {
   new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()) 
 }
 
-def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
-  submodules.foreach{ submodule =>
-    runD("git", "checkout", "master")(submodule)
-    runD("git", "remote", "update")(submodule)
-    runD("git", "reset", "--hard", "origin/master")(submodule)
-    runD("git", "pull", "origin", "master")(submodule)
-  }
+def updatingRepositories(contribPath: Path, indexPath: Path)(f: () => Unit): Unit = {
+  // Fetch the last data from the contrib repository
+  runD("git", "checkout", "master")(contribPath)
+  runD("git", "remote", "update")(contribPath)
+  runD("git", "pull", "origin", "master")(contribPath)
 
   // run index
   f()
 
-  // publish the latest data
-  submodules.foreach{ submodule =>
-    runD("git", "add", "-A")(submodule)
-    runD("git", "commit", "-m", '"' + datetime + '"' )(submodule)
-    runD("git", "pull", "origin", "master")(submodule)
-    runD("git", "push", "origin", "master")(submodule)
-  }
+  // Then push the server’s data (live + sonatype notifications) on the index repository
+  runD("git", "add", "-A")(indexPath)
+  runD("git", "commit", "-m", '"' + datetime + '"')(indexPath)
+  runD("git", "push", "origin", "master")(indexPath)
 }
 
-@main def main(fullBranchName: String, job: Job.Value) = {
+/**
+  * @param reposDir Directory that contains the `scaladex-credentials`, `scaladex-index` and `scaladex-contrib`
+  *                 sub-directories containing the git repositories
+  */
+@main def main(reposDir: String, fullBranchName: String, job: Job.Value) = {
   import Job._
 
   val chmod = "chmod"
@@ -88,13 +87,13 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
     mkdir(bintrayCredentialsFolder)
   }
 
-  val scaladexHome = root / "home" / "scaladex"
+  val scaladexHome = Path(reposDir)
 
   val credentialsDest = scaladexHome
   val credentialsFolder = credentialsDest / "scaladex-credentials"
 
   if(!exists(credentialsFolder)) {
-    run("git", "clone", "git@github.com:scalacenter/scaladex-credentials.git", credentialsDest.toString)
+    run("git", "clone", "git@github.com:scalacenter/scaladex-credentials.git", credentialsFolder.toString)
   } else {
     runD("git", "pull", "origin", "master")(credentialsFolder)
   }
@@ -114,12 +113,12 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 
   if(job == Index){
 
-    updatingSubmodules(List(contribFolder, indexFolder)){ () =>
+    updatingRepositories(contribFolder, indexFolder) { () =>
       // run index
       sbt(s"data/run all $contribFolder $indexFolder")
     }
   } else if(job == Elastic) {
-    updatingSubmodules(List(contribFolder, indexFolder)){ () =>
+    updatingRepositories(contribFolder, indexFolder) { () =>
       // run index
       sbt(s"data/run elastic $contribFolder $indexFolder")
     }
@@ -129,7 +128,7 @@ def updatingSubmodules(submodules: List[Path])(f: () => Unit): Unit = {
 
   } else if(job == Deploy) {
 
-    updatingSubmodules(List(contribFolder, indexFolder)){ () =>
+    updatingRepositories(contribFolder, indexFolder) { () =>
       sbt(
         "server/universal:packageBin",
         s"data/run elastic $contribFolder $indexFolder"

@@ -46,13 +46,13 @@ object DataPaths {
   def apply(args: List[String]): DataPaths = new DataPaths(args)
 }
 
-class DataPaths(private[DataPaths] args: List[String]) {
+class DataPaths(private[DataPaths] val args: List[String]) {
 
-  private val (contrib, index) = args.toList match {
+  private val (contrib, index) = args match {
     case List(contrib, index) => (Paths.get(contrib), Paths.get(index))
     case _ => {
       val base = build.info.BuildInfo.baseDirectory.toPath.getParent
-      (base.resolve(Paths.get("contrib")), base.resolve(Paths.get("index")))
+      (base.resolve(Paths.get("scaladex-contrib")), base.resolve(Paths.get("scaladex-index")))
     }
   }
 
