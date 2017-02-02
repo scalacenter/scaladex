@@ -33,7 +33,7 @@ def datetime = {
 }
 
 def updatingRepositories(contribPath: Path, indexPath: Path)(f: () => Unit): Unit = {
-  // Fetch the last data from the contrib repository
+  println("Pulling the latest data from the 'contrib' repository")
   runD("git", "checkout", "master")(contribPath)
   runD("git", "remote", "update")(contribPath)
   runD("git", "pull", "origin", "master")(contribPath)
@@ -41,7 +41,7 @@ def updatingRepositories(contribPath: Path, indexPath: Path)(f: () => Unit): Uni
   // run index
   f()
 
-  // Then push the server’s data (live + sonatype notifications) on the index repository
+  println("Pushing current state to the 'index' repository")
   runD("git", "add", "-A")(indexPath)
   runD("git", "commit", "-m", '"' + datetime + '"')(indexPath)
   runD("git", "push", "origin", "master")(indexPath)
