@@ -4,21 +4,13 @@ package elastic
 
 import model._
 import project._
-import maven.PomsReader
-
-import com.sksamuel.elastic4s._
-import ElasticDsl._
-
 import org.json4s._
-import org.json4s.native.Serialization.{read, writePretty, write}
+import org.json4s.native.Serialization.{read, write, writePretty}
 import org.json4s.native.parseJson
-
 import java.nio.file._
 import java.nio.charset.StandardCharsets
 
-import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext}
-import scala.util.Success
+import scala.concurrent.{ExecutionContext, Future}
 
 // this allows us to save project as json object sorted by keys
 case class LiveProjects(projects: Map[Project.Reference, ProjectForm])
@@ -53,47 +45,24 @@ object LiveProjectsSerializer
       ))
 
 trait LiveProjectsProtocol {
-  implicit val formats = DefaultFormats ++ Seq(LiveProjectsSerializer)
-  implicit val serialization = native.Serialization
+  implicit val formats: Formats = DefaultFormats ++ Seq(LiveProjectsSerializer)
+  implicit val serialization: Serialization = native.Serialization
 }
 
 object SaveLiveData extends LiveProjectsProtocol {
 
-  def storedProjects(paths: DataPaths) =
+  def storedProjects(paths: DataPaths): Map[Project.Reference, ProjectForm] =
     read[LiveProjects](Files.readAllLines(paths.liveProjects).toArray.mkString("")).projects
-}
 
-class SaveLiveData(paths: DataPaths)(implicit val ec: ExecutionContext)
-    extends LiveProjectsProtocol {
-
-  def run(): Unit = {
-    blockUntilYellow()
-
-    val exists = Await.result(esClient.execute { indexExists(indexName) }, Duration.Inf).isExists()
-
-    if (exists) {
-      val projectConverter = new ProjectConvert(paths)
-      val newData = projectConverter(
-        PomsReader.loadAll(paths).collect { case Success(pomAndMeta) => pomAndMeta },
-        stored = false
-      )
-      val (projects, projectReleases) = newData.unzip
-
-      val limit = 5000
-
-      val liveProjects =
-        Await.result(esClient.execute {
-          search.in(indexName / projectsCollection).query(termQuery("liveData", true)).size(limit)
-        }.map(_.as[Project].toList), Duration.Inf)
-
-      val liveProjectsForms =
-        liveProjects.map(project => (project.reference, ProjectForm(project))).toMap
-
-      val keepProjects = LiveProjects(SaveLiveData.storedProjects(paths) ++ liveProjectsForms)
-
+  // Note: we use a future here just to catch exceptions. Our code is blocking, though.
+  def saveProject(project: Project, paths: DataPaths)(implicit ec: ExecutionContext): Future[_] = Future {
+    concurrent.blocking {
+      val keepProjects =
+        LiveProjects(
+          SaveLiveData.storedProjects(paths) + (project.reference -> ProjectForm(project))
+        )
       Files.write(paths.liveProjects, writePretty(keepProjects).getBytes(StandardCharsets.UTF_8))
-
-      ()
     }
   }
+
 }

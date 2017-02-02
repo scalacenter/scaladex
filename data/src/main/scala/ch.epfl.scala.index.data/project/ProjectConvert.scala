@@ -381,7 +381,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
           if (stored) {
             storedProjects
               .get(project.reference)
-              .map(form => form.update(project, live = false))
+              .map(_.update(project))
               .getOrElse(project)
           } else project
 

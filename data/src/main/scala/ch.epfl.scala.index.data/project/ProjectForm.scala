@@ -6,33 +6,32 @@ import model.Project
 
 case class ProjectForm(
     // project
-    contributorsWanted: Boolean = false,
-    keywords: Set[String] = Set(),
-    defaultArtifact: Option[String] = None,
-    defaultStableVersion: Boolean = true,
-    deprecated: Boolean = false,
-    artifactDeprecations: Set[String] = Set(),
-    cliArtifacts: Set[String] = Set(),
+    contributorsWanted: Boolean ,
+    keywords: Set[String],
+    defaultArtifact: Option[String],
+    defaultStableVersion: Boolean,
+    deprecated: Boolean ,
+    artifactDeprecations: Set[String],
+    cliArtifacts: Set[String],
     // documentation
-    customScalaDoc: Option[String] = None,
-    documentationLinks: List[(String, String)] = List()
+    customScalaDoc: Option[String],
+    documentationLinks: List[(String, String)]
 ) {
-  def update(project: Project, live: Boolean = true): Project = {
+  def update(project: Project): Project = {
     project.copy(
       contributorsWanted = contributorsWanted,
       keywords = keywords,
       defaultArtifact =
-        if (!defaultArtifact.isEmpty) defaultArtifact
+        if (defaultArtifact.isDefined) defaultArtifact
         else project.defaultArtifact,
       defaultStableVersion = defaultStableVersion,
       deprecated = deprecated,
       artifactDeprecations = artifactDeprecations,
       cliArtifacts = cliArtifacts,
-      hasCli = !cliArtifacts.isEmpty,
+      hasCli = cliArtifacts.nonEmpty,
       // documentation
       customScalaDoc = customScalaDoc.filterNot(_ == ""),
-      documentationLinks = documentationLinks.filterNot { case (_, link) => link == "" },
-      liveData = live
+      documentationLinks = documentationLinks.filterNot { case (_, link) => link == "" }
     )
   }
 }

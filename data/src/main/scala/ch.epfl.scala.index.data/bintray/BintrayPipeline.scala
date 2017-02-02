@@ -2,10 +2,10 @@ package ch.epfl.scala.index
 package data
 package bintray
 
-import maven.DownloadParentPoms
-import cleanup.{GithubRepoExtractor, NonStandardLib}
+import cleanup.NonStandardLib
+import elastic.SeedElasticSearch
 import github.GithubDownload
-import elastic.{SeedElasticSearch, SaveLiveData}
+import maven.DownloadParentPoms
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
@@ -58,23 +58,12 @@ object BintrayPipeline {
       println("parent done")
     }
 
-    def claims(): Unit = {
-      val githubRepoExtractor = new GithubRepoExtractor(paths)
-      githubRepoExtractor.run()
-    }
-
     def github(): Unit = {
 
       val githubDownload = new GithubDownload(paths)
       githubDownload.run()
 
       println("github done")
-    }
-
-    def live(): Unit = {
-
-      val liveStep = new SaveLiveData(paths)
-      liveStep.run()
     }
 
     def elastic(): Unit = {
@@ -87,9 +76,7 @@ object BintrayPipeline {
       "list" -> list _,
       "download" -> download _,
       "parent" -> parent _,
-      "claims" -> claims _,
       "github" -> github _,
-      "live" -> live _,
       "elastic" -> elastic _
     )
 

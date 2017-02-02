@@ -4,6 +4,13 @@ package data
 import java.nio.file.{Paths, Files}
 
 /*
+The contrib folder is read-only from the point of view of Scaladex. We receive PR, we merge them.
+We can use GithubRepoExtractor.run() to manually set the claims.json up to date. We update them via
+a PR.
+
+The index folder is write-only. We don't accept PR. Users have to login on Scaladex and update via
+the UI.
+
 index
 ├── poms
 │   ├── bintray
@@ -46,13 +53,13 @@ object DataPaths {
   def apply(args: List[String]): DataPaths = new DataPaths(args)
 }
 
-class DataPaths(private[DataPaths] args: List[String]) {
+class DataPaths(private[DataPaths] val args: List[String]) {
 
-  private val (contrib, index) = args.toList match {
+  private val (contrib, index) = args match {
     case List(contrib, index) => (Paths.get(contrib), Paths.get(index))
     case _ => {
       val base = build.info.BuildInfo.baseDirectory.toPath.getParent
-      (base.resolve(Paths.get("contrib")), base.resolve(Paths.get("index")))
+      (base.resolve(Paths.get("scaladex-contrib")), base.resolve(Paths.get("scaladex-index")))
     }
   }
 
