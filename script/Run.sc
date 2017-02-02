@@ -21,6 +21,7 @@ def runEnv(args: String*)(envs: (String, String)*) = {
 
 def sbt(commands: String*): Unit = {
   val jvmOpts =
+    "-Dsbt.global.staging=/tmp" ::
     "-DELASTICSEARCH=remote" ::
     "-Xms1G" ::
     "-Xmx3G" ::
