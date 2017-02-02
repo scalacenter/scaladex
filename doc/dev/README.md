@@ -8,8 +8,8 @@
 
 ```bash
 git clone https://github.com/scalacenter/scaladex.git
-git clone --depth=1 https://github.com/scalacenter/scaladex-index.git
-git clone --depth=1 https://github.com/scalacenter/scaladex-contrib.git
+git clone https://github.com/scalacenter/scaladex-index.git
+git clone https://github.com/scalacenter/scaladex-contrib.git
 cd scaladex
 sbt
 ```

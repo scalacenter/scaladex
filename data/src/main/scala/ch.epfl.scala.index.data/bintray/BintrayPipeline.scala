@@ -2,12 +2,13 @@ package ch.epfl.scala.index
 package data
 package bintray
 
+import cleanup.NonStandardLib
+import elastic.SeedElasticSearch
+import github.GithubDownload
+import maven.DownloadParentPoms
+
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import ch.epfl.scala.index.data.cleanup.NonStandardLib
-import ch.epfl.scala.index.data.elastic.SeedElasticSearch
-import ch.epfl.scala.index.data.github.GithubDownload
-import ch.epfl.scala.index.data.maven.DownloadParentPoms
 
 object BintrayPipeline {
   def main(args: Array[String]): Unit = {
