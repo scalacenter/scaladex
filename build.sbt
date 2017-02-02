@@ -14,6 +14,8 @@ lazy val baseSettings = Seq(
   version := "0.2.0"
 )
 
+lazy val moveUniversal = taskKey[Unit]("moveUniversal")
+
 lazy val commonSettings = Seq(
     resolvers += Resolver.typesafeIvyRepo("releases"),
     scalaVersion := "2.11.8",
@@ -91,6 +93,15 @@ lazy val server = project
       "org.webjars.bower" % "select2" % "4.0.3",
       "com.lihaoyi" %%% "scalatags" % scalatagsVersion
     ),
+    moveUniversal := {
+      val archive = (packageBin in Universal).value
+      val dest = file("/home/gui")
+      val destArchive = dest / "universal.zip"
+      if(destArchive.exists) {
+        destArchive.delete       
+      }
+      IO.copyFile(archive, destArchive)
+    },
     packageBin in Universal := (packageBin in Universal).dependsOn(WebKeys.assets in Assets).value,
     reStart := reStart.dependsOn(WebKeys.assets in Assets).evaluated,
     unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,

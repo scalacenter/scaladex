@@ -130,7 +130,7 @@ def updatingRepositories(contribPath: Path, indexPath: Path)(f: () => Unit): Uni
 
     updatingRepositories(contribFolder, indexFolder) { () =>
       sbt(
-        "server/universal:packageBin",
+        "server/moveUniversal",
         s"data/run elastic $contribFolder $indexFolder"
       )
     }
@@ -148,7 +148,7 @@ def updatingRepositories(contribPath: Path, indexPath: Path)(f: () => Unit): Uni
 
     mkdir(destGitDescribe)
 
-    val packageBin = cwd / "server" / "target" / "universal" / "scaladex.zip"
+    val packageBin =  scaladex / "universal.zip"
 
     run("unzip", packageBin.toString, "-d", destGitDescribe.toString)
 
