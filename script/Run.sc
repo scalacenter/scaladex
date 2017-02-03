@@ -14,7 +14,10 @@ def ensureSuccess(status: Int): Unit =
   else sys.error(s"Process exited with status $status")
 
 def run(args: String*): Unit = ensureSuccess(Process(args.toList).!)
-def runD(args: String*)(dir: Path): Unit = ensureSuccess(Process(args.toList, Some(dir.toIO)).!)
+def runD(args: String*)(dir: Path): Unit = {
+  println(s"Running command ${args.mkString(" ")} in working directory $dir")
+  ensureSuccess(Process(args.toList, Some(dir.toIO)).!)
+}
 def runSlurp(args: String*): String = Process(args.toList).lineStream.toList.headOption.getOrElse("")
 def runPipe(args: String*)(file: Path) = ensureSuccess((Process(args.toList) #> file.toIO).!)
 def runEnv(args: String*)(envs: (String, String)*) = {
