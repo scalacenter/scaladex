@@ -95,7 +95,7 @@ lazy val server = project
     ),
     moveUniversal := {
       val archive = (packageBin in Universal).value
-      val dest = file("/home/scaladex")
+      val dest = file("/home/scaladex/scaladex")
       val destArchive = dest / "universal.zip"
       if(destArchive.exists) {
         destArchive.delete       
