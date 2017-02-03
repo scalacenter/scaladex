@@ -23,6 +23,7 @@ import akka.stream.ActorMaterializer
 import akka.util.Timeout
 
 import scala.concurrent.Future
+import scala.collection.mutable.{Map => MMap}
 
 class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Github)(
     implicit val system: ActorSystem,
@@ -48,7 +49,20 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
           val credentials = GithubCredentials(token)
           // todo - catch errors
 
-          github.getUserStateWithToken(token).map(user => Some((credentials, user)))
+          githubCredentialsCache.get(token) match {
+            case res @ Some(_) => {
+              println("from cache")
+              Future.successful(res)
+            }
+            case _ => {
+              println("not cached")
+              github.getUserStateWithToken(token).map{user => 
+                githubCredentialsCache(token) = (credentials, user)
+                Some((credentials, user))
+              }
+            }
+          }
+
         }
         case _ => Future.successful(None)
       }
@@ -82,6 +96,8 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
   implicit val timeout = Timeout(40.seconds)
   private val actor =
     system.actorOf(Props(classOf[impl.PublishActor], paths, dataRepository, system, materializer))
+
+  private val githubCredentialsCache = MMap.empty[String, (GithubCredentials, UserState)]
 
   val DateTimeUn = Unmarshaller.strict[String, DateTime] { dateRaw =>
     new DateTime(dateRaw.toLong * 1000L)
