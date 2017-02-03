@@ -102,7 +102,7 @@ curl --data-binary "@noscm_2.11-1.0.0.pom" \
 curl --data-binary "@test_2.11-1.1.5.pom" \
 -XPUT \
 --user token:c61e65b80662c064abe923a407b936894b29fb55 \
-"https://scaladex.scala-lang.org/publish?test=true&created=1478668532&readme=true&info=true&contributors=true&path=/org/example/test_2.11/1.2.3/test_2.11-1.2.3.pom"
+"https://index.scala-lang.org/publish?test=true&created=1478668532&readme=true&info=true&contributors=true&path=/org/example/test_2.11/1.2.3/test_2.11-1.2.3.pom"
 
 
 or via `sbt sbtScaladex/scripted`
