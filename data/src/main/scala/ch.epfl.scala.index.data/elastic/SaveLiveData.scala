@@ -61,6 +61,7 @@ object SaveLiveData extends LiveProjectsProtocol {
         LiveProjects(
           SaveLiveData.storedProjects(paths) + (project.reference -> ProjectForm(project))
         )
+      println(s"Writing projects at ${paths.liveProjects}")
       Files.write(paths.liveProjects, writePretty(keepProjects).getBytes(StandardCharsets.UTF_8))
     }
   }
