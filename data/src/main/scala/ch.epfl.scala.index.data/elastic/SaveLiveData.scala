@@ -10,6 +10,8 @@ import org.json4s.native.parseJson
 import java.nio.file._
 import java.nio.charset.StandardCharsets
 
+import org.slf4j.LoggerFactory
+
 import scala.concurrent.{ExecutionContext, Future}
 
 // this allows us to save project as json object sorted by keys
@@ -51,6 +53,8 @@ trait LiveProjectsProtocol {
 
 object SaveLiveData extends LiveProjectsProtocol {
 
+  val logger = LoggerFactory.getLogger(this.getClass)
+
   def storedProjects(paths: DataPaths): Map[Project.Reference, ProjectForm] =
     read[LiveProjects](Files.readAllLines(paths.liveProjects).toArray.mkString("")).projects
 
@@ -61,7 +65,7 @@ object SaveLiveData extends LiveProjectsProtocol {
         LiveProjects(
           SaveLiveData.storedProjects(paths) + (project.reference -> ProjectForm(project))
         )
-      println(s"Writing projects at ${paths.liveProjects}")
+      logger.debug(s"Writing projects at ${paths.liveProjects}")
       Files.write(paths.liveProjects, writePretty(keepProjects).getBytes(StandardCharsets.UTF_8))
     }
   }

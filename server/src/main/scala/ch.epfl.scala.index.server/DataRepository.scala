@@ -12,6 +12,7 @@ import ElasticDsl._
 import ch.epfl.scala.index.data.DataPaths
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.Modifier
 import org.elasticsearch.search.sort.SortOrder
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.reflectiveCalls
@@ -22,6 +23,8 @@ import scala.language.reflectiveCalls
   */
 class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(id = None)
+
+  val logger = LoggerFactory.getLogger(this.getClass)
 
   val sortQuery = (sorting: Option[String]) =>
     sorting match {
@@ -238,7 +241,7 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
               val esUpdate =
                 esClient.execute(update(id) in (indexName / projectsCollection) doc project)
 
-              println("Updating live data on the index repository")
+              logger.debug("Updating live data on the index repository")
               val indexUpdate = SaveLiveData.saveProject(project, paths)
 
               esUpdate.zip(indexUpdate).map(_ => true)

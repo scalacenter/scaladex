@@ -6,21 +6,23 @@ import model._
 import release._
 import data.project.ProjectForm
 import model.misc._
-
-import com.softwaremill.session._, SessionDirectives._, SessionOptions._
-
+import com.softwaremill.session._
+import SessionDirectives._
+import SessionOptions._
 import TwirlSupport._
-
 import akka.http.scaladsl._
 import model._
 import server.Directives._
 import Uri._
 import StatusCodes._
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
 
 class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
   import session._
+
+  val logger = LoggerFactory.getLogger(this.getClass)
 
   private def canEdit(owner: String, repo: String, userState: Option[UserState]) =
     userState.map(s => s.isAdmin || s.repos.contains(GithubRepo(owner, repo))).getOrElse(false)
@@ -88,7 +90,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
   val routes =
     post {
       path("edit" / Segment / Segment) { (organization, repository) =>
-        println(s"Saving data of $organization/$repository")
+        logger.debug(s"Saving data of $organization/$repository")
         optionalSession(refreshable, usingCookies) { userId =>
           pathEnd {
             formFieldSeq { fields =>
