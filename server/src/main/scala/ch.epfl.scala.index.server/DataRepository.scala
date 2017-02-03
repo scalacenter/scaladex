@@ -238,6 +238,7 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
               val esUpdate =
                 esClient.execute(update(id) in (indexName / projectsCollection) doc project)
 
+              println("Updating live data on the index repository")
               val indexUpdate = SaveLiveData.saveProject(project, paths)
 
               esUpdate.zip(indexUpdate).map(_ => true)
