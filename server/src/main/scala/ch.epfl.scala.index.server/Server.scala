@@ -80,6 +80,7 @@ object Server {
     Await.result(Http().bindAndHandle(routes, "0.0.0.0", port), 20.seconds)
 
     println(s"port: $port")
+    println("Application started")
 
     ()
   }
