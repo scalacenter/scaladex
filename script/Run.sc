@@ -100,6 +100,7 @@ def updatingRepositories(contribPath: Path, indexPath: Path)(f: () => Unit): Uni
 
   val credentialsDest = scaladexHome
   val credentialsFolder = credentialsDest / "scaladex-credentials"
+  println(s"Using $credentialsFolder as credential repository")
 
   if(!exists(credentialsFolder)) {
     run("git", "clone", "git@github.com:scalacenter/scaladex-credentials.git", credentialsFolder.toString)
@@ -114,10 +115,12 @@ def updatingRepositories(contribPath: Path, indexPath: Path)(f: () => Unit): Uni
 
   val indexDest = scaladexHome
   val indexFolder = indexDest / "scaladex-index"
+  println(s"Using $indexFolder as index repository")
 
   val contribDest = scaladexHome
   val contribFolder = contribDest / "scaladex-contrib"
-  
+  println(s"Using $contribFolder as contrib repository")
+
   val readWritePublic = "777"
 
   if(job == Index){
