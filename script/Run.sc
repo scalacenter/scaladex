@@ -55,7 +55,7 @@ def updatingRepositories(contribPath: Path, indexPath: Path)(f: () => Unit): Uni
 
   println("Pushing current state to the 'index' repository")
   runD("git", "add", "-A")(indexPath)
-  runD("git", "commit", "-m", '"' + datetime + '"')(indexPath)
+  runD("git", "commit", "--allow-empty", "-m", '"' + datetime + '"')(indexPath)
   runD("git", "push", "origin", "master")(indexPath)
 }
 
