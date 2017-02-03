@@ -94,7 +94,7 @@
                   @for(artifact <- project.artifacts){
                     <option 
                       value="@artifact"
-                      @if(artifact == project.defaultArtifact){ selected }>
+                      @if(Some(artifact) == project.defaultArtifact){ selected }>
                       @artifact
                     </option>
                   }

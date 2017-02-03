@@ -58,7 +58,7 @@ object DefaultRelease {
       (
         // artifact
         // match default artifact (ex: akka-actors is the default for akka/akka)
-        defaultArtifact == Some(artifact),
+        defaultArtifact != Some(artifact), // false < true
         // match project repository (ex: shapeless)
         projectRepository == artifact,
         // alphabetically
