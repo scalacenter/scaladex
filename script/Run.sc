@@ -9,14 +9,18 @@ object Job extends Enumeration {
 
 implicit val readCiType: scopt.Read[Job.Value] = scopt.Read.reads(Job withName _)
 
-def run(args: String*): Unit = Process(args.toList).!
-def runD(args: String*)(dir: Path): Unit = Process(args.toList, Some(dir.toIO)).!
+def ensureSuccess(status: Int): Unit =
+  if (status == 0) ()
+  else sys.error(s"Process exited with status $status")
+
+def run(args: String*): Unit = ensureSuccess(Process(args.toList).!)
+def runD(args: String*)(dir: Path): Unit = ensureSuccess(Process(args.toList, Some(dir.toIO)).!)
 def runSlurp(args: String*): String = Process(args.toList).lineStream.toList.headOption.getOrElse("")
-def runPipe(args: String*)(file: Path) = (Process(args.toList) #> file.toIO).!
+def runPipe(args: String*)(file: Path) = ensureSuccess((Process(args.toList) #> file.toIO).!)
 def runEnv(args: String*)(envs: (String, String)*) = {
   println(args.toList)
   println(envs)
-  Process(command = args.toList, cwd = None, extraEnv = envs: _*).!
+  ensureSuccess(Process(command = args.toList, cwd = None, extraEnv = envs: _*).!)
 }
 
 def sbt(commands: String*): Unit = {
