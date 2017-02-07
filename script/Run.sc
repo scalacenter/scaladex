@@ -1,120 +1,30 @@
 import sys.process._
 import ammonite.ops._
-import java.io.File
 
 object Job extends Enumeration {
   type Job = Value
-  val Index, Deploy, Elastic, Test = Value
+  val Index, Elastic = Value
 }
 
 implicit val readCiType: scopt.Read[Job.Value] = scopt.Read.reads(Job withName _)
 
-def ensureSuccess(status: Int): Unit =
+def run(args: String*): Unit = {
+  val status = Process(args.toList).!
   if (status == 0) ()
-  else sys.error(s"Process exited with status $status")
-
-def run(args: String*): Unit = ensureSuccess(Process(args.toList).!)
-def runD(args: String*)(dir: Path): Unit = {
-  println(s"Running command ${args.mkString(" ")} in working directory $dir")
-  ensureSuccess(Process(args.toList, Some(dir.toIO)).!)
-}
-def runSlurp(args: String*): String = Process(args.toList).lineStream.toList.headOption.getOrElse("")
-def runPipe(args: String*)(file: Path) = ensureSuccess((Process(args.toList) #> file.toIO).!)
-def runEnv(args: String*)(envs: (String, String)*) = {
-  println(args.toList)
-  println(envs)
-  ensureSuccess(Process(command = args.toList, cwd = None, extraEnv = envs: _*).!)
-}
-
-def sbt(commands: String*): Unit = {
-  val jvmOpts =
-    "-Dsbt.global.staging=/tmp" ::
-    "-DELASTICSEARCH=remote" ::
-    "-Xms1G" ::
-    "-Xmx3G" ::
-    Nil
-
-  // run index
-  runEnv("./sbt", ("clean" :: commands.toList).mkString(";", " ;", ""))(("JVM_OPTS", jvmOpts.mkString(" ")))
-}
-
-def datetime = {
-  import java.text.SimpleDateFormat
-  import java.util.Calendar
-  new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(Calendar.getInstance().getTime()) 
-}
-
-def updatingRepositories(contribPath: Path, indexPath: Path)(f: () => Unit): Unit = {
-  println("Pulling the latest data from the 'contrib' repository")
-  runD("git", "checkout", "master")(contribPath)
-  runD("git", "remote", "update")(contribPath)
-  runD("git", "pull", "origin", "master")(contribPath)
-
-  // run index
-  f()
-
-  println("Pushing current state to the 'index' repository")
-  runD("git", "add", "-A")(indexPath)
-  runD("git", "commit", "--allow-empty", "-m", '"' + datetime + '"')(indexPath)
-  runD("git", "push", "origin", "master")(indexPath)
+  else sys.error(s"Process '${args.mkString(" ")}' exited with status $status")
 }
 
 /**
-  * @param reposDir Directory that contains the `scaladex-credentials`, `scaladex-index` and `scaladex-contrib`
-  *                 sub-directories containing the git repositories
+  * @param dataPath Path of the deployed `data` application
+  * @param reposDir Directory that contains the `scaladex-credentials`, `scaladex-index` and
+  *                 `scaladex-contrib` sub-directories containing the git repositories
   */
-@main def main(reposDir: String, fullBranchName: String, job: Job.Value) = {
+@main def main(dataPath: String, reposDir: String, job: Job.Value) = {
   import Job._
 
-  val chmod = "chmod"
-
-  val branch = {
-    val origin = "origin/"
-    if(fullBranchName.startsWith(origin)) fullBranchName.drop(origin.length)
-    else fullBranchName
-  }
-
   println(s"job $job")
-  println(s"branch $branch")
- 
-  if(job == Deploy && branch != "master") {
-    println("Exit 1")
-    sys.exit
-  }
-
-  if(job == Test && branch == "master") {
-    println("Exit 2")
-    sys.exit
-  }
-
-  println("OK ...")
-
-  if(!exists(cwd / "sbt")) {
-    runPipe("curl", "-s", "https://raw.githubusercontent.com/paulp/sbt-extras/master/sbt")(cwd / "sbt")
-    run("chmod", "a+x", "sbt")
-  }
-
-  val bintrayCredentialsFolder = home / ".bintray"
-  if(!exists(bintrayCredentialsFolder)) {
-    mkdir(bintrayCredentialsFolder)
-  }
 
   val scaladexHome = Path(reposDir)
-
-  val credentialsDest = scaladexHome
-  val credentialsFolder = credentialsDest / "scaladex-credentials"
-  println(s"Using $credentialsFolder as credential repository")
-
-  if(!exists(credentialsFolder)) {
-    run("git", "clone", "git@github.com:scalacenter/scaladex-credentials.git", credentialsFolder.toString)
-  } else {
-    runD("git", "pull", "origin", "master")(credentialsFolder)
-  }
-
-  val searchCredentialsFolder = bintrayCredentialsFolder / ".credentials2"
-  if(!exists(searchCredentialsFolder)){
-    cp(credentialsFolder / "search-credentials", searchCredentialsFolder)
-  }
 
   val indexDest = scaladexHome
   val indexFolder = indexDest / "scaladex-index"
@@ -124,59 +34,13 @@ def updatingRepositories(contribPath: Path, indexPath: Path)(f: () => Unit): Uni
   val contribFolder = contribDest / "scaladex-contrib"
   println(s"Using $contribFolder as contrib repository")
 
-  val readWritePublic = "777"
+  val dataJvmArgs = Seq("-DELASTICSEARCH=remote", "-J-Xms1G", "-J-Xmx3G")
 
-  if(job == Index){
-
-    updatingRepositories(contribFolder, indexFolder) { () =>
-      // run index
-      sbt(s"data/run all $contribFolder $indexFolder")
-    }
-  } else if(job == Elastic) {
-    updatingRepositories(contribFolder, indexFolder) { () =>
-      // run index
-      sbt(s"data/run elastic $contribFolder $indexFolder")
-    }
-  } else if(job == Test) {
-
-    sbt("test")
-
-  } else if(job == Deploy) {
-
-    updatingRepositories(contribFolder, indexFolder) { () =>
-      sbt(
-        "server/moveUniversal",
-        s"data/run elastic $contribFolder $indexFolder"
-      )
-    }
-    
-    val scaladex = home / "scaladex"
-    if(!exists(scaladex)) mkdir(scaladex)
-
-    val releases = "releases"
-    val scaladexReleases = scaladex / "releases"
-    if(!exists(scaladexReleases)) mkdir(scaladexReleases)
-
-    val gitDescribe = runSlurp("git", "describe", "--tags")
-    val destGitDescribe = scaladexReleases / gitDescribe
-    if(exists(destGitDescribe)) rm(destGitDescribe)
-
-    mkdir(destGitDescribe)
-
-    val packageBin =  scaladex / "universal.zip"
-
-    run("unzip", packageBin.toString, "-d", destGitDescribe.toString)
-
-    val current = "current"
-    val currentLink = scaladex / current
-    if(exists(currentLink)) {
-      rm(currentLink)
+  val steps =
+    job match {
+      case Index   => "all"
+      case Elastic => "elastic"
     }
 
-    // current -> releases/1.2.3-sha
-    runD("ln", "-s", s"$releases/$gitDescribe", current)(scaladex) // relative link
-
-    // /usr/bin/sudo -H -u scaladex /home/scaladex/bin/jenkins_redeploy.sh
-    // does the rest of the work
-  }
+  run(Seq(dataPath, steps, contribFolder.toString, indexFolder.toString) ++ dataJvmArgs: _*)
 }

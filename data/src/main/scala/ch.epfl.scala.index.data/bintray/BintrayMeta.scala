@@ -7,10 +7,8 @@ import model.Descending
 
 import org.json4s._
 import org.json4s.native.JsonMethods._
-import org.json4s.native.Serialization.write
 
-import java.nio.file.{Files, Path}
-import java.nio.charset.StandardCharsets
+import java.nio.file.Path
 
 object BintrayMeta extends BintrayProtocol {
 
@@ -32,13 +30,4 @@ object BintrayMeta extends BintrayProtocol {
       .sortBy(_.created)(Descending)
   }
 
-  def append(paths: DataPaths, meta: BintraySearch): Unit = {
-    val all = load(paths)
-    Files.delete(path(paths))
-    val sorted = (meta :: all).sortBy(_.created)(Descending)
-    val jsonPerLine =
-      sorted.map(s => write(s)).mkString("", System.lineSeparator, System.lineSeparator)
-    Files.write(path(paths), jsonPerLine.getBytes(StandardCharsets.UTF_8))
-    ()
-  }
 }
