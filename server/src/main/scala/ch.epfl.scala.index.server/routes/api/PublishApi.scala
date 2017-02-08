@@ -6,21 +6,18 @@ package api
 import data.DataPaths
 import model.release._
 import data.github._
-
 import org.joda.time.DateTime
-
 import akka.http.scaladsl._
 import model._
 import headers._
 import server.Directives._
 import server.directives._
 import unmarshalling.Unmarshaller
-
 import StatusCodes._
-
 import akka.actor.{ActorSystem, Props}
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
 import scala.collection.mutable.{Map => MMap}
@@ -28,6 +25,8 @@ import scala.collection.mutable.{Map => MMap}
 class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Github)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer) {
+
+  private val logger = LoggerFactory.getLogger("scaladex.publish.routes")
 
   import system.dispatcher
 
@@ -123,6 +122,7 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
     } ~
       put {
         path("publish") {
+          logger.debug("Received publish request")
           parameters(
             'path,
             'created.as(DateTimeUn) ? DateTime.now,
@@ -136,6 +136,7 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
               extractCredentials { credentials =>
                 authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) {
                   case (credentials, userState) =>
+                    logger.debug(s"path = $path; data = $data")
                     val publishData = impl.PublishData(
                       path,
                       created,

@@ -9,25 +9,23 @@ import data.cleanup.GithubRepoExtractor
 import data.download.PlayWsDownloader
 import data.elastic._
 import data.github._
-import data.maven.{MavenModel, PomsReader, DownloadParentPoms}
+import data.maven.{DownloadParentPoms, MavenModel, PomsReader}
 import data.project.ProjectConvert
-
 import model.misc.GithubRepo
 import model.{Project, Release}
 import model.release.ReleaseSelection
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.StatusCode
-
 import com.sksamuel.elastic4s._
 import ElasticDsl._
 
 import scala.concurrent.Future
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
+import java.io.{PrintWriter, StringWriter}
 
-import java.io.{StringWriter, PrintWriter}
+import org.slf4j.LoggerFactory
 
 private[api] class PublishProcess(paths: DataPaths, dataRepository: DataRepository)(
     implicit val system: ActorSystem,
@@ -35,6 +33,7 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
 ) extends PlayWsDownloader {
 
   import system.dispatcher
+  private val logger = LoggerFactory.getLogger("scaladex.publish.process")
 
   /**
     * write the pom file to disk if it's a pom file (SBT will also send *.pom.sha1 and *.pom.md5)
@@ -51,11 +50,13 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
     */
   def writeFiles(data: PublishData): Future[(StatusCode, String)] = Future {
     if (data.isPom) {
+      logger.debug("Publishing a POM")
       data.writeTemp()
       getTmpPom(data) match {
         case List(Success((pom, _, _))) =>
           getGithubRepo(pom) match {
             case None => {
+              logger.debug("POM saved without Github information")
               data.deleteTemp()
               (NoContent, "No Github Repo")
             }
@@ -64,21 +65,26 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
                 data.writePom(paths)
                 data.deleteTemp()
                 updateIndex(repo, pom, data)
+                logger.debug(s"Published ${pom.organization.map(_.name).getOrElse("")} ${pom.artifactId} ${pom.version}")
                 (Created, "Published release")
               } else {
+                logger.info(s"User ${data.userState.user.login} attempted to publish to ${repo.toString}")
                 data.deleteTemp()
                 (Forbidden, s"${data.userState.user.login} cannot publish to ${repo.toString}")
               }
             }
           }
         case List(Failure(e)) => {
+          logger.error("Invalid POM", e)
           val sw = new StringWriter()
           val pw = new PrintWriter(sw)
           e.printStackTrace(pw)
 
           (BadRequest, "Invalid pom: " + sw.toString())
         }
-        case _ => (BadRequest, "Impossible ?")
+        case _ =>
+          logger.error("Unable to write POM data")
+          (BadRequest, "Impossible ?")
       }
     } else {
       if (data.userState.isSonatype) ((BadRequest, "Not a POM"))
