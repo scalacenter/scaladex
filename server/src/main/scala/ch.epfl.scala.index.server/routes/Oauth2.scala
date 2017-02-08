@@ -20,13 +20,13 @@ class OAuth2(github: Github, session: GithubUserSession) {
   val routes =
     get {
       path("login") {
-        headerValueByType[Referer]() { referer =>
+        optionalHeaderValueByType[Referer]() { referer =>
           redirect(
             Uri("https://github.com/login/oauth/authorize").withQuery(
               Query(
                 "client_id" -> github.clientId,
                 "scope" -> "read:org",
-                "state" -> referer.value
+                "state" -> referer.map(_.value).getOrElse("/")
               )),
             TemporaryRedirect
           )
