@@ -12,8 +12,6 @@ import akka.stream.ActorMaterializer
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-import akka.http.scaladsl.model.StatusCodes._
-
 class PublishActor(paths: DataPaths,
                    dataRepository: DataRepository,
                    implicit val system: ActorSystem,
@@ -24,12 +22,7 @@ class PublishActor(paths: DataPaths,
 
   def receive = {
     case publishData: PublishData => {
-      if (publishData.isPom) {
         sender ! Await.result(publishProcess.writeFiles(publishData), 10.seconds)
-      } else {
-        if (publishData.userState.isSonatype) sender ! ((BadRequest, "Not a POM"))
-        else sender ! ((OK, "ignoring")) // for sbt, ignore SHA1, etc
-      }
     }
   }
 }
