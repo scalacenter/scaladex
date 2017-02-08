@@ -134,9 +134,10 @@ lazy val data = project
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),
-    javaOptions in reStart += "-Xmx3g"
+    javaOptions in reStart += "-Xmx3g",
+    packageName in Universal := "data"
   )
-  .enablePlugins(BuildInfoPlugin)
+  .enablePlugins(BuildInfoPlugin, JavaAppPackaging)
   .dependsOn(model)
 
 // to publish plugin

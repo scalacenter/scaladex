@@ -55,7 +55,7 @@ object DataPaths {
 
 class DataPaths(private[DataPaths] val args: List[String]) {
 
-  private val (contrib, index) = args match {
+  private[data] val (contrib, index) = args match {
     case List(contrib, index) => (Paths.get(contrib), Paths.get(index))
     case _ => {
       val base = build.info.BuildInfo.baseDirectory.toPath.getParent

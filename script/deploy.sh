@@ -11,4 +11,4 @@ then
   chmod a+x amm
 fi
 
-./amm $HERE/Run.sc "$@"
+./amm $HERE/Deploy.sc "$@"
