@@ -14,6 +14,7 @@ import elastic.SaveLiveData
 import com.github.nscala_time.time.Imports._
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
+import org.slf4j.LoggerFactory
 
 class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
 
@@ -21,10 +22,15 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
 
   private val nonStandardLibs = NonStandardLib.load(paths)
 
+  private val logger = LoggerFactory.getLogger(this.getClass)
+
   /** artifactId is often use to express binary compatibility with a scala version (ScalaTarget)
     * if the developer follow this convention we extract the relevant parts and we mark
     * the library as standard. Otherwise we either have a library like gatling or the scala library itself
+    *
+    * @return The artifact name (without suffix), the Scala target, whether this project is a usual Scala library or not
     */
+  // TODO Return more than a Boolean to describe the kind of artifact: scala library, non-scala library, sbt-plugin
   private def extractArtifactNameAndTarget(
       pom: MavenModel): Option[(String, Option[ScalaTarget], Boolean)] = {
     nonStandardLibs
@@ -52,8 +58,27 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
           (pom.artifactId, Some(ScalaTarget.scala(version)), true))
 
       case None =>
-        Artifact(pom.artifactId).map {
-          case (artifactName, target) => (artifactName, Some(target), false)
+        // This is a usual Scala library (whose artifact name is suffixed by the Scala binary version)
+        // Or it can be an sbt-plugin published as a maven style. In such a case the Scala target
+        // is not suffixed to the artifact name, but can be found in the pom properties
+        val maybeSbtPlugin =
+          for {
+            scalaVersion <- pom.properties.get("scalaVersion")
+            sbtVersion   <- pom.properties.get("sbtVersion")
+          } yield (scalaVersion, sbtVersion)
+
+        // TODO Store the sbt target too
+        maybeSbtPlugin.flatMap { case (scalaVersion, _) =>
+          SemanticVersion(scalaVersion).map(ScalaTarget.scala).orElse {
+            logger.error("Unable to decode the Scala target")
+            None
+          }.map { target =>
+            (pom.artifactId, Some(target), true)
+          }
+        }.orElse {
+          Artifact(pom.artifactId).map {
+            case (artifactName, target) => (artifactName, Some(target), false)
+          }
         }
     }
   }

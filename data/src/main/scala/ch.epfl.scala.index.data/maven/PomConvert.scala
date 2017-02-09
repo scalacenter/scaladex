@@ -116,7 +116,8 @@ private[maven] object PomConvert {
           getName,
           Option(getUrl)
         )
-      }
+      },
+      getProperties.asScala.toMap
     )
   }
 }

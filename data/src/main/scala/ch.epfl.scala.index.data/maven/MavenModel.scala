@@ -26,7 +26,8 @@ case class MavenModel(
     licenses: List[License],
     dependencies: List[Dependency],
     repositories: List[Repository],
-    organization: Option[Organization]
+    organization: Option[Organization],
+    properties: Map[String, String]
 )
 
 /*
