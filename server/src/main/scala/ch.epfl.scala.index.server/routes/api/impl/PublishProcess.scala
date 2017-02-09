@@ -48,47 +48,51 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
     * @param data the Publish data class holding all the data
     * @return
     */
-  def writeFiles(data: PublishData): Future[(StatusCode, String)] = Future {
+  def writeFiles(data: PublishData): Future[(StatusCode, String)] = {
     if (data.isPom) {
       logger.debug("Publishing a POM")
-      data.writeTemp()
-      getTmpPom(data) match {
-        case List(Success((pom, _, _))) =>
-          getGithubRepo(pom) match {
-            case None => {
-              logger.debug("POM saved without Github information")
-              data.deleteTemp()
-              (NoContent, "No Github Repo")
-            }
-            case Some(repo) => {
-              if (data.userState.hasPublishingAuthority || data.userState.repos.contains(repo)) {
-                data.writePom(paths)
+      Future {
+        data.writeTemp()
+      }.flatMap { _ =>
+        getTmpPom(data) match {
+          case List(Success((pom, _, _))) =>
+            getGithubRepo(pom) match {
+              case None => {
+                logger.debug("POM saved without Github information")
                 data.deleteTemp()
-                updateIndex(repo, pom, data)
-                logger.debug(s"Published ${pom.organization.map(_.name).getOrElse("")} ${pom.artifactId} ${pom.version}")
-                (Created, "Published release")
-              } else {
-                logger.info(s"User ${data.userState.user.login} attempted to publish to ${repo.toString}")
-                data.deleteTemp()
-                (Forbidden, s"${data.userState.user.login} cannot publish to ${repo.toString}")
+                Future.successful((NoContent, "No Github Repo"))
+              }
+              case Some(repo) => {
+                if (data.userState.hasPublishingAuthority || data.userState.repos.contains(repo)) {
+                  data.writePom(paths)
+                  data.deleteTemp()
+                  updateIndex(repo, pom, data).map { _ =>
+                    logger.debug(s"Published ${pom.organization.map(_.name).getOrElse("")} ${pom.artifactId} ${pom.version}")
+                    (Created, "Published release")
+                  }
+                } else {
+                  logger.info(s"User ${data.userState.user.login} attempted to publish to ${repo.toString}")
+                  data.deleteTemp()
+                  Future.successful((Forbidden, s"${data.userState.user.login} cannot publish to ${repo.toString}"))
+                }
               }
             }
-          }
-        case List(Failure(e)) => {
-          logger.error("Invalid POM", e)
-          val sw = new StringWriter()
-          val pw = new PrintWriter(sw)
-          e.printStackTrace(pw)
+          case List(Failure(e)) => {
+            logger.error("Invalid POM", e)
+            val sw = new StringWriter()
+            val pw = new PrintWriter(sw)
+            e.printStackTrace(pw)
 
-          (BadRequest, "Invalid pom: " + sw.toString())
+            Future.successful((BadRequest, "Invalid pom: " + sw.toString()))
+          }
+          case _ =>
+            logger.error("Unable to write POM data")
+            Future.successful((BadRequest, "Impossible ?"))
         }
-        case _ =>
-          logger.error("Unable to write POM data")
-          (BadRequest, "Impossible ?")
       }
     } else {
-      if (data.userState.isSonatype) ((BadRequest, "Not a POM"))
-      else ((Created, "ignoring")) // for sbt, ignore SHA1, etc
+      if (data.userState.isSonatype) Future.successful((BadRequest, "Not a POM"))
+      else Future.successful((Created, "ignoring")) // for sbt, ignore SHA1, etc
     }
   }
 

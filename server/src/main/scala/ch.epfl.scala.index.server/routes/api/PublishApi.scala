@@ -129,9 +129,8 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
             'readme.as[Boolean] ? true,
             'contributors.as[Boolean] ? true,
             'info.as[Boolean] ? true,
-            'keywords.as[String].*,
-            'test.as[Boolean] ? false
-          ) { (path, created, readme, contributors, info, keywords, test) =>
+            'keywords.as[String].*
+          ) { (path, created, readme, contributors, info, keywords) =>
             entity(as[String]) { data =>
               extractCredentials { credentials =>
                 authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) {
@@ -146,8 +145,7 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
                       info,
                       contributors,
                       readme,
-                      keywords.toSet,
-                      test
+                      keywords.toSet
                     )
 
                     complete((actor ? publishData).mapTo[(StatusCode, String)].map(s => s))
