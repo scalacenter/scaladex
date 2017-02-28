@@ -2,6 +2,7 @@ package ch.epfl.scala.index
 package data
 package maven
 
+/** Abstract model of a released artifact. Initially modeled after the POM model. Tweaked to fit with ivy.xml descriptors */
 // POM Model
 // https://maven.apache.org/pom.html
 // javadoc: https://maven.apache.org/ref/3.3.9/maven-model/apidocs/org/apache/maven/model/Model.html
@@ -9,7 +10,7 @@ package maven
 // the pom is defined using modello
 // https://codehaus-plexus.github.io/modello/
 // https://github.com/apache/maven/blob/master/maven-model/src/main/mdo/maven.mdo
-case class MavenModel(
+case class ReleaseModel(
     groupId: String,
     artifactId: String,
     version: String,
@@ -27,8 +28,10 @@ case class MavenModel(
     dependencies: List[Dependency],
     repositories: List[Repository],
     organization: Option[Organization],
-    properties: Map[String, String]
+    sbtPluginTarget: Option[SbtPluginTarget] // Information on the target scala and sbt versions, in case this release describes an sbt plugin
 )
+
+case class SbtPluginTarget(scalaVersion: String, sbtVersion: String)
 
 /*
 This element describes all of the licenses for this project.

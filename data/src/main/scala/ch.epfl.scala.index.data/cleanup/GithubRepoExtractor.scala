@@ -52,7 +52,7 @@ class GithubRepoExtractor(paths: DataPaths) {
     case (k, v) =>
       val List(groupId, artifactIdRawRegex) = k.split(" ").toList
       val artifactIdRegex = artifactIdRawRegex.replaceAllLiterally("*", "(.*)").r
-      val matcher: (maven.MavenModel => Boolean) = pom => {
+      val matcher: (maven.ReleaseModel => Boolean) = pom => {
         def artifactMatches =
           artifactIdRawRegex == "*" ||
             matches(artifactIdRegex, pom.artifactId)
@@ -68,7 +68,7 @@ class GithubRepoExtractor(paths: DataPaths) {
   }
   source.close()
 
-  def apply(pom: maven.MavenModel): Option[GithubRepo] = {
+  def apply(pom: maven.ReleaseModel): Option[GithubRepo] = {
     val fromPoms = pom.scm match {
       case Some(scm) => {
         List(scm.connection, scm.developerConnection, scm.url).flatten

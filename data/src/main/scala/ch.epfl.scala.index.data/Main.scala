@@ -6,7 +6,7 @@ import java.time.format.DateTimeFormatter
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import ch.epfl.scala.index.data.bintray.{BintrayDownloadPoms, BintrayListPoms}
+import ch.epfl.scala.index.data.bintray.{BintrayDownloadPoms, BintrayListPoms, BintrayDownloadSbtPlugins}
 import ch.epfl.scala.index.data.cleanup.NonStandardLib
 import ch.epfl.scala.index.data.elastic.SeedElasticSearch
 import ch.epfl.scala.index.data.github.GithubDownload
@@ -43,7 +43,7 @@ object Main {
       else args.toList.tail
 
     val paths = DataPaths(pathFromArgs.take(2))
-    val bintray: LocalRepository = LocalRepository.Bintray
+    val bintray: LocalPomRepository = LocalPomRepository.Bintray
 
     val steps = List(
       // List POMs of Bintray
@@ -71,6 +71,9 @@ object Main {
 
       // Download additional information about projects from Github
       Step("github")(() => new GithubDownload(paths).run()),
+
+      // Download ivy.xml descriptors of sbt-plugins from Bintray
+      Step("download-sbt-plugins")(() => new BintrayDownloadSbtPlugins(paths).run()),
 
       // Re-create the ElasticSearch index
       Step("elastic")(() => new SeedElasticSearch(paths).run())

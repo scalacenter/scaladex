@@ -3,25 +3,22 @@ package data
 package download
 
 import me.tongfei.progressbar.ProgressBar
-
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
-
 import com.typesafe.config.ConfigFactory
-
-import play.api.libs.ws.{WSConfigParser, WSRequest, WSResponse}
+import play.api.libs.ws.{WSClient, WSConfigParser, WSRequest, WSResponse}
 import play.api.libs.ws.ahc.{AhcConfigBuilder, AhcWSClient, AhcWSClientConfig}
 import play.api.{Configuration, Environment, Mode}
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 
 trait PlayWsDownloader {
 
   implicit val system: ActorSystem
   import system.dispatcher
-  implicit val materializer: ActorMaterializer
+  implicit val materializer: Materializer
 
   /**
     * Creating a new WS Client - copied from Play website
@@ -44,6 +41,20 @@ trait PlayWsDownloader {
 
     val ahcConfig = ahcBuilder.build()
     new AhcWSClient(ahcConfig)
+  }
+
+  /**
+    * Creates a fresh client and closes it after the future returned by `f` completes.
+    *
+    * {{{
+    *   managed { client =>
+    *     client.url("http://google.com").get()
+    *   }
+    * }}}
+    */
+  def managed[A](f: WSClient => Future[A])(implicit ec: ExecutionContext): Future[A] = {
+    val client = wsClient
+    f(client).andThen { case _ => client.close() }
   }
 
   /**

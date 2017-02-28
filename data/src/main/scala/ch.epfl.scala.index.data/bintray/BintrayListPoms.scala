@@ -16,7 +16,6 @@ import com.github.nscala_time.time.Imports._
 
 import play.api.libs.ws.{WSRequest, WSResponse}
 import play.api.libs.ws.ahc.AhcWSClient
-import play.api.libs.ws.WSAuthScheme
 
 import org.json4s._
 import org.json4s.native.JsonMethods._
@@ -29,46 +28,9 @@ import scala.concurrent.duration.Duration
 class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
                                         implicit val materializer: ActorMaterializer)
     extends BintrayProtocol
-    with PlayWsDownloader {
+    with PlayWsDownloader with BintrayClient {
 
   import system.dispatcher
-
-  /**
-    * The url to search at
-    */
-  private val bintrayUri = "https://bintray.com/api/v1/search/file"
-
-  private val bintrayCredentials = {
-    // from bintray-sbt convention
-    // cat ~/.bintray/.credentials
-    // host = api.bintray.com
-    // user = xxxxxxxxxx
-    // password = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-    val home = System.getProperty("user.home")
-    val path = home + "/.bintray/.credentials2"
-    val nl = System.lineSeparator
-    val source = scala.io.Source.fromFile(path)
-
-    val info = source.mkString
-      .split(nl)
-      .map { v =>
-        val (l, r) = v.span(_ != '=')
-        (l.trim, r.drop(2).trim)
-      }
-      .toMap
-    source.close()
-
-    info
-  }
-
-  def withAuth(request: WSRequest) = {
-    (bintrayCredentials.get("user"), bintrayCredentials.get("password")) match {
-      case (Some(user), Some(password)) =>
-        request.withAuth(user, password, WSAuthScheme.BASIC)
-      case _ => request
-    }
-  }
 
   /** paginated search query for bintray - append the query string to
     * the request object
@@ -82,7 +44,7 @@ class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
         "name" -> s"${page.query}*.pom",
         "start_pos" -> page.page.toString)
 
-    withAuth(wsClient.url(bintrayUri)).withQueryString(query: _*)
+    withAuth(wsClient.url(s"$bintrayApi/search/file")).withQueryString(query: _*)
   }
 
   /** Fetch bintray first, to find out the number of pages and items to iterate

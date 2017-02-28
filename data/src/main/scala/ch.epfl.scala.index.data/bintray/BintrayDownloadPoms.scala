@@ -15,7 +15,7 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit val system: ActorSystem,
                                             implicit val materializer: ActorMaterializer)
     extends PlayWsDownloader {
 
-  private val bintrayPomBase = paths.poms(LocalRepository.Bintray)
+  private val bintrayPomBase = paths.poms(LocalPomRepository.Bintray)
 
   /**
     * resolve the filename for a specific pom by sha1
