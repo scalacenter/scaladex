@@ -3,7 +3,7 @@ package data
 package maven
 
 private[maven] object PomConvert {
-  def apply(model: org.apache.maven.model.Model): MavenModel = {
+  def apply(model: org.apache.maven.model.Model): ReleaseModel = {
     import model._
     import scala.collection.JavaConverters._
     import scala.util.Try
@@ -29,7 +29,7 @@ private[maven] object PomConvert {
       )
     }
 
-    MavenModel(
+    ReleaseModel(
       getGroupId,
       getArtifactId,
       getVersion,
@@ -117,7 +117,13 @@ private[maven] object PomConvert {
           Option(getUrl)
         )
       },
-      getProperties.asScala.toMap
+      {
+        val properties = getProperties.asScala.toMap
+        for {
+          scalaVersion <- properties.get("scalaVersion")
+          sbtVersion   <- properties.get("sbtVersion")
+        } yield SbtPluginTarget(scalaVersion, sbtVersion)
+      }
     )
   }
 }

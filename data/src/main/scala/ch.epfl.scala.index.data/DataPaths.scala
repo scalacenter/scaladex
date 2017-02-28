@@ -1,7 +1,7 @@
 package ch.epfl.scala.index
 package data
 
-import java.nio.file.{Paths, Files}
+import java.nio.file.{Files, Path, Paths}
 
 /*
 The contrib folder is read-only from the point of view of Scaladex. We receive PR, we merge them.
@@ -32,8 +32,14 @@ index
 ├── github
 │   ├── org/repo
 │   └── org/repo
-└── live
-    └── projects.json
+├── live
+|   └── projects.json
+└── ivys
+    ├── data.json (all the information we need about ivy releases to index)
+    ├── last-download (date of the last time we fetched information from bintray)
+    └── subject (e.g. “sbt”)
+        └── repo (e.g. “sbt-plugin-releases”)
+            └── ivy files (e.g. “com.github.gseitz/sbt-release/scala_2.10/sbt_0.13/0.8.5/ivys/ivy.xml”)
 
 contrib
 ├── claims.json
@@ -42,10 +48,16 @@ contrib
  */
 
 sealed trait LocalRepository
+
 object LocalRepository {
-  final case object Bintray extends LocalRepository
-  final case object MavenCentral extends LocalRepository
-  final case object UserProvided extends LocalRepository
+  final case object BintraySbtPlugins extends LocalRepository
+}
+
+sealed trait LocalPomRepository extends LocalRepository
+object LocalPomRepository {
+  final case object Bintray extends LocalPomRepository
+  final case object MavenCentral extends LocalPomRepository
+  final case object UserProvided extends LocalPomRepository
 }
 
 // List("/home/gui/center/scaladex/contrib", "/home/gui/center/scaladex/index")
@@ -131,23 +143,31 @@ class DataPaths(private[DataPaths] val args: List[String]) {
   private val usersMeta = usersPom.resolve("meta.json")
   assert(Files.exists(usersMeta))
 
-  import LocalRepository._
+  // === ivys ===
 
-  def poms(repository: LocalRepository) =
+  val ivys: Path = index.resolve("ivys")
+
+  val ivysLastDownload: Path = ivys.resolve("last-download")
+
+  val ivysData: Path = ivys.resolve("data.json")
+
+  import LocalPomRepository._
+
+  def poms(repository: LocalPomRepository) =
     repository match {
       case Bintray => bintrayPomSha
       case MavenCentral => mavenCentralPomSha
       case UserProvided => usersPomSha
     }
 
-  def parentPoms(repository: LocalRepository) =
+  def parentPoms(repository: LocalPomRepository) =
     repository match {
       case Bintray => bintrayParentPom
       case MavenCentral => mavenCentralParentPom
       case UserProvided => usersParentPom
     }
 
-  def meta(repository: LocalRepository) =
+  def meta(repository: LocalPomRepository) =
     repository match {
       case Bintray => bintrayMeta
       case MavenCentral => mavenCentralMeta

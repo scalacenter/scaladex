@@ -48,10 +48,10 @@ object Meta {
   implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer, MetaSerializer)
   implicit val serialization = native.Serialization
 
-  def load(paths: DataPaths, repository: LocalRepository): List[Meta] = {
+  def load(paths: DataPaths, repository: LocalPomRepository): List[Meta] = {
     assert(
-      repository == LocalRepository.MavenCentral ||
-        repository == LocalRepository.UserProvided)
+      repository == LocalPomRepository.MavenCentral ||
+        repository == LocalPomRepository.UserProvided)
 
     val metaPath = paths.meta(repository)
 
@@ -62,7 +62,7 @@ object Meta {
     ret.filter(_ != "").map(json => parse(json).extract[Meta]).sortBy(_.created)(Descending)
   }
 
-  def append(paths: DataPaths, meta: Meta, repository: LocalRepository): Unit = {
+  def append(paths: DataPaths, meta: Meta, repository: LocalPomRepository): Unit = {
     val all = load(paths, repository)
 
     val metaPath = paths.meta(repository)

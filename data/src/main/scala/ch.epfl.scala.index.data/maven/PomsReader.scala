@@ -3,13 +3,13 @@ package data
 package maven
 
 import me.tongfei.progressbar._
-
 import java.io.File
 import java.nio.file._
 
-import scala.util.{Try, Success}
-
+import scala.util.{Success, Try}
 import java.util.Properties
+
+import ch.epfl.scala.index.data.bintray.SbtPluginsData
 
 case class MissingParentPom(dep: maven.Dependency) extends Exception
 
@@ -24,8 +24,8 @@ object PomsReader {
     ).mkString(File.separator)
   }
 
-  def loadAll(paths: DataPaths): List[Try[(MavenModel, LocalRepository, String)]] = {
-    import LocalRepository._
+  def loadAll(paths: DataPaths): List[Try[(ReleaseModel, LocalRepository, String)]] = {
+    import LocalPomRepository._
     val localRepositories = List(Bintray, MavenCentral, UserProvided)
 
     val centralPoms = PomsReader(MavenCentral, paths).load()
@@ -42,21 +42,23 @@ object PomsReader {
       case _ => true
     }
 
-    centralPoms ::: bintrayPoms ::: usersPoms
+    val ivysDescriptors = SbtPluginsData(paths).load()
+
+    centralPoms ::: bintrayPoms ::: usersPoms ::: ivysDescriptors
   }
 
-  def apply(repository: LocalRepository, paths: DataPaths): PomsReader = {
+  def apply(repository: LocalPomRepository, paths: DataPaths): PomsReader = {
     new PomsReader(paths.poms(repository), paths.parentPoms(repository), repository)
   }
 
   def tmp(paths: DataPaths, path: Path): PomsReader = {
     new PomsReader(path,
-                   paths.parentPoms(LocalRepository.MavenCentral),
-                   LocalRepository.UserProvided)
+                   paths.parentPoms(LocalPomRepository.MavenCentral),
+                   LocalPomRepository.UserProvided)
   }
 }
 
-private[maven] class PomsReader(pomsPath: Path, parentPomsPath: Path, repository: LocalRepository) {
+private[maven] class PomsReader(pomsPath: Path, parentPomsPath: Path, repository: LocalPomRepository) {
   import org.apache.maven.model._
   import resolution._
   import io._
@@ -95,7 +97,7 @@ private[maven] class PomsReader(pomsPath: Path, parentPomsPath: Path, repository
     builder.build(request).getEffectiveModel
   }
 
-  def load(): List[Try[(MavenModel, LocalRepository, String)]] = {
+  def load(): List[Try[(ReleaseModel, LocalPomRepository, String)]] = {
     import scala.collection.JavaConverters._
 
     val s = Files.newDirectoryStream(pomsPath)

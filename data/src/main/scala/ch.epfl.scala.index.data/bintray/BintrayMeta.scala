@@ -12,7 +12,7 @@ import java.nio.file.Path
 
 object BintrayMeta extends BintrayProtocol {
 
-  def path(paths: DataPaths): Path = paths.meta(LocalRepository.Bintray)
+  def path(paths: DataPaths): Path = paths.meta(LocalPomRepository.Bintray)
 
   /**
     * read all currently downloaded poms and convert them to BintraySearch object

@@ -6,8 +6,9 @@ import cleanup._
 import model._
 import model.misc._
 import model.release._
-import maven.MavenModel
+import maven.{ReleaseModel, SbtPluginTarget}
 import bintray._
+import ch.epfl.scala.index.data.LocalRepository.BintraySbtPlugins
 import ch.epfl.scala.index.data.project.ProjectConvert.ProjectSeed
 import github._
 import elastic.SaveLiveData
@@ -32,7 +33,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
     */
   // TODO Return more than a Boolean to describe the kind of artifact: scala library, non-scala library, sbt-plugin
   private def extractArtifactNameAndTarget(
-      pom: MavenModel): Option[(String, Option[ScalaTarget], Boolean)] = {
+      pom: ReleaseModel): Option[(String, Option[ScalaTarget], Boolean)] = {
     nonStandardLibs
       .find(
         lib =>
@@ -60,15 +61,9 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
       case None =>
         // This is a usual Scala library (whose artifact name is suffixed by the Scala binary version)
         // Or it can be an sbt-plugin published as a maven style. In such a case the Scala target
-        // is not suffixed to the artifact name, but can be found in the pom properties
-        val maybeSbtPlugin =
-          for {
-            scalaVersion <- pom.properties.get("scalaVersion")
-            sbtVersion   <- pom.properties.get("sbtVersion")
-          } yield (scalaVersion, sbtVersion)
-
+        // is not suffixed to the artifact name but can be found in the model’s `sbtPluginTarget` member.
         // TODO Store the sbt target too
-        maybeSbtPlugin.flatMap { case (scalaVersion, _) =>
+        pom.sbtPluginTarget.flatMap { case SbtPluginTarget(scalaVersion, _) =>
           SemanticVersion(scalaVersion).map(ScalaTarget.scala).orElse {
             logger.error("Unable to decode the Scala target")
             None
@@ -83,12 +78,16 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
     }
   }
 
-  private def extractMeta(pomsRepoSha: List[(MavenModel, LocalRepository, String)]) = {
-    import LocalRepository._
+  private def extractMeta(pomsRepoSha: List[(ReleaseModel, LocalRepository, String)]) = {
+    import LocalPomRepository._
 
     val bintray = BintrayMeta.load(paths).groupBy(_.sha1)
     val users = Meta.load(paths, UserProvided).groupBy(_.sha1)
     val central = Meta.load(paths, MavenCentral).groupBy(_.sha1)
+    val sbtPluginsCreated =
+      SbtPluginsData(paths).read()._1
+        .groupBy(_.sha1)
+        .mapValues(_.head.created) // Note: This is inefficient because we already loaded the data earlier and discarded the creation time
 
     val packagingOfInterest = Set("aar", "jar", "bundle")
 
@@ -102,7 +101,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
     def created(metas: List[DateTime]): Option[String] = metas.sorted.headOption.map(format.print)
     pomsRepoSha.map {
       case (pom, repo, sha1) => {
-        val default = (pom, None, None, true)
+        val default = (pom, /* created */ None, /* resolver */ None, /* keep */ true)
         repo match {
           case Bintray => {
             bintray.get(sha1) match {
@@ -159,6 +158,13 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
                 default
               }
             }
+          case BintraySbtPlugins =>
+            (
+              pom,
+              sbtPluginsCreated.get(sha1),
+              None,
+              true
+            )
         }
       }
     }.filter { case (pom, _, _, keep) => packagingOfInterest.contains(pom.packaging) && keep }.map {
@@ -171,7 +177,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
     * @param stored read user update projects from disk
     * @param cachedReleases use previous released cached to workarround elasticsearch consistency (write, read)
     */
-  def apply(pomsRepoSha: List[(MavenModel, LocalRepository, String)],
+  def apply(pomsRepoSha: List[(ReleaseModel, LocalRepository, String)],
             stored: Boolean = true,
             cachedReleases: Map[Project.Reference, Set[Release]] = Map())
     : List[(Project, Set[Release])] = {
@@ -192,7 +198,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
     println("Convert POMs to Project")
     val licenseCleanup = new LicenseCleanup(paths)
 
-    def pomToMavenReference(pom: maven.MavenModel) =
+    def pomToMavenReference(pom: maven.ReleaseModel) =
       MavenReference(pom.groupId, pom.artifactId, pom.version)
 
     def maxMinRelease(releases: Set[Release]): (Option[String], Option[String]) = {

@@ -9,7 +9,7 @@ import data.cleanup.GithubRepoExtractor
 import data.download.PlayWsDownloader
 import data.elastic._
 import data.github._
-import data.maven.{DownloadParentPoms, MavenModel, PomsReader}
+import data.maven.{DownloadParentPoms, ReleaseModel, PomsReader}
 import data.project.ProjectConvert
 import model.misc.GithubRepo
 import model.{Project, Release}
@@ -102,11 +102,11 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
     * @param data the XML String data
     * @return
     */
-  private def getTmpPom(data: PublishData): List[Try[(MavenModel, LocalRepository, String)]] = {
+  private def getTmpPom(data: PublishData): List[Try[(ReleaseModel, LocalPomRepository, String)]] = {
     val path = data.tempPath.getParent
 
     val downloadParentPomsStep =
-      new DownloadParentPoms(LocalRepository.MavenCentral, paths, Some(path))
+      new DownloadParentPoms(LocalPomRepository.MavenCentral, paths, Some(path))
 
     downloadParentPomsStep.run()
 
@@ -119,7 +119,7 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
     * @param pom the Maven model
     * @return
     */
-  private def getGithubRepo(pom: MavenModel): Option[GithubRepo] =
+  private def getGithubRepo(pom: ReleaseModel): Option[GithubRepo] =
     (new GithubRepoExtractor(paths)).apply(pom)
 
   /**
@@ -138,7 +138,7 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
     * @param data the main publish data
     * @return
     */
-  private def updateIndex(repo: GithubRepo, pom: MavenModel, data: PublishData): Future[Unit] = {
+  private def updateIndex(repo: GithubRepo, pom: ReleaseModel, data: PublishData): Future[Unit] = {
     println("updating " + pom.artifactId)
 
     new GithubDownload(paths, Some(data.credentials))
@@ -151,8 +151,8 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
     def updateProjectReleases(project: Option[Project], releases: List[Release]): Future[Unit] = {
 
       val repository =
-        if (data.userState.hasPublishingAuthority) LocalRepository.MavenCentral
-        else LocalRepository.UserProvided
+        if (data.userState.hasPublishingAuthority) LocalPomRepository.MavenCentral
+        else LocalPomRepository.UserProvided
 
       Meta.append(paths, Meta(data.hash, data.path, data.created), repository)
 

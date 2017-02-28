@@ -14,12 +14,12 @@ import play.api.libs.ws.ahc.AhcWSClient
 
 import scala.util.Failure
 
-class DownloadParentPoms(repository: LocalRepository, paths: DataPaths, tmp: Option[Path] = None)(
+class DownloadParentPoms(repository: LocalPomRepository, paths: DataPaths, tmp: Option[Path] = None)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer)
     extends PlayWsDownloader {
 
-  assert(repository == LocalRepository.MavenCentral || repository == LocalRepository.Bintray)
+  assert(repository == LocalPomRepository.MavenCentral || repository == LocalPomRepository.Bintray)
 
   val parentPomsPath = paths.parentPoms(repository)
   val pomReader =
@@ -35,7 +35,7 @@ class DownloadParentPoms(repository: LocalRepository, paths: DataPaths, tmp: Opt
     */
   def downloadRequest(wsClient: AhcWSClient, dep: Dependency): WSRequest = {
     val urlBase =
-      if (repository == LocalRepository.MavenCentral) "https://repo1.maven.org/maven2"
+      if (repository == LocalPomRepository.MavenCentral) "https://repo1.maven.org/maven2"
       else "https://jcenter.bintray.com"
 
     val fullUrl = s"$urlBase/${PomsReader.path(dep)}"

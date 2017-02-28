@@ -4,7 +4,7 @@ package routes
 package api
 package impl
 
-import data.{LocalRepository, DataPaths}
+import data.{LocalPomRepository, DataPaths}
 // import data.bintray._
 import data.github.GithubCredentials
 
@@ -84,8 +84,8 @@ private[api] case class PublishData(
     */
   private def pomPath(paths: DataPaths, sha1: String): Path = {
     val repository =
-      if (userState.isSonatype) LocalRepository.MavenCentral
-      else LocalRepository.UserProvided
+      if (userState.isSonatype) LocalPomRepository.MavenCentral
+      else LocalPomRepository.UserProvided
 
     paths.poms(repository).resolve(s"$sha1.pom")
   }
