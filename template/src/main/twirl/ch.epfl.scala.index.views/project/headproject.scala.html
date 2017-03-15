@@ -4,7 +4,7 @@
 @import ch.epfl.scala.index.views.html.unescapeBackground
 
 @(project: Project, artifacts: List[String], versions: List[SemanticVersion], 
-  targets: List[ScalaTarget], release: Release, canEdit: Boolean)
+  targets: List[ScalaTarget], release: Release, previouslySelectedTarget: Option[String], canEdit: Boolean)
 <div class="head-project">
   <div class="container">
     <div class="row">
@@ -93,12 +93,14 @@
                 @artifact
               </option>
             }
+
             </select>
           </form>
           
           <form action="/@project.reference.organization/@project.reference.repository" action="GET">
-            @for(target <- release.reference.target) {
-              <input type="hidden" name="target" value="@target.encode">
+            @previouslySelectedTarget match {
+              case Some(target) =>  {<input type="hidden" name="target" value="@target">}
+              case None => {}
             }
             <input type="hidden" name="artifact" value="@release.reference.artifact">
 
