@@ -80,6 +80,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
              versions,
              targets,
              release,
+             target,
              user,
              canEdit(owner, repo, userState),
              twitterCard
