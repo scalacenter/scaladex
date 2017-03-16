@@ -24,19 +24,18 @@ Process:
   * Pull Bintray (once per day): 
     * File Search: releases that follow the scala artifactId convention presented above.
     * Non Standards: If you dont follow this convention add your releases to [non-standard.json]
-    * Sbt Plugins: We index sbt plugins published to [sbt/sbt-plugin-releases]
+    * Sbt Plugins: We index sbt plugins published to [sbt/sbt-plugin-releases] add your plugin to [claims.json]
 * We download pom and parent poms
 * We read them, 10% are invalid 
   (most common issue: duplicated tags see https://github.com/sbt/sbt/issues/2566)
 * We inspect the pom file for scm tag (source control management). 
-  If you forgot to add a scm tag claim your library to 
-  [claims.json](https://github.com/scalacenter/scaladex-data/blob/master/claims.json)
+  If you forgot to add a scm tag claim your library or you publish a sbt plugin add claim your project to [claims.json]
 * We download content and metadata from GitHub (Readme, Avatar, Descriptions, etc)
 
 [non-standard.json]: https://github.com/scalacenter/scaladex-data/blob/master/non-standard.json
 [publish REST api]: https://github.com/scalacenter/scaladex/blob/master/server/src/main/scala/ch.epfl.scala.index.server/routes/api/PublishApi.scala
 [sbt/sbt-plugin-releases]: https://bintray.com/sbt/sbt-plugin-releases
-
+[claims.json]: https://github.com/scalacenter/scaladex-data/blob/master/claims.json
 ## How to contribute
 
 Join the [gitter.im channel](https://gitter.im/scalacenter/scaladex) and 
