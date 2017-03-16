@@ -5,19 +5,27 @@
 
 ## How it works
 
-We pull poms from Bintray and we receive poms from Maven Central or to Scaladex directly.
+We pull poms from Bintray and we receive poms from Maven Central (Sonatype) or to Scaladex directly.
 Your library has to be published to one of those repositories.
 
-* [`How to publish on Bintray`](/doc/user/publish-bintray.md)
 * [`How to publish on Maven Central`](/doc/user/publish-maven-central.md)
+* [`How to publish on Bintray`](/doc/user/publish-bintray.md)
 * [`How to publish on Scaladex`](/doc/user/publish-scaladex.md)
 
 Process:
-* We discover Scala release based on the pom filename.
-  A common practice is to include the scala compiler version in the artifactId.
-  We search for `.pom files` containing `_2.10`, `_2.11` and `_2.12`.
-  If you dont follow this convention add your releases to
-  [non-standard.json](https://github.com/scalacenter/scaladex-data/blob/master/non-standard.json)
+* Releases Sources
+  * Push from Maven Central(Sonatype):
+    * We receive pushes from Maven Central that follow the artifactId convention
+      presented above (pom path containing _2.11, etc).
+  * Push from Scala Developers:
+    * You can use the [sbt-scaladex to push releases](/doc/user/publish-scaladex.md)
+    * You can also use the [publish REST api]
+  * Pull Bintray (once per day): 
+    * File Search: we discover Scala release based on the pom filename.
+      A common practice is to include the scala compiler version in the artifactId.
+      We search for `.pom files` containing `_2.10`, `_2.11` and `_2.12`.
+    * Non Standards: If you dont follow this convention add your releases to [non-standard.json]
+    * Sbt Plugins: 
 * We download pom and parent poms
 * We read them, 10% are invalid 
   (most common issue: duplicated tags see https://github.com/sbt/sbt/issues/2566)
@@ -25,6 +33,9 @@ Process:
   If you forgot to add a scm tag claim your library to 
   [claims.json](https://github.com/scalacenter/scaladex-data/blob/master/claims.json)
 * We download content and metadata from GitHub (Readme, Avatar, Descriptions, etc)
+
+[non-standard.json]: https://github.com/scalacenter/scaladex-data/blob/master/non-standard.json
+[publish REST api]: https://github.com/scalacenter/scaladex/blob/master/server/src/main/scala/ch.epfl.scala.index.server/routes/api/PublishApi.scala
 
 ## How to contribute
 
