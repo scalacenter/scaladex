@@ -12,7 +12,7 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
       description = None,
       released = None,
       licenses = Set(),
-      nonStandardLib = false,
+      artifactKind = ArtifactKind.ConventionalScalaLib,
       id = None,
       liveData = false,
       scalaDependencies = Seq(),
