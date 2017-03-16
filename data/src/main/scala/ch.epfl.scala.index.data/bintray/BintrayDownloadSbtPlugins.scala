@@ -73,7 +73,7 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(implicit
         version = release.sbtRelease.version,
         packaging = "jar",
         name = None,
-        description = Some(descriptor.getDescription),
+        description = Option(descriptor.getDescription),
         inceptionYear = None,
         url = None,
         scm = None,
@@ -104,7 +104,9 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(implicit
         )
       )
 
-    SbtPluginReleaseModel(releaseModel, new DateTime(descriptor.getPublicationDate).toString, release.sbtRelease.sha1)
+    val publicationDate =
+      new DateTime(Option(descriptor.getPublicationDate).getOrElse(sys.error("Missing publication date"))).toString
+    SbtPluginReleaseModel(releaseModel, publicationDate, release.sbtRelease.sha1)
   }
 
   private def fetchNewReleases(lastDownload: Option[String]): Future[List[SbtPluginReleaseWithModuleDescriptor]] =
