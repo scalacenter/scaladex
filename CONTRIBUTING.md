@@ -6,12 +6,23 @@
 
 ## How to run Scaladex locally:
 
+```
+scaladex
+├── scaladex
+├── scaladex-contrib
+├── scaladex-credentials (optionnal)
+└── scaladex-index
+```
+
 ```bash
+mkdir scaladex
+cd scaladex
+
 git clone git@github.com:scalacenter/scaladex.git
 git clone git@github.com:scalacenter/scaladex-index.git
 git clone git@github.com:scalacenter/scaladex-contrib.git
 
-# If you have access
+# Optionnal: If you have access
 git clone git@github.com:scalacenter/scaladex-credentials.git
 
 cd scaladex
