@@ -1,6 +1,8 @@
-package ch.epfl.scala.index.data.bintray
+package ch.epfl.scala.index.data
+package bintray
 
 import java.net.URL
+import java.nio.file.Files
 
 import org.json4s.JsonAST.JValue
 import org.json4s.native.JsonMethods.parse
@@ -11,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.util.control.NonFatal
 
-trait BintrayClient {
+class BintrayClient(paths: DataPaths) {
 
   private val bintrayCredentials = {
     // from bintray-sbt convention
@@ -20,21 +22,23 @@ trait BintrayClient {
     // user = xxxxxxxxxx
     // password = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
-    val home = System.getProperty("user.home")
-    val path = home + "/.bintray/.credentials2"
-    val nl = System.lineSeparator
-    val source = scala.io.Source.fromFile(path)
+    val credentials = paths.credentials
 
-    val info = source.mkString
-      .split(nl)
-      .map { v =>
-        val (l, r) = v.span(_ != '=')
-        (l.trim, r.drop(2).trim)
-      }
-      .toMap
-    source.close()
-
-    info
+    if(Files.exists(credentials) && Files.isDirectory(credentials)) {
+      val nl = System.lineSeparator
+      val source = scala.io.Source.fromFile(
+        credentials.resolve("search-credentials").toFile
+      )
+      val info = source.mkString
+        .split(nl)
+        .map { v =>
+          val (l, r) = v.span(_ != '=')
+          (l.trim, r.drop(2).trim)
+        }
+        .toMap
+      source.close()      
+      info
+    } else Map[String, String]()
   }
 
   private val logger = LoggerFactory.getLogger(this.getClass)
@@ -112,6 +116,4 @@ trait BintrayClient {
         logger.error("Unable to decode data", exn)
         Nil
     }
-
-
 }

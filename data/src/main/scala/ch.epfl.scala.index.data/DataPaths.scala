@@ -11,7 +11,7 @@ a PR.
 The index folder is write-only. We don't accept PR. Users have to login on Scaladex and update via
 the UI.
 
-index
+scaladex-index
 ├── poms
 │   ├── bintray
 │   │   ├── meta.json
@@ -40,11 +40,13 @@ index
     └── subject (e.g. “sbt”)
         └── repo (e.g. “sbt-plugin-releases”)
             └── ivy files (e.g. “com.github.gseitz/sbt-release/scala_2.10/sbt_0.13/0.8.5/ivys/ivy.xml”)
-
-contrib
+scaladex-contrib
 ├── claims.json
 ├── licensesByName.json
 └── non-standard.json
+
+scaladex-credential (optionnal)
+└── search-credential
  */
 
 sealed trait LocalRepository
@@ -60,23 +62,33 @@ object LocalPomRepository {
   final case object UserProvided extends LocalPomRepository
 }
 
-// List("/home/gui/center/scaladex/contrib", "/home/gui/center/scaladex/index")
 object DataPaths {
   def apply(args: List[String]): DataPaths = new DataPaths(args)
 }
 
 class DataPaths(private[DataPaths] val args: List[String]) {
 
-  private[data] val (contrib, index) = args match {
-    case List(contrib, index) => (Paths.get(contrib), Paths.get(index))
+  private[data] val (contrib, index, credentials) = args match {
+    case List(contrib, index, credentials) => 
+      ( 
+        Paths.get(contrib),
+        Paths.get(index),
+        Paths.get(credentials)
+      )
     case _ => {
       val base = build.info.BuildInfo.baseDirectory.toPath.getParent
-      (base.resolve(Paths.get("scaladex-contrib")), base.resolve(Paths.get("scaladex-index")))
+      
+      ( 
+        base.resolve(Paths.get("scaladex-contrib")), 
+        base.resolve(Paths.get("scaladex-index")),
+        base.resolve(Paths.get("scaladex-credentials"))
+      )
     }
   }
 
   println(s"contrib folder: $contrib")
   println(s"index folder: $index")
+  println(s"credentials folder: $credentials")
 
   assert(Files.isDirectory(contrib))
   assert(Files.isDirectory(index))
