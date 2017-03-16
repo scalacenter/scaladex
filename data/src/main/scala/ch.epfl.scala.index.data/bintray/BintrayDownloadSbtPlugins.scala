@@ -267,5 +267,5 @@ object BintrayDownloadSbtPlugins {
     sbtRelease: SbtPluginRelease,
     moduleDescriptor: ModuleDescriptor
   )
-
+  
 }
