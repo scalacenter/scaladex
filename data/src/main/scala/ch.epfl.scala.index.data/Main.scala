@@ -69,11 +69,11 @@ object Main {
       // Download parent POMs
       Step("parent")(() => new DownloadParentPoms(bintray, paths).run()),
 
-      // Download additional information about projects from Github
-      Step("github")(() => new GithubDownload(paths).run()),
-
       // Download ivy.xml descriptors of sbt-plugins from Bintray
       Step("download-sbt-plugins")(() => new BintrayDownloadSbtPlugins(paths).run()),
+
+      // Download additional information about projects from Github
+      Step("github")(() => new GithubDownload(paths).run()),
 
       // Re-create the ElasticSearch index
       Step("elastic")(() => new SeedElasticSearch(paths).run())
