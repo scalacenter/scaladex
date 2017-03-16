@@ -52,10 +52,8 @@ trait PlayWsDownloader {
     *   }
     * }}}
     */
-  def managed[A](f: WSClient => Future[A])(implicit ec: ExecutionContext): Future[A] = {
-    val client = wsClient
-    f(client).andThen { case _ => client.close() }
-  }
+  def managed[A](f: WSClient => Future[A])(implicit ec: ExecutionContext): Future[A] =
+    Future(wsClient).flatMap(client => f(client).andThen { case _ => client.close() })
 
   /**
     * Actual download of bunch of documents. Will loop through all and display a status bar in the console output.
