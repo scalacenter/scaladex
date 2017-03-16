@@ -14,16 +14,15 @@ Your library has to be published to one of those repositories.
 
 Process:
 * Releases Sources
-  * Push from Maven Central(Sonatype):
-    * We receive pushes from Maven Central that follow the artifactId convention
-      presented above (pom path containing _2.11, etc).
+  * Push from Maven Central (Sonatype):
+    * We receive pushes from Maven Central that follow the scala artifactId convention.
+      A common practice is to include the scala compiler version in the artifactId.
+      The `.pom files` will contain `_2.10`, `_2.11`, `_2.12` or any further Scala Version.
   * Push from Scala Developers:
     * You can use the [sbt-scaladex to push releases](/doc/user/publish-scaladex.md)
     * You can also use the [publish REST api]
   * Pull Bintray (once per day): 
-    * File Search: we discover Scala release based on the pom filename.
-      A common practice is to include the scala compiler version in the artifactId.
-      We search for `.pom files` containing `_2.10`, `_2.11` and `_2.12`.
+    * File Search: releases that follow the scala artifactId convention presented above.
     * Non Standards: If you dont follow this convention add your releases to [non-standard.json]
     * Sbt Plugins: We index sbt plugins published to [sbt/sbt-plugin-releases]
 * We download pom and parent poms

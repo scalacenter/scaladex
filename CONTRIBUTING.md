@@ -28,7 +28,8 @@ Then, open `localhost:8080` in your browser.
 
 ### Elasticsearch Remote
 
-If you have an elasticsearch service installed use the following sbt command when indexing/running the server:
+If you have an elasticsearch service installed use the following sbt command when
+indexing/running the server:
 
 `set javaOptions in reStart += "-DELASTICSEARCH=remote"`
 
@@ -74,25 +75,29 @@ and ElasticSearch to power the full-text search.
 The `contrib.git` repository is read-only for the Scaladex application
 (users can write on it, on Github).
 
-Data of the `[scaladex-index.git]` repository are written *only* by Scaladex. This repository contains the POMs
-and project information added by users (e.g. keywords).
+Data of the `[scaladex-index.git]` repository are written *only* by Scaladex.
+This repository contains the POMs and project information added by users (e.g. keywords).
 
 ## Bintray Data Pipeline
 
 If you want to update the data:
 
-The entry point is at [BintrayPipeline.scala](/data/src/main/scala/ch.epfl.scala.index.data/bintray/BintrayPipeline.scala)
+The entry point is at [data/Main.scala](/data/src/main/scala/ch.epfl.scala.index.data/Main.scala)
 
-### List Poms
+### List Poms / Sbt
 
-This step will search on Bintray for artifact containing `_2.10`, `_2.11`, `_2.12`. Bintray contains jcenter,
-it's a mirror of maven central.
+This step will search on Bintray for artifact containing `_2.10`, `_2.11`, `_2.12`.
+Bintray contains jcenter, it's a mirror of maven central.
 
 You will need a premium Bintray account.
 
 ```
-set javaOptions in reStart ++= Seq("-DBINTRAY_USER=XXXXXXX", "-DBINTRAY_PASSWORD=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-data/reStart list /path/to/contrib /path/to/index`
+set javaOptions in reStart ++= Seq(
+  "-DBINTRAY_USER=XXXXXXX", 
+  "-DBINTRAY_PASSWORD=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+)
+data/reStart list
+data/reStart download-sbt-plugins
 ```
 
 ### Download
