@@ -25,7 +25,7 @@ Process:
       A common practice is to include the scala compiler version in the artifactId.
       We search for `.pom files` containing `_2.10`, `_2.11` and `_2.12`.
     * Non Standards: If you dont follow this convention add your releases to [non-standard.json]
-    * Sbt Plugins: 
+    * Sbt Plugins: We index sbt plugins published to [sbt/sbt-plugin-releases]
 * We download pom and parent poms
 * We read them, 10% are invalid 
   (most common issue: duplicated tags see https://github.com/sbt/sbt/issues/2566)
@@ -36,6 +36,7 @@ Process:
 
 [non-standard.json]: https://github.com/scalacenter/scaladex-data/blob/master/non-standard.json
 [publish REST api]: https://github.com/scalacenter/scaladex/blob/master/server/src/main/scala/ch.epfl.scala.index.server/routes/api/PublishApi.scala
+[sbt/sbt-plugin-releases]: https://bintray.com/sbt/sbt-plugin-releases
 
 ## How to contribute
 
