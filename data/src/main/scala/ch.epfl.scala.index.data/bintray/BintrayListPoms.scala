@@ -28,7 +28,12 @@ import scala.concurrent.duration.Duration
 class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
                                         implicit val materializer: ActorMaterializer)
     extends BintrayProtocol
-    with PlayWsDownloader with BintrayClient {
+    with PlayWsDownloader {
+
+  val bintrayClient = new BintrayClient(paths)
+  import bintrayClient._
+
+  assert(bintrayCredentials.nonEmpty, "this steps requires bintray user")
 
   import system.dispatcher
 

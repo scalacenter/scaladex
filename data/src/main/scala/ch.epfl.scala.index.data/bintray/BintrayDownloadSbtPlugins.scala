@@ -29,8 +29,13 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(implicit
   val materializer: Materializer,
   val system: ActorSystem
 ) extends PlayWsDownloader
-    with BintrayClient
     with BintrayProtocol {
+
+
+  val bintrayClient = new BintrayClient(paths)
+  import bintrayClient._
+
+  assert(bintrayCredentials.nonEmpty, "this steps requires bintray user")
 
   import BintrayDownloadSbtPlugins._
 
