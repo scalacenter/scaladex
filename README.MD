@@ -29,7 +29,7 @@ Process:
 ## How to contribute
 
 Join the [gitter.im channel](https://gitter.im/scalacenter/scaladex) and 
-read the [developer guide](/doc/dev/README.md)
+read the [developer guide](/CONTRIBUTING.md)
 
 ## Badges API
 
