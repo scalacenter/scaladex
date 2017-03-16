@@ -15,3 +15,7 @@ For each project:
 For each release:
 
 0. `sbt publish`
+
+## Sbt Plugins
+
+http://www.scala-sbt.org/release/docs/Bintray-For-Plugins.html
