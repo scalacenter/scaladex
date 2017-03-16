@@ -1,16 +1,20 @@
 package ch.epfl.scala.index.data
 
+import bintray.{BintrayDownloadPoms, BintrayListPoms, BintrayDownloadSbtPlugins}
+import cleanup.{NonStandardLib, GithubRepoExtractor}
+import elastic.SeedElasticSearch
+import github.GithubDownload
+import maven.DownloadParentPoms
+
 import java.nio.file.Path
+
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import ch.epfl.scala.index.data.bintray.{BintrayDownloadPoms, BintrayListPoms, BintrayDownloadSbtPlugins}
-import ch.epfl.scala.index.data.cleanup.NonStandardLib
-import ch.epfl.scala.index.data.elastic.SeedElasticSearch
-import ch.epfl.scala.index.data.github.GithubDownload
-import ch.epfl.scala.index.data.maven.DownloadParentPoms
+
+
 import org.slf4j.LoggerFactory
 
 import scala.sys.process.Process
@@ -79,9 +83,15 @@ object Main {
       Step("elastic")(() => new SeedElasticSearch(paths).run())
     )
 
+    def updateClaims(): Unit = {
+      val githubRepoExtractor = new GithubRepoExtractor(paths)
+      githubRepoExtractor.updateClaims()
+    }
+
     val stepsToRun =
       args.headOption match {
         case Some("all") => steps
+        case Some("updateClaims") => List(Step("updateClaims")(() => updateClaims()))
         case Some(name)  =>
           steps.find(_.name == name)
             .fold(sys.error(s"Unknown step: $name. Available steps are: ${steps.map(_.name).mkString(" ")}."))(List(_))
@@ -131,5 +141,4 @@ object Main {
       else sys.error(s"Command '${args.mkString(" ")}' exited with status $status")
     }
   }
-
 }

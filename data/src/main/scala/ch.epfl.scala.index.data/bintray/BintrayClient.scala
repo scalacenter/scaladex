@@ -15,7 +15,7 @@ import scala.util.control.NonFatal
 
 class BintrayClient(paths: DataPaths) {
 
-  private val bintrayCredentials = {
+  val bintrayCredentials = {
     // from bintray-sbt convention
     // cat ~/.bintray/.credentials
     // host = api.bintray.com

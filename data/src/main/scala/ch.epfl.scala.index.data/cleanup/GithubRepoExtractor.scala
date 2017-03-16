@@ -104,7 +104,7 @@ class GithubRepoExtractor(paths: DataPaths) {
   }
 
   // script to generate contrib/claims.json
-  def run(): Unit = {
+  def updateClaims(): Unit = {
 
     val poms = PomsReader.loadAll(paths).collect { case Success((pom, _, _)) => pom }
 
