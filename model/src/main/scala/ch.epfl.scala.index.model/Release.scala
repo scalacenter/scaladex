@@ -11,8 +11,7 @@ import release._
   * @param description the description of that release
   * @param released first release date
   * @param licenses a bunch of licences
-  * @param nonStandardLib if not using artifactName_scalaVersion convention
-  * @param customScalaDocUrl override javadoc.io scaladoc url
+  * @param artifactKind kind of artifact (whether it uses the convention of being suffixed by the targeted scala version, or it is an sbt plugin)
   * @param id Elastic search id
   * @param scalaDependencies bunch of scala dependencies
   * @param javaDependencies bunch of java dependencies
@@ -26,7 +25,7 @@ case class Release(
     description: Option[String],
     released: Option[String],
     licenses: Set[License],
-    nonStandardLib: Boolean,
+    artifactKind: ArtifactKind,
     id: Option[String],
     liveData: Boolean,
     /* split dependencies in 2 fields because elastic can't handle 2 different types
@@ -47,22 +46,34 @@ case class Release(
     * string representation for sbt dependency
     * @return
     */
-  def sbtInstall = {
+  def sbtInstall: String = {
 
     val scalaJs = reference.target.flatMap(_.scalaJsVersion).isDefined
     val crossFull = reference.target.flatMap(_.scalaVersion.patch).isDefined
 
-    val (artifactOperator, crossSuffix) =
-      if (nonStandardLib) ("%", "")
-      else if (scalaJs) ("%%%", "")
-      else if (crossFull) ("%", " cross CrossVersion.full")
-      else ("%%", "")
+    def libraryDependency(isUnconventional: Boolean): String = {
+      val (artifactOperator, crossSuffix) =
+        if (isUnconventional) ("%", "")
+        else if (scalaJs) ("%%%", "")
+        else if (crossFull) ("%", " cross CrossVersion.full")
+        else ("%%", "")
 
-    List(
-      Some(
-        s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""),
-      resolver.map("resolvers += " + _.sbt)
-    ).flatten.mkString(System.lineSeparator)
+      List(
+        Some(
+          s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""),
+        resolver.map("resolvers += " + _.sbt)
+      ).flatten.mkString(System.lineSeparator)
+    }
+
+    artifactKind match {
+      case ArtifactKind.SbtPlugin =>
+        s"""addSbtPlugin("${maven.groupId}" % "${reference.artifact}" % "${reference.version}")"""
+      case ArtifactKind.UnconventionalScalaLib =>
+        libraryDependency(isUnconventional = true)
+      case ArtifactKind.ConventionalScalaLib =>
+        libraryDependency(isUnconventional = false)
+    }
+
   }
 
   /**
@@ -79,7 +90,7 @@ case class Release(
       |  false)
       |interp.resolvers() = interp.resolvers() :+ res""".stripMargin
 
-    val artifactOperator = if (nonStandardLib) ":" else "::"
+    val artifactOperator = if (artifactKind == ArtifactKind.UnconventionalScalaLib) ":" else "::"
 
     List(
       Some(

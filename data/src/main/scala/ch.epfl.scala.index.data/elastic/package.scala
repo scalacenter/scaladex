@@ -27,7 +27,7 @@ trait ProjectProtocol {
         classOf[ReleaseCandidate],
         classOf[OtherPreRelease],
         classOf[BintrayResolver]
-      )))
+      ))) + artifactKindSerializer
 
   implicit val serialization = native.Serialization
 
@@ -49,6 +49,22 @@ trait ProjectProtocol {
   implicit object ReleaseIndexable extends Indexable[Release] {
     override def json(release: Release): String = write(release)
   }
+
+  lazy val artifactKindSerializer: Serializer[ArtifactKind] =
+    new CustomSerializer[ArtifactKind](formats => {
+      (
+        {
+          case JString("sbt-plugin")     => ArtifactKind.SbtPlugin
+          case JString("conventional")   => ArtifactKind.ConventionalScalaLib
+          case JString("unconventional") => ArtifactKind.UnconventionalScalaLib
+        },
+        {
+          case ArtifactKind.SbtPlugin              => JString("sbt-plugin")
+          case ArtifactKind.ConventionalScalaLib   => JString("conventional")
+          case ArtifactKind.UnconventionalScalaLib => JString("unconventional")
+        }
+      )
+    })
 }
 
 package object elastic extends ProjectProtocol {

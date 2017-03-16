@@ -31,9 +31,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
     *
     * @return The artifact name (without suffix), the Scala target, whether this project is a usual Scala library or not
     */
-  // TODO Return more than a Boolean to describe the kind of artifact: scala library, non-scala library, sbt-plugin
   private def extractArtifactNameAndTarget(
-      pom: ReleaseModel): Option[(String, Option[ScalaTarget], Boolean)] = {
+      pom: ReleaseModel): Option[(String, Option[ScalaTarget], ArtifactKind)] = {
     nonStandardLibs
       .find(
         lib =>
@@ -49,14 +48,14 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
           .flatMap(dep => SemanticVersion(dep.version))
           .map(version =>
             // we assume binary compatibility
-            (pom.artifactId, Some(ScalaTarget.scala(version.copy(patch = None))), true))
+            (pom.artifactId, Some(ScalaTarget.scala(version.copy(patch = None))), ArtifactKind.UnconventionalScalaLib))
 
       case Some(NoScalaTargetPureJavaDependency) =>
-        Some((pom.artifactId, None, false))
+        Some((pom.artifactId, None, ArtifactKind.ConventionalScalaLib))
 
       case Some(ScalaTargetFromVersion) =>
         SemanticVersion(pom.version).map(version =>
-          (pom.artifactId, Some(ScalaTarget.scala(version)), true))
+          (pom.artifactId, Some(ScalaTarget.scala(version)), ArtifactKind.UnconventionalScalaLib))
 
       case None =>
         // This is a usual Scala library (whose artifact name is suffixed by the Scala binary version)
@@ -68,11 +67,11 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
             logger.error("Unable to decode the Scala target")
             None
           }.map { target =>
-            (pom.artifactId, Some(target), true)
+            (pom.artifactId, Some(target), ArtifactKind.SbtPlugin)
           }
         }.orElse {
           Artifact(pom.artifactId).map {
-            case (artifactName, target) => (artifactName, Some(target), false)
+            case (artifactName, target) => (artifactName, Some(target), ArtifactKind.ConventionalScalaLib)
           }
         }
     }
@@ -227,7 +226,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
           cachedReleases.get(projectReference).getOrElse(Set())
 
         val releases = vs.map {
-          case (_, artifactName, target, pom, created, resolver, version, nonStandardLib) =>
+          case (_, artifactName, target, pom, created, resolver, version, artifactKind) =>
             val (targetType, scalaVersion, scalaJsVersion, scalaNativeVersion) =
               ScalaTarget.split(target)
 
@@ -245,7 +244,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
               description = pom.description,
               released = created,
               licenses = licenseCleanup(pom),
-              nonStandardLib = nonStandardLib,
+              artifactKind = artifactKind,
               id = None,
               liveData = false,
               scalaDependencies = Seq(),
