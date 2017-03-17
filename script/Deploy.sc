@@ -76,13 +76,9 @@ def runSlurp(args: String*): String =
     run("unzip", appTarball, "-d", destGitDescribe.toString)
 
     val current = "current"
-    val currentLink = scaladex / name / current
-    if(exists(currentLink)) {
-      rm(currentLink)
-    }
 
     // current -> releases/1.2.3-sha
-    runD("ln", "-s", s"$releases/$gitDescribe", current)(scaladex / name) // relative link
+    runD("ln", "-sf", s"$releases/$gitDescribe", current)(scaladex / name) // relative link
   }
 
   // /usr/bin/sudo -H -u scaladex /home/scaladex/bin/jenkins_redeploy.sh
