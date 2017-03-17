@@ -3,6 +3,7 @@
 [![Travis](https://img.shields.io/travis/scalacenter/scaladex.svg?style=flat-square)](https://travis-ci.org/scalacenter/scaladex)
 [![Gitter](https://img.shields.io/gitter/room/scalacenter/scaladex.svg?style=flat-square)](https://gitter.im/scalacenter/scaladex)
 
+
 ## How it works
 
 We pull poms from Bintray and we receive poms from Maven Central (Sonatype) or to Scaladex directly.
