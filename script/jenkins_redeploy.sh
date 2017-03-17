@@ -51,7 +51,8 @@ then
           -Dconfig.file=/home/scaladex/scaladex-credentials/application.conf \
           /home/scaladex/scaladex-contrib \
           /home/scaladex/scaladex-index \
-          /home/scaladex/scaladex-credentials
+          /home/scaladex/scaladex-credentials \
+          elastic
 
         echo "Starting Webserver"
         nohup /home/scaladex/scaladex/server/current/scaladex/bin/server \
