@@ -10,6 +10,22 @@ id
 echo "Environment:"
 env
 echo "--------------------------------"
+
+echo "========= Indexing ========"
+echo "Not running after $maxdelay seconds, starting it !!!!!"
+cd $RUN_DIR
+echo "Indexing"
+/home/scaladex/scaladex/data/current/data/bin/data \
+  -DELASTICSEARCH=remote \
+  -J-Xms1G \
+  -J-Xmx3G \
+  -Dlogback.configurationFile=/home/scaladex/bin/logback.xml \
+  -Dconfig.file=/home/scaladex/scaladex-credentials/application.conf \
+  elastic \
+  /home/scaladex/scaladex-contrib \
+  /home/scaladex/scaladex-index \
+  /home/scaladex/scaladex-credentials
+
 echo "========= If process is running, Kill it ========"
 [[ -e ${RUN_DIR}/PID ]] && kill $(cat ${RUN_DIR}/PID)
 PID2=$(lsof -i:${LISTENING_PORT} -t)
@@ -40,30 +56,16 @@ done
 
 if [ $IS_SCALADEX_RUNNING = 0 ]
 then
-        echo "Not running after $maxdelay seconds, starting it !!!!!"
-        cd $RUN_DIR
-        echo "Indexing"
-        /home/scaladex/scaladex/data/current/data/bin/data \
-          -DELASTICSEARCH=remote \
-          -J-Xms1G \
-          -J-Xmx3G \
-          -Dlogback.configurationFile=/home/scaladex/bin/logback.xml \
-          -Dconfig.file=/home/scaladex/scaladex-credentials/application.conf \
-          elastic \
-          /home/scaladex/scaladex-contrib \
-          /home/scaladex/scaladex-index \
-          /home/scaladex/scaladex-credentials
-
-        echo "Starting Webserver"
-        nohup /home/scaladex/scaladex/server/current/scaladex/bin/server \
-          -Dlogback.configurationFile=/home/scaladex/bin/logback.xml \
-          -Dconfig.file=/home/scaladex/scaladex-credentials/application.conf\
-          8080 \
-          /home/scaladex/scaladex-contrib \
-          /home/scaladex/scaladex-index \
-          /home/scaladex/scaladex-credentials \
-          > /home/scaladex/run/scaladex.log \
-          2> /home/scaladex/run/scaladex.log &
+  echo "Starting Webserver"
+  nohup /home/scaladex/scaladex/server/current/scaladex/bin/server \
+    -Dlogback.configurationFile=/home/scaladex/bin/logback.xml \
+    -Dconfig.file=/home/scaladex/scaladex-credentials/application.conf\
+    8080 \
+    /home/scaladex/scaladex-contrib \
+    /home/scaladex/scaladex-index \
+    /home/scaladex/scaladex-credentials \
+    > /home/scaladex/run/scaladex.log \
+    2> /home/scaladex/run/scaladex.log &
 fi
 
 echo "======== End =========="
