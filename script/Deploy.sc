@@ -85,15 +85,6 @@ def runSlurp(args: String*): String =
     runD("ln", "-s", s"$releases/$gitDescribe", current)(scaladex / name) // relative link
   }
 
-  // --- Update the index (in case the model changed)
-
-  val dataApp = scaladex / "data" / "current" / "data" / "bin" / "data"
-  val dataJvmArgs = Seq("-DELASTICSEARCH=remote", "-J-Xms1G", "-J-Xmx3G")
-  run(Seq(dataApp.toString, "elastic",
-    contribFolder.toString,
-    indexFolder.toString,
-    credentialsFolder.toString) ++ dataJvmArgs: _*)
-
   // /usr/bin/sudo -H -u scaladex /home/scaladex/bin/jenkins_redeploy.sh
-  // does the rest of the work
+  // does the rest of the work (reindex and run webserver)
 }
