@@ -50,7 +50,7 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
     */
   def writeFiles(data: PublishData): Future[(StatusCode, String)] = {
     if (data.isPom) {
-      logger.debug("Publishing a POM")
+      logger.info("Publishing a POM")
       Future {
         data.writeTemp()
       }.flatMap { _ =>
@@ -58,7 +58,7 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
           case List(Success((pom, _, _))) =>
             getGithubRepo(pom) match {
               case None => {
-                logger.debug("POM saved without Github information")
+                logger.info("POM saved without Github information")
                 data.deleteTemp()
                 Future.successful((NoContent, "No Github Repo"))
               }
@@ -67,7 +67,7 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
                   data.writePom(paths)
                   data.deleteTemp()
                   updateIndex(repo, pom, data).map { _ =>
-                    logger.debug(s"Published ${pom.organization.map(_.name).getOrElse("")} ${pom.artifactId} ${pom.version}")
+                    logger.info(s"Published ${pom.organization.map(_.name).getOrElse("")} ${pom.artifactId} ${pom.version}")
                     (Created, "Published release")
                   }
                 } else {

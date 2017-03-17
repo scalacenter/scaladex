@@ -20,7 +20,7 @@
 
     <logger name="com.sksamuel" level="INFO" />
     <logger name="org.elasticsearch" level="INFO" />
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </root>

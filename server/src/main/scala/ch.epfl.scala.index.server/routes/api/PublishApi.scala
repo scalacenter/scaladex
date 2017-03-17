@@ -122,7 +122,7 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
     } ~
       put {
         path("publish") {
-          logger.debug("Received publish request")
+          logger.info("Received publish request")
           parameters(
             'path,
             'created.as(DateTimeUn) ? DateTime.now,
@@ -135,7 +135,7 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
               extractCredentials { credentials =>
                 authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) {
                   case (credentials, userState) =>
-                    logger.debug(s"path = $path; data = $data")
+                    logger.info(s"path = $path; data = $data")
                     val publishData = impl.PublishData(
                       path,
                       created,

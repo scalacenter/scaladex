@@ -91,7 +91,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
   val routes =
     post {
       path("edit" / Segment / Segment) { (organization, repository) =>
-        logger.debug(s"Saving data of $organization/$repository")
+        logger.info(s"Saving data of $organization/$repository")
         optionalSession(refreshable, usingCookies) { userId =>
           pathEnd {
             formFieldSeq { fields =>

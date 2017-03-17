@@ -121,9 +121,9 @@ object Main {
 
   class Step(val name: String)(effect: () => Unit) {
     def run(): Unit = {
-      logger.debug(s"Starting $name")
+      logger.info(s"Starting $name")
       effect()
-      logger.debug(s"$name done")
+      logger.info(s"$name done")
     }
   }
 
