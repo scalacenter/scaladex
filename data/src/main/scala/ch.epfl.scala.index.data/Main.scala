@@ -38,6 +38,8 @@ object Main {
     *              - Path of the 'index' Git repository
     */
   def main(args: Array[String]): Unit = {
+    println("input: " + args.toString)
+
     implicit val system = ActorSystem()
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
