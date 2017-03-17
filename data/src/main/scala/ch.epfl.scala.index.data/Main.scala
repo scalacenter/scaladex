@@ -38,7 +38,7 @@ object Main {
     *              - Path of the 'index' Git repository
     */
   def main(args: Array[String]): Unit = {
-    println("input: " + args.toString)
+    println("input: " + args.toList.toString)
 
     implicit val system = ActorSystem()
     import system.dispatcher
