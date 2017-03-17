@@ -44,27 +44,27 @@ then
         cd $RUN_DIR
         echo "Indexing"
         /home/scaladex/scaladex/data/current/data/bin/data \
-          -DELASTICSEARCH=remote
+          -DELASTICSEARCH=remote \
           -J-Xms1G \
           -J-Xmx3G \
           -Dlogback.configurationFile=/home/scaladex/bin/logback.xml \
-          -Dconfig.file=/home/scaladex/scaladex-credentials/application.conf > \
+          -Dconfig.file=/home/scaladex/scaladex-credentials/application.conf \
           /home/scaladex/scaladex-contrib \
           /home/scaladex/scaladex-index \
           /home/scaladex/scaladex-credentials \
-          /home/scaladex/run/data.log 2> \
-          /home/scaladex/run/data.log &
+          > /home/scaladex/run/data.log \
+          2> /home/scaladex/run/data.log
 
         echo "Starting Webserver"
         nohup /home/scaladex/scaladex/server/current/scaladex/bin/server \
           -Dlogback.configurationFile=/home/scaladex/bin/logback.xml \
+          -Dconfig.file=/home/scaladex/scaladex-credentials/application.conf\
           8080 \
           /home/scaladex/scaladex-contrib \
           /home/scaladex/scaladex-index \
           /home/scaladex/scaladex-credentials \
-          -Dconfig.file=/home/scaladex/scaladex-credentials/application.conf > \
-          /home/scaladex/run/scaladex.log 2> \
-          /home/scaladex/run/scaladex.log &
+          > /home/scaladex/run/scaladex.log \
+          2> /home/scaladex/run/scaladex.log &
 fi
 
 echo "======== End =========="
