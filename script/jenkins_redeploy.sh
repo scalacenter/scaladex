@@ -51,9 +51,7 @@ then
           -Dconfig.file=/home/scaladex/scaladex-credentials/application.conf \
           /home/scaladex/scaladex-contrib \
           /home/scaladex/scaladex-index \
-          /home/scaladex/scaladex-credentials \
-          > /home/scaladex/run/data.log \
-          2> /home/scaladex/run/data.log
+          /home/scaladex/scaladex-credentials
 
         echo "Starting Webserver"
         nohup /home/scaladex/scaladex/server/current/scaladex/bin/server \

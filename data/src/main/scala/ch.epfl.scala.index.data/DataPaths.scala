@@ -68,6 +68,8 @@ object DataPaths {
 
 class DataPaths(private[DataPaths] val args: List[String]) {
 
+  println("DataPaths args: " + args)
+
   private[data] val (contrib, index, credentials) = args match {
     case List(contrib, index, credentials) => 
       ( 
