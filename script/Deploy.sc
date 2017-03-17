@@ -89,7 +89,10 @@ def runSlurp(args: String*): String =
 
   val dataApp = scaladex / "data" / "current" / "data" / "bin" / "data"
   val dataJvmArgs = Seq("-DELASTICSEARCH=remote", "-J-Xms1G", "-J-Xmx3G")
-  run(Seq(dataApp.toString, "elastic", contribFolder.toString, indexFolder.toString) ++ dataJvmArgs: _*)
+  run(Seq(dataApp.toString, "elastic",
+    contribFolder.toString,
+    indexFolder.toString,
+    credentialsFolder.toString) ++ dataJvmArgs: _*)
 
   // /usr/bin/sudo -H -u scaladex /home/scaladex/bin/jenkins_redeploy.sh
   // does the rest of the work
