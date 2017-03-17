@@ -46,7 +46,7 @@ object Main {
 
     val pathFromArgs =
       if (args.isEmpty) Nil
-      else args.toList.tail
+      else args.toList
 
     val paths = DataPaths(pathFromArgs.take(3))
     val bintray: LocalPomRepository = LocalPomRepository.Bintray
