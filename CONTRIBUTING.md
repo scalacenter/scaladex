@@ -75,9 +75,9 @@ indexing/running the server:
 -- asciiflow.com
 ```
 
-* [Jenkins]: https://scala-webapps.epfl.ch/jenkins/view/scaladex/
-* [scaladex-index.git]: https://github.com/scalacenter/scaladex-index
-* [scaladex-contrib.git]: https://github.com/scalacenter/scaladex-contrib
+* [Jenkins](https://scala-webapps.epfl.ch/jenkins/view/scaladex/)
+* [scaladex-index.git](https://github.com/scalacenter/scaladex-index)
+* [scaladex-contrib.git](https://github.com/scalacenter/scaladex-contrib)
 
 As shown in the above diagram, Scaladex uses two Git repositories 
 (`[scaladex-contrib.git]` and `[scaladex-index.git]`) as persistence mechanisms, 
