@@ -11,6 +11,8 @@ import model.StatusCodes._
 class Badges(dataRepository: DataRepository) {
 
   private val shields = parameters(('color.?, 'style.?, 'logo.?, 'logoWidth.as[Int].?))
+
+  private val shieldsOptionalSubject = shields & parameters('subject.?)
   private val shieldsSubject = shields & parameters('subject)
 
   private def shieldsSvg(rawSubject: String,
@@ -49,7 +51,7 @@ class Badges(dataRepository: DataRepository) {
     get {
       path(Segment / Segment / Segment / "latest.svg") { (organization, repository, artifact) =>
         parameter('target.?) { target =>
-          shields { (color, style, logo, logoWidth) =>
+          shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
             onSuccess(
               dataRepository.projectPage(
                 Project.Reference(organization, repository),
@@ -62,14 +64,14 @@ class Badges(dataRepository: DataRepository) {
             ) {
 
               case Some((_, options)) =>
-                shieldsSvg(artifact,
+                shieldsSvg(subject getOrElse artifact,
                            options.release.reference.version.toString(),
                            color,
                            style,
                            logo,
                            logoWidth)
               case _ =>
-                shieldsSvg(artifact,
+                shieldsSvg(subject getOrElse artifact,
                            "no published release",
                            color orElse Some("lightgrey"),
                            style,
