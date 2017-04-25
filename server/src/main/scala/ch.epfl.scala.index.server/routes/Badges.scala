@@ -82,22 +82,23 @@ class Badges(dataRepository: DataRepository) {
   }
 
   val routes =
-    get {
-      pathPrefix(Segment / Segment) { (organization, repository) =>
-        path(Segment / "latest.svg") { artifact =>
-          latest(organization, repository, Some(artifact))
-        } ~
-          path("latest.svg") {
-            latest(organization, repository, None)
-          }
-      } ~
-        path("count.svg") {
-          parameter('q) { query =>
-            shieldsSubject { (color, style, logo, logoWidth, subject) =>
+    get(
+      concat(
+        pathPrefix(Segment / Segment) { (organization, repository) =>
+          concat(
+            path(Segment / "latest.svg")(artifact =>
+              latest(organization, repository, Some(artifact))),
+            path("latest.svg")(
+              latest(organization, repository, None)
+            )
+          )
+        },
+        path("count.svg")(
+          parameter('q)(query =>
+            shieldsSubject((color, style, logo, logoWidth, subject) =>
               onSuccess(dataRepository.total(query))(count =>
-                shieldsSvg(subject, count.toString, color, style, logo, logoWidth))
-            }
-          }
-        }
-    }
+                shieldsSvg(subject, count.toString, color, style, logo, logoWidth))))
+        )
+      )
+    )
 }
