@@ -6,11 +6,11 @@ import model.Project
 
 case class ProjectForm(
     // project
-    contributorsWanted: Boolean ,
+    contributorsWanted: Boolean,
     keywords: Set[String],
     defaultArtifact: Option[String],
     defaultStableVersion: Boolean,
-    deprecated: Boolean ,
+    deprecated: Boolean,
     artifactDeprecations: Set[String],
     cliArtifacts: Set[String],
     // documentation

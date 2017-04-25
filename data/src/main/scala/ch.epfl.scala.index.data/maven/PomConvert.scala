@@ -116,12 +116,11 @@ private[maven] object PomConvert {
           getName,
           Option(getUrl)
         )
-      },
-      {
+      }, {
         val properties = getProperties.asScala.toMap
         for {
           scalaVersion <- properties.get("scalaVersion")
-          sbtVersion   <- properties.get("sbtVersion")
+          sbtVersion <- properties.get("sbtVersion")
         } yield SbtPluginTarget(scalaVersion, sbtVersion)
       }
     )

@@ -235,19 +235,17 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
   def updateProject(projectRef: Project.Reference, form: ProjectForm): Future[Boolean] = {
     for {
       updatedProject <- project(projectRef).map(_.map(p => form.update(p)))
-      ret <- updatedProject
-        .flatMap { project =>
-            project.id.map { id =>
-              val esUpdate =
-                esClient.execute(update(id) in (indexName / projectsCollection) doc project)
+      ret <- updatedProject.flatMap { project =>
+        project.id.map { id =>
+          val esUpdate =
+            esClient.execute(update(id) in (indexName / projectsCollection) doc project)
 
-              logger.info("Updating live data on the index repository")
-              val indexUpdate = SaveLiveData.saveProject(project, paths)
+          logger.info("Updating live data on the index repository")
+          val indexUpdate = SaveLiveData.saveProject(project, paths)
 
-              esUpdate.zip(indexUpdate).map(_ => true)
-            }
+          esUpdate.zip(indexUpdate).map(_ => true)
         }
-        .getOrElse(Future.successful(false))
+      }.getOrElse(Future.successful(false))
     } yield ret
   }
 

@@ -71,17 +71,17 @@ class DataPaths(private[DataPaths] val args: List[String]) {
   println("DataPaths args: " + args)
 
   private[data] val (contrib, index, credentials) = args match {
-    case List(contrib, index, credentials) => 
-      ( 
+    case List(contrib, index, credentials) =>
+      (
         Paths.get(contrib),
         Paths.get(index),
         Paths.get(credentials)
       )
     case _ => {
       val base = build.info.BuildInfo.baseDirectory.toPath.getParent
-      
-      ( 
-        base.resolve(Paths.get("scaladex-contrib")), 
+
+      (
+        base.resolve(Paths.get("scaladex-contrib")),
         base.resolve(Paths.get("scaladex-index")),
         base.resolve(Paths.get("scaladex-credentials"))
       )

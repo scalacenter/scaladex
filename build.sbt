@@ -17,35 +17,35 @@ lazy val baseSettings = Seq(
 lazy val moveUniversal = taskKey[Unit]("moveUniversal")
 
 lazy val commonSettings = Seq(
-    resolvers += Resolver.typesafeIvyRepo("releases"),
-    scalaVersion := "2.11.8",
-    // 2.12.0
-    // missing
-    //   play-ws
-    scalacOptions := Seq(
-      "-deprecation",
-      "-encoding",
-      "UTF-8",
-      "-feature",
-      "-unchecked",
-      "-Xfatal-warnings",
-      "-Xlint",
-      "-Yinline-warnings",
-      "-Yno-adapted-args",
-      "-Yrangepos",
-      "-Ywarn-dead-code",
-      "-Ywarn-numeric-widen",
-      "-Ywarn-unused-import",
-      "-Ywarn-value-discard",
-      "-Xmax-classfile-name",
-      "78"
-    ),
-    scalacOptions in (Test, console) -= "-Ywarn-unused-import",
-    scalacOptions in (Compile, consoleQuick) -= "-Ywarn-unused-import",
-    libraryDependencies += "org.specs2" %% "specs2-core" % "3.8.6" % "test",
-    scalacOptions in Test ++= Seq("-Yrangepos")
-  ) ++ baseSettings ++
-    addCommandAlias("start", "reStart")
+  resolvers += Resolver.typesafeIvyRepo("releases"),
+  scalaVersion := "2.11.8",
+  // 2.12.0
+  // missing
+  //   play-ws
+  scalacOptions := Seq(
+    "-deprecation",
+    "-encoding",
+    "UTF-8",
+    "-feature",
+    "-unchecked",
+    "-Xfatal-warnings",
+    "-Xlint",
+    "-Yinline-warnings",
+    "-Yno-adapted-args",
+    "-Yrangepos",
+    "-Ywarn-dead-code",
+    "-Ywarn-numeric-widen",
+    "-Ywarn-unused-import",
+    "-Ywarn-value-discard",
+    "-Xmax-classfile-name",
+    "78"
+  ),
+  scalacOptions in (Test, console) -= "-Ywarn-unused-import",
+  scalacOptions in (Compile, consoleQuick) -= "-Ywarn-unused-import",
+  libraryDependencies += "org.specs2" %% "specs2-core" % "3.8.6" % "test",
+  scalacOptions in Test ++= Seq("-Yrangepos")
+) ++ baseSettings ++
+  addCommandAlias("start", "reStart")
 
 lazy val template = project
   .settings(commonSettings)
@@ -97,8 +97,8 @@ lazy val server = project
       val archive = (packageBin in Universal).value
       val dest = file("/home/scaladex/scaladex")
       val destArchive = dest / "universal.zip"
-      if(destArchive.exists) {
-        destArchive.delete       
+      if (destArchive.exists) {
+        destArchive.delete
       }
       IO.copyFile(archive, destArchive)
     },

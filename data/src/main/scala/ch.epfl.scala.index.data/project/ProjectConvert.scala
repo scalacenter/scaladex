@@ -46,9 +46,12 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
             dep.groupId == "org.scala-lang" &&
               dep.artifactId == "scala-library")
           .flatMap(dep => SemanticVersion(dep.version))
-          .map(version =>
-            // we assume binary compatibility
-            (pom.artifactId, Some(ScalaTarget.scala(version.copy(patch = None))), ArtifactKind.UnconventionalScalaLib))
+          .map(
+            version =>
+              // we assume binary compatibility
+              (pom.artifactId,
+               Some(ScalaTarget.scala(version.copy(patch = None))),
+               ArtifactKind.UnconventionalScalaLib))
 
       case Some(NoScalaTargetPureJavaDependency) =>
         Some((pom.artifactId, None, ArtifactKind.ConventionalScalaLib))
@@ -62,16 +65,21 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
         // Or it can be an sbt-plugin published as a maven style. In such a case the Scala target
         // is not suffixed to the artifact name but can be found in the model’s `sbtPluginTarget` member.
         // TODO Store the sbt target too
-        pom.sbtPluginTarget.flatMap { case SbtPluginTarget(scalaVersion, _) =>
-          SemanticVersion(scalaVersion).map(ScalaTarget.scala).orElse {
-            logger.error("Unable to decode the Scala target")
-            None
-          }.map { target =>
-            (pom.artifactId, Some(target), ArtifactKind.SbtPlugin)
-          }
+        pom.sbtPluginTarget.flatMap {
+          case SbtPluginTarget(scalaVersion, _) =>
+            SemanticVersion(scalaVersion)
+              .map(ScalaTarget.scala)
+              .orElse {
+                logger.error("Unable to decode the Scala target")
+                None
+              }
+              .map { target =>
+                (pom.artifactId, Some(target), ArtifactKind.SbtPlugin)
+              }
         }.orElse {
           Artifact(pom.artifactId).map {
-            case (artifactName, target) => (artifactName, Some(target), ArtifactKind.ConventionalScalaLib)
+            case (artifactName, target) =>
+              (artifactName, Some(target), ArtifactKind.ConventionalScalaLib)
           }
         }
     }
@@ -84,7 +92,9 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
     val users = Meta.load(paths, UserProvided).groupBy(_.sha1)
     val central = Meta.load(paths, MavenCentral).groupBy(_.sha1)
     val sbtPluginsCreated =
-      SbtPluginsData(paths).read()._1
+      SbtPluginsData(paths)
+        .read()
+        ._1
         .groupBy(_.sha1)
         .mapValues(_.head.created) // Note: This is inefficient because we already loaded the data earlier and discarded the creation time
 
@@ -409,10 +419,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
 
         val updatedProject =
           if (stored) {
-            storedProjects
-              .get(project.reference)
-              .map(_.update(project))
-              .getOrElse(project)
+            storedProjects.get(project.reference).map(_.update(project)).getOrElse(project)
           } else project
 
         (updatedProject, releasesWithDependencies)

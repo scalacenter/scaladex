@@ -59,15 +59,16 @@ object SaveLiveData extends LiveProjectsProtocol {
     read[LiveProjects](Files.readAllLines(paths.liveProjects).toArray.mkString("")).projects
 
   // Note: we use a future here just to catch exceptions. Our code is blocking, though.
-  def saveProject(project: Project, paths: DataPaths)(implicit ec: ExecutionContext): Future[_] = Future {
-    concurrent.blocking {
-      val keepProjects =
-        LiveProjects(
-          SaveLiveData.storedProjects(paths) + (project.reference -> ProjectForm(project))
-        )
-      logger.info(s"Writing projects at ${paths.liveProjects}")
-      Files.write(paths.liveProjects, writePretty(keepProjects).getBytes(StandardCharsets.UTF_8))
+  def saveProject(project: Project, paths: DataPaths)(implicit ec: ExecutionContext): Future[_] =
+    Future {
+      concurrent.blocking {
+        val keepProjects =
+          LiveProjects(
+            SaveLiveData.storedProjects(paths) + (project.reference -> ProjectForm(project))
+          )
+        logger.info(s"Writing projects at ${paths.liveProjects}")
+        Files.write(paths.liveProjects, writePretty(keepProjects).getBytes(StandardCharsets.UTF_8))
+      }
     }
-  }
 
 }

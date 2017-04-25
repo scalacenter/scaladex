@@ -45,9 +45,9 @@ class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
     */
   private def discover(wsClient: AhcWSClient, page: PomListDownload): WSRequest = {
     val query = page.lastSearchDate.fold(Seq[(String, String)]())(after =>
-        Seq("created_after" -> (after.toLocalDateTime.toString + "Z"))) ++ Seq(
-        "name" -> s"${page.query}*.pom",
-        "start_pos" -> page.page.toString)
+      Seq("created_after" -> (after.toLocalDateTime.toString + "Z"))) ++ Seq(
+      "name" -> s"${page.query}*.pom",
+      "start_pos" -> page.page.toString)
 
     withAuth(wsClient.url(s"$bintrayApi/search/file")).withQueryString(query: _*)
   }
@@ -189,8 +189,8 @@ class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
       Await.result(getNumberOfPages(search, mostRecentQueriedDate), Duration.Inf)
 
     val requestCount = Math
-        .floor(page.numberOfPages.toDouble / page.itemPerPage.toDouble)
-        .toInt + 1
+      .floor(page.numberOfPages.toDouble / page.itemPerPage.toDouble)
+      .toInt + 1
 
     val toDownload = (1 to requestCount)
       .map(p => PomListDownload(search, (p - 1) * page.itemPerPage, mostRecentQueriedDate))

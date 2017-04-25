@@ -121,7 +121,12 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
                          'scalaVersion.?,
                          'scalaJsVersion.?,
                          'scalaNativeVersion.?) {
-                (organization, repository, artifact, targetType, scalaVersion, scalaJsVersion,
+                (organization,
+                 repository,
+                 artifact,
+                 targetType,
+                 scalaVersion,
+                 scalaJsVersion,
                  scalaNativeVersion) =>
                   val reference = Project.Reference(organization, repository)
 

@@ -14,7 +14,6 @@ import java.time.format.DateTimeFormatter
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
-
 import org.slf4j.LoggerFactory
 
 import scala.sys.process.Process
@@ -68,19 +67,14 @@ object Main {
           listPomsStep.run(lib.groupId, lib.artifactId)
         }
       }),
-
       // Download POMs from Bintray
       Step("download")(() => new BintrayDownloadPoms(paths).run()),
-
       // Download parent POMs
       Step("parent")(() => new DownloadParentPoms(bintray, paths).run()),
-
       // Download ivy.xml descriptors of sbt-plugins from Bintray
       Step("download-sbt-plugins")(() => new BintrayDownloadSbtPlugins(paths).run()),
-
       // Download additional information about projects from Github
       Step("github")(() => new GithubDownload(paths).run()),
-
       // Re-create the ElasticSearch index
       Step("elastic")(() => new SeedElasticSearch(paths).run())
     )
@@ -94,10 +88,15 @@ object Main {
       args.headOption match {
         case Some("all") => steps
         case Some("updateClaims") => List(Step("updateClaims")(() => updateClaims()))
-        case Some(name)  =>
-          steps.find(_.name == name)
-            .fold(sys.error(s"Unknown step: $name. Available steps are: ${steps.map(_.name).mkString(" ")}."))(List(_))
-        case None        => sys.error(s"No step to execute. Available steps are: ${steps.map(_.name).mkString(" ")}.")
+        case Some(name) =>
+          steps
+            .find(_.name == name)
+            .fold(sys.error(
+              s"Unknown step: $name. Available steps are: ${steps.map(_.name).mkString(" ")}."))(
+              List(_))
+        case None =>
+          sys.error(
+            s"No step to execute. Available steps are: ${steps.map(_.name).mkString(" ")}.")
       }
 
     inPath(paths.contrib) { sh =>

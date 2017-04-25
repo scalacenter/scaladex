@@ -67,13 +67,17 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
                   data.writePom(paths)
                   data.deleteTemp()
                   updateIndex(repo, pom, data).map { _ =>
-                    logger.info(s"Published ${pom.organization.map(_.name).getOrElse("")} ${pom.artifactId} ${pom.version}")
+                    logger.info(
+                      s"Published ${pom.organization.map(_.name).getOrElse("")} ${pom.artifactId} ${pom.version}")
                     (Created, "Published release")
                   }
                 } else {
-                  logger.info(s"User ${data.userState.user.login} attempted to publish to ${repo.toString}")
+                  logger.info(
+                    s"User ${data.userState.user.login} attempted to publish to ${repo.toString}")
                   data.deleteTemp()
-                  Future.successful((Forbidden, s"${data.userState.user.login} cannot publish to ${repo.toString}"))
+                  Future.successful(
+                    (Forbidden,
+                     s"${data.userState.user.login} cannot publish to ${repo.toString}"))
                 }
               }
             }

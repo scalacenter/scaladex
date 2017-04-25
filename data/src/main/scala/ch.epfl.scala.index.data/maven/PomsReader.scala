@@ -58,7 +58,9 @@ object PomsReader {
   }
 }
 
-private[maven] class PomsReader(pomsPath: Path, parentPomsPath: Path, repository: LocalPomRepository) {
+private[maven] class PomsReader(pomsPath: Path,
+                                parentPomsPath: Path,
+                                repository: LocalPomRepository) {
   import org.apache.maven.model._
   import resolution._
   import io._

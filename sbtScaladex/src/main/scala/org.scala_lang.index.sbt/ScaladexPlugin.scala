@@ -31,19 +31,19 @@ object ScaladexPlugin extends AutoPlugin {
 
     /** define base scaladex options */
     lazy val baseScaladexSettings = Seq(
-        scaladexKeywords := Seq(),
-        scaladexDownloadContributors := true,
-        scaladexDownloadInfo := true,
-        scaladexDownloadReadme := true,
-        scaladexTest := false,
-        scaladexBaseUri := uri("https://index.scala-lang.org")
-      ) ++
-        inConfig(Scaladex)(
-          /** import ivy publishing settings */
-          Classpaths.ivyPublishSettings ++
-            Classpaths.ivyBaseSettings ++
-            Seq(
-              publishTo := {
+      scaladexKeywords := Seq(),
+      scaladexDownloadContributors := true,
+      scaladexDownloadInfo := true,
+      scaladexDownloadReadme := true,
+      scaladexTest := false,
+      scaladexBaseUri := uri("https://index.scala-lang.org")
+    ) ++
+      inConfig(Scaladex)(
+        /** import ivy publishing settings */
+        Classpaths.ivyPublishSettings ++
+          Classpaths.ivyBaseSettings ++
+          Seq(
+            publishTo := {
 
               /** prepare the url to publish on scaladex */
               val baseUri = scaladexBaseUri.value
@@ -65,14 +65,14 @@ object ScaladexPlugin extends AutoPlugin {
 
               Some("Scaladex" at url)
             },
-              publishArtifact in packageBin := true,
-              publishArtifact in packageDoc := true,
-              publishArtifact in packageSrc := true
-            )
-        ) ++ Seq(
-        packagedArtifacts in Scaladex := (packagedArtifacts in Compile).value
-          .filter(_._2.getName.endsWith(".pom"))
-      )
+            publishArtifact in packageBin := true,
+            publishArtifact in packageDoc := true,
+            publishArtifact in packageSrc := true
+          )
+      ) ++ Seq(
+      packagedArtifacts in Scaladex := (packagedArtifacts in Compile).value
+        .filter(_._2.getName.endsWith(".pom"))
+    )
   }
 
   import autoImport._

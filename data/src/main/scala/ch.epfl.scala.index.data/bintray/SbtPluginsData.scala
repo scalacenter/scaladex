@@ -37,7 +37,8 @@ case class SbtPluginsData(paths: DataPaths) extends BintrayProtocol {
     (releases, lastDownload)
   }
 
-  def update(oldReleases: List[SbtPluginReleaseModel], newReleases: List[SbtPluginReleaseModel]): Unit = {
+  def update(oldReleases: List[SbtPluginReleaseModel],
+             newReleases: List[SbtPluginReleaseModel]): Unit = {
     val allReleases = (oldReleases ++ newReleases).distinct
 
     val _ = Files.write(paths.ivysData, write[List[SbtPluginReleaseModel]](allReleases).getBytes)
@@ -46,7 +47,7 @@ case class SbtPluginsData(paths: DataPaths) extends BintrayProtocol {
 }
 
 case class SbtPluginReleaseModel(
-  releaseModel: ReleaseModel,
-  created: String,
-  sha1: String
+    releaseModel: ReleaseModel,
+    created: String,
+    sha1: String
 )

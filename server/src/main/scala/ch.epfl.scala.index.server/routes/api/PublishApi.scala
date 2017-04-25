@@ -55,7 +55,7 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
             }
             case _ => {
               println("not cached")
-              github.getUserStateWithToken(token).map{user => 
+              github.getUserStateWithToken(token).map { user =>
                 githubCredentialsCache(token) = (credentials, user)
                 Some((credentials, user))
               }

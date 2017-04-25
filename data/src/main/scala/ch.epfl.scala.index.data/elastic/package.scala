@@ -54,13 +54,12 @@ trait ProjectProtocol {
     new CustomSerializer[ArtifactKind](formats => {
       (
         {
-          case JString("sbt-plugin")     => ArtifactKind.SbtPlugin
-          case JString("conventional")   => ArtifactKind.ConventionalScalaLib
+          case JString("sbt-plugin") => ArtifactKind.SbtPlugin
+          case JString("conventional") => ArtifactKind.ConventionalScalaLib
           case JString("unconventional") => ArtifactKind.UnconventionalScalaLib
-        },
-        {
-          case ArtifactKind.SbtPlugin              => JString("sbt-plugin")
-          case ArtifactKind.ConventionalScalaLib   => JString("conventional")
+        }, {
+          case ArtifactKind.SbtPlugin => JString("sbt-plugin")
+          case ArtifactKind.ConventionalScalaLib => JString("conventional")
           case ArtifactKind.UnconventionalScalaLib => JString("unconventional")
         }
       )

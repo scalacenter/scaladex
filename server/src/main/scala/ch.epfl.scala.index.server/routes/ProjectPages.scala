@@ -105,8 +105,14 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
                 'cliArtifacts.*,
                 'customScalaDoc.?
               ) {
-                (contributorsWanted, keywords, defaultArtifact, defaultStableVersion, deprecated,
-                 artifactDeprecations, cliArtifacts, customScalaDoc) =>
+                (contributorsWanted,
+                 keywords,
+                 defaultArtifact,
+                 defaultStableVersion,
+                 deprecated,
+                 artifactDeprecations,
+                 cliArtifacts,
+                 customScalaDoc) =>
                   val documentationLinks = {
                     val name = "documentationLinks"
                     val end = "]".head

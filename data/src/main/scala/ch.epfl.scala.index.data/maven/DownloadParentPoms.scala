@@ -14,9 +14,10 @@ import play.api.libs.ws.ahc.AhcWSClient
 
 import scala.util.Failure
 
-class DownloadParentPoms(repository: LocalPomRepository, paths: DataPaths, tmp: Option[Path] = None)(
-    implicit val system: ActorSystem,
-    implicit val materializer: ActorMaterializer)
+class DownloadParentPoms(repository: LocalPomRepository,
+                         paths: DataPaths,
+                         tmp: Option[Path] = None)(implicit val system: ActorSystem,
+                                                   implicit val materializer: ActorMaterializer)
     extends PlayWsDownloader {
 
   assert(repository == LocalPomRepository.MavenCentral || repository == LocalPomRepository.Bintray)

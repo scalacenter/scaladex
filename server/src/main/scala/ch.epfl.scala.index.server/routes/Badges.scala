@@ -47,34 +47,36 @@ class Badges(dataRepository: DataRepository) {
 
   }
 
-  def latest(organization: String, repository: String, artifact: Option[String]) = parameter('target.?) { target =>
-    shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
-      onSuccess(
-        dataRepository.projectPage(
-          Project.Reference(organization, repository),
-          ReleaseSelection.parse(
-            target = target,
-            artifactName = artifact,
-            version = None
+  def latest(organization: String, repository: String, artifact: Option[String]) = {
+    parameter('target.?) { target =>
+      shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
+        onSuccess(
+          dataRepository.projectPage(
+            Project.Reference(organization, repository),
+            ReleaseSelection.parse(
+              target = target,
+              artifactName = artifact,
+              version = None
+            )
           )
-        )
-      ) {
+        ) {
 
-        case Some((_, options)) =>
-          shieldsSvg(subject orElse artifact getOrElse repository,
-                     options.release.reference.version.toString(),
-                     color,
-                     style,
-                     logo,
-                     logoWidth)
-        case _ =>
-          shieldsSvg(subject orElse artifact getOrElse repository,
-                     "no published release",
-                     color orElse Some("lightgrey"),
-                     style,
-                     logo,
-                     logoWidth)
+          case Some((_, options)) =>
+            shieldsSvg(subject orElse artifact getOrElse repository,
+                       options.release.reference.version.toString(),
+                       color,
+                       style,
+                       logo,
+                       logoWidth)
+          case _ =>
+            shieldsSvg(subject orElse artifact getOrElse repository,
+                       "no published release",
+                       color orElse Some("lightgrey"),
+                       style,
+                       logo,
+                       logoWidth)
 
+        }
       }
     }
   }
@@ -85,9 +87,9 @@ class Badges(dataRepository: DataRepository) {
         path(Segment / "latest.svg") { artifact =>
           latest(organization, repository, Some(artifact))
         } ~
-        path("latest.svg") {
-          latest(organization, repository, None)
-        }
+          path("latest.svg") {
+            latest(organization, repository, None)
+          }
       } ~
         path("count.svg") {
           parameter('q) { query =>

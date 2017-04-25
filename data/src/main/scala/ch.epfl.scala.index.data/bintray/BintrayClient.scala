@@ -24,7 +24,7 @@ class BintrayClient(paths: DataPaths) {
 
     val credentials = paths.credentials
 
-    if(Files.exists(credentials) && Files.isDirectory(credentials)) {
+    if (Files.exists(credentials) && Files.isDirectory(credentials)) {
       val nl = System.lineSeparator
       val source = scala.io.Source.fromFile(
         credentials.resolve("search-credentials").toFile
@@ -36,7 +36,7 @@ class BintrayClient(paths: DataPaths) {
           (l.trim, r.drop(2).trim)
         }
         .toMap
-      source.close()      
+      source.close()
       info
     } else Map[String, String]()
   }
@@ -68,15 +68,13 @@ class BintrayClient(paths: DataPaths) {
     * @return The whole resource
     */
   def fetchPaginatedResource[A](
-    fetchPage: Int => Future[WSResponse]
+      fetchPage: Int => Future[WSResponse]
   )(
-    decode: WSResponse => List[A]
-  )(implicit
-    ec: ExecutionContext
-  ): Future[List[A]] = {
+      decode: WSResponse => List[A]
+  )(implicit ec: ExecutionContext): Future[List[A]] = {
     for {
       // Let’s first get the first page
-      firstResponse      <- fetchPage(0)
+      firstResponse <- fetchPage(0)
       // And then get the remaining pages, if any
       remainingResponses <- Future.traverse(remainingPages(firstResponse))(fetchPage)
     } yield {
@@ -91,14 +89,15 @@ class BintrayClient(paths: DataPaths) {
     * @return The list of the remaining queries that have to be performed to get the missing packages
     * @param response Response of the ''first'' query
     */
-  def remainingPages(response: WSResponse): Seq[Int] = (
-    for {
-      total <- response.header("X-RangeLimit-Total").flatMap(s => Try(s.toInt).toOption)
-      count <- response.header("X-RangeLimit-EndPos").flatMap(s => Try(s.toInt).toOption)
-      if count < total
-      remainingPages = (total - 1) / count
-    } yield Seq.tabulate(remainingPages)(page => (page + 1) * count)
-  ).getOrElse(Nil)
+  def remainingPages(response: WSResponse): Seq[Int] =
+    (
+      for {
+        total <- response.header("X-RangeLimit-Total").flatMap(s => Try(s.toInt).toOption)
+        count <- response.header("X-RangeLimit-EndPos").flatMap(s => Try(s.toInt).toOption)
+        if count < total
+        remainingPages = (total - 1) / count
+      } yield Seq.tabulate(remainingPages)(page => (page + 1) * count)
+    ).getOrElse(Nil)
 
   /**
     * @param response The HTTP response that we want to decode

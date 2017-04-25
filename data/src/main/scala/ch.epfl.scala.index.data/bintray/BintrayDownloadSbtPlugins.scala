@@ -25,12 +25,10 @@ import scala.util.{Failure, Success, Try}
 /**
   * Fetches sbt plugins information
   */
-final class BintrayDownloadSbtPlugins(paths: DataPaths)(implicit
-  val materializer: Materializer,
-  val system: ActorSystem
-) extends PlayWsDownloader
+final class BintrayDownloadSbtPlugins(paths: DataPaths)(implicit val materializer: Materializer,
+                                                        val system: ActorSystem)
+    extends PlayWsDownloader
     with BintrayProtocol {
-
 
   val bintrayClient = new BintrayClient(paths)
   import bintrayClient._
@@ -110,22 +108,27 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(implicit
       )
 
     val publicationDate =
-      new DateTime(Option(descriptor.getPublicationDate).getOrElse(sys.error("Missing publication date"))).toString
+      new DateTime(
+        Option(descriptor.getPublicationDate)
+          .getOrElse(sys.error("Missing publication date"))).toString
     SbtPluginReleaseModel(releaseModel, publicationDate, release.sbtRelease.sha1)
   }
 
-  private def fetchNewReleases(lastDownload: Option[String]): Future[List[SbtPluginReleaseWithModuleDescriptor]] =
+  private def fetchNewReleases(
+      lastDownload: Option[String]): Future[List[SbtPluginReleaseWithModuleDescriptor]] =
     managed { client =>
       val lastDownload =
         Try(new String(Files.readAllBytes(paths.ivysLastDownload))).toOption
 
-      Future.traverse(pluginsRepositories)((listSbtPluginReleases(client, lastDownload) _).tupled)
+      Future
+        .traverse(pluginsRepositories)((listSbtPluginReleases(client, lastDownload) _).tupled)
         .map(_.flatten) // Concatenate the plugins of all the `pluginRepositories`
 
-      // TODO Check sha1
+    // TODO Check sha1
 
-    }.andThen { case Success(newReleases) =>
-      writeSbtPluginReleases(newReleases)
+    }.andThen {
+      case Success(newReleases) =>
+        writeSbtPluginReleases(newReleases)
     }
 
   /**
@@ -134,15 +137,18 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(implicit
     * @param subject User or organization name (e.g. "sbt")
     * @param repo    Repository name (e.g. "sbt-plugin-releases")
     */
-  private def listSbtPluginReleases(client: WSClient, lastDownload: Option[String])(subject: String, repo: String): Future[List[SbtPluginReleaseWithModuleDescriptor]] = {
+  private def listSbtPluginReleases(client: WSClient, lastDownload: Option[String])(
+      subject: String,
+      repo: String): Future[List[SbtPluginReleaseWithModuleDescriptor]] = {
 
     def fetchPage(startPos: Int): Future[WSResponse] = {
       val req1 =
-        client.url(s"$bintrayApi/search/file")
+        client
+          .url(s"$bintrayApi/search/file")
           .withQueryString(
-            "name"      -> "ivy.xml", // Releases produce an “ivy.xml” file
-            "subject"   -> subject,
-            "repo"      -> repo,
+            "name" -> "ivy.xml", // Releases produce an “ivy.xml” file
+            "subject" -> subject,
+            "repo" -> repo,
             "start_pos" -> startPos.toString
           )
       val req2 =
@@ -152,14 +158,23 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(implicit
 
     val decode: WSResponse => List[SbtPluginRelease] =
       decodeSucessfulJson { json =>
-        json.extract[List[JValue]]
+        json
+          .extract[List[JValue]]
           .map { json =>
             ((json \ "path").extract[String], (json \ "sha1").extract[String])
           }
           // We filter the results because not all the “ivy.xml” files found describe sbt-plugin releases
           .collect {
             case (path @ sbtPluginPath(org, artifact, scalaVersion, sbtVersion, version), sha1) =>
-              SbtPluginRelease(subject, repo, org, artifact, scalaVersion, sbtVersion, version, path, sha1)
+              SbtPluginRelease(subject,
+                               repo,
+                               org,
+                               artifact,
+                               scalaVersion,
+                               sbtVersion,
+                               version,
+                               path,
+                               sha1)
           }
       }
 
@@ -169,31 +184,34 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(implicit
 
   // **sequentially** downloads module descriptors (if we do it in parallel, bintray rejects us)
   private def sequentiallyFetchModuleDescriptors(
-    client: WSClient,
-    subject: String,
-    repo: String
+      client: WSClient,
+      subject: String,
+      repo: String
   )(
-    releases: List[SbtPluginRelease]
+      releases: List[SbtPluginRelease]
   ): Future[List[SbtPluginReleaseWithModuleDescriptor]] = {
 
     val count = releases.size
     val maybeProgress =
-      if (count > 1) Some(new ProgressBar(s"Downloading descriptors of $subject/$repo", count)) else None
+      if (count > 1) Some(new ProgressBar(s"Downloading descriptors of $subject/$repo", count))
+      else None
 
     maybeProgress.foreach(_.start())
 
-    releases.foldLeft(Future.successful(List.newBuilder[SbtPluginReleaseWithModuleDescriptor])) {
-      case (eventuallyReleases, release) =>
-        for {
-          previousReleases <- eventuallyReleases // The order of these two lines is important!
-          moduleDescriptor <- fetchModuleDescriptor(client)(release)
-          _ = maybeProgress.foreach(_.step())
-        } yield previousReleases += SbtPluginReleaseWithModuleDescriptor(release, moduleDescriptor)
-    }.map { builder =>
-
-      maybeProgress.foreach(_.stop())
-      builder.result()
-    }
+    releases
+      .foldLeft(Future.successful(List.newBuilder[SbtPluginReleaseWithModuleDescriptor])) {
+        case (eventuallyReleases, release) =>
+          for {
+            previousReleases <- eventuallyReleases // The order of these two lines is important!
+            moduleDescriptor <- fetchModuleDescriptor(client)(release)
+            _ = maybeProgress.foreach(_.step())
+          } yield
+            previousReleases += SbtPluginReleaseWithModuleDescriptor(release, moduleDescriptor)
+      }
+      .map { builder =>
+        maybeProgress.foreach(_.stop())
+        builder.result()
+      }
   }
 
   /**
@@ -201,14 +219,20 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(implicit
     * @param client HTTP client
     * @param release Release to find the module descriptor for
     */
-  private def fetchModuleDescriptor(client: WSClient)(release: SbtPluginRelease): Future[ModuleDescriptor] = Future {
-    concurrent.blocking {
-      XmlModuleDescriptorParser.getInstance()
-        .parseDescriptor(new IvySettings(), downloadUrl(release.subject, release.repo, release.ivyPath), /* validate = */ false)
+  private def fetchModuleDescriptor(client: WSClient)(
+      release: SbtPluginRelease): Future[ModuleDescriptor] =
+    Future {
+      concurrent.blocking {
+        XmlModuleDescriptorParser
+          .getInstance()
+          .parseDescriptor(new IvySettings(),
+                           downloadUrl(release.subject, release.repo, release.ivyPath),
+                           /* validate = */ false)
+      }
+    }.andThen {
+      case Failure(t) =>
+        logger.error("Unable to fetch ivy.xml descriptor", t)
     }
-  }.andThen { case Failure(t) =>
-    logger.error("Unable to fetch ivy.xml descriptor", t)
-  }
 
   private def writeSbtPluginReleases(releases: List[SbtPluginReleaseWithModuleDescriptor]): Unit = {
 
@@ -257,20 +281,20 @@ object BintrayDownloadSbtPlugins {
     * @param ivyPath Path of the ivy.xml file
     */
   case class SbtPluginRelease(
-    subject: String,
-    repo: String,
-    organization: String,
-    artifact: String,
-    scalaVersion: String,
-    sbtVersion: String,
-    version: String,
-    ivyPath: String,
-    sha1: String
+      subject: String,
+      repo: String,
+      organization: String,
+      artifact: String,
+      scalaVersion: String,
+      sbtVersion: String,
+      version: String,
+      ivyPath: String,
+      sha1: String
   )
 
   case class SbtPluginReleaseWithModuleDescriptor(
-    sbtRelease: SbtPluginRelease,
-    moduleDescriptor: ModuleDescriptor
+      sbtRelease: SbtPluginRelease,
+      moduleDescriptor: ModuleDescriptor
   )
-  
+
 }
