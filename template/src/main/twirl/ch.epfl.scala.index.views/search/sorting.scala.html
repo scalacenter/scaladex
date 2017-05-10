@@ -57,6 +57,10 @@
         class="btn btn-default @if(params.sorting.contains("forks")) { active }">
         Forks
       </button>
+      <button name="sort" value="contributors" type="submit"
+        class="btn btn-default @if(params.sorting.contains("contributors")) { active }">
+        Contributors
+      </button>
     </div>
   </form>
 </div>

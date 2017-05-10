@@ -12,6 +12,7 @@ import ElasticDsl._
 import ch.epfl.scala.index.data.DataPaths
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.Modifier
 import org.elasticsearch.search.sort.SortOrder
+import org.elasticsearch.script.ScriptService.ScriptType
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,6 +35,8 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
         fieldSort("github.forks") missing "0" order SortOrder.DESC mode MultiMode.Avg
       case Some("dependentCount") =>
         fieldSort("dependentCount") missing "0" order SortOrder.DESC mode MultiMode.Avg
+      case Some("contributors") =>
+        scriptSort(script("contributors_size") scriptType ScriptType.FILE) typed "number" order SortOrder.DESC
       case Some("relevant") => scoreSort
       case Some("created") => fieldSort("created") order SortOrder.DESC
       case Some("updated") => fieldSort("updated") order SortOrder.DESC
