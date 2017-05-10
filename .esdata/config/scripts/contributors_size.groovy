@@ -1,0 +1,1 @@
+if (_source.containsKey('github')) _source['github'].contributors.size() else 0
