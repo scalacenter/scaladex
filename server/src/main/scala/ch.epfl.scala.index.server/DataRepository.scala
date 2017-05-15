@@ -81,13 +81,28 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
       else translated.replaceAllLiterally("/", "\\/")
 
     val targetsQuery =
-      params.targetTypes.map(targetType => bool(should(termQuery("targetType", targetType)))) ++
+      params.targetTypes.map(targetType => bool(must(termQuery("targetType", targetType)))) ++
         params.scalaVersions.map(scalaVersion =>
-          bool(should(termQuery("scalaVersion", scalaVersion)))) ++
+          bool(must(termQuery("scalaVersion", scalaVersion)))) ++
         params.scalaJsVersions.map(scalaJsVersion =>
-          bool(should(termQuery("scalaJsVersion", scalaJsVersion)))) ++
+          bool(must(termQuery("scalaJsVersion", scalaJsVersion)))) ++
         params.scalaNativeVersions.map(scalaNativeVersion =>
-          bool(should(termQuery("scalaNativeVersion", scalaNativeVersion))))
+          bool(must(termQuery("scalaNativeVersion", scalaNativeVersion))))
+
+    val targetQuery = 
+      params.targetFiltering.map(target =>
+
+        List(bool(must(termQuery("scalaVersion", target.scalaVersion.toString)))) ++
+
+        target.scalaJsVersion.map(jsVersion =>
+          List(bool(must(termQuery("scalaJsVersion", target.scalaJsVersion.toString))))
+        ).getOrElse(Nil) ++
+
+        target.scalaNativeVersion.map(nativeVersion =>
+          List(bool(must(termQuery("scalaNativeVersion", target.scalaNativeVersion.toString))))
+        ).getOrElse(Nil)
+
+      ).getOrElse(Nil)
 
     val cliQuery =
       if (cli) List(termQuery("hasCli", true))
@@ -118,7 +133,7 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
 
     functionScoreQuery(
       bool(
-        mustQueries = mustQueriesRepos ++ cliQuery ++ keywordsQuery ++ targetsQuery,
+        mustQueries = mustQueriesRepos ++ cliQuery ++ keywordsQuery ++ targetsQuery ++ targetQuery,
         shouldQueries = List(
           fuzzyQuery("keywords", escaped).boost(2),
           fuzzyQuery("github.description", escaped).boost(1.7),
@@ -146,8 +161,9 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
     }.map(_.totalHits)
   }
 
-  def find(params: SearchParams): Future[(Pagination, List[Project])] =
+  def find(params: SearchParams): Future[(Pagination, List[Project])] = {
     query(getQuery(params), params)
+  }
 
   def releases(project: Project.Reference, selection: ReleaseSelection): Future[List[Release]] = {
     esClient.execute {

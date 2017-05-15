@@ -14,9 +14,6 @@ case class ScalaTarget(
     scalaJsVersion: Option[SemanticVersion],
     scalaNativeVersion: Option[SemanticVersion]
 ) {
-  // def sbt(artifact: String) = {
-  //   artifact + scalaJsVersion.map("_sjs" + _).getOrElse("") + "_" + scalaVersion
-  // }
   def encode: String = ScalaTarget.encode(this)
 
   def render = {

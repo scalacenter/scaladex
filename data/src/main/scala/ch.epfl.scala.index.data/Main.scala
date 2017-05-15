@@ -56,7 +56,7 @@ object Main {
         val listPomsStep = new BintrayListPoms(paths)
 
         // TODO: should be located in a config file
-        val versions = List("2.12", "2.11", "2.10")
+        val versions = List("2.13", "2.12", "2.11", "2.10")
 
         for (version <- versions) {
           listPomsStep.run(version)
