@@ -28,6 +28,7 @@ object GithubReader {
       info.copy(
         readme = readme(paths, github).toOption,
         contributors = contributorList,
+        contributorCount = contributorList.size,
         commits = Some(contributorList.foldLeft(0)(_ + _.contributions))
       )
     }.toOption

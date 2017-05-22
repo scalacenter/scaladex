@@ -2,8 +2,7 @@ target/
 core
 .sass-cache
 .idea
-.esdata/*
-!.esdata/config
+.esdata/
 amm
 sbt
 server/scaladex.log

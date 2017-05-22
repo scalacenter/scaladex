@@ -12,6 +12,7 @@ package ch.epfl.scala.index.model.misc
   * @param watchers number of subscribers to this repo
   * @param issues number of open issues for this repo
   * @param contributors list of contributor profiles
+  * @param contributorCount how many contributors there are, used to sort search results by number of contributors
   * @param commits number of commits, calculated by contributors
   */
 case class GithubInfo(
@@ -24,5 +25,6 @@ case class GithubInfo(
     watchers: Option[Int] = None,
     issues: Option[Int] = None,
     contributors: List[GithubContributor] = List(),
+    contributorCount: Int = 0,
     commits: Option[Int] = None
 )
