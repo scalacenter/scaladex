@@ -1,6 +1,7 @@
 @import ch.epfl.scala.index.model.Project
 @import ch.epfl.scala.index.model.Release
 @import ch.epfl.scala.index.model.misc.{Url, UserInfo}
+@import ch.epfl.scala.index.model.misc.SearchParams
 
 @(keywords: List[(String, Long)],
   targetTypes: List[(String, Long)],
@@ -11,7 +12,9 @@
   mostDependedUpon: List[Project],
   latestReleases: List[Release],
   user: Option[UserInfo],
-  ecosystems: Map[String, String])
+  ecosystems: Map[String, String],
+  totalProjects: Long,
+  totalReleases: Long)
 
 @main(title = "Home", showSearch = false, user) {
 <main id="container-home">
@@ -19,7 +22,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-8 col-md-offset-2">
-                    <h1>The Scala Library Index</h1> @searchinput()
+                    <h1>The Scala Library Index</h1> @searchinput(SearchParams(), false, Some(totalProjects), Some(totalReleases))
                     <ul class="tag">
                         <li><strong>Keywords:</strong></li>
                         @for((keyword, count) <- keywords) {
