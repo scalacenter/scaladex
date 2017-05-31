@@ -1,6 +1,6 @@
 @import ch.epfl.scala.index.model.misc.SearchParams
 
-@(params: SearchParams = SearchParams(), you: Boolean = false)
+@(params: SearchParams = SearchParams(), you: Boolean = false, totalProjects: Option[Long], totalReleases: Option[Long])
 
 <div class="has-feedback">
     <form action="/search" action="GET">
@@ -9,7 +9,7 @@
             value = "@params.queryString"
           }
           name="q" id="search" type="text" class="form-control"
-          placeholder="Search">
+          placeholder="Search @for(projects <- totalProjects; releases <- totalReleases) {within @projects projects and @releases releases}">
         @if(you){
           <input type="hidden" name="you" value="✓">
         }

@@ -328,6 +328,20 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
       .map(addParamsIfMissing(params.scalaNativeVersions))
   }
 
+  def totalProjects(): Future[Long] = {
+    esClient.execute {
+      search
+        .in(indexName / projectsCollection)
+    }.map(_.totalHits)
+  }
+
+  def totalReleases(): Future[Long] = {
+    esClient.execute {
+      search
+        .in(indexName / releasesCollection)
+    }.map(_.totalHits)
+  }
+
   private def addParamsIfMissing(params: List[String])(
       result: List[(String, Long)]): List[(String, Long)] = {
     val pSet = params.toSet

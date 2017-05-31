@@ -3,7 +3,8 @@
 
 @(title: String, showSearch: Boolean, user: Option[UserInfo],
   params: SearchParams = SearchParams(), you: Boolean = false,
-  extraMeta: Seq[HeadMeta] = Seq.empty)(content: Html)
+  extraMeta: Seq[HeadMeta] = Seq.empty,
+  totalProjects: Option[Long] = None, totalReleases: Option[Long])(content: Html)
 
 <!DOCTYPE HTML>
 <html lang="en">
@@ -56,7 +57,7 @@
                     <div class="col-md-10">
 
                         @if(showSearch) {
-                            @searchinput(params, you)
+                            @searchinput(params, you, totalProjects, totalReleases)
                         }
 
                         @user.map{ u =>
