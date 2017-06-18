@@ -15,7 +15,7 @@ case class SearchParams(
     total: Int = SearchParams.resultsPerPage,
     targetFiltering: Option[ScalaTarget] = None,
     cli: Boolean = false,
-    keywords: List[String] = Nil,
+    topics: List[String] = Nil,
     targetTypes: List[String] = Nil,
     scalaVersions: List[String] = Nil,
     scalaJsVersions: List[String] = Nil,

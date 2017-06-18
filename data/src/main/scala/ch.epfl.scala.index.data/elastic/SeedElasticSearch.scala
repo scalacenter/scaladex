@@ -8,6 +8,7 @@ import maven.PomsReader
 import me.tongfei.progressbar._
 
 import com.sksamuel.elastic4s._
+import com.sksamuel.elastic4s.mappings
 import ElasticDsl._
 import mappings.FieldType._
 
@@ -30,7 +31,7 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
     val projectFields = List(
       field("organization").typed(StringType).index("not_analyzed"),
       field("repository").typed(StringType).index("not_analyzed"),
-      field("keywords").typed(StringType).index("not_analyzed"),
+      field("github").typed(ObjectType).inner(field("topics").typed(StringType).index("not_analyzed")),
       field("defaultArtifact").typed(StringType).index("no"),
       field("artifacts").typed(StringType).index("not_analyzed"),
       field("customScalaDoc").typed(StringType).index("no"),

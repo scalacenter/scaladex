@@ -4,11 +4,14 @@ package server
 import model._
 import model.misc._
 import data.project.ProjectForm
+import data.github.{GithubDownload, GithubReader}
 import release._
 import misc.Pagination
 import data.elastic._
 import com.sksamuel.elastic4s._
 import ElasticDsl._
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.data.DataPaths
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.Modifier
 import org.elasticsearch.search.sort.SortOrder
@@ -76,11 +79,12 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
       regex.replaceAllIn(queryString, s"$$1$replacement:")
     }
 
-    val translated = replaceField(queryString, "depends-on", "dependencies")
+    val translated1 = replaceField(queryString, "depends-on", "dependencies")
+    val translated2 = replaceField(translated1, "topics", "github.topics")
 
     val escaped =
-      if (translated.isEmpty) "*"
-      else translated.replaceAllLiterally("/", "\\/")
+      if (translated2.isEmpty) "*"
+      else translated2.replaceAllLiterally("/", "\\/")
 
     val targetsQuery =
       params.targetTypes.map(targetType => bool(must(termQuery("targetType", targetType)))) ++
@@ -110,8 +114,8 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
       if (cli) List(termQuery("hasCli", true))
       else Nil
 
-    val keywordsQuery =
-      params.keywords.map(keyword => bool(should(termQuery("keywords", keyword))))
+    val topicsQuery =
+      params.topics.map(topic => bool(should(termQuery("github.topics", topic))))
 
     val reposQueries = if (!userRepos.isEmpty) {
       userRepos.toList.map {
@@ -135,9 +139,9 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
 
     functionScoreQuery(
       bool(
-        mustQueries = mustQueriesRepos ++ cliQuery ++ keywordsQuery ++ targetsQuery ++ targetQuery,
+        mustQueries = mustQueriesRepos ++ cliQuery ++ topicsQuery ++ targetsQuery ++ targetQuery,
         shouldQueries = List(
-          fuzzyQuery("keywords", escaped).boost(2),
+          fuzzyQuery("github.topics", escaped).boost(2),
           fuzzyQuery("github.description", escaped).boost(1.7),
           fuzzyQuery("repository", escaped),
           fuzzyQuery("organization", escaped),
@@ -240,14 +244,31 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
                   selection: ReleaseSelection): Future[Option[(Project, ReleaseOptions)]] = {
     projectAndReleases(projectRef, selection).map {
       case Some((project, releases)) => {
-        DefaultRelease(project.repository,
+        val updatedProject = liveUpdate(project)
+        DefaultRelease(updatedProject.repository,
                        selection,
                        releases.toSet,
-                       project.defaultArtifact,
-                       project.defaultStableVersion).map(sel => (project, sel))
+                       updatedProject.defaultArtifact,
+                       updatedProject.defaultStableVersion).map(sel => (updatedProject, sel))
       }
       case None => None
     }
+  }
+
+  private def liveUpdate(project: Project): Project = {
+    val repo = new GithubRepo(project.organization, project.repository)
+    implicit val system = ActorSystem()
+    implicit val materializer = ActorMaterializer()
+    new GithubDownload(paths).run(repo, true, true, false)
+    val github = GithubReader(paths, repo)
+    val updatedProject = project.copy(
+      github = github
+    )
+    esClient
+      .execute(
+        update(project.id.get).in(indexName / projectsCollection).doc(updatedProject)
+      )
+    updatedProject
   }
 
   def updateProject(projectRef: Project.Reference, form: ProjectForm): Future[Boolean] = {
@@ -299,8 +320,8 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
     }.map(r => r.as[T].toList)
   }
 
-  def keywords(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {
-    stringAggregations("keywords", params).map(addParamsIfMissing(params.keywords))
+  def topics(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {
+    stringAggregations("github.topics", params).map(addParamsIfMissing(params.topics))
   }
 
   def targetTypes(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {

@@ -21,7 +21,6 @@ Generate a [GitHub personal access token](https://github.com/settings/tokens/new
 Add the following to your build.sbt file:
 
 ```scala
-scaladexKeywords in Scaladex := Seq("Foo", "Bar", "Baz")
 credentials in Scaladex += Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials")
 /*
 realm=Scaladex Realm
@@ -47,11 +46,10 @@ process and verify that you have permission to the defined repository (SCM Tag)
 
 ### Configure the publish process
 
-There are some settings for the Plugin to control the output on Scaladex a bit, like adding keywords, show GitHub info,
-show GitHub Readme file, show GitHub contributors.
+There are some settings for the Plugin to control the output on Scaladex a bit, like showing GitHub info,
+showing GitHub Readme file, showing GitHub contributors.
 
 * **scaladexBaseUri**: This is the main uri to publish to _default_: `https://index.scala-lang.org`
-* **scaladexKeywords**: List of keywords for your artifact _default_: `empty`
 * **scaladexDownloadReadme**: A flag to download the README from GitHub. _default_: `true`
 * **scaladexDownloadInfo**: A flag to download the repository info from GitHub (eg: stars, forks, ...). _default_: `true`
 * **scaladexDownloadContributors**: A flag to download the contributors info from GitHub. _default_: `true`
@@ -91,8 +89,6 @@ PUT /publish
   readme=[true|false] (default: true)
   contributors=[true|false] (default: true)
   info=[true|false] (default: true)
-  keywords=foo (repeated parameter)
-  keywords=bar
 
 GET /publish?
   path=/org/example/foo_2.11/0.8.0/foo_2.11-0.8.0.pom

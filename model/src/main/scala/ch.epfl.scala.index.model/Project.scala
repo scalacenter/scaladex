@@ -9,7 +9,6 @@ import misc.{GithubInfo, GithubRepo}
   * @param organization (ex: typelevel)
   * @param repository (ex: spark)
   * @param github github information representation
-  * @param keywords predefined keywords (ex: database)
   * @param defaultArtifact when we land on a project page (ex: typelevel/cats) specify an artifact to select by default
   * @param defaultStableVersion when selecting a default version avoid preReleases if possible (otherwise select latest version)
   * @param artifacts names for this project (ex: cats-core, cats-free, ...)
@@ -29,7 +28,6 @@ case class Project(
     organization: String,
     repository: String,
     github: Option[GithubInfo] = None,
-    keywords: Set[String] = Set(),
     defaultStableVersion: Boolean = true,
     defaultArtifact: Option[String],
     artifacts: List[String],

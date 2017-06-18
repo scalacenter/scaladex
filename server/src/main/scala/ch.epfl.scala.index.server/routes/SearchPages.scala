@@ -26,7 +26,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
     complete(
       for {
         (pagination, projects) <- find(params)
-        keywords <- keywords(params)
+        topics <- topics(params)
         targetTypes <- targetTypes(params)
         scalaVersions <- scalaVersions(params)
         scalaJsVersions <- scalaJsVersions(params)
@@ -39,7 +39,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
           projects,
           getUser(userId).map(_.user),
           params.userRepos.nonEmpty,
-          keywords,
+          topics,
           targetTypes,
           scalaVersions,
           scalaJsVersions,
@@ -54,7 +54,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
       ('q ? "*",
        'page.as[Int] ? 1,
        'sort.?,
-       'keywords.*,
+       'topics.*,
        'targetTypes.*,
        'scalaVersions.*,
        'scalaJsVersions.*,
@@ -63,7 +63,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
       case (q,
             page,
             sort,
-            keywords,
+            topics,
             targetTypes,
             scalaVersions,
             scalaJsVersions,
@@ -75,7 +75,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
           page,
           sort,
           userRepos,
-          keywords = keywords.toList,
+          topics = topics.toList,
           targetTypes = targetTypes.toList,
           scalaVersions = scalaVersions.toList,
           scalaJsVersions = scalaJsVersions.toList,

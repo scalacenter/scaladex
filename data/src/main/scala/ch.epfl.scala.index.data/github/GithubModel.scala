@@ -18,7 +18,7 @@ case class Repository(
     name: String, // cats
     owner: User,
     `private`: Boolean,
-    description: String,
+    description: Option[String],
     fork: Boolean,
     created_at: String, // format: "2015-01-28T20:26:48Z",
     updated_at: String,
@@ -63,3 +63,32 @@ case class Contributor(
     site_admin: Boolean,
     contributions: Int
 )
+
+
+
+// classes for GraphQL API, https://developer.github.com/v4/reference/
+// note that some classes are missing members, only got ones needed for topics
+
+case class GraphqlTopic(
+    name: String = "",
+    relatedTopics: List[GraphqlTopic] = null
+)
+
+case class GraphqlRepositoryTopic(
+    resourcePath: String = "",
+    topic: GraphqlTopic = null,
+    url: String = ""
+)
+
+case class GraphqlRepositoryTopicConnection(nodes: List[GraphqlRepositoryTopic] = null)
+
+case class GraphqlRepository(
+    name: String = "",
+    description: String = "",
+    repositoryTopics: GraphqlRepositoryTopicConnection = null
+)
+
+// if you want to query starting with anything other than repository, you will have to add it as a member here
+case class GraphqlData(repository: GraphqlRepository = null)
+
+case class GraphqlResult(data: GraphqlData = null)
