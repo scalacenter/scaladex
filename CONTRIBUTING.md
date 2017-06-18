@@ -87,7 +87,7 @@ The `contrib.git` repository is read-only for the Scaladex application
 (users can write on it, on Github).
 
 Data of the `[scaladex-index.git]` repository are written *only* by Scaladex.
-This repository contains the POMs and project information added by users (e.g. keywords).
+This repository contains the POMs and project information added by users.
 
 ## Bintray Data Pipeline
 

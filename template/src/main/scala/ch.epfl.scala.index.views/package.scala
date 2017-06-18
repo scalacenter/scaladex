@@ -41,7 +41,7 @@ package object html {
 
     uri
       .appendQuery("sort", params.sorting)
-      .appendQuery("keywords", params.keywords.toList)
+      .appendQuery("topics", params.topics.toList)
       .appendQuery("targetTypes", params.targetTypes.toList)
       .appendQuery("scalaVersions", params.scalaVersions.toList)
       .appendQuery("scalaJsVersions", params.scalaJsVersions.toList)

@@ -14,6 +14,7 @@ package ch.epfl.scala.index.model.misc
   * @param contributors list of contributor profiles
   * @param contributorCount how many contributors there are, used to sort search results by number of contributors
   * @param commits number of commits, calculated by contributors
+  * @param topics topics associated with the project
   */
 case class GithubInfo(
     readme: Option[String] = None,
@@ -26,5 +27,6 @@ case class GithubInfo(
     issues: Option[Int] = None,
     contributors: List[GithubContributor] = List(),
     contributorCount: Int = 0,
-    commits: Option[Int] = None
+    commits: Option[Int] = None,
+    topics: Set[String] = Set()
 )

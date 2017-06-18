@@ -2,7 +2,7 @@
 @import ch.epfl.scala.index.model.misc.{Pagination, SearchParams}
 
 @(params: SearchParams,
-  keywords: List[(String, Long)],
+  topics: List[(String, Long)],
   targetTypes: List[(String, Long)],
   scalaVersions: List[(String, Long)],
   scalaJsVersions: List[(String, Long)],
@@ -75,17 +75,17 @@
       }
     </fieldset>
     <fieldset>
-      <legend>Keywords</legend>
+      <legend>Topics</legend>
       <ul>
-      @for((keyword, count) <- keywords.toList.sortBy(_._1)) {
+        @for((topic, count) <- topics.toList.sortBy(_._1)) {
         <li>
           <label>
-            <input type="checkbox" @if(params.keywords.contains(keyword)) { checked }
-                   name="keywords" value="@keyword" onclick="this.form.submit()">
-            @keyword (@count)
+            <input type="checkbox" @if(params.topics.contains(topic)) { checked }
+                   name="topics" value="@topic" onclick="this.form.submit()">
+            @topic (@count)
           </label>
         </li>
-      }
+        }
       </ul>
     </fieldset>
 

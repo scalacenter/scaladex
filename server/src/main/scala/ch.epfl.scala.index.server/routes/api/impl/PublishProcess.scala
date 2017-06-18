@@ -170,7 +170,6 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
       cachedReleases = upserts(cachedReleases, projectReference, newReleases)
 
       val updatedProject = newProject.copy(
-        keywords = data.keywords,
         liveData = true
       )
 

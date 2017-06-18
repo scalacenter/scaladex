@@ -25,11 +25,13 @@ object GithubReader {
 
     info(paths, github).map { info =>
       val contributorList = contributors(paths, github).getOrElse(List())
+      val topicsSet = topics(paths, github).getOrElse(List()).toSet
       info.copy(
         readme = readme(paths, github).toOption,
         contributors = contributorList,
         contributorCount = contributorList.size,
-        commits = Some(contributorList.foldLeft(0)(_ + _.contributions))
+        commits = Some(contributorList.foldLeft(0)(_ + _.contributions)),
+        topics = topicsSet
       )
     }.toOption
   }
@@ -56,7 +58,7 @@ object GithubReader {
     val repository = read[Repository](Files.readAllLines(repoInfoPath).toArray.mkString(""))
     GithubInfo(
       homepage = repository.homepage.map(h => Url(h)),
-      description = Some(repository.description),
+      description = repository.description,
       logo = Some(Url(repository.owner.avatar_url)),
       stars = Some(repository.stargazers_count),
       forks = Some(repository.forks),
@@ -81,6 +83,20 @@ object GithubReader {
         Url(contributor.html_url),
         contributor.contributions
       )
+    }
+  }
+
+  /**
+    * extract the topics if they exist
+    * @param github the current repo
+    * @return
+    */
+  def topics(paths: DataPaths, github: GithubRepo): Try[List[String]] = Try {
+
+    val repoTopicsPath = githubRepoTopicsPath(paths, github)
+    val graphqlResult = read[GraphqlResult](Files.readAllLines(repoTopicsPath).toArray.mkString(""))
+    graphqlResult.data.repository.repositoryTopics.nodes.map { node =>
+      node.topic.name
     }
   }
 }

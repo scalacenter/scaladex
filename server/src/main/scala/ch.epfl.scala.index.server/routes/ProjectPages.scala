@@ -31,12 +31,10 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
     val user = userState.map(_.user)
     if (canEdit(owner, repo, userState)) {
       for {
-        keywords <- dataRepository.keywords()
         project <- dataRepository.project(Project.Reference(owner, repo))
       } yield {
         project.map { p =>
-          val allKeywords = (p.keywords ++ keywords.map(_._1).toSet).toList.sorted
-          (OK, views.project.html.editproject(p, allKeywords, user))
+          (OK, views.project.html.editproject(p, user))
         }.getOrElse((NotFound, views.html.notfound(user)))
       }
     } else Future.successful((Forbidden, views.html.forbidden(user)))
@@ -97,7 +95,6 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
             formFieldSeq { fields =>
               formFields(
                 'contributorsWanted.as[Boolean] ? false,
-                'keywords.*,
                 'defaultArtifact.?,
                 'defaultStableVersion.as[Boolean] ? false,
                 'deprecated.as[Boolean] ? false,
@@ -106,7 +103,6 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
                 'customScalaDoc.?
               ) {
                 (contributorsWanted,
-                 keywords,
                  defaultArtifact,
                  defaultStableVersion,
                  deprecated,
@@ -131,7 +127,6 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
                       Project.Reference(organization, repository),
                       ProjectForm(
                         contributorsWanted,
-                        keywords.toSet,
                         defaultArtifact,
                         defaultStableVersion,
                         deprecated,

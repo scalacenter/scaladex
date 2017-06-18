@@ -22,7 +22,6 @@ import java.nio.file.{Files, Path}
   * @param downloadInfo flag for downloading info
   * @param downloadContributors flag for downloading contributors
   * @param downloadReadme flag for downloading the readme file
-  * @param keywords the keywords for the project
   */
 private[api] case class PublishData(
     path: String,
@@ -32,8 +31,7 @@ private[api] case class PublishData(
     userState: UserState,
     downloadInfo: Boolean,
     downloadContributors: Boolean,
-    downloadReadme: Boolean,
-    keywords: Set[String]
+    downloadReadme: Boolean
 ) {
 
   lazy val isPom: Boolean = path matches """.*\.pom"""

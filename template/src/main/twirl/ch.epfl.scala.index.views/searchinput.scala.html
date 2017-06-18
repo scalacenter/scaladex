@@ -13,8 +13,8 @@
         @if(you){
           <input type="hidden" name="you" value="✓">
         }
-        @for(keyword <- params.keywords){
-          <input type="hidden" name="keywords" value="@keyword">
+        @for(topic <- params.topics){
+          <input type="hidden" name="topics" value="@topic">
         }
         @for(tpe <- params.targetTypes){
           <input type="hidden" name="targetTypes" value="@tpe">

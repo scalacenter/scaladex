@@ -7,7 +7,6 @@ import model.Project
 case class ProjectForm(
     // project
     contributorsWanted: Boolean,
-    keywords: Set[String],
     defaultArtifact: Option[String],
     defaultStableVersion: Boolean,
     deprecated: Boolean,
@@ -20,7 +19,6 @@ case class ProjectForm(
   def update(project: Project): Project = {
     project.copy(
       contributorsWanted = contributorsWanted,
-      keywords = keywords,
       defaultArtifact =
         if (defaultArtifact.isDefined) defaultArtifact
         else project.defaultArtifact,
@@ -41,7 +39,6 @@ object ProjectForm {
     import project._
     new ProjectForm(
       contributorsWanted,
-      keywords,
       defaultArtifact,
       defaultStableVersion,
       deprecated,

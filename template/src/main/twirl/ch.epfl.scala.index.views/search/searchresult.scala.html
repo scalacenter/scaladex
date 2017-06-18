@@ -11,7 +11,7 @@
   projects: List[Project],
   user: Option[UserInfo],
   you: Boolean,
-  keywords: List[(String, Long)],
+  topics: List[(String, Long)],
   targetTypes: List[(String, Long)],
   scalaVersions: List[(String, Long)],
   scalaJsVersions: List[(String, Long)],
@@ -20,7 +20,7 @@
   <main id="container-search">
     <div class="container">
       @result(params, uri, pagination, projects,
-              user, you, keywords, targetTypes,
+              user, you, topics, targetTypes,
               scalaVersions, scalaJsVersions, scalaNativeVersions)
       </div>
     </div>

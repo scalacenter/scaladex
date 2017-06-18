@@ -48,12 +48,16 @@
         <div class="col-md-4">
           <div class="stats">
             <div>
-            @for(keyword <- project.keywords) {
-              <span class="item-filter-tag">
-                <a href="/search?q=keywords:@keyword">
-                  @keyword
-                </a>
-              </span>
+            @for(github <- project.github) {
+              @if(!github.topics.isEmpty) {
+                @for(topic <- github.topics) {
+                  <span class="item-filter-tag">
+                    <a href="/search?q=topics:@topic">
+                      @topic
+                    </a>
+                  </span>
+                }
+              }
             }
             </div>
 
