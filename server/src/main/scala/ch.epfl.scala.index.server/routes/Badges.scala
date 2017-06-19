@@ -10,7 +10,8 @@ import model.StatusCodes._
 
 class Badges(dataRepository: DataRepository) {
 
-  private val shields = parameters(('color.?, 'style.?, 'logo.?, 'logoWidth.as[Int].?))
+  private val shields = parameters(
+    ('color.?, 'style.?, 'logo.?, 'logoWidth.as[Int].?))
 
   private val shieldsOptionalSubject = shields & parameters('subject.?)
   private val shieldsSubject = shields & parameters('subject)
@@ -35,8 +36,12 @@ class Badges(dataRepository: DataRepository) {
     // we need a specific encoding
     val query = List(
       style.map(("style", _)),
-      logo.map(l =>
-        ("logo", java.net.URLEncoder.encode(l, "ascii").replaceAllLiterally("+", "%2B"))),
+      logo.map(
+        l =>
+          ("logo",
+           java.net.URLEncoder
+             .encode(l, "ascii")
+             .replaceAllLiterally("+", "%2B"))),
       logoWidth.map(w => ("logoWidth", w.toString))
     ).flatten.map { case (k, v) => k + "=" + v }.mkString("?", "&", "")
 
@@ -47,7 +52,9 @@ class Badges(dataRepository: DataRepository) {
 
   }
 
-  def latest(organization: String, repository: String, artifact: Option[String]) = {
+  def latest(organization: String,
+             repository: String,
+             artifact: Option[String]) = {
     parameter('target.?) { target =>
       shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
         onSuccess(
@@ -94,10 +101,18 @@ class Badges(dataRepository: DataRepository) {
           )
         },
         path("count.svg")(
-          parameter('q)(query =>
-            shieldsSubject((color, style, logo, logoWidth, subject) =>
-              onSuccess(dataRepository.total(query))(count =>
-                shieldsSvg(subject, count.toString, color, style, logo, logoWidth))))
+          parameter('q)(
+            query =>
+              shieldsSubject(
+                (color, style, logo, logoWidth, subject) =>
+                  onSuccess(dataRepository.total(query))(
+                    count =>
+                      shieldsSvg(subject,
+                                 count.toString,
+                                 color,
+                                 style,
+                                 logo,
+                                 logoWidth))))
         )
       )
     )

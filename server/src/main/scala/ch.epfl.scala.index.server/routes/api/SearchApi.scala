@@ -35,12 +35,14 @@ object Api {
   )
 }
 
-class SearchApi(dataRepository: DataRepository)(implicit val executionContext: ExecutionContext) {
+class SearchApi(dataRepository: DataRepository)(
+    implicit val executionContext: ExecutionContext) {
 
-  private def parseScalaTarget(targetType: Option[String],
-                               scalaVersion: Option[String],
-                               scalaJsVersion: Option[String],
-                               scalaNativeVersion: Option[String]): Option[ScalaTarget] = {
+  private def parseScalaTarget(
+      targetType: Option[String],
+      scalaVersion: Option[String],
+      scalaJsVersion: Option[String],
+      scalaNativeVersion: Option[String]): Option[ScalaTarget] = {
     (targetType,
      scalaVersion.flatMap(SemanticVersion.parse),
      scalaJsVersion.flatMap(SemanticVersion.parse),
@@ -53,7 +55,9 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
         Some(ScalaTarget.scalaJs(scalaVersion.binary, scalaJsVersion.binary))
 
       case (Some("NATIVE"), Some(scalaVersion), _, Some(scalaNativeVersion)) =>
-        Some(ScalaTarget.scalaNative(scalaVersion.binary, scalaNativeVersion.binary))
+        Some(
+          ScalaTarget.scalaNative(scalaVersion.binary,
+                                  scalaNativeVersion.binary))
 
       case _ =>
         None
@@ -72,7 +76,12 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
                        'scalaNativeVersion.?,
                        'cli.as[Boolean] ? false) {
 
-              (q, targetType, scalaVersion, scalaJsVersion, scalaNativeVersion, cli) =>
+              (q,
+               targetType,
+               scalaVersion,
+               scalaJsVersion,
+               scalaNativeVersion,
+               cli) =>
                 val scalaTarget =
                   parseScalaTarget(Some(targetType),
                                    Some(scalaVersion),
@@ -131,7 +140,10 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
                   val reference = Project.Reference(organization, repository)
 
                   val scalaTarget =
-                    parseScalaTarget(targetType, scalaVersion, scalaJsVersion, scalaNativeVersion)
+                    parseScalaTarget(targetType,
+                                     scalaVersion,
+                                     scalaJsVersion,
+                                     scalaNativeVersion)
 
                   val selection = new ReleaseSelection(
                     target = scalaTarget,
@@ -150,10 +162,11 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
                     )
                   }
 
-                  complete(dataRepository.projectPage(reference, selection).map {
-                    case Some((_, options)) => (OK, write(convert(options)))
-                    case None => (NotFound, "")
-                  })
+                  complete(
+                    dataRepository.projectPage(reference, selection).map {
+                      case Some((_, options)) => (OK, write(convert(options)))
+                      case None               => (NotFound, "")
+                    })
               }
             }
           } ~
@@ -162,7 +175,11 @@ class SearchApi(dataRepository: DataRepository)(implicit val executionContext: E
               parameter('q) { query =>
                 complete {
                   dataRepository
-                    .find(SearchParams(queryString = query, page = 1, sorting = None, total = 5))
+                    .find(
+                      SearchParams(queryString = query,
+                                   page = 1,
+                                   sorting = None,
+                                   total = 5))
                     .map {
                       case (pagination, projects) =>
                         val summarisedProjects = projects.map(

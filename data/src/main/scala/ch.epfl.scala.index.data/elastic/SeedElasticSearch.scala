@@ -20,7 +20,9 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
     extends ProjectProtocol {
   def run(): Unit = {
 
-    val exists = Await.result(esClient.execute { indexExists(indexName) }, Duration.Inf).isExists()
+    val exists = Await
+      .result(esClient.execute { indexExists(indexName) }, Duration.Inf)
+      .isExists()
 
     if (exists) {
       Await.result(esClient.execute {
@@ -31,7 +33,9 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
     val projectFields = List(
       field("organization").typed(StringType).index("not_analyzed"),
       field("repository").typed(StringType).index("not_analyzed"),
-      field("github").typed(ObjectType).inner(field("topics").typed(StringType).index("not_analyzed")),
+      field("github")
+        .typed(ObjectType)
+        .inner(field("topics").typed(StringType).index("not_analyzed")),
       field("defaultArtifact").typed(StringType).index("no"),
       field("artifacts").typed(StringType).index("not_analyzed"),
       field("customScalaDoc").typed(StringType).index("no"),
@@ -80,7 +84,9 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
     println("loading update data")
     val projectConverter = new ProjectConvert(paths)
     val newData = projectConverter(
-      PomsReader.loadAll(paths).collect { case Success(pomAndMeta) => pomAndMeta }
+      PomsReader.loadAll(paths).collect {
+        case Success(pomAndMeta) => pomAndMeta
+      }
     )
 
     val (projects, projectReleases) = newData.unzip
@@ -91,7 +97,8 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
     val bunch = 1000
     releases.grouped(bunch).foreach { group =>
       Await.result(esClient.execute {
-        bulk(group.map(release => index.into(indexName / releasesCollection).source(release)))
+        bulk(group.map(release =>
+          index.into(indexName / releasesCollection).source(release)))
       }, Duration.Inf)
       progress.stepBy(bunch)
     }
@@ -100,7 +107,8 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
     println(s"Indexing projects (${projects.size})")
     projects.grouped(bunch2).foreach { group =>
       Await.result(esClient.execute {
-        bulk(group.map(project => index.into(indexName / projectsCollection).source(project)))
+        bulk(group.map(project =>
+          index.into(indexName / projectsCollection).source(project)))
       }, Duration.Inf)
     }
 

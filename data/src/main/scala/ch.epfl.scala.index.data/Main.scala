@@ -1,6 +1,10 @@
 package ch.epfl.scala.index.data
 
-import bintray.{BintrayDownloadPoms, BintrayListPoms, BintrayDownloadSbtPlugins}
+import bintray.{
+  BintrayDownloadPoms,
+  BintrayListPoms,
+  BintrayDownloadSbtPlugins
+}
 import cleanup.{NonStandardLib, GithubRepoExtractor}
 import elastic.SeedElasticSearch
 import github.GithubDownload
@@ -72,7 +76,8 @@ object Main {
       // Download parent POMs
       Step("parent")(() => new DownloadParentPoms(bintray, paths).run()),
       // Download ivy.xml descriptors of sbt-plugins from Bintray
-      Step("download-sbt-plugins")(() => new BintrayDownloadSbtPlugins(paths).run()),
+      Step("download-sbt-plugins")(() =>
+        new BintrayDownloadSbtPlugins(paths).run()),
       // Download additional information about projects from Github
       Step("github")(() => new GithubDownload(paths).run()),
       // Re-create the ElasticSearch index
@@ -87,7 +92,8 @@ object Main {
     val stepsToRun =
       args.headOption match {
         case Some("all") => steps
-        case Some("updateClaims") => List(Step("updateClaims")(() => updateClaims()))
+        case Some("updateClaims") =>
+          List(Step("updateClaims")(() => updateClaims()))
         case Some(name) =>
           steps
             .find(_.name == name)
@@ -112,7 +118,10 @@ object Main {
     inPath(paths.index) { sh =>
       logger.info("Saving the updated state to the 'index' repository")
       sh.exec("git", "add", "-A")
-      def now() = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"))
+      def now() =
+        LocalDateTime
+          .now()
+          .format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"))
       sh.exec("git", "commit", "--allow-empty", "-m", '"' +: now() :+ '"')
     }
 
@@ -139,7 +148,9 @@ object Main {
       val process = Process(args, path.toFile)
       val status = process.!
       if (status == 0) ()
-      else sys.error(s"Command '${args.mkString(" ")}' exited with status $status")
+      else
+        sys.error(
+          s"Command '${args.mkString(" ")}' exited with status $status")
     }
   }
 }

@@ -34,9 +34,9 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
 
       val ecosystems = Map(
         "Akka" -> query("topics")("akka",
-                                    "akka-http",
-                                    "akka-persistence",
-                                    "akka-streams"),
+                                  "akka-http",
+                                  "akka-persistence",
+                                  "akka-streams"),
         "Scala.js" -> "search?targets=scala.js_0.6",
         "Spark" -> query("depends-on")("apache/spark-streaming",
                                        "apache/spark-graphx",
@@ -51,7 +51,9 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
       views.html.frontpage(
         topics,
         targetTypes,
-        scalaVersions.filterNot { case (version, _) => excludedScalaVersions.contains(version) },
+        scalaVersions.filterNot {
+          case (version, _) => excludedScalaVersions.contains(version)
+        },
         scalaJsVersions,
         scalaNativeVersions,
         latestProjects,

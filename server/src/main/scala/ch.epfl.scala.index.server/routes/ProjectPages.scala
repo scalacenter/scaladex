@@ -24,18 +24,26 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  private def canEdit(owner: String, repo: String, userState: Option[UserState]) =
-    userState.map(s => s.isAdmin || s.repos.contains(GithubRepo(owner, repo))).getOrElse(false)
+  private def canEdit(owner: String,
+                      repo: String,
+                      userState: Option[UserState]) =
+    userState
+      .map(s => s.isAdmin || s.repos.contains(GithubRepo(owner, repo)))
+      .getOrElse(false)
 
-  private def editPage(owner: String, repo: String, userState: Option[UserState]) = {
+  private def editPage(owner: String,
+                       repo: String,
+                       userState: Option[UserState]) = {
     val user = userState.map(_.user)
     if (canEdit(owner, repo, userState)) {
       for {
         project <- dataRepository.project(Project.Reference(owner, repo))
       } yield {
-        project.map { p =>
-          (OK, views.project.html.editproject(p, user))
-        }.getOrElse((NotFound, views.html.notfound(user)))
+        project
+          .map { p =>
+            (OK, views.project.html.editproject(p, user))
+          }
+          .getOrElse((NotFound, views.html.notfound(user)))
       }
     } else Future.successful((Forbidden, views.html.forbidden(user)))
   }
@@ -113,13 +121,21 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
                     val name = "documentationLinks"
                     val end = "]".head
 
-                    fields.filter { case (key, _) => key.startsWith(name) }.groupBy {
-                      case (key, _) => key.drop("documentationLinks[".length).takeWhile(_ != end)
-                    }.values.map {
-                      case Vector((a, b), (c, d)) =>
-                        if (a.contains("label")) (b, d)
-                        else (d, b)
-                    }.toList
+                    fields
+                      .filter { case (key, _) => key.startsWith(name) }
+                      .groupBy {
+                        case (key, _) =>
+                          key
+                            .drop("documentationLinks[".length)
+                            .takeWhile(_ != end)
+                      }
+                      .values
+                      .map {
+                        case Vector((a, b), (c, d)) =>
+                          if (a.contains("label")) (b, d)
+                          else (d, b)
+                      }
+                      .toList
                   }
 
                   onSuccess(
@@ -157,39 +173,46 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
         } ~
           path(Segment / Segment) { (organization, repository) =>
             optionalSession(refreshable, usingCookies) { userId =>
-              parameters('artifact.?, 'version.?, 'target.?) { (artifact, version, target) =>
-                val rest = (artifact, version) match {
-                  case (Some(a), Some(v)) => s"$a/$v"
-                  case (Some(a), None) => a
-                  case _ => ""
-                }
-                val targetQuery = target match {
-                  case Some(t) => s"?target=$t"
-                  case _ => ""
-                }
-                if (artifact.isEmpty && version.isEmpty) {
-                  complete(
-                    projectPage(organization, repository, target, None, None, getUser(userId)))
-                } else {
-                  redirect(s"/$organization/$repository/$rest$targetQuery",
-                           StatusCodes.PermanentRedirect)
-                }
+              parameters('artifact.?, 'version.?, 'target.?) {
+                (artifact, version, target) =>
+                  val rest = (artifact, version) match {
+                    case (Some(a), Some(v)) => s"$a/$v"
+                    case (Some(a), None)    => a
+                    case _                  => ""
+                  }
+                  val targetQuery = target match {
+                    case Some(t) => s"?target=$t"
+                    case _       => ""
+                  }
+                  if (artifact.isEmpty && version.isEmpty) {
+                    complete(
+                      projectPage(organization,
+                                  repository,
+                                  target,
+                                  None,
+                                  None,
+                                  getUser(userId)))
+                  } else {
+                    redirect(s"/$organization/$repository/$rest$targetQuery",
+                             StatusCodes.PermanentRedirect)
+                  }
               }
             }
           } ~
-          path(Segment / Segment / Segment) { (organization, repository, artifact) =>
-            optionalSession(refreshable, usingCookies) { userId =>
-              parameter('target.?) { target =>
-                complete(
-                  projectPage(organization,
-                              repository,
-                              target,
-                              Some(artifact),
-                              None,
-                              getUser(userId))
-                )
+          path(Segment / Segment / Segment) {
+            (organization, repository, artifact) =>
+              optionalSession(refreshable, usingCookies) { userId =>
+                parameter('target.?) { target =>
+                  complete(
+                    projectPage(organization,
+                                repository,
+                                target,
+                                Some(artifact),
+                                None,
+                                getUser(userId))
+                  )
+                }
               }
-            }
           } ~
           path(Segment / Segment / Segment / Segment) {
             (organization, repository, artifact, version) =>

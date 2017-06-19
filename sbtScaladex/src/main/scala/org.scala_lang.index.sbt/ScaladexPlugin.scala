@@ -18,12 +18,16 @@ object ScaladexPlugin extends AutoPlugin {
     /* defining the Scope Scaladex */
     lazy val Scaladex = config("scaladex") extend Compile
     lazy val scaladexDownloadReadme =
-      settingKey[Boolean]("should we download the readme file from the scm tag")
+      settingKey[Boolean](
+        "should we download the readme file from the scm tag")
     lazy val scaladexDownloadInfo =
-      settingKey[Boolean]("should we download the project info from the scm tag")
+      settingKey[Boolean](
+        "should we download the project info from the scm tag")
     lazy val scaladexDownloadContributors =
-      settingKey[Boolean]("should we download the contributors from the scm tag")
-    lazy val scaladexBaseUri = settingKey[URI]("scaladex server location and path")
+      settingKey[Boolean](
+        "should we download the contributors from the scm tag")
+    lazy val scaladexBaseUri =
+      settingKey[URI]("scaladex server location and path")
     lazy val scaladexTest = settingKey[Boolean]("testing the api")
 
     /** define base scaladex options */
@@ -53,10 +57,12 @@ object ScaladexPlugin extends AutoPlugin {
                 "path" -> "" // need to be at the end!
               )
 
-              val url = baseUri + basePath + params.map {
+              val url = baseUri + basePath + params
+                .map {
 
-                case (k, v) => s"$k=$v"
-              }.mkString("&")
+                  case (k, v) => s"$k=$v"
+                }
+                .mkString("&")
 
               Some("Scaladex" at url)
             },

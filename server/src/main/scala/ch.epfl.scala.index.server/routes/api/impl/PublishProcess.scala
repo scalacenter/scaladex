@@ -27,7 +27,8 @@ import java.io.{PrintWriter, StringWriter}
 
 import org.slf4j.LoggerFactory
 
-private[api] class PublishProcess(paths: DataPaths, dataRepository: DataRepository)(
+private[api] class PublishProcess(paths: DataPaths,
+                                  dataRepository: DataRepository)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer
 ) extends PlayWsDownloader {
@@ -63,12 +64,14 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
                 Future.successful((NoContent, "No Github Repo"))
               }
               case Some(repo) => {
-                if (data.userState.hasPublishingAuthority || data.userState.repos.contains(repo)) {
+                if (data.userState.hasPublishingAuthority || data.userState.repos
+                      .contains(repo)) {
                   data.writePom(paths)
                   data.deleteTemp()
                   updateIndex(repo, pom, data).map { _ =>
-                    logger.info(
-                      s"Published ${pom.organization.map(_.name).getOrElse("")} ${pom.artifactId} ${pom.version}")
+                    logger.info(s"Published ${pom.organization
+                      .map(_.name)
+                      .getOrElse("")} ${pom.artifactId} ${pom.version}")
                     (Created, "Published release")
                   }
                 } else {
@@ -95,8 +98,10 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
         }
       }
     } else {
-      if (data.userState.isSonatype) Future.successful((BadRequest, "Not a POM"))
-      else Future.successful((Created, "ignoring")) // for sbt, ignore SHA1, etc
+      if (data.userState.isSonatype)
+        Future.successful((BadRequest, "Not a POM"))
+      else
+        Future.successful((Created, "ignoring")) // for sbt, ignore SHA1, etc
     }
   }
 
@@ -106,11 +111,14 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
     * @param data the XML String data
     * @return
     */
-  private def getTmpPom(data: PublishData): List[Try[(ReleaseModel, LocalPomRepository, String)]] = {
+  private def getTmpPom(data: PublishData)
+    : List[Try[(ReleaseModel, LocalPomRepository, String)]] = {
     val path = data.tempPath.getParent
 
     val downloadParentPomsStep =
-      new DownloadParentPoms(LocalPomRepository.MavenCentral, paths, Some(path))
+      new DownloadParentPoms(LocalPomRepository.MavenCentral,
+                             paths,
+                             Some(path))
 
     downloadParentPomsStep.run()
 
@@ -142,20 +150,27 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
     * @param data the main publish data
     * @return
     */
-  private def updateIndex(repo: GithubRepo, pom: ReleaseModel, data: PublishData): Future[Unit] = {
+  private def updateIndex(repo: GithubRepo,
+                          pom: ReleaseModel,
+                          data: PublishData): Future[Unit] = {
     println("updating " + pom.artifactId)
 
     new GithubDownload(paths, Some(data.credentials))
-      .run(repo, data.downloadInfo, data.downloadReadme, data.downloadContributors)
+      .run(repo,
+           data.downloadInfo,
+           data.downloadReadme,
+           data.downloadContributors)
 
     val githubRepoExtractor = new GithubRepoExtractor(paths)
     val Some(GithubRepo(organization, repository)) = githubRepoExtractor(pom)
     val projectReference = Project.Reference(organization, repository)
 
-    def updateProjectReleases(project: Option[Project], releases: List[Release]): Future[Unit] = {
+    def updateProjectReleases(project: Option[Project],
+                              releases: List[Release]): Future[Unit] = {
 
       val repository =
-        if (data.userState.hasPublishingAuthority) LocalPomRepository.MavenCentral
+        if (data.userState.hasPublishingAuthority)
+          LocalPomRepository.MavenCentral
         else LocalPomRepository.UserProvided
 
       Meta.append(paths, Meta(data.hash, data.path, data.created), repository)
@@ -179,7 +194,9 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
 
             esClient
               .execute(
-                update(project.id.get).in(indexName / projectsCollection).doc(updatedProject)
+                update(project.id.get)
+                  .in(indexName / projectsCollection)
+                  .doc(updatedProject)
               )
               .map(_ => println("updating project " + pom.artifactId))
           }
@@ -187,7 +204,9 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
           case None =>
             esClient
               .execute(
-                index.into(indexName / projectsCollection).source(updatedProject)
+                index
+                  .into(indexName / projectsCollection)
+                  .source(updatedProject)
               )
               .map(_ => println("inserting project " + pom.artifactId))
         }
@@ -213,7 +232,8 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: DataReposito
 
     for {
       project <- dataRepository.project(projectReference)
-      releases <- dataRepository.releases(projectReference, ReleaseSelection.empty)
+      releases <- dataRepository.releases(projectReference,
+                                          ReleaseSelection.empty)
       _ <- updateProjectReleases(project, releases)
     } yield ()
   }

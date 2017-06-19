@@ -72,7 +72,10 @@ lazy val shared = crossProject
 lazy val sharedJvm = shared.jvm
 lazy val sharedJs = shared.js
 
-lazy val client = project.settings(commonSettings).enablePlugins(ScalaJSPlugin).dependsOn(sharedJs)
+lazy val client = project
+  .settings(commonSettings)
+  .enablePlugins(ScalaJSPlugin)
+  .dependsOn(sharedJs)
 
 lazy val server = project
   .settings(commonSettings)
@@ -102,7 +105,9 @@ lazy val server = project
       }
       IO.copyFile(archive, destArchive)
     },
-    packageBin in Universal := (packageBin in Universal).dependsOn(WebKeys.assets in Assets).value,
+    packageBin in Universal := (packageBin in Universal)
+      .dependsOn(WebKeys.assets in Assets)
+      .value,
     reStart := reStart.dependsOn(WebKeys.assets in Assets).evaluated,
     unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
     javaOptions in reStart += "-Xmx3g",
@@ -154,8 +159,9 @@ lazy val sbtScaladex = project
     name := "sbt-scaladex",
     sbtPlugin := true,
     scalaVersion := "2.10.6",
-    scriptedLaunchOpts := scriptedLaunchOpts.value ++ Seq("-Xmx1024M",
-                                                          "-Dplugin.version=" + version.value),
+    scriptedLaunchOpts := scriptedLaunchOpts.value ++ Seq(
+      "-Xmx1024M",
+      "-Dplugin.version=" + version.value),
     scriptedBufferLog := false,
     bintrayRepository := "sbt-plugins",
     bintrayOrganization := None

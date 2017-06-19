@@ -64,8 +64,6 @@ case class Contributor(
     contributions: Int
 )
 
-
-
 // classes for GraphQL API, https://developer.github.com/v4/reference/
 // note that some classes are missing members, only got ones needed for topics
 
@@ -80,7 +78,8 @@ case class GraphqlRepositoryTopic(
     url: String = ""
 )
 
-case class GraphqlRepositoryTopicConnection(nodes: List[GraphqlRepositoryTopic] = null)
+case class GraphqlRepositoryTopicConnection(
+    nodes: List[GraphqlRepositoryTopic] = null)
 
 case class GraphqlRepository(
     name: String = "",

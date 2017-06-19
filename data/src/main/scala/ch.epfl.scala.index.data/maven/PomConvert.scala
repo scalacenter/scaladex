@@ -84,7 +84,9 @@ private[maven] object PomConvert {
           getVersion,
           getProperties.asScala.toMap,
           Option(getScope),
-          getExclusions.asScala.map(e => Exclusion(e.getGroupId, e.getArtifactId)).toSet
+          getExclusions.asScala
+            .map(e => Exclusion(e.getGroupId, e.getArtifactId))
+            .toSet
         )
       },
       list(getRepositories).map { r =>

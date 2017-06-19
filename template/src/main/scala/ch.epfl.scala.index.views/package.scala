@@ -14,7 +14,9 @@ package object html {
   implicit class QueryAppend(uri: Uri) {
 
     def appendQuery(kv: (String, String)): Uri = uri.withQuery(
-      Query((uri.query(java.nio.charset.Charset.forName("UTF-8")) ++ Vector(kv)): _*)
+      Query(
+        (uri
+          .query(java.nio.charset.Charset.forName("UTF-8")) ++ Vector(kv)): _*)
     )
 
     def appendQuery(k: String, on: Boolean): Uri = {
@@ -29,7 +31,7 @@ package object html {
     def appendQuery(k: String, ov: Option[String]): Uri = {
       ov match {
         case Some(v) => appendQuery(k -> v)
-        case None => uri
+        case None    => uri
       }
     }
   }
@@ -52,15 +54,17 @@ package object html {
   }
 
   // https://www.reddit.com/r/scala/comments/4n73zz/scala_puzzle_gooooooogle_pagination/d41jor5
-  def paginationRender(selected: Int,
-                       max: Int,
-                       toShow: Int = 10): (Option[Int], List[Int], Option[Int]) = {
+  def paginationRender(
+      selected: Int,
+      max: Int,
+      toShow: Int = 10): (Option[Int], List[Int], Option[Int]) = {
     val min = 1
 
     if (selected == max && max == 1) (None, List(1), None)
     else if (!(min to max).contains(selected)) (None, List(), None)
     else {
-      require(max > 0 && selected > 0 && toShow > 0, "all arguments must be positive")
+      require(max > 0 && selected > 0 && toShow > 0,
+              "all arguments must be positive")
 
       val window = (max min toShow) / 2
       val left = selected - window
@@ -72,7 +76,7 @@ package object html {
           (left, right) match {
             case (l, r) if l < min => (min, min + toShow - 1)
             case (l, r) if r > max => (max - toShow + 1, max)
-            case (l, r) => (l, r - 1 + toShow % 2)
+            case (l, r)            => (l, r - 1 + toShow % 2)
           }
         }
 
@@ -107,7 +111,8 @@ package object html {
     out.print(in.parseDateTime(date))
   }
 
-  def sortVersions(versions: Set[String], scala: Boolean = false): List[String] = {
+  def sortVersions(versions: Set[String],
+                   scala: Boolean = false): List[String] = {
     val minVersion = SemanticVersion(2, 10)
     versions.toList
       .flatMap(SemanticVersion.parse)

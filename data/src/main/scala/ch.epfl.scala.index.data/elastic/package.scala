@@ -54,12 +54,12 @@ trait ProjectProtocol {
     new CustomSerializer[ArtifactKind](formats => {
       (
         {
-          case JString("sbt-plugin") => ArtifactKind.SbtPlugin
-          case JString("conventional") => ArtifactKind.ConventionalScalaLib
+          case JString("sbt-plugin")     => ArtifactKind.SbtPlugin
+          case JString("conventional")   => ArtifactKind.ConventionalScalaLib
           case JString("unconventional") => ArtifactKind.UnconventionalScalaLib
         }, {
-          case ArtifactKind.SbtPlugin => JString("sbt-plugin")
-          case ArtifactKind.ConventionalScalaLib => JString("conventional")
+          case ArtifactKind.SbtPlugin              => JString("sbt-plugin")
+          case ArtifactKind.ConventionalScalaLib   => JString("conventional")
           case ArtifactKind.UnconventionalScalaLib => JString("unconventional")
         }
       )
@@ -80,7 +80,9 @@ package object elastic extends ProjectProtocol {
       val base = build.info.BuildInfo.baseDirectory.toPath
       println(base.resolve(".esdata").toString())
       val esSettings =
-        Settings.settingsBuilder().put("path.home", base.resolve(".esdata").toString())
+        Settings
+          .settingsBuilder()
+          .put("path.home", base.resolve(".esdata").toString())
       ElasticClient.local(esSettings.build)
     } else {
       sys.error(
@@ -108,9 +110,12 @@ package object elastic extends ProjectProtocol {
 
     blockUntil("Expected cluster to have yellow status") { () =>
       val status =
-        esClient.execute {
-          get cluster health
-        }.await.getStatus
+        esClient
+          .execute {
+            get cluster health
+          }
+          .await
+          .getStatus
 
       status == ClusterHealthStatus.YELLOW ||
       status == ClusterHealthStatus.GREEN

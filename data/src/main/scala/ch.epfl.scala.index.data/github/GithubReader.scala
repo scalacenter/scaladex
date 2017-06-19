@@ -55,7 +55,8 @@ object GithubReader {
   def info(paths: DataPaths, github: GithubRepo): Try[GithubInfo] = Try {
 
     val repoInfoPath = githubRepoInfoPath(paths, github)
-    val repository = read[Repository](Files.readAllLines(repoInfoPath).toArray.mkString(""))
+    val repository =
+      read[Repository](Files.readAllLines(repoInfoPath).toArray.mkString(""))
     GithubInfo(
       homepage = repository.homepage.map(h => Url(h)),
       description = repository.description,
@@ -72,10 +73,12 @@ object GithubReader {
     * @param github the current repo
     * @return
     */
-  def contributors(paths: DataPaths, github: GithubRepo): Try[List[GithubContributor]] = Try {
+  def contributors(paths: DataPaths,
+                   github: GithubRepo): Try[List[GithubContributor]] = Try {
 
     val repoInfoPath = githubRepoContributorsPath(paths, github)
-    val repository = read[List[Contributor]](Files.readAllLines(repoInfoPath).toArray.mkString(""))
+    val repository = read[List[Contributor]](
+      Files.readAllLines(repoInfoPath).toArray.mkString(""))
     repository.map { contributor =>
       GithubContributor(
         contributor.login,
@@ -94,7 +97,8 @@ object GithubReader {
   def topics(paths: DataPaths, github: GithubRepo): Try[List[String]] = Try {
 
     val repoTopicsPath = githubRepoTopicsPath(paths, github)
-    val graphqlResult = read[GraphqlResult](Files.readAllLines(repoTopicsPath).toArray.mkString(""))
+    val graphqlResult = read[GraphqlResult](
+      Files.readAllLines(repoTopicsPath).toArray.mkString(""))
     graphqlResult.data.repository.repositoryTopics.nodes.map { node =>
       node.topic.name
     }

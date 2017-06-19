@@ -69,7 +69,8 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
             scalaJsVersions,
             scalaNativeVersions,
             you) =>
-        val userRepos = you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set())
+        val userRepos =
+          you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set())
         SearchParams(
           q,
           page,
@@ -98,7 +99,8 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
           optionalSession(refreshable, usingCookies) { userId =>
             searchParams(userId) { params =>
               search(
-                params.copy(queryString = s"${params.queryString} AND organization:$organization"),
+                params.copy(queryString =
+                  s"${params.queryString} AND organization:$organization"),
                 userId,
                 organization
               )

@@ -4,7 +4,9 @@ object SemanticVersionTests extends org.specs2.mutable.Specification {
   "semantic versionning" >> {
     "ordering" >> {
       def order(versions: List[String]): List[SemanticVersion] =
-        versions.flatMap(v => parseVersion(v)).sorted(Descending[SemanticVersion])
+        versions
+          .flatMap(v => parseVersion(v))
+          .sorted(Descending[SemanticVersion])
 
       "small" >> {
         val versions = List(
@@ -140,7 +142,8 @@ object SemanticVersionTests extends org.specs2.mutable.Specification {
 
       // relaxed semantic version
       "major.minor.patch.patch2" >> {
-        parseVersion("1.2.3.4") ==== Some(SemanticVersion(1, 2, Some(3), Some(4)))
+        parseVersion("1.2.3.4") ==== Some(
+          SemanticVersion(1, 2, Some(3), Some(4)))
       }
 
       "major.minor.patch-rc" >> {
@@ -182,7 +185,10 @@ object SemanticVersionTests extends org.specs2.mutable.Specification {
     }
   }
 
-  private def parseVersion(v: String): Option[SemanticVersion] = SemanticVersion(v)
-  private def binary(v: String): Option[String] = SemanticVersion(v).map(_.binary.toString)
-  private def full(v: String): Option[String] = SemanticVersion(v).map(_.toString)
+  private def parseVersion(v: String): Option[SemanticVersion] =
+    SemanticVersion(v)
+  private def binary(v: String): Option[String] =
+    SemanticVersion(v).map(_.binary.toString)
+  private def full(v: String): Option[String] =
+    SemanticVersion(v).map(_.toString)
 }

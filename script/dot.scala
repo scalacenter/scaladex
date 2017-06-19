@@ -22,19 +22,22 @@ object A {
   )
 
   val links = releases
-    .flatMap(
-      release =>
-        release.scalaDependencies
-          .filter(_.scope != Some("test"))
-          .filter(d => !testOrLogging.contains(d.reference.name))
-          .map(dep => release.reference.projectReference -> dep.reference.projectReference))
+    .flatMap(release =>
+      release.scalaDependencies
+        .filter(_.scope != Some("test"))
+        .filter(d => !testOrLogging.contains(d.reference.name))
+        .map(dep =>
+          release.reference.projectReference -> dep.reference.projectReference))
     .toSet
 
   val nl = System.lineSeparator
-  val linksOut = links.map {
-    case (model.Project.Reference(o1, r1), model.Project.Reference(o2, r2)) =>
-      s"""  "$o1/$r1" -> "$o2/$r2";"""
-  }.mkString("digraph G{" + nl, nl, nl + "}")
+  val linksOut = links
+    .map {
+      case (model.Project.Reference(o1, r1),
+            model.Project.Reference(o2, r2)) =>
+        s"""  "$o1/$r1" -> "$o2/$r2";"""
+    }
+    .mkString("digraph G{" + nl, nl, nl + "}")
 
   import java.nio.file._
   import java.nio.charset.StandardCharsets

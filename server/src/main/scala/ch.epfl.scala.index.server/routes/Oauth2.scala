@@ -54,12 +54,15 @@ class OAuth2(github: Github, session: GithubUserSession) {
             pathEnd {
               parameters('code, 'state.?) { (code, state) =>
                 onSuccess(github.getUserStateWithOauth2(code)) { userState =>
-                  setSession(refreshable, usingCookies, session.addUser(userState)) {
+                  setSession(refreshable,
+                             usingCookies,
+                             session.addUser(userState)) {
                     setNewCsrfToken(checkHeader) { ctx =>
                       ctx.complete(
                         HttpResponse(
                           status = TemporaryRedirect,
-                          headers = headers.Location(Uri(state.getOrElse("/"))) :: Nil,
+                          headers = headers
+                            .Location(Uri(state.getOrElse("/"))) :: Nil,
                           entity = HttpEntity.Empty
                         )
                       )

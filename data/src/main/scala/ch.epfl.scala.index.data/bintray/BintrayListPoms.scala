@@ -25,8 +25,9 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
-class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
-                                        implicit val materializer: ActorMaterializer)
+class BintrayListPoms(paths: DataPaths)(
+    implicit val system: ActorSystem,
+    implicit val materializer: ActorMaterializer)
     extends BintrayProtocol
     with PlayWsDownloader {
 
@@ -43,33 +44,38 @@ class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
     * @param page the page credentials to download
     * @return
     */
-  private def discover(wsClient: AhcWSClient, page: PomListDownload): WSRequest = {
+  private def discover(wsClient: AhcWSClient,
+                       page: PomListDownload): WSRequest = {
     val query = page.lastSearchDate.fold(Seq[(String, String)]())(after =>
       Seq("created_after" -> (after.toLocalDateTime.toString + "Z"))) ++ Seq(
       "name" -> s"${page.query}*.pom",
       "start_pos" -> page.page.toString)
 
-    withAuth(wsClient.url(s"$bintrayApi/search/file")).withQueryString(query: _*)
+    withAuth(wsClient.url(s"$bintrayApi/search/file"))
+      .withQueryString(query: _*)
   }
 
   /** Fetch bintray first, to find out the number of pages and items to iterate
     * them over
     */
-  def getNumberOfPages(query: String,
-                       lastCheckDate: Option[DateTime]): Future[InternalBintrayPagination] = {
+  def getNumberOfPages(
+      query: String,
+      lastCheckDate: Option[DateTime]): Future[InternalBintrayPagination] = {
     val client = wsClient
     val request = discover(client, PomListDownload(query, 0, lastCheckDate))
 
-    request.get.flatMap { response =>
-      if (200 == response.status) {
-        Future.successful {
-          InternalBintrayPagination(
-            response.header("X-RangeLimit-Total").map(_.toInt).getOrElse(0))
+    request.get
+      .flatMap { response =>
+        if (200 == response.status) {
+          Future.successful {
+            InternalBintrayPagination(
+              response.header("X-RangeLimit-Total").map(_.toInt).getOrElse(0))
+          }
+        } else {
+          Future.failed(new Exception(response.statusText))
         }
-      } else {
-        Future.failed(new Exception(response.statusText))
       }
-    }.map(v => { client.close(); v })
+      .map(v => { client.close(); v })
   }
 
   /**
@@ -79,7 +85,8 @@ class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
     * @param response the current response
     * @return
     */
-  def processSearch(page: PomListDownload, response: WSResponse): List[BintraySearch] = {
+  def processSearch(page: PomListDownload,
+                    response: WSResponse): List[BintraySearch] = {
     try {
       parse(response.body).extract[List[BintraySearch]]
     } catch {
@@ -144,7 +151,8 @@ class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
 
     /* the filter to make sure only this artifact get's added */
     def filter(bintray: BintraySearch): Boolean = {
-      bintray.path.startsWith(groupId.replaceAllLiterally(".", "/") + "/" + artifact)
+      bintray.path.startsWith(
+        groupId.replaceAllLiterally(".", "/") + "/" + artifact)
     }
 
     val mostRecentQueriedDate = queried.find(filter).map(_.created - 2.month)
@@ -180,20 +188,25 @@ class BintrayListPoms(paths: DataPaths)(implicit val system: ActorSystem,
 
       filter match {
         case Some(f) => bintray.filter(f)
-        case None => bintray
+        case None    => bintray
       }
     }
 
     /* check first how many pages there are */
     val page: InternalBintrayPagination =
-      Await.result(getNumberOfPages(search, mostRecentQueriedDate), Duration.Inf)
+      Await.result(getNumberOfPages(search, mostRecentQueriedDate),
+                   Duration.Inf)
 
     val requestCount = Math
       .floor(page.numberOfPages.toDouble / page.itemPerPage.toDouble)
       .toInt + 1
 
     val toDownload = (1 to requestCount)
-      .map(p => PomListDownload(search, (p - 1) * page.itemPerPage, mostRecentQueriedDate))
+      .map(
+        p =>
+          PomListDownload(search,
+                          (p - 1) * page.itemPerPage,
+                          mostRecentQueriedDate))
       .toSet
 
     /* fetch all data from bintray */

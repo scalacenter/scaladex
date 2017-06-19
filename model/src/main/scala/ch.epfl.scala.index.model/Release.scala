@@ -90,7 +90,8 @@ case class Release(
       |  false)
       |interp.resolvers() = interp.resolvers() :+ res""".stripMargin
 
-    val artifactOperator = if (artifactKind == ArtifactKind.UnconventionalScalaLib) ":" else "::"
+    val artifactOperator =
+      if (artifactKind == ArtifactKind.UnconventionalScalaLib) ":" else "::"
 
     List(
       Some(
@@ -141,7 +142,8 @@ case class Release(
     }
   }
 
-  def documentationURLs(documentationLinks: List[(String, String)]): List[(String, String)] = {
+  def documentationURLs(
+      documentationLinks: List[(String, String)]): List[(String, String)] = {
     documentationLinks.map { case (label, url) => (label, evalLink(url)) }
   }
 
@@ -164,7 +166,9 @@ case class Release(
     * ordered scala dependencies - tests last
     */
   lazy val orderedDependencies = {
-    val (a, b) = scalaDependencies.sortBy(_.reference.name).partition(_.scope.contains("test"))
+    val (a, b) = scalaDependencies
+      .sortBy(_.reference.name)
+      .partition(_.scope.contains("test"))
     b.groupBy(b => b).values.flatten.toList ++ a
   }
 
@@ -174,7 +178,9 @@ case class Release(
     */
   lazy val orderedJavaDependencies = {
 
-    val (a, b) = javaDependencies.sortBy(_.reference.name).partition(_.scope.contains("test"))
+    val (a, b) = javaDependencies
+      .sortBy(_.reference.name)
+      .partition(_.scope.contains("test"))
     b.groupBy(b => b).values.flatten.toList ++ a
   }
 
@@ -218,7 +224,8 @@ case class Release(
     * @param dep current looking dependency
     * @return
     */
-  def versionsForReverseDependencies(dep: ScalaDependency): Seq[SemanticVersion] = {
+  def versionsForReverseDependencies(
+      dep: ScalaDependency): Seq[SemanticVersion] = {
 
     orderedReverseDependencies
       .filter(d => d.reference.name == dep.reference.name)

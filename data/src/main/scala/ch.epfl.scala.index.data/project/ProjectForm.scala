@@ -29,7 +29,9 @@ case class ProjectForm(
       hasCli = cliArtifacts.nonEmpty,
       // documentation
       customScalaDoc = customScalaDoc.filterNot(_ == ""),
-      documentationLinks = documentationLinks.filterNot { case (_, link) => link == "" }
+      documentationLinks = documentationLinks.filterNot {
+        case (_, link) => link == ""
+      }
     )
   }
 }

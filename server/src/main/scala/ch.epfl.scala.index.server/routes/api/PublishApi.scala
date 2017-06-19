@@ -22,7 +22,9 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.Future
 import scala.collection.mutable.{Map => MMap}
 
-class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Github)(
+class PublishApi(paths: DataPaths,
+                 dataRepository: DataRepository,
+                 github: Github)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer) {
 
@@ -41,7 +43,8 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
     case Credentials.Provided(username) => {
       credentialsHeader match {
         case Some(cred) => {
-          val upw = new String(new sun.misc.BASE64Decoder().decodeBuffer(cred.token()))
+          val upw = new String(
+            new sun.misc.BASE64Decoder().decodeBuffer(cred.token()))
           val userPass = upw.split(":")
 
           val token = userPass(1)
@@ -94,9 +97,15 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
   import scala.concurrent.duration._
   implicit val timeout = Timeout(40.seconds)
   private val actor =
-    system.actorOf(Props(classOf[impl.PublishActor], paths, dataRepository, system, materializer))
+    system.actorOf(
+      Props(classOf[impl.PublishActor],
+            paths,
+            dataRepository,
+            system,
+            materializer))
 
-  private val githubCredentialsCache = MMap.empty[String, (GithubCredentials, UserState)]
+  private val githubCredentialsCache =
+    MMap.empty[String, (GithubCredentials, UserState)]
 
   val DateTimeUn = Unmarshaller.strict[String, DateTime] { dateRaw =>
     new DateTime(dateRaw.toLong * 1000L)
@@ -114,7 +123,7 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
              */
             dataRepository.maven(mavenPathExtractor(path)) map {
               case Some(release) => (OK, "release already exists")
-              case None => (NotFound, "ok to publish")
+              case None          => (NotFound, "ok to publish")
             }
           }
         }
@@ -132,7 +141,8 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
           ) { (path, created, readme, contributors, info) =>
             entity(as[String]) { data =>
               extractCredentials { credentials =>
-                authenticateBasicAsync(realm = "Scaladex Realm", githubAuthenticator(credentials)) {
+                authenticateBasicAsync(realm = "Scaladex Realm",
+                                       githubAuthenticator(credentials)) {
                   case (credentials, userState) =>
                     logger.info(s"path = $path; data = $data")
                     val publishData = impl.PublishData(
@@ -146,7 +156,10 @@ class PublishApi(paths: DataPaths, dataRepository: DataRepository, github: Githu
                       readme
                     )
 
-                    complete((actor ? publishData).mapTo[(StatusCode, String)].map(s => s))
+                    complete(
+                      (actor ? publishData)
+                        .mapTo[(StatusCode, String)]
+                        .map(s => s))
                 }
               }
             }

@@ -11,8 +11,9 @@ import akka.stream.ActorMaterializer
 import play.api.libs.ws.{WSRequest, WSResponse}
 import play.api.libs.ws.ahc.AhcWSClient
 
-class BintrayDownloadPoms(paths: DataPaths)(implicit val system: ActorSystem,
-                                            implicit val materializer: ActorMaterializer)
+class BintrayDownloadPoms(paths: DataPaths)(
+    implicit val system: ActorSystem,
+    implicit val materializer: ActorMaterializer)
     extends PlayWsDownloader {
 
   private val bintrayPomBase = paths.poms(LocalPomRepository.Bintray)
@@ -36,7 +37,8 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit val system: ActorSystem,
   def verifyChecksum(toVerify: String, sha1: String) = {
 
     val md = java.security.MessageDigest.getInstance("SHA-1")
-    val computed = md.digest(toVerify.getBytes("UTF-8")).map("%02x".format(_)).mkString
+    val computed =
+      md.digest(toVerify.getBytes("UTF-8")).map("%02x".format(_)).mkString
 
     computed == sha1
   }
@@ -63,7 +65,8 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit val system: ActorSystem,
 
     BintrayMeta
       .load(paths)
-      .filter(s => !Files.exists(pomPath(s)) || !verifySHA1FileHash(pomPath(s), s.sha1))
+      .filter(s =>
+        !Files.exists(pomPath(s)) || !verifySHA1FileHash(pomPath(s), s.sha1))
       .groupBy(_.sha1) // remove duplicates with sha1
       .map { case (_, vs) => vs.head }
       .toSet
@@ -86,12 +89,14 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit val system: ActorSystem,
     * @param search the bintray Search
     * @return
     */
-  private def downloadRequest(wsClient: AhcWSClient, search: BintraySearch): WSRequest = {
+  private def downloadRequest(wsClient: AhcWSClient,
+                              search: BintraySearch): WSRequest = {
 
     if (search.isJCenter) {
       wsClient.url(escape(s"https://jcenter.bintray.com/${search.path}"))
     } else {
-      wsClient.url(escape(s"https://dl.bintray.com/${search.owner}/${search.repo}/${search.path}"))
+      wsClient.url(escape(
+        s"https://dl.bintray.com/${search.owner}/${search.repo}/${search.path}"))
     }
   }
 
@@ -100,7 +105,8 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit val system: ActorSystem,
     * @param search the bintray search
     * @param response the download response
     */
-  private def processPomDownload(search: BintraySearch, response: WSResponse): Unit = {
+  private def processPomDownload(search: BintraySearch,
+                                 response: WSResponse): Unit = {
 
     if (200 == response.status) {
 

@@ -35,7 +35,11 @@ package object github extends Parsers {
     */
   def extractLastPage(links: String): Int = {
     val pattern = """page=([0-9]+)>; rel=["]?([a-z]+)["]?""".r
-    val pages = pattern.findAllIn(links).matchData.map(x => x.group(2) -> x.group(1).toInt).toMap
+    val pages = pattern
+      .findAllIn(links)
+      .matchData
+      .map(x => x.group(2) -> x.group(1).toInt)
+      .toMap
     pages.getOrElse("last", 1)
   }
 }
