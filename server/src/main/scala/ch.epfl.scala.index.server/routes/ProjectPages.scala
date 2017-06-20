@@ -101,15 +101,16 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
         optionalSession(refreshable, usingCookies) { userId =>
           pathEnd {
             formFieldSeq { fields =>
-              formFields((
-                'contributorsWanted.as[Boolean] ? false,
-                'defaultArtifact.?,
-                'defaultStableVersion.as[Boolean] ? false,
-                'deprecated.as[Boolean] ? false,
-                'artifactDeprecations.*,
-                'cliArtifacts.*,
-                'customScalaDoc.?
-              )) {
+              formFields(
+                (
+                  'contributorsWanted.as[Boolean] ? false,
+                  'defaultArtifact.?,
+                  'defaultStableVersion.as[Boolean] ? false,
+                  'deprecated.as[Boolean] ? false,
+                  'artifactDeprecations.*,
+                  'cliArtifacts.*,
+                  'customScalaDoc.?
+                )) {
                 (contributorsWanted,
                  defaultArtifact,
                  defaultStableVersion,

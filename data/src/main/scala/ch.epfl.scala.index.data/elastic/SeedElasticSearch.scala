@@ -8,7 +8,6 @@ import maven.PomsReader
 import me.tongfei.progressbar._
 
 import com.sksamuel.elastic4s.ElasticDsl._
-// import com.sksamuel.elastic4s.mappings.FieldType._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
@@ -46,11 +45,13 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
     )
 
     val releasesFields = List(
-      nestedField("reference").fields(
-        keywordField("organization"),
-        keywordField("repository"),
-        keywordField("artifact")
-      ).includeInAll(true),
+      nestedField("reference")
+        .fields(
+          keywordField("organization"),
+          keywordField("repository"),
+          keywordField("artifact")
+        )
+        .includeInAll(true),
       nestedField("maven").fields(
         keywordField("groupId"),
         keywordField("artifactId"),

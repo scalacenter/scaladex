@@ -65,7 +65,8 @@ class GithubDownload(paths: DataPaths,
     privateCredentials
       .map(cred =>
         request.addHttpHeaders("Authorization" -> s"token ${cred.token}"))
-      .getOrElse(request.addHttpHeaders("Authorization" -> s"token $credentials"))
+      .getOrElse(
+        request.addHttpHeaders("Authorization" -> s"token $credentials"))
   }
 
   /**
@@ -88,7 +89,8 @@ class GithubDownload(paths: DataPaths,
   def applyReadmeHeaders(request: WSRequest): WSRequest = {
 
     applyBasicHeaders(
-      request.addHttpHeaders("Accept" -> "application/vnd.github.VERSION.html"))
+      request.addHttpHeaders(
+        "Accept" -> "application/vnd.github.VERSION.html"))
   }
 
   /**

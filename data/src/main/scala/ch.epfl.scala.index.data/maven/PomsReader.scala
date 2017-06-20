@@ -28,7 +28,6 @@ object PomsReader {
       paths: DataPaths): List[Try[(ReleaseModel, LocalRepository, String)]] = {
     import LocalPomRepository._
 
-
     val centralPoms = PomsReader(MavenCentral, paths).load()
     val centralShas = centralPoms.collect { case Success((_, _, sha)) => sha }.toSet
 
