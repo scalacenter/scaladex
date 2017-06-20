@@ -11,15 +11,17 @@ import data.elastic._
 import data.github._
 import data.maven.{DownloadParentPoms, ReleaseModel, PomsReader}
 import data.project.ProjectConvert
+
 import model.misc.GithubRepo
 import model.{Project, Release}
 import model.release.ReleaseSelection
+
+import com.sksamuel.elastic4s.ElasticDsl._
+
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.StatusCode
-import com.sksamuel.elastic4s._
-import ElasticDsl._
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -204,8 +206,7 @@ private[api] class PublishProcess(paths: DataPaths,
           case None =>
             esClient
               .execute(
-                index
-                  .into(indexName / projectsCollection)
+                indexInto(indexName / projectsCollection)
                   .source(updatedProject)
               )
               .map(_ => println("inserting project " + pom.artifactId))
@@ -216,8 +217,7 @@ private[api] class PublishProcess(paths: DataPaths,
           // create new release
           esClient
             .execute(
-              index
-                .into(indexName / releasesCollection)
+              indexInto(indexName / releasesCollection)
                 .source(
                   newReleases.head.copy(liveData = true)
                 ))

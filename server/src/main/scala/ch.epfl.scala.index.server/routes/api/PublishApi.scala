@@ -132,13 +132,13 @@ class PublishApi(paths: DataPaths,
       put {
         path("publish") {
           logger.info("Received publish request")
-          parameters(
+          parameters((
             'path,
             'created.as(DateTimeUn) ? DateTime.now,
             'readme.as[Boolean] ? true,
             'contributors.as[Boolean] ? true,
             'info.as[Boolean] ? true
-          ) { (path, created, readme, contributors, info) =>
+          )) { (path, created, readme, contributors, info) =>
             entity(as[String]) { data =>
               extractCredentials { credentials =>
                 authenticateBasicAsync(realm = "Scaladex Realm",

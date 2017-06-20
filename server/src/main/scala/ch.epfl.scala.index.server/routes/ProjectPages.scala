@@ -101,7 +101,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
         optionalSession(refreshable, usingCookies) { userId =>
           pathEnd {
             formFieldSeq { fields =>
-              formFields(
+              formFields((
                 'contributorsWanted.as[Boolean] ? false,
                 'defaultArtifact.?,
                 'defaultStableVersion.as[Boolean] ? false,
@@ -109,7 +109,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
                 'artifactDeprecations.*,
                 'cliArtifacts.*,
                 'customScalaDoc.?
-              ) {
+              )) {
                 (contributorsWanted,
                  defaultArtifact,
                  defaultStableVersion,
@@ -173,7 +173,7 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
         } ~
           path(Segment / Segment) { (organization, repository) =>
             optionalSession(refreshable, usingCookies) { userId =>
-              parameters('artifact.?, 'version.?, 'target.?) {
+              parameters(('artifact.?, 'version.?, 'target.?)) {
                 (artifact, version, target) =>
                   val rest = (artifact, version) match {
                     case (Some(a), Some(v)) => s"$a/$v"
