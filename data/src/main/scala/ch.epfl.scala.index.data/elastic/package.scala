@@ -5,18 +5,18 @@ import model._
 import release._
 
 import com.sksamuel.elastic4s._
-import com.sksamuel.elastic4s.ElasticDsl.{get, _}
+import com.sksamuel.elastic4s.embedded.LocalNode
+import com.sksamuel.elastic4s.ElasticDsl._
 import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.cluster.health.ClusterHealthStatus
-import source.Indexable
 
 import org.json4s._
 import org.json4s.native.Serialization
-import org.json4s.native.Serialization.{read, write}
+import org.json4s.native.Serialization.{read => nread, write => nwrite}
 
 import com.typesafe.config.ConfigFactory
 
-// import java.nio.file.Paths
+import scala.util.{Try, Success}
 
 trait ProjectProtocol {
 
@@ -29,25 +29,30 @@ trait ProjectProtocol {
         classOf[BintrayResolver]
       ))) + artifactKindSerializer
 
-  implicit val serialization = native.Serialization
+  // implicit val serialization = native.Serialization
 
-  implicit object ProjectAs extends HitAs[Project] {
+  private def tryEither[T](f: T): Either[Throwable, T] = {
+    Try(f).transform(s => Success(Right(s)),f => Success(Left(f))).get
+  }
 
-    override def as(hit: RichSearchHit): Project =
-      read[Project](hit.sourceAsString).copy(id = Some(hit.getId))
+  implicit object ProjectAs extends HitReader[Project] {
+
+    override def read(hit: Hit): Either[Throwable, Project] =
+      tryEither(nread[Project](hit.sourceAsString).copy(id = Some(hit.id)))
   }
 
   implicit object ProjectIndexable extends Indexable[Project] {
-    override def json(project: Project): String = write(project)
+    override def json(project: Project): String = nwrite(project)
   }
 
-  implicit object ReleaseAs extends HitAs[Release] {
-    override def as(hit: RichSearchHit): Release =
-      read[Release](hit.sourceAsString).copy(id = Some(hit.getId))
+  implicit object ReleaseAs extends HitReader[Release] {
+
+    override def read(hit: Hit): Either[Throwable, Release] =
+      tryEither(nread[Release](hit.sourceAsString).copy(id = Some(hit.id)))
   }
 
   implicit object ReleaseIndexable extends Indexable[Release] {
-    override def json(release: Release): String = write(release)
+    override def json(release: Release): String = nwrite(release)
   }
 
   lazy val artifactKindSerializer: Serializer[ArtifactKind] =
@@ -75,15 +80,17 @@ package object elastic extends ProjectProtocol {
 
     println(s"elasticsearch $elasticsearch")
     if (elasticsearch == "remote") {
-      ElasticClient.transport(ElasticsearchClientUri("localhost", 9300))
+      TcpClient.transport(ElasticsearchClientUri("localhost", 9300))
     } else if (elasticsearch == "local") {
       val base = build.info.BuildInfo.baseDirectory.toPath
       println(base.resolve(".esdata").toString())
       val esSettings =
         Settings
-          .settingsBuilder()
+          .builder()
           .put("path.home", base.resolve(".esdata").toString())
-      ElasticClient.local(esSettings.build)
+          .build()
+
+      LocalNode(esSettings).elastic4sclient()
     } else {
       sys.error(
         s"org.scala_lang.index.data.elasticsearch should be remote or local: $elasticsearch")
@@ -106,13 +113,13 @@ package object elastic extends ProjectProtocol {
       require(done, s"Failed waiting on: $explain")
     }
 
-    import ElasticDsl._
+    // import ElasticDsl._
 
     blockUntil("Expected cluster to have yellow status") { () =>
       val status =
         esClient
           .execute {
-            get cluster health
+            clusterHealth()
           }
           .await
           .getStatus

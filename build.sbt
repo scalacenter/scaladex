@@ -1,10 +1,14 @@
 import ScalaJSHelper._
 import org.scalajs.sbtplugin.cross.CrossProject
 
-lazy val akkaVersion = "2.4.11"
-lazy val upickleVersion = "0.4.1"
-lazy val scalatagsVersion = "0.6.1"
-lazy val autowireVersion = "0.2.5"
+val akkaVersion = "2.5.2"
+val upickleVersion = "0.4.4"
+val scalatagsVersion = "0.6.5"
+val autowireVersion = "0.2.6"
+val akkaHttpVersion = "10.0.6"
+val elastic4sVersion = "5.4.5"
+
+def akkaHttpCore = "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
 
 val nscalaTime = "com.github.nscala-time" %% "nscala-time" % "2.14.0"
 val logback = "ch.qos.logback" % "logback-classic" % "1.1.7"
@@ -18,10 +22,7 @@ lazy val moveUniversal = taskKey[Unit]("moveUniversal")
 
 lazy val commonSettings = Seq(
   resolvers += Resolver.typesafeIvyRepo("releases"),
-  scalaVersion := "2.11.8",
-  // 2.12.0
-  // missing
-  //   play-ws
+  scalaVersion := "2.12.2",
   scalacOptions := Seq(
     "-deprecation",
     "-encoding",
@@ -30,7 +31,6 @@ lazy val commonSettings = Seq(
     "-unchecked",
     "-Xfatal-warnings",
     "-Xlint",
-    "-Yinline-warnings",
     "-Yno-adapted-args",
     "-Yrangepos",
     "-Ywarn-dead-code",
@@ -50,11 +50,11 @@ lazy val commonSettings = Seq(
 lazy val template = project
   .settings(commonSettings)
   .settings(
-    scalacOptions -= "-Ywarn-unused-import",
+    scalacOptions -= "-Xfatal-warnings",
     libraryDependencies ++= Seq(
       nscalaTime,
       "com.typesafe" % "config" % "1.3.1",
-      "com.typesafe.akka" %% "akka-http-core" % akkaVersion
+      akkaHttpCore
     )
   )
   .dependsOn(model)
@@ -83,10 +83,9 @@ lazy val server = project
   .settings(
     libraryDependencies ++= Seq(
       logback,
-      "com.typesafe.akka" %% "akka-http-experimental" % akkaVersion,
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
-      "ch.megard" %% "akka-http-cors" % "0.1.8",
-      "com.softwaremill.akka-http-session" %% "core" % "0.2.7",
+      "ch.megard" %% "akka-http-cors" % "0.2.1",
+      "com.softwaremill.akka-http-session" %% "core" % "0.4.0",
       "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
       "org.webjars.bower" % "bootstrap-sass" % "3.3.6",
       "org.webjars.bower" % "bootstrap-switch" % "3.3.2",
@@ -129,13 +128,14 @@ lazy val data = project
     libraryDependencies ++= Seq(
       nscalaTime,
       logback,
-      "com.sksamuel.elastic4s" %% "elastic4s-core" % "2.4.0",
+      "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
+      "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion,
       "com.typesafe.akka" %% "akka-stream" % akkaVersion,
       "org.json4s" %% "json4s-native" % "3.4.2",
       "me.tongfei" % "progressbar" % "0.4.0",
       "org.apache.maven" % "maven-model-builder" % "3.3.9",
       "org.jsoup" % "jsoup" % "1.10.1",
-      "com.typesafe.play" %% "play-ws" % "2.5.9",
+      "com.typesafe.play" %% "play-ahc-ws" % "2.6.0-RC2",
       "org.apache.ivy" % "ivy" % "2.4.0"
     ),
     buildInfoPackage := "build.info",

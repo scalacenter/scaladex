@@ -155,7 +155,7 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
       val req1 =
         client
           .url(s"$bintrayApi/search/file")
-          .withQueryString(
+          .withQueryStringParameters(
             "name" -> "ivy.xml", // Releases produce an “ivy.xml” file
             "subject" -> subject,
             "repo" -> repo,
@@ -163,7 +163,7 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
           )
       val req2 =
         lastDownload.fold(req1)(date =>
-          req1.withQueryString("created_after" -> date))
+          req1.withQueryStringParameters("created_after" -> date))
       withAuth(req2).get()
     }
 
