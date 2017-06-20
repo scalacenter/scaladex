@@ -7,10 +7,8 @@ import maven.PomsReader
 
 import me.tongfei.progressbar._
 
-import com.sksamuel.elastic4s._
-import com.sksamuel.elastic4s.mappings
-import ElasticDsl._
-import mappings.FieldType._
+import com.sksamuel.elastic4s.ElasticDsl._
+// import com.sksamuel.elastic4s.mappings.FieldType._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
@@ -31,48 +29,45 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
     }
 
     val projectFields = List(
-      field("organization").typed(StringType).index("not_analyzed"),
-      field("repository").typed(StringType).index("not_analyzed"),
-      field("github")
-        .typed(ObjectType)
-        .inner(field("topics").typed(StringType).index("not_analyzed")),
-      field("defaultArtifact").typed(StringType).index("no"),
-      field("artifacts").typed(StringType).index("not_analyzed"),
-      field("customScalaDoc").typed(StringType).index("no"),
-      field("artifactDeprecations").typed(StringType).index("no"),
-      field("cliArtifacts").typed(StringType).index("no"),
-      field("created").typed(DateType),
-      field("updated").typed(DateType),
-      field("targets").typed(StringType).index("not_analyzed"),
-      field("dependencies").typed(StringType).index("not_analyzed")
+      keywordField("organization"),
+      keywordField("repository"),
+      keywordField("defaultArtifact").index(false),
+      keywordField("artifacts"),
+      keywordField("customScalaDoc").index(false),
+      keywordField("artifactDeprecations").index(false),
+      keywordField("cliArtifacts").index(false),
+      keywordField("targets"),
+      keywordField("dependencies"),
+      nestedField("github").fields(
+        keywordField("topics")
+      ),
+      dateField("created"),
+      dateField("updated")
     )
 
     val releasesFields = List(
-      field("reference")
-        .nested(
-          field("organization").typed(StringType).index("not_analyzed"),
-          field("repository").typed(StringType).index("not_analyzed"),
-          field("artifact").typed(StringType).index("not_analyzed")
-        )
-        .includeInRoot(true),
-      field("maven").nested(
-        field("groupId").typed(StringType).index("not_analyzed"),
-        field("artifactId").typed(StringType).index("not_analyzed"),
-        field("version").typed(StringType).index("not_analyzed")
+      nestedField("reference").fields(
+        keywordField("organization"),
+        keywordField("repository"),
+        keywordField("artifact")
+      ).includeInAll(true),
+      nestedField("maven").fields(
+        keywordField("groupId"),
+        keywordField("artifactId"),
+        keywordField("version")
       ),
-      field("released").typed(DateType),
-      field("version").typed(StringType).index("not_analyzed"),
-      field("targetType").typed(StringType).index("not_analyzed"),
-      field("scalaVersion").typed(StringType).index("not_analyzed"),
-      field("scalaJsVersion").typed(StringType).index("not_analyzed"),
-      field("scalaNativeVersion").typed(StringType).index("not_analyzed")
+      keywordField("version"),
+      keywordField("targetType"),
+      keywordField("scalaVersion"),
+      keywordField("scalaJsVersion"),
+      keywordField("scalaNativeVersion"),
+      dateField("released")
     )
 
     println("creating index")
     Await.result(
       esClient.execute {
-        create
-          .index(indexName)
+        createIndex(indexName)
           .mappings(
             mapping(projectsCollection).fields(projectFields: _*),
             mapping(releasesCollection).fields(releasesFields: _*)
@@ -98,7 +93,7 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
     releases.grouped(bunch).foreach { group =>
       Await.result(esClient.execute {
         bulk(group.map(release =>
-          index.into(indexName / releasesCollection).source(release)))
+          indexInto(indexName / releasesCollection).source(release)))
       }, Duration.Inf)
       progress.stepBy(bunch)
     }
@@ -108,7 +103,7 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
     projects.grouped(bunch2).foreach { group =>
       Await.result(esClient.execute {
         bulk(group.map(project =>
-          index.into(indexName / projectsCollection).source(project)))
+          indexInto(indexName / projectsCollection).source(project)))
       }, Duration.Inf)
     }
 

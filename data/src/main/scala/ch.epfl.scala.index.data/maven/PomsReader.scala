@@ -27,7 +27,7 @@ object PomsReader {
   def loadAll(
       paths: DataPaths): List[Try[(ReleaseModel, LocalRepository, String)]] = {
     import LocalPomRepository._
-    val localRepositories = List(Bintray, MavenCentral, UserProvided)
+
 
     val centralPoms = PomsReader(MavenCentral, paths).load()
     val centralShas = centralPoms.collect { case Success((_, _, sha)) => sha }.toSet

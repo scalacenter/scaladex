@@ -64,8 +64,8 @@ class GithubDownload(paths: DataPaths,
 
     privateCredentials
       .map(cred =>
-        request.withHeaders("Authorization" -> s"token ${cred.token}"))
-      .getOrElse(request.withHeaders("Authorization" -> s"token $credentials"))
+        request.addHttpHeaders("Authorization" -> s"token ${cred.token}"))
+      .getOrElse(request.addHttpHeaders("Authorization" -> s"token $credentials"))
   }
 
   /**
@@ -76,7 +76,7 @@ class GithubDownload(paths: DataPaths,
     */
   def applyAcceptJsonHeaders(request: WSRequest): WSRequest =
     applyBasicHeaders(
-      request.withHeaders("Accept" -> "application/json")
+      request.addHttpHeaders("Accept" -> "application/json")
     )
 
   /**
@@ -88,7 +88,7 @@ class GithubDownload(paths: DataPaths,
   def applyReadmeHeaders(request: WSRequest): WSRequest = {
 
     applyBasicHeaders(
-      request.withHeaders("Accept" -> "application/vnd.github.VERSION.html"))
+      request.addHttpHeaders("Accept" -> "application/vnd.github.VERSION.html"))
   }
 
   /**
@@ -134,16 +134,16 @@ class GithubDownload(paths: DataPaths,
     * @param response the response
     * @return
     */
-  private def processIssuesResponse(repo: GithubRepo,
-                                    response: WSResponse): Unit = {
+  // private def processIssuesResponse(repo: GithubRepo,
+  //                                   response: WSResponse): Unit = {
 
-    if (200 == response.status) {
+  //   if (200 == response.status) {
 
-      saveJson(githubRepoIssuesPath(paths, repo), repo, response.body)
-    }
+  //     saveJson(githubRepoIssuesPath(paths, repo), repo, response.body)
+  //   }
 
-    ()
-  }
+  //   ()
+  // }
 
   /**
     * Convert contributor response to a List of Contributors
@@ -330,11 +330,10 @@ class GithubDownload(paths: DataPaths,
     * @param repo the current repository
     * @return
     */
-  private def githubIssuesUrl(wsClient: AhcWSClient,
-                              repo: GithubRepo): WSRequest = {
-
-    applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo) + "/issues"))
-  }
+  // private def githubIssuesUrl(wsClient: AhcWSClient,
+  //                             repo: GithubRepo): WSRequest = {
+  //   applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo) + "/issues"))
+  // }
 
   /**
     * get the Github contributors url

@@ -52,7 +52,7 @@ class BintrayListPoms(paths: DataPaths)(
       "start_pos" -> page.page.toString)
 
     withAuth(wsClient.url(s"$bintrayApi/search/file"))
-      .withQueryString(query: _*)
+      .withQueryStringParameters(query: _*)
   }
 
   /** Fetch bintray first, to find out the number of pages and items to iterate

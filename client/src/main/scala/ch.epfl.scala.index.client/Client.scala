@@ -75,7 +75,7 @@ trait ClientBase {
 
   def cleanResults(): Unit = {
     completionSelection = CompletionSelection.empty
-    getResultList.fold()(_.innerHTML = "")
+    getResultList.fold(())(_.innerHTML = "")
   }
 
   @JSExport
