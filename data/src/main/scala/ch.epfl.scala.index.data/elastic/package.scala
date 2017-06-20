@@ -29,10 +29,8 @@ trait ProjectProtocol {
         classOf[BintrayResolver]
       ))) + artifactKindSerializer
 
-  // implicit val serialization = native.Serialization
-
   private def tryEither[T](f: T): Either[Throwable, T] = {
-    Try(f).transform(s => Success(Right(s)),f => Success(Left(f))).get
+    Try(f).transform(s => Success(Right(s)), f => Success(Left(f))).get
   }
 
   implicit object ProjectAs extends HitReader[Project] {
@@ -112,8 +110,6 @@ package object elastic extends ProjectProtocol {
       }
       require(done, s"Failed waiting on: $explain")
     }
-
-    // import ElasticDsl._
 
     blockUntil("Expected cluster to have yellow status") { () =>
       val status =

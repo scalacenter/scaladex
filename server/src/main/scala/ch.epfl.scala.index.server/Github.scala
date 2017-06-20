@@ -93,7 +93,7 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer)
 
     def paginated[T](path: Path, org: Boolean = false)(
         implicit ev: Unmarshaller[HttpResponse, List[T]]): Future[List[T]] = {
-      
+
       def request(page: Option[Int]) = {
         val query =
           page.map(p => Query("page" -> p.toString())).getOrElse(Query())

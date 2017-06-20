@@ -15,8 +15,6 @@ import scala.util.Success
 import scala.util.matching.Regex
 
 class GithubRepoExtractor(paths: DataPaths) {
-  // private val claimsFile = cleanupIndexBase.resolve(Paths.get("claims.json"))
-
   case class Claims(claims: Map[String, Option[String]])
   object ClaimsSerializer
       extends CustomSerializer[Claims](
@@ -44,7 +42,6 @@ class GithubRepoExtractor(paths: DataPaths) {
     * json4s formats
     */
   implicit private val formats = DefaultFormats ++ Seq(ClaimsSerializer)
-  // implicit private val serialization = native.Serialization
 
   private val source = scala.io.Source.fromFile(paths.claims.toFile)
   private val claims = read[Claims](source.mkString).claims

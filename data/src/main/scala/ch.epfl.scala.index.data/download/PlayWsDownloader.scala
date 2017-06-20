@@ -39,13 +39,11 @@ trait PlayWsDownloader {
                                   this.getClass.getClassLoader,
                                   Mode.Prod)
 
-    val wsConfig = AhcWSClientConfigFactory.forConfig(
-      configuration.underlying, environment.classLoader)
+    val wsConfig = AhcWSClientConfigFactory.forConfig(configuration.underlying,
+                                                      environment.classLoader)
 
     AhcWSClient(wsConfig)
   }
-
-
 
   /**
     * Creates a fresh client and closes it after the future returned by `f` completes.
@@ -92,18 +90,21 @@ trait PlayWsDownloader {
           if (graphqlQuery != null) request.post(graphqlQuery(item))
           else request.get
 
-        response.transform(data => {
-          if (toDownload.size > 1) {
-            progress.step()
-          }
-          if (graphqlProcess != null) graphqlProcess(item, data, client)
-          else process(item, data)
-        }, e => {
-          println(
-            s"error on downloading content from ${request.url}: ${e.getMessage}")
+        response.transform(
+          data => {
+            if (toDownload.size > 1) {
+              progress.step()
+            }
+            if (graphqlProcess != null) graphqlProcess(item, data, client)
+            else process(item, data)
+          },
+          e => {
+            println(
+              s"error on downloading content from ${request.url}: ${e.getMessage}")
 
-          e
-        })
+            e
+          }
+        )
       }
     }
 

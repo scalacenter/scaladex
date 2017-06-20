@@ -69,12 +69,13 @@ class SearchApi(dataRepository: DataRepository)(
       cors() {
         path("search") {
           get {
-            parameters(('q,
-                        'target,
-                        'scalaVersion,
-                        'scalaJsVersion.?,
-                        'scalaNativeVersion.?,
-                        'cli.as[Boolean] ? false)) {
+            parameters(
+              ('q,
+               'target,
+               'scalaVersion,
+               'scalaJsVersion.?,
+               'scalaNativeVersion.?,
+               'cli.as[Boolean] ? false)) {
 
               (q,
                targetType,
@@ -123,13 +124,14 @@ class SearchApi(dataRepository: DataRepository)(
         } ~
           path("project") {
             get {
-              parameters(('organization,
-                          'repository,
-                          'artifact.?,
-                          'target.?,
-                          'scalaVersion.?,
-                          'scalaJsVersion.?,
-                          'scalaNativeVersion.?)) {
+              parameters(
+                ('organization,
+                 'repository,
+                 'artifact.?,
+                 'target.?,
+                 'scalaVersion.?,
+                 'scalaJsVersion.?,
+                 'scalaNativeVersion.?)) {
                 (organization,
                  repository,
                  artifact,
