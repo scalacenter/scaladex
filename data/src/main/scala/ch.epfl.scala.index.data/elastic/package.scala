@@ -7,7 +7,6 @@ import release._
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.embedded.LocalNode
 import com.sksamuel.elastic4s.ElasticDsl._
-import org.elasticsearch.common.settings.Settings
 import org.elasticsearch.cluster.health.ClusterHealthStatus
 
 import org.json4s._
@@ -81,14 +80,13 @@ package object elastic extends ProjectProtocol {
       TcpClient.transport(ElasticsearchClientUri("localhost", 9300))
     } else if (elasticsearch == "local") {
       val base = build.info.BuildInfo.baseDirectory.toPath
-      println(base.resolve(".esdata").toString())
-      val esSettings =
-        Settings
-          .builder()
-          .put("path.home", base.resolve(".esdata").toString())
-          .build()
+      val homePath = base.resolve(".esdata").toString()
+      println(homePath)
 
-      LocalNode(esSettings).elastic4sclient()
+      LocalNode(LocalNode.requiredSettings(
+        clusterName = "elasticsearch-local", 
+        homePath = homePath
+      )).elastic4sclient()
     } else {
       sys.error(
         s"org.scala_lang.index.data.elasticsearch should be remote or local: $elasticsearch")
