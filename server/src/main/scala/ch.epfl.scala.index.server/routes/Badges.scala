@@ -11,7 +11,8 @@ import model.StatusCodes._
 class Badges(dataRepository: DataRepository) {
 
   private val shields = parameters(
-    ('color.?, 'style.?, 'logo.?, 'logoWidth.as[Int].?))
+    ('color.?, 'style.?, 'logo.?, 'logoWidth.as[Int].?)
+  )
 
   private val shieldsOptionalSubject = shields & parameters('subject.?)
   private val shieldsSubject = shields & parameters('subject)
