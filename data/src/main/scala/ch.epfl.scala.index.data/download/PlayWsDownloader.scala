@@ -75,36 +75,38 @@ trait PlayWsDownloader {
       downloadUrl: (AhcWSClient, T) => WSRequest,
       process: (T, WSResponse) => R,
       parallelism: Int,
-      graphqlQuery: (T) => JsObject = null,
-      graphqlProcess: (T, WSResponse, AhcWSClient) => R = null
+      graphqlQuery: Option[(T) => JsObject] = None
   ): Seq[R] = {
 
     val client = wsClient
     val progress = new ProgressBar(message, toDownload.size)
 
+    def processItem(item: T) = {
+      val request = downloadUrl(client, item)
+      val response = graphqlQuery match {
+        case Some(q) => request.post(q(item))
+        case None => request.get
+      }
+      response.transform(
+        data => {
+          if (toDownload.size > 1) {
+            progress.step()
+          }
+          process(item, data)
+        },
+        e => {
+          println(
+            s"error on downloading content from ${request.url}: ${e.getMessage}")
+
+          e
+        }
+      )
+    }
+
     def processDownloads = {
 
       Source(toDownload).mapAsyncUnordered(parallelism) { item =>
-        val request = downloadUrl(client, item)
-        val response =
-          if (graphqlQuery != null) request.post(graphqlQuery(item))
-          else request.get
-
-        response.transform(
-          data => {
-            if (toDownload.size > 1) {
-              progress.step()
-            }
-            if (graphqlProcess != null) graphqlProcess(item, data, client)
-            else process(item, data)
-          },
-          e => {
-            println(
-              s"error on downloading content from ${request.url}: ${e.getMessage}")
-
-            e
-          }
-        )
+        processItem(item)
       }
     }
 
@@ -113,7 +115,11 @@ trait PlayWsDownloader {
     }
     try {
       val response =
-        Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
+        if (toDownload.size == 1) {
+          Seq(Await.result(processItem(toDownload.head), Duration.Inf))
+        } else {
+          Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
+        }
 
       if (toDownload.size > 1) {
         progress.stop()
@@ -128,28 +134,4 @@ trait PlayWsDownloader {
     }
   }
 
-  def retryDownload[T, R](
-      item: T,
-      downloadUrl: (AhcWSClient, T) => WSRequest,
-      graphqlQuery: (T) => JsObject,
-      graphqlProcess: (T, WSResponse, AhcWSClient) => R,
-      client: AhcWSClient
-  ): Future[R] = {
-
-    val request = downloadUrl(client, item)
-    val response =
-      if (graphqlQuery != null) request.post(graphqlQuery(item))
-      else request.get
-
-    response.transform(
-      data => graphqlProcess(item, data, client),
-      e => {
-        println(
-          s"error on downloading content from ${request.url}: ${e.getMessage}")
-
-        e
-      }
-    )
-
-  }
 }
