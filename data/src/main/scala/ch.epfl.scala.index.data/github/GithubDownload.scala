@@ -254,8 +254,7 @@ class GithubDownload(paths: DataPaths,
     */
   private def processTopicsResponse(isRetry: Boolean)(
       repo: GithubRepo,
-      response: WSResponse,
-      client: AhcWSClient): Unit = {
+      response: WSResponse): Unit = {
 
     if (200 == response.status) {
 
@@ -278,15 +277,14 @@ class GithubDownload(paths: DataPaths,
       if (!isRetry) {
         val retryAfter = response.header("Retry-After").getOrElse("60").toInt
         println(
-          s"Thread ${Thread.currentThread().getId}, ${repo}, Stopping for ${retryAfter} s, ${response.status} response")
+          s"Downloading Topics - ${repo}, got ${response.status} response, Pausing for ${retryAfter} s")
         Thread.sleep((retryAfter * 1000).toLong)
-        println(s"Thread ${Thread.currentThread().getId}, ${repo}, Continuing")
-
-        retryDownload[GithubRepo, Unit](repo,
-                                        githubGraphqlUrl,
-                                        topicQuery,
-                                        processTopicsResponse(true),
-                                        client)
+        download[GithubRepo, Unit](s"Downloading Topics - ${repo}, Retrying download",
+                                  Set(repo),
+                                  githubGraphqlUrl,
+                                  processTopicsResponse(true),
+                                  parallelism = 32,
+                                  graphqlQuery = Some(topicQuery))
       }
     }
 
@@ -401,10 +399,9 @@ class GithubDownload(paths: DataPaths,
     download[GithubRepo, Unit]("Downloading Topics",
                                githubRepos,
                                githubGraphqlUrl,
-                               null,
+                               processTopicsResponse(false),
                                parallelism = 32,
-                               graphqlQuery = topicQuery,
-                               graphqlProcess = processTopicsResponse(false))
+                               graphqlQuery = Some(topicQuery))
     download[GithubRepo, Unit]("Downloading Readme",
                                githubRepos,
                                githubReadmeUrl,
@@ -445,10 +442,9 @@ class GithubDownload(paths: DataPaths,
       download[GithubRepo, Unit]("Downloading Topics",
                                  Set(repo),
                                  githubGraphqlUrl,
-                                 null,
+                                 processTopicsResponse(false),
                                  parallelism = 32,
-                                 graphqlQuery = topicQuery,
-                                 graphqlProcess = processTopicsResponse(false))
+                                 graphqlQuery = Some(topicQuery))
     }
 
     if (readme) {
