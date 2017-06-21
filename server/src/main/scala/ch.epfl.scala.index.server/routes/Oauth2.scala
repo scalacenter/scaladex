@@ -20,7 +20,7 @@ class OAuth2(github: Github, session: GithubUserSession) {
   val routes =
     get {
       path("login") {
-        optionalHeaderValueByType[Referer]() { referer =>
+        optionalHeaderValueByType[Referer](()) { referer =>
           redirect(
             Uri("https://github.com/login/oauth/authorize").withQuery(
               Query(
@@ -33,7 +33,7 @@ class OAuth2(github: Github, session: GithubUserSession) {
         }
       } ~
         path("logout") {
-          headerValueByType[Referer]() { referer =>
+          headerValueByType[Referer](()) { referer =>
             requiredSession(refreshable, usingCookies) { _ =>
               invalidateSession(refreshable, usingCookies) { ctx =>
                 ctx.complete(
@@ -52,14 +52,17 @@ class OAuth2(github: Github, session: GithubUserSession) {
             complete("OK")
           } ~
             pathEnd {
-              parameters('code, 'state.?) { (code, state) =>
+              parameters(('code, 'state.?)) { (code, state) =>
                 onSuccess(github.getUserStateWithOauth2(code)) { userState =>
-                  setSession(refreshable, usingCookies, session.addUser(userState)) {
+                  setSession(refreshable,
+                             usingCookies,
+                             session.addUser(userState)) {
                     setNewCsrfToken(checkHeader) { ctx =>
                       ctx.complete(
                         HttpResponse(
                           status = TemporaryRedirect,
-                          headers = headers.Location(Uri(state.getOrElse("/"))) :: Nil,
+                          headers = headers
+                            .Location(Uri(state.getOrElse("/"))) :: Nil,
                           entity = HttpEntity.Empty
                         )
                       )

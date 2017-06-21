@@ -12,7 +12,7 @@
   projects: List[Project],
   user: Option[UserInfo],
   you: Boolean,
-  keywords: List[(String, Long)],
+  topics: List[(String, Long)],
   targetTypes: List[(String, Long)],
   scalaVersions: List[(String, Long)],
   scalaJsVersions: List[(String, Long)],
@@ -36,7 +36,7 @@
   <div class="col-md-3">
     @filter(
       params,
-      keywords,
+      topics,
       targetTypes,
       scalaVersions,
       scalaJsVersions,

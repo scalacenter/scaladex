@@ -4,7 +4,7 @@
 @import ch.epfl.scala.index.model.misc._
 @import ch.epfl.scala.index.model.release._
 
-@(project: Project, keywords: List[String], user: Option[UserInfo])
+@(project: Project, user: Option[UserInfo])
 
 @main(title = s"Edit ${project.repository}", showSearch = true, user) {
   <main id="container-project">
@@ -20,19 +20,6 @@
               <div class="form-group">
                 <input type="checkbox" name="contributorsWanted" @if(project.contributorsWanted){ checked }> 
                 <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">
-              </div>
-
-              <div class="form-group">
-                <label for="keywords_multiple">Keywords</label>
-                <select
-                  name="keywords"
-                  class="js-keywords-multiple js-states form-control"
-                  id="keywords_multiple"
-                  multiple="multiple">
-                @for(keyword <- keywords) {
-                  <option value="@keyword" @if(project.keywords.contains(keyword)){selected}>@keyword</option>
-                }
-                </select>
               </div>
 
               <div class="form-group">

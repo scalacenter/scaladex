@@ -13,7 +13,8 @@ lazy val testSetup = Seq(
   scaladexBaseUri := uri("http://localhost:8080"),
   scaladexTest := true,
   // credentials in Scaladex += Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials2")
-  credentials in Scaladex += Credentials(Path.userHome / ".ivy2" / ".scaladex.credentials")
+  credentials in Scaladex += Credentials(
+    Path.userHome / ".ivy2" / ".scaladex.credentials")
   // or
   // credentials in Scaladex := Credentials("Scaladex Realm", "localhost", "token", "<github personnal token>"),
 )
@@ -25,8 +26,11 @@ lazy val simple = project
   .aggregate(m, n, o)
   .dependsOn(m, n, o)
 
-lazy val m = (project in file("m")).settings(testSetup).enablePlugins(ScaladexPlugin)
+lazy val m =
+  (project in file("m")).settings(testSetup).enablePlugins(ScaladexPlugin)
 
-lazy val n = (project in file("n")).settings(testSetup).enablePlugins(ScaladexPlugin)
+lazy val n =
+  (project in file("n")).settings(testSetup).enablePlugins(ScaladexPlugin)
 
-lazy val o = (project in file("o")).settings(testSetup).enablePlugins(ScaladexPlugin)
+lazy val o =
+  (project in file("o")).settings(testSetup).enablePlugins(ScaladexPlugin)

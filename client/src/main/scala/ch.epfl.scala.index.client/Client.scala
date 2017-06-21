@@ -33,14 +33,18 @@ trait ClientBase {
   def getElement(id: String): Option[Element] =
     Try(document.getElementById(id)).toOption
 
-  def appendResult(owner: String, repo: String, description: String): Option[Node] = {
+  def appendResult(owner: String,
+                   repo: String,
+                   description: String): Option[Node] = {
     for {
       resultContainer <- getResultList
       newItem = newProjectItem(owner, repo, description)
     } yield resultContainer.appendChild(newItem)
   }
 
-  def newProjectItem(owner: String, repo: String, description: String): Element = {
+  def newProjectItem(owner: String,
+                     repo: String,
+                     description: String): Element = {
     li(
       a(href := s"/$owner/$repo")(
         p(s"$owner / $repo"),
@@ -51,7 +55,7 @@ trait ClientBase {
 
   def getQuery(input: Option[HTMLInputElement]): Option[String] = input match {
     case Some(i) if i.value.length > 1 => Option(i.value)
-    case _ => None
+    case _                             => None
   }
 
   def getProjects(query: String): Future[List[Autocompletion]] =
@@ -71,7 +75,7 @@ trait ClientBase {
 
   def cleanResults(): Unit = {
     completionSelection = CompletionSelection.empty
-    getResultList.fold()(_.innerHTML = "")
+    getResultList.fold(())(_.innerHTML = "")
   }
 
   @JSExport
@@ -97,7 +101,8 @@ trait ClientBase {
     } else if (event.keyCode == KeyCode.Enter) {
       completionSelection.selected.foreach { selected =>
         event.preventDefault()
-        val Autocompletion(owner, repo, _) = completionSelection.choices(selected)
+        val Autocompletion(owner, repo, _) =
+          completionSelection.choices(selected)
         dom.window.location.assign(s"/$owner/$repo")
       }
     } else if (event.keyCode == KeyCode.Escape) {
@@ -113,7 +118,8 @@ trait ClientBase {
     def updateSelection(): Unit = {
       getResultList.foreach { resultList =>
         for (i <- 0 until resultList.childElementCount) {
-          val resultElement = resultList.childNodes(i).asInstanceOf[HTMLUListElement]
+          val resultElement =
+            resultList.childNodes(i).asInstanceOf[HTMLUListElement]
           if (completionSelection.selected.contains(i)) {
             resultElement.classList.add("selected")
           } else {
@@ -129,7 +135,8 @@ trait ClientBase {
     def get[A <: Element]: A = e.asInstanceOf[A]
   }
 
-  case class CompletionSelection(selected: Option[Int], choices: List[Autocompletion])
+  case class CompletionSelection(selected: Option[Int],
+                                 choices: List[Autocompletion])
 
   object CompletionSelection {
     val empty = CompletionSelection(None, Nil)

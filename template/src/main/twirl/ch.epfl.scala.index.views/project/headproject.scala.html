@@ -45,12 +45,14 @@
               Github <i class="fa fa-github fa-lg"></i>
             </a>
           }
-          @if(!project.keywords.isEmpty) {
-            <ul class="list-inline">
-            @for(keyword <- project.keywords) {
-              <li><a href="/search?q=keywords:@keyword">@keyword</a></li>
+          @for(github <- project.github) {
+            @if(!github.topics.isEmpty) {
+              <ul class="list-inline">
+                @for(topic <- github.topics) {
+                  <li><a href="/search?q=topics:@topic">@topic</a></li>
+                }
+              </ul>
             }
-            </ul>
           }
         </div>
       </div>

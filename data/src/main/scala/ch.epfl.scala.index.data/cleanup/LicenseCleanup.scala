@@ -9,13 +9,14 @@ import org.json4s.native.Serialization.read
 
 class LicenseCleanup(paths: DataPaths) {
   implicit private val formats = DefaultFormats
-  implicit private val serialization = native.Serialization
 
-  private val byNameSource = scala.io.Source.fromFile(paths.licensesByName.toFile)
+  private val byNameSource =
+    scala.io.Source.fromFile(paths.licensesByName.toFile)
   private val byName = read[Map[String, List[String]]](byNameSource.mkString)
   byNameSource.close()
 
-  private val licensesFromName = License.all.groupBy(_.shortName).mapValues(_.head)
+  private val licensesFromName =
+    License.all.groupBy(_.shortName).mapValues(_.head)
   private val variaNameToLicense: Map[String, License] =
     innerJoin(byName, licensesFromName)((_, _)).flatMap {
       case (_, (xs, license)) =>

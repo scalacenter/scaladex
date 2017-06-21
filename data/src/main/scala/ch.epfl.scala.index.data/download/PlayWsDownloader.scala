@@ -3,15 +3,18 @@ package data
 package download
 
 import me.tongfei.progressbar.ProgressBar
+
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
-import com.typesafe.config.ConfigFactory
-import play.api.libs.ws.{WSClient, WSConfigParser, WSRequest, WSResponse}
-import play.api.libs.ws.ahc.{AhcConfigBuilder, AhcWSClient, AhcWSClientConfig}
-import play.api.{Configuration, Environment, Mode}
 
-import scala.concurrent.{Await, ExecutionContext, Future}
+import com.typesafe.config.ConfigFactory
+import play.api._
+import play.api.libs.ws._
+import play.api.libs.ws.ahc._
+import play.api.libs.json._
+
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 
 trait PlayWsDownloader {
@@ -23,7 +26,7 @@ trait PlayWsDownloader {
   /**
     * Creating a new WS Client - copied from Play website
     *
-    * @see https://www.playframework.com/documentation/2.5.x/ScalaWS
+    * @see https://www.playframework.com/documentation/2.6.0-RC2/ScalaWS#Directly-creating-WSClient
     */
   def wsClient = {
     val configuration = Configuration.reference ++ Configuration(
@@ -32,15 +35,14 @@ trait PlayWsDownloader {
       """.stripMargin))
 
     /* If running in Play, environment should be injected */
-    val environment = Environment(new java.io.File("."), this.getClass.getClassLoader, Mode.Prod)
+    val environment = Environment(new java.io.File("."),
+                                  this.getClass.getClassLoader,
+                                  Mode.Prod)
 
-    val parser = new WSConfigParser(configuration, environment)
-    val config = new AhcWSClientConfig(wsClientConfig = parser.parse())
-    val builder = new AhcConfigBuilder(config)
-    val ahcBuilder = builder.configure()
+    val wsConfig = AhcWSClientConfigFactory.forConfig(configuration.underlying,
+                                                      environment.classLoader)
 
-    val ahcConfig = ahcBuilder.build()
-    new AhcWSClient(ahcConfig)
+    AhcWSClient(wsConfig)
   }
 
   /**
@@ -52,8 +54,9 @@ trait PlayWsDownloader {
     *   }
     * }}}
     */
-  def managed[A](f: WSClient => Future[A])(implicit ec: ExecutionContext): Future[A] =
-    Future(wsClient).flatMap(client => f(client).andThen { case _ => client.close() })
+  def managed[A](f: WSClient => Future[A]): Future[A] =
+    Future(wsClient).flatMap(client =>
+      f(client).andThen { case _ => client.close() })
 
   /**
     * Actual download of bunch of documents. Will loop through all and display a status bar in the console output.
@@ -62,6 +65,7 @@ trait PlayWsDownloader {
     * @param toDownload the set of downloadable elements
     * @param downloadUrl a function to get the WsRequest for the current element
     * @param process a function to process the response in succes case
+    * @param graphqlQuery query sent to Github's GraphQL API
     * @tparam T Input type
     * @tparam R output type
     */
@@ -70,7 +74,9 @@ trait PlayWsDownloader {
       toDownload: Set[T],
       downloadUrl: (AhcWSClient, T) => WSRequest,
       process: (T, WSResponse) => R,
-      parallelism: Int
+      parallelism: Int,
+      graphqlQuery: (T) => JsObject = null,
+      graphqlProcess: (T, WSResponse, AhcWSClient) => R = null
   ): Seq[R] = {
 
     val client = wsClient
@@ -80,33 +86,70 @@ trait PlayWsDownloader {
 
       Source(toDownload).mapAsyncUnordered(parallelism) { item =>
         val request = downloadUrl(client, item)
-        val response = request.get
+        val response =
+          if (graphqlQuery != null) request.post(graphqlQuery(item))
+          else request.get
 
-        response.onFailure {
+        response.transform(
+          data => {
+            if (toDownload.size > 1) {
+              progress.step()
+            }
+            if (graphqlProcess != null) graphqlProcess(item, data, client)
+            else process(item, data)
+          },
+          e => {
+            println(
+              s"error on downloading content from ${request.url}: ${e.getMessage}")
 
-          case e: Throwable =>
-            println(s"error on downloading content from ${request.url}: ${e.getMessage}")
-        }
-
-        response.map { data =>
-          if (toDownload.size > 1) {
-            progress.step()
+            e
           }
-          process(item, data)
-        }
+        )
       }
     }
 
     if (toDownload.size > 1) {
       progress.start()
     }
-    val response = Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
-    if (toDownload.size > 1) {
-      progress.stop()
-    }
-    client.close()
+    try {
+      val response =
+        Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
 
-    response
+      if (toDownload.size > 1) {
+        progress.stop()
+      }
+      client.close()
+      response
+    } catch {
+      case e: Exception =>
+        println(e.getMessage)
+        client.close()
+        Seq()
+    }
   }
 
+  def retryDownload[T, R](
+      item: T,
+      downloadUrl: (AhcWSClient, T) => WSRequest,
+      graphqlQuery: (T) => JsObject,
+      graphqlProcess: (T, WSResponse, AhcWSClient) => R,
+      client: AhcWSClient
+  ): Future[R] = {
+
+    val request = downloadUrl(client, item)
+    val response =
+      if (graphqlQuery != null) request.post(graphqlQuery(item))
+      else request.get
+
+    response.transform(
+      data => graphqlProcess(item, data, client),
+      e => {
+        println(
+          s"error on downloading content from ${request.url}: ${e.getMessage}")
+
+        e
+      }
+    )
+
+  }
 }

@@ -12,9 +12,11 @@ import scala.concurrent.ExecutionContext
 import scala.util.Try
 import java.util.UUID
 
-class GithubUserSession(config: Config)(implicit val executionContext: ExecutionContext) {
+class GithubUserSession(config: Config)(
+    implicit val executionContext: ExecutionContext) {
 
-  val sessionConfig = SessionConfig.default(config.getString("sesssion-secret"))
+  val sessionConfig =
+    SessionConfig.default(config.getString("sesssion-secret"))
 
   implicit def serializer: SessionSerializer[UUID, String] =
     new SingleValueSessionSerializer(

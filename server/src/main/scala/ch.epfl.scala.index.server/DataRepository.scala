@@ -3,19 +3,29 @@ package server
 
 import model._
 import model.misc._
+
+import data.DataPaths
 import data.project.ProjectForm
+import data.github.{GithubDownload, GithubReader}
+
 import release._
 import misc.Pagination
 import data.elastic._
-import com.sksamuel.elastic4s._
-import ElasticDsl._
-import ch.epfl.scala.index.data.DataPaths
+
+import com.sksamuel.elastic4s.HitReader
+import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.searches.queries.QueryDefinition
+import com.sksamuel.elastic4s.searches.sort.SortDefinition
+
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.Modifier
 import org.elasticsearch.search.sort.SortOrder
+
 import org.slf4j.LoggerFactory
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.reflectiveCalls
 
 /**
   * @param github  Github client
@@ -26,21 +36,21 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
 
   val logger = LoggerFactory.getLogger(this.getClass)
 
-  val sortQuery = (sorting: Option[String]) =>
-    sorting match {
-      case Some("stars") =>
-        fieldSort("github.stars") missing "0" order SortOrder.DESC mode MultiMode.Avg
-      case Some("forks") =>
-        fieldSort("github.forks") missing "0" order SortOrder.DESC mode MultiMode.Avg
-      case Some("dependentCount") =>
-        fieldSort("dependentCount") missing "0" order SortOrder.DESC mode MultiMode.Avg
-      case Some("contributors") =>
-        fieldSort("github.contributorCount") missing "0" order SortOrder.DESC mode MultiMode.Avg
-      case Some("relevant") => scoreSort
-      case Some("created") => fieldSort("created") order SortOrder.DESC
-      case Some("updated") => fieldSort("updated") order SortOrder.DESC
-      case _ => scoreSort
-  }
+  val sortQuery: Option[String] => SortDefinition = 
+    _ match {
+        case Some("stars") =>
+          fieldSort("github.stars") missing "0" order SortOrder.DESC // mode MultiMode.Avg
+        case Some("forks") =>
+          fieldSort("github.forks") missing "0" order SortOrder.DESC // mode MultiMode.Avg
+        case Some("dependentCount") =>
+          fieldSort("dependentCount") missing "0" order SortOrder.DESC // mode MultiMode.Avg
+        case Some("contributors") =>
+          fieldSort("github.contributorCount") missing "0" order SortOrder.DESC // mode MultiMode.Avg
+        case Some("relevant") => scoreSort order SortOrder.DESC
+        case Some("created") => fieldSort("created") order SortOrder.DESC
+        case Some("updated") => fieldSort("updated") order SortOrder.DESC
+        case _ => scoreSort order SortOrder.DESC
+    }
 
   private def clamp(page: Int) = if (page <= 0) 1 else page
 
@@ -50,12 +60,12 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
     import params._
 
     esClient.execute {
-      search
-        .in(indexName / projectsCollection)
+      search(indexName / projectsCollection)
         .query(q)
         .start(params.total * (clamp(page) - 1))
         .limit(params.total)
-        .sort(sortQuery(sorting))
+        .sortBy(sortQuery(sorting))
+
     }.map(
       r =>
         (
@@ -64,7 +74,7 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
             totalPages = Math.ceil(r.totalHits / params.total.toDouble).toInt,
             total = r.totalHits
           ),
-          r.as[Project].toList.map(hideId)
+          r.to[Project].toList.map(hideId)
       ))
   }
 
@@ -76,32 +86,33 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
       regex.replaceAllIn(queryString, s"$$1$replacement:")
     }
 
-    val translated = replaceField(queryString, "depends-on", "dependencies")
+    val translated1 = replaceField(queryString, "depends-on", "dependencies")
+    val translated2 = replaceField(translated1, "topics", "github.topics")
 
     val escaped =
-      if (translated.isEmpty) "*"
-      else translated.replaceAllLiterally("/", "\\/")
+      if (translated2.isEmpty) "*"
+      else translated2.replaceAllLiterally("/", "\\/")
 
     val targetsQuery =
-      params.targetTypes.map(targetType => bool(must(termQuery("targetType", targetType)))) ++
+      params.targetTypes.map(targetType => boolQuery().must(termQuery("targetType", targetType))) ++
         params.scalaVersions.map(scalaVersion =>
-          bool(must(termQuery("scalaVersion", scalaVersion)))) ++
+          boolQuery().must(termQuery("scalaVersion", scalaVersion))) ++
         params.scalaJsVersions.map(scalaJsVersion =>
-          bool(must(termQuery("scalaJsVersion", scalaJsVersion)))) ++
+          boolQuery().must(termQuery("scalaJsVersion", scalaJsVersion))) ++
         params.scalaNativeVersions.map(scalaNativeVersion =>
-          bool(must(termQuery("scalaNativeVersion", scalaNativeVersion))))
+          boolQuery().must(termQuery("scalaNativeVersion", scalaNativeVersion)))
 
     val targetQuery = 
       params.targetFiltering.map(target =>
 
-        List(bool(must(termQuery("scalaVersion", target.scalaVersion.toString)))) ++
+        List(boolQuery().must(termQuery("scalaVersion", target.scalaVersion.toString))) ++
 
         target.scalaJsVersion.map(jsVersion =>
-          List(bool(must(termQuery("scalaJsVersion", target.scalaJsVersion.toString))))
+          List(boolQuery().must(termQuery("scalaJsVersion", target.scalaJsVersion.toString)))
         ).getOrElse(Nil) ++
 
         target.scalaNativeVersion.map(nativeVersion =>
-          List(bool(must(termQuery("scalaNativeVersion", target.scalaNativeVersion.toString))))
+          List(boolQuery().must(termQuery("scalaNativeVersion", target.scalaNativeVersion.toString)))
         ).getOrElse(Nil)
 
       ).getOrElse(Nil)
@@ -110,54 +121,50 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
       if (cli) List(termQuery("hasCli", true))
       else Nil
 
-    val keywordsQuery =
-      params.keywords.map(keyword => bool(should(termQuery("keywords", keyword))))
+    val topicsQuery =
+      params.topics.map(topic => boolQuery().should(termQuery("github.topics", topic)))
 
     val reposQueries = if (!userRepos.isEmpty) {
       userRepos.toList.map {
         case GithubRepo(organization, repository) =>
-          bool(
-            must(
-              termQuery("organization", organization.toLowerCase),
-              termQuery("repository", repository.toLowerCase)
-            )
+          boolQuery().must(
+            termQuery("organization", organization.toLowerCase),
+            termQuery("repository", repository.toLowerCase)
           )
       }
     } else List()
 
     val mustQueriesRepos =
       if (userRepos.isEmpty) Nil
-      else List(bool(should(reposQueries: _*)))
+      else List(boolQuery().should(reposQueries: _*))
 
     val stringQ =
       if (escaped.contains(":")) stringQuery(escaped)
       else stringQuery(escaped + "~").fuzzyPrefixLength(3).defaultOperator("AND")
 
     functionScoreQuery(
-      bool(
-        mustQueries = mustQueriesRepos ++ cliQuery ++ keywordsQuery ++ targetsQuery ++ targetQuery,
-        shouldQueries = List(
-          fuzzyQuery("keywords", escaped).boost(2),
+      boolQuery().
+        must(mustQueriesRepos ++ cliQuery ++ topicsQuery ++ targetsQuery ++ targetQuery).
+        should(List(
+          fuzzyQuery("github.topics", escaped).boost(2),
           fuzzyQuery("github.description", escaped).boost(1.7),
           fuzzyQuery("repository", escaped),
           fuzzyQuery("organization", escaped),
           fuzzyQuery("artifacts", escaped),
           stringQ.boost(0.01) // low boost because this query is applied to all the fields of the project (including the github readme)
-        ),
-        notQueries = List(termQuery("deprecated", true))
-      )
+        )).
+        not(List(termQuery("deprecated", true)))
     ).scorers(
         // Add a small boost for project that seem to be “popular” (highly depended on or highly starred)
-        fieldFactorScore("dependentCount").modifier(Modifier.LOG1P).weight(0.3),
-        fieldFactorScore("github.stars").missing(0).modifier(Modifier.LOG1P).weight(0.1)
+        fieldFactorScore("dependentCount").modifier(Modifier.LOG1P).factor(0.3),
+        fieldFactorScore("github.stars").missing(0).modifier(Modifier.LOG1P).factor(0.1)
       )
       .boostMode("sum")
   }
 
   def total(queryString: String): Future[Long] = {
     esClient.execute {
-      search
-        .in(indexName / projectsCollection)
+      search(indexName / projectsCollection)
         .query(getQuery(SearchParams(queryString = queryString)))
         .size(0)
     }.map(_.totalHits)
@@ -169,22 +176,19 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
 
   def releases(project: Project.Reference, selection: ReleaseSelection): Future[List[Release]] = {
     esClient.execute {
-      search
-        .in(indexName / releasesCollection)
+      search(indexName / releasesCollection)
         .query(
           nestedQuery("reference").query(
-            bool(
-              must(
-                List(
-                  termQuery("reference.organization", project.organization),
-                  termQuery("reference.repository", project.repository)
-                )
+            boolQuery().must(
+              List(
+                termQuery("reference.organization", project.organization),
+                termQuery("reference.repository", project.repository)
               )
             )
           )
         )
         .size(5000)
-    }.map(_.as[Release].toList)
+    }.map(_.to[Release].toList)
   }
 
   /**
@@ -195,37 +199,31 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
   def maven(maven: MavenReference): Future[Option[Release]] = {
 
     esClient.execute {
-      search
-        .in(indexName / releasesCollection)
+      search(indexName / releasesCollection)
         .query(
           nestedQuery("maven").query(
-            bool(
-              must(
-                termQuery("maven.groupId", maven.groupId),
-                termQuery("maven.artifactId", maven.artifactId),
-                termQuery("maven.version", maven.version)
-              )
+            boolQuery().must(
+              termQuery("maven.groupId", maven.groupId),
+              termQuery("maven.artifactId", maven.artifactId),
+              termQuery("maven.version", maven.version)
             )
           )
         )
         .limit(1)
-    }.map(r => r.as[Release].headOption)
+    }.map(r => r.to[Release].headOption)
   }
 
   def project(project: Project.Reference): Future[Option[Project]] = {
     esClient.execute {
-      search
-        .in(indexName / projectsCollection)
+      search(indexName / projectsCollection)
         .query(
-          bool(
-            must(
-              termQuery("organization", project.organization),
-              termQuery("repository", project.repository)
-            )
+          boolQuery().must(
+            termQuery("organization", project.organization),
+            termQuery("repository", project.repository)
           )
         )
         .limit(1)
-    }.map(_.as[Project].headOption)
+    }.map(_.to[Project].headOption)
   }
 
   def projectAndReleases(projectRef: Project.Reference,
@@ -240,14 +238,31 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
                   selection: ReleaseSelection): Future[Option[(Project, ReleaseOptions)]] = {
     projectAndReleases(projectRef, selection).map {
       case Some((project, releases)) => {
-        DefaultRelease(project.repository,
+        val updatedProject = liveUpdate(project)
+        DefaultRelease(updatedProject.repository,
                        selection,
                        releases.toSet,
-                       project.defaultArtifact,
-                       project.defaultStableVersion).map(sel => (project, sel))
+                       updatedProject.defaultArtifact,
+                       updatedProject.defaultStableVersion).map(sel => (updatedProject, sel))
       }
       case None => None
     }
+  }
+
+  private def liveUpdate(project: Project): Project = {
+    val repo = new GithubRepo(project.organization, project.repository)
+    implicit val system = ActorSystem()
+    implicit val materializer = ActorMaterializer()
+    new GithubDownload(paths).run(repo, true, true, false)
+    val github = GithubReader(paths, repo)
+    val updatedProject = project.copy(
+      github = github
+    )
+    esClient
+      .execute(
+        update(project.id.get).in(indexName / projectsCollection).doc(updatedProject)
+      )
+    updatedProject
   }
 
   def updateProject(projectRef: Project.Reference, form: ProjectForm): Future[Boolean] = {
@@ -275,18 +290,16 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
 
   def mostDependedUpon() = {
     esClient.execute {
-      search
-        .in(indexName / projectsCollection)
+      search(indexName / projectsCollection)
         .query(matchAllQuery)
         .limit(frontPageCount)
-        .sort(sortQuery(Some("dependentCount")))
-    }.map(_.as[Project].toList)
+        .sortBy(sortQuery(Some("dependentCount")))
+    }.map(_.to[Project].toList)
   }
 
-  private def latest[T: HitAs: Manifest](collection: String, by: String, n: Int): Future[List[T]] = {
+  private def latest[T: HitReader: Manifest](collection: String, by: String, n: Int): Future[List[T]] = {
     esClient.execute {
-      search
-        .in(indexName / collection)
+      search(indexName / collection)
         .query(
           bool(
             mustQueries = Nil,
@@ -294,13 +307,13 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
             notQueries = List(termQuery("deprecated", true))
           )
         )
-        .sort(fieldSort(by).order(SortOrder.DESC))
+        .sortBy(fieldSort(by).order(SortOrder.DESC))
         .limit(n)
-    }.map(r => r.as[T].toList)
+    }.map(r => r.to[T].toList)
   }
 
-  def keywords(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {
-    stringAggregations("keywords", params).map(addParamsIfMissing(params.keywords))
+  def topics(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {
+    stringAggregations("github.topics", params).map(addParamsIfMissing(params.topics))
   }
 
   def targetTypes(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {
@@ -330,15 +343,13 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
 
   def totalProjects(): Future[Long] = {
     esClient.execute {
-      search
-        .in(indexName / projectsCollection)
+      search(indexName / projectsCollection)
     }.map(_.totalHits)
   }
 
   def totalReleases(): Future[Long] = {
     esClient.execute {
-      search
-        .in(indexName / releasesCollection)
+      search(indexName / releasesCollection)
     }.map(_.totalHits)
   }
 
@@ -376,13 +387,12 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
     val aggregationName = s"${field}_count"
 
     esClient.execute {
-      search
-        .in(indexName / projectsCollection)
+      search(indexName / projectsCollection)
         .query(getQuery(params))
-        .aggregations(aggregation.terms(aggregationName).field(field).size(50))
+        .aggregations(termsAggregation(aggregationName).field(field).size(50))
     }.map(resp => {
       try {
-        val agg = resp.aggregations.get[StringTerms](aggregationName)
+        val agg = resp.aggregations.stringTermsResult(aggregationName)
         agg.getBuckets.asScala.toList.collect {
           case b: StringTerms.Bucket => b.getKeyAsString -> b.getDocCount
         }.toMap
@@ -397,7 +407,4 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
 
     })
   }
-
-  private def maxOption[T: Ordering](xs: List[T]): Option[T] =
-    if (xs.isEmpty) None else Some(xs.max)
 }

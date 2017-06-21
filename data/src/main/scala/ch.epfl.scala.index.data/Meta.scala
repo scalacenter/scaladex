@@ -25,27 +25,27 @@ object Meta {
     * MetaSerializer to keep the fields ordering
     */
   object MetaSerializer
-      extends CustomSerializer[Meta](
-        format =>
-          (
-            {
-              case in: JValue => {
-                implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
-                in.extract[Meta]
-              }
-            }, {
-              case meta: Meta => {
-                implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
-                JObject(
-                  JField("created", Extraction.decompose(meta.created)),
-                  JField("path", Extraction.decompose(meta.path)),
-                  JField("sha1", Extraction.decompose(meta.sha1))
-                )
-              }
+      extends CustomSerializer[Meta](format =>
+        (
+          {
+            case in: JValue => {
+              implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
+              in.extract[Meta]
             }
-        ))
+          }, {
+            case meta: Meta => {
+              implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
+              JObject(
+                JField("created", Extraction.decompose(meta.created)),
+                JField("path", Extraction.decompose(meta.path)),
+                JField("sha1", Extraction.decompose(meta.sha1))
+              )
+            }
+          }
+      ))
 
-  implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer, MetaSerializer)
+  implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer,
+                                               MetaSerializer)
   implicit val serialization = native.Serialization
 
   def load(paths: DataPaths, repository: LocalPomRepository): List[Meta] = {
@@ -59,17 +59,24 @@ object Meta {
     val ret = source.mkString.split(nl).toList
     source.close()
 
-    ret.filter(_ != "").map(json => parse(json).extract[Meta]).sortBy(_.created)(Descending)
+    ret
+      .filter(_ != "")
+      .map(json => parse(json).extract[Meta])
+      .sortBy(_.created)(Descending)
   }
 
-  def append(paths: DataPaths, meta: Meta, repository: LocalPomRepository): Unit = {
+  def append(paths: DataPaths,
+             meta: Meta,
+             repository: LocalPomRepository): Unit = {
     val all = load(paths, repository)
 
     val metaPath = paths.meta(repository)
 
     val sorted = (meta :: all).sortBy(_.created)(Descending)
     val jsonPerLine =
-      sorted.map(s => write(s)).mkString("", System.lineSeparator, System.lineSeparator)
+      sorted
+        .map(s => write(s))
+        .mkString("", System.lineSeparator, System.lineSeparator)
 
     Files.delete(metaPath)
     Files.write(metaPath, jsonPerLine.getBytes(StandardCharsets.UTF_8))

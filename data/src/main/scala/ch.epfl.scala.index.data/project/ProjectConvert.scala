@@ -31,8 +31,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
     *
     * @return The artifact name (without suffix), the Scala target, whether this project is a usual Scala library or not
     */
-  private def extractArtifactNameAndTarget(
-      pom: ReleaseModel): Option[(String, Option[ScalaTarget], ArtifactKind)] = {
+  private def extractArtifactNameAndTarget(pom: ReleaseModel)
+    : Option[(String, Option[ScalaTarget], ArtifactKind)] = {
     nonStandardLibs
       .find(
         lib =>
@@ -57,35 +57,41 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
         Some((pom.artifactId, None, ArtifactKind.ConventionalScalaLib))
 
       case Some(ScalaTargetFromVersion) =>
-        SemanticVersion(pom.version).map(version =>
-          (pom.artifactId, Some(ScalaTarget.scala(version)), ArtifactKind.UnconventionalScalaLib))
+        SemanticVersion(pom.version).map(
+          version =>
+            (pom.artifactId,
+             Some(ScalaTarget.scala(version)),
+             ArtifactKind.UnconventionalScalaLib))
 
       case None =>
         // This is a usual Scala library (whose artifact name is suffixed by the Scala binary version)
         // Or it can be an sbt-plugin published as a maven style. In such a case the Scala target
         // is not suffixed to the artifact name but can be found in the model’s `sbtPluginTarget` member.
         // TODO Store the sbt target too
-        pom.sbtPluginTarget.flatMap {
-          case SbtPluginTarget(scalaVersion, _) =>
-            SemanticVersion(scalaVersion)
-              .map(ScalaTarget.scala)
-              .orElse {
-                logger.error("Unable to decode the Scala target")
-                None
-              }
-              .map { target =>
-                (pom.artifactId, Some(target), ArtifactKind.SbtPlugin)
-              }
-        }.orElse {
-          Artifact(pom.artifactId).map {
-            case (artifactName, target) =>
-              (artifactName, Some(target), ArtifactKind.ConventionalScalaLib)
+        pom.sbtPluginTarget
+          .flatMap {
+            case SbtPluginTarget(scalaVersion, _) =>
+              SemanticVersion(scalaVersion)
+                .map(ScalaTarget.scala)
+                .orElse {
+                  logger.error("Unable to decode the Scala target")
+                  None
+                }
+                .map { target =>
+                  (pom.artifactId, Some(target), ArtifactKind.SbtPlugin)
+                }
           }
-        }
+          .orElse {
+            Artifact(pom.artifactId).map {
+              case (artifactName, target) =>
+                (artifactName, Some(target), ArtifactKind.ConventionalScalaLib)
+            }
+          }
     }
   }
 
-  private def extractMeta(pomsRepoSha: List[(ReleaseModel, LocalRepository, String)]) = {
+  private def extractMeta(
+      pomsRepoSha: List[(ReleaseModel, LocalRepository, String)]) = {
     import LocalPomRepository._
 
     val bintray = BintrayMeta.load(paths).groupBy(_.sha1)
@@ -107,78 +113,89 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
       "maven-releases" // too much noise
     )
 
-    def created(metas: List[DateTime]): Option[String] = metas.sorted.headOption.map(format.print)
-    pomsRepoSha.map {
-      case (pom, repo, sha1) => {
-        val default = (pom, /* created */ None, /* resolver */ None, /* keep */ true)
-        repo match {
-          case Bintray => {
-            bintray.get(sha1) match {
-              case Some(metas) => {
-                val resolver: Option[Resolver] =
-                  if (metas.forall(_.isJCenter)) Option(JCenter)
-                  else metas.headOption.map(meta => BintrayResolver(meta.owner, meta.repo))
+    def created(metas: List[DateTime]): Option[String] =
+      metas.sorted.headOption.map(format.print)
+    pomsRepoSha
+      .map {
+        case (pom, repo, sha1) => {
+          val default =
+            (pom, /* created */ None, /* resolver */ None, /* keep */ true)
+          repo match {
+            case Bintray => {
+              bintray.get(sha1) match {
+                case Some(metas) => {
+                  val resolver: Option[Resolver] =
+                    if (metas.forall(_.isJCenter)) Option(JCenter)
+                    else
+                      metas.headOption.map(meta =>
+                        BintrayResolver(meta.owner, meta.repo))
 
-                (
-                  pom,
-                  // create
-                  created(metas.map(_.created)),
-                  // resolver
-                  resolver,
-                  // filter
-                  !metas.exists(meta =>
-                    meta.owner == "typesafe" && typesafeNonOSS.contains(meta.repo))
-                )
-              }
-              case None => {
-                println("no meta for pom: " + sha1)
-                default
+                  (
+                    pom,
+                    // create
+                    created(metas.map(_.created)),
+                    // resolver
+                    resolver,
+                    // filter
+                    !metas.exists(meta =>
+                      meta.owner == "typesafe" && typesafeNonOSS.contains(
+                        meta.repo))
+                  )
+                }
+                case None => {
+                  println("no meta for pom: " + sha1)
+                  default
+                }
               }
             }
+            case MavenCentral => {
+              central.get(sha1) match {
+                case Some(metas) => {
+                  (
+                    pom,
+                    created(metas.map(_.created)),
+                    None,
+                    true
+                  )
+                }
+                case None => {
+                  println("no meta for pom: " + sha1)
+                  default
+                }
+              }
+            }
+            case UserProvided =>
+              users.get(sha1) match {
+                case Some(metas) => {
+                  (
+                    pom,
+                    created(metas.map(_.created)),
+                    Some(UserPublished),
+                    true
+                  )
+                }
+                case None => {
+                  println("no meta for pom: " + sha1)
+                  default
+                }
+              }
+            case BintraySbtPlugins =>
+              (
+                pom,
+                sbtPluginsCreated.get(sha1),
+                None,
+                true
+              )
           }
-          case MavenCentral => {
-            central.get(sha1) match {
-              case Some(metas) => {
-                (
-                  pom,
-                  created(metas.map(_.created)),
-                  None,
-                  true
-                )
-              }
-              case None => {
-                println("no meta for pom: " + sha1)
-                default
-              }
-            }
-          }
-          case UserProvided =>
-            users.get(sha1) match {
-              case Some(metas) => {
-                (
-                  pom,
-                  created(metas.map(_.created)),
-                  Some(UserPublished),
-                  true
-                )
-              }
-              case None => {
-                println("no meta for pom: " + sha1)
-                default
-              }
-            }
-          case BintraySbtPlugins =>
-            (
-              pom,
-              sbtPluginsCreated.get(sha1),
-              None,
-              true
-            )
         }
       }
-    }.filter { case (pom, _, _, keep) => packagingOfInterest.contains(pom.packaging) && keep }.map {
-      case (pom, created, resolver, _) => (pom, created, resolver)
-    }
+      .filter {
+        case (pom, _, _, keep) =>
+          packagingOfInterest.contains(pom.packaging) && keep
+      }
+      .map {
+        case (pom, created, resolver, _) => (pom, created, resolver)
+      }
   }
 
   /**
@@ -198,10 +215,19 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
     val pomsAndMetaClean = extractMeta(pomsRepoSha).flatMap {
       case (pom, created, resolver) =>
         for {
-          (artifactName, target, nonStandardLib) <- extractArtifactNameAndTarget(pom)
+          (artifactName, target, nonStandardLib) <- extractArtifactNameAndTarget(
+            pom)
           version <- SemanticVersion(pom.version)
           github <- githubRepoExtractor(pom)
-        } yield (github, artifactName, target, pom, created, resolver, version, nonStandardLib)
+        } yield
+          (github,
+           artifactName,
+           target,
+           pom,
+           created,
+           resolver,
+           version,
+           nonStandardLib)
     }
 
     println("Convert POMs to Project")
@@ -210,9 +236,13 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
     def pomToMavenReference(pom: maven.ReleaseModel) =
       MavenReference(pom.groupId, pom.artifactId, pom.version)
 
-    def maxMinRelease(releases: Set[Release]): (Option[String], Option[String]) = {
+    def maxMinRelease(
+        releases: Set[Release]): (Option[String], Option[String]) = {
       def sortDate(rawDates: List[String]): List[String] = {
-        rawDates.map(format.parseDateTime).sorted(Descending[DateTime]).map(format.print)
+        rawDates
+          .map(format.parseDateTime)
+          .sorted(Descending[DateTime])
+          .map(format.print)
       }
 
       val dates = for {
@@ -226,93 +256,112 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
 
     val storedProjects = SaveLiveData.storedProjects(paths)
 
-    val projectsAndReleases = pomsAndMetaClean.groupBy {
-      case (githubRepo, _, _, _, _, _, _, _) => githubRepo
-    }.map {
-      case (githubRepo @ GithubRepo(organization, repository), vs) =>
-        val projectReference = Project.Reference(organization, repository)
+    val projectsAndReleases = pomsAndMetaClean
+      .groupBy {
+        case (githubRepo, _, _, _, _, _, _, _) => githubRepo
+      }
+      .map {
+        case (githubRepo @ GithubRepo(organization, repository), vs) =>
+          val projectReference = Project.Reference(organization, repository)
 
-        val cachedReleasesForProject =
-          cachedReleases.get(projectReference).getOrElse(Set())
+          val cachedReleasesForProject =
+            cachedReleases.get(projectReference).getOrElse(Set())
 
-        val releases = vs.map {
-          case (_, artifactName, target, pom, created, resolver, version, artifactKind) =>
-            val (targetType, scalaVersion, scalaJsVersion, scalaNativeVersion) =
-              ScalaTarget.split(target)
+          val releases = vs.map {
+            case (_,
+                  artifactName,
+                  target,
+                  pom,
+                  created,
+                  resolver,
+                  version,
+                  artifactKind) =>
+              val (targetType,
+                   scalaVersion,
+                   scalaJsVersion,
+                   scalaNativeVersion) =
+                ScalaTarget.split(target)
 
-            Release(
-              maven = pomToMavenReference(pom),
-              reference = Release.Reference(
-                organization,
-                repository,
-                artifactName,
-                version,
-                target
-              ),
-              resolver = resolver,
-              name = pom.name,
-              description = pom.description,
-              released = created,
-              licenses = licenseCleanup(pom),
-              artifactKind = artifactKind,
-              id = None,
-              liveData = false,
-              scalaDependencies = Seq(),
-              javaDependencies = Seq(),
-              reverseDependencies = Seq(),
-              internalDependencies = Seq(),
-              targetType = targetType.getOrElse("JAVA"),
-              // for artifact publish with binary, full will return binary
-              // ex cats_2.11 => 2.11
-              scalaVersion = scalaVersion,
-              scalaJsVersion = scalaJsVersion,
-              scalaNativeVersion = scalaNativeVersion
-            )
-        }.toSet ++ cachedReleasesForProject
+              Release(
+                maven = pomToMavenReference(pom),
+                reference = Release.Reference(
+                  organization,
+                  repository,
+                  artifactName,
+                  version,
+                  target
+                ),
+                resolver = resolver,
+                name = pom.name,
+                description = pom.description,
+                released = created,
+                licenses = licenseCleanup(pom),
+                artifactKind = artifactKind,
+                id = None,
+                liveData = false,
+                scalaDependencies = Seq(),
+                javaDependencies = Seq(),
+                reverseDependencies = Seq(),
+                internalDependencies = Seq(),
+                targetType = targetType.getOrElse("JAVA"),
+                // for artifact publish with binary, full will return binary
+                // ex cats_2.11 => 2.11
+                scalaVersion = scalaVersion,
+                scalaJsVersion = scalaJsVersion,
+                scalaNativeVersion = scalaNativeVersion
+              )
+          }.toSet ++ cachedReleasesForProject
 
-        val releaseCount = releases.map(_.reference.version).toSet.size
+          val releaseCount = releases.map(_.reference.version).toSet.size
 
-        val (max, min) = maxMinRelease(releases)
+          val (max, min) = maxMinRelease(releases)
 
-        val defaultStableVersion =
-          if (stored)
-            storedProjects
-              .get(Project.Reference(organization, repository))
-              .map(_.defaultStableVersion)
-              .getOrElse(true)
-          else true
+          val defaultStableVersion =
+            if (stored)
+              storedProjects
+                .get(Project.Reference(organization, repository))
+                .map(_.defaultStableVersion)
+                .getOrElse(true)
+            else true
 
-        val releaseOptions = DefaultRelease(
-          repository,
-          ReleaseSelection(None, None, None),
-          releases,
-          None,
-          defaultStableVersion
-        )
-
-        val seed =
-          ProjectSeed(
-            organization = organization,
-            repository = repository,
-            github = GithubReader(paths, githubRepo),
-            artifacts = releaseOptions.map(_.artifacts.sorted).getOrElse(Nil),
-            releaseCount = releaseCount,
-            defaultArtifact = releaseOptions.map(_.release.reference.artifact),
-            created = min,
-            updated = max
+          val releaseOptions = DefaultRelease(
+            repository,
+            ReleaseSelection(None, None, None),
+            releases,
+            None,
+            defaultStableVersion
           )
 
-        (seed, releases)
-    }.toList
+          val seed =
+            ProjectSeed(
+              organization = organization,
+              repository = repository,
+              github = GithubReader(paths, githubRepo),
+              artifacts = releaseOptions.map(_.artifacts.sorted).getOrElse(Nil),
+              releaseCount = releaseCount,
+              defaultArtifact =
+                releaseOptions.map(_.release.reference.artifact),
+              created = min,
+              updated = max
+            )
+
+          (seed, releases)
+      }
+      .toList
 
     println("Dependencies & Reverse Dependencies")
 
-    val mavenReferenceToReleaseReference = projectsAndReleases.flatMap {
-      case (_, releases) => releases
-    }.map(release => (release.maven, release.reference)).toMap
+    val mavenReferenceToReleaseReference = projectsAndReleases
+      .flatMap {
+        case (_, releases) => releases
+      }
+      .map(release => (release.maven, release.reference))
+      .toMap
 
     def dependencyToMaven(dependency: maven.Dependency) =
-      MavenReference(dependency.groupId, dependency.artifactId, dependency.version)
+      MavenReference(dependency.groupId,
+                     dependency.artifactId,
+                     dependency.version)
 
     val poms = pomsAndMetaClean.map { case (_, _, _, pom, _, _, _, _) => pom }
 
@@ -333,7 +382,9 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
                   val (source, target) =
                     if (reverse) (dependencyReference, pomReference)
                     else (pomReference, dependencyReference)
-                  upsert(cache0, source, ScalaDependency(target, dependency.scope))
+                  upsert(cache0,
+                         source,
+                         ScalaDependency(target, dependency.scope))
 
                 /* dependency is scala reference - works now only if reverse */
                 case (Some(dependencyReference), None) =>
@@ -346,12 +397,15 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
                 /* works only if not reverse */
                 case (None, Some(pomReference)) =>
                   if (!reverse)
-                    upsert(cache0, pomReference, JavaDependency(depMavenRef, dependency.scope))
+                    upsert(cache0,
+                           pomReference,
+                           JavaDependency(depMavenRef, dependency.scope))
                   else cache0
 
                 /* java -> java: should not happen actually */
                 case (None, None) =>
-                  println(s"no reference discovered for $pomMavenRef -> $depMavenRef")
+                  println(
+                    s"no reference discovered for $pomMavenRef -> $depMavenRef")
                   cache0
               }
           }
@@ -369,8 +423,9 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
       reverseDependenciesCache.getOrElse(release.reference, Seq())
     }
 
-    def collectDependencies(releases: Set[Release],
-                            f: Release.Reference => Option[String]): Set[String] = {
+    def collectDependencies(
+        releases: Set[Release],
+        f: Release.Reference => Option[String]): Set[String] = {
       (for {
         release <- releases.toList
         dependency <- release.scalaDependencies.toList
@@ -393,15 +448,23 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
       case (seed, releases) =>
         val releasesWithDependencies = releases.map { release =>
           val dependencies = findDependencies(release)
-          val externalDependencies = dependencies.filterNot(belongsTo(seed.reference))
-          val internalDependencies = dependencies.filter(belongsTo(seed.reference))
+          val externalDependencies =
+            dependencies.filterNot(belongsTo(seed.reference))
+          val internalDependencies =
+            dependencies.filter(belongsTo(seed.reference))
           release.copy(
-            scalaDependencies = externalDependencies.collect { case sd: ScalaDependency => sd },
-            javaDependencies = externalDependencies.collect { case jd: JavaDependency => jd },
+            scalaDependencies = externalDependencies.collect {
+              case sd: ScalaDependency => sd
+            },
+            javaDependencies = externalDependencies.collect {
+              case jd: JavaDependency => jd
+            },
             reverseDependencies = findReverseDependencies(release).collect {
               case sd: ScalaDependency => sd
             },
-            internalDependencies = internalDependencies.collect { case sd: ScalaDependency => sd }
+            internalDependencies = internalDependencies.collect {
+              case sd: ScalaDependency => sd
+            }
           )
         }
 
@@ -419,7 +482,10 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
 
         val updatedProject =
           if (stored) {
-            storedProjects.get(project.reference).map(_.update(project)).getOrElse(project)
+            storedProjects
+              .get(project.reference)
+              .map(_.update(project))
+              .getOrElse(project)
           } else project
 
         (updatedProject, releasesWithDependencies)

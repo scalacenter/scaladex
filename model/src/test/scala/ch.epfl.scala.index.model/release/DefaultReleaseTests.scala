@@ -3,7 +3,8 @@ package release
 
 object DefaultReleaseTests extends org.specs2.mutable.Specification {
 
-  def emptyRelease(maven: MavenReference, reference: Release.Reference): Release =
+  def emptyRelease(maven: MavenReference,
+                   reference: Release.Reference): Release =
     Release(
       maven,
       reference,
@@ -29,19 +30,26 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
               repository: String,
               groupdId: String,
               releases: List[(String, String)]) = {
-    releases.flatMap {
-      case (artifactId, rawVersion) =>
-        for {
-          (artifact, target) <- Artifact(artifactId)
-          version <- SemanticVersion(rawVersion)
-        } yield (artifactId, rawVersion, artifact, target, version)
-    }.map {
-      case (artifactId, rawVersion, artifact, target, version) =>
-        emptyRelease(
-          MavenReference(groupdId, artifactId, rawVersion),
-          Release.Reference(organization, repository, artifact, version, Some(target))
-        )
-    }.toSet
+    releases
+      .flatMap {
+        case (artifactId, rawVersion) =>
+          for {
+            (artifact, target) <- Artifact(artifactId)
+            version <- SemanticVersion(rawVersion)
+          } yield (artifactId, rawVersion, artifact, target, version)
+      }
+      .map {
+        case (artifactId, rawVersion, artifact, target, version) =>
+          emptyRelease(
+            MavenReference(groupdId, artifactId, rawVersion),
+            Release.Reference(organization,
+                              repository,
+                              artifact,
+                              version,
+                              Some(target))
+          )
+      }
+      .toSet
   }
 
   "Default Release" >> {
@@ -83,7 +91,11 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
       )
 
       val result =
-        DefaultRelease(repository, ReleaseSelection(None, None, None), releases, None, true)
+        DefaultRelease(repository,
+                       ReleaseSelection(None, None, None),
+                       releases,
+                       None,
+                       true)
 
       val versions: List[SemanticVersion] =
         List(
@@ -97,8 +109,10 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
 
       val targets: List[ScalaTarget] =
         List(
-          ScalaTarget.scalaJs(SemanticVersion("2.11").get, SemanticVersion("0.6").get),
-          ScalaTarget.scalaJs(SemanticVersion("2.10").get, SemanticVersion("0.6").get),
+          ScalaTarget.scalaJs(SemanticVersion("2.11").get,
+                              SemanticVersion("0.6").get),
+          ScalaTarget.scalaJs(SemanticVersion("2.10").get,
+                              SemanticVersion("0.6").get),
           ScalaTarget.scala(SemanticVersion("2.11").get),
           ScalaTarget.scala(SemanticVersion("2.10").get)
         )
@@ -130,13 +144,14 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
       val organization = "akka"
       val repository = "akka"
       val groupdId = "com.typesafe.akka"
-      val releases = prepare(organization,
-                             repository,
-                             groupdId,
-                             List(
-                               ("akka-distributed-data-experimental_2.11", "2.4.8"),
-                               ("akka-actors_2.11", "2.4.8")
-                             ))
+      val releases =
+        prepare(organization,
+                repository,
+                groupdId,
+                List(
+                  ("akka-distributed-data-experimental_2.11", "2.4.8"),
+                  ("akka-actors_2.11", "2.4.8")
+                ))
 
       val result = DefaultRelease(
         repository,
@@ -162,7 +177,9 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
               ScalaTarget.scala(SemanticVersion("2.11").get)
             ),
             release = emptyRelease(
-              MavenReference(groupdId, "akka-distributed-data-experimental_2.11", "2.4.8"),
+              MavenReference(groupdId,
+                             "akka-distributed-data-experimental_2.11",
+                             "2.4.8"),
               Release.Reference(
                 organization,
                 repository,

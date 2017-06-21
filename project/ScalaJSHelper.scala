@@ -27,7 +27,8 @@ object ScalaJSHelper {
         }
 
       val optimized = {
-        val (js, map) = andSourceMap((fullOptJS in (client, Compile)).value.data)
+        val (js, map) =
+          andSourceMap((fullOptJS in (client, Compile)).value.data)
         Seq(
           js -> js.getName,
           map -> map.getName

@@ -25,7 +25,7 @@ object Artifact extends Parsers {
   def apply(artifactId: String): Option[(String, ScalaTarget)] = {
     ArtifactNameParser.parse(artifactId) match {
       case Parsed.Success(v, _) => Some(v)
-      case _ => None
+      case _                    => None
     }
   }
 }

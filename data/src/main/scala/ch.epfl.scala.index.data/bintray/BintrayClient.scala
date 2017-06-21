@@ -76,11 +76,13 @@ class BintrayClient(paths: DataPaths) {
       // Let’s first get the first page
       firstResponse <- fetchPage(0)
       // And then get the remaining pages, if any
-      remainingResponses <- Future.traverse(remainingPages(firstResponse))(fetchPage)
+      remainingResponses <- Future.traverse(remainingPages(firstResponse))(
+        fetchPage)
     } yield {
       // Eventually concatenate all the results together
-      remainingResponses.foldLeft(decode(firstResponse)) { (results, otherResults) =>
-        results ++ decode(otherResults)
+      remainingResponses.foldLeft(decode(firstResponse)) {
+        (results, otherResults) =>
+          results ++ decode(otherResults)
       }
     }
   }
@@ -92,8 +94,12 @@ class BintrayClient(paths: DataPaths) {
   def remainingPages(response: WSResponse): Seq[Int] =
     (
       for {
-        total <- response.header("X-RangeLimit-Total").flatMap(s => Try(s.toInt).toOption)
-        count <- response.header("X-RangeLimit-EndPos").flatMap(s => Try(s.toInt).toOption)
+        total <- response
+          .header("X-RangeLimit-Total")
+          .flatMap(s => Try(s.toInt).toOption)
+        count <- response
+          .header("X-RangeLimit-EndPos")
+          .flatMap(s => Try(s.toInt).toOption)
         if count < total
         remainingPages = (total - 1) / count
       } yield Seq.tabulate(remainingPages)(page => (page + 1) * count)
@@ -104,10 +110,12 @@ class BintrayClient(paths: DataPaths) {
     * @param decode   The function that decodes the JSON content into a list of meaningful information
     * @return The decoded content. In case of (any) failure, logs the error and returns an empty list.
     */
-  def decodeSucessfulJson[A](decode: JValue => List[A])(response: WSResponse): List[A] =
+  def decodeSucessfulJson[A](decode: JValue => List[A])(
+      response: WSResponse): List[A] =
     try {
       if (response.status != 200) {
-        sys.error(s"Got a response with a non-OK status: ${response.statusText} ${response.body}")
+        sys.error(
+          s"Got a response with a non-OK status: ${response.statusText} ${response.body}")
       }
       decode(parse(response.body))
     } catch {

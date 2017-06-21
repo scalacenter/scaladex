@@ -30,7 +30,7 @@ case class ScalaTarget(
     (scalaJsVersion, scalaNativeVersion) match {
       case (Some(_), _) => "JS"
       case (_, Some(_)) => "NATIVE"
-      case _ => "JVM"
+      case _            => "JVM"
     }
   }
 }
@@ -40,8 +40,10 @@ object ScalaTarget {
   def encode(target: ScalaTarget): String = {
     val scalaVersion = target.scalaVersion
     (target.scalaJsVersion, target.scalaNativeVersion) match {
-      case (Some(scalaJsVersion), _) => s"_sjs${scalaJsVersion}_${scalaVersion}"
-      case (_, Some(scalaNativeVersion)) => s"_native${scalaNativeVersion}_${scalaVersion}"
+      case (Some(scalaJsVersion), _) =>
+        s"_sjs${scalaJsVersion}_${scalaVersion}"
+      case (_, Some(scalaNativeVersion)) =>
+        s"_native${scalaNativeVersion}_${scalaVersion}"
       case _ => s"_${scalaVersion}"
     }
   }
@@ -51,14 +53,17 @@ object ScalaTarget {
   }
 
   def scala(version: SemanticVersion) =
-    ScalaTarget(scalaVersion = version, scalaJsVersion = None, scalaNativeVersion = None)
+    ScalaTarget(scalaVersion = version,
+                scalaJsVersion = None,
+                scalaNativeVersion = None)
 
   def scalaJs(scalaVersion: SemanticVersion, scalaJsVersion: SemanticVersion) =
     ScalaTarget(scalaVersion = scalaVersion,
                 scalaJsVersion = Some(scalaJsVersion),
                 scalaNativeVersion = None)
 
-  def scalaNative(version: SemanticVersion, scalaNativeVersion: SemanticVersion) =
+  def scalaNative(version: SemanticVersion,
+                  scalaNativeVersion: SemanticVersion) =
     ScalaTarget(scalaVersion = version,
                 scalaJsVersion = None,
                 scalaNativeVersion = Some(scalaNativeVersion))
@@ -67,8 +72,10 @@ object ScalaTarget {
     : (Option[String], Option[String], Option[String], Option[String]) = {
     val targetType = target.map(_.targetType)
     val scalaVersion = target.map(_.scalaVersion.forceBinary.toString)
-    val scalaJsVersion = target.flatMap(_.scalaJsVersion.map(_.forceBinary.toString))
-    val scalaNativeVersion = target.flatMap(_.scalaNativeVersion.map(_.forceBinary.toString))
+    val scalaJsVersion =
+      target.flatMap(_.scalaJsVersion.map(_.forceBinary.toString))
+    val scalaNativeVersion =
+      target.flatMap(_.scalaNativeVersion.map(_.forceBinary.toString))
 
     (targetType, scalaVersion, scalaJsVersion, scalaNativeVersion)
   }

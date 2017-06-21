@@ -27,11 +27,14 @@ case class SemanticVersion(
     val patchPart = patch.map("." + _).getOrElse("")
     val patch2Part = patch2.map("." + _).getOrElse("")
 
-    val preReleasePart = preRelease.map {
-      case Milestone(d) => "M" + d.toString
-      case ReleaseCandidate(d) => "RC" + d.toString
-      case OtherPreRelease(v) => v.toString
-    }.map("-" + _).getOrElse("")
+    val preReleasePart = preRelease
+      .map {
+        case Milestone(d)        => "M" + d.toString
+        case ReleaseCandidate(d) => "RC" + d.toString
+        case OtherPreRelease(v)  => v.toString
+      }
+      .map("-" + _)
+      .getOrElse("")
 
     val metadataPart = metadata.map("+" + _).getOrElse("")
 
@@ -50,7 +53,8 @@ case class SemanticVersion(
 
   private final val lcmp = implicitly[Ordering[Long]]
   private final val scmp = implicitly[Ordering[String]]
-  private final val cmp = implicitly[Ordering[(Long, Long, Option[Long], Option[Long])]]
+  private final val cmp =
+    implicitly[Ordering[(Long, Long, Option[Long], Option[Long])]]
 
   override def compare(that: SemanticVersion): Int = {
     val v1 = this
@@ -102,7 +106,8 @@ object SemanticVersion extends Parsers {
     val PreRelease: P[PreRelease] =
       "-" ~ (
         (("M" | "m") ~ &(Digit) ~ Number).map(n => Milestone(n)) |
-          (("R" | "r") ~ ("C" | "c") ~ &(Digit) ~ Number).map(n => ReleaseCandidate(n)) |
+          (("R" | "r") ~ ("C" | "c") ~ &(Digit) ~ Number).map(n =>
+            ReleaseCandidate(n)) |
           (Digit | Alpha | "." | "-").rep.!.map(s => OtherPreRelease(s))
       )
 
@@ -113,17 +118,18 @@ object SemanticVersion extends Parsers {
     val PatchP = ("." ~ Number).? // not really valid SemVer
     val Patch2P = ("." ~ Number).? // not really valid SemVer
 
-    ("v".? ~ Major ~ MinorP ~ PatchP ~ Patch2P ~ PreRelease.? ~ MetaData.?).map {
-      case (major, minor, patch, patch2, preRelease, metadata) =>
-        SemanticVersion(major, minor, patch, patch2, preRelease, metadata)
-    }
+    ("v".? ~ Major ~ MinorP ~ PatchP ~ Patch2P ~ PreRelease.? ~ MetaData.?)
+      .map {
+        case (major, minor, patch, patch2, preRelease, metadata) =>
+          SemanticVersion(major, minor, patch, patch2, preRelease, metadata)
+      }
   }
   private val FullParser = Start ~ Parser ~ End
   def parse(version: String): Option[SemanticVersion] = apply(version)
   def apply(version: String): Option[SemanticVersion] = {
     FullParser.parse(version) match {
       case Parsed.Success(v, _) => Some(v)
-      case _ => None
+      case _                    => None
     }
   }
 }

@@ -15,8 +15,6 @@ import scala.util.Success
 import scala.util.matching.Regex
 
 class GithubRepoExtractor(paths: DataPaths) {
-  // private val claimsFile = cleanupIndexBase.resolve(Paths.get("claims.json"))
-
   case class Claims(claims: Map[String, Option[String]])
   object ClaimsSerializer
       extends CustomSerializer[Claims](
@@ -25,7 +23,9 @@ class GithubRepoExtractor(paths: DataPaths) {
             {
               case JObject(obj) => {
                 implicit val formats = DefaultFormats
-                Claims(obj.map { case (k, v) => (k, v.extract[Option[String]]) }.toMap)
+                Claims(obj.map {
+                  case (k, v) => (k, v.extract[Option[String]])
+                }.toMap)
               }
             }, {
               case c: Claims =>
@@ -42,30 +42,31 @@ class GithubRepoExtractor(paths: DataPaths) {
     * json4s formats
     */
   implicit private val formats = DefaultFormats ++ Seq(ClaimsSerializer)
-  implicit private val serialization = native.Serialization
 
   private val source = scala.io.Source.fromFile(paths.claims.toFile)
   private val claims = read[Claims](source.mkString).claims
   private def matches(m: Regex, s: String): Boolean = m.unapplySeq(s).isDefined
 
-  val claimedRepos = claims.toList.sorted.flatMap { case (k, v) => v.map((k, _)) }.map {
-    case (k, v) =>
-      val List(groupId, artifactIdRawRegex) = k.split(" ").toList
-      val artifactIdRegex = artifactIdRawRegex.replaceAllLiterally("*", "(.*)").r
-      val matcher: (maven.ReleaseModel => Boolean) = pom => {
-        def artifactMatches =
-          artifactIdRawRegex == "*" ||
-            matches(artifactIdRegex, pom.artifactId)
+  val claimedRepos =
+    claims.toList.sorted.flatMap { case (k, v) => v.map((k, _)) }.map {
+      case (k, v) =>
+        val List(groupId, artifactIdRawRegex) = k.split(" ").toList
+        val artifactIdRegex =
+          artifactIdRawRegex.replaceAllLiterally("*", "(.*)").r
+        val matcher: (maven.ReleaseModel => Boolean) = pom => {
+          def artifactMatches =
+            artifactIdRawRegex == "*" ||
+              matches(artifactIdRegex, pom.artifactId)
 
-        def groupIdMaches = groupId == pom.groupId
+          def groupIdMaches = groupId == pom.groupId
 
-        groupIdMaches && artifactMatches
-      }
+          groupIdMaches && artifactMatches
+        }
 
-      val List(organization, repo) = v.split('/').toList
+        val List(organization, repo) = v.split('/').toList
 
-      (matcher, GithubRepo(organization, repo))
-  }
+        (matcher, GithubRepo(organization, repo))
+    }
   source.close()
 
   def apply(pom: maven.ReleaseModel): Option[GithubRepo] = {
@@ -78,14 +79,15 @@ class GithubRepoExtractor(paths: DataPaths) {
       case None => List()
     }
 
-    val fromClaims = claimedRepos.find { case (matcher, _) => matcher(pom) }.map {
-      case (_, repo) => repo
-    }
+    val fromClaims =
+      claimedRepos.find { case (matcher, _) => matcher(pom) }.map {
+        case (_, repo) => repo
+      }
 
     /* use claims first because it can be used to rewrite scmInfo */
     val repo = fromClaims match {
       case None => fromPoms.headOption
-      case s => s
+      case s    => s
     }
 
     // scala xml interpolation is <url>{someVar}<url> and it's often wrong like <url>${someVar}<url>
@@ -106,10 +108,12 @@ class GithubRepoExtractor(paths: DataPaths) {
   // script to generate contrib/claims.json
   def updateClaims(): Unit = {
 
-    val poms = PomsReader.loadAll(paths).collect { case Success((pom, _, _)) => pom }
+    val poms =
+      PomsReader.loadAll(paths).collect { case Success((pom, _, _)) => pom }
 
     val noUrl = poms.filter(pom => apply(pom).isEmpty)
-    val notClaimed = noUrl.map(pom => (s"${pom.groupId} ${pom.artifactId}", None)).toMap
+    val notClaimed =
+      noUrl.map(pom => (s"${pom.groupId} ${pom.artifactId}", None)).toMap
     val out = writePretty(Claims(notClaimed ++ claims))
       .replaceAllLiterally("\":\"", "\": \"") // make json breath
       .replaceAllLiterally("\":null", "\": null")

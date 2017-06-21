@@ -16,7 +16,8 @@ object ArtifactTests extends org.specs2.mutable.Specification {
       Artifact("cats-core_native0.1_2.11") ==== Some(
         (
           "cats-core",
-          ScalaTarget.scalaNative(SemanticVersion(2, 11), SemanticVersion(0, 1))
+          ScalaTarget.scalaNative(SemanticVersion(2, 11),
+                                  SemanticVersion(0, 1))
         )
       )
     }
@@ -25,7 +26,10 @@ object ArtifactTests extends org.specs2.mutable.Specification {
         (
           "akka-remote-tests",
           ScalaTarget.scala(
-            SemanticVersion(2, 11, Some(0), preRelease = Some(ReleaseCandidate(4)))
+            SemanticVersion(2,
+                            11,
+                            Some(0),
+                            preRelease = Some(ReleaseCandidate(4)))
           )
         )
       )

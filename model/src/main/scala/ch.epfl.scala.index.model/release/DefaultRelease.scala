@@ -39,7 +39,9 @@ object DefaultRelease {
             defaultStableVersion: Boolean): Option[ReleaseOptions] = {
 
     def filterTarget(release: Release): Boolean =
-      selection.target.map(target => Some(target) == release.reference.target).getOrElse(true)
+      selection.target
+        .map(target => Some(target) == release.reference.target)
+        .getOrElse(true)
 
     def filterArtifact(release: Release): Boolean =
       selection.artifact.map(_ == release.reference.artifact).getOrElse(true)
@@ -47,8 +49,10 @@ object DefaultRelease {
     def filterVersion(release: Release): Boolean =
       selection.version.map(_ == release.reference.version).getOrElse(true)
 
-    val selectedReleases = releases.filter(release =>
-      filterTarget(release) && filterArtifact(release) && filterVersion(release))
+    val selectedReleases = releases.filter(
+      release =>
+        filterTarget(release) && filterArtifact(release) && filterVersion(
+          release))
 
     // descending ordering for versions
     implicit def ordering = implicitly[Ordering[SemanticVersion]].reverse
@@ -80,12 +84,15 @@ object DefaultRelease {
         .map(_.reference.target)
         .toList
         .flatten
-        .sortBy(target => (target.targetType, target.scalaVersion, target.scalaJsVersion))
+        .sortBy(target =>
+          (target.targetType, target.scalaVersion, target.scalaJsVersion))
 
-      val artifacts = releases.filter(filterTarget).map(_.reference.artifact).toList.sorted
+      val artifacts =
+        releases.filter(filterTarget).map(_.reference.artifact).toList.sorted
 
       val releasesForArtifact =
-        releases.filter(release => filterTarget(release) && filterArtifact(release))
+        releases.filter(release =>
+          filterTarget(release) && filterArtifact(release))
 
       val versions = releasesForArtifact.map(_.reference.version).toList.sorted
 

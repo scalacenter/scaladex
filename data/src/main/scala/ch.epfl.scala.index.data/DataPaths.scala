@@ -169,21 +169,21 @@ class DataPaths(private[DataPaths] val args: List[String]) {
 
   def poms(repository: LocalPomRepository) =
     repository match {
-      case Bintray => bintrayPomSha
+      case Bintray      => bintrayPomSha
       case MavenCentral => mavenCentralPomSha
       case UserProvided => usersPomSha
     }
 
   def parentPoms(repository: LocalPomRepository) =
     repository match {
-      case Bintray => bintrayParentPom
+      case Bintray      => bintrayParentPom
       case MavenCentral => mavenCentralParentPom
       case UserProvided => usersParentPom
     }
 
   def meta(repository: LocalPomRepository) =
     repository match {
-      case Bintray => bintrayMeta
+      case Bintray      => bintrayMeta
       case MavenCentral => mavenCentralMeta
       case UserProvided => usersMeta
     }

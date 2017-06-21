@@ -24,21 +24,22 @@ object PomsReader {
     ).mkString(File.separator)
   }
 
-  def loadAll(paths: DataPaths): List[Try[(ReleaseModel, LocalRepository, String)]] = {
+  def loadAll(
+      paths: DataPaths): List[Try[(ReleaseModel, LocalRepository, String)]] = {
     import LocalPomRepository._
-    val localRepositories = List(Bintray, MavenCentral, UserProvided)
 
     val centralPoms = PomsReader(MavenCentral, paths).load()
     val centralShas = centralPoms.collect { case Success((_, _, sha)) => sha }.toSet
 
     val bintrayPoms = PomsReader(Bintray, paths).load().filter {
       case Success((_, _, sha)) => !centralShas.contains(sha)
-      case _ => true
+      case _                    => true
     }
     val bintrayShas = bintrayPoms.collect { case Success((_, _, sha)) => sha }.toSet
 
     val usersPoms = PomsReader(UserProvided, paths).load().filter {
-      case Success((_, _, sha)) => !centralShas.contains(sha) && !bintrayShas.contains(sha)
+      case Success((_, _, sha)) =>
+        !centralShas.contains(sha) && !bintrayShas.contains(sha)
       case _ => true
     }
 
@@ -48,7 +49,9 @@ object PomsReader {
   }
 
   def apply(repository: LocalPomRepository, paths: DataPaths): PomsReader = {
-    new PomsReader(paths.poms(repository), paths.parentPoms(repository), repository)
+    new PomsReader(paths.poms(repository),
+                   paths.parentPoms(repository),
+                   repository)
   }
 
   def tmp(paths: DataPaths, path: Path): PomsReader = {
@@ -77,7 +80,9 @@ private[maven] class PomsReader(pomsPath: Path,
     def resolveModel(parent: Parent): ModelSource2 = {
       resolveModel(parent.getGroupId, parent.getArtifactId, parent.getVersion)
     }
-    def resolveModel(groupId: String, artifactId: String, version: String): ModelSource2 = {
+    def resolveModel(groupId: String,
+                     artifactId: String,
+                     version: String): ModelSource2 = {
       val dep = maven.Dependency(groupId, artifactId, version)
       val target = parentPomsPath.resolve(PomsReader.path(dep))
 
@@ -94,7 +99,10 @@ private[maven] class PomsReader(pomsPath: Path,
 
   private def resolve(pom: Path) = {
     val request = new DefaultModelBuildingRequest
-    request.setModelResolver(resolver).setSystemProperties(jdk).setPomFile(pom.toFile)
+    request
+      .setModelResolver(resolver)
+      .setSystemProperties(jdk)
+      .setPomFile(pom.toFile)
 
     builder.build(request).getEffectiveModel
   }

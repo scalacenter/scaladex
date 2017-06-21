@@ -26,7 +26,8 @@ case class SbtPluginsData(paths: DataPaths) extends BintrayProtocol {
 
     val releases =
       if (paths.ivysData.toFile.exists())
-        parse(new String(Files.readAllBytes(paths.ivysData))).extract[List[SbtPluginReleaseModel]]
+        parse(new String(Files.readAllBytes(paths.ivysData)))
+          .extract[List[SbtPluginReleaseModel]]
       else Nil
 
     val lastDownload =
@@ -41,7 +42,9 @@ case class SbtPluginsData(paths: DataPaths) extends BintrayProtocol {
              newReleases: List[SbtPluginReleaseModel]): Unit = {
     val allReleases = (oldReleases ++ newReleases).distinct
 
-    val _ = Files.write(paths.ivysData, write[List[SbtPluginReleaseModel]](allReleases).getBytes)
+    val _ = Files.write(
+      paths.ivysData,
+      write[List[SbtPluginReleaseModel]](allReleases).getBytes)
   }
 
 }

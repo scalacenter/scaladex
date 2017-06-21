@@ -15,7 +15,9 @@ import org.json4s.native.JsonMethods._
   * @param artifactId the artifact id
   * @param lookup where we can find the scala target
   */
-case class NonStandardLib(groupId: String, artifactId: String, lookup: ScalaTargetLookup)
+case class NonStandardLib(groupId: String,
+                          artifactId: String,
+                          lookup: ScalaTargetLookup)
 
 sealed trait ScalaTargetLookup
 
@@ -57,10 +59,10 @@ object NonStandardLib {
         case (artifact, rawLookup) =>
           val lookup =
             rawLookup match {
-              case "pom" => ScalaTargetFromPom
-              case "java" => NoScalaTargetPureJavaDependency
+              case "pom"     => ScalaTargetFromPom
+              case "java"    => NoScalaTargetPureJavaDependency
               case "version" => ScalaTargetFromVersion
-              case _ => sys.error("unknown lookup: '" + rawLookup + "'")
+              case _         => sys.error("unknown lookup: '" + rawLookup + "'")
             }
 
           val List(groupId, artifactId) = artifact.split(" ").toList

@@ -28,20 +28,23 @@ object LiveProjectsSerializer
                   case (k, v) =>
                     val List(organization, repository) = k.split('/').toList
 
-                    (Project.Reference(organization, repository), v.extract[ProjectForm])
+                    (Project.Reference(organization, repository),
+                     v.extract[ProjectForm])
                 }.toMap
               )
             }
           }, {
             case l: LiveProjects =>
               JObject(
-                l.projects.toList.sortBy {
-                  case (Project.Reference(organization, repository), _) =>
-                    (organization, repository)
-                }.map {
-                  case (Project.Reference(organization, repository), v) =>
-                    JField(s"$organization/$repository", parseJson(write(v)))
-                }
+                l.projects.toList
+                  .sortBy {
+                    case (Project.Reference(organization, repository), _) =>
+                      (organization, repository)
+                  }
+                  .map {
+                    case (Project.Reference(organization, repository), v) =>
+                      JField(s"$organization/$repository", parseJson(write(v)))
+                  }
               )
           }
       ))
@@ -56,18 +59,23 @@ object SaveLiveData extends LiveProjectsProtocol {
   val logger = LoggerFactory.getLogger(this.getClass)
 
   def storedProjects(paths: DataPaths): Map[Project.Reference, ProjectForm] =
-    read[LiveProjects](Files.readAllLines(paths.liveProjects).toArray.mkString("")).projects
+    read[LiveProjects](
+      Files.readAllLines(paths.liveProjects).toArray.mkString("")).projects
 
   // Note: we use a future here just to catch exceptions. Our code is blocking, though.
-  def saveProject(project: Project, paths: DataPaths)(implicit ec: ExecutionContext): Future[_] =
+  def saveProject(project: Project, paths: DataPaths)(
+      implicit ec: ExecutionContext): Future[_] =
     Future {
       concurrent.blocking {
         val keepProjects =
           LiveProjects(
-            SaveLiveData.storedProjects(paths) + (project.reference -> ProjectForm(project))
+            SaveLiveData
+              .storedProjects(paths) + (project.reference -> ProjectForm(
+              project))
           )
         logger.info(s"Writing projects at ${paths.liveProjects}")
-        Files.write(paths.liveProjects, writePretty(keepProjects).getBytes(StandardCharsets.UTF_8))
+        Files.write(paths.liveProjects,
+                    writePretty(keepProjects).getBytes(StandardCharsets.UTF_8))
       }
     }
 

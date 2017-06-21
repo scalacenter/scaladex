@@ -27,21 +27,26 @@ object Response {
   case class Organization(login: String)
 }
 
-case class UserState(repos: Set[GithubRepo], orgs: Set[Response.Organization], user: UserInfo) {
+case class UserState(repos: Set[GithubRepo],
+                     orgs: Set[Response.Organization],
+                     user: UserInfo) {
   def isAdmin = orgs.contains(Response.Organization("scalacenter"))
   def isSonatype = orgs.contains(Response.Organization("sonatype"))
   def hasPublishingAuthority = isAdmin || isSonatype
 }
 
-class Github(implicit system: ActorSystem, materializer: ActorMaterializer) extends Json4sSupport {
+class Github(implicit system: ActorSystem, materializer: ActorMaterializer)
+    extends Json4sSupport {
   import system.dispatcher
 
-  val config = ConfigFactory.load().getConfig("org.scala_lang.index.server.oauth2")
+  val config =
+    ConfigFactory.load().getConfig("org.scala_lang.index.server.oauth2")
   val clientId = config.getString("client-id")
   val clientSecret = config.getString("client-secret")
   val redirectUri = config.getString("uri") + "/callback/done"
 
-  private val poolClientFlow = Http().cachedHostConnectionPoolHttps[HttpRequest]("api.github.com")
+  private val poolClientFlow =
+    Http().cachedHostConnectionPoolHttps[HttpRequest]("api.github.com")
 
   def getUserStateWithToken(token: String): Future[UserState] = info(token)
   def getUserStateWithOauth2(code: String): Future[UserState] = {
@@ -59,7 +64,8 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
               )),
             headers = List(Accept(MediaTypes.`application/json`))
           ))
-        .flatMap(response => Unmarshal(response).to[Response.AccessToken].map(_.access_token))
+        .flatMap(response =>
+          Unmarshal(response).to[Response.AccessToken].map(_.access_token))
     }
 
     access.flatMap(info)
@@ -87,8 +93,10 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
 
     def paginated[T](path: Path, org: Boolean = false)(
         implicit ev: Unmarshaller[HttpResponse, List[T]]): Future[List[T]] = {
-      def request(page: Option[Int] = None) = {
-        val query = page.map(p => Query("page" -> p.toString())).getOrElse(Query())
+
+      def request(page: Option[Int]) = {
+        val query =
+          page.map(p => Query("page" -> p.toString())).getOrElse(Query())
 
         val query2 =
           if (org) ("type", "public") +: query
@@ -96,11 +104,15 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
 
         fetchGithub(path, query2)
       }
+
       Http()
         .singleRequest(request(None))
         .flatMap { r1 =>
           val lastPage =
-            r1.headers.find(_.name == "Link").map(h => extractLastPage(h.value)).getOrElse(1)
+            r1.headers
+              .find(_.name == "Link")
+              .map(h => extractLastPage(h.value))
+              .getOrElse(1)
           val maxPages = 5
           val clampedLastPage = if (lastPage > maxPages) maxPages else lastPage
           Unmarshal(r1).to[List[T]].map(vs => (vs, clampedLastPage))
@@ -115,7 +127,8 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
                   .runWith(Sink.seq)
                   .map(_.toList)
                   .map(_.collect { case (scala.util.Success(v), _) => v })
-                  .flatMap(s => Future.sequence(s.map(r2 => Unmarshal(r2).to[List[T]])))
+                  .flatMap(s =>
+                    Future.sequence(s.map(r2 => Unmarshal(r2).to[List[T]])))
                   .map(_.flatten)
               } else Future.successful(Nil)
 
@@ -129,7 +142,9 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer) exte
         .flatMap(response => Unmarshal(response).to[Response.User])
 
     for {
-      ((repos, user), orgs) <- fetchUserRepos().zip(fetchUser()).zip(fetchOrgs())
+      ((repos, user), orgs) <- fetchUserRepos()
+        .zip(fetchUser())
+        .zip(fetchOrgs())
       orgRepos <- Future.sequence(orgs.map(org => fetchOrgRepos(org.login)))
     } yield {
 

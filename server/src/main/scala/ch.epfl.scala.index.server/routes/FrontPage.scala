@@ -17,7 +17,7 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
   private def frontPage(userInfo: Option[UserInfo]) = {
     import dataRepository._
     for {
-      keywords <- keywords()
+      topics <- topics()
       targetTypes <- targetTypes()
       scalaVersions <- scalaVersions()
       scalaJsVersions <- scalaJsVersions()
@@ -33,9 +33,10 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
         xs.map(v => s"$label:$v").mkString("search?q=", " OR ", "")
 
       val ecosystems = Map(
-        "Akka" -> query("keywords")("akka-extension",
-                                    "akka-http-extension",
-                                    "akka-persistence-plugin"),
+        "Akka" -> query("topics")("akka",
+                                  "akka-http",
+                                  "akka-persistence",
+                                  "akka-streams"),
         "Scala.js" -> "search?targets=scala.js_0.6",
         "Spark" -> query("depends-on")("apache/spark-streaming",
                                        "apache/spark-graphx",
@@ -48,9 +49,11 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
       val excludedScalaVersions = Set("2.9", "2.8")
 
       views.html.frontpage(
-        keywords,
+        topics,
         targetTypes,
-        scalaVersions.filterNot { case (version, _) => excludedScalaVersions.contains(version) },
+        scalaVersions.filterNot {
+          case (version, _) => excludedScalaVersions.contains(version)
+        },
         scalaJsVersions,
         scalaNativeVersions,
         latestProjects,

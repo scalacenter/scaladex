@@ -16,10 +16,12 @@ object AutowireClient extends autowire.Client[String, Reader, Writer] {
     encodeURIComponent(uri.filterNot(c => c == '[' || c == ']'))
 
   def buildQueryGet(args: Map[String, String]): String = {
-    args.iterator.map {
-      case (key, value) =>
-        key + "=" + encode(value.toString.tail.init) // removes quotes around
-    }.mkString("&")
+    args.iterator
+      .map {
+        case (key, value) =>
+          key + "=" + encode(value.toString.tail.init) // removes quotes around
+      }
+      .mkString("&")
   }
 
   /** Change this if you add more features to the client. */

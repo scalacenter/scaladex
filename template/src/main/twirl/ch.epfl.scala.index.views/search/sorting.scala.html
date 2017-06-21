@@ -12,9 +12,6 @@
     }
     <input type="hidden" name="page" value="@pagination.current">
     
-    @for(keyword <- params.keywords){
-      <input type="hidden" name="keywords" value="@keyword">
-    }
     @for(tpe <- params.targetTypes){
       <input type="hidden" name="targetTypes" value="@tpe">
     }

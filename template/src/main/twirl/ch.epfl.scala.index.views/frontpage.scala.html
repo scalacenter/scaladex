@@ -3,7 +3,7 @@
 @import ch.epfl.scala.index.model.misc.{Url, UserInfo}
 @import ch.epfl.scala.index.model.misc.SearchParams
 
-@(keywords: List[(String, Long)],
+@(topics: List[(String, Long)],
   targetTypes: List[(String, Long)],
   scalaVersions: List[(String, Long)],
   scalaJsVersions: List[(String, Long)],
@@ -24,9 +24,9 @@
                 <div class="col-md-8 col-md-offset-2">
                     <h1>The Scala Library Index</h1> @searchinput(SearchParams(), false, Some(totalProjects), Some(totalReleases))
                     <ul class="tag">
-                        <li><strong>Keywords:</strong></li>
-                        @for((keyword, count) <- keywords) {
-                            <li><a href="/search?q=*&keywords=@keyword">@keyword (@count)</a></li>
+                        <li><strong>Topics:</strong></li>
+                        @for((topic, count) <- topics) {
+                            <li><a href="/search?q=*&topics=@topic">@topic (@count)</a></li>
                         }
                     </ul>
                     <ul class="tag">
