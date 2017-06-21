@@ -37,9 +37,7 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
       keywordField("cliArtifacts").index(false),
       keywordField("targets"),
       keywordField("dependencies"),
-      nestedField("github").fields(
-        keywordField("topics")
-      ),
+      objectField("github").fields(keywordField("topics")),
       dateField("created"),
       dateField("updated")
     )
