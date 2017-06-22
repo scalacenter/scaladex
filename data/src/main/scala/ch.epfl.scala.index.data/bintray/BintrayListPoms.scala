@@ -131,7 +131,7 @@ class BintrayListPoms(paths: DataPaths)(
     val mostRecentQueriedDate =
       queried.find(_.name.contains(scalaVersion)).map(_.created - 2.month)
 
-    performSearchAndDownload(s"List POMs for scala $scalaVersion",
+    performSearchAndDownload(s"Bintray: Search POMs for scala $scalaVersion",
                              queried,
                              s"*_$scalaVersion",
                              mostRecentQueriedDate)
@@ -144,9 +144,6 @@ class BintrayListPoms(paths: DataPaths)(
     * @param artifact the artifact name
     */
   def run(groupId: String, artifact: String): Unit = {
-
-    println(s"run $groupId $artifact")
-
     val queried = BintrayMeta.load(paths)
 
     /* the filter to make sure only this artifact get's added */
@@ -157,7 +154,7 @@ class BintrayListPoms(paths: DataPaths)(
 
     val mostRecentQueriedDate = queried.find(filter).map(_.created - 2.month)
 
-    performSearchAndDownload(s"List Poms for $groupId:$artifact",
+    performSearchAndDownload(s"Bintray: Search Poms for $groupId:$artifact",
                              queried,
                              artifact,
                              mostRecentQueriedDate,
