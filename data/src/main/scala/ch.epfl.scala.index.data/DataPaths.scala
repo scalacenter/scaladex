@@ -45,7 +45,7 @@ scaladex-contrib
 ├── licensesByName.json
 └── non-standard.json
 
-scaladex-credential (optionnal)
+scaladex-credentials (optionnal)
 └── search-credential
  */
 

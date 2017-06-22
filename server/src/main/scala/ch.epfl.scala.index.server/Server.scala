@@ -4,6 +4,7 @@ package server
 import routes._
 import routes.api._
 import data.DataPaths
+import data.util.PidLock
 import data.elastic._
 import akka.http.scaladsl._
 import akka.http.scaladsl.model.StatusCodes
@@ -14,11 +15,7 @@ import akka.stream.ActorMaterializer
 
 import scala.concurrent.duration._
 import scala.concurrent.Await
-import java.lang.management.ManagementFactory
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
 
-// reStart 8080 /home/gui/center/scaladex/contrib /home/gui/center/scaladex-data-jungle
 object Server {
   def main(args: Array[String]): Unit = {
 
@@ -30,12 +27,7 @@ object Server {
     val production = config.getBoolean("production")
 
     if (production) {
-      val pid = ManagementFactory.getRuntimeMXBean().getName().split("@").head
-      val pidFile = Paths.get("PID")
-      Files.write(pidFile, pid.getBytes(StandardCharsets.UTF_8))
-      sys.addShutdownHook {
-        Files.delete(pidFile)
-      }
+      PidLock.create("SERVER")
     }
 
     implicit val system = ActorSystem("scaladex")

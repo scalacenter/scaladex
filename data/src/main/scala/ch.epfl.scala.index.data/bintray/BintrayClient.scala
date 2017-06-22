@@ -29,6 +29,7 @@ class BintrayClient(paths: DataPaths) {
       val source = scala.io.Source.fromFile(
         credentials.resolve("search-credentials").toFile
       )
+
       val info = source.mkString
         .split(nl)
         .map { v =>

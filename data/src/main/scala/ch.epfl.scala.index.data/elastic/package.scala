@@ -78,15 +78,22 @@ package object elastic extends ProjectProtocol {
     println(s"elasticsearch $elasticsearch")
     if (elasticsearch == "remote") {
       TcpClient.transport(ElasticsearchClientUri("localhost", 9300))
-    } else if (elasticsearch == "local") {
-      val base = build.info.BuildInfo.baseDirectory.toPath
-      val homePath = base.resolve(".esdata").toString()
-      println(homePath)
+    } else if (elasticsearch == "local" || elasticsearch == "local-prod") {
+      val homePath =
+        if (elasticsearch == "local-prod") {
+          "."
+        } else {
+          val base = build.info.BuildInfo.baseDirectory.toPath
+          val out = base.resolve(".esdata").toString()
+          println(out)
+          out
+        }
 
-      LocalNode(LocalNode.requiredSettings(
-        clusterName = "elasticsearch-local", 
-        homePath = homePath
-      )).elastic4sclient()
+      LocalNode(
+        LocalNode.requiredSettings(
+          clusterName = "elasticsearch-local",
+          homePath = homePath
+        )).elastic4sclient()
     } else {
       sys.error(
         s"org.scala_lang.index.data.elasticsearch should be remote or local: $elasticsearch")

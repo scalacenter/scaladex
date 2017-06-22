@@ -1,6 +1,8 @@
 import ScalaJSHelper._
 import org.scalajs.sbtplugin.cross.CrossProject
 
+import Deployment.githash
+
 val akkaVersion = "2.5.2"
 val upickleVersion = "0.4.4"
 val scalatagsVersion = "0.6.5"
@@ -15,7 +17,7 @@ val logback = "ch.qos.logback" % "logback-classic" % "1.1.7"
 
 lazy val baseSettings = Seq(
   organization := "ch.epfl.scala.index",
-  version := "0.2.0"
+  version := s"0.2.0+${githash()}"
 )
 
 lazy val moveUniversal = taskKey[Unit]("moveUniversal")
@@ -47,6 +49,21 @@ lazy val commonSettings = Seq(
 ) ++ baseSettings ++
   addCommandAlias("start", "reStart")
 
+lazy val scaladex = project
+  .in(file("."))
+  .aggregate(
+    client,
+    data,
+    model,
+    sbtScaladex,
+    server,
+    sharedJVM,
+    sharedJS,
+    template
+  )
+  .settings(commonSettings)
+  .settings(Deployment(data, server))
+
 lazy val template = project
   .settings(commonSettings)
   .settings(
@@ -69,13 +86,13 @@ lazy val shared = crossProject
       "com.lihaoyi" %%% "autowire" % autowireVersion
     )
   )
-lazy val sharedJvm = shared.jvm
-lazy val sharedJs = shared.js
+lazy val sharedJVM = shared.jvm
+lazy val sharedJS = shared.js
 
 lazy val client = project
   .settings(commonSettings)
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(sharedJs)
+  .dependsOn(sharedJS)
 
 lazy val server = project
   .settings(commonSettings)
@@ -109,10 +126,9 @@ lazy val server = project
       .value,
     reStart := reStart.dependsOn(WebKeys.assets in Assets).evaluated,
     unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
-    javaOptions in reStart += "-Xmx3g",
-    packageName in Universal := "scaladex"
+    javaOptions in reStart += "-Xmx3g"
   )
-  .dependsOn(template, data, sharedJvm)
+  .dependsOn(template, data, sharedJVM)
   .enablePlugins(SbtSass, JavaServerAppPackaging)
 
 lazy val model = project
@@ -140,8 +156,7 @@ lazy val data = project
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),
-    javaOptions in reStart += "-Xmx3g",
-    packageName in Universal := "data"
+    javaOptions in reStart += "-Xmx3g"
   )
   .enablePlugins(BuildInfoPlugin, JavaAppPackaging)
   .dependsOn(model)

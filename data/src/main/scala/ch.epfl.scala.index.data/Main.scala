@@ -41,11 +41,9 @@ object Main {
     *              - Path of the 'index' Git repository
     */
   def main(args: Array[String]): Unit = {
-    println("input: " + args.toList.toString)
+    util.PidLock.create("DATA")
 
-    implicit val system = ActorSystem()
-    import system.dispatcher
-    implicit val materializer = ActorMaterializer()
+    println("input: " + args.toList.toString)
 
     val pathFromArgs =
       if (args.isEmpty) Nil
@@ -53,6 +51,10 @@ object Main {
 
     val paths = DataPaths(pathFromArgs.take(3))
     val bintray: LocalPomRepository = LocalPomRepository.Bintray
+
+    implicit val system = ActorSystem()
+    import system.dispatcher
+    implicit val materializer = ActorMaterializer()
 
     val steps = List(
       // List POMs of Bintray

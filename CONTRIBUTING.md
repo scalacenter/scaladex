@@ -49,7 +49,7 @@ indexing/running the server:
 ```
 +-----------------------+                                          +-----------------------+
 |                       |                                          |                       |
-|  [Jenkins](Bintray)   +----------------------------------------> |  [scaladex-index.git] |
+|     Bintray           +----------------------------------------> |  [scaladex-index.git] |
 |                       |                                          |                       |
 +-----------------------+                                          +-----------------------+
 
@@ -75,7 +75,6 @@ indexing/running the server:
 -- asciiflow.com
 ```
 
-* [Jenkins](https://scala-webapps.epfl.ch/jenkins/view/scaladex/)
 * [scaladex-index.git](https://github.com/scalacenter/scaladex-index)
 * [scaladex-contrib.git](https://github.com/scalacenter/scaladex-contrib)
 
@@ -97,7 +96,7 @@ The entry point is at [data/Main.scala](/data/src/main/scala/ch.epfl.scala.index
 
 ### List Poms / Sbt
 
-This step will search on Bintray for artifact containing `_2.10`, `_2.11`, `_2.12`.
+This step will search on Bintray for artifact containing `_2.10`, `_2.11`, `_2.12`, ...
 Bintray contains jcenter, it's a mirror of maven central.
 
 You will need a premium Bintray account.
@@ -128,6 +127,28 @@ This step will download GitHub metadata and content
 ```
 data/reStart github`
 ```
+
+## How to deploy
+
+### Requirements
+
+To deploy the application to the production server (index.scala-lang.org) you will need to have ssh access to the following machine:
+
+* ssh devscaladex@index.scala-lang.org (staging)
+* ssh scaladex@index.scala-lang.org
+
+These people have access:
+
+* [@MasseGuillaume](https://github.com/MasseGuillaume)
+* [@heathermiller](https://github.com/heathermiller)
+* [@julienrf](https://github.com/julienrf)
+* [@jvican](https://github.com/jvican)
+* [@olafurpg](https://github.com/olafurpg)
+
+To deploy the index and the server:
+
+* sbt deployIndex
+* sbt deployServer
 
 ## How to publish the Scaladex SBT Plugin
 

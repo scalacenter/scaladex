@@ -409,6 +409,7 @@ class GithubDownload(paths: DataPaths,
                                parallelism = 32)
     // todo: for later @see #112 - remember that issues are paginated - see contributors */
     // download[GithubRepo, Unit]("Downloading Issues", githubRepos, githubIssuesUrl, processIssuesResponse)
+
     download[PaginatedGithub, Unit]("Downloading Contributors",
                                     paginatedGithubRepos,
                                     githubContributorsUrl,
