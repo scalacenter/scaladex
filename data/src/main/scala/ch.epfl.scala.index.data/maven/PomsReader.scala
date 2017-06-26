@@ -113,7 +113,7 @@ private[maven] class PomsReader(pomsPath: Path,
     val s = Files.newDirectoryStream(pomsPath)
     val rawPoms = s.asScala.toList
 
-    val progress = new ProgressBar("Reading POMs", rawPoms.size)
+    val progress = new ProgressBar(s"Reading $repository's POMs", rawPoms.size)
     progress.start()
 
     def sha1(path: Path) = path.getFileName().toString.dropRight(".pom".length)

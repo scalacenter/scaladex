@@ -61,12 +61,12 @@ class GithubDownload(paths: DataPaths,
     * @return
     */
   def applyBasicHeaders(request: WSRequest): WSRequest = {
+    val token =
+      privateCredentials
+        .map(_.token)
+        .getOrElse(credentials)
 
-    privateCredentials
-      .map(cred =>
-        request.addHttpHeaders("Authorization" -> s"token ${cred.token}"))
-      .getOrElse(
-        request.addHttpHeaders("Authorization" -> s"token $credentials"))
+    request.addHttpHeaders("Authorization" -> s"bearer $token")
   }
 
   /**
@@ -396,17 +396,20 @@ class GithubDownload(paths: DataPaths,
                                githubInfoUrl,
                                processInfoResponse,
                                parallelism = 32)
+
     download[GithubRepo, Unit]("Downloading Topics",
                                githubRepos,
                                githubGraphqlUrl,
                                processTopicsResponse(false),
                                parallelism = 32,
                                graphqlQuery = Some(topicQuery))
+
     download[GithubRepo, Unit]("Downloading Readme",
                                githubRepos,
                                githubReadmeUrl,
                                processReadmeResponse,
                                parallelism = 32)
+
     // todo: for later @see #112 - remember that issues are paginated - see contributors */
     // download[GithubRepo, Unit]("Downloading Issues", githubRepos, githubIssuesUrl, processIssuesResponse)
 
