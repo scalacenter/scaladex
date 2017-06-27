@@ -6,7 +6,6 @@ import model.misc._
 
 import data.DataPaths
 import data.project.ProjectForm
-import data.github.{GithubDownload, GithubReader}
 
 import release._
 import misc.Pagination
@@ -21,9 +20,6 @@ import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.
 import org.elasticsearch.search.sort.SortOrder
 
 import org.slf4j.LoggerFactory
-
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -238,31 +234,14 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
                   selection: ReleaseSelection): Future[Option[(Project, ReleaseOptions)]] = {
     projectAndReleases(projectRef, selection).map {
       case Some((project, releases)) => {
-        val updatedProject = liveUpdate(project)
-        DefaultRelease(updatedProject.repository,
+        DefaultRelease(project.repository,
                        selection,
                        releases.toSet,
-                       updatedProject.defaultArtifact,
-                       updatedProject.defaultStableVersion).map(sel => (updatedProject, sel))
+                       project.defaultArtifact,
+                       project.defaultStableVersion).map(sel => (project, sel))
       }
       case None => None
     }
-  }
-
-  private def liveUpdate(project: Project): Project = {
-    val repo = new GithubRepo(project.organization, project.repository)
-    implicit val system = ActorSystem()
-    implicit val materializer = ActorMaterializer()
-    new GithubDownload(paths).run(repo, true, true, false)
-    val github = GithubReader(paths, repo)
-    val updatedProject = project.copy(
-      github = github
-    )
-    esClient
-      .execute(
-        update(project.id.get).in(indexName / projectsCollection).doc(updatedProject)
-      )
-    updatedProject
   }
 
   def updateProject(projectRef: Project.Reference, form: ProjectForm): Future[Boolean] = {
