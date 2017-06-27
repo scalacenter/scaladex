@@ -20,8 +20,6 @@ lazy val baseSettings = Seq(
   version := s"0.2.0+${githash()}"
 )
 
-lazy val moveUniversal = taskKey[Unit]("moveUniversal")
-
 lazy val commonSettings = Seq(
   resolvers += Resolver.typesafeIvyRepo("releases"),
   scalaVersion := "2.12.2",
@@ -112,15 +110,6 @@ lazy val server = project
       "org.webjars.bower" % "select2" % "4.0.3",
       "com.lihaoyi" %%% "scalatags" % scalatagsVersion
     ),
-    moveUniversal := {
-      val archive = (packageBin in Universal).value
-      val dest = file("/home/scaladex/scaladex")
-      val destArchive = dest / "universal.zip"
-      if (destArchive.exists) {
-        destArchive.delete
-      }
-      IO.copyFile(archive, destArchive)
-    },
     packageBin in Universal := (packageBin in Universal)
       .dependsOn(WebKeys.assets in Assets)
       .value,

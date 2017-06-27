@@ -9,27 +9,28 @@ import java.nio.file.attribute._
 import System.{lineSeparator => nl}
 
 object Deployment {
-  val deployServer = taskKey[Unit]("Deploy the server")
-  val deployIndex = taskKey[Unit]("Run index pipeline")
-
   def apply(data: Project, server: Project): Seq[Def.Setting[_]] = Seq(
-    deployServer := deployTask(server).value,
-    deployIndex := indexTask(data).value
+    deployServer := deployTask(server, prodUserName, prodPort).value,
+    deployIndex := indexTask(data, prodUserName).value,
+    deployDevServer := deployTask(server, devUserName, devPort).value,
+    deployDevIndex := indexTask(data, devUserName).value
   )
 
-  def deployTask(server: Project): Def.Initialize[Task[Unit]] = Def.task {
+  def deployTask(server: Project, userName: String, port: Int): Def.Initialize[Task[Unit]] = Def.task {
     val serverZip = (packageBin in (server, Universal)).value.toPath
 
     new Deployment(
-      logger = streams.value.log
-    ).deploy(serverZip)
+      logger = streams.value.log,
+      userName = userName
+    ).deploy(serverZip, port)
   }
 
-  def indexTask(data: Project): Def.Initialize[Task[Unit]] = Def.task {
+  def indexTask(data: Project, userName: String): Def.Initialize[Task[Unit]] = Def.task {
     val dataZip = (packageBin in (data, Universal)).value.toPath
 
     new Deployment(
-      logger = streams.value.log
+      logger = streams.value.log,
+      userName = userName
     ).index(dataZip)
   }
 
@@ -44,11 +45,23 @@ object Deployment {
       Process("git rev-parse --verify HEAD").lines.mkString("") + indexState
     } else "CI"
   }
+
+  private val deployServer = taskKey[Unit]("Deploy the server")
+  private val deployIndex = taskKey[Unit]("Run index pipeline")
+
+  private val deployDevServer = taskKey[Unit]("Deploy the dev server")
+  private val deployDevIndex = taskKey[Unit]("Run dev index pipeline")
+
+  private val devUserName = "devscaladex"
+  private val prodUserName = "scaladex"
+
+  private val devPort = 8082
+  private val prodPort = 8080
 }
 
-class Deployment(logger: Logger) {
+class Deployment(logger: Logger, userName: String) {
 
-  def deploy(serverZip: Path): Unit = {
+  def deploy(serverZip: Path, port: Int): Unit = {
     logger.info("Generate server script")
 
     val serverScript = Files.createTempDirectory("server").resolve("server.sh")
@@ -71,7 +84,7 @@ class Deployment(logger: Logger) {
           |nohup server/current/bin/server \\
           |  -J-Xmx3g \\
           |  -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
-          |  8081 \\
+          |  $port \\
           |  /home/$userName/scaladex-contrib \\
           |  /home/$userName/scaladex-index \\
           |  /home/$userName/scaladex-credentials \\
@@ -161,7 +174,5 @@ class Deployment(logger: Logger) {
   private val executablePermissions =
     PosixFilePermissions.fromString("rwxr-xr-x")
 
-  // private val userName = "devscaladex"
-  private val userName = "scaladex"
   private val serverHostname = "index.scala-lang.org"
 }
