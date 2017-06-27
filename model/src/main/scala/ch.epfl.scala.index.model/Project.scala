@@ -1,6 +1,6 @@
 package ch.epfl.scala.index.model
 
-import misc.{GithubInfo, GithubRepo}
+import misc.{GithubInfo, GithubRepo, Url}
 
 /**
   * Project representation which contains all necessary meta data to
@@ -9,21 +9,29 @@ import misc.{GithubInfo, GithubRepo}
   * @param organization (ex: typelevel)
   * @param repository (ex: spark)
   * @param github github information representation
-  * @param defaultArtifact when we land on a project page (ex: typelevel/cats) specify an artifact to select by default
   * @param defaultStableVersion when selecting a default version avoid preReleases if possible (otherwise select latest version)
+  * @param defaultArtifact when we land on a project page (ex: typelevel/cats) specify an artifact to select by default
   * @param artifacts names for this project (ex: cats-core, cats-free, ...)
   * @param releaseCount how many distinct versions we can find
   * @param customScalaDoc expression to substitute scaladoc
   * @param documentationLinks user documentation & etc
-  * @param logoImageUrl absolute url to a logo (ex: http://spark.apache.org/images/spark-logo-trademark.png)
+  * @param deprecated whether or not project is deprecated
+  * @param contributorsWanted true if project is looking for new contributors
+  * @param artifactDeprecations
+  * @param cliArtifacts
+  * @param hasCli true if project has cli
   * @param liveData the project was updated/created by a user
   * @param id elasticsearch id only used for updating projects
   * @param created date of the first release
   * @param updated date of the last release
-  * @param targets (ex: scala_2.11, scala_2.12, scala-js_0.5)
+  * @param targetType (ex: scala_2.11, scala_2.12, scala-js_0.5)
+  * @param scalaVersion (ex: scala_2.11, scala_2.12)
+  * @param scalaJsVersion (ex: scala-js_0.5)
+  * @param scalaNativeVersion
   * @param dependencies to aggregate most depended upon libs (ex: spark, play framework, ...)
   * @param dependentCount Number of artifacts that depends on at least one release of at least one artifact of this project
   * @param primaryTopic most significative topic (ex: Circe: json)
+  * @param chatroom link to project chatroom (ex: https://gitter.im/scalacenter/scaladex)
   */
 case class Project(
     organization: String,
@@ -50,7 +58,8 @@ case class Project(
     scalaNativeVersion: Set[String],
     dependencies: Set[String],
     dependentCount: Int,
-    primaryTopic: Option[String] = None
+    primaryTopic: Option[String] = None,
+    chatroom: Option[Url] = None
 ) {
 
   def reference = Project.Reference(organization, repository)

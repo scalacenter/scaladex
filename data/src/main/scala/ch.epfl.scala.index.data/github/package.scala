@@ -26,6 +26,9 @@ package object github extends Parsers {
   def githubRepoTopicsPath(paths: DataPaths, github: GithubRepo) =
     path(paths, github).resolve(Paths.get("topics.json"))
 
+  def githubRepoCommunityProfilePath(paths: DataPaths, github: GithubRepo) =
+    path(paths, github).resolve(Paths.get("community.json"))
+
   /**
     * extracts the last page from a given link string
     * - <https://api.github.com/repositories/130013/issues?page=2>; rel="next", <https://api.github.com/repositories/130013/issues?page=23>; rel="last"
