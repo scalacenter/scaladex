@@ -25,7 +25,8 @@ import java.nio.file.{Files, Path}
 
 import com.typesafe.config.ConfigFactory
 
-class GithubDownload(paths: DataPaths)(
+class GithubDownload(paths: DataPaths,
+                     privateCredentials: Option[GithubCredentials] = None)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer)
     extends PlayWsDownloader {
@@ -60,7 +61,12 @@ class GithubDownload(paths: DataPaths)(
     * @return
     */
   def applyBasicHeaders(request: WSRequest): WSRequest = {
-    request.addHttpHeaders("Authorization" -> s"bearer $credentials")
+    val token =
+      privateCredentials
+        .map(_.token)
+        .getOrElse(credentials)
+
+    request.addHttpHeaders("Authorization" -> s"bearer $token")
   }
 
   /**
