@@ -7,6 +7,7 @@ import model.Project
 case class ProjectForm(
     // project
     contributorsWanted: Boolean,
+    keywords: Set[String],
     defaultArtifact: Option[String],
     defaultStableVersion: Boolean,
     deprecated: Boolean,
@@ -27,6 +28,9 @@ case class ProjectForm(
       artifactDeprecations = artifactDeprecations,
       cliArtifacts = cliArtifacts,
       hasCli = cliArtifacts.nonEmpty,
+      github = project.github.map(github => 
+        github.copy(topics = github.topics ++ keywords)
+      ),
       // documentation
       customScalaDoc = customScalaDoc.filterNot(_ == ""),
       documentationLinks = documentationLinks.filterNot {
@@ -39,8 +43,10 @@ case class ProjectForm(
 object ProjectForm {
   def apply(project: Project): ProjectForm = {
     import project._
+
     new ProjectForm(
       contributorsWanted,
+      github.map(_.topics).getOrElse(Set()),
       defaultArtifact,
       defaultStableVersion,
       deprecated,

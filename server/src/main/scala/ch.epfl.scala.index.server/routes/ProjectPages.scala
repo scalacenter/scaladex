@@ -139,11 +139,14 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
                       .toList
                   }
 
+                  val keywords = Set[String]()
+
                   onSuccess(
                     dataRepository.updateProject(
                       Project.Reference(organization, repository),
                       ProjectForm(
                         contributorsWanted,
+                        keywords,
                         defaultArtifact,
                         defaultStableVersion,
                         deprecated,
