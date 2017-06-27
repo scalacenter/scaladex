@@ -68,35 +68,53 @@ case class Contributor(
     contributions: Int
 )
 
+case class CommunityProfile(files: CommunityFiles)
+
+case class CommunityFiles(contributing: ContributingFile)
+
+case class ContributingFile(html_url: Option[String])
+
 // classes for GraphQL API, https://developer.github.com/v4/reference/
 // note that some classes are missing members, only got ones needed for topics
 
 case class GraphqlTopic(
-    name: String = "",
-    relatedTopics: List[GraphqlTopic] = null
+    name: Option[String],
+    relatedTopics: Option[List[GraphqlTopic]]
 )
 
 case class GraphqlRepositoryTopic(
-    resourcePath: String = "",
-    topic: GraphqlTopic = null,
-    url: String = ""
+    resourcePath: Option[String],
+    topic: Option[GraphqlTopic],
+    url: Option[String]
+)
+
+case class GraphqlIssue(
+    number: Option[Int],
+    title: Option[String],
+    bodyText: Option[String],
+    url: Option[String]
 )
 
 case class GraphqlRepositoryTopicConnection(
-    nodes: List[GraphqlRepositoryTopic] = null
+    nodes: Option[List[GraphqlRepositoryTopic]]
+)
+
+case class GraphqlIssueConnection(
+    nodes: Option[List[GraphqlIssue]]
 )
 
 case class GraphqlRepository(
-    name: String = "",
-    description: String = "",
-    repositoryTopics: GraphqlRepositoryTopicConnection = null
+    name: Option[String],
+    description: Option[String],
+    repositoryTopics: Option[GraphqlRepositoryTopicConnection],
+    issues: Option[GraphqlIssueConnection]
 )
 
 // if you want to query starting with anything other than repository, you will have to add it as a member here
 case class GraphqlData(
-    repository: GraphqlRepository = null
+    repository: Option[GraphqlRepository]
 )
 
 case class GraphqlResult(
-    data: GraphqlData = null
+    data: Option[GraphqlData]
 )

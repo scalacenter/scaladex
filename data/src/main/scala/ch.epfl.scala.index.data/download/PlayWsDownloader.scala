@@ -14,6 +14,7 @@ import play.api.libs.json._
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
+import scala.util.{Try, Success, Failure}
 
 import org.slf4j.LoggerFactory
 
@@ -67,7 +68,6 @@ trait PlayWsDownloader {
     * @param toDownload the set of downloadable elements
     * @param downloadUrl a function to get the WsRequest for the current element
     * @param process a function to process the response in succes case
-    * @param graphqlQuery query sent to Github's GraphQL API
     * @tparam T Input type
     * @tparam R output type
     */
@@ -76,64 +76,151 @@ trait PlayWsDownloader {
       toDownload: Set[T],
       downloadUrl: (AhcWSClient, T) => WSRequest,
       process: (T, WSResponse) => R,
-      parallelism: Int,
-      graphqlQuery: Option[(T) => JsObject] = None
+      parallelism: Int
   ): Seq[R] = {
 
     val client = wsClient
     val progress = ProgressBar(message, toDownload.size, log)
 
-    def processItem(item: T) = {
-      val request = downloadUrl(client, item)
-      val response = graphqlQuery match {
-        case Some(q) => request.post(q(item))
-        case None    => request.get
-      }
-      response.transform(
-        data => {
-          if (toDownload.size > 1) {
-            progress.step()
-          }
-          process(item, data)
-        },
-        e => {
-          log.warn(
-            s"error on downloading content from ${request.url}: ${e.getMessage}")
-
-          e
-        }
-      )
-    }
-
     def processDownloads = {
 
       Source(toDownload).mapAsyncUnordered(parallelism) { item =>
-        processItem(item)
+        val request = downloadUrl(client, item)
+        val response = request.get
+
+        response.transform(
+          data => {
+            if (toDownload.size > 1) {
+              progress.step()
+            }
+            process(item, data)
+          },
+          e => {
+            log.warn(
+              s"error on downloading content from ${request.url}: ${e.getMessage}")
+
+            e
+          }
+        )
       }
     }
 
     if (toDownload.size > 1) {
       progress.start()
     }
-    try {
-      val response =
-        if (toDownload.size == 1) {
-          Seq(Await.result(processItem(toDownload.head), Duration.Inf))
-        } else {
-          Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
-        }
-
-      if (toDownload.size > 1) {
-        progress.stop()
-      }
-      client.close()
-      response
-    } catch {
-      case e: Exception =>
-        log.warn("failed to download", e)
-        client.close()
-        Seq()
+    val response = Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
+    if (toDownload.size > 1) {
+      progress.stop()
     }
+    client.close()
+
+    response
+  }
+  /**
+    * Actual download of bunch of documents from the Github's REST API. Will loop through all and display a status bar in the console output.
+    *
+    * @param message the message for the loader info
+    * @param toDownload the set of downloadable elements
+    * @param downloadUrl a function to get the WsRequest for the current element
+    * @param process a function to process the response in succes case
+    * @tparam T Input type
+    * @tparam R output type
+    */
+  def downloadGithub[T, R](
+      message: String,
+      toDownload: Set[T],
+      downloadUrl: (AhcWSClient, T) => WSRequest,
+      process: (T, WSResponse) => Try[R],
+      parallelism: Int
+  ): Seq[R] = {
+
+    def processItem(client: AhcWSClient, item: T, progress: ProgressBar) = {
+      val request = downloadUrl(client, item)
+      val response = request.get
+
+      response.flatMap { data =>
+        if (toDownload.size > 1) {
+          progress.step()
+        }
+        Future.fromTry(process(item, data))
+      }
+
+    }
+
+    processDownloads(message, toDownload, processItem, parallelism)
   }
 
+  /**
+    * Actual download of bunch of documents from Github's GraphQL API. Will loop through all and display a status bar in the console output.
+    *
+    * @param message the message for the loader info
+    * @param toDownload the set of downloadable elements
+    * @param downloadUrl a function to get the WsRequest for the current element
+    * @param query query sent to Github's GraphQL API
+    * @param process a function to process the response in succes case
+    * @tparam T Input type
+    * @tparam R output type
+    */
+  def downloadGraphql[T, R](
+     message: String,
+     toDownload: Set[T],
+     downloadUrl: AhcWSClient => WSRequest,
+     query: T => JsObject,
+     process: (T, WSResponse) => Try[R],
+     parallelism: Int
+  ): Seq[R] = {
+
+    def processItem(client: AhcWSClient, item: T, progress: ProgressBar) = {
+      val request = downloadUrl(client)
+      val response = request.post(query(item))
+      response.flatMap { data =>
+        if (toDownload.size > 1) {
+          progress.step()
+        }
+        Future.fromTry(process(item, data))
+      }
+    }
+
+    processDownloads(message, toDownload, processItem, parallelism)
+  }
+
+  private def processDownloads[T, R](
+      message: String,
+      toDownload: Set[T],
+      processItem: (AhcWSClient, T, ProgressBar) => Future[R],
+      parallelism: Int
+  ):Seq[R] = {
+
+    def processItems(client: AhcWSClient, progress: ProgressBar) = {
+
+      Source(toDownload).mapAsyncUnordered(parallelism) { item =>
+        processItem(client, item, progress)
+      }
+    }
+
+    val client = wsClient
+    val progress = ProgressBar(message, toDownload.size, log)
+
+    if (toDownload.size > 1) {
+      progress.start()
+    }
+
+    val result = Await.ready(processItems(client, progress).runWith(Sink.seq), Duration.Inf)
+
+    if (toDownload.size > 1) {
+      progress.stop()
+    }
+    // pause for 1s before closing client so other threads that were trying to download
+    // don't get interrupted and throw p.s.a.i.n.u.c.D.rejectedExecution if download stopped due to error
+    Thread.sleep(1000.toLong)
+    client.close()
+
+    result.value.map(_ match {
+      case Success(value) => value
+      case Failure(e) => {
+        log.warn(s"ERROR - $e")
+        Seq()
+      }
+    }).getOrElse(Seq())
+  }
 }

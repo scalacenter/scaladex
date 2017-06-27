@@ -15,6 +15,9 @@ package ch.epfl.scala.index.model.misc
   * @param contributorCount how many contributors there are, used to sort search results by number of contributors
   * @param commits number of commits, calculated by contributors
   * @param topics topics associated with the project
+  * @param contributingGuide CONTRIBUTING.md
+  * @param beginnerIssuesLabel label used to tag beginner-friendly issues
+  * @param beginnerIssues list of beginner-friendly issues for the project
   */
 case class GithubInfo(
     name: String = "",
@@ -30,5 +33,8 @@ case class GithubInfo(
     contributors: List[GithubContributor] = List(),
     contributorCount: Int = 0,
     commits: Option[Int] = None,
-    topics: Set[String] = Set()
+    topics: Set[String] = Set(),
+    contributingGuide: Option[Url] = None,
+    beginnerIssuesLabel: Option[String] = None,
+    beginnerIssues: List[GithubIssue] = List()
 )
