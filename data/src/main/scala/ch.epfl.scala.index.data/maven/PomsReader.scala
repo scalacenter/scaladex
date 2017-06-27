@@ -118,10 +118,12 @@ private[maven] class PomsReader(pomsPath: Path,
 
     def sha1(path: Path) = path.getFileName().toString.dropRight(".pom".length)
 
-    val poms = rawPoms.map { p =>
-      progress.step()
+    val poms = rawPoms.par.map { p =>
+      progress.synchronized {
+        progress.step()
+      }
       Try(resolve(p)).map(pom => (PomConvert(pom), repository, sha1(p)))
-    }
+    }.toList
     progress.stop()
     s.close()
 
