@@ -32,12 +32,15 @@ object GithubReader {
     info(paths, github).map { info =>
       val contributorList = contributors(paths, github).getOrElse(List())
       val topicsSet = topics(paths, github).getOrElse(List()).toSet
+      val readmeStr = readme(paths, github).toOption
       info.copy(
-        readme = readme(paths, github).toOption,
+        readme = readmeStr,
         contributors = contributorList,
         contributorCount = contributorList.size,
         commits = Some(contributorList.foldLeft(0)(_ + _.contributions)),
-        topics = topicsSet
+        topics = topicsSet,
+        beginnerIssues = beginnerIssues(paths, github).getOrElse(List()),
+        contributingGuide = contributingGuide(paths, github).getOrElse(None)
       )
     }.toOption
   }
@@ -79,7 +82,7 @@ object GithubReader {
   }
 
   /**
-    * extract the contributors of exists
+    * extract the contributors if they exist
     * @param github the current repo
     * @return
     */
@@ -111,9 +114,69 @@ object GithubReader {
 
     val repoTopicsPath = githubRepoTopicsPath(paths, github)
     val graphqlResult = read[GraphqlResult](slurp(repoTopicsPath))
-    graphqlResult.data.repository.repositoryTopics.nodes.map { node =>
-      node.topic.name
-    }
+    val graphqlTopics = for {
+      data <- graphqlResult.data;
+      repo <- data.repository;
+      topics <- repo.repositoryTopics;
+      nodes <- topics.nodes
+    } yield { nodes }
+    graphqlTopics.getOrElse(List()).map(_.topic.flatMap(_.name).getOrElse(""))
+  }
+
+  /**
+    * extract the issues if they exist
+    * @param github the current repo
+    * @return
+    */
+  def beginnerIssues(paths: DataPaths,
+                     github: GithubRepo): Try[List[GithubIssue]] = Try {
+
+    import Json4s._
+
+    val issuesPath = githubRepoIssuesPath(paths, github)
+    val graphqlResult = read[GraphqlResult](slurp(issuesPath))
+    val graphqlIssues = for {
+      data <- graphqlResult.data;
+      repo <- data.repository;
+      issues <- repo.issues;
+      nodes <- issues.nodes
+    } yield { nodes }
+    graphqlIssues.getOrElse(List()).map(issue =>
+      GithubIssue(
+        issue.number.getOrElse(0),
+        issue.title.getOrElse(""),
+        issue.bodyText.getOrElse(""),
+        Url(issue.url.getOrElse(""))
+      )
+    )
+  }
+
+  /**
+    * read the contributing guide from file if exists
+    * @param github the git repo
+    * @return
+    */
+  def contributingGuide(paths: DataPaths, github: GithubRepo): Try[Option[Url]] = Try {
+
+    import Json4s._
+
+    val communityProfilePath = githubRepoCommunityProfilePath(paths, github)
+    val communityProfile =
+      read[CommunityProfile](slurp(communityProfilePath))
+    communityProfile.files.contributing.html_url.map(Url(_))
+  }
+
+  /**
+    * get the chatroom from the readme if it exists
+    * @param readme the readme text
+    * @return
+    */
+  def chatroom(repo: GithubRepo, readme: String): Option[Url] = {
+
+    val gitterPattern = """<a href="(https?://gitter.im/[^"]*)"""".r
+    gitterPattern
+      .findFirstMatchIn(readme)
+      .map(x => Url(x.group(1)))
   }
 
   case class Moved(inner: Map[GithubRepo, GithubRepo])
