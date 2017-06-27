@@ -53,7 +53,6 @@ lazy val scaladex = project
     client,
     data,
     model,
-    sbtScaladex,
     server,
     sharedJVM,
     sharedJS,
@@ -149,25 +148,3 @@ lazy val data = project
   )
   .enablePlugins(BuildInfoPlugin, JavaAppPackaging)
   .dependsOn(model)
-
-// to publish plugin
-// follow: http://www.scala-sbt.org/0.13/docs/Bintray-For-Plugins.html
-// then add a new package ()
-// name: sbt-scaladex, license: MIT, version control: git@github.com:scalacenter/scaladex.git
-// to be available without a resolver
-// follow: http://www.scala-sbt.org/0.13/docs/Bintray-For-Plugins.html#Linking+your+package+to+the+sbt+organization
-lazy val sbtScaladex = project
-  .settings(baseSettings)
-  .settings(ScriptedPlugin.scriptedSettings)
-  .settings(
-    name := "sbt-scaladex",
-    sbtPlugin := true,
-    scalaVersion := "2.10.6",
-    scriptedLaunchOpts := scriptedLaunchOpts.value ++ Seq(
-      "-Xmx1024M",
-      "-Dplugin.version=" + version.value),
-    scriptedBufferLog := false,
-    bintrayRepository := "sbt-plugins",
-    bintrayOrganization := None
-  )
-  .enablePlugins(BintrayPlugin)

@@ -150,16 +150,6 @@ To deploy the index and the server:
 * sbt deployIndex
 * sbt deployServer
 
-## How to publish the Scaladex SBT Plugin
-
-``` 
-$ sbt
-> sbtScaladex/bintrayChangeCredentials
-# username: scaladex
-# api key: **********
-> sbtScaladex/publish
-```
-
 ## Testing publish
 
 Requests must be authenticated with Basic HTTP authentication:
@@ -188,8 +178,6 @@ curl --data-binary "@test_2.11-1.1.5.pom" \
 --user token:c61e65b80662c064abe923a407b936894b29fb55 \
 "https://index.scala-lang.org/publish?created=1478668532&readme=true&info=true&contributors=true&path=/org/example/test_2.11/1.2.3/test_2.11-1.2.3.pom"
 ~~~
-
-or via `sbt sbtScaladex/scripted`
 
 github test user:
 

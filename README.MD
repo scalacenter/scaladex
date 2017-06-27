@@ -3,15 +3,15 @@
 [![Travis](https://img.shields.io/travis/scalacenter/scaladex.svg?style=flat-square)](https://travis-ci.org/scalacenter/scaladex)
 [![Gitter](https://img.shields.io/gitter/room/scalacenter/scaladex.svg?style=flat-square)](https://gitter.im/scalacenter/scaladex)
 
-
 ## How it works
 
-We pull poms from Bintray and we receive poms from Maven Central (Sonatype) or to Scaladex directly.
+We pull poms from Bintray and we receive poms from Maven Central (Sonatype).
 Your library has to be published to one of those repositories.
 
 * [`How to publish on Maven Central`](/doc/user/publish-maven-central.md)
 * [`How to publish on Bintray`](/doc/user/publish-bintray.md)
-* [`How to publish on Scaladex`](/doc/user/publish-scaladex.md)
+
+You can also watch [The Last 10 Percent by Stefan Zeiger](https://www.youtube.com/watch?v=RmEMUwfQoSc).
 
 Process:
 * Releases Sources
@@ -19,9 +19,6 @@ Process:
     * We receive pushes from Maven Central that follow the scala artifactId convention.
       A common practice is to include the scala compiler version in the artifactId.
       The `.pom files` will contain `_2.10`, `_2.11`, `_2.12` or any further Scala Version.
-  * Push from Scala Developers:
-    * You can use the [sbt-scaladex to push releases](/doc/user/publish-scaladex.md)
-    * You can also use the [publish REST api]
   * Pull Bintray (once per day): 
     * File Search: releases that follow the scala artifactId convention presented above.
     * Non Standards: If you dont follow this convention add your releases to [non-standard.json]
@@ -34,7 +31,6 @@ Process:
 * We download content and metadata from GitHub (Readme, Avatar, Descriptions, etc)
 
 [non-standard.json]: https://github.com/scalacenter/scaladex-data/blob/master/non-standard.json
-[publish REST api]: https://github.com/scalacenter/scaladex/blob/master/server/src/main/scala/ch.epfl.scala.index.server/routes/api/PublishApi.scala
 [sbt/sbt-plugin-releases]: https://bintray.com/sbt/sbt-plugin-releases
 [claims.json]: https://github.com/scalacenter/scaladex-data/blob/master/claims.json
 ## How to contribute
