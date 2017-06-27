@@ -9,6 +9,7 @@ import cleanup.{NonStandardLib, GithubRepoExtractor}
 import elastic.SeedElasticSearch
 import github.GithubDownload
 import maven.DownloadParentPoms
+import util.PidLock
 
 import java.nio.file.Path
 
@@ -41,7 +42,7 @@ object Main {
     *              - Path of the 'index' Git repository
     */
   def main(args: Array[String]): Unit = {
-    util.PidLock.create("DATA")
+    PidLock.create("DATA")
 
     println("input: " + args.toList.toString)
 

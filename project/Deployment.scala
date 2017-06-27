@@ -58,25 +58,24 @@ class Deployment(logger: Logger) {
     val scriptContent =
       s"""|#!/usr/bin/env bash
           |
-          |if [ ! -f SERVER-PID ]; then
-          |  whoami
+          |whoami
+          |kill `cat SERVER-PID`
           |
-          |  rm server/server-*
-          |  unzip -d server $serverZipFileName
-          |  rm -rf server/current
-          |  mkdir server/current
-          |  mv server/server-*/* server/current
-          |  rmdir server/server-*
+          |rm server/server-*
+          |unzip -d server $serverZipFileName
+          |rm -rf server/current
+          |mkdir server/current
+          |mv server/server-*/* server/current
+          |rmdir server/server-*
           |
-          |  nohup server/current/bin/server \\
-          |    -J-Xmx2g \\
-          |    -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
-          |    8081 \\
-          |    /home/$userName/scaladex-contrib \\
-          |    /home/$userName/scaladex-index \\
-          |    /home/$userName/scaladex-credentials \\
-          |    &>/home/$userName/server.log &
-          |fi
+          |nohup server/current/bin/server \\
+          |  -J-Xmx3g \\
+          |  -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
+          |  8081 \\
+          |  /home/$userName/scaladex-contrib \\
+          |  /home/$userName/scaladex-index \\
+          |  /home/$userName/scaladex-credentials \\
+          |  &>/home/$userName/server.log &
           |""".stripMargin
 
     Files.write(serverScript, scriptContent.getBytes)
