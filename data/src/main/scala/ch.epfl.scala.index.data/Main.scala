@@ -19,6 +19,8 @@ import java.time.format.DateTimeFormatter
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 
+import com.typesafe.config.ConfigFactory
+
 import org.slf4j.LoggerFactory
 
 import scala.sys.process.Process
@@ -42,7 +44,12 @@ object Main {
     *              - Path of the 'index' Git repository
     */
   def main(args: Array[String]): Unit = {
-    PidLock.create("DATA")
+    val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
+    val production = config.getBoolean("production")
+
+    if (production) {
+      PidLock.create("DATA")
+    }
 
     println("input: " + args.toList.toString)
 

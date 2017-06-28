@@ -70,10 +70,11 @@ trait ProjectProtocol {
 
 package object elastic extends ProjectProtocol {
 
+  private val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
+  private val elasticsearch = config.getString("elasticsearch")
+
   /** @see https://github.com/sksamuel/elastic4s#client for configurations */
   lazy val esClient = {
-    val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
-    val elasticsearch = config.getString("elasticsearch")
 
     println(s"elasticsearch $elasticsearch")
     if (elasticsearch == "remote") {
@@ -99,8 +100,13 @@ package object elastic extends ProjectProtocol {
         s"org.scala_lang.index.data.elasticsearch should be remote or local: $elasticsearch")
     }
   }
+  
+  private val production = config.getBoolean("production")
 
-  val indexName = "scaladex"
+  val indexName = 
+    if(production) "scaladex"
+    else "scaladex-dev"
+
   val projectsCollection = "projects"
   val releasesCollection = "releases"
 
