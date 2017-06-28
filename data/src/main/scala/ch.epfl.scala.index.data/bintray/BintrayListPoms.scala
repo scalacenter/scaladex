@@ -25,11 +25,17 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
+import org.slf4j.LoggerFactory
+
+import System.{lineSeparator => nl}
+
 class BintrayListPoms(paths: DataPaths)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer)
     extends BintrayProtocol
     with PlayWsDownloader {
+
+  private val log = LoggerFactory.getLogger(getClass)
 
   val bintrayClient = new BintrayClient(paths)
   import bintrayClient._
@@ -91,7 +97,7 @@ class BintrayListPoms(paths: DataPaths)(
       parse(response.body).extract[List[BintraySearch]]
     } catch {
       case scala.util.control.NonFatal(e) => {
-        println(e)
+        log.error("failed to parse bintray search", e)
         List()
       }
     }
@@ -178,7 +184,7 @@ class BintrayListPoms(paths: DataPaths)(
   ) = {
 
     if (queried.size == 1) {
-      println(infoMessage)
+      log.info(infoMessage)
     }
 
     def applyFilter(bintray: List[BintraySearch]): List[BintraySearch] = {

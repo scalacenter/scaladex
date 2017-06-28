@@ -28,7 +28,7 @@ class PublishApi(paths: DataPaths,
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer) {
 
-  private val logger = LoggerFactory.getLogger("scaladex.publish.routes")
+  private val log = LoggerFactory.getLogger(getClass)
 
   import system.dispatcher
 
@@ -53,11 +53,9 @@ class PublishApi(paths: DataPaths,
 
           githubCredentialsCache.get(token) match {
             case res @ Some(_) => {
-              println("from cache")
               Future.successful(res)
             }
             case _ => {
-              println("not cached")
               github.getUserStateWithToken(token).map { user =>
                 githubCredentialsCache(token) = (credentials, user)
                 Some((credentials, user))
@@ -131,7 +129,7 @@ class PublishApi(paths: DataPaths,
     } ~
       put {
         path("publish") {
-          logger.info("Received publish request")
+          log.info("Received publish request")
           parameters(
             (
               'path,
@@ -145,7 +143,7 @@ class PublishApi(paths: DataPaths,
                 authenticateBasicAsync(realm = "Scaladex Realm",
                                        githubAuthenticator(credentials)) {
                   case (credentials, userState) =>
-                    logger.info(s"path = $path; data = $data")
+                    log.info(s"path = $path; data = $data")
                     val publishData = impl.PublishData(
                       path,
                       created,

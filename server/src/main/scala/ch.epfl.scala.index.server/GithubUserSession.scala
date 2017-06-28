@@ -4,7 +4,6 @@ package server
 import com.typesafe.config._
 
 import com.softwaremill.session._
-// import com.softwaremill.session.{SessionManager, InMemoryRefreshTokenStorage}
 
 import scala.collection.parallel.mutable.ParTrieMap
 import scala.concurrent.ExecutionContext
@@ -12,8 +11,12 @@ import scala.concurrent.ExecutionContext
 import scala.util.Try
 import java.util.UUID
 
+import org.slf4j.LoggerFactory
+
 class GithubUserSession(config: Config)(
     implicit val executionContext: ExecutionContext) {
+
+  private val logger = LoggerFactory.getLogger(getClass)
 
   val sessionConfig =
     SessionConfig.default(config.getString("sesssion-secret"))
@@ -27,7 +30,7 @@ class GithubUserSession(config: Config)(
   implicit val refreshTokenStorage = new InMemoryRefreshTokenStorage[UUID] {
     def log(msg: String) =
       if (msg.startsWith("Looking up token for selector")) () // borring
-      else println(msg)
+      else logger.info(msg)
   }
 
   private val users = ParTrieMap[UUID, UserState]()

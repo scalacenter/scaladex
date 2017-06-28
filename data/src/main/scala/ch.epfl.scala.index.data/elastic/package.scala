@@ -15,6 +15,8 @@ import org.json4s.native.Serialization.{read => nread, write => nwrite}
 
 import com.typesafe.config.ConfigFactory
 
+import org.slf4j.LoggerFactory
+
 import scala.util.{Try, Success}
 
 trait ProjectProtocol {
@@ -70,13 +72,16 @@ trait ProjectProtocol {
 
 package object elastic extends ProjectProtocol {
 
-  private val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
+  private val log = LoggerFactory.getLogger(getClass)
+
+  private val config =
+    ConfigFactory.load().getConfig("org.scala_lang.index.data")
   private val elasticsearch = config.getString("elasticsearch")
 
   /** @see https://github.com/sksamuel/elastic4s#client for configurations */
   lazy val esClient = {
 
-    println(s"elasticsearch $elasticsearch")
+    log.info(s"elasticsearch $elasticsearch")
     if (elasticsearch == "remote") {
       TcpClient.transport(ElasticsearchClientUri("localhost", 9300))
     } else if (elasticsearch == "local" || elasticsearch == "local-prod") {
@@ -85,9 +90,7 @@ package object elastic extends ProjectProtocol {
           "."
         } else {
           val base = build.info.BuildInfo.baseDirectory.toPath
-          val out = base.resolve(".esdata").toString()
-          println(out)
-          out
+          base.resolve(".esdata").toString()
         }
 
       LocalNode(
@@ -96,15 +99,17 @@ package object elastic extends ProjectProtocol {
           homePath = homePath
         )).elastic4sclient()
     } else {
-      sys.error(
-        s"org.scala_lang.index.data.elasticsearch should be remote or local: $elasticsearch")
+      val er =
+        s"org.scala_lang.index.data.elasticsearch should be remote or local: $elasticsearch"
+      log.error(er)
+      sys.error(er)
     }
   }
-  
+
   private val production = config.getBoolean("production")
 
-  val indexName = 
-    if(production) "scaladex"
+  val indexName =
+    if (production) "scaladex"
     else "scaladex-dev"
 
   val projectsCollection = "projects"

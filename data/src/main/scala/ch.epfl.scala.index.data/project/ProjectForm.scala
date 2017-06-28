@@ -28,9 +28,8 @@ case class ProjectForm(
       artifactDeprecations = artifactDeprecations,
       cliArtifacts = cliArtifacts,
       hasCli = cliArtifacts.nonEmpty,
-      github = project.github.map(github => 
-        github.copy(topics = github.topics ++ keywords)
-      ),
+      github = project.github.map(github =>
+        github.copy(topics = github.topics ++ keywords)),
       // documentation
       customScalaDoc = customScalaDoc.filterNot(_ == ""),
       documentationLinks = documentationLinks.filterNot {

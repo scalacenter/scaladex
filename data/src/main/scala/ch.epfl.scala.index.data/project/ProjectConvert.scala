@@ -23,7 +23,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
 
   private val nonStandardLibs = NonStandardLib.load(paths)
 
-  private val logger = LoggerFactory.getLogger(this.getClass)
+  private val log = LoggerFactory.getLogger(getClass)
 
   /** artifactId is often use to express binary compatibility with a scala version (ScalaTarget)
     * if the developer follow this convention we extract the relevant parts and we mark
@@ -74,7 +74,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
               SemanticVersion(scalaVersion)
                 .map(ScalaTarget.scala)
                 .orElse {
-                  logger.error("Unable to decode the Scala target")
+                  log.error("Unable to decode the Scala target")
                   None
                 }
                 .map { target =>
@@ -143,7 +143,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
                   )
                 }
                 case None => {
-                  println("no meta for pom: " + sha1)
+                  log.info("no meta for pom: " + sha1)
                   default
                 }
               }
@@ -159,7 +159,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
                   )
                 }
                 case None => {
-                  println("no meta for pom: " + sha1)
+                  log.info("no meta for pom: " + sha1)
                   default
                 }
               }
@@ -175,7 +175,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
                   )
                 }
                 case None => {
-                  println("no meta for pom: " + sha1)
+                  log.info("no meta for pom: " + sha1)
                   default
                 }
               }
@@ -210,7 +210,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
 
     val githubRepoExtractor = new GithubRepoExtractor(paths)
 
-    println("Collecting Metadata")
+    log.info("Collecting Metadata")
 
     val pomsAndMetaClean = extractMeta(pomsRepoSha).flatMap {
       case (pom, created, resolver) =>
@@ -230,7 +230,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
            nonStandardLib)
     }
 
-    println("Convert POMs to Project")
+    log.info("Convert POMs to Project")
     val licenseCleanup = new LicenseCleanup(paths)
 
     def pomToMavenReference(pom: maven.ReleaseModel) =
@@ -349,7 +349,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
       }
       .toList
 
-    println("Dependencies & Reverse Dependencies")
+    log.info("Dependencies & Reverse Dependencies")
 
     val mavenReferenceToReleaseReference = projectsAndReleases
       .flatMap {
@@ -404,7 +404,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
 
                 /* java -> java: should not happen actually */
                 case (None, None) =>
-                  println(
+                  log.error(
                     s"no reference discovered for $pomMavenRef -> $depMavenRef")
                   cache0
               }

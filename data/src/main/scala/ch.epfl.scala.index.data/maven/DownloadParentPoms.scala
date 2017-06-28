@@ -14,12 +14,16 @@ import play.api.libs.ws.ahc.AhcWSClient
 
 import scala.util.Failure
 
+import org.slf4j.LoggerFactory
+
 class DownloadParentPoms(repository: LocalPomRepository,
                          paths: DataPaths,
                          tmp: Option[Path] = None)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer)
     extends PlayWsDownloader {
+
+  private val log = LoggerFactory.getLogger(getClass)
 
   assert(
     repository == LocalPomRepository.MavenCentral || repository == LocalPomRepository.Bintray)
@@ -87,8 +91,8 @@ class DownloadParentPoms(repository: LocalPomRepository,
         }
         .toSet
 
-    println(s"to download: ${parentPomsToDownload.size}")
-    println(s"last failed: $lastFailedToDownload")
+    log.info(s"to download: ${parentPomsToDownload.size}")
+    log.info(s"last failed: $lastFailedToDownload")
 
     if (parentPomsToDownload.size > lastFailedToDownload) {
 
@@ -100,7 +104,7 @@ class DownloadParentPoms(repository: LocalPomRepository,
                                   parallelism = 32)
       val failedDownloads = downloaded.sum
 
-      println(s"failed downloads: $failedDownloads")
+      log.warn(s"failed downloads: $failedDownloads")
 
       if (0 < failedDownloads && parentPomsToDownload.size != failedDownloads) {
 

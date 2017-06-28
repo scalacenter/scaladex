@@ -19,9 +19,12 @@ import akka.stream.ActorMaterializer
 import scala.concurrent.duration._
 import scala.concurrent.Await
 
-object Server {
-  def main(args: Array[String]): Unit = {
+import org.slf4j.LoggerFactory
 
+object Server {
+  private val log = LoggerFactory.getLogger(getClass)
+
+  def main(args: Array[String]): Unit = {
     val port =
       if (args.isEmpty) 8080
       else args.head.toInt
@@ -68,14 +71,14 @@ object Server {
 
     val routes = programmaticRoutes ~ userFacingRoutes
 
-    println("waiting for elastic to start")
+    log.info("waiting for elastic to start")
     blockUntilYellow()
-    println("ready")
+    log.info("ready")
 
     Await.result(Http().bindAndHandle(routes, "0.0.0.0", port), 20.seconds)
 
-    println(s"port: $port")
-    println("Application started")
+    log.info(s"port: $port")
+    log.info("Application started")
 
     ()
   }

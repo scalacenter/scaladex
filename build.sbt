@@ -13,7 +13,13 @@ val elastic4sVersion = "5.4.5"
 def akkaHttpCore = "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
 
 val nscalaTime = "com.github.nscala-time" %% "nscala-time" % "2.14.0"
-val logback = "ch.qos.logback" % "logback-classic" % "1.1.7"
+
+lazy val logging =
+  libraryDependencies ++= Seq(
+    "ch.qos.logback" % "logback-classic" % "1.1.7",
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
+    "com.getsentry.raven" % "raven-logback" % "8.0.3"
+  )
 
 lazy val baseSettings = Seq(
   organization := "ch.epfl.scala.index",
@@ -45,7 +51,7 @@ lazy val commonSettings = Seq(
   libraryDependencies += "org.specs2" %% "specs2-core" % "3.8.6" % "test",
   scalacOptions in Test ++= Seq("-Yrangepos")
 ) ++ baseSettings ++
-  addCommandAlias("start", "reStart")
+  addCommandAlias("start", "reStart") ++ logging
 
 lazy val scaladex = project
   .in(file("."))
@@ -100,7 +106,6 @@ lazy val server = project
   .settings(packageScalaJS(client))
   .settings(
     libraryDependencies ++= Seq(
-      logback,
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
       "ch.megard" %% "akka-http-cors" % "0.2.1",
       "com.softwaremill.akka-http-session" %% "core" % "0.4.0",
@@ -135,7 +140,6 @@ lazy val data = project
     resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
     libraryDependencies ++= Seq(
       nscalaTime,
-      logback,
       "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
       "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion,
       "com.typesafe.akka" %% "akka-stream" % akkaVersion,

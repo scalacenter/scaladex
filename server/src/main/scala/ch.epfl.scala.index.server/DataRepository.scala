@@ -30,7 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: ExecutionContext) {
   private def hideId(p: Project) = p.copy(id = None)
 
-  val logger = LoggerFactory.getLogger(this.getClass)
+  val log = LoggerFactory.getLogger(getClass)
 
   val sortQuery: Option[String] => SortDefinition = 
     _ match {
@@ -252,7 +252,7 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
           val esUpdate =
             esClient.execute(update(id) in (indexName / projectsCollection) doc project)
 
-          logger.info("Updating live data on the index repository")
+          log.info("Updating live data on the index repository")
           val indexUpdate = SaveLiveData.saveProject(project, paths)
 
           esUpdate.zip(indexUpdate).map(_ => true)
@@ -377,8 +377,7 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
         }.toMap
       } catch {
         case e: Exception => {
-          println(field)
-          e.printStackTrace()
+          log.error("failed aggregations", e)
           Map()
         }
 

@@ -3,6 +3,8 @@ package data
 
 import java.nio.file.{Files, Path, Paths}
 
+import org.slf4j.LoggerFactory
+
 /*
 The contrib folder is read-only from the point of view of Scaladex. We receive PR, we merge them.
 We can use GithubRepoExtractor.run() to manually set the claims.json up to date. We update them via
@@ -68,7 +70,8 @@ object DataPaths {
 
 class DataPaths(private[DataPaths] val args: List[String]) {
 
-  println("DataPaths args: " + args)
+  private val log = LoggerFactory.getLogger(getClass)
+  log.info("DataPaths args: " + args)
 
   private[data] val (contrib, index, credentials) = args match {
     case List(contrib, index, credentials) =>
@@ -88,9 +91,9 @@ class DataPaths(private[DataPaths] val args: List[String]) {
     }
   }
 
-  println(s"contrib folder: $contrib")
-  println(s"index folder: $index")
-  println(s"credentials folder: $credentials")
+  log.info(s"contrib folder: $contrib")
+  log.info(s"index folder: $index")
+  log.info(s"credentials folder: $credentials")
 
   assert(Files.isDirectory(contrib))
   assert(Files.isDirectory(index))

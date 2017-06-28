@@ -24,12 +24,15 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 import com.typesafe.config.ConfigFactory
+import org.slf4j.LoggerFactory
 
 class GithubDownload(paths: DataPaths,
                      privateCredentials: Option[GithubCredentials] = None)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer)
     extends PlayWsDownloader {
+
+  private val log = LoggerFactory.getLogger(getClass)
 
   import Json4s._
 
@@ -252,9 +255,8 @@ class GithubDownload(paths: DataPaths,
     * @param response the response
     * @return
     */
-  private def processTopicsResponse(isRetry: Boolean)(
-      repo: GithubRepo,
-      response: WSResponse): Unit = {
+  private def processTopicsResponse(
+      isRetry: Boolean)(repo: GithubRepo, response: WSResponse): Unit = {
 
     if (200 == response.status) {
 
@@ -276,15 +278,17 @@ class GithubDownload(paths: DataPaths,
       // abuse rate limit error thrown by github, only try to download again one more time
       if (!isRetry) {
         val retryAfter = response.header("Retry-After").getOrElse("60").toInt
-        println(
+        log.info(
           s"Downloading Topics - ${repo}, got ${response.status} response, Pausing for ${retryAfter} s")
         Thread.sleep((retryAfter * 1000).toLong)
-        download[GithubRepo, Unit](s"Downloading Topics - ${repo}, Retrying download",
-                                  Set(repo),
-                                  githubGraphqlUrl,
-                                  processTopicsResponse(true),
-                                  parallelism = 32,
-                                  graphqlQuery = Some(topicQuery))
+        download[GithubRepo, Unit](
+          s"Downloading Topics - ${repo}, Retrying download",
+          Set(repo),
+          githubGraphqlUrl,
+          processTopicsResponse(true),
+          parallelism = 32,
+          graphqlQuery = Some(topicQuery)
+        )
       }
     }
 

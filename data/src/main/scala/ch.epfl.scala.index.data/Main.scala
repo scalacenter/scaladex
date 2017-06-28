@@ -30,7 +30,7 @@ import scala.sys.process.Process
   */
 object Main {
 
-  private val logger = LoggerFactory.getLogger("ch.epfl.scala.index.data")
+  private val logger = LoggerFactory.getLogger(getClass)
 
   /**
     * Update data:
@@ -52,7 +52,7 @@ object Main {
       PidLock.create("DATA")
     }
 
-    println("input: " + args.toList.toString)
+    logger.info("input: " + args.toList.toString)
 
     val pathFromArgs =
       if (args.isEmpty) Nil

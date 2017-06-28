@@ -2,6 +2,7 @@ import sbt._
 import Keys._
 
 import com.typesafe.sbt.SbtNativePackager.Universal
+import com.typesafe.config.ConfigFactory
 
 import java.nio.file._
 import java.nio.file.attribute._
@@ -16,23 +17,31 @@ object Deployment {
     deployDevIndex := indexTask(data, devUserName).value
   )
 
-  def deployTask(server: Project, userName: String, port: Int): Def.Initialize[Task[Unit]] = Def.task {
+  def deployTask(server: Project,
+                 userName: String,
+                 port: Int): Def.Initialize[Task[Unit]] = Def.task {
     val serverZip = (packageBin in (server, Universal)).value.toPath
-
-    new Deployment(
-      logger = streams.value.log,
-      userName = userName
-    ).deploy(serverZip, port)
+    val deployment = deploymentTask(userName).value
+    deployment.deploy(serverZip, port)
   }
 
-  def indexTask(data: Project, userName: String): Def.Initialize[Task[Unit]] = Def.task {
-    val dataZip = (packageBin in (data, Universal)).value.toPath
+  def indexTask(data: Project, userName: String): Def.Initialize[Task[Unit]] =
+    Def.task {
+      val dataZip = (packageBin in (data, Universal)).value.toPath
+      val deployment = deploymentTask(userName).value
+      deployment.index(dataZip)
+    }
 
-    new Deployment(
-      logger = streams.value.log,
-      userName = userName
-    ).index(dataZip)
-  }
+  private def deploymentTask(
+      userName: String): Def.Initialize[Task[Deployment]] =
+    Def.task {
+      new Deployment(
+        rootFolder = (baseDirectory in ThisBuild).value,
+        logger = streams.value.log,
+        userName = userName,
+        version = version.value
+      )
+    }
 
   def githash(): String = {
     import sys.process._
@@ -59,7 +68,10 @@ object Deployment {
   private val prodPort = 8080
 }
 
-class Deployment(logger: Logger, userName: String) {
+class Deployment(rootFolder: File,
+                 logger: Logger,
+                 userName: String,
+                 version: String) {
 
   def deploy(serverZip: Path, port: Int): Unit = {
     logger.info("Generate server script")
@@ -67,6 +79,8 @@ class Deployment(logger: Logger, userName: String) {
     val serverScript = Files.createTempDirectory("server").resolve("server.sh")
 
     val serverZipFileName = serverZip.getFileName
+
+    val sentryDsn = getSentryDsn
 
     val scriptContent =
       s"""|#!/usr/bin/env bash
@@ -83,12 +97,16 @@ class Deployment(logger: Logger, userName: String) {
           |
           |nohup server/current/bin/server \\
           |  -J-Xmx3g \\
+          |  -Dlogback.output-file=server.log \\
+          |  -Dlogback.configurationFile=/home/$userName/scaladex-credentials/logback.xml \\
           |  -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
+          |  -Dsentry.dsn=$sentryDsn \\
+          |  -Dsentry.release=$version \\
           |  $port \\
           |  /home/$userName/scaladex-contrib \\
           |  /home/$userName/scaladex-index \\
           |  /home/$userName/scaladex-credentials \\
-          |  &>/home/$userName/server.log &
+          |  &>/dev/null &
           |""".stripMargin
 
     Files.write(serverScript, scriptContent.getBytes)
@@ -126,6 +144,8 @@ class Deployment(logger: Logger, userName: String) {
         "index"
       ).map(cloneIfAbsent).mkString(nl)
 
+    val sentryDsn = getSentryDsn
+
     val scriptContent =
       s"""|#!/usr/bin/env bash
           |
@@ -143,12 +163,16 @@ class Deployment(logger: Logger, userName: String) {
           |
           |  nohup data/current/bin/data \\
           |    -J-Xmx3g \\
+          |    -Dlogback.output-file=data.log \\
+          |    -Dlogback.configurationFile=/home/$userName/scaladex-credentials/logback.xml \\
           |    -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
+          |    -Dsentry.dsn=$sentryDsn \\
+          |    -Dsentry.release=$version \\
           |    all \\
           |    /home/$userName/scaladex-contrib \\
           |    /home/$userName/scaladex-index \\
           |    /home/$userName/scaladex-credentials \\
-          |    &>/home/$userName/data.log &
+          |    &>/dev/null &
           |fi
           |""".stripMargin
 
@@ -175,4 +199,22 @@ class Deployment(logger: Logger, userName: String) {
     PosixFilePermissions.fromString("rwxr-xr-x")
 
   private val serverHostname = "index.scala-lang.org"
+
+  private val getSentryDsn: String = {
+    val scaladexCredentials = "scaladex-credentials"
+
+    val secretFolder = rootFolder / ".." / scaladexCredentials
+
+    if (Files.exists(secretFolder.toPath)) {
+      Process("git pull origin master", secretFolder)
+    } else {
+      Process(
+        s"git clone git@github.com:scaladex/$scaladexCredentials.git $secretFolder")
+    }
+
+    val secretConfig = (secretFolder / "application.conf").toPath
+    val config = ConfigFactory.parseFile(secretConfig.toFile)
+    val scaladexConfig = config.getConfig("org.scala_lang.index")
+    scaladexConfig.getString("sentry.dsn")
+  }
 }

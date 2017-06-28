@@ -17,7 +17,11 @@ import play.api.libs.json._
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
 
+import org.slf4j.LoggerFactory
+
 trait PlayWsDownloader {
+
+  private val log = LoggerFactory.getLogger(getClass)
 
   implicit val system: ActorSystem
   import system.dispatcher
@@ -85,7 +89,7 @@ trait PlayWsDownloader {
       val request = downloadUrl(client, item)
       val response = graphqlQuery match {
         case Some(q) => request.post(q(item))
-        case None => request.get
+        case None    => request.get
       }
       response.transform(
         data => {
@@ -95,7 +99,7 @@ trait PlayWsDownloader {
           process(item, data)
         },
         e => {
-          println(
+          log.warn(
             s"error on downloading content from ${request.url}: ${e.getMessage}")
 
           e
@@ -128,7 +132,7 @@ trait PlayWsDownloader {
       response
     } catch {
       case e: Exception =>
-        println(e.getMessage)
+        log.warn("failed to download", e)
         client.close()
         Seq()
     }

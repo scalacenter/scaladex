@@ -36,7 +36,7 @@ private[api] class PublishProcess(paths: DataPaths,
 ) extends PlayWsDownloader {
 
   import system.dispatcher
-  private val logger = LoggerFactory.getLogger("scaladex.publish.process")
+  private val log = LoggerFactory.getLogger(getClass)
 
   /**
     * write the pom file to disk if it's a pom file (SBT will also send *.pom.sha1 and *.pom.md5)
@@ -53,7 +53,7 @@ private[api] class PublishProcess(paths: DataPaths,
     */
   def writeFiles(data: PublishData): Future[(StatusCode, String)] = {
     if (data.isPom) {
-      logger.info("Publishing a POM")
+      log.info("Publishing a POM")
       Future {
         data.writeTemp()
       }.flatMap { _ =>
@@ -61,7 +61,7 @@ private[api] class PublishProcess(paths: DataPaths,
           case List(Success((pom, _, _))) =>
             getGithubRepo(pom) match {
               case None => {
-                logger.info("POM saved without Github information")
+                log.info("POM saved without Github information")
                 data.deleteTemp()
                 Future.successful((NoContent, "No Github Repo"))
               }
@@ -71,13 +71,13 @@ private[api] class PublishProcess(paths: DataPaths,
                   data.writePom(paths)
                   data.deleteTemp()
                   updateIndex(repo, pom, data).map { _ =>
-                    logger.info(s"Published ${pom.organization
+                    log.info(s"Published ${pom.organization
                       .map(_.name)
                       .getOrElse("")} ${pom.artifactId} ${pom.version}")
                     (Created, "Published release")
                   }
                 } else {
-                  logger.info(
+                  log.warn(
                     s"User ${data.userState.user.login} attempted to publish to ${repo.toString}")
                   data.deleteTemp()
                   Future.successful(
@@ -87,7 +87,7 @@ private[api] class PublishProcess(paths: DataPaths,
               }
             }
           case List(Failure(e)) => {
-            logger.error("Invalid POM", e)
+            log.error("Invalid POM " + e)
             val sw = new StringWriter()
             val pw = new PrintWriter(sw)
             e.printStackTrace(pw)
@@ -95,7 +95,7 @@ private[api] class PublishProcess(paths: DataPaths,
             Future.successful((BadRequest, "Invalid pom: " + sw.toString()))
           }
           case _ =>
-            logger.error("Unable to write POM data")
+            log.error("Unable to write POM data")
             Future.successful((BadRequest, "Impossible ?"))
         }
       }
@@ -200,7 +200,7 @@ private[api] class PublishProcess(paths: DataPaths,
                   .in(indexName / projectsCollection)
                   .doc(updatedProject)
               )
-              .map(_ => println("updating project " + pom.artifactId))
+              .map(_ => log.info("updating project " + pom.artifactId))
           }
 
           case None =>
@@ -209,7 +209,7 @@ private[api] class PublishProcess(paths: DataPaths,
                 indexInto(indexName / projectsCollection)
                   .source(updatedProject)
               )
-              .map(_ => println("inserting project " + pom.artifactId))
+              .map(_ => log.info("inserting project " + pom.artifactId))
         }
 
       val releaseUpdate =

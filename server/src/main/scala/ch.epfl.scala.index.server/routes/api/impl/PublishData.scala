@@ -95,10 +95,7 @@ private[api] case class PublishData(
     */
   private def tmpPath(sha1: String): Path = {
     val tmpDir = Files.createTempDirectory(sha1)
-    println(tmpDir)
-    val out = Files.createTempFile(tmpDir, "", "")
-    println(out)
-    out
+    Files.createTempFile(tmpDir, "", "")
   }
 
   /**

@@ -6,15 +6,22 @@ import download.PlayWsDownloader
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import play.api.libs.ws.{WSRequest, WSResponse}
 import play.api.libs.ws.ahc.AhcWSClient
+
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+
+import org.slf4j.LoggerFactory
+
+import System.{lineSeparator => nl}
 
 class BintrayDownloadPoms(paths: DataPaths)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer)
     extends PlayWsDownloader {
+
+  private val log = LoggerFactory.getLogger(getClass)
 
   private val bintrayPomBase = paths.poms(LocalPomRepository.Bintray)
 
@@ -125,9 +132,11 @@ class BintrayDownloadPoms(paths: DataPaths)(
       ()
     } else {
 
-      println("Pom download failed")
-      println(search)
-      println(response.body)
+      log.warn(
+        "Pom download failed" + nl +
+          search.toString + nl +
+          response.body.toString
+      )
     }
   }
 

@@ -13,8 +13,13 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
 import scala.util.Success
 
+import org.slf4j.LoggerFactory
+
 class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
     extends ProjectProtocol {
+
+  private val log = LoggerFactory.getLogger(getClass)
+
   def run(): Unit = {
 
     val exists = Await
@@ -63,7 +68,7 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
       dateField("released")
     )
 
-    println("creating index")
+    log.info("creating index")
     Await.result(
       esClient.execute {
         createIndex(indexName)
@@ -75,7 +80,7 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
       Duration.Inf
     )
 
-    println("loading update data")
+    log.info("loading update data")
     val projectConverter = new ProjectConvert(paths)
     val newData = projectConverter(
       PomsReader.loadAll(paths).collect {
@@ -95,29 +100,25 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
           indexInto(indexName / releasesCollection).source(release)))
       }, Duration.Inf)
 
-      if(bulkResults.hasFailures) {
-        bulkResults.failures.foreach(p =>
-          println(p.failureMessage)
-        )
-        throw new Exception("Indexing releases failed")
+      if (bulkResults.hasFailures) {
+        bulkResults.failures.foreach(p => log.error(p.failureMessage))
+        log.error("Indexing releases failed")
       }
 
       progress.stepBy(bunch)
     }
 
     val bunch2 = 100
-    println(s"Indexing projects (${projects.size})")
+    log.info(s"Indexing projects (${projects.size})")
     projects.grouped(bunch2).foreach { group =>
       val bulkResults = Await.result(esClient.execute {
         bulk(group.map(project =>
           indexInto(indexName / projectsCollection).source(project)))
       }, Duration.Inf)
 
-      if(bulkResults.hasFailures) {
-        bulkResults.failures.foreach(p =>
-          println(p.failureMessage)
-        )
-        throw new Exception("Indexing projects failed")
+      if (bulkResults.hasFailures) {
+        bulkResults.failures.foreach(p => log.error(p.failureMessage))
+        log.error("Indexing projects failed")
       }
     }
 
