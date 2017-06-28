@@ -38,10 +38,11 @@ object Main {
     *  - download data from Bintray and update the ElasticSearch index
     *  - commit the new state of the 'index' repository
     *
-    * @param args 3 arguments:
+    * @param args 4 arguments:
     *              - Name of a step to execute (or “all” to execute all the steps)
     *              - Path of the 'contrib' Git repository
     *              - Path of the 'index' Git repository
+    *              - Path of the 'credentials' Git repository
     */
   def main(args: Array[String]): Unit = {
     val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
@@ -125,14 +126,16 @@ object Main {
     logger.info("Executing steps")
     stepsToRun.foreach(_.run())
 
-    inPath(paths.index) { sh =>
-      logger.info("Saving the updated state to the 'index' repository")
-      sh.exec("git", "add", "-A")
-      def now() =
-        LocalDateTime
-          .now()
-          .format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"))
-      sh.exec("git", "commit", "--allow-empty", "-m", '"' +: now() :+ '"')
+    if (production) {
+      inPath(paths.index) { sh =>
+        logger.info("Saving the updated state to the 'index' repository")
+        sh.exec("git", "add", "-A")
+        def now() =
+          LocalDateTime
+            .now()
+            .format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"))
+        sh.exec("git", "commit", "--allow-empty", "-m", '"' +: now() :+ '"')
+      }
     }
 
     system.terminate()
