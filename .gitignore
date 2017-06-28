@@ -11,3 +11,4 @@ contrib/
 bin/.coursier
 bin/.scalafmt
 .DS_Store
+data/DATA-PID

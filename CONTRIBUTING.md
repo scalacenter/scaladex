@@ -150,6 +150,11 @@ To deploy the index and the server:
 * sbt deployIndex
 * sbt deployServer
 
+Or
+
+* sbt deployDevIndex
+* sbt deployDevServer
+
 ## Testing publish
 
 Requests must be authenticated with Basic HTTP authentication:
