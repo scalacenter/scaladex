@@ -49,7 +49,7 @@
             @if(!github.topics.isEmpty) {
               <ul class="list-inline">
                 @for(topic <- github.topics) {
-                  <li><a href="/search?q=topics:@topic">@topic</a></li>
+                  <li><a href="/search?topics=@topic">@topic</a></li>
                 }
               </ul>
             }

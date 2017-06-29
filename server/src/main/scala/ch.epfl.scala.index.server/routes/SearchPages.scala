@@ -26,11 +26,11 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
     complete(
       for {
         (pagination, projects) <- find(params)
-        topics <- topics(params)
-        targetTypes <- targetTypes(params)
-        scalaVersions <- scalaVersions(params)
-        scalaJsVersions <- scalaJsVersions(params)
-        scalaNativeVersions <- scalaNativeVersions(params)
+        topics <- topics(Some(params))
+        targetTypes <- targetTypes(Some(params))
+        scalaVersions <- scalaVersions(Some(params))
+        scalaJsVersions <- scalaJsVersions(Some(params))
+        scalaNativeVersions <- scalaNativeVersions(Some(params))
       } yield {
         searchresult(
           params,

@@ -61,6 +61,25 @@
                 </select>
               </div>
 
+              @for(github <- project.github) {
+                <div class="form-group">
+                  <label for="primary-topic">Primary Topic</label>
+                  <p>The most relevant topic for this project</p>
+                  <select
+                    id="primary-topic"
+                    name="primaryTopic"
+                    data-live-search="true"
+                    class="selectpicker" data-style="btn-primary">
+                  @for(topic <- github.topics) {
+                    <option
+                      value="@topic" 
+                      @if(project.primaryTopic == Some(topic)){selected}>
+                        @topic
+                    </option>
+                  }
+                  </select>
+                </div>
+              }
 
               <fieldset>
                 <legend>Default Release Selection</legend>

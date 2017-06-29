@@ -34,17 +34,7 @@ lazy val commonSettings = Seq(
     "-encoding",
     "UTF-8",
     "-feature",
-    "-unchecked",
-    "-Xfatal-warnings",
-    "-Xlint",
-    "-Yno-adapted-args",
-    "-Yrangepos",
-    "-Ywarn-dead-code",
-    "-Ywarn-numeric-widen",
-    "-Ywarn-unused-import",
-    "-Ywarn-value-discard",
-    "-Xmax-classfile-name",
-    "78"
+    "-unchecked"
   ),
   scalacOptions in (Test, console) -= "-Ywarn-unused-import",
   scalacOptions in (Compile, consoleQuick) -= "-Ywarn-unused-import",

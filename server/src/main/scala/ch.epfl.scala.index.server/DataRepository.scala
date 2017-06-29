@@ -17,17 +17,48 @@ import com.sksamuel.elastic4s.searches.queries.QueryDefinition
 import com.sksamuel.elastic4s.searches.sort.SortDefinition
 
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.Modifier
+import org.elasticsearch.search.aggregations.bucket.terms.StringTerms
 import org.elasticsearch.search.sort.SortOrder
 
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Await}
+import scala.concurrent.duration.Duration
 
 /**
   * @param github  Github client
   * @param paths   Paths to the files storing the index
   */
 class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: ExecutionContext) {
+
+  lazy val cachedTopics: Set[String] = {
+    import scala.collection.JavaConverters._
+
+    val aggregationName = "topic_count"
+
+    Await.result(
+      esClient.execute {
+        search(indexName / projectsCollection)
+          .aggregations(
+            termsAggregation(aggregationName).field("github.topics")
+          )
+      }.map(resp => {
+        try {
+          val agg = resp.aggregations.stringTermsResult(aggregationName)
+          agg.getBuckets.asScala.toList.collect {
+            case b: StringTerms.Bucket => b.getKeyAsString
+          }.toSet
+        } catch {
+          case e: Exception => {
+            log.error("failed aggregations", e)
+            Set()
+          }
+        }
+      }),
+      Duration.Inf
+    )
+  }
+
   private def hideId(p: Project) = p.copy(id = None)
 
   val log = LoggerFactory.getLogger(getClass)
@@ -138,16 +169,30 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
       if (escaped.contains(":")) stringQuery(escaped)
       else stringQuery(escaped + "~").fuzzyPrefixLength(3).defaultOperator("AND")
 
+    val queryIsATopic = cachedTopics.contains(queryString)
+
     functionScoreQuery(
       boolQuery().
         must(mustQueriesRepos ++ cliQuery ++ topicsQuery ++ targetsQuery ++ targetQuery).
         should(List(
-          fuzzyQuery("github.topics", escaped).boost(2),
-          fuzzyQuery("github.description", escaped).boost(1.7),
+          termQuery("repository", escaped).boost(20),
           fuzzyQuery("repository", escaped),
-          fuzzyQuery("organization", escaped),
+
+          termQuery("artifacts", escaped).boost(20),
           fuzzyQuery("artifacts", escaped),
-          stringQ.boost(0.01) // low boost because this query is applied to all the fields of the project (including the github readme)
+          
+          termQuery("organization", escaped).boost(20),
+          fuzzyQuery("organization", escaped),
+          
+          termQuery("primaryTopic", escaped).boost(
+            if(queryIsATopic) 1000
+            else 2
+          ),
+          termQuery("github.topics", escaped).boost(
+            if(queryIsATopic) 100
+            else 2
+          ),
+          fuzzyQuery("github.topics", escaped)
         )).
         not(List(termQuery("deprecated", true)))
     ).scorers(
@@ -291,33 +336,35 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
     }.map(r => r.to[T].toList)
   }
 
-  def topics(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {
-    stringAggregations("github.topics", params).map(addParamsIfMissing(params.topics))
+  def topics(params: Option[SearchParams] = None): Future[List[(String, Long)]] = {
+    stringAggregations("github.topics", params).map(
+      addParamsIfMissing(params, _.topics)
+    )
   }
 
-  def targetTypes(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {
-    stringAggregations("targetType", params).map(addParamsIfMissing(params.targetTypes))
+  def targetTypes(params: Option[SearchParams] = None): Future[List[(String, Long)]] = {
+    stringAggregations("targetType", params).map(addParamsIfMissing(params, _.targetTypes))
   }
 
   private def stringAggregations(field: String,
-                                 params: SearchParams): Future[List[(String, Long)]] = {
+                                 params: Option[SearchParams] = None): Future[List[(String, Long)]] = {
     aggregations(field, params).map(_.toList.sortBy(_._1).toList)
   }
 
-  def scalaVersions(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {
+  def scalaVersions(params: Option[SearchParams] = None): Future[List[(String, Long)]] = {
     val minVer = SemanticVersion(2, 10)
     versionAggregations("scalaVersion", params, _ >= minVer)
-      .map(addParamsIfMissing(params.scalaVersions))
+      .map(addParamsIfMissing(params, _.scalaVersions))
   }
 
-  def scalaJsVersions(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {
+  def scalaJsVersions(params: Option[SearchParams] = None): Future[List[(String, Long)]] = {
     versionAggregations("scalaJsVersion", params, _ => true)
-      .map(addParamsIfMissing(params.scalaJsVersions))
+      .map(addParamsIfMissing(params, _.scalaJsVersions))
   }
 
-  def scalaNativeVersions(params: SearchParams = SearchParams()): Future[List[(String, Long)]] = {
+  def scalaNativeVersions(params: Option[SearchParams] = None): Future[List[(String, Long)]] = {
     versionAggregations("scalaNativeVersion", params, _ => true)
-      .map(addParamsIfMissing(params.scalaNativeVersions))
+      .map(addParamsIfMissing(params, _.scalaNativeVersions))
   }
 
   def totalProjects(): Future[Long] = {
@@ -332,22 +379,30 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
     }.map(_.totalHits)
   }
 
-  private def addParamsIfMissing(params: List[String])(
-      result: List[(String, Long)]): List[(String, Long)] = {
-    val pSet = params.toSet
-    val rSet = result.map(_._1).toSet
+  private def addParamsIfMissing(p: Option[SearchParams], 
+                                 f: SearchParams => List[String])(
+                                   result: List[(String, Long)]
+                                ): List[(String, Long)] = {
+    p match {
+      case Some(params) => {
+        val pSet = f(params).toSet
+        val rSet = result.map(_._1).toSet
 
-    val diff = pSet -- rSet
+        val diff = pSet -- rSet
 
-    if (diff.nonEmpty) {
-      (diff.toList.map(label => (label, 0L)) ++ result).sortBy(_._1)
-    } else result
+        if (diff.nonEmpty) {
+          (diff.toList.map(label => (label, 0L)) ++ result).sortBy(_._1)
+        } else result
+      }
+      case _ => result
+    }
   }
 
   private def versionAggregations(
       field: String,
-      params: SearchParams,
+      params: Option[SearchParams],
       filterF: SemanticVersion => Boolean): Future[List[(String, Long)]] = {
+
     def sortedByVersion(aggregation: Map[String, Long]): List[(String, Long)] = {
       aggregation.toList.flatMap {
         case (version, count) => SemanticVersion(version).map(v => (v, count))
@@ -355,20 +410,24 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
         case (version, _) => SemanticVersion(version.major, version.minor)
       }.mapValues(_.map(_._2).sum).toList.sortBy(_._1).map { case (v, c) => (v.toString, c) }
     }
+
     aggregations(field, params).map(sortedByVersion)
   }
 
-  private def aggregations(field: String, params: SearchParams): Future[Map[String, Long]] = {
-
+  private def aggregations(field: String, params: Option[SearchParams]): Future[Map[String, Long]] = {
     import scala.collection.JavaConverters._
-    import org.elasticsearch.search.aggregations.bucket.terms.StringTerms
-
     val aggregationName = s"${field}_count"
+
+    val q = params.map(getQuery).getOrElse(matchAllQuery)
 
     esClient.execute {
       search(indexName / projectsCollection)
-        .query(getQuery(params))
-        .aggregations(termsAggregation(aggregationName).field(field).size(50))
+        .query(q)
+        .aggregations(
+          termsAggregation(aggregationName)
+            .field(field)
+            .size(50)
+        )
     }.map(resp => {
       try {
         val agg = resp.aggregations.stringTermsResult(aggregationName)
@@ -380,9 +439,7 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
           log.error("failed aggregations", e)
           Map()
         }
-
       }
-
     })
   }
 }

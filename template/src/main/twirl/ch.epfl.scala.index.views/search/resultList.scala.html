@@ -52,7 +52,7 @@
               @if(!github.topics.isEmpty) {
                 @for(topic <- github.topics) {
                   <span class="item-filter-tag">
-                    <a href="/search?q=topics:@topic">
+                    <a href="/search?topics=@topic">
                       @topic
                     </a>
                   </span>

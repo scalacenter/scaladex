@@ -23,6 +23,7 @@ import misc.{GithubInfo, GithubRepo}
   * @param targets (ex: scala_2.11, scala_2.12, scala-js_0.5)
   * @param dependencies to aggregate most depended upon libs (ex: spark, play framework, ...)
   * @param dependentCount Number of artifacts that depends on at least one release of at least one artifact of this project
+  * @param primaryTopic most significative topic (ex: Circe: json)
   */
 case class Project(
     organization: String,
@@ -48,7 +49,8 @@ case class Project(
     scalaJsVersion: Set[String],
     scalaNativeVersion: Set[String],
     dependencies: Set[String],
-    dependentCount: Int
+    dependentCount: Int,
+    primaryTopic: Option[String] = None
 ) {
 
   def reference = Project.Reference(organization, repository)

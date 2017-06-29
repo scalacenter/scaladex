@@ -15,7 +15,8 @@ case class ProjectForm(
     cliArtifacts: Set[String],
     // documentation
     customScalaDoc: Option[String],
-    documentationLinks: List[(String, String)]
+    documentationLinks: List[(String, String)],
+    primaryTopic: Option[String] = None
 ) {
   def update(project: Project): Project = {
     project.copy(
@@ -33,8 +34,9 @@ case class ProjectForm(
       // documentation
       customScalaDoc = customScalaDoc.filterNot(_ == ""),
       documentationLinks = documentationLinks.filterNot {
-        case (_, link) => link == ""
-      }
+        case (label, link) => label == "" || link == ""
+      },
+      primaryTopic = primaryTopic
     )
   }
 }
@@ -52,7 +54,8 @@ object ProjectForm {
       artifactDeprecations,
       cliArtifacts,
       customScalaDoc,
-      documentationLinks
+      documentationLinks,
+      primaryTopic
     )
   }
 }
