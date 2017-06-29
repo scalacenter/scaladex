@@ -3,6 +3,7 @@ package data
 package project
 
 import model.Project
+import model.misc.GithubInfo
 
 case class ProjectForm(
     // project
@@ -19,6 +20,15 @@ case class ProjectForm(
     primaryTopic: Option[String] = None
 ) {
   def update(project: Project): Project = {
+
+    val githubWithKeywords =
+      if(project.github.isEmpty) {
+        Some(GithubInfo(topics = keywords))
+      } else {
+        project.github.map(github =>
+          github.copy(topics = github.topics ++ keywords))
+      }
+
     project.copy(
       contributorsWanted = contributorsWanted,
       defaultArtifact =
@@ -29,9 +39,7 @@ case class ProjectForm(
       artifactDeprecations = artifactDeprecations,
       cliArtifacts = cliArtifacts,
       hasCli = cliArtifacts.nonEmpty,
-      github = project.github.map(github =>
-        github.copy(topics = github.topics ++ keywords)),
-      // documentation
+      github = githubWithKeywords,
       customScalaDoc = customScalaDoc.filterNot(_ == ""),
       documentationLinks = documentationLinks.filterNot {
         case (label, link) => label == "" || link == ""
