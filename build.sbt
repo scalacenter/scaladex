@@ -134,7 +134,7 @@ lazy val data = project
       "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion,
       "com.typesafe.akka" %% "akka-stream" % akkaVersion,
       "org.json4s" %% "json4s-native" % "3.4.2",
-      "me.tongfei" % "progressbar" % "0.4.0",
+      "me.tongfei" % "progressbar" % "0.5.5",
       "org.apache.maven" % "maven-model-builder" % "3.3.9",
       "org.jsoup" % "jsoup" % "1.10.1",
       "com.typesafe.play" %% "play-ahc-ws" % "2.6.0-RC2",

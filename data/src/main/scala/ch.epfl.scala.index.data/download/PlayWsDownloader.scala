@@ -2,8 +2,6 @@ package ch.epfl.scala.index
 package data
 package download
 
-import me.tongfei.progressbar.ProgressBar
-
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
@@ -83,7 +81,7 @@ trait PlayWsDownloader {
   ): Seq[R] = {
 
     val client = wsClient
-    val progress = new ProgressBar(message, toDownload.size)
+    val progress = ProgressBar(message, toDownload.size, log)
 
     def processItem(item: T) = {
       val request = downloadUrl(client, item)

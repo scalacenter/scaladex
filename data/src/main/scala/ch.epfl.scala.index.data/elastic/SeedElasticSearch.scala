@@ -5,8 +5,6 @@ package elastic
 import project._
 import maven.PomsReader
 
-import me.tongfei.progressbar._
-
 import com.sksamuel.elastic4s.ElasticDsl._
 
 import scala.concurrent.duration._
@@ -91,7 +89,7 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
     val (projects, projectReleases) = newData.unzip
     val releases = projectReleases.flatten
 
-    val progress = new ProgressBar("Indexing releases", releases.size)
+    val progress = ProgressBar("Indexing releases", releases.size, log)
     progress.start()
     val bunch = 1000
     releases.grouped(bunch).foreach { group =>

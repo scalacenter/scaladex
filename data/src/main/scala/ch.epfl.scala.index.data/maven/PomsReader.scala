@@ -2,7 +2,6 @@ package ch.epfl.scala.index
 package data
 package maven
 
-import me.tongfei.progressbar._
 import java.io.File
 import java.nio.file._
 
@@ -10,6 +9,8 @@ import scala.util.{Success, Try}
 import java.util.Properties
 
 import ch.epfl.scala.index.data.bintray.SbtPluginsData
+
+import org.slf4j.LoggerFactory
 
 case class MissingParentPom(dep: maven.Dependency) extends Exception
 
@@ -64,6 +65,9 @@ object PomsReader {
 private[maven] class PomsReader(pomsPath: Path,
                                 parentPomsPath: Path,
                                 repository: LocalPomRepository) {
+
+  private val log = LoggerFactory.getLogger(getClass)
+  
   import org.apache.maven.model._
   import resolution._
   import io._
@@ -113,7 +117,7 @@ private[maven] class PomsReader(pomsPath: Path,
     val s = Files.newDirectoryStream(pomsPath)
     val rawPoms = s.asScala.toList
 
-    val progress = new ProgressBar(s"Reading $repository's POMs", rawPoms.size)
+    val progress = ProgressBar(s"Reading $repository's POMs", rawPoms.size, log)
     progress.start()
 
     def sha1(path: Path) = path.getFileName().toString.dropRight(".pom".length)

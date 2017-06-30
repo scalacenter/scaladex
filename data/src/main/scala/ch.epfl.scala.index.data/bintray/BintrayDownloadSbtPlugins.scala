@@ -1,4 +1,5 @@
-package ch.epfl.scala.index.data.bintray
+package ch.epfl.scala.index.data
+package bintray
 
 import java.nio.file.Files
 
@@ -7,7 +8,7 @@ import akka.stream.Materializer
 import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.download.PlayWsDownloader
 import ch.epfl.scala.index.data.maven._
-import me.tongfei.progressbar.ProgressBar
+
 import org.apache.ivy.core.module.descriptor.ModuleDescriptor
 import org.apache.ivy.core.settings.IvySettings
 import org.apache.ivy.plugins.parser.xml.XmlModuleDescriptorParser
@@ -38,7 +39,7 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
 
   import BintrayDownloadSbtPlugins._
 
-  private val logger = LoggerFactory.getLogger(this.getClass)
+  private val log = LoggerFactory.getLogger(this.getClass)
 
   private val ivysData = SbtPluginsData(paths)
 
@@ -211,7 +212,8 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
     val maybeProgress =
       if (count > 1)
         Some(
-          new ProgressBar(s"Downloading descriptors of $subject/$repo", count))
+          ProgressBar(s"Downloading descriptors of $subject/$repo", count, log)
+        )
       else None
 
     maybeProgress.foreach(_.start())
@@ -254,7 +256,7 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
       }
     }.andThen {
       case Failure(t) =>
-        logger.error("Unable to fetch ivy.xml descriptor", t)
+        log.error("Unable to fetch ivy.xml descriptor", t)
     }
 
   private def writeSbtPluginReleases(
@@ -263,7 +265,7 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
     val count = releases.size
     val maybeProgress =
       if (count > 1)
-        Some(new ProgressBar("Writing ivy.xml descriptors", releases.size))
+        Some(ProgressBar("Writing ivy.xml descriptors", releases.size, log))
       else None
 
     // --- Store the ivy.xml files
