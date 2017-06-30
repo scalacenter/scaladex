@@ -31,34 +31,6 @@ import scala.concurrent.duration.Duration
   */
 class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: ExecutionContext) {
 
-  lazy val cachedTopics: Set[String] = {
-    import scala.collection.JavaConverters._
-
-    val aggregationName = "topic_count"
-
-    Await.result(
-      esClient.execute {
-        search(indexName / projectsCollection)
-          .aggregations(
-            termsAggregation(aggregationName).field("github.topics")
-          )
-      }.map(resp => {
-        try {
-          val agg = resp.aggregations.stringTermsResult(aggregationName)
-          agg.getBuckets.asScala.toList.collect {
-            case b: StringTerms.Bucket => b.getKeyAsString
-          }.toSet
-        } catch {
-          case e: Exception => {
-            log.error("failed aggregations", e)
-            Set()
-          }
-        }
-      }),
-      Duration.Inf
-    )
-  }
-
   private def hideId(p: Project) = p.copy(id = None)
 
   val log = LoggerFactory.getLogger(getClass)
@@ -175,7 +147,7 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
       boolQuery().
         must(mustQueriesRepos ++ cliQuery ++ topicsQuery ++ targetsQuery ++ targetQuery).
         should(List(
-          termQuery("repository", escaped).boost(20),
+          termQuery("repository", escaped).boost(1000),
           fuzzyQuery("repository", escaped),
 
           termQuery("artifacts", escaped).boost(20),
@@ -184,6 +156,10 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
           termQuery("organization", escaped).boost(20),
           fuzzyQuery("organization", escaped),
           
+          termQuery("primaryTopic", escaped).boost(10),
+          termQuery("github.topics", escaped).boost(2),
+          fuzzyQuery("github.topics", escaped),
+
           termQuery("primaryTopic", escaped).boost(
             if(queryIsATopic) 1000
             else 2
@@ -192,7 +168,8 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
             if(queryIsATopic) 100
             else 2
           ),
-          fuzzyQuery("github.topics", escaped)
+
+          stringQ
         )).
         not(List(termQuery("deprecated", true)))
     ).scorers(
@@ -442,4 +419,33 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
       }
     })
   }
+
+  lazy val cachedTopics: Set[String] = {
+    import scala.collection.JavaConverters._
+
+    val aggregationName = "topic_count"
+
+    Await.result(
+      esClient.execute {
+        search(indexName / projectsCollection)
+          .aggregations(
+            termsAggregation(aggregationName).field("github.topics")
+          )
+      }.map(resp => {
+        try {
+          val agg = resp.aggregations.stringTermsResult(aggregationName)
+          agg.getBuckets.asScala.toList.collect {
+            case b: StringTerms.Bucket => b.getKeyAsString
+          }.toSet
+        } catch {
+          case e: Exception => {
+            log.error("failed aggregations", e)
+            Set()
+          }
+        }
+      }),
+      Duration.Inf
+    )
+  }
+
 }

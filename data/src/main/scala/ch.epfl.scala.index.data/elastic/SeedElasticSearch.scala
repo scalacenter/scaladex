@@ -105,6 +105,7 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
 
       progress.stepBy(bunch)
     }
+    progress.stop()
 
     val bunch2 = 100
     log.info(s"Indexing projects (${projects.size})")

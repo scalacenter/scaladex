@@ -115,6 +115,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
 
     def created(metas: List[DateTime]): Option[String] =
       metas.sorted.headOption.map(format.print)
+
     pomsRepoSha
       .map {
         case (pom, repo, sha1) => {

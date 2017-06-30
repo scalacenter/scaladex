@@ -113,7 +113,7 @@ lazy val server = project
       .value,
     reStart := reStart.dependsOn(WebKeys.assets in Assets).evaluated,
     unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
-    javaOptions in reStart += "-Xmx3g"
+    javaOptions in reStart += "-Xmx4g"
   )
   .dependsOn(template, data, sharedJVM)
   .enablePlugins(SbtSass, JavaServerAppPackaging)
