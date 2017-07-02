@@ -48,11 +48,31 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
     } else Future.successful((Forbidden, views.html.forbidden(user)))
   }
 
+  private def redirectTo(owner: String,
+                         repo: String,
+                         target: Option[String],
+                         artifact: Option[String],
+                         version: Option[String],
+                         selected: Option[String]): Future[Option[Release]] = {
+
+    val selection = ReleaseSelection.parse(
+      target = target,
+      artifactName = artifact,
+      version = version,
+      selected = selected
+    )
+    
+    dataRepository
+      .projectPage(Project.Reference(owner, repo), selection)
+      .map(_.map {case (_, options) => options.release})
+  }
+
   private def projectPage(owner: String,
                           repo: String,
                           target: Option[String],
                           artifact: Option[String],
                           version: Option[String],
+                          selected: Option[String],
                           userState: Option[UserState]) = {
 
     val user = userState.map(_.user)
@@ -60,7 +80,8 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
     val selection = ReleaseSelection.parse(
       target = target,
       artifactName = artifact,
-      version = version
+      version = version,
+      selected = selected
     )
 
     dataRepository
@@ -86,7 +107,6 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
              versions,
              targets,
              release,
-             target,
              user,
              canEdit(owner, repo, userState),
              twitterCard
@@ -179,29 +199,35 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
         } ~
           path(Segment / Segment) { (organization, repository) =>
             optionalSession(refreshable, usingCookies) { userId =>
-              parameters(('artifact.?, 'version.?, 'target.?)) {
-                (artifact, version, target) =>
-                  val rest = (artifact, version) match {
-                    case (Some(a), Some(v)) => s"$a/$v"
-                    case (Some(a), None)    => a
-                    case _                  => ""
-                  }
-                  val targetQuery = target match {
-                    case Some(t) => s"?target=$t"
-                    case _       => ""
-                  }
-                  if (artifact.isEmpty && version.isEmpty) {
-                    complete(
-                      projectPage(organization,
-                                  repository,
-                                  target,
-                                  None,
-                                  None,
-                                  getUser(userId)))
-                  } else {
-                    redirect(s"/$organization/$repository/$rest$targetQuery",
-                             StatusCodes.PermanentRedirect)
-                  }
+              parameters(('artifact.?, 'version.?, 'target.?, 'selected.?)) {
+                (artifact, version, target, selected) =>
+
+                  onSuccess(
+                    redirectTo(
+                      owner = organization,
+                      repo = repository,
+                      target = target,
+                      artifact = artifact,
+                      version = version,
+                      selected = selected
+                    )
+                  )(maybeRelease =>
+                    maybeRelease match {
+                      case Some(release) => {
+                        val targetParam =
+                          release.reference.target match {
+                            case Some(target) => s"?target=${target.encode}"
+                            case None => ""
+                          }
+
+                        redirect(
+                          s"/$organization/$repository/${release.reference.artifact}/${release.reference.version}/$targetParam",
+                          StatusCodes.TemporaryRedirect
+                        )
+                      }
+                      case None => complete(((NotFound, views.html.notfound(getUser(userId).map(_.user)))))
+                    }
+                  )
               }
             }
           } ~
@@ -210,12 +236,15 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
               optionalSession(refreshable, usingCookies) { userId =>
                 parameter('target.?) { target =>
                   complete(
-                    projectPage(organization,
-                                repository,
-                                target,
-                                Some(artifact),
-                                None,
-                                getUser(userId))
+                    projectPage(
+                      owner = organization,
+                      repo = repository,
+                      target = target,
+                      artifact = Some(artifact),
+                      version = None,
+                      selected = None,
+                      userState = getUser(userId)
+                    )
                   )
                 }
               }
@@ -225,12 +254,15 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
               optionalSession(refreshable, usingCookies) { userId =>
                 parameter('target.?) { target =>
                   complete(
-                    projectPage(organization,
-                                repository,
-                                target,
-                                Some(artifact),
-                                Some(version),
-                                getUser(userId))
+                    projectPage(
+                      owner = organization,
+                      repo = repository,
+                      target = target,
+                      artifact = Some(artifact),
+                      version = Some(version),
+                      selected = None,
+                      userState = getUser(userId)
+                    )
                   )
                 }
               }

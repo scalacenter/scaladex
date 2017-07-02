@@ -192,7 +192,7 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
     query(getQuery(params), params)
   }
 
-  def releases(project: Project.Reference, selection: ReleaseSelection): Future[List[Release]] = {
+  def releases(project: Project.Reference): Future[List[Release]] = {
     esClient.execute {
       search(indexName / releasesCollection)
         .query(
@@ -248,7 +248,7 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
                          selection: ReleaseSelection): Future[Option[(Project, List[Release])]] = {
     for {
       project <- project(projectRef)
-      releases <- releases(projectRef, selection)
+      releases <- releases(projectRef)
     } yield project.map((_, releases))
   }
 

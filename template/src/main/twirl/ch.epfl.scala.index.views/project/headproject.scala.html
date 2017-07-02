@@ -4,7 +4,7 @@
 @import ch.epfl.scala.index.views.html.unescapeBackground
 
 @(project: Project, artifacts: List[String], versions: List[SemanticVersion], 
-  targets: List[ScalaTarget], release: Release, previouslySelectedTarget: Option[String], canEdit: Boolean)
+  targets: List[ScalaTarget], release: Release, canEdit: Boolean)
 <div class="head-project">
   <div class="container">
     <div class="row">
@@ -63,6 +63,8 @@
           }
           @if(!targets.isEmpty) {
             <form action="/@project.reference.organization/@project.reference.repository" action="GET">
+              <input type="hidden" name="selected" value="target">
+
               <input type="hidden" name="artifact" value="@release.reference.artifact">
               
               <select
@@ -78,12 +80,18 @@
                 </option>
               }
               </select>
+
+              <input type="hidden" name="version" value="@release.reference.version">
             </form>
           }
+
           <form action="/@project.reference.organization/@project.reference.repository" action="GET">
+
             @for(target <- release.reference.target) {
               <input type="hidden" name="target" value="@target.encode">
             }
+
+            <input type="hidden" name="selected" value="artifact">
 
             <select
               name="artifact"
@@ -95,16 +103,19 @@
                 @artifact
               </option>
             }
-
             </select>
+
+            <input type="hidden" name="version" value="@release.reference.version">
           </form>
           
           <form action="/@project.reference.organization/@project.reference.repository" action="GET">
-            @previouslySelectedTarget match {
-              case Some(target) =>  {<input type="hidden" name="target" value="@target">}
-              case None => {}
-            }
+            <input type="hidden" name="selected" value="version">
+
             <input type="hidden" name="artifact" value="@release.reference.artifact">
+
+            @for(target <- release.reference.target) {
+              <input type="hidden" name="target" value="@target.encode">
+            }
 
             <select
               name="version"

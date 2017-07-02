@@ -64,7 +64,8 @@ class Badges(dataRepository: DataRepository) {
             ReleaseSelection.parse(
               target = target,
               artifactName = artifact,
-              version = None
+              version = None,
+              selected = None
             )
           )
         ) {

@@ -150,7 +150,8 @@ class SearchApi(dataRepository: DataRepository)(
                   val selection = new ReleaseSelection(
                     target = scalaTarget,
                     artifact = artifact,
-                    version = None
+                    version = None,
+                    selected = None
                   )
 
                   def convert(options: ReleaseOptions): Api.ReleaseOptions = {

@@ -4,21 +4,24 @@ package release
 case class ReleaseSelection(
     target: Option[ScalaTarget],
     artifact: Option[String],
-    version: Option[SemanticVersion]
+    version: Option[SemanticVersion],
+    selected: Option[String]
 )
 
 object ReleaseSelection {
   def parse(target: Option[String],
             artifactName: Option[String],
-            version: Option[String]): ReleaseSelection = {
+            version: Option[String],
+            selected: Option[String]): ReleaseSelection = {
 
     new ReleaseSelection(
       target.flatMap(ScalaTarget.decode),
       artifactName,
-      version.flatMap(SemanticVersion.parse)
+      version.flatMap(SemanticVersion.parse),
+      selected
     )
   }
-  def empty = new ReleaseSelection(None, None, None)
+  def empty = new ReleaseSelection(None, None, None, None)
 }
 
 /**
@@ -49,10 +52,23 @@ object DefaultRelease {
     def filterVersion(release: Release): Boolean =
       selection.version.map(_ == release.reference.version).getOrElse(true)
 
-    val selectedReleases = releases.filter(
-      release =>
-        filterTarget(release) && filterArtifact(release) && filterVersion(
-          release))
+    def filterAll =
+      releases.filter(
+        release =>
+          filterTarget(release) && 
+          filterArtifact(release) && 
+          filterVersion(release)
+      )
+
+    val selectedReleases = 
+      selection.selected match {
+        case Some(selected) =>
+          if (selected == "target") releases.filter(filterTarget)
+          else if (selected == "artifact") releases.filter(filterArtifact)
+          else if (selected == "version") releases.filter(filterVersion)
+          else filterAll
+        case None => filterAll
+      }
 
     // descending ordering for versions
     implicit def ordering = implicitly[Ordering[SemanticVersion]].reverse
@@ -87,14 +103,8 @@ object DefaultRelease {
         .sortBy(target =>
           (target.targetType, target.scalaVersion, target.scalaJsVersion))
 
-      val artifacts =
-        releases.filter(filterTarget).map(_.reference.artifact).toList.sorted
-
-      val releasesForArtifact =
-        releases.filter(release =>
-          filterTarget(release) && filterArtifact(release))
-
-      val versions = releasesForArtifact.map(_.reference.version).toList.sorted
+      val artifacts = releases.map(_.reference.artifact).toList.sorted
+      val versions = releases.map(_.reference.version).toList.sorted
 
       ReleaseOptions(
         artifacts,

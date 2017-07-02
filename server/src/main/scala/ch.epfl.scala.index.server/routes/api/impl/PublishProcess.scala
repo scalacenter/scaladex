@@ -232,8 +232,7 @@ private[api] class PublishProcess(paths: DataPaths,
 
     for {
       project <- dataRepository.project(projectReference)
-      releases <- dataRepository.releases(projectReference,
-                                          ReleaseSelection.empty)
+      releases <- dataRepository.releases(projectReference)
       _ <- updateProjectReleases(project, releases)
     } yield ()
   }

@@ -327,7 +327,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
 
           val releaseOptions = DefaultRelease(
             repository,
-            ReleaseSelection(None, None, None),
+            ReleaseSelection.empty,
             releases,
             None,
             defaultStableVersion
