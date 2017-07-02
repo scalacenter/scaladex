@@ -1,7 +1,7 @@
 @import ch.epfl.scala.index.model._
 @import ch.epfl.scala.index.model.release._
 
-@import ch.epfl.scala.index.views.html.unescapeBackground
+@import ch.epfl.scala.index.views.html.{unescapeBackground, ensureUri}
 
 @(project: Project, artifacts: List[String], versions: List[SemanticVersion], 
   targets: List[ScalaTarget], release: Release, canEdit: Boolean)
@@ -35,7 +35,7 @@
           @for(github <- project.github) {
             @for(homepage <- github.homepage) {
               @if(!homepage.target.isEmpty) {
-                <a class="homepage" href="@homepage.target" target="_blank">
+                <a class="homepage" href="@ensureUri(homepage.target)" target="_blank">
                   Website <i class="fa fa-globe" aria-hidden="true"></i>
                 </a>
               }
