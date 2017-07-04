@@ -330,8 +330,11 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
 
   def scalaVersions(params: Option[SearchParams] = None): Future[List[(String, Long)]] = {
     val minVer = SemanticVersion(2, 10)
-    versionAggregations("scalaVersion", params, _ >= minVer)
-      .map(addParamsIfMissing(params, _.scalaVersions))
+    val maxVer = SemanticVersion(2, 13)
+
+    versionAggregations("scalaVersion", params, version => 
+      minVer <= version && version <= maxVer
+    ).map(addParamsIfMissing(params, _.scalaVersions))
   }
 
   def scalaJsVersions(params: Option[SearchParams] = None): Future[List[(String, Long)]] = {
