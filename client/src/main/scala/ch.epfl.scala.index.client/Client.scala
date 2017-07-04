@@ -5,35 +5,40 @@ import autowire._
 import api._
 import rpc.AutowireClient
 import org.scalajs.dom
-import org.scalajs.dom.ext.KeyCode
+import org.scalajs.dom.ext.{KeyCode, Ajax}
+
 import org.scalajs.dom.{Event, KeyboardEvent, document}
 import org.scalajs.dom.raw.{Element, HTMLInputElement, HTMLUListElement, Node}
 
 import scalatags.JsDom.all._
 import scalajs.concurrent.JSExecutionContext.Implicits.queue
-import scalajs.js.annotation.JSExport
+import scalajs.js.annotation.{JSExport, JSExportTopLevel}
 import scalajs.js.JSApp
+import scala.scalajs.js.UndefOr
+
 import scala.concurrent.Future
 import scala.util.Try
 
-trait ClientBase {
 
-  val searchId = "search"
-  val resultElementId = "list-result"
-  var completionSelection: CompletionSelection = CompletionSelection.empty
+@JSExportTopLevel("ch.epfl.scala.index.client.Client")
+object Client {
 
-  def getResultList: Option[Element] = getElement(resultElementId)
+  private val searchId = "search"
+  private val resultElementId = "list-result"
+  private var completionSelection = CompletionSelection.empty
 
-  def getSearchBox: Option[Element] =
+  private def getResultList: Option[Element] = getElement(resultElementId)
+
+  private def getSearchBox: Option[Element] =
     getElement(searchId)
 
-  def getSearchInput: Option[HTMLInputElement] =
+  private def getSearchInput: Option[HTMLInputElement] =
     getSearchBox.map(_.getInput)
 
-  def getElement(id: String): Option[Element] =
-    Try(document.getElementById(id)).toOption
+  private def getElement(id: String): Option[Element] =
+    Option(document.getElementById(id))
 
-  def appendResult(owner: String,
+  private def appendResult(owner: String,
                    repo: String,
                    description: String): Option[Node] = {
     for {
@@ -42,7 +47,7 @@ trait ClientBase {
     } yield resultContainer.appendChild(newItem)
   }
 
-  def newProjectItem(owner: String,
+  private def newProjectItem(owner: String,
                      repo: String,
                      description: String): Element = {
     li(
@@ -53,15 +58,15 @@ trait ClientBase {
     ).render
   }
 
-  def getQuery(input: Option[HTMLInputElement]): Option[String] = input match {
+  private def getQuery(input: Option[HTMLInputElement]): Option[String] = input match {
     case Some(i) if i.value.length > 1 => Option(i.value)
     case _                             => None
   }
 
-  def getProjects(query: String): Future[List[Autocompletion]] =
+  private def getProjects(query: String): Future[List[Autocompletion]] =
     AutowireClient[Api].autocomplete(query).call()
 
-  def showResults(projects: List[Autocompletion]): List[Option[Node]] = {
+  private def showResults(projects: List[Autocompletion]): List[Option[Node]] = {
     completionSelection = CompletionSelection(None, projects)
     projects.map {
       case Autocompletion(organization, repository, description) =>
@@ -73,13 +78,12 @@ trait ClientBase {
     }
   }
 
-  def cleanResults(): Unit = {
+  private def cleanResults(): Unit = {
     completionSelection = CompletionSelection.empty
     getResultList.fold(())(_.innerHTML = "")
   }
 
-  @JSExport
-  def runSearch(event: dom.Event): Future[List[Option[Node]]] = {
+  private def runSearch(event: dom.Event): Future[List[Option[Node]]] = {
     cleanResults()
     getQuery(getSearchInput)
       .fold(
@@ -88,7 +92,7 @@ trait ClientBase {
       .map(showResults)
   }
 
-  def navigate(event: KeyboardEvent): Unit = {
+  private def navigate(event: KeyboardEvent): Unit = {
     if (event.keyCode == KeyCode.Up && completionSelection.choices.nonEmpty) {
       moveSelection(
         completionSelection.selected.map(_ - 1).filter(_ >= 0)
@@ -142,15 +146,39 @@ trait ClientBase {
     val empty = CompletionSelection(None, Nil)
   }
 
-}
+  private def fetchAndReplaceReadme(el: Element, token: Option[String]): Unit = {
 
-object Client extends JSApp with ClientBase {
+    val organization = el.attributes.getNamedItem("data-organization").value
+    val repository = el.attributes.getNamedItem("data-repository").value
 
-  override def main(): Unit = {
+    val headers = Map(
+      "Accept" -> "application/vnd.github.VERSION.html"
+    )
+
+    val headersWithCreds =
+      token.map(t =>
+        headers + ("Authorization" -> s"bearer $t")
+      ).getOrElse(headers)
+
+    Ajax.get(
+      url = s"https://api.github.com/repos/$organization/$repository/readme",
+      data = "",
+      timeout = 0,
+      headers = headersWithCreds
+    ).onSuccess{case xhr =>
+      el.innerHTML = xhr.responseText
+    }
+  }
+
+  @JSExport
+  def main(token: UndefOr[String]): Unit = {    
     getSearchBox.foreach { searchBox =>
       searchBox.addEventListener[Event]("input", runSearch _)
       searchBox.addEventListener[KeyboardEvent]("keydown", navigate _)
     }
-  }
 
+    getElement("README").foreach{ readmeEl =>
+      fetchAndReplaceReadme(readmeEl, token.toOption)
+    }    
+  }
 }
