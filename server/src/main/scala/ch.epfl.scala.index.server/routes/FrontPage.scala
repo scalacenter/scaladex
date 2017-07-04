@@ -46,14 +46,10 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
         "Typelevel" -> "typelevel"
       )
 
-      val excludedScalaVersions = Set("2.9", "2.8")
-
       views.html.frontpage(
         topics,
         targetTypes,
-        scalaVersions.filterNot {
-          case (version, _) => excludedScalaVersions.contains(version)
-        },
+        scalaVersions,
         scalaJsVersions,
         scalaNativeVersions,
         latestProjects,
