@@ -3,7 +3,7 @@
 
 @(params: SearchParams,
   topics: List[(String, Long)],
-  targetTypes: List[(String, Long)],
+  targetTypes: List[(String, String, Long)],
   scalaVersions: List[(String, Long)],
   scalaJsVersions: List[(String, Long)],
   scalaNativeVersions: List[(String, Long)],
@@ -16,17 +16,13 @@
     <fieldset>
       <legend>Target</legend>
       <ul>
-      @for((targetType, count) <- targetTypes) {
+      @for((targetType, label, count) <- targetTypes) {
         <li>
           <label>
             <input type="checkbox" @if(params.targetTypes.contains(targetType)) { checked }
                    name="targetTypes" value="@targetType" onclick="this.form.submit()">
-            @if(targetType == "JVM") {
-              Scala (JVM)
-            } else {
-              @targetType 
-            }
-            (@count)
+                   
+            @label (@count)
           </label>
         </li>
       }
