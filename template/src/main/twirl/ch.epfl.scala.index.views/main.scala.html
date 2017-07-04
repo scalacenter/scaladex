@@ -143,7 +143,12 @@
         });
 
         // Run client scalajs code (for instance, autocomplete)
-        ch.epfl.scala.index.client.Client().main();
+        @if(user.isDefined) {
+          ch.epfl.scala.index.client.Client.main("@user.get.token");
+        } else {
+          ch.epfl.scala.index.client.Client.main();
+        }
+
     </script>
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
