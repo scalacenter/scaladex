@@ -319,8 +319,15 @@ class DataRepository(github: Github, paths: DataPaths)(private implicit val ec: 
     )
   }
 
-  def targetTypes(params: Option[SearchParams] = None): Future[List[(String, Long)]] = {
-    stringAggregations("targetType", params).map(addParamsIfMissing(params, _.targetTypes))
+  def targetTypes(params: Option[SearchParams] = None): Future[List[(String, String, Long)]] = {
+    def labelize(in: String): String = {
+      if(in == "JVM") "Scala (Jvm)"
+      else in.take(1).map(_.toUpper) + in.drop(1).map(_.toLower)
+    }
+
+    stringAggregations("targetType", params)
+      .map(addParamsIfMissing(params, _.targetTypes))
+      .map(_.map{case (targetType, count) => (targetType, labelize(targetType), count)})
   }
 
   private def stringAggregations(field: String,

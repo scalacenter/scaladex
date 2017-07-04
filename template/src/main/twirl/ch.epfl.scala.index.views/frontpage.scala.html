@@ -4,7 +4,7 @@
 @import ch.epfl.scala.index.model.misc.SearchParams
 
 @(topics: List[(String, Long)],
-  targetTypes: List[(String, Long)],
+  targetTypes: List[(String, String, Long)],
   scalaVersions: List[(String, Long)],
   scalaJsVersions: List[(String, Long)],
   scalaNativeVersions: List[(String, Long)], 
@@ -31,9 +31,9 @@
                     </ul>
                     <ul class="tag">
                         <li><strong>Platforms:</strong></li>
-                        @for((targetType, count) <- targetTypes) {
+                        @for((label, targetType, count) <- targetTypes) {
                             <li>
-                                <a href="/search?q=*&targetType=@targetType">@targetType (@count)</a>
+                                <a href="/search?q=*&targetType=@targetType">@label (@count)</a>
                             </li>
                         }
                     </ul>
