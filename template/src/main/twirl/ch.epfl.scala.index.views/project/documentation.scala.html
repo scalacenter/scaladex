@@ -4,11 +4,11 @@
   <h4>Documentation</h4>
   <ul>
     @for(scaladoc <- release.scalaDocURL(project.customScalaDoc)){
-      <li><a href="@scaladoc.toString()" target="_blank">Scaladoc</a></li>
+      <li><a href="@scaladoc.toString()" rel="nofollow" target="_blank">Scaladoc</a></li>
     }
     @for((label, url) <- release.documentationURLs(project.documentationLinks)){
       <li>
-        <a href="@url.toString()" target="_blank">
+        <a href="@url.toString()" target="_blank" rel="nofollow">
           @if(label == ""){ @url } else { @label }
         </a>
       </li>

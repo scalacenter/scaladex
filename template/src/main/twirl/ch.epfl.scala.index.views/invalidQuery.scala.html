@@ -1,0 +1,13 @@
+@import ch.epfl.scala.index.model._
+@import ch.epfl.scala.index.model.misc.{UserInfo, SearchParams}
+@(user: Option[UserInfo], params: SearchParams)
+
+@main(title = "Invalid Query", showSearch = true, params = params, user = user) {
+<main class="container">
+  <h1>Not a valid query</h1>
+  <pre>@params.queryString</pre>
+  <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/query-dsl-query-string-query.html#query-string-syntax" target="_blank" rel="noreferrer">
+    Please refer to the elasticsearch manual
+  </a>
+</main>
+}

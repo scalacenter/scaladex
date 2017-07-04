@@ -35,7 +35,7 @@
           @for(github <- project.github) {
             @for(homepage <- github.homepage) {
               @if(!homepage.target.isEmpty) {
-                <a class="homepage" href="@ensureUri(homepage.target)" target="_blank">
+                <a class="homepage" href="@ensureUri(homepage.target)" target="_blank" rel="nofollow">
                   Website <i class="fa fa-globe" aria-hidden="true"></i>
                 </a>
               }

@@ -7,9 +7,18 @@ import data.DataPaths
 import data.util.PidLock
 import data.elastic._
 
+import TwirlSupport._
+
 import akka.http.scaladsl._
-import akka.http.scaladsl.model.StatusCodes
-import server.Directives._
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.server._
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.model.StatusCodes.UnprocessableEntity
+
+import com.softwaremill.session._
+import SessionDirectives._
+import SessionOptions._
+
 
 import com.typesafe.config.ConfigFactory
 
@@ -20,6 +29,9 @@ import scala.concurrent.duration._
 import scala.concurrent.Await
 
 import org.slf4j.LoggerFactory
+
+import org.elasticsearch.action.search.SearchPhaseExecutionException
+import org.apache.lucene.queryparser.classic.ParseException
 
 object Server {
   private val log = LoggerFactory.getLogger(getClass)
@@ -50,13 +62,17 @@ object Server {
     val data = new DataRepository(github, paths)
     val session = new GithubUserSession(config)
 
+    import session._
+
+    val searchPages = new SearchPages(data, session)
+
     val userFacingRoutes =
       concat(
         new FrontPage(data, session).routes,
         redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
           concat(
             new ProjectPages(data, session).routes,
-            new SearchPages(data, session).routes
+            searchPages.routes
           )
         }
       )
@@ -69,7 +85,28 @@ object Server {
       new OAuth2(github, session).routes
     )
 
-    val routes = programmaticRoutes ~ userFacingRoutes
+    val exceptionHandler = ExceptionHandler {
+      case ex: SearchPhaseExecutionException =>
+        optionalSession(refreshable, usingCookies) { userId =>
+          searchPages.searchParams(userId) { params =>
+            complete(
+              (
+                UnprocessableEntity,
+                views.html.invalidQuery(
+                  getUser(userId).map(_.user),
+                  params
+                )
+              )
+            )
+          }
+        }
+    }
+
+    val routes = 
+      handleExceptions(exceptionHandler){
+        concat(programmaticRoutes, userFacingRoutes)
+      }
+
 
     log.info("waiting for elastic to start")
     blockUntilYellow()
