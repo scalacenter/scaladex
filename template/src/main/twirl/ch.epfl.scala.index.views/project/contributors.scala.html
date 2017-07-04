@@ -7,7 +7,7 @@
     <ul>
       @for(contributor <- contributors.take(100)) {
         <li>
-          <a href="@contributor.url.target" target="_blank">
+          <a href="@contributor.url.target" target="_blank" rel="noreferrer">
             <img data-toggle="tooltip" data-placement="bottom" width="32" title="@contributor.login" src="@contributor.sizedAvatarUrl(32)" alt="">
           </a>
         </li>
