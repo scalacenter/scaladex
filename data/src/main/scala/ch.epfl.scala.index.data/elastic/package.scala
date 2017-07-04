@@ -28,7 +28,7 @@ trait ProjectProtocol {
         classOf[ReleaseCandidate],
         classOf[OtherPreRelease],
         classOf[BintrayResolver]
-      ))) + artifactKindSerializer
+      ))).preservingEmptyValues + artifactKindSerializer
 
   private def tryEither[T](f: T): Either[Throwable, T] = {
     Try(f).transform(s => Success(Right(s)), f => Success(Left(f))).get
