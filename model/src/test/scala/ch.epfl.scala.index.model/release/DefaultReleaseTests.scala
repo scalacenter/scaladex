@@ -92,7 +92,7 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
 
       val result =
         DefaultRelease(repository,
-                       ReleaseSelection(None, None, None),
+                       ReleaseSelection.empty,
                        releases,
                        None,
                        true)
@@ -155,9 +155,12 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
 
       val result = DefaultRelease(
         repository,
-        ReleaseSelection(artifact = Some("akka-distributed-data-experimental"),
-                         target = None,
-                         version = None),
+        ReleaseSelection(
+          artifact = Some("akka-distributed-data-experimental"),
+          target = None,
+          version = None,
+          selected = None
+        ),
         releases,
         None,
         true
