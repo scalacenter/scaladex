@@ -160,7 +160,9 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer)
 
       val Response.User(login, name, avatarUrl) = user
 
-      UserState(githubRepos, orgs.toSet, UserInfo(login, name, avatarUrl, token))
+      UserState(githubRepos,
+                orgs.toSet,
+                UserInfo(login, name, avatarUrl, token))
     }
   }
 }

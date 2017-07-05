@@ -55,12 +55,12 @@ object DefaultRelease {
     def filterAll =
       releases.filter(
         release =>
-          filterTarget(release) && 
-          filterArtifact(release) && 
-          filterVersion(release)
+          filterTarget(release) &&
+            filterArtifact(release) &&
+            filterVersion(release)
       )
 
-    val selectedReleases = 
+    val selectedReleases =
       selection.selected match {
         case Some(selected) =>
           if (selected == "target") releases.filter(filterTarget)

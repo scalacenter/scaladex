@@ -22,7 +22,7 @@ class ProgressBar(inner: PB, logger: Logger, count: Int) {
   def start(): Unit = {
     inner.start()
   }
-  
+
   def step(): Unit = {
     inner.step()
     c += 1
@@ -42,7 +42,7 @@ class ProgressBar(inner: PB, logger: Logger, count: Int) {
   private def print(): Unit = {
     val pp = ((c.toDouble / count) * 100).toInt
 
-    if(printed < pp) {
+    if (printed < pp) {
       logger.debug(pp + "%")
       printed = pp
     }

@@ -22,7 +22,7 @@ case class ProjectForm(
   def update(project: Project): Project = {
 
     val githubWithKeywords =
-      if(project.github.isEmpty) {
+      if (project.github.isEmpty) {
         Some(GithubInfo(topics = keywords))
       } else {
         project.github.map(github =>

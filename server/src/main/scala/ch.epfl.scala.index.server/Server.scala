@@ -19,7 +19,6 @@ import com.softwaremill.session._
 import SessionDirectives._
 import SessionOptions._
 
-
 import com.typesafe.config.ConfigFactory
 
 import akka.actor.ActorSystem
@@ -102,11 +101,10 @@ object Server {
         }
     }
 
-    val routes = 
-      handleExceptions(exceptionHandler){
+    val routes =
+      handleExceptions(exceptionHandler) {
         concat(programmaticRoutes, userFacingRoutes)
       }
-
 
     log.info("waiting for elastic to start")
     blockUntilYellow()

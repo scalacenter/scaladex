@@ -21,14 +21,16 @@ import scala.util.{Try, Success}
 
 trait ProjectProtocol {
 
-  implicit val formats = Serialization.formats(
-    ShortTypeHints(
-      List(
-        classOf[Milestone],
-        classOf[ReleaseCandidate],
-        classOf[OtherPreRelease],
-        classOf[BintrayResolver]
-      ))).preservingEmptyValues + artifactKindSerializer
+  implicit val formats = Serialization
+    .formats(
+      ShortTypeHints(
+        List(
+          classOf[Milestone],
+          classOf[ReleaseCandidate],
+          classOf[OtherPreRelease],
+          classOf[BintrayResolver]
+        )))
+    .preservingEmptyValues + artifactKindSerializer
 
   private def tryEither[T](f: T): Either[Throwable, T] = {
     Try(f).transform(s => Success(Right(s)), f => Success(Left(f))).get

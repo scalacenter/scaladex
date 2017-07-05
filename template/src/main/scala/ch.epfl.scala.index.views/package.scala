@@ -37,7 +37,7 @@ package object html {
   }
 
   def ensureUri(in: String): String = {
-    if(in.startsWith("https://") || in.startsWith("http://")) in
+    if (in.startsWith("https://") || in.startsWith("http://")) in
     else "http://" + in
   }
 

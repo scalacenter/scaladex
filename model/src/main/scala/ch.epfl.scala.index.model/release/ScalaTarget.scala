@@ -5,10 +5,10 @@ object ScalaTargetType {
   implicit val ordering: Ordering[ScalaTargetType] = {
     def toInt(v: ScalaTargetType): Int = {
       v match {
-        case Jvm => 4
-        case Js => 3
+        case Jvm    => 4
+        case Js     => 3
         case Native => 2
-        case Java => 1
+        case Java   => 1
       }
     }
 
@@ -65,8 +65,7 @@ case class ScalaTarget(
 
   // Scala > Js > Native
 
-
-  private val ordering: Ordering[ScalaTarget] = Ordering.by{target =>
+  private val ordering: Ordering[ScalaTarget] = Ordering.by { target =>
     (
       target.targetType,
       target.scalaVersion,
@@ -115,8 +114,10 @@ object ScalaTarget {
                 scalaJsVersion = None,
                 scalaNativeVersion = Some(scalaNativeVersion))
 
-  def split(target: Option[ScalaTarget])
-    : (Option[ScalaTargetType], Option[String], Option[String], Option[String]) = {
+  def split(target: Option[ScalaTarget]): (Option[ScalaTargetType],
+                                           Option[String],
+                                           Option[String],
+                                           Option[String]) = {
     val targetType = target.map(_.targetType)
     val scalaVersion = target.map(_.scalaVersion.forceBinary.toString)
     val scalaJsVersion =

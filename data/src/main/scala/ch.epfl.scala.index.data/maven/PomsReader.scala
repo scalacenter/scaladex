@@ -67,7 +67,7 @@ private[maven] class PomsReader(pomsPath: Path,
                                 repository: LocalPomRepository) {
 
   private val log = LoggerFactory.getLogger(getClass)
-  
+
   import org.apache.maven.model._
   import resolution._
   import io._
@@ -117,7 +117,8 @@ private[maven] class PomsReader(pomsPath: Path,
     val s = Files.newDirectoryStream(pomsPath)
     val rawPoms = s.asScala.toList
 
-    val progress = ProgressBar(s"Reading $repository's POMs", rawPoms.size, log)
+    val progress =
+      ProgressBar(s"Reading $repository's POMs", rawPoms.size, log)
     progress.start()
 
     def sha1(path: Path) = path.getFileName().toString.dropRight(".pom".length)

@@ -18,8 +18,6 @@ import scala.scalajs.js.UndefOr
 
 import scala.concurrent.Future
 import scala.util.Try
-
-
 @JSExportTopLevel("ch.epfl.scala.index.client.Client")
 object Client {
 
@@ -39,8 +37,8 @@ object Client {
     Option(document.getElementById(id))
 
   private def appendResult(owner: String,
-                   repo: String,
-                   description: String): Option[Node] = {
+                           repo: String,
+                           description: String): Option[Node] = {
     for {
       resultContainer <- getResultList
       newItem = newProjectItem(owner, repo, description)
@@ -48,8 +46,8 @@ object Client {
   }
 
   private def newProjectItem(owner: String,
-                     repo: String,
-                     description: String): Element = {
+                             repo: String,
+                             description: String): Element = {
     li(
       a(href := s"/$owner/$repo")(
         p(s"$owner / $repo"),
@@ -58,10 +56,11 @@ object Client {
     ).render
   }
 
-  private def getQuery(input: Option[HTMLInputElement]): Option[String] = input match {
-    case Some(i) if i.value.length > 1 => Option(i.value)
-    case _                             => None
-  }
+  private def getQuery(input: Option[HTMLInputElement]): Option[String] =
+    input match {
+      case Some(i) if i.value.length > 1 => Option(i.value)
+      case _                             => None
+    }
 
   private def getProjects(query: String): Future[List[Autocompletion]] =
     AutowireClient[Api].autocomplete(query).call()
@@ -156,29 +155,32 @@ object Client {
     )
 
     val headersWithCreds =
-      token.map(t =>
-        headers + ("Authorization" -> s"bearer $t")
-      ).getOrElse(headers)
+      token
+        .map(t => headers + ("Authorization" -> s"bearer $t"))
+        .getOrElse(headers)
 
-    Ajax.get(
-      url = s"https://api.github.com/repos/$organization/$repository/readme",
-      data = "",
-      timeout = 0,
-      headers = headersWithCreds
-    ).onSuccess{case xhr =>
-      el.innerHTML = xhr.responseText
-    }
+    Ajax
+      .get(
+        url = s"https://api.github.com/repos/$organization/$repository/readme",
+        data = "",
+        timeout = 0,
+        headers = headersWithCreds
+      )
+      .onSuccess {
+        case xhr =>
+          el.innerHTML = xhr.responseText
+      }
   }
 
   @JSExport
-  def main(token: UndefOr[String]): Unit = {    
+  def main(token: UndefOr[String]): Unit = {
     getSearchBox.foreach { searchBox =>
       searchBox.addEventListener[Event]("input", runSearch _)
       searchBox.addEventListener[KeyboardEvent]("keydown", navigate _)
     }
 
-    getElement("README").foreach{ readmeEl =>
+    getElement("README").foreach { readmeEl =>
       fetchAndReplaceReadme(readmeEl, token.toOption)
-    }    
+    }
   }
 }
