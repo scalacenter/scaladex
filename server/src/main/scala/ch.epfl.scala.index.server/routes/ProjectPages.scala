@@ -67,6 +67,63 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
       .map(_.map {case (_, options) => options.release})
   }
 
+  private def artifactsPage(owner: String,
+                            repo: String,
+                            userState: Option[UserState]) = {
+
+    val user = userState.map(_.user)
+
+    def showTarget(target: ScalaTarget): String = {
+      target match {
+        case ScalaTarget(scalaVersion, None, None) => 
+          scalaVersion.toString
+
+        case ScalaTarget(scalaVersion, Some(scalaJsVersion), None) =>
+          scalaVersion.toString
+
+        case ScalaTarget(scalaVersion, None, Some(scalaNativeVersion)) =>
+          scalaNativeVersion.toString
+
+        case _ => "" // impossible
+      }
+    }
+
+    dataRepository.projectAndReleases(Project.Reference(owner, repo), ReleaseSelection.empty).map{
+      case Some((project, releases)) => {
+        val targets =
+          releases
+            .map(_.reference.target)
+            .sorted
+            .reverse
+            .map(target =>
+              (
+                target,
+                target.map(showTarget).getOrElse("Java")
+              )
+            )
+            .distinct
+
+        val targetTypes =
+          targets
+            .map(_._1.map(_.targetType)
+            .getOrElse(Java))
+            .groupBy(x => x)
+            .map{case (k, vs) => (k, vs.size)}
+            .toList
+
+        val sortedReleases = 
+          releases
+            .groupBy(_.reference.version)
+            .toList
+            .sortBy(_._1)
+            .reverse
+
+        (OK, views.html.artifacts(project, sortedReleases, targetTypes, targets, user))
+      }
+      case None => (NotFound, views.html.notfound(user))
+    }
+  }
+
   private def projectPage(owner: String,
                           repo: String,
                           target: Option[String],
@@ -189,17 +246,25 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
         }
       }
     } ~
-      get {
-        path("edit" / Segment / Segment) { (organization, repository) =>
-          optionalSession(refreshable, usingCookies) { userId =>
-            pathEnd {
-              complete(editPage(organization, repository, getUser(userId)))
-            }
-          }
-        } ~
-          path(Segment / Segment) { (organization, repository) =>
-            optionalSession(refreshable, usingCookies) { userId =>
-              parameters(('artifact.?, 'version.?, 'target.?, 'selected.?)) {
+      get(
+        concat(
+          path("artifacts" / Segment / Segment)((organization, repository) =>
+            optionalSession(refreshable, usingCookies)(userId =>
+              pathEnd(
+                complete(artifactsPage(organization, repository, getUser(userId)))
+              )
+            )
+          ),
+          path("edit" / Segment / Segment)((organization, repository) =>
+            optionalSession(refreshable, usingCookies)(userId =>
+              pathEnd(
+                complete(editPage(organization, repository, getUser(userId)))
+              )
+            )
+          ),
+          path(Segment / Segment)((organization, repository) =>
+            optionalSession(refreshable, usingCookies)(userId =>
+              parameters(('artifact.?, 'version.?, 'target.?, 'selected.?))(
                 (artifact, version, target, selected) =>
 
                   onSuccess(
@@ -228,13 +293,13 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
                       case None => complete(((NotFound, views.html.notfound(getUser(userId).map(_.user)))))
                     }
                   )
-              }
-            }
-          } ~
-          path(Segment / Segment / Segment) {
+              )
+            )
+          ),
+          path(Segment / Segment / Segment)(
             (organization, repository, artifact) =>
-              optionalSession(refreshable, usingCookies) { userId =>
-                parameter('target.?) { target =>
+              optionalSession(refreshable, usingCookies) ( userId =>
+                parameter('target.?) ( target =>
                   complete(
                     projectPage(
                       owner = organization,
@@ -246,13 +311,13 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
                       userState = getUser(userId)
                     )
                   )
-                }
-              }
-          } ~
-          path(Segment / Segment / Segment / Segment) {
+                )
+              )
+          ),
+          path(Segment / Segment / Segment / Segment)(
             (organization, repository, artifact, version) =>
-              optionalSession(refreshable, usingCookies) { userId =>
-                parameter('target.?) { target =>
+              optionalSession(refreshable, usingCookies)(userId =>
+                parameter('target.?) (target =>
                   complete(
                     projectPage(
                       owner = organization,
@@ -264,8 +329,9 @@ class ProjectPages(dataRepository: DataRepository, session: GithubUserSession) {
                       userState = getUser(userId)
                     )
                   )
-                }
-              }
-          }
-      }
+                )
+              )
+          )
+        )
+      )
 }

@@ -1,0 +1,69 @@
+@import ch.epfl.scala.index.model._
+@import ch.epfl.scala.index.model.misc._
+@import ch.epfl.scala.index.model.release._
+
+@(project: Project, 
+  releases: List[(SemanticVersion, List[Release])],
+  targetTypes: List[(ScalaTargetType, Int)],
+  targets: List[(Option[ScalaTarget], String)],
+  user: Option[UserInfo])
+
+@main(title = project.repository, showSearch = true, user) {
+  <main class="artifacts">
+    <a href="/@project.reference.organization/@project.reference.repository" class="btn btn-primary">
+      Back
+    </a>
+
+    <table>
+      <thead>
+        <tr>
+          <th rowspan="2" class="version">Versions</th>
+          <th rowspan="2" class="artifact">Artifacts</th>
+
+          @for((targetType, count) <- targetTypes) {
+            <th colspan="@count">@targetType</th>
+          }
+        </tr>
+
+        <tr>
+        @for((_, label) <- targets) {
+            <th class="target">@label</th>
+          }
+        </tr>
+      </thead>
+
+      <tbody>
+      @for((version, releasesByVersion) <- releases){
+        <tr>
+          @defining(releasesByVersion.groupBy(_.reference.artifact).toList.sortBy(_._1)) { artifacts =>
+            <td rowspan="@{artifacts.size + 1}" class="version">
+              @version
+            </td>
+            @for((artifact, releasesByArtifact) <- artifacts) {
+              <tr>
+                <td class="artifact">
+                  @artifact
+                </td>
+                @defining(releasesByArtifact.groupBy(_.reference.target)) { suportedTargets =>
+
+                  @for((target, _) <- targets) {
+                    <td class="target" title="@target.map(_.render).getOrElse("Java")">
+                    @for(release <- suportedTargets.get(target)) {
+                      @for(r0 <- release.headOption) {
+                        <a href="@r0.reference.httpUrl" class="supported-target">
+                        </a>
+                      }
+                    }
+                    </td>
+                  }
+                } 
+              </tr>
+            }
+          }
+
+        </tr>
+      }
+      </tbody>
+    </table>
+  </main>
+}
