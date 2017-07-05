@@ -1,6 +1,27 @@
 package ch.epfl.scala.index.model
 package release
 
+object ScalaTargetType {
+  implicit val ordering: Ordering[ScalaTargetType] = {
+    def toInt(v: ScalaTargetType): Int = {
+      v match {
+        case Jvm => 4
+        case Js => 3
+        case Native => 2
+        case Java => 1
+      }
+    }
+
+    Ordering.by(toInt)
+  }
+}
+
+sealed trait ScalaTargetType
+case object Jvm extends ScalaTargetType
+case object Js extends ScalaTargetType
+case object Native extends ScalaTargetType
+case object Java extends ScalaTargetType
+
 /*
 SemanticVersion will only contain the information from the artifactId
 
@@ -13,7 +34,7 @@ case class ScalaTarget(
     scalaVersion: SemanticVersion,
     scalaJsVersion: Option[SemanticVersion],
     scalaNativeVersion: Option[SemanticVersion]
-) {
+) extends Ordered[ScalaTarget] {
   def encode: String = ScalaTarget.encode(this)
 
   def render = {
@@ -26,16 +47,42 @@ case class ScalaTarget(
     }
   }
 
-  def targetType: String = {
+  def targetType: ScalaTargetType = {
     (scalaJsVersion, scalaNativeVersion) match {
-      case (Some(_), _) => "JS"
-      case (_, Some(_)) => "NATIVE"
-      case _            => "JVM"
+      case (Some(_), _) => Js
+      case (_, Some(_)) => Native
+      case _            => Jvm
     }
   }
+
+  private final val LT = -1
+  private final val GT = 1
+  private final val EQ = 0
+
+  private def isScalaJs = scalaJsVersion.isDefined
+  private def isScalaNative = scalaNativeVersion.isDefined
+  private def isScala = !isScalaJs && !isScalaNative
+
+  // Scala > Js > Native
+
+
+  private val ordering: Ordering[ScalaTarget] = Ordering.by{target =>
+    (
+      target.targetType,
+      target.scalaVersion,
+      target.scalaJsVersion,
+      target.scalaNativeVersion
+    )
+  }
+  override def compare(that: ScalaTarget): Int =
+    ordering.compare(this, that)
 }
 
 object ScalaTarget {
+  implicit def ordering = new Ordering[ScalaTarget] {
+    def compare(t1: ScalaTarget, t2: ScalaTarget): Int =
+      t1.compare(t2)
+  }
 
   def encode(target: ScalaTarget): String = {
     val scalaVersion = target.scalaVersion
@@ -69,7 +116,7 @@ object ScalaTarget {
                 scalaNativeVersion = Some(scalaNativeVersion))
 
   def split(target: Option[ScalaTarget])
-    : (Option[String], Option[String], Option[String], Option[String]) = {
+    : (Option[ScalaTargetType], Option[String], Option[String], Option[String]) = {
     val targetType = target.map(_.targetType)
     val scalaVersion = target.map(_.scalaVersion.forceBinary.toString)
     val scalaJsVersion =

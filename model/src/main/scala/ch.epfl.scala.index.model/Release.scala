@@ -250,6 +250,11 @@ object Release {
 
     def projectReference = Project.Reference(organization, repository)
     def name = s"$organization/$artifact"
-    def httpUrl = s"/$organization/$repository/$artifact/$version"
+    def httpUrl = {
+      val targetQuery = target.map(t => s"?target=${t.encode}").getOrElse("")
+
+      s"/$organization/$repository/$artifact/$version$targetQuery"
+    }
+
   }
 }

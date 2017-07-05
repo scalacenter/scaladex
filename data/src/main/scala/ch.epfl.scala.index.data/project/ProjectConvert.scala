@@ -304,7 +304,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
                 javaDependencies = Seq(),
                 reverseDependencies = Seq(),
                 internalDependencies = Seq(),
-                targetType = targetType.getOrElse("JAVA"),
+                targetType = targetType.getOrElse(Java).toString,
                 // for artifact publish with binary, full will return binary
                 // ex cats_2.11 => 2.11
                 scalaVersion = scalaVersion,

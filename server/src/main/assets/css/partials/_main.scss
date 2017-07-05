@@ -517,17 +517,23 @@ main {
         }
     }
     .artifact-project {
+        i.fa {
+          margin-right: 8px;
+        }
+
         img {
             width: 140px;
             margin-top: 10px;
             margin-left: 5px;
             height: auto;
         }
+
         .btn-primary {
             @include button-variant($btn-primary-color,
                     rgba(255, 255, 255, 0.1),
                     $btn-primary-border);
         }
+        
         .dropdown-menu {
             border: none;
             background-color: rgba($gray-lighter, 0.7);
@@ -548,4 +554,50 @@ main {
     li {
         display: block;
     }
+}
+
+html, body {
+  height: 100%;
+}
+
+.artifacts {
+  margin: 20px;
+
+  table {
+    margin-top: 25px;
+  }
+
+  table, th, td {
+    border: 1px solid black;
+  }
+
+  td, th {
+    padding: 5px;
+  }
+
+  tbody {
+    tr:hover {
+      background-color: beige;
+    }
+
+    tr:nth-child(odd) {
+      background-color: #ccc;
+    }
+  }
+
+  .artifact {
+    min-width: 200px;
+  }
+
+  .supported-target {
+    color: green;
+    text-align: center;
+    vertical-align: middle;
+    display: block;
+
+    &:before {
+      content: '●';
+      font-size: 50px;
+    }
+  }
 }
