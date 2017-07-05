@@ -33,7 +33,7 @@
                         <li><strong>Platforms:</strong></li>
                         @for((label, targetType, count) <- targetTypes) {
                             <li>
-                                <a href="/search?q=*&targetType=@targetType">@label (@count)</a>
+                                <a href="/search?q=*&targetTypes=@targetType">@label (@count)</a>
                             </li>
                         }
                     </ul>
@@ -41,7 +41,7 @@
                         <li><strong>Scala Versions:</strong></li>
                         @for((scalaVersion, count) <- scalaVersions) {
                             <li>
-                                <a href="/search?q=*&scalaVersion=@scalaVersion">@scalaVersion (@count)</a>
+                                <a href="/search?q=*&scalaVersions=@scalaVersion">@scalaVersion (@count)</a>
                             </li>
                         }
                     </ul>
@@ -49,7 +49,7 @@
                         <li><strong>Scala.js Versions:</strong></li>
                         @for((scalaJsVersion, count) <- scalaJsVersions) {
                             <li>
-                                <a href="/search?q=*&scalaJsVersion=@scalaJsVersion">@scalaJsVersion (@count)</a>
+                                <a href="/search?q=*&scalaJsVersions=@scalaJsVersion">@scalaJsVersion (@count)</a>
                             </li>
                         }
                     </ul>
@@ -58,7 +58,7 @@
                             <li><strong>Scala-Native Versions:</strong></li>
                             @for((scalaNativeVersion, count) <- scalaNativeVersions) {
                                 <li>
-                                    <a href="/search?q=*&scalaNativeVersion=@scalaNativeVersion">@scalaNativeVersion (@count)</a>
+                                    <a href="/search?q=*&scalaNativeVersions=@scalaNativeVersion">@scalaNativeVersion (@count)</a>
                                 </li>
                             }
                         }
