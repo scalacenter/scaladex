@@ -13,7 +13,7 @@ import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.model.StatusCodes.UnprocessableEntity
+import akka.http.scaladsl.model.StatusCodes._
 
 import com.softwaremill.session._
 import SessionDirectives._
@@ -84,8 +84,21 @@ object Server {
       new OAuth2(github, session).routes
     )
 
+    def hasParent(parentClass: Class[_], ex: Throwable)(): Boolean = {
+      var current = ex
+      def check: Boolean = parentClass == current.getClass
+      var found = check
+
+      while(!found && current.getCause != null) {
+        current = current.getCause
+        found = check
+      }
+
+      found
+    }
+
     val exceptionHandler = ExceptionHandler {
-      case ex: SearchPhaseExecutionException =>
+      case ex: Exception if hasParent(classOf[SearchPhaseExecutionException], ex) =>
         optionalSession(refreshable, usingCookies) { userId =>
           searchPages.searchParams(userId) { params =>
             complete(
@@ -99,6 +112,25 @@ object Server {
             )
           }
         }
+
+      case ex: Exception => {
+        import java.io.{StringWriter, PrintWriter}
+
+        val sw = new StringWriter()
+        val pw = new PrintWriter(sw)
+        ex.printStackTrace(pw)
+
+        val out = sw.toString()
+        
+        log.error(out)
+
+        complete(
+          (
+            InternalServerError,
+            out
+          )
+        )
+      }
     }
 
     val routes =
