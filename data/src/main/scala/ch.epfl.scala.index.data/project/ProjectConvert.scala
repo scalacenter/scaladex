@@ -104,7 +104,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
         .groupBy(_.sha1)
         .mapValues(_.head.created) // Note: This is inefficient because we already loaded the data earlier and discarded the creation time
 
-    val packagingOfInterest = Set("aar", "jar", "bundle")
+    val packagingOfInterest = Set("aar", "jar", "bundle", "pom")
 
     val typesafeNonOSS = Set(
       "for-subscribers-only",
