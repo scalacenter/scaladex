@@ -39,24 +39,24 @@ class GithubDownload(paths: DataPaths,
   case class PaginatedGithub(repo: GithubRepo, page: Int)
 
   private lazy val githubRepoExtractor = new GithubRepoExtractor(paths)
-  private lazy val githubRepos = {
+  
+  private lazy val githubRepos = 
     PomsReader
       .loadAll(paths)
       .collect { case Success((pom, _, _)) => githubRepoExtractor(pom) }
       .flatten
       .toSet
-  }
+
   private lazy val paginatedGithubRepos =
     githubRepos.map(repo => PaginatedGithub(repo, 1))
-
+    
   private val config =
     ConfigFactory.load().getConfig("org.scala_lang.index.data")
-  private val tokens = config.getStringList("github").toArray
 
-  private def credentials = {
-    tokens(scala.util.Random.nextInt(tokens.length))
-  }
-
+  private val credential = 
+    if (config.hasPath("github")) config.getString("github")
+    else sys.error("Setup your GitHub token see CONTRIBUTING.md#GitHub")
+  
   /**
     * Apply github authentication strategy
     *
@@ -67,7 +67,7 @@ class GithubDownload(paths: DataPaths,
     val token =
       privateCredentials
         .map(_.token)
-        .getOrElse(credentials)
+        .getOrElse(credential)
 
     request.addHttpHeaders("Authorization" -> s"bearer $token")
   }
@@ -90,10 +90,11 @@ class GithubDownload(paths: DataPaths,
     * @return
     */
   def applyReadmeHeaders(request: WSRequest): WSRequest = {
-
     applyBasicHeaders(
       request.addHttpHeaders(
-        "Accept" -> "application/vnd.github.VERSION.html"))
+        "Accept" -> "application/vnd.github.VERSION.html"
+      )
+    )
   }
 
   /**

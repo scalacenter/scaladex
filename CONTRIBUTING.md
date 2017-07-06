@@ -120,10 +120,22 @@ data/reStart download`
 data/reStart parent`
 ```
 
-### Github
+### GitHub
 
-This step will download GitHub metadata and content
+This step will download GitHub metadata and content.
 
+You need a token for this step. https://github.com/settings/tokens/new
+
+Then create the following file ../scaladex-dev-credentials/application.conf
+
+```
+
+```
+org.scala_lang.index {
+  data {
+    github = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  }
+}
 ```
 data/reStart github`
 ```

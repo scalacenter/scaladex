@@ -39,7 +39,18 @@ lazy val commonSettings = Seq(
   scalacOptions in (Test, console) -= "-Ywarn-unused-import",
   scalacOptions in (Compile, consoleQuick) -= "-Ywarn-unused-import",
   libraryDependencies += "org.specs2" %% "specs2-core" % "3.8.6" % "test",
-  scalacOptions in Test ++= Seq("-Yrangepos")
+  scalacOptions in Test ++= Seq("-Yrangepos"),
+  javaOptions in reStart ++= {
+    val base = (baseDirectory in ThisBuild).value
+
+    val devCredentials = base / "../scaladex-dev-credentials/application.conf"
+
+    val addDevCredentials =
+      if(devCredentials.exists) Seq(s"-Dconfig.file=$devCredentials")
+      else Seq()
+
+    addDevCredentials ++ Seq("-Xmx3g")
+  }
 ) ++ baseSettings ++
   addCommandAlias("start", "reStart") ++ logging
 
@@ -112,8 +123,7 @@ lazy val server = project
       .dependsOn(WebKeys.assets in Assets)
       .value,
     reStart := reStart.dependsOn(WebKeys.assets in Assets).evaluated,
-    unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
-    javaOptions in reStart += "-Xmx4g"
+    unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value
   )
   .dependsOn(template, data, sharedJVM)
   .enablePlugins(SbtSass, JavaServerAppPackaging)
@@ -141,8 +151,7 @@ lazy val data = project
       "org.apache.ivy" % "ivy" % "2.4.0"
     ),
     buildInfoPackage := "build.info",
-    buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),
-    javaOptions in reStart += "-Xmx3g"
+    buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild)
   )
   .enablePlugins(BuildInfoPlugin, JavaAppPackaging)
   .dependsOn(model)
