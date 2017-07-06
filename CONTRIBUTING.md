@@ -126,9 +126,7 @@ This step will download GitHub metadata and content.
 
 You need a token for this step. https://github.com/settings/tokens/new
 
-Then create the following file ../scaladex-dev-credentials/application.conf
-
-```
+Then create the following file `../scaladex-dev-credentials/application.conf`
 
 ```
 org.scala_lang.index {
@@ -137,8 +135,10 @@ org.scala_lang.index {
   }
 }
 ```
-data/reStart github`
-```
+
+And run
+
+`data/reStart github`
 
 ## How to deploy
 
