@@ -39,8 +39,8 @@ class GithubDownload(paths: DataPaths,
   case class PaginatedGithub(repo: GithubRepo, page: Int)
 
   private lazy val githubRepoExtractor = new GithubRepoExtractor(paths)
-  
-  private lazy val githubRepos = 
+
+  private lazy val githubRepos =
     PomsReader
       .loadAll(paths)
       .collect { case Success((pom, _, _)) => githubRepoExtractor(pom) }
@@ -49,14 +49,14 @@ class GithubDownload(paths: DataPaths,
 
   private lazy val paginatedGithubRepos =
     githubRepos.map(repo => PaginatedGithub(repo, 1))
-    
+
   private val config =
     ConfigFactory.load().getConfig("org.scala_lang.index.data")
 
-  private val credential = 
+  private val credential =
     if (config.hasPath("github")) config.getString("github")
     else sys.error("Setup your GitHub token see CONTRIBUTING.md#GitHub")
-  
+
   /**
     * Apply github authentication strategy
     *
@@ -128,6 +128,7 @@ class GithubDownload(paths: DataPaths,
     if (200 == response.status) {
 
       saveJson(githubRepoInfoPath(paths, repo), repo, response.body)
+      GithubReader.appendMovedRepository(paths, repo)
     }
 
     ()

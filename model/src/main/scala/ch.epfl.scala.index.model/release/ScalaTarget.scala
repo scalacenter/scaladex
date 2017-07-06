@@ -65,22 +65,19 @@ case class ScalaTarget(
 
   // Scala > Js > Native
 
-  private val ordering: Ordering[ScalaTarget] = Ordering.by { target =>
+  override def compare(that: ScalaTarget): Int =
+    ScalaTarget.ordering.compare(this, that)
+}
+
+object ScalaTarget {
+
+  implicit val ordering: Ordering[ScalaTarget] = Ordering.by { target =>
     (
       target.targetType,
       target.scalaVersion,
       target.scalaJsVersion,
       target.scalaNativeVersion
     )
-  }
-  override def compare(that: ScalaTarget): Int =
-    ordering.compare(this, that)
-}
-
-object ScalaTarget {
-  implicit def ordering = new Ordering[ScalaTarget] {
-    def compare(t1: ScalaTarget, t2: ScalaTarget): Int =
-      t1.compare(t2)
   }
 
   def encode(target: ScalaTarget): String = {

@@ -15,7 +15,7 @@ case class User(
 )
 
 case class Repository(
-    name: String, // cats
+    name: String, // cat
     owner: User,
     `private`: Boolean,
     description: Option[String],
@@ -41,7 +41,11 @@ case class Repository(
     permissions: Option[Permissions]
 )
 
-case class Permissions(admin: Boolean, push: Boolean, pull: Boolean)
+case class Permissions(
+    admin: Boolean,
+    push: Boolean,
+    pull: Boolean
+)
 
 case class Contributor(
     login: String,
@@ -79,7 +83,8 @@ case class GraphqlRepositoryTopic(
 )
 
 case class GraphqlRepositoryTopicConnection(
-    nodes: List[GraphqlRepositoryTopic] = null)
+    nodes: List[GraphqlRepositoryTopic] = null
+)
 
 case class GraphqlRepository(
     name: String = "",
@@ -88,6 +93,10 @@ case class GraphqlRepository(
 )
 
 // if you want to query starting with anything other than repository, you will have to add it as a member here
-case class GraphqlData(repository: GraphqlRepository = null)
+case class GraphqlData(
+    repository: GraphqlRepository = null
+)
 
-case class GraphqlResult(data: GraphqlData = null)
+case class GraphqlResult(
+    data: GraphqlData = null
+)

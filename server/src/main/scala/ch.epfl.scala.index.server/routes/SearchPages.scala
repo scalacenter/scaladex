@@ -87,25 +87,23 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
   private val searchPath = "search"
 
   val routes =
-    get {
-      path(searchPath) {
-        optionalSession(refreshable, usingCookies) { userId =>
-          searchParams(userId) { params =>
-            search(params, userId, searchPath)
-          }
-        }
-      } ~
-        path(Segment) { organization =>
-          optionalSession(refreshable, usingCookies) { userId =>
-            searchParams(userId) { params =>
-              search(
-                params.copy(queryString =
-                  s"${params.queryString} AND organization:$organization"),
-                userId,
-                organization
-              )
-            }
-          }
-        }
-    }
+    get(
+      concat(
+        path(searchPath)(
+          optionalSession(refreshable, usingCookies)(userId =>
+            searchParams(userId)(params => search(params, userId, searchPath)))
+        ),
+        path(Segment)(
+          organization =>
+            optionalSession(refreshable, usingCookies)(
+              userId =>
+                searchParams(userId)(params =>
+                  search(
+                    params.copy(queryString =
+                      s"${params.queryString} AND organization:$organization"),
+                    userId,
+                    organization
+                ))))
+      )
+    )
 }

@@ -70,7 +70,7 @@ object Server {
         new FrontPage(data, session).routes,
         redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
           concat(
-            new ProjectPages(data, session).routes,
+            new ProjectPages(data, session, paths).routes,
             searchPages.routes
           )
         }
@@ -89,7 +89,7 @@ object Server {
       def check: Boolean = parentClass == current.getClass
       var found = check
 
-      while(!found && current.getCause != null) {
+      while (!found && current.getCause != null) {
         current = current.getCause
         found = check
       }
@@ -98,7 +98,10 @@ object Server {
     }
 
     val exceptionHandler = ExceptionHandler {
-      case ex: Exception if hasParent(classOf[SearchPhaseExecutionException], ex) =>
+      case ex: Exception
+          if hasParent(classOf[SearchPhaseExecutionException], ex) => {
+        ex.printStackTrace
+
         optionalSession(refreshable, usingCookies) { userId =>
           searchPages.searchParams(userId) { params =>
             complete(
@@ -112,6 +115,7 @@ object Server {
             )
           }
         }
+      }
 
       case ex: Exception => {
         import java.io.{StringWriter, PrintWriter}
@@ -121,7 +125,7 @@ object Server {
         ex.printStackTrace(pw)
 
         val out = sw.toString()
-        
+
         log.error(out)
 
         complete(

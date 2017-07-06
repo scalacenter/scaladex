@@ -46,7 +46,7 @@ lazy val commonSettings = Seq(
     val devCredentials = base / "../scaladex-dev-credentials/application.conf"
 
     val addDevCredentials =
-      if(devCredentials.exists) Seq(s"-Dconfig.file=$devCredentials")
+      if (devCredentials.exists) Seq(s"-Dconfig.file=$devCredentials")
       else Seq()
 
     addDevCredentials ++ Seq("-Xmx3g")

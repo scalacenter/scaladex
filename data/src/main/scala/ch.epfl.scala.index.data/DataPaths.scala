@@ -32,7 +32,9 @@ scaladex-index
 │       ├── parents
 │       └── sha
 ├── github
+│   ├── moved.json
 │   ├── org/repo
+│   ├── ...
 │   └── org/repo
 ├── live
 |   └── projects.json
@@ -192,4 +194,6 @@ class DataPaths(private[DataPaths] val args: List[String]) {
     }
 
   val github = index.resolve("github")
+
+  val movedGithub = github.resolve("moved.json")
 }

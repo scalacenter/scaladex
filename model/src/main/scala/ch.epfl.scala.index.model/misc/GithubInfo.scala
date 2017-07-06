@@ -17,6 +17,8 @@ package ch.epfl.scala.index.model.misc
   * @param topics topics associated with the project
   */
 case class GithubInfo(
+    name: String = "",
+    owner: String = "",
     readme: Option[String] = None,
     description: Option[String] = None,
     homepage: Option[Url] = None,

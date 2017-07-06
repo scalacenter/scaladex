@@ -18,21 +18,22 @@ class OAuth2(github: Github, session: GithubUserSession) {
   import session._
 
   val routes =
-    get {
-      path("login") {
-        optionalHeaderValueByType[Referer](()) { referer =>
-          redirect(
-            Uri("https://github.com/login/oauth/authorize").withQuery(
-              Query(
-                "client_id" -> github.clientId,
-                "scope" -> "read:org",
-                "state" -> referer.map(_.value).getOrElse("/")
-              )),
-            TemporaryRedirect
-          )
-        }
-      } ~
-        path("logout") {
+    get(
+      concat(
+        path("login")(
+          optionalHeaderValueByType[Referer](())(
+            referer =>
+              redirect(
+                Uri("https://github.com/login/oauth/authorize").withQuery(
+                  Query(
+                    "client_id" -> github.clientId,
+                    "scope" -> "read:org",
+                    "state" -> referer.map(_.value).getOrElse("/")
+                  )),
+                TemporaryRedirect
+            ))
+        ),
+        path("logout")(
           headerValueByType[Referer](()) { referer =>
             requiredSession(refreshable, usingCookies) { _ =>
               invalidateSession(refreshable, usingCookies) { ctx =>
@@ -46,31 +47,34 @@ class OAuth2(github: Github, session: GithubUserSession) {
               }
             }
           }
-        } ~
-        pathPrefix("callback") {
-          path("done") {
-            complete("OK")
-          } ~
-            pathEnd {
+        ),
+        pathPrefix("callback")(
+          concat(
+            path("done")(
+              complete("OK")
+            ),
+            pathEnd(
               parameters(('code, 'state.?)) { (code, state) =>
-                onSuccess(github.getUserStateWithOauth2(code)) { userState =>
-                  setSession(refreshable,
-                             usingCookies,
-                             session.addUser(userState)) {
-                    setNewCsrfToken(checkHeader) { ctx =>
-                      ctx.complete(
-                        HttpResponse(
-                          status = TemporaryRedirect,
-                          headers = headers
-                            .Location(Uri(state.getOrElse("/"))) :: Nil,
-                          entity = HttpEntity.Empty
-                        )
-                      )
-                    }
-                  }
-                }
+                onSuccess(github.getUserStateWithOauth2(code))(
+                  userState =>
+                    setSession(refreshable,
+                               usingCookies,
+                               session.addUser(userState))(
+                      setNewCsrfToken(checkHeader)(
+                        ctx =>
+                          ctx.complete(
+                            HttpResponse(
+                              status = TemporaryRedirect,
+                              headers = headers.Location(
+                                Uri(state.getOrElse("/"))) :: Nil,
+                              entity = HttpEntity.Empty
+                            )
+                        ))
+                  ))
               }
-            }
-        }
-    }
+            )
+          )
+        )
+      )
+    )
 }

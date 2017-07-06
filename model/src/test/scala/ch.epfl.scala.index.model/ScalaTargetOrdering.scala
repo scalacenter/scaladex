@@ -1,7 +1,6 @@
 package ch.epfl.scala.index.model
 package release
 
-
 object ScalaTargetOrdering extends org.specs2.mutable.Specification {
   "Ordering Scala Targets" >> {
 
@@ -33,7 +32,7 @@ object ScalaTargetOrdering extends org.specs2.mutable.Specification {
       ScalaTarget.scalaJs(s212, js0618),
       ScalaTarget.scala(s210),
       ScalaTarget.scala(s211),
-      ScalaTarget.scala(s212),
+      ScalaTarget.scala(s212)
     )
 
     obtained ==== expected
