@@ -37,6 +37,10 @@ do only once to populate the index
  
 Then, open `localhost:8080` in your browser.
 
+## Scalafmt
+
+Make shure to run `bin/scalafmt` to format your code.
+
 ### Elasticsearch Remote
 
 If you have an elasticsearch service installed use the following sbt command when
@@ -166,6 +170,14 @@ Or
 
 * sbt deployDevIndex
 * sbt deployDevServer
+
+## How to restart the server
+
+```bash
+ssh scaladex@index.scala-lang.org
+./server.sh
+tail -n 100 -f server.log
+```
 
 ## Testing publish
 
