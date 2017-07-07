@@ -1,0 +1,183 @@
+java
+  typesafehub/config
+
+scalanative
+  scalaz/scalaz
+  scopt/scopt
+  scala-native/scala-native
+  scalaprops/scalaprops
+
+scala-js
+  scala-js/scala-js
+  scala-js/scala-js-dom
+
+orgs
+  typelevel/squants
+  typelevel/cats
+  typelevel/algebra
+  typelevel/squants
+  typelevel/discipline
+  typelevel/machinist
+  typelevel/cats-effect
+  typelevel/shapeless-contrib
+  typelevel/scalaz-contrib
+  typelevel/scalaz-specs2
+  typelevel/scalaz-scalatest
+  typelevel/paiges
+  typelevel/catalysts
+  typelevel/frameless
+  typelevel/sbt-catalysts
+  typelevel/wartremover
+  typelevel/scalaz-outlaws
+  
+spark
+  synsys/spark
+  apache/spark
+  deeplearning4j/deeplearning4j
+  h2oai/sparkling-water
+  hdinsight/spark-eventhubs
+  bizreach/aws-kinesis-scala
+  samelamin/spark-bigquery
+  recipegrace/biglibrary
+  combust/mleap
+  sansa-stack/sansa-query
+  deeplearning4j/datavec
+  typelevel/frameless
+  microsoft/mobius
+  a2mz/microspark
+  sparkling-graph/sparkling-graph
+  spotify/featran
+  sansa-stack/sansa-owl
+  sadikovi/spark-netflow
+  groupon/sparklint
+  piotr-kalanski/spark-local
+
+database
+  slick/slick
+  tpolecat/doobie
+  getquill/quill
+  playframework/anorm
+  alexandru/shade
+  aselab/scala-activerecord
+  atry/memcontinuationed
+  beloglazov/couchdb-scala
+  debasishg/scala-redisclustering support
+  etaty/rediscalasupport
+  fehmicansaglam/tepkin
+  finagle/finagle-postgres
+  fwbrasil/activate
+  guardian/scanamo
+  kclay/rethink-scala
+  kostaskougios/mapperdao
+  lastland/scala-forklift
+  livestream/scredis
+  longevityframework/longevity
+  lucidsoftware/relate
+  mauricio/postgresql-asyncmysql
+  mongodb/casbah
+  outr/lucene4s
+  outr/neo4akka
+  outr/scalarelational
+  outworkers/morpheus
+  outworkers/phantom
+  outworkers/reactiveneo
+  reactivecouchbase
+  reactivemongo/reactivemongo
+  salat/salat/
+  scalikejdbc/scalikejdbcdevelopers
+  sksamuel/elastic4s
+  sorm/sorm
+  squeryl/squeryl
+  wangzaixiang/scala-sql
+
+
+json
+  spray/spray-json
+  json4s/json4s
+  playframework/playframework (play-json)
+  playframework/play-json
+  lihaoyi/upickle-pprint
+  non/jawn
+  lift/framework (lift-json)
+  argonaut-io/argonaut
+  circe/circe
+  edadma/json
+  plasmaconduit/json
+  nestorpersist/json
+  mdedetrich/scalajson
+  json4s/json4s
+  circe/circe
+  debasishg/sjson
+  spray/spray-json
+  jrudolph/json-lenses
+  finagle/finch
+  hseeberger/akka-http-json
+  uniformlyrandom/jello
+  tkroman/micromarshal
+  ldaniels528/qwery
+  xuwei-k/play-json-extra
+  vital-software/scala-redox
+  taig/soap
+  mkotsur/aws-lambda-scala
+  outr/profig
+  skinny-framework/skinny-micro
+  xuwei-k/httpz
+  lunaryorn/play-json-refined
+  pathikrit/dijon
+  sauldhernandez/autoschema
+  msgpack4z/msgpack4z-jawn
+  scalatra/scalatra
+  non/jawn
+  edadma/bittydb
+  jto/validation
+  sciss/play-json-sealed
+  jpzk/bottledynamo
+  kakao/mango
+  msgpack4z/msgpack4z-play
+  jilen/play-circe
+  garyaiki/dendrites
+  agourlay/cornichon
+  gnieh/diffson
+  makkarpov/pray-json
+  fthomas/crjdt
+  playframework/playframework
+
+match name:
+  spark
+    apache/spark
+    synsys/spark
+    h2oai/sparkling-water
+
+  doobie
+    tpolecat/doobie
+    jacoby6000/scoobie
+    underscoreio/doodle
+    definitelyscala/scala-js-dookie
+
+  scalafix
+    jandom-devel/scalafix
+    scalacenter/scalafix
+    scalafx/scalafx
+    jesseeichar/scala-io
+    lihaoyi/scala.rx
+    monifu/scalax
+
+  scalameta
+    scalameta/scalameta
+    scalameter/scalameter
+    scalameta/scalafmt
+
+  scalafmt
+    scalafx/scalafx
+    scala/scala
+    sksamuel/scalax
+    scalapb/scalapb
+    scalatra/scalamd
+    loyolachicagocode/scalamu
+    jandom-devel/scalafix
+
+  milessabin/shapeless
+    milessabin/shapeless
+    wellfactored/play-bindings
+    alexarchambault/scalacheck-shapeless
+    pureconfig/pureconfig

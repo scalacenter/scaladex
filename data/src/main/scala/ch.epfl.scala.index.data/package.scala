@@ -1,5 +1,7 @@
 package ch.epfl.scala.index
 
+import java.nio.file.{Files, Path}
+
 package object data {
 
   val nl = System.lineSeparator
@@ -34,5 +36,9 @@ package object data {
     (km2 -- km1).map(k => k -> db(m2(k))).toMap ++ // missing in m1
       (km1 -- km2).map(k => k -> da(m1(k))).toMap ++ // missing in m2
       (km1.intersect(km2)).map(k => k -> f(m1(k), m2(k))) // in m1 and m2
+  }
+
+  def slurp(path: Path): String = {
+    Files.readAllLines(path).toArray.mkString(System.lineSeparator)
   }
 }

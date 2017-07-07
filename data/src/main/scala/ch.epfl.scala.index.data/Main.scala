@@ -54,21 +54,24 @@ object Main {
 
     logger.info("input: " + args.toList.toString)
 
-    val pathFromArgs =
-      if (args.isEmpty) Nil
-      else args.toList.tail
-
-    val paths = DataPaths(pathFromArgs.take(3))
     val bintray: LocalPomRepository = LocalPomRepository.Bintray
 
     implicit val system = ActorSystem()
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
+    def getPathFromArgs = {
+      val pathFromArgs =
+        if (args.isEmpty) Nil
+        else args.toList.tail
+
+      DataPaths(pathFromArgs.take(3))
+    }
+
     val steps = List(
       // List POMs of Bintray
       Step("list")({ () =>
-        val listPomsStep = new BintrayListPoms(paths)
+        val listPomsStep = new BintrayListPoms(getPathFromArgs)
 
         // TODO: should be located in a config file
         val versions = List("2.13", "2.12", "2.11", "2.10")
@@ -78,26 +81,34 @@ object Main {
         }
 
         /* do a search for non standard lib poms */
-        for (lib <- NonStandardLib.load(paths)) {
+        for (lib <- NonStandardLib.load(getPathFromArgs)) {
           listPomsStep.run(lib.groupId, lib.artifactId)
         }
       }),
       // Download POMs from Bintray
-      Step("download")(() => new BintrayDownloadPoms(paths).run()),
+      Step("download")(() => new BintrayDownloadPoms(getPathFromArgs).run()),
       // Download parent POMs
-      Step("parent")(() => new DownloadParentPoms(bintray, paths).run()),
+      Step("parent")(() =>
+        new DownloadParentPoms(bintray, getPathFromArgs).run()),
       // Download ivy.xml descriptors of sbt-plugins from Bintray
       Step("download-sbt-plugins")(() =>
-        new BintrayDownloadSbtPlugins(paths).run()),
+        new BintrayDownloadSbtPlugins(getPathFromArgs).run()),
       // Download additional information about projects from Github
-      Step("github")(() => new GithubDownload(paths).run()),
+      Step("github")(() => new GithubDownload(getPathFromArgs).run()),
       // Re-create the ElasticSearch index
-      Step("elastic")(() => new SeedElasticSearch(paths).run())
+      Step("elastic")(() => new SeedElasticSearch(getPathFromArgs).run())
     )
 
     def updateClaims(): Unit = {
-      val githubRepoExtractor = new GithubRepoExtractor(paths)
+      val githubRepoExtractor = new GithubRepoExtractor(getPathFromArgs)
       githubRepoExtractor.updateClaims()
+    }
+
+    def subIndex(): Unit = {
+      SubIndex.generate(
+        source = DataPaths.fullIndex,
+        destination = DataPaths.subIndex
+      )
     }
 
     val stepsToRun =
@@ -105,6 +116,8 @@ object Main {
         case Some("all") => steps
         case Some("updateClaims") =>
           List(Step("updateClaims")(() => updateClaims()))
+        case Some("subIndex") =>
+          List(Step("subIndex")(() => subIndex()))
         case Some(name) =>
           steps
             .find(_.name == name)
@@ -116,18 +129,20 @@ object Main {
             s"No step to execute. Available steps are: ${steps.map(_.name).mkString(" ")}.")
       }
 
-    inPath(paths.contrib) { sh =>
-      logger.info("Pulling the latest data from the 'contrib' repository")
-      sh.exec("git", "checkout", "master")
-      sh.exec("git", "remote", "update")
-      sh.exec("git", "pull", "origin", "master")
+    if (production) {
+      inPath(getPathFromArgs.contrib) { sh =>
+        logger.info("Pulling the latest data from the 'contrib' repository")
+        sh.exec("git", "checkout", "master")
+        sh.exec("git", "remote", "update")
+        sh.exec("git", "pull", "origin", "master")
+      }
     }
 
     logger.info("Executing steps")
     stepsToRun.foreach(_.run())
 
     if (production) {
-      inPath(paths.index) { sh =>
+      inPath(getPathFromArgs.index) { sh =>
         logger.info("Saving the updated state to the 'index' repository")
         sh.exec("git", "add", "-A")
         def now() =

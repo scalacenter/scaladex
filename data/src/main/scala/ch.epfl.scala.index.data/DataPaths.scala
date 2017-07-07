@@ -13,7 +13,7 @@ a PR.
 The index folder is write-only. We don't accept PR. Users have to login on Scaladex and update via
 the UI.
 
-scaladex-index
+scaladex-small-index or scaladex-index
 ├── poms
 │   ├── bintray
 │   │   ├── meta.json
@@ -67,100 +67,131 @@ object LocalPomRepository {
 }
 
 object DataPaths {
-  def apply(args: List[String]): DataPaths = new DataPaths(args)
-}
-
-class DataPaths(private[DataPaths] val args: List[String]) {
 
   private val log = LoggerFactory.getLogger(getClass)
-  log.info("DataPaths args: " + args)
 
-  private[data] val (contrib, index, credentials) = args match {
-    case List(contrib, index, credentials) =>
-      (
-        Paths.get(contrib),
-        Paths.get(index),
-        Paths.get(credentials)
-      )
-    case _ => {
-      val base = build.info.BuildInfo.baseDirectory.toPath.getParent
+  private val base = build.info.BuildInfo.baseDirectory.toPath.getParent
 
-      (
-        base.resolve(Paths.get("scaladex-contrib")),
-        base.resolve(Paths.get("scaladex-index")),
-        base.resolve(Paths.get("scaladex-credentials"))
-      )
+  private val defaultContrib = base.resolve(Paths.get("scaladex-contrib"))
+  private val defaultIndex = base.resolve(Paths.get("scaladex-small-index"))
+  private val defaultCredentials =
+    base.resolve(Paths.get("scaladex-credentials"))
+
+  def apply(args: List[String]): DataPaths = {
+    log.info("DataPaths args: " + args)
+    val (contrib, index, credentials) = args match {
+      case List(contrib, index, credentials) =>
+        (
+          Paths.get(contrib),
+          Paths.get(index),
+          Paths.get(credentials)
+        )
+      case _ => {
+        (
+          defaultContrib,
+          defaultIndex,
+          defaultCredentials
+        )
+      }
     }
+
+    new DataPaths(contrib, index, credentials, validate = true)
   }
+
+  def fullIndex: DataPaths = {
+    val index = base.resolve(Paths.get("scaladex-index"))
+    new DataPaths(defaultContrib, index, defaultCredentials, validate = false)
+  }
+
+  def subIndex: DataPaths = {
+    val index = base.resolve(Paths.get("scaladex-small-index"))
+    new DataPaths(defaultContrib, index, defaultCredentials, validate = false)
+  }
+}
+
+class DataPaths(
+    private[data] val contrib: Path,
+    private[data] val index: Path,
+    private[data] val credentials: Path,
+    validate: Boolean
+) {
+
+  private val log = LoggerFactory.getLogger(getClass)
 
   log.info(s"contrib folder: $contrib")
   log.info(s"index folder: $index")
   log.info(s"credentials folder: $credentials")
 
-  assert(Files.isDirectory(contrib))
-  assert(Files.isDirectory(index))
+  def assert2(cond: Boolean) = {
+    if (validate) {
+      assert(cond)
+    }
+  }
+
+  assert2(Files.isDirectory(contrib))
+  assert2(Files.isDirectory(index))
 
   val claims = contrib.resolve("claims.json")
-  assert(Files.exists(claims))
+  assert2(Files.exists(claims))
 
   val licensesByName = contrib.resolve("licenses-by-name.json")
-  assert(Files.exists(licensesByName))
+  assert2(Files.exists(licensesByName))
 
   val nonStandard = contrib.resolve("non-standard.json")
-  assert(Files.exists(nonStandard))
+  assert2(Files.exists(nonStandard))
 
   // === live ===
   private val live = index.resolve("live")
-  assert(Files.isDirectory(live))
+  assert2(Files.isDirectory(live))
 
   val liveProjects = live.resolve("projects.json")
-  assert(Files.exists(liveProjects))
+  assert2(Files.exists(liveProjects))
 
   // === poms ===
   private val pomsFolder = index.resolve("poms")
-  assert(Files.isDirectory(pomsFolder))
+  assert2(Files.isDirectory(pomsFolder))
 
   // Bintray
 
   private val bintrayPom = pomsFolder.resolve("bintray")
-  assert(Files.isDirectory(bintrayPom))
+  assert2(Files.isDirectory(bintrayPom))
 
   private val bintrayParentPom = bintrayPom.resolve("parent")
-  assert(Files.isDirectory(bintrayParentPom))
+  assert2(Files.isDirectory(bintrayParentPom))
 
   private val bintrayPomSha = bintrayPom.resolve("sha")
-  assert(Files.isDirectory(bintrayPomSha))
+  assert2(Files.isDirectory(bintrayPomSha))
 
   private val bintrayMeta = bintrayPom.resolve("meta.json")
-  assert(Files.exists(bintrayMeta))
+  assert2(Files.exists(bintrayMeta))
 
   // MavenCentral
 
   private val mavenCentralPom = pomsFolder.resolve("maven-central")
-  assert(Files.isDirectory(mavenCentralPom))
+  assert2(Files.isDirectory(mavenCentralPom))
 
   private val mavenCentralParentPom = mavenCentralPom.resolve("parent")
-  assert(Files.isDirectory(mavenCentralParentPom))
+  assert2(Files.isDirectory(mavenCentralParentPom))
 
   private val mavenCentralPomSha = mavenCentralPom.resolve("sha")
-  assert(Files.isDirectory(mavenCentralPomSha))
+  assert2(Files.isDirectory(mavenCentralPomSha))
 
   private val mavenCentralMeta = mavenCentralPom.resolve("meta.json")
-  assert(Files.exists(mavenCentralMeta))
+  assert2(Files.exists(mavenCentralMeta))
 
   // Users
 
   private val usersPom = pomsFolder.resolve("users")
-  assert(Files.isDirectory(usersPom))
+  assert2(Files.isDirectory(usersPom))
 
   private val usersParentPom = usersPom.resolve("parent")
-  assert(Files.isDirectory(usersParentPom))
+  assert2(Files.isDirectory(usersParentPom))
 
   private val usersPomSha = usersPom.resolve("sha")
-  assert(Files.isDirectory(usersPomSha))
+  assert2(Files.isDirectory(usersPomSha))
 
   private val usersMeta = usersPom.resolve("meta.json")
-  assert(Files.exists(usersMeta))
+  assert2(Files.exists(usersMeta))
 
   // === ivys ===
 

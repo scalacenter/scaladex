@@ -1,0 +1,176 @@
+alexandru/shade => moved monix/shade
+alexarchambault/coursier => moved coursier/coursier
+etaty/rediscalasupport => moved etaty/rediscala
+garykeorkunian/squants => moved garykeorkunian/squants
+lihaoyi/pprint => moved lihaoyi/upickle-pprint
+mauricio/postgresql-asyncmysql => moved mauricio/postgresql-async
+melrief/pureconfig => moved pureconfig/pureconfig
+monifu/monix => moved monix/monix
+predictionio/predictionio => moved apache/incubator-predictionio
+puffnfresh/wartremover => moved wartremover/wartremover
+
+missing:
+  andypetrella/spark-notebook
+    application
+
+  apache/zeppelin
+    application
+
+  atry/sbt-cppp
+    ???
+
+  biddata/bidmach
+    non-standard
+      <properties>
+        <scalaVersion>2.11</scalaVersion>
+
+  deeplearning4j/nd4s
+    located at deeplearning4j/nd4j
+
+  eclipse/vert.x
+    java
+    vert-x/mod-lang-scala should be vert-x3/vertx-lang-scala
+
+  elderresearch/ssc
+    missing
+
+  [x] ensime/ensime-sbt
+    sbt-ensime
+
+  jrudolph/sbt-dependency-graph
+    claimed
+
+  kclay/rethink-scala
+    not resolvable
+
+  kkbox/spark-deployer
+    claimed
+
+  locationtech/sfcurve
+    https://github.com/locationtech/sfcurve/issues/19
+
+  lucastorri/idid
+    Resolver.sonatypeRepo("public")
+
+  marconilanna/replesent
+    application
+
+  marcuslonnberg/sbt-docker
+    missing
+
+  marianogappa/ostinato
+    application
+
+  mauricio/postgresql-async
+    missing added to non standard
+
+  mesosphere/chaos
+    resolvers += "Mesosphere Public Repo" at "http://downloads.mesosphere.io/maven"
+
+  nestorpersist/sbt-view
+    missing
+
+  nitro/avro-codegen
+    old
+
+  openmole/openmole
+    application
+
+  orrsella/sbt-sublime
+    missing
+
+  pathikrit/sauron
+    old
+
+  pfn/android-sdk-plugin
+    sbt plugin missing
+
+  playframework/play-json
+    claimed
+
+  qifun/sbt-haxe
+    missing
+
+  roboscala/sbt-robovm
+    claimed
+
+  rtimush/sbt-updates
+    claimed
+
+  ruippeixotog/sbt-classfinder
+    old
+
+  sandrogrzicic/scalabuff
+    claimed sbt/sbt-scalabuff
+
+  saturday06/gradle-android-scala-plugin
+    old
+
+  sbt/sbt-groll
+    claimed
+
+  scala/scala-abide
+    snapshot
+
+  scalan/scalan
+    weird
+
+  scorexproject/scrypto => moved input-output-hk/scrypto
+
+  sksamuel/sbt-versions
+    claimed
+
+  softwaremill/bootzooka
+    application/template
+
+  sorm/sorm
+    non standard
+
+  stanch/resolvable
+    claimed
+
+  stephenmcd/curiodb
+    not released: https://github.com/stephenmcd/curiodb/issues/29
+
+  stratio/sparkta
+    application / deprecated
+
+  unibas-gravis/scalismo
+    claimed
+
+  wspringer/sonofjson
+    not released
+
+  xerial/sbt-pack
+    sbt plugin on maven (http://repo1.maven.org/maven2/org/xerial/sbt/sbt-pack_2.10_0.13/0.8.2/sbt-pack-0.8.2.pom)
+
+  xitrum-framework/scalive
+    not released https://github.com/xitrum-framework/scalive/issues/20
+
+  zalando/oauth2-mock-play
+    application
+
+  akozhemiakin/cableguy
+    not releasd
+
+  dvarelap/peregrine
+    not released
+
+  jetbrains/sbt-ide-settings
+    deprecated
+
+  adamretter/shadoop
+    old
+
+  fehmicansaglam/tepkin
+    old
+
+  helgoboss/domino
+    old
+
+  jannvck/rdfp
+    old
+
+  klout/scoozie
+    old
+
