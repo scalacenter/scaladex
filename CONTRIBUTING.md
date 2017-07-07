@@ -19,7 +19,7 @@ mkdir scaladex
 cd scaladex
 
 git clone git@github.com:scalacenter/scaladex.git
-git clone git@github.com:scalacenter/scaladex-index.git
+git clone git@github.com:scalacenter/scaladex-small-index.git
 git clone git@github.com:scalacenter/scaladex-contrib.git
 
 # Optionnal: If you have access

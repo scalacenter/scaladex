@@ -53,7 +53,7 @@ object GithubReader {
   def readme(paths: DataPaths, github: GithubRepo): Try[String] = Try {
 
     val readmePath = githubReadmePath(paths, github)
-    slurp(readmePath, System.lineSeparator)
+    slurp(readmePath)
   }
 
   /**
@@ -259,10 +259,6 @@ object GithubReader {
       }
       case _ => log.warn(s"cannot read repo info: $repo")
     }
-  }
-
-  private def slurp(path: Path, sep: String = ""): String = {
-    Files.readAllLines(path).toArray.mkString(sep)
   }
 
   private def read[T: Manifest](path: Path)(implicit formats: Formats): T = {

@@ -67,7 +67,7 @@ case class Project(
     *
     * @return
     */
-  def githubRepo = GithubRepo(reference.organization, reference.repository)
+  def githubRepo = reference.githubRepo
 }
 
 object Project {
@@ -78,5 +78,7 @@ object Project {
     * @param organization github organization. ex: typelevel, akka, etc
     * @param repository github repository. ex: cats, akka, etc
     */
-  case class Reference(organization: String, repository: String)
+  case class Reference(organization: String, repository: String) {
+    def githubRepo = GithubRepo(organization, repository)
+  }
 }

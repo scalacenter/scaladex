@@ -56,26 +56,41 @@ trait LiveProjectsProtocol {
 
 object SaveLiveData extends LiveProjectsProtocol {
 
-  val logger = LoggerFactory.getLogger(this.getClass)
+  val logger = LoggerFactory.getLogger(getClass)
 
   def storedProjects(paths: DataPaths): Map[Project.Reference, ProjectForm] =
     read[LiveProjects](
-      Files.readAllLines(paths.liveProjects).toArray.mkString("")).projects
+      Files
+        .readAllLines(paths.liveProjects)
+        .toArray
+        .mkString("")
+    ).projects
+
+  def saveProjects(paths: DataPaths,
+                   live: Map[Project.Reference, ProjectForm]): Unit = {
+    val projects = LiveProjects(live)
+
+    val liveDir = paths.liveProjects.getParent
+    if (!Files.isDirectory(liveDir)) {
+      Files.createDirectory(liveDir)
+    }
+
+    Files.write(
+      paths.liveProjects,
+      writePretty(projects).getBytes(StandardCharsets.UTF_8)
+    )
+  }
 
   // Note: we use a future here just to catch exceptions. Our code is blocking, though.
   def saveProject(project: Project, paths: DataPaths)(
       implicit ec: ExecutionContext): Future[_] =
     Future {
       concurrent.blocking {
-        val keepProjects =
-          LiveProjects(
-            SaveLiveData
-              .storedProjects(paths) + (project.reference -> ProjectForm(
-              project))
-          )
+        val stored = SaveLiveData.storedProjects(paths)
+        val newProject = (project.reference -> ProjectForm(project))
+
         logger.info(s"Writing projects at ${paths.liveProjects}")
-        Files.write(paths.liveProjects,
-                    writePretty(keepProjects).getBytes(StandardCharsets.UTF_8))
+        saveProjects(paths, stored + newProject)
       }
     }
 

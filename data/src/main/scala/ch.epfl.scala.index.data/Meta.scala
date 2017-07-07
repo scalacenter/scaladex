@@ -8,7 +8,7 @@ import org.joda.time.DateTime
 
 import org.json4s._
 import org.json4s.native.JsonMethods._
-import org.json4s.native.Serialization.write
+import org.json4s.native.Serialization.{write => swrite}
 
 import java.nio.file.Files
 import java.nio.charset.StandardCharsets
@@ -69,16 +69,24 @@ object Meta {
              meta: Meta,
              repository: LocalPomRepository): Unit = {
     val all = load(paths, repository)
+    write(paths, meta :: all, repository)
+  }
+
+  def write(paths: DataPaths,
+            metas: List[Meta],
+            repository: LocalPomRepository): Unit = {
+    val sorted = metas.sortBy(_.created)(Descending)
+    val jsonPerLine =
+      sorted
+        .map(s => swrite(s))
+        .mkString("", System.lineSeparator, System.lineSeparator)
 
     val metaPath = paths.meta(repository)
 
-    val sorted = (meta :: all).sortBy(_.created)(Descending)
-    val jsonPerLine =
-      sorted
-        .map(s => write(s))
-        .mkString("", System.lineSeparator, System.lineSeparator)
+    if (Files.exists(metaPath)) {
+      Files.delete(metaPath)
+    }
 
-    Files.delete(metaPath)
     Files.write(metaPath, jsonPerLine.getBytes(StandardCharsets.UTF_8))
     ()
   }

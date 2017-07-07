@@ -49,7 +49,7 @@ lazy val commonSettings = Seq(
       if (devCredentials.exists) Seq(s"-Dconfig.file=$devCredentials")
       else Seq()
 
-    addDevCredentials ++ Seq("-Xmx3g")
+    addDevCredentials ++ Seq("-Xmx2g")
   }
 ) ++ baseSettings ++
   addCommandAlias("start", "reStart") ++ logging
