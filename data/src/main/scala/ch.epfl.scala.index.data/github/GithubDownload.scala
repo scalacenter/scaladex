@@ -358,6 +358,24 @@ class GithubDownload(paths: DataPaths,
 
   }
 
+  private def processChatroomResponse(repo: GithubRepo,
+                                      response: WSResponse): Unit = {
+
+    if (200 == response.status) {
+
+      val dir = path(paths, repo)
+      Files.createDirectories(dir)
+
+      Files.write(
+        githubRepoChatroomPath(paths, repo),
+        gitterUrl(repo).getBytes(StandardCharsets.UTF_8)
+      )
+    }
+
+    ()
+
+  }
+
   /**
     * main github url to the api
     *
@@ -426,6 +444,26 @@ class GithubDownload(paths: DataPaths,
   private def githubGraphqlUrl(wsClient: AhcWSClient): WSRequest = {
 
     applyAcceptJsonHeaders(wsClient.url("https://api.github.com/graphql"))
+  }
+
+  /**
+    * request for potential url for project's gitter room
+    *
+    * @param repo the current github repo
+    * @return
+    */
+  private def gitterUrl(wsClient: AhcWSClient, repo: GithubRepo): WSRequest = {
+    wsClient.url(gitterUrl(repo))
+  }
+
+  /**
+    * potential url for project's gitter room
+    *
+    * @param repo the current github repo
+    * @return
+    */
+  private def gitterUrl(repo: GithubRepo): String = {
+    s"https://gitter.im/${repo.organization}/${repo.repository}"
   }
 
   /**
@@ -526,6 +564,12 @@ class GithubDownload(paths: DataPaths,
                                           processContributorResponse,
                                           parallelism = 32)
 
+    download[GithubRepo, Unit]("Checking Gitter Chatroom Links",
+                               githubRepos,
+                               gitterUrl,
+                               processChatroomResponse,
+                               parallelism = 32)
+
     ()
   }
 
@@ -582,6 +626,12 @@ class GithubDownload(paths: DataPaths,
                                             processContributorResponse,
                                             parallelism = 32)
     }
+
+    download[GithubRepo, Unit]("Checking Gitter Chatroom Links",
+                               Set(repo),
+                               gitterUrl,
+                               processChatroomResponse,
+                               parallelism = 32)
 
     ()
   }

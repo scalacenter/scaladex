@@ -32,16 +32,15 @@ object GithubReader {
 
     info(paths, github).map { info =>
       val contributorList = contributors(paths, github).getOrElse(List())
-      val topicsSet = topics(paths, github).getOrElse(List()).toSet
-      val readmeStr = readme(paths, github).toOption
       info.copy(
-        readme = readmeStr,
+        readme = readme(paths, github).toOption,
         contributors = contributorList,
         contributorCount = contributorList.size,
         commits = Some(contributorList.foldLeft(0)(_ + _.contributions)),
-        topics = topicsSet,
+        topics = topics(paths, github).getOrElse(List()).toSet,
         beginnerIssues = beginnerIssues(paths, github).getOrElse(List()),
-        contributingGuide = contributingGuide(paths, github).getOrElse(None)
+        contributingGuide = contributingGuide(paths, github).getOrElse(None),
+        chatroom = chatroom(paths, github).toOption
       )
     }.toOption
   }
@@ -54,7 +53,7 @@ object GithubReader {
   def readme(paths: DataPaths, github: GithubRepo): Try[String] = Try {
 
     val readmePath = githubReadmePath(paths, github)
-    slurp(readmePath).mkString(System.lineSeparator)
+    slurp(readmePath, System.lineSeparator)
   }
 
   /**
@@ -174,16 +173,13 @@ object GithubReader {
   }
 
   /**
-    * get the chatroom from the readme if it exists
-    * @param readme the readme text
+    * read the chatroom from file if it exists
     * @return
     */
-  def chatroom(repo: GithubRepo, readme: String): Option[Url] = {
+  def chatroom(paths: DataPaths, github: GithubRepo): Try[Url] = Try {
 
-    val gitterPattern = """<a href="(https?://gitter.im/[^"]*)"""".r
-    gitterPattern
-      .findFirstMatchIn(readme)
-      .map(x => Url(x.group(1)))
+    val chatroomPath = githubRepoChatroomPath(paths, github)
+    Url(slurp(chatroomPath))
   }
 
   case class Moved(inner: Map[GithubRepo, GithubRepo])
@@ -265,8 +261,8 @@ object GithubReader {
     }
   }
 
-  private def slurp(path: Path): String = {
-    Files.readAllLines(path).toArray.mkString("")
+  private def slurp(path: Path, sep: String = ""): String = {
+    Files.readAllLines(path).toArray.mkString(sep)
   }
 
   private def read[T: Manifest](path: Path)(implicit formats: Formats): T = {
