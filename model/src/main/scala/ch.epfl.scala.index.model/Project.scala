@@ -31,7 +31,6 @@ import misc.{GithubInfo, GithubRepo, Url}
   * @param dependencies to aggregate most depended upon libs (ex: spark, play framework, ...)
   * @param dependentCount Number of artifacts that depends on at least one release of at least one artifact of this project
   * @param primaryTopic most significative topic (ex: Circe: json)
-  * @param chatroom link to project chatroom (ex: https://gitter.im/scalacenter/scaladex)
   */
 case class Project(
     organization: String,
@@ -58,8 +57,7 @@ case class Project(
     scalaNativeVersion: Set[String],
     dependencies: Set[String],
     dependentCount: Int,
-    primaryTopic: Option[String] = None,
-    chatroom: Option[Url] = None
+    primaryTopic: Option[String] = None
 ) {
 
   def reference = Project.Reference(organization, repository)

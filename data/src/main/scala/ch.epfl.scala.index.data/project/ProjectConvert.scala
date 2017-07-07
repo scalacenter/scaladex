@@ -344,9 +344,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
               defaultArtifact =
                 releaseOptions.map(_.release.reference.artifact),
               created = min,
-              updated = max,
-              chatroom = github.flatMap(_.readme.flatMap(readme =>
-                GithubReader.chatroom(githubRepo, readme)))
+              updated = max
             )
 
           (seed, releases)
@@ -508,8 +506,7 @@ object ProjectConvert {
       defaultArtifact: Option[String],
       releaseCount: Int,
       created: Option[String],
-      updated: Option[String],
-      chatroom: Option[Url]
+      updated: Option[String]
   ) {
 
     def reference = Project.Reference(organization, repository)
@@ -534,8 +531,7 @@ object ProjectConvert {
         scalaJsVersion = scalaJsVersion,
         scalaNativeVersion = scalaNativeVersion,
         dependencies = dependencies,
-        dependentCount = dependentCount,
-        chatroom = chatroom
+        dependentCount = dependentCount
       )
   }
 
