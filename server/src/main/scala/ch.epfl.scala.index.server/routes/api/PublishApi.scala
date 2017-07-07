@@ -143,7 +143,6 @@ class PublishApi(paths: DataPaths,
                 authenticateBasicAsync(realm = "Scaladex Realm",
                                        githubAuthenticator(credentials)) {
                   case (credentials, userState) =>
-                    log.info(s"path = $path; data = $data")
                     val publishData = impl.PublishData(
                       path,
                       created,
