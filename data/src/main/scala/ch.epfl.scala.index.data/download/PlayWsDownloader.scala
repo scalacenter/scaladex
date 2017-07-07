@@ -108,7 +108,8 @@ trait PlayWsDownloader {
     if (toDownload.size > 1) {
       progress.start()
     }
-    val response = Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
+    val response =
+      Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
     if (toDownload.size > 1) {
       progress.stop()
     }
@@ -116,6 +117,7 @@ trait PlayWsDownloader {
 
     response
   }
+
   /**
     * Actual download of bunch of documents from the Github's REST API. Will loop through all and display a status bar in the console output.
     *
@@ -162,12 +164,12 @@ trait PlayWsDownloader {
     * @tparam R output type
     */
   def downloadGraphql[T, R](
-     message: String,
-     toDownload: Set[T],
-     downloadUrl: AhcWSClient => WSRequest,
-     query: T => JsObject,
-     process: (T, WSResponse) => Try[R],
-     parallelism: Int
+      message: String,
+      toDownload: Set[T],
+      downloadUrl: AhcWSClient => WSRequest,
+      query: T => JsObject,
+      process: (T, WSResponse) => Try[R],
+      parallelism: Int
   ): Seq[R] = {
 
     def processItem(client: AhcWSClient, item: T, progress: ProgressBar) = {
@@ -189,7 +191,7 @@ trait PlayWsDownloader {
       toDownload: Set[T],
       processItem: (AhcWSClient, T, ProgressBar) => Future[R],
       parallelism: Int
-  ):Seq[R] = {
+  ): Seq[R] = {
 
     def processItems(client: AhcWSClient, progress: ProgressBar) = {
 
@@ -205,7 +207,8 @@ trait PlayWsDownloader {
       progress.start()
     }
 
-    val result = Await.ready(processItems(client, progress).runWith(Sink.seq), Duration.Inf)
+    val result = Await.ready(processItems(client, progress).runWith(Sink.seq),
+                             Duration.Inf)
 
     if (toDownload.size > 1) {
       progress.stop()
@@ -215,12 +218,14 @@ trait PlayWsDownloader {
     Thread.sleep(1000.toLong)
     client.close()
 
-    result.value.map(_ match {
-      case Success(value) => value
-      case Failure(e) => {
-        log.warn(s"ERROR - $e")
-        Seq()
-      }
-    }).getOrElse(Seq())
+    result.value
+      .map(_ match {
+        case Success(value) => value
+        case Failure(e) => {
+          log.warn(s"ERROR - $e")
+          Seq()
+        }
+      })
+      .getOrElse(Seq())
   }
 }

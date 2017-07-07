@@ -4,19 +4,23 @@ package routes
 package api
 
 import data.DataPaths
+import data.github
 import model.release._
-import data.github._
+
 import org.joda.time.DateTime
+
 import akka.http.scaladsl._
-import model._
-import headers._
-import server.Directives._
-import server.directives._
-import unmarshalling.Unmarshaller
-import StatusCodes._
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.directives._
+import akka.http.scaladsl.unmarshalling.Unmarshaller
+import akka.http.scaladsl.model.StatusCodes._
+
 import akka.actor.{ActorSystem, Props}
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
+
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
@@ -38,7 +42,7 @@ class PublishApi(paths: DataPaths,
    * @return
    */
   private def githubAuthenticator(credentialsHeader: Option[HttpCredentials])
-    : Credentials => Future[Option[(GithubCredentials, UserState)]] = {
+    : Credentials => Future[Option[(data.github.Credentials, UserState)]] = {
 
     case Credentials.Provided(username) => {
       credentialsHeader match {
@@ -48,7 +52,7 @@ class PublishApi(paths: DataPaths,
           val userPass = upw.split(":")
 
           val token = userPass(1)
-          val credentials = GithubCredentials(token)
+          val credentials = data.github.Credentials(token)
           // todo - catch errors
 
           githubCredentialsCache.get(token) match {
@@ -103,7 +107,7 @@ class PublishApi(paths: DataPaths,
             materializer))
 
   private val githubCredentialsCache =
-    MMap.empty[String, (GithubCredentials, UserState)]
+    MMap.empty[String, (data.github.Credentials, UserState)]
 
   val DateTimeUn = Unmarshaller.strict[String, DateTime] { dateRaw =>
     new DateTime(dateRaw.toLong * 1000L)

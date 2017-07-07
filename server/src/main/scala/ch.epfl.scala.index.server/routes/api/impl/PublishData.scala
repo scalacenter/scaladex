@@ -5,8 +5,7 @@ package api
 package impl
 
 import data.{LocalPomRepository, DataPaths}
-// import data.bintray._
-import data.github.GithubCredentials
+import data.github
 
 import org.joda.time.DateTime
 
@@ -27,7 +26,7 @@ private[api] case class PublishData(
     path: String,
     created: DateTime,
     data: String,
-    credentials: GithubCredentials,
+    credentials: github.Credentials,
     userState: UserState,
     downloadInfo: Boolean,
     downloadContributors: Boolean,

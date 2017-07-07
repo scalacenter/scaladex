@@ -345,7 +345,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
                 releaseOptions.map(_.release.reference.artifact),
               created = min,
               updated = max,
-              chatroom = github.flatMap(_.readme.flatMap(readme => GithubReader.chatroom(githubRepo, readme)))
+              chatroom = github.flatMap(_.readme.flatMap(readme =>
+                GithubReader.chatroom(githubRepo, readme)))
             )
 
           (seed, releases)
