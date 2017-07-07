@@ -5,7 +5,7 @@ package github
 import model.misc._
 
 import org.json4s._
-import org.json4s.native.Serialization.{read, writePretty}
+import org.json4s.native.Serialization.{read => parse, writePretty}
 
 import java.nio.file.{Files, Path}
 import java.nio.charset.StandardCharsets
@@ -13,6 +13,7 @@ import java.nio.charset.StandardCharsets
 import org.slf4j.LoggerFactory
 
 import scala.util.{Try, Success}
+import scala.reflect.Manifest
 
 /**
   * Github reader - to read all related infos from downloaded github files
@@ -66,7 +67,7 @@ object GithubReader {
     import Json4s._
 
     val repoInfoPath = githubRepoInfoPath(paths, github)
-    val repository = read[Repository](slurp(repoInfoPath))
+    val repository = read[V3.Repository](repoInfoPath)
 
     GithubInfo(
       name = repository.name,
@@ -92,7 +93,7 @@ object GithubReader {
     import Json4s._
 
     val repoInfoPath = githubRepoContributorsPath(paths, github)
-    val repository = read[List[Contributor]](slurp(repoInfoPath))
+    val repository = read[List[V3.Contributor]](repoInfoPath)
     repository.map { contributor =>
       GithubContributor(
         contributor.login,
@@ -113,13 +114,14 @@ object GithubReader {
     import Json4s._
 
     val repoTopicsPath = githubRepoTopicsPath(paths, github)
-    val graphqlResult = read[GraphqlResult](slurp(repoTopicsPath))
+    val graphqlResult = read[V4.RepositoryResult](repoTopicsPath)
     val graphqlTopics = for {
-      data <- graphqlResult.data;
-      repo <- data.repository;
-      topics <- repo.repositoryTopics;
+      data <- graphqlResult.data
+      repo <- data.repository
+      topics <- repo.repositoryTopics
       nodes <- topics.nodes
     } yield { nodes }
+
     graphqlTopics.getOrElse(List()).map(_.topic.flatMap(_.name).getOrElse(""))
   }
 
@@ -134,21 +136,25 @@ object GithubReader {
     import Json4s._
 
     val issuesPath = githubRepoIssuesPath(paths, github)
-    val graphqlResult = read[GraphqlResult](slurp(issuesPath))
+    val graphqlResult = read[V4.RepositoryResult](issuesPath)
+
     val graphqlIssues = for {
-      data <- graphqlResult.data;
-      repo <- data.repository;
-      issues <- repo.issues;
+      data <- graphqlResult.data
+      repo <- data.repository
+      issues <- repo.issues
       nodes <- issues.nodes
-    } yield { nodes }
-    graphqlIssues.getOrElse(List()).map(issue =>
-      GithubIssue(
-        issue.number.getOrElse(0),
-        issue.title.getOrElse(""),
-        issue.bodyText.getOrElse(""),
-        Url(issue.url.getOrElse(""))
-      )
-    )
+    } yield nodes
+
+    graphqlIssues
+      .getOrElse(List())
+      .map(
+        issue =>
+          GithubIssue(
+            issue.number,
+            issue.title,
+            issue.bodyText,
+            Url(issue.url)
+        ))
   }
 
   /**
@@ -156,13 +162,14 @@ object GithubReader {
     * @param github the git repo
     * @return
     */
-  def contributingGuide(paths: DataPaths, github: GithubRepo): Try[Option[Url]] = Try {
+  def contributingGuide(paths: DataPaths,
+                        github: GithubRepo): Try[Option[Url]] = Try {
 
     import Json4s._
 
     val communityProfilePath = githubRepoCommunityProfilePath(paths, github)
     val communityProfile =
-      read[CommunityProfile](slurp(communityProfilePath))
+      read[V3.CommunityProfile](communityProfilePath)
     communityProfile.files.contributing.html_url.map(Url(_))
   }
 
@@ -227,7 +234,7 @@ object GithubReader {
 
   def movedRepositories(paths: DataPaths): Map[GithubRepo, GithubRepo] = {
     import Moved.formats
-    read[Moved](slurp(paths.movedGithub)).inner
+    read[Moved](paths.movedGithub).inner
   }
 
   /**
@@ -258,7 +265,11 @@ object GithubReader {
     }
   }
 
-  private def slurp(path: Path): String =
+  private def slurp(path: Path): String = {
     Files.readAllLines(path).toArray.mkString("")
+  }
 
+  private def read[T: Manifest](path: Path)(implicit formats: Formats): T = {
+    parse[T](slurp(path))
+  }
 }
