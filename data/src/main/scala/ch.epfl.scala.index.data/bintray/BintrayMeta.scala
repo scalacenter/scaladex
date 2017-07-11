@@ -15,11 +15,11 @@ object BintrayMeta extends BintrayProtocol {
   def path(paths: DataPaths): Path = paths.meta(LocalPomRepository.Bintray)
 
   /**
-    * read all currently downloaded poms and convert them to BintraySearch object
-    *
-    * @param path the file path
-    * @return
-    */
+   * read all currently downloaded poms and convert them to BintraySearch object
+   *
+   * @param path the file path
+   * @return
+   */
   def load(paths: DataPaths): List[BintraySearch] = {
     val source = scala.io.Source.fromFile(path(paths).toFile)
     val ret = source.mkString.split(nl).toList

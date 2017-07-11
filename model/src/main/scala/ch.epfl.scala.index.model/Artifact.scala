@@ -31,11 +31,11 @@ object Artifact extends Parsers {
 }
 
 /**
-  * We distinguish between 3 kinds of artifacts:
-  *  - conventional Scala library (whose artifact names are suffixed by the targeted Scala version -- e.g. "_2.11")
-  *  - unconventional Scala library (whose artifact names are ''not'' suffixed by the targeted Scala version)
-  *  - sbt plugins
-  */
+ * We distinguish between 3 kinds of artifacts:
+ *  - conventional Scala library (whose artifact names are suffixed by the targeted Scala version -- e.g. "_2.11")
+ *  - unconventional Scala library (whose artifact names are ''not'' suffixed by the targeted Scala version)
+ *  - sbt plugins
+ */
 sealed trait ArtifactKind
 
 object ArtifactKind {

@@ -13,8 +13,9 @@ import java.util.UUID
 
 import org.slf4j.LoggerFactory
 
-class GithubUserSession(config: Config)(
-    implicit val executionContext: ExecutionContext) {
+class GithubUserSession(
+    config: Config
+)(implicit val executionContext: ExecutionContext) {
 
   private val logger = LoggerFactory.getLogger(getClass)
 

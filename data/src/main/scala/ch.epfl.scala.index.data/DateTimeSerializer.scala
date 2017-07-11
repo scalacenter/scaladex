@@ -7,9 +7,9 @@ import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
 /**
-  * Scope serializer, since Scope is not a case class json4s can't handle this by default
-  *
-  */
+ * Scope serializer, since Scope is not a case class json4s can't handle this by default
+ *
+ */
 object DateTimeSerializer
     extends CustomSerializer[DateTime](
       format =>
@@ -25,4 +25,5 @@ object DateTimeSerializer
               JString(formatter.print(dateTime))
             }
           }
-      ))
+      )
+    )

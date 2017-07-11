@@ -30,8 +30,8 @@ import org.slf4j.LoggerFactory
 class GithubDownload(paths: DataPaths,
                      privateCredentials: Option[Credentials] = None)(
     implicit val system: ActorSystem,
-    implicit val materializer: ActorMaterializer)
-    extends PlayWsDownloader {
+    implicit val materializer: ActorMaterializer
+) extends PlayWsDownloader {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -59,11 +59,11 @@ class GithubDownload(paths: DataPaths,
     else sys.error("Setup your GitHub token see CONTRIBUTING.md#GitHub")
 
   /**
-    * Apply github authentication strategy
-    *
-    * @param request the current request
-    * @return
-    */
+   * Apply github authentication strategy
+   *
+   * @param request the current request
+   * @return
+   */
   def applyBasicHeaders(request: WSRequest): WSRequest = {
     val token =
       privateCredentials
@@ -74,22 +74,22 @@ class GithubDownload(paths: DataPaths,
   }
 
   /**
-    * basic Authentication header + Accept application jsob
-    *
-    * @param request
-    * @return the current request
-    */
+   * basic Authentication header + Accept application jsob
+   *
+   * @param request
+   * @return the current request
+   */
   def applyAcceptJsonHeaders(request: WSRequest): WSRequest =
     applyBasicHeaders(
       request.addHttpHeaders("Accept" -> "application/json")
     )
 
   /**
-    * Apply github authentication strategy and set response header to html
-    *
-    * @param request the current request
-    * @return
-    */
+   * Apply github authentication strategy and set response header to html
+   *
+   * @param request the current request
+   * @return
+   */
   def applyReadmeHeaders(request: WSRequest): WSRequest = {
     applyBasicHeaders(
       request.addHttpHeaders(
@@ -99,25 +99,27 @@ class GithubDownload(paths: DataPaths,
   }
 
   /**
-    * Apply github authentication strategy and set response header to html
-    *
-    * @param request the current request
-    * @return
-    */
+   * Apply github authentication strategy and set response header to html
+   *
+   * @param request the current request
+   * @return
+   */
   def applyCommunityProfileHeaders(request: WSRequest): WSRequest = {
 
     applyBasicHeaders(
       request.addHttpHeaders(
-        "Accept" -> "application/vnd.github.black-panther-preview+json"))
+        "Accept" -> "application/vnd.github.black-panther-preview+json"
+      )
+    )
   }
 
   /**
-    * Save the json response to directory
-    *
-    * @param filePath the file path to save the file
-    * @param repo the current repo
-    * @param data the response data
-    */
+   * Save the json response to directory
+   *
+   * @param filePath the file path to save the file
+   * @param repo the current repo
+   * @param data the response data
+   */
   private def saveJson(filePath: Path, repo: GithubRepo, data: String): Path = {
 
     val dir = path(paths, repo)
@@ -130,12 +132,12 @@ class GithubDownload(paths: DataPaths,
   }
 
   /**
-    * Process the downloaded data from repository info
-    *
-    * @param repo the current repo
-    * @param response the response
-    * @return
-    */
+   * Process the downloaded data from repository info
+   *
+   * @param repo the current repo
+   * @param response the response
+   * @return
+   */
   private def processInfoResponse(repo: GithubRepo,
                                   response: WSResponse): Try[Unit] = {
 
@@ -153,15 +155,16 @@ class GithubDownload(paths: DataPaths,
   }
 
   /**
-    * Convert contributor response to a List of Contributors
-    *
-    * @param repo
-    * @param response
-    * @return
-    */
+   * Convert contributor response to a List of Contributors
+   *
+   * @param repo
+   * @param response
+   * @return
+   */
   private def convertContributorResponse(
       repo: PaginatedGithub,
-      response: WSResponse): Try[List[V3.Contributor]] = {
+      response: WSResponse
+  ): Try[List[V3.Contributor]] = {
 
     checkGithubApiError("Converting Contributors", response)
       .map(_ => {
@@ -175,12 +178,12 @@ class GithubDownload(paths: DataPaths,
   }
 
   /**
-    * Process the downloaded contributors data from repository info
-    *
-    * @param repo the current repo
-    * @param response the response
-    * @return
-    */
+   * Process the downloaded contributors data from repository info
+   *
+   * @param repo the current repo
+   * @param response the response
+   * @return
+   */
   private def processContributorResponse(repo: PaginatedGithub,
                                          response: WSResponse): Try[Unit] = {
 
@@ -241,12 +244,12 @@ class GithubDownload(paths: DataPaths,
   }
 
   /**
-    * Process the downloaded data from repository info
-    *
-    * @param repo the current repo
-    * @param response the response
-    * @return
-    */
+   * Process the downloaded data from repository info
+   *
+   * @param repo the current repo
+   * @param response the response
+   * @return
+   */
   private def processReadmeResponse(repo: GithubRepo,
                                     response: WSResponse): Try[Unit] = {
 
@@ -270,15 +273,16 @@ class GithubDownload(paths: DataPaths,
   }
 
   /**
-    * Process the downloaded data from repository info
-    *
-    * @param repo the current repo
-    * @param response the response
-    * @return
-    */
+   * Process the downloaded data from repository info
+   *
+   * @param repo the current repo
+   * @param response the response
+   * @return
+   */
   private def processCommunityProfileResponse(
       repo: GithubRepo,
-      response: WSResponse): Try[Unit] = {
+      response: WSResponse
+  ): Try[Unit] = {
 
     checkGithubApiError("Processing Community Profile", response)
       .map(_ => {
@@ -295,11 +299,11 @@ class GithubDownload(paths: DataPaths,
   }
 
   /**
-    * Process the downloaded data from GraphQL API
-    * @param repo the current repo
-    * @param response the response
-    * @return
-    */
+   * Process the downloaded data from GraphQL API
+   * @param repo the current repo
+   * @param response the response
+   * @return
+   */
   private def processTopicsResponse(repo: GithubRepo,
                                     response: WSResponse): Try[Unit] = {
 
@@ -313,12 +317,12 @@ class GithubDownload(paths: DataPaths,
   }
 
   /**
-    * Process the downloaded issues from GraphQL API
-    *
-    * @param project the current project
-    * @param response the response
-    * @return
-    */
+   * Process the downloaded issues from GraphQL API
+   *
+   * @param project the current project
+   * @param response the response
+   * @return
+   */
   private def processIssuesResponse(project: Project,
                                     response: WSResponse): Try[Unit] = {
 
@@ -342,18 +346,22 @@ class GithubDownload(paths: DataPaths,
       response.header("X-RateLimit-Remaining").getOrElse("-1").toInt
     if (0 == rateLimitRemaining) {
       val resetAt = new DateTime(
-        response.header("X-RateLimit-Reset").getOrElse("0").toLong * 1000)
+        response.header("X-RateLimit-Reset").getOrElse("0").toLong * 1000
+      )
       throw new Exception(
-        s" $message, hit API Rate Limit by running out of API calls, try again at $resetAt")
+        s" $message, hit API Rate Limit by running out of API calls, try again at $resetAt"
+      )
     } else if (403 == response.status) {
       val retryAfter = response.header("ResetAt").getOrElse("60").toInt
       throw new Exception(
-        s" $message, hit API Abuse Rate Limit by making too many calls in a small amount of time, try again after $retryAfter s")
+        s" $message, hit API Abuse Rate Limit by making too many calls in a small amount of time, try again after $retryAfter s"
+      )
     } else if (200 != response.status && 404 != response.status) {
       // 200 is valid response and get 404 for old repo that no longer exists,
       // don't want to throw exception for 404 since it'll stop all other downloads
       throw new Exception(
-        s" $message, Unknown response from Github API, ${response.status}, ${response.body}")
+        s" $message, Unknown response from Github API, ${response.status}, ${response.body}"
+      )
     }
 
   }
@@ -377,20 +385,20 @@ class GithubDownload(paths: DataPaths,
   }
 
   /**
-    * main github url to the api
-    *
-    * @param repo the current github repo
-    * @return
-    */
+   * main github url to the api
+   *
+   * @param repo the current github repo
+   * @return
+   */
   private def mainGithubUrl(repo: GithubRepo): String =
     s"https://api.github.com/repos/${repo.organization}/${repo.repository}"
 
   /**
-    * get the Github Info url
-    *
-    * @param repo the current repository
-    * @return
-    */
+   * get the Github Info url
+   *
+   * @param repo the current repository
+   * @return
+   */
   private def githubInfoUrl(wsClient: AhcWSClient,
                             repo: GithubRepo): WSRequest = {
 
@@ -398,11 +406,11 @@ class GithubDownload(paths: DataPaths,
   }
 
   /**
-    * get the Github readme url
-    *
-    * @param repo the current repository
-    * @return
-    */
+   * get the Github readme url
+   *
+   * @param repo the current repository
+   * @return
+   */
   private def githubReadmeUrl(wsClient: AhcWSClient,
                               repo: GithubRepo): WSRequest = {
 
@@ -410,67 +418,69 @@ class GithubDownload(paths: DataPaths,
   }
 
   /**
-    * get the Github contributors url
-    *
-    * @param repo the current repository
-    * @return
-    */
+   * get the Github contributors url
+   *
+   * @param repo the current repository
+   * @return
+   */
   private def githubContributorsUrl(wsClient: AhcWSClient,
                                     repo: PaginatedGithub): WSRequest = {
 
     applyAcceptJsonHeaders(
-      wsClient.url(
-        mainGithubUrl(repo.repo) + s"/contributors?page=${repo.page}"))
+      wsClient
+        .url(mainGithubUrl(repo.repo) + s"/contributors?page=${repo.page}")
+    )
   }
 
   /**
-    * get the Github community profile url
-    *
-    * @param repo the current repository
-    * @return
-    */
+   * get the Github community profile url
+   *
+   * @param repo the current repository
+   * @return
+   */
   private def githubCommunityProfileUrl(wsClient: AhcWSClient,
                                         repo: GithubRepo): WSRequest = {
 
     applyCommunityProfileHeaders(
-      wsClient.url(mainGithubUrl(repo) + "/community/profile"))
+      wsClient.url(mainGithubUrl(repo) + "/community/profile")
+    )
   }
 
   /**
-    * get the Github GraphQL API url
-    *
-    * @return
-    */
+   * get the Github GraphQL API url
+   *
+   * @return
+   */
   private def githubGraphqlUrl(wsClient: AhcWSClient): WSRequest = {
 
     applyAcceptJsonHeaders(wsClient.url("https://api.github.com/graphql"))
   }
 
   /**
-    * request for potential url for project's gitter room
-    *
-    * @param repo the current github repo
-    * @return
-    */
+   * request for potential url for project's gitter room
+   *
+   * @param repo the current github repo
+   * @return
+   */
   private def gitterUrl(wsClient: AhcWSClient, repo: GithubRepo): WSRequest = {
     wsClient.url(gitterUrl(repo))
   }
 
   /**
-    * potential url for project's gitter room
-    *
-    * @param repo the current github repo
-    * @return
-    */
+   * potential url for project's gitter room
+   *
+   * @param repo the current github repo
+   * @return
+   */
   private def gitterUrl(repo: GithubRepo): String = {
     s"https://gitter.im/${repo.organization}/${repo.repository}"
   }
 
   /**
-    * get the topic query used by the Github GraphQL API
-    *
-    * @return
-    */
+   * get the topic query used by the Github GraphQL API
+   *
+   * @return
+   */
   private def topicQuery(repo: GithubRepo): JsObject = {
 
     val query =
@@ -489,14 +499,15 @@ class GithubDownload(paths: DataPaths,
       """
     Json.obj(
       "query" -> query,
-      "variables" -> s"""{ "owner": "${repo.organization}", "name": "${repo.repository}" }""")
+      "variables" -> s"""{ "owner": "${repo.organization}", "name": "${repo.repository}" }"""
+    )
   }
 
   /**
-    * get the issues query used by the Github GraphQL API
-    *
-    * @return
-    */
+   * get the issues query used by the Github GraphQL API
+   *
+   * @return
+   */
   private def issuesQuery(project: Project): JsObject = {
 
     val query =
@@ -526,8 +537,8 @@ class GithubDownload(paths: DataPaths,
   }
 
   /**
-    * process all downloads
-    */
+   * process all downloads
+   */
   def run(): Unit = {
 
     downloadGraphql[GithubRepo, Unit]("Downloading Topics",
@@ -574,13 +585,13 @@ class GithubDownload(paths: DataPaths,
   }
 
   /**
-    * Download github info for specific repository
-    *
-    * @param repo the github repository
-    * @param info flag if info can be downloaded
-    * @param readme flag if readme can be downloaded
-    * @param contributors flag if contributors can be downloaded
-    */
+   * Download github info for specific repository
+   *
+   * @param repo the github repository
+   * @param info flag if info can be downloaded
+   * @param readme flag if readme can be downloaded
+   * @param contributors flag if contributors can be downloaded
+   */
   def run(repo: GithubRepo,
           info: Boolean,
           readme: Boolean,

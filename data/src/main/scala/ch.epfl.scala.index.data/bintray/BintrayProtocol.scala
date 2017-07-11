@@ -21,64 +21,70 @@ case class BintraySearch(
 }
 
 /**
-  * Internal pagination class
-  *
-  * @param numberOfPages the maximum number of pages
-  * @param itemPerPage the max items per page
-  */
+ * Internal pagination class
+ *
+ * @param numberOfPages the maximum number of pages
+ * @param itemPerPage the max items per page
+ */
 case class InternalBintrayPagination(numberOfPages: Int, itemPerPage: Int = 50)
 
 /**
-  * Pom list download class to map the version and the scala version for
-  * the search query
-  *
-  * @param query
-  * @param page the current page
-  * @param lastSearchDate the last searched date
-  */
+ * Pom list download class to map the version and the scala version for
+ * the search query
+ *
+ * @param query
+ * @param page the current page
+ * @param lastSearchDate the last searched date
+ */
 case class PomListDownload(query: String,
                            page: Int,
                            lastSearchDate: Option[DateTime])
 
 /**
-  * Bintray protocol
-  */
+ * Bintray protocol
+ */
 trait BintrayProtocol {
 
   /**
-    * json4s formats
-    */
+   * json4s formats
+   */
   implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer,
                                                BintraySearchSerializer)
   implicit val serialization = native.Serialization
 
   /**
-    * BintraySearchSerializer to keep the fields ordering
-    */
+   * BintraySearchSerializer to keep the fields ordering
+   */
   object BintraySearchSerializer
-      extends CustomSerializer[BintraySearch](format =>
-        (
-          {
-            case in: JValue => {
-              implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
-              in.extract[BintraySearch]
+      extends CustomSerializer[BintraySearch](
+        format =>
+          (
+            {
+              case in: JValue => {
+                implicit val formats = DefaultFormats ++ Seq(
+                  DateTimeSerializer
+                )
+                in.extract[BintraySearch]
+              }
+            }, {
+              case search: BintraySearch => {
+                implicit val formats = DefaultFormats ++ Seq(
+                  DateTimeSerializer
+                )
+                JObject(
+                  JField("created", Extraction.decompose(search.created)),
+                  JField("package", Extraction.decompose(search.`package`)),
+                  JField("owner", Extraction.decompose(search.owner)),
+                  JField("repo", Extraction.decompose(search.repo)),
+                  JField("sha1", Extraction.decompose(search.sha1)),
+                  JField("sha256", Extraction.decompose(search.sha256)),
+                  JField("name", Extraction.decompose(search.name)),
+                  JField("path", Extraction.decompose(search.path)),
+                  JField("size", Extraction.decompose(search.size)),
+                  JField("version", Extraction.decompose(search.version))
+                )
+              }
             }
-          }, {
-            case search: BintraySearch => {
-              implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
-              JObject(
-                JField("created", Extraction.decompose(search.created)),
-                JField("package", Extraction.decompose(search.`package`)),
-                JField("owner", Extraction.decompose(search.owner)),
-                JField("repo", Extraction.decompose(search.repo)),
-                JField("sha1", Extraction.decompose(search.sha1)),
-                JField("sha256", Extraction.decompose(search.sha256)),
-                JField("name", Extraction.decompose(search.name)),
-                JField("path", Extraction.decompose(search.path)),
-                JField("size", Extraction.decompose(search.size)),
-                JField("version", Extraction.decompose(search.version))
-              )
-            }
-          }
-      ))
+        )
+      )
 }

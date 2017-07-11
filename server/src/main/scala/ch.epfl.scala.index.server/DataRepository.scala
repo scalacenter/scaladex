@@ -26,11 +26,12 @@ import scala.concurrent.{ExecutionContext, Future, Await}
 import scala.concurrent.duration.Duration
 
 /**
-  * @param github  Github client
-  * @param paths   Paths to the files storing the index
-  */
+ * @param github  Github client
+ * @param paths   Paths to the files storing the index
+ */
 class DataRepository(github: Github, paths: DataPaths)(
-    private implicit val ec: ExecutionContext) {
+    private implicit val ec: ExecutionContext
+) {
 
   private def hideId(p: Project) = p.copy(id = None)
 
@@ -56,7 +57,8 @@ class DataRepository(github: Github, paths: DataPaths)(
 
   private def query(
       q: QueryDefinition,
-      params: SearchParams): Future[(Pagination, List[Project])] = {
+      params: SearchParams
+  ): Future[(Pagination, List[Project])] = {
 
     import params._
 
@@ -69,15 +71,17 @@ class DataRepository(github: Github, paths: DataPaths)(
           .sortBy(sortQuery(sorting))
 
       }
-      .map(r =>
-        (
-          Pagination(
-            current = clamp(page),
-            totalPages = Math.ceil(r.totalHits / params.total.toDouble).toInt,
-            total = r.totalHits
-          ),
-          r.to[Project].toList.map(hideId)
-      ))
+      .map(
+        r =>
+          (
+            Pagination(
+              current = clamp(page),
+              totalPages = Math.ceil(r.totalHits / params.total.toDouble).toInt,
+              total = r.totalHits
+            ),
+            r.to[Project].toList.map(hideId)
+        )
+      )
   }
 
   private def targetFiltering(params: SearchParams) = {
@@ -85,22 +89,32 @@ class DataRepository(github: Github, paths: DataPaths)(
       .map { target =>
         val scalaVersionFiltering =
           List(
-            boolQuery().must(
-              termQuery("scalaVersion", target.scalaVersion.toString))
+            boolQuery()
+              .must(termQuery("scalaVersion", target.scalaVersion.toString))
           )
 
         val scalaJsVersionFiltering =
           target.scalaJsVersion
-            .map(jsVersion =>
-              List(boolQuery().must(
-                termQuery("scalaJsVersion", target.scalaJsVersion.toString))))
+            .map(
+              jsVersion =>
+                List(
+                  boolQuery().must(
+                    termQuery("scalaJsVersion", target.scalaJsVersion.toString)
+                  )
+              )
+            )
             .getOrElse(Nil)
 
         val scalaNativeVersionFiltering = target.scalaNativeVersion
-          .map(nativeVersion =>
-            List(
-              boolQuery().must(termQuery("scalaNativeVersion",
-                                         target.scalaNativeVersion.toString))))
+          .map(
+            nativeVersion =>
+              List(
+                boolQuery().must(
+                  termQuery("scalaNativeVersion",
+                            target.scalaNativeVersion.toString)
+                )
+            )
+          )
           .getOrElse(Nil)
 
         scalaVersionFiltering ++ scalaJsVersionFiltering ++ scalaNativeVersionFiltering
@@ -109,14 +123,21 @@ class DataRepository(github: Github, paths: DataPaths)(
   }
 
   private def targetsQuery(params: SearchParams) = {
-    params.targetTypes.map(targetType =>
-      boolQuery().must(termQuery("targetType", targetType))) ++
-      params.scalaVersions.map(scalaVersion =>
-        boolQuery().must(termQuery("scalaVersion", scalaVersion))) ++
-      params.scalaJsVersions.map(scalaJsVersion =>
-        boolQuery().must(termQuery("scalaJsVersion", scalaJsVersion))) ++
-      params.scalaNativeVersions.map(scalaNativeVersion =>
-        boolQuery().must(termQuery("scalaNativeVersion", scalaNativeVersion)))
+    params.targetTypes.map(
+      targetType => boolQuery().must(termQuery("targetType", targetType))
+    ) ++
+      params.scalaVersions.map(
+        scalaVersion =>
+          boolQuery().must(termQuery("scalaVersion", scalaVersion))
+      ) ++
+      params.scalaJsVersions.map(
+        scalaJsVersion =>
+          boolQuery().must(termQuery("scalaJsVersion", scalaJsVersion))
+      ) ++
+      params.scalaNativeVersions.map(
+        scalaNativeVersion =>
+          boolQuery().must(termQuery("scalaNativeVersion", scalaNativeVersion))
+      )
 
   }
 
@@ -139,8 +160,9 @@ class DataRepository(github: Github, paths: DataPaths)(
       else Nil
 
     val topicsQuery =
-      params.topics.map(topic =>
-        boolQuery().should(termQuery("github.topics", topic)))
+      params.topics.map(
+        topic => boolQuery().should(termQuery("github.topics", topic))
+      )
 
     val mustQueriesRepos = {
       if (params.userRepos.isEmpty) Nil
@@ -174,26 +196,28 @@ class DataRepository(github: Github, paths: DataPaths)(
             targetsQuery(params) ++
             targetFiltering(params)
         )
-        .should(List(
-          termQuery("repository", escaped).boost(1000),
-          fuzzyQuery("repository", escaped),
-          termQuery("artifacts", escaped).boost(20),
-          fuzzyQuery("artifacts", escaped),
-          termQuery("organization", escaped).boost(20),
-          fuzzyQuery("organization", escaped),
-          termQuery("primaryTopic", escaped).boost(10),
-          termQuery("github.topics", escaped).boost(2),
-          fuzzyQuery("github.topics", escaped),
-          termQuery("primaryTopic", escaped).boost(
-            if (queryIsATopic) 1000
-            else 2
-          ),
-          termQuery("github.topics", escaped).boost(
-            if (queryIsATopic) 100
-            else 2
-          ),
-          stringQ
-        ))
+        .should(
+          List(
+            termQuery("repository", escaped).boost(1000),
+            fuzzyQuery("repository", escaped),
+            termQuery("artifacts", escaped).boost(20),
+            fuzzyQuery("artifacts", escaped),
+            termQuery("organization", escaped).boost(20),
+            fuzzyQuery("organization", escaped),
+            termQuery("primaryTopic", escaped).boost(10),
+            termQuery("github.topics", escaped).boost(2),
+            fuzzyQuery("github.topics", escaped),
+            termQuery("primaryTopic", escaped).boost(
+              if (queryIsATopic) 1000
+              else 2
+            ),
+            termQuery("github.topics", escaped).boost(
+              if (queryIsATopic) 100
+              else 2
+            ),
+            stringQ
+          )
+        )
         .not(List(termQuery("deprecated", true)))
     ).scorers(
         // Add a small boost for project that seem to be “popular” (highly depended on or highly starred)
@@ -242,10 +266,10 @@ class DataRepository(github: Github, paths: DataPaths)(
   }
 
   /**
-    * search for a maven artifact
-    * @param maven
-    * @return
-    */
+   * search for a maven artifact
+   * @param maven
+   * @return
+   */
   def maven(maven: MavenReference): Future[Option[Release]] = {
 
     esClient
@@ -280,17 +304,20 @@ class DataRepository(github: Github, paths: DataPaths)(
       .map(_.to[Project].headOption)
   }
 
-  def projectAndReleases(projectRef: Project.Reference,
-                         selection: ReleaseSelection)
-    : Future[Option[(Project, List[Release])]] = {
+  def projectAndReleases(
+      projectRef: Project.Reference,
+      selection: ReleaseSelection
+  ): Future[Option[(Project, List[Release])]] = {
     for {
       project <- project(projectRef)
       releases <- releases(projectRef)
     } yield project.map((_, releases))
   }
 
-  def projectPage(projectRef: Project.Reference, selection: ReleaseSelection)
-    : Future[Option[(Project, ReleaseOptions)]] = {
+  def projectPage(
+      projectRef: Project.Reference,
+      selection: ReleaseSelection
+  ): Future[Option[(Project, ReleaseOptions)]] = {
     projectAndReleases(projectRef, selection).map {
       case Some((project, releases)) => {
         DefaultRelease(project.repository,
@@ -312,7 +339,8 @@ class DataRepository(github: Github, paths: DataPaths)(
           project.id.map { id =>
             val esUpdate =
               esClient.execute(
-                update(id) in (indexName / projectsCollection) doc project)
+                update(id) in (indexName / projectsCollection) doc project
+              )
 
             log.info("Updating live data on the index repository")
             val indexUpdate = SaveLiveData.saveProject(project, paths)
@@ -363,14 +391,16 @@ class DataRepository(github: Github, paths: DataPaths)(
   }
 
   def topics(
-      params: Option[SearchParams] = None): Future[List[(String, Long)]] = {
+      params: Option[SearchParams] = None
+  ): Future[List[(String, Long)]] = {
     stringAggregations("github.topics", params).map(
       addParamsIfMissing(params, _.topics)
     )
   }
 
-  def targetTypes(params: Option[SearchParams] = None)
-    : Future[List[(String, String, Long)]] = {
+  def targetTypes(
+      params: Option[SearchParams] = None
+  ): Future[List[(String, String, Long)]] = {
     def labelize(in: String): String = {
       if (in == "JVM") "Scala (Jvm)"
       else in.take(1).map(_.toUpper) + in.drop(1).map(_.toLower)
@@ -385,12 +415,14 @@ class DataRepository(github: Github, paths: DataPaths)(
 
   private def stringAggregations(
       field: String,
-      params: Option[SearchParams] = None): Future[List[(String, Long)]] = {
+      params: Option[SearchParams] = None
+  ): Future[List[(String, Long)]] = {
     aggregations(field, params).map(_.toList.sortBy(_._1).toList)
   }
 
   def scalaVersions(
-      params: Option[SearchParams] = None): Future[List[(String, Long)]] = {
+      params: Option[SearchParams] = None
+  ): Future[List[(String, Long)]] = {
     val minVer = SemanticVersion(2, 10)
     val maxVer = SemanticVersion(2, 13)
 
@@ -401,13 +433,15 @@ class DataRepository(github: Github, paths: DataPaths)(
   }
 
   def scalaJsVersions(
-      params: Option[SearchParams] = None): Future[List[(String, Long)]] = {
+      params: Option[SearchParams] = None
+  ): Future[List[(String, Long)]] = {
     versionAggregations("scalaJsVersion", params, _ => true)
       .map(addParamsIfMissing(params, _.scalaJsVersions))
   }
 
   def scalaNativeVersions(
-      params: Option[SearchParams] = None): Future[List[(String, Long)]] = {
+      params: Option[SearchParams] = None
+  ): Future[List[(String, Long)]] = {
     versionAggregations("scalaNativeVersion", params, _ => true)
       .map(addParamsIfMissing(params, _.scalaNativeVersions))
   }
@@ -450,7 +484,8 @@ class DataRepository(github: Github, paths: DataPaths)(
   private def versionAggregations(
       field: String,
       params: Option[SearchParams],
-      filterF: SemanticVersion => Boolean): Future[List[(String, Long)]] = {
+      filterF: SemanticVersion => Boolean
+  ): Future[List[(String, Long)]] = {
 
     def sortedByVersion(aggregation: Map[String, Long]): List[(String, Long)] = {
       aggregation.toList
@@ -473,7 +508,8 @@ class DataRepository(github: Github, paths: DataPaths)(
 
   private def aggregations(
       field: String,
-      params: Option[SearchParams]): Future[Map[String, Long]] = {
+      params: Option[SearchParams]
+  ): Future[Map[String, Long]] = {
     import scala.collection.JavaConverters._
     val aggregationName = s"${field}_count"
 

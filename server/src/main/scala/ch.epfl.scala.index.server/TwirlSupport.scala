@@ -23,7 +23,8 @@ trait TwirlSupport {
 
   /** Serialize Twirl formats to `String`. */
   protected def twirlMarshaller[A <: AnyRef: Manifest](
-      contentType: MediaType): ToEntityMarshaller[A] =
+      contentType: MediaType
+  ): ToEntityMarshaller[A] =
     Marshaller.StringMarshaller.wrap(contentType)(_.toString)
 
 }

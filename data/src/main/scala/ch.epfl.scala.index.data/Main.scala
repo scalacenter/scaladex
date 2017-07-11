@@ -1,10 +1,6 @@
 package ch.epfl.scala.index.data
 
-import bintray.{
-  BintrayDownloadPoms,
-  BintrayListPoms,
-  BintrayDownloadSbtPlugins
-}
+import bintray.{BintrayDownloadPoms, BintrayListPoms, BintrayDownloadSbtPlugins}
 import cleanup.{NonStandardLib, GithubRepoExtractor}
 import elastic.SeedElasticSearch
 import github.GithubDownload
@@ -26,24 +22,24 @@ import org.slf4j.LoggerFactory
 import scala.sys.process.Process
 
 /**
-  * This application manages indexed POMs.
-  */
+ * This application manages indexed POMs.
+ */
 object Main {
 
   private val logger = LoggerFactory.getLogger(getClass)
 
   /**
-    * Update data:
-    *  - pull the latest data from the 'contrib' repository
-    *  - download data from Bintray and update the ElasticSearch index
-    *  - commit the new state of the 'index' repository
-    *
-    * @param args 4 arguments:
-    *              - Name of a step to execute (or “all” to execute all the steps)
-    *              - Path of the 'contrib' Git repository
-    *              - Path of the 'index' Git repository
-    *              - Path of the 'credentials' Git repository
-    */
+   * Update data:
+   *  - pull the latest data from the 'contrib' repository
+   *  - download data from Bintray and update the ElasticSearch index
+   *  - commit the new state of the 'index' repository
+   *
+   * @param args 4 arguments:
+   *              - Name of a step to execute (or “all” to execute all the steps)
+   *              - Path of the 'contrib' Git repository
+   *              - Path of the 'index' Git repository
+   *              - Path of the 'credentials' Git repository
+   */
   def main(args: Array[String]): Unit = {
     val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
     val production = config.getBoolean("production")
@@ -88,11 +84,13 @@ object Main {
       // Download POMs from Bintray
       Step("download")(() => new BintrayDownloadPoms(getPathFromArgs).run()),
       // Download parent POMs
-      Step("parent")(() =>
-        new DownloadParentPoms(bintray, getPathFromArgs).run()),
+      Step("parent")(
+        () => new DownloadParentPoms(bintray, getPathFromArgs).run()
+      ),
       // Download ivy.xml descriptors of sbt-plugins from Bintray
-      Step("download-sbt-plugins")(() =>
-        new BintrayDownloadSbtPlugins(getPathFromArgs).run()),
+      Step("download-sbt-plugins")(
+        () => new BintrayDownloadSbtPlugins(getPathFromArgs).run()
+      ),
       // Download additional information about projects from Github
       Step("github")(() => new GithubDownload(getPathFromArgs).run()),
       // Re-create the ElasticSearch index
@@ -121,12 +119,15 @@ object Main {
         case Some(name) =>
           steps
             .find(_.name == name)
-            .fold(sys.error(
-              s"Unknown step: $name. Available steps are: ${steps.map(_.name).mkString(" ")}."))(
-              List(_))
+            .fold(
+              sys.error(
+                s"Unknown step: $name. Available steps are: ${steps.map(_.name).mkString(" ")}."
+              )
+            )(List(_))
         case None =>
           sys.error(
-            s"No step to execute. Available steps are: ${steps.map(_.name).mkString(" ")}.")
+            s"No step to execute. Available steps are: ${steps.map(_.name).mkString(" ")}."
+          )
       }
 
     if (production) {
@@ -178,7 +179,8 @@ object Main {
       if (status == 0) ()
       else
         sys.error(
-          s"Command '${args.mkString(" ")}' exited with status $status")
+          s"Command '${args.mkString(" ")}' exited with status $status"
+        )
     }
   }
 }

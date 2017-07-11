@@ -2,23 +2,29 @@ package ch.epfl.scala.index
 package data
 package github
 
-object LinkParserTests extends org.specs2.mutable.Specification {
-  "Link parser" >> {
-    "quote" >> {
-      extractLastPage(
-        List(
-          """<https://api.github.com/repositories/130013/issues?page=2>; rel="next"""",
-          """<https://api.github.com/repositories/130013/issues?page=23>; rel="last""""
-        ).mkString(", ")
-      ) ==== 23
+import org.scalatest._
+
+class LinkParserTests extends FunSpec {
+  describe("Link parser") {
+    it("quote") {
+      assert(
+        extractLastPage(
+          List(
+            """<https://api.github.com/repositories/130013/issues?page=2>; rel="next"""",
+            """<https://api.github.com/repositories/130013/issues?page=23>; rel="last""""
+          ).mkString(", ")
+        ) == 23
+      )
     }
-    "unquote" >> {
-      extractLastPage(
-        List(
-          """<https://api.github.com/user/repos?page=2>; rel=next""",
-          """<https://api.github.com/user/repos?page=2>; rel=last"""
-        ).mkString(", ")
-      ) ==== 2
+    it("unquote") {
+      assert(
+        extractLastPage(
+          List(
+            """<https://api.github.com/user/repos?page=2>; rel=next""",
+            """<https://api.github.com/user/repos?page=2>; rel=last"""
+          ).mkString(", ")
+        ) == 2
+      )
     }
   }
 }

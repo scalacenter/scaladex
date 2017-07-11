@@ -18,29 +18,29 @@ import System.{lineSeparator => nl}
 
 class BintrayDownloadPoms(paths: DataPaths)(
     implicit val system: ActorSystem,
-    implicit val materializer: ActorMaterializer)
-    extends PlayWsDownloader {
+    implicit val materializer: ActorMaterializer
+) extends PlayWsDownloader {
 
   private val log = LoggerFactory.getLogger(getClass)
 
   private val bintrayPomBase = paths.poms(LocalPomRepository.Bintray)
 
   /**
-    * resolve the filename for a specific pom by sha1
-    *
-    * @param search the bintray search object
-    * @return
-    */
+   * resolve the filename for a specific pom by sha1
+   *
+   * @param search the bintray search object
+   * @return
+   */
   private def pomPath(search: BintraySearch) =
     bintrayPomBase.resolve(s"${search.sha1}.pom")
 
   /**
-    * will compute ans sha1 hash from given string and verify that against
-    * given compare hash
-    * @param toVerify the string to compute
-    * @param sha1 the verify hash
-    * @return
-    */
+   * will compute ans sha1 hash from given string and verify that against
+   * given compare hash
+   * @param toVerify the string to compute
+   * @param sha1 the verify hash
+   * @return
+   */
   def verifyChecksum(toVerify: String, sha1: String) = {
 
     val md = java.security.MessageDigest.getInstance("SHA-1")
@@ -51,11 +51,11 @@ class BintrayDownloadPoms(paths: DataPaths)(
   }
 
   /**
-    * verify the sha1 file hash
-    * @param path the path to the file to verify
-    * @param sha1 the sha1 hash
-    * @return
-    */
+   * verify the sha1 file hash
+   * @param path the path to the file to verify
+   * @param sha1 the sha1 hash
+   * @return
+   */
   private def verifySHA1FileHash(path: Path, sha1: String): Boolean = {
 
     val source = scala.io.Source.fromFile(path.toFile)
@@ -66,52 +66,57 @@ class BintrayDownloadPoms(paths: DataPaths)(
   }
 
   /**
-    * get a list of bintraySearch object where no sha1 file exists
-    */
+   * get a list of bintraySearch object where no sha1 file exists
+   */
   private val searchesBySha1: Set[BintraySearch] = {
 
     BintrayMeta
       .load(paths)
-      .filter(s =>
-        !Files.exists(pomPath(s)) || !verifySHA1FileHash(pomPath(s), s.sha1))
+      .filter(
+        s =>
+          !Files.exists(pomPath(s)) || !verifySHA1FileHash(pomPath(s), s.sha1)
+      )
       .groupBy(_.sha1) // remove duplicates with sha1
       .map { case (_, vs) => vs.head }
       .toSet
   }
 
   /**
-    * partly url encode - replaces only spaces
-    *
-    * @param url the url to "encode"
-    * @return
-    */
+   * partly url encode - replaces only spaces
+   *
+   * @param url the url to "encode"
+   * @return
+   */
   private def escape(url: String) = url.replace(" ", "%20")
 
   /**
-    * get the download request object
-    * downloads pom from
-    * - jcenter.bintray.com or
-    * - dl.bintray.com
-    *
-    * @param search the bintray Search
-    * @return
-    */
+   * get the download request object
+   * downloads pom from
+   * - jcenter.bintray.com or
+   * - dl.bintray.com
+   *
+   * @param search the bintray Search
+   * @return
+   */
   private def downloadRequest(wsClient: AhcWSClient,
                               search: BintraySearch): WSRequest = {
 
     if (search.isJCenter) {
       wsClient.url(escape(s"https://jcenter.bintray.com/${search.path}"))
     } else {
-      wsClient.url(escape(
-        s"https://dl.bintray.com/${search.owner}/${search.repo}/${search.path}"))
+      wsClient.url(
+        escape(
+          s"https://dl.bintray.com/${search.owner}/${search.repo}/${search.path}"
+        )
+      )
     }
   }
 
   /**
-    * handle the downloaded pom and write it to file
-    * @param search the bintray search
-    * @param response the download response
-    */
+   * handle the downloaded pom and write it to file
+   * @param search the bintray search
+   * @param response the download response
+   */
   private def processPomDownload(search: BintraySearch,
                                  response: WSResponse): Unit = {
 
@@ -141,8 +146,8 @@ class BintrayDownloadPoms(paths: DataPaths)(
   }
 
   /**
-    * main run method
-    */
+   * main run method
+   */
   def run(): Unit = {
 
     download[BintraySearch, Unit]("Downloading POMs",

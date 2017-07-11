@@ -25,8 +25,8 @@ object ReleaseSelection {
 }
 
 /**
-  * populate dropdowns to select artifact, version and target
-  */
+ * populate dropdowns to select artifact, version and target
+ */
 case class ReleaseOptions(
     artifacts: List[String],
     versions: List[SemanticVersion],
@@ -100,8 +100,10 @@ object DefaultRelease {
         .map(_.reference.target)
         .toList
         .flatten
-        .sortBy(target =>
-          (target.targetType, target.scalaVersion, target.scalaJsVersion))
+        .sortBy(
+          target =>
+            (target.targetType, target.scalaVersion, target.scalaJsVersion)
+        )
 
       val artifacts = releases.map(_.reference.artifact).toList.sorted
       val versions = releases.map(_.reference.version).toList.sorted

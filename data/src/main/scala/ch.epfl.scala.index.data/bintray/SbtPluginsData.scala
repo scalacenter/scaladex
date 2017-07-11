@@ -44,7 +44,8 @@ case class SbtPluginsData(paths: DataPaths) extends BintrayProtocol {
 
     val _ = Files.write(
       paths.ivysData,
-      write[List[SbtPluginReleaseModel]](allReleases).getBytes)
+      write[List[SbtPluginReleaseModel]](allReleases).getBytes
+    )
   }
 
 }

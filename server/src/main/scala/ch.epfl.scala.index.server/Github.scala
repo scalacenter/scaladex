@@ -61,11 +61,15 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer)
                 "client_secret" -> clientSecret,
                 "code" -> code,
                 "redirect_uri" -> redirectUri
-              )),
+              )
+            ),
             headers = List(Accept(MediaTypes.`application/json`))
-          ))
-        .flatMap(response =>
-          Unmarshal(response).to[Response.AccessToken].map(_.access_token))
+          )
+        )
+        .flatMap(
+          response =>
+            Unmarshal(response).to[Response.AccessToken].map(_.access_token)
+        )
     }
 
     access.flatMap(info)
@@ -92,7 +96,8 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer)
     }
 
     def paginated[T](path: Path, org: Boolean = false)(
-        implicit ev: Unmarshaller[HttpResponse, List[T]]): Future[List[T]] = {
+        implicit ev: Unmarshaller[HttpResponse, List[T]]
+    ): Future[List[T]] = {
 
       def request(page: Option[Int]) = {
         val query =
@@ -127,8 +132,9 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer)
                   .runWith(Sink.seq)
                   .map(_.toList)
                   .map(_.collect { case (scala.util.Success(v), _) => v })
-                  .flatMap(s =>
-                    Future.sequence(s.map(r2 => Unmarshal(r2).to[List[T]])))
+                  .flatMap(
+                    s => Future.sequence(s.map(r2 => Unmarshal(r2).to[List[T]]))
+                  )
                   .map(_.flatten)
               } else Future.successful(Nil)
 

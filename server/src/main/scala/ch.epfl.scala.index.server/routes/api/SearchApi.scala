@@ -35,14 +35,16 @@ object Api {
   )
 }
 
-class SearchApi(dataRepository: DataRepository)(
-    implicit val executionContext: ExecutionContext) {
+class SearchApi(
+    dataRepository: DataRepository
+)(implicit val executionContext: ExecutionContext) {
 
   private def parseScalaTarget(
       targetType: Option[String],
       scalaVersion: Option[String],
       scalaJsVersion: Option[String],
-      scalaNativeVersion: Option[String]): Option[ScalaTarget] = {
+      scalaNativeVersion: Option[String]
+  ): Option[ScalaTarget] = {
     (targetType,
      scalaVersion.flatMap(SemanticVersion.parse),
      scalaJsVersion.flatMap(SemanticVersion.parse),
@@ -57,7 +59,8 @@ class SearchApi(dataRepository: DataRepository)(
       case (Some("NATIVE"), Some(scalaVersion), _, Some(scalaNativeVersion)) =>
         Some(
           ScalaTarget.scalaNative(scalaVersion.binary,
-                                  scalaNativeVersion.binary))
+                                  scalaNativeVersion.binary)
+        )
 
       case _ =>
         None
@@ -75,7 +78,8 @@ class SearchApi(dataRepository: DataRepository)(
                'scalaVersion,
                'scalaJsVersion.?,
                'scalaNativeVersion.?,
-               'cli.as[Boolean] ? false)) {
+               'cli.as[Boolean] ? false)
+            ) {
 
               (q,
                targetType,
@@ -111,7 +115,8 @@ class SearchApi(dataRepository: DataRepository)(
                            SearchParams(queryString = q,
                                         targetFiltering = scalaTarget,
                                         cli = cli,
-                                        total = 10))
+                                        total = 10)
+                         )
                          .map { case (_, ps) => ps.map(p => convert(p)) }
                          .map(ps => write(ps)))
                     case None =>
@@ -131,7 +136,8 @@ class SearchApi(dataRepository: DataRepository)(
                  'target.?,
                  'scalaVersion.?,
                  'scalaJsVersion.?,
-                 'scalaNativeVersion.?)) {
+                 'scalaNativeVersion.?)
+              ) {
                 (organization,
                  repository,
                  artifact,
@@ -169,7 +175,8 @@ class SearchApi(dataRepository: DataRepository)(
                     dataRepository.projectPage(reference, selection).map {
                       case Some((_, options)) => (OK, write(convert(options)))
                       case None               => (NotFound, "")
-                    })
+                    }
+                  )
               }
             }
           } ~
@@ -182,7 +189,8 @@ class SearchApi(dataRepository: DataRepository)(
                       SearchParams(queryString = query,
                                    page = 1,
                                    sorting = None,
-                                   total = 5))
+                                   total = 5)
+                    )
                     .map {
                       case (pagination, projects) =>
                         val summarisedProjects = projects.map(
@@ -191,7 +199,8 @@ class SearchApi(dataRepository: DataRepository)(
                               p.organization,
                               p.repository,
                               p.github.flatMap(_.description).getOrElse("")
-                          ))
+                          )
+                        )
                         write(summarisedProjects)
                     }
                 }

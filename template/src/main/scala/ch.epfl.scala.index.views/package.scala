@@ -16,7 +16,8 @@ package object html {
     def appendQuery(kv: (String, String)): Uri = uri.withQuery(
       Query(
         (uri
-          .query(java.nio.charset.Charset.forName("UTF-8")) ++ Vector(kv)): _*)
+          .query(java.nio.charset.Charset.forName("UTF-8")) ++ Vector(kv)): _*
+      )
     )
 
     def appendQuery(k: String, on: Boolean): Uri = {
@@ -62,7 +63,8 @@ package object html {
   def paginationRender(
       selected: Int,
       max: Int,
-      toShow: Int = 10): (Option[Int], List[Int], Option[Int]) = {
+      toShow: Int = 10
+  ): (Option[Int], List[Int], Option[Int]) = {
     val min = 1
 
     if (selected == max && max == 1) (None, List(1), None)

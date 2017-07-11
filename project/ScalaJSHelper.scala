@@ -15,7 +15,8 @@ object ScalaJSHelper {
             js -> target.value / js.getName,
             map -> target.value / map.getName,
             jsdeps -> target.value / jsdeps.getName
-          ))
+          )
+        )
         .toSeq
     }.taskValue,
     mappings in (Compile, packageBin) := {

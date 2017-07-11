@@ -39,18 +39,18 @@ private[api] class PublishProcess(paths: DataPaths,
   private val log = LoggerFactory.getLogger(getClass)
 
   /**
-    * write the pom file to disk if it's a pom file (SBT will also send *.pom.sha1 and *.pom.md5)
-    * - will check if there is a scm tag for github
-    * - will check if the publishing user have write access to the provided repository
-    *
-    * Response codes:
-    * Created - 201 - Data accepted and stored (by default for all files which is not *.pom)
-    * NoContent - 204 - No GitHub SCM tag provided
-    * Forbidden - 403 - No write access to the GitHub repository
-    *
-    * @param data the Publish data class holding all the data
-    * @return
-    */
+   * write the pom file to disk if it's a pom file (SBT will also send *.pom.sha1 and *.pom.md5)
+   * - will check if there is a scm tag for github
+   * - will check if the publishing user have write access to the provided repository
+   *
+   * Response codes:
+   * Created - 201 - Data accepted and stored (by default for all files which is not *.pom)
+   * NoContent - 204 - No GitHub SCM tag provided
+   * Forbidden - 403 - No write access to the GitHub repository
+   *
+   * @param data the Publish data class holding all the data
+   * @return
+   */
   def writeFiles(data: PublishData): Future[(StatusCode, String)] = {
     if (data.isPom) {
       log.info("Publishing a POM")
@@ -78,11 +78,13 @@ private[api] class PublishProcess(paths: DataPaths,
                   }
                 } else {
                   log.warn(
-                    s"User ${data.userState.user.login} attempted to publish to ${repo.toString}")
+                    s"User ${data.userState.user.login} attempted to publish to ${repo.toString}"
+                  )
                   data.deleteTemp()
                   Future.successful(
                     (Forbidden,
-                     s"${data.userState.user.login} cannot publish to ${repo.toString}"))
+                     s"${data.userState.user.login} cannot publish to ${repo.toString}")
+                  )
                 }
               }
             }
@@ -108,19 +110,18 @@ private[api] class PublishProcess(paths: DataPaths,
   }
 
   /**
-    * Convert the POM XML data to a Maven Model
-    *
-    * @param data the XML String data
-    * @return
-    */
-  private def getTmpPom(data: PublishData)
-    : List[Try[(ReleaseModel, LocalPomRepository, String)]] = {
+   * Convert the POM XML data to a Maven Model
+   *
+   * @param data the XML String data
+   * @return
+   */
+  private def getTmpPom(
+      data: PublishData
+  ): List[Try[(ReleaseModel, LocalPomRepository, String)]] = {
     val path = data.tempPath.getParent
 
     val downloadParentPomsStep =
-      new DownloadParentPoms(LocalPomRepository.MavenCentral,
-                             paths,
-                             Some(path))
+      new DownloadParentPoms(LocalPomRepository.MavenCentral, paths, Some(path))
 
     downloadParentPomsStep.run()
 
@@ -128,30 +129,30 @@ private[api] class PublishProcess(paths: DataPaths,
   }
 
   /**
-    * try to extract a github repository from scm tag in Maven Model
-    *
-    * @param pom the Maven model
-    * @return
-    */
+   * try to extract a github repository from scm tag in Maven Model
+   *
+   * @param pom the Maven model
+   * @return
+   */
   private def getGithubRepo(pom: ReleaseModel): Option[GithubRepo] =
     (new GithubRepoExtractor(paths)).apply(pom)
 
   /**
-    * Main task to update the scaladex index.
-    * - download GitHub info if allowd
-    * - download GitHub contributors if allowed
-    * - download GitHub readme if allowed
-    * - search for project and
-    *   1. update project
-    *      1. Search for release
-    *      2. update or create new release
-    *   2. create new project
-    *
-    * @param repo the Github repo reference model
-    * @param pom the Maven Model
-    * @param data the main publish data
-    * @return
-    */
+   * Main task to update the scaladex index.
+   * - download GitHub info if allowd
+   * - download GitHub contributors if allowed
+   * - download GitHub readme if allowed
+   * - search for project and
+   *   1. update project
+   *      1. Search for release
+   *      2. update or create new release
+   *   2. create new project
+   *
+   * @param repo the Github repo reference model
+   * @param pom the Maven Model
+   * @param data the main publish data
+   * @return
+   */
   private def updateIndex(repo: GithubRepo,
                           pom: ReleaseModel,
                           data: PublishData): Future[Unit] = {
@@ -220,7 +221,8 @@ private[api] class PublishProcess(paths: DataPaths,
               indexInto(indexName / releasesCollection)
                 .source(
                   newReleases.head.copy(liveData = true)
-                ))
+                )
+            )
             .map(_ => ())
         } else { Future.successful(()) }
 

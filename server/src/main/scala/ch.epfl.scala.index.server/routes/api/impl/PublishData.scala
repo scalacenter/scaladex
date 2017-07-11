@@ -13,15 +13,15 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 /**
-  * Publish data model / Settings
-  * @param path the file name send to scaladex
-  * @param created the datime the release was published on the upstream repository
-  * @param data the file content
-  * @param credentials the credentials (username & password)
-  * @param downloadInfo flag for downloading info
-  * @param downloadContributors flag for downloading contributors
-  * @param downloadReadme flag for downloading the readme file
-  */
+ * Publish data model / Settings
+ * @param path the file name send to scaladex
+ * @param created the datime the release was published on the upstream repository
+ * @param data the file content
+ * @param credentials the credentials (username & password)
+ * @param downloadInfo flag for downloading info
+ * @param downloadContributors flag for downloading contributors
+ * @param downloadReadme flag for downloading the readme file
+ */
 private[api] case class PublishData(
     path: String,
     created: DateTime,
@@ -39,9 +39,9 @@ private[api] case class PublishData(
   def savePath(paths: DataPaths): Path = pomPath(paths, hash)
 
   /**
-    * write the file content to given path
-    * @param destination the given destination
-    */
+   * write the file content to given path
+   * @param destination the given destination
+   */
   private def write(destination: Path): Unit = {
     delete(destination)
     Files.write(destination, data.getBytes(StandardCharsets.UTF_8))
@@ -49,9 +49,9 @@ private[api] case class PublishData(
   }
 
   /**
-    * delete a given file
-    * @param file the file name to delete
-    */
+   * delete a given file
+   * @param file the file name to delete
+   */
   private def delete(file: Path): Unit = {
 
     if (Files.exists(file)) Files.delete(file)
@@ -59,26 +59,26 @@ private[api] case class PublishData(
   }
 
   /**
-    * write the temp file to /tmp/sha/sha.pom
-    */
+   * write the temp file to /tmp/sha/sha.pom
+   */
   def writeTemp(): Unit = write(tempPath)
 
   /**
-    * write the pom file to /index/bintray/pom_sha1
-    */
+   * write the pom file to /index/bintray/pom_sha1
+   */
   def writePom(paths: DataPaths): Unit = write(savePath(paths))
 
   /**
-    * delete the temp add file
-    */
+   * delete the temp add file
+   */
   def deleteTemp(): Unit = delete(tempPath)
 
   /**
-    * resolve the filename for a specific pom by sha1
-    *
-    * @param sha1 the sha1 hash of the file
-    * @return
-    */
+   * resolve the filename for a specific pom by sha1
+   *
+   * @param sha1 the sha1 hash of the file
+   * @return
+   */
   private def pomPath(paths: DataPaths, sha1: String): Path = {
     val repository =
       if (userState.isSonatype) LocalPomRepository.MavenCentral
@@ -88,20 +88,20 @@ private[api] case class PublishData(
   }
 
   /**
-    * get the tmp save path for the pom file
-    * @param sha1 the sha1 hash
-    * @return
-    */
+   * get the tmp save path for the pom file
+   * @param sha1 the sha1 hash
+   * @return
+   */
   private def tmpPath(sha1: String): Path = {
     val tmpDir = Files.createTempDirectory(sha1)
     Files.createTempFile(tmpDir, "", "")
   }
 
   /**
-    * generate SHA1 hash from a given String
-    * @param data the sha1 hash
-    * @return
-    */
+   * generate SHA1 hash from a given String
+   * @param data the sha1 hash
+   * @return
+   */
   private def computeSha1(data: String): String = {
 
     val md = java.security.MessageDigest.getInstance("SHA-1")

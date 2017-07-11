@@ -22,7 +22,8 @@ object ScmInfoParser extends Parsers {
     "scm:".? ~ "git:".? ~ ("git@" | "https://" | "git://" | "//") ~
       "github.com" ~ (":" | "/") ~ Segment
       .rep(1)
-      .! ~ "/" ~ Segment.rep(1).!.map(removeDotGit))
+      .! ~ "/" ~ Segment.rep(1).!.map(removeDotGit)
+  )
 
   def parse(scmInfo: String): Option[GithubRepo] = {
     ScmUrl.parse(scmInfo) match {

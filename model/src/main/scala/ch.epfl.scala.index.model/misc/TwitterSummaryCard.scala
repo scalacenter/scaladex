@@ -2,14 +2,14 @@ package ch.epfl.scala.index.model
 package misc
 
 /**
-  * A twitter summary card, see https://dev.twitter.com/cards/types/summary.
-  *
-  * @param site The Twitter handle (including @) of the site
-  * @param title The title of the card
-  * @param description A description.  Truncated, not all clients show it
-  * @param image URL to an image representing the content
-  * @param imageAlt Alt text for the image
-  */
+ * A twitter summary card, see https://dev.twitter.com/cards/types/summary.
+ *
+ * @param site The Twitter handle (including @) of the site
+ * @param title The title of the card
+ * @param description A description.  Truncated, not all clients show it
+ * @param image URL to an image representing the content
+ * @param imageAlt Alt text for the image
+ */
 case class TwitterSummaryCard(site: String,
                               title: String,
                               description: String,
@@ -18,8 +18,8 @@ case class TwitterSummaryCard(site: String,
   val card: String = "summary"
 
   /**
-    * Convert the twitter card to a corresponding list of meta tags.
-    */
+   * Convert the twitter card to a corresponding list of meta tags.
+   */
   def toHeadMeta: Seq[HeadMeta] =
     Seq(
       HeadMeta(name = "twitter:card", content = card),

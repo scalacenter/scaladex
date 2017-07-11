@@ -36,11 +36,12 @@ class GithubRepoExtractor(paths: DataPaths) {
                   }
                 )
             }
-        ))
+        )
+      )
 
   /**
-    * json4s formats
-    */
+   * json4s formats
+   */
   implicit private val formats = DefaultFormats ++ Seq(ClaimsSerializer)
 
   private val source = scala.io.Source.fromFile(paths.claims.toFile)

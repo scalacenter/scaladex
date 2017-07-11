@@ -109,8 +109,7 @@ object SubIndex extends BintrayProtocol {
         .map(bintray => write[BintraySearch](bintray))
         .mkString(nl)
 
-    writeFile(destination.meta(LocalPomRepository.Bintray),
-              filteredBintrayMeta)
+    writeFile(destination.meta(LocalPomRepository.Bintray), filteredBintrayMeta)
 
     def copyMetas(forRepo: LocalPomRepository): Unit = {
       val shas = shasFor(forRepo)
@@ -155,7 +154,8 @@ object SubIndex extends BintrayProtocol {
       new SimpleFileVisitor[Path] {
         override def preVisitDirectory(
             dir: Path,
-            attrs: BasicFileAttributes): FileVisitResult = {
+            attrs: BasicFileAttributes
+        ): FileVisitResult = {
           Files.createDirectories(to.resolve(from.relativize(dir)))
           FileVisitResult.CONTINUE
         }

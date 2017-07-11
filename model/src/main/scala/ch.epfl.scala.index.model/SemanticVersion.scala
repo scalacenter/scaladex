@@ -6,14 +6,14 @@ case class Milestone(m: Long) extends PreRelease
 case class OtherPreRelease(o: String) extends PreRelease
 
 /**
-  * Semantic version, separation of possible combinations
-  * @param major the major version number
-  * @param minor the minor version number
-  * @param patch the path version number
-  * @param patch2 the path version number (to support a.b.c.d)
-  * @param preRelease the pre release name
-  * @param metadata the release metadata
-  */
+ * Semantic version, separation of possible combinations
+ * @param major the major version number
+ * @param minor the minor version number
+ * @param patch the path version number
+ * @param patch2 the path version number (to support a.b.c.d)
+ * @param preRelease the pre release name
+ * @param metadata the release metadata
+ */
 case class SemanticVersion(
     major: Long,
     minor: Long = 0,
@@ -106,8 +106,8 @@ object SemanticVersion extends Parsers {
     val PreRelease: P[PreRelease] =
       "-" ~ (
         (("M" | "m") ~ &(Digit) ~ Number).map(n => Milestone(n)) |
-          (("R" | "r") ~ ("C" | "c") ~ &(Digit) ~ Number).map(n =>
-            ReleaseCandidate(n)) |
+          (("R" | "r") ~ ("C" | "c") ~ &(Digit) ~ Number)
+            .map(n => ReleaseCandidate(n)) |
           (Digit | Alpha | "." | "-").rep.!.map(s => OtherPreRelease(s))
       )
 

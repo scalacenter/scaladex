@@ -26,32 +26,37 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
   private val log = LoggerFactory.getLogger(getClass)
 
   /** artifactId is often use to express binary compatibility with a scala version (ScalaTarget)
-    * if the developer follow this convention we extract the relevant parts and we mark
-    * the library as standard. Otherwise we either have a library like gatling or the scala library itself
-    *
-    * @return The artifact name (without suffix), the Scala target, whether this project is a usual Scala library or not
-    */
-  private def extractArtifactNameAndTarget(pom: ReleaseModel)
-    : Option[(String, Option[ScalaTarget], ArtifactKind)] = {
+   * if the developer follow this convention we extract the relevant parts and we mark
+   * the library as standard. Otherwise we either have a library like gatling or the scala library itself
+   *
+   * @return The artifact name (without suffix), the Scala target, whether this project is a usual Scala library or not
+   */
+  private def extractArtifactNameAndTarget(
+      pom: ReleaseModel
+  ): Option[(String, Option[ScalaTarget], ArtifactKind)] = {
     nonStandardLibs
       .find(
         lib =>
           lib.groupId == pom.groupId &&
-            lib.artifactId == pom.artifactId)
+            lib.artifactId == pom.artifactId
+      )
       .map(_.lookup) match {
 
       case Some(ScalaTargetFromPom) =>
         pom.dependencies
-          .find(dep =>
-            dep.groupId == "org.scala-lang" &&
-              dep.artifactId == "scala-library")
+          .find(
+            dep =>
+              dep.groupId == "org.scala-lang" &&
+                dep.artifactId == "scala-library"
+          )
           .flatMap(dep => SemanticVersion(dep.version))
           .map(
             version =>
               // we assume binary compatibility
               (pom.artifactId,
                Some(ScalaTarget.scala(version.copy(patch = None))),
-               ArtifactKind.UnconventionalScalaLib))
+               ArtifactKind.UnconventionalScalaLib)
+          )
 
       case Some(NoScalaTargetPureJavaDependency) =>
         Some((pom.artifactId, None, ArtifactKind.ConventionalScalaLib))
@@ -61,7 +66,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
           version =>
             (pom.artifactId,
              Some(ScalaTarget.scala(version)),
-             ArtifactKind.UnconventionalScalaLib))
+             ArtifactKind.UnconventionalScalaLib)
+        )
 
       case None =>
         // This is a usual Scala library (whose artifact name is suffixed by the Scala binary version)
@@ -91,7 +97,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
   }
 
   private def extractMeta(
-      pomsRepoSha: List[(ReleaseModel, LocalRepository, String)]) = {
+      pomsRepoSha: List[(ReleaseModel, LocalRepository, String)]
+  ) = {
     import LocalPomRepository._
 
     val bintray = BintrayMeta.load(paths).groupBy(_.sha1)
@@ -128,8 +135,9 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
                   val resolver: Option[Resolver] =
                     if (metas.forall(_.isJCenter)) Option(JCenter)
                     else
-                      metas.headOption.map(meta =>
-                        BintrayResolver(meta.owner, meta.repo))
+                      metas.headOption.map(
+                        meta => BintrayResolver(meta.owner, meta.repo)
+                      )
 
                   (
                     pom,
@@ -138,9 +146,11 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
                     // resolver
                     resolver,
                     // filter
-                    !metas.exists(meta =>
-                      meta.owner == "typesafe" && typesafeNonOSS.contains(
-                        meta.repo))
+                    !metas.exists(
+                      meta =>
+                        meta.owner == "typesafe" && typesafeNonOSS
+                          .contains(meta.repo)
+                    )
                   )
                 }
                 case None => {
@@ -200,14 +210,15 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
   }
 
   /**
-    * @param pomsRepoSha poms and associated meta information reference
-    * @param stored read user update projects from disk
-    * @param cachedReleases use previous released cached to workarround elasticsearch consistency (write, read)
-    */
-  def apply(pomsRepoSha: List[(ReleaseModel, LocalRepository, String)],
-            stored: Boolean = true,
-            cachedReleases: Map[Project.Reference, Set[Release]] = Map())
-    : List[(Project, Set[Release])] = {
+   * @param pomsRepoSha poms and associated meta information reference
+   * @param stored read user update projects from disk
+   * @param cachedReleases use previous released cached to workarround elasticsearch consistency (write, read)
+   */
+  def apply(
+      pomsRepoSha: List[(ReleaseModel, LocalRepository, String)],
+      stored: Boolean = true,
+      cachedReleases: Map[Project.Reference, Set[Release]] = Map()
+  ): List[(Project, Set[Release])] = {
 
     val githubRepoExtractor = new GithubRepoExtractor(paths)
 
@@ -217,7 +228,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
       case (pom, created, resolver) =>
         for {
           (artifactName, target, nonStandardLib) <- extractArtifactNameAndTarget(
-            pom)
+            pom
+          )
           version <- SemanticVersion(pom.version)
           github <- githubRepoExtractor(pom)
         } yield
@@ -238,7 +250,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
       MavenReference(pom.groupId, pom.artifactId, pom.version)
 
     def maxMinRelease(
-        releases: Set[Release]): (Option[String], Option[String]) = {
+        releases: Set[Release]
+    ): (Option[String], Option[String]) = {
       def sortDate(rawDates: List[String]): List[String] = {
         rawDates
           .map(format.parseDateTime)
@@ -341,8 +354,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
               github = github,
               artifacts = releaseOptions.map(_.artifacts.sorted).getOrElse(Nil),
               releaseCount = releaseCount,
-              defaultArtifact =
-                releaseOptions.map(_.release.reference.artifact),
+              defaultArtifact = releaseOptions.map(_.release.reference.artifact),
               created = min,
               updated = max
             )
@@ -407,7 +419,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
                 /* java -> java: should not happen actually */
                 case (None, None) =>
                   log.error(
-                    s"no reference discovered for $pomMavenRef -> $depMavenRef")
+                    s"no reference discovered for $pomMavenRef -> $depMavenRef"
+                  )
                   cache0
               }
           }
@@ -427,7 +440,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
 
     def collectDependencies(
         releases: Set[Release],
-        f: Release.Reference => Option[String]): Set[String] = {
+        f: Release.Reference => Option[String]
+    ): Set[String] = {
       (for {
         release <- releases.toList
         dependency <- release.scalaDependencies.toList
