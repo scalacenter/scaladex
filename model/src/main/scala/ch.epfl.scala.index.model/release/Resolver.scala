@@ -2,9 +2,9 @@ package ch.epfl.scala.index.model
 package release
 
 /**
-  * A resolver is a place to download artifact (ex: Maven Central, etc)
-  * @param sbt see http://www.scala-sbt.org/0.13/docs/Resolvers.html#Predefined
-  */
+ * A resolver is a place to download artifact (ex: Maven Central, etc)
+ * @param sbt see http://www.scala-sbt.org/0.13/docs/Resolvers.html#Predefined
+ */
 trait Resolver {
   def name: String
   def url: Option[String]

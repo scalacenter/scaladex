@@ -59,7 +59,8 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
        'scalaVersions.*,
        'scalaJsVersions.*,
        'scalaNativeVersions.*,
-       'you.?)).tmap {
+       'you.?)
+    ).tmap {
       case (q,
             page,
             sort,
@@ -90,20 +91,30 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
     get(
       concat(
         path(searchPath)(
-          optionalSession(refreshable, usingCookies)(userId =>
-            searchParams(userId)(params => search(params, userId, searchPath)))
+          optionalSession(refreshable, usingCookies)(
+            userId =>
+              searchParams(userId)(
+                params => search(params, userId, searchPath)
+            )
+          )
         ),
         path(Segment)(
           organization =>
             optionalSession(refreshable, usingCookies)(
               userId =>
-                searchParams(userId)(params =>
-                  search(
-                    params.copy(queryString =
-                      s"${params.queryString} AND organization:$organization"),
-                    userId,
-                    organization
-                ))))
+                searchParams(userId)(
+                  params =>
+                    search(
+                      params.copy(
+                        queryString =
+                          s"${params.queryString} AND organization:$organization"
+                      ),
+                      userId,
+                      organization
+                  )
+              )
+          )
+        )
       )
     )
 }

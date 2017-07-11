@@ -22,27 +22,33 @@ case class Meta(
 object Meta {
 
   /**
-    * MetaSerializer to keep the fields ordering
-    */
+   * MetaSerializer to keep the fields ordering
+   */
   object MetaSerializer
-      extends CustomSerializer[Meta](format =>
-        (
-          {
-            case in: JValue => {
-              implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
-              in.extract[Meta]
+      extends CustomSerializer[Meta](
+        format =>
+          (
+            {
+              case in: JValue => {
+                implicit val formats = DefaultFormats ++ Seq(
+                  DateTimeSerializer
+                )
+                in.extract[Meta]
+              }
+            }, {
+              case meta: Meta => {
+                implicit val formats = DefaultFormats ++ Seq(
+                  DateTimeSerializer
+                )
+                JObject(
+                  JField("created", Extraction.decompose(meta.created)),
+                  JField("path", Extraction.decompose(meta.path)),
+                  JField("sha1", Extraction.decompose(meta.sha1))
+                )
+              }
             }
-          }, {
-            case meta: Meta => {
-              implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
-              JObject(
-                JField("created", Extraction.decompose(meta.created)),
-                JField("path", Extraction.decompose(meta.path)),
-                JField("sha1", Extraction.decompose(meta.sha1))
-              )
-            }
-          }
-      ))
+        )
+      )
 
   implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer,
                                                MetaSerializer)
@@ -51,7 +57,8 @@ object Meta {
   def load(paths: DataPaths, repository: LocalPomRepository): List[Meta] = {
     assert(
       repository == LocalPomRepository.MavenCentral ||
-        repository == LocalPomRepository.UserProvided)
+        repository == LocalPomRepository.UserProvided
+    )
 
     val metaPath = paths.meta(repository)
 

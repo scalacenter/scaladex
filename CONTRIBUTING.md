@@ -11,7 +11,7 @@ scaladex
 ├── scaladex
 ├── scaladex-contrib
 ├── scaladex-credentials (optionnal)
-└── scaladex-index
+└── scaladex-small-index
 ```
 
 ```bash
@@ -40,6 +40,8 @@ Then, open `localhost:8080` in your browser.
 ## Scalafmt
 
 Make shure to run `bin/scalafmt` to format your code.
+
+You can intall a pre-commit hook with `bin/hooks.sh`
 
 ### Elasticsearch Remote
 

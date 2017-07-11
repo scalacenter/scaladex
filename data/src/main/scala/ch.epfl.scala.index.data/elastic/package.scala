@@ -29,7 +29,9 @@ trait ProjectProtocol {
           classOf[ReleaseCandidate],
           classOf[OtherPreRelease],
           classOf[BintrayResolver]
-        )))
+        )
+      )
+    )
     .preservingEmptyValues + artifactKindSerializer
 
   private def tryEither[T](f: T): Either[Throwable, T] = {
@@ -99,7 +101,8 @@ package object elastic extends ProjectProtocol {
         LocalNode.requiredSettings(
           clusterName = "elasticsearch-local",
           homePath = homePath
-        )).elastic4sclient()
+        )
+      ).elastic4sclient()
     } else {
       val er =
         s"org.scala_lang.index.data.elasticsearch should be remote or local: $elasticsearch"

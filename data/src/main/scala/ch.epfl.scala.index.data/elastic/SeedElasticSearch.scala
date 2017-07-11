@@ -94,8 +94,11 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
     val bunch = 1000
     releases.grouped(bunch).foreach { group =>
       val bulkResults = Await.result(esClient.execute {
-        bulk(group.map(release =>
-          indexInto(indexName / releasesCollection).source(release)))
+        bulk(
+          group.map(
+            release => indexInto(indexName / releasesCollection).source(release)
+          )
+        )
       }, Duration.Inf)
 
       if (bulkResults.hasFailures) {
@@ -111,8 +114,11 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
     log.info(s"Indexing projects (${projects.size})")
     projects.grouped(bunch2).foreach { group =>
       val bulkResults = Await.result(esClient.execute {
-        bulk(group.map(project =>
-          indexInto(indexName / projectsCollection).source(project)))
+        bulk(
+          group.map(
+            project => indexInto(indexName / projectsCollection).source(project)
+          )
+        )
       }, Duration.Inf)
 
       if (bulkResults.hasFailures) {

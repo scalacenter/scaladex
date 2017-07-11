@@ -33,12 +33,12 @@ package object github extends Parsers {
     path(paths, github).resolve(Paths.get("chatroom.txt"))
 
   /**
-    * extracts the last page from a given link string
-    * - <https://api.github.com/repositories/130013/issues?page=2>; rel="next", <https://api.github.com/repositories/130013/issues?page=23>; rel="last"
-    * - <https://api.github.com/user/repos?page=2>; rel=next, <https://api.github.com/user/repos?page=2>; rel=last
-    * @param links the links
-    * @return
-    */
+   * extracts the last page from a given link string
+   * - <https://api.github.com/repositories/130013/issues?page=2>; rel="next", <https://api.github.com/repositories/130013/issues?page=23>; rel="last"
+   * - <https://api.github.com/user/repos?page=2>; rel=next, <https://api.github.com/user/repos?page=2>; rel=last
+   * @param links the links
+   * @return
+   */
   def extractLastPage(links: String): Int = {
     val pattern = """page=([0-9]+)>; rel=["]?([a-z]+)["]?""".r
     val pages = pattern

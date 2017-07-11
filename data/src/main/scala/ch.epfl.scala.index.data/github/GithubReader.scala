@@ -16,18 +16,18 @@ import scala.util.{Try, Success}
 import scala.reflect.Manifest
 
 /**
-  * Github reader - to read all related infos from downloaded github files
-  * and map / convert to GithubInfo object
-  */
+ * Github reader - to read all related infos from downloaded github files
+ * and map / convert to GithubInfo object
+ */
 object GithubReader {
 
   private val log = LoggerFactory.getLogger(getClass)
 
   /**
-    * read info from github files and convert to GithubInfo object
-    * @param github
-    * @return
-    */
+   * read info from github files and convert to GithubInfo object
+   * @param github
+   * @return
+   */
   def apply(paths: DataPaths, github: GithubRepo): Option[GithubInfo] = {
 
     info(paths, github).map { info =>
@@ -46,10 +46,10 @@ object GithubReader {
   }
 
   /**
-    * read the readme file if exists
-    * @param github the git repo
-    * @return
-    */
+   * read the readme file if exists
+   * @param github the git repo
+   * @return
+   */
   def readme(paths: DataPaths, github: GithubRepo): Try[String] = Try {
 
     val readmePath = githubReadmePath(paths, github)
@@ -57,10 +57,10 @@ object GithubReader {
   }
 
   /**
-    * read the main info from file if exists
-    * @param github the git repo
-    * @return
-    */
+   * read the main info from file if exists
+   * @param github the git repo
+   * @return
+   */
   def info(paths: DataPaths, github: GithubRepo): Try[GithubInfo] = Try {
 
     import Json4s._
@@ -82,10 +82,10 @@ object GithubReader {
   }
 
   /**
-    * extract the contributors if they exist
-    * @param github the current repo
-    * @return
-    */
+   * extract the contributors if they exist
+   * @param github the current repo
+   * @return
+   */
   def contributors(paths: DataPaths,
                    github: GithubRepo): Try[List[GithubContributor]] = Try {
 
@@ -104,10 +104,10 @@ object GithubReader {
   }
 
   /**
-    * extract the topics if they exist
-    * @param github the current repo
-    * @return
-    */
+   * extract the topics if they exist
+   * @param github the current repo
+   * @return
+   */
   def topics(paths: DataPaths, github: GithubRepo): Try[List[String]] = Try {
 
     import Json4s._
@@ -125,10 +125,10 @@ object GithubReader {
   }
 
   /**
-    * extract the issues if they exist
-    * @param github the current repo
-    * @return
-    */
+   * extract the issues if they exist
+   * @param github the current repo
+   * @return
+   */
   def beginnerIssues(paths: DataPaths,
                      github: GithubRepo): Try[List[GithubIssue]] = Try {
 
@@ -153,14 +153,15 @@ object GithubReader {
             issue.title,
             issue.bodyText,
             Url(issue.url)
-        ))
+        )
+      )
   }
 
   /**
-    * read the contributing guide from file if exists
-    * @param github the git repo
-    * @return
-    */
+   * read the contributing guide from file if exists
+   * @param github the git repo
+   * @return
+   */
   def contributingGuide(paths: DataPaths,
                         github: GithubRepo): Try[Option[Url]] = Try {
 
@@ -173,9 +174,9 @@ object GithubReader {
   }
 
   /**
-    * read the chatroom from file if it exists
-    * @return
-    */
+   * read the chatroom from file if it exists
+   * @return
+   */
   def chatroom(paths: DataPaths, github: GithubRepo): Try[Url] = Try {
 
     val chatroomPath = githubRepoChatroomPath(paths, github)
@@ -223,7 +224,8 @@ object GithubReader {
                     }
                   )
               }
-          ))
+          )
+        )
 
     implicit val formats = DefaultFormats ++ Seq(MovedSerializer)
   }
@@ -234,9 +236,9 @@ object GithubReader {
   }
 
   /**
-    * keep track of repository remaning/tranfers
-    *
-    */
+   * keep track of repository remaning/tranfers
+   *
+   */
   def appendMovedRepository(paths: DataPaths, repo: GithubRepo): Unit = {
     import Moved.formats
     info(paths, repo) match {

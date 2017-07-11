@@ -20,13 +20,14 @@ class DownloadParentPoms(repository: LocalPomRepository,
                          paths: DataPaths,
                          tmp: Option[Path] = None)(
     implicit val system: ActorSystem,
-    implicit val materializer: ActorMaterializer)
-    extends PlayWsDownloader {
+    implicit val materializer: ActorMaterializer
+) extends PlayWsDownloader {
 
   private val log = LoggerFactory.getLogger(getClass)
 
   assert(
-    repository == LocalPomRepository.MavenCentral || repository == LocalPomRepository.Bintray)
+    repository == LocalPomRepository.MavenCentral || repository == LocalPomRepository.Bintray
+  )
 
   val parentPomsPath = paths.parentPoms(repository)
   val pomReader =
@@ -36,10 +37,10 @@ class DownloadParentPoms(repository: LocalPomRepository,
     }
 
   /**
-    * get the play-ws request by using the dependency
-    * @param dep the current depenency
-    * @return
-    */
+   * get the play-ws request by using the dependency
+   * @param dep the current depenency
+   * @return
+   */
   def downloadRequest(wsClient: AhcWSClient, dep: Dependency): WSRequest = {
     val urlBase =
       if (repository == LocalPomRepository.MavenCentral)
@@ -51,13 +52,13 @@ class DownloadParentPoms(repository: LocalPomRepository,
   }
 
   /**
-    * process the HTTP response - save the file to disk it status is 200 (OK)
-    * otherwise return 1 for failed download
-    *
-    * @param dep the current dependency
-    * @param response the current response
-    * @return
-    */
+   * process the HTTP response - save the file to disk it status is 200 (OK)
+   * otherwise return 1 for failed download
+   *
+   * @param dep the current dependency
+   * @param response the current response
+   * @return
+   */
   def processResponse(dep: Dependency, response: WSResponse): Int = {
 
     if (200 == response.status) {
@@ -76,10 +77,10 @@ class DownloadParentPoms(repository: LocalPomRepository,
   }
 
   /**
-    * do the main run
-    *
-    * @param lastFailedToDownload the number of last failed downloads
-    */
+   * do the main run
+   *
+   * @param lastFailedToDownload the number of last failed downloads
+   */
   def run(lastFailedToDownload: Int = 0): Unit = {
 
     /* load poms */

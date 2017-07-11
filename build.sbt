@@ -3,13 +3,16 @@ import org.scalajs.sbtplugin.cross.CrossProject
 
 import Deployment.githash
 
-val akkaVersion = "2.5.2"
+val akkaVersion = "2.5.3"
 val upickleVersion = "0.4.4"
 val scalatagsVersion = "0.6.5"
 val autowireVersion = "0.2.6"
-val akkaHttpVersion = "10.0.6"
+val akkaHttpVersion = "10.0.9"
 val elastic4sVersion = "5.4.5"
+lazy val scalaTestVersion = "3.0.1"
 
+def akka(module: String) =
+  "com.typesafe.akka" %% ("akka-" + module) % akkaVersion
 def akkaHttpCore = "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
 
 val nscalaTime = "com.github.nscala-time" %% "nscala-time" % "2.14.0"
@@ -36,10 +39,7 @@ lazy val commonSettings = Seq(
     "-feature",
     "-unchecked"
   ),
-  scalacOptions in (Test, console) -= "-Ywarn-unused-import",
-  scalacOptions in (Compile, consoleQuick) -= "-Ywarn-unused-import",
-  libraryDependencies += "org.specs2" %% "specs2-core" % "3.8.6" % "test",
-  scalacOptions in Test ++= Seq("-Yrangepos"),
+  libraryDependencies += "org.scalatest" %% "scalatest" % scalaTestVersion % Test,
   javaOptions in reStart ++= {
     val base = (baseDirectory in ThisBuild).value
 
@@ -107,6 +107,7 @@ lazy val server = project
   .settings(packageScalaJS(client))
   .settings(
     libraryDependencies ++= Seq(
+      akka("testkit") % Test,
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
       "ch.megard" %% "akka-http-cors" % "0.2.1",
       "com.softwaremill.akka-http-session" %% "core" % "0.4.0",

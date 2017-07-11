@@ -24,11 +24,11 @@ import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
 
 /**
-  * Fetches sbt plugins information
-  */
-final class BintrayDownloadSbtPlugins(paths: DataPaths)(
-    implicit val materializer: Materializer,
-    val system: ActorSystem)
+ * Fetches sbt plugins information
+ */
+final class BintrayDownloadSbtPlugins(
+    paths: DataPaths
+)(implicit val materializer: Materializer, val system: ActorSystem)
     extends PlayWsDownloader
     with BintrayProtocol {
 
@@ -59,9 +59,9 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
   }
 
   /**
-    * Downloads all sbt plugin releases from bintray.
-    * If some releases have already been downloaded in the past, only newer releases are downloaded.
-    */
+   * Downloads all sbt plugin releases from bintray.
+   * If some releases have already been downloaded in the past, only newer releases are downloaded.
+   */
   def downloadSbtPlugins(): Future[_] =
     for {
       (oldReleases, lastDownload) <- Future.successful(ivysData.read())
@@ -71,7 +71,8 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
     }
 
   private def parseRelease(
-      release: SbtPluginReleaseWithModuleDescriptor): SbtPluginReleaseModel = {
+      release: SbtPluginReleaseWithModuleDescriptor
+  ): SbtPluginReleaseModel = {
     val descriptor = release.moduleDescriptor
     val releaseModel =
       ReleaseModel(
@@ -117,21 +118,24 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
     val publicationDate =
       new DateTime(
         Option(descriptor.getPublicationDate)
-          .getOrElse(sys.error("Missing publication date"))).toString
+          .getOrElse(sys.error("Missing publication date"))
+      ).toString
     SbtPluginReleaseModel(releaseModel,
                           publicationDate,
                           release.sbtRelease.sha1)
   }
 
-  private def fetchNewReleases(lastDownload: Option[String])
-    : Future[List[SbtPluginReleaseWithModuleDescriptor]] =
+  private def fetchNewReleases(
+      lastDownload: Option[String]
+  ): Future[List[SbtPluginReleaseWithModuleDescriptor]] =
     managed { client =>
       val lastDownload =
         Try(new String(Files.readAllBytes(paths.ivysLastDownload))).toOption
 
       Future
         .traverse(pluginsRepositories)(
-          (listSbtPluginReleases(client, lastDownload) _).tupled)
+          (listSbtPluginReleases(client, lastDownload) _).tupled
+        )
         .map(_.flatten) // Concatenate the plugins of all the `pluginRepositories`
 
     // TODO Check sha1
@@ -142,15 +146,16 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
     }
 
   /**
-    * @return All the sbt plugin releases found in the given repository
-    * @param client  HTTP client
-    * @param subject User or organization name (e.g. "sbt")
-    * @param repo    Repository name (e.g. "sbt-plugin-releases")
-    */
+   * @return All the sbt plugin releases found in the given repository
+   * @param client  HTTP client
+   * @param subject User or organization name (e.g. "sbt")
+   * @param repo    Repository name (e.g. "sbt-plugin-releases")
+   */
   private def listSbtPluginReleases(client: WSClient,
                                     lastDownload: Option[String])(
       subject: String,
-      repo: String): Future[List[SbtPluginReleaseWithModuleDescriptor]] = {
+      repo: String
+  ): Future[List[SbtPluginReleaseWithModuleDescriptor]] = {
 
     def fetchPage(startPos: Int): Future[WSResponse] = {
       val req1 =
@@ -163,8 +168,9 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
             "start_pos" -> startPos.toString
           )
       val req2 =
-        lastDownload.fold(req1)(date =>
-          req1.withQueryStringParameters("created_after" -> date))
+        lastDownload.fold(req1)(
+          date => req1.withQueryStringParameters("created_after" -> date)
+        )
       withAuth(req2).get()
     }
 
@@ -220,8 +226,9 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
 
     releases
       .foldLeft(
-        Future.successful(
-          List.newBuilder[SbtPluginReleaseWithModuleDescriptor])) {
+        Future
+          .successful(List.newBuilder[SbtPluginReleaseWithModuleDescriptor])
+      ) {
         case (eventuallyReleases, release) =>
           for {
             previousReleases <- eventuallyReleases // The order of these two lines is important!
@@ -230,7 +237,8 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
           } yield
             previousReleases += SbtPluginReleaseWithModuleDescriptor(
               release,
-              moduleDescriptor)
+              moduleDescriptor
+            )
       }
       .map { builder =>
         maybeProgress.foreach(_.stop())
@@ -239,12 +247,13 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
   }
 
   /**
-    * @return The ivy module descriptor of the given file path
-    * @param client HTTP client
-    * @param release Release to find the module descriptor for
-    */
-  private def fetchModuleDescriptor(client: WSClient)(
-      release: SbtPluginRelease): Future[ModuleDescriptor] =
+   * @return The ivy module descriptor of the given file path
+   * @param client HTTP client
+   * @param release Release to find the module descriptor for
+   */
+  private def fetchModuleDescriptor(
+      client: WSClient
+  )(release: SbtPluginRelease): Future[ModuleDescriptor] =
     Future {
       concurrent.blocking {
         XmlModuleDescriptorParser
@@ -252,7 +261,8 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
           .parseDescriptor(
             new IvySettings(),
             downloadUrl(release.subject, release.repo, release.ivyPath),
-            /* validate = */ false)
+            /* validate = */ false
+          )
       }
     }.andThen {
       case Failure(t) =>
@@ -260,7 +270,8 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
     }
 
   private def writeSbtPluginReleases(
-      releases: List[SbtPluginReleaseWithModuleDescriptor]): Unit = {
+      releases: List[SbtPluginReleaseWithModuleDescriptor]
+  ): Unit = {
 
     val count = releases.size
     val maybeProgress =
@@ -299,15 +310,15 @@ final class BintrayDownloadSbtPlugins(paths: DataPaths)(
 object BintrayDownloadSbtPlugins {
 
   /**
-    * @param subject User or organization name (e.g. "sbt")
-    * @param repo Repository name (e.g. "sbt-plugin-releases")
-    * @param organization Organization name of the published artifact (e.g. "com.typesafe.play")
-    * @param artifact Artifact name (e.g. "sbt-plugin")
-    * @param scalaVersion Scala version (e.g. "2.10")
-    * @param sbtVersion Sbt version (e.g. "0.13")
-    * @param version Release version (e.g. "1.0.0")
-    * @param ivyPath Path of the ivy.xml file
-    */
+   * @param subject User or organization name (e.g. "sbt")
+   * @param repo Repository name (e.g. "sbt-plugin-releases")
+   * @param organization Organization name of the published artifact (e.g. "com.typesafe.play")
+   * @param artifact Artifact name (e.g. "sbt-plugin")
+   * @param scalaVersion Scala version (e.g. "2.10")
+   * @param sbtVersion Sbt version (e.g. "0.13")
+   * @param version Release version (e.g. "1.0.0")
+   * @param ivyPath Path of the ivy.xml file
+   */
   case class SbtPluginRelease(
       subject: String,
       repo: String,

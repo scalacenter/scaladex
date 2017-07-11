@@ -1,11 +1,11 @@
 package ch.epfl.scala.index.model
 
 /**
-  * Licence representation
-  * @param name the licence name
-  * @param shortName the short name
-  * @param url the url for further reading
-  */
+ * Licence representation
+ * @param name the licence name
+ * @param shortName the short name
+ * @param url the url for further reading
+ */
 case class License(name: String, shortName: String, url: Option[String])
 
 object License {
@@ -85,16 +85,17 @@ object License {
     "Typesafe Subscription Agreement",
     "Typesafe Subscription Agreement",
     Some(
-      "http://downloads.typesafe.com/website/legal/TypesafeSubscriptionAgreement.pdf")
+      "http://downloads.typesafe.com/website/legal/TypesafeSubscriptionAgreement.pdf"
+    )
   )
   val Unlicense = spdx("Unlicense", "The Unlicense")
   val W3C = spdx("W3C", "W3C Software Notice and License")
   val WTFPL = spdx("WTFPL", "Do What The F*ck You Want To Public License")
 
   /**
-    * list of all licences
-    * @return
-    */
+   * list of all licences
+   * @return
+   */
   def all = List(
     Academic,
     Affero,

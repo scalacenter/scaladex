@@ -33,7 +33,8 @@ object Deployment {
     }
 
   private def deploymentTask(
-      userName: String): Def.Initialize[Task[Deployment]] =
+      userName: String
+  ): Def.Initialize[Task[Deployment]] =
     Def.task {
       new Deployment(
         rootFolder = (baseDirectory in ThisBuild).value,
@@ -209,7 +210,8 @@ class Deployment(rootFolder: File,
       Process("git pull origin master", secretFolder)
     } else {
       Process(
-        s"git clone git@github.com:scaladex/$scaladexCredentials.git $secretFolder")
+        s"git clone git@github.com:scaladex/$scaladexCredentials.git $secretFolder"
+      )
     }
 
     val secretConfig = (secretFolder / "application.conf").toPath

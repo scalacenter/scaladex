@@ -3,35 +3,35 @@ package ch.epfl.scala.index.model
 import misc.{GithubInfo, GithubRepo, Url}
 
 /**
-  * Project representation which contains all necessary meta data to
-  * the project. Equivalent to a github repository or a sbt build.
-  *
-  * @param organization (ex: typelevel)
-  * @param repository (ex: spark)
-  * @param github github information representation
-  * @param defaultStableVersion when selecting a default version avoid preReleases if possible (otherwise select latest version)
-  * @param defaultArtifact when we land on a project page (ex: typelevel/cats) specify an artifact to select by default
-  * @param artifacts names for this project (ex: cats-core, cats-free, ...)
-  * @param releaseCount how many distinct versions we can find
-  * @param customScalaDoc expression to substitute scaladoc
-  * @param documentationLinks user documentation & etc
-  * @param deprecated whether or not project is deprecated
-  * @param contributorsWanted true if project is looking for new contributors
-  * @param artifactDeprecations
-  * @param cliArtifacts
-  * @param hasCli true if project has cli
-  * @param liveData the project was updated/created by a user
-  * @param id elasticsearch id only used for updating projects
-  * @param created date of the first release
-  * @param updated date of the last release
-  * @param targetType (ex: scala_2.11, scala_2.12, scala-js_0.5)
-  * @param scalaVersion (ex: scala_2.11, scala_2.12)
-  * @param scalaJsVersion (ex: scala-js_0.5)
-  * @param scalaNativeVersion
-  * @param dependencies to aggregate most depended upon libs (ex: spark, play framework, ...)
-  * @param dependentCount Number of artifacts that depends on at least one release of at least one artifact of this project
-  * @param primaryTopic most significative topic (ex: Circe: json)
-  */
+ * Project representation which contains all necessary meta data to
+ * the project. Equivalent to a github repository or a sbt build.
+ *
+ * @param organization (ex: typelevel)
+ * @param repository (ex: spark)
+ * @param github github information representation
+ * @param defaultStableVersion when selecting a default version avoid preReleases if possible (otherwise select latest version)
+ * @param defaultArtifact when we land on a project page (ex: typelevel/cats) specify an artifact to select by default
+ * @param artifacts names for this project (ex: cats-core, cats-free, ...)
+ * @param releaseCount how many distinct versions we can find
+ * @param customScalaDoc expression to substitute scaladoc
+ * @param documentationLinks user documentation & etc
+ * @param deprecated whether or not project is deprecated
+ * @param contributorsWanted true if project is looking for new contributors
+ * @param artifactDeprecations
+ * @param cliArtifacts
+ * @param hasCli true if project has cli
+ * @param liveData the project was updated/created by a user
+ * @param id elasticsearch id only used for updating projects
+ * @param created date of the first release
+ * @param updated date of the last release
+ * @param targetType (ex: scala_2.11, scala_2.12, scala-js_0.5)
+ * @param scalaVersion (ex: scala_2.11, scala_2.12)
+ * @param scalaJsVersion (ex: scala-js_0.5)
+ * @param scalaNativeVersion
+ * @param dependencies to aggregate most depended upon libs (ex: spark, play framework, ...)
+ * @param dependentCount Number of artifacts that depends on at least one release of at least one artifact of this project
+ * @param primaryTopic most significative topic (ex: Circe: json)
+ */
 case class Project(
     organization: String,
     repository: String,
@@ -63,21 +63,21 @@ case class Project(
   def reference = Project.Reference(organization, repository)
 
   /**
-    * create github representation for the repository
-    *
-    * @return
-    */
+   * create github representation for the repository
+   *
+   * @return
+   */
   def githubRepo = reference.githubRepo
 }
 
 object Project {
 
   /**
-    * Simplified project reference name ex(typelevel/cats)
-    *
-    * @param organization github organization. ex: typelevel, akka, etc
-    * @param repository github repository. ex: cats, akka, etc
-    */
+   * Simplified project reference name ex(typelevel/cats)
+   *
+   * @param organization github organization. ex: typelevel, akka, etc
+   * @param repository github repository. ex: cats, akka, etc
+   */
   case class Reference(organization: String, repository: String) {
     def githubRepo = GithubRepo(organization, repository)
   }

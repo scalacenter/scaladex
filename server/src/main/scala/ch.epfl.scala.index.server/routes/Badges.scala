@@ -42,7 +42,8 @@ class Badges(dataRepository: DataRepository) {
           ("logo",
            java.net.URLEncoder
              .encode(l, "ascii")
-             .replaceAllLiterally("+", "%2B"))),
+             .replaceAllLiterally("+", "%2B"))
+      ),
       logoWidth.map(w => ("logoWidth", w.toString))
     ).flatten.map { case (k, v) => k + "=" + v }.mkString("?", "&", "")
 
@@ -95,8 +96,9 @@ class Badges(dataRepository: DataRepository) {
       concat(
         pathPrefix(Segment / Segment) { (organization, repository) =>
           concat(
-            path(Segment / "latest.svg")(artifact =>
-              latest(organization, repository, Some(artifact))),
+            path(Segment / "latest.svg")(
+              artifact => latest(organization, repository, Some(artifact))
+            ),
             path("latest.svg")(
               latest(organization, repository, None)
             )
@@ -114,7 +116,10 @@ class Badges(dataRepository: DataRepository) {
                                  color,
                                  style,
                                  logo,
-                                 logoWidth))))
+                                 logoWidth)
+                )
+            )
+          )
         )
       )
     )

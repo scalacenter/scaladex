@@ -3,20 +3,20 @@ package ch.epfl.scala.index.model
 import release._
 
 /**
-  * Artifact release representation
-  * @param maven famous maven triple: org.typelevel - cats-core_sjs0.6_2.11 - 0.6.0
-  * @param reference similar to maven but with a clean artifact name
-  * @param name human readable name (ex: Apache Spark)
-  * @param resolver if not on maven central (ex: Bintray)
-  * @param description the description of that release
-  * @param released first release date
-  * @param licenses a bunch of licences
-  * @param artifactKind kind of artifact (whether it uses the convention of being suffixed by the targeted scala version, or it is an sbt plugin)
-  * @param id Elastic search id
-  * @param scalaDependencies bunch of scala dependencies
-  * @param javaDependencies bunch of java dependencies
-  * @param reverseDependencies bunch of reversed dependencies
-  */
+ * Artifact release representation
+ * @param maven famous maven triple: org.typelevel - cats-core_sjs0.6_2.11 - 0.6.0
+ * @param reference similar to maven but with a clean artifact name
+ * @param name human readable name (ex: Apache Spark)
+ * @param resolver if not on maven central (ex: Bintray)
+ * @param description the description of that release
+ * @param released first release date
+ * @param licenses a bunch of licences
+ * @param artifactKind kind of artifact (whether it uses the convention of being suffixed by the targeted scala version, or it is an sbt plugin)
+ * @param id Elastic search id
+ * @param scalaDependencies bunch of scala dependencies
+ * @param javaDependencies bunch of java dependencies
+ * @param reverseDependencies bunch of reversed dependencies
+ */
 case class Release(
     maven: MavenReference,
     reference: Release.Reference,
@@ -43,9 +43,9 @@ case class Release(
 ) {
 
   /**
-    * string representation for sbt dependency
-    * @return
-    */
+   * string representation for sbt dependency
+   * @return
+   */
   def sbtInstall: String = {
 
     val scalaJs = reference.target.flatMap(_.scalaJsVersion).isDefined
@@ -60,7 +60,8 @@ case class Release(
 
       List(
         Some(
-          s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""),
+          s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""
+        ),
         resolver.map("resolvers += " + _.sbt)
       ).flatten.mkString(System.lineSeparator)
     }
@@ -77,33 +78,34 @@ case class Release(
   }
 
   /**
-    * string representation for Ammonite loading
-    * @return
-    */
+   * string representation for Ammonite loading
+   * @return
+   */
   def ammInstall = {
 
     def addResolver(r: Resolver) = s"""import ammonite._, Resolvers._
-      |val res = Resolver.Http(
-      |  "${r.name}",
-      |  "${r.url}",
-      |  IvyPattern,
-      |  false)
-      |interp.resolvers() = interp.resolvers() :+ res""".stripMargin
+                                      |val res = Resolver.Http(
+                                      |  "${r.name}",
+                                      |  "${r.url}",
+                                      |  IvyPattern,
+                                      |  false)
+                                      |interp.resolvers() = interp.resolvers() :+ res""".stripMargin
 
     val artifactOperator =
       if (artifactKind == ArtifactKind.UnconventionalScalaLib) ":" else "::"
 
     List(
       Some(
-        s"import $$ivy.`${maven.groupId}$artifactOperator${reference.artifact}:${reference.version}`"),
+        s"import $$ivy.`${maven.groupId}$artifactOperator${reference.artifact}:${reference.version}`"
+      ),
       resolver.map(addResolver)
     ).flatten.mkString(System.lineSeparator)
   }
 
   /**
-    * string representation for maven dependency
-    * @return
-    */
+   * string representation for maven dependency
+   * @return
+   */
   def mavenInstall = {
     import maven._
     s"""|<dependency>
@@ -114,18 +116,18 @@ case class Release(
   }
 
   /**
-    * string representation for gradle dependency
-    * @return
-    */
+   * string representation for gradle dependency
+   * @return
+   */
   def gradleInstall = {
     import maven._
     s"compile group: '$groupId', name: '$artifactId', version: '$version'"
   }
 
   /**
-    * Url to the scala-docs.
-    * @return
-    */
+   * Url to the scala-docs.
+   * @return
+   */
   def scalaDocURL(customScalaDoc: Option[String]): Option[String] = {
     customScalaDoc match {
       case None =>
@@ -143,15 +145,16 @@ case class Release(
   }
 
   def documentationURLs(
-      documentationLinks: List[(String, String)]): List[(String, String)] = {
+      documentationLinks: List[(String, String)]
+  ): List[(String, String)] = {
     documentationLinks.map { case (label, url) => (label, evalLink(url)) }
   }
 
   /** Documentation link are often related to a release version
-    * for example: https://playframework.com/documentation/2.6.x/Home
-    * we want to substitute input such as
-    * https://playframework.com/documentation/[major].[minor].x/Home
-    */
+   * for example: https://playframework.com/documentation/2.6.x/Home
+   * we want to substitute input such as
+   * https://playframework.com/documentation/[major].[minor].x/Home
+   */
   private def evalLink(rawLink: String): String = {
     rawLink
       .replaceAllLiterally("[groupId]", maven.groupId.toString)
@@ -163,8 +166,8 @@ case class Release(
   }
 
   /**
-    * ordered scala dependencies - tests last
-    */
+   * ordered scala dependencies - tests last
+   */
   lazy val orderedDependencies = {
     val (a, b) = scalaDependencies
       .sortBy(_.reference.name)
@@ -173,9 +176,9 @@ case class Release(
   }
 
   /**
-    * ordered java dependencies - tests last
-    * - watch out the performance on /scala/scala-library
-    */
+   * ordered java dependencies - tests last
+   * - watch out the performance on /scala/scala-library
+   */
   lazy val orderedJavaDependencies = {
 
     val (a, b) = javaDependencies
@@ -185,9 +188,9 @@ case class Release(
   }
 
   /**
-    * ordered reverse scala dependencies - tests last
-    * - watch out the performance on /scala/scala-library
-    */
+   * ordered reverse scala dependencies - tests last
+   * - watch out the performance on /scala/scala-library
+   */
   lazy val orderedReverseDependencies = {
 
     val (a, b) = reverseDependencies.partition(_.scope.contains("test"))
@@ -195,8 +198,8 @@ case class Release(
   }
 
   /** collect all unique organization/artifact dependency
-    * - watch out the performance on /scala/scala-library
-    */
+   * - watch out the performance on /scala/scala-library
+   */
   lazy val uniqueOrderedReverseDependencies: Seq[ScalaDependency] = {
 
     orderedReverseDependencies
@@ -208,24 +211,25 @@ case class Release(
   }
 
   /**
-    * number of dependencies (java + scala)
-    */
+   * number of dependencies (java + scala)
+   */
   lazy val dependencyCount = scalaDependencies.size + javaDependencies.size
 
   /**
-    * number of internal dependencies
-    */
+   * number of internal dependencies
+   */
   lazy val internalDependencyCount = internalDependencies.size
 
   /**
-    * collect a list of version for a reverse dependency
-    * - watch out the performance on /scala/scala-library
-    *
-    * @param dep current looking dependency
-    * @return
-    */
+   * collect a list of version for a reverse dependency
+   * - watch out the performance on /scala/scala-library
+   *
+   * @param dep current looking dependency
+   * @return
+   */
   def versionsForReverseDependencies(
-      dep: ScalaDependency): Seq[SemanticVersion] = {
+      dep: ScalaDependency
+  ): Seq[SemanticVersion] = {
 
     orderedReverseDependencies
       .filter(d => d.reference.name == dep.reference.name)
@@ -236,10 +240,10 @@ case class Release(
 object Release {
 
   /**
-    * @param organization (ex: typelevel | akka)
-    * @param repository (ex: cats | akka)
-    * @param artifact (ex: cats-core | akka-http-experimental)
-    */
+   * @param organization (ex: typelevel | akka)
+   * @param repository (ex: cats | akka)
+   * @param artifact (ex: cats-core | akka-http-experimental)
+   */
   case class Reference(
       organization: String,
       repository: String,

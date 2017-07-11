@@ -29,9 +29,11 @@ class OAuth2(github: Github, session: GithubUserSession) {
                     "client_id" -> github.clientId,
                     "scope" -> "read:org",
                     "state" -> referer.map(_.value).getOrElse("/")
-                  )),
+                  )
+                ),
                 TemporaryRedirect
-            ))
+            )
+          )
         ),
         path("logout")(
           headerValueByType[Referer](()) { referer =>
@@ -65,12 +67,14 @@ class OAuth2(github: Github, session: GithubUserSession) {
                           ctx.complete(
                             HttpResponse(
                               status = TemporaryRedirect,
-                              headers = headers.Location(
-                                Uri(state.getOrElse("/"))) :: Nil,
+                              headers = headers
+                                .Location(Uri(state.getOrElse("/"))) :: Nil,
                               entity = HttpEntity.Empty
                             )
-                        ))
-                  ))
+                        )
+                      )
+                  )
+                )
               }
             )
           )

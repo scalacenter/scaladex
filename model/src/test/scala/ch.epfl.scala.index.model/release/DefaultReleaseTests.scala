@@ -1,7 +1,9 @@
 package ch.epfl.scala.index.model
 package release
 
-object DefaultReleaseTests extends org.specs2.mutable.Specification {
+import org.scalatest._
+
+class DefaultReleaseTests extends FunSpec {
 
   def emptyRelease(maven: MavenReference,
                    reference: Release.Reference): Release =
@@ -52,8 +54,8 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
       .toSet
   }
 
-  "Default Release" >> {
-    "latest version pre release scala" >> {
+  describe("Default Release") {
+    it("latest version pre release scala") {
 
       val organization = "typelevel"
       val repository = "cats"
@@ -91,11 +93,7 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
       )
 
       val result =
-        DefaultRelease(repository,
-                       ReleaseSelection.empty,
-                       releases,
-                       None,
-                       true)
+        DefaultRelease(repository, ReleaseSelection.empty, releases, None, true)
 
       val versions: List[SemanticVersion] =
         List(
@@ -135,12 +133,13 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
                 Some(ScalaTarget.scala(SemanticVersion("2.11").get))
               )
             )
-          ))
+          )
+        )
 
-      expected ==== result
+      assert(expected == result)
     }
 
-    "selected artifact" >> {
+    it("selected artifact") {
       val organization = "akka"
       val repository = "akka"
       val groupdId = "com.typesafe.akka"
@@ -191,9 +190,10 @@ object DefaultReleaseTests extends org.specs2.mutable.Specification {
                 Some(ScalaTarget.scala(SemanticVersion("2.11").get))
               )
             )
-          ))
+          )
+        )
 
-      result ==== expected
+      assert(result == expected)
     }
   }
 }

@@ -25,8 +25,9 @@ case class ProjectForm(
       if (project.github.isEmpty) {
         Some(GithubInfo(topics = keywords))
       } else {
-        project.github.map(github =>
-          github.copy(topics = github.topics ++ keywords))
+        project.github.map(
+          github => github.copy(topics = github.topics ++ keywords)
+        )
       }
 
     project.copy(

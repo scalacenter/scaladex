@@ -47,7 +47,8 @@ object LiveProjectsSerializer
                   }
               )
           }
-      ))
+      )
+    )
 
 trait LiveProjectsProtocol {
   implicit val formats: Formats = DefaultFormats ++ Seq(LiveProjectsSerializer)
@@ -82,8 +83,8 @@ object SaveLiveData extends LiveProjectsProtocol {
   }
 
   // Note: we use a future here just to catch exceptions. Our code is blocking, though.
-  def saveProject(project: Project, paths: DataPaths)(
-      implicit ec: ExecutionContext): Future[_] =
+  def saveProject(project: Project,
+                  paths: DataPaths)(implicit ec: ExecutionContext): Future[_] =
     Future {
       concurrent.blocking {
         val stored = SaveLiveData.storedProjects(paths)

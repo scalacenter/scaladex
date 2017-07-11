@@ -98,8 +98,9 @@ object Client {
       )
     } else if (event.keyCode == KeyCode.Down && completionSelection.choices.nonEmpty) {
       moveSelection(
-        completionSelection.selected.fold[Option[Int]](Some(0))(i =>
-          Some(math.min(i + 1, completionSelection.choices.size - 1)))
+        completionSelection.selected.fold[Option[Int]](Some(0))(
+          i => Some(math.min(i + 1, completionSelection.choices.size - 1))
+        )
       )
     } else if (event.keyCode == KeyCode.Enter) {
       completionSelection.selected.foreach { selected =>

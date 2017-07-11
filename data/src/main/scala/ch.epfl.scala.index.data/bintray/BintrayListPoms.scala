@@ -31,8 +31,8 @@ import System.{lineSeparator => nl}
 
 class BintrayListPoms(paths: DataPaths)(
     implicit val system: ActorSystem,
-    implicit val materializer: ActorMaterializer)
-    extends BintrayProtocol
+    implicit val materializer: ActorMaterializer
+) extends BintrayProtocol
     with PlayWsDownloader {
 
   private val log = LoggerFactory.getLogger(getClass)
@@ -45,28 +45,28 @@ class BintrayListPoms(paths: DataPaths)(
   import system.dispatcher
 
   /** paginated search query for bintray - append the query string to
-    * the request object
-    *
-    * @param page the page credentials to download
-    * @return
-    */
+   * the request object
+   *
+   * @param page the page credentials to download
+   * @return
+   */
   private def discover(wsClient: AhcWSClient,
                        page: PomListDownload): WSRequest = {
-    val query = page.lastSearchDate.fold(Seq[(String, String)]())(after =>
-      Seq("created_after" -> (after.toLocalDateTime.toString + "Z"))) ++ Seq(
-      "name" -> s"${page.query}*.pom",
-      "start_pos" -> page.page.toString)
+    val query = page.lastSearchDate.fold(Seq[(String, String)]())(
+      after => Seq("created_after" -> (after.toLocalDateTime.toString + "Z"))
+    ) ++ Seq("name" -> s"${page.query}*.pom", "start_pos" -> page.page.toString)
 
     withAuth(wsClient.url(s"$bintrayApi/search/file"))
       .withQueryStringParameters(query: _*)
   }
 
   /** Fetch bintray first, to find out the number of pages and items to iterate
-    * them over
-    */
+   * them over
+   */
   def getNumberOfPages(
       query: String,
-      lastCheckDate: Option[DateTime]): Future[InternalBintrayPagination] = {
+      lastCheckDate: Option[DateTime]
+  ): Future[InternalBintrayPagination] = {
     val client = wsClient
     val request = discover(client, PomListDownload(query, 0, lastCheckDate))
 
@@ -75,7 +75,8 @@ class BintrayListPoms(paths: DataPaths)(
         if (200 == response.status) {
           Future.successful {
             InternalBintrayPagination(
-              response.header("X-RangeLimit-Total").map(_.toInt).getOrElse(0))
+              response.header("X-RangeLimit-Total").map(_.toInt).getOrElse(0)
+            )
           }
         } else {
           Future.failed(new Exception(response.statusText))
@@ -85,12 +86,12 @@ class BintrayListPoms(paths: DataPaths)(
   }
 
   /**
-    * Convert the json response to BintraySearch class
-    *
-    * @param page the current page object
-    * @param response the current response
-    * @return
-    */
+   * Convert the json response to BintraySearch class
+   *
+   * @param page the current page object
+   * @param response the current response
+   * @return
+   */
   def processSearch(page: PomListDownload,
                     response: WSResponse): List[BintraySearch] = {
     try {
@@ -104,11 +105,11 @@ class BintrayListPoms(paths: DataPaths)(
   }
 
   /**
-    * write the list of BintraySerch classes back to a file
-    *
-    * @param merged the merged list
-    * @return
-    */
+   * write the list of BintraySerch classes back to a file
+   *
+   * @param merged the merged list
+   * @return
+   */
   def writeMergedPoms(merged: List[BintraySearch]) = {
     Files.delete(BintrayMeta.path(paths))
 
@@ -121,15 +122,15 @@ class BintrayListPoms(paths: DataPaths)(
   }
 
   /**
-    * run task to:
-    * - read current downloaded poms
-    * - check how many pages there are for the search
-    * - fetch all pages
-    * - merge current Search results with new results
-    * - write them back to file
-    *
-    * @param scalaVersion the scala version to search for new artifacts
-    */
+   * run task to:
+   * - read current downloaded poms
+   * - check how many pages there are for the search
+   * - fetch all pages
+   * - merge current Search results with new results
+   * - write them back to file
+   *
+   * @param scalaVersion the scala version to search for new artifacts
+   */
   def run(scalaVersion: String): Unit = {
 
     val queried = BintrayMeta.load(paths)
@@ -144,18 +145,19 @@ class BintrayListPoms(paths: DataPaths)(
   }
 
   /**
-    * search for non standard published artifacts and apply a filter later to make sure that
-    * the page name is identical.
-    * @param groupId the current group id
-    * @param artifact the artifact name
-    */
+   * search for non standard published artifacts and apply a filter later to make sure that
+   * the page name is identical.
+   * @param groupId the current group id
+   * @param artifact the artifact name
+   */
   def run(groupId: String, artifact: String): Unit = {
     val queried = BintrayMeta.load(paths)
 
     /* the filter to make sure only this artifact get's added */
     def filter(bintray: BintraySearch): Boolean = {
       bintray.path.startsWith(
-        groupId.replaceAllLiterally(".", "/") + "/" + artifact)
+        groupId.replaceAllLiterally(".", "/") + "/" + artifact
+      )
     }
 
     val mostRecentQueriedDate = queried.find(filter).map(_.created - 2.month)
@@ -168,13 +170,13 @@ class BintrayListPoms(paths: DataPaths)(
   }
 
   /**
-    * do the actual search on bintray for files
-    * @param infoMessage the message to display for downloading
-    * @param queried the list of currently fetched searches
-    * @param search the search string
-    * @param mostRecentQueriedDate the last fetched date
-    * @param filter an optional filter, to filter the response before adding
-    */
+   * do the actual search on bintray for files
+   * @param infoMessage the message to display for downloading
+   * @param queried the list of currently fetched searches
+   * @param search the search string
+   * @param mostRecentQueriedDate the last fetched date
+   * @param filter an optional filter, to filter the response before adding
+   */
   def performSearchAndDownload(
       infoMessage: String,
       queried: List[BintraySearch],
@@ -209,7 +211,8 @@ class BintrayListPoms(paths: DataPaths)(
         p =>
           PomListDownload(search,
                           (p - 1) * page.itemPerPage,
-                          mostRecentQueriedDate))
+                          mostRecentQueriedDate)
+      )
       .toSet
 
     /* fetch all data from bintray */

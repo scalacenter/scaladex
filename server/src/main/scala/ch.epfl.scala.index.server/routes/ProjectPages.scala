@@ -112,7 +112,8 @@ class ProjectPages(dataRepository: DataRepository,
                   (
                     target,
                     target.map(showTarget).getOrElse("Java")
-                ))
+                )
+              )
               .distinct
 
           val targetTypes =
@@ -120,7 +121,8 @@ class ProjectPages(dataRepository: DataRepository,
               .map(
                 _._1
                   .map(_.targetType)
-                  .getOrElse(Java))
+                  .getOrElse(Java)
+              )
               .groupBy(x => x)
               .map { case (k, vs) => (k, vs.size) }
               .toList
@@ -215,7 +217,8 @@ class ProjectPages(dataRepository: DataRepository,
             'cliArtifacts.*,
             'customScalaDoc.?,
             'primaryTopic.?
-          )).tmap {
+          )
+        ).tmap {
           case (contributorsWanted,
                 defaultArtifact,
                 defaultStableVersion,
@@ -259,7 +262,8 @@ class ProjectPages(dataRepository: DataRepository,
               documentationLinks,
               primaryTopic
             )
-      })
+      }
+    )
 
   val routes =
     concat(
@@ -279,8 +283,11 @@ class ProjectPages(dataRepository: DataRepository,
                       ) { ret =>
                         Thread.sleep(1000) // oh yeah
                         redirect(Uri(s"/$organization/$repository"), SeeOther)
-                    })
-              )))
+                    }
+                  )
+              )
+          )
+        )
       ),
       get(
         concat(
@@ -292,22 +299,28 @@ class ProjectPages(dataRepository: DataRepository,
                     complete(
                       artifactsPage(organization, repository, getUser(userId))
                     )
-                ))),
+                )
+            )
+          ),
           path("edit" / Segment / Segment)(
             (organization, repository) =>
               optionalSession(refreshable, usingCookies)(
                 userId =>
                   pathEnd(
                     complete(
-                      getEditPage(organization, repository, getUser(userId)))
-                ))),
+                      getEditPage(organization, repository, getUser(userId))
+                    )
+                )
+            )
+          ),
           path(Segment / Segment)(
             (organization, repository) =>
               redirectMoved(organization, repository)(
                 optionalSession(refreshable, usingCookies)(
                   userId =>
                     parameters(
-                      ('artifact.?, 'version.?, 'target.?, 'selected.?))(
+                      ('artifact.?, 'version.?, 'target.?, 'selected.?)
+                    )(
                       (artifact, version, target, selected) =>
                         onSuccess(
                           redirectTo(
@@ -335,11 +348,14 @@ class ProjectPages(dataRepository: DataRepository,
                           case None =>
                             complete(
                               ((NotFound,
-                                views.html.notfound(
-                                  getUser(userId).map(_.user)))))
+                                views.html
+                                  .notfound(getUser(userId).map(_.user))))
+                            )
                       }
-                  ))
-            )),
+                  )
+                )
+            )
+          ),
           path(Segment / Segment / Segment)(
             (organization, repository, artifact) =>
               optionalSession(refreshable, usingCookies)(
@@ -356,7 +372,10 @@ class ProjectPages(dataRepository: DataRepository,
                           selected = None,
                           userState = getUser(userId)
                         )
-                    )))),
+                    )
+                )
+            )
+          ),
           path(Segment / Segment / Segment / Segment)(
             (organization, repository, artifact, version) =>
               optionalSession(refreshable, usingCookies)(
@@ -373,7 +392,9 @@ class ProjectPages(dataRepository: DataRepository,
                           selected = None,
                           userState = getUser(userId)
                         )
-                    )))
+                    )
+                )
+            )
           )
         )
       )

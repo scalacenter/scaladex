@@ -62,12 +62,12 @@ class BintrayClient(paths: DataPaths) {
     new URL(s"https://dl.bintray.com/$subject/$repo/$path")
 
   /**
-    * Fetches a bintray-paginated resource.
-    *
-    * @param fetchPage Function that fetches one page given the index of the first element to fetch
-    * @param decode    Function that decodes the response into a meaningful list of data
-    * @return The whole resource
-    */
+   * Fetches a bintray-paginated resource.
+   *
+   * @param fetchPage Function that fetches one page given the index of the first element to fetch
+   * @param decode    Function that decodes the response into a meaningful list of data
+   * @return The whole resource
+   */
   def fetchPaginatedResource[A](
       fetchPage: Int => Future[WSResponse]
   )(
@@ -78,7 +78,8 @@ class BintrayClient(paths: DataPaths) {
       firstResponse <- fetchPage(0)
       // And then get the remaining pages, if any
       remainingResponses <- Future.traverse(remainingPages(firstResponse))(
-        fetchPage)
+        fetchPage
+      )
     } yield {
       // Eventually concatenate all the results together
       remainingResponses.foldLeft(decode(firstResponse)) {
@@ -89,9 +90,9 @@ class BintrayClient(paths: DataPaths) {
   }
 
   /**
-    * @return The list of the remaining queries that have to be performed to get the missing packages
-    * @param response Response of the ''first'' query
-    */
+   * @return The list of the remaining queries that have to be performed to get the missing packages
+   * @param response Response of the ''first'' query
+   */
   def remainingPages(response: WSResponse): Seq[Int] =
     (
       for {
@@ -107,16 +108,18 @@ class BintrayClient(paths: DataPaths) {
     ).getOrElse(Nil)
 
   /**
-    * @param response The HTTP response that we want to decode
-    * @param decode   The function that decodes the JSON content into a list of meaningful information
-    * @return The decoded content. In case of (any) failure, logs the error and returns an empty list.
-    */
-  def decodeSucessfulJson[A](decode: JValue => List[A])(
-      response: WSResponse): List[A] =
+   * @param response The HTTP response that we want to decode
+   * @param decode   The function that decodes the JSON content into a list of meaningful information
+   * @return The decoded content. In case of (any) failure, logs the error and returns an empty list.
+   */
+  def decodeSucessfulJson[A](
+      decode: JValue => List[A]
+  )(response: WSResponse): List[A] =
     try {
       if (response.status != 200) {
         sys.error(
-          s"Got a response with a non-OK status: ${response.statusText} ${response.body}")
+          s"Got a response with a non-OK status: ${response.statusText} ${response.body}"
+        )
       }
       decode(parse(response.body))
     } catch {

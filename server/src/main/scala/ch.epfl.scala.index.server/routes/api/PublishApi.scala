@@ -30,7 +30,8 @@ class PublishApi(paths: DataPaths,
                  dataRepository: DataRepository,
                  github: Github)(
     implicit val system: ActorSystem,
-    implicit val materializer: ActorMaterializer) {
+    implicit val materializer: ActorMaterializer
+) {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -41,14 +42,16 @@ class PublishApi(paths: DataPaths,
    * @param credentials the credentials
    * @return
    */
-  private def githubAuthenticator(credentialsHeader: Option[HttpCredentials])
-    : Credentials => Future[Option[(data.github.Credentials, UserState)]] = {
+  private def githubAuthenticator(
+      credentialsHeader: Option[HttpCredentials]
+  ): Credentials => Future[Option[(data.github.Credentials, UserState)]] = {
 
     case Credentials.Provided(username) => {
       credentialsHeader match {
         case Some(cred) => {
           val upw = new String(
-            new sun.misc.BASE64Decoder().decodeBuffer(cred.token()))
+            new sun.misc.BASE64Decoder().decodeBuffer(cred.token())
+          )
           val userPass = upw.split(":")
 
           val token = userPass(1)
@@ -104,7 +107,8 @@ class PublishApi(paths: DataPaths,
             paths,
             dataRepository,
             system,
-            materializer))
+            materializer)
+    )
 
   private val githubCredentialsCache =
     MMap.empty[String, (data.github.Credentials, UserState)]
@@ -141,7 +145,8 @@ class PublishApi(paths: DataPaths,
               'readme.as[Boolean] ? true,
               'contributors.as[Boolean] ? true,
               'info.as[Boolean] ? true
-            )) { (path, created, readme, contributors, info) =>
+            )
+          ) { (path, created, readme, contributors, info) =>
             entity(as[String]) { data =>
               extractCredentials { credentials =>
                 authenticateBasicAsync(realm = "Scaladex Realm",
@@ -161,7 +166,8 @@ class PublishApi(paths: DataPaths,
                     complete(
                       (actor ? publishData)
                         .mapTo[(StatusCode, String)]
-                        .map(s => s))
+                        .map(s => s)
+                    )
                 }
               }
             }

@@ -3,7 +3,7 @@ dist: trusty
 os:
   - linux
 scala:
-  - 2.11.8
+  - 2.12.2
 jdk:
   - oraclejdk8
 cache:
@@ -15,11 +15,14 @@ cache:
   - $HOME/.coursier/
 script:
   - bin/scalafmt --test
+  - export SBT_OPTS="-Xmx1G"
+  - sbt "data/run elastic"
   - sbt test
   - sbt server/universal:packageBin
 
-git:
-  submodules: false
-
 before_script:
+  - pushd ..
+  - git clone git://github.com/scalacenter/scaladex-small-index.git
+  - git clone git://github.com/scalacenter/scaladex-contrib.git
+  - popd
   - 'gem install sass --version "=3.2.12"'
