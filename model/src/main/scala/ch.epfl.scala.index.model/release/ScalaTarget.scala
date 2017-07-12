@@ -105,9 +105,9 @@ object ScalaTarget {
                 scalaJsVersion = Some(scalaJsVersion),
                 scalaNativeVersion = None)
 
-  def scalaNative(version: SemanticVersion,
+  def scalaNative(scalaVersion: SemanticVersion,
                   scalaNativeVersion: SemanticVersion) =
-    ScalaTarget(scalaVersion = version,
+    ScalaTarget(scalaVersion = scalaVersion,
                 scalaJsVersion = None,
                 scalaNativeVersion = Some(scalaNativeVersion))
 

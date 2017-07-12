@@ -35,9 +35,9 @@ class DataRepository(github: Github, paths: DataPaths)(
 
   private def hideId(p: Project) = p.copy(id = None)
 
-  val log = LoggerFactory.getLogger(getClass)
+  private val log = LoggerFactory.getLogger(getClass)
 
-  val sortQuery: Option[String] => SortDefinition =
+  private val sortQuery: Option[String] => SortDefinition =
     _ match {
       case Some("stars") =>
         fieldSort("github.stars") missing "0" order SortOrder.DESC // mode MultiMode.Avg
@@ -53,7 +53,8 @@ class DataRepository(github: Github, paths: DataPaths)(
       case _                => scoreSort order SortOrder.DESC
     }
 
-  private def clamp(page: Int) = if (page <= 0) 1 else page
+  private def clamp(page: Int): Int =
+    if (page <= 0) 1 else page
 
   private def query(
       q: QueryDefinition,
@@ -69,7 +70,6 @@ class DataRepository(github: Github, paths: DataPaths)(
           .start(params.total * (clamp(page) - 1))
           .limit(params.total)
           .sortBy(sortQuery(sorting))
-
       }
       .map(
         r =>
@@ -84,13 +84,17 @@ class DataRepository(github: Github, paths: DataPaths)(
       )
   }
 
-  private def targetFiltering(params: SearchParams) = {
+  private def targetFiltering(params: SearchParams): List[QueryDefinition] = {
     params.targetFiltering
       .map { target =>
         val scalaVersionFiltering =
           List(
-            boolQuery()
-              .must(termQuery("scalaVersion", target.scalaVersion.toString))
+            boolQuery().must(
+              termQuery(
+                "scalaVersion",
+                target.scalaVersion.toString
+              )
+            )
           )
 
         val scalaJsVersionFiltering =
@@ -99,49 +103,58 @@ class DataRepository(github: Github, paths: DataPaths)(
               jsVersion =>
                 List(
                   boolQuery().must(
-                    termQuery("scalaJsVersion", target.scalaJsVersion.toString)
+                    termQuery(
+                      "scalaJsVersion",
+                      jsVersion.toString
+                    )
                   )
               )
             )
             .getOrElse(Nil)
 
-        val scalaNativeVersionFiltering = target.scalaNativeVersion
-          .map(
-            nativeVersion =>
-              List(
-                boolQuery().must(
-                  termQuery("scalaNativeVersion",
-                            target.scalaNativeVersion.toString)
-                )
+        val scalaNativeVersionFiltering =
+          target.scalaNativeVersion
+            .map(
+              nativeVersion =>
+                List(
+                  boolQuery().must(
+                    termQuery(
+                      "scalaNativeVersion",
+                      nativeVersion.toString
+                    )
+                  )
+              )
             )
-          )
-          .getOrElse(Nil)
+            .getOrElse(Nil)
 
         scalaVersionFiltering ++ scalaJsVersionFiltering ++ scalaNativeVersionFiltering
       }
       .getOrElse(Nil)
   }
 
-  private def targetsQuery(params: SearchParams) = {
-    params.targetTypes.map(
+  private def targetsQuery(params: SearchParams): List[QueryDefinition] = {
+    val targetTypes = params.targetTypes.map(
       targetType => boolQuery().must(termQuery("targetType", targetType))
-    ) ++
-      params.scalaVersions.map(
-        scalaVersion =>
-          boolQuery().must(termQuery("scalaVersion", scalaVersion))
-      ) ++
-      params.scalaJsVersions.map(
-        scalaJsVersion =>
-          boolQuery().must(termQuery("scalaJsVersion", scalaJsVersion))
-      ) ++
-      params.scalaNativeVersions.map(
-        scalaNativeVersion =>
-          boolQuery().must(termQuery("scalaNativeVersion", scalaNativeVersion))
-      )
+    )
 
+    val scalaVersions = params.scalaVersions.map(
+      scalaVersion => boolQuery().must(termQuery("scalaVersion", scalaVersion))
+    )
+
+    val scalaJsVersions = params.scalaJsVersions.map(
+      scalaJsVersion =>
+        boolQuery().must(termQuery("scalaJsVersion", scalaJsVersion))
+    )
+
+    val scalaNativeVersions = params.scalaNativeVersions.map(
+      scalaNativeVersion =>
+        boolQuery().must(termQuery("scalaNativeVersion", scalaNativeVersion))
+    )
+
+    targetTypes ++ scalaVersions ++ scalaJsVersions ++ scalaNativeVersions
   }
 
-  private def getQuery(params: SearchParams) = {
+  private def getQuery(params: SearchParams): QueryDefinition = {
     def replaceField(queryString: String, input: String, replacement: String) = {
       val regex = s"(\\s|^)$input:".r
       regex.replaceAllIn(queryString, s"$$1$replacement:")
@@ -149,7 +162,9 @@ class DataRepository(github: Github, paths: DataPaths)(
 
     val translated1 =
       replaceField(params.queryString, "depends-on", "dependencies")
-    val translated2 = replaceField(translated1, "topics", "github.topics")
+
+    val translated2 =
+      replaceField(translated1, "topics", "github.topics")
 
     val escaped =
       if (translated2.isEmpty) "*"
@@ -164,9 +179,8 @@ class DataRepository(github: Github, paths: DataPaths)(
         topic => boolQuery().should(termQuery("github.topics", topic))
       )
 
-    val mustQueriesRepos = {
-      if (params.userRepos.isEmpty) Nil
-      else {
+    val mustQueriesRepos: List[QueryDefinition] = {
+      if (params.userRepos.nonEmpty) {
         val reposQueries =
           params.userRepos.toList.map {
             case GithubRepo(organization, repository) =>
@@ -175,15 +189,16 @@ class DataRepository(github: Github, paths: DataPaths)(
                 termQuery("repository", repository.toLowerCase)
               )
           }
-
         List(boolQuery().should(reposQueries: _*))
-      }
+      } else Nil
     }
 
     val stringQ =
-      if (escaped.contains(":")) stringQuery(escaped)
-      else
+      if (escaped.contains(":")) {
+        stringQuery(escaped)
+      } else {
         stringQuery(escaped + "~").fuzzyPrefixLength(3).defaultOperator("AND")
+      }
 
     val queryIsATopic = cachedTopics.contains(params.queryString)
 
@@ -357,10 +372,11 @@ class DataRepository(github: Github, paths: DataPaths)(
   def latestProjects() =
     latest[Project](projectsCollection, "created", frontPageCount)
       .map(_.map(hideId))
+
   def latestReleases() =
     latest[Release](releasesCollection, "released", frontPageCount)
 
-  def mostDependedUpon() = {
+  def mostDependedUpon(): Future[List[Project]] = {
     esClient
       .execute {
         search(indexName / projectsCollection)
@@ -540,7 +556,7 @@ class DataRepository(github: Github, paths: DataPaths)(
       })
   }
 
-  lazy val cachedTopics: Set[String] = {
+  private lazy val cachedTopics: Set[String] = {
     import scala.collection.JavaConverters._
 
     val aggregationName = "topic_count"

@@ -110,14 +110,11 @@ class RelevanceTest
     )
   }
 
-  // fails
-  // empty list
-  // https://github.com/scalacenter/scaladex/issues/455
   test("Scala.js targetFiltering") {
     val scalaJs =
       ScalaTarget.scalaJs(
-        SemanticVersion("0.6").get,
-        SemanticVersion("2.12").get
+        scalaVersion = SemanticVersion("2.12").get,
+        scalaJsVersion = SemanticVersion("0.6").get
       )
 
     top(
@@ -126,14 +123,13 @@ class RelevanceTest
         ("scala-js", "scala-js")
       )
     )
-    pending
   }
 
   test("Scala.js targetFiltering (2)") {
     val scalaJs =
       ScalaTarget.scalaJs(
-        SemanticVersion("0.6").get,
-        SemanticVersion("2.12").get
+        scalaVersion = SemanticVersion("2.12").get,
+        scalaJsVersion = SemanticVersion("0.6").get
       )
 
     compare(
@@ -141,7 +137,6 @@ class RelevanceTest
       List(),
       (_, obtained) => assert(obtained.nonEmpty)
     )
-    pending
   }
 
   test("Scala Native targetTypes") {
@@ -156,13 +151,11 @@ class RelevanceTest
     )
   }
 
-  // fails
-  // https://github.com/scalacenter/scaladex/issues/455
   test("Scala Native targetFiltering") {
     val scalaNative =
-      ScalaTarget.scalaJs(
-        SemanticVersion("0.3").get,
-        SemanticVersion("2.11").get
+      ScalaTarget.scalaNative(
+        scalaVersion = SemanticVersion("2.11").get,
+        scalaNativeVersion = SemanticVersion("0.3").get
       )
 
     top(
@@ -174,7 +167,6 @@ class RelevanceTest
         ("scalaprops", "scalaprops")
       )
     )
-    pending
   }
 
   private def first(query: String)(org: String,
