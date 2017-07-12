@@ -179,7 +179,7 @@ class ProjectPages(dataRepository: DataRepository,
            views.project.html.project(
              project,
              options.artifacts,
-             versions,
+             versions.filter(_.isSemantic),
              targets,
              release,
              user,

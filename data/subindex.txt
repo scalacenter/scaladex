@@ -52,6 +52,7 @@ lift/framework
 lihaoyi/scala.rx
 lihaoyi/upickle-pprint
 livestream/scredis
+locationtech/geotrellis
 longevityframework/longevity
 loyolachicagocode/scalamu
 lucidsoftware/relate

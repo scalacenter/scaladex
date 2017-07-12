@@ -1,9 +1,17 @@
 package ch.epfl.scala.index.model
 
-sealed trait PreRelease
-case class ReleaseCandidate(rc: Long) extends PreRelease
-case class Milestone(m: Long) extends PreRelease
-case class OtherPreRelease(o: String) extends PreRelease
+sealed trait PreRelease {
+  def isSemantic: Boolean
+}
+case class ReleaseCandidate(rc: Long) extends PreRelease {
+  def isSemantic: Boolean = true
+}
+case class Milestone(m: Long) extends PreRelease {
+  def isSemantic: Boolean = true
+}
+case class OtherPreRelease(o: String) extends PreRelease {
+  def isSemantic: Boolean = false
+}
 
 /**
  * Semantic version, separation of possible combinations
@@ -22,6 +30,12 @@ case class SemanticVersion(
     preRelease: Option[PreRelease] = None,
     metadata: Option[String] = None
 ) extends Ordered[SemanticVersion] {
+
+  def isSemantic = {
+    patch.isDefined &&
+    !patch2.isDefined &&
+    preRelease.map(_.isSemantic).getOrElse(true)
+  }
 
   override def toString: String = {
     val patchPart = patch.map("." + _).getOrElse("")
