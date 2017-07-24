@@ -16,9 +16,12 @@ package ch.epfl.scala.index.model.misc
  * @param commits number of commits, calculated by contributors
  * @param topics topics associated with the project
  * @param contributingGuide CONTRIBUTING.md
+ * @param codeOfConduct link to code of conduct
  * @param chatroom link to chatroom (ex: https://gitter.im/scalacenter/scaladex)
  * @param beginnerIssuesLabel label used to tag beginner-friendly issues
  * @param beginnerIssues list of beginner-friendly issues for the project
+ * @param selectedBeginnerIssues list of beginner-friendly issues selected by maintainer which show in UI
+ * @param filteredBeginnerIssues list of beginner-friendly issues that were filtered by contributing search
  */
 case class GithubInfo(
     name: String = "",
@@ -36,7 +39,21 @@ case class GithubInfo(
     commits: Option[Int] = None,
     topics: Set[String] = Set(),
     contributingGuide: Option[Url] = None,
+    codeOfConduct: Option[Url] = None,
     chatroom: Option[Url] = None,
     beginnerIssuesLabel: Option[String] = None,
-    beginnerIssues: List[GithubIssue] = List()
-)
+    beginnerIssues: List[GithubIssue] = List(),
+    selectedBeginnerIssues: List[GithubIssue] = List(),
+    filteredBeginnerIssues: List[GithubIssue] = List()
+) {
+  def displayIssues: List[GithubIssue] = {
+    if (!filteredBeginnerIssues.isEmpty) {
+      filteredBeginnerIssues
+    } else {
+      val selectedIssueNumbers = selectedBeginnerIssues.map(_.number)
+      val remainingIssues =
+        beginnerIssues.filter(x => !selectedIssueNumbers.contains(x.number))
+      selectedBeginnerIssues ++ remainingIssues
+    }
+  }
+}

@@ -47,7 +47,7 @@ package object html {
                     pagination: Pagination,
                     you: Boolean): Int => Uri = page => {
 
-    uri
+    val newUri = uri
       .appendQuery("sort", params.sorting)
       .appendQuery("topics", params.topics.toList)
       .appendQuery("targetTypes", params.targetTypes.toList)
@@ -57,6 +57,13 @@ package object html {
       .appendQuery("you", you)
       .appendQuery("q" -> params.queryString)
       .appendQuery("page" -> page.toString)
+
+    if (params.contributingSearch)
+      newUri.appendQuery(
+        "contributingSearch" -> params.contributingSearch.toString
+      )
+    else newUri
+
   }
 
   // https://www.reddit.com/r/scala/comments/4n73zz/scala_puzzle_gooooooogle_pagination/d41jor5

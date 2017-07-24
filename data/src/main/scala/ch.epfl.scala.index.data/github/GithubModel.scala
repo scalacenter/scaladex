@@ -65,8 +65,10 @@ object V3 {
   )
 
   case class CommunityProfile(files: CommunityFiles)
-  case class CommunityFiles(contributing: ContributingFile)
+  case class CommunityFiles(contributing: ContributingFile,
+                            code_of_conduct: CodeOfConductFile)
   case class ContributingFile(html_url: Option[String])
+  case class CodeOfConductFile(html_url: Option[String])
 }
 
 // classes for GraphQL API, https://developer.github.com/v4/reference/

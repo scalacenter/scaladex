@@ -8,6 +8,7 @@ import model.SemanticVersion
 
 import data.DataPaths
 import data.elastic._
+import data.github.GithubDownload
 
 import org.scalatest._
 
@@ -28,7 +29,7 @@ class RelevanceTest
 
   val paths = DataPaths(Nil)
   val github = new Github
-  val data = new DataRepository(github, paths)
+  val data = new DataRepository(github, paths, new GithubDownload(paths))
 
   blockUntilYellow()
 
@@ -211,7 +212,8 @@ class RelevanceTest
   private def compare(
       params: SearchParams,
       expected: List[(String, String)],
-      assertFun: (List[Project.Reference], List[Project.Reference]) => Assertion
+      assertFun: (List[Project.Reference],
+                  List[Project.Reference]) => Assertion
   ): Future[Assertion] = {
 
     val expectedRefs = expected.map {

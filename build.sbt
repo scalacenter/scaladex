@@ -97,7 +97,8 @@ lazy val client = project
   .settings(commonSettings)
   .settings(
     skip in packageJSDependencies := false,
-    jsDependencies += "org.webjars.bower" % "raven-js" % "3.11.0" / "dist/raven.js" minified "dist/raven.min.js"
+    jsDependencies += "org.webjars.bower" % "raven-js" % "3.11.0" / "dist/raven.js" minified "dist/raven.min.js",
+    libraryDependencies += "be.doeraene" %%% "scalajs-jquery" % "0.9.1"
   )
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(sharedJS)

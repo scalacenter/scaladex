@@ -18,6 +18,13 @@
   scalaJsVersions: List[(String, Long)],
   scalaNativeVersions: List[(String, Long)])
 
+@if(params.contributingSearch){
+  <h2 class="text-center">Contributing Search</h2>
+  <div class="row">
+    <h4 class="text-center">All the projects below have beginner-friendly issues which are great places to start contributing</h4>
+  </div>
+}
+
 <div class="row">
   <div class="col-md-2">
     <div class="result-count">
@@ -46,7 +53,7 @@
     )
   </div>      
   <div class="col-md-9">
-    @resultList(projects)
+    @resultList(projects, params)
     @paginate(pagination, paginationUri(params, uri, pagination, you))
   </div>
 </div>

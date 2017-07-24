@@ -4,7 +4,7 @@
 @import ch.epfl.scala.index.model.misc._
 @import ch.epfl.scala.index.model.release._
 
-@(project: Project, user: Option[UserInfo])
+@(project: Project, user: Option[UserInfo], beginnerIssuesJson: String)
 
 @main(title = s"Edit ${project.repository}", showSearch = true, user) {
   <main id="container-project">
@@ -79,6 +79,50 @@
                   }
                   </select>
                 </div>
+
+                <fieldset>
+                  <legend>Contributing Info</legend>
+                  <div class="form-group">
+                    <label for="beginnerIssuesLabel">Beginner Issues Label</label>
+                    <input id="beginnerIssuesLabel" name="beginnerIssuesLabel" value="@github.beginnerIssuesLabel.getOrElse("")"
+                      placeholder="Label used to mark beginner-friendly Issues on Github"
+                      class="form-control list-group-item" data-organization="@project.reference.organization"
+                      data-repository="@project.reference.repository">
+                  </div>
+                  <div class="form-group">
+                    <label for="selectedBeginnerIssues">Selected Beginner Issues</label>
+                    <p>Select which issues will be shown on the front page, Contributing Search page
+                     and project page. If none are selected, the first couple issues created with the
+                     beginner issues label will be shown.</p>
+                    <select
+                      id="selectedBeginnerIssues"
+                      name="selectedBeginnerIssues"
+                      data-live-search="true"
+                      class="selectpicker" data-style="btn-primary"
+                      multiple data-max-options="3"
+                      data-selected="@github.selectedBeginnerIssues.map(_.number).mkString(",")">
+                    </select>
+                    <input type="hidden" name="beginnerIssues" id="beginnerIssues" value="@beginnerIssuesJson">
+                  </div>
+                  <div class="form-group">
+                    <label for="chatroom">Chatroom</label>
+                    <input name="chatroom" value="@github.chatroom.getOrElse(Url("")).target"
+                      class="form-control list-group-item"
+                      placeholder="Link to chatroom (Ex. https://gitter.im/scalacenter/scaladex)">
+                  </div>
+                  <div class="form-group">
+                    <label for="contributingGuide">Contributing Guide</label>
+                    <input name="contributingGuide" value="@github.contributingGuide.getOrElse(Url("")).target"
+                      placeholder="Link to contributing guide (Ex. https://github.com/scalacenter/scaladex/blob/master/CONTRIBUTING.md)"
+                      class="form-control list-group-item">
+                  </div>
+                  <div class="form-group">
+                    <label for="codeOfConduct">Code of Conduct</label>
+                    <input name="codeOfConduct" value="@github.codeOfConduct.getOrElse(Url("")).target"
+                      placeholder="Link to code of conduct (Ex. https://github.com/playframework/playframework/blob/master/CODE_OF_CONDUCT.md)"
+                      class="form-control list-group-item">
+                  </div>
+                </fieldset>
               }
 
               <fieldset>

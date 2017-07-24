@@ -6,6 +6,7 @@ import routes.api._
 import data.DataPaths
 import data.util.PidLock
 import data.elastic._
+import data.github.GithubDownload
 
 import TwirlSupport._
 
@@ -58,7 +59,7 @@ object Server {
     val paths = DataPaths(pathFromArgs)
 
     val github = new Github
-    val data = new DataRepository(github, paths)
+    val data = new DataRepository(github, paths, new GithubDownload(paths))
     val session = new GithubUserSession(config)
 
     import session._

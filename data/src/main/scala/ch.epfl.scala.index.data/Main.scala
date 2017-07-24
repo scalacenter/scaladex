@@ -1,6 +1,10 @@
 package ch.epfl.scala.index.data
 
-import bintray.{BintrayDownloadPoms, BintrayListPoms, BintrayDownloadSbtPlugins}
+import bintray.{
+  BintrayDownloadPoms,
+  BintrayListPoms,
+  BintrayDownloadSbtPlugins
+}
 import cleanup.{NonStandardLib, GithubRepoExtractor}
 import elastic.SeedElasticSearch
 import github.GithubDownload
@@ -64,6 +68,7 @@ object Main {
       DataPaths(pathFromArgs.take(3))
     }
 
+    val githubDownload = new GithubDownload(getPathFromArgs)
     val steps = List(
       // List POMs of Bintray
       Step("list")({ () =>
@@ -92,9 +97,11 @@ object Main {
         () => new BintrayDownloadSbtPlugins(getPathFromArgs).run()
       ),
       // Download additional information about projects from Github
-      Step("github")(() => new GithubDownload(getPathFromArgs).run()),
+      Step("github")(() => githubDownload.run()),
       // Re-create the ElasticSearch index
-      Step("elastic")(() => new SeedElasticSearch(getPathFromArgs).run())
+      Step("elastic")(
+        () => new SeedElasticSearch(getPathFromArgs, githubDownload).run()
+      )
     )
 
     def updateClaims(): Unit = {

@@ -2,22 +2,20 @@ package ch.epfl.scala.index
 package data
 
 import model._
+import model.misc.GithubIssue
 import release._
-
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.embedded.LocalNode
 import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.searches.RichSearchHit
 import org.elasticsearch.cluster.health.ClusterHealthStatus
-
 import org.json4s._
 import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{read => nread, write => nwrite}
-
 import com.typesafe.config.ConfigFactory
-
 import org.slf4j.LoggerFactory
 
-import scala.util.{Try, Success}
+import scala.util.{Success, Try}
 
 trait ProjectProtocol {
 
@@ -38,10 +36,37 @@ trait ProjectProtocol {
     Try(f).transform(s => Success(Right(s)), f => Success(Left(f))).get
   }
 
+  // filters a project's beginnerIssues by the inner hits returned from elastic search
+  // so that only the beginnerIssues that passed the nested beginnerIssues query
+  // get returned
+  private def checkInnerHits(hit: RichSearchHit, p: Project): Project = {
+    hit.innerHits
+      .get("issues")
+      .collect {
+        case searchHits if searchHits.totalHits > 0 => {
+          p.copy(
+            github = p.github.map { github =>
+              github.copy(
+                filteredBeginnerIssues = searchHits
+                  .getHits()
+                  .map { hit =>
+                    nread[GithubIssue](hit.getSourceAsString)
+                  }
+                  .toList
+              )
+            }
+          )
+        }
+      }
+      .getOrElse(p)
+  }
+
   implicit object ProjectAs extends HitReader[Project] {
 
-    override def read(hit: Hit): Either[Throwable, Project] =
-      tryEither(nread[Project](hit.sourceAsString).copy(id = Some(hit.id)))
+    override def read(hit: Hit): Either[Throwable, Project] = {
+      val project = nread[Project](hit.sourceAsString).copy(id = Some(hit.id))
+      tryEither(checkInnerHits(hit.asInstanceOf[RichSearchHit], project))
+    }
   }
 
   implicit object ProjectIndexable extends Indexable[Project] {

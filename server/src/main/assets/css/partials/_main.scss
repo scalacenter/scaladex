@@ -172,6 +172,42 @@ main {
             @include box-shadow(0 1px 15px rgba(0, 0, 0, 0.15));
         }
     }
+
+    .contributing-projects {
+        @extend .recent-projects;
+        h2 {
+            margin-bottom: 0;
+        }
+        h4 {
+            margin-bottom: ($line-height-computed * 1.5);
+        }
+        .content-contributing-project {
+            @extend .content-project;
+            height: 350px;
+            h4 {
+                margin: 0;
+                display: inline-block;
+                padding-left: 15px;
+                width: 90%;
+            }
+            img {
+                width: 28px;
+                height: auto;
+                float: left;
+            }
+            a {
+                display: block;
+                padding-bottom: 10px;
+                color: $gray;
+                &:hover,
+                &:focus {
+                    color: $brand-primary;
+                    text-decoration: underline;
+                }
+            }
+            td { padding-left: 20px; }
+        }
+    }
 }
 
 // Result page
@@ -297,6 +333,14 @@ main {
                 color: $brand-primary;
             }
         }
+    }
+    .contributing-result {
+        a {
+            display: block;
+            padding-bottom: 10px;
+        }
+        td { padding-left: 80px; }
+        p { padding-bottom: 20px; }
     }
 }
 
@@ -444,6 +488,19 @@ main {
                 position: relative;
                 margin-left: 5px;
             }
+        }
+        .project-contributing-info {
+            a {
+                display: block;
+                padding-bottom: 10px;
+                color: $gray;
+                &:hover,
+                &:focus {
+                    color: $brand-primary;
+                    text-decoration: underline;
+                }
+            }
+            td { padding-left: 30px; }
         }
     }
     .collaborators {
@@ -601,3 +658,5 @@ html, body {
     }
   }
 }
+
+.white { color: #fff; }

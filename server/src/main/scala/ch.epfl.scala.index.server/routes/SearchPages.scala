@@ -69,7 +69,8 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
        'scalaVersions.*,
        'scalaJsVersions.*,
        'scalaNativeVersions.*,
-       'you.?)
+       'you.?,
+       'contributingSearch.as[Boolean] ? false)
     ).tmap {
       case (q,
             page,
@@ -79,7 +80,8 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
             scalaVersions,
             scalaJsVersions,
             scalaNativeVersions,
-            you) =>
+            you,
+            contributingSearch) =>
         val userRepos =
           you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set())
         SearchParams(
@@ -91,7 +93,8 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
           targetTypes = targetTypes.toList,
           scalaVersions = scalaVersions.toList,
           scalaJsVersions = scalaJsVersions.toList,
-          scalaNativeVersions = scalaNativeVersions.toList
+          scalaNativeVersions = scalaNativeVersions.toList,
+          contributingSearch = contributingSearch
         )
     }
 

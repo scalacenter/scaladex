@@ -2,8 +2,9 @@ package ch.epfl.scala.index
 package data
 package project
 
+import data.github.{GithubDownload, GithubReader}
 import model.Project
-import model.misc.GithubInfo
+import model.misc.{GithubInfo, Url, GithubIssue}
 
 case class ProjectForm(
     // project
@@ -18,9 +19,18 @@ case class ProjectForm(
     // documentation
     customScalaDoc: Option[String],
     documentationLinks: List[(String, String)],
-    primaryTopic: Option[String] = None
+    primaryTopic: Option[String] = None,
+    beginnerIssuesLabel: Option[String],
+    beginnerIssues: List[GithubIssue] = List(),
+    selectedBeginnerIssues: List[GithubIssue] = List(),
+    chatroom: Option[Url],
+    contributingGuide: Option[Url],
+    codeOfConduct: Option[Url]
 ) {
-  def update(project: Project): Project = {
+  def update(project: Project,
+             paths: DataPaths,
+             githubDownload: GithubDownload,
+             fromStored: Boolean = false): Project = {
 
     val githubWithKeywords =
       if (project.github.isEmpty) {
@@ -30,6 +40,21 @@ case class ProjectForm(
           github => github.copy(topics = github.topics ++ keywords)
         )
       }
+
+    val oldBeginnerIssueLabel = project.github.flatMap(_.beginnerIssuesLabel)
+    val getBeginnerIssues = fromStored && beginnerIssues.isEmpty && beginnerIssuesLabel.isDefined
+    val newBeginnerIssues =
+      if (getBeginnerIssues) {
+        githubDownload.runBeginnerIssues(project.githubRepo,
+                                         beginnerIssuesLabel.getOrElse(""))
+        GithubReader
+          .beginnerIssues(paths, project.githubRepo)
+          .getOrElse(List())
+      } else beginnerIssues
+
+    val newChatroom = chatroom.filterNot(_.target == "")
+    val newContributingGuide = contributingGuide.filterNot(_.target == "")
+    val newCodeOfConduct = codeOfConduct.filterNot(_.target == "")
 
     project.copy(
       contributorsWanted = contributorsWanted,
@@ -42,7 +67,29 @@ case class ProjectForm(
       artifactDeprecations = artifactDeprecations,
       cliArtifacts = cliArtifacts,
       hasCli = cliArtifacts.nonEmpty,
-      github = githubWithKeywords,
+      github = githubWithKeywords.map(
+        github =>
+          github.copy(
+            beginnerIssuesLabel = beginnerIssuesLabel.filterNot(_ == ""),
+            beginnerIssues = newBeginnerIssues,
+            selectedBeginnerIssues = selectedBeginnerIssues,
+            // default to project's chatroom/contributingGuide/codeOfConduct
+            // if updating from stored project and stored project didn't override
+            // that value
+            chatroom =
+              if (fromStored && !newChatroom.isDefined)
+                project.github.flatMap(_.chatroom)
+              else newChatroom,
+            contributingGuide =
+              if (fromStored && !newContributingGuide.isDefined)
+                project.github.flatMap(_.contributingGuide)
+              else newContributingGuide,
+            codeOfConduct =
+              if (fromStored && !newCodeOfConduct.isDefined)
+                project.github.flatMap(_.codeOfConduct)
+              else newCodeOfConduct
+        )
+      ),
       customScalaDoc = customScalaDoc.filterNot(_ == ""),
       documentationLinks = documentationLinks.filterNot {
         case (label, link) => label == "" || link == ""
@@ -67,7 +114,13 @@ object ProjectForm {
       cliArtifacts,
       customScalaDoc,
       documentationLinks,
-      primaryTopic
+      primaryTopic,
+      github.flatMap(_.beginnerIssuesLabel),
+      github.map(_.beginnerIssues).getOrElse(List()),
+      github.map(_.selectedBeginnerIssues).getOrElse(List()),
+      github.flatMap(_.chatroom),
+      github.flatMap(_.contributingGuide),
+      github.flatMap(_.codeOfConduct)
     )
   }
 }

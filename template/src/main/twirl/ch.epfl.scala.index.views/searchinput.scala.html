@@ -9,7 +9,12 @@
             value = "@params.queryString"
           }
           name="q" id="search" type="text" class="form-control"
-          placeholder="Search @for(projects <- totalProjects; releases <- totalReleases) {within @projects projects and @releases releases}">
+          @if(params.contributingSearch){
+            placeholder="Search beginner-friendly projects and issues"
+          } else {
+            placeholder="Search @for(projects <- totalProjects; releases <- totalReleases) {within @projects projects and @releases releases}"
+          }
+          >
         @if(you){
           <input type="hidden" name="you" value="✓">
         }
@@ -31,6 +36,10 @@
         @for(scalaNativeVersion <- params.scalaNativeVersions){
           <input type="hidden" name="scalaNativeVersions" value="@scalaNativeVersion">
         }
+
+          @if(params.contributingSearch) {
+            <input type="hidden" name="contributingSearch" value="@{params.contributingSearch}">
+          }
     </form>
     <span class="form-control-feedback"><i class="fa fa-search"></i></span>
     <div class="autocomplete">

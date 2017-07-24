@@ -59,6 +59,12 @@
 
                         @if(showSearch) {
                             @searchinput(params, you, totalProjects, totalReleases, queryIsTopic)
+                        } else {
+                            <div class="col-md-9">
+                                <p class="white">New Feature: Projects with Contributing Info
+                                show up on the front page and in the Contributing Search page. Maintainers can
+                                give their project Contributing Info in the Edit page.</p>
+                            </div>
                         }
 
                         @user.map{ u =>

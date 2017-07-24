@@ -14,7 +14,8 @@
   user: Option[UserInfo],
   ecosystems: Map[String, String],
   totalProjects: Long,
-  totalReleases: Long)
+  totalReleases: Long,
+  contributingProjects: List[Project])
 
 @main(title = "Scaladex", showSearch = false, user) {
 <main id="container-home">
@@ -70,6 +71,21 @@
                         }
                     </ul>
                 </div>
+            </div>
+        </div>
+    </section>
+    <section class="contributing-projects">
+        <div class="container">
+            <h2 class="text-center">Looking for a project to contribute to?</h2>
+            <h4 class="text-center">Each project below has beginner-friendly issues which are great places to start contributing.<br>To find more projects, use the <a href="/search?q=&contributingSearch=true">Contributing Search</a></h4>
+            <div class="row">
+                @for(project <- contributingProjects){
+                    <div class="col-md-4 col-sm-6">
+                        <div class="content-contributing-project box">
+                            @contributingInfo(project)
+                      </div>
+                    </div>
+                }
             </div>
         </div>
     </section>

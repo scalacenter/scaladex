@@ -17,7 +17,8 @@ import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 import org.slf4j.LoggerFactory
 
-class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
+class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
+    extends BintrayProtocol {
 
   private val format = ISODateTimeFormat.dateTime.withOffsetParsed
 
@@ -354,7 +355,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
               github = github,
               artifacts = releaseOptions.map(_.artifacts.sorted).getOrElse(Nil),
               releaseCount = releaseCount,
-              defaultArtifact = releaseOptions.map(_.release.reference.artifact),
+              defaultArtifact =
+                releaseOptions.map(_.release.reference.artifact),
               created = min,
               updated = max
             )
@@ -507,7 +509,7 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
           if (stored) {
             storedProjects
               .get(project.reference)
-              .map(_.update(project))
+              .map(_.update(project, paths, githubDownload, fromStored = true))
               .getOrElse(project)
           } else project
 

@@ -12,6 +12,12 @@
 
 <div class="filters">
   <form action="/search" action="GET">
+    @if(params.contributingSearch) {
+      <a class="btn btn-primary" href="/search?q=">Normal Search</a>
+      <input type="hidden" name="contributingSearch" value="true">
+    } else {
+      <a class="btn btn-primary" href="/search?q=&contributingSearch=true">Contributing Search</a>
+    }
     <h3>Filters</h3>
     <fieldset>
       <legend>Target</legend>

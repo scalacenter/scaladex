@@ -3,7 +3,7 @@ package server
 package routes
 
 import data.project.ProjectForm
-import data.github.GithubReader
+import data.github.{GithubReader, Json4s}
 import data.DataPaths
 import model._
 import model.misc._
@@ -23,6 +23,8 @@ import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.Directives._
 
 import org.slf4j.LoggerFactory
+
+import org.json4s.native.Serialization.{read, write}
 
 import scala.concurrent.Future
 
@@ -50,7 +52,13 @@ class ProjectPages(dataRepository: DataRepository,
       } yield {
         project
           .map { p =>
-            (OK, views.project.html.editproject(p, user))
+            val beginnerIssuesJson = p.github
+              .map { github =>
+                import Json4s._
+                write[List[GithubIssue]](github.beginnerIssues)
+              }
+              .getOrElse("")
+            (OK, views.project.html.editproject(p, user, beginnerIssuesJson))
           }
           .getOrElse((NotFound, views.html.notfound(user)))
       }
@@ -221,7 +229,13 @@ class ProjectPages(dataRepository: DataRepository,
             'artifactDeprecations.*,
             'cliArtifacts.*,
             'customScalaDoc.?,
-            'primaryTopic.?
+            'primaryTopic.?,
+            'beginnerIssuesLabel.?,
+            'beginnerIssues.?,
+            'selectedBeginnerIssues.*,
+            'chatroom.?,
+            'contributingGuide.?,
+            'codeOfConduct.?
           )
         ).tmap {
           case (contributorsWanted,
@@ -232,7 +246,13 @@ class ProjectPages(dataRepository: DataRepository,
                 artifactDeprecations,
                 cliArtifacts,
                 customScalaDoc,
-                primaryTopic) =>
+                primaryTopic,
+                beginnerIssuesLabel,
+                beginnerIssues,
+                selectedBeginnerIssues,
+                chatroom,
+                contributingGuide,
+                codeOfConduct) =>
             val documentationLinks = {
               val name = "documentationLinks"
               val end = "]".head
@@ -256,6 +276,7 @@ class ProjectPages(dataRepository: DataRepository,
 
             val keywords = Set[String]()
 
+            import Json4s._
             ProjectForm(
               contributorsWanted,
               keywords,
@@ -267,7 +288,13 @@ class ProjectPages(dataRepository: DataRepository,
               cliArtifacts.toSet,
               customScalaDoc,
               documentationLinks,
-              primaryTopic
+              primaryTopic,
+              beginnerIssuesLabel,
+              beginnerIssues.map(read[List[GithubIssue]](_)).getOrElse(List()),
+              selectedBeginnerIssues.map(read[GithubIssue](_)).toList,
+              chatroom.map(Url(_)),
+              contributingGuide.map(Url(_)),
+              codeOfConduct.map(Url(_))
             )
       }
     )

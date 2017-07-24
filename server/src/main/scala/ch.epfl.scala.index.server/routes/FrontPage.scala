@@ -26,6 +26,8 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
     val latestReleasesF = latestReleases()
     val totalProjectsF = totalProjects()
     val totalReleasesF = totalReleases()
+    val contributingProjectsF = contributingProjects()
+
     for {
       topics <- topicsF
       targetTypes <- targetTypesF
@@ -37,6 +39,7 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
       latestReleases <- latestReleasesF
       totalProjects <- totalProjectsF
       totalReleases <- totalReleasesF
+      contributingProjects <- contributingProjectsF
     } yield {
 
       def query(label: String)(xs: String*): String =
@@ -68,7 +71,8 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
         userInfo,
         ecosystems,
         totalProjects,
-        totalReleases
+        totalReleases,
+        contributingProjects
       )
     }
   }

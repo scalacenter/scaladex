@@ -3,6 +3,7 @@ package data
 package elastic
 
 import project._
+import github.GithubDownload
 import maven.PomsReader
 
 import com.sksamuel.elastic4s.ElasticDsl._
@@ -13,8 +14,9 @@ import scala.util.Success
 
 import org.slf4j.LoggerFactory
 
-class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
-    extends ProjectProtocol {
+class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
+    implicit val ec: ExecutionContext
+) extends ProjectProtocol {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -40,7 +42,8 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
       keywordField("cliArtifacts").index(false),
       keywordField("targets"),
       keywordField("dependencies"),
-      objectField("github").fields(keywordField("topics")),
+      objectField("github").fields(keywordField("topics"),
+                                   nestedField("beginnerIssues")),
       dateField("created"),
       dateField("updated")
     )
@@ -79,7 +82,7 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
     )
 
     log.info("loading update data")
-    val projectConverter = new ProjectConvert(paths)
+    val projectConverter = new ProjectConvert(paths, githubDownload)
     val newData = projectConverter(
       PomsReader.loadAll(paths).collect {
         case Success(pomAndMeta) => pomAndMeta
@@ -96,7 +99,8 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
       val bulkResults = Await.result(esClient.execute {
         bulk(
           group.map(
-            release => indexInto(indexName / releasesCollection).source(release)
+            release =>
+              indexInto(indexName / releasesCollection).source(release)
           )
         )
       }, Duration.Inf)
@@ -116,7 +120,8 @@ class SeedElasticSearch(paths: DataPaths)(implicit val ec: ExecutionContext)
       val bulkResults = Await.result(esClient.execute {
         bulk(
           group.map(
-            project => indexInto(indexName / projectsCollection).source(project)
+            project =>
+              indexInto(indexName / projectsCollection).source(project)
           )
         )
       }, Duration.Inf)

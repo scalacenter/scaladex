@@ -40,6 +40,7 @@ object GithubReader {
         topics = topics(paths, github).getOrElse(List()).toSet,
         beginnerIssues = beginnerIssues(paths, github).getOrElse(List()),
         contributingGuide = contributingGuide(paths, github).getOrElse(None),
+        codeOfConduct = codeOfConduct(paths, github).getOrElse(None),
         chatroom = chatroom(paths, github).toOption
       )
     }.toOption
@@ -151,14 +152,13 @@ object GithubReader {
           GithubIssue(
             issue.number,
             issue.title,
-            issue.bodyText,
             Url(issue.url)
         )
       )
   }
 
   /**
-   * read the contributing guide from file if exists
+   * read the link to the contributing guide from file if exists
    * @param github the git repo
    * @return
    */
@@ -174,7 +174,23 @@ object GithubReader {
   }
 
   /**
-   * read the chatroom from file if it exists
+   * read the link to the code of conduct from file if exists
+   * @param github the git repo
+   * @return
+   */
+  def codeOfConduct(paths: DataPaths, github: GithubRepo): Try[Option[Url]] =
+    Try {
+
+      import Json4s._
+
+      val communityProfilePath = githubRepoCommunityProfilePath(paths, github)
+      val communityProfile =
+        read[V3.CommunityProfile](communityProfilePath)
+      communityProfile.files.code_of_conduct.html_url.map(Url(_))
+    }
+
+  /**
+   * read the link to the chatroom from file if it exists
    * @return
    */
   def chatroom(paths: DataPaths, github: GithubRepo): Try[Url] = Try {

@@ -1,6 +1,7 @@
 @import ch.epfl.scala.index.views.html._
 @import ch.epfl.scala.index.model.Project
-@(projects: List[Project])
+@import ch.epfl.scala.index.model.misc.SearchParams
+@(projects: List[Project], params: SearchParams)
 
 <ol class="list-result box">
   @for(project <- projects){
@@ -8,42 +9,48 @@
     <a href="/@project.reference.organization/@project.reference.repository">
       <div class="row">
         <div class="col-md-8">
-          <div>
-            <img src="@{project.github.flatMap(_.logo.map(_.target)).getOrElse("/assets/img/avatar-list.png")}" alt="project logo">
-            <h4>@project.reference.organization/@project.reference.repository</h4>
+          @if(params.contributingSearch){
+            <div class="contributing-result">
+              @contributingInfo(project, params = Some(params))
+            </div>
+          } else {
+            <div>
+              <img src="@{project.github.flatMap(_.logo.map(_.target)).getOrElse("/assets/img/avatar-list.png")}" alt="project logo">
+              <h4>@project.reference.organization/@project.reference.repository</h4>
 
-            @for(github <- project.github) {
-              @for(description <- github.description) {
-                <p class="description">@description</p>
+              @for(github <- project.github) {
+                @for(description <- github.description) {
+                  <p class="description">@description</p>
+                }
               }
-            }
-            @if(project.scalaVersion.nonEmpty){
-              <div>
-                Scala (JVM): 
-                @for(v <- sortVersions(project.scalaVersion, scala = true)) {
-                  <span class="targets">@v</span>  
-                } 
-              </div>
-            }
+              @if(project.scalaVersion.nonEmpty){
+                <div>
+                  Scala (JVM):
+                  @for(v <- sortVersions(project.scalaVersion, scala = true)) {
+                    <span class="targets">@v</span>
+                  }
+                </div>
+              }
 
-            @if(project.scalaJsVersion.nonEmpty){
-              <div>
-                Scala.js: 
-                @for(v <- sortVersions(project.scalaJsVersion)) {
-                  <span class="targets">@v</span>  
-                }
-              </div> 
-            }
+              @if(project.scalaJsVersion.nonEmpty){
+                <div>
+                  Scala.js:
+                  @for(v <- sortVersions(project.scalaJsVersion)) {
+                    <span class="targets">@v</span>
+                  }
+                </div>
+              }
 
-            @if(project.scalaNativeVersion.nonEmpty){
-              <div>
-                Scala-Native: 
-                @for(v <- sortVersions(project.scalaNativeVersion)) {
-                  <span class="targets">@v</span>  
-                }
-              </div>
-            }
-          </div>
+              @if(project.scalaNativeVersion.nonEmpty){
+                <div>
+                  Scala-Native:
+                  @for(v <- sortVersions(project.scalaNativeVersion)) {
+                    <span class="targets">@v</span>
+                  }
+                </div>
+              }
+            </div>
+          }
         </div>
         <div class="col-md-4">
           <div class="stats">

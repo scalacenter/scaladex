@@ -335,19 +335,17 @@ class GithubDownload(paths: DataPaths,
   /**
    * Process the downloaded issues from GraphQL API
    *
-   * @param project the current project
+   * @param repo the current repo
    * @param response the response
    * @return
    */
-  private def processIssuesResponse(project: Project,
+  private def processIssuesResponse(repo: GithubRepo,
                                     response: WSResponse): Try[Unit] = {
 
     checkGithubApiError(s"Processing Issues for ${project.githubRepo}",
                         response)
       .map(_ => {
-        saveJson(githubRepoIssuesPath(paths, project.githubRepo),
-                 project.githubRepo,
-                 response.body)
+        saveJson(githubRepoIssuesPath(paths, repo), repo, response.body)
 
         ()
       })
@@ -368,16 +366,19 @@ class GithubDownload(paths: DataPaths,
       throw new Exception(
         s" $message, hit Github API Abuse Rate Limit by making too many calls in a small amount of time, try again after $retryAfter s"
       )
-    } else if (200 != response.status && 404 != response.status && 500 != response.status && 204 != response.status) {
+    } else if (500 == response.status) {
+      log.info(s" $message, received 500 response from github")
+    } else if (200 != response.status && 
+               404 != response.status && 
+               500 != response.status && 
+               204 != response.status) {
       // get 200 for valid response
       // get 404 for old repo that no longer exists
-      // get 500 with 1 repo with community profile api (error on github's side),  https://api.github.com/repos/spacelift/amqp-scala-client/community/profile
-      // get 204 when getting contributors for empty repo, https:/api.github.com/repos/rockjam/cbt-sonatype/contributors?page=1
-      throw new Exception(
-        s" $message, Unknown response from Github API, ${response.status}, ${response.body}"
-      )
+      // get 500 with 1 repo with community profile api (error on github's side),
+      //   https://api.github.com/repos/spacelift/amqp-scala-client/community/profile
+      // get 204 when getting contributors for empty repo,
+      //   https:/api.github.com/repos/rockjam/cbt-sonatype/contributors?page=1
     }
-
   }
 
   private def pauseRateLimitReset() = {
@@ -566,7 +567,9 @@ class GithubDownload(paths: DataPaths,
    *
    * @return
    */
-  private def issuesQuery(project: Project): JsObject = {
+  private def issuesQuery(
+      beginnerIssuesLabel: String
+  )(repo: GithubRepo): JsObject = {
 
     val query =
       """
@@ -583,13 +586,11 @@ class GithubDownload(paths: DataPaths,
           }
         }
       """
-    val beginnerIssuesLabel =
-      project.github.flatMap(_.beginnerIssuesLabel).getOrElse("")
     Json.obj(
       "query" -> query,
       "variables" ->
-        s"""{ "owner": "${project.organization}",
-           |"name": "${project.repository}",
+        s"""{ "owner": "${repo.organization}",
+           |"name": "${repo.repository}",
            |"beginnerLabel": "$beginnerIssuesLabel" }""".stripMargin
     )
   }
@@ -693,6 +694,16 @@ class GithubDownload(paths: DataPaths,
                                parallelism = 32)
 
     ()
+  }
+
+  def runBeginnerIssues(repo: GithubRepo, beginnerIssuesLabel: String): Unit = {
+
+    downloadGraphql[GithubRepo, Unit]("Downloading Beginner Issues",
+                                      Set(repo),
+                                      githubGraphqlUrl,
+                                      issuesQuery(beginnerIssuesLabel),
+                                      processIssuesResponse,
+                                      parallelism = 32)
   }
 
 }
