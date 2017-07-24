@@ -30,6 +30,7 @@
             </div>
             }
             @project.github.map(gh => statistic(gh, project.githubRepo, project.releaseCount, release.uniqueOrderedReverseDependencies.size))
+            @projectContributingInfo(project)
             @install(release, project.cliArtifacts)
             @documentation(release, project)
             @project.github.map(gh => contributors(gh.contributors))

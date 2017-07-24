@@ -17,7 +17,8 @@ import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 import org.slf4j.LoggerFactory
 
-class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
+class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
+    extends BintrayProtocol {
 
   private val format = ISODateTimeFormat.dateTime.withOffsetParsed
 
@@ -500,7 +501,10 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
           if (stored) {
             storedProjects
               .get(project.reference)
-              .map(_.update(project))
+              // set defaultToProject = true in update call so that project will get
+              // contributingGuide/chatroom downloaded from github if they weren't
+              // already set in stored project
+              .map(_.update(project, paths, githubDownload, true))
               .getOrElse(project)
           } else project
 

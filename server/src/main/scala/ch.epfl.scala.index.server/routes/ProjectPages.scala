@@ -216,7 +216,11 @@ class ProjectPages(dataRepository: DataRepository,
             'artifactDeprecations.*,
             'cliArtifacts.*,
             'customScalaDoc.?,
-            'primaryTopic.?
+            'primaryTopic.?,
+            'beginnerIssuesLabel.?,
+            'chatroom.?,
+            'contributingGuide.?,
+            'codeOfConduct.?
           )
         ).tmap {
           case (contributorsWanted,
@@ -226,7 +230,11 @@ class ProjectPages(dataRepository: DataRepository,
                 artifactDeprecations,
                 cliArtifacts,
                 customScalaDoc,
-                primaryTopic) =>
+                primaryTopic,
+                beginnerIssuesLabel,
+                chatroom,
+                contributingGuide,
+                codeOfConduct) =>
             val documentationLinks = {
               val name = "documentationLinks"
               val end = "]".head
@@ -260,7 +268,11 @@ class ProjectPages(dataRepository: DataRepository,
               cliArtifacts.toSet,
               customScalaDoc,
               documentationLinks,
-              primaryTopic
+              primaryTopic,
+              beginnerIssuesLabel,
+              chatroom.map(Url(_)),
+              contributingGuide.map(Url(_)),
+              codeOfConduct.map(Url(_))
             )
       }
     )

@@ -6,6 +6,7 @@ import model.misc._
 
 import data.DataPaths
 import data.project.ProjectForm
+import data.github.GithubDownload
 
 import release._
 import misc.Pagination
@@ -24,14 +25,17 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future, Await}
 import scala.concurrent.duration.Duration
+import scala.util.Random
 
 /**
  * @param github  Github client
  * @param paths   Paths to the files storing the index
  */
-class DataRepository(github: Github, paths: DataPaths)(
-    private implicit val ec: ExecutionContext
-) {
+class DataRepository(
+    github: Github,
+    paths: DataPaths,
+    githubDownload: GithubDownload
+)(private implicit val ec: ExecutionContext) {
 
   private def hideId(p: Project) = p.copy(id = None)
 
@@ -53,6 +57,14 @@ class DataRepository(github: Github, paths: DataPaths)(
       case _                => scoreSort order SortOrder.DESC
     }
 
+  val contributingQuery =
+    boolQuery().must(
+      List(
+        existsQuery("github.beginnerIssues"),
+        existsQuery("github.contributingGuide"),
+        existsQuery("github.chatroom")
+      )
+    )
   private def clamp(page: Int): Int =
     if (page <= 0) 1 else page
 
@@ -179,6 +191,13 @@ class DataRepository(github: Github, paths: DataPaths)(
         topic => boolQuery().should(termQuery("github.topics", topic))
       )
 
+    val contributingSearchQuery =
+      if (params.contributingSearch) {
+        List(contributingQuery)
+      } else {
+        Nil
+      }
+
     val mustQueriesRepos: List[QueryDefinition] = {
       if (params.userRepos.nonEmpty) {
         val reposQueries =
@@ -202,14 +221,15 @@ class DataRepository(github: Github, paths: DataPaths)(
 
     val queryIsATopic = cachedTopics.contains(params.queryString)
 
-    functionScoreQuery(
+    val query = functionScoreQuery(
       boolQuery()
         .must(
           mustQueriesRepos ++
             cliQuery ++
             topicsQuery ++
             targetsQuery(params) ++
-            targetFiltering(params)
+            targetFiltering(params) ++
+            contributingSearchQuery
         )
         .should(
           List(
@@ -245,6 +265,10 @@ class DataRepository(github: Github, paths: DataPaths)(
           .factor(0.1)
       )
       .boostMode("sum")
+
+    if (params.contributingSearch && !params.queryString.isEmpty)
+      query.minScore(15)
+    else query
   }
 
   def total(queryString: String): Future[Long] = {
@@ -348,7 +372,9 @@ class DataRepository(github: Github, paths: DataPaths)(
   def updateProject(projectRef: Project.Reference,
                     form: ProjectForm): Future[Boolean] = {
     for {
-      updatedProject <- project(projectRef).map(_.map(p => form.update(p)))
+      updatedProject <- project(projectRef).map(
+        _.map(p => form.update(p, paths, githubDownload))
+      )
       ret <- updatedProject
         .flatMap { project =>
           project.id.map { id =>
@@ -476,6 +502,20 @@ class DataRepository(github: Github, paths: DataPaths)(
         search(indexName / releasesCollection)
       }
       .map(_.totalHits)
+  }
+
+  def contributingProjects() = {
+    esClient
+      .execute {
+        search(indexName / projectsCollection)
+          .query(
+            functionScoreQuery(contributingQuery)
+              .scorers(randomScore(scala.util.Random.nextInt(10000)))
+              .boostMode("sum")
+          )
+          .limit(frontPageCount)
+      }
+      .map(_.to[Project].toList)
   }
 
   private def addParamsIfMissing(p: Option[SearchParams],

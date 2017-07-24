@@ -1,0 +1,46 @@
+@import ch.epfl.scala.index.model.Project
+
+@(project: Project, hideProjectInfo: Boolean = false)
+
+@if(!hideProjectInfo) {
+    <a href="/@project.reference.organization/@project.reference.repository">
+        <img src="@{project.github.flatMap(_.logo.map(_.target)).getOrElse("/assets/img/avatar-list.png")}" alt="project logo">
+
+        <h4>@project.reference.organization/@project.reference.repository</h4>
+    </a>
+
+    @for(github <- project.github) {
+      @for(description <- github.description) {
+        <p class="description">@description</p>
+      }
+    }
+}
+@for(github <- project.github) {
+  @for(issue <- github.beginnerIssues.take(3)) {
+    <a href="@issue.url.target" target="_blank">@issue</a>
+  }
+  @if(3 < github.beginnerIssues.length) {
+      @for(label <- github.beginnerIssuesLabel) {
+        <a href="https://github.com/@{project.githubRepo}/labels/@{label}"
+          target="_blank">More Issues ...</a>
+      }
+  }
+   @for(contributingGuide <- github.contributingGuide; chatroom <- github.chatroom) {
+        <table>
+            <tr>
+              <td>
+                  <a href="@contributingGuide.target" target="_blank">Contributing Guide</a>
+              </td>
+              <td>
+                  <a href="@chatroom.target" target="_blank">Chatroom</a>
+              </td>
+              @for(codeOfConduct <- github.codeOfConduct) {
+                  <td>
+                      <a href="@codeOfConduct.target" target="_blank">CoC</a>
+                  </td>
+              }
+            </tr>
+        </table>
+    }
+
+}
