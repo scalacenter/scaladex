@@ -137,7 +137,7 @@ Then create the following file `../scaladex-dev-credentials/application.conf`
 ```
 org.scala_lang.index {
   data {
-    github = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+    github = ["XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"]
   }
 }
 ```
