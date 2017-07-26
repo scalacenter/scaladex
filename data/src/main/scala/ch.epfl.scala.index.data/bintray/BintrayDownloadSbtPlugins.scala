@@ -18,7 +18,6 @@ import org.json4s.JsonAST.JValue
 import org.slf4j.LoggerFactory
 import play.api.libs.ws.{WSClient, WSResponse}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
@@ -31,6 +30,8 @@ final class BintrayDownloadSbtPlugins(
 )(implicit val materializer: Materializer, val system: ActorSystem)
     extends PlayWsDownloader
     with BintrayProtocol {
+
+  import system.dispatcher
 
   val bintrayClient = new BintrayClient(paths)
   import bintrayClient._

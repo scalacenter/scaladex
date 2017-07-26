@@ -135,8 +135,7 @@ trait PlayWsDownloader {
       message: String,
       toDownload: Set[T],
       downloadUrl: (AhcWSClient, T) => WSRequest,
-      process: (T, WSResponse) => Try[R],
-      parallelism: Int
+      process: (T, WSResponse) => Try[R]
   ): Seq[R] = {
 
     def processItem(client: AhcWSClient, item: T, progress: ProgressBar) = {
@@ -152,7 +151,7 @@ trait PlayWsDownloader {
 
     }
 
-    processDownloads(message, toDownload, processItem, parallelism)
+    processDownloads(message, toDownload, processItem)
   }
 
   /**
@@ -171,8 +170,7 @@ trait PlayWsDownloader {
       toDownload: Set[T],
       downloadUrl: AhcWSClient => WSRequest,
       query: T => JsObject,
-      process: (T, WSResponse) => Try[R],
-      parallelism: Int
+      process: (T, WSResponse) => Try[R]
   ): Seq[R] = {
 
     def processItem(client: AhcWSClient, item: T, progress: ProgressBar) = {
@@ -186,18 +184,19 @@ trait PlayWsDownloader {
       }
     }
 
-    processDownloads(message, toDownload, processItem, parallelism)
+    processDownloads(message, toDownload, processItem)
   }
 
   private def processDownloads[T, R](
       message: String,
       toDownload: Set[T],
-      processItem: (AhcWSClient, T, ProgressBar) => Future[R],
-      parallelism: Int
+      processItem: (AhcWSClient, T, ProgressBar) => Future[R]
   ): Seq[R] = {
 
     def processItems(client: AhcWSClient, progress: ProgressBar) = {
-
+      // use minimal concurrency to avoid abuse rate limit error which is triggered
+      // by making too many calls in a short period of time, see https://github.com/scalacenter/scaladex/issues/431
+      val parallelism = 1
       Source(toDownload).mapAsyncUnordered(parallelism) { item =>
         processItem(client, item, progress)
       }
