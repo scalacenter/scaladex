@@ -235,6 +235,8 @@ case class Release(
       .filter(d => d.reference.name == dep.reference.name)
       .map(_.reference.version)
   }
+
+  def isScalaLib: Boolean = reference.isScalaLib
 }
 
 object Release {
@@ -258,6 +260,12 @@ object Release {
       val targetQuery = target.map(t => s"?target=${t.encode}").getOrElse("")
 
       s"/$organization/$repository/$artifact/$version$targetQuery"
+    }
+
+    def isScalaLib: Boolean = {
+      organization == "scala" &&
+      repository == "scala" &&
+      artifact == "scala-library"
     }
 
   }

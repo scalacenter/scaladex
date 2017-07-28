@@ -1,32 +1,34 @@
 @import ch.epfl.scala.index.model.{Release, Project}
 @(project: Project, release: Release)
-<div class="dependents box" id="dependents">
-  <h4>
-    <a href="/search?q=depends-on:@project.reference.organization/@release.reference.artifact">
-      Artifact Dependents
-    </a>
-  </h4>
-  
-  <hr>
-
-  <h4>@release.uniqueOrderedReverseDependencies.size 
-    @if(release.uniqueOrderedReverseDependencies.size > 1) {
-      Dependents
-    } else {
-      Dependent
-    }
-  </h4>
-  <ul>
-  @for(dependency <- release.uniqueOrderedReverseDependencies.take(100)){
-    <li>
-      <a href="@dependency.reference.httpUrl" target="_blank">
-      @dependency.reference.name
+@if(!release.isScalaLib) {
+  <div class="dependents box" id="dependents">
+    <h4>
+      <a href="/search?q=depends-on:@project.reference.organization/@release.reference.artifact">
+        Artifact Dependents
       </a>
-      <span class="label label-primary">@dependency.scope</span>
-    </li>
-  }
-  @if(100 < release.uniqueOrderedReverseDependencies.size) {
-    <p>Only showing 100 dependents</p>
-  }
-  </ul>  
-</div>
+    </h4>
+    
+    <hr>
+
+    <h4>@release.uniqueOrderedReverseDependencies.size 
+      @if(release.uniqueOrderedReverseDependencies.size > 1) {
+        Dependents
+      } else {
+        Dependent
+      }
+    </h4>
+    <ul>
+    @for(dependency <- release.uniqueOrderedReverseDependencies.take(100)){
+      <li>
+        <a href="@dependency.reference.httpUrl" target="_blank">
+        @dependency.reference.name
+        </a>
+        <span class="label label-primary">@dependency.scope</span>
+      </li>
+    }
+    @if(100 < release.uniqueOrderedReverseDependencies.size) {
+      <p>Only showing 100 dependents</p>
+    }
+    </ul>  
+  </div>
+}

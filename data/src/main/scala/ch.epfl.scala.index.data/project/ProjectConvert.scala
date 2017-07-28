@@ -365,12 +365,14 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
 
     log.info("Dependencies & Reverse Dependencies")
 
-    val mavenReferenceToReleaseReference = projectsAndReleases
-      .flatMap {
-        case (_, releases) => releases
-      }
-      .map(release => (release.maven, release.reference))
-      .toMap
+    val mavenReferenceToReleaseReference
+      : Map[MavenReference, Release.Reference] =
+      projectsAndReleases
+        .flatMap {
+          case (_, releases) => releases
+        }
+        .map(release => (release.maven, release.reference))
+        .toMap
 
     def dependencyToMaven(dependency: maven.Dependency) =
       MavenReference(dependency.groupId,
@@ -390,6 +392,11 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
               val pomRef = mavenReferenceToReleaseReference.get(pomMavenRef)
 
               (depRef, pomRef) match {
+
+                // Scala Library is a reverse dependency of almost all projects anyway
+                case (Some(dependencyReference), _)
+                    if (reverse && dependencyReference.isScalaLib) =>
+                  cache0
 
                 /* We have both, scala -> scala reference */
                 case (Some(dependencyReference), Some(pomReference)) =>
