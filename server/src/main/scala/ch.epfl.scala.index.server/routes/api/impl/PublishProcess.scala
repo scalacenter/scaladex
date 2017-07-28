@@ -70,12 +70,16 @@ private[api] class PublishProcess(paths: DataPaths,
                       .contains(repo)) {
                   data.writePom(paths)
                   data.deleteTemp()
-                  updateIndex(repo, pom, data).map { _ =>
-                    log.info(s"Published ${pom.organization
-                      .map(_.name)
-                      .getOrElse("")} ${pom.artifactId} ${pom.version}")
-                    (Created, "Published release")
-                  }
+
+                  // updateIndex(repo, pom, data).map { _ =>
+                  //   log.info(s"Published ${pom.organization
+                  //     .map(_.name)
+                  //     .getOrElse("")} ${pom.artifactId} ${pom.version}")
+                  //   (Created, "Published release")
+                  // }
+
+                  // XXX: Disabled indexing #478
+                  Future.successful((Created, "Published release"))
                 } else {
                   log.warn(
                     s"User ${data.userState.user.login} attempted to publish to ${repo.toString}"
