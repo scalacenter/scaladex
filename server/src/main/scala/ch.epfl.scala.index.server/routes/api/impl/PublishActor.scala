@@ -22,7 +22,7 @@ class PublishActor(paths: DataPaths,
 
   def receive = {
     case publishData: PublishData => {
-      sender ! Await.result(publishProcess.writeFiles(publishData), 10.seconds)
+      sender ! Await.result(publishProcess.writeFiles(publishData), 1.minute)
     }
   }
 }
