@@ -27,6 +27,7 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
       latestReleases <- latestReleases()
       totalProjects <- totalProjects()
       totalReleases <- totalReleases()
+      contributingProjects <- contributingProjects()
     } yield {
 
       def query(label: String)(xs: String*): String =
@@ -58,7 +59,8 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
         userInfo,
         ecosystems,
         totalProjects,
-        totalReleases
+        totalReleases,
+        contributingProjects
       )
     }
   }

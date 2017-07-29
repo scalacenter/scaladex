@@ -162,11 +162,11 @@ private[api] class PublishProcess(paths: DataPaths,
                           data: PublishData): Future[Unit] = {
     println("updating " + pom.artifactId)
 
-    new GithubDownload(paths, Some(data.credentials))
-      .run(repo,
-           data.downloadInfo,
-           data.downloadReadme,
-           data.downloadContributors)
+    val githubDownload = new GithubDownload(paths, Some(data.credentials))
+    githubDownload.run(repo,
+                       data.downloadInfo,
+                       data.downloadReadme,
+                       data.downloadContributors)
 
     val githubRepoExtractor = new GithubRepoExtractor(paths)
     val Some(GithubRepo(organization, repository)) = githubRepoExtractor(pom)
@@ -182,7 +182,7 @@ private[api] class PublishProcess(paths: DataPaths,
 
       Meta.append(paths, Meta(data.hash, data.path, data.created), repository)
 
-      val converter = new ProjectConvert(paths)
+      val converter = new ProjectConvert(paths, githubDownload)
 
       val (newProject, newReleases) = converter(
         pomsRepoSha = List((pom, repository, data.hash)),

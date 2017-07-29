@@ -79,6 +79,24 @@
                   }
                   </select>
                 </div>
+                <div class="form-group">
+                  <label for="beginnerIssuesLabel">Beginner Issues Label</label>
+                  <input name="beginnerIssuesLabel" value="@github.beginnerIssuesLabel.getOrElse("")"
+                    placeholder="Label used to mark beginner-friendly Issues on Github"
+                    class="form-control list-group-item">
+                </div>
+                <div class="form-group">
+                  <label for="chatroom">Chatroom</label>
+                  <input name="chatroom" value="@github.chatroom.getOrElse(Url("")).target"
+                    placeholder="Link to chatroom (Ex. https://gitter.im/scalacenter/scaladex)"
+                    class="form-control list-group-item">
+                </div>
+                <div class="form-group">
+                  <label for="contributingGuide">Contributing Guide</label>
+                  <input name="contributingGuide" value="@github.contributingGuide.getOrElse(Url("")).target"
+                    placeholder="Link to contributing guide (Ex. https://github.com/scalacenter/scaladex/blob/master/CONTRIBUTING.md)"
+                    class="form-control list-group-item">
+                </div>
               }
 
               <fieldset>

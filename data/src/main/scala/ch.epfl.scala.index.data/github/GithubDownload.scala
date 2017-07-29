@@ -319,18 +319,16 @@ class GithubDownload(paths: DataPaths,
   /**
    * Process the downloaded issues from GraphQL API
    *
-   * @param project the current project
+   * @param repo the current repo
    * @param response the response
    * @return
    */
-  private def processIssuesResponse(project: Project,
+  private def processIssuesResponse(repo: GithubRepo,
                                     response: WSResponse): Try[Unit] = {
 
     checkGithubApiError("Processing Issues", response)
       .map(_ => {
-        saveJson(githubRepoIssuesPath(paths, project.githubRepo),
-                 project.githubRepo,
-                 response.body)
+        saveJson(githubRepoIssuesPath(paths, repo), repo, response.body)
 
         ()
       })
@@ -356,8 +354,9 @@ class GithubDownload(paths: DataPaths,
       throw new Exception(
         s" $message, hit API Abuse Rate Limit by making too many calls in a small amount of time, try again after $retryAfter s"
       )
-    } else if (200 != response.status && 404 != response.status) {
-      // 200 is valid response and get 404 for old repo that no longer exists,
+    } else if (200 != response.status && 404 != response.status && 500 != response.status) {
+      // 200 is valid response, 404 is for old repo that no longer exists
+      // 500 is for error on github's side for some of the community profile api endpoints
       // don't want to throw exception for 404 since it'll stop all other downloads
       throw new Exception(
         s" $message, Unknown response from Github API, ${response.status}, ${response.body}"
@@ -508,7 +507,9 @@ class GithubDownload(paths: DataPaths,
    *
    * @return
    */
-  private def issuesQuery(project: Project): JsObject = {
+  private def issuesQuery(
+      beginnerIssuesLabel: String
+  )(repo: GithubRepo): JsObject = {
 
     val query =
       """
@@ -525,13 +526,11 @@ class GithubDownload(paths: DataPaths,
           }
         }
       """
-    val beginnerIssuesLabel =
-      project.github.flatMap(_.beginnerIssuesLabel).getOrElse("")
     Json.obj(
       "query" -> query,
       "variables" ->
-        s"""{ "owner": "${project.organization}",
-           |"name": "${project.repository}",
+        s"""{ "owner": "${repo.organization}",
+           |"name": "${repo.repository}",
            |"beginnerLabel": "$beginnerIssuesLabel" }""".stripMargin
     )
   }
@@ -645,6 +644,16 @@ class GithubDownload(paths: DataPaths,
                                parallelism = 32)
 
     ()
+  }
+
+  def runBeginnerIssues(repo: GithubRepo, beginnerIssuesLabel: String): Unit = {
+
+    downloadGraphql[GithubRepo, Unit]("Downloading Beginner Issues",
+                                      Set(repo),
+                                      githubGraphqlUrl,
+                                      issuesQuery(beginnerIssuesLabel),
+                                      processIssuesResponse,
+                                      parallelism = 32)
   }
 
 }

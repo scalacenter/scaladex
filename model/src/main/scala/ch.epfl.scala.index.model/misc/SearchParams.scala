@@ -19,5 +19,6 @@ case class SearchParams(
     targetTypes: List[String] = Nil,
     scalaVersions: List[String] = Nil,
     scalaJsVersions: List[String] = Nil,
-    scalaNativeVersions: List[String] = Nil
+    scalaNativeVersions: List[String] = Nil,
+    contributingSearch: Boolean = false
 )
