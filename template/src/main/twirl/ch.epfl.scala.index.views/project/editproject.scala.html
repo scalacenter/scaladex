@@ -111,6 +111,10 @@
                   <p>If possible we do not use release candidate or milestones as the last version. For example, if the artifact has version 1.2.1 and version 2.0.0-RC1 by default we will use 1.2.1. If you would prefer to select 2.0.0-RC1 uncheck this box:</p>
                   <input type="checkbox" name="defaultStableVersion" @if(project.defaultStableVersion){ checked } id="defaultStableVersion">
                   <label label-for="defaultStableVersion">Do not select pre-released versions</label>
+
+                  <p>Remove versions not following the semver.org specifications</p>
+                  <input type="checkbox" name="strictVersions" @if(project.strictVersions){ checked } id="strictVersions">
+                  <label label-for="strictVersions">Semantic Versions only</label>
                 </div>
 
 

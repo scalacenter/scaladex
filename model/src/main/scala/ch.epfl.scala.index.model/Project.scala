@@ -11,6 +11,7 @@ import misc.{GithubInfo, GithubRepo, Url}
  * @param github github information representation
  * @param defaultStableVersion when selecting a default version avoid preReleases if possible (otherwise select latest version)
  * @param defaultArtifact when we land on a project page (ex: typelevel/cats) specify an artifact to select by default
+ * @param strictVersions only show valid semantic version
  * @param artifacts names for this project (ex: cats-core, cats-free, ...)
  * @param releaseCount how many distinct versions we can find
  * @param customScalaDoc expression to substitute scaladoc
@@ -38,6 +39,7 @@ case class Project(
     github: Option[GithubInfo] = None,
     defaultStableVersion: Boolean = true,
     defaultArtifact: Option[String],
+    strictVersions: Boolean = false,
     artifacts: List[String],
     releaseCount: Int,
     customScalaDoc: Option[String] = None,

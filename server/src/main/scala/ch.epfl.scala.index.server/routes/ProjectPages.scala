@@ -175,11 +175,15 @@ class ProjectPages(dataRepository: DataRepository,
               image = github.logo
             )
 
+          val versions0 =
+            if (project.strictVersions) versions.filter(_.isSemantic)
+            else versions
+
           (OK,
            views.project.html.project(
              project,
              options.artifacts,
-             versions.filter(_.isSemantic),
+             versions0,
              targets,
              release,
              user,
@@ -212,6 +216,7 @@ class ProjectPages(dataRepository: DataRepository,
             'contributorsWanted.as[Boolean] ? false,
             'defaultArtifact.?,
             'defaultStableVersion.as[Boolean] ? false,
+            'strictVersions.as[Boolean] ? false,
             'deprecated.as[Boolean] ? false,
             'artifactDeprecations.*,
             'cliArtifacts.*,
@@ -222,6 +227,7 @@ class ProjectPages(dataRepository: DataRepository,
           case (contributorsWanted,
                 defaultArtifact,
                 defaultStableVersion,
+                strictVersions,
                 deprecated,
                 artifactDeprecations,
                 cliArtifacts,
@@ -255,6 +261,7 @@ class ProjectPages(dataRepository: DataRepository,
               keywords,
               defaultArtifact,
               defaultStableVersion,
+              strictVersions,
               deprecated,
               artifactDeprecations.toSet,
               cliArtifacts.toSet,

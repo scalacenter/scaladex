@@ -11,6 +11,7 @@ case class ProjectForm(
     keywords: Set[String],
     defaultArtifact: Option[String],
     defaultStableVersion: Boolean,
+    strictVersions: Boolean = false,
     deprecated: Boolean,
     artifactDeprecations: Set[String],
     cliArtifacts: Set[String],
@@ -36,6 +37,7 @@ case class ProjectForm(
         if (defaultArtifact.isDefined) defaultArtifact
         else project.defaultArtifact,
       defaultStableVersion = defaultStableVersion,
+      strictVersions = strictVersions,
       deprecated = deprecated,
       artifactDeprecations = artifactDeprecations,
       cliArtifacts = cliArtifacts,
@@ -59,6 +61,7 @@ object ProjectForm {
       github.map(_.topics).getOrElse(Set()),
       defaultArtifact,
       defaultStableVersion,
+      strictVersions,
       deprecated,
       artifactDeprecations,
       cliArtifacts,
