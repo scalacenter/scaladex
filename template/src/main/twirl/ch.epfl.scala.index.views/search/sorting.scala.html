@@ -11,7 +11,11 @@
       <input type="hidden" name="you" value="">
     }
     <input type="hidden" name="page" value="@pagination.current">
-    
+
+    @for(topic <- params.topics){
+      <input type="hidden" name="topics" value="@topic">
+    }
+
     @for(tpe <- params.targetTypes){
       <input type="hidden" name="targetTypes" value="@tpe">
     }
