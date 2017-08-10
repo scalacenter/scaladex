@@ -54,8 +54,7 @@ class BintrayListPoms(paths: DataPaths)(
                        page: PomListDownload): WSRequest = {
     val query = page.lastSearchDate.fold(Seq[(String, String)]())(
       after => Seq("created_after" -> (after.toLocalDateTime.toString + "Z"))
-    ) ++ Seq("name" -> s"${page.query}*.pom",
-             "start_pos" -> page.page.toString)
+    ) ++ Seq("name" -> s"${page.query}*.pom", "start_pos" -> page.page.toString)
 
     withAuth(wsClient.url(s"$bintrayApi/search/file"))
       .withQueryStringParameters(query: _*)

@@ -93,11 +93,7 @@ class DefaultReleaseTests extends FunSpec {
       )
 
       val result =
-        DefaultRelease(repository,
-                       ReleaseSelection.empty,
-                       releases,
-                       None,
-                       true)
+        DefaultRelease(repository, ReleaseSelection.empty, releases, None, true)
 
       val versions: List[SemanticVersion] =
         List(
