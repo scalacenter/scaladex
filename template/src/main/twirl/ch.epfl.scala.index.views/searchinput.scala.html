@@ -1,6 +1,6 @@
 @import ch.epfl.scala.index.model.misc.SearchParams
 
-@(params: SearchParams = SearchParams(), you: Boolean = false, totalProjects: Option[Long], totalReleases: Option[Long])
+@(params: SearchParams = SearchParams(), you: Boolean = false, totalProjects: Option[Long], totalReleases: Option[Long], queryIsTopic: Boolean = false)
 
 <div class="has-feedback">
     <form action="/search" action="GET">
@@ -36,4 +36,7 @@
     <div class="autocomplete">
         <ul id="list-result"></ul>
     </div>
+    @if(queryIsTopic){
+        <p>Did you mean <a href="/search?q=&topics=@{params.queryString}">topics=@{params.queryString}?</a></p>
+    }
 </div>

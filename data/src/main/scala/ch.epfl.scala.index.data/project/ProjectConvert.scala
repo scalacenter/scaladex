@@ -354,7 +354,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
               github = github,
               artifacts = releaseOptions.map(_.artifacts.sorted).getOrElse(Nil),
               releaseCount = releaseCount,
-              defaultArtifact = releaseOptions.map(_.release.reference.artifact),
+              defaultArtifact =
+                releaseOptions.map(_.release.reference.artifact),
               created = min,
               updated = max
             )

@@ -125,7 +125,9 @@ private[api] class PublishProcess(paths: DataPaths,
     val path = data.tempPath.getParent
 
     val downloadParentPomsStep =
-      new DownloadParentPoms(LocalPomRepository.MavenCentral, paths, Some(path))
+      new DownloadParentPoms(LocalPomRepository.MavenCentral,
+                             paths,
+                             Some(path))
 
     downloadParentPomsStep.run()
 

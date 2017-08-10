@@ -31,6 +31,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
         scalaVersions <- scalaVersions(Some(params))
         scalaJsVersions <- scalaJsVersions(Some(params))
         scalaNativeVersions <- scalaNativeVersions(Some(params))
+        queryIsTopic <- queryIsTopic(params.queryString)
       } yield {
         searchresult(
           params,
@@ -43,7 +44,8 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
           targetTypes,
           scalaVersions,
           scalaJsVersions,
-          scalaNativeVersions
+          scalaNativeVersions,
+          queryIsTopic
         )
       }
     )
