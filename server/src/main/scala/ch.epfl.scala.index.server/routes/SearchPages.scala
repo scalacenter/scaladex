@@ -23,15 +23,23 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
   import dataRepository._
 
   private def search(params: SearchParams, userId: Option[UUID], uri: String) = {
-    complete(
+    complete {
+      val resultsF = find(params)
+      val topicsF = topics(Some(params))
+      val targetTypesF = targetTypes(Some(params))
+      val scalaVersionsF = scalaVersions(Some(params))
+      val scalaJsVersionsF = scalaJsVersions(Some(params))
+      val scalaNativeVersionsF = scalaNativeVersions(Some(params))
+      val queryIsTopicF = queryIsTopic(params.queryString)
+
       for {
-        (pagination, projects) <- find(params)
-        topics <- topics(Some(params))
-        targetTypes <- targetTypes(Some(params))
-        scalaVersions <- scalaVersions(Some(params))
-        scalaJsVersions <- scalaJsVersions(Some(params))
-        scalaNativeVersions <- scalaNativeVersions(Some(params))
-        queryIsTopic <- queryIsTopic(params.queryString)
+        (pagination, projects) <- resultsF
+        topics <- topicsF
+        targetTypes <- targetTypesF
+        scalaVersions <- scalaVersionsF
+        scalaJsVersions <- scalaJsVersionsF
+        scalaNativeVersions <- scalaNativeVersionsF
+        queryIsTopic <- queryIsTopicF
       } yield {
         searchresult(
           params,
@@ -48,7 +56,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
           queryIsTopic
         )
       }
-    )
+    }
   }
 
   def searchParams(userId: Option[UUID]): Directive1[SearchParams] =

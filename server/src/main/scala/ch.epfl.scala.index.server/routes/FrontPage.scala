@@ -16,17 +16,27 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
 
   private def frontPage(userInfo: Option[UserInfo]) = {
     import dataRepository._
+    val topicsF = topics()
+    val targetTypesF = targetTypes()
+    val scalaVersionsF = scalaVersions()
+    val scalaJsVersionsF = scalaJsVersions()
+    val scalaNativeVersionsF = scalaNativeVersions()
+    val mostDependedUponF = mostDependedUpon()
+    val latestProjectsF = latestProjects()
+    val latestReleasesF = latestReleases()
+    val totalProjectsF = totalProjects()
+    val totalReleasesF = totalReleases()
     for {
-      topics <- topics()
-      targetTypes <- targetTypes()
-      scalaVersions <- scalaVersions()
-      scalaJsVersions <- scalaJsVersions()
-      scalaNativeVersions <- scalaNativeVersions()
-      mostDependedUpon <- mostDependedUpon()
-      latestProjects <- latestProjects()
-      latestReleases <- latestReleases()
-      totalProjects <- totalProjects()
-      totalReleases <- totalReleases()
+      topics <- topicsF
+      targetTypes <- targetTypesF
+      scalaVersions <- scalaVersionsF
+      scalaJsVersions <- scalaJsVersionsF
+      scalaNativeVersions <- scalaNativeVersionsF
+      mostDependedUpon <- mostDependedUponF
+      latestProjects <- latestProjectsF
+      latestReleases <- latestReleasesF
+      totalProjects <- totalProjectsF
+      totalReleases <- totalReleasesF
     } yield {
 
       def query(label: String)(xs: String*): String =
