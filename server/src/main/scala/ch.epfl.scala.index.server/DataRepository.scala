@@ -261,6 +261,20 @@ class DataRepository(github: Github, paths: DataPaths)(
     query(getQuery(params), params)
   }
 
+  def queryIsTopic(queryString: String): Future[Boolean] = {
+
+    val q = getQuery(SearchParams(topics = List(queryString)))
+
+    esClient
+      .execute {
+        search(indexName / projectsCollection)
+          .query(q)
+          .size(0)
+          .terminateAfter(1)
+      }
+      .map(_.totalHits > 0)
+  }
+
   def releases(project: Project.Reference): Future[List[Release]] = {
     esClient
       .execute {
