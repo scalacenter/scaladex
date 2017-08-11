@@ -633,7 +633,8 @@ class GithubDownload(paths: DataPaths,
     download[GithubRepo, Unit]("Checking Gitter Chatroom Links",
                                githubRepos,
                                gitterUrl,
-                               processChatroomResponse)
+                               processChatroomResponse,
+                               parallelism = 32)
 
     val reposAndBeginnerIssues: Set[(GithubRepo, String)] = {
       val liveProjecs = SaveLiveData.storedProjects(paths)
@@ -720,7 +721,8 @@ class GithubDownload(paths: DataPaths,
     download[GithubRepo, Unit]("Checking Gitter Chatroom Links",
                                Set(repo),
                                gitterUrl,
-                               processChatroomResponse)
+                               processChatroomResponse,
+                               parallelism = 32)
 
     ()
   }

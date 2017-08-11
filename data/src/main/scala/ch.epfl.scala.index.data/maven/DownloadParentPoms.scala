@@ -101,7 +101,8 @@ class DownloadParentPoms(repository: LocalPomRepository,
         download[Dependency, Int]("Download parent POMs",
                                   parentPomsToDownload,
                                   downloadRequest,
-                                  processResponse)
+                                  processResponse,
+                                  parallelism = 32)
       val failedDownloads = downloaded.sum
 
       log.warn(s"failed downloads: $failedDownloads")

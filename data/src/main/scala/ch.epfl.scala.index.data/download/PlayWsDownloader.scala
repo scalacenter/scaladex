@@ -77,7 +77,8 @@ trait PlayWsDownloader {
       message: String,
       toDownload: Set[T],
       downloadUrl: (AhcWSClient, T) => WSRequest,
-      process: (T, WSResponse) => R
+      process: (T, WSResponse) => R,
+      parallelism: Int
   ): Seq[R] = {
 
     val client = wsClient
