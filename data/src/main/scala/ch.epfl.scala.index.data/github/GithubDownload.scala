@@ -655,7 +655,8 @@ class GithubDownload(paths: DataPaths,
     download[GithubRepo, Unit]("Checking Gitter Chatroom Links",
                                githubRepos,
                                gitterUrl,
-                               processChatroomResponse)
+                               processChatroomResponse,
+                               parallelism = 32)
 
     downloadGraphql[(GithubRepo, String), Unit](
       "Downloading Beginner Issues",
@@ -720,7 +721,8 @@ class GithubDownload(paths: DataPaths,
     download[GithubRepo, Unit]("Checking Gitter Chatroom Links",
                                Set(repo),
                                gitterUrl,
-                               processChatroomResponse)
+                               processChatroomResponse,
+                               parallelism = 32)
 
     ()
   }

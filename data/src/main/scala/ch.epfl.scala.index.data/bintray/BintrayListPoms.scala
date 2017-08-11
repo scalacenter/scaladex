@@ -220,7 +220,8 @@ class BintrayListPoms(paths: DataPaths)(
       download[PomListDownload, List[BintraySearch]](infoMessage,
                                                      toDownload,
                                                      discover,
-                                                     processSearch)
+                                                     processSearch,
+                                                     parallelism = 1)
 
     /* maybe we have here a problem with duplicated poms */
     val merged = newQueried
