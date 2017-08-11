@@ -7,6 +7,7 @@ import cleanup.GithubRepoExtractor
 import maven.PomsReader
 import model.misc.GithubRepo
 import model.Project
+import elastic.SaveLiveData
 
 import org.json4s._
 import org.joda.time.DateTime
@@ -52,6 +53,28 @@ class GithubDownload(paths: DataPaths,
       .collect { case Success((pom, _, _)) => githubRepoExtractor(pom) }
       .flatten
       .toSet
+
+  val reposAndBeginnerIssues: Set[(GithubRepo, String)] = {
+    val liveProjecs = SaveLiveData.storedProjects(paths)
+
+    val projectReferences =
+      githubRepos.map {
+        case repo @ GithubRepo(organization, repository) =>
+          (repo, Project.Reference(organization, repository))
+      }.toList
+
+    projectReferences
+      .map {
+        case (repo, reference) =>
+          liveProjecs
+            .get(reference)
+            .flatMap(
+              form => form.beginnerIssuesLabel.map(label => (repo, label))
+            )
+      }
+      .flatten
+      .toSet
+  }
 
   private lazy val paginatedGithubRepos =
     githubRepos.map(repo => PaginatedGithub(repo, 1))
@@ -339,8 +362,10 @@ class GithubDownload(paths: DataPaths,
    * @param response the response
    * @return
    */
-  private def processIssuesResponse(repo: GithubRepo,
+  private def processIssuesResponse(in: (GithubRepo, String),
                                     response: WSResponse): Try[Unit] = {
+
+    val (repo, _) = in
 
     checkGithubApiError(s"Processing Issues for ${repo}", response)
       .map(_ => {
@@ -566,9 +591,8 @@ class GithubDownload(paths: DataPaths,
    *
    * @return
    */
-  private def issuesQuery(
-      beginnerIssuesLabel: String
-  )(repo: GithubRepo): JsObject = {
+  private def issuesQuery(in: (GithubRepo, String)): JsObject = {
+    val (repo, beginnerIssuesLabel) = in
 
     val query =
       """
@@ -633,6 +657,14 @@ class GithubDownload(paths: DataPaths,
                                gitterUrl,
                                processChatroomResponse)
 
+    downloadGraphql[(GithubRepo, String), Unit](
+      "Downloading Beginner Issues",
+      reposAndBeginnerIssues,
+      githubGraphqlUrl,
+      issuesQuery,
+      processIssuesResponse
+    )
+
     ()
   }
 
@@ -695,11 +727,13 @@ class GithubDownload(paths: DataPaths,
 
   def runBeginnerIssues(repo: GithubRepo, beginnerIssuesLabel: String): Unit = {
 
-    downloadGraphql[GithubRepo, Unit]("Downloading Beginner Issues",
-                                      Set(repo),
-                                      githubGraphqlUrl,
-                                      issuesQuery(beginnerIssuesLabel),
-                                      processIssuesResponse)
+    downloadGraphql[(GithubRepo, String), Unit](
+      "Downloading Beginner Issues",
+      Set((repo, beginnerIssuesLabel)),
+      githubGraphqlUrl,
+      issuesQuery,
+      processIssuesResponse
+    )
   }
 
 }
