@@ -355,8 +355,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
               github = github,
               artifacts = releaseOptions.map(_.artifacts.sorted).getOrElse(Nil),
               releaseCount = releaseCount,
-              defaultArtifact =
-                releaseOptions.map(_.release.reference.artifact),
+              defaultArtifact = releaseOptions.map(_.release.reference.artifact),
               created = min,
               updated = max
             )

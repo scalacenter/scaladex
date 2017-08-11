@@ -77,8 +77,7 @@ trait PlayWsDownloader {
       message: String,
       toDownload: Set[T],
       downloadUrl: (AhcWSClient, T) => WSRequest,
-      process: (T, WSResponse) => R,
-      parallelism: Int
+      process: (T, WSResponse) => R
   ): Seq[R] = {
 
     val client = wsClient
@@ -86,7 +85,7 @@ trait PlayWsDownloader {
 
     def processDownloads = {
 
-      Source(toDownload).mapAsyncUnordered(parallelism) { item =>
+      Source(toDownload).mapAsyncUnordered(parallelism = 1) { item =>
         val request = downloadUrl(client, item)
         val response = request.get
 

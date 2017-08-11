@@ -153,8 +153,7 @@ class BintrayDownloadPoms(paths: DataPaths)(
     download[BintraySearch, Unit]("Downloading POMs",
                                   searchesBySha1,
                                   downloadRequest,
-                                  processPomDownload,
-                                  parallelism = 32)
+                                  processPomDownload)
     ()
   }
 }

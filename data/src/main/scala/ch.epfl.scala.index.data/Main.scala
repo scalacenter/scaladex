@@ -1,10 +1,6 @@
 package ch.epfl.scala.index.data
 
-import bintray.{
-  BintrayDownloadPoms,
-  BintrayListPoms,
-  BintrayDownloadSbtPlugins
-}
+import bintray.{BintrayDownloadPoms, BintrayListPoms, BintrayDownloadSbtPlugins}
 import cleanup.{NonStandardLib, GithubRepoExtractor}
 import elastic.SeedElasticSearch
 import github.GithubDownload

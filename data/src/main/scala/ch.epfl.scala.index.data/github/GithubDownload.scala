@@ -342,8 +342,7 @@ class GithubDownload(paths: DataPaths,
   private def processIssuesResponse(repo: GithubRepo,
                                     response: WSResponse): Try[Unit] = {
 
-    checkGithubApiError(s"Processing Issues for ${project.githubRepo}",
-                        response)
+    checkGithubApiError(s"Processing Issues for ${repo}", response)
       .map(_ => {
         saveJson(githubRepoIssuesPath(paths, repo), repo, response.body)
 
@@ -368,9 +367,9 @@ class GithubDownload(paths: DataPaths,
       )
     } else if (500 == response.status) {
       log.info(s" $message, received 500 response from github")
-    } else if (200 != response.status && 
-               404 != response.status && 
-               500 != response.status && 
+    } else if (200 != response.status &&
+               404 != response.status &&
+               500 != response.status &&
                204 != response.status) {
       // get 200 for valid response
       // get 404 for old repo that no longer exists
@@ -632,8 +631,7 @@ class GithubDownload(paths: DataPaths,
     download[GithubRepo, Unit]("Checking Gitter Chatroom Links",
                                githubRepos,
                                gitterUrl,
-                               processChatroomResponse,
-                               parallelism = 32)
+                               processChatroomResponse)
 
     ()
   }
@@ -690,8 +688,7 @@ class GithubDownload(paths: DataPaths,
     download[GithubRepo, Unit]("Checking Gitter Chatroom Links",
                                Set(repo),
                                gitterUrl,
-                               processChatroomResponse,
-                               parallelism = 32)
+                               processChatroomResponse)
 
     ()
   }
@@ -702,8 +699,7 @@ class GithubDownload(paths: DataPaths,
                                       Set(repo),
                                       githubGraphqlUrl,
                                       issuesQuery(beginnerIssuesLabel),
-                                      processIssuesResponse,
-                                      parallelism = 32)
+                                      processIssuesResponse)
   }
 
 }
