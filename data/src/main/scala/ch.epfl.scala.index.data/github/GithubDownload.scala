@@ -54,28 +54,6 @@ class GithubDownload(paths: DataPaths,
       .flatten
       .toSet
 
-  val reposAndBeginnerIssues: Set[(GithubRepo, String)] = {
-    val liveProjecs = SaveLiveData.storedProjects(paths)
-
-    val projectReferences =
-      githubRepos.map {
-        case repo @ GithubRepo(organization, repository) =>
-          (repo, Project.Reference(organization, repository))
-      }.toList
-
-    projectReferences
-      .map {
-        case (repo, reference) =>
-          liveProjecs
-            .get(reference)
-            .flatMap(
-              form => form.beginnerIssuesLabel.map(label => (repo, label))
-            )
-      }
-      .flatten
-      .toSet
-  }
-
   private lazy val paginatedGithubRepos =
     githubRepos.map(repo => PaginatedGithub(repo, 1))
 
@@ -656,6 +634,28 @@ class GithubDownload(paths: DataPaths,
                                githubRepos,
                                gitterUrl,
                                processChatroomResponse)
+
+    val reposAndBeginnerIssues: Set[(GithubRepo, String)] = {
+      val liveProjecs = SaveLiveData.storedProjects(paths)
+
+      val projectReferences =
+        githubRepos.map {
+          case repo @ GithubRepo(organization, repository) =>
+            (repo, Project.Reference(organization, repository))
+        }.toList
+
+      projectReferences
+        .map {
+          case (repo, reference) =>
+            liveProjecs
+              .get(reference)
+              .flatMap(
+                form => form.beginnerIssuesLabel.map(label => (repo, label))
+              )
+        }
+        .flatten
+        .toSet
+    }
 
     downloadGraphql[(GithubRepo, String), Unit](
       "Downloading Beginner Issues",

@@ -174,7 +174,6 @@ main {
     }
 
     .contributing-projects {
-        @extend .recent-projects;
         h2 {
             margin-bottom: 0;
         }
@@ -182,11 +181,19 @@ main {
             margin-bottom: ($line-height-computed * 1.5);
         }
         .content-contributing-project {
+            overflow-y: auto; 
+
             @extend .content-project;
-            height: 350px;
+            height: 500px;
+
+            ul {
+              padding-left: 10px;
+            }
+
             h4 {
                 margin: 0;
                 display: inline-block;
+                vertical-align: middle;
                 padding-left: 15px;
                 width: 90%;
             }
@@ -196,13 +203,14 @@ main {
                 float: left;
             }
             a {
+                text-decoration: underline;
+
                 display: block;
                 padding-bottom: 10px;
                 color: $gray;
                 &:hover,
                 &:focus {
                     color: $brand-primary;
-                    text-decoration: underline;
                 }
             }
             td { padding-left: 20px; }
