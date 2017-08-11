@@ -47,7 +47,7 @@ class RelevanceTest
   }
 
   test("match for scalafix") {
-    first("scalafix")("scalacenter", "scalafix")
+    top("scalafix", List("scalacenter" -> "scalafix"))
   }
 
   // fails
