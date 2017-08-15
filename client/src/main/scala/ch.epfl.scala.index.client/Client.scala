@@ -272,6 +272,10 @@ object Client {
     getIssuesSelect.selectpicker("deselectAll")
   }
 
+  private def hideBanner(event: dom.Event) = {
+    jQuery(".banner").hide()
+  }
+
   @JSExport
   def main(token: UndefOr[String]): Unit = {
 
@@ -289,6 +293,10 @@ object Client {
     }
 
     getIssues(token.toOption, true)
+
+    getElement("hide-banner").foreach { el =>
+      el.addEventListener[Event]("click", hideBanner _)
+    }
 
   }
 }

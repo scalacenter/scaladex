@@ -16,3 +16,33 @@ $params: $shadow1;
    -moz-box-shadow: $params;
         box-shadow: $params;
 }
+
+// Breakpoints
+//------------------------------------------------
+@mixin bp($point) {
+	@if $point==xxlarge {
+		@media (max-width: $bp-xxlarge) {
+			@content;
+		}
+	}
+	@if $point==xlarge {
+		@media (max-width: $bp-xlarge) {
+			@content;
+		}
+	}
+	@if $point==large {
+		@media (max-width: $bp-large) {
+			@content;
+		}
+	}
+	@if $point==medium {
+		@media (max-width: $bp-medium) {
+			@content;
+		}
+	}
+	@if $point==small {
+		@media (max-width: $bp-small) {
+			@content;
+		}
+	}
+}

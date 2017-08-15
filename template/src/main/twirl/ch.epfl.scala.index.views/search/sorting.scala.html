@@ -32,6 +32,10 @@
       <input type="hidden" name="scalaNativeVersions" value="@scalaNativeVersion">
     }
 
+    @if(params.contributingSearch){
+      <input type="hidden" name="contributingSearch" value="true">
+    }
+
     <h3>Sorting</h3>
     <div class="btn-group" role="group" aria-label="sorting">
       <button name="sort" value="relevant" type="submit" 
