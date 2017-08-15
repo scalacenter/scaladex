@@ -14,6 +14,43 @@ main {
     flex: 1;
 }
 
+.banner {
+  background: #0c353c;
+  text-align: center;
+  padding: 8px 0;
+  color: #fff;
+  transition: $base-transition;
+  position: relative;
+
+    @include bp(medium) {
+      padding: 10px 40px;
+    }
+
+  span {
+    position: absolute;
+    right: 20px;
+    top: 3px;
+    z-index: 1;
+    cursor: pointer;
+    font-size: 1.275rem;
+    opacity: 0.6;
+    transition: $base-transition;
+    &:hover {
+      opacity: 1;
+    }
+    i { font-size: x-large; }
+  }
+  a {
+    color: #fff;
+    text-decoration: underline;
+    &:active,
+    &:focus,
+    &:hover {
+      text-decoration: none;
+    }
+  }
+}
+
 // Home page
 // -----------------------------------------------------------------------------
 #container-home {
