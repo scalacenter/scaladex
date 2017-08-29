@@ -186,7 +186,7 @@ object Client {
   }
 
   private def getIssueJson(issue: Issue): String = {
-    s"""{ "number":${issue.number}, "title":"${issue.title}", "url":{"target":"${issue.html_url}"} }"""
+    s"""{ "number":${issue.number}, "title":"${issue.title.replace("\"", "\\\"")}", "url":{"target":"${issue.html_url}"} }"""
   }
 
   private def getIssuesListener(
