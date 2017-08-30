@@ -86,7 +86,7 @@ trait PlayWsDownloader {
 
     def processDownloads = {
 
-      Source(toDownload).mapAsyncUnordered(parallelism = 1) { item =>
+      Source(toDownload).mapAsyncUnordered(parallelism) { item =>
         val request = downloadUrl(client, item)
         val response = request.get
 
@@ -196,7 +196,7 @@ trait PlayWsDownloader {
     def processItems(client: AhcWSClient, progress: ProgressBar) = {
       // use minimal concurrency to avoid abuse rate limit error which is triggered
       // by making too many calls in a short period of time, see https://github.com/scalacenter/scaladex/issues/431
-      val parallelism = 1
+      val parallelism = 4
       Source(toDownload).mapAsyncUnordered(parallelism) { item =>
         processItem(client, item, progress)
       }
