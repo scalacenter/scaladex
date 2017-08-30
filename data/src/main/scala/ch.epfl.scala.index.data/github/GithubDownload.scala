@@ -372,14 +372,14 @@ class GithubDownload(paths: DataPaths,
       log.info(s" $message, received 500 response from github")
     } else if (200 != response.status &&
                404 != response.status &&
-               500 != response.status &&
                204 != response.status) {
       // get 200 for valid response
       // get 404 for old repo that no longer exists
-      // get 500 with 1 repo with community profile api (error on github's side),
-      //   https://api.github.com/repos/spacelift/amqp-scala-client/community/profile
       // get 204 when getting contributors for empty repo,
       //   https:/api.github.com/repos/rockjam/cbt-sonatype/contributors?page=1
+      throw new Exception(
+          s" $message, Unknown response from Github API, ${response.status}, ${response.body}"
+        )
     }
   }
 
