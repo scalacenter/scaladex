@@ -212,7 +212,8 @@ class RelevanceTest
   private def compare(
       params: SearchParams,
       expected: List[(String, String)],
-      assertFun: (List[Project.Reference], List[Project.Reference]) => Assertion
+      assertFun: (List[Project.Reference],
+                  List[Project.Reference]) => Assertion
   ): Future[Assertion] = {
 
     val expectedRefs = expected.map {

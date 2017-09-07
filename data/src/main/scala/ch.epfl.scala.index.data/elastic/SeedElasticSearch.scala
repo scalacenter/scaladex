@@ -99,7 +99,8 @@ class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
       val bulkResults = Await.result(esClient.execute {
         bulk(
           group.map(
-            release => indexInto(indexName / releasesCollection).source(release)
+            release =>
+              indexInto(indexName / releasesCollection).source(release)
           )
         )
       }, Duration.Inf)
@@ -119,7 +120,8 @@ class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
       val bulkResults = Await.result(esClient.execute {
         bulk(
           group.map(
-            project => indexInto(indexName / projectsCollection).source(project)
+            project =>
+              indexInto(indexName / projectsCollection).source(project)
           )
         )
       }, Duration.Inf)

@@ -378,8 +378,8 @@ class GithubDownload(paths: DataPaths,
       // get 204 when getting contributors for empty repo,
       //   https:/api.github.com/repos/rockjam/cbt-sonatype/contributors?page=1
       throw new Exception(
-          s" $message, Unknown response from Github API, ${response.status}, ${response.body}"
-        )
+        s" $message, Unknown response from Github API, ${response.status}, ${response.body}"
+      )
     }
   }
 
