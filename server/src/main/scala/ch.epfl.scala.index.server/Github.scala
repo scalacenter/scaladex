@@ -133,7 +133,8 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer)
                   .map(_.toList)
                   .map(_.collect { case (scala.util.Success(v), _) => v })
                   .flatMap(
-                    s => Future.sequence(s.map(r2 => Unmarshal(r2).to[List[T]]))
+                    s =>
+                      Future.sequence(s.map(r2 => Unmarshal(r2).to[List[T]]))
                   )
                   .map(_.flatten)
               } else Future.successful(Nil)
