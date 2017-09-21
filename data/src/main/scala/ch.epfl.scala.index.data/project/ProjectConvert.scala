@@ -355,8 +355,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
               github = github,
               artifacts = releaseOptions.map(_.artifacts.sorted).getOrElse(Nil),
               releaseCount = releaseCount,
-              defaultArtifact =
-                releaseOptions.map(_.release.reference.artifact),
+              defaultArtifact = releaseOptions.map(_.release.reference.artifact),
               created = min,
               updated = max
             )
@@ -502,6 +501,11 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
             dependencies = dependencies(releasesWithDependencies),
             dependentCount = releasesWithDependencies.view
               .flatMap(_.reverseDependencies.map(_.reference))
+              .filterNot(
+                release =>
+                  belongsTo(seed.reference)(ScalaDependency(release, None))
+              )
+              .map(_.projectReference)
               .size // Note: we don’t need to call `.distinct` because `releases` is a `Set`
           )
 
