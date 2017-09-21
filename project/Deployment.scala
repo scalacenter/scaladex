@@ -97,7 +97,7 @@ class Deployment(rootFolder: File,
           |rmdir server/server-*
           |
           |nohup server/current/bin/server \\
-          |  -J-Xmx3g \\
+          |  -J-Xmx6g \\
           |  -Dlogback.output-file=server.log \\
           |  -Dlogback.configurationFile=/home/$userName/scaladex-credentials/logback.xml \\
           |  -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
@@ -163,7 +163,7 @@ class Deployment(rootFolder: File,
           |  rmdir data/data-*
           |
           |  nohup data/current/bin/data \\
-          |    -J-Xmx3g \\
+          |    -J-Xmx6g \\
           |    -Dlogback.output-file=data.log \\
           |    -Dlogback.configurationFile=/home/$userName/scaladex-credentials/logback.xml \\
           |    -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
