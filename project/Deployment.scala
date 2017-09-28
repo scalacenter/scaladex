@@ -175,6 +175,9 @@ class Deployment(rootFolder: File,
           |    /home/$userName/scaladex-credentials \\
           |    &>/dev/null &
           |fi
+          |
+          |# list -> download -> parent -> download-sbt-plugins -> github -> elastic
+          |# updateClaims
           |""".stripMargin
 
     Files.write(dataScript, scriptContent.getBytes)
