@@ -159,20 +159,29 @@ final class BintrayDownloadSbtPlugins(
   ): Future[List[SbtPluginReleaseWithModuleDescriptor]] = {
 
     def fetchPage(startPos: Int): Future[WSResponse] = {
-      val req1 =
+
+      val parameters =
+        List(
+          "name" -> "ivy.xml", // Releases produce an “ivy.xml” file
+          "subject" -> subject,
+          "repo" -> repo,
+          "start_pos" -> startPos.toString
+        )
+
+      val createdAfterParameter =
+        lastDownload match {
+          case Some(date) => List("created_after" -> date)
+          case _          => List()
+        }
+
+      val allParameters = parameters ::: createdAfterParameter
+
+      val request =
         client
           .url(s"$bintrayApi/search/file")
-          .withQueryStringParameters(
-            "name" -> "ivy.xml", // Releases produce an “ivy.xml” file
-            "subject" -> subject,
-            "repo" -> repo,
-            "start_pos" -> startPos.toString
-          )
-      val req2 =
-        lastDownload.fold(req1)(
-          date => req1.withQueryStringParameters("created_after" -> date)
-        )
-      withAuth(req2).get()
+          .withQueryStringParameters(allParameters: _*)
+
+      withAuth(request).get()
     }
 
     val decode: WSResponse => List[SbtPluginRelease] =

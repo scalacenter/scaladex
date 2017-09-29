@@ -89,7 +89,7 @@ object Main {
         () => new DownloadParentPoms(bintray, getPathFromArgs).run()
       ),
       // Download ivy.xml descriptors of sbt-plugins from Bintray
-      Step("download-sbt-plugins")(
+      Step("sbt")(
         () => new BintrayDownloadSbtPlugins(getPathFromArgs).run()
       ),
       // Download additional information about projects from Github

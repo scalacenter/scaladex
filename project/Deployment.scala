@@ -176,7 +176,7 @@ class Deployment(rootFolder: File,
           |    &>/dev/null &
           |fi
           |
-          |# list -> download -> parent -> download-sbt-plugins -> github -> elastic
+          |# list -> download -> parent -> sbt -> github -> elastic
           |# updateClaims
           |""".stripMargin
 
