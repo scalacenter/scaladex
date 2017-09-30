@@ -187,10 +187,6 @@ class Deployment(rootFolder: File,
 
     rsync(dataZip)
     rsync(dataScript)
-
-    val dataScriptFileName = dataScript.getFileName
-    val uri = userName + "@" + serverHostname
-    Process(s"ssh $uri ./$dataScriptFileName") ! logger
   }
 
   private def rsync(file: Path): Unit = {
