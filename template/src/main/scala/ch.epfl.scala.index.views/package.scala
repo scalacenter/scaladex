@@ -54,6 +54,7 @@ package object html {
       .appendQuery("scalaVersions", params.scalaVersions.toList)
       .appendQuery("scalaJsVersions", params.scalaJsVersions.toList)
       .appendQuery("scalaNativeVersions", params.scalaNativeVersions.toList)
+      .appendQuery("sbtVersions", params.sbtVersions.toList)
       .appendQuery("you", you)
       .appendQuery("q" -> params.queryString)
       .appendQuery("page" -> page.toString)

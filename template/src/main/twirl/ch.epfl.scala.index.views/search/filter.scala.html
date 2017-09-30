@@ -7,6 +7,7 @@
   scalaVersions: List[(String, Long)],
   scalaJsVersions: List[(String, Long)],
   scalaNativeVersions: List[(String, Long)],
+  sbtVersions: List[(String, Long)],
   pagination: Pagination,
   you: Boolean)
 
@@ -42,6 +43,21 @@
               <input type="checkbox" @if(params.scalaVersions.contains(scalaVersion)) { checked }
                      name="scalaVersions" value="@scalaVersion" onclick="this.form.submit()">
               @scalaVersion (@count)
+            </label>
+          </li>
+        }
+        </ul>
+      }
+
+      @if(!sbtVersions.isEmpty) {
+        Sbt
+        <ul>
+        @for((sbtVersion, count) <- sbtVersions) {
+          <li>
+            <label>
+              <input type="checkbox" @if(params.sbtVersions.contains(sbtVersion)) { checked }
+                     name="sbtVersions" value="@sbtVersion" onclick="this.form.submit()">
+              @sbtVersion (@count)
             </label>
           </li>
         }

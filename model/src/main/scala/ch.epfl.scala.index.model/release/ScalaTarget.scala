@@ -5,9 +5,10 @@ object ScalaTargetType {
   implicit val ordering: Ordering[ScalaTargetType] = {
     def toInt(v: ScalaTargetType): Int = {
       v match {
-        case Jvm    => 4
-        case Js     => 3
-        case Native => 2
+        case Jvm    => 5
+        case Js     => 4
+        case Native => 3
+        case Sbt    => 2
         case Java   => 1
       }
     }
@@ -21,6 +22,7 @@ case object Jvm extends ScalaTargetType
 case object Js extends ScalaTargetType
 case object Native extends ScalaTargetType
 case object Java extends ScalaTargetType
+case object Sbt extends ScalaTargetType
 
 /*
 SemanticVersion will only contain the information from the artifactId
@@ -33,35 +35,39 @@ it's dependency on scala-library for example.
 case class ScalaTarget(
     scalaVersion: SemanticVersion,
     scalaJsVersion: Option[SemanticVersion],
-    scalaNativeVersion: Option[SemanticVersion]
+    scalaNativeVersion: Option[SemanticVersion],
+    sbtVersion: Option[SemanticVersion]
 ) extends Ordered[ScalaTarget] {
   def encode: String = ScalaTarget.encode(this)
 
   def render = {
-    (scalaJsVersion, scalaNativeVersion) match {
-      case (Some(jsVersion), _) =>
+    (scalaJsVersion, scalaNativeVersion, sbtVersion) match {
+      case (Some(jsVersion), _, _) =>
         s"scala-js ${jsVersion.toString} (scala ${scalaVersion.toString})"
-      case (_, Some(nativeVersion)) =>
+
+      case (_, Some(nativeVersion), _) =>
         s"scala-native ${nativeVersion.toString} (scala ${scalaVersion.toString})"
-      case _ => s"scala ${scalaVersion.toString}"
+
+      case (_, _, Some(sbtVersion)) =>
+        s"sbt ${sbtVersion.toString} (scala ${scalaVersion.toString})"
+
+      case _ =>
+        s"scala ${scalaVersion.toString}"
     }
   }
 
   def targetType: ScalaTargetType = {
-    (scalaJsVersion, scalaNativeVersion) match {
-      case (Some(_), _) => Js
-      case (_, Some(_)) => Native
-      case _            => Jvm
+    (scalaJsVersion, scalaNativeVersion, sbtVersion) match {
+      case (Some(_), _, _) => Js
+      case (_, Some(_), _) => Native
+      case (_, _, Some(_)) => Sbt
+      case _               => Jvm
     }
   }
 
   private final val LT = -1
   private final val GT = 1
   private final val EQ = 0
-
-  private def isScalaJs = scalaJsVersion.isDefined
-  private def isScalaNative = scalaNativeVersion.isDefined
-  private def isScala = !isScalaJs && !isScalaNative
 
   // Scala > Js > Native
 
@@ -76,18 +82,25 @@ object ScalaTarget {
       target.targetType,
       target.scalaVersion,
       target.scalaJsVersion,
-      target.scalaNativeVersion
+      target.scalaNativeVersion,
+      target.sbtVersion
     )
   }
 
   def encode(target: ScalaTarget): String = {
     val scalaVersion = target.scalaVersion
-    (target.scalaJsVersion, target.scalaNativeVersion) match {
-      case (Some(scalaJsVersion), _) =>
+    (target.scalaJsVersion, target.scalaNativeVersion, target.sbtVersion) match {
+      case (Some(scalaJsVersion), _, _) =>
         s"_sjs${scalaJsVersion}_${scalaVersion}"
-      case (_, Some(scalaNativeVersion)) =>
+
+      case (_, Some(scalaNativeVersion), _) =>
         s"_native${scalaNativeVersion}_${scalaVersion}"
-      case _ => s"_${scalaVersion}"
+
+      case (_, _, Some(sbtVersion)) =>
+        s"_sbt${sbtVersion}_${scalaVersion}"
+
+      case _ =>
+        s"_${scalaVersion}"
     }
   }
 
@@ -98,30 +111,48 @@ object ScalaTarget {
   def scala(version: SemanticVersion) =
     ScalaTarget(scalaVersion = version,
                 scalaJsVersion = None,
-                scalaNativeVersion = None)
+                scalaNativeVersion = None,
+                sbtVersion = None)
 
   def scalaJs(scalaVersion: SemanticVersion, scalaJsVersion: SemanticVersion) =
     ScalaTarget(scalaVersion = scalaVersion,
                 scalaJsVersion = Some(scalaJsVersion),
-                scalaNativeVersion = None)
+                scalaNativeVersion = None,
+                sbtVersion = None)
 
   def scalaNative(scalaVersion: SemanticVersion,
                   scalaNativeVersion: SemanticVersion) =
     ScalaTarget(scalaVersion = scalaVersion,
                 scalaJsVersion = None,
-                scalaNativeVersion = Some(scalaNativeVersion))
+                scalaNativeVersion = Some(scalaNativeVersion),
+                sbtVersion = None)
+
+  def sbt(scalaVersion: SemanticVersion, sbtVersion: SemanticVersion) =
+    ScalaTarget(scalaVersion = scalaVersion,
+                scalaJsVersion = None,
+                scalaNativeVersion = None,
+                sbtVersion = Some(sbtVersion))
 
   def split(target: Option[ScalaTarget]): (Option[ScalaTargetType],
                                            Option[String],
                                            Option[String],
+                                           Option[String],
                                            Option[String]) = {
-    val targetType = target.map(_.targetType)
-    val scalaVersion = target.map(_.scalaVersion.forceBinary.toString)
+    val targetType =
+      target.map(_.targetType)
+
+    val scalaVersion =
+      target.map(_.scalaVersion.forceBinary.toString)
+
     val scalaJsVersion =
       target.flatMap(_.scalaJsVersion.map(_.forceBinary.toString))
+
     val scalaNativeVersion =
       target.flatMap(_.scalaNativeVersion.map(_.forceBinary.toString))
 
-    (targetType, scalaVersion, scalaJsVersion, scalaNativeVersion)
+    val sbtVersion =
+      target.flatMap(_.sbtVersion.map(_.forceBinary.toString))
+
+    (targetType, scalaVersion, scalaJsVersion, scalaNativeVersion, sbtVersion)
   }
 }

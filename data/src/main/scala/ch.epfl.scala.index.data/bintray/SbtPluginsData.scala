@@ -42,10 +42,12 @@ case class SbtPluginsData(paths: DataPaths) extends BintrayProtocol {
              newReleases: List[SbtPluginReleaseModel]): Unit = {
     val allReleases = (oldReleases ++ newReleases).distinct
 
-    val _ = Files.write(
+    Files.write(
       paths.ivysData,
       write[List[SbtPluginReleaseModel]](allReleases).getBytes
     )
+
+    ()
   }
 
 }

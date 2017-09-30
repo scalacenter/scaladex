@@ -13,7 +13,12 @@ object Artifact extends Parsers {
 
     val ScalaTargetParser = (ScalaJs.? ~ ScalaNative.? ~ Scala).map {
       case (scalaJsVersion, scalaNativeVersion, scalaVersion) =>
-        ScalaTarget(scalaVersion, scalaJsVersion, scalaNativeVersion)
+        ScalaTarget(
+          scalaVersion = scalaVersion,
+          scalaJsVersion = scalaJsVersion,
+          scalaNativeVersion = scalaNativeVersion,
+          sbtVersion = None
+        )
     }
 
     Start ~

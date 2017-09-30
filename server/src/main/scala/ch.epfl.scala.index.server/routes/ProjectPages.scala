@@ -92,14 +92,17 @@ class ProjectPages(dataRepository: DataRepository,
 
     def showTarget(target: ScalaTarget): String = {
       target match {
-        case ScalaTarget(scalaVersion, None, None) =>
+        case ScalaTarget(scalaVersion, None, None, None) =>
           scalaVersion.toString
 
-        case ScalaTarget(scalaVersion, Some(scalaJsVersion), None) =>
+        case ScalaTarget(scalaVersion, Some(scalaJsVersion), None, None) =>
           scalaVersion.toString
 
-        case ScalaTarget(scalaVersion, None, Some(scalaNativeVersion)) =>
+        case ScalaTarget(scalaVersion, None, Some(scalaNativeVersion), None) =>
           scalaNativeVersion.toString
+
+        case ScalaTarget(scalaVersion, None, None, Some(sbtVersion)) =>
+          sbtVersion.toString
 
         case _ => "" // impossible
       }

@@ -16,7 +16,8 @@
   targetTypes: List[(String, String, Long)],
   scalaVersions: List[(String, Long)],
   scalaJsVersions: List[(String, Long)],
-  scalaNativeVersions: List[(String, Long)])
+  scalaNativeVersions: List[(String, Long)],
+  sbtVersions: List[(String, Long)])
 
 @if(params.contributingSearch){
   <h2 class="text-center">Contributing Search</h2>
@@ -48,6 +49,7 @@
       scalaVersions,
       scalaJsVersions,
       scalaNativeVersions,
+      sbtVersions,
       pagination,
       you
     )

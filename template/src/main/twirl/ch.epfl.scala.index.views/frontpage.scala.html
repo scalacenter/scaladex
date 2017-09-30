@@ -7,7 +7,8 @@
   targetTypes: List[(String, String, Long)],
   scalaVersions: List[(String, Long)],
   scalaJsVersions: List[(String, Long)],
-  scalaNativeVersions: List[(String, Long)], 
+  scalaNativeVersions: List[(String, Long)],
+  sbtVersions: List[(String, Long)], 
   latestProjects: List[Project],
   mostDependedUpon: List[Project],
   latestReleases: List[Release],
@@ -43,6 +44,14 @@
                         @for((scalaVersion, count) <- scalaVersions) {
                             <li>
                                 <a href="/search?q=*&scalaVersions=@scalaVersion">@scalaVersion (@count)</a>
+                            </li>
+                        }
+                    </ul>
+                    <ul class="tag">
+                        <li><strong>Sbt Versions:</strong></li>
+                        @for((sbtVersion, count) <- sbtVersions) {
+                            <li>
+                                <a href="/search?q=*&sbtVersions=@sbtVersion">@sbtVersion (@count)</a>
                             </li>
                         }
                     </ul>

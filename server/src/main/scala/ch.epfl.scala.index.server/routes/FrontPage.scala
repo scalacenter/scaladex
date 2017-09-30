@@ -21,6 +21,7 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
     val scalaVersionsF = scalaVersions()
     val scalaJsVersionsF = scalaJsVersions()
     val scalaNativeVersionsF = scalaNativeVersions()
+    val sbtVersionsF = sbtVersions()
     val mostDependedUponF = mostDependedUpon()
     val latestProjectsF = latestProjects()
     val latestReleasesF = latestReleases()
@@ -34,6 +35,7 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
       scalaVersions <- scalaVersionsF
       scalaJsVersions <- scalaJsVersionsF
       scalaNativeVersions <- scalaNativeVersionsF
+      sbtVersions <- sbtVersionsF
       mostDependedUpon <- mostDependedUponF
       latestProjects <- latestProjectsF
       latestReleases <- latestReleasesF
@@ -65,6 +67,7 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
         scalaVersions,
         scalaJsVersions,
         scalaNativeVersions,
+        sbtVersions,
         latestProjects,
         mostDependedUpon,
         latestReleases,

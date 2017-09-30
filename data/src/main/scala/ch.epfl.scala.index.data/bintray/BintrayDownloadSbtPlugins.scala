@@ -56,7 +56,8 @@ final class BintrayDownloadSbtPlugins(
     "(.+?)/(.+?)/scala_(.+?)/sbt_(.+?)/(.+?)/ivys/ivy.xml".r
 
   def run(): Unit = {
-    val _ = Await.ready(downloadSbtPlugins(), Duration.Inf)
+    Await.ready(downloadSbtPlugins(), Duration.Inf)
+    ()
   }
 
   /**

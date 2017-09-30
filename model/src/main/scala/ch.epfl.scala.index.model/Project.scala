@@ -57,6 +57,7 @@ case class Project(
     scalaVersion: Set[String],
     scalaJsVersion: Set[String],
     scalaNativeVersion: Set[String],
+    sbtVersion: Set[String],
     dependencies: Set[String],
     dependentCount: Int,
     primaryTopic: Option[String] = None

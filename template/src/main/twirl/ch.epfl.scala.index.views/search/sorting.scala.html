@@ -24,6 +24,10 @@
       <input type="hidden" name="scalaVersions" value="@scalaVersion">
     }
 
+    @for(sbtVersion <- params.sbtVersions){
+      <input type="hidden" name="sbtVersions" value="@sbtVersion">
+    }
+
     @for(scalaJsVersion <- params.scalaJsVersions){
       <input type="hidden" name="scalaJsVersions" value="@scalaJsVersion">
     }

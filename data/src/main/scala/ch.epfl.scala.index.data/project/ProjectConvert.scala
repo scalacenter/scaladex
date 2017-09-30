@@ -35,15 +35,49 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
   private def extractArtifactNameAndTarget(
       pom: ReleaseModel
   ): Option[(String, Option[ScalaTarget], ArtifactKind)] = {
-    nonStandardLibs
-      .find(
-        lib =>
-          lib.groupId == pom.groupId &&
-            lib.artifactId == pom.artifactId
-      )
-      .map(_.lookup) match {
+    val nonStandardLookup =
+      nonStandardLibs
+        .find(
+          lib =>
+            lib.groupId == pom.groupId &&
+              lib.artifactId == pom.artifactId
+        )
+        .map(_.lookup)
 
-      case Some(ScalaTargetFromPom) =>
+    nonStandardLookup match {
+      case None => {
+        pom.sbtPluginTarget match {
+
+          // This is a usual Scala library (whose artifact name is suffixed by the Scala binary version)
+          // For example: akka-actors_2.12
+          case None => {
+            Artifact(pom.artifactId).map {
+              case (artifactName, target) =>
+                (artifactName, Some(target), ArtifactKind.ConventionalScalaLib)
+            }
+          }
+
+          // Or it can be an sbt-plugin published as a maven style. In such a case the Scala target
+          // is not suffixed to the artifact name but can be found in the model’s `sbtPluginTarget` member.
+          case Some(SbtPluginTarget(rawScalaVersion, rawSbtVersion)) => {
+            SemanticVersion(rawScalaVersion).zip(SemanticVersion(rawSbtVersion)) match {
+              case List((scalaVersion, sbtVersion)) =>
+                Some(
+                  (pom.artifactId,
+                   Some(ScalaTarget.sbt(scalaVersion, sbtVersion)),
+                   ArtifactKind.SbtPlugin)
+                )
+              case _ => {
+                log.error("Unable to decode the Scala target")
+                None
+              }
+            }
+          }
+        }
+      }
+
+      // For example: io.gatling
+      case Some(ScalaTargetFromPom) => {
         pom.dependencies
           .find(
             dep =>
@@ -58,42 +92,22 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
                Some(ScalaTarget.scala(version.copy(patch = None))),
                ArtifactKind.UnconventionalScalaLib)
           )
+      }
 
-      case Some(NoScalaTargetPureJavaDependency) =>
+      // For example: typesafe config
+      case Some(NoScalaTargetPureJavaDependency) => {
         Some((pom.artifactId, None, ArtifactKind.ConventionalScalaLib))
+      }
 
-      case Some(ScalaTargetFromVersion) =>
+      // For example: scala-compiler
+      case Some(ScalaTargetFromVersion) => {
         SemanticVersion(pom.version).map(
           version =>
             (pom.artifactId,
              Some(ScalaTarget.scala(version)),
              ArtifactKind.UnconventionalScalaLib)
         )
-
-      case None =>
-        // This is a usual Scala library (whose artifact name is suffixed by the Scala binary version)
-        // Or it can be an sbt-plugin published as a maven style. In such a case the Scala target
-        // is not suffixed to the artifact name but can be found in the model’s `sbtPluginTarget` member.
-        // TODO Store the sbt target too
-        pom.sbtPluginTarget
-          .flatMap {
-            case SbtPluginTarget(scalaVersion, _) =>
-              SemanticVersion(scalaVersion)
-                .map(ScalaTarget.scala)
-                .orElse {
-                  log.error("Unable to decode the Scala target")
-                  None
-                }
-                .map { target =>
-                  (pom.artifactId, Some(target), ArtifactKind.SbtPlugin)
-                }
-          }
-          .orElse {
-            Artifact(pom.artifactId).map {
-              case (artifactName, target) =>
-                (artifactName, Some(target), ArtifactKind.ConventionalScalaLib)
-            }
-          }
+      }
     }
   }
 
@@ -294,7 +308,8 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
               val (targetType,
                    scalaVersion,
                    scalaJsVersion,
-                   scalaNativeVersion) =
+                   scalaNativeVersion,
+                   sbtVersion) =
                 ScalaTarget.split(target)
 
               Release(
@@ -323,7 +338,8 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
                 // ex cats_2.11 => 2.11
                 scalaVersion = scalaVersion,
                 scalaJsVersion = scalaJsVersion,
-                scalaNativeVersion = scalaNativeVersion
+                scalaNativeVersion = scalaNativeVersion,
+                sbtVersion = sbtVersion
               )
           }.toSet ++ cachedReleasesForProject
 
@@ -498,6 +514,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
             scalaVersion = releases.flatMap(_.scalaVersion).toSet,
             scalaJsVersion = releases.flatMap(_.scalaJsVersion).toSet,
             scalaNativeVersion = releases.flatMap(_.scalaNativeVersion).toSet,
+            sbtVersion = releases.flatMap(_.sbtVersion).toSet,
             dependencies = dependencies(releasesWithDependencies),
             dependentCount = releasesWithDependencies.view
               .flatMap(_.reverseDependencies.map(_.reference))
@@ -542,6 +559,7 @@ object ProjectConvert {
                   scalaVersion: Set[String],
                   scalaJsVersion: Set[String],
                   scalaNativeVersion: Set[String],
+                  sbtVersion: Set[String],
                   dependencies: Set[String],
                   dependentCount: Int): Project =
       Project(
@@ -557,6 +575,7 @@ object ProjectConvert {
         scalaVersion = scalaVersion,
         scalaJsVersion = scalaJsVersion,
         scalaNativeVersion = scalaNativeVersion,
+        sbtVersion = sbtVersion,
         dependencies = dependencies,
         dependentCount = dependentCount
       )

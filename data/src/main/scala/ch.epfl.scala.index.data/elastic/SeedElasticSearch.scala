@@ -66,6 +66,7 @@ class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
       keywordField("scalaVersion"),
       keywordField("scalaJsVersion"),
       keywordField("scalaNativeVersion"),
+      keywordField("sbtVersion"),
       dateField("released")
     )
 

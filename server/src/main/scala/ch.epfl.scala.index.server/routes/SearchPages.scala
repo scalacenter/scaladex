@@ -30,6 +30,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
       val scalaVersionsF = scalaVersions(Some(params))
       val scalaJsVersionsF = scalaJsVersions(Some(params))
       val scalaNativeVersionsF = scalaNativeVersions(Some(params))
+      val sbtVersionsF = sbtVersions(Some(params))
       val queryIsTopicF = queryIsTopic(params.queryString)
 
       for {
@@ -39,6 +40,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
         scalaVersions <- scalaVersionsF
         scalaJsVersions <- scalaJsVersionsF
         scalaNativeVersions <- scalaNativeVersionsF
+        sbtVersions <- sbtVersionsF
         queryIsTopic <- queryIsTopicF
       } yield {
         searchresult(
@@ -53,6 +55,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
           scalaVersions,
           scalaJsVersions,
           scalaNativeVersions,
+          sbtVersions,
           queryIsTopic
         )
       }
@@ -69,6 +72,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
        'scalaVersions.*,
        'scalaJsVersions.*,
        'scalaNativeVersions.*,
+       'sbtVersions.*,
        'you.?,
        'contributingSearch.as[Boolean] ? false)
     ).tmap {
@@ -80,6 +84,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
             scalaVersions,
             scalaJsVersions,
             scalaNativeVersions,
+            sbtVersions,
             you,
             contributingSearch) =>
         val userRepos =
@@ -94,6 +99,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
           scalaVersions = scalaVersions.toList,
           scalaJsVersions = scalaJsVersions.toList,
           scalaNativeVersions = scalaNativeVersions.toList,
+          sbtVersions = sbtVersions.toList,
           contributingSearch = contributingSearch
         )
     }

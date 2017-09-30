@@ -32,6 +32,15 @@
                 </div>
               }
 
+              @if(project.sbtVersion.nonEmpty){
+                <div>
+                  Sbt:
+                  @for(v <- sortVersions(project.sbtVersion)) {
+                    <span class="targets">@v</span>
+                  }
+                </div>
+              }
+
               @if(project.scalaJsVersion.nonEmpty){
                 <div>
                   Scala.js:

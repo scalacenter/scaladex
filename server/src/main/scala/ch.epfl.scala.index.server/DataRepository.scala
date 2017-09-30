@@ -140,7 +140,22 @@ class DataRepository(
             )
             .getOrElse(Nil)
 
-        scalaVersionFiltering ++ scalaJsVersionFiltering ++ scalaNativeVersionFiltering
+        val sbtVersionFiltering =
+          target.sbtVersion
+            .map(
+              sbtVersion =>
+                List(
+                  boolQuery().must(
+                    termQuery(
+                      "sbtVersion",
+                      sbtVersion.toString
+                    )
+                  )
+              )
+            )
+            .getOrElse(Nil)
+
+        scalaVersionFiltering ++ scalaJsVersionFiltering ++ scalaNativeVersionFiltering ++ sbtVersionFiltering
       }
       .getOrElse(Nil)
   }
@@ -164,7 +179,11 @@ class DataRepository(
         boolQuery().must(termQuery("scalaNativeVersion", scalaNativeVersion))
     )
 
-    targetTypes ++ scalaVersions ++ scalaJsVersions ++ scalaNativeVersions
+    val sbtVersions = params.sbtVersions.map(
+      sbtVersion => boolQuery().must(termQuery("sbtVersion", sbtVersion))
+    )
+
+    targetTypes ++ scalaVersions ++ scalaJsVersions ++ scalaNativeVersions ++ sbtVersions
   }
 
   private def getQuery(params: SearchParams): QueryDefinition = {
@@ -508,6 +527,13 @@ class DataRepository(
   ): Future[List[(String, Long)]] = {
     versionAggregations("scalaNativeVersion", params, _ => true)
       .map(addParamsIfMissing(params, _.scalaNativeVersions))
+  }
+
+  def sbtVersions(
+      params: Option[SearchParams] = None
+  ): Future[List[(String, Long)]] = {
+    versionAggregations("sbtVersion", params, _ => true)
+      .map(addParamsIfMissing(params, _.sbtVersions))
   }
 
   def totalProjects(): Future[Long] = {

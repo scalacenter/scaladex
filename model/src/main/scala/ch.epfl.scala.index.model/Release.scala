@@ -36,10 +36,11 @@ case class Release(
     reverseDependencies: Seq[ScalaDependency],
     internalDependencies: Seq[ScalaDependency],
     // this part for elasticsearch search
-    targetType: String, // JVM, JS, Native, JAVA
+    targetType: String, // JVM, JS, Native, JAVA, SBT
     scalaVersion: Option[String],
     scalaJsVersion: Option[String],
-    scalaNativeVersion: Option[String]
+    scalaNativeVersion: Option[String],
+    sbtVersion: Option[String]
 ) {
 
   /**
@@ -49,18 +50,19 @@ case class Release(
   def sbtInstall: String = {
 
     val scalaJs = reference.target.flatMap(_.scalaJsVersion).isDefined
+    val scalaNative = reference.target.flatMap(_.scalaNativeVersion).isDefined
     val crossFull = reference.target.flatMap(_.scalaVersion.patch).isDefined
 
     def libraryDependency(isUnconventional: Boolean): String = {
       val (artifactOperator, crossSuffix) =
         if (isUnconventional) ("%", "")
-        else if (scalaJs) ("%%%", "")
+        else if (scalaJs || scalaNative) ("%%%", "")
         else if (crossFull) ("%", " cross CrossVersion.full")
         else ("%%", "")
 
       List(
         Some(
-          s""""${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""
+          s"""libraryDependencies += "${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""
         ),
         resolver.map("resolvers += " + _.sbt)
       ).flatten.mkString(System.lineSeparator)
@@ -83,13 +85,14 @@ case class Release(
    */
   def ammInstall = {
 
-    def addResolver(r: Resolver) = s"""import ammonite._, Resolvers._
-                                      |val res = Resolver.Http(
-                                      |  "${r.name}",
-                                      |  "${r.url}",
-                                      |  IvyPattern,
-                                      |  false)
-                                      |interp.resolvers() = interp.resolvers() :+ res""".stripMargin
+    def addResolver(r: Resolver) =
+      s"""|import ammonite._, Resolvers._
+          |val res = Resolver.Http(
+          |  "${r.name}",
+          |  "${r.url}",
+          |  IvyPattern,
+          |  false)
+          |interp.resolvers() = interp.resolvers() :+ res""".stripMargin
 
     val artifactOperator =
       if (artifactKind == ArtifactKind.UnconventionalScalaLib) ":" else "::"

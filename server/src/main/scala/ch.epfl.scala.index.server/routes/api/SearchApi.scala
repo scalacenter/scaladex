@@ -43,23 +43,34 @@ class SearchApi(
       targetType: Option[String],
       scalaVersion: Option[String],
       scalaJsVersion: Option[String],
-      scalaNativeVersion: Option[String]
+      scalaNativeVersion: Option[String],
+      sbtVersion: Option[String]
   ): Option[ScalaTarget] = {
     (targetType,
      scalaVersion.flatMap(SemanticVersion.parse),
      scalaJsVersion.flatMap(SemanticVersion.parse),
-     scalaNativeVersion.flatMap(SemanticVersion.parse)) match {
+     scalaNativeVersion.flatMap(SemanticVersion.parse),
+     sbtVersion.flatMap(SemanticVersion.parse)) match {
 
-      case (Some("JVM"), Some(scalaVersion), _, _) =>
+      case (Some("JVM"), Some(scalaVersion), _, _, _) =>
         Some(ScalaTarget.scala(scalaVersion.binary))
 
-      case (Some("JS"), Some(scalaVersion), Some(scalaJsVersion), _) =>
+      case (Some("JS"), Some(scalaVersion), Some(scalaJsVersion), _, _) =>
         Some(ScalaTarget.scalaJs(scalaVersion.binary, scalaJsVersion.binary))
 
-      case (Some("NATIVE"), Some(scalaVersion), _, Some(scalaNativeVersion)) =>
+      case (Some("NATIVE"),
+            Some(scalaVersion),
+            _,
+            Some(scalaNativeVersion),
+            _) =>
         Some(
           ScalaTarget.scalaNative(scalaVersion.binary,
                                   scalaNativeVersion.binary)
+        )
+
+      case (Some("SBT"), Some(scalaVersion), _, _, Some(sbtVersion)) =>
+        Some(
+          ScalaTarget.sbt(scalaVersion.binary, sbtVersion.binary)
         )
 
       case _ =>
@@ -78,6 +89,7 @@ class SearchApi(
                'scalaVersion,
                'scalaJsVersion.?,
                'scalaNativeVersion.?,
+               'sbtVersion.?,
                'cli.as[Boolean] ? false)
             ) {
 
@@ -86,12 +98,14 @@ class SearchApi(
                scalaVersion,
                scalaJsVersion,
                scalaNativeVersion,
+               sbtVersion,
                cli) =>
                 val scalaTarget =
                   parseScalaTarget(Some(targetType),
                                    Some(scalaVersion),
                                    scalaJsVersion,
-                                   scalaNativeVersion)
+                                   scalaNativeVersion,
+                                   sbtVersion)
 
                 def convert(project: Project): Api.Project = {
                   import project._
@@ -121,7 +135,7 @@ class SearchApi(
                          .map(ps => write(ps)))
                     case None =>
                       (BadRequest,
-                       s"something is wrong: $scalaTarget $scalaVersion $scalaJsVersion $scalaNativeVersion")
+                       s"something is wrong: $scalaTarget $scalaVersion $scalaJsVersion $scalaNativeVersion $sbtVersion")
                   }
                 )
             }
@@ -136,7 +150,8 @@ class SearchApi(
                  'target.?,
                  'scalaVersion.?,
                  'scalaJsVersion.?,
-                 'scalaNativeVersion.?)
+                 'scalaNativeVersion.?,
+                 'sbtVersion.?)
               ) {
                 (organization,
                  repository,
@@ -144,14 +159,16 @@ class SearchApi(
                  targetType,
                  scalaVersion,
                  scalaJsVersion,
-                 scalaNativeVersion) =>
+                 scalaNativeVersion,
+                 sbtVersion) =>
                   val reference = Project.Reference(organization, repository)
 
                   val scalaTarget =
                     parseScalaTarget(targetType,
                                      scalaVersion,
                                      scalaJsVersion,
-                                     scalaNativeVersion)
+                                     scalaNativeVersion,
+                                     sbtVersion)
 
                   val selection = new ReleaseSelection(
                     target = scalaTarget,

@@ -16,13 +16,25 @@
   scalaVersions: List[(String, Long)],
   scalaJsVersions: List[(String, Long)],
   scalaNativeVersions: List[(String, Long)],
+  sbtVersions: List[(String, Long)],
   queryIsTopic: Boolean)
 @main(title = s"Search ${params.queryString}", showSearch = true, user, params, you, queryIsTopic = queryIsTopic) {
   <main id="container-search">
     <div class="container">
-      @result(params, uri, pagination, projects,
-              user, you, topics, targetTypes,
-              scalaVersions, scalaJsVersions, scalaNativeVersions)
+      @result(
+        params,
+        uri,
+        pagination,
+        projects,
+        user,
+        you,
+        topics,
+        targetTypes,
+        scalaVersions,
+        scalaJsVersions,
+        scalaNativeVersions,
+        sbtVersions
+      )
       </div>
     </div>
   </main>
