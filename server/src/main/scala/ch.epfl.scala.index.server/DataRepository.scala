@@ -80,9 +80,9 @@ class DataRepository(
       .execute {
         search(indexName / projectsCollection)
           .query(q)
-          .start(params.total * (clamp(page) - 1))
-          .limit(params.total)
           .sortBy(sortQuery(sorting))
+          .from(params.total * (clamp(page) - 1))
+          .size(params.total)
       }
       .map(
         r =>

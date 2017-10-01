@@ -87,6 +87,8 @@ class SearchApi(
               ('q,
                'target,
                'scalaVersion,
+               'page.as[Int].?,
+               'total.as[Int].?,
                'scalaJsVersion.?,
                'scalaNativeVersion.?,
                'sbtVersion.?,
@@ -96,6 +98,8 @@ class SearchApi(
               (q,
                targetType,
                scalaVersion,
+               page,
+               total,
                scalaJsVersion,
                scalaNativeVersion,
                sbtVersion,
@@ -126,10 +130,13 @@ class SearchApi(
                       (OK,
                        dataRepository
                          .find(
-                           SearchParams(queryString = q,
-                                        targetFiltering = scalaTarget,
-                                        cli = cli,
-                                        total = 10)
+                           SearchParams(
+                             queryString = q,
+                             targetFiltering = scalaTarget,
+                             cli = cli,
+                             page = page.getOrElse(0),
+                             total = total.getOrElse(10)
+                           )
                          )
                          .map { case (_, ps) => ps.map(p => convert(p)) }
                          .map(ps => write(ps)))
