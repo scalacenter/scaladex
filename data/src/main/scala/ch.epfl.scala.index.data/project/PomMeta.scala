@@ -14,9 +14,9 @@ import org.joda.time.format.ISODateTimeFormat
 import org.slf4j.LoggerFactory
 
 case class PomMeta(
-  releaseModel: ReleaseModel,
-  created: Option[String],
-  resolver: Option[Resolver]
+    releaseModel: ReleaseModel,
+    created: Option[String],
+    resolver: Option[Resolver]
 )
 
 object PomMeta {
@@ -63,8 +63,9 @@ object PomMeta {
     def created(metas: List[DateTime]): Option[String] =
       metas.sorted.headOption.map(format.print)
 
-    pomsRepoSha.map {
-      case (pom, repo, sha1) => {
+    pomsRepoSha
+      .map {
+        case (pom, repo, sha1) => {
           repo match {
             case Bintray => {
               bintray.get(sha1) match {

@@ -11,9 +11,11 @@ class SbtInstallTests extends FunSuite {
         artifactId = "paradise_2.12.3",
         version = "2.1.1",
         artifactName = "paradise",
-        target = Some(ScalaTarget.scala(
-          scalaVersion = SemanticVersion("2.12.3").get
-        ))
+        target = Some(
+          ScalaTarget.scala(
+            scalaVersion = SemanticVersion("2.12.3").get
+          )
+        )
       ).sbtInstall
 
     val expected =
@@ -29,10 +31,12 @@ class SbtInstallTests extends FunSuite {
         artifactId = "scalajs-dom_sjs0.6_2.12",
         version = "0.9.3",
         artifactName = "scalajs-dom",
-        target = Some(ScalaTarget.scalaJs(
-          scalaVersion = SemanticVersion("2.12").get,
-          scalaJsVersion = SemanticVersion("0.6").get
-        ))
+        target = Some(
+          ScalaTarget.scalaJs(
+            scalaVersion = SemanticVersion("2.12").get,
+            scalaJsVersion = SemanticVersion("0.6").get
+          )
+        )
       ).sbtInstall
 
     val expected =
@@ -48,16 +52,18 @@ class SbtInstallTests extends FunSuite {
         artifactId = "sbt-native-packager_2.10_0.13",
         version = "1.2.2",
         artifactName = "sbt-native-packager",
-        target = Some(ScalaTarget.sbt(
-          scalaVersion = SemanticVersion("2.10").get,
-          sbtVersion = SemanticVersion("0.13").get
-        ))
+        target = Some(
+          ScalaTarget.sbt(
+            scalaVersion = SemanticVersion("2.10").get,
+            sbtVersion = SemanticVersion("0.13").get
+          )
+        )
       ).sbtInstall
 
-    val expected = 
+    val expected =
       """addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.2.2")"""
 
-    assert(expected == obtained)    
+    assert(expected == obtained)
   }
 
   test("resolvers") {
@@ -67,9 +73,11 @@ class SbtInstallTests extends FunSuite {
         artifactId = "doodle_2.11",
         version = "0.8.2",
         artifactName = "doodle",
-        target = Some(ScalaTarget.scala(
-          scalaVersion = SemanticVersion("2.11").get
-        )),
+        target = Some(
+          ScalaTarget.scala(
+            scalaVersion = SemanticVersion("2.11").get
+          )
+        ),
         resolver = Some(BintrayResolver("noelwelsh", "maven"))
       ).sbtInstall
 
@@ -90,18 +98,15 @@ class SbtInstallTests extends FunSuite {
         target = None
       ).sbtInstall
 
-
     val expected =
       """libraryDependencies += "com.typesafe" %% "config" % "1.3.1""""
 
     assert(expected == obtained)
   }
 
-  test("non-standard") {
+  test("non-standard") {}
 
-  }
-
-  def release(groupId: String, 
+  def release(groupId: String,
               artifactId: String,
               version: String,
               artifactName: String,
@@ -118,14 +123,12 @@ class SbtInstallTests extends FunSuite {
         artifact = artifactName,
         version = SemanticVersion(version).get,
         target = target,
-
         // Not necessary for the test
         organization = "GitHub-Org",
         repository = "GitHub-Repo"
       ),
       resolver = resolver,
       isNonStandardLib = isNonStandardLib,
-
       // default/elasticsearch fields
       name = None,
       description = None,

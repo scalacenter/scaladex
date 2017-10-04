@@ -10,9 +10,9 @@ import maven.{ReleaseModel, SbtPluginTarget}
 import org.slf4j.LoggerFactory
 
 case class ArtifactMeta(
-  artifactName: String,
-  scalaTarget: Option[ScalaTarget],
-  isNonStandard: Boolean
+    artifactName: String,
+    scalaTarget: Option[ScalaTarget],
+    isNonStandard: Boolean
 )
 
 class ArtifactMetaExtractor(paths: DataPaths) {
@@ -61,7 +61,8 @@ class ArtifactMetaExtractor(paths: DataPaths) {
                 Some(
                   ArtifactMeta(
                     artifactName = pom.artifactId,
-                    scalaTarget = Some(ScalaTarget.sbt(scalaVersion, sbtVersion)),
+                    scalaTarget =
+                      Some(ScalaTarget.sbt(scalaVersion, sbtVersion)),
                     isNonStandard = false
                   )
                 )
@@ -88,9 +89,10 @@ class ArtifactMetaExtractor(paths: DataPaths) {
               // we assume binary compatibility
               ArtifactMeta(
                 artifactName = pom.artifactId,
-                scalaTarget = Some(ScalaTarget.scala(version.copy(patch = None))),
+                scalaTarget =
+                  Some(ScalaTarget.scala(version.copy(patch = None))),
                 isNonStandard = true
-              )
+            )
           )
       }
 
@@ -107,11 +109,12 @@ class ArtifactMetaExtractor(paths: DataPaths) {
 
       // For example: scala-compiler
       case Some(ScalaTargetFromVersion) => {
-        SemanticVersion(pom.version).map(version =>
-          ArtifactMeta(
-            artifactName = pom.artifactId,
-            scalaTarget = Some(ScalaTarget.scala(version)),
-            isNonStandard = true
+        SemanticVersion(pom.version).map(
+          version =>
+            ArtifactMeta(
+              artifactName = pom.artifactId,
+              scalaTarget = Some(ScalaTarget.scala(version)),
+              isNonStandard = true
           )
         )
       }
