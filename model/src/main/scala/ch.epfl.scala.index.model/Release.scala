@@ -37,6 +37,7 @@ case class Release(
     internalDependencies: Seq[ScalaDependency],
     // this part for elasticsearch search
     targetType: String, // JVM, JS, Native, JAVA, SBT
+    fullScalaVersion: Option[String],
     scalaVersion: Option[String],
     scalaJsVersion: Option[String],
     scalaNativeVersion: Option[String],
@@ -64,7 +65,7 @@ case class Release(
           else if (isCrossFull) ("%", " cross CrossVersion.full")
           else ("%%", "")
 
-        s"""libraryDependencies += "${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}$crossSuffix""""
+        s"""libraryDependencies += "${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}"$crossSuffix"""
       } else {
         s"""addSbtPlugin("${maven.groupId}" % "${reference.artifact}" % "${reference.version}")"""
       }

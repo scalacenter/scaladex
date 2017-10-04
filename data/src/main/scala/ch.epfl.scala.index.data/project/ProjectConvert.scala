@@ -106,6 +106,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
                   version,
                   isNonStandardLib) =>
               val (targetType,
+                   fullScalaVersion,
                    scalaVersion,
                    scalaJsVersion,
                    scalaNativeVersion,
@@ -136,6 +137,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
                 targetType = targetType.getOrElse(Java).toString,
                 // for artifact publish with binary, full will return binary
                 // ex cats_2.11 => 2.11
+                fullScalaVersion = fullScalaVersion,
                 scalaVersion = scalaVersion,
                 scalaJsVersion = scalaJsVersion,
                 scalaNativeVersion = scalaNativeVersion,
@@ -311,6 +313,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
         val project =
           seed.toProject(
             targetType = releases.map(_.targetType).toSet,
+            fullScalaVersion = releases.flatMap(_.fullScalaVersion).toSet,
             scalaVersion = releases.flatMap(_.scalaVersion).toSet,
             scalaJsVersion = releases.flatMap(_.scalaJsVersion).toSet,
             scalaNativeVersion = releases.flatMap(_.scalaNativeVersion).toSet,
@@ -356,6 +359,7 @@ object ProjectConvert {
     def reference = Project.Reference(organization, repository)
 
     def toProject(targetType: Set[String],
+                  fullScalaVersion: Set[String],
                   scalaVersion: Set[String],
                   scalaJsVersion: Set[String],
                   scalaNativeVersion: Set[String],
@@ -372,6 +376,7 @@ object ProjectConvert {
         created = created,
         updated = updated,
         targetType = targetType,
+        fullScalaVersion = fullScalaVersion,
         scalaVersion = scalaVersion,
         scalaJsVersion = scalaJsVersion,
         scalaNativeVersion = scalaNativeVersion,

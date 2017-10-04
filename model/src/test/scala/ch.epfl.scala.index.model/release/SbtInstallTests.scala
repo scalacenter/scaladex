@@ -4,6 +4,17 @@ package release
 import org.scalatest._
 
 class SbtInstallTests extends FunSuite {
+  def assert2(a: String, b: String): Unit = {
+    val ok = a == b
+    if (!ok) {
+      println()
+      println("---")
+      println(a + "|")
+      println(b + "|")
+      assert(a == b)
+    }
+  }
+
   test("crossFull") {
     val obtained =
       release(
@@ -19,9 +30,9 @@ class SbtInstallTests extends FunSuite {
       ).sbtInstall
 
     val expected =
-      """libraryDependencies += "org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full""""
+      """libraryDependencies += "org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full"""
 
-    assert(expected == obtained)
+    assert2(expected, obtained)
   }
 
   test("Scala.js / Scala-Native") {
@@ -42,7 +53,7 @@ class SbtInstallTests extends FunSuite {
     val expected =
       """libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "0.9.3""""
 
-    assert(expected == obtained)
+    assert2(expected, obtained)
   }
 
   test("sbt-plugin") {
@@ -63,7 +74,7 @@ class SbtInstallTests extends FunSuite {
     val expected =
       """addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.2.2")"""
 
-    assert(expected == obtained)
+    assert2(expected, obtained)
   }
 
   test("resolvers") {
@@ -85,7 +96,7 @@ class SbtInstallTests extends FunSuite {
       """|libraryDependencies += "underscoreio" %% "doodle" % "0.8.2"
          |resolvers += Some(Resolver.bintrayRepo("noelwelsh", "maven"))""".stripMargin
 
-    assert(expected == obtained)
+    assert2(expected, obtained)
   }
 
   test("Java") {
@@ -101,7 +112,7 @@ class SbtInstallTests extends FunSuite {
     val expected =
       """libraryDependencies += "com.typesafe" %% "config" % "1.3.1""""
 
-    assert(expected == obtained)
+    assert2(expected, obtained)
   }
 
   test("non-standard") {}
@@ -141,6 +152,7 @@ class SbtInstallTests extends FunSuite {
       reverseDependencies = Seq(),
       internalDependencies = Seq(),
       targetType = "",
+      fullScalaVersion = None,
       scalaVersion = None,
       scalaJsVersion = None,
       scalaNativeVersion = None,

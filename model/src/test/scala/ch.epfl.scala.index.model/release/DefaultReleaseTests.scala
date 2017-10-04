@@ -23,6 +23,7 @@ class DefaultReleaseTests extends FunSpec {
       reverseDependencies = Seq(),
       internalDependencies = Seq(),
       targetType = "JVM",
+      fullScalaVersion = None,
       scalaVersion = None,
       scalaJsVersion = None,
       scalaNativeVersion = None,

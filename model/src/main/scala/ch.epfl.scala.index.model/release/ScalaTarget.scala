@@ -135,9 +135,13 @@ object ScalaTarget {
                                            Option[String],
                                            Option[String],
                                            Option[String],
+                                           Option[String],
                                            Option[String]) = {
     val targetType =
       target.map(_.targetType)
+
+    val fullScalaVersion =
+      target.map(_.scalaVersion.toString)
 
     val scalaVersion =
       target.map(_.scalaVersion.forceBinary.toString)
@@ -151,6 +155,11 @@ object ScalaTarget {
     val sbtVersion =
       target.flatMap(_.sbtVersion.map(_.forceBinary.toString))
 
-    (targetType, scalaVersion, scalaJsVersion, scalaNativeVersion, sbtVersion)
+    (targetType,
+     fullScalaVersion,
+     scalaVersion,
+     scalaJsVersion,
+     scalaNativeVersion,
+     sbtVersion)
   }
 }
