@@ -53,16 +53,23 @@ case class Release(
 
     val install =
       if (!isSbtPlugin) {
-        val isScalaJs = reference.target.flatMap(_.scalaJsVersion).isDefined
+        val isScalaJs =
+          reference.target.flatMap(_.scalaJsVersion).isDefined
+
         val isScalaNative =
           reference.target.flatMap(_.scalaNativeVersion).isDefined
+
         val isCrossFull =
           reference.target.flatMap(_.scalaVersion.patch).isDefined
+
+        val isPreRelease =
+          reference.target.flatMap(_.scalaVersion.preRelease).isDefined
 
         val (artifactOperator, crossSuffix) =
           if (isNonStandardLib) ("%", "")
           else if (isScalaJs || isScalaNative) ("%%%", "")
-          else if (isCrossFull) ("%", " cross CrossVersion.full")
+          else if (isCrossFull & !isPreRelease)
+            ("%", " cross CrossVersion.full")
           else ("%%", "")
 
         s"""libraryDependencies += "${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}"$crossSuffix"""

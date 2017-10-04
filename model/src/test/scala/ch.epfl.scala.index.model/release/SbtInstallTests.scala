@@ -35,6 +35,26 @@ class SbtInstallTests extends FunSuite {
     assert2(expected, obtained)
   }
 
+  test("binary") {
+    val obtained =
+      release(
+        groupId = "org.scalaz",
+        artifactId = "scalaz-core_2.13.0-M1",
+        version = "7.2.14",
+        artifactName = "scalaz-core",
+        target = Some(
+          ScalaTarget.scala(
+            scalaVersion = SemanticVersion("2.13.0-M1").get
+          )
+        )
+      ).sbtInstall
+
+    val expected =
+      """libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.2.14""""
+
+    assert2(expected, obtained)
+  }
+
   test("Scala.js / Scala-Native") {
     val obtained =
       release(
