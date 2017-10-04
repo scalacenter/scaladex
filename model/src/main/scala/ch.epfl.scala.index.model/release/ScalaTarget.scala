@@ -38,7 +38,6 @@ case class ScalaTarget(
     scalaNativeVersion: Option[SemanticVersion],
     sbtVersion: Option[SemanticVersion]
 ) extends Ordered[ScalaTarget] {
-  def encode: String = ScalaTarget.encode(this)
 
   def render = {
     (scalaJsVersion, scalaNativeVersion, sbtVersion) match {
@@ -65,6 +64,22 @@ case class ScalaTarget(
     }
   }
 
+  def encode: String = {
+    (scalaJsVersion, scalaNativeVersion, sbtVersion) match {
+      case (Some(scalaJsVersion), _, _) =>
+        s"_sjs${scalaJsVersion}_${scalaVersion}"
+
+      case (_, Some(scalaNativeVersion), _) =>
+        s"_native${scalaNativeVersion}_${scalaVersion}"
+
+      case (_, _, Some(sbtVersion)) =>
+        s"_${scalaVersion}_${sbtVersion}"
+
+      case _ =>
+        s"_${scalaVersion}"
+    }
+  }
+
   private final val LT = -1
   private final val GT = 1
   private final val EQ = 0
@@ -87,29 +102,12 @@ object ScalaTarget {
     )
   }
 
-  def encode(target: ScalaTarget): String = {
-    val scalaVersion = target.scalaVersion
-    (target.scalaJsVersion, target.scalaNativeVersion, target.sbtVersion) match {
-      case (Some(scalaJsVersion), _, _) =>
-        s"_sjs${scalaJsVersion}_${scalaVersion}"
-
-      case (_, Some(scalaNativeVersion), _) =>
-        s"_native${scalaNativeVersion}_${scalaVersion}"
-
-      case (_, _, Some(sbtVersion)) =>
-        s"_sbt${sbtVersion}_${scalaVersion}"
-
-      case _ =>
-        s"_${scalaVersion}"
-    }
-  }
-
   def decode(code: String): Option[ScalaTarget] = {
     Artifact(code).map(_._2)
   }
 
-  def scala(version: SemanticVersion) =
-    ScalaTarget(scalaVersion = version,
+  def scala(scalaVersion: SemanticVersion) =
+    ScalaTarget(scalaVersion = scalaVersion,
                 scalaJsVersion = None,
                 scalaNativeVersion = None,
                 sbtVersion = None)

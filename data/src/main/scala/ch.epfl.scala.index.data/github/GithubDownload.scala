@@ -60,7 +60,7 @@ class GithubDownload(paths: DataPaths,
   private val config =
     ConfigFactory.load().getConfig("org.scala_lang.index.data")
 
-  private val credential =
+  private lazy val credential =
     if (config.hasPath("github")) {
       val creds = config.getStringList("github").toArray
       if (0 == creds.length) {

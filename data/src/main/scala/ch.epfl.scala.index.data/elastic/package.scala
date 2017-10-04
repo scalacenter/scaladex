@@ -30,7 +30,7 @@ trait ProjectProtocol {
         )
       )
     )
-    .preservingEmptyValues + artifactKindSerializer
+    .preservingEmptyValues
 
   private def tryEither[T](f: T): Either[Throwable, T] = {
     Try(f).transform(s => Success(Right(s)), f => Success(Left(f))).get
@@ -82,21 +82,6 @@ trait ProjectProtocol {
   implicit object ReleaseIndexable extends Indexable[Release] {
     override def json(release: Release): String = nwrite(release)
   }
-
-  lazy val artifactKindSerializer: Serializer[ArtifactKind] =
-    new CustomSerializer[ArtifactKind](formats => {
-      (
-        {
-          case JString("sbt-plugin")     => ArtifactKind.SbtPlugin
-          case JString("conventional")   => ArtifactKind.ConventionalScalaLib
-          case JString("unconventional") => ArtifactKind.UnconventionalScalaLib
-        }, {
-          case ArtifactKind.SbtPlugin              => JString("sbt-plugin")
-          case ArtifactKind.ConventionalScalaLib   => JString("conventional")
-          case ArtifactKind.UnconventionalScalaLib => JString("unconventional")
-        }
-      )
-    })
 }
 
 package object elastic extends ProjectProtocol {

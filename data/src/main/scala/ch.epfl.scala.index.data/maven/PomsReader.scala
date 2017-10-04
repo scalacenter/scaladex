@@ -102,14 +102,19 @@ private[maven] class PomsReader(pomsPath: Path,
   // jdk.setProperty("scala.version", "2.11.7")
   // jdk.setProperty("scala.binary.version", "2.11")
 
-  private def resolve(pom: Path) = {
-    val request = new DefaultModelBuildingRequest
-    request
-      .setModelResolver(resolver)
-      .setSystemProperties(jdk)
-      .setPomFile(pom.toFile)
+  def loadOne(path: Path): Try[(ReleaseModel, LocalPomRepository, String)] = {
+    val sha1 = path.getFileName().toString.dropRight(".pom".length)
 
-    builder.build(request).getEffectiveModel
+    Try {
+      val request = new DefaultModelBuildingRequest
+      request
+        .setModelResolver(resolver)
+        .setSystemProperties(jdk)
+        .setPomFile(path.toFile)
+
+      builder.build(request).getEffectiveModel
+
+    }.map(pom => (PomConvert(pom), repository, sha1))
   }
 
   def load(): List[Try[(ReleaseModel, LocalPomRepository, String)]] = {
@@ -122,13 +127,13 @@ private[maven] class PomsReader(pomsPath: Path,
       ProgressBar(s"Reading $repository's POMs", rawPoms.size, log)
     progress.start()
 
-    def sha1(path: Path) = path.getFileName().toString.dropRight(".pom".length)
-
     val poms = rawPoms.par.map { p =>
       progress.synchronized {
         progress.step()
       }
-      Try(resolve(p)).map(pom => (PomConvert(pom), repository, sha1(p)))
+
+      loadOne(p)
+
     }.toList
     progress.stop()
     s.close()

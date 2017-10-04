@@ -11,7 +11,10 @@ class ArtifactTests extends FunSpec {
         Artifact("cats-core_sjs0.6_2.11") == Some(
           (
             "cats-core",
-            ScalaTarget.scalaJs(SemanticVersion(2, 11), SemanticVersion(0, 6))
+            ScalaTarget.scalaJs(
+              scalaVersion = SemanticVersion("2.11").get,
+              scalaJsVersion = SemanticVersion("0.6").get
+            )
           )
         )
       )
@@ -22,8 +25,10 @@ class ArtifactTests extends FunSpec {
         Artifact("cats-core_native0.1_2.11") == Some(
           (
             "cats-core",
-            ScalaTarget.scalaNative(SemanticVersion(2, 11),
-                                    SemanticVersion(0, 1))
+            ScalaTarget.scalaNative(
+              scalaVersion = SemanticVersion("2.11").get,
+              scalaNativeVersion = SemanticVersion("0.1").get
+            )
           )
         )
       )
@@ -35,10 +40,21 @@ class ArtifactTests extends FunSpec {
           (
             "akka-remote-tests",
             ScalaTarget.scala(
-              SemanticVersion(2,
-                              11,
-                              Some(0),
-                              preRelease = Some(ReleaseCandidate(4)))
+              scalaVersion = SemanticVersion("2.11.0-RC4").get
+            )
+          )
+        )
+      )
+    }
+
+    it("parses sbt") {
+      assert(
+        Artifact("sbt-microsites_2.12_1.0") == Some(
+          (
+            "sbt-microsites",
+            ScalaTarget.sbt(
+              scalaVersion = SemanticVersion("2.12").get,
+              sbtVersion = SemanticVersion("1.0").get
             )
           )
         )
@@ -54,7 +70,9 @@ class ArtifactTests extends FunSpec {
         Artifact("banana_jvm_2.11") == Some(
           (
             "banana_jvm",
-            ScalaTarget.scala(SemanticVersion(2, 11))
+            ScalaTarget.scala(
+              scalaVersion = SemanticVersion("2.11").get
+            )
           )
         )
       )

@@ -1,0 +1,15 @@
+import ch.epfl.scala.index.data._
+import ch.epfl.scala.index.data.maven._
+import java.nio.file._
+import scala.collection.JavaConverters._
+
+val paths = DataPaths(Nil)
+val reader = PomsReader(LocalPomRepository.MavenCentral, paths)
+
+val lines = Files.readAllLines(Paths.get("out")).asScala
+
+val base = Paths.get("/home/gui/scaladex/scaladex-index/poms/maven-central/sha/")
+
+lines.map( sha =>
+  reader.loadOne(base.resolve(s"$sha.pom"))
+)

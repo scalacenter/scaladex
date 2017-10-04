@@ -8,221 +8,23 @@ import model.misc._
 import model.release._
 import maven.{ReleaseModel, SbtPluginTarget}
 import bintray._
+import github._
+
 import ch.epfl.scala.index.data.LocalRepository.BintraySbtPlugins
 import ch.epfl.scala.index.data.project.ProjectConvert.ProjectSeed
-import github._
+
 import elastic.SaveLiveData
 import com.github.nscala_time.time.Imports._
 import org.joda.time.DateTime
-import org.joda.time.format.ISODateTimeFormat
+
 import org.slf4j.LoggerFactory
 
 class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
     extends BintrayProtocol {
 
-  private val format = ISODateTimeFormat.dateTime.withOffsetParsed
-
-  private val nonStandardLibs = NonStandardLib.load(paths)
-
   private val log = LoggerFactory.getLogger(getClass)
 
-  /** artifactId is often use to express binary compatibility with a scala version (ScalaTarget)
-   * if the developer follow this convention we extract the relevant parts and we mark
-   * the library as standard. Otherwise we either have a library like gatling or the scala library itself
-   *
-   * @return The artifact name (without suffix), the Scala target, whether this project is a usual Scala library or not
-   */
-  private def extractArtifactNameAndTarget(
-      pom: ReleaseModel
-  ): Option[(String, Option[ScalaTarget], ArtifactKind)] = {
-    val nonStandardLookup =
-      nonStandardLibs
-        .find(
-          lib =>
-            lib.groupId == pom.groupId &&
-              lib.artifactId == pom.artifactId
-        )
-        .map(_.lookup)
-
-    nonStandardLookup match {
-      case None => {
-        pom.sbtPluginTarget match {
-
-          // This is a usual Scala library (whose artifact name is suffixed by the Scala binary version)
-          // For example: akka-actors_2.12
-          case None => {
-            Artifact(pom.artifactId).map {
-              case (artifactName, target) =>
-                (artifactName, Some(target), ArtifactKind.ConventionalScalaLib)
-            }
-          }
-
-          // Or it can be an sbt-plugin published as a maven style. In such a case the Scala target
-          // is not suffixed to the artifact name but can be found in the model’s `sbtPluginTarget` member.
-          case Some(SbtPluginTarget(rawScalaVersion, rawSbtVersion)) => {
-            SemanticVersion(rawScalaVersion).zip(SemanticVersion(rawSbtVersion)) match {
-              case List((scalaVersion, sbtVersion)) =>
-                Some(
-                  (pom.artifactId,
-                   Some(ScalaTarget.sbt(scalaVersion, sbtVersion)),
-                   ArtifactKind.SbtPlugin)
-                )
-              case _ => {
-                log.error("Unable to decode the Scala target")
-                None
-              }
-            }
-          }
-        }
-      }
-
-      // For example: io.gatling
-      case Some(ScalaTargetFromPom) => {
-        pom.dependencies
-          .find(
-            dep =>
-              dep.groupId == "org.scala-lang" &&
-                dep.artifactId == "scala-library"
-          )
-          .flatMap(dep => SemanticVersion(dep.version))
-          .map(
-            version =>
-              // we assume binary compatibility
-              (pom.artifactId,
-               Some(ScalaTarget.scala(version.copy(patch = None))),
-               ArtifactKind.UnconventionalScalaLib)
-          )
-      }
-
-      // For example: typesafe config
-      case Some(NoScalaTargetPureJavaDependency) => {
-        Some((pom.artifactId, None, ArtifactKind.ConventionalScalaLib))
-      }
-
-      // For example: scala-compiler
-      case Some(ScalaTargetFromVersion) => {
-        SemanticVersion(pom.version).map(
-          version =>
-            (pom.artifactId,
-             Some(ScalaTarget.scala(version)),
-             ArtifactKind.UnconventionalScalaLib)
-        )
-      }
-    }
-  }
-
-  private def extractMeta(
-      pomsRepoSha: List[(ReleaseModel, LocalRepository, String)]
-  ) = {
-    import LocalPomRepository._
-
-    val bintray = BintrayMeta.load(paths).groupBy(_.sha1)
-    val users = Meta.load(paths, UserProvided).groupBy(_.sha1)
-    val central = Meta.load(paths, MavenCentral).groupBy(_.sha1)
-    val sbtPluginsCreated =
-      SbtPluginsData(paths)
-        .read()
-        ._1
-        .groupBy(_.sha1)
-        .mapValues(_.head.created) // Note: This is inefficient because we already loaded the data earlier and discarded the creation time
-
-    val packagingOfInterest = Set("aar", "jar", "bundle", "pom")
-
-    val typesafeNonOSS = Set(
-      "for-subscribers-only",
-      "instrumented-reactive-platform",
-      "subscribers-early-access",
-      "maven-releases" // too much noise
-    )
-
-    def created(metas: List[DateTime]): Option[String] =
-      metas.sorted.headOption.map(format.print)
-
-    pomsRepoSha
-      .map {
-        case (pom, repo, sha1) => {
-          val default =
-            (pom, /* created */ None, /* resolver */ None, /* keep */ true)
-          repo match {
-            case Bintray => {
-              bintray.get(sha1) match {
-                case Some(metas) => {
-                  val resolver: Option[Resolver] =
-                    if (metas.forall(_.isJCenter)) Option(JCenter)
-                    else
-                      metas.headOption.map(
-                        meta => BintrayResolver(meta.owner, meta.repo)
-                      )
-
-                  (
-                    pom,
-                    // create
-                    created(metas.map(_.created)),
-                    // resolver
-                    resolver,
-                    // filter
-                    !metas.exists(
-                      meta =>
-                        meta.owner == "typesafe" && typesafeNonOSS
-                          .contains(meta.repo)
-                    )
-                  )
-                }
-                case None => {
-                  log.info("no meta for pom: " + sha1)
-                  default
-                }
-              }
-            }
-            case MavenCentral => {
-              central.get(sha1) match {
-                case Some(metas) => {
-                  (
-                    pom,
-                    created(metas.map(_.created)),
-                    None,
-                    true
-                  )
-                }
-                case None => {
-                  log.info("no meta for pom: " + sha1)
-                  default
-                }
-              }
-            }
-            case UserProvided =>
-              users.get(sha1) match {
-                case Some(metas) => {
-                  (
-                    pom,
-                    created(metas.map(_.created)),
-                    Some(UserPublished),
-                    true
-                  )
-                }
-                case None => {
-                  log.info("no meta for pom: " + sha1)
-                  default
-                }
-              }
-            case BintraySbtPlugins =>
-              (
-                pom,
-                sbtPluginsCreated.get(sha1),
-                None,
-                true
-              )
-          }
-        }
-      }
-      .filter {
-        case (pom, _, _, keep) =>
-          packagingOfInterest.contains(pom.packaging) && keep
-      }
-      .map {
-        case (pom, created, resolver, _) => (pom, created, resolver)
-      }
-  }
+  private val artifactMetaExtractor = new ArtifactMetaExtractor(paths)
 
   /**
    * @param pomsRepoSha poms and associated meta information reference
@@ -239,23 +41,21 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
     log.info("Collecting Metadata")
 
-    val pomsAndMetaClean = extractMeta(pomsRepoSha).flatMap {
-      case (pom, created, resolver) =>
+    val pomsAndMetaClean = PomMeta(pomsRepoSha, paths).flatMap {
+      case PomMeta(pom, created, resolver) =>
         for {
-          (artifactName, target, nonStandardLib) <- extractArtifactNameAndTarget(
-            pom
-          )
+          artifactMeta <- artifactMetaExtractor(pom)
           version <- SemanticVersion(pom.version)
           github <- githubRepoExtractor(pom)
         } yield
           (github,
-           artifactName,
-           target,
+           artifactMeta.artifactName,
+           artifactMeta.scalaTarget,
            pom,
            created,
            resolver,
            version,
-           nonStandardLib)
+           artifactMeta.isNonStandard)
     }
 
     log.info("Convert POMs to Project")
@@ -269,9 +69,9 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
     ): (Option[String], Option[String]) = {
       def sortDate(rawDates: List[String]): List[String] = {
         rawDates
-          .map(format.parseDateTime)
+          .map(PomMeta.format.parseDateTime)
           .sorted(Descending[DateTime])
-          .map(format.print)
+          .map(PomMeta.format.print)
       }
 
       val dates = for {
@@ -304,7 +104,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
                   created,
                   resolver,
                   version,
-                  artifactKind) =>
+                  isNonStandardLib) =>
               val (targetType,
                    scalaVersion,
                    scalaJsVersion,
@@ -326,7 +126,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
                 description = pom.description,
                 released = created,
                 licenses = licenseCleanup(pom),
-                artifactKind = artifactKind,
+                isNonStandardLib = isNonStandardLib,
                 id = None,
                 liveData = false,
                 scalaDependencies = Seq(),

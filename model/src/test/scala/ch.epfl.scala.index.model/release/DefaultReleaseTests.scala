@@ -15,7 +15,7 @@ class DefaultReleaseTests extends FunSpec {
       description = None,
       released = None,
       licenses = Set(),
-      artifactKind = ArtifactKind.ConventionalScalaLib,
+      isNonStandardLib = false,
       id = None,
       liveData = false,
       scalaDependencies = Seq(),
@@ -25,7 +25,8 @@ class DefaultReleaseTests extends FunSpec {
       targetType = "JVM",
       scalaVersion = None,
       scalaJsVersion = None,
-      scalaNativeVersion = None
+      scalaNativeVersion = None,
+      sbtVersion = None
     )
 
   def prepare(organization: String,

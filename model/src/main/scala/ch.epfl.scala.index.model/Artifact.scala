@@ -7,20 +7,29 @@ import release.ScalaTarget
 
 object Artifact extends Parsers {
   private val ArtifactNameParser = {
-    val Scala = "_" ~ SemanticVersion.Parser
-    val ScalaJs = "_sjs" ~ SemanticVersion.Parser
-    val ScalaNative = "_native" ~ SemanticVersion.Parser
-    val Sbt = "_sbt" ~ SemanticVersion.Parser
+    val ScalaPart = "_" ~ SemanticVersion.Parser
 
-    val ScalaTargetParser = (ScalaJs.? ~ ScalaNative.? ~ Sbt.? ~ Scala).map {
-      case (scalaJsVersion, scalaNativeVersion, sbtVersion, scalaVersion) =>
-        ScalaTarget(
-          scalaVersion = scalaVersion,
-          scalaJsVersion = scalaJsVersion,
-          scalaNativeVersion = scalaNativeVersion,
-          sbtVersion = sbtVersion
-        )
+    val ScalaJs: P[ScalaTarget] =
+      ("_sjs" ~ SemanticVersion.Parser ~ ScalaPart).map {
+        case (scalaJsVersion, scalaVersion) =>
+          ScalaTarget.scalaJs(scalaVersion, scalaJsVersion)
+      }
+
+    val ScalaNative: P[ScalaTarget] =
+      ("_native" ~ SemanticVersion.Parser ~ ScalaPart).map {
+        case (scalaNativeVersion, scalaVersion) =>
+          ScalaTarget.scalaNative(scalaVersion, scalaNativeVersion)
+      }
+
+    val Sbt: P[ScalaTarget] = (ScalaPart ~ "_" ~ SemanticVersion.Parser).map {
+      case (scalaVersion, sbtVersion) =>
+        ScalaTarget.sbt(scalaVersion, sbtVersion)
     }
+
+    val Scala: P[ScalaTarget] = ScalaPart.map(ScalaTarget.scala)
+
+    val ScalaTargetParser =
+      ScalaJs | ScalaNative | Sbt | Scala
 
     Start ~
       (Alpha | Digit | "-".! | ".".! | (!(ScalaTargetParser ~ End) ~ "_")).rep.! ~ // must end with scala target

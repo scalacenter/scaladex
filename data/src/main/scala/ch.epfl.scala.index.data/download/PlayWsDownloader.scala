@@ -33,9 +33,7 @@ trait PlayWsDownloader {
    */
   def wsClient = {
     val configuration = Configuration.reference ++ Configuration(
-      ConfigFactory.parseString("""
-                                  |plaw.ws.followRedirects = true
-      """.stripMargin)
+      ConfigFactory.parseString("plaw.ws.followRedirects = true")
     )
 
     /* If running in Play, environment should be injected */
