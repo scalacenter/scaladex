@@ -79,7 +79,7 @@ case class Release(
 
     List(
       Some(install),
-      resolver.map("resolvers += " + _.sbt)
+      resolver.flatMap(_.sbt.map("resolvers += " + _))
     ).flatten.mkString(System.lineSeparator)
   }
 

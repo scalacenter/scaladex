@@ -114,7 +114,7 @@ class SbtInstallTests extends FunSuite {
 
     val expected =
       """|libraryDependencies += "underscoreio" %% "doodle" % "0.8.2"
-         |resolvers += Some(Resolver.bintrayRepo("noelwelsh", "maven"))""".stripMargin
+         |resolvers += Resolver.bintrayRepo("noelwelsh", "maven")""".stripMargin
 
     assert2(expected, obtained)
   }
