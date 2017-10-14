@@ -140,6 +140,18 @@ object Client {
     }
   }
 
+  private def jumpToSearchInput(event: KeyboardEvent): Unit = {
+    if (event.keyCode == 191) {
+      getSearchBox.foreach { searchBox =>
+        val input = searchBox.getInput
+        if (event.srcElement != input) {
+          input.focus()
+          event.preventDefault()
+        }
+      }
+    }
+  }
+
   implicit class ElementOps(e: Element) {
     def getInput: HTMLInputElement = get[HTMLInputElement]
     def get[A <: Element]: A = e.asInstanceOf[A]
@@ -279,6 +291,7 @@ object Client {
 
   @JSExport
   def main(token: UndefOr[String]): Unit = {
+    document.addEventListener[KeyboardEvent]("keydown", jumpToSearchInput _)
 
     getSearchBox.foreach { searchBox =>
       searchBox.addEventListener[Event]("input", runSearch _)
