@@ -64,27 +64,28 @@
                 <div class="row">
                     <div class="col-md-2">
                         <a href="/">
-                            <img src="/assets/img/scaladex-brand.svg" alt="scaladex logo">
+                            <img src="/assets/img/scaladex-brand.svg" alt="scaladex logo" class="logo">
                         </a>
                     </div>
-                    <div class="col-md-10">
+                    <div class="col-md-7">
                         @if(showSearch) {
-                              @searchinput(params, you, totalProjects, totalReleases, queryIsTopic)
-                         }
+                            @searchinput(params, you, totalProjects, totalReleases, queryIsTopic)
+                        }
+                    </div>
+                    <div class="col-md-3">
                         @user.map{ u =>
                             <a class="btn btn-default pull-right" href="/logout">
                                 Logout
                             </a>
                             <a class="btn pull-right you
-                                   @if(you) {
+                                @if(you) {
                                     btn-primary
-                                   } else {
+                                } else {
                                     btn-default
-                                   }
-                               "
-                               href="/search?q=@params.queryString@if(!you){&you=✓}"
-                               
-                               >
+                                }
+                                "
+                                href="/search?q=@params.queryString@if(!you){&you=✓}"
+                            >
                                 <img src="@u.sizedAvatarUrl(38)" alt="Your Avatar - @u.login">
                                 <span style="vertical-align: middle">Projects</span>
                             </a>
