@@ -3,6 +3,8 @@ package server
 package routes
 package api
 
+import play.api.libs.json._
+
 import ch.epfl.scala.index.api.Autocompletion
 
 import model.misc.SearchParams
@@ -14,11 +16,16 @@ import akka.http.scaladsl._
 import server.Directives._
 import model.StatusCodes._
 
-import upickle.default._
-
 import scala.concurrent.ExecutionContext
 
 object Api {
+
+  implicit val formatProject: OFormat[Project] =
+    Json.format[Project]
+
+  implicit val formatReleaseOptions: OFormat[ReleaseOptions] =
+    Json.format[ReleaseOptions]
+
   case class Project(
       organization: String,
       repository: String,
@@ -37,7 +44,8 @@ object Api {
 
 class SearchApi(
     dataRepository: DataRepository
-)(implicit val executionContext: ExecutionContext) {
+)(implicit val executionContext: ExecutionContext)
+    extends PlayJsonSupport {
 
   private def parseScalaTarget(
       targetType: Option[String],
@@ -124,9 +132,9 @@ class SearchApi(
                               artifacts0)
                 }
 
-                complete(
-                  scalaTarget match {
-                    case Some(target) =>
+                scalaTarget match {
+                  case Some(target) =>
+                    complete(
                       (OK,
                        dataRepository
                          .find(
@@ -138,13 +146,15 @@ class SearchApi(
                              total = total.getOrElse(10)
                            )
                          )
-                         .map { case (_, ps) => ps.map(p => convert(p)) }
-                         .map(ps => write(ps)))
-                    case None =>
+                         .map { case (_, ps) => ps.map(p => convert(p)) })
+                    )
+
+                  case None =>
+                    complete(
                       (BadRequest,
                        s"something is wrong: $scalaTarget $scalaVersion $scalaJsVersion $scalaNativeVersion $sbtVersion")
-                  }
-                )
+                    )
+                }
             }
           }
         } ~
@@ -196,10 +206,11 @@ class SearchApi(
                   }
 
                   complete(
-                    dataRepository.projectPage(reference, selection).map {
-                      case Some((_, options)) => (OK, write(convert(options)))
-                      case None               => (NotFound, "")
-                    }
+                    dataRepository
+                      .projectPage(reference, selection)
+                      .map(
+                        _.map { case (_, options) => convert(options) }
+                      )
                   )
               }
             }
@@ -217,7 +228,7 @@ class SearchApi(
                     )
                     .map {
                       case (pagination, projects) =>
-                        val summarisedProjects = projects.map(
+                        projects.map(
                           p =>
                             Autocompletion(
                               p.organization,
@@ -225,7 +236,6 @@ class SearchApi(
                               p.github.flatMap(_.description).getOrElse("")
                           )
                         )
-                        write(summarisedProjects)
                     }
                 }
               }

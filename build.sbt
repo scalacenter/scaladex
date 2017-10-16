@@ -3,6 +3,7 @@ import org.scalajs.sbtplugin.cross.CrossProject
 
 import Deployment.githash
 
+val playJsonVersion = "2.6.2"
 val akkaVersion = "2.5.3"
 val upickleVersion = "0.4.4"
 val scalatagsVersion = "0.6.5"
@@ -13,7 +14,11 @@ lazy val scalaTestVersion = "3.0.1"
 
 def akka(module: String) =
   "com.typesafe.akka" %% ("akka-" + module) % akkaVersion
+
 def akkaHttpCore = "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
+
+val playJson =
+  libraryDependencies += "com.typesafe.play" %%% "play-json" % playJsonVersion
 
 val nscalaTime = "com.github.nscala-time" %% "nscala-time" % "2.14.0"
 
@@ -82,7 +87,8 @@ lazy val template = project
   .enablePlugins(SbtTwirl)
 
 lazy val shared = crossProject
-  .settings(commonSettings: _*)
+  .settings(commonSettings)
+  .settings(playJson)
   .settings(
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "scalatags" % scalatagsVersion,
@@ -106,6 +112,7 @@ lazy val client = project
 lazy val server = project
   .settings(commonSettings)
   .settings(packageScalaJS(client))
+  .settings(playJson)
   .settings(
     libraryDependencies ++= Seq(
       akka("testkit") % Test,
