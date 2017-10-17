@@ -56,7 +56,7 @@ object Main {
     import system.dispatcher
     implicit val materializer = ActorMaterializer()
 
-    def getPathFromArgs = {
+    val getPathFromArgs = {
       val pathFromArgs =
         if (args.isEmpty) Nil
         else args.toList.tail
@@ -83,7 +83,9 @@ object Main {
         }
       }),
       // Download POMs from Bintray
-      Step("download")(() => new BintrayDownloadPoms(getPathFromArgs).run()),
+      Step("download")(
+        () => new BintrayDownloadPoms(getPathFromArgs).run()
+      ),
       // Download parent POMs
       Step("parent")(
         () => new DownloadParentPoms(bintray, getPathFromArgs).run()
@@ -92,8 +94,14 @@ object Main {
       Step("sbt")(
         () => new BintrayDownloadSbtPlugins(getPathFromArgs).run()
       ),
+      // // Find missing artifacts in maven-central
+      // Step("central")(
+      //   () => new CentralMissing(getPathFromArgs).run()
+      // )
       // Download additional information about projects from Github
-      Step("github")(() => githubDownload.run()),
+      Step("github")(
+        () => githubDownload.run()
+      ),
       // Re-create the ElasticSearch index
       Step("elastic")(
         () => new SeedElasticSearch(getPathFromArgs, githubDownload).run()

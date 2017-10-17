@@ -89,7 +89,7 @@ object Scrape {
   def requestLatest(querry: String): List[Latest.Doc] = {
     val request =
       wsClient
-        .url("http://search.maven.org/solrsearch/select")
+        .url("https://search.maven.org/solrsearch/select")
         .withQueryStringParameters(
           "q" -> querry
         )
@@ -106,7 +106,7 @@ object Scrape {
   def requestGav(groupId: String, artifactId: String): List[Gav.Doc] = {
     val request =
       wsClient
-        .url("http://search.maven.org/solrsearch/select")
+        .url("https://search.maven.org/solrsearch/select")
         .withQueryStringParameters(
           "q" -> s"""g:"$groupId" AND a:"$artifactId"""",
           "core" -> "gav"
@@ -121,7 +121,7 @@ object Scrape {
 
   // requestGav("com.47deg", "sbt-microsites")
 
-  // http://repo1.maven.org/maven2/com/47deg/sbt-microsites_2.12_1.0/0.7.1/sbt-microsites-0.7.1.pom
+  // https://repo1.maven.org/maven2/com/47deg/sbt-microsites_2.12_1.0/0.7.1/sbt-microsites-0.7.1.pom
   def download(groupId: String,
                artifact: String,
                version: String,
@@ -130,7 +130,7 @@ object Scrape {
     val request =
       wsClient
         .url(
-          s"http://repo1.maven.org/maven2/$path/$artifact${target.encode}/$version/$artifact-$version.pom"
+          s"https://repo1.maven.org/maven2/$path/$artifact${target.encode}/$version/$artifact-$version.pom"
         )
         .get
 
