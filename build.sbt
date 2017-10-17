@@ -153,14 +153,16 @@ lazy val data = project
       "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
       "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion,
       "com.typesafe.akka" %% "akka-stream" % akkaVersion,
-      "org.json4s" %% "json4s-native" % "3.5.2",
+      "org.json4s" %% "json4s-native" % "3.5.3",
       "org.spire-math" %% "jawn-json4s" % "0.11.0",
       "me.tongfei" % "progressbar" % "0.5.5",
       "org.apache.maven" % "maven-model-builder" % "3.3.9",
       "org.jsoup" % "jsoup" % "1.10.1",
       "com.typesafe.play" %% "play-ahc-ws" % "2.6.0-RC2",
       "org.apache.ivy" % "ivy" % "2.4.0",
-      "com.github.scopt" %% "scopt" % "3.7.0"
+      "com.typesafe.akka" %% "akka-http" % "10.0.10",
+      "de.heikoseeberger" %% "akka-http-json4s" % "1.18.0",
+      "org.json4s" %% "json4s-native" % "3.5.3"
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),
