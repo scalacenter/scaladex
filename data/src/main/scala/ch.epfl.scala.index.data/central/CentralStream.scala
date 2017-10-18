@@ -75,16 +75,18 @@ object CentralStream {
   implicit val materializer = ActorMaterializer()
 
   case class ArtifactRequest(
-    groupId: String,
-    artifactId: String
+      groupId: String,
+      artifactId: String
   )
 
-  val mavenSearchConnectionPool: Flow[(HttpRequest, ArtifactRequest),(Try[HttpResponse], ArtifactRequest), Http.HostConnectionPool] = 
+  val mavenSearchConnectionPool: Flow[(HttpRequest, ArtifactRequest),
+                                      (Try[HttpResponse], ArtifactRequest),
+                                      Http.HostConnectionPool] =
     Http()
       .cachedHostConnectionPoolHttps[ArtifactRequest]("search.maven.org")
       .throttle(
         elements = 10,
-        per = 1.minute, 
+        per = 1.minute,
         maximumBurst = 10,
         mode = ThrottleMode.Shaping
       )
@@ -103,32 +105,38 @@ object CentralStream {
     )
   }
 
-
-  def parseJson: Flow[(Try[HttpResponse], ArtifactRequest), Either[String,(Gav.Body, ArtifactRequest)], akka.NotUsed] = {
-    Flow[(Try[HttpResponse], ArtifactRequest)].mapAsyncUnordered(parallelism = 100){
-      case (Success(res @ HttpResponse(StatusCodes.OK, _, entity, _)), ar) => {
-        Unmarshal(entity).to[Gav.Body].map(gav => Right((gav, ar)))
+  def parseJson: Flow[(Try[HttpResponse], ArtifactRequest),
+                      Either[String, (Gav.Body, ArtifactRequest)],
+                      akka.NotUsed] = {
+    Flow[(Try[HttpResponse], ArtifactRequest)]
+      .mapAsyncUnordered(parallelism = 100) {
+        case (Success(res @ HttpResponse(StatusCodes.OK, _, entity, _)), ar) => {
+          Unmarshal(entity).to[Gav.Body].map(gav => Right((gav, ar)))
+        }
+        case (Success(x), ar) =>
+          Future.successful(Left(s"Unexpected status code ${x.status} for $ar"))
+        case (Failure(e), ar) =>
+          Future.failed(new Exception(s"Failed to fetch $ar", e))
       }
-      case (Success(x), ar) => Future.successful(Left(s"Unexpected status code ${x.status} for $ar"))
-      case (Failure(e), ar) => Future.failed(new Exception(s"Failed to fetch $ar", e))
-    }
   }
 
-  val mavenDownloadConnectionPool: Flow[(HttpRequest, DownloadRequest),(Try[HttpResponse], DownloadRequest), Http.HostConnectionPool] = 
+  val mavenDownloadConnectionPool: Flow[(HttpRequest, DownloadRequest),
+                                        (Try[HttpResponse], DownloadRequest),
+                                        Http.HostConnectionPool] =
     Http()
       .cachedHostConnectionPoolHttps[DownloadRequest]("repo1.maven.org")
       .throttle(
         elements = 10,
-        per = 1.minute, 
+        per = 1.minute,
         maximumBurst = 10,
         mode = ThrottleMode.Shaping
       )
 
   case class DownloadRequest(
-    groupId: String,
-    artifact: String,
-    version: String,
-    target: ScalaTarget
+      groupId: String,
+      artifact: String,
+      version: String,
+      target: ScalaTarget
   )
 
   case class PomContent(content: String)
@@ -144,16 +152,22 @@ object CentralStream {
     )
   }
 
-  val unmarshal = Unmarshaller.stringUnmarshaller.forContentTypes(MediaTypes.`text/xml`)
+  val unmarshal =
+    Unmarshaller.stringUnmarshaller.forContentTypes(MediaTypes.`text/xml`)
 
-  def readContent: Flow[(Try[HttpResponse], DownloadRequest), Either[String,(PomContent, DownloadRequest)], akka.NotUsed] = {
-    Flow[(Try[HttpResponse], DownloadRequest)].mapAsyncUnordered(parallelism = 100){
-      case (Success(res @ HttpResponse(StatusCodes.OK, _, entity, _)), dr) => {
+  def readContent: Flow[(Try[HttpResponse], DownloadRequest),
+                        Either[String, (PomContent, DownloadRequest)],
+                        akka.NotUsed] = {
+    Flow[(Try[HttpResponse], DownloadRequest)]
+      .mapAsyncUnordered(parallelism = 100) {
+        case (Success(res @ HttpResponse(StatusCodes.OK, _, entity, _)), dr) => {
 
-        unmarshal(entity).map(pom => Right((PomContent(pom), dr)))
+          unmarshal(entity).map(pom => Right((PomContent(pom), dr)))
+        }
+        case (Success(x), dr) =>
+          Future.successful(Left(s"Unexpected status code ${x.status} for $dr"))
+        case (Failure(e), dr) =>
+          Future.failed(new Exception(s"Failed to fetch $dr", e))
       }
-      case (Success(x), dr) => Future.successful(Left(s"Unexpected status code ${x.status} for $dr"))
-      case (Failure(e), dr) => Future.failed(new Exception(s"Failed to fetch $dr", e))
-    }
   }
 }
