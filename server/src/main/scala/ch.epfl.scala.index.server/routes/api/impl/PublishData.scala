@@ -7,6 +7,8 @@ package impl
 import data.{LocalPomRepository, DataPaths}
 import data.github
 
+import ch.epfl.scala.index.model.misc.Sha1
+
 import org.joda.time.DateTime
 
 import java.nio.charset.StandardCharsets
@@ -34,7 +36,7 @@ private[api] case class PublishData(
 ) {
 
   lazy val isPom: Boolean = path matches """.*\.pom"""
-  lazy val hash = computeSha1(data)
+  lazy val hash = Sha1(data)
   lazy val tempPath = tmpPath(hash)
   def savePath(paths: DataPaths): Path = pomPath(paths, hash)
 
@@ -96,16 +98,4 @@ private[api] case class PublishData(
     val tmpDir = Files.createTempDirectory(sha1)
     Files.createTempFile(tmpDir, "", "")
   }
-
-  /**
-   * generate SHA1 hash from a given String
-   * @param data the sha1 hash
-   * @return
-   */
-  private def computeSha1(data: String): String = {
-
-    val md = java.security.MessageDigest.getInstance("SHA-1")
-    md.digest(data.getBytes("UTF-8")).map("%02x".format(_)).mkString
-  }
-
 }

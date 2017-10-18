@@ -94,10 +94,10 @@ object Main {
       Step("sbt")(
         () => new BintrayDownloadSbtPlugins(getPathFromArgs).run()
       ),
-      // // Find missing artifacts in maven-central
-      // Step("central")(
-      //   () => new CentralMissing(getPathFromArgs).run()
-      // )
+      // Find missing artifacts in maven-central
+      Step("central")(
+        () => new CentralMissing(getPathFromArgs, githubDownload).run()
+      ),
       // Download additional information about projects from Github
       Step("github")(
         () => githubDownload.run()
