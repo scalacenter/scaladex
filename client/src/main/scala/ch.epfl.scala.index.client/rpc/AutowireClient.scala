@@ -1,13 +1,12 @@
 package ch.epfl.scala.index.client
 package rpc
 
-import upickle.default.{Reader, Writer, read => uread, write => uwrite}
-
 import scala.concurrent.Future
 import scalajs.concurrent.JSExecutionContext.Implicits.queue
 import org.scalajs.dom
+import play.api.libs.json.{JsObject, Json, Reads, Writes}
 
-object AutowireClient extends autowire.Client[String, Reader, Writer] {
+object AutowireClient extends autowire.Client[String, Reads, Writes] {
 
   import scala.scalajs.js.URIUtils.encodeURIComponent
 
@@ -33,6 +32,7 @@ object AutowireClient extends autowire.Client[String, Reader, Writer] {
       .map(_.responseText)
   }
 
-  def read[T: Reader](p: String) = uread[T](p)
-  def write[T: Writer](r: T) = uwrite(r)
+  def read[T: Reads](p: String): T = Json.parse(p).as[T]
+
+  def write[T: Writes](r: T): String = Json.stringify(Json.toJson(r))
 }

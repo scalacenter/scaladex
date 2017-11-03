@@ -5,7 +5,6 @@ import Deployment.githash
 
 val playJsonVersion = "2.6.2"
 val akkaVersion = "2.5.3"
-val upickleVersion = "0.4.4"
 val scalatagsVersion = "0.6.5"
 val autowireVersion = "0.2.6"
 val akkaHttpVersion = "10.0.9"
@@ -92,7 +91,6 @@ lazy val shared = crossProject
   .settings(
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "scalatags" % scalatagsVersion,
-      "com.lihaoyi" %%% "upickle" % upickleVersion,
       "com.lihaoyi" %%% "autowire" % autowireVersion
     )
   )
