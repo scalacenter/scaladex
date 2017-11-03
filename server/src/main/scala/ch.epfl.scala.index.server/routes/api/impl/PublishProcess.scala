@@ -9,16 +9,13 @@ import data.cleanup.GithubRepoExtractor
 import data.download.PlayWsDownloader
 import data.elastic._
 import data.github._
-import data.maven.{DownloadParentPoms, ReleaseModel, PomsReader}
+import data.maven.{DownloadParentPoms, PomsReader, ReleaseModel}
 import data.project.ProjectConvert
-
 import model.misc.GithubRepo
 import model.{Project, Release}
 import model.release.ReleaseSelection
-
 import com.sksamuel.elastic4s.ElasticDsl._
-
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Props}
 import akka.stream.ActorMaterializer
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.StatusCode
@@ -37,6 +34,12 @@ private[api] class PublishProcess(paths: DataPaths,
 
   import system.dispatcher
   private val log = LoggerFactory.getLogger(getClass)
+  private val indexingActor = system.actorOf(Props(classOf[impl.IndexingActor],
+    paths,
+    dataRepository,
+    system,
+    materializer)
+  )
 
   /**
    * write the pom file to disk if it's a pom file (SBT will also send *.pom.sha1 and *.pom.md5)
@@ -71,13 +74,7 @@ private[api] class PublishProcess(paths: DataPaths,
                   data.writePom(paths)
                   data.deleteTemp()
 
-                  // updateIndex(repo, pom, data).map { _ =>
-                  //   log.info(s"Published ${pom.organization
-                  //     .map(_.name)
-                  //     .getOrElse("")} ${pom.artifactId} ${pom.version}")
-                  //   (Created, "Published release")
-                  // }
-
+                  indexingActor ! UpdateIndex(repo, pom, data)
                   // // XXX: Disabled indexing #478
                   Future.successful((Created, "Published release"))
                 } else {
@@ -140,108 +137,6 @@ private[api] class PublishProcess(paths: DataPaths,
    */
   private def getGithubRepo(pom: ReleaseModel): Option[GithubRepo] =
     (new GithubRepoExtractor(paths)).apply(pom)
-
-  /**
-   * Main task to update the scaladex index.
-   * - download GitHub info if allowd
-   * - download GitHub contributors if allowed
-   * - download GitHub readme if allowed
-   * - search for project and
-   *   1. update project
-   *      1. Search for release
-   *      2. update or create new release
-   *   2. create new project
-   *
-   * @param repo the Github repo reference model
-   * @param pom the Maven Model
-   * @param data the main publish data
-   * @return
-   */
-  private def updateIndex(repo: GithubRepo,
-                          pom: ReleaseModel,
-                          data: PublishData): Future[Unit] = {
-    println("updating " + pom.artifactId)
-
-    val githubDownload = new GithubDownload(paths, Some(data.credentials))
-    githubDownload.run(repo,
-                       data.downloadInfo,
-                       data.downloadReadme,
-                       data.downloadContributors)
-
-    val githubRepoExtractor = new GithubRepoExtractor(paths)
-    val Some(GithubRepo(organization, repository)) = githubRepoExtractor(pom)
-    val projectReference = Project.Reference(organization, repository)
-
-    def updateProjectReleases(project: Option[Project],
-                              releases: List[Release]): Future[Unit] = {
-
-      val repository =
-        if (data.userState.hasPublishingAuthority)
-          LocalPomRepository.MavenCentral
-        else LocalPomRepository.UserProvided
-
-      Meta.append(paths, Meta(data.hash, data.path, data.created), repository)
-
-      val converter = new ProjectConvert(paths, githubDownload)
-
-      val (newProject, newReleases) = converter(
-        pomsRepoSha = List((pom, repository, data.hash)),
-        cachedReleases = cachedReleases
-      ).head
-
-      cachedReleases = upserts(cachedReleases, projectReference, newReleases)
-
-      val updatedProject = newProject.copy(
-        liveData = true
-      )
-
-      val projectUpdate =
-        project match {
-          case Some(project) => {
-
-            esClient
-              .execute(
-                update(project.id.get)
-                  .in(indexName / projectsCollection)
-                  .doc(updatedProject)
-              )
-              .map(_ => log.info("updating project " + pom.artifactId))
-          }
-
-          case None =>
-            esClient
-              .execute(
-                indexInto(indexName / projectsCollection)
-                  .source(updatedProject)
-              )
-              .map(_ => log.info("inserting project " + pom.artifactId))
-        }
-
-      val releaseUpdate =
-        if (!releases.exists(r => r.reference == newReleases.head.reference)) {
-          // create new release
-          esClient
-            .execute(
-              indexInto(indexName / releasesCollection)
-                .source(
-                  newReleases.head.copy(liveData = true)
-                )
-            )
-            .map(_ => ())
-        } else { Future.successful(()) }
-
-      for {
-        _ <- projectUpdate
-        _ <- releaseUpdate
-      } yield ()
-    }
-
-    for {
-      project <- dataRepository.project(projectReference)
-      releases <- dataRepository.releases(projectReference)
-      _ <- updateProjectReleases(project, releases)
-    } yield ()
-  }
 
   private var cachedReleases = Map.empty[Project.Reference, Set[Release]]
 }
