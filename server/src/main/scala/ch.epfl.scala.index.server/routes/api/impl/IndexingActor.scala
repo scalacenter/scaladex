@@ -22,65 +22,66 @@ import ch.epfl.scala.index.data.elastic._
 import org.slf4j.LoggerFactory
 
 class IndexingActor(
-  paths: DataPaths,
-  dataRepository: DataRepository,
-  implicit val system: ActorSystem,
-  implicit val materializer: ActorMaterializer
+    paths: DataPaths,
+    dataRepository: DataRepository,
+    implicit val system: ActorSystem,
+    implicit val materializer: ActorMaterializer
 ) extends Actor {
   private val log = LoggerFactory.getLogger(getClass)
   import system.dispatcher
 
   def receive = {
-    case something: UpdateIndex => {
-      sender ! Await.result(updateIndex(something.repo, something.pom, something.data), 1.minute)
+    case updateIndexData: UpdateIndex => {
+      sender ! Await.result(updateIndex(
+                              updateIndexData.repo,
+                              updateIndexData.pom,
+                              updateIndexData.data,
+                              updateIndexData.localRepo
+                            ),
+                            1.minute)
     }
   }
 
   /**
-    * Main task to update the scaladex index.
-    * - download GitHub info if allowd
-    * - download GitHub contributors if allowed
-    * - download GitHub readme if allowed
-    * - search for project and
-    *   1. update project
-    *      1. Search for release
-    *      2. update or create new release
-    *   2. create new project
-    *
-    * @param repo the Github repo reference model
-    * @param pom the Maven Model
-    * @param data the main publish data
-    * @return
-    */
+   * Main task to update the scaladex index.
+   * - download GitHub info if allowd
+   * - download GitHub contributors if allowed
+   * - download GitHub readme if allowed
+   * - search for project and
+   *   1. update project
+   *      1. Search for release
+   *      2. update or create new release
+   *   2. create new project
+   *
+   * @param repo the Github repo reference model
+   * @param pom the Maven Model
+   * @param data the main publish data
+   * @return
+   */
   private def updateIndex(repo: GithubRepo,
-    pom: ReleaseModel,
-    data: PublishData): Future[Unit] = {
+                          pom: ReleaseModel,
+                          data: PublishData,
+                          localRepository: LocalPomRepository): Future[Unit] = {
+
     println("updating " + pom.artifactId)
 
     val githubDownload = new GithubDownload(paths, Some(data.credentials))
     githubDownload.run(repo,
-      data.downloadInfo,
-      data.downloadReadme,
-      data.downloadContributors)
+                       data.downloadInfo,
+                       data.downloadReadme,
+                       data.downloadContributors)
 
     val githubRepoExtractor = new GithubRepoExtractor(paths)
     val Some(GithubRepo(organization, repository)) = githubRepoExtractor(pom)
     val projectReference = Project.Reference(organization, repository)
 
     def updateProjectReleases(project: Option[Project],
-      releases: List[Release]): Future[Unit] = {
-
-      val repository =
-        if (data.userState.hasPublishingAuthority)
-          LocalPomRepository.MavenCentral
-        else LocalPomRepository.UserProvided
-
-      Meta.append(paths, Meta(data.hash, data.path, data.created), repository)
+                              releases: List[Release]): Future[Unit] = {
 
       val converter = new ProjectConvert(paths, githubDownload)
 
       val (newProject, newReleases) = converter(
-        pomsRepoSha = List((pom, repository, data.hash)),
+        pomsRepoSha = List((pom, localRepository, data.hash)),
         cachedReleases = cachedReleases
       ).head
 
@@ -138,12 +139,12 @@ class IndexingActor(
     } yield ()
   }
 
-
   private var cachedReleases = Map.empty[Project.Reference, Set[Release]]
 }
 
 case class UpdateIndex(
-  repo: GithubRepo,
-  pom: ReleaseModel,
-  data: PublishData
+    repo: GithubRepo,
+    pom: ReleaseModel,
+    data: PublishData,
+    localRepo: LocalPomRepository
 )

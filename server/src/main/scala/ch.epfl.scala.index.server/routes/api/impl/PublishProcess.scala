@@ -34,11 +34,12 @@ private[api] class PublishProcess(paths: DataPaths,
 
   import system.dispatcher
   private val log = LoggerFactory.getLogger(getClass)
-  private val indexingActor = system.actorOf(Props(classOf[impl.IndexingActor],
-    paths,
-    dataRepository,
-    system,
-    materializer)
+  private val indexingActor = system.actorOf(
+    Props(classOf[impl.IndexingActor],
+          paths,
+          dataRepository,
+          system,
+          materializer)
   )
 
   /**
@@ -74,8 +75,17 @@ private[api] class PublishProcess(paths: DataPaths,
                   data.writePom(paths)
                   data.deleteTemp()
 
-                  indexingActor ! UpdateIndex(repo, pom, data)
-                  // // XXX: Disabled indexing #478
+                  val repository =
+                    if (data.userState.hasPublishingAuthority)
+                      LocalPomRepository.MavenCentral
+                    else LocalPomRepository.UserProvided
+
+                  Meta.append(paths,
+                              Meta(data.hash, data.path, data.created),
+                              repository)
+
+                  indexingActor ! UpdateIndex(repo, pom, data, repository)
+
                   Future.successful((Created, "Published release"))
                 } else {
                   log.warn(
