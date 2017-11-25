@@ -83,15 +83,15 @@ object DefaultRelease {
         projectRepository == artifact,
         // alphabetically
         artifact,
+        // version
+        defaultStableVersion && version.preRelease.isDefined,
+        version,
         // target
         // stable jvm targets first
         target.flatMap(_.scalaJsVersion).isDefined,
         target.flatMap(_.scalaVersion.preRelease).isDefined,
         target.map(_.scalaVersion),
-        target.flatMap(_.scalaJsVersion),
-        // version
-        defaultStableVersion && version.preRelease.isDefined,
-        version
+        target.flatMap(_.scalaJsVersion)
       )
     }
 

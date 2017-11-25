@@ -197,5 +197,62 @@ class DefaultReleaseTests extends FunSpec {
 
       assert(result == expected)
     }
+
+    it("scalafix ordering") {
+      // 0.5.3 on 2.12 vs 0.3.4 on 2.12.2
+
+      val organization = "scalacenter"
+      val repository = "scalafix"
+      val groupdId = "ch.epfl.scala"
+      val releases = prepare(
+        organization,
+        repository,
+        groupdId,
+        List(
+          ("scalafix-core_2.12.2", "0.3.4"),
+          ("scalafix-core_2.12", "0.5.3")
+        )
+      )
+
+      val result =
+        DefaultRelease(repository, ReleaseSelection.empty, releases, None, true)
+
+      val versions: List[SemanticVersion] =
+        List(
+          SemanticVersion("0.3.4").get,
+          SemanticVersion("0.5.3").get
+        )
+
+      val targets: List[ScalaTarget] =
+        List(
+          ScalaTarget.scala(SemanticVersion("2.12.2").get),
+          ScalaTarget.scala(SemanticVersion("2.12").get)
+        )
+
+      val expected: Option[ReleaseOptions] =
+        Some(
+          ReleaseOptions(
+            artifacts = List(
+              "scalafix-core"
+            ),
+            versions = versions,
+            targets = targets,
+            release = emptyRelease(
+              MavenReference(groupdId, "scalafix-core_2.12", "0.5.3"),
+              Release.Reference(
+                organization,
+                repository,
+                "scalafix-core",
+                SemanticVersion("0.5.3").get,
+                Some(ScalaTarget.scala(SemanticVersion("2.12").get))
+              )
+            )
+          )
+        )
+
+      assert(
+        result.get.release.reference.version == SemanticVersion("0.5.3").get
+      )
+    }
   }
 }
