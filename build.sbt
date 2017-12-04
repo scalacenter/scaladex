@@ -53,7 +53,7 @@ lazy val commonSettings = Seq(
       if (devCredentials.exists) Seq(s"-Dconfig.file=$devCredentials")
       else Seq()
 
-    addDevCredentials ++ Seq("-Xmx2g")
+    addDevCredentials
   }
 ) ++ baseSettings ++
   addCommandAlias("start", "reStart") ++ logging
@@ -130,7 +130,8 @@ lazy val server = project
       .dependsOn(WebKeys.assets in Assets)
       .value,
     reStart := reStart.dependsOn(WebKeys.assets in Assets).evaluated,
-    unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value
+    unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
+    javaOptions in reStart ++= Seq("-Xmx4g")
   )
   .dependsOn(template, data, sharedJVM)
   .enablePlugins(SbtSass, JavaServerAppPackaging)
@@ -150,7 +151,8 @@ lazy val data = project
       "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
       "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion,
       "com.typesafe.akka" %% "akka-stream" % akkaVersion,
-      "org.json4s" %% "json4s-native" % "3.4.2",
+      "org.json4s" %% "json4s-native" % "3.5.2",
+      "org.spire-math" %% "jawn-json4s" % "0.11.0",
       "me.tongfei" % "progressbar" % "0.5.5",
       "org.apache.maven" % "maven-model-builder" % "3.3.9",
       "org.jsoup" % "jsoup" % "1.10.1",
@@ -159,7 +161,8 @@ lazy val data = project
       "com.github.scopt" %% "scopt" % "3.7.0"
     ),
     buildInfoPackage := "build.info",
-    buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild)
+    buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),
+    javaOptions in reStart ++= Seq("-Xmx4g")
   )
   .enablePlugins(BuildInfoPlugin, JavaAppPackaging)
   .dependsOn(model)

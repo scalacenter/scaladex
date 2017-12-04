@@ -11,8 +11,9 @@ import com.sksamuel.elastic4s.searches.RichSearchHit
 import org.elasticsearch.cluster.health.ClusterHealthStatus
 import org.json4s._
 import org.json4s.native.Serialization
-import org.json4s.native.Serialization.{read => nread, write => nwrite}
+import org.json4s.native.Serialization.{write => nwrite}
 import com.typesafe.config.ConfigFactory
+import jawn.support.json4s.Parser
 import org.slf4j.LoggerFactory
 
 import scala.util.{Success, Try}
@@ -36,6 +37,8 @@ trait ProjectProtocol {
     Try(f).transform(s => Success(Right(s)), f => Success(Left(f))).get
   }
 
+  private def nread[T: Manifest](hit: Hit) = Parser.parseUnsafe(hit.sourceAsString).extract[T]
+
   // filters a project's beginnerIssues by the inner hits returned from elastic search
   // so that only the beginnerIssues that passed the nested beginnerIssues query
   // get returned
@@ -50,7 +53,7 @@ trait ProjectProtocol {
                 filteredBeginnerIssues = searchHits
                   .getHits()
                   .map { hit =>
-                    nread[GithubIssue](hit.getSourceAsString)
+                    nread[GithubIssue](RichSearchHit(hit))
                   }
                   .toList
               )
@@ -64,8 +67,7 @@ trait ProjectProtocol {
   implicit object ProjectAs extends HitReader[Project] {
 
     override def read(hit: Hit): Either[Throwable, Project] = {
-      val project = nread[Project](hit.sourceAsString).copy(id = Some(hit.id))
-      tryEither(checkInnerHits(hit.asInstanceOf[RichSearchHit], project))
+      tryEither(checkInnerHits(hit.asInstanceOf[RichSearchHit], nread[Project](hit).copy(id = Some(hit.id))))
     }
   }
 
@@ -76,7 +78,7 @@ trait ProjectProtocol {
   implicit object ReleaseAs extends HitReader[Release] {
 
     override def read(hit: Hit): Either[Throwable, Release] =
-      tryEither(nread[Release](hit.sourceAsString).copy(id = Some(hit.id)))
+      tryEither(nread[Release](hit).copy(id = Some(hit.id)))
   }
 
   implicit object ReleaseIndexable extends Indexable[Release] {
