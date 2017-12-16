@@ -37,7 +37,8 @@ trait ProjectProtocol {
     Try(f).transform(s => Success(Right(s)), f => Success(Left(f))).get
   }
 
-  private def nread[T: Manifest](hit: Hit) = Parser.parseUnsafe(hit.sourceAsString).extract[T]
+  private def nread[T: Manifest](hit: Hit) =
+    Parser.parseUnsafe(hit.sourceAsString).extract[T]
 
   // filters a project's beginnerIssues by the inner hits returned from elastic search
   // so that only the beginnerIssues that passed the nested beginnerIssues query
@@ -67,7 +68,10 @@ trait ProjectProtocol {
   implicit object ProjectAs extends HitReader[Project] {
 
     override def read(hit: Hit): Either[Throwable, Project] = {
-      tryEither(checkInnerHits(hit.asInstanceOf[RichSearchHit], nread[Project](hit).copy(id = Some(hit.id))))
+      tryEither(
+        checkInnerHits(hit.asInstanceOf[RichSearchHit],
+                       nread[Project](hit).copy(id = Some(hit.id)))
+      )
     }
   }
 
