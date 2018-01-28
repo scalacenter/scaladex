@@ -331,15 +331,19 @@ main {
         padding: 15px 0;
         margin: 0;
         border-bottom: 1px solid rgba($gray-dark, 0.12);
-        h4,
+
         .targets,
         .homepage,
         .description {
-            padding-left: 16px;
             margin-bottom: 0;
             display: inline-block;
         }
+        .targets {
+            padding-left: 16px;
+        }
         h4 {
+            padding-left: 44px;
+            margin-bottom: 7px;
             margin-top: 0;
             a {
                 color: $gray-darker;
