@@ -7,6 +7,7 @@ import release._
 import akka.http.scaladsl._
 import server.Directives._
 import model.StatusCodes._
+import akka.http.scaladsl.server.directives.CachingDirectives.cachingProhibited
 
 class Badges(dataRepository: DataRepository) {
 
@@ -47,11 +48,12 @@ class Badges(dataRepository: DataRepository) {
       logoWidth.map(w => ("logoWidth", w.toString))
     ).flatten.map { case (k, v) => k + "=" + v }.mkString("?", "&", "")
 
-    redirect(
-      s"https://img.shields.io/badge/$subject-$status-$color.svg$query",
-      TemporaryRedirect
-    )
-
+    cachingProhibited {
+      redirect(
+        s"https://img.shields.io/badge/$subject-$status-$color.svg$query",
+        TemporaryRedirect
+      )
+    }
   }
 
   def latest(organization: String,

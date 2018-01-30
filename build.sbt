@@ -7,7 +7,7 @@ val playJsonVersion = "2.6.2"
 val akkaVersion = "2.5.3"
 val scalatagsVersion = "0.6.5"
 val autowireVersion = "0.2.6"
-val akkaHttpVersion = "10.0.9"
+val akkaHttpVersion = "10.0.11"
 val elastic4sVersion = "5.4.5"
 lazy val scalaTestVersion = "3.0.1"
 
@@ -35,7 +35,7 @@ lazy val baseSettings = Seq(
 
 lazy val commonSettings = Seq(
   resolvers += Resolver.typesafeIvyRepo("releases"),
-  scalaVersion := "2.12.2",
+  scalaVersion := "2.12.4",
   scalacOptions := Seq(
     "-deprecation",
     "-encoding",
@@ -116,7 +116,9 @@ lazy val server = project
       akka("testkit") % Test,
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
       "ch.megard" %% "akka-http-cors" % "0.2.1",
-      "com.softwaremill.akka-http-session" %% "core" % "0.4.0",
+      "com.softwaremill.akka-http-session" %% "core" % "0.5.3",
+      "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
+      "com.typesafe.akka" %% "akka-http-caching" % akkaHttpVersion,
       "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
       "org.webjars.bower" % "bootstrap-sass" % "3.3.6",
       "org.webjars.bower" % "bootstrap-switch" % "3.3.2",
