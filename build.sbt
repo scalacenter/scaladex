@@ -5,7 +5,12 @@ import Deployment.githash
 
 val playJsonVersion = "2.6.2"
 val akkaVersion = "2.5.3"
+<<<<<<< HEAD
 val scalatagsVersion = "0.6.5"
+=======
+val upickleVersion = "0.4.4"
+val scalatagsVersion = "0.6.7"
+>>>>>>> Add ammonite
 val autowireVersion = "0.2.6"
 val akkaHttpVersion = "10.0.11"
 val elastic4sVersion = "5.4.5"
@@ -33,6 +38,24 @@ lazy val baseSettings = Seq(
   version := s"0.2.0+${githash()}"
 )
 
+lazy val ammoniteSettings = Seq(
+  libraryDependencies += "com.lihaoyi" % "ammonite" % "1.0.3-10-4311ac9" % Test cross CrossVersion.full,
+  sourceGenerators in Test += Def.task {
+    val file = (sourceManaged in Test).value / "amm.scala"
+    IO.write(file, """object amm extends App { ammonite.Main.main(args) }""")
+    Seq(file)
+  }.taskValue,
+  (fullClasspath in Test) ++= {
+    (updateClassifiers in Test).value
+      .configurations
+      .find(_.configuration == Test.name)
+      .get
+      .modules
+      .flatMap(_.artifacts)
+      .collect{case (a, f) if a.classifier == Some("sources") => f}
+  }
+)
+
 lazy val commonSettings = Seq(
   resolvers += Resolver.typesafeIvyRepo("releases"),
   scalaVersion := "2.12.4",
@@ -56,7 +79,7 @@ lazy val commonSettings = Seq(
     addDevCredentials
   }
 ) ++ baseSettings ++
-  addCommandAlias("start", "reStart") ++ logging
+  addCommandAlias("start", "reStart") ++ logging ++ ammoniteSettings
 
 lazy val scaladex = project
   .in(file("."))
@@ -141,7 +164,7 @@ lazy val server = project
 lazy val model = project
   .settings(commonSettings)
   .settings(
-    libraryDependencies += "com.lihaoyi" %% "fastparse" % "0.4.2"
+    libraryDependencies += "com.lihaoyi" %% "fastparse" % "1.0.0"
   )
 
 lazy val data = project
