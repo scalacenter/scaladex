@@ -112,8 +112,12 @@ class BintrayListPoms(paths: DataPaths)(
    */
   def writeMergedPoms(merged: List[BintraySearch]) = {
     Files.delete(BintrayMeta.path(paths))
+    
+    val mavenMetas = Meta.load(paths, LocalPomRepository.MavenCentral)
+    val mavenShas = mavenMetas.map(_.sha1).toSet
 
     val flow = Flow[BintraySearch]
+      .filterNot(search => mavenShas.contains(search.sha1))
       .map(bintray => write[BintraySearch](bintray))
       .map(s => ByteString(s + nl))
       .toMat(FileIO.toPath(BintrayMeta.path(paths)))(Keep.right)
