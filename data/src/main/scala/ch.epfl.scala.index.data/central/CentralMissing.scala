@@ -5,7 +5,7 @@ import ch.epfl.scala.index.model.Release
 import ch.epfl.scala.index.model.release.ScalaTarget
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.data.github.GithubDownload
-import ch.epfl.scala.index.data.project.ProjectConvert
+import ch.epfl.scala.index.data.project.{ProjectConvert, ArtifactMetaExtractor}
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.model.misc.Sha1
 
@@ -40,65 +40,80 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.Seq
 
-class CentralMissing(
-    paths: DataPaths,
-    githubDownload: GithubDownload
-)(implicit val materializer: Materializer, val system: ActorSystem) {
+import java.nio.file.Files
+import java.nio.charset.StandardCharsets
 
-  import system.dispatcher
+import java.lang.reflect.InvocationTargetException
 
-  // q=sbt-microsites
-  private object Latest {
-    case class Body(response: Response)
-    case class Response(docs: List[Doc])
-    case class Doc(
-        g: String,
-        a: String,
-        latestVersion: String,
-        timestamp: DateTime
-    )
-  }
-
+object CentralMissing {
   // q = g:"com.47deg" AND a:"sbt-microsites"
   // core = gav
-  case class SearchBody(response: SearchResponse) {
+  private[CentralMissing] case class SearchBody(response: SearchResponse) {
     def toDocs: List[SearchDoc] = response.docs
   }
-  case class SearchResponse(docs: List[SearchDoc])
-  case class SearchDoc(
+  private[CentralMissing] case class SearchResponse(docs: List[SearchDoc])
+  private[CentralMissing] case class SearchDoc(
       g: String,
       a: String,
       v: String,
       timestamp: DateTime
   )
-  private case class ArtifactRequest(
+  private[CentralMissing] case class ArtifactRequest(
       groupId: String,
       artifactId: String
   )
 
-  private case class DownloadRequest(
+  private[CentralMissing] case class DownloadRequest(
       groupId: String,
       artifactId: String,
-      version: String
-  )
+      version: String,
+      created: DateTime
+  ) {
+    def path: String = {
+      val groupIdPath = groupId.replaceAllLiterally(".", "/")
+      s"/$groupIdPath/$artifactId/$version/$artifactId-$version.pom"
+    }
+  }
 
-  private case class PomContent(content: String)
+  case class PomContent(content: String)
+}
 
-  private implicit val formats = DefaultFormats ++ Seq(DateTimeSerializer)
+object TimestampSerializer
+    extends CustomSerializer[DateTime](
+      format =>
+        (
+          {
+            case JInt(timestamp) => new DateTime(timestamp.toLong)
+          }, {
+            case dateTime: DateTime => JInt(dateTime.getMillis)
+          }
+      )
+    )
+
+
+class CentralMissing(paths: DataPaths)(implicit val materializer: Materializer, val system: ActorSystem) {
+  import CentralMissing._
+
+  private implicit val formats = DefaultFormats ++ Seq(TimestampSerializer)
   private implicit val serialization = native.Serialization
+  
+  val log = LoggerFactory.getLogger(getClass)
 
-  private val mavenSearchConnectionPool
-    : Flow[(HttpRequest, ArtifactRequest),
+  import system.dispatcher
+
+  private val mavenSearchConnectionPool: Flow[(HttpRequest, ArtifactRequest),
            (Try[HttpResponse], ArtifactRequest),
-           Http.HostConnectionPool] =
+           Http.HostConnectionPool] = {
+
     Http()
       .cachedHostConnectionPoolHttps[ArtifactRequest]("search.maven.org")
       .throttle(
-        elements = 10,
+        elements = 100,
         per = 1.minute,
-        maximumBurst = 10,
+        maximumBurst = 50,
         mode = ThrottleMode.Shaping
       )
+  }
 
   private def request(gaRequest: ArtifactRequest): HttpRequest = {
     import gaRequest._
@@ -114,14 +129,15 @@ class CentralMissing(
     )
   }
 
-  private val parseJson
-    : Flow[(Try[HttpResponse], ArtifactRequest),
+  private val parseJson: Flow[(Try[HttpResponse], ArtifactRequest),
            Either[String, (List[SearchDoc], ArtifactRequest)],
            akka.NotUsed] = {
     Flow[(Try[HttpResponse], ArtifactRequest)]
       .mapAsyncUnordered(parallelism = 100) {
         case (Success(res @ HttpResponse(StatusCodes.OK, _, entity, _)), ar) => {
-          Unmarshal(entity).to[SearchBody].map(gav => Right((gav.toDocs, ar)))
+          Unmarshal(entity).to[SearchBody].map(
+            gav => Right((gav.toDocs, ar))
+          )
         }
         case (Success(x), ar) =>
           Future.successful(Left(s"Unexpected status code ${x.status} for $ar"))
@@ -144,11 +160,8 @@ class CentralMissing(
       )
 
   private def request(dr: DownloadRequest): HttpRequest = {
-    import dr._
-    val path = groupId.replaceAllLiterally(".", "/")
-
     HttpRequest(
-      uri = s"/maven2/$path/$artifactId/$version/$artifactId-$version.pom",
+      uri = "/maven2" + dr.path,
       headers = List(Accept(MediaTypes.`application/xml`))
     )
   }
@@ -167,18 +180,72 @@ class CentralMissing(
         }
         case (Success(x), dr) =>
           Future.successful(Left(s"Unexpected status code ${x.status} for $dr"))
-        case (Failure(e), dr) =>
+        case (Failure(e), dr) =>;
           Future.failed(new Exception(s"Failed to fetch $dr", e))
       }
   }
 
-  def run(): Unit = {
-    val projectConverter = new ProjectConvert(paths, githubDownload)
-    val releases: Set[Release] = projectConverter(
-      PomsReader.loadAll(paths).collect {
-        case Success(pomAndMeta) => pomAndMeta
+  private val downloadPoms: Flow[
+      Either[String, (List[SearchDoc], ArtifactRequest)],
+      Either[String, (PomContent, DownloadRequest)],
+      akka.NotUsed] = {
+
+    Flow[Either[String, (List[SearchDoc], ArtifactRequest)]]
+      .flatMapConcat {
+        case Left(failed) => Source.single(Left(failed))
+        case Right((docs, _)) => {
+          val toDownload = 
+            docs.map {
+              case SearchDoc(groupId, artifactId, version, created) => {
+                DownloadRequest(groupId, artifactId, version, created)
+              }
+            }
+
+          Source(toDownload)
+            .map(dr => (request(dr), dr))
+            .via(mavenDownloadConnectionPool)
+            .via(readContent)
+        }
       }
-    ).map { case (project, releases) => releases }.flatten.toSet
+  }
+
+  def savePomsAndMeta(in: Either[String, (PomContent, DownloadRequest)]): Unit = {
+    in match {
+      case Left(failure) => 
+        log.error(failure)
+
+      case Right((pom, request)) => {
+        val sha1 = Sha1(pom.content)
+        val repository = LocalPomRepository.MavenCentral
+
+        val meta = Meta(sha1, request.path, request.created)
+
+        // write meta
+        Meta.append(
+          paths,
+          meta,
+          repository
+        )
+
+        // write pom
+        val pomPath = paths.poms(repository).resolve(s"$sha1.pom")
+        Files.write(pomPath, pom.content.getBytes(StandardCharsets.UTF_8))
+      }
+    }
+  }
+
+  // data/run central /home/gui/scaladex/scaladex-contrib /home/gui/scaladex/scaladex-index /home/gui/scaladex/scaladex-credentials
+  def run(): Unit = {
+    val artifactMetaExtractor = new ArtifactMetaExtractor(paths)
+    val releases: Set[(String, String)] = 
+      PomsReader(LocalPomRepository.MavenCentral, paths).load().collect{
+        case Success((pom,_, _)) =>
+          artifactMetaExtractor(pom).flatMap(meta =>
+            if(meta.scalaTarget.isDefined && !meta.isNonStandard)
+              Some((pom.groupId, meta.artifactName))
+            else None
+          )
+      }.flatten.toSet
 
     val scala213 = SemanticVersion("2.13.0-M3").get
     val scala212 = SemanticVersion("2.12").get
@@ -203,18 +270,14 @@ class CentralMissing(
       ScalaTarget.scalaNative(scala211, native03)
     )
 
-    val releasesDownloads = releases
-      .flatMap(
-        release =>
+    val releasesDownloads =
+      releases.flatMap{
+        case (groupId, artifact) =>
           allTargets.map(
             target =>
-              ArtifactRequest(release.maven.groupId,
-                              release.reference.artifact + target.encode)
+              ArtifactRequest(groupId, artifact + target.encode)
         )
-      )
-      .toList
-
-    val log = LoggerFactory.getLogger(getClass)
+      }.toList
 
     val progress = ProgressBar("Listing", releasesDownloads.size, log)
     progress.start()
@@ -224,43 +287,14 @@ class CentralMissing(
         .map(ar => (request(ar), ar))
         .via(mavenSearchConnectionPool)
         .via(parseJson)
-        .alsoTo(Sink.foreach(_ => progress.step()))
-        .runWith(Sink.seq)
 
-    val artifactVersions
-      : Seq[Either[String, (List[SearchDoc], ArtifactRequest)]] =
-      Await.result(listArtifactVersions, 100.minutes)
+    val savePomsAndMetaFlow = 
+      listArtifactVersions.via(downloadPoms)
+        .alsoTo(Sink.foreach(_ => progress.step()))
+        .runWith(Sink.foreach(savePomsAndMeta))
+
+    Await.result(savePomsAndMetaFlow, Duration.Inf)
 
     progress.stop()
-
-    val toDownload: Seq[DownloadRequest] =
-      artifactVersions.collect {
-        case Right((docs, _)) => {
-          docs.map {
-            case SearchDoc(groupId, artifactId, version, created) => {
-              DownloadRequest(groupId, artifactId, version)
-            }
-          }
-        }
-      }.flatten
-
-    // Meta.append(paths, Meta(data.hash, data.path, data.created), repository)
-
-    val downloadPoms =
-      Source(toDownload)
-        .map(dr => (request(dr), dr))
-        .via(mavenDownloadConnectionPool)
-        .via(readContent)
-        .runWith(Sink.seq)
-
-    val result: Seq[Either[String, (PomContent, DownloadRequest)]] =
-      Await.result(downloadPoms, 100.minutes)
-
-    println(result)
-    // get all artifacts from maven central
-    // group by latest version => g, a
-    // requestGav(g, a)
-    //
-
   }
 }

@@ -96,7 +96,7 @@ object Main {
       ),
       // Find missing artifacts in maven-central
       Step("central")(
-        () => new CentralMissing(getPathFromArgs, githubDownload).run()
+        () => new CentralMissing(getPathFromArgs).run()
       ),
       // Download additional information about projects from Github
       Step("github")(

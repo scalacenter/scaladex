@@ -5,12 +5,8 @@ import Deployment.githash
 
 val playJsonVersion = "2.6.2"
 val akkaVersion = "2.5.3"
-<<<<<<< HEAD
-val scalatagsVersion = "0.6.5"
-=======
 val upickleVersion = "0.4.4"
 val scalatagsVersion = "0.6.7"
->>>>>>> Add ammonite
 val autowireVersion = "0.2.6"
 val akkaHttpVersion = "10.0.11"
 val elastic4sVersion = "5.4.5"
@@ -184,7 +180,7 @@ lazy val data = project
       "com.typesafe.play" %% "play-ahc-ws" % "2.6.0-RC2",
       "org.apache.ivy" % "ivy" % "2.4.0",
       "com.typesafe.akka" %% "akka-http" % "10.0.10",
-      "de.heikoseeberger" %% "akka-http-json4s" % "1.18.0",
+      "de.heikoseeberger" %% "akka-http-json4s" % "1.19.0",
       "org.json4s" %% "json4s-native" % "3.5.3"
     ),
     buildInfoPackage := "build.info",
