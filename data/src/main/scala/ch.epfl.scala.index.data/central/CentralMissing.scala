@@ -180,16 +180,13 @@ class CentralMissing(
       }
     ).map { case (project, releases) => releases }.flatten.toSet
 
-    val scala213 = SemanticVersion("2.13.0-M2").get
+    val scala213 = SemanticVersion("2.13.0-M3").get
     val scala212 = SemanticVersion("2.12").get
     val scala211 = SemanticVersion("2.11").get
     val scala210 = SemanticVersion("2.10").get
-
     val sbt013 = SemanticVersion("0.13").get
     val sbt10 = SemanticVersion("1.0").get
-
     val scalaJs06 = SemanticVersion("0.6").get
-
     val native03 = SemanticVersion("0.3").get
 
     val allTargets = List(
@@ -198,7 +195,7 @@ class CentralMissing(
       ScalaTarget.scala(scala211),
       ScalaTarget.scala(scala210),
       ScalaTarget.sbt(scala210, sbt013),
-      ScalaTarget.sbt(scala210, sbt10),
+      ScalaTarget.sbt(scala212, sbt10),
       ScalaTarget.scalaJs(scala213, scalaJs06),
       ScalaTarget.scalaJs(scala212, scalaJs06),
       ScalaTarget.scalaJs(scala211, scalaJs06),
@@ -266,5 +263,4 @@ class CentralMissing(
     //
 
   }
-
 }
