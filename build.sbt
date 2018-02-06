@@ -42,13 +42,12 @@ lazy val ammoniteSettings = Seq(
     Seq(file)
   }.taskValue,
   (fullClasspath in Test) ++= {
-    (updateClassifiers in Test).value
-      .configurations
+    (updateClassifiers in Test).value.configurations
       .find(_.configuration == Test.name)
       .get
       .modules
       .flatMap(_.artifacts)
-      .collect{case (a, f) if a.classifier == Some("sources") => f}
+      .collect { case (a, f) if a.classifier == Some("sources") => f }
   }
 )
 
