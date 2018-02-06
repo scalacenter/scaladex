@@ -112,7 +112,7 @@ class BintrayListPoms(paths: DataPaths)(
    */
   def writeMergedPoms(merged: List[BintraySearch]) = {
     Files.delete(BintrayMeta.path(paths))
-    
+
     val mavenMetas = Meta.load(paths, LocalPomRepository.MavenCentral)
     val mavenShas = mavenMetas.map(_.sha1).toSet
 

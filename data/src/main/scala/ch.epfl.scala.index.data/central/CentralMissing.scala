@@ -90,18 +90,19 @@ object TimestampSerializer
       )
     )
 
-
-class CentralMissing(paths: DataPaths)(implicit val materializer: Materializer, val system: ActorSystem) {
+class CentralMissing(paths: DataPaths)(implicit val materializer: Materializer,
+                                       val system: ActorSystem) {
   import CentralMissing._
 
   private implicit val formats = DefaultFormats ++ Seq(TimestampSerializer)
   private implicit val serialization = native.Serialization
-  
+
   val log = LoggerFactory.getLogger(getClass)
 
   import system.dispatcher
 
-  private val mavenSearchConnectionPool: Flow[(HttpRequest, ArtifactRequest),
+  private val mavenSearchConnectionPool
+    : Flow[(HttpRequest, ArtifactRequest),
            (Try[HttpResponse], ArtifactRequest),
            Http.HostConnectionPool] = {
 
@@ -129,15 +130,18 @@ class CentralMissing(paths: DataPaths)(implicit val materializer: Materializer, 
     )
   }
 
-  private val parseJson: Flow[(Try[HttpResponse], ArtifactRequest),
+  private val parseJson
+    : Flow[(Try[HttpResponse], ArtifactRequest),
            Either[String, (List[SearchDoc], ArtifactRequest)],
            akka.NotUsed] = {
     Flow[(Try[HttpResponse], ArtifactRequest)]
       .mapAsyncUnordered(parallelism = 100) {
         case (Success(res @ HttpResponse(StatusCodes.OK, _, entity, _)), ar) => {
-          Unmarshal(entity).to[SearchBody].map(
-            gav => Right((gav.toDocs, ar))
-          )
+          Unmarshal(entity)
+            .to[SearchBody]
+            .map(
+              gav => Right((gav.toDocs, ar))
+            )
         }
         case (Success(x), ar) =>
           Future.successful(Left(s"Unexpected status code ${x.status} for $ar"))
@@ -180,21 +184,22 @@ class CentralMissing(paths: DataPaths)(implicit val materializer: Materializer, 
         }
         case (Success(x), dr) =>
           Future.successful(Left(s"Unexpected status code ${x.status} for $dr"))
-        case (Failure(e), dr) =>;
+        case (Failure(e), dr) =>
+          ;
           Future.failed(new Exception(s"Failed to fetch $dr", e))
       }
   }
 
-  private val downloadPoms: Flow[
-      Either[String, (List[SearchDoc], ArtifactRequest)],
-      Either[String, (PomContent, DownloadRequest)],
-      akka.NotUsed] = {
+  private val downloadPoms
+    : Flow[Either[String, (List[SearchDoc], ArtifactRequest)],
+           Either[String, (PomContent, DownloadRequest)],
+           akka.NotUsed] = {
 
     Flow[Either[String, (List[SearchDoc], ArtifactRequest)]]
       .flatMapConcat {
         case Left(failed) => Source.single(Left(failed))
         case Right((docs, _)) => {
-          val toDownload = 
+          val toDownload =
             docs.map {
               case SearchDoc(groupId, artifactId, version, created) => {
                 DownloadRequest(groupId, artifactId, version, created)
@@ -211,7 +216,7 @@ class CentralMissing(paths: DataPaths)(implicit val materializer: Materializer, 
 
   def savePomsAndMeta(in: Either[String, (PomContent, DownloadRequest)]): Unit = {
     in match {
-      case Left(failure) => 
+      case Left(failure) =>
         log.error(failure)
 
       case Right((pom, request)) => {
@@ -237,15 +242,20 @@ class CentralMissing(paths: DataPaths)(implicit val materializer: Materializer, 
   // data/run central /home/gui/scaladex/scaladex-contrib /home/gui/scaladex/scaladex-index /home/gui/scaladex/scaladex-credentials
   def run(): Unit = {
     val artifactMetaExtractor = new ArtifactMetaExtractor(paths)
-    val releases: Set[(String, String)] = 
-      PomsReader(LocalPomRepository.MavenCentral, paths).load().collect{
-        case Success((pom,_, _)) =>
-          artifactMetaExtractor(pom).flatMap(meta =>
-            if(meta.scalaTarget.isDefined && !meta.isNonStandard)
-              Some((pom.groupId, meta.artifactName))
-            else None
-          )
-      }.flatten.toSet
+    val releases: Set[(String, String)] =
+      PomsReader(LocalPomRepository.MavenCentral, paths)
+        .load()
+        .collect {
+          case Success((pom, _, _)) =>
+            artifactMetaExtractor(pom).flatMap(
+              meta =>
+                if (meta.scalaTarget.isDefined && !meta.isNonStandard)
+                  Some((pom.groupId, meta.artifactName))
+                else None
+            )
+        }
+        .flatten
+        .toSet
 
     val scala213 = SemanticVersion("2.13.0-M3").get
     val scala212 = SemanticVersion("2.12").get
@@ -271,12 +281,11 @@ class CentralMissing(paths: DataPaths)(implicit val materializer: Materializer, 
     )
 
     val releasesDownloads =
-      releases.flatMap{
+      releases.flatMap {
         case (groupId, artifact) =>
           allTargets.map(
-            target =>
-              ArtifactRequest(groupId, artifact + target.encode)
-        )
+            target => ArtifactRequest(groupId, artifact + target.encode)
+          )
       }.toList
 
     val progress = ProgressBar("Listing", releasesDownloads.size, log)
@@ -288,8 +297,9 @@ class CentralMissing(paths: DataPaths)(implicit val materializer: Materializer, 
         .via(mavenSearchConnectionPool)
         .via(parseJson)
 
-    val savePomsAndMetaFlow = 
-      listArtifactVersions.via(downloadPoms)
+    val savePomsAndMetaFlow =
+      listArtifactVersions
+        .via(downloadPoms)
         .alsoTo(Sink.foreach(_ => progress.step()))
         .runWith(Sink.foreach(savePomsAndMeta))
 

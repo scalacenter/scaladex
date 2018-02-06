@@ -61,12 +61,11 @@ object Meta {
     )
 
     val metaPath = paths.meta(repository)
+    val metaRaw = new String(Files.readAllBytes(metaPath))
 
-    val source = scala.io.Source.fromFile(metaPath.toFile)
-    val ret = source.mkString.split(nl).toList
-    source.close()
-
-    ret
+    metaRaw
+      .split(nl)
+      .toList
       .filter(_ != "")
       .map(json => parse(json).extract[Meta])
       .sortBy(_.created)(Descending)
