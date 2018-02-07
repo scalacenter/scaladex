@@ -144,7 +144,7 @@ object Client {
     if (event.keyCode == KeyCode.S) {
       getSearchBox.foreach { searchBox =>
         val input = searchBox.getInput
-        if (event.srcElement != input) {
+        if (event.target != input) {
           input.focus()
           event.preventDefault()
         }
