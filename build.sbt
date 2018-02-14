@@ -136,7 +136,6 @@ lazy val server = project
       "ch.megard" %% "akka-http-cors" % "0.2.1",
       "com.softwaremill.akka-http-session" %% "core" % "0.5.3",
       "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
-      "com.typesafe.akka" %% "akka-http-caching" % akkaHttpVersion,
       "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
       "org.webjars.bower" % "bootstrap-sass" % "3.3.6",
       "org.webjars.bower" % "bootstrap-switch" % "3.3.2",
