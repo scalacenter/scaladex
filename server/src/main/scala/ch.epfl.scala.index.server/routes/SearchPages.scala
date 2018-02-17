@@ -90,7 +90,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
         val userRepos =
           you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set())
         SearchParams(
-          q.toLowerCase,
+          q,
           page,
           sort,
           userRepos,
