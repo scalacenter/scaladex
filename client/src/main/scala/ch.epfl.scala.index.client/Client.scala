@@ -178,6 +178,11 @@ object Client {
         .map(t => headers + ("Authorization" -> s"bearer $t"))
         .getOrElse(headers)
 
+    val root = s"https://github.com/$organization/$repository"
+    def base(v: String) = s"$root/$v/master"
+    val raw = base("raw")
+    val blob = base("blob")
+
     Ajax
       .get(
         url = s"https://api.github.com/repos/$organization/$repository/readme",
@@ -187,6 +192,27 @@ object Client {
       )
       .foreach { xhr =>
         el.innerHTML = xhr.responseText
+
+        jQuery(el).find("img, a").not("[href^='http'],[href^='https'],[src^='http'],[src^='https']")
+          .each{ (e: Element) =>
+          val (at, newBase) = if (e.tagName == "A") {
+            val attr = "href"
+            val href =
+              if (e.getAttribute(attr).startsWith("#")) root
+              else blob
+
+            e.setAttribute("target", "_blank")
+            (attr, href)
+          } else ("src", raw)
+
+          Option(e.getAttribute(at))
+          .foreach{ oldUrl =>
+            if(!oldUrl.isEmpty()) {
+              val newUrl = if (!oldUrl.startsWith("/")) s"$newBase/$oldUrl" else s"$newBase$oldUrl"
+              e.setAttribute(at, newUrl)
+            }
+          }
+        }
       }
   }
 
