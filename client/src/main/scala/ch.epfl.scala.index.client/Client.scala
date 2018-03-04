@@ -193,26 +193,30 @@ object Client {
       .foreach { xhr =>
         el.innerHTML = xhr.responseText
 
-        jQuery(el).find("img, a").not("[href^='http'],[href^='https'],[src^='http'],[src^='https']")
-          .each{ (e: Element) =>
-          val (at, newBase) = if (e.tagName == "A") {
-            val attr = "href"
-            val href =
-              if (e.getAttribute(attr).startsWith("#")) root
-              else blob
+        jQuery(el)
+          .find("img, a")
+          .not("[href^='http'],[href^='https'],[src^='http'],[src^='https']")
+          .each { (e: Element) =>
+            val (at, newBase) = if (e.tagName == "A") {
+              val attr = "href"
+              val href =
+                if (e.getAttribute(attr).startsWith("#")) root
+                else blob
 
-            e.setAttribute("target", "_blank")
-            (attr, href)
-          } else ("src", raw)
+              e.setAttribute("target", "_blank")
+              (attr, href)
+            } else ("src", raw)
 
-          Option(e.getAttribute(at))
-          .foreach{ oldUrl =>
-            if(!oldUrl.isEmpty()) {
-              val newUrl = if (!oldUrl.startsWith("/")) s"$newBase/$oldUrl" else s"$newBase$oldUrl"
-              e.setAttribute(at, newUrl)
-            }
+            Option(e.getAttribute(at))
+              .foreach { oldUrl =>
+                if (!oldUrl.isEmpty()) {
+                  val newUrl =
+                    if (!oldUrl.startsWith("/")) s"$newBase/$oldUrl"
+                    else s"$newBase$oldUrl"
+                  e.setAttribute(at, newUrl)
+                }
+              }
           }
-        }
       }
   }
 
