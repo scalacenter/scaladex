@@ -89,14 +89,14 @@ class Deployment(rootFolder: File,
           |whoami
           |kill `cat SERVER-PID`
           |
-          |rm server/server-*
-          |unzip -d server $serverZipFileName
-          |rm -rf server/current
-          |mkdir server/current
-          |mv server/server-*/* server/current
-          |rmdir server/server-*
+          |rm /home/$userName/server/server-*
+          |unzip -d /home/$userName/server /home/$userName/$serverZipFileName
+          |rm -rf /home/$userName/server/current
+          |mkdir /home/$userName/server/current
+          |mv /home/$userName/server/server-*/* /home/$userName/server/current
+          |rmdir /home/$userName/server/server-*
           |
-          |nohup server/current/bin/server \\
+          |nohup /home/$userName/server/current/bin/server \\
           |  -J-Xmx4g \\
           |  -Dlogback.output-file=server.log \\
           |  -Dlogback.configurationFile=/home/$userName/scaladex-credentials/logback.xml \\
@@ -155,15 +155,15 @@ class Deployment(rootFolder: File,
           |
           |$cloneAllIfAbsent
           |
-          |  rm data/data-*
-          |  unzip -d data $dataZipFileName
-          |  rm -rf data/current
-          |  mkdir data/current
-          |  mv data/data-*/* data/current
-          |  rmdir data/data-*
+          |  rm /home/$userName/data/data-*
+          |  unzip -d /home/$userName/data /home/$userName/$dataZipFileName
+          |  rm -rf /home/$userName/data/current
+          |  mkdir /home/$userName/data/current
+          |  mv /home/$userName/data/data-*/* /home/$userName/data/current
+          |  rmdir /home/$userName/data/data-*
           |
-          |  nohup data/current/bin/data \\
-          |    -J-Xmx4g \\
+          |  nohup /home/$userName/data/current/bin/data \\
+          |    -J-Xmx6g \\
           |    -Dlogback.output-file=data.log \\
           |    -Dlogback.configurationFile=/home/$userName/scaladex-credentials/logback.xml \\
           |    -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
