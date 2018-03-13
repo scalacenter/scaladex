@@ -118,7 +118,7 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer)
               .find(_.name == "Link")
               .map(h => extractLastPage(h.value))
               .getOrElse(1)
-          val maxPages = 5
+          val maxPages = 42
           val clampedLastPage = if (lastPage > maxPages) maxPages else lastPage
           Unmarshal(r1).to[List[T]].map(vs => (vs, clampedLastPage))
         }
