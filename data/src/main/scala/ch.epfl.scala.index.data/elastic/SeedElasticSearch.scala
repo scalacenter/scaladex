@@ -5,13 +5,16 @@ package elastic
 import project._
 import github.GithubDownload
 import maven.PomsReader
-
 import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.analyzers.{
+  CustomAnalyzerDefinition,
+  LowercaseTokenFilter,
+  LowercaseTokenizer
+}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
 import scala.util.Success
-
 import org.slf4j.LoggerFactory
 
 class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
@@ -33,10 +36,10 @@ class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
     }
 
     val projectFields = List(
-      keywordField("organization"),
-      keywordField("repository"),
+      keywordField("organization") normalizer "lowercase",
+      keywordField("repository") normalizer "lowercase",
       keywordField("defaultArtifact").index(false),
-      keywordField("artifacts"),
+      keywordField("artifacts") normalizer "lowercase",
       keywordField("customScalaDoc").index(false),
       keywordField("artifactDeprecations").index(false),
       keywordField("cliArtifacts").index(false),
@@ -51,19 +54,19 @@ class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
     val releasesFields = List(
       nestedField("reference")
         .fields(
-          keywordField("organization"),
-          keywordField("repository"),
-          keywordField("artifact")
+          keywordField("organization") normalizer "lowercase",
+          keywordField("repository") normalizer "lowercase",
+          keywordField("artifact") normalizer "lowercase"
         )
         .includeInAll(true),
       nestedField("maven").fields(
-        keywordField("groupId"),
-        keywordField("artifactId"),
+        keywordField("groupId") normalizer "lowercase",
+        keywordField("artifactId") normalizer "lowercase",
         keywordField("version")
       ),
       keywordField("version"),
-      keywordField("targetType"),
-      keywordField("fullScalaVersion"),
+      keywordField("targetType") normalizer "lowercase",
+      keywordField("fullScalaVersion") normalizer "lowercase",
       keywordField("scalaVersion"),
       keywordField("scalaJsVersion"),
       keywordField("scalaNativeVersion"),
@@ -72,9 +75,13 @@ class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
     )
 
     log.info("creating index")
+
     Await.result(
       esClient.execute {
         createIndex(indexName)
+          .normalizers(
+            customNormalizer("lowercase", LowercaseTokenFilter)
+          )
           .mappings(
             mapping(projectsCollection).fields(projectFields: _*),
             mapping(releasesCollection).fields(releasesFields: _*)
