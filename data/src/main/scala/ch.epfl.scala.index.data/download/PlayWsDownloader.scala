@@ -10,6 +10,7 @@ import com.typesafe.config.ConfigFactory
 import play.api._
 import play.api.libs.ws._
 import play.api.libs.ws.ahc._
+import play.api.libs.ws.ahc.AhcCurlRequestLogger
 import play.api.libs.json._
 
 import scala.concurrent.{Await, Future}
@@ -44,7 +45,7 @@ trait PlayWsDownloader {
     val wsConfig = AhcWSClientConfigFactory.forConfig(configuration.underlying,
                                                       environment.classLoader)
 
-    AhcWSClient(wsConfig)
+    AhcWSClient(wsConfig).withRequestFilter(AhcCurlRequestLogger())
   }
 
   /**
