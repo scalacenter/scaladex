@@ -16,6 +16,7 @@ import com.github.nscala_time.time.Imports._
 
 import play.api.libs.ws.{WSRequest, WSResponse}
 import play.api.libs.ws.ahc.AhcWSClient
+import play.api.libs.ws.ahc.AhcCurlRequestLogger
 
 import org.json4s._
 import org.json4s.native.JsonMethods._
@@ -58,6 +59,7 @@ class BintrayListPoms(paths: DataPaths)(
 
     withAuth(wsClient.url(s"$bintrayApi/search/file"))
       .withQueryStringParameters(query: _*)
+      .withRequestFilter(AhcCurlRequestLogger())
   }
 
   /** Fetch bintray first, to find out the number of pages and items to iterate
@@ -70,7 +72,9 @@ class BintrayListPoms(paths: DataPaths)(
     val client = wsClient
     val request = discover(client, PomListDownload(query, 0, lastCheckDate))
 
-    request.get
+    request
+      .withRequestFilter(AhcCurlRequestLogger())
+      .get
       .flatMap { response =>
         if (200 == response.status) {
           Future.successful {

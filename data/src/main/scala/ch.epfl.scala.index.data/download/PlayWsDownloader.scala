@@ -45,7 +45,7 @@ trait PlayWsDownloader {
     val wsConfig = AhcWSClientConfigFactory.forConfig(configuration.underlying,
                                                       environment.classLoader)
 
-    AhcWSClient(wsConfig).withRequestFilter(AhcCurlRequestLogger())
+    AhcWSClient(wsConfig)
   }
 
   /**
@@ -86,7 +86,8 @@ trait PlayWsDownloader {
     def processDownloads = {
 
       Source(toDownload).mapAsyncUnordered(parallelism) { item =>
-        val request = downloadUrl(client, item)
+        val request =
+          downloadUrl(client, item).withRequestFilter(AhcCurlRequestLogger())
         val response = request.get
 
         response.transform(
@@ -138,7 +139,8 @@ trait PlayWsDownloader {
   ): Seq[R] = {
 
     def processItem(client: AhcWSClient, item: T, progress: ProgressBar) = {
-      val request = downloadUrl(client, item)
+      val request =
+        downloadUrl(client, item).withRequestFilter(AhcCurlRequestLogger())
       val response = request.get
 
       response.flatMap { data =>
@@ -174,7 +176,8 @@ trait PlayWsDownloader {
 
     def processItem(client: AhcWSClient, item: T, progress: ProgressBar) = {
       val request = downloadUrl(client)
-      val response = request.post(query(item))
+      val response =
+        request.withRequestFilter(AhcCurlRequestLogger()).post(query(item))
       response.flatMap { data =>
         if (toDownload.size > 1) {
           progress.step()
