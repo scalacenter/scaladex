@@ -31,7 +31,8 @@ case class UserState(repos: Set[GithubRepo],
                      orgs: Set[Response.Organization],
                      user: UserInfo) {
   def isAdmin = orgs.contains(Response.Organization("scalacenter"))
-  def isSonatype = orgs.contains(Response.Organization("sonatype"))
+  def isSonatype =
+    orgs.contains(Response.Organization("sonatype")) || user.login == "central-ossrh"
   def hasPublishingAuthority = isAdmin || isSonatype
 }
 
