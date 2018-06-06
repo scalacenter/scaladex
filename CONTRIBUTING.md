@@ -22,7 +22,7 @@ git clone git@github.com:scalacenter/scaladex.git
 git clone git@github.com:scalacenter/scaladex-small-index.git
 git clone git@github.com:scalacenter/scaladex-contrib.git
 
-# Optionnal: If you have access
+# Optional: If you have access
 git clone git@github.com:scalacenter/scaladex-credentials.git
 
 cd scaladex
