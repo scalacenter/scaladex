@@ -48,7 +48,12 @@ object Client {
     for {
       resultContainer <- getResultList
       newItem = newProjectItem(owner, repo, description)
-    } yield resultContainer.appendChild(newItem)
+    } yield {
+      jQuery(newItem).find(".emojify").each { (el: Element) =>
+        emojify.run(el)
+      }
+      resultContainer.appendChild(newItem)
+    }
   }
 
   private def newProjectItem(owner: String,
@@ -57,7 +62,7 @@ object Client {
     li(
       a(href := s"/$owner/$repo")(
         p(s"$owner / $repo"),
-        span(description)
+        span(cls := "emojify")(description)
       )
     ).render
   }
@@ -321,6 +326,7 @@ object Client {
 
   @JSExport
   def main(token: UndefOr[String]): Unit = {
+
     document.addEventListener[KeyboardEvent]("keydown", jumpToSearchInput _)
 
     getSearchBox.foreach { searchBox =>
@@ -342,5 +348,14 @@ object Client {
       el.addEventListener[Event]("click", hideBanner _)
     }
 
+    emojify.setConfig(
+      js.Dictionary(
+        "img_dir" -> "https://cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/images/basic"
+      )
+    )
+    jQuery(".emojify").each { (el: Element) =>
+      emojify.run(el)
+    }
+    emojify.run(document.body)
   }
 }

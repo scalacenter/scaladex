@@ -29,7 +29,7 @@
           @for(github <- project.github) {
             @for(description <- github.description) {
               @if(!description.isEmpty) {
-                <p class="description">@description</p>
+                <p class="description emojify">@description</p>
               }
             }
           }

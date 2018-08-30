@@ -20,7 +20,7 @@
 
               @for(github <- project.github) {
                 @for(description <- github.description) {
-                  <p class="description">@description</p>
+                  <p class="description emojify">@description</p>
                 }
               }
               @if(project.scalaVersion.nonEmpty){
