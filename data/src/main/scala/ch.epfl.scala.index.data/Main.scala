@@ -153,18 +153,6 @@ object Main {
     logger.info("Executing steps")
     stepsToRun.foreach(_.run())
 
-    if (production) {
-      inPath(getPathFromArgs.index) { sh =>
-        logger.info("Saving the updated state to the 'index' repository")
-        sh.exec("git", "add", "-A")
-        def now() =
-          LocalDateTime
-            .now()
-            .format(DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss"))
-        sh.exec("git", "commit", "--allow-empty", "-m", '"' +: now() :+ '"')
-      }
-    }
-
     system.terminate()
     ()
   }
