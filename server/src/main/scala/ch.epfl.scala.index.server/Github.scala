@@ -19,12 +19,22 @@ import scala.concurrent.Future
 
 import com.typesafe.config.ConfigFactory
 
+import org.json4s._
+import org.json4s.native.JsonMethods._
+
 object Response {
-  case class Permissions(admin: Boolean, push: Boolean, pull: Boolean)
   case class AccessToken(access_token: String)
-  case class Repo(full_name: String, permissions: Permissions)
-  case class User(login: String, name: Option[String], avatar_url: String)
+
+  case class PageInfo(endCursor: String, hasNextPage: Boolean)
+  case class Repo(nameWithOwner: String, viewerPermission: String)
+  case class AllRepos(pageInfo: PageInfo, totalCount: Int, nodes: List[Repo])
+
   case class Organization(login: String)
+
+  case class User(login: String, name: Option[String], avatarUrl: String) {
+    def convert(token: String): UserInfo =
+      UserInfo(login, name, avatarUrl, token)
+  }
 }
 
 case class UserState(repos: Set[GithubRepo],
@@ -45,9 +55,6 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer)
   val clientId = config.getString("client-id")
   val clientSecret = config.getString("client-secret")
   val redirectUri = config.getString("uri") + "/callback/done"
-
-  private val poolClientFlow =
-    Http().cachedHostConnectionPoolHttps[HttpRequest]("api.github.com")
 
   def getUserStateWithToken(token: String): Future[UserState] = info(token)
   def getUserStateWithOauth2(code: String): Future[UserState] = {
@@ -76,100 +83,120 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer)
     access.flatMap(info)
   }
 
-  private def info(token: String) = {
-    def fetchGithub(path: Path, query: Query = Query.Empty) = {
-      HttpRequest(
-        uri = Uri(s"https://api.github.com").withPath(path).withQuery(query),
-        headers = List(Authorization(GenericHttpCredentials("token", token)))
+  private def info(token: String): Future[UserState] = {
+    def fetchRepos(): Future[Set[GithubRepo]] = {
+      def convert(repos: List[Response.Repo]): Set[GithubRepo] = {
+        repos.iterator
+          .filter(
+            repo =>
+              repo.viewerPermission == "WRITE" ||
+                repo.viewerPermission == "ADMIN"
+          )
+          .map { repo =>
+            val Array(owner, name) = repo.nameWithOwner.split("/")
+            GithubRepo(owner, name)
+          }
+          .toSet
+      }
+      def loop(cursorStart: Option[String],
+               acc: Set[GithubRepo],
+               n: Int): Future[Set[GithubRepo]] = {
+        val after = cursorStart.map(s => s"""after: "$s", """).getOrElse("")
+        val query =
+          s"""|query {
+              |  viewer {
+              |    repositories(first: 100,$after affiliations: [COLLABORATOR, ORGANIZATION_MEMBER, OWNER]) {
+              |      pageInfo {
+              |        endCursor
+              |        hasNextPage
+              |      }
+              |      totalCount
+              |      nodes {
+              |        nameWithOwner
+              |        viewerPermission
+              |      }
+              |    }
+              |  }
+              |}""".stripMargin
+
+        graphqlRequest(query).flatMap(
+          response =>
+            Unmarshal(response).to[JValue].flatMap { data =>
+              val json = data \ "data" \ "viewer" \ "repositories"
+              val repos = json.extract[Response.AllRepos]
+              val res = acc ++ convert(repos.nodes)
+              if (repos.pageInfo.hasNextPage || n < 5) {
+                loop(cursorStart = Some(repos.pageInfo.endCursor),
+                     acc = res,
+                     n + 1)
+              } else {
+                Future.successful(res)
+              }
+          }
+        )
+      }
+      loop(None, Set(), 0)
+    }
+
+    def graphqlRequest(query: String): Future[HttpResponse] = {
+      val json = JObject("query" -> JString(query))
+
+      val request =
+        HttpRequest(
+          method = HttpMethods.POST,
+          uri = Uri("https://api.github.com/graphql"),
+          entity =
+            HttpEntity(ContentTypes.`application/json`, compact(render(json))),
+          headers = List(Authorization(OAuth2BearerToken(token)))
+        )
+
+      Http().singleRequest(request)
+    }
+
+    def fetchUser(): Future[UserInfo] = {
+      val query =
+        """|query {
+           |  viewer {
+           |    avatarUrl
+           |    name
+           |    login
+           |  }
+           |}""".stripMargin
+
+      graphqlRequest(query).flatMap(
+        response =>
+          Unmarshal(response).to[JValue].map { data =>
+            val json = data \ "data" \ "viewer"
+            json.extract[Response.User].convert(token)
+        }
       )
     }
 
-    def fetchUserRepos(): Future[List[Response.Repo]] = {
-      paginated[Response.Repo](Path.Empty / "user" / "repos")
-    }
+    def fetchOrganizations(): Future[Set[Response.Organization]] = {
+      val query =
+        """|query {
+           |  viewer {
+           |    organizations(first: 100) {
+           |      nodes {
+           |        login
+           |        viewerCanAdminister
+           |      }
+           |    }
+           |  }
+           |}""".stripMargin
 
-    def fetchOrgs(): Future[List[Response.Organization]] = {
-      paginated[Response.Organization](Path.Empty / "user" / "orgs")
-    }
-
-    def fetchOrgRepos(org: String): Future[List[Response.Repo]] = {
-      paginated[Response.Repo](Path.Empty / "orgs" / org / "repos", org = true)
-    }
-
-    def paginated[T](path: Path, org: Boolean = false)(
-        implicit ev: Unmarshaller[HttpResponse, List[T]]
-    ): Future[List[T]] = {
-
-      def request(page: Option[Int]) = {
-        val query =
-          page.map(p => Query("page" -> p.toString())).getOrElse(Query())
-
-        val query2 =
-          if (org) ("type", "public") +: query
-          else query
-
-        fetchGithub(path, query2)
-      }
-
-      Http()
-        .singleRequest(request(None))
-        .flatMap { r1 =>
-          val lastPage =
-            r1.headers
-              .find(_.name == "Link")
-              .map(h => extractLastPage(h.value))
-              .getOrElse(1)
-          val maxPages = 5
-          val clampedLastPage = if (lastPage > maxPages) maxPages else lastPage
-          Unmarshal(r1).to[List[T]].map(vs => (vs, clampedLastPage))
+      graphqlRequest(query).flatMap(
+        response =>
+          Unmarshal(response).to[JValue].map { data =>
+            val json = data \ "data" \ "viewer" \ "organizations" \ "nodes"
+            json.extract[Set[Response.Organization]]
         }
-        .flatMap {
-          case (vs, lastPage) =>
-            val nextPagesRequests =
-              if (lastPage > 1) {
-                Source((2 to lastPage).map(page => request(Some(page))))
-                  .map(r => (r, r))
-                  .via(poolClientFlow)
-                  .runWith(Sink.seq)
-                  .map(_.toList)
-                  .map(_.collect { case (scala.util.Success(v), _) => v })
-                  .flatMap(
-                    s => Future.sequence(s.map(r2 => Unmarshal(r2).to[List[T]]))
-                  )
-                  .map(_.flatten)
-              } else Future.successful(Nil)
-
-            nextPagesRequests.map(vs2 => vs ++ vs2)
-        }
+      )
     }
 
-    def fetchUser() =
-      Http()
-        .singleRequest(fetchGithub(Path.Empty / "user"))
-        .flatMap(response => Unmarshal(response).to[Response.User])
-
-    for {
-      ((repos, user), orgs) <- fetchUserRepos()
-        .zip(fetchUser())
-        .zip(fetchOrgs())
-      orgRepos <- Future.sequence(orgs.map(org => fetchOrgRepos(org.login)))
-    } yield {
-
-      val allRepos = repos ::: orgRepos.flatten
-
-      val githubRepos = allRepos
-        .filter(repo => repo.permissions.push || repo.permissions.admin)
-        .map { r =>
-          val List(owner, repo) = r.full_name.split("/").toList
-          GithubRepo(owner.toLowerCase, repo.toLowerCase)
-        }
-        .toSet
-
-      val Response.User(login, name, avatarUrl) = user
-
-      UserState(githubRepos,
-                orgs.toSet,
-                UserInfo(login, name, avatarUrl, token))
+    fetchOrganizations().zip(fetchUser()).zip(fetchRepos()).map {
+      case ((orgs, user), repos) =>
+        UserState(repos, orgs, user)
     }
   }
 }
