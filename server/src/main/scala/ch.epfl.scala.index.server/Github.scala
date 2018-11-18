@@ -1,26 +1,20 @@
 package ch.epfl.scala.index
 package server
 
-import model.misc._
-import data.github._
-
-import akka.http.scaladsl._
-import akka.http.scaladsl.model._
-import HttpMethods.POST
-import headers._
-import Uri._
-import unmarshalling.{Unmarshal, Unmarshaller}
-
 import akka.actor.ActorSystem
+import akka.http.scaladsl._
+import akka.http.scaladsl.model.HttpMethods.POST
+import akka.http.scaladsl.model.Uri._
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl._
-
-import scala.concurrent.Future
-
+import ch.epfl.scala.index.model.misc._
 import com.typesafe.config.ConfigFactory
-
 import org.json4s._
 import org.json4s.native.JsonMethods._
+
+import scala.concurrent.Future
 
 object Response {
   case class AccessToken(access_token: String)
@@ -122,15 +116,17 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer)
         graphqlRequest(query).flatMap(
           response =>
             Unmarshal(response).to[JValue].flatMap { data =>
-              val json = data \ "data" \ "viewer" \ "repositories"
-              val repos = json.extract[Response.AllRepos]
-              val res = acc ++ convert(repos.nodes)
-              if (repos.pageInfo.hasNextPage || n < 5) {
-                loop(cursorStart = Some(repos.pageInfo.endCursor),
-                     acc = res,
-                     n + 1)
-              } else {
-                Future.successful(res)
+              val json: JValue = data \ "data" \ "viewer" \ "repositories"
+              json match {
+                case JNothing => Future.successful(acc)
+                case _ =>
+                  val repos = json.extract[Response.AllRepos]
+                  val res = acc ++ convert(repos.nodes)
+                  if (repos.pageInfo.hasNextPage || n < 5) {
+                    loop(cursorStart = Some(repos.pageInfo.endCursor), acc = res, n + 1)
+                  } else {
+                    Future.successful(res)
+                  }
               }
           }
         )
