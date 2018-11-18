@@ -123,7 +123,9 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer)
                   val repos = json.extract[Response.AllRepos]
                   val res = acc ++ convert(repos.nodes)
                   if (repos.pageInfo.hasNextPage || n < 5) {
-                    loop(cursorStart = Some(repos.pageInfo.endCursor), acc = res, n + 1)
+                    loop(cursorStart = Some(repos.pageInfo.endCursor),
+                         acc = res,
+                         n + 1)
                   } else {
                     Future.successful(res)
                   }
