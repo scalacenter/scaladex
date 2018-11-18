@@ -154,7 +154,7 @@ case class Release(
     val tryBaseUrl = "https://scastie.scala-lang.org/try"
 
     def latestFor(version: String): String = {
-      val latest = 
+      val latest =
         Map(
           "2.10" -> "2.10.7",
           "2.11" -> "2.11.12",
@@ -164,19 +164,23 @@ case class Release(
       latest.get(version).getOrElse(version)
     }
 
-    reference.target.map(target =>
-      List(
-        "g"  -> maven.groupId,
-        "a"  -> reference.artifact,
-        "v"  -> maven.version,
-        "t"  -> target.targetType.toString.toUpperCase,
-        "sv" -> latestFor(target.scalaVersion.toString)
+    reference.target
+      .map(
+        target =>
+          List(
+            "g" -> maven.groupId,
+            "a" -> reference.artifact,
+            "v" -> maven.version,
+            "t" -> target.targetType.toString.toUpperCase,
+            "sv" -> latestFor(target.scalaVersion.toString)
+        )
       )
-    ).map(
-      _.map{ case (k, v) =>
-        s"$k=$v"
-      }.mkString(tryBaseUrl + "?", "&", "")
-    )
+      .map(
+        _.map {
+          case (k, v) =>
+            s"$k=$v"
+        }.mkString(tryBaseUrl + "?", "&", "")
+      )
   }
 
   def documentationURLs(
