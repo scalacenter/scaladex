@@ -146,7 +146,7 @@ object Client {
   }
 
   private def jumpToSearchInput(event: KeyboardEvent): Unit = {
-    if (event.keyCode == KeyCode.S) {
+    if (event.ctrlKey && event.keyCode == KeyCode.S) {
       getSearchBox.foreach { searchBox =>
         val input = searchBox.getInput
         if (event.target != input) {
