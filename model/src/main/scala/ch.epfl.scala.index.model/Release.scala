@@ -131,6 +131,15 @@ case class Release(
   }
 
   /**
+   * string representation for mill dependency
+   * @return
+   */
+  def millInstall = {
+    val artifactOperator = if (isNonStandardLib) ":" else "::"
+    s"""ivy"${maven.groupId}$artifactOperator${reference.artifact}:${reference.version}""""
+  }
+
+  /**
    * Url to the scala-docs.
    * @return
    */
