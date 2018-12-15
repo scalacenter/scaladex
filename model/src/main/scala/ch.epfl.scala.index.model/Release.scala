@@ -135,7 +135,8 @@ case class Release(
    * @return
    */
   def millInstall = {
-    def addResolver(r: Resolver) = r.url map (url => s"""MavenRepository("${url}")""")
+    def addResolver(r: Resolver) =
+      r.url map (url => s"""MavenRepository("${url}")""")
     val artifactOperator = if (isNonStandardLib) ":" else "::"
     List(
       Some(
