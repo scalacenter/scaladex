@@ -99,12 +99,19 @@ class BintrayClient(paths: DataPaths) {
         total <- response
           .header("X-RangeLimit-Total")
           .flatMap(s => Try(s.toInt).toOption)
-        count <- response
+        startPos <- response
+          .header("X-RangeLimit-StartPos")
+          .flatMap(s => Try(s.toInt).toOption)
+        endPos <- response
           .header("X-RangeLimit-EndPos")
           .flatMap(s => Try(s.toInt).toOption)
-        if count < total
-        remainingPages = (total - 1) / count
-      } yield Seq.tabulate(remainingPages)(page => (page + 1) * count)
+        if endPos < (total - 1)
+        nextPos = endPos + 1
+        perPage = nextPos - startPos
+        remainingPageCount = Math
+          .ceil((total - nextPos).toDouble / perPage)
+          .toInt
+      } yield Seq.tabulate(remainingPageCount)(page => nextPos + page * perPage)
     ).getOrElse(Nil)
 
   /**
