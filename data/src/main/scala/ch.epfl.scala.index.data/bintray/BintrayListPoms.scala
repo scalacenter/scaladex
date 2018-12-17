@@ -62,10 +62,8 @@ class BintrayListPoms(paths: DataPaths)(
       .withRequestFilter(AhcCurlRequestLogger())
   }
 
-  /** Fetch bintray first, to find out the number of pages and items to iterate
-   * them over
-   */
-  def getNumberOfPages(
+  /** Fetch bintray first, to find out the pages remaining */
+  def getPagination(
       query: String,
       lastCheckDate: Option[DateTime]
   ): Future[InternalBintrayPagination] = {
@@ -79,7 +77,7 @@ class BintrayListPoms(paths: DataPaths)(
         if (200 == response.status) {
           Future.successful {
             InternalBintrayPagination(
-              response.header("X-RangeLimit-Total").map(_.toInt).getOrElse(0)
+              remainingPages(response)
             )
           }
         } else {
@@ -205,21 +203,13 @@ class BintrayListPoms(paths: DataPaths)(
       }
     }
 
-    /* check first how many pages there are */
-    val page: InternalBintrayPagination =
-      Await.result(getNumberOfPages(search, mostRecentQueriedDate),
-                   Duration.Inf)
+    /* get the list of pages */
+    val pagination: InternalBintrayPagination =
+      Await.result(getPagination(search, mostRecentQueriedDate), Duration.Inf)
 
-    val requestCount = Math
-      .floor(page.numberOfPages.toDouble / page.itemPerPage.toDouble)
-      .toInt + 1
-
-    val toDownload = (1 to requestCount)
+    val toDownload = pagination.pages
       .map(
-        p =>
-          PomListDownload(search,
-                          (p - 1) * page.itemPerPage,
-                          mostRecentQueriedDate)
+        page => PomListDownload(search, page, mostRecentQueriedDate)
       )
       .toSet
 
