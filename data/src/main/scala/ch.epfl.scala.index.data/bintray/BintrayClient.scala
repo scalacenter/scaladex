@@ -4,8 +4,8 @@ package bintray
 import java.net.URL
 import java.nio.file.Files
 
+import jawn.support.json4s.Parser
 import org.json4s.JsonAST.JValue
-import org.json4s.native.JsonMethods.parse
 import org.slf4j.LoggerFactory
 import play.api.libs.ws.{WSAuthScheme, WSRequest, WSResponse}
 
@@ -128,7 +128,7 @@ class BintrayClient(paths: DataPaths) {
           s"Got a response with a non-OK status: ${response.statusText} ${response.body}"
         )
       }
-      decode(parse(response.body))
+      decode(Parser.parseUnsafe(response.body))
     } catch {
       case NonFatal(exn) =>
         logger.error("Unable to decode data", exn)

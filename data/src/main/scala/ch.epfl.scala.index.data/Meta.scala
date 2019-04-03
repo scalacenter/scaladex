@@ -1,17 +1,15 @@
 package ch.epfl.scala.index
 package data
 
-import model.Descending
-import com.github.nscala_time.time.Imports._
-
-import org.joda.time.DateTime
-
-import org.json4s._
-import org.json4s.native.JsonMethods._
-import org.json4s.native.Serialization.{write => swrite}
-
-import java.nio.file.Files
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+
+import ch.epfl.scala.index.model.Descending
+import com.github.nscala_time.time.Imports._
+import jawn.support.json4s.Parser
+import org.joda.time.DateTime
+import org.json4s._
+import org.json4s.native.Serialization.{write => swrite}
 
 case class Meta(
     sha1: String,
@@ -67,7 +65,7 @@ object Meta {
       .split(nl)
       .toList
       .filter(_ != "")
-      .map(json => parse(json).extract[Meta])
+      .map(json => Parser.parseUnsafe(json).extract[Meta])
       .sortBy(_.created)(Descending)
   }
 

@@ -5,7 +5,7 @@ import java.nio.file.Files
 import ch.epfl.scala.index.data.LocalRepository.BintraySbtPlugins
 import ch.epfl.scala.index.data.maven._
 import ch.epfl.scala.index.data.{DataPaths, LocalRepository}
-import org.json4s.native.JsonMethods._
+import jawn.support.json4s.Parser
 import org.json4s.native.Serialization.write
 
 import scala.util.{Success, Try}
@@ -26,7 +26,7 @@ case class SbtPluginsData(paths: DataPaths) extends BintrayProtocol {
 
     val releases =
       if (paths.ivysData.toFile.exists())
-        parse(new String(Files.readAllBytes(paths.ivysData)))
+        Parser.parseFromFile(paths.ivysData.toFile).get
           .extract[List[SbtPluginReleaseModel]]
       else Nil
 
