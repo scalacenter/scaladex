@@ -26,7 +26,9 @@ case class SbtPluginsData(paths: DataPaths) extends BintrayProtocol {
 
     val releases =
       if (paths.ivysData.toFile.exists())
-        Parser.parseFromFile(paths.ivysData.toFile).get
+        Parser
+          .parseFromFile(paths.ivysData.toFile)
+          .get
           .extract[List[SbtPluginReleaseModel]]
       else Nil
 

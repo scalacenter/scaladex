@@ -51,7 +51,8 @@ object NonStandardLib {
     val filePath = paths.nonStandard
 
     if (Files.exists(filePath)) {
-      val nonStandard = Parser.parseFromFile(filePath.toFile).get.extract[Map[String, String]]
+      val nonStandard =
+        Parser.parseFromFile(filePath.toFile).get.extract[Map[String, String]]
 
       nonStandard.map {
         case (artifact, rawLookup) =>
