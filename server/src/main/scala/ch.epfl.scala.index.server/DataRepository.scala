@@ -89,8 +89,13 @@ class DataRepository(
               current = clamp(page),
               totalPages = Math.ceil(r.totalHits / params.total.toDouble).toInt,
               total = r.totalHits
-            ),
-            r.to[Project].toList.map(hideId)
+            ), {
+              // println(r.hits.toList.take(100) map { h =>
+              //   val source = h.sourceAsMap
+              //   s"""${h.score}: ${source("organization")}/${source("repository")}"""
+              // })
+              r.to[Project].toList.map(hideId)
+            }
         )
       )
   }
@@ -251,21 +256,17 @@ class DataRepository(
         )
         .should(
           List(
-            termQuery("repository", escaped).boost(1000),
-            fuzzyQuery("repository", escaped),
-            termQuery("artifacts", escaped).boost(20),
-            fuzzyQuery("artifacts", escaped),
-            termQuery("organization", escaped).boost(20),
+            termQuery("repository", escaped).boost(40),
+            fuzzyQuery("repository", escaped).boost(4),
+            termQuery("github.description", escaped).boost(20),
+            termQuery("organization", escaped),
             fuzzyQuery("organization", escaped),
-            termQuery("primaryTopic", escaped).boost(10),
-            termQuery("github.topics", escaped).boost(2),
-            fuzzyQuery("github.topics", escaped),
             termQuery("primaryTopic", escaped).boost(
-              if (queryIsATopic) 1000
+              if (queryIsATopic) 5
               else 2
             ),
             termQuery("github.topics", escaped).boost(
-              if (queryIsATopic) 100
+              if (queryIsATopic) 5
               else 2
             ),
             nestedQuery("github.beginnerIssues",
@@ -280,14 +281,9 @@ class DataRepository(
         )
         .not(List(termQuery("deprecated", true)))
     ).scorers(
-        // Add a small boost for project that seem to be “popular” (highly depended on or highly starred)
-        fieldFactorScore("dependentCount")
-          .modifier(Modifier.LOG1P)
-          .factor(0.3),
         fieldFactorScore("github.stars")
-          .missing(0)
-          .modifier(Modifier.LOG1P)
-          .factor(0.1)
+          .missing(1.0)
+          .factor(0.01)
       )
       .boostMode("sum")
 
