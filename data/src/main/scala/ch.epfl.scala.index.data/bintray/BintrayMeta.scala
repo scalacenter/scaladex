@@ -2,13 +2,12 @@ package ch.epfl.scala.index
 package data
 package bintray
 
-import com.github.nscala_time.time.Imports._
-import model.Descending
-
-import org.json4s._
-import org.json4s.native.JsonMethods._
-
 import java.nio.file.Path
+
+import ch.epfl.scala.index.model.Descending
+import com.github.nscala_time.time.Imports._
+import jawn.support.json4s.Parser
+import org.json4s._
 
 object BintrayMeta extends BintrayProtocol {
 
@@ -26,7 +25,7 @@ object BintrayMeta extends BintrayProtocol {
     source.close()
     ret
       .filter(_ != "")
-      .map(json => parse(json).extract[BintraySearch])
+      .map(json => Parser.parseUnsafe(json).extract[BintraySearch])
       .sortBy(_.created)(Descending)
   }
 

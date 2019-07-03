@@ -2,42 +2,36 @@ package ch.epfl.scala.index
 package data
 package github
 
-import download.PlayWsDownloader
-import cleanup.GithubRepoExtractor
-import maven.PomsReader
-import model.misc.GithubRepo
-import model.Project
-import elastic.SaveLiveData
-
-import org.json4s._
-import org.joda.time.DateTime
-import native.JsonMethods._
-import native.Serialization._
-
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-
-import play.api.libs.ws._
-import play.api.libs.ws.ahc.AhcWSClient
-import play.api.libs.json._
-
-import scala.util._
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
+import ch.epfl.scala.index.data.download.PlayWsDownloader
+import ch.epfl.scala.index.data.elastic.SaveLiveData
+import ch.epfl.scala.index.data.maven.PomsReader
+import ch.epfl.scala.index.model.Project
+import ch.epfl.scala.index.model.misc.GithubRepo
 import com.typesafe.config.ConfigFactory
+import jawn.support.json4s.Parser
+import org.joda.time.DateTime
+import org.json4s._
+import org.json4s.native.Serialization._
 import org.slf4j.LoggerFactory
+import play.api.libs.json._
+import play.api.libs.ws._
+import play.api.libs.ws.ahc.AhcWSClient
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import scala.util._
 
 class GithubDownload(paths: DataPaths,
                      privateCredentials: Option[Credentials] = None)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer
 ) extends PlayWsDownloader {
-
-  import system.dispatcher
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -145,7 +139,7 @@ class GithubDownload(paths: DataPaths,
 
     Files.write(
       filePath,
-      writePretty(parse(data)).getBytes(StandardCharsets.UTF_8)
+      writePretty(Parser.parseUnsafe(data)).getBytes(StandardCharsets.UTF_8)
     )
   }
 
