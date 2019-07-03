@@ -257,7 +257,7 @@ class CentralMissing(paths: DataPaths)(implicit val materializer: Materializer,
         .flatten
         .toSet
 
-    val scala213 = SemanticVersion("2.13.0-M3").get
+    val scala213 = SemanticVersion("2.13").get
     val scala212 = SemanticVersion("2.12").get
     val scala211 = SemanticVersion("2.11").get
     val scala210 = SemanticVersion("2.10").get
