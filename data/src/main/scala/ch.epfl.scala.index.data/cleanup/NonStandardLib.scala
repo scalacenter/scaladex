@@ -4,8 +4,8 @@ package cleanup
 
 import java.nio.file._
 
+import jawn.support.json4s.Parser
 import org.json4s._
-import org.json4s.native.JsonMethods._
 
 /**
  * Non standard published lib which misses the scala version in the artifact name
@@ -51,9 +51,8 @@ object NonStandardLib {
     val filePath = paths.nonStandard
 
     if (Files.exists(filePath)) {
-      val source = scala.io.Source.fromFile(filePath.toFile)
-      val nonStandard = parse(source.mkString).extract[Map[String, String]]
-      source.close()
+      val nonStandard =
+        Parser.parseFromFile(filePath.toFile).get.extract[Map[String, String]]
 
       nonStandard.map {
         case (artifact, rawLookup) =>

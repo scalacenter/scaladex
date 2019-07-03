@@ -2,33 +2,25 @@ package ch.epfl.scala.index
 package data
 package bintray
 
-import model._
-import download.PlayWsDownloader
-
+import java.lang.System.{lineSeparator => nl}
 import java.nio.file.Files
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{FileIO, Flow, Keep, Source}
 import akka.util.ByteString
-
+import ch.epfl.scala.index.data.download.PlayWsDownloader
+import ch.epfl.scala.index.model._
 import com.github.nscala_time.time.Imports._
-
-import play.api.libs.ws.{WSRequest, WSResponse}
-import play.api.libs.ws.ahc.AhcWSClient
-import play.api.libs.ws.ahc.AhcCurlRequestLogger
-
+import jawn.support.json4s.Parser
 import org.json4s._
-import org.json4s.native.JsonMethods._
 import org.json4s.native.Serialization.write
-
-import scala.concurrent.Await
-import scala.concurrent.Future
-import scala.concurrent.duration.Duration
-
 import org.slf4j.LoggerFactory
+import play.api.libs.ws.ahc.{AhcCurlRequestLogger, AhcWSClient}
+import play.api.libs.ws.{WSRequest, WSResponse}
 
-import System.{lineSeparator => nl}
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
 
 class BintrayListPoms(paths: DataPaths)(
     implicit val system: ActorSystem,
@@ -97,7 +89,7 @@ class BintrayListPoms(paths: DataPaths)(
   def processSearch(page: PomListDownload,
                     response: WSResponse): List[BintraySearch] = {
     try {
-      parse(response.body).extract[List[BintraySearch]]
+      Parser.parseUnsafe(response.body).extract[List[BintraySearch]]
     } catch {
       case scala.util.control.NonFatal(e) => {
         log.error("failed to parse bintray search", e)
