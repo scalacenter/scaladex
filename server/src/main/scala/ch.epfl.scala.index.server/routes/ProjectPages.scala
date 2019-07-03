@@ -11,11 +11,9 @@ import release._
 
 import TwirlSupport._
 
-import com.softwaremill.session._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 
-import akka.http.scaladsl._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.model.StatusCodes._
@@ -109,8 +107,7 @@ class ProjectPages(dataRepository: DataRepository,
     }
 
     dataRepository
-      .projectAndReleases(Project.Reference(owner, repo),
-                          ReleaseSelection.empty)
+      .projectAndReleases(Project.Reference(owner, repo))
       .map {
         case Some((project, releases)) => {
           val targets =

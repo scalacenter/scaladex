@@ -93,7 +93,10 @@ private[maven] class PomsReader(pomsPath: Path,
 
       if (Files.exists(target)) {
         new FileModelSource(target.toFile)
-      } else throw new MissingParentPom(dep)
+      } else {
+        log.error(s"Missing parent pom of $groupId:$artifactId:$version")
+        throw new MissingParentPom(dep)
+      }
     }
   }
 

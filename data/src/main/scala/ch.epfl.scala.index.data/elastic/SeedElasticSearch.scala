@@ -6,11 +6,7 @@ import project._
 import github.GithubDownload
 import maven.PomsReader
 import com.sksamuel.elastic4s.ElasticDsl._
-import com.sksamuel.elastic4s.analyzers.{
-  CustomAnalyzerDefinition,
-  LowercaseTokenFilter,
-  LowercaseTokenizer
-}
+import com.sksamuel.elastic4s.analyzers.LowercaseTokenFilter
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}

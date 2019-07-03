@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future, Await}
 import scala.concurrent.duration.Duration
-import scala.util.Random
 
 /**
  * @param github  Github client
@@ -41,21 +40,20 @@ class DataRepository(
 
   private val log = LoggerFactory.getLogger(getClass)
 
-  private val sortQuery: Option[String] => SortDefinition =
-    _ match {
-      case Some("stars") =>
-        fieldSort("github.stars") missing "0" order SortOrder.DESC // mode MultiMode.Avg
-      case Some("forks") =>
-        fieldSort("github.forks") missing "0" order SortOrder.DESC // mode MultiMode.Avg
-      case Some("dependentCount") =>
-        fieldSort("dependentCount") missing "0" order SortOrder.DESC // mode MultiMode.Avg
-      case Some("contributors") =>
-        fieldSort("github.contributorCount") missing "0" order SortOrder.DESC // mode MultiMode.Avg
-      case Some("relevant") => scoreSort order SortOrder.DESC
-      case Some("created")  => fieldSort("created") order SortOrder.DESC
-      case Some("updated")  => fieldSort("updated") order SortOrder.DESC
-      case _                => scoreSort order SortOrder.DESC
-    }
+  private val sortQuery: Option[String] => SortDefinition = {
+    case Some("stars") =>
+      fieldSort("github.stars") missing "0" order SortOrder.DESC // mode MultiMode.Avg
+    case Some("forks") =>
+      fieldSort("github.forks") missing "0" order SortOrder.DESC // mode MultiMode.Avg
+    case Some("dependentCount") =>
+      fieldSort("dependentCount") missing "0" order SortOrder.DESC // mode MultiMode.Avg
+    case Some("contributors") =>
+      fieldSort("github.contributorCount") missing "0" order SortOrder.DESC // mode MultiMode.Avg
+    case Some("relevant") => scoreSort order SortOrder.DESC
+    case Some("created")  => fieldSort("created") order SortOrder.DESC
+    case Some("updated")  => fieldSort("updated") order SortOrder.DESC
+    case _                => scoreSort order SortOrder.DESC
+  }
 
   val contributingQuery =
     boolQuery().must(
@@ -385,8 +383,7 @@ class DataRepository(
   }
 
   def projectAndReleases(
-      projectRef: Project.Reference,
-      selection: ReleaseSelection
+      projectRef: Project.Reference
   ): Future[Option[(Project, List[Release])]] = {
     for {
       project <- project(projectRef)
@@ -398,7 +395,7 @@ class DataRepository(
       projectRef: Project.Reference,
       selection: ReleaseSelection
   ): Future[Option[(Project, ReleaseOptions)]] = {
-    projectAndReleases(projectRef, selection).map {
+    projectAndReleases(projectRef).map {
       case Some((project, releases)) => {
         DefaultRelease(project.repository,
                        selection,
