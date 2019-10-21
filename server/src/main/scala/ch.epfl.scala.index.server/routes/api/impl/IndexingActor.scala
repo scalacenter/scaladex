@@ -32,6 +32,7 @@ class IndexingActor(
 
   def receive = {
     case updateIndexData: UpdateIndex => {
+      // TODO be non-blocking
       sender ! Await.result(updateIndex(
                               updateIndexData.repo,
                               updateIndexData.pom,
@@ -63,7 +64,7 @@ class IndexingActor(
                           data: PublishData,
                           localRepository: LocalPomRepository): Future[Unit] = {
 
-    println("updating " + pom.artifactId)
+    log.debug("updating " + pom.artifactId)
 
     val githubDownload = new GithubDownload(paths, Some(data.credentials))
     githubDownload.run(repo,
@@ -123,7 +124,7 @@ class IndexingActor(
                   newReleases.head.copy(liveData = true)
                 )
             )
-            .map(_ => ())
+            .map(_ => log.info(s"inserting release ${newReleases.head.maven}"))
         } else { Future.successful(()) }
 
       for {

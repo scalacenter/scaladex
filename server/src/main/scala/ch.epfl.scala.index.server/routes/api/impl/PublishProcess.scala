@@ -65,7 +65,7 @@ private[api] class PublishProcess(paths: DataPaths,
           case List(Success((pom, _, _))) =>
             getGithubRepo(pom) match {
               case None => {
-                log.info("POM saved without Github information")
+                log.warn("POM saved without Github information")
                 data.deleteTemp()
                 Future.successful((NoContent, "No Github Repo"))
               }
@@ -83,6 +83,8 @@ private[api] class PublishProcess(paths: DataPaths,
                   Meta.append(paths,
                               Meta(data.hash, data.path, data.created),
                               repository)
+
+                  log.info(s"Saved ${pom.groupId}:${pom.artifactId}:${pom.version}")
 
                   indexingActor ! UpdateIndex(repo, pom, data, repository)
 

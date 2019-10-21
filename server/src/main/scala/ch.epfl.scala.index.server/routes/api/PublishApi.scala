@@ -166,6 +166,9 @@ class PublishApi(paths: DataPaths,
                             readme
                           )
 
+                          log.info(s"Received publish command: ${publishData.created} - ${publishData.path}")
+                          log.debug(publishData.data)
+
                           complete(
                             (actor ? publishData)
                               .mapTo[(StatusCode, String)]
