@@ -92,8 +92,8 @@ class DownloadParentPoms(repository: LocalPomRepository,
         }
         .toSet
 
-    log.info(s"to download: ${parentPomsToDownload.size}")
-    log.info(s"last failed: $lastFailedToDownload")
+    log.debug(s"to download: ${parentPomsToDownload.size}")
+    log.debug(s"last failed: $lastFailedToDownload")
 
     if (parentPomsToDownload.size > lastFailedToDownload) {
 
