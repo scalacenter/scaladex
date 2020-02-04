@@ -84,7 +84,9 @@ private[api] class PublishProcess(paths: DataPaths,
                               Meta(data.hash, data.path, data.created),
                               repository)
 
-                  log.info(s"Saved ${pom.groupId}:${pom.artifactId}:${pom.version}")
+                  log.info(
+                    s"Saved ${pom.groupId}:${pom.artifactId}:${pom.version}"
+                  )
 
                   indexingActor ! UpdateIndex(repo, pom, data, repository)
 
