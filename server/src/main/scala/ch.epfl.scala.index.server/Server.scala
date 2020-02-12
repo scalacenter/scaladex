@@ -35,13 +35,14 @@ import org.apache.lucene.queryparser.classic.ParseException
 
 object Server {
   private val log = LoggerFactory.getLogger(getClass)
+  val config = ConfigFactory.load().getConfig("org.scala_lang.index.server")
+  val tempDirPath = config.getString("tempDirPath")
 
   def main(args: Array[String]): Unit = {
     val port =
       if (args.isEmpty) 8080
       else args.head.toInt
 
-    val config = ConfigFactory.load().getConfig("org.scala_lang.index.server")
     val production = config.getBoolean("production")
 
     if (production) {

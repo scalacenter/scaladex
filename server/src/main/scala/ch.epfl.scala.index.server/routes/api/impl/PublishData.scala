@@ -4,15 +4,16 @@ package routes
 package api
 package impl
 
-import data.{LocalPomRepository, DataPaths}
+import data.{DataPaths, LocalPomRepository}
 import data.github
-
 import ch.epfl.scala.index.model.misc.Sha1
-
 import org.joda.time.DateTime
-
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
+
+import org.slf4j.LoggerFactory
+
+import scala.util.control.NonFatal
 
 /**
  * Publish data model / Settings
@@ -34,7 +35,7 @@ private[api] case class PublishData(
     downloadContributors: Boolean,
     downloadReadme: Boolean
 ) {
-
+  private val log = LoggerFactory.getLogger(getClass)
   lazy val isPom: Boolean = path matches """.*\.pom"""
   lazy val hash = Sha1(data)
   lazy val tempPath = tmpPath(hash)
@@ -73,7 +74,15 @@ private[api] case class PublishData(
   /**
    * delete the temp add file
    */
-  def deleteTemp(): Unit = delete(tempPath)
+  def deleteTemp(): Unit = {
+    delete(tempPath)
+    val directory = tempPath.getParent
+    try {
+      Files.delete(directory)
+    } catch {
+      case NonFatal(error) => log.error("Unable to delete temporary directory", error)
+    }
+  }
 
   /**
    * resolve the filename for a specific pom by sha1
@@ -95,7 +104,7 @@ private[api] case class PublishData(
    * @return
    */
   private def tmpPath(sha1: String): Path = {
-    val tmpDir = Files.createTempDirectory(sha1)
+    val tmpDir = Files.createTempDirectory(Paths.get(Server.tempDirPath), sha1)
     Files.createTempFile(tmpDir, "", "")
   }
 }
