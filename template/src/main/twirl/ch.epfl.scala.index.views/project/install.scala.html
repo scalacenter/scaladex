@@ -26,27 +26,33 @@
   </ul>
   <div class="tab-content">
     <div role="tabpanel" class="tab-pane active" id="sbt">
-      <pre>@release.sbtInstall</pre>
+      <pre id="copy-sbt">@release.sbtInstall</pre>
+      <button class="btn-copy" data-clipboard-target="copy-sbt">Copy</button>
     </div>
     <div role="tabpanel" class="tab-pane" id="ammonite">
       <a href="http://www.lihaoyi.com/Ammonite/#Ammonite-REPL">Ammonite REPL</a>
-      <pre>@release.ammInstall</pre>
+      <pre id="copy-amm">@release.ammInstall</pre>
+      <button class="btn-copy" data-clipboard-target="copy-amm">Copy</button>
     </div>
     @if(cliArtifacts.contains(release.reference.artifact)) {
       <div role="tabpanel" class="tab-pane" id="coursier">
         <a href="https://github.com/alexarchambault/coursier#command-line-1">Coursier</a>
-        <pre>./coursier launch @release.maven.groupId:@release.maven.artifactId:@release.maven.version</pre>
+        <pre id="copy-coursier">./coursier launch @release.maven.groupId:@release.maven.artifactId:@release.maven.version</pre>
+        <button class="btn-copy" data-clipboard-target="copy-coursier">Copy</button>
       </div>
     }
     <div role="tabpanel" class="tab-pane" id="maven">
-      <pre>@release.mavenInstall</pre>
+      <pre id="copy-maven">@release.mavenInstall</pre>
+      <button class="btn-copy" data-clipboard-target="copy-maven">Copy</button>
     </div>
     <div role="tabpanel" class="tab-pane" id="gradle">
-      <pre>@release.gradleInstall</pre>
+      <pre id="copy-gradle">@release.gradleInstall</pre>
+      <button class="btn-copy" data-clipboard-target="copy-gradle">Copy</button>
     </div>
     <div role="tabpanel" class="tab-pane" id="mill">
       <a href="https://www.lihaoyi.com/mill/">Mill build tool</a>
-      <pre>@release.millInstall</pre>
+      <pre id="copy-mill">@release.millInstall</pre>
+      <button class="btn-copy" data-clipboard-target="copy-mill">Copy</button>
     </div>
   </div>
 </div>

@@ -580,6 +580,18 @@ main {
             background-color: #002b37;
         }
     }
+
+    .tab-content {
+        position: relative;
+    }
+    .tab-pane {
+        height: 85px;
+    }
+    .btn-copy {
+        position: absolute;
+        top: 50px;
+        right: 6px;
+    }
 }
 
 .head-project {
