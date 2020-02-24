@@ -357,5 +357,7 @@ object Client {
       emojify.run(el)
     }
     emojify.run(document.body)
+
+    CopyToClipboard.addCopyListenersOnClass("btn-copy")
   }
 }
