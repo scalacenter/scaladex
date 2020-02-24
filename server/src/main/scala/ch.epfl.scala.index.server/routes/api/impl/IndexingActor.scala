@@ -59,10 +59,12 @@ class IndexingActor(
    * @param data the main publish data
    * @return
    */
-  private def updateIndex(repo: GithubRepo,
-                          pom: ReleaseModel,
-                          data: PublishData,
-                          localRepository: LocalPomRepository): Future[Unit] = {
+  private def updateIndex(
+      repo: GithubRepo,
+      pom: ReleaseModel,
+      data: PublishData,
+      localRepository: LocalPomRepository
+  ): Future[Unit] = {
 
     log.debug("updating " + pom.artifactId)
 

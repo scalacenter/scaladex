@@ -144,7 +144,9 @@ class CentralMissing(paths: DataPaths)(implicit val materializer: Materializer,
             )
         }
         case (Success(x), ar) =>
-          Future.successful(Left(s"Unexpected status code ${x.status} for $ar"))
+          Future.successful(
+            Left(s"Unexpected status code ${x.status} for $ar")
+          )
         case (Failure(e), ar) =>
           Future.failed(new Exception(s"Failed to fetch $ar", e))
       }
@@ -183,7 +185,9 @@ class CentralMissing(paths: DataPaths)(implicit val materializer: Materializer,
           unmarshal(entity).map(pom => Right((PomContent(pom), dr)))
         }
         case (Success(x), dr) =>
-          Future.successful(Left(s"Unexpected status code ${x.status} for $dr"))
+          Future.successful(
+            Left(s"Unexpected status code ${x.status} for $dr")
+          )
         case (Failure(e), dr) =>
           ;
           Future.failed(new Exception(s"Failed to fetch $dr", e))
@@ -214,7 +218,9 @@ class CentralMissing(paths: DataPaths)(implicit val materializer: Materializer,
       }
   }
 
-  def savePomsAndMeta(in: Either[String, (PomContent, DownloadRequest)]): Unit = {
+  def savePomsAndMeta(
+      in: Either[String, (PomContent, DownloadRequest)]
+  ): Unit = {
     in match {
       case Left(failure) =>
         log.error(failure)
