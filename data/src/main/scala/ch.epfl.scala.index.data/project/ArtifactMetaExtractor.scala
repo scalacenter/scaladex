@@ -56,7 +56,9 @@ class ArtifactMetaExtractor(paths: DataPaths) {
           // Or it can be an sbt-plugin published as a maven style. In such a case the Scala target
           // is not suffixed to the artifact name but can be found in the model’s `sbtPluginTarget` member.
           case Some(SbtPluginTarget(rawScalaVersion, rawSbtVersion)) => {
-            SemanticVersion(rawScalaVersion).zip(SemanticVersion(rawSbtVersion)) match {
+            SemanticVersion(rawScalaVersion).zip(
+              SemanticVersion(rawSbtVersion)
+            ) match {
               case List((scalaVersion, sbtVersion)) =>
                 Some(
                   ArtifactMeta(

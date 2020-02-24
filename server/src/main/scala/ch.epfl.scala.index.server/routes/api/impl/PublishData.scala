@@ -80,7 +80,8 @@ private[api] case class PublishData(
     try {
       Files.delete(directory)
     } catch {
-      case NonFatal(error) => log.error("Unable to delete temporary directory", error)
+      case NonFatal(error) =>
+        log.error("Unable to delete temporary directory", error)
     }
   }
 
