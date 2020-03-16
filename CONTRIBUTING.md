@@ -39,9 +39,9 @@ Then, open `localhost:8080` in your browser.
 
 ## Scalafmt
 
-Make shure to run `bin/scalafmt` to format your code.
+Make sure to run `bin/scalafmt` to format your code.
 
-You can intall a pre-commit hook with `bin/hooks.sh`
+You can install a pre-commit hook with `bin/hooks.sh`
 
 ### Elasticsearch Remote
 
