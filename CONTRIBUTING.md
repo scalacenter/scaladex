@@ -1,10 +1,6 @@
-## Requirements
+## General Overview
 
-* a jvm
-* sbt
-* css compiler [`sass`](http://sass-lang.com/install)
-
-## How to run Scaladex locally:
+Scaladex is composed of four repositories: one source repository `scaladex`, two data repositories, `scaladex-contrib` and `scaladex-small-index`, and one configuration repository `scaladex-credentials` for deployment.
 
 ```
 scaladex
@@ -13,6 +9,16 @@ scaladex
 ├── scaladex-credentials (optionnal)
 └── scaladex-small-index
 ```
+
+## Requirements
+
+* Java 1.8 or later
+* the [sbt](https://www.scala-sbt.org/) build tool
+* the deprecated [ruby-sass](https://rubygems.org/gems/sass) for compiling CSS files
+
+:warning: Neither the newer Dart Sass nor LibSass are supported yet ([more info](https://sass-lang.com/ruby-sass))
+
+## How to run Scaladex locally:
 
 ```bash
 mkdir scaladex
@@ -28,7 +34,6 @@ git clone git@github.com:scalacenter/scaladex-credentials.git
 cd scaladex
 sbt
 ```
-
 do only once to populate the index
 
 `data/reStart elastic`
