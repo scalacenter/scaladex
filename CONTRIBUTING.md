@@ -170,9 +170,15 @@ data/reStart github
 
 ## How to deploy
 
+There are two deployment environments, a staging and a production one.
+
+The urls of each environment are:
+ * https://index-dev.scala-lang.org/ (staging)
+ * https://index.scala-lang.org/
+
 ### Requirements
 
-To deploy the application to the production server (index.scala-lang.org) you will need to have ssh access to the following machine:
+To deploy the application to the server (index.scala-lang.org) you will need to have the following ssh access:
 
 * devscaladex@index.scala-lang.org (staging)
 * scaladex@index.scala-lang.org
@@ -186,23 +192,35 @@ These people have access:
 * [@olafurpg](https://github.com/olafurpg)
 * [@adpi2](https://github.com/adpi2)
 
-### Deploy the index and the server
+### Staging Deployment
 
-* In the staging environment:
+* Deploy the index and the server from your workstation
 
 ``` bash
 sbt deployDevIndex
 sbt deployDevServer
 ```
 
-* In the production environment:
+* Restart the server
+
+```bash
+ssh devscaladex@index.scala-lang.org
+./server.sh
+tail -n 100 -f server.log
+```
+
+If all goes well, the [staging scaladex website](https://index-dev.scala-lang.org/) should be up and running.
+
+### Production Deployment
+
+* Similarly you can deploy the production index and server
 
 ``` bash
 sbt deployIndex
 sbt deployServer
 ```
 
-### Restart the server
+* And restart the server
 
 ```bash
 ssh scaladex@index.scala-lang.org
