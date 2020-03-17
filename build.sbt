@@ -1,5 +1,5 @@
 import ScalaJSHelper._
-import org.scalajs.sbtplugin.cross.CrossProject
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 import Deployment.githash
 
@@ -103,7 +103,7 @@ lazy val template = project
   .dependsOn(model)
   .enablePlugins(SbtTwirl)
 
-lazy val shared = crossProject
+lazy val shared = crossProject(JSPlatform, JVMPlatform)
   .settings(commonSettings)
   .settings(playJson)
   .settings(

@@ -1,10 +1,9 @@
 import sbt._
 import Keys._
-import org.scalajs.sbtplugin.ScalaJSPlugin.AutoImport._
-import org.scalajs.sbtplugin.cross.CrossType
+import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 object ScalaJSHelper {
-  def packageScalaJS(client: Project) = Seq(
+  def packageScalaJS(client: Project): Seq[Setting[_]] = Seq(
     watchSources ++= (watchSources in client).value,
     // Pick fastOpt when developing and fullOpt when publishing
     resourceGenerators in Compile += Def.task {
