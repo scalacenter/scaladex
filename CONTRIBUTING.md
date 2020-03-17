@@ -1,13 +1,15 @@
 ## General Overview
 
-Scaladex is composed of four repositories: one source repository `scaladex`, two data repositories, `scaladex-contrib` and `scaladex-small-index`, and one configuration repository `scaladex-credentials` for deployment.
+Scaladex is composed of four repositories: one source repository `scaladex`, two persistence repositories, `scaladex-contrib` and `scaladex-index`, and one configuration repository `scaladex-credentials`.
+
+For development, you should prefer using `scaladex-small-index` that is a small subset of the original `scaladex-index` repository.
 
 ```
 scaladex
 ├── scaladex
 ├── scaladex-contrib
-├── scaladex-credentials (optionnal)
-└── scaladex-small-index
+├── scaladex-credentials
+└── scaladex-index (or scaladex-small-index)
 ```
 
 ## Requirements
@@ -19,6 +21,8 @@ scaladex
 :warning: Neither the newer Dart Sass nor LibSass are supported yet ([more info](https://sass-lang.com/ruby-sass))
 
 ## How to run Scaladex locally:
+
+First clone the scaladex repositories and then run sbt.
 
 ```bash
 mkdir scaladex
@@ -34,11 +38,20 @@ git clone git@github.com:scalacenter/scaladex-credentials.git
 cd scaladex
 sbt
 ```
-do only once to populate the index
 
-`data/reStart elastic`
+Into the sbt shell:
 
-`~server/reStart`
+* Populate the elastic search index (only once):
+
+```
+data/reStart elastic
+```
+
+ * Start the Scaladex server:
+
+```
+~server/reStart
+```
  
 Then, open `localhost:8080` in your browser.
 
@@ -46,16 +59,17 @@ Then, open `localhost:8080` in your browser.
 
 Make sure to run `bin/scalafmt` to format your code.
 
-You can install a pre-commit hook with `bin/hooks.sh`
+You can install a pre-commit hook with `bin/hooks.sh`.
 
-### Elasticsearch Remote
+## Standalone Elasticsearch Server
 
-If you have an elasticsearch service installed use the following sbt command when
-indexing/running the server:
+If you have a standalone elasticsearch server, you can use it when indexing or running the server with the following sbt command:
 
-`set javaOptions in reStart += "-DELASTICSEARCH=remote"`
+```
+set javaOptions in reStart += "-DELASTICSEARCH=remote"
+```
 
-## Overview
+## Architecture
 
 ```
 +-----------------------+                                          +-----------------------+
@@ -86,11 +100,8 @@ indexing/running the server:
 -- asciiflow.com
 ```
 
-* [scaladex-index.git](https://github.com/scalacenter/scaladex-index)
-* [scaladex-contrib.git](https://github.com/scalacenter/scaladex-contrib)
-
 As shown in the above diagram, Scaladex uses two Git repositories 
-(`[scaladex-contrib.git]` and `[scaladex-index.git]`) as persistence mechanisms, 
+([scaladex-contrib.git](https://github.com/scalacenter/scaladex-contrib) and [scaladex-index.git](https://github.com/scalacenter/scaladex-index)) as persistence mechanisms, 
 and ElasticSearch to power the full-text search.
 
 The `contrib.git` repository is read-only for the Scaladex application
@@ -105,9 +116,9 @@ If you want to update the data:
 
 The entry point is at [data/Main.scala](/data/src/main/scala/ch.epfl.scala.index.data/Main.scala)
 
-### List Poms / Sbt
+### List Poms
 
-This step will search on Bintray for artifact containing `_2.10`, `_2.11`, `_2.12`, ...
+This step searches on Bintray for artifact containing `_2.10`, `_2.11`, `_2.12`, ...
 Bintray contains jcenter, it's a mirror of maven central.
 
 You will need a premium Bintray account.
@@ -117,27 +128,34 @@ set javaOptions in reStart ++= Seq(
   "-DBINTRAY_USER=XXXXXXX", 
   "-DBINTRAY_PASSWORD=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 )
+
 data/reStart list
-data/reStart download-sbt-plugins
 ```
 
-### Download
+### Download ivy.xml of SBT plugins from Bintray
 
-This step will download poms from Bintray
+This step also requires a premium Bintray.
 
 ```
-data/reStart download`
-# wait for task to complete
-data/reStart parent`
+data/reStart sbt
+```
+
+### Download Poms
+
+This steps download poms and parent poms from Bintray
+
+```
+data/reStart download
+data/reStart parent
 ```
 
 ### GitHub
 
-This step will download GitHub metadata and content.
+This step downloads GitHub metadata and content.
 
-You need a token for this step. https://github.com/settings/tokens/new
+You need to create a token on your github account: https://github.com/settings/tokens/new
 
-Then create the following file `../scaladex-dev-credentials/application.conf`
+Then fill the following file `../scaladex-dev-credentials/application.conf` with:
 
 ```
 org.scala_lang.index {
@@ -149,7 +167,9 @@ org.scala_lang.index {
 
 And run
 
-`data/reStart github`
+```
+data/reStart github
+```
 
 ## How to deploy
 
@@ -167,18 +187,25 @@ These people have access:
 * [@julienrf](https://github.com/julienrf)
 * [@jvican](https://github.com/jvican)
 * [@olafurpg](https://github.com/olafurpg)
+* [@adpi2](https://github.com/adpi2)
 
-To deploy the index and the server:
+### Deploy the index and the server
 
-* sbt deployIndex
-* sbt deployServer
+* In the staging environment:
 
-Or
+``` bash
+sbt deployDevIndex
+sbt deployDevServer
+```
 
-* sbt deployDevIndex
-* sbt deployDevServer
+* In the production environment:
 
-## How to restart the server
+``` bash
+sbt deployIndex
+sbt deployServer
+```
+
+### Restart the server
 
 ```bash
 ssh scaladex@index.scala-lang.org
