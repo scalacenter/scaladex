@@ -21,7 +21,7 @@ object BintrayMeta extends BintrayProtocol {
    */
   def load(paths: DataPaths): List[BintraySearch] = {
     val source = scala.io.Source.fromFile(path(paths).toFile)
-    val ret = source.mkString.split(nl).toList
+    val ret = source.mkString.split('\n').toList
     source.close()
     ret
       .filter(_ != "")

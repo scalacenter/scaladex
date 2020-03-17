@@ -62,7 +62,7 @@ object Meta {
     val metaRaw = new String(Files.readAllBytes(metaPath))
 
     metaRaw
-      .split(nl)
+      .split('\n')
       .toList
       .filter(_ != "")
       .map(json => Parser.parseUnsafe(json).extract[Meta])
