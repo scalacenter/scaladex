@@ -13,3 +13,6 @@ bin/.scalafmt
 .DS_Store
 data/DATA-PID
 scaladex.log
+.bloop/
+.metals/
+project/metals.sbt
