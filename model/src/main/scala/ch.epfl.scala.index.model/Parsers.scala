@@ -1,8 +1,9 @@
 package ch.epfl.scala.index.model
 
 trait Parsers {
-  import fastparse.all._
+  import fastparse._
 
-  protected val Alpha = (CharIn('a' to 'z') | CharIn('A' to 'Z')).!
-  protected val Digit = CharIn('0' to '9').!
+  protected def Alpha[_: P] =
+    CharPred(c => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')).!
+  protected def Digit[_: P] = CharIn("0123456789").!
 }
