@@ -14,13 +14,10 @@ scaladex
 
 ## Requirements
 
-* Java 1.8 or later
+* Java 1.8
 * the [sbt](https://www.scala-sbt.org/) build tool
-* the deprecated [ruby-sass](https://rubygems.org/gems/sass) for compiling CSS files
 
-:warning: Neither the newer Dart Sass nor LibSass are supported yet ([more info](https://sass-lang.com/ruby-sass))
-
-## How to run Scaladex locally:
+## How to run Scaladex locally
 
 First clone the scaladex repositories and then run sbt.
 
@@ -177,8 +174,8 @@ data/reStart github
 
 To deploy the application to the production server (index.scala-lang.org) you will need to have ssh access to the following machine:
 
-* ssh devscaladex@index.scala-lang.org (staging)
-* ssh scaladex@index.scala-lang.org
+* devscaladex@index.scala-lang.org (staging)
+* scaladex@index.scala-lang.org
 
 These people have access:
 
