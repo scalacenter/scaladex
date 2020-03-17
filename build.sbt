@@ -53,7 +53,7 @@ lazy val ammoniteSettings = Seq(
 
 lazy val commonSettings = Seq(
   resolvers += Resolver.typesafeIvyRepo("releases"),
-  scalaVersion := "2.12.4",
+  scalaVersion := "2.12.10",
   scalacOptions := Seq(
     "-deprecation",
     "-encoding",
