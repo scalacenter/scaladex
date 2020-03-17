@@ -80,7 +80,7 @@ case class Release(
     List(
       Some(install),
       resolver.flatMap(_.sbt.map("resolvers += " + _))
-    ).flatten.mkString(System.lineSeparator)
+    ).flatten.mkString("\n")
   }
 
   /**
@@ -105,7 +105,7 @@ case class Release(
         s"import $$ivy.`${maven.groupId}$artifactOperator${reference.artifact}:${reference.version}`"
       ),
       resolver.map(addResolver)
-    ).flatten.mkString(System.lineSeparator)
+    ).flatten.mkString("\n")
   }
 
   /**
@@ -143,7 +143,7 @@ case class Release(
         s"""ivy"${maven.groupId}$artifactOperator${reference.artifact}:${reference.version}""""
       ),
       resolver flatMap addResolver
-    ).flatten.mkString(System.lineSeparator)
+    ).flatten.mkString("\n")
   }
 
   /**

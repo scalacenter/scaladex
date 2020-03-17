@@ -2,7 +2,6 @@ package ch.epfl.scala.index
 package data
 package bintray
 
-import java.lang.System.{lineSeparator => nl}
 import java.nio.file.Files
 
 import akka.actor.ActorSystem
@@ -113,7 +112,7 @@ class BintrayListPoms(paths: DataPaths)(
     val flow = Flow[BintraySearch]
       .filterNot(search => mavenShas.contains(search.sha1))
       .map(bintray => write[BintraySearch](bintray))
-      .map(s => ByteString(s + nl))
+      .map(s => ByteString(s + "\n"))
       .toMat(FileIO.toPath(BintrayMeta.path(paths)))(Keep.right)
 
     Await.result(Source(merged).runWith(flow), Duration.Inf)

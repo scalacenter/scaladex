@@ -27,7 +27,7 @@ object SubIndex extends BintrayProtocol {
 
     val repos =
       slurp(Paths.get("subindex.txt"))
-        .split(nl)
+        .split('\n')
         .map(splitRepo)
         .toSet
 
@@ -107,7 +107,7 @@ object SubIndex extends BintrayProtocol {
         .load(source)
         .filter(meta => bintrayShas.contains(meta.sha1))
         .map(bintray => write[BintraySearch](bintray))
-        .mkString(nl)
+        .mkString("\n")
 
     writeFile(destination.meta(LocalPomRepository.Bintray), filteredBintrayMeta)
 

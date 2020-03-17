@@ -14,8 +14,6 @@ import akka.stream.ActorMaterializer
 
 import org.slf4j.LoggerFactory
 
-import System.{lineSeparator => nl}
-
 class BintrayDownloadPoms(paths: DataPaths)(
     implicit val system: ActorSystem,
     implicit val materializer: ActorMaterializer
@@ -138,8 +136,8 @@ class BintrayDownloadPoms(paths: DataPaths)(
     } else {
 
       log.warn(
-        "Pom download failed" + nl +
-          search.toString + nl +
+        "Pom download failed\n" +
+          search.toString + "\n" +
           response.body.toString
       )
     }

@@ -83,7 +83,7 @@ object Meta {
     val jsonPerLine =
       sorted
         .map(s => swrite(s))
-        .mkString("", System.lineSeparator, System.lineSeparator)
+        .mkString("", "\n", "\n")
 
     val metaPath = paths.meta(repository)
 
