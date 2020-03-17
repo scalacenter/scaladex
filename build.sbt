@@ -153,7 +153,7 @@ lazy val server = project
     javaOptions in reStart ++= Seq("-Xmx4g")
   )
   .dependsOn(template, data, sharedJVM)
-  .enablePlugins(SbtSass, JavaServerAppPackaging)
+  .enablePlugins(SbtSassify, JavaServerAppPackaging)
 
 lazy val model = project
   .settings(commonSettings)
