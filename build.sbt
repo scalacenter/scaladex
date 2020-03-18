@@ -7,7 +7,6 @@ val playJsonVersion = "2.6.2"
 val akkaVersion = "2.5.3"
 val upickleVersion = "0.4.4"
 val scalatagsVersion = "0.6.7"
-val autowireVersion = "0.2.6"
 val akkaHttpVersion = "10.0.11"
 val elastic4sVersion = "5.4.5"
 lazy val scalaTestVersion = "3.0.1"
@@ -108,8 +107,7 @@ lazy val shared = crossProject(JSPlatform, JVMPlatform)
   .settings(playJson)
   .settings(
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "scalatags" % scalatagsVersion,
-      "com.lihaoyi" %%% "autowire" % autowireVersion
+      "com.lihaoyi" %%% "scalatags" % scalatagsVersion
     )
   )
 lazy val sharedJVM = shared.jvm
