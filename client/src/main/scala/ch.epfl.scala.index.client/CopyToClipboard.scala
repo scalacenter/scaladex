@@ -2,7 +2,7 @@ package ch.epfl.scala.index.client
 
 import org.scalajs.dom
 import org.scalajs.dom.document
-import org.scalajs.dom.raw.{Event, HTMLButtonElement, NodeList}
+import org.scalajs.dom.raw.{Event, HTMLButtonElement, HTMLCollection}
 
 object CopyToClipboard {
   private val errorPrefix = "[CopyToClipboard] -"
@@ -12,7 +12,7 @@ object CopyToClipboard {
    * @param triggerClass the HTML tag class identifying the buttons to listen
    */
   def addCopyListenersOnClass(triggerClass: String): Unit = {
-    val triggers: NodeList = document.getElementsByClassName(triggerClass)
+    val triggers: HTMLCollection = document.getElementsByClassName(triggerClass)
 
     for (i <- 0 until triggers.length) {
       val trigger = triggers.item(i)

@@ -112,8 +112,8 @@ lazy val client = project
     skip in packageJSDependencies := false,
     jsDependencies += "org.webjars.bower" % "raven-js" % "3.11.0" / "dist/raven.js" minified "dist/raven.min.js",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "scalatags" % "0.6.7",
-      "be.doeraene" %%% "scalajs-jquery" % "0.9.1"
+      "com.lihaoyi" %%% "scalatags" % "0.8.6",
+      "be.doeraene" %%% "scalajs-jquery" % "1.0.0"
     )
   )
   .enablePlugins(ScalaJSPlugin)
