@@ -32,9 +32,6 @@ object Assets {
         path("assets" / "client-fastopt.js.map")(
           getFromResource("client-fastopt.js.map")
         ),
-        path("assets" / "client-jsdeps.js")(
-          getFromResource("client-jsdeps.js")
-        ),
         path("assets" / "opensearch.xml")(
           getFromResource("opensearch.xml")
         )

@@ -109,8 +109,6 @@ lazy val sharedJS = shared.js
 lazy val client = project
   .settings(commonSettings)
   .settings(
-    skip in packageJSDependencies := false,
-    jsDependencies += "org.webjars.bower" % "raven-js" % "3.11.0" / "dist/raven.js" minified "dist/raven.min.js",
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "scalatags" % "0.8.6",
       "be.doeraene" %%% "scalajs-jquery" % "1.0.0"
@@ -136,6 +134,7 @@ lazy val server = project
       "org.webjars.bower" % "bootstrap-select" % "1.10.0",
       "org.webjars.bower" % "font-awesome" % "4.6.3",
       "org.webjars.bower" % "jQuery" % "2.2.4",
+      "org.webjars.bower" % "raven-js" % "3.11.0",
       "org.webjars.bower" % "select2" % "4.0.3"
     ),
     packageBin in Universal := (packageBin in Universal)

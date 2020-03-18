@@ -7,13 +7,11 @@ object ScalaJSHelper {
     watchSources ++= (watchSources in client).value,
     // Pick fastOpt when developing and fullOpt when publishing
     resourceGenerators in Compile += Def.task {
-      val jsdeps = (packageJSDependencies in (client, Compile)).value
       val (js, map) = andSourceMap((fastOptJS in (client, Compile)).value.data)
       IO.copy(
           Seq(
             js -> target.value / js.getName,
-            map -> target.value / map.getName,
-            jsdeps -> target.value / jsdeps.getName
+            map -> target.value / map.getName
           )
         )
         .toSeq
