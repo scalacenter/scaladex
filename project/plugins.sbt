@@ -1,4 +1,4 @@
-addSbtPlugin("io.spray" % "sbt-revolver" % "0.8.0")
+addSbtPlugin("io.spray" % "sbt-revolver" % "0.9.1")
 addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.6.1")
 addSbtPlugin("com.typesafe.sbt" % "sbt-twirl" % "1.5.0")
 addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.4.13")
