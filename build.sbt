@@ -5,8 +5,6 @@ import Deployment.githash
 
 val playJsonVersion = "2.6.2"
 val akkaVersion = "2.5.3"
-val upickleVersion = "0.4.4"
-val scalatagsVersion = "0.6.7"
 val akkaHttpVersion = "10.0.11"
 val elastic4sVersion = "5.4.5"
 lazy val scalaTestVersion = "3.0.1"
@@ -105,11 +103,6 @@ lazy val template = project
 lazy val shared = crossProject(JSPlatform, JVMPlatform)
   .settings(commonSettings)
   .settings(playJson)
-  .settings(
-    libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "scalatags" % scalatagsVersion
-    )
-  )
 lazy val sharedJVM = shared.jvm
 lazy val sharedJS = shared.js
 
@@ -118,7 +111,10 @@ lazy val client = project
   .settings(
     skip in packageJSDependencies := false,
     jsDependencies += "org.webjars.bower" % "raven-js" % "3.11.0" / "dist/raven.js" minified "dist/raven.min.js",
-    libraryDependencies += "be.doeraene" %%% "scalajs-jquery" % "0.9.1"
+    libraryDependencies ++= Seq(
+      "com.lihaoyi" %%% "scalatags" % "0.6.7",
+      "be.doeraene" %%% "scalajs-jquery" % "0.9.1"
+    )
   )
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(sharedJS)
@@ -140,8 +136,7 @@ lazy val server = project
       "org.webjars.bower" % "bootstrap-select" % "1.10.0",
       "org.webjars.bower" % "font-awesome" % "4.6.3",
       "org.webjars.bower" % "jQuery" % "2.2.4",
-      "org.webjars.bower" % "select2" % "4.0.3",
-      "com.lihaoyi" %%% "scalatags" % scalatagsVersion
+      "org.webjars.bower" % "select2" % "4.0.3"
     ),
     packageBin in Universal := (packageBin in Universal)
       .dependsOn(WebKeys.assets in Assets)
