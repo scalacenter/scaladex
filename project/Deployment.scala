@@ -7,8 +7,6 @@ import com.typesafe.config.ConfigFactory
 import java.nio.file._
 import java.nio.file.attribute._
 
-import System.{lineSeparator => nl}
-
 object Deployment {
   def apply(data: Project, server: Project): Seq[Def.Setting[_]] = Seq(
     deployServer := deployTask(server, prodUserName, prodPort).value,
@@ -143,7 +141,7 @@ class Deployment(rootFolder: File,
         "credentials",
         "contrib",
         "index"
-      ).map(cloneIfAbsent).mkString(nl)
+      ).map(cloneIfAbsent).mkString("\n")
 
     val sentryDsn = getSentryDsn
 

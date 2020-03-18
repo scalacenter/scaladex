@@ -25,13 +25,12 @@ class BintrayClient(paths: DataPaths) {
     val credentials = paths.credentials
 
     if (Files.exists(credentials) && Files.isDirectory(credentials)) {
-      val nl = System.lineSeparator
       val source = scala.io.Source.fromFile(
         credentials.resolve("search-credentials").toFile
       )
 
       val info = source.mkString
-        .split(nl)
+        .split('\n')
         .map { v =>
           val (l, r) = v.span(_ != '=')
           (l.trim, r.drop(2).trim)

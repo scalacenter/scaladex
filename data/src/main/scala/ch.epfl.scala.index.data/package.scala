@@ -4,8 +4,6 @@ import java.nio.file.{Files, Path}
 
 package object data {
 
-  val nl = System.lineSeparator
-
   def innerJoin[K, A, B, Z](m1: Map[K, A],
                             m2: Map[K, B])(f: (A, B) => Z): Map[K, Z] = {
     m1.flatMap {
@@ -40,6 +38,6 @@ package object data {
   }
 
   def slurp(path: Path): String = {
-    Files.readAllLines(path).toArray.mkString(System.lineSeparator)
+    Files.readAllLines(path).toArray.mkString("\n")
   }
 }
