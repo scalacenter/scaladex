@@ -1,36 +1,38 @@
 package ch.epfl.scala.index.model
 
-import fastparse.all._
-import fastparse.core.Parsed
+import fastparse._
 
 import release.ScalaTarget
 
 object Artifact extends Parsers {
-  private val ArtifactNameParser = {
-    val ScalaPart = "_" ~ SemanticVersion.Parser
+  import fastparse.NoWhitespace._
 
-    val ScalaJs: P[ScalaTarget] =
-      ("_sjs" ~ SemanticVersion.Parser ~ ScalaPart).map {
-        case (scalaJsVersion, scalaVersion) =>
-          ScalaTarget.scalaJs(scalaVersion, scalaJsVersion)
-      }
+  private def ScalaPart[_: P] = "_" ~ SemanticVersion.Parser
 
-    val ScalaNative: P[ScalaTarget] =
-      ("_native" ~ SemanticVersion.Parser ~ ScalaPart).map {
-        case (scalaNativeVersion, scalaVersion) =>
-          ScalaTarget.scalaNative(scalaVersion, scalaNativeVersion)
-      }
+  private def ScalaJs[_: P]: P[ScalaTarget] =
+    ("_sjs" ~ SemanticVersion.Parser ~ ScalaPart).map {
+      case (scalaJsVersion, scalaVersion) =>
+        ScalaTarget.scalaJs(scalaVersion, scalaJsVersion)
+    }
 
-    val Sbt: P[ScalaTarget] = (ScalaPart ~ "_" ~ SemanticVersion.Parser).map {
+  private def ScalaNative[_: P]: P[ScalaTarget] =
+    ("_native" ~ SemanticVersion.Parser ~ ScalaPart).map {
+      case (scalaNativeVersion, scalaVersion) =>
+        ScalaTarget.scalaNative(scalaVersion, scalaNativeVersion)
+    }
+
+  private def Sbt[_: P]: P[ScalaTarget] =
+    (ScalaPart ~ "_" ~ SemanticVersion.Parser).map {
       case (scalaVersion, sbtVersion) =>
         ScalaTarget.sbt(scalaVersion, sbtVersion)
     }
 
-    val Scala: P[ScalaTarget] = ScalaPart.map(ScalaTarget.scala)
+  private def Scala[_: P]: P[ScalaTarget] = ScalaPart.map(ScalaTarget.scala)
 
-    val ScalaTargetParser =
-      ScalaJs | ScalaNative | Sbt | Scala
+  private def ScalaTargetParser[_: P] =
+    ScalaJs | ScalaNative | Sbt | Scala
 
+  private def ArtifactNameParser[_: P] = {
     Start ~
       (Alpha | Digit | "-".! | ".".! | (!(ScalaTargetParser ~ End) ~ "_")).rep.! ~ // must end with scala target
       ScalaTargetParser ~
@@ -38,7 +40,7 @@ object Artifact extends Parsers {
   }
 
   def apply(artifactId: String): Option[(String, ScalaTarget)] = {
-    ArtifactNameParser.parse(artifactId) match {
+    fastparse.parse(artifactId, x => ArtifactNameParser(x)) match {
       case Parsed.Success(v, _) => Some(v)
       case _                    => None
     }

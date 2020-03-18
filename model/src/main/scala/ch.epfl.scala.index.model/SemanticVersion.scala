@@ -104,44 +104,46 @@ case class SemanticVersion(
 }
 
 object SemanticVersion extends Parsers {
-  import fastparse.all._
-  import fastparse.core.Parsed
+  import fastparse._
+  import fastparse.NoWhitespace._
 
   implicit def ordering = new Ordering[SemanticVersion] {
     def compare(v1: SemanticVersion, v2: SemanticVersion): Int =
       v1.compare(v2)
   }
 
-  val Parser = {
-    val Number = Digit.rep(1).!.map(_.toLong)
-    val Major = Number
+  private def Number[_: P] = Digit.rep(1).!.map(_.toLong)
+  private def Major[_: P] = Number
 
-    // http://semver.org/#spec-item-9
-    val PreRelease: P[PreRelease] =
-      "-" ~ (
-        (("M" | "m") ~ &(Digit) ~ Number).map(n => Milestone(n)) |
-          (("R" | "r") ~ ("C" | "c") ~ &(Digit) ~ Number)
-            .map(n => ReleaseCandidate(n)) |
-          (Digit | Alpha | "." | "-").rep.!.map(s => OtherPreRelease(s))
-      )
+  // http://semver.org/#spec-item-9
+  private def PreRelease[_: P]: P[PreRelease] =
+    "-" ~ (
+      (("M" | "m") ~ &(Digit) ~ Number).map(n => Milestone(n)) |
+        (("R" | "r") ~ ("C" | "c") ~ &(Digit) ~ Number)
+          .map(n => ReleaseCandidate(n)) |
+        (Digit | Alpha | "." | "-").rep.!.map(s => OtherPreRelease(s))
+    )
 
-    // http://semver.org/#spec-item-10
-    val MetaData = "+" ~ AnyChar.rep.!
+  // http://semver.org/#spec-item-10
+  private def MetaData[_: P] = "+" ~ AnyChar.rep.!
 
-    val MinorP = ("." ~ Number).?.map(_.getOrElse(0L)) // not really valid SemVer
-    val PatchP = ("." ~ Number).? // not really valid SemVer
-    val Patch2P = ("." ~ Number).? // not really valid SemVer
+  private def MinorP[_: P] =
+    ("." ~ Number).?.map(_.getOrElse(0L)) // not really valid SemVer
+  private def PatchP[_: P] = ("." ~ Number).? // not really valid SemVer
+  private def Patch2P[_: P] = ("." ~ Number).? // not really valid SemVer
 
+  def Parser[_: P] = {
     ("v".? ~ Major ~ MinorP ~ PatchP ~ Patch2P ~ PreRelease.? ~ MetaData.?)
       .map {
         case (major, minor, patch, patch2, preRelease, metadata) =>
           SemanticVersion(major, minor, patch, patch2, preRelease, metadata)
       }
   }
-  private val FullParser = Start ~ Parser ~ End
+
+  private def FullParser[_: P] = Start ~ Parser ~ End
   def parse(version: String): Option[SemanticVersion] = apply(version)
   def apply(version: String): Option[SemanticVersion] = {
-    FullParser.parse(version) match {
+    fastparse.parse(version, x => FullParser(x)) match {
       case Parsed.Success(v, _) => Some(v)
       case _                    => None
     }

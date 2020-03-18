@@ -1,5 +1,5 @@
 import ScalaJSHelper._
-import org.scalajs.sbtplugin.cross.CrossProject
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
 import Deployment.githash
 
@@ -35,7 +35,7 @@ lazy val baseSettings = Seq(
 )
 
 lazy val ammoniteSettings = Seq(
-  libraryDependencies += "com.lihaoyi" % "ammonite" % "1.0.3-10-4311ac9" % Test cross CrossVersion.full,
+  libraryDependencies += "com.lihaoyi" % "ammonite" % "2.0.4" % Test cross CrossVersion.full,
   sourceGenerators in Test += Def.task {
     val file = (sourceManaged in Test).value / "amm.scala"
     IO.write(file, """object amm extends App { ammonite.Main.main(args) }""")
@@ -53,7 +53,7 @@ lazy val ammoniteSettings = Seq(
 
 lazy val commonSettings = Seq(
   resolvers += Resolver.typesafeIvyRepo("releases"),
-  scalaVersion := "2.12.4",
+  scalaVersion := "2.12.10",
   scalacOptions := Seq(
     "-deprecation",
     "-encoding",
@@ -103,7 +103,7 @@ lazy val template = project
   .dependsOn(model)
   .enablePlugins(SbtTwirl)
 
-lazy val shared = crossProject
+lazy val shared = crossProject(JSPlatform, JVMPlatform)
   .settings(commonSettings)
   .settings(playJson)
   .settings(
@@ -158,7 +158,7 @@ lazy val server = project
 lazy val model = project
   .settings(commonSettings)
   .settings(
-    libraryDependencies += "com.lihaoyi" %% "fastparse" % "1.0.0"
+    libraryDependencies += "com.lihaoyi" %% "fastparse" % "2.2.3"
   )
 
 lazy val data = project

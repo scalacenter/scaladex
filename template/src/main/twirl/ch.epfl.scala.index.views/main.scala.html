@@ -146,9 +146,9 @@
 
         // Run client scalajs code (for instance, autocomplete)
         @if(user.isDefined) {
-          ch.epfl.scala.index.client.Client.main("@user.get.token");
+          ScaladexClient.main("@user.get.token");
         } else {
-          ch.epfl.scala.index.client.Client.main();
+          ScaladexClient.main();
         }
 
     </script>

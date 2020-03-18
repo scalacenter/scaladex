@@ -19,7 +19,8 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.concurrent.Future
 import scala.util.Try
-@JSExportTopLevel("ch.epfl.scala.index.client.Client")
+
+@JSExportTopLevel("ScaladexClient")
 object Client {
 
   private val searchId = "search"
