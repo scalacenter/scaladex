@@ -15,7 +15,6 @@ cache:
   - $HOME/.coursier/
 script:
   - bin/scalafmt --test
-  - export SBT_OPTS="-Xmx1G"
   - sbt "data/run elastic"
   - sbt test
   - sbt server/universal:packageBin

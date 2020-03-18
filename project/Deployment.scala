@@ -7,6 +7,8 @@ import com.typesafe.config.ConfigFactory
 import java.nio.file._
 import java.nio.file.attribute._
 
+import scala.sys.process._
+
 object Deployment {
   def apply(data: Project, server: Project): Seq[Def.Setting[_]] = Seq(
     deployServer := deployTask(server, prodUserName, prodPort).value,
@@ -43,14 +45,14 @@ object Deployment {
     }
 
   def githash(): String = {
-    import sys.process._
     if (!sys.env.contains("CI")) {
       val isDirty = Process("git diff-files --quiet").! == 1
       val indexState =
         if (isDirty) "-dirty"
         else ""
 
-      Process("git rev-parse --verify HEAD").lines.mkString("") + indexState
+      Process("git rev-parse --verify HEAD").lineStream
+        .mkString("") + indexState
     } else "CI"
   }
 

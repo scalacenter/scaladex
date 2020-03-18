@@ -43,7 +43,7 @@ lazy val ammoniteSettings = Seq(
   }.taskValue,
   (fullClasspath in Test) ++= {
     (updateClassifiers in Test).value.configurations
-      .find(_.configuration == Test.name)
+      .find(_.configuration.name == Test.name)
       .get
       .modules
       .flatMap(_.artifacts)
