@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future, Await}
 import scala.concurrent.duration.Duration
+import org.elasticsearch.common.lucene.search.function.CombineFunction
 
 /**
  * @param github  Github client
@@ -89,13 +90,8 @@ class DataRepository(
               current = clamp(page),
               totalPages = Math.ceil(r.totalHits / params.total.toDouble).toInt,
               total = r.totalHits
-            ), {
-              // println(r.hits.toList.take(100) map { h =>
-              //   val source = h.sourceAsMap
-              //   s"""${h.score}: ${source("organization")}/${source("repository")}"""
-              // })
-              r.to[Project].toList.map(hideId)
-            }
+            ),
+            r.to[Project].toList.map(hideId)
         )
       )
   }
@@ -235,12 +231,10 @@ class DataRepository(
       } else Nil
     }
 
-    val stringQ =
-      if (escaped.contains(":")) {
-        stringQuery(escaped)
-      } else {
-        stringQuery(escaped + "~").fuzzyPrefixLength(3).defaultOperator("AND")
-      }
+    val luceneQueries = escaped.split(" ").flatMap { term =>
+      if (term.contains(":")) Some(stringQuery(term))
+      else None
+    }
 
     val queryIsATopic = cachedTopics.contains(params.queryString)
 
@@ -252,40 +246,35 @@ class DataRepository(
             topicsQuery ++
             targetsQuery(params) ++
             targetFiltering(params) ++
-            contributingSearchQuery
+            contributingSearchQuery ++
+            luceneQueries
         )
         .should(
           List(
-            termQuery("repository", escaped).boost(40),
-            fuzzyQuery("repository", escaped).boost(4),
-            termQuery("github.description", escaped).boost(20),
-            termQuery("organization", escaped),
-            fuzzyQuery("organization", escaped),
-            termQuery("primaryTopic", escaped).boost(
-              if (queryIsATopic) 5
-              else 2
-            ),
-            termQuery("github.topics", escaped).boost(
-              if (queryIsATopic) 5
-              else 2
-            ),
+            matchQuery("repository", escaped).boost(16),
+            matchQuery("primaryTopic", escaped).boost(8),
+            matchQuery("github.description", escaped).boost(4),
+            matchQuery("organization", escaped).boost(4),
+            matchQuery("github.topics", escaped).boost(4),
+            matchQuery("artifacts", escaped).boost(2),
+            matchQuery("github.readme", escaped).boost(1),
             nestedQuery("github.beginnerIssues",
-                        termQuery("github.beginnerIssues.title", escaped))
+                        matchQuery("github.beginnerIssues.title", escaped))
               .inner(innerHits("issues").size(7))
-              .boost(
-                if (params.contributingSearch) 20
+              .boost {
+                if (params.contributingSearch) 8
                 else 1
-              ),
-            stringQ
+              }
           )
         )
         .not(List(termQuery("deprecated", true)))
     ).scorers(
         fieldFactorScore("github.stars")
           .missing(1.0)
-          .factor(0.01)
+          .factor(1.0)
+          .modifier(Modifier.LN1P)
       )
-      .boostMode("sum")
+      .boostMode(CombineFunction.MULTIPLY)
 
     if (params.contributingSearch && !params.queryString.isEmpty)
       query.minScore(15)
