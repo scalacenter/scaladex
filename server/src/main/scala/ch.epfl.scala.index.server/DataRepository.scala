@@ -251,16 +251,22 @@ class DataRepository(
         )
         .should(
           List(
-            matchQuery("repository", escaped).boost(16),
-            matchQuery("primaryTopic", escaped).boost(8),
-            matchQuery("github.description", escaped).boost(4),
-            matchQuery("organization", escaped).boost(4),
-            matchQuery("github.topics", escaped).boost(4),
-            matchQuery("artifacts", escaped).boost(2),
-            matchQuery("github.readme", escaped).boost(1),
-            nestedQuery("github.beginnerIssues",
-                        matchQuery("github.beginnerIssues.title", escaped))
-              .inner(innerHits("issues").size(7))
+            multiMatchQuery(escaped)
+              .field("repository", 6)
+              .field("primaryTopic", 5)
+              .field("organization", 5)
+              .field("repository.analyzed", 4)
+              .field("primaryTopic.analyzed", 4)
+              .field("github.description", 4)
+              .field("github.topics", 4)
+              .field("github.topics.analyzed", 2)
+              .field("artifacts", 2)
+              .field("organization.analyzed", 1),
+            matchQuery("github.readme", escaped).boost(0.5),
+            nestedQuery(
+              "github.beginnerIssues",
+              matchQuery("github.beginnerIssues.title", escaped)
+            ).inner(innerHits("issues").size(7))
               .boost {
                 if (params.contributingSearch) 8
                 else 1
@@ -270,9 +276,8 @@ class DataRepository(
         .not(List(termQuery("deprecated", true)))
     ).scorers(
         fieldFactorScore("github.stars")
-          .missing(1.0)
-          .factor(1.0)
-          .modifier(Modifier.LN1P)
+          .missing(0)
+          .modifier(Modifier.LN2P)
       )
       .boostMode(CombineFunction.MULTIPLY)
 

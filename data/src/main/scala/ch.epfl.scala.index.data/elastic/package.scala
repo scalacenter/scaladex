@@ -101,7 +101,7 @@ package object elastic extends ProjectProtocol {
   /** @see https://github.com/sksamuel/elastic4s#client for configurations */
   lazy val esClient = {
 
-    log.info(s"elasticsearch $elasticsearch")
+    log.info(s"elasticsearch $elasticsearch $indexName")
     if (elasticsearch == "remote") {
       TcpClient.transport(ElasticsearchClientUri("localhost", 9300))
     } else if (elasticsearch == "local" || elasticsearch == "local-prod") {
