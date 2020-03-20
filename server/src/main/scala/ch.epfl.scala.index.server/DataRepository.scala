@@ -236,21 +236,11 @@ class DataRepository(
       else None
     }
 
-    val queryIsATopic = cachedTopics.contains(params.queryString)
-
-    val query = functionScoreQuery(
-      boolQuery()
-        .must(
-          mustQueriesRepos ++
-            cliQuery ++
-            topicsQuery ++
-            targetsQuery(params) ++
-            targetFiltering(params) ++
-            contributingSearchQuery ++
-            luceneQueries
-        )
-        .should(
-          List(
+    val searchQuery =
+      if (escaped == "*") None
+      else
+        Some {
+          boolQuery().should(
             multiMatchQuery(escaped)
               .field("repository", 6)
               .field("primaryTopic", 5)
@@ -272,6 +262,19 @@ class DataRepository(
                 else 1
               }
           )
+        }
+
+    val query = functionScoreQuery(
+      boolQuery()
+        .must(
+          mustQueriesRepos ++
+            cliQuery ++
+            topicsQuery ++
+            targetsQuery(params) ++
+            targetFiltering(params) ++
+            contributingSearchQuery ++
+            luceneQueries ++
+            searchQuery
         )
         .not(List(termQuery("deprecated", true)))
     ).scorers(
