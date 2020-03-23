@@ -32,17 +32,38 @@ class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
     }
 
     val projectFields = List(
-      keywordField("organization") normalizer "lowercase",
-      keywordField("repository") normalizer "lowercase",
+      keywordField("organization")
+        .normalizer("lowercase")
+        .fields(
+          textField("analyzed").analyzer("english")
+        ),
+      keywordField("repository")
+        .normalizer("lowercase")
+        .fields(
+          textField("analyzed").analyzer("english")
+        ),
+      keywordField("primaryTopic")
+        .normalizer("lowercase")
+        .fields(
+          textField("analyzed").analyzer("english")
+        ),
       keywordField("defaultArtifact").index(false),
-      keywordField("artifacts") normalizer "lowercase",
+      keywordField("artifacts").normalizer("lowercase"),
       keywordField("customScalaDoc").index(false),
       keywordField("artifactDeprecations").index(false),
       keywordField("cliArtifacts").index(false),
       keywordField("targets"),
       keywordField("dependencies"),
-      objectField("github").fields(keywordField("topics"),
-                                   nestedField("beginnerIssues")),
+      objectField("github").fields(
+        keywordField("topics")
+          .normalizer("lowercase")
+          .fields(
+            textField("analyzed").analyzer("english")
+          ),
+        nestedField("beginnerIssues"),
+        textField("description").analyzer("english"),
+        textField("readme").analyzer("english")
+      ),
       dateField("created"),
       dateField("updated")
     )

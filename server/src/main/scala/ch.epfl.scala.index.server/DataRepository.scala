@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future, Await}
 import scala.concurrent.duration.Duration
+import org.elasticsearch.common.lucene.search.function.CombineFunction
 
 /**
  * @param github  Github client
@@ -230,14 +231,38 @@ class DataRepository(
       } else Nil
     }
 
-    val stringQ =
-      if (escaped.contains(":")) {
-        stringQuery(escaped)
-      } else {
-        stringQuery(escaped + "~").fuzzyPrefixLength(3).defaultOperator("AND")
-      }
+    val luceneQueries = escaped.split(" ").flatMap { term =>
+      if (term.contains(":")) Some(stringQuery(term))
+      else None
+    }
 
-    val queryIsATopic = cachedTopics.contains(params.queryString)
+    val searchQuery =
+      if (escaped == "*") None
+      else
+        Some {
+          boolQuery().should(
+            multiMatchQuery(escaped)
+              .field("repository", 6)
+              .field("primaryTopic", 5)
+              .field("organization", 5)
+              .field("repository.analyzed", 4)
+              .field("primaryTopic.analyzed", 4)
+              .field("github.description", 4)
+              .field("github.topics", 4)
+              .field("github.topics.analyzed", 2)
+              .field("artifacts", 2)
+              .field("organization.analyzed", 1),
+            matchQuery("github.readme", escaped).boost(0.5),
+            nestedQuery(
+              "github.beginnerIssues",
+              matchQuery("github.beginnerIssues.title", escaped)
+            ).inner(innerHits("issues").size(7))
+              .boost {
+                if (params.contributingSearch) 8
+                else 1
+              }
+          )
+        }
 
     val query = functionScoreQuery(
       boolQuery()
@@ -247,49 +272,17 @@ class DataRepository(
             topicsQuery ++
             targetsQuery(params) ++
             targetFiltering(params) ++
-            contributingSearchQuery
-        )
-        .should(
-          List(
-            termQuery("repository", escaped).boost(1000),
-            fuzzyQuery("repository", escaped),
-            termQuery("artifacts", escaped).boost(20),
-            fuzzyQuery("artifacts", escaped),
-            termQuery("organization", escaped).boost(20),
-            fuzzyQuery("organization", escaped),
-            termQuery("primaryTopic", escaped).boost(10),
-            termQuery("github.topics", escaped).boost(2),
-            fuzzyQuery("github.topics", escaped),
-            termQuery("primaryTopic", escaped).boost(
-              if (queryIsATopic) 1000
-              else 2
-            ),
-            termQuery("github.topics", escaped).boost(
-              if (queryIsATopic) 100
-              else 2
-            ),
-            nestedQuery("github.beginnerIssues",
-                        termQuery("github.beginnerIssues.title", escaped))
-              .inner(innerHits("issues").size(7))
-              .boost(
-                if (params.contributingSearch) 20
-                else 1
-              ),
-            stringQ
-          )
+            contributingSearchQuery ++
+            luceneQueries ++
+            searchQuery
         )
         .not(List(termQuery("deprecated", true)))
     ).scorers(
-        // Add a small boost for project that seem to be “popular” (highly depended on or highly starred)
-        fieldFactorScore("dependentCount")
-          .modifier(Modifier.LOG1P)
-          .factor(0.3),
         fieldFactorScore("github.stars")
           .missing(0)
-          .modifier(Modifier.LOG1P)
-          .factor(0.1)
+          .modifier(Modifier.LN2P)
       )
-      .boostMode("sum")
+      .boostMode(CombineFunction.MULTIPLY)
 
     if (params.contributingSearch && !params.queryString.isEmpty)
       query.minScore(15)
