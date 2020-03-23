@@ -1,9 +1,8 @@
 package ch.epfl.scala.index
 package client
 
-import autowire._
 import api._
-import rpc.AutowireClient
+import rpc.RPC
 import org.scalajs.dom
 import org.scalajs.dom.ext.{Ajax, KeyCode}
 import org.scalajs.dom.{Event, KeyboardEvent, document}
@@ -75,7 +74,7 @@ object Client {
     }
 
   private def getProjects(query: String): Future[List[Autocompletion]] =
-    AutowireClient[Api].autocomplete(query).call()
+    RPC.autocomplete(query)
 
   private def showResults(projects: List[Autocompletion]): List[Option[Node]] = {
     completionSelection = CompletionSelection(None, projects)
