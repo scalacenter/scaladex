@@ -2,43 +2,38 @@ package ch.epfl.scala.index
 package server
 package routes
 
-import data.project.ProjectForm
-import data.github.{GithubReader, Json4s}
-import data.DataPaths
-import model._
-import model.misc._
-import release._
-
-import TwirlSupport._
-
+import akka.http.scaladsl.model.StatusCodes._
+import akka.http.scaladsl.model.Uri._
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server._
+import ch.epfl.scala.index.data.DataPaths
+import ch.epfl.scala.index.data.github.{GithubReader, Json4s}
+import ch.epfl.scala.index.data.project.ProjectForm
+import ch.epfl.scala.index.model._
+import ch.epfl.scala.index.model.misc._
+import ch.epfl.scala.index.model.release._
+import ch.epfl.scala.index.server.TwirlSupport._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
-
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.Uri._
-import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.server._
-import akka.http.scaladsl.server.Directives._
-
-import org.slf4j.LoggerFactory
-
 import org.json4s.native.Serialization.{read, write}
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class ProjectPages(dataRepository: DataRepository,
-                   session: GithubUserSession,
-                   paths: DataPaths) {
-  import session._
-
-  private val logger = LoggerFactory.getLogger(this.getClass)
+class ProjectPages(
+    dataRepository: DataRepository,
+    session: GithubUserSession,
+    paths: DataPaths
+)(implicit executionContext: ExecutionContext) {
+  import session.implicits._
 
   private def canEdit(owner: String,
                       repo: String,
-                      userState: Option[UserState]) =
-    userState
-      .map(s => s.isAdmin || s.repos.contains(GithubRepo(owner, repo)))
-      .getOrElse(false)
+                      userState: Option[UserState]) = {
+    userState.exists(
+      s => s.isAdmin || s.repos.contains(GithubRepo(owner, repo))
+    )
+  }
 
   private def getEditPage(owner: String,
                           repo: String,
@@ -267,7 +262,7 @@ class ProjectPages(dataRepository: DataRepository,
                 }
                 .values
                 .map {
-                  case Vector((a, b), (c, d)) =>
+                  case Vector((a, b), (_, d)) =>
                     if (a.contains("label")) (b, d)
                     else (d, b)
                 }
@@ -292,20 +287,20 @@ class ProjectPages(dataRepository: DataRepository,
               beginnerIssuesLabel,
               beginnerIssues.map(read[List[GithubIssue]](_)).getOrElse(List()),
               selectedBeginnerIssues.map(read[GithubIssue](_)).toList,
-              chatroom.map(Url(_)),
-              contributingGuide.map(Url(_)),
-              codeOfConduct.map(Url(_))
+              chatroom.map(Url),
+              contributingGuide.map(Url),
+              codeOfConduct.map(Url)
             )
       }
     )
 
-  val routes =
+  val routes: Route =
     concat(
       post(
         path("edit" / Segment / Segment)(
           (organization, repository) =>
             optionalSession(refreshable, usingCookies)(
-              userId =>
+              _ =>
                 pathEnd(
                   editForm(
                     form =>
@@ -314,7 +309,7 @@ class ProjectPages(dataRepository: DataRepository,
                           Project.Reference(organization, repository),
                           form
                         )
-                      ) { ret =>
+                      ) { _ =>
                         Thread.sleep(1000) // oh yeah
                         redirect(Uri(s"/$organization/$repository"), SeeOther)
                     }
@@ -331,7 +326,9 @@ class ProjectPages(dataRepository: DataRepository,
                 userId =>
                   pathEnd(
                     complete(
-                      artifactsPage(organization, repository, getUser(userId))
+                      artifactsPage(organization,
+                                    repository,
+                                    session.getUser(userId))
                     )
                 )
             )
@@ -342,7 +339,9 @@ class ProjectPages(dataRepository: DataRepository,
                 userId =>
                   pathEnd(
                     complete(
-                      getEditPage(organization, repository, getUser(userId))
+                      getEditPage(organization,
+                                  repository,
+                                  session.getUser(userId))
                     )
                 )
             )
@@ -366,7 +365,7 @@ class ProjectPages(dataRepository: DataRepository,
                             selected = selected
                           )
                         ) {
-                          case Some(release) => {
+                          case Some(release) =>
                             val targetParam =
                               release.reference.target match {
                                 case Some(target) =>
@@ -378,12 +377,13 @@ class ProjectPages(dataRepository: DataRepository,
                               s"/$organization/$repository/${release.reference.artifact}/${release.reference.version}/$targetParam",
                               StatusCodes.TemporaryRedirect
                             )
-                          }
                           case None =>
                             complete(
                               ((NotFound,
                                 views.html
-                                  .notfound(getUser(userId).map(_.user))))
+                                  .notfound(
+                                    session.getUser(userId).map(_.user)
+                                  )))
                             )
                       }
                   )
@@ -404,7 +404,7 @@ class ProjectPages(dataRepository: DataRepository,
                           artifact = Some(artifact),
                           version = None,
                           selected = None,
-                          userState = getUser(userId)
+                          userState = session.getUser(userId)
                         )
                     )
                 )
@@ -424,7 +424,7 @@ class ProjectPages(dataRepository: DataRepository,
                           artifact = Some(artifact),
                           version = Some(version),
                           selected = None,
-                          userState = getUser(userId)
+                          userState = session.getUser(userId)
                         )
                     )
                 )

@@ -4,15 +4,13 @@ package routes
 package api
 
 import play.api.libs.json._
-
 import ch.epfl.scala.index.api.Autocompletion
-
 import model.misc.SearchParams
-import model._, release._
-
+import model._
+import release._
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
-
 import akka.http.scaladsl._
+import akka.http.scaladsl.server.Route
 import server.Directives._
 import model.StatusCodes._
 
@@ -86,7 +84,7 @@ class SearchApi(
     }
   }
 
-  val routes =
+  val routes: Route =
     pathPrefix("api") {
       cors() {
         path("search") {
@@ -133,20 +131,24 @@ class SearchApi(
                 }
 
                 scalaTarget match {
-                  case Some(target) =>
+                  case Some(_) =>
                     complete(
-                      (OK,
-                       dataRepository
-                         .find(
-                           SearchParams(
-                             queryString = q,
-                             targetFiltering = scalaTarget,
-                             cli = cli,
-                             page = page.getOrElse(0),
-                             total = total.getOrElse(10)
-                           )
-                         )
-                         .map { case (_, ps) => ps.map(p => convert(p)) })
+                      (
+                        OK,
+                        dataRepository
+                          .find(
+                            SearchParams(
+                              queryString = q,
+                              targetFiltering = scalaTarget,
+                              cli = cli,
+                              page = page.getOrElse(0),
+                              total = total.getOrElse(10)
+                            )
+                          )
+                          .map { page =>
+                            page.items.map(p => convert(p))
+                          }
+                      )
                     )
 
                   case None =>
@@ -221,21 +223,22 @@ class SearchApi(
                 complete {
                   dataRepository
                     .find(
-                      SearchParams(queryString = query,
-                                   page = 1,
-                                   sorting = None,
-                                   total = 5)
+                      SearchParams(
+                        queryString = query,
+                        page = 1,
+                        sorting = None,
+                        total = 5
+                      )
                     )
-                    .map {
-                      case (pagination, projects) =>
-                        projects.map(
-                          p =>
-                            Autocompletion(
-                              p.organization,
-                              p.repository,
-                              p.github.flatMap(_.description).getOrElse("")
-                          )
+                    .map { page =>
+                      page.items.map(
+                        project =>
+                          Autocompletion(
+                            project.organization,
+                            project.repository,
+                            project.github.flatMap(_.description).getOrElse("")
                         )
+                      )
                     }
                 }
               }

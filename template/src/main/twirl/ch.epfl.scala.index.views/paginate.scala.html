@@ -5,7 +5,7 @@
 
 <nav>
   <ul class="pagination">
-    @defining(paginationRender(pagination.current, pagination.totalPages)) { case (prev, sels, next) =>
+    @defining(paginationRender(pagination.current, pagination.pageCount)) { case (prev, sels, next) =>
       @for(i <- prev){
         <li>
           <a href="@uriFun(i)" aria-label="Previous">

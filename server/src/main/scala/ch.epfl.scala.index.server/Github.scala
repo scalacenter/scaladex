@@ -10,7 +10,6 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.model.misc._
-import com.typesafe.config.ConfigFactory
 import org.json4s._
 import org.json4s.native.JsonMethods._
 
@@ -34,24 +33,21 @@ object Response {
 case class UserState(repos: Set[GithubRepo],
                      orgs: Set[Response.Organization],
                      user: UserInfo) {
-  def isAdmin = orgs.contains(Response.Organization("scalacenter"))
-  def isSonatype =
+  def isAdmin: Boolean = orgs.contains(Response.Organization("scalacenter"))
+  def isSonatype: Boolean =
     orgs.contains(Response.Organization("sonatype")) || user.login == "central-ossrh"
-  def hasPublishingAuthority = isAdmin || isSonatype
+  def hasPublishingAuthority: Boolean = isAdmin || isSonatype
 }
 
-class Github(implicit system: ActorSystem, materializer: ActorMaterializer)
+class Github()(implicit sys: ActorSystem, mat: ActorMaterializer)
     extends Json4sSupport {
-  import system.dispatcher
-
-  val config =
-    ConfigFactory.load().getConfig("org.scala_lang.index.server.oauth2")
-  val clientId = config.getString("client-id")
-  val clientSecret = config.getString("client-secret")
-  val redirectUri = config.getString("uri") + "/callback/done"
+  import sys.dispatcher
 
   def getUserStateWithToken(token: String): Future[UserState] = info(token)
-  def getUserStateWithOauth2(code: String): Future[UserState] = {
+  def getUserStateWithOauth2(clientId: String,
+                             clientSecret: String,
+                             code: String,
+                             redirectUri: String): Future[UserState] = {
     def access = {
       Http()
         .singleRequest(
@@ -197,4 +193,8 @@ class Github(implicit system: ActorSystem, materializer: ActorMaterializer)
         UserState(repos, orgs, user)
     }
   }
+}
+
+object Github {
+  def apply()(implicit sys: ActorSystem, mat: ActorMaterializer) = new Github()
 }

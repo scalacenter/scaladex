@@ -25,11 +25,10 @@ class RelevanceTest
     with BeforeAndAfterAll {
 
   import system.dispatcher
-  implicit val materializer = ActorMaterializer()
+  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  val paths = DataPaths(Nil)
-  val github = new Github
-  val data = new DataRepository(github, paths, new GithubDownload(paths))
+  private val paths = DataPaths(Nil)
+  private val data = new DataRepository(paths, new GithubDownload(paths))
 
   blockUntilYellow()
 
@@ -173,12 +172,12 @@ class RelevanceTest
   private def first(query: String)(org: String,
                                    repo: String): Future[Assertion] = {
     val params = SearchParams(queryString = query)
-    data.find(params).map {
-      case (_, projects) =>
-        assert(
-          projects.headOption.map(_.reference) ==
-            Some(Project.Reference(org, repo))
-        )
+    data.find(params).map { page =>
+      assert {
+        page.items.headOption
+          .map(_.reference)
+          .contains(Project.Reference(org, repo))
+      }
     }
   }
 
@@ -212,7 +211,7 @@ class RelevanceTest
   private def compare(
       params: SearchParams,
       expected: List[(String, String)],
-      assertFun: (List[Project.Reference], List[Project.Reference]) => Assertion
+      assertFun: (Seq[Project.Reference], Seq[Project.Reference]) => Assertion
   ): Future[Assertion] = {
 
     val expectedRefs = expected.map {
@@ -220,10 +219,9 @@ class RelevanceTest
         Project.Reference(org, repo)
     }
 
-    data.find(params).map {
-      case (_, projects) =>
-        val obtainedRefs = projects.map(_.reference)
-        assertFun(expectedRefs, obtainedRefs)
+    data.find(params).map { page =>
+      val obtainedRefs = page.items.map(_.reference)
+      assertFun(expectedRefs, obtainedRefs)
     }
   }
 

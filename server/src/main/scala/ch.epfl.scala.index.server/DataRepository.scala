@@ -3,39 +3,33 @@ package server
 
 import model._
 import model.misc._
-
 import data.DataPaths
 import data.project.ProjectForm
 import data.github.GithubDownload
-
 import release._
 import misc.Pagination
 import data.elastic._
-
 import com.sksamuel.elastic4s.HitReader
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.searches.queries.QueryDefinition
 import com.sksamuel.elastic4s.searches.sort.SortDefinition
-
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.Modifier
 import org.elasticsearch.search.aggregations.bucket.terms.StringTerms
 import org.elasticsearch.search.sort.SortOrder
-
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.{ExecutionContext, Future, Await}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import org.elasticsearch.common.lucene.search.function.CombineFunction
 
 /**
- * @param github  Github client
  * @param paths   Paths to the files storing the index
  */
 class DataRepository(
-    github: Github,
     paths: DataPaths,
     githubDownload: GithubDownload
 )(private implicit val ec: ExecutionContext) {
+  import DataRepository._
 
   private def hideId(p: Project) = p.copy(id = None)
 
@@ -56,45 +50,19 @@ class DataRepository(
     case _                => scoreSort order SortOrder.DESC
   }
 
-  val contributingQuery =
-    boolQuery().must(
-      List(
-        nestedQuery("github.beginnerIssues",
-                    existsQuery("github.beginnerIssues")),
-        existsQuery("github.contributingGuide"),
-        existsQuery("github.chatroom")
-      )
+  private val contributingQuery = boolQuery().must(
+    Seq(
+      nestedQuery(
+        "github.beginnerIssues",
+        existsQuery("github.beginnerIssues")
+      ),
+      existsQuery("github.contributingGuide"),
+      existsQuery("github.chatroom")
     )
+  )
+
   private def clamp(page: Int): Int =
     if (page <= 0) 1 else page
-
-  private def query(
-      q: QueryDefinition,
-      params: SearchParams
-  ): Future[(Pagination, List[Project])] = {
-
-    import params._
-
-    esClient
-      .execute {
-        search(indexName / projectsCollection)
-          .query(q)
-          .sortBy(sortQuery(sorting))
-          .from(params.total * (clamp(page) - 1))
-          .size(params.total)
-      }
-      .map(
-        r =>
-          (
-            Pagination(
-              current = clamp(page),
-              totalPages = Math.ceil(r.totalHits / params.total.toDouble).toInt,
-              total = r.totalHits
-            ),
-            r.to[Project].toList.map(hideId)
-        )
-      )
-  }
 
   private def targetFiltering(params: SearchParams): List[QueryDefinition] = {
     params.targetFiltering
@@ -186,20 +154,7 @@ class DataRepository(
   }
 
   private def getQuery(params: SearchParams): QueryDefinition = {
-    def replaceField(queryString: String, input: String, replacement: String) = {
-      val regex = s"(\\s|^)$input:".r
-      regex.replaceAllIn(queryString, s"$$1$replacement:")
-    }
-
-    val translated1 =
-      replaceField(params.queryString, "depends-on", "dependencies")
-
-    val translated2 =
-      replaceField(translated1, "topics", "github.topics")
-
-    val escaped =
-      if (translated2.isEmpty) "*"
-      else translated2.replaceAllLiterally("/", "\\/")
+    val escapedQuery = params.queryString.replaceAllLiterally("/", "\\/")
 
     val cliQuery =
       if (params.cli) List(termQuery("hasCli", true))
@@ -231,17 +186,17 @@ class DataRepository(
       } else Nil
     }
 
-    val luceneQueries = escaped.split(" ").flatMap { term =>
-      if (term.contains(":")) Some(stringQuery(term))
+    val luceneQueries = escapedQuery.split(" ").flatMap { subQuery =>
+      if (subQuery.contains(":")) Some(luceneQueryDef(subQuery))
       else None
     }
 
     val searchQuery =
-      if (escaped == "*") None
+      if (escapedQuery.isEmpty || escapedQuery == "*") None
       else
         Some {
-          boolQuery().should(
-            multiMatchQuery(escaped)
+          boolQuery.should(
+            multiMatchQuery(escapedQuery)
               .field("repository", 6)
               .field("primaryTopic", 5)
               .field("organization", 5)
@@ -252,10 +207,10 @@ class DataRepository(
               .field("github.topics.analyzed", 2)
               .field("artifacts", 2)
               .field("organization.analyzed", 1),
-            matchQuery("github.readme", escaped).boost(0.5),
+            matchQuery("github.readme", escapedQuery).boost(0.5),
             nestedQuery(
               "github.beginnerIssues",
-              matchQuery("github.beginnerIssues.title", escaped)
+              matchQuery("github.beginnerIssues.title", escapedQuery)
             ).inner(innerHits("issues").size(7))
               .boost {
                 if (params.contributingSearch) 8
@@ -264,7 +219,7 @@ class DataRepository(
           )
         }
 
-    val query = functionScoreQuery(
+    val queryDef = functionScoreQuery(
       boolQuery()
         .must(
           mustQueriesRepos ++
@@ -285,8 +240,8 @@ class DataRepository(
       .boostMode(CombineFunction.MULTIPLY)
 
     if (params.contributingSearch && !params.queryString.isEmpty)
-      query.minScore(15)
-    else query
+      queryDef.minScore(15)
+    else queryDef
   }
 
   def total(queryString: String): Future[Long] = {
@@ -299,8 +254,29 @@ class DataRepository(
       .map(_.totalHits)
   }
 
-  def find(params: SearchParams): Future[(Pagination, List[Project])] = {
-    query(getQuery(params), params)
+  def find(params: SearchParams): Future[Page[Project]] = {
+    val queryDef = getQuery(params)
+    val sortDef = sortQuery(params.sorting)
+
+    esClient
+      .execute(
+        search(indexName / projectsCollection)
+          .query(queryDef)
+          .sortBy(sortDef)
+          .from(params.total * (clamp(params.page) - 1))
+          .size(params.total)
+      )
+      .map { result =>
+        Page(
+          Pagination(
+            current = clamp(params.page),
+            pageCount =
+              Math.ceil(result.totalHits / params.total.toDouble).toInt,
+            itemCount = result.totalHits
+          ),
+          result.to[Project].map(hideId)
+        )
+      }
   }
 
   def queryIsTopic(queryString: String): Future[Boolean] = {
@@ -542,7 +518,7 @@ class DataRepository(
       .map(_.totalHits)
   }
 
-  def contributingProjects() = {
+  def contributingProjects(): Future[List[Project]] = {
     esClient
       .execute {
         search(indexName / projectsCollection)
@@ -663,5 +639,31 @@ class DataRepository(
       Duration.Inf
     )
   }
+}
 
+object DataRepository {
+  private val fieldMapping = Map(
+    "depends-on" -> "dependencies",
+    "topics" -> "github.topics"
+  )
+
+  private def replaceFields(queryString: String) = {
+    fieldMapping.foldLeft(queryString) {
+      case (query, (input, replacement)) =>
+        val regex = s"(\\s|^)$input:".r
+        regex.replaceAllIn(query, s"$$1$replacement:")
+    }
+  }
+
+  /**
+   * Treats the query inputted by a user as a lucene query
+   *
+   * @param queryString the query inputted by user
+   * @return the elastic query definition
+   */
+  private def luceneQueryDef(queryString: String): QueryDefinition = {
+    stringQuery(
+      replaceFields(queryString)
+    )
+  }
 }

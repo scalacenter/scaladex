@@ -6,18 +6,25 @@ import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import com.softwaremill.session.CsrfDirectives._
 import com.softwaremill.session.CsrfOptions._
-
 import akka.http.scaladsl._
 import model._
 import Uri.Query
 import StatusCodes.TemporaryRedirect
+import akka.actor.ActorSystem
+import akka.http.scaladsl.server.Route
+import akka.stream.ActorMaterializer
+import ch.epfl.scala.index.server.config.{OAuth2Config, ServerConfig}
 import headers.Referer
 import server.Directives._
 
-class OAuth2(github: Github, session: GithubUserSession) {
-  import session._
+import scala.concurrent.ExecutionContext
 
-  val routes =
+class Oauth2(config: OAuth2Config, github: Github, session: GithubUserSession)(
+    implicit ec: ExecutionContext
+) {
+  import session.implicits._
+
+  val routes: Route =
     get(
       concat(
         path("login")(
@@ -26,7 +33,7 @@ class OAuth2(github: Github, session: GithubUserSession) {
               redirect(
                 Uri("https://github.com/login/oauth/authorize").withQuery(
                   Query(
-                    "client_id" -> github.clientId,
+                    "client_id" -> config.clientId,
                     "scope" -> "read:org",
                     "state" -> referer.map(_.value).getOrElse("/")
                   )
@@ -57,28 +64,46 @@ class OAuth2(github: Github, session: GithubUserSession) {
             ),
             pathEnd(
               parameters(('code, 'state.?)) { (code, state) =>
-                onSuccess(github.getUserStateWithOauth2(code))(
-                  userState =>
-                    setSession(refreshable,
-                               usingCookies,
-                               session.addUser(userState))(
-                      setNewCsrfToken(checkHeader)(
-                        ctx =>
-                          ctx.complete(
-                            HttpResponse(
-                              status = TemporaryRedirect,
-                              headers = headers
-                                .Location(Uri(state.getOrElse("/"))) :: Nil,
-                              entity = HttpEntity.Empty
-                            )
-                        )
-                      )
-                  )
+                val userStateQuery = github.getUserStateWithOauth2(
+                  config.clientId,
+                  config.clientSecret,
+                  code,
+                  config.redirectUri
                 )
+
+                onSuccess(userStateQuery) {
+                  userState =>
+                    setSession(
+                      refreshable,
+                      usingCookies,
+                      session.addUser(userState)
+                    )(
+                      setNewCsrfToken(checkHeader) { ctx =>
+                        ctx.complete(
+                          HttpResponse(
+                            status = TemporaryRedirect,
+                            headers = headers
+                              .Location(Uri(state.getOrElse("/"))) :: Nil,
+                            entity = HttpEntity.Empty
+                          )
+                        )
+                      }
+                    )
+                }
               }
             )
           )
         )
       )
     )
+}
+
+object Oauth2 {
+  def apply(
+      config: ServerConfig,
+      session: GithubUserSession
+  )(implicit sys: ActorSystem, mat: ActorMaterializer): Oauth2 = {
+    import sys.dispatcher
+    new Oauth2(config.oAuth2, Github(), session)
+  }
 }

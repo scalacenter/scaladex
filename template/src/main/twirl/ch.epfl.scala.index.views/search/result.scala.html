@@ -30,9 +30,9 @@
   <div class="col-md-2">
     <div class="result-count">
       @if(pagination.current == 1) {
-        @pagination.total results
+        @pagination.itemCount results
       } else {
-        Page @pagination.current of @pagination.total results
+        Page @pagination.current of @pagination.itemCount results
       }
     </div>
   </div>

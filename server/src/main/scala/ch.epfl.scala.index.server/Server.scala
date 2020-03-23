@@ -1,69 +1,53 @@
 package ch.epfl.scala.index
 package server
 
-import routes._
-import routes.api._
-import data.DataPaths
-import data.util.PidLock
-import data.elastic._
-import data.github.GithubDownload
-
-import TwirlSupport._
-
-import akka.http.scaladsl._
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server._
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.model.StatusCodes._
-
-import com.softwaremill.session._
-import SessionDirectives._
-import SessionOptions._
-
-import com.typesafe.config.ConfigFactory
-
 import akka.actor.ActorSystem
+import akka.http.scaladsl._
+import akka.http.scaladsl.model.StatusCodes._
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server._
 import akka.stream.ActorMaterializer
-
-import scala.concurrent.duration._
-import scala.concurrent.Await
-
+import ch.epfl.scala.index.data.DataPaths
+import ch.epfl.scala.index.data.elastic._
+import ch.epfl.scala.index.data.github.GithubDownload
+import ch.epfl.scala.index.data.util.PidLock
+import ch.epfl.scala.index.server.TwirlSupport._
+import ch.epfl.scala.index.server.config.ServerConfig
+import ch.epfl.scala.index.server.routes._
+import ch.epfl.scala.index.server.routes.api._
+import com.softwaremill.session.SessionDirectives._
+import com.softwaremill.session.SessionOptions._
+import org.elasticsearch.action.search.SearchPhaseExecutionException
 import org.slf4j.LoggerFactory
 
-import org.elasticsearch.action.search.SearchPhaseExecutionException
-import org.apache.lucene.queryparser.classic.ParseException
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 object Server {
   private val log = LoggerFactory.getLogger(getClass)
-  val config = ConfigFactory.load().getConfig("org.scala_lang.index.server")
-  val tempDirPath = config.getString("tempDirPath")
+  val config: ServerConfig = ServerConfig.load()
 
   def main(args: Array[String]): Unit = {
     val port =
       if (args.isEmpty) 8080
       else args.head.toInt
 
-    val production = config.getBoolean("production")
-
-    if (production) {
+    if (config.production) {
       PidLock.create("SERVER")
     }
 
-    implicit val system = ActorSystem("scaladex")
+    implicit val system: ActorSystem = ActorSystem("scaladex")
     import system.dispatcher
-    implicit val materializer = ActorMaterializer()
+    implicit val materializer: ActorMaterializer = ActorMaterializer()
 
     val pathFromArgs =
       if (args.isEmpty) Nil
       else args.toList.tail
 
     val paths = DataPaths(pathFromArgs)
-
-    val github = new Github
-    val data = new DataRepository(github, paths, new GithubDownload(paths))
-    val session = new GithubUserSession(config)
-
-    import session._
+    val data = new DataRepository(paths, new GithubDownload(paths))
+    val session = GithubUserSession(config)
 
     val searchPages = new SearchPages(data, session)
 
@@ -79,11 +63,11 @@ object Server {
       )
 
     val programmaticRoutes = concat(
-      new PublishApi(paths, data, github).routes,
+      PublishApi(paths, data).routes,
       new SearchApi(data).routes,
       Assets.routes,
       new Badges(data).routes,
-      new OAuth2(github, session).routes
+      Oauth2(config, session).routes
     )
 
     def hasParent(parentClass: Class[_], ex: Throwable)(): Boolean = {
@@ -99,10 +83,11 @@ object Server {
       found
     }
 
+    import session.implicits._
     val exceptionHandler = ExceptionHandler {
       case ex: Exception
-          if hasParent(classOf[SearchPhaseExecutionException], ex) => {
-        ex.printStackTrace
+          if hasParent(classOf[SearchPhaseExecutionException], ex) =>
+        ex.printStackTrace()
 
         optionalSession(refreshable, usingCookies) { userId =>
           searchPages.searchParams(userId) { params =>
@@ -110,33 +95,29 @@ object Server {
               (
                 UnprocessableEntity,
                 views.html.invalidQuery(
-                  getUser(userId).map(_.user),
+                  session.getUser(userId).map(_.user),
                   params
                 )
               )
             )
           }
         }
-      }
 
-      case ex: Exception => {
-        import java.io.{StringWriter, PrintWriter}
+      case ex: Exception =>
+        import java.io.{PrintWriter, StringWriter}
 
         val sw = new StringWriter()
         val pw = new PrintWriter(sw)
         ex.printStackTrace(pw)
 
-        val out = sw.toString()
+        val out = sw.toString
 
         log.error(out)
 
         complete(
-          (
-            InternalServerError,
-            out
-          )
+          InternalServerError,
+          out
         )
-      }
     }
 
     val routes =

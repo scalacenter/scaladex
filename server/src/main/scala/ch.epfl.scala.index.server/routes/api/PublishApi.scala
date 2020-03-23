@@ -3,35 +3,29 @@ package server
 package routes
 package api
 
-import data.DataPaths
-import data.github
-import model.release._
-
-import org.joda.time.DateTime
-
-import akka.http.scaladsl._
+import akka.actor.{ActorSystem, Props}
+import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.directives._
 import akka.http.scaladsl.unmarshalling.Unmarshaller
-import akka.http.scaladsl.model.StatusCodes._
-
-import akka.actor.{ActorSystem, Props}
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
-
+import ch.epfl.scala.index.data.DataPaths
+import ch.epfl.scala.index.model.release._
+import ch.epfl.scala.index.server.config.OAuth2Config
+import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.Future
 import scala.collection.mutable.{Map => MMap}
+import scala.concurrent.Future
 
-class PublishApi(paths: DataPaths,
-                 dataRepository: DataRepository,
-                 github: Github)(
-    implicit val system: ActorSystem,
-    implicit val materializer: ActorMaterializer
-) {
+class PublishApi(
+    paths: DataPaths,
+    dataRepository: DataRepository,
+    github: Github
+)(implicit system: ActorSystem, materializer: ActorMaterializer) {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -99,6 +93,7 @@ class PublishApi(paths: DataPaths,
   }
 
   import akka.pattern.ask
+
   import scala.concurrent.duration._
   implicit val timeout = Timeout(40.seconds)
   private val actor =
@@ -185,4 +180,13 @@ class PublishApi(paths: DataPaths,
         )
       )
     )
+}
+
+object PublishApi {
+  def apply(
+      paths: DataPaths,
+      dataRepository: DataRepository
+  )(implicit sys: ActorSystem, mat: ActorMaterializer): PublishApi = {
+    new PublishApi(paths, dataRepository, Github())
+  }
 }
