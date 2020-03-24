@@ -172,7 +172,7 @@ class RelevanceTest
   private def first(query: String)(org: String,
                                    repo: String): Future[Assertion] = {
     val params = SearchParams(queryString = query)
-    data.find(params).map { page =>
+    data.findProjects(params).map { page =>
       assert {
         page.items.headOption
           .map(_.reference)
@@ -219,7 +219,7 @@ class RelevanceTest
         Project.Reference(org, repo)
     }
 
-    data.find(params).map { page =>
+    data.findProjects(params).map { page =>
       val obtainedRefs = page.items.map(_.reference)
       assertFun(expectedRefs, obtainedRefs)
     }

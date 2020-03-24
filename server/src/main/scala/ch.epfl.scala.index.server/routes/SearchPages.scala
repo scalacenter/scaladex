@@ -22,14 +22,14 @@ class SearchPages(dataRepository: DataRepository,
 
   private def search(params: SearchParams, userId: Option[UUID], uri: String) = {
     complete {
-      val resultsF = find(params)
-      val topicsF = topics(Some(params))
-      val targetTypesF = targetTypes(Some(params))
-      val scalaVersionsF = scalaVersions(Some(params))
-      val scalaJsVersionsF = scalaJsVersions(Some(params))
-      val scalaNativeVersionsF = scalaNativeVersions(Some(params))
-      val sbtVersionsF = sbtVersions(Some(params))
-      val queryIsTopicF = queryIsTopic(params.queryString)
+      val resultsF = findProjects(params)
+      val topicsF = getTopics(params)
+      val targetTypesF = getTargetTypes(params)
+      val scalaVersionsF = scalaVersions(params)
+      val scalaJsVersionsF = scalaJsVersions(params)
+      val scalaNativeVersionsF = scalaNativeVersions(params)
+      val sbtVersionsF = sbtVersions(params)
+      val queryIsTopicF = isTopic(params.queryString)
 
       for {
         Page(pagination, projects) <- resultsF

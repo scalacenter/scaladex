@@ -123,7 +123,7 @@ class PublishApi(
                  * NotFound -> allowed to write
                  * OK -> only allowed if isSnapshot := true
                  */
-                dataRepository.maven(mavenPathExtractor(path)) map {
+                dataRepository.getMavenArtifact(mavenPathExtractor(path)) map {
                   case Some(release) => (OK, "release already exists")
                   case None          => (NotFound, "ok to publish")
                 }

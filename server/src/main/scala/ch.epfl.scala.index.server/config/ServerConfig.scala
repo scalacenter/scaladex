@@ -3,7 +3,10 @@ package ch.epfl.scala.index.server.config
 import com.softwaremill.session.SessionConfig
 import com.typesafe.config.{Config, ConfigFactory}
 
-case class ServerConfig(tempDirPath: String, production: Boolean, oAuth2: OAuth2Config, session: SessionConfig)
+case class ServerConfig(tempDirPath: String,
+                        production: Boolean,
+                        oAuth2: OAuth2Config,
+                        session: SessionConfig)
 
 object ServerConfig {
   def load(): ServerConfig = {

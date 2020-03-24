@@ -41,7 +41,7 @@ class ProjectPages(
     val user = userState.map(_.user)
     if (canEdit(owner, repo, userState)) {
       for {
-        project <- dataRepository.project(Project.Reference(owner, repo))
+        project <- dataRepository.getProject(Project.Reference(owner, repo))
       } yield {
         project
           .map { p =>
@@ -73,7 +73,7 @@ class ProjectPages(
     )
 
     dataRepository
-      .projectPage(Project.Reference(owner, repo), selection)
+      .getProjectPage(Project.Reference(owner, repo), selection)
       .map(_.map { case (_, options) => options.release })
   }
 
@@ -102,7 +102,7 @@ class ProjectPages(
     }
 
     dataRepository
-      .projectAndReleases(Project.Reference(owner, repo))
+      .getProjectAndReleases(Project.Reference(owner, repo))
       .map {
         case Some((project, releases)) => {
           val targets =
@@ -163,7 +163,7 @@ class ProjectPages(
     )
 
     dataRepository
-      .projectPage(Project.Reference(owner, repo), selection)
+      .getProjectPage(Project.Reference(owner, repo), selection)
       .map(_.map {
         case (project, options) =>
           import options._

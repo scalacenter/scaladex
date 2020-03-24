@@ -100,62 +100,54 @@ class SearchApi(
                'sbtVersion.?,
                'cli.as[Boolean] ? false)
             ) {
-
-              (q,
-               targetType,
-               scalaVersion,
-               page,
-               total,
-               scalaJsVersion,
-               scalaNativeVersion,
-               sbtVersion,
-               cli) =>
-                val scalaTarget =
-                  parseScalaTarget(Some(targetType),
-                                   Some(scalaVersion),
-                                   scalaJsVersion,
-                                   scalaNativeVersion,
-                                   sbtVersion)
+              (
+                  q,
+                  targetType,
+                  scalaVersion,
+                  page,
+                  total,
+                  scalaJsVersion,
+                  scalaNativeVersion,
+                  sbtVersion,
+                  cli
+              ) =>
+                val scalaTarget = parseScalaTarget(
+                  Some(targetType),
+                  Some(scalaVersion),
+                  scalaJsVersion,
+                  scalaNativeVersion,
+                  sbtVersion
+                )
 
                 def convert(project: Project): Api.Project = {
                   import project._
-
-                  val artifacts0 =
-                    if (cli) cliArtifacts.toList
-                    else artifacts
-
-                  Api.Project(organization,
-                              repository,
-                              project.github.flatMap(_.logo.map(_.target)),
-                              artifacts0)
+                  val artifacts0 = if (cli) cliArtifacts.toList else artifacts
+                  Api.Project(
+                    organization,
+                    repository,
+                    project.github.flatMap(_.logo.map(_.target)),
+                    artifacts0
+                  )
                 }
 
                 scalaTarget match {
                   case Some(_) =>
-                    complete(
-                      (
-                        OK,
-                        dataRepository
-                          .find(
-                            SearchParams(
-                              queryString = q,
-                              targetFiltering = scalaTarget,
-                              cli = cli,
-                              page = page.getOrElse(0),
-                              total = total.getOrElse(10)
-                            )
-                          )
-                          .map { page =>
-                            page.items.map(p => convert(p))
-                          }
-                      )
+                    val searchParams = SearchParams(
+                      queryString = q,
+                      targetFiltering = scalaTarget,
+                      cli = cli,
+                      page = page.getOrElse(0),
+                      total = total.getOrElse(10)
                     )
+                    val result = dataRepository
+                      .findProjects(searchParams)
+                      .map(page => page.items.map(p => convert(p)))
+                    complete(OK, result)
 
                   case None =>
-                    complete(
-                      (BadRequest,
-                       s"something is wrong: $scalaTarget $scalaVersion $scalaJsVersion $scalaNativeVersion $sbtVersion")
-                    )
+                    val errorMessage =
+                      s"something is wrong: $scalaTarget $scalaVersion $scalaJsVersion $scalaNativeVersion $sbtVersion"
+                    complete(BadRequest, errorMessage)
                 }
             }
           }
@@ -209,7 +201,7 @@ class SearchApi(
 
                   complete(
                     dataRepository
-                      .projectPage(reference, selection)
+                      .getProjectPage(reference, selection)
                       .map(
                         _.map { case (_, options) => convert(options) }
                       )
@@ -222,7 +214,7 @@ class SearchApi(
               parameter('q) { query =>
                 complete {
                   dataRepository
-                    .find(
+                    .findProjects(
                       SearchParams(
                         queryString = query,
                         page = 1,

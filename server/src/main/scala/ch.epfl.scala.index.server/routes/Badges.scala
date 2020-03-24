@@ -63,7 +63,7 @@ class Badges(dataRepository: DataRepository) {
     parameter('target.?) { target =>
       shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
         onSuccess(
-          dataRepository.projectPage(
+          dataRepository.getProjectPage(
             Project.Reference(organization, repository),
             ReleaseSelection.parse(
               target = target,
@@ -112,7 +112,7 @@ class Badges(dataRepository: DataRepository) {
             query =>
               shieldsSubject(
                 (color, style, logo, logoWidth, subject) =>
-                  onSuccess(dataRepository.total(query))(
+                  onSuccess(dataRepository.getTotalProjects(query))(
                     count =>
                       shieldsSvg(subject,
                                  count.toString,

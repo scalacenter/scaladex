@@ -1,13 +1,13 @@
-package ch.epfl.scala.index
-package server
-package routes
+package ch.epfl.scala.index.server.routes
 
-import model.misc.UserInfo
-import TwirlSupport._
+import ch.epfl.scala.index.model.misc.UserInfo
+import ch.epfl.scala.index.server.TwirlSupport._
+import ch.epfl.scala.index.views.html.frontpage
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import ch.epfl.scala.index.server.{DataRepository, GithubUserSession}
 
 import scala.concurrent.ExecutionContext
 
@@ -17,15 +17,15 @@ class FrontPage(dataRepository: DataRepository,
 
   private def frontPage(userInfo: Option[UserInfo]) = {
     import dataRepository._
-    val topicsF = topics()
-    val targetTypesF = targetTypes()
-    val scalaVersionsF = scalaVersions()
-    val scalaJsVersionsF = scalaJsVersions()
-    val scalaNativeVersionsF = scalaNativeVersions()
-    val sbtVersionsF = sbtVersions()
-    val mostDependedUponF = mostDependedUpon()
-    val latestProjectsF = latestProjects()
-    val latestReleasesF = latestReleases()
+    val topicsF = getAllTopics()
+    val targetTypesF = getAllTargetTypes()
+    val scalaVersionsF = allScalaVersions()
+    val scalaJsVersionsF = allScalaJsVersions()
+    val scalaNativeVersionsF = allScalaNativeVersions()
+    val sbtVersionsF = allSbtVersions()
+    val mostDependedUponF = getMostDependentUpon()
+    val latestProjectsF = getLatestProjects()
+    val latestReleasesF = getLatestReleases()
     val totalProjectsF = totalProjects()
     val totalReleasesF = totalReleases()
     val contributingProjectsF = contributingProjects()
@@ -62,7 +62,7 @@ class FrontPage(dataRepository: DataRepository,
         "Typelevel" -> "typelevel"
       )
 
-      views.html.frontpage(
+      frontpage(
         topics,
         targetTypes,
         scalaVersions,

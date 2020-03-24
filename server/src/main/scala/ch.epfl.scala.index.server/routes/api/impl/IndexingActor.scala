@@ -31,7 +31,7 @@ class IndexingActor(
   import system.dispatcher
 
   def receive = {
-    case updateIndexData: UpdateIndex => {
+    case updateIndexData: UpdateIndex =>
       // TODO be non-blocking
       sender ! Await.result(updateIndex(
                               updateIndexData.repo,
@@ -40,7 +40,6 @@ class IndexingActor(
                               updateIndexData.localRepo
                             ),
                             1.minute)
-    }
   }
 
   /**
@@ -79,7 +78,7 @@ class IndexingActor(
     val projectReference = Project.Reference(organization, repository)
 
     def updateProjectReleases(project: Option[Project],
-                              releases: List[Release]): Future[Unit] = {
+                              releases: Seq[Release]): Future[Unit] = {
 
       val converter = new ProjectConvert(paths, githubDownload)
 
@@ -96,8 +95,7 @@ class IndexingActor(
 
       val projectUpdate =
         project match {
-          case Some(project) => {
-
+          case Some(project) =>
             esClient
               .execute(
                 update(project.id.get)
@@ -105,7 +103,6 @@ class IndexingActor(
                   .doc(updatedProject)
               )
               .map(_ => log.info("updating project " + pom.artifactId))
-          }
 
           case None =>
             esClient
@@ -136,8 +133,8 @@ class IndexingActor(
     }
 
     for {
-      project <- dataRepository.project(projectReference)
-      releases <- dataRepository.releases(projectReference)
+      project <- dataRepository.getProject(projectReference)
+      releases <- dataRepository.getProjectReleases(projectReference)
       _ <- updateProjectReleases(project, releases)
     } yield ()
   }
