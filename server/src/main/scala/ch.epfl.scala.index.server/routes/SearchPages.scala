@@ -25,10 +25,10 @@ class SearchPages(dataRepository: DataRepository,
       val resultsF = findProjects(params)
       val topicsF = getTopics(params)
       val targetTypesF = getTargetTypes(params)
-      val scalaVersionsF = scalaVersions(params)
-      val scalaJsVersionsF = scalaJsVersions(params)
-      val scalaNativeVersionsF = scalaNativeVersions(params)
-      val sbtVersionsF = sbtVersions(params)
+      val scalaVersionsF = getScalaVersions(params)
+      val scalaJsVersionsF = getScalaJsVersions(params)
+      val scalaNativeVersionsF = getScalaNativeVersions(params)
+      val sbtVersionsF = getSbtVersions(params)
       val queryIsTopicF = isTopic(params.queryString)
 
       for {

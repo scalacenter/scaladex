@@ -19,16 +19,16 @@ class FrontPage(dataRepository: DataRepository,
     import dataRepository._
     val topicsF = getAllTopics()
     val targetTypesF = getAllTargetTypes()
-    val scalaVersionsF = allScalaVersions()
-    val scalaJsVersionsF = allScalaJsVersions()
-    val scalaNativeVersionsF = allScalaNativeVersions()
-    val sbtVersionsF = allSbtVersions()
+    val scalaVersionsF = getAllScalaVersions()
+    val scalaJsVersionsF = getAllScalaJsVersions()
+    val scalaNativeVersionsF = getAllScalaNativeVersions()
+    val sbtVersionsF = getAllSbtVersions()
     val mostDependedUponF = getMostDependentUpon()
     val latestProjectsF = getLatestProjects()
     val latestReleasesF = getLatestReleases()
-    val totalProjectsF = totalProjects()
-    val totalReleasesF = totalReleases()
-    val contributingProjectsF = contributingProjects()
+    val totalProjectsF = getTotalProjects()
+    val totalReleasesF = getTotalReleases()
+    val contributingProjectsF = getContributingProjects()
 
     for {
       topics <- topicsF

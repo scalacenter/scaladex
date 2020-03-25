@@ -214,7 +214,7 @@ class SearchApi(
               parameter('q) { query =>
                 complete {
                   dataRepository
-                    .findProjects(
+                    .autocompleteProjects(
                       SearchParams(
                         queryString = query,
                         page = 1,
@@ -222,8 +222,8 @@ class SearchApi(
                         total = 5
                       )
                     )
-                    .map { page =>
-                      page.items.map(
+                    .map { projects =>
+                      projects.map(
                         project =>
                           Autocompletion(
                             project.organization,
