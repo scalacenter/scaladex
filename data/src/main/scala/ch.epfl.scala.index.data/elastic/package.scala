@@ -127,11 +127,7 @@ package object elastic extends ProjectProtocol {
     }
   }
 
-  private val production = config.getBoolean("production")
-
-  val indexName =
-    if (production) "scaladex"
-    else "scaladex-dev"
+  val indexName: String = config.getString("index")
 
   val projectsCollection = "projects"
   val releasesCollection = "releases"
