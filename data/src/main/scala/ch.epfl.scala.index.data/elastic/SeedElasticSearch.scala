@@ -104,12 +104,13 @@ class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
     )
     val codeStrip = PatternReplaceCharFilter(
       "code_strip",
-      "<code>.*?<\\/code>",
+      "<code>[\\w\\W]*?<\\/code>",
       ""
     )
-    val englishStop = StopTokenFilter("english_stop",
-                                      language =
-                                        Some(NamedStopTokenFilter.English))
+    val englishStop = StopTokenFilter(
+      "english_stop",
+      language = Some(NamedStopTokenFilter.English)
+    )
     val englishStemmer = StemmerTokenFilter("english_stemmer", "english")
     val englishPossessiveStemmer = StemmerTokenFilter(
       "english_possessive_stemmer",
@@ -192,7 +193,5 @@ class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
         log.error("Indexing projects failed")
       }
     }
-
-    ()
   }
 }
