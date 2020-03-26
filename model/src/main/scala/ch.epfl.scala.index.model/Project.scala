@@ -63,15 +63,16 @@ case class Project(
     dependentCount: Int,
     primaryTopic: Option[String] = None
 ) {
+  def hideId: Project = copy(id = None)
 
-  def reference = Project.Reference(organization, repository)
+  def reference: Project.Reference = Project.Reference(organization, repository)
 
   /**
    * create github representation for the repository
    *
    * @return
    */
-  def githubRepo = reference.githubRepo
+  def githubRepo: GithubRepo = reference.githubRepo
 }
 
 object Project {

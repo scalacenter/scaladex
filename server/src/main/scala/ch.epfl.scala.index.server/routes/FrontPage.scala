@@ -1,33 +1,34 @@
-package ch.epfl.scala.index
-package server
-package routes
+package ch.epfl.scala.index.server.routes
 
-import model.misc.UserInfo
-
-import TwirlSupport._
-
+import ch.epfl.scala.index.model.misc.UserInfo
+import ch.epfl.scala.index.server.TwirlSupport._
+import ch.epfl.scala.index.views.html.frontpage
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
-
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
+import ch.epfl.scala.index.server.{DataRepository, GithubUserSession}
 
-class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
-  import session._
+import scala.concurrent.ExecutionContext
+
+class FrontPage(dataRepository: DataRepository,
+                session: GithubUserSession)(implicit ec: ExecutionContext) {
+  import session.implicits._
 
   private def frontPage(userInfo: Option[UserInfo]) = {
     import dataRepository._
-    val topicsF = topics()
-    val targetTypesF = targetTypes()
-    val scalaVersionsF = scalaVersions()
-    val scalaJsVersionsF = scalaJsVersions()
-    val scalaNativeVersionsF = scalaNativeVersions()
-    val sbtVersionsF = sbtVersions()
-    val mostDependedUponF = mostDependedUpon()
-    val latestProjectsF = latestProjects()
-    val latestReleasesF = latestReleases()
-    val totalProjectsF = totalProjects()
-    val totalReleasesF = totalReleases()
-    val contributingProjectsF = contributingProjects()
+    val topicsF = getAllTopics()
+    val targetTypesF = getAllTargetTypes()
+    val scalaVersionsF = getAllScalaVersions()
+    val scalaJsVersionsF = getAllScalaJsVersions()
+    val scalaNativeVersionsF = getAllScalaNativeVersions()
+    val sbtVersionsF = getAllSbtVersions()
+    val mostDependedUponF = getMostDependentUpon()
+    val latestProjectsF = getLatestProjects()
+    val latestReleasesF = getLatestReleases()
+    val totalProjectsF = getTotalProjects()
+    val totalReleasesF = getTotalReleases()
+    val contributingProjectsF = getContributingProjects()
 
     for {
       topics <- topicsF
@@ -61,7 +62,7 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
         "Typelevel" -> "typelevel"
       )
 
-      views.html.frontpage(
+      frontpage(
         topics,
         targetTypes,
         scalaVersions,
@@ -80,10 +81,10 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession) {
     }
   }
 
-  val routes =
+  val routes: Route =
     pathSingleSlash {
       optionalSession(refreshable, usingCookies) { userId =>
-        complete(frontPage(getUser(userId).map(_.user)))
+        complete(frontPage(session.getUser(userId).map(_.user)))
       }
     }
 }

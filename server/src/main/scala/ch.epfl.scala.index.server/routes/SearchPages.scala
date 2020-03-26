@@ -2,39 +2,37 @@ package ch.epfl.scala.index
 package server
 package routes
 
-import views.search.html._
-
-import model.misc.SearchParams
-
-import com.softwaremill.session._, SessionDirectives._, SessionOptions._
-
-import TwirlSupport._
-
-import akka.http.scaladsl._
-import model._
-import server._
-import server.Directives._
-import Uri._
-
 import java.util.UUID
 
-class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
-  import session._
+import akka.http.scaladsl.model.Uri._
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server._
+import ch.epfl.scala.index.model.misc.{Page, SearchParams}
+import ch.epfl.scala.index.server.TwirlSupport._
+import ch.epfl.scala.index.views.search.html.searchresult
+import com.softwaremill.session.SessionDirectives._
+import com.softwaremill.session.SessionOptions._
+
+import scala.concurrent.ExecutionContext
+
+class SearchPages(dataRepository: DataRepository,
+                  session: GithubUserSession)(implicit ec: ExecutionContext) {
   import dataRepository._
+  import session.implicits._
 
   private def search(params: SearchParams, userId: Option[UUID], uri: String) = {
     complete {
-      val resultsF = find(params)
-      val topicsF = topics(Some(params))
-      val targetTypesF = targetTypes(Some(params))
-      val scalaVersionsF = scalaVersions(Some(params))
-      val scalaJsVersionsF = scalaJsVersions(Some(params))
-      val scalaNativeVersionsF = scalaNativeVersions(Some(params))
-      val sbtVersionsF = sbtVersions(Some(params))
-      val queryIsTopicF = queryIsTopic(params.queryString)
+      val resultsF = findProjects(params)
+      val topicsF = getTopics(params)
+      val targetTypesF = getTargetTypes(params)
+      val scalaVersionsF = getScalaVersions(params)
+      val scalaJsVersionsF = getScalaJsVersions(params)
+      val scalaNativeVersionsF = getScalaNativeVersions(params)
+      val sbtVersionsF = getSbtVersions(params)
+      val queryIsTopicF = isTopic(params.queryString)
 
       for {
-        (pagination, projects) <- resultsF
+        Page(pagination, projects) <- resultsF
         topics <- topicsF
         targetTypes <- targetTypesF
         scalaVersions <- scalaVersionsF
@@ -47,8 +45,8 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
           params,
           uri,
           pagination,
-          projects,
-          getUser(userId).map(_.user),
+          projects.toList,
+          session.getUser(userId).map(_.user),
           params.userRepos.nonEmpty,
           topics,
           targetTypes,
@@ -87,8 +85,9 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
             sbtVersions,
             you,
             contributingSearch) =>
-        val userRepos =
-          you.flatMap(_ => getUser(userId).map(_.repos)).getOrElse(Set())
+        val userRepos = you
+          .flatMap(_ => session.getUser(userId).map(_.repos))
+          .getOrElse(Set())
         SearchParams(
           q,
           page,
@@ -106,7 +105,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession) {
 
   private val searchPath = "search"
 
-  val routes =
+  val routes: Route =
     get(
       concat(
         path(searchPath)(

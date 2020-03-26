@@ -4,15 +4,13 @@ package routes
 package api
 
 import play.api.libs.json._
-
 import ch.epfl.scala.index.api.Autocompletion
-
 import model.misc.SearchParams
-import model._, release._
-
+import model._
+import release._
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
-
 import akka.http.scaladsl._
+import akka.http.scaladsl.server.Route
 import server.Directives._
 import model.StatusCodes._
 
@@ -86,7 +84,7 @@ class SearchApi(
     }
   }
 
-  val routes =
+  val routes: Route =
     pathPrefix("api") {
       cors() {
         path("search") {
@@ -102,58 +100,54 @@ class SearchApi(
                'sbtVersion.?,
                'cli.as[Boolean] ? false)
             ) {
-
-              (q,
-               targetType,
-               scalaVersion,
-               page,
-               total,
-               scalaJsVersion,
-               scalaNativeVersion,
-               sbtVersion,
-               cli) =>
-                val scalaTarget =
-                  parseScalaTarget(Some(targetType),
-                                   Some(scalaVersion),
-                                   scalaJsVersion,
-                                   scalaNativeVersion,
-                                   sbtVersion)
+              (
+                  q,
+                  targetType,
+                  scalaVersion,
+                  page,
+                  total,
+                  scalaJsVersion,
+                  scalaNativeVersion,
+                  sbtVersion,
+                  cli
+              ) =>
+                val scalaTarget = parseScalaTarget(
+                  Some(targetType),
+                  Some(scalaVersion),
+                  scalaJsVersion,
+                  scalaNativeVersion,
+                  sbtVersion
+                )
 
                 def convert(project: Project): Api.Project = {
                   import project._
-
-                  val artifacts0 =
-                    if (cli) cliArtifacts.toList
-                    else artifacts
-
-                  Api.Project(organization,
-                              repository,
-                              project.github.flatMap(_.logo.map(_.target)),
-                              artifacts0)
+                  val artifacts0 = if (cli) cliArtifacts.toList else artifacts
+                  Api.Project(
+                    organization,
+                    repository,
+                    project.github.flatMap(_.logo.map(_.target)),
+                    artifacts0
+                  )
                 }
 
                 scalaTarget match {
-                  case Some(target) =>
-                    complete(
-                      (OK,
-                       dataRepository
-                         .find(
-                           SearchParams(
-                             queryString = q,
-                             targetFiltering = scalaTarget,
-                             cli = cli,
-                             page = page.getOrElse(0),
-                             total = total.getOrElse(10)
-                           )
-                         )
-                         .map { case (_, ps) => ps.map(p => convert(p)) })
+                  case Some(_) =>
+                    val searchParams = SearchParams(
+                      queryString = q,
+                      targetFiltering = scalaTarget,
+                      cli = cli,
+                      page = page.getOrElse(0),
+                      total = total.getOrElse(10)
                     )
+                    val result = dataRepository
+                      .findProjects(searchParams)
+                      .map(page => page.items.map(p => convert(p)))
+                    complete(OK, result)
 
                   case None =>
-                    complete(
-                      (BadRequest,
-                       s"something is wrong: $scalaTarget $scalaVersion $scalaJsVersion $scalaNativeVersion $sbtVersion")
-                    )
+                    val errorMessage =
+                      s"something is wrong: $scalaTarget $scalaVersion $scalaJsVersion $scalaNativeVersion $sbtVersion"
+                    complete(BadRequest, errorMessage)
                 }
             }
           }
@@ -207,7 +201,7 @@ class SearchApi(
 
                   complete(
                     dataRepository
-                      .projectPage(reference, selection)
+                      .getProjectPage(reference, selection)
                       .map(
                         _.map { case (_, options) => convert(options) }
                       )
@@ -220,22 +214,23 @@ class SearchApi(
               parameter('q) { query =>
                 complete {
                   dataRepository
-                    .find(
-                      SearchParams(queryString = query,
-                                   page = 1,
-                                   sorting = None,
-                                   total = 5)
+                    .autocompleteProjects(
+                      SearchParams(
+                        queryString = query,
+                        page = 1,
+                        sorting = None,
+                        total = 5
+                      )
                     )
-                    .map {
-                      case (pagination, projects) =>
-                        projects.map(
-                          p =>
-                            Autocompletion(
-                              p.organization,
-                              p.repository,
-                              p.github.flatMap(_.description).getOrElse("")
-                          )
+                    .map { projects =>
+                      projects.map(
+                        project =>
+                          Autocompletion(
+                            project.organization,
+                            project.repository,
+                            project.github.flatMap(_.description).getOrElse("")
                         )
+                      )
                     }
                 }
               }

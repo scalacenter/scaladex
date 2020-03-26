@@ -3,9 +3,9 @@
 @import ch.epfl.scala.index.model.release._
 
 @(project: Project, 
-  releases: List[(SemanticVersion, List[Release])],
-  targetTypes: List[(ScalaTargetType, Int)],
-  targets: List[(Option[ScalaTarget], String)],
+  releases: Seq[(SemanticVersion, Seq[Release])],
+  targetTypes: Seq[(ScalaTargetType, Int)],
+  targets: Seq[(Option[ScalaTarget], String)],
   user: Option[UserInfo])
 
 @main(title = project.repository, showSearch = true, user) {
