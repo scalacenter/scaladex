@@ -2,16 +2,16 @@ package ch.epfl.scala.index
 package data
 package elastic
 
-import project._
-import github.GithubDownload
-import maven.PomsReader
+import ch.epfl.scala.index.data.github.GithubDownload
+import ch.epfl.scala.index.data.maven.PomsReader
+import ch.epfl.scala.index.data.project._
 import com.sksamuel.elastic4s.ElasticDsl._
-import com.sksamuel.elastic4s.analyzers.LowercaseTokenFilter
+import com.sksamuel.elastic4s.analyzers._
+import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
 import scala.util.Success
-import org.slf4j.LoggerFactory
 
 class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
     implicit val ec: ExecutionContext
@@ -22,30 +22,34 @@ class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
   def run(): Unit = {
 
     val exists = Await
-      .result(esClient.execute { indexExists(indexName) }, Duration.Inf)
-      .isExists()
+      .result(
+        esClient.execute(indexExists(indexName)),
+        Duration.Inf
+      )
+      .isExists
 
     if (exists) {
-      Await.result(esClient.execute {
-        deleteIndex(indexName)
-      }, Duration.Inf)
+      Await.result(
+        esClient.execute(deleteIndex(indexName)),
+        Duration.Inf
+      )
     }
 
     val projectFields = List(
-      keywordField("organization")
-        .normalizer("lowercase")
+      textField("organization")
+        .analyzer("standard")
         .fields(
-          textField("analyzed").analyzer("english")
+          keywordField("keyword").normalizer("lowercase")
         ),
-      keywordField("repository")
-        .normalizer("lowercase")
+      textField("repository")
+        .analyzer("standard")
         .fields(
-          textField("analyzed").analyzer("english")
+          keywordField("keyword").normalizer("lowercase")
         ),
-      keywordField("primaryTopic")
-        .normalizer("lowercase")
+      textField("primaryTopic")
+        .analyzer("english")
         .fields(
-          textField("analyzed").analyzer("english")
+          keywordField("keyword").normalizer("lowercase")
         ),
       keywordField("defaultArtifact").index(false),
       keywordField("artifacts").normalizer("lowercase"),
@@ -55,14 +59,14 @@ class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
       keywordField("targets"),
       keywordField("dependencies"),
       objectField("github").fields(
-        keywordField("topics")
-          .normalizer("lowercase")
+        textField("topics")
+          .analyzer("standard")
           .fields(
-            textField("analyzed").analyzer("english")
+            keywordField("keyword").normalizer("lowercase")
           ),
         nestedField("beginnerIssues"),
         textField("description").analyzer("english"),
-        textField("readme").analyzer("english")
+        textField("readme").analyzer("english_readme")
       ),
       dateField("created"),
       dateField("updated")
@@ -93,12 +97,45 @@ class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
 
     log.info("creating index")
 
+    val urlStrip = PatternReplaceCharFilter(
+      "url_strip",
+      "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)",
+      ""
+    )
+    val codeStrip = PatternReplaceCharFilter(
+      "code_strip",
+      "<code>.*?<\\/code>",
+      ""
+    )
+    val englishStop = StopTokenFilter("english_stop",
+                                      language =
+                                        Some(NamedStopTokenFilter.English))
+    val englishStemmer = StemmerTokenFilter("english_stemmer", "english")
+    val englishPossessiveStemmer = StemmerTokenFilter(
+      "english_possessive_stemmer",
+      "possessive_english"
+    )
+
+    val englishReadme =
+      CustomAnalyzerDefinition(
+        "english_readme",
+        StandardTokenizer,
+        codeStrip,
+        HtmlStripCharFilter,
+        urlStrip,
+        LowercaseTokenFilter,
+        englishPossessiveStemmer,
+        englishStop,
+        englishStemmer
+      )
+
+    val lowercase = customNormalizer("lowercase", LowercaseTokenFilter)
+
     Await.result(
       esClient.execute {
         createIndex(indexName)
-          .normalizers(
-            customNormalizer("lowercase", LowercaseTokenFilter)
-          )
+          .analysis(englishReadme)
+          .normalizers(lowercase)
           .mappings(
             mapping(projectsCollection).fields(projectFields: _*),
             mapping(releasesCollection).fields(releasesFields: _*)

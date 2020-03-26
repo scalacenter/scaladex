@@ -425,9 +425,9 @@ object DataRepository {
         .replaceAllLiterally("/", "\\/")
         .split(" AND ")
         .partition(_.contains(":")) match {
-          case (luceneQueries, plainTerms) =>
+        case (luceneQueries, plainTerms) =>
           (luceneQueries.mkString(" AND "), plainTerms.mkString(" "))
-        }
+      }
 
     val filterQuery = optionalQuery(
       filters.nonEmpty,
