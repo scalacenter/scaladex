@@ -490,7 +490,7 @@ object DataRepository {
   }
 
   private def topicQuery(topic: String): QueryDefinition = {
-    termQuery("github.topics", topic)
+    termQuery("github.topics.keyword", topic)
   }
 
   private val cliQuery = termQuery("hasCli", true)
@@ -503,8 +503,8 @@ object DataRepository {
 
   private def repositoryQuery(repo: GithubRepo): QueryDefinition = {
     must(
-      termQuery("organization", repo.organization),
-      termQuery("repository", repo.repository)
+      termQuery("organization.keyword", repo.organization),
+      termQuery("repository.keyword", repo.repository)
     )
   }
 
