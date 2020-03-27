@@ -1,23 +1,20 @@
 package ch.epfl.scala.index
 package client
 
-import api._
-import rpc.RPC
+import ch.epfl.scala.index.api._
+import ch.epfl.scala.index.client.rpc.RPC
 import org.scalajs.dom
 import org.scalajs.dom.ext.{Ajax, KeyCode}
-import org.scalajs.dom.{Event, KeyboardEvent, document}
 import org.scalajs.dom.raw._
+import org.scalajs.dom.{Event, KeyboardEvent, document}
 import org.scalajs.jquery.jQuery
-
 import scalatags.JsDom.all._
-import scalajs.concurrent.JSExecutionContext.Implicits.queue
-import scalajs.js.annotation.{JSExport, JSExportTopLevel}
-import scalajs.js.JSApp
-import scala.scalajs.js.UndefOr
+
+import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
-import scala.concurrent.Future
-import scala.util.Try
+import scala.scalajs.js.UndefOr
+import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 
 @JSExportTopLevel("ScaladexClient")
 object Client {
@@ -73,18 +70,19 @@ object Client {
       case _                             => None
     }
 
-  private def getProjects(query: String): Future[List[Autocompletion]] =
-    RPC.autocomplete(query)
-
-  private def showResults(projects: List[Autocompletion]): List[Option[Node]] = {
-    completionSelection = CompletionSelection(None, projects)
-    projects.map {
-      case Autocompletion(organization, repository, description) =>
-        appendResult(
-          organization,
-          repository,
-          description
-        )
+  private def updateAutocompletion(projects: List[Autocompletion],
+                                   query: String): Unit = {
+    if (getQuery(getSearchInput).contains(query)) {
+      cleanResults()
+      completionSelection = CompletionSelection(None, projects)
+      projects.map {
+        case Autocompletion(organization, repository, description) =>
+          appendResult(
+            organization,
+            repository,
+            description
+          )
+      }
     }
   }
 
@@ -93,13 +91,13 @@ object Client {
     getResultList.fold(())(_.innerHTML = "")
   }
 
-  private def runSearch(event: dom.Event): Future[List[Option[Node]]] = {
-    cleanResults()
-    getQuery(getSearchInput)
-      .fold(
-        Future.successful(List.empty[Autocompletion])
-      )(getProjects)
-      .map(showResults)
+  private def runAutocompletion(event: dom.Event): Unit = {
+    getQuery(getSearchInput) match {
+      case Some(query) =>
+        for (autocompletion <- RPC.autocomplete(query))
+          yield updateAutocompletion(autocompletion, query)
+      case None => cleanResults()
+    }
   }
 
   private def navigate(event: KeyboardEvent): Unit = {
@@ -330,7 +328,7 @@ object Client {
     document.addEventListener[KeyboardEvent]("keydown", jumpToSearchInput _)
 
     getSearchBox.foreach { searchBox =>
-      searchBox.addEventListener[Event]("input", runSearch _)
+      searchBox.addEventListener[Event]("input", runAutocompletion _)
       searchBox.addEventListener[KeyboardEvent]("keydown", navigate _)
     }
 
