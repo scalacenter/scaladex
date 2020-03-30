@@ -7,12 +7,12 @@ import scala.scalajs.js.URIUtils.encodeURIComponent
 import org.scalajs.dom
 import play.api.libs.json.{Json, Reads, Writes}
 
-import ch.epfl.scala.index.api.Autocompletion
+import ch.epfl.scala.index.api.SuggestedProject
 
 object RPC {
-  def autocomplete(q: String): Future[List[Autocompletion]] = {
+  def autocomplete(q: String): Future[List[SuggestedProject]] = {
     val args = Map("q" -> write(q))
-    doCall("autocomplete", args).map(read[List[Autocompletion]](_))
+    doCall("autocomplete", args).map(read[List[SuggestedProject]](_))
   }
 
   /** Reuse URL encoding and update implementation to reserve square brackets. */

@@ -1,16 +1,12 @@
 package ch.epfl.scala.index
 package client
 
-import ch.epfl.scala.index.api._
-import ch.epfl.scala.index.client.rpc.RPC
 import org.scalajs.dom
 import org.scalajs.dom.ext.{Ajax, KeyCode}
 import org.scalajs.dom.raw._
 import org.scalajs.dom.{Event, KeyboardEvent, document}
 import org.scalajs.jquery.jQuery
-import scalatags.JsDom.all._
 
-import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.UndefOr
@@ -18,153 +14,22 @@ import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 
 @JSExportTopLevel("ScaladexClient")
 object Client {
-
-  private val searchId = "search"
-  private val resultElementId = "list-result"
-  private var completionSelection = CompletionSelection.empty
+  import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
   // used to access methods from bootstrap-select library like .selectpicker("val")
   // see https://silviomoreto.github.io/bootstrap-select/methods/
   private def getIssuesSelect =
     jQuery("#selectedBeginnerIssues").asInstanceOf[js.Dynamic]
 
-  private def getResultList: Option[Element] = getElement(resultElementId)
-
-  private def getSearchBox: Option[Element] =
-    getElement(searchId)
-
-  private def getSearchInput: Option[HTMLInputElement] =
-    getSearchBox.map(_.getInput)
-
-  private def getElement(id: String): Option[Element] =
-    Option(document.getElementById(id))
-
-  private def appendResult(owner: String,
-                           repo: String,
-                           description: String): Option[Node] = {
-    for {
-      resultContainer <- getResultList
-      newItem = newProjectItem(owner, repo, description)
-    } yield {
-      jQuery(newItem).find(".emojify").each { (el: Element) =>
-        emojify.run(el)
-      }
-      resultContainer.appendChild(newItem)
-    }
-  }
-
-  private def newProjectItem(owner: String,
-                             repo: String,
-                             description: String): Element = {
-    li(
-      a(href := s"/$owner/$repo")(
-        p(s"$owner / $repo"),
-        span(cls := "emojify")(description)
-      )
-    ).render
-  }
-
-  private def getQuery(input: Option[HTMLInputElement]): Option[String] =
-    input match {
-      case Some(i) if i.value.length > 1 => Option(i.value)
-      case _                             => None
-    }
-
-  private def updateAutocompletion(projects: List[Autocompletion],
-                                   query: String): Unit = {
-    if (getQuery(getSearchInput).contains(query)) {
-      cleanResults()
-      completionSelection = CompletionSelection(None, projects)
-      projects.map {
-        case Autocompletion(organization, repository, description) =>
-          appendResult(
-            organization,
-            repository,
-            description
-          )
-      }
-    }
-  }
-
-  private def cleanResults(): Unit = {
-    completionSelection = CompletionSelection.empty
-    getResultList.fold(())(_.innerHTML = "")
-  }
-
-  private def runAutocompletion(event: dom.Event): Unit = {
-    getQuery(getSearchInput) match {
-      case Some(query) =>
-        for (autocompletion <- RPC.autocomplete(query))
-          yield updateAutocompletion(autocompletion, query)
-      case None => cleanResults()
-    }
-  }
-
-  private def navigate(event: KeyboardEvent): Unit = {
-    if (event.keyCode == KeyCode.Up && completionSelection.choices.nonEmpty) {
-      moveSelection(
-        completionSelection.selected.map(_ - 1).filter(_ >= 0)
-      )
-    } else if (event.keyCode == KeyCode.Down && completionSelection.choices.nonEmpty) {
-      moveSelection(
-        completionSelection.selected.fold[Option[Int]](Some(0))(
-          i => Some(math.min(i + 1, completionSelection.choices.size - 1))
-        )
-      )
-    } else if (event.keyCode == KeyCode.Enter) {
-      completionSelection.selected.foreach { selected =>
-        event.preventDefault()
-        val Autocompletion(owner, repo, _) =
-          completionSelection.choices(selected)
-        dom.window.location.assign(s"/$owner/$repo")
-      }
-    } else if (event.keyCode == KeyCode.Escape) {
-      cleanResults()
-    } else ()
-
-    def moveSelection(newSelected: Option[Int]): Unit = {
-      event.preventDefault()
-      completionSelection = completionSelection.copy(selected = newSelected)
-      updateSelection()
-    }
-
-    def updateSelection(): Unit = {
-      getResultList.foreach { resultList =>
-        for (i <- 0 until resultList.childElementCount) {
-          val resultElement =
-            resultList.childNodes(i).asInstanceOf[HTMLUListElement]
-          if (completionSelection.selected.contains(i)) {
-            resultElement.classList.add("selected")
-          } else {
-            resultElement.classList.remove("selected")
-          }
-        }
-      }
-    }
-  }
-
   private def jumpToSearchInput(event: KeyboardEvent): Unit = {
     if (event.ctrlKey && event.keyCode == KeyCode.S) {
-      getSearchBox.foreach { searchBox =>
-        val input = searchBox.getInput
+      Dom.getSearchInput.foreach { input =>
         if (event.target != input) {
           input.focus()
           event.preventDefault()
         }
       }
     }
-  }
-
-  implicit class ElementOps(e: Element) {
-    def getInput: HTMLInputElement = get[HTMLInputElement]
-    def get[A <: Element]: A = e.asInstanceOf[A]
-  }
-
-  case class CompletionSelection(selected: Option[Int],
-                                 choices: List[Autocompletion])
-
-  object CompletionSelection {
-    val empty = CompletionSelection(None, Nil)
   }
 
   private def fetchAndReplaceReadme(el: Element, token: Option[String]): Unit = {
@@ -199,7 +64,7 @@ object Client {
         jQuery(el)
           .find("img, a")
           .not("[href^='http'],[href^='https'],[src^='http'],[src^='https']")
-          .each { (e: Element) =>
+          .each { e: Element =>
             val (at, newBase) = if (e.tagName == "A") {
               val attr = "href"
               val href =
@@ -212,7 +77,7 @@ object Client {
 
             Option(e.getAttribute(at))
               .foreach { oldUrl =>
-                if (!oldUrl.isEmpty()) {
+                if (oldUrl.nonEmpty) {
                   val newUrl =
                     if (!oldUrl.startsWith("/")) s"$newBase/$oldUrl"
                     else s"$newBase$oldUrl"
@@ -243,8 +108,9 @@ object Client {
 
   private def getIssues(token: Option[String],
                         showSelected: Boolean = false): Unit = {
-    getElement("beginnerIssuesLabel").foreach { issuesLabelEl =>
-      val label = issuesLabelEl.getInput.value
+    import Dom.ElementOps
+    Dom.getElement("beginnerIssuesLabel").foreach { issuesLabelEl =>
+      val label = issuesLabelEl.asInput.value
       if (!label.isEmpty) {
         val organization =
           issuesLabelEl.attributes.getNamedItem("data-organization").value
@@ -271,16 +137,16 @@ object Client {
           .foreach { xhr =>
             val rawIssues = js.JSON.parse(xhr.responseText)
             val issues = rawIssues.asInstanceOf[js.Array[Issue]]
-            getElement("selectedBeginnerIssues").foreach { el =>
+            Dom.getElement("selectedBeginnerIssues").foreach { el =>
               val options = issues.map { issue =>
                 s"""<option value='${getIssueJson(issue)}' title="#${issue.number}"> #${issue.number} - ${issue.title}</option>"""
               }
               val selectEl = el.asInstanceOf[HTMLSelectElement]
               selectEl.innerHTML = options.mkString
-              getElement("beginnerIssues").foreach { beginnerIssuesEl =>
+              Dom.getElement("beginnerIssues").foreach { beginnerIssuesEl =>
                 val beginnerIssuesJson =
                   s"[${issues.map(getIssueJson).mkString(",")}]"
-                beginnerIssuesEl.getInput.value = beginnerIssuesJson
+                beginnerIssuesEl.asInput.value = beginnerIssuesJson
               }
 
               disableBeginnerIssues(false)
@@ -300,11 +166,11 @@ object Client {
             }
           }
       } else {
-        getElement("selectedBeginnerIssues").foreach { el =>
+        Dom.getElement("selectedBeginnerIssues").foreach { el =>
           val selectEl = el.asInstanceOf[HTMLSelectElement]
           selectEl.innerHTML = ""
-          getElement("beginnerIssues").foreach { beginnerIssuesEl =>
-            beginnerIssuesEl.getInput.value = ""
+          Dom.getElement("beginnerIssues").foreach { beginnerIssuesEl =>
+            beginnerIssuesEl.asInput.value = ""
           }
           disableBeginnerIssues(true)
         }
@@ -324,25 +190,26 @@ object Client {
 
   @JSExport
   def main(token: UndefOr[String]): Unit = {
-
     document.addEventListener[KeyboardEvent]("keydown", jumpToSearchInput _)
 
-    getSearchBox.foreach { searchBox =>
-      searchBox.addEventListener[Event]("input", runAutocompletion _)
-      searchBox.addEventListener[KeyboardEvent]("keydown", navigate _)
+    val autocompletion = new Autocompletion()
+
+    Dom.getSearchBox.foreach { searchBox =>
+      searchBox.addEventListener[Event]("input", autocompletion.run _)
+      searchBox.addEventListener[KeyboardEvent]("keydown", autocompletion.navigate _)
     }
 
-    getElement("README").foreach { readmeEl =>
+    Dom.getElement("README").foreach { readmeEl =>
       fetchAndReplaceReadme(readmeEl, token.toOption)
     }
 
-    getElement("beginnerIssuesLabel").foreach { el =>
+    Dom.getElement("beginnerIssuesLabel").foreach { el =>
       el.addEventListener[Event]("change", getIssuesListener(token.toOption) _)
     }
 
-    getIssues(token.toOption, true)
+    getIssues(token.toOption, showSelected = true)
 
-    getElement("hide-banner").foreach { el =>
+    Dom.getElement("hide-banner").foreach { el =>
       el.addEventListener[Event]("click", hideBanner _)
     }
 
@@ -351,7 +218,7 @@ object Client {
         "img_dir" -> "https://cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/images/basic"
       )
     )
-    jQuery(".emojify").each { (el: Element) =>
+    jQuery(".emojify").each { el: Element =>
       emojify.run(el)
     }
     emojify.run(document.body)

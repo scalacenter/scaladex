@@ -4,7 +4,7 @@ package routes
 package api
 
 import play.api.libs.json._
-import ch.epfl.scala.index.api.Autocompletion
+import ch.epfl.scala.index.api.SuggestedProject
 import model.misc.SearchParams
 import model._
 import release._
@@ -225,7 +225,7 @@ class SearchApi(
                     .map { projects =>
                       projects.map(
                         project =>
-                          Autocompletion(
+                          SuggestedProject(
                             project.organization,
                             project.repository,
                             project.github.flatMap(_.description).getOrElse("")
