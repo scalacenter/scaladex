@@ -109,7 +109,7 @@ object Client {
   private def getIssues(token: Option[String],
                         showSelected: Boolean = false): Unit = {
     import Dom.ElementOps
-    Dom.getElement("beginnerIssuesLabel").foreach { issuesLabelEl =>
+    Dom.getElementById("beginnerIssuesLabel").foreach { issuesLabelEl =>
       val label = issuesLabelEl.asInput.value
       if (!label.isEmpty) {
         val organization =
@@ -137,13 +137,13 @@ object Client {
           .foreach { xhr =>
             val rawIssues = js.JSON.parse(xhr.responseText)
             val issues = rawIssues.asInstanceOf[js.Array[Issue]]
-            Dom.getElement("selectedBeginnerIssues").foreach { el =>
+            Dom.getElementById("selectedBeginnerIssues").foreach { el =>
               val options = issues.map { issue =>
                 s"""<option value='${getIssueJson(issue)}' title="#${issue.number}"> #${issue.number} - ${issue.title}</option>"""
               }
               val selectEl = el.asInstanceOf[HTMLSelectElement]
               selectEl.innerHTML = options.mkString
-              Dom.getElement("beginnerIssues").foreach { beginnerIssuesEl =>
+              Dom.getElementById("beginnerIssues").foreach { beginnerIssuesEl =>
                 val beginnerIssuesJson =
                   s"[${issues.map(getIssueJson).mkString(",")}]"
                 beginnerIssuesEl.asInput.value = beginnerIssuesJson
@@ -166,10 +166,10 @@ object Client {
             }
           }
       } else {
-        Dom.getElement("selectedBeginnerIssues").foreach { el =>
+        Dom.getElementById("selectedBeginnerIssues").foreach { el =>
           val selectEl = el.asInstanceOf[HTMLSelectElement]
           selectEl.innerHTML = ""
-          Dom.getElement("beginnerIssues").foreach { beginnerIssuesEl =>
+          Dom.getElementById("beginnerIssues").foreach { beginnerIssuesEl =>
             beginnerIssuesEl.asInput.value = ""
           }
           disableBeginnerIssues(true)
@@ -196,20 +196,21 @@ object Client {
 
     Dom.getSearchBox.foreach { searchBox =>
       searchBox.addEventListener[Event]("input", autocompletion.run _)
-      searchBox.addEventListener[KeyboardEvent]("keydown", autocompletion.navigate _)
+      searchBox
+        .addEventListener[KeyboardEvent]("keydown", autocompletion.navigate _)
     }
 
-    Dom.getElement("README").foreach { readmeEl =>
+    Dom.getElementById("README").foreach { readmeEl =>
       fetchAndReplaceReadme(readmeEl, token.toOption)
     }
 
-    Dom.getElement("beginnerIssuesLabel").foreach { el =>
+    Dom.getElementById("beginnerIssuesLabel").foreach { el =>
       el.addEventListener[Event]("change", getIssuesListener(token.toOption) _)
     }
 
     getIssues(token.toOption, showSelected = true)
 
-    Dom.getElement("hide-banner").foreach { el =>
+    Dom.getElementById("hide-banner").foreach { el =>
       el.addEventListener[Event]("click", hideBanner _)
     }
 

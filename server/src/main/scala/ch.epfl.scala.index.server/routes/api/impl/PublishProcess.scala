@@ -93,12 +93,12 @@ private[api] class PublishProcess(paths: DataPaths,
                   Future.successful((Created, "Published release"))
                 } else {
                   log.warn(
-                    s"User ${data.userState.user.login} attempted to publish to ${repo.toString}"
+                    s"User ${data.userState.info.login} attempted to publish to ${repo.toString}"
                   )
                   data.deleteTemp()
                   Future.successful(
                     (Forbidden,
-                     s"${data.userState.user.login} cannot publish to ${repo.toString}")
+                     s"${data.userState.info.login} cannot publish to ${repo.toString}")
                   )
                 }
               }

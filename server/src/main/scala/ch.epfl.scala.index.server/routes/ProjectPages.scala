@@ -38,7 +38,7 @@ class ProjectPages(
   private def getEditPage(owner: String,
                           repo: String,
                           userState: Option[UserState]) = {
-    val user = userState.map(_.user)
+    val user = userState.map(_.info)
     if (canEdit(owner, repo, userState)) {
       for {
         project <- dataRepository.getProject(Project.Reference(owner, repo))
@@ -81,7 +81,7 @@ class ProjectPages(
                             repo: String,
                             userState: Option[UserState]) = {
 
-    val user = userState.map(_.user)
+    val user = userState.map(_.info)
 
     def showTarget(target: ScalaTarget): String = {
       target match {
@@ -153,7 +153,7 @@ class ProjectPages(
                           selected: Option[String],
                           userState: Option[UserState]) = {
 
-    val user = userState.map(_.user)
+    val user = userState.map(_.info)
 
     val selection = ReleaseSelection.parse(
       target = target,
@@ -382,7 +382,7 @@ class ProjectPages(
                               ((NotFound,
                                 views.html
                                   .notfound(
-                                    session.getUser(userId).map(_.user)
+                                    session.getUser(userId).map(_.info)
                                   )))
                             )
                       }

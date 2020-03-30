@@ -1,6 +1,6 @@
 package ch.epfl.scala.index.client
 
-import ch.epfl.scala.index.api.SuggestedProject
+import ch.epfl.scala.index.api.AutocompletionResponse
 import ch.epfl.scala.index.client.rpc.RPC
 import org.scalajs.dom
 import org.scalajs.dom.KeyboardEvent
@@ -13,8 +13,8 @@ import scala.concurrent.ExecutionContext
 
 class Autocompletion(implicit ec: ExecutionContext) {
   case class CompletionSelection(
-    selected: Option[Int],
-    choices: List[SuggestedProject]
+      selected: Option[Int],
+      choices: List[AutocompletionResponse]
   )
 
   object CompletionSelection {
@@ -24,10 +24,10 @@ class Autocompletion(implicit ec: ExecutionContext) {
   private var completionSelection = CompletionSelection.empty
 
   def run(event: dom.Event): Unit = {
-    Dom.getSearchQuery match {
-      case Some(query) =>
-        for (autocompletion <- RPC.autocomplete(query))
-          yield update(autocompletion, query)
+    Dom.getSearchRequest match {
+      case Some(request) =>
+        for (autocompletion <- RPC.autocomplete(request))
+          yield update(autocompletion, request.query)
       case None => cleanResults()
     }
   }
@@ -46,7 +46,7 @@ class Autocompletion(implicit ec: ExecutionContext) {
     } else if (event.keyCode == KeyCode.Enter) {
       completionSelection.selected.foreach { selected =>
         event.preventDefault()
-        val SuggestedProject(owner, repo, _) =
+        val AutocompletionResponse(owner, repo, _) =
           completionSelection.choices(selected)
         dom.window.location.assign(s"/$owner/$repo")
       }
@@ -80,12 +80,13 @@ class Autocompletion(implicit ec: ExecutionContext) {
     Dom.getResultList.fold(())(_.innerHTML = "")
   }
 
-  private def update(projects: List[SuggestedProject], query: String): Unit = {
+  private def update(projects: List[AutocompletionResponse],
+                     query: String): Unit = {
     if (Dom.getSearchQuery.contains(query)) {
       cleanResults()
       completionSelection = CompletionSelection(None, projects)
       projects.map {
-        case SuggestedProject(organization, repository, description) =>
+        case AutocompletionResponse(organization, repository, description) =>
           appendResult(
             organization,
             repository,
@@ -96,9 +97,9 @@ class Autocompletion(implicit ec: ExecutionContext) {
   }
 
   private def appendResult(
-    owner: String,
-    repo: String,
-    description: String
+      owner: String,
+      repo: String,
+      description: String
   ): Option[Node] = {
     for {
       resultContainer <- Dom.getResultList
@@ -112,9 +113,9 @@ class Autocompletion(implicit ec: ExecutionContext) {
   }
 
   private def projectSuggestion(
-    owner: String,
-    repo: String,
-    description: String
+      owner: String,
+      repo: String,
+      description: String
   ): Element = {
     li(
       a(href := s"/$owner/$repo")(

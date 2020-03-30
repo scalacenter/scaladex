@@ -20,7 +20,9 @@ class SearchPages(dataRepository: DataRepository,
   import dataRepository._
   import session.implicits._
 
-  private def search(params: SearchParams, userId: Option[UUID], uri: String) = {
+  private def search(params: SearchParams,
+                     user: Option[UserState],
+                     uri: String) = {
     complete {
       val resultsF = findProjects(params)
       val topicsF = getTopics(params)
@@ -46,7 +48,7 @@ class SearchPages(dataRepository: DataRepository,
           uri,
           pagination,
           projects.toList,
-          session.getUser(userId).map(_.user),
+          user.map(_.info),
           params.userRepos.nonEmpty,
           topics,
           targetTypes,
@@ -60,78 +62,35 @@ class SearchPages(dataRepository: DataRepository,
     }
   }
 
-  def searchParams(userId: Option[UUID]): Directive1[SearchParams] =
-    parameters(
-      ('q ? "*",
-       'page.as[Int] ? 1,
-       'sort.?,
-       'topics.*,
-       'targetTypes.*,
-       'scalaVersions.*,
-       'scalaJsVersions.*,
-       'scalaNativeVersions.*,
-       'sbtVersions.*,
-       'you.?,
-       'contributingSearch.as[Boolean] ? false)
-    ).tmap {
-      case (q,
-            page,
-            sort,
-            topics,
-            targetTypes,
-            scalaVersions,
-            scalaJsVersions,
-            scalaNativeVersions,
-            sbtVersions,
-            you,
-            contributingSearch) =>
-        val userRepos = you
-          .flatMap(_ => session.getUser(userId).map(_.repos))
-          .getOrElse(Set())
-        SearchParams(
-          q,
-          page,
-          sort,
-          userRepos,
-          topics = topics.toList,
-          targetTypes = targetTypes.toList,
-          scalaVersions = scalaVersions.toList,
-          scalaJsVersions = scalaJsVersions.toList,
-          scalaNativeVersions = scalaNativeVersions.toList,
-          sbtVersions = sbtVersions.toList,
-          contributingSearch = contributingSearch
-        )
-    }
-
   private val searchPath = "search"
 
   val routes: Route =
     get(
       concat(
         path(searchPath)(
-          optionalSession(refreshable, usingCookies)(
-            userId =>
-              searchParams(userId)(
-                params => search(params, userId, searchPath)
+          optionalSession(refreshable, usingCookies) { userId =>
+            val user = session.getUser(userId)
+            searchParams(user)(
+              params => search(params, user, searchPath)
             )
-          )
+          }
         ),
         path(Segment)(
           organization =>
-            optionalSession(refreshable, usingCookies)(
-              userId =>
-                searchParams(userId)(
-                  params =>
-                    search(
-                      params.copy(
-                        queryString =
-                          s"${params.queryString} AND organization:$organization"
-                      ),
-                      userId,
-                      organization
-                  )
+            optionalSession(refreshable, usingCookies) { userId =>
+              val user = session.getUser(userId)
+              searchParams(user)(
+                params =>
+                  search(
+                    params.copy(
+                      queryString =
+                        s"${params.queryString} AND organization:$organization"
+                    ),
+                    user,
+                    organization
+                )
               )
-          )
+          }
         )
       )
     )

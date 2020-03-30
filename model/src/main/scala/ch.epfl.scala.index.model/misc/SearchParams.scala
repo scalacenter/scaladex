@@ -1,6 +1,8 @@
 package ch.epfl.scala.index.model
 package misc
 
+import java.util.UUID
+
 import release.ScalaTarget
 
 object SearchParams {
