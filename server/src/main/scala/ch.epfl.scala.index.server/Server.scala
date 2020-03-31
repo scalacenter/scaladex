@@ -64,7 +64,7 @@ object Server {
 
     val programmaticRoutes = concat(
       PublishApi(paths, data).routes,
-      new SearchApi(data).routes,
+      new SearchApi(data, session).routes,
       Assets.routes,
       new Badges(data).routes,
       Oauth2(config, session).routes
@@ -90,12 +90,13 @@ object Server {
         ex.printStackTrace()
 
         optionalSession(refreshable, usingCookies) { userId =>
-          searchPages.searchParams(userId) { params =>
+          val user = session.getUser(userId)
+          searchParams(user) { params =>
             complete(
               (
                 UnprocessableEntity,
                 views.html.invalidQuery(
-                  session.getUser(userId).map(_.user),
+                  session.getUser(userId).map(_.info),
                   params
                 )
               )

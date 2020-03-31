@@ -32,10 +32,10 @@ object Response {
 
 case class UserState(repos: Set[GithubRepo],
                      orgs: Set[Response.Organization],
-                     user: UserInfo) {
+                     info: UserInfo) {
   def isAdmin: Boolean = orgs.contains(Response.Organization("scalacenter"))
   def isSonatype: Boolean =
-    orgs.contains(Response.Organization("sonatype")) || user.login == "central-ossrh"
+    orgs.contains(Response.Organization("sonatype")) || info.login == "central-ossrh"
   def hasPublishingAuthority: Boolean = isAdmin || isSonatype
 }
 

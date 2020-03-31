@@ -1,5 +1,5 @@
 import ScalaJSHelper._
-import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
+import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
 import Deployment.githash
 
@@ -44,7 +44,7 @@ lazy val ammoniteSettings = Seq(
       .get
       .modules
       .flatMap(_.artifacts)
-      .collect { case (a, f) if a.classifier == Some("sources") => f }
+      .collect { case (a, f) if a.classifier.contains("sources") => f }
   }
 )
 
@@ -80,8 +80,8 @@ lazy val scaladex = project
     data,
     model,
     server,
-    sharedJVM,
-    sharedJS,
+    api.jvm,
+    api.js,
     template
   )
   .settings(commonSettings)
@@ -100,11 +100,9 @@ lazy val template = project
   .dependsOn(model)
   .enablePlugins(SbtTwirl)
 
-lazy val shared = crossProject(JSPlatform, JVMPlatform)
+lazy val api = crossProject(JSPlatform, JVMPlatform)
   .settings(commonSettings)
   .settings(playJson)
-lazy val sharedJVM = shared.jvm
-lazy val sharedJS = shared.js
 
 lazy val client = project
   .settings(commonSettings)
@@ -115,7 +113,7 @@ lazy val client = project
     )
   )
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(sharedJS)
+  .dependsOn(api.js)
 
 lazy val server = project
   .settings(commonSettings)
@@ -144,7 +142,7 @@ lazy val server = project
     unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
     javaOptions in reStart ++= Seq("-Xmx4g")
   )
-  .dependsOn(template, data, sharedJVM)
+  .dependsOn(template, data, api.jvm)
   .enablePlugins(SbtSassify, JavaServerAppPackaging)
 
 lazy val model = project

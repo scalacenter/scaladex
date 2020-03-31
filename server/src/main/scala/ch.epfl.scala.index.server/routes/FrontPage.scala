@@ -84,7 +84,7 @@ class FrontPage(dataRepository: DataRepository,
   val routes: Route =
     pathSingleSlash {
       optionalSession(refreshable, usingCookies) { userId =>
-        complete(frontPage(session.getUser(userId).map(_.user)))
+        complete(frontPage(session.getUser(userId).map(_.info)))
       }
     }
 }

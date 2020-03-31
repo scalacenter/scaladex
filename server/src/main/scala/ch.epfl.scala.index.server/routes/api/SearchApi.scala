@@ -3,21 +3,21 @@ package server
 package routes
 package api
 
-import play.api.libs.json._
-import ch.epfl.scala.index.api.Autocompletion
-import model.misc.SearchParams
-import model._
-import release._
-import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
-import akka.http.scaladsl._
+import akka.http.scaladsl.model.StatusCodes._
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import server.Directives._
-import model.StatusCodes._
+import ch.epfl.scala.index.api.AutocompletionResponse
+import ch.epfl.scala.index.model._
+import ch.epfl.scala.index.model.misc.SearchParams
+import ch.epfl.scala.index.model.release._
+import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
+import com.softwaremill.session.SessionDirectives.optionalSession
+import com.softwaremill.session.SessionOptions.{refreshable, usingCookies}
+import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext
 
-object Api {
-
+object SearchApi {
   implicit val formatProject: OFormat[Project] =
     Json.format[Project]
 
@@ -41,9 +41,11 @@ object Api {
 }
 
 class SearchApi(
-    dataRepository: DataRepository
+    dataRepository: DataRepository,
+    session: GithubUserSession
 )(implicit val executionContext: ExecutionContext)
     extends PlayJsonSupport {
+  import session.implicits._
 
   private def parseScalaTarget(
       targetType: Option[String],
@@ -119,10 +121,10 @@ class SearchApi(
                   sbtVersion
                 )
 
-                def convert(project: Project): Api.Project = {
+                def convert(project: Project): SearchApi.Project = {
                   import project._
                   val artifacts0 = if (cli) cliArtifacts.toList else artifacts
-                  Api.Project(
+                  SearchApi.Project(
                     organization,
                     repository,
                     project.github.flatMap(_.logo.map(_.target)),
@@ -188,9 +190,11 @@ class SearchApi(
                     selected = None
                   )
 
-                  def convert(options: ReleaseOptions): Api.ReleaseOptions = {
+                  def convert(
+                      options: ReleaseOptions
+                  ): SearchApi.ReleaseOptions = {
                     import options._
-                    Api.ReleaseOptions(
+                    SearchApi.ReleaseOptions(
                       artifacts,
                       versions.sorted.map(_.toString),
                       release.maven.groupId,
@@ -209,33 +213,30 @@ class SearchApi(
               }
             }
           } ~
-          path("autocomplete") {
-            get {
-              parameter('q) { query =>
-                complete {
-                  dataRepository
-                    .autocompleteProjects(
-                      SearchParams(
-                        queryString = query,
-                        page = 1,
-                        sorting = None,
-                        total = 5
-                      )
-                    )
-                    .map { projects =>
-                      projects.map(
-                        project =>
-                          Autocompletion(
-                            project.organization,
-                            project.repository,
-                            project.github.flatMap(_.description).getOrElse("")
-                        )
-                      )
-                    }
+          get {
+            path("autocomplete") {
+              optionalSession(refreshable, usingCookies) { userId =>
+                val user = session.getUser(userId)
+                searchParams(user) { params =>
+                  complete {
+                    autocomplete(params)
+                  }
                 }
               }
             }
           }
       }
     }
+
+  private def autocomplete(params: SearchParams) = {
+    for (projects <- dataRepository.autocompleteProjects(params))
+      yield
+        projects.map { project =>
+          AutocompletionResponse(
+            project.organization,
+            project.repository,
+            project.github.flatMap(_.description).getOrElse("")
+          )
+        }
+  }
 }

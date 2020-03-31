@@ -16,7 +16,7 @@
           }
           >
         @if(you){
-          <input type="hidden" name="you" value="✓">
+          <input type="hidden" name="you" id="you" value="✓">
         }
         @for(topic <- params.topics){
           <input type="hidden" name="topics" value="@topic">
@@ -42,7 +42,7 @@
         }
 
         @if(params.contributingSearch) {
-          <input type="hidden" name="contributingSearch" value="true">
+          <input type="hidden" name="contributingSearch" id="contributing-search" value="true">
         }
     </form>
     <span class="form-control-feedback"><i class="fa fa-search"></i></span>
