@@ -4,8 +4,7 @@
 @(title: String, showSearch: Boolean, user: Option[UserInfo],
   params: SearchParams = SearchParams(), you: Boolean = false,
   extraMeta: Seq[HeadMeta] = Seq.empty,
-  totalProjects: Option[Long] = None, totalReleases: Option[Long] = None,
-  queryIsTopic: Boolean = false)(content: Html)
+  totalProjects: Option[Long] = None, totalReleases: Option[Long] = None)(content: Html)
 
 <!DOCTYPE HTML>
 <html lang="en">
@@ -60,7 +59,7 @@
                     </div>
                     <div class="col-md-7">
                         @if(showSearch) {
-                            @searchinput(params, you, totalProjects, totalReleases, queryIsTopic)
+                            @searchinput(params, you, totalProjects, totalReleases)
                         }
                     </div>
                     <div class="col-md-3">

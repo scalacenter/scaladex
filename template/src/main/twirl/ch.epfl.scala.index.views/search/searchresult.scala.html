@@ -16,9 +16,8 @@
   scalaVersions: List[(String, Long)],
   scalaJsVersions: List[(String, Long)],
   scalaNativeVersions: List[(String, Long)],
-  sbtVersions: List[(String, Long)],
-  queryIsTopic: Boolean)
-@main(title = s"Search ${params.queryString}", showSearch = true, user, params, you, queryIsTopic = queryIsTopic) {
+  sbtVersions: List[(String, Long)])
+@main(title = s"Search ${params.queryString}", showSearch = true, user, params, you) {
   <main id="container-search">
     <div class="container">
       @result(
