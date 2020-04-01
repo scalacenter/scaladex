@@ -31,7 +31,6 @@ class SearchPages(dataRepository: DataRepository,
       val scalaJsVersionsF = getScalaJsVersions(params)
       val scalaNativeVersionsF = getScalaNativeVersions(params)
       val sbtVersionsF = getSbtVersions(params)
-      val queryIsTopicF = isTopic(params.queryString)
 
       for {
         Page(pagination, projects) <- resultsF
@@ -41,7 +40,6 @@ class SearchPages(dataRepository: DataRepository,
         scalaJsVersions <- scalaJsVersionsF
         scalaNativeVersions <- scalaNativeVersionsF
         sbtVersions <- sbtVersionsF
-        queryIsTopic <- queryIsTopicF
       } yield {
         searchresult(
           params,
@@ -55,8 +53,7 @@ class SearchPages(dataRepository: DataRepository,
           scalaVersions,
           scalaJsVersions,
           scalaNativeVersions,
-          sbtVersions,
-          queryIsTopic
+          sbtVersions
         )
       }
     }

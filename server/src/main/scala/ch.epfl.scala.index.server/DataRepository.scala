@@ -74,17 +74,6 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
       }
   }
 
-  def isTopic(topic: String): Future[Boolean] = {
-    val query = must(notDeprecatedQuery, topicQuery(topic))
-
-    val request = search(indexName / projectsCollection)
-      .query(query)
-      .size(0)
-      .terminateAfter(1)
-
-    esClient.execute(request).map(_.totalHits > 0)
-  }
-
   def getProjectReleases(project: Project.Reference): Future[Seq[Release]] = {
     val query = nestedQuery("reference").query(
       must(
