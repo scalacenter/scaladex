@@ -146,8 +146,13 @@ object ScalaTarget {
     val scalaVersion =
       target.map(_.scalaVersion.forceBinary.toString)
 
-    val scalaJsVersion =
-      target.flatMap(_.scalaJsVersion.map(_.forceBinary.toString))
+    val scalaJsVersion = for {
+      target <- target
+      scalaJsVersion <- target.scalaJsVersion
+    } yield scalaJsVersion match {
+      case SemanticVersion(0, minor, _, _, _, _) => SemanticVersion(0, minor).toString
+      case _ => SemanticVersion(scalaJsVersion.major).toString
+    }
 
     val scalaNativeVersion =
       target.flatMap(_.scalaNativeVersion.map(_.forceBinary.toString))

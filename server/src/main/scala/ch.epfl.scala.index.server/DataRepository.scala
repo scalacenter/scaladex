@@ -225,20 +225,16 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
   }
 
   def getScalaVersions(params: SearchParams): Future[List[(String, Long)]] = {
-    versionAggregations("scalaVersion",
-                        filteredSearchQuery(params),
-                        filterScalaVersion)
+    versionAggregations("scalaVersion", filteredSearchQuery(params), filterScalaVersion)
       .map(addLabelsIfMissing(params.scalaVersions.toSet))
   }
 
   def getAllScalaJsVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("scalaJsVersion", notDeprecatedQuery, _ => true)
+    versionAggregations("scalaJsVersion", notDeprecatedQuery, filterScalaJsVersion)
   }
 
   def getScalaJsVersions(params: SearchParams): Future[List[(String, Long)]] = {
-    versionAggregations("scalaJsVersion",
-                        filteredSearchQuery(params),
-                        _ => true)
+    versionAggregations("scalaJsVersion", filteredSearchQuery(params), filterScalaJsVersion)
       .map(addLabelsIfMissing(params.scalaJsVersions.toSet))
   }
 
@@ -256,11 +252,11 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
   }
 
   def getAllSbtVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("sbtVersion", notDeprecatedQuery, _ => true)
+    versionAggregations("sbtVersion", notDeprecatedQuery, filterSbtVersion)
   }
 
   def getSbtVersions(params: SearchParams): Future[List[(String, Long)]] = {
-    versionAggregations("sbtVersion", filteredSearchQuery(params), _ => true)
+    versionAggregations("sbtVersion", filteredSearchQuery(params), filterSbtVersion)
       .map(addLabelsIfMissing(params.sbtVersions.toSet))
   }
 
@@ -573,6 +569,19 @@ object DataRepository {
 
   private def filterScalaVersion(version: SemanticVersion): Boolean = {
     minScalaVersion <= version && version <= maxScalaVersion
+  }
+
+  private def minSbtVersion = SemanticVersion(0, 11)
+  private def maxSbtVersion = SemanticVersion(1, 3)
+
+  private def filterSbtVersion(version: SemanticVersion): Boolean = {
+    minSbtVersion <= version && version <= maxSbtVersion
+  }
+
+  private def minScalaJsVersion = SemanticVersion(0, 6)
+
+  private def filterScalaJsVersion(version: SemanticVersion): Boolean = {
+    minScalaJsVersion <= version
   }
 
   private def labelizeTargetType(targetType: String): String = {
