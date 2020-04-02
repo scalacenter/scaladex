@@ -102,6 +102,8 @@ object ScalaTarget extends Parsers {
     minSbtVersion <= version && version <= maxSbtVersion
   }
 
+  def isValidScalaNativeVersion(version: SemanticVersion): Boolean = true
+
   import fastparse.NoWhitespace._
   import fastparse._
 

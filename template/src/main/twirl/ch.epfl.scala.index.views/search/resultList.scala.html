@@ -54,7 +54,7 @@
               @if(project.scalaNativeVersion.nonEmpty){
                 <div>
                   Scala-Native:
-                  @for(v <- sortVersions(project.scalaNativeVersion, _ => true)) {
+                  @for(v <- sortVersions(project.scalaNativeVersion, ScalaTarget.isValidScalaNativeVersion)) {
                     <span class="targets">@v</span>
                   }
                 </div>

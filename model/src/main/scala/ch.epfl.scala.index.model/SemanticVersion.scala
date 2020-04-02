@@ -39,8 +39,8 @@ case class SemanticVersion(
 
   override def toString: String = {
     val minorPart = minor.map(m => s".$m").getOrElse("")
-    val patchPart = patch.map("." + _).getOrElse("")
-    val patch2Part = patch2.map("." + _).getOrElse("")
+    val patchPart = patch.map(p => s".$p").getOrElse("")
+    val patch2Part = patch2.map(p2 => s".$p2").getOrElse("")
 
     val preReleasePart = preRelease
       .map {
@@ -76,7 +76,7 @@ object SemanticVersion extends Parsers {
       case Some(OtherPreRelease(pr))  => (0, None, Some(pr))
     }
 
-  implicit def ordering: Ordering[SemanticVersion] = Ordering.by { x =>
+  implicit val ordering: Ordering[SemanticVersion] = Ordering.by { x =>
     (x.major, x.minor, x.patch, x.patch2, x.preRelease)
   }
 
