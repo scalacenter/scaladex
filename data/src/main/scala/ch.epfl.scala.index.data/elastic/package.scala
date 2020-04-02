@@ -27,7 +27,11 @@ trait ProjectProtocol {
           classOf[Milestone],
           classOf[ReleaseCandidate],
           classOf[OtherPreRelease],
-          classOf[BintrayResolver]
+          classOf[BintrayResolver],
+          classOf[ScalaJvm],
+          classOf[ScalaJs],
+          classOf[ScalaNative],
+          classOf[SbtPlugin]
         )
       )
     )

@@ -225,16 +225,22 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
   }
 
   def getScalaVersions(params: SearchParams): Future[List[(String, Long)]] = {
-    versionAggregations("scalaVersion", filteredSearchQuery(params), filterScalaVersion)
+    versionAggregations("scalaVersion",
+                        filteredSearchQuery(params),
+                        filterScalaVersion)
       .map(addLabelsIfMissing(params.scalaVersions.toSet))
   }
 
   def getAllScalaJsVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("scalaJsVersion", notDeprecatedQuery, filterScalaJsVersion)
+    versionAggregations("scalaJsVersion",
+                        notDeprecatedQuery,
+                        filterScalaJsVersion)
   }
 
   def getScalaJsVersions(params: SearchParams): Future[List[(String, Long)]] = {
-    versionAggregations("scalaJsVersion", filteredSearchQuery(params), filterScalaJsVersion)
+    versionAggregations("scalaJsVersion",
+                        filteredSearchQuery(params),
+                        filterScalaJsVersion)
       .map(addLabelsIfMissing(params.scalaJsVersions.toSet))
   }
 
@@ -256,7 +262,9 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
   }
 
   def getSbtVersions(params: SearchParams): Future[List[(String, Long)]] = {
-    versionAggregations("sbtVersion", filteredSearchQuery(params), filterSbtVersion)
+    versionAggregations("sbtVersion",
+                        filteredSearchQuery(params),
+                        filterSbtVersion)
       .map(addLabelsIfMissing(params.sbtVersions.toSet))
   }
 
@@ -510,18 +518,25 @@ object DataRepository {
   }
 
   private def targetQuery(target: ScalaTarget): QueryDefinition = {
-    must(
-      termQuery("scalaVersion", target.scalaVersion.toString),
-      optionalQuery(target.scalaJsVersion) { version =>
-        termQuery("scalaJsVersion", version.toString)
-      },
-      optionalQuery(target.scalaNativeVersion) { version =>
-        termQuery("scalaNativeVersion", version.toString)
-      },
-      optionalQuery(target.sbtVersion) { version =>
-        termQuery("sbtVersion", version.toString)
-      }
-    )
+    target match {
+      case ScalaJvm(scalaVersion) =>
+        termQuery("scalaVersion", scalaVersion.toString)
+      case ScalaJs(scalaVersion, jsVersion) =>
+        must(
+          termQuery("scalaVersion", scalaVersion.toString),
+          termQuery("scalaJsVersion", jsVersion.toString)
+        )
+      case ScalaNative(scalaVersion, nativeVersion) =>
+        must(
+          termQuery("scalaVersion", scalaVersion.toString),
+          termQuery("scalaNativeVersion", nativeVersion.toString)
+        )
+      case SbtPlugin(scalaVersion, sbtVersion) =>
+        must(
+          termQuery("scalaVersion", scalaVersion.toString),
+          termQuery("sbtVersion", sbtVersion.toString)
+        )
+    }
   }
 
   private val contributingQuery = boolQuery().must(

@@ -68,18 +68,38 @@ case class SemanticVersion(
 }
 
 object SemanticVersion extends Parsers {
-  private implicit val preReleaseOrdering: Ordering[PreRelease] = Ordering.by {
-    case ReleaseCandidate(rc) => (Some(rc), None, None)
-    case Milestone(m) => (None, Some(m), None)
-    case OtherPreRelease(pr) => (None, None, Some(pr))
-  }
+  private implicit val preReleaseOrdering: Ordering[Option[PreRelease]] =
+    Ordering.by {
+      case None                       => (3, None, None)
+      case Some(ReleaseCandidate(rc)) => (2, Some(rc), None)
+      case Some(Milestone(m))         => (1, Some(m), None)
+      case Some(OtherPreRelease(pr))  => (0, None, Some(pr))
+    }
 
-  implicit val ordering: Ordering[SemanticVersion] = Ordering.by {
-    x => (x.major, x.minor, x.patch, x.patch2, x.preRelease)
+  implicit def ordering: Ordering[SemanticVersion] = Ordering.by { x =>
+    (x.major, x.minor, x.patch, x.patch2, x.preRelease)
   }
 
   def apply(major: Long, minor: Long): SemanticVersion = {
     SemanticVersion(major, Some(minor))
+  }
+
+  def apply(major: Long, minor: Long, patch: Long): SemanticVersion = {
+    SemanticVersion(major, Some(minor), Some(patch))
+  }
+
+  def apply(major: Long,
+            minor: Long,
+            patch: Long,
+            patch2: Long): SemanticVersion = {
+    SemanticVersion(major, Some(minor), Some(patch), Some(patch2))
+  }
+
+  def apply(major: Long,
+            minor: Long,
+            patch: Long,
+            preRelease: PreRelease): SemanticVersion = {
+    SemanticVersion(major, Some(minor), Some(patch), None, Some(preRelease))
   }
 
   import fastparse._

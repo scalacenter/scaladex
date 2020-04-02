@@ -2,7 +2,7 @@ package ch.epfl.scala.index.model
 
 import org.scalatest._
 
-class SemanticVersionTests extends FunSpec {
+class SemanticVersionTests extends FunSpec with Matchers {
   describe("semantic versionning") {
     it("has an ordering") {
       def order(versions: List[String]): List[SemanticVersion] =
@@ -22,13 +22,17 @@ class SemanticVersionTests extends FunSpec {
 
       assert(
         order(versions) == List(
-          SemanticVersion(1, 1, Some(1)),
-          SemanticVersion(1, 0, Some(1)),
-          SemanticVersion(1, 0, Some(1), None, Some(ReleaseCandidate(2))),
-          SemanticVersion(1, 0, Some(1), None, Some(ReleaseCandidate(1))),
-          SemanticVersion(1, 0, Some(1), None, Some(Milestone(2))),
-          SemanticVersion(1, 0, Some(1), None, Some(Milestone(1))),
-          SemanticVersion(1, 0, Some(1), None, Some(OtherPreRelease("BLABLA")))
+          SemanticVersion(1, 1, 1),
+          SemanticVersion(1, 0, 1),
+          SemanticVersion(1, Some(0), Some(1), None, Some(ReleaseCandidate(2))),
+          SemanticVersion(1, Some(0), Some(1), None, Some(ReleaseCandidate(1))),
+          SemanticVersion(1, Some(0), Some(1), None, Some(Milestone(2))),
+          SemanticVersion(1, Some(0), Some(1), None, Some(Milestone(1))),
+          SemanticVersion(1,
+                          Some(0),
+                          Some(1),
+                          None,
+                          Some(OtherPreRelease("BLABLA")))
         )
       )
     }
@@ -37,53 +41,53 @@ class SemanticVersionTests extends FunSpec {
       describe("binary") {
         // relaxed semantic version
         it("major") {
-          assert(binary("1") == Some("1.0"))
+          binary("1") should contain("1")
         }
 
         // relaxed semantic version
         it("major.minor") {
-          assert(binary("1.2") == Some("1.2"))
+          binary("1.2") should contain("1.2")
         }
 
         it("major.minor.patch") {
-          assert(binary("1.2.3") == Some("1.2"))
+          binary("1.2.3") should contain("1.2")
         }
 
         // relaxed semantic version
         it("major.minor.patch.patch2") {
-          assert(binary("1.2.3.4") == Some("1.2"))
+          binary("1.2.3.4") should contain("1.2")
         }
 
         it("major.minor.patch-rc") {
-          assert(binary("1.2.3-RC5") == Some("1.2.3-RC5"))
+          binary("1.2.3-RC5") should contain("1.2.3-RC5")
         }
 
         it("major.minor.patch-m") {
-          assert(binary("1.2.3-M6") == Some("1.2.3-M6"))
+          binary("1.2.3-M6") should contain("1.2.3-M6")
         }
 
         it("major.minor.patch-xyz") {
-          assert(binary("1.1.1-xyz") == Some("1.1.1-xyz"))
+          binary("1.1.1-xyz") should contain("1.1.1-xyz")
         }
 
         it("major.minor.patch+meta") {
-          assert(binary("1.1.1+some.meta~data") == Some("1.1"))
+          binary("1.1.1+some.meta~data") should contain("1.1")
         }
 
         it("git commit") {
-          assert(binary("13e7afa9c1817d45b2989e545b2e9ead21d00cef") == None)
+          binary("13e7afa9c1817d45b2989e545b2e9ead21d00cef") shouldBe empty
         }
 
         // relaxed semantic version
         it("v sufix") {
-          assert(binary("v1") == Some("1.0"))
+          binary("v1") should contain("1")
         }
       }
 
       describe("full or toString") {
         // relaxed semantic version
         it("major") {
-          assert(full("1") == Some("1.0"))
+          full("1") should contain("1")
         }
 
         // relaxed semantic version
@@ -122,7 +126,7 @@ class SemanticVersionTests extends FunSpec {
 
         // relaxed semantic version
         it("v sufix") {
-          assert(full("v1") == Some("1.0"))
+          full("v1") should contain("1")
         }
       }
     }
@@ -130,77 +134,66 @@ class SemanticVersionTests extends FunSpec {
     describe("parsing") {
       // relaxed semantic version
       it("major") {
-        assert(parseVersion("1") == Some(SemanticVersion(1)))
+        parseVersion("1") should contain(SemanticVersion(1))
       }
 
       // relaxed semantic version
       it("major.minor") {
-        assert(parseVersion("1.2") == Some(SemanticVersion(1, 2)))
+        parseVersion("1.2") should contain(SemanticVersion(1, 2))
       }
 
       it("major.minor.patch") {
-        assert(parseVersion("1.2.3") == Some(SemanticVersion(1, 2, Some(3))))
+        parseVersion("1.2.3") should contain(SemanticVersion(1, 2, 3))
       }
 
       // relaxed semantic version
       it("major.minor.patch.patch2") {
-        assert(
-          parseVersion("1.2.3.4") == Some(
-            SemanticVersion(1, 2, Some(3), Some(4))
-          )
+        parseVersion("1.2.3.4") should contain(
+          SemanticVersion(1, 2, 3, 4)
         )
       }
 
       it("major.minor.patch-rc") {
-        assert(
-          parseVersion("1.2.3-RC5") == Some(
-            SemanticVersion(1, 2, Some(3), None, Some(ReleaseCandidate(5)))
-          )
+        parseVersion("1.2.3-RC5") should contain(
+          SemanticVersion(1, 2, 3, ReleaseCandidate(5))
         )
+
       }
 
       it("major.minor.patch-m") {
-        assert(
-          parseVersion("1.2.3-M6") == Some(
-            SemanticVersion(1, 2, Some(3), None, Some(Milestone(6)))
-          )
+        parseVersion("1.2.3-M6") should contain(
+          SemanticVersion(1, 2, 3, Milestone(6))
         )
       }
 
       it("major.minor.patch-xyz") {
-        assert(
-          parseVersion("1.1.1-xyz") == Some(
-            SemanticVersion(1, 1, Some(1), None, Some(OtherPreRelease("xyz")))
-          )
+        parseVersion("1.1.1-xyz") should contain(
+          SemanticVersion(1,
+                          Some(1),
+                          Some(1),
+                          None,
+                          Some(OtherPreRelease("xyz")))
         )
       }
 
       it("major.minor.patch+meta") {
-        assert(
-          parseVersion("1.1.1+some.meta~data") == Some(
-            SemanticVersion(
-              major = 1,
-              minor = 1,
-              patch = Some(1),
-              patch2 = None,
-              preRelease = None,
-              metadata = Some("some.meta~data")
-            )
+        parseVersion("1.1.1+some.meta~data") should contain(
+          SemanticVersion(
+            major = 1,
+            minor = Some(1),
+            patch = Some(1),
+            metadata = Some("some.meta~data")
           )
         )
       }
 
       it("git commit") {
-        assert(
-          parseVersion("13e7afa9c1817d45b2989e545b2e9ead21d00cef") == None
-        )
+        parseVersion("13e7afa9c1817d45b2989e545b2e9ead21d00cef") shouldBe empty
       }
 
       // relaxed semantic version
       it("v sufix") {
-        assert(
-          parseVersion("v1") == Some(SemanticVersion(1))
-        )
+        parseVersion("v1") should contain(SemanticVersion(1))
       }
     }
   }

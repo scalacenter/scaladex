@@ -15,7 +15,7 @@ object ReleaseSelection {
             selected: Option[String]): ReleaseSelection = {
 
     new ReleaseSelection(
-      target.flatMap(ScalaTarget.decode),
+      target.flatMap(ScalaTarget.parse),
       artifactName,
       version.flatMap(SemanticVersion.parse),
       selected
@@ -42,15 +42,15 @@ object DefaultRelease {
             defaultStableVersion: Boolean): Option[ReleaseOptions] = {
 
     def filterTarget(release: Release): Boolean =
-      selection.target
-        .map(target => Some(target) == release.reference.target)
-        .getOrElse(true)
+      selection.target.forall(
+        target => release.reference.target.contains(target)
+      )
 
     def filterArtifact(release: Release): Boolean =
-      selection.artifact.map(_ == release.reference.artifact).getOrElse(true)
+      selection.artifact.forall(_ == release.reference.artifact)
 
     def filterVersion(release: Release): Boolean =
-      selection.version.map(_ == release.reference.version).getOrElse(true)
+      selection.version.forall(_ == release.reference.version)
 
     def filterAll =
       releases.filter(
@@ -71,14 +71,15 @@ object DefaultRelease {
       }
 
     // descending ordering for versions
-    implicit def ordering = implicitly[Ordering[SemanticVersion]].reverse
+    implicit def ordering: Ordering[SemanticVersion] =
+      SemanticVersion.ordering.reverse
 
     val releasesSorted = selectedReleases.toList.sortBy { release =>
       import release.reference._
       (
         // artifact
         // match default artifact (ex: akka-actors is the default for akka/akka)
-        defaultArtifact != Some(artifact), // false < true
+        !defaultArtifact.contains(artifact), // false < true
         // match project repository (ex: shapeless)
         projectRepository == artifact,
         // alphabetically
@@ -88,10 +89,10 @@ object DefaultRelease {
         version,
         // target
         // stable jvm targets first
-        target.flatMap(_.scalaJsVersion).isDefined,
+        target.exists(_.targetType == Js),
         target.flatMap(_.scalaVersion.preRelease).isDefined,
         target.map(_.scalaVersion),
-        target.flatMap(_.scalaJsVersion)
+        target.collect { case ScalaJs(_, scalaJsVersion) => scalaJsVersion }
       )
     }
 
@@ -102,11 +103,21 @@ object DefaultRelease {
         .flatten
         .sortBy(
           target =>
-            (target.targetType, target.scalaVersion, target.scalaJsVersion)
+            (
+              target.targetType,
+              target.scalaVersion,
+              target match {
+                case ScalaJs(_, scalaJsVersion) => Some(scalaJsVersion)
+                case _                          => None
+              }
+          )
         )
 
       val artifacts = releases.map(_.reference.artifact).toList.sorted
-      val versions = releases.map(_.reference.version).toList.sorted
+      val versions = releases
+        .map(_.reference.version)
+        .toList
+        .sorted(SemanticVersion.ordering.reverse)
 
       ReleaseOptions(
         artifacts,

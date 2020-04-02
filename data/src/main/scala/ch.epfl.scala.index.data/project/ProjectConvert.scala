@@ -2,21 +2,17 @@ package ch.epfl.scala.index
 package data
 package project
 
-import cleanup._
-import model._
-import model.misc._
-import model.release._
-import maven.{ReleaseModel, SbtPluginTarget}
-import bintray._
-import github._
-
-import ch.epfl.scala.index.data.LocalRepository.BintraySbtPlugins
+import ch.epfl.scala.index.data.bintray._
+import ch.epfl.scala.index.data.cleanup._
+import ch.epfl.scala.index.data.elastic.SaveLiveData
+import ch.epfl.scala.index.data.github._
+import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.project.ProjectConvert.ProjectSeed
-
-import elastic.SaveLiveData
+import ch.epfl.scala.index.model._
+import ch.epfl.scala.index.model.misc._
+import ch.epfl.scala.index.model.release._
 import com.github.nscala_time.time.Imports._
 import org.joda.time.DateTime
-
 import org.slf4j.LoggerFactory
 
 class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
@@ -94,7 +90,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
           val projectReference = Project.Reference(organization, repository)
 
           val cachedReleasesForProject =
-            cachedReleases.get(projectReference).getOrElse(Set())
+            cachedReleases.getOrElse(projectReference, Set())
 
           val releases = vs.map {
             case (_,
@@ -106,12 +102,20 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
                   version,
                   isNonStandardLib) =>
               val (targetType,
-                   fullScalaVersion,
                    scalaVersion,
                    scalaJsVersion,
                    scalaNativeVersion,
-                   sbtVersion) =
-                ScalaTarget.split(target)
+                   sbtVersion) = target match {
+                case Some(ScalaJvm(version)) =>
+                  (Jvm, Some(version), None, None, None)
+                case Some(ScalaJs(version, jsVersion)) =>
+                  (Js, Some(version), Some(jsVersion), None, None)
+                case Some(ScalaNative(version, nativeVersion)) =>
+                  (Native, Some(version), None, Some(nativeVersion), None)
+                case Some(SbtPlugin(version, sbtVersion)) =>
+                  (Sbt, Some(version), None, None, Some(sbtVersion))
+                case None => (Java, None, None, None, None)
+              }
 
               Release(
                 maven = pomToMavenReference(pom),
@@ -134,18 +138,24 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
                 javaDependencies = Seq(),
                 reverseDependencies = Seq(),
                 internalDependencies = Seq(),
-                targetType = targetType.getOrElse(Java).toString,
+                targetType = targetType.toString,
                 // for artifact publish with binary, full will return binary
                 // ex cats_2.11 => 2.11
-                fullScalaVersion = fullScalaVersion,
-                scalaVersion = scalaVersion,
-                scalaJsVersion = scalaJsVersion,
-                scalaNativeVersion = scalaNativeVersion,
-                sbtVersion = sbtVersion
+                fullScalaVersion = scalaVersion.map(_.toString),
+                scalaVersion = scalaVersion.map(_.forceBinary.toString),
+                scalaJsVersion = scalaJsVersion.map {
+                  case SemanticVersion(0, minor, _, _, _, _) =>
+                    SemanticVersion(0, minor).toString
+                  case SemanticVersion(major, _, _, _, _, _) =>
+                    SemanticVersion(major).toString
+                },
+                scalaNativeVersion =
+                  scalaNativeVersion.map(_.forceBinary.toString),
+                sbtVersion = sbtVersion.map(_.forceBinary.toString)
               )
           }.toSet ++ cachedReleasesForProject
 
-          val releaseCount = releases.map(_.reference.version).toSet.size
+          val releaseCount = releases.map(_.reference.version).size
 
           val (max, min) = maxMinRelease(releases)
 
@@ -153,8 +163,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
             if (stored)
               storedProjects
                 .get(Project.Reference(organization, repository))
-                .map(_.defaultStableVersion)
-                .getOrElse(true)
+                .forall(_.defaultStableVersion)
             else true
 
           val releaseOptions = DefaultRelease(
@@ -214,7 +223,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
                 // Scala Library is a reverse dependency of almost all projects anyway
                 case (Some(dependencyReference), _)
-                    if (reverse && dependencyReference.isScalaLib) =>
+                    if reverse && dependencyReference.isScalaLib =>
                   cache0
 
                 /* We have both, scala -> scala reference */
@@ -312,12 +321,12 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
         val project =
           seed.toProject(
-            targetType = releases.map(_.targetType).toSet,
-            fullScalaVersion = releases.flatMap(_.fullScalaVersion).toSet,
-            scalaVersion = releases.flatMap(_.scalaVersion).toSet,
-            scalaJsVersion = releases.flatMap(_.scalaJsVersion).toSet,
-            scalaNativeVersion = releases.flatMap(_.scalaNativeVersion).toSet,
-            sbtVersion = releases.flatMap(_.sbtVersion).toSet,
+            targetType = releases.map(_.targetType),
+            fullScalaVersion = releases.flatMap(_.fullScalaVersion),
+            scalaVersion = releases.flatMap(_.scalaVersion),
+            scalaJsVersion = releases.flatMap(_.scalaJsVersion),
+            scalaNativeVersion = releases.flatMap(_.scalaNativeVersion),
+            sbtVersion = releases.flatMap(_.sbtVersion),
             dependencies = dependencies(releasesWithDependencies),
             dependentCount = releasesWithDependencies.view
               .flatMap(_.reverseDependencies.map(_.reference))
@@ -356,7 +365,8 @@ object ProjectConvert {
       updated: Option[String]
   ) {
 
-    def reference = Project.Reference(organization, repository)
+    def reference: Project.Reference =
+      Project.Reference(organization, repository)
 
     def toProject(targetType: Set[String],
                   fullScalaVersion: Set[String],

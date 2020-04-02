@@ -3,10 +3,9 @@ package data
 package project
 
 import cleanup._
-import model.release.ScalaTarget
+import model.release.{SbtPlugin, ScalaJvm, ScalaTarget}
 import model.{Artifact, SemanticVersion}
 import maven.{ReleaseModel, SbtPluginTarget}
-
 import org.slf4j.LoggerFactory
 
 case class ArtifactMeta(
@@ -43,8 +42,8 @@ class ArtifactMetaExtractor(paths: DataPaths) {
           // This is a usual Scala library (whose artifact name is suffixed by the Scala binary version)
           // For example: akka-actors_2.12
           case None => {
-            Artifact(pom.artifactId).map {
-              case (artifactName, target) =>
+            Artifact.parse(pom.artifactId).map {
+              case Artifact(artifactName, target) =>
                 ArtifactMeta(
                   artifactName = artifactName,
                   scalaTarget = Some(target),
@@ -63,8 +62,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
                 Some(
                   ArtifactMeta(
                     artifactName = pom.artifactId,
-                    scalaTarget =
-                      Some(ScalaTarget.sbt(scalaVersion, sbtVersion)),
+                    scalaTarget = Some(SbtPlugin(scalaVersion, sbtVersion)),
                     isNonStandard = false
                   )
                 )
@@ -91,8 +89,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
               // we assume binary compatibility
               ArtifactMeta(
                 artifactName = pom.artifactId,
-                scalaTarget =
-                  Some(ScalaTarget.scala(version.copy(patch = None))),
+                scalaTarget = Some(ScalaJvm(version.copy(patch = None))),
                 isNonStandard = true
             )
           )
@@ -115,7 +112,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
           version =>
             ArtifactMeta(
               artifactName = pom.artifactId,
-              scalaTarget = Some(ScalaTarget.scala(version)),
+              scalaTarget = Some(ScalaJvm(version)),
               isNonStandard = true
           )
         )

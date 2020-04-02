@@ -2,18 +2,12 @@ package ch.epfl.scala.index.model
 package release
 
 object ScalaTargetType {
-  implicit val ordering: Ordering[ScalaTargetType] = {
-    def toInt(v: ScalaTargetType): Int = {
-      v match {
-        case Jvm    => 5
-        case Js     => 4
-        case Native => 3
-        case Sbt    => 2
-        case Java   => 1
-      }
-    }
-
-    Ordering.by(toInt)
+  implicit val ordering: Ordering[ScalaTargetType] = Ordering.by {
+    case Jvm    => 5
+    case Js     => 4
+    case Native => 3
+    case Sbt    => 2
+    case Java   => 1
   }
 }
 
@@ -32,139 +26,87 @@ in other words if we see cats_2.11 we will not infer the full scala version from
 it's dependency on scala-library for example.
 
  */
-case class ScalaTarget(
-    scalaVersion: SemanticVersion,
-    scalaJsVersion: Option[SemanticVersion],
-    scalaNativeVersion: Option[SemanticVersion],
-    sbtVersion: Option[SemanticVersion]
-) extends Ordered[ScalaTarget] {
-
-  def render = {
-    (scalaJsVersion, scalaNativeVersion, sbtVersion) match {
-      case (Some(jsVersion), _, _) =>
-        s"scala-js ${jsVersion.toString} (scala ${scalaVersion.toString})"
-
-      case (_, Some(nativeVersion), _) =>
-        s"scala-native ${nativeVersion.toString} (scala ${scalaVersion.toString})"
-
-      case (_, _, Some(sbtVersion)) =>
-        s"sbt ${sbtVersion.toString} (scala ${scalaVersion.toString})"
-
-      case _ =>
-        s"scala ${scalaVersion.toString}"
-    }
-  }
-
-  def targetType: ScalaTargetType = {
-    (scalaJsVersion, scalaNativeVersion, sbtVersion) match {
-      case (Some(_), _, _) => Js
-      case (_, Some(_), _) => Native
-      case (_, _, Some(_)) => Sbt
-      case _               => Jvm
-    }
-  }
-
-  def encode: String = {
-    (scalaJsVersion, scalaNativeVersion, sbtVersion) match {
-      case (Some(scalaJsVersion), _, _) =>
-        s"_sjs${scalaJsVersion}_${scalaVersion}"
-
-      case (_, Some(scalaNativeVersion), _) =>
-        s"_native${scalaNativeVersion}_${scalaVersion}"
-
-      case (_, _, Some(sbtVersion)) =>
-        s"_${scalaVersion}_${sbtVersion}"
-
-      case _ =>
-        s"_${scalaVersion}"
-    }
-  }
-
-  private final val LT = -1
-  private final val GT = 1
-  private final val EQ = 0
-
-  // Scala > Js > Native
+sealed trait ScalaTarget extends Ordered[ScalaTarget] {
+  def scalaVersion: SemanticVersion
+  def render: String
+  def encode: String
+  def targetType: ScalaTargetType
 
   override def compare(that: ScalaTarget): Int =
     ScalaTarget.ordering.compare(this, that)
 }
 
-object ScalaTarget {
+case class ScalaJvm(scalaVersion: SemanticVersion) extends ScalaTarget {
+  val scalaJsVersion: Option[SemanticVersion] = None
+  val render = s"scala $scalaVersion"
+  val encode = s"_$scalaVersion"
+  val targetType: ScalaTargetType = Jvm
+}
+case class ScalaJs(scalaVersion: SemanticVersion,
+                   scalaJsVersion: SemanticVersion)
+    extends ScalaTarget {
+  val render = s"scala-js $scalaJsVersion ($scalaVersion)"
+  val encode = s"_sjs${scalaJsVersion}_$scalaVersion"
+  val targetType: ScalaTargetType = Js
+}
+case class ScalaNative(scalaVersion: SemanticVersion,
+                       scalaNativeVersion: SemanticVersion)
+    extends ScalaTarget {
+  val scalaJsVersion: Option[SemanticVersion] = None
+  val render = s"scala-native $scalaNativeVersion ($scalaNativeVersion)"
+  val encode = s"_native${scalaNativeVersion}_$scalaVersion"
+  val targetType: ScalaTargetType = Native
+}
 
-  implicit val ordering: Ordering[ScalaTarget] = Ordering.by { target =>
-    (
-      target.targetType,
-      target.scalaVersion,
-      target.scalaJsVersion,
-      target.scalaNativeVersion,
-      target.sbtVersion
-    )
-  }
+case class SbtPlugin(scalaVersion: SemanticVersion, sbtVersion: SemanticVersion)
+    extends ScalaTarget {
+  val scalaJsVersion: Option[SemanticVersion] = None
+  val render = s"sbt $sbtVersion ($scalaVersion)"
+  val encode = s"_${scalaVersion}_$sbtVersion"
+  val targetType: ScalaTargetType = Sbt
+}
 
-  def decode(code: String): Option[ScalaTarget] = {
-    Artifact(code).map(_._2)
-  }
-
-  def scala(scalaVersion: SemanticVersion) =
-    ScalaTarget(scalaVersion = scalaVersion,
-                scalaJsVersion = None,
-                scalaNativeVersion = None,
-                sbtVersion = None)
-
-  def scalaJs(scalaVersion: SemanticVersion, scalaJsVersion: SemanticVersion) =
-    ScalaTarget(scalaVersion = scalaVersion,
-                scalaJsVersion = Some(scalaJsVersion),
-                scalaNativeVersion = None,
-                sbtVersion = None)
-
-  def scalaNative(scalaVersion: SemanticVersion,
-                  scalaNativeVersion: SemanticVersion) =
-    ScalaTarget(scalaVersion = scalaVersion,
-                scalaJsVersion = None,
-                scalaNativeVersion = Some(scalaNativeVersion),
-                sbtVersion = None)
-
-  def sbt(scalaVersion: SemanticVersion, sbtVersion: SemanticVersion) =
-    ScalaTarget(scalaVersion = scalaVersion,
-                scalaJsVersion = None,
-                scalaNativeVersion = None,
-                sbtVersion = Some(sbtVersion))
-
-  def split(target: Option[ScalaTarget]): (Option[ScalaTargetType],
-                                           Option[String],
-                                           Option[String],
-                                           Option[String],
-                                           Option[String],
-                                           Option[String]) = {
-    val targetType =
-      target.map(_.targetType)
-
-    val fullScalaVersion =
-      target.map(_.scalaVersion.toString)
-
-    val scalaVersion =
-      target.map(_.scalaVersion.forceBinary.toString)
-
-    val scalaJsVersion = for {
-      target <- target
-      scalaJsVersion <- target.scalaJsVersion
-    } yield scalaJsVersion match {
-      case SemanticVersion(0, minor, _, _, _, _) => SemanticVersion(0, minor).toString
-      case _ => SemanticVersion(scalaJsVersion.major).toString
+object ScalaTarget extends Parsers {
+  // Scala > Js > Native > Sbt
+  implicit val ordering: Ordering[ScalaTarget] =
+    Ordering.by[ScalaTarget,
+                (ScalaTargetType, SemanticVersion, Option[SemanticVersion])] {
+      case ScalaJvm(version)           => (Jvm, version, None)
+      case ScalaJs(version, jsVersion) => (Js, version, Some(jsVersion))
+      case ScalaNative(version, nativeVersion) =>
+        (Native, version, Some(nativeVersion))
+      case SbtPlugin(version, sbtVersion) => (Sbt, version, Some(sbtVersion))
     }
 
-    val scalaNativeVersion =
-      target.flatMap(_.scalaNativeVersion.map(_.forceBinary.toString))
-
-    val sbtVersion =
-      target.flatMap(_.sbtVersion.map(_.forceBinary.toString))
-
-    (targetType,
-     fullScalaVersion,
-     scalaVersion,
-     scalaJsVersion,
-     scalaNativeVersion,
-     sbtVersion)
+  def parse(code: String): Option[ScalaTarget] = {
+    tryParse(code, x => scalaTargetParser(x))
   }
+
+  import fastparse.NoWhitespace._
+  import fastparse._
+
+  private def scalaPart[_: P] = "_" ~ SemanticVersion.Parser
+
+  private def scalaJs[_: P]: P[ScalaTarget] =
+    ("_sjs" ~ SemanticVersion.Parser ~ scalaPart).map {
+      case (scalaJsVersion, scalaVersion) =>
+        ScalaJs(scalaVersion, scalaJsVersion)
+    }
+
+  private def scalaNative[_: P]: P[ScalaTarget] =
+    ("_native" ~ SemanticVersion.Parser ~ scalaPart).map {
+      case (scalaNativeVersion, scalaVersion) =>
+        ScalaNative(scalaVersion, scalaNativeVersion)
+    }
+
+  private def sbt[_: P]: P[ScalaTarget] =
+    (scalaPart ~ "_" ~ SemanticVersion.Parser).map {
+      case (scalaVersion, sbtVersion) =>
+        SbtPlugin(scalaVersion, sbtVersion)
+    }
+
+  private def scala[_: P]: P[ScalaTarget] = scalaPart.map(ScalaJvm)
+
+  def scalaTargetParser[_: P]: P[ScalaTarget] =
+    scalaJs | scalaNative | sbt | scala
 }

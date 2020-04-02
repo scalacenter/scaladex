@@ -6,4 +6,11 @@ trait Parsers {
   protected def Alpha[_: P] =
     CharPred(c => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')).!
   protected def Digit[_: P] = CharIn("0123456789").!
+
+  def tryParse[T](input: ParserInputSource, parser: P[_] => P[T]): Option[T] = {
+    fastparse.parse(input, parser) match {
+      case Parsed.Success(v, _) => Some(v)
+      case _                    => None
+    }
+  }
 }

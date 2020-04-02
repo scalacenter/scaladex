@@ -61,28 +61,22 @@ class SearchApi(
      sbtVersion.flatMap(SemanticVersion.parse)) match {
 
       case (Some("JVM"), Some(scalaVersion), _, _, _) =>
-        Some(ScalaTarget.scala(scalaVersion.binary))
+        Some(ScalaJvm(scalaVersion.binary))
 
       case (Some("JS"), Some(scalaVersion), Some(scalaJsVersion), _, _) =>
-        Some(ScalaTarget.scalaJs(scalaVersion.binary, scalaJsVersion.binary))
+        Some(ScalaJs(scalaVersion.binary, scalaJsVersion.binary))
 
       case (Some("NATIVE"),
             Some(scalaVersion),
             _,
             Some(scalaNativeVersion),
             _) =>
-        Some(
-          ScalaTarget.scalaNative(scalaVersion.binary,
-                                  scalaNativeVersion.binary)
-        )
+        Some(ScalaNative(scalaVersion.binary, scalaNativeVersion.binary))
 
       case (Some("SBT"), Some(scalaVersion), _, _, Some(sbtVersion)) =>
-        Some(
-          ScalaTarget.sbt(scalaVersion.binary, sbtVersion.binary)
-        )
+        Some(SbtPlugin(scalaVersion.binary, sbtVersion.binary))
 
-      case _ =>
-        None
+      case _ => None
     }
   }
 

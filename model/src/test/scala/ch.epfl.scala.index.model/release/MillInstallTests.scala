@@ -12,8 +12,8 @@ class MillInstallTests extends FunSuite with TestHelpers {
         artifactId = "http4s-core_2.12",
         artifactName = "http4s-core",
         target = Some(
-          ScalaTarget.scala(
-            scalaVersion = SemanticVersion("2.12.3").get
+          ScalaJvm(
+            scalaVersion = SemanticVersion(2, 12, 3)
           )
         )
       ).millInstall
@@ -32,8 +32,8 @@ class MillInstallTests extends FunSuite with TestHelpers {
         version = "0.8.2",
         artifactName = "doodle",
         target = Some(
-          ScalaTarget.scala(
-            scalaVersion = SemanticVersion("2.11").get
+          ScalaJvm(
+            scalaVersion = SemanticVersion(2, 11)
           )
         ),
         resolver = Some(BintrayResolver("noelwelsh", "maven"))

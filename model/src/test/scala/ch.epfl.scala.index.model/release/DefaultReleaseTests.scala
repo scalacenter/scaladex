@@ -3,7 +3,7 @@ package release
 
 import org.scalatest._
 
-class DefaultReleaseTests extends FunSpec {
+class DefaultReleaseTests extends FunSpec with Matchers {
 
   def emptyRelease(maven: MavenReference,
                    reference: Release.Reference): Release =
@@ -33,12 +33,12 @@ class DefaultReleaseTests extends FunSpec {
   def prepare(organization: String,
               repository: String,
               groupdId: String,
-              releases: List[(String, String)]) = {
+              releases: List[(String, String)]): Set[Release] = {
     releases
       .flatMap {
         case (artifactId, rawVersion) =>
           for {
-            (artifact, target) <- Artifact(artifactId)
+            Artifact(artifact, target) <- Artifact.parse(artifactId)
             version <- SemanticVersion(rawVersion)
           } yield (artifactId, rawVersion, artifact, target, version)
       }
@@ -95,7 +95,11 @@ class DefaultReleaseTests extends FunSpec {
       )
 
       val result =
-        DefaultRelease(repository, ReleaseSelection.empty, releases, None, true)
+        DefaultRelease(repository,
+                       ReleaseSelection.empty,
+                       releases,
+                       None,
+                       defaultStableVersion = true)
 
       val versions: List[SemanticVersion] =
         List(
@@ -109,12 +113,10 @@ class DefaultReleaseTests extends FunSpec {
 
       val targets: List[ScalaTarget] =
         List(
-          ScalaTarget.scalaJs(SemanticVersion("2.11").get,
-                              SemanticVersion("0.6").get),
-          ScalaTarget.scalaJs(SemanticVersion("2.10").get,
-                              SemanticVersion("0.6").get),
-          ScalaTarget.scala(SemanticVersion("2.11").get),
-          ScalaTarget.scala(SemanticVersion("2.10").get)
+          ScalaJs(SemanticVersion("2.11").get, SemanticVersion("0.6").get),
+          ScalaJs(SemanticVersion("2.10").get, SemanticVersion("0.6").get),
+          ScalaJvm(SemanticVersion("2.11").get),
+          ScalaJvm(SemanticVersion("2.10").get)
         )
 
       val expected: Option[ReleaseOptions] =
@@ -132,13 +134,13 @@ class DefaultReleaseTests extends FunSpec {
                 repository,
                 "cats-core",
                 SemanticVersion("0.6.0").get,
-                Some(ScalaTarget.scala(SemanticVersion("2.11").get))
+                Some(ScalaJvm(SemanticVersion("2.11").get))
               )
             )
           )
         )
 
-      assert(expected == result)
+      result shouldBe expected
     }
 
     it("selected artifact") {
@@ -164,7 +166,7 @@ class DefaultReleaseTests extends FunSpec {
         ),
         releases,
         None,
-        true
+        defaultStableVersion = true
       )
 
       val expected =
@@ -178,7 +180,7 @@ class DefaultReleaseTests extends FunSpec {
               SemanticVersion("2.4.8").get
             ),
             targets = List(
-              ScalaTarget.scala(SemanticVersion("2.11").get)
+              ScalaJvm(SemanticVersion("2.11").get)
             ),
             release = emptyRelease(
               MavenReference(groupdId,
@@ -189,7 +191,7 @@ class DefaultReleaseTests extends FunSpec {
                 repository,
                 "akka-distributed-data-experimental",
                 SemanticVersion("2.4.8").get,
-                Some(ScalaTarget.scala(SemanticVersion("2.11").get))
+                Some(ScalaJvm(SemanticVersion("2.11").get))
               )
             )
           )
@@ -215,7 +217,11 @@ class DefaultReleaseTests extends FunSpec {
       )
 
       val result =
-        DefaultRelease(repository, ReleaseSelection.empty, releases, None, true)
+        DefaultRelease(repository,
+                       ReleaseSelection.empty,
+                       releases,
+                       None,
+                       defaultStableVersion = true)
 
       val versions: List[SemanticVersion] =
         List(
@@ -225,8 +231,8 @@ class DefaultReleaseTests extends FunSpec {
 
       val targets: List[ScalaTarget] =
         List(
-          ScalaTarget.scala(SemanticVersion("2.12.2").get),
-          ScalaTarget.scala(SemanticVersion("2.12").get)
+          ScalaJvm(SemanticVersion("2.12.2").get),
+          ScalaJvm(SemanticVersion("2.12").get)
         )
 
       val expected: Option[ReleaseOptions] =
@@ -244,7 +250,7 @@ class DefaultReleaseTests extends FunSpec {
                 repository,
                 "scalafix-core",
                 SemanticVersion("0.5.3").get,
-                Some(ScalaTarget.scala(SemanticVersion("2.12").get))
+                Some(ScalaJvm(SemanticVersion("2.12").get))
               )
             )
           )

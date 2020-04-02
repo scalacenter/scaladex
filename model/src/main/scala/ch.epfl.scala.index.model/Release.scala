@@ -49,33 +49,19 @@ case class Release(
    * @return
    */
   def sbtInstall: String = {
-    val isSbtPlugin = reference.target.flatMap(_.sbtVersion).isDefined
-
-    val install =
-      if (!isSbtPlugin) {
-        val isScalaJs =
-          reference.target.flatMap(_.scalaJsVersion).isDefined
-
-        val isScalaNative =
-          reference.target.flatMap(_.scalaNativeVersion).isDefined
-
-        val isCrossFull =
-          reference.target.flatMap(_.scalaVersion.patch).isDefined
-
-        val isPreRelease =
-          reference.target.flatMap(_.scalaVersion.preRelease).isDefined
-
-        val (artifactOperator, crossSuffix) =
-          if (isNonStandardLib) ("%", "")
-          else if (isScalaJs || isScalaNative) ("%%%", "")
-          else if (isCrossFull & !isPreRelease)
-            ("%", " cross CrossVersion.full")
-          else ("%%", "")
-
-        s"""libraryDependencies += "${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}"$crossSuffix"""
-      } else {
+    val install = reference.target match {
+      case Some(SbtPlugin(_, _)) =>
         s"""addSbtPlugin("${maven.groupId}" % "${reference.artifact}" % "${reference.version}")"""
-      }
+      case _ if isNonStandardLib =>
+        s"""libraryDependencies += "${maven.groupId}" % "${reference.artifact}" % "${reference.version}""""
+      case Some(ScalaJs(_, _) | ScalaNative(_, _)) =>
+        s"""libraryDependencies += "${maven.groupId}" %%% "${reference.artifact}" % "${reference.version}""""
+      case Some(ScalaJvm(version))
+          if version.patch.isDefined && version.preRelease.isEmpty =>
+        s"""libraryDependencies += "${maven.groupId}" % "${reference.artifact}" % "${reference.version}" cross CrossVersion.full"""
+      case _ =>
+        s"""libraryDependencies += "${maven.groupId}" %% "${reference.artifact}" % "${reference.version}""""
+    }
 
     List(
       Some(install),
