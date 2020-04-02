@@ -127,11 +127,10 @@ package object html {
   }
 
   def sortVersions(versions: Set[String],
-                   scala: Boolean = false): List[String] = {
-    val minVersion = SemanticVersion(2, 10)
+                   filter: SemanticVersion => Boolean): List[String] = {
     versions.toList
       .flatMap(SemanticVersion.parse)
-      .filter(version => !scala || version >= minVersion)
+      .filter(filter)
       .sorted
       .map(version => SemanticVersion(version.major, version.minor).toString)
       .distinct

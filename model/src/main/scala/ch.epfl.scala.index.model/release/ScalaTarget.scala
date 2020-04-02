@@ -82,6 +82,26 @@ object ScalaTarget extends Parsers {
     tryParse(code, x => scalaTargetParser(x))
   }
 
+  private val minScalaVersion = SemanticVersion(2, 10)
+  private val maxScalaVersion = SemanticVersion(2, 13)
+
+  def isValidScalaVersion(version: SemanticVersion): Boolean = {
+    version >= minScalaVersion && version <= maxScalaVersion
+  }
+
+  private def minScalaJsVersion = SemanticVersion(0, 6)
+
+  def isValidScalaJsVersion(version: SemanticVersion): Boolean = {
+    minScalaJsVersion <= version
+  }
+
+  private def minSbtVersion = SemanticVersion(0, 11)
+  private def maxSbtVersion = SemanticVersion(1, 3)
+
+  def isValidSbtVersion(version: SemanticVersion): Boolean = {
+    minSbtVersion <= version && version <= maxSbtVersion
+  }
+
   import fastparse.NoWhitespace._
   import fastparse._
 
