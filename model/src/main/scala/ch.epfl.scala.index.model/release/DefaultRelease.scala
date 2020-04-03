@@ -37,48 +37,33 @@ case class ReleaseOptions(
 object DefaultRelease {
   def apply(projectRepository: String,
             selection: ReleaseSelection,
-            releases: Set[Release],
+            releases: Seq[Release],
             defaultArtifact: Option[String],
             defaultStableVersion: Boolean): Option[ReleaseOptions] = {
-
-    def filterTarget(release: Release): Boolean =
-      selection.target.forall(
-        target => release.reference.target.contains(target)
-      )
-
-    def filterArtifact(release: Release): Boolean =
-      selection.artifact.forall(_ == release.reference.artifact)
-
-    def filterVersion(release: Release): Boolean =
-      selection.version.forall(_ == release.reference.version)
-
-    def filterAll =
-      releases.filter(
-        release =>
-          filterTarget(release) &&
-            filterArtifact(release) &&
-            filterVersion(release)
-      )
 
     val selectedReleases =
       selection.selected match {
         case Some(selected) =>
-          if (selected == "target") releases.filter(filterTarget)
-          else if (selected == "artifact") releases.filter(filterArtifact)
-          else if (selected == "version") releases.filter(filterVersion)
-          else filterAll
-        case None => filterAll
+          if (selected == "target") releases.filter(filterTarget(selection))
+          else if (selected == "artifact")
+            releases.filter(filterArtifact(selection))
+          else if (selected == "version")
+            releases.filter(filterVersion(selection))
+          else releases.filter(filterAll(selection))
+        case None => releases.filter(filterAll(selection))
       }
 
-    val releasesSorted = selectedReleases.toSeq.view.sortBy { release =>
+    val releasesSorted = selectedReleases.view.sortBy { release =>
       val ref = release.reference
       (
         // default artifact (ex: akka-actors is the default for akka/akka)
-        if (defaultArtifact.contains(ref.artifact)) 0 else 1,
+        if (defaultArtifact.contains(ref.artifact)) 1 else 0,
         // project repository (ex: shapeless)
         if (projectRepository == ref.artifact) 1 else 0,
         // alphabetically
         ref.artifact,
+        // stable version first
+        if (defaultStableVersion && ref.version.preRelease.isDefined) 0 else 1,
         // version
         ref.version,
         // target
@@ -87,18 +72,24 @@ object DefaultRelease {
     }.reverse
 
     releasesSorted.headOption.map { release =>
-      val targets = releases.toSeq.view
+      val targets = releases.view
         .flatMap(_.reference.target)
         .distinct
         .sorted
         .reverse
         .toList
 
-      val artifacts = releases.map(_.reference.artifact).toList.sorted
-      val versions = releases
-        .map(_.reference.version)
+      val artifacts = releases.view
+        .map(_.reference.artifact)
+        .distinct
+        .sorted
         .toList
+
+      val versions = releases.view
+        .map(_.reference.version)
+        .distinct
         .sorted(SemanticVersion.ordering.reverse)
+        .toList
 
       ReleaseOptions(
         artifacts,
@@ -108,4 +99,20 @@ object DefaultRelease {
       )
     }
   }
+
+  def filterTarget(selection: ReleaseSelection)(release: Release): Boolean =
+    selection.target.forall(
+      target => release.reference.target.contains(target)
+    )
+
+  def filterArtifact(selection: ReleaseSelection)(release: Release): Boolean =
+    selection.artifact.forall(_ == release.reference.artifact)
+
+  def filterVersion(selection: ReleaseSelection)(release: Release): Boolean =
+    selection.version.forall(_ == release.reference.version)
+
+  def filterAll(selection: ReleaseSelection)(release: Release): Boolean =
+    filterTarget(selection)(release) &&
+      filterArtifact(selection)(release) &&
+      filterVersion(selection)(release)
 }

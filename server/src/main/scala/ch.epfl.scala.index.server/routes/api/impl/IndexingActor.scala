@@ -87,7 +87,8 @@ class IndexingActor(
         cachedReleases = cachedReleases
       ).head
 
-      cachedReleases = upserts(cachedReleases, projectReference, newReleases)
+      cachedReleases =
+        upserts(cachedReleases, projectReference, newReleases.toSet)
 
       val updatedProject = newProject.copy(
         liveData = true

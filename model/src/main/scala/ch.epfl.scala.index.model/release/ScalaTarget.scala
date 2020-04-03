@@ -31,38 +31,46 @@ sealed trait ScalaTarget extends Ordered[ScalaTarget] {
   def render: String
   def encode: String
   def targetType: ScalaTargetType
+  def isValid: Boolean
 
   override def compare(that: ScalaTarget): Int =
     ScalaTarget.ordering.compare(this, that)
 }
 
 case class ScalaJvm(scalaVersion: BinaryVersion) extends ScalaTarget {
-  val scalaJsVersion: Option[SemanticVersion] = None
   val render = s"scala $scalaVersion"
   val encode = s"_$scalaVersion"
   val targetType: ScalaTargetType = Jvm
+  val isValid: Boolean = ScalaJvm.isValid(scalaVersion)
 }
 case class ScalaJs(scalaVersion: BinaryVersion, scalaJsVersion: BinaryVersion)
     extends ScalaTarget {
   val render = s"scala-js $scalaJsVersion ($scalaVersion)"
   val encode = s"_sjs${scalaJsVersion}_$scalaVersion"
   val targetType: ScalaTargetType = Js
+  val isValid: Boolean = ScalaJvm.isValid(scalaVersion) && ScalaJs.isValid(
+    scalaJsVersion
+  )
 }
 case class ScalaNative(scalaVersion: BinaryVersion,
                        scalaNativeVersion: BinaryVersion)
     extends ScalaTarget {
-  val scalaJsVersion: Option[SemanticVersion] = None
   val render = s"scala-native $scalaNativeVersion ($scalaNativeVersion)"
   val encode = s"_native${scalaNativeVersion}_$scalaVersion"
   val targetType: ScalaTargetType = Native
+  val isValid: Boolean = ScalaJvm.isValid(scalaVersion) && ScalaNative.isValid(
+    scalaNativeVersion
+  )
 }
 
 case class SbtPlugin(scalaVersion: BinaryVersion, sbtVersion: BinaryVersion)
     extends ScalaTarget {
-  val scalaJsVersion: Option[SemanticVersion] = None
   val render = s"sbt $sbtVersion ($scalaVersion)"
   val encode = s"_${scalaVersion}_$sbtVersion"
   val targetType: ScalaTargetType = Sbt
+  val isValid: Boolean = ScalaJvm.isValid(scalaVersion) && SbtPlugin.isValid(
+    sbtVersion
+  )
 }
 
 object ScalaJvm {
@@ -79,6 +87,47 @@ object ScalaJvm {
         MinorBinary(major, minor.getOrElse(0))
     }
     ScalaJvm(binaryVersion)
+  }
+
+  val `2.10`: BinaryVersion = MinorBinary(2, 10)
+  val `2.11`: BinaryVersion = MinorBinary(2, 11)
+  val `2.12`: BinaryVersion = MinorBinary(2, 12)
+  val `2.13`: BinaryVersion = MinorBinary(2, 13)
+
+  private def stableBinaryVersions = Set(`2.10`, `2.11`, `2.12`, `2.13`)
+
+  def isValid(version: BinaryVersion): Boolean =
+    stableBinaryVersions.contains(version)
+}
+
+object ScalaJs {
+  val `0.6`: BinaryVersion = MinorBinary(0, 6)
+  val `1.x`: BinaryVersion = MajorBinary(1)
+
+  private def stableBinaryVersions = Set(`0.6`, `1.x`)
+
+  def isValid(version: BinaryVersion): Boolean =
+    stableBinaryVersions.contains(version)
+}
+
+object ScalaNative {
+  val `0.3`: BinaryVersion = MinorBinary(0, 3)
+  val `0.4.0-M2`: BinaryVersion = PreReleaseBinary(0, 4, Some(0), Milestone(2))
+
+  def isValid(version: BinaryVersion): Boolean = {
+    version == `0.3` || version >= `0.4.0-M2`
+  }
+}
+
+object SbtPlugin {
+  val `0.13`: BinaryVersion = MinorBinary(0, 13)
+  val `1.0`: BinaryVersion = MinorBinary(1, 0)
+  val `1.x`: BinaryVersion = MajorBinary(1)
+
+  private def stableBinaryVersions = Set(`0.13`, `1.0`, `1.x`)
+
+  def isValid(version: BinaryVersion): Boolean = {
+   stableBinaryVersions.contains(version)
   }
 }
 
@@ -99,28 +148,6 @@ object ScalaTarget extends Parsers {
   def parse(code: String): Option[ScalaTarget] = {
     tryParse(code, x => Parser(x))
   }
-
-  private val minScalaVersion = MinorBinary(2, 10)
-  private val maxScalaVersion = MinorBinary(2, 13)
-
-  def isValidScalaVersion(version: BinaryVersion): Boolean = {
-    version >= minScalaVersion && version <= maxScalaVersion
-  }
-
-  private def minScalaJsVersion = MinorBinary(0, 6)
-
-  def isValidScalaJsVersion(version: BinaryVersion): Boolean = {
-    minScalaJsVersion <= version
-  }
-
-  private def minSbtVersion = MinorBinary(0, 11)
-  private def maxSbtVersion = MinorBinary(1, 3)
-
-  def isValidSbtVersion(version: BinaryVersion): Boolean = {
-    minSbtVersion <= version && version <= maxSbtVersion
-  }
-
-  def isValidScalaNativeVersion(version: BinaryVersion): Boolean = true
 
   import fastparse.NoWhitespace._
   import fastparse._

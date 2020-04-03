@@ -69,7 +69,7 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
               Math.ceil(result.totalHits / params.total.toDouble).toInt,
             itemCount = result.totalHits
           ),
-          result.to[Project].map(_.hideId)
+          result.to[Project].map(_.formatForDisplaying)
         )
       }
   }
@@ -84,7 +84,7 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
 
     val request = search(indexName / releasesCollection).query(query).size(5000)
 
-    esClient.execute(request).map(_.to[Release])
+    esClient.execute(request).map(_.to[Release].filter(_.isValid))
   }
 
   /**
@@ -138,7 +138,7 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
         DefaultRelease(
           project.repository,
           selection,
-          releases.toSet,
+          releases,
           project.defaultArtifact,
           project.defaultStableVersion
         ).map(sel => (project, sel))
@@ -175,7 +175,7 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
         "created",
         frontPageCount
       )
-    } yield projects.map(_.hideId)
+    } yield projects.map(_.formatForDisplaying)
   }
 
   def getLatestReleases(): Future[List[Release]] = {
@@ -221,35 +221,31 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
   }
 
   def getAllScalaVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("scalaVersion",
-                        notDeprecatedQuery,
-                        ScalaTarget.isValidScalaVersion)
+    versionAggregations("scalaVersion", notDeprecatedQuery, ScalaJvm.isValid)
   }
 
   def getScalaVersions(params: SearchParams): Future[List[(String, Long)]] = {
     versionAggregations("scalaVersion",
                         filteredSearchQuery(params),
-                        ScalaTarget.isValidScalaVersion)
+                        ScalaJvm.isValid)
       .map(addLabelsIfMissing(params.scalaVersions.toSet))
   }
 
   def getAllScalaJsVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("scalaJsVersion",
-                        notDeprecatedQuery,
-                        ScalaTarget.isValidScalaJsVersion)
+    versionAggregations("scalaJsVersion", notDeprecatedQuery, ScalaJs.isValid)
   }
 
   def getScalaJsVersions(params: SearchParams): Future[List[(String, Long)]] = {
     versionAggregations("scalaJsVersion",
                         filteredSearchQuery(params),
-                        ScalaTarget.isValidScalaJsVersion)
+                        ScalaJs.isValid)
       .map(addLabelsIfMissing(params.scalaJsVersions.toSet))
   }
 
   def getAllScalaNativeVersions(): Future[List[(String, Long)]] = {
     versionAggregations("scalaNativeVersion",
                         notDeprecatedQuery,
-                        ScalaTarget.isValidScalaNativeVersion)
+                        ScalaNative.isValid)
   }
 
   def getScalaNativeVersions(
@@ -258,20 +254,18 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
     versionAggregations(
       "scalaNativeVersion",
       filteredSearchQuery(params),
-      ScalaTarget.isValidScalaNativeVersion
+      ScalaNative.isValid
     ).map(addLabelsIfMissing(params.scalaNativeVersions.toSet))
   }
 
   def getAllSbtVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("sbtVersion",
-                        notDeprecatedQuery,
-                        ScalaTarget.isValidSbtVersion)
+    versionAggregations("sbtVersion", notDeprecatedQuery, SbtPlugin.isValid)
   }
 
   def getSbtVersions(params: SearchParams): Future[List[(String, Long)]] = {
     versionAggregations("sbtVersion",
                         filteredSearchQuery(params),
-                        ScalaTarget.isValidSbtVersion)
+                        SbtPlugin.isValid)
       .map(addLabelsIfMissing(params.sbtVersions.toSet))
   }
 

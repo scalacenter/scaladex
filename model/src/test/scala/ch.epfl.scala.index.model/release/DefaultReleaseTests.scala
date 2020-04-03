@@ -32,7 +32,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
   def prepare(organization: String,
               repository: String,
               groupdId: String,
-              releases: List[(String, String)]): Set[Release] = {
+              releases: List[(String, String)]): Seq[Release] = {
     releases
       .flatMap {
         case (artifactId, rawVersion) =>
@@ -52,7 +52,6 @@ class DefaultReleaseTests extends FunSpec with Matchers {
                               Some(target))
           )
       }
-      .toSet
   }
 
   describe("Default Release") {

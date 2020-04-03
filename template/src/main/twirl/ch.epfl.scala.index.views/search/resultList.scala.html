@@ -27,7 +27,7 @@
               @if(project.scalaVersion.nonEmpty){
                 <div>
                   Scala (JVM):
-                  @for(v <- sortVersions(project.scalaVersion, ScalaTarget.isValidScalaVersion)) {
+                  @for(v <- project.scalaVersion) {
                     <span class="targets">@v</span>
                   }
                 </div>
@@ -36,7 +36,7 @@
               @if(project.sbtVersion.nonEmpty){
                 <div>
                   Sbt:
-                  @for(v <- sortVersions(project.sbtVersion, ScalaTarget.isValidSbtVersion)) {
+                  @for(v <- project.sbtVersion) {
                     <span class="targets">@v</span>
                   }
                 </div>
@@ -45,7 +45,7 @@
               @if(project.scalaJsVersion.nonEmpty){
                 <div>
                   Scala.js:
-                  @for(v <- sortVersions(project.scalaJsVersion, ScalaTarget.isValidScalaJsVersion)) {
+                  @for(v <- project.scalaJsVersion) {
                     <span class="targets">@v</span>
                   }
                 </div>
@@ -54,7 +54,7 @@
               @if(project.scalaNativeVersion.nonEmpty){
                 <div>
                   Scala-Native:
-                  @for(v <- sortVersions(project.scalaNativeVersion, ScalaTarget.isValidScalaNativeVersion)) {
+                  @for(v <- project.scalaNativeVersion) {
                     <span class="targets">@v</span>
                   }
                 </div>

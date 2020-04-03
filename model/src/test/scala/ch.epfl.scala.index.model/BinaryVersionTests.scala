@@ -25,4 +25,17 @@ class BinaryVersionTests
       BinaryVersion.parse(input) should contain(output)
     }
   }
+
+  it("should be ordered") {
+    val inputs = Table[BinaryVersion, BinaryVersion](
+      ("lower", "higher"),
+      (MajorBinary(1), MajorBinary(2)),
+      (MajorBinary(1), MinorBinary(1, 1)), // 1.x < 1.1
+      (MajorBinary(1), MinorBinary(2, 1)),
+      (PreReleaseBinary(1, 2, None, Milestone(1)), MinorBinary(1, 2)),
+      (MajorBinary(1), PreReleaseBinary(2, 0, None, Milestone(1)))
+    )
+
+    forAll(inputs) { (lower, higher) => lower shouldBe < (higher)}
+  }
 }

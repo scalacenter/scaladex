@@ -31,7 +31,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
       pomsRepoSha: List[(ReleaseModel, LocalRepository, String)],
       stored: Boolean = true,
       cachedReleases: Map[Project.Reference, Set[Release]] = Map()
-  ): List[(Project, Set[Release])] = {
+  ): List[(Project, Seq[Release])] = {
 
     val githubRepoExtractor = new GithubRepoExtractor(paths)
 
@@ -61,7 +61,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
       MavenReference(pom.groupId, pom.artifactId, pom.version)
 
     def maxMinRelease(
-        releases: Set[Release]
+        releases: Seq[Release]
     ): (Option[String], Option[String]) = {
       def sortDate(rawDates: List[String]): List[String] = {
         rawDates
@@ -144,7 +144,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
                 scalaNativeVersion = scalaNativeVersion.map(_.toString),
                 sbtVersion = sbtVersion.map(_.toString)
               )
-          }.toSet ++ cachedReleasesForProject
+          } ++ cachedReleasesForProject
 
           val releaseCount = releases.map(_.reference.version).size
 
@@ -265,17 +265,17 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
     }
 
     def collectDependencies(
-        releases: Set[Release],
+        releases: Seq[Release],
         f: Release.Reference => Option[String]
     ): Set[String] = {
       (for {
-        release <- releases.toList
-        dependency <- release.scalaDependencies.toList
-        r <- f(dependency.reference).toList
+        release <- releases
+        dependency <- release.scalaDependencies
+        r <- f(dependency.reference)
       } yield r).toSet
     }
 
-    def dependencies(releases: Set[Release]): Set[String] =
+    def dependencies(releases: Seq[Release]): Set[String] =
       collectDependencies(releases, r => Some(r.name))
 
     def belongsTo(reference: Project.Reference): Dependency => Boolean = {
@@ -312,11 +312,11 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
         val project =
           seed.toProject(
-            targetType = releases.map(_.targetType),
-            scalaVersion = releases.flatMap(_.scalaVersion),
-            scalaJsVersion = releases.flatMap(_.scalaJsVersion),
-            scalaNativeVersion = releases.flatMap(_.scalaNativeVersion),
-            sbtVersion = releases.flatMap(_.sbtVersion),
+            targetType = releases.map(_.targetType).distinct,
+            scalaVersion = releases.flatMap(_.scalaVersion).distinct,
+            scalaJsVersion = releases.flatMap(_.scalaJsVersion).distinct,
+            scalaNativeVersion = releases.flatMap(_.scalaNativeVersion).distinct,
+            sbtVersion = releases.flatMap(_.sbtVersion).distinct,
             dependencies = dependencies(releasesWithDependencies),
             dependentCount = releasesWithDependencies.view
               .flatMap(_.reverseDependencies.map(_.reference))
@@ -358,11 +358,11 @@ object ProjectConvert {
     def reference: Project.Reference =
       Project.Reference(organization, repository)
 
-    def toProject(targetType: Set[String],
-                  scalaVersion: Set[String],
-                  scalaJsVersion: Set[String],
-                  scalaNativeVersion: Set[String],
-                  sbtVersion: Set[String],
+    def toProject(targetType: List[String],
+                  scalaVersion: List[String],
+                  scalaJsVersion: List[String],
+                  scalaNativeVersion: List[String],
+                  sbtVersion: List[String],
                   dependencies: Set[String],
                   dependentCount: Int): Project =
       Project(

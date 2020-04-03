@@ -1,5 +1,11 @@
 package ch.epfl.scala.index.model
 
+import ch.epfl.scala.index.model.release.{
+  SbtPlugin,
+  ScalaJs,
+  ScalaJvm,
+  ScalaNative
+}
 import misc.{GithubInfo, GithubRepo, Url}
 
 /**
@@ -53,16 +59,26 @@ case class Project(
     id: Option[String] = None,
     created: Option[String],
     updated: Option[String],
-    targetType: Set[String],
-    scalaVersion: Set[String],
-    scalaJsVersion: Set[String],
-    scalaNativeVersion: Set[String],
-    sbtVersion: Set[String],
+    targetType: List[String],
+    scalaVersion: List[String],
+    scalaJsVersion: List[String],
+    scalaNativeVersion: List[String],
+    sbtVersion: List[String],
     dependencies: Set[String],
     dependentCount: Int,
     primaryTopic: Option[String] = None
 ) {
-  def hideId: Project = copy(id = None)
+  def formatForDisplaying: Project = {
+    import BinaryVersion.sortAndFilter
+    copy(
+      id = None,
+      scalaVersion = sortAndFilter(scalaVersion, ScalaJvm.isValid).toList,
+      scalaJsVersion = sortAndFilter(scalaJsVersion, ScalaJs.isValid).toList,
+      scalaNativeVersion =
+        sortAndFilter(scalaNativeVersion, ScalaNative.isValid).toList,
+      sbtVersion = sortAndFilter(sbtVersion, SbtPlugin.isValid).toList
+    )
+  }
 
   def reference: Project.Reference = Project.Reference(organization, repository)
 

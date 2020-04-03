@@ -156,7 +156,6 @@ class ProjectPages(
       .getProjectPage(Project.Reference(owner, repo), selection)
       .map(_.map {
         case (project, options) =>
-          import options._
           val twitterCard = for {
             github <- project.github
             description <- github.description
@@ -169,16 +168,16 @@ class ProjectPages(
             )
 
           val versions0 =
-            if (project.strictVersions) versions.filter(_.isSemantic)
-            else versions
+            if (project.strictVersions) options.versions.filter(_.isSemantic)
+            else options.versions
 
           (OK,
            views.project.html.project(
              project,
              options.artifacts,
              versions0,
-             targets,
-             release,
+             options.targets,
+             options.release,
              user,
              canEdit(owner, repo, userState),
              twitterCard

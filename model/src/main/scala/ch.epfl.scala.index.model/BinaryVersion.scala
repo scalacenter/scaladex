@@ -33,15 +33,25 @@ final case class PreReleaseBinary(major: Int,
 object BinaryVersion extends Parsers {
   import fastparse._
   import fastparse.NoWhitespace._
-
-  // Major > Minor > Patch > PreRelease
+  
   implicit val ordering: Ordering[BinaryVersion] = Ordering.by {
-    case MajorBinary(major)        => (3, major, None, None, None)
-    case MinorBinary(major, minor) => (2, major, Some(minor), None, None)
+    case MajorBinary(major)        => (major, None, None, None)
+    case MinorBinary(major, minor) => (major, Some(minor), None, None)
     case PatchBinary(major, minor, patch) =>
-      (1, major, Some(minor), Some(patch), None)
+      (major, Some(minor), Some(patch), None)
     case PreReleaseBinary(major, minor, patch, preRelease) =>
-      (0, major, Some(minor), patch, Some(preRelease))
+      (major, Some(minor), patch, Some(preRelease))
+  }
+
+  def sortAndFilter(
+      binaryVersions: Seq[String],
+      filter: BinaryVersion => Boolean
+  ): Seq[String] = {
+    binaryVersions.view
+      .flatMap(parse)
+      .filter(filter)
+      .sorted
+      .map(_.toString)
   }
 
   def parse(input: String): Option[BinaryVersion] = {

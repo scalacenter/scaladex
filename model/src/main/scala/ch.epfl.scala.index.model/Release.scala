@@ -43,6 +43,10 @@ case class Release(
     sbtVersion: Option[String]
 ) {
 
+  def isValid: Boolean = {
+    reference.isValid
+  }
+
   /**
    * string representation for sbt dependency
    * @return
@@ -293,6 +297,10 @@ object Release {
       target: Option[ScalaTarget]
   ) extends GeneralReference {
 
+    def isValid: Boolean = {
+      target.exists(_.isValid)
+    }
+
     def projectReference = Project.Reference(organization, repository)
     def name = s"$organization/$artifact"
     def httpUrl = {
@@ -306,6 +314,5 @@ object Release {
       repository == "scala" &&
       artifact == "scala-library"
     }
-
   }
 }
