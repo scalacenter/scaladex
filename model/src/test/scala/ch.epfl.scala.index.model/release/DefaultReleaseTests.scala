@@ -23,7 +23,6 @@ class DefaultReleaseTests extends FunSpec with Matchers {
       reverseDependencies = Seq(),
       internalDependencies = Seq(),
       targetType = "JVM",
-      fullScalaVersion = None,
       scalaVersion = None,
       scalaJsVersion = None,
       scalaNativeVersion = None,
@@ -113,34 +112,32 @@ class DefaultReleaseTests extends FunSpec with Matchers {
 
       val targets: List[ScalaTarget] =
         List(
-          ScalaJs(SemanticVersion("2.11").get, SemanticVersion("0.6").get),
-          ScalaJs(SemanticVersion("2.10").get, SemanticVersion("0.6").get),
-          ScalaJvm(SemanticVersion("2.11").get),
-          ScalaJvm(SemanticVersion("2.10").get)
+          ScalaJvm(MinorBinary(2, 11)),
+          ScalaJvm(MinorBinary(2, 10)),
+          ScalaJs(MinorBinary(2, 11), MinorBinary(0, 6)),
+          ScalaJs(MinorBinary(2, 10), MinorBinary(0, 6))
         )
 
-      val expected: Option[ReleaseOptions] =
-        Some(
-          ReleaseOptions(
-            artifacts = List(
-              "cats-core"
-            ),
-            versions = versions,
-            targets = targets,
-            release = emptyRelease(
-              MavenReference(groupdId, "cats-core_2.11", "0.6.0"),
-              Release.Reference(
-                organization,
-                repository,
-                "cats-core",
-                SemanticVersion("0.6.0").get,
-                Some(ScalaJvm(SemanticVersion("2.11").get))
-              )
+      val expected =
+        ReleaseOptions(
+          artifacts = List(
+            "cats-core"
+          ),
+          versions = versions,
+          targets = targets,
+          release = emptyRelease(
+            MavenReference(groupdId, "cats-core_2.11", "0.6.0"),
+            Release.Reference(
+              organization,
+              repository,
+              "cats-core",
+              SemanticVersion("0.6.0").get,
+              Some(ScalaJvm(MinorBinary(2, 11)))
             )
           )
         )
 
-      result shouldBe expected
+      result should contain(expected)
     }
 
     it("selected artifact") {
@@ -180,7 +177,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
               SemanticVersion("2.4.8").get
             ),
             targets = List(
-              ScalaJvm(SemanticVersion("2.11").get)
+              ScalaJvm(MinorBinary(2, 11))
             ),
             release = emptyRelease(
               MavenReference(groupdId,
@@ -191,7 +188,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
                 repository,
                 "akka-distributed-data-experimental",
                 SemanticVersion("2.4.8").get,
-                Some(ScalaJvm(SemanticVersion("2.11").get))
+                Some(ScalaJvm(MinorBinary(2, 11)))
               )
             )
           )
@@ -231,8 +228,8 @@ class DefaultReleaseTests extends FunSpec with Matchers {
 
       val targets: List[ScalaTarget] =
         List(
-          ScalaJvm(SemanticVersion("2.12.2").get),
-          ScalaJvm(SemanticVersion("2.12").get)
+          ScalaJvm(PatchBinary(2, 12, 2)),
+          ScalaJvm(MinorBinary(2, 12))
         )
 
       val expected: Option[ReleaseOptions] =
@@ -250,7 +247,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
                 repository,
                 "scalafix-core",
                 SemanticVersion("0.5.3").get,
-                Some(ScalaJvm(SemanticVersion("2.12").get))
+                Some(ScalaJvm(MinorBinary(2, 12)))
               )
             )
           )

@@ -31,7 +31,11 @@ trait ProjectProtocol {
           classOf[ScalaJvm],
           classOf[ScalaJs],
           classOf[ScalaNative],
-          classOf[SbtPlugin]
+          classOf[SbtPlugin],
+          classOf[MajorBinary],
+          classOf[MinorBinary],
+          classOf[PatchBinary],
+          classOf[PreReleaseBinary]
         )
       )
     )

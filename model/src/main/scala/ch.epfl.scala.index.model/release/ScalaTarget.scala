@@ -27,7 +27,7 @@ it's dependency on scala-library for example.
 
  */
 sealed trait ScalaTarget extends Ordered[ScalaTarget] {
-  def scalaVersion: SemanticVersion
+  def scalaVersion: BinaryVersion
   def render: String
   def encode: String
   def targetType: ScalaTargetType
@@ -36,21 +36,20 @@ sealed trait ScalaTarget extends Ordered[ScalaTarget] {
     ScalaTarget.ordering.compare(this, that)
 }
 
-case class ScalaJvm(scalaVersion: SemanticVersion) extends ScalaTarget {
+case class ScalaJvm(scalaVersion: BinaryVersion) extends ScalaTarget {
   val scalaJsVersion: Option[SemanticVersion] = None
   val render = s"scala $scalaVersion"
   val encode = s"_$scalaVersion"
   val targetType: ScalaTargetType = Jvm
 }
-case class ScalaJs(scalaVersion: SemanticVersion,
-                   scalaJsVersion: SemanticVersion)
+case class ScalaJs(scalaVersion: BinaryVersion, scalaJsVersion: BinaryVersion)
     extends ScalaTarget {
   val render = s"scala-js $scalaJsVersion ($scalaVersion)"
   val encode = s"_sjs${scalaJsVersion}_$scalaVersion"
   val targetType: ScalaTargetType = Js
 }
-case class ScalaNative(scalaVersion: SemanticVersion,
-                       scalaNativeVersion: SemanticVersion)
+case class ScalaNative(scalaVersion: BinaryVersion,
+                       scalaNativeVersion: BinaryVersion)
     extends ScalaTarget {
   val scalaJsVersion: Option[SemanticVersion] = None
   val render = s"scala-native $scalaNativeVersion ($scalaNativeVersion)"
@@ -58,7 +57,7 @@ case class ScalaNative(scalaVersion: SemanticVersion,
   val targetType: ScalaTargetType = Native
 }
 
-case class SbtPlugin(scalaVersion: SemanticVersion, sbtVersion: SemanticVersion)
+case class SbtPlugin(scalaVersion: BinaryVersion, sbtVersion: BinaryVersion)
     extends ScalaTarget {
   val scalaJsVersion: Option[SemanticVersion] = None
   val render = s"sbt $sbtVersion ($scalaVersion)"
@@ -66,11 +65,30 @@ case class SbtPlugin(scalaVersion: SemanticVersion, sbtVersion: SemanticVersion)
   val targetType: ScalaTargetType = Sbt
 }
 
+object ScalaJvm {
+  def fromFullVersion(fullVersion: SemanticVersion): ScalaJvm = {
+    val binaryVersion = fullVersion match {
+      case SemanticVersion(major, minor, patch, _, Some(preRelease), _) =>
+        PreReleaseBinary(
+          major,
+          minor.getOrElse(0),
+          patch,
+          preRelease
+        )
+      case SemanticVersion(major, minor, _, _, _, _) =>
+        MinorBinary(major, minor.getOrElse(0))
+    }
+    ScalaJvm(binaryVersion)
+  }
+}
+
 object ScalaTarget extends Parsers {
   // Scala > Js > Native > Sbt
   implicit val ordering: Ordering[ScalaTarget] =
-    Ordering.by[ScalaTarget,
-                (ScalaTargetType, SemanticVersion, Option[SemanticVersion])] {
+    Ordering.by[
+      ScalaTarget,
+      (ScalaTargetType, BinaryVersion, Option[BinaryVersion])
+    ] {
       case ScalaJvm(version)           => (Jvm, version, None)
       case ScalaJs(version, jsVersion) => (Js, version, Some(jsVersion))
       case ScalaNative(version, nativeVersion) =>
@@ -79,56 +97,56 @@ object ScalaTarget extends Parsers {
     }
 
   def parse(code: String): Option[ScalaTarget] = {
-    tryParse(code, x => scalaTargetParser(x))
+    tryParse(code, x => Parser(x))
   }
 
-  private val minScalaVersion = SemanticVersion(2, 10)
-  private val maxScalaVersion = SemanticVersion(2, 13)
+  private val minScalaVersion = MinorBinary(2, 10)
+  private val maxScalaVersion = MinorBinary(2, 13)
 
-  def isValidScalaVersion(version: SemanticVersion): Boolean = {
+  def isValidScalaVersion(version: BinaryVersion): Boolean = {
     version >= minScalaVersion && version <= maxScalaVersion
   }
 
-  private def minScalaJsVersion = SemanticVersion(0, 6)
+  private def minScalaJsVersion = MinorBinary(0, 6)
 
-  def isValidScalaJsVersion(version: SemanticVersion): Boolean = {
+  def isValidScalaJsVersion(version: BinaryVersion): Boolean = {
     minScalaJsVersion <= version
   }
 
-  private def minSbtVersion = SemanticVersion(0, 11)
-  private def maxSbtVersion = SemanticVersion(1, 3)
+  private def minSbtVersion = MinorBinary(0, 11)
+  private def maxSbtVersion = MinorBinary(1, 3)
 
-  def isValidSbtVersion(version: SemanticVersion): Boolean = {
+  def isValidSbtVersion(version: BinaryVersion): Boolean = {
     minSbtVersion <= version && version <= maxSbtVersion
   }
 
-  def isValidScalaNativeVersion(version: SemanticVersion): Boolean = true
+  def isValidScalaNativeVersion(version: BinaryVersion): Boolean = true
 
   import fastparse.NoWhitespace._
   import fastparse._
 
-  private def scalaPart[_: P] = "_" ~ SemanticVersion.Parser
+  private def scalaPart[_: P] = "_" ~ BinaryVersion.Parser
 
   private def scalaJs[_: P]: P[ScalaTarget] =
-    ("_sjs" ~ SemanticVersion.Parser ~ scalaPart).map {
+    ("_sjs" ~ BinaryVersion.Parser ~ scalaPart).map {
       case (scalaJsVersion, scalaVersion) =>
         ScalaJs(scalaVersion, scalaJsVersion)
     }
 
   private def scalaNative[_: P]: P[ScalaTarget] =
-    ("_native" ~ SemanticVersion.Parser ~ scalaPart).map {
+    ("_native" ~ BinaryVersion.Parser ~ scalaPart).map {
       case (scalaNativeVersion, scalaVersion) =>
         ScalaNative(scalaVersion, scalaNativeVersion)
     }
 
   private def sbt[_: P]: P[ScalaTarget] =
-    (scalaPart ~ "_" ~ SemanticVersion.Parser).map {
+    (scalaPart ~ "_" ~ BinaryVersion.Parser).map {
       case (scalaVersion, sbtVersion) =>
         SbtPlugin(scalaVersion, sbtVersion)
     }
 
-  private def scala[_: P]: P[ScalaTarget] = scalaPart.map(ScalaJvm)
+  private def scala[_: P]: P[ScalaTarget] = scalaPart.map(ScalaJvm.apply)
 
-  def scalaTargetParser[_: P]: P[ScalaTarget] =
+  def Parser[_: P]: P[ScalaTarget] =
     scalaJs | scalaNative | sbt | scala
 }

@@ -37,7 +37,6 @@ case class Release(
     internalDependencies: Seq[ScalaDependency],
     // this part for elasticsearch search
     targetType: String, // JVM, JS, Native, JAVA, SBT
-    fullScalaVersion: Option[String],
     scalaVersion: Option[String],
     scalaJsVersion: Option[String],
     scalaNativeVersion: Option[String],
@@ -56,8 +55,7 @@ case class Release(
         s"""libraryDependencies += "${maven.groupId}" % "${reference.artifact}" % "${reference.version}""""
       case Some(ScalaJs(_, _) | ScalaNative(_, _)) =>
         s"""libraryDependencies += "${maven.groupId}" %%% "${reference.artifact}" % "${reference.version}""""
-      case Some(ScalaJvm(version))
-          if version.patch.isDefined && version.preRelease.isEmpty =>
+      case Some(ScalaJvm(version: PatchBinary)) =>
         s"""libraryDependencies += "${maven.groupId}" % "${reference.artifact}" % "${reference.version}" cross CrossVersion.full"""
       case _ =>
         s"""libraryDependencies += "${maven.groupId}" %% "${reference.artifact}" % "${reference.version}""""

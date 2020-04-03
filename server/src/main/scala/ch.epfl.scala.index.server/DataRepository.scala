@@ -247,16 +247,19 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
   }
 
   def getAllScalaNativeVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("scalaNativeVersion", notDeprecatedQuery, _ => true)
+    versionAggregations("scalaNativeVersion",
+                        notDeprecatedQuery,
+                        ScalaTarget.isValidScalaNativeVersion)
   }
 
   def getScalaNativeVersions(
       params: SearchParams
   ): Future[List[(String, Long)]] = {
-    versionAggregations("scalaNativeVersion",
-                        filteredSearchQuery(params),
-                        _ => true)
-      .map(addLabelsIfMissing(params.scalaNativeVersions.toSet))
+    versionAggregations(
+      "scalaNativeVersion",
+      filteredSearchQuery(params),
+      ScalaTarget.isValidScalaNativeVersion
+    ).map(addLabelsIfMissing(params.scalaNativeVersions.toSet))
   }
 
   def getAllSbtVersions(): Future[List[(String, Long)]] = {
@@ -319,21 +322,16 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
   private def versionAggregations(
       field: String,
       query: QueryDefinition,
-      filterF: SemanticVersion => Boolean
+      filterF: BinaryVersion => Boolean
   ): Future[List[(String, Long)]] = {
 
     aggregations(field, query).map { versionAgg =>
       val filteredAgg = for {
         (version, count) <- versionAgg.toList
-        semanticVersion <- SemanticVersion(version) if filterF(semanticVersion)
-      } yield (semanticVersion, count)
+        binaryVersion <- BinaryVersion.parse(version) if filterF(binaryVersion)
+      } yield (binaryVersion, count)
 
       filteredAgg
-        .groupBy {
-          case (version, _) => SemanticVersion(version.major, version.minor)
-        }
-        .mapValues(group => group.map { case (_, count) => count }.sum)
-        .toList
         .sortBy(_._1)
         .map { case (v, c) => (v.toString, c) }
     }

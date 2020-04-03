@@ -25,7 +25,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
   /**
    * @param pomsRepoSha poms and associated meta information reference
    * @param stored read user update projects from disk
-   * @param cachedReleases use previous released cached to workarround elasticsearch consistency (write, read)
+   * @param cachedReleases use previous released cached to workaround elasticsearch consistency (write, read)
    */
   def apply(
       pomsRepoSha: List[(ReleaseModel, LocalRepository, String)],
@@ -139,19 +139,10 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
                 reverseDependencies = Seq(),
                 internalDependencies = Seq(),
                 targetType = targetType.toString,
-                // for artifact publish with binary, full will return binary
-                // ex cats_2.11 => 2.11
-                fullScalaVersion = scalaVersion.map(_.toString),
-                scalaVersion = scalaVersion.map(_.forceBinary.toString),
-                scalaJsVersion = scalaJsVersion.map {
-                  case SemanticVersion(0, minor, _, _, _, _) =>
-                    SemanticVersion(0, minor).toString
-                  case SemanticVersion(major, _, _, _, _, _) =>
-                    SemanticVersion(major).toString
-                },
-                scalaNativeVersion =
-                  scalaNativeVersion.map(_.forceBinary.toString),
-                sbtVersion = sbtVersion.map(_.forceBinary.toString)
+                scalaVersion = scalaVersion.map(_.toString),
+                scalaJsVersion = scalaJsVersion.map(_.toString),
+                scalaNativeVersion = scalaNativeVersion.map(_.toString),
+                sbtVersion = sbtVersion.map(_.toString)
               )
           }.toSet ++ cachedReleasesForProject
 
@@ -322,7 +313,6 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
         val project =
           seed.toProject(
             targetType = releases.map(_.targetType),
-            fullScalaVersion = releases.flatMap(_.fullScalaVersion),
             scalaVersion = releases.flatMap(_.scalaVersion),
             scalaJsVersion = releases.flatMap(_.scalaJsVersion),
             scalaNativeVersion = releases.flatMap(_.scalaNativeVersion),
@@ -369,7 +359,6 @@ object ProjectConvert {
       Project.Reference(organization, repository)
 
     def toProject(targetType: Set[String],
-                  fullScalaVersion: Set[String],
                   scalaVersion: Set[String],
                   scalaJsVersion: Set[String],
                   scalaNativeVersion: Set[String],
@@ -386,7 +375,6 @@ object ProjectConvert {
         created = created,
         updated = updated,
         targetType = targetType,
-        fullScalaVersion = fullScalaVersion,
         scalaVersion = scalaVersion,
         scalaJsVersion = scalaJsVersion,
         scalaNativeVersion = scalaNativeVersion,

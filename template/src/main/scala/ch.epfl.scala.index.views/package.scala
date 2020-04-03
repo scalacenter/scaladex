@@ -127,12 +127,11 @@ package object html {
   }
 
   def sortVersions(versions: Set[String],
-                   filter: SemanticVersion => Boolean): List[String] = {
+                   filter: BinaryVersion => Boolean): List[String] = {
     versions.toList
-      .flatMap(SemanticVersion.parse)
+      .flatMap(BinaryVersion.parse)
       .filter(filter)
       .sorted
-      .map(version => SemanticVersion(version.major, version.minor).toString)
-      .distinct
+      .map(_.toString)
   }
 }

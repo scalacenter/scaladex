@@ -54,7 +54,6 @@ case class Project(
     created: Option[String],
     updated: Option[String],
     targetType: Set[String],
-    fullScalaVersion: Set[String],
     scalaVersion: Set[String],
     scalaJsVersion: Set[String],
     scalaNativeVersion: Set[String],

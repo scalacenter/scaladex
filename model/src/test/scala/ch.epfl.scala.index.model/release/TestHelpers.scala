@@ -19,7 +19,7 @@ trait TestHelpers {
               artifactName: String,
               target: Option[ScalaTarget],
               isNonStandardLib: Boolean = false,
-              resolver: Option[Resolver] = None) = {
+              resolver: Option[Resolver] = None): Release = {
     Release(
       maven = MavenReference(
         groupId = groupId,
@@ -48,7 +48,6 @@ trait TestHelpers {
       reverseDependencies = Seq(),
       internalDependencies = Seq(),
       targetType = "",
-      fullScalaVersion = None,
       scalaVersion = None,
       scalaJsVersion = None,
       scalaNativeVersion = None,

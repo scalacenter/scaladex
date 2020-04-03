@@ -70,48 +70,29 @@ object DefaultRelease {
         case None => filterAll
       }
 
-    // descending ordering for versions
-    implicit def ordering: Ordering[SemanticVersion] =
-      SemanticVersion.ordering.reverse
-
-    val releasesSorted = selectedReleases.toList.sortBy { release =>
-      import release.reference._
+    val releasesSorted = selectedReleases.toSeq.view.sortBy { release =>
+      val ref = release.reference
       (
-        // artifact
-        // match default artifact (ex: akka-actors is the default for akka/akka)
-        !defaultArtifact.contains(artifact), // false < true
-        // match project repository (ex: shapeless)
-        projectRepository == artifact,
+        // default artifact (ex: akka-actors is the default for akka/akka)
+        if (defaultArtifact.contains(ref.artifact)) 0 else 1,
+        // project repository (ex: shapeless)
+        if (projectRepository == ref.artifact) 1 else 0,
         // alphabetically
-        artifact,
+        ref.artifact,
         // version
-        defaultStableVersion && version.preRelease.isDefined,
-        version,
+        ref.version,
         // target
-        // stable jvm targets first
-        target.exists(_.targetType == Js),
-        target.flatMap(_.scalaVersion.preRelease).isDefined,
-        target.map(_.scalaVersion),
-        target.collect { case ScalaJs(_, scalaJsVersion) => scalaJsVersion }
+        ref.target
       )
-    }
+    }.reverse
 
     releasesSorted.headOption.map { release =>
-      val targets = releases
-        .map(_.reference.target)
+      val targets = releases.toSeq.view
+        .flatMap(_.reference.target)
+        .distinct
+        .sorted
+        .reverse
         .toList
-        .flatten
-        .sortBy(
-          target =>
-            (
-              target.targetType,
-              target.scalaVersion,
-              target match {
-                case ScalaJs(_, scalaJsVersion) => Some(scalaJsVersion)
-                case _                          => None
-              }
-          )
-        )
 
       val artifacts = releases.map(_.reference.artifact).toList.sorted
       val versions = releases

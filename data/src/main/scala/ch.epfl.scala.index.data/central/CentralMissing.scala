@@ -1,46 +1,37 @@
 package ch.epfl.scala.index
 package data
+package central
 
-import ch.epfl.scala.index.model.Release
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.Uri.Query
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.unmarshalling._
+import akka.stream.{Materializer, ThrottleMode}
+import akka.stream.scaladsl._
+import ch.epfl.scala.index.data.maven.PomsReader
+import ch.epfl.scala.index.data.project.ArtifactMetaExtractor
+import ch.epfl.scala.index.model.MinorBinary
+import ch.epfl.scala.index.model.misc.Sha1
 import ch.epfl.scala.index.model.release.{
   SbtPlugin,
   ScalaJs,
   ScalaJvm,
-  ScalaNative,
-  ScalaTarget
+  ScalaNative
 }
-import ch.epfl.scala.index.model.SemanticVersion
-import ch.epfl.scala.index.data.github.GithubDownload
-import ch.epfl.scala.index.data.project.{ArtifactMetaExtractor, ProjectConvert}
-import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.index.model.misc.Sha1
-
-import scala.util.{Failure, Success}
-import scala.concurrent.{Await, Future, Promise}
-import scala.concurrent.duration._
-import scala.util.Try
-import akka.NotUsed
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.ContentTypes._
-import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.model.Uri.Query
-import akka.http.scaladsl.unmarshalling._
-import akka.stream.Materializer
-import akka.stream.ThrottleMode
-import akka.stream.scaladsl._
-import akka.stream.{OverflowStrategy, QueueOfferResult}
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 import org.joda.time.DateTime
 import org.json4s._
-import org.json4s.native.JsonMethods._
 import org.slf4j.LoggerFactory
 
 import scala.collection.immutable.Seq
-import java.nio.file.Files
-import java.nio.charset.StandardCharsets
-import java.lang.reflect.InvocationTargetException
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
+import scala.util.{Failure, Success, Try}
 
 object CentralMissing {
   // q = g:"com.47deg" AND a:"sbt-microsites"
@@ -260,14 +251,14 @@ class CentralMissing(paths: DataPaths)(implicit val materializer: Materializer,
         .flatten
         .toSet
 
-    val scala213 = SemanticVersion("2.13").get
-    val scala212 = SemanticVersion("2.12").get
-    val scala211 = SemanticVersion("2.11").get
-    val scala210 = SemanticVersion("2.10").get
-    val sbt013 = SemanticVersion("0.13").get
-    val sbt10 = SemanticVersion("1.0").get
-    val scalaJs06 = SemanticVersion("0.6").get
-    val native03 = SemanticVersion("0.3").get
+    val scala213 = MinorBinary(2, 13)
+    val scala212 = MinorBinary(2, 12)
+    val scala211 = MinorBinary(2, 11)
+    val scala210 = MinorBinary(2, 10)
+    val sbt013 = MinorBinary(0, 13)
+    val sbt10 = MinorBinary(1, 0)
+    val scalaJs06 = MinorBinary(0, 6)
+    val native03 = MinorBinary(0, 3)
 
     val allTargets = List(
       ScalaJvm(scala213),

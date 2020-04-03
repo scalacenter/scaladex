@@ -1,22 +1,21 @@
 package ch.epfl.scala.index.data
 
-import bintray.{BintrayDownloadPoms, BintrayListPoms, BintrayDownloadSbtPlugins}
-import cleanup.{NonStandardLib, GithubRepoExtractor}
-import elastic.SeedElasticSearch
-import github.GithubDownload
-import maven.DownloadParentPoms
-import util.PidLock
-
 import java.nio.file.Path
-
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-
+import ch.epfl.scala.index.data.bintray.{
+  BintrayDownloadPoms,
+  BintrayDownloadSbtPlugins,
+  BintrayListPoms
+}
+import ch.epfl.scala.index.data.central.CentralMissing
+import ch.epfl.scala.index.data.cleanup.{GithubRepoExtractor, NonStandardLib}
+import ch.epfl.scala.index.data.elastic.SeedElasticSearch
+import ch.epfl.scala.index.data.github.GithubDownload
+import ch.epfl.scala.index.data.maven.DownloadParentPoms
+import ch.epfl.scala.index.data.util.PidLock
 import com.typesafe.config.ConfigFactory
-
 import org.slf4j.LoggerFactory
 
 import scala.sys.process.Process

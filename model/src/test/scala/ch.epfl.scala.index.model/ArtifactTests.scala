@@ -11,8 +11,8 @@ class ArtifactTests extends FunSpec with Matchers {
         Artifact(
           "cats-core",
           ScalaJs(
-            scalaVersion = SemanticVersion(2, 11),
-            scalaJsVersion = SemanticVersion(0, 6)
+            scalaVersion = MinorBinary(2, 11),
+            scalaJsVersion = MinorBinary(0, 6)
           )
         )
       )
@@ -23,8 +23,8 @@ class ArtifactTests extends FunSpec with Matchers {
         Artifact(
           "cats-core",
           ScalaNative(
-            scalaVersion = SemanticVersion(2, 11),
-            scalaNativeVersion = SemanticVersion(0, 1)
+            scalaVersion = MinorBinary(2, 11),
+            scalaNativeVersion = MinorBinary(0, 1)
           )
         )
       )
@@ -34,7 +34,7 @@ class ArtifactTests extends FunSpec with Matchers {
       Artifact.parse("akka-remote-tests_2.11.0-RC4") should contain(
         Artifact(
           "akka-remote-tests",
-          ScalaJvm(SemanticVersion(2, 11, 0, ReleaseCandidate(4)))
+          ScalaJvm(PreReleaseBinary(2, 11, Some(0), ReleaseCandidate(4)))
         )
       )
     }
@@ -44,8 +44,8 @@ class ArtifactTests extends FunSpec with Matchers {
         Artifact(
           "sbt-microsites",
           SbtPlugin(
-            scalaVersion = SemanticVersion(2, 12),
-            sbtVersion = SemanticVersion(1, 0)
+            scalaVersion = MinorBinary(2, 12),
+            sbtVersion = MinorBinary(1, 0)
           )
         )
       )
@@ -59,7 +59,7 @@ class ArtifactTests extends FunSpec with Matchers {
       Artifact.parse("banana_jvm_2.11") should contain(
         Artifact(
           "banana_jvm",
-          ScalaJvm(SemanticVersion(2, 11))
+          ScalaJvm(MinorBinary(2, 11))
         )
       )
     }

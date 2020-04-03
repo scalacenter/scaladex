@@ -55,26 +55,26 @@ class SearchApi(
       sbtVersion: Option[String]
   ): Option[ScalaTarget] = {
     (targetType,
-     scalaVersion.flatMap(SemanticVersion.parse),
-     scalaJsVersion.flatMap(SemanticVersion.parse),
-     scalaNativeVersion.flatMap(SemanticVersion.parse),
-     sbtVersion.flatMap(SemanticVersion.parse)) match {
+     scalaVersion.flatMap(BinaryVersion.parse),
+     scalaJsVersion.flatMap(BinaryVersion.parse),
+     scalaNativeVersion.flatMap(BinaryVersion.parse),
+     sbtVersion.flatMap(BinaryVersion.parse)) match {
 
       case (Some("JVM"), Some(scalaVersion), _, _, _) =>
-        Some(ScalaJvm(scalaVersion.binary))
+        Some(ScalaJvm(scalaVersion))
 
       case (Some("JS"), Some(scalaVersion), Some(scalaJsVersion), _, _) =>
-        Some(ScalaJs(scalaVersion.binary, scalaJsVersion.binary))
+        Some(ScalaJs(scalaVersion, scalaJsVersion))
 
       case (Some("NATIVE"),
             Some(scalaVersion),
             _,
             Some(scalaNativeVersion),
             _) =>
-        Some(ScalaNative(scalaVersion.binary, scalaNativeVersion.binary))
+        Some(ScalaNative(scalaVersion, scalaNativeVersion))
 
       case (Some("SBT"), Some(scalaVersion), _, _, Some(sbtVersion)) =>
-        Some(SbtPlugin(scalaVersion.binary, sbtVersion.binary))
+        Some(SbtPlugin(scalaVersion, sbtVersion))
 
       case _ => None
     }
