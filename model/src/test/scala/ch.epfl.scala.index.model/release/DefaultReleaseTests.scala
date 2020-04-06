@@ -38,7 +38,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
         case (artifactId, rawVersion) =>
           for {
             Artifact(artifact, target) <- Artifact.parse(artifactId)
-            version <- SemanticVersion(rawVersion)
+            version <- SemanticVersion.tryParse(rawVersion)
           } yield (artifactId, rawVersion, artifact, target, version)
       }
       .map {
@@ -101,12 +101,12 @@ class DefaultReleaseTests extends FunSpec with Matchers {
 
       val versions: List[SemanticVersion] =
         List(
-          SemanticVersion("0.6.0").get,
-          SemanticVersion("0.6.0-M2").get,
-          SemanticVersion("0.6.0-M1").get,
-          SemanticVersion("0.5.0").get,
-          SemanticVersion("0.4.1").get,
-          SemanticVersion("0.4.0").get
+          SemanticVersion(0, 6, 0),
+          SemanticVersion(0, 6, 0, Milestone(2)),
+          SemanticVersion(0, 6, 0, Milestone(1)),
+          SemanticVersion(0, 5, 0),
+          SemanticVersion(0, 4, 1),
+          SemanticVersion(0, 4, 0)
         )
 
       val targets: List[ScalaTarget] =
@@ -130,7 +130,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
               organization,
               repository,
               "cats-core",
-              SemanticVersion("0.6.0").get,
+              SemanticVersion(0, 6, 0),
               Some(ScalaJvm(MinorBinary(2, 11)))
             )
           )
@@ -173,7 +173,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
               "akka-distributed-data-experimental"
             ),
             versions = List(
-              SemanticVersion("2.4.8").get
+              SemanticVersion(2, 4, 8)
             ),
             targets = List(
               ScalaJvm(MinorBinary(2, 11))
@@ -186,7 +186,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
                 organization,
                 repository,
                 "akka-distributed-data-experimental",
-                SemanticVersion("2.4.8").get,
+                SemanticVersion(2, 4, 8),
                 Some(ScalaJvm(MinorBinary(2, 11)))
               )
             )
@@ -221,8 +221,8 @@ class DefaultReleaseTests extends FunSpec with Matchers {
 
       val versions: List[SemanticVersion] =
         List(
-          SemanticVersion("0.3.4").get,
-          SemanticVersion("0.5.3").get
+          SemanticVersion(0, 3, 4),
+          SemanticVersion(0, 5, 3)
         )
 
       val targets: List[ScalaTarget] =
@@ -245,7 +245,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
                 organization,
                 repository,
                 "scalafix-core",
-                SemanticVersion("0.5.3").get,
+                SemanticVersion(0, 5, 3),
                 Some(ScalaJvm(MinorBinary(2, 12)))
               )
             )
@@ -253,7 +253,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
         )
 
       assert(
-        result.get.release.reference.version == SemanticVersion("0.5.3").get
+        result.get.release.reference.version == SemanticVersion(0, 5, 3)
       )
     }
   }

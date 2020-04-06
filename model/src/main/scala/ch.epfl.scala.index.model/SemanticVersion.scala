@@ -1,7 +1,12 @@
 package ch.epfl.scala.index.model
 
+import com.typesafe.scalalogging.LazyLogging
+
+import scala.util.control.NonFatal
+
 /**
  * Semantic version, separation of possible combinations
+ *
  * @param major the major version number
  * @param minor the minor version number
  * @param patch the path version number
@@ -38,7 +43,7 @@ case class SemanticVersion(
   }
 }
 
-object SemanticVersion extends Parsers {
+object SemanticVersion extends Parsers  with LazyLogging {
   implicit val ordering: Ordering[SemanticVersion] = Ordering.by { x =>
     (x.major, x.minor, x.patch, x.patch2, x.preRelease)
   }
@@ -83,11 +88,20 @@ object SemanticVersion extends Parsers {
   }
 
   private def FullParser[_: P] = Start ~ Parser ~ End
-  def parse(version: String): Option[SemanticVersion] = apply(version)
-  def apply(version: String): Option[SemanticVersion] = {
-    fastparse.parse(version, x => FullParser(x)) match {
-      case Parsed.Success(v, _) => Some(v)
-      case _                    => None
+
+  def tryParse(version: String): Option[SemanticVersion] = {
+    try {
+      fastparse.parse(version, x => FullParser(x)) match {
+        case Parsed.Success(v, _) => Some(v)
+        case _                    =>
+          logger.warn(s"cannot parse ${classOf[SemanticVersion].getSimpleName} $version")
+          None
+      }
+    } catch {
+      case NonFatal(_) =>
+        logger.warn(s"cannot parse ${classOf[SemanticVersion].getSimpleName} $version")
+        None
     }
+
   }
 }

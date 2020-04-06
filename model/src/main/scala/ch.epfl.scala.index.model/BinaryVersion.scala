@@ -33,7 +33,7 @@ final case class PreReleaseBinary(major: Int,
 object BinaryVersion extends Parsers {
   import fastparse._
   import fastparse.NoWhitespace._
-  
+
   implicit val ordering: Ordering[BinaryVersion] = Ordering.by {
     case MajorBinary(major)        => (major, None, None, None)
     case MinorBinary(major, minor) => (major, Some(minor), None, None)

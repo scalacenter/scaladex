@@ -81,7 +81,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
               dep.groupId == "org.scala-lang" &&
                 dep.artifactId == "scala-library"
           )
-          .flatMap(dep => SemanticVersion.parse(dep.version))
+          .flatMap(dep => SemanticVersion.tryParse(dep.version))
           .map { version =>
             // we assume binary compatibility
             ArtifactMeta(
@@ -103,7 +103,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
 
       // For example: scala-compiler
       case Some(ScalaTargetFromVersion) =>
-        SemanticVersion(pom.version).map(
+        SemanticVersion.tryParse(pom.version).map(
           version =>
             ArtifactMeta(
               artifactName = pom.artifactId,

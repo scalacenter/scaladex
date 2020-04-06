@@ -7,7 +7,7 @@ class SemanticVersionTests extends FunSpec with Matchers {
     it("has an ordering") {
       def order(versions: List[String]): List[SemanticVersion] =
         versions
-          .flatMap(v => parseVersion(v))
+          .flatMap(v => SemanticVersion.tryParse(v))
           .sorted(Descending[SemanticVersion])
 
       val versions = List(
@@ -40,40 +40,40 @@ class SemanticVersionTests extends FunSpec with Matchers {
     describe("parsing") {
       // relaxed semantic version
       it("major") {
-        parseVersion("1") should contain(SemanticVersion(1))
+        SemanticVersion.tryParse("1") should contain(SemanticVersion(1))
       }
 
       // relaxed semantic version
       it("major.minor") {
-        parseVersion("1.2") should contain(SemanticVersion(1, 2))
+        SemanticVersion.tryParse("1.2") should contain(SemanticVersion(1, 2))
       }
 
       it("major.minor.patch") {
-        parseVersion("1.2.3") should contain(SemanticVersion(1, 2, 3))
+        SemanticVersion.tryParse("1.2.3") should contain(SemanticVersion(1, 2, 3))
       }
 
       // relaxed semantic version
       it("major.minor.patch.patch2") {
-        parseVersion("1.2.3.4") should contain(
+        SemanticVersion.tryParse("1.2.3.4") should contain(
           SemanticVersion(1, 2, 3, 4)
         )
       }
 
       it("major.minor.patch-rc") {
-        parseVersion("1.2.3-RC5") should contain(
+        SemanticVersion.tryParse("1.2.3-RC5") should contain(
           SemanticVersion(1, 2, 3, ReleaseCandidate(5))
         )
 
       }
 
       it("major.minor.patch-m") {
-        parseVersion("1.2.3-M6") should contain(
+        SemanticVersion.tryParse("1.2.3-M6") should contain(
           SemanticVersion(1, 2, 3, Milestone(6))
         )
       }
 
       it("major.minor.patch-xyz") {
-        parseVersion("1.1.1-xyz") should contain(
+        SemanticVersion.tryParse("1.1.1-xyz") should contain(
           SemanticVersion(1,
                           Some(1),
                           Some(1),
@@ -83,7 +83,7 @@ class SemanticVersionTests extends FunSpec with Matchers {
       }
 
       it("major.minor.patch+meta") {
-        parseVersion("1.1.1+some.meta~data") should contain(
+        SemanticVersion.tryParse("1.1.1+some.meta~data") should contain(
           SemanticVersion(
             major = 1,
             minor = Some(1),
@@ -94,16 +94,14 @@ class SemanticVersionTests extends FunSpec with Matchers {
       }
 
       it("git commit") {
-        parseVersion("13e7afa9c1817d45b2989e545b2e9ead21d00cef") shouldBe empty
+        SemanticVersion.tryParse("13e7afa9c1817d45b2989e545b2e9ead21d00cef") shouldBe empty
+        SemanticVersion.tryParse("6988989374b307bc6a57f9a3d218fead6c4c634f") shouldBe empty
       }
 
       // relaxed semantic version
       it("v sufix") {
-        parseVersion("v1") should contain(SemanticVersion(1))
+        SemanticVersion.tryParse("v1") should contain(SemanticVersion(1))
       }
     }
   }
-
-  private def parseVersion(v: String): Option[SemanticVersion] =
-    SemanticVersion(v)
 }

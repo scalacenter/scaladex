@@ -36,12 +36,11 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
     val githubRepoExtractor = new GithubRepoExtractor(paths)
 
     log.info("Collecting Metadata")
-
     val pomsAndMetaClean = PomMeta(pomsRepoSha, paths).flatMap {
       case PomMeta(pom, created, resolver) =>
         for {
           artifactMeta <- artifactMetaExtractor(pom)
-          version <- SemanticVersion(pom.version)
+          version <- SemanticVersion.tryParse(pom.version)
           github <- githubRepoExtractor(pom)
         } yield
           (github,
@@ -184,12 +183,9 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
     log.info("Dependencies & Reverse Dependencies")
 
-    val mavenReferenceToReleaseReference
-      : Map[MavenReference, Release.Reference] =
+    val mavenReferenceToReleaseReference =
       projectsAndReleases
-        .flatMap {
-          case (_, releases) => releases
-        }
+        .flatMap { case (_, releases) => releases }
         .map(release => (release.maven, release.reference))
         .toMap
 

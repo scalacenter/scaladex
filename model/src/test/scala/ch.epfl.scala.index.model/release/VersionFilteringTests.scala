@@ -56,7 +56,7 @@ class VersionFilteringTests extends FunSuite {
       "0.8.1-RC3",
       "0.8.1-RC2",
       "0.8.1-RC1"
-    ).flatMap(SemanticVersion.parse)
+    ).flatMap(SemanticVersion.tryParse)
 
     val obtained = versions.filter(_.isSemantic)
 
@@ -95,7 +95,7 @@ class VersionFilteringTests extends FunSuite {
       "0.8.1-RC3",
       "0.8.1-RC2",
       "0.8.1-RC1"
-    ).flatMap(SemanticVersion.parse)
+    ).flatMap(SemanticVersion.tryParse)
 
     assert((obtained.toSet -- expected.toSet).isEmpty)
     assert((expected.toSet -- obtained.toSet).isEmpty)

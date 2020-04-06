@@ -28,7 +28,7 @@ trait TestHelpers {
       ),
       reference = Release.Reference(
         artifact = artifactName,
-        version = SemanticVersion(version).get,
+        version = SemanticVersion.tryParse(version).get,
         target = target,
         // Not necessary for the test
         organization = "GitHub-Org",

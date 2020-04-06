@@ -17,7 +17,7 @@ object ReleaseSelection {
     new ReleaseSelection(
       target.flatMap(ScalaTarget.parse),
       artifactName,
-      version.flatMap(SemanticVersion.parse),
+      version.flatMap(SemanticVersion.tryParse),
       selected
     )
   }
