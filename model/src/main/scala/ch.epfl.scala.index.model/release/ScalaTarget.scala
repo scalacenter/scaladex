@@ -55,7 +55,7 @@ case class ScalaJs(scalaVersion: BinaryVersion, scalaJsVersion: BinaryVersion)
 case class ScalaNative(scalaVersion: BinaryVersion,
                        scalaNativeVersion: BinaryVersion)
     extends ScalaTarget {
-  val render = s"scala-native $scalaNativeVersion ($scalaNativeVersion)"
+  val render = s"scala-native $scalaNativeVersion ($scalaVersion)"
   val encode = s"_native${scalaNativeVersion}_$scalaVersion"
   val targetType: ScalaTargetType = Native
   val isValid: Boolean = ScalaJvm.isValid(scalaVersion) && ScalaNative.isValid(
@@ -139,10 +139,9 @@ object ScalaTarget extends Parsers {
       (ScalaTargetType, BinaryVersion, Option[BinaryVersion])
     ] {
       case ScalaJvm(version)           => (Jvm, version, None)
-      case ScalaJs(version, jsVersion) => (Js, version, Some(jsVersion))
-      case ScalaNative(version, nativeVersion) =>
-        (Native, version, Some(nativeVersion))
-      case SbtPlugin(version, sbtVersion) => (Sbt, version, Some(sbtVersion))
+      case ScalaJs(version, jsVersion) => (Js, jsVersion, Some(version))
+      case ScalaNative(version, nativeVersion) => (Native, nativeVersion, Some(version))
+      case SbtPlugin(version, sbtVersion) => (Sbt, sbtVersion, Some(version))
     }
 
   def parse(code: String): Option[ScalaTarget] = {
