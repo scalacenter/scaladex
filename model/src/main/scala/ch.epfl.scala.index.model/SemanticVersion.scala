@@ -43,7 +43,7 @@ case class SemanticVersion(
   }
 }
 
-object SemanticVersion extends Parsers  with LazyLogging {
+object SemanticVersion extends Parsers with LazyLogging {
   implicit val ordering: Ordering[SemanticVersion] = Ordering.by { x =>
     (x.major, x.minor, x.patch, x.patch2, x.preRelease)
   }
@@ -93,13 +93,17 @@ object SemanticVersion extends Parsers  with LazyLogging {
     try {
       fastparse.parse(version, x => FullParser(x)) match {
         case Parsed.Success(v, _) => Some(v)
-        case _                    =>
-          logger.warn(s"cannot parse ${classOf[SemanticVersion].getSimpleName} $version")
+        case _ =>
+          logger.warn(
+            s"cannot parse ${classOf[SemanticVersion].getSimpleName} $version"
+          )
           None
       }
     } catch {
       case NonFatal(_) =>
-        logger.warn(s"cannot parse ${classOf[SemanticVersion].getSimpleName} $version")
+        logger.warn(
+          s"cannot parse ${classOf[SemanticVersion].getSimpleName} $version"
+        )
         None
     }
 

@@ -36,6 +36,8 @@ class BinaryVersionTests
       (MajorBinary(1), PreReleaseBinary(2, 0, None, Milestone(1)))
     )
 
-    forAll(inputs) { (lower, higher) => lower shouldBe < (higher)}
+    forAll(inputs) { (lower, higher) =>
+      lower shouldBe <(higher)
+    }
   }
 }

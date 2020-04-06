@@ -31,8 +31,8 @@ class ScalaTargetTests
     val expected = List(
       ScalaNative(s211, nat03),
       ScalaJs(s210, js067),
-      ScalaJs(s210, js0618),
       ScalaJs(s211, js067),
+      ScalaJs(s210, js0618),
       ScalaJs(s211, js0618),
       ScalaJs(s212, js0618),
       ScalaJvm(s210),

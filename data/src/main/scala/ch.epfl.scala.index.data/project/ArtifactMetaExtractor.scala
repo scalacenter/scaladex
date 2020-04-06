@@ -103,14 +103,16 @@ class ArtifactMetaExtractor(paths: DataPaths) {
 
       // For example: scala-compiler
       case Some(ScalaTargetFromVersion) =>
-        SemanticVersion.tryParse(pom.version).map(
-          version =>
-            ArtifactMeta(
-              artifactName = pom.artifactId,
-              scalaTarget = Some(ScalaJvm.fromFullVersion(version)),
-              isNonStandard = true
+        SemanticVersion
+          .tryParse(pom.version)
+          .map(
+            version =>
+              ArtifactMeta(
+                artifactName = pom.artifactId,
+                scalaTarget = Some(ScalaJvm.fromFullVersion(version)),
+                isNonStandard = true
+            )
           )
-        )
     }
   }
 }

@@ -4,7 +4,11 @@ import java.nio.file.Path
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import ch.epfl.scala.index.data.bintray.{BintrayDownloadPoms, BintrayDownloadSbtPlugins, BintrayListPoms}
+import ch.epfl.scala.index.data.bintray.{
+  BintrayDownloadPoms,
+  BintrayDownloadSbtPlugins,
+  BintrayListPoms
+}
 import ch.epfl.scala.index.data.central.CentralMissing
 import ch.epfl.scala.index.data.cleanup.{GithubRepoExtractor, NonStandardLib}
 import ch.epfl.scala.index.data.elastic.SeedElasticSearch

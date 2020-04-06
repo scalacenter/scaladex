@@ -127,7 +127,7 @@ object SbtPlugin {
   private def stableBinaryVersions = Set(`0.13`, `1.0`, `1.x`)
 
   def isValid(version: BinaryVersion): Boolean = {
-   stableBinaryVersions.contains(version)
+    stableBinaryVersions.contains(version)
   }
 }
 
@@ -140,7 +140,8 @@ object ScalaTarget extends Parsers {
     ] {
       case ScalaJvm(version)           => (Jvm, version, None)
       case ScalaJs(version, jsVersion) => (Js, jsVersion, Some(version))
-      case ScalaNative(version, nativeVersion) => (Native, nativeVersion, Some(version))
+      case ScalaNative(version, nativeVersion) =>
+        (Native, nativeVersion, Some(version))
       case SbtPlugin(version, sbtVersion) => (Sbt, sbtVersion, Some(version))
     }
 

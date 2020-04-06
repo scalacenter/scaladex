@@ -49,7 +49,9 @@ class SemanticVersionTests extends FunSpec with Matchers {
       }
 
       it("major.minor.patch") {
-        SemanticVersion.tryParse("1.2.3") should contain(SemanticVersion(1, 2, 3))
+        SemanticVersion.tryParse("1.2.3") should contain(
+          SemanticVersion(1, 2, 3)
+        )
       }
 
       // relaxed semantic version
