@@ -1,22 +1,17 @@
 package ch.epfl.scala.index
 package server
 
-import model.Project
+import model.{MinorBinary, Project, SemanticVersion}
 import model.misc.SearchParams
-import model.release.ScalaTarget
-import model.SemanticVersion
-
+import model.release.{ScalaJs, ScalaNative, ScalaTarget}
 import data.DataPaths
 import data.elastic._
 import data.github.GithubDownload
-
 import org.scalatest._
 
 import scala.concurrent.Future
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-
 import akka.testkit.TestKit
 
 class RelevanceTest
@@ -112,9 +107,9 @@ class RelevanceTest
 
   test("Scala.js targetFiltering") {
     val scalaJs =
-      ScalaTarget.scalaJs(
-        scalaVersion = SemanticVersion("2.12").get,
-        scalaJsVersion = SemanticVersion("0.6").get
+      ScalaJs(
+        scalaVersion = MinorBinary(2, 12),
+        scalaJsVersion = MinorBinary(0, 6)
       )
 
     top(
@@ -127,9 +122,9 @@ class RelevanceTest
 
   test("Scala.js targetFiltering (2)") {
     val scalaJs =
-      ScalaTarget.scalaJs(
-        scalaVersion = SemanticVersion("2.12").get,
-        scalaJsVersion = SemanticVersion("0.6").get
+      ScalaJs(
+        scalaVersion = MinorBinary(2, 12),
+        scalaJsVersion = MinorBinary(0, 6)
       )
 
     compare(
@@ -153,9 +148,9 @@ class RelevanceTest
 
   test("Scala Native targetFiltering") {
     val scalaNative =
-      ScalaTarget.scalaNative(
-        scalaVersion = SemanticVersion("2.11").get,
-        scalaNativeVersion = SemanticVersion("0.3").get
+      ScalaNative(
+        scalaVersion = MinorBinary(2, 11),
+        scalaNativeVersion = MinorBinary(0, 3)
       )
 
     top(

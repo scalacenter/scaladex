@@ -87,7 +87,6 @@ class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
       ),
       keywordField("version"),
       keywordField("targetType") normalizer "lowercase",
-      keywordField("fullScalaVersion") normalizer "lowercase",
       keywordField("scalaVersion"),
       keywordField("scalaJsVersion"),
       keywordField("scalaNativeVersion"),

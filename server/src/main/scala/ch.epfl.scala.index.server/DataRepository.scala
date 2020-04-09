@@ -69,7 +69,7 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
               Math.ceil(result.totalHits / params.total.toDouble).toInt,
             itemCount = result.totalHits
           ),
-          result.to[Project].map(_.hideId)
+          result.to[Project].map(_.formatForDisplaying)
         )
       }
   }
@@ -84,7 +84,7 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
 
     val request = search(indexName / releasesCollection).query(query).size(5000)
 
-    esClient.execute(request).map(_.to[Release])
+    esClient.execute(request).map(_.to[Release].filter(_.isValid))
   }
 
   /**
@@ -138,7 +138,7 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
         DefaultRelease(
           project.repository,
           selection,
-          releases.toSet,
+          releases,
           project.defaultArtifact,
           project.defaultStableVersion
         ).map(sel => (project, sel))
@@ -175,7 +175,7 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
         "created",
         frontPageCount
       )
-    } yield projects.map(_.hideId)
+    } yield projects.map(_.formatForDisplaying)
   }
 
   def getLatestReleases(): Future[List[Release]] = {
@@ -221,46 +221,51 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
   }
 
   def getAllScalaVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("scalaVersion", notDeprecatedQuery, filterScalaVersion)
+    versionAggregations("scalaVersion", notDeprecatedQuery, ScalaJvm.isValid)
   }
 
   def getScalaVersions(params: SearchParams): Future[List[(String, Long)]] = {
     versionAggregations("scalaVersion",
                         filteredSearchQuery(params),
-                        filterScalaVersion)
+                        ScalaJvm.isValid)
       .map(addLabelsIfMissing(params.scalaVersions.toSet))
   }
 
   def getAllScalaJsVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("scalaJsVersion", notDeprecatedQuery, _ => true)
+    versionAggregations("scalaJsVersion", notDeprecatedQuery, ScalaJs.isValid)
   }
 
   def getScalaJsVersions(params: SearchParams): Future[List[(String, Long)]] = {
     versionAggregations("scalaJsVersion",
                         filteredSearchQuery(params),
-                        _ => true)
+                        ScalaJs.isValid)
       .map(addLabelsIfMissing(params.scalaJsVersions.toSet))
   }
 
   def getAllScalaNativeVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("scalaNativeVersion", notDeprecatedQuery, _ => true)
+    versionAggregations("scalaNativeVersion",
+                        notDeprecatedQuery,
+                        ScalaNative.isValid)
   }
 
   def getScalaNativeVersions(
       params: SearchParams
   ): Future[List[(String, Long)]] = {
-    versionAggregations("scalaNativeVersion",
-                        filteredSearchQuery(params),
-                        _ => true)
-      .map(addLabelsIfMissing(params.scalaNativeVersions.toSet))
+    versionAggregations(
+      "scalaNativeVersion",
+      filteredSearchQuery(params),
+      ScalaNative.isValid
+    ).map(addLabelsIfMissing(params.scalaNativeVersions.toSet))
   }
 
   def getAllSbtVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("sbtVersion", notDeprecatedQuery, _ => true)
+    versionAggregations("sbtVersion", notDeprecatedQuery, SbtPlugin.isValid)
   }
 
   def getSbtVersions(params: SearchParams): Future[List[(String, Long)]] = {
-    versionAggregations("sbtVersion", filteredSearchQuery(params), _ => true)
+    versionAggregations("sbtVersion",
+                        filteredSearchQuery(params),
+                        SbtPlugin.isValid)
       .map(addLabelsIfMissing(params.sbtVersions.toSet))
   }
 
@@ -311,21 +316,16 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
   private def versionAggregations(
       field: String,
       query: QueryDefinition,
-      filterF: SemanticVersion => Boolean
+      filterF: BinaryVersion => Boolean
   ): Future[List[(String, Long)]] = {
 
     aggregations(field, query).map { versionAgg =>
       val filteredAgg = for {
         (version, count) <- versionAgg.toList
-        semanticVersion <- SemanticVersion(version) if filterF(semanticVersion)
-      } yield (semanticVersion, count)
+        binaryVersion <- BinaryVersion.parse(version) if filterF(binaryVersion)
+      } yield (binaryVersion, count)
 
       filteredAgg
-        .groupBy {
-          case (version, _) => SemanticVersion(version.major, version.minor)
-        }
-        .mapValues(group => group.map { case (_, count) => count }.sum)
-        .toList
         .sortBy(_._1)
         .map { case (v, c) => (v.toString, c) }
     }
@@ -514,18 +514,25 @@ object DataRepository {
   }
 
   private def targetQuery(target: ScalaTarget): QueryDefinition = {
-    must(
-      termQuery("scalaVersion", target.scalaVersion.toString),
-      optionalQuery(target.scalaJsVersion) { version =>
-        termQuery("scalaJsVersion", version.toString)
-      },
-      optionalQuery(target.scalaNativeVersion) { version =>
-        termQuery("scalaNativeVersion", version.toString)
-      },
-      optionalQuery(target.sbtVersion) { version =>
-        termQuery("sbtVersion", version.toString)
-      }
-    )
+    target match {
+      case ScalaJvm(scalaVersion) =>
+        termQuery("scalaVersion", scalaVersion.toString)
+      case ScalaJs(scalaVersion, jsVersion) =>
+        must(
+          termQuery("scalaVersion", scalaVersion.toString),
+          termQuery("scalaJsVersion", jsVersion.toString)
+        )
+      case ScalaNative(scalaVersion, nativeVersion) =>
+        must(
+          termQuery("scalaVersion", scalaVersion.toString),
+          termQuery("scalaNativeVersion", nativeVersion.toString)
+        )
+      case SbtPlugin(scalaVersion, sbtVersion) =>
+        must(
+          termQuery("scalaVersion", scalaVersion.toString),
+          termQuery("sbtVersion", sbtVersion.toString)
+        )
+    }
   }
 
   private val contributingQuery = boolQuery().must(
@@ -568,12 +575,6 @@ object DataRepository {
   }
 
   private val frontPageCount = 12
-  private val minScalaVersion = SemanticVersion(2, 10)
-  private val maxScalaVersion = SemanticVersion(2, 13)
-
-  private def filterScalaVersion(version: SemanticVersion): Boolean = {
-    minScalaVersion <= version && version <= maxScalaVersion
-  }
 
   private def labelizeTargetType(targetType: String): String = {
     if (targetType == "JVM") "Scala (Jvm)"

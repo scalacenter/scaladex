@@ -49,12 +49,12 @@ package object html {
 
     val newUri = uri
       .appendQuery("sort", params.sorting)
-      .appendQuery("topics", params.topics.toList)
-      .appendQuery("targetTypes", params.targetTypes.toList)
-      .appendQuery("scalaVersions", params.scalaVersions.toList)
-      .appendQuery("scalaJsVersions", params.scalaJsVersions.toList)
-      .appendQuery("scalaNativeVersions", params.scalaNativeVersions.toList)
-      .appendQuery("sbtVersions", params.sbtVersions.toList)
+      .appendQuery("topics", params.topics)
+      .appendQuery("targetTypes", params.targetTypes)
+      .appendQuery("scalaVersions", params.scalaVersions)
+      .appendQuery("scalaJsVersions", params.scalaJsVersions)
+      .appendQuery("scalaNativeVersions", params.scalaNativeVersions)
+      .appendQuery("sbtVersions", params.sbtVersions)
       .appendQuery("you", you)
       .appendQuery("q" -> params.queryString)
       .appendQuery("page" -> page.toString)
@@ -124,16 +124,5 @@ package object html {
     val out = DateTimeFormat.forPattern("dd/MM/yyyy")
 
     out.print(in.parseDateTime(date))
-  }
-
-  def sortVersions(versions: Set[String],
-                   scala: Boolean = false): List[String] = {
-    val minVersion = SemanticVersion(2, 10)
-    versions.toList
-      .flatMap(SemanticVersion.parse)
-      .filter(version => !scala || version >= minVersion)
-      .sorted
-      .map(version => SemanticVersion(version.major, version.minor).toString)
-      .distinct
   }
 }

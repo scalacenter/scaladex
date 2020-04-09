@@ -1,5 +1,6 @@
 @import ch.epfl.scala.index.views.html._
 @import ch.epfl.scala.index.model.Project
+@import ch.epfl.scala.index.model.release.ScalaTarget
 @import ch.epfl.scala.index.model.misc.SearchParams
 @(projects: List[Project], params: SearchParams)
 
@@ -26,7 +27,7 @@
               @if(project.scalaVersion.nonEmpty){
                 <div>
                   Scala (JVM):
-                  @for(v <- sortVersions(project.scalaVersion, scala = true)) {
+                  @for(v <- project.scalaVersion) {
                     <span class="targets">@v</span>
                   }
                 </div>
@@ -35,7 +36,7 @@
               @if(project.sbtVersion.nonEmpty){
                 <div>
                   Sbt:
-                  @for(v <- sortVersions(project.sbtVersion)) {
+                  @for(v <- project.sbtVersion) {
                     <span class="targets">@v</span>
                   }
                 </div>
@@ -44,7 +45,7 @@
               @if(project.scalaJsVersion.nonEmpty){
                 <div>
                   Scala.js:
-                  @for(v <- sortVersions(project.scalaJsVersion)) {
+                  @for(v <- project.scalaJsVersion) {
                     <span class="targets">@v</span>
                   }
                 </div>
@@ -53,7 +54,7 @@
               @if(project.scalaNativeVersion.nonEmpty){
                 <div>
                   Scala-Native:
-                  @for(v <- sortVersions(project.scalaNativeVersion)) {
+                  @for(v <- project.scalaNativeVersion) {
                     <span class="targets">@v</span>
                   }
                 </div>

@@ -12,8 +12,8 @@ class SbtInstallTests extends FunSuite with TestHelpers {
         version = "2.1.1",
         artifactName = "paradise",
         target = Some(
-          ScalaTarget.scala(
-            scalaVersion = SemanticVersion("2.12.3").get
+          ScalaJvm(
+            scalaVersion = PatchBinary(2, 12, 3)
           )
         )
       ).sbtInstall
@@ -32,8 +32,8 @@ class SbtInstallTests extends FunSuite with TestHelpers {
         version = "7.2.14",
         artifactName = "scalaz-core",
         target = Some(
-          ScalaTarget.scala(
-            scalaVersion = SemanticVersion("2.13.0-M1").get
+          ScalaJvm(
+            scalaVersion = PreReleaseBinary(2, 13, Some(0), Milestone(1))
           )
         )
       ).sbtInstall
@@ -52,9 +52,9 @@ class SbtInstallTests extends FunSuite with TestHelpers {
         version = "0.9.3",
         artifactName = "scalajs-dom",
         target = Some(
-          ScalaTarget.scalaJs(
-            scalaVersion = SemanticVersion("2.12").get,
-            scalaJsVersion = SemanticVersion("0.6").get
+          ScalaJs(
+            scalaVersion = MinorBinary(2, 12),
+            scalaJsVersion = MinorBinary(0, 6)
           )
         )
       ).sbtInstall
@@ -73,9 +73,9 @@ class SbtInstallTests extends FunSuite with TestHelpers {
         version = "1.2.2",
         artifactName = "sbt-native-packager",
         target = Some(
-          ScalaTarget.sbt(
-            scalaVersion = SemanticVersion("2.10").get,
-            sbtVersion = SemanticVersion("0.13").get
+          SbtPlugin(
+            scalaVersion = MinorBinary(2, 10),
+            sbtVersion = MinorBinary(0, 13)
           )
         )
       ).sbtInstall
@@ -94,8 +94,8 @@ class SbtInstallTests extends FunSuite with TestHelpers {
         version = "0.8.2",
         artifactName = "doodle",
         target = Some(
-          ScalaTarget.scala(
-            scalaVersion = SemanticVersion("2.11").get
+          ScalaJvm(
+            scalaVersion = MinorBinary(2, 11)
           )
         ),
         resolver = Some(BintrayResolver("noelwelsh", "maven"))

@@ -37,45 +37,33 @@ case class Release(
     internalDependencies: Seq[ScalaDependency],
     // this part for elasticsearch search
     targetType: String, // JVM, JS, Native, JAVA, SBT
-    fullScalaVersion: Option[String],
     scalaVersion: Option[String],
     scalaJsVersion: Option[String],
     scalaNativeVersion: Option[String],
     sbtVersion: Option[String]
 ) {
 
+  def isValid: Boolean = {
+    reference.isValid
+  }
+
   /**
    * string representation for sbt dependency
    * @return
    */
   def sbtInstall: String = {
-    val isSbtPlugin = reference.target.flatMap(_.sbtVersion).isDefined
-
-    val install =
-      if (!isSbtPlugin) {
-        val isScalaJs =
-          reference.target.flatMap(_.scalaJsVersion).isDefined
-
-        val isScalaNative =
-          reference.target.flatMap(_.scalaNativeVersion).isDefined
-
-        val isCrossFull =
-          reference.target.flatMap(_.scalaVersion.patch).isDefined
-
-        val isPreRelease =
-          reference.target.flatMap(_.scalaVersion.preRelease).isDefined
-
-        val (artifactOperator, crossSuffix) =
-          if (isNonStandardLib) ("%", "")
-          else if (isScalaJs || isScalaNative) ("%%%", "")
-          else if (isCrossFull & !isPreRelease)
-            ("%", " cross CrossVersion.full")
-          else ("%%", "")
-
-        s"""libraryDependencies += "${maven.groupId}" $artifactOperator "${reference.artifact}" % "${reference.version}"$crossSuffix"""
-      } else {
+    val install = reference.target match {
+      case Some(SbtPlugin(_, _)) =>
         s"""addSbtPlugin("${maven.groupId}" % "${reference.artifact}" % "${reference.version}")"""
-      }
+      case _ if isNonStandardLib =>
+        s"""libraryDependencies += "${maven.groupId}" % "${reference.artifact}" % "${reference.version}""""
+      case Some(ScalaJs(_, _) | ScalaNative(_, _)) =>
+        s"""libraryDependencies += "${maven.groupId}" %%% "${reference.artifact}" % "${reference.version}""""
+      case Some(ScalaJvm(version: PatchBinary)) =>
+        s"""libraryDependencies += "${maven.groupId}" % "${reference.artifact}" % "${reference.version}" cross CrossVersion.full"""
+      case _ =>
+        s"""libraryDependencies += "${maven.groupId}" %% "${reference.artifact}" % "${reference.version}""""
+    }
 
     List(
       Some(install),
@@ -309,6 +297,10 @@ object Release {
       target: Option[ScalaTarget]
   ) extends GeneralReference {
 
+    def isValid: Boolean = {
+      target.exists(_.isValid)
+    }
+
     def projectReference = Project.Reference(organization, repository)
     def name = s"$organization/$artifact"
     def httpUrl = {
@@ -322,6 +314,5 @@ object Release {
       repository == "scala" &&
       artifact == "scala-library"
     }
-
   }
 }

@@ -83,28 +83,19 @@ class ProjectPages(
 
     val user = userState.map(_.info)
 
-    def showTarget(target: ScalaTarget): String = {
+    def showVersion(target: ScalaTarget): String = {
       target match {
-        case ScalaTarget(scalaVersion, None, None, None) =>
-          scalaVersion.toString
-
-        case ScalaTarget(scalaVersion, Some(scalaJsVersion), None, None) =>
-          scalaVersion.toString
-
-        case ScalaTarget(scalaVersion, None, Some(scalaNativeVersion), None) =>
-          scalaNativeVersion.toString
-
-        case ScalaTarget(scalaVersion, None, None, Some(sbtVersion)) =>
-          sbtVersion.toString
-
-        case _ => "" // impossible
+        case ScalaJvm(version)                   => version.toString
+        case ScalaJs(version, jsVersion)         => s"${jsVersion}_$version"
+        case ScalaNative(version, nativeVersion) => s"${nativeVersion}_$version"
+        case SbtPlugin(version, sbtVersion)      => s"${sbtVersion}_$version"
       }
     }
 
     dataRepository
       .getProjectAndReleases(Project.Reference(owner, repo))
       .map {
-        case Some((project, releases)) => {
+        case Some((project, releases)) =>
           val targets =
             releases
               .map(_.reference.target)
@@ -114,7 +105,7 @@ class ProjectPages(
                 target =>
                   (
                     target,
-                    target.map(showTarget).getOrElse("Java")
+                    target.map(showVersion).getOrElse("Java")
                 )
               )
               .distinct
@@ -140,7 +131,6 @@ class ProjectPages(
           (OK,
            views.html
              .artifacts(project, sortedReleases, targetTypes, targets, user))
-        }
         case None => (NotFound, views.html.notfound(user))
       }
   }
@@ -166,7 +156,6 @@ class ProjectPages(
       .getProjectPage(Project.Reference(owner, repo), selection)
       .map(_.map {
         case (project, options) =>
-          import options._
           val twitterCard = for {
             github <- project.github
             description <- github.description
@@ -179,16 +168,16 @@ class ProjectPages(
             )
 
           val versions0 =
-            if (project.strictVersions) versions.filter(_.isSemantic)
-            else versions
+            if (project.strictVersions) options.versions.filter(_.isSemantic)
+            else options.versions
 
           (OK,
            views.project.html.project(
              project,
              options.artifacts,
              versions0,
-             targets,
-             release,
+             options.targets,
+             options.release,
              user,
              canEdit(owner, repo, userState),
              twitterCard
@@ -379,11 +368,10 @@ class ProjectPages(
                             )
                           case None =>
                             complete(
-                              ((NotFound,
-                                views.html
-                                  .notfound(
-                                    session.getUser(userId).map(_.info)
-                                  )))
+                              NotFound,
+                              views.html.notfound(
+                                session.getUser(userId).map(_.info)
+                              )
                             )
                       }
                   )
