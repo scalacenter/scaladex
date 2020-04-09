@@ -94,7 +94,7 @@ object ScalaJvm {
   val `2.12`: BinaryVersion = MinorBinary(2, 12)
   val `2.13`: BinaryVersion = MinorBinary(2, 13)
 
-  private def stableBinaryVersions = Set(`2.10`, `2.11`, `2.12`, `2.13`)
+  private val stableBinaryVersions = Set(`2.10`, `2.11`, `2.12`, `2.13`)
 
   def isValid(version: BinaryVersion): Boolean =
     stableBinaryVersions.contains(version)
@@ -104,7 +104,7 @@ object ScalaJs {
   val `0.6`: BinaryVersion = MinorBinary(0, 6)
   val `1.x`: BinaryVersion = MajorBinary(1)
 
-  private def stableBinaryVersions = Set(`0.6`, `1.x`)
+  private val stableBinaryVersions = Set(`0.6`, `1.x`)
 
   def isValid(version: BinaryVersion): Boolean =
     stableBinaryVersions.contains(version)
@@ -122,9 +122,8 @@ object ScalaNative {
 object SbtPlugin {
   val `0.13`: BinaryVersion = MinorBinary(0, 13)
   val `1.0`: BinaryVersion = MinorBinary(1, 0)
-  val `1.x`: BinaryVersion = MajorBinary(1)
 
-  private def stableBinaryVersions = Set(`0.13`, `1.0`, `1.x`)
+  private val stableBinaryVersions = Set(`0.13`, `1.0`)
 
   def isValid(version: BinaryVersion): Boolean = {
     stableBinaryVersions.contains(version)
