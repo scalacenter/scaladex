@@ -13,7 +13,7 @@ class MillInstallTests extends FunSuite with TestHelpers {
         artifactName = "http4s-core",
         target = Some(
           ScalaJvm(
-            scalaVersion = PatchBinary(2, 12, 3)
+            languageVersion = ScalaVersion(PatchBinary(2, 12, 3))
           )
         )
       ).millInstall
@@ -33,7 +33,7 @@ class MillInstallTests extends FunSuite with TestHelpers {
         artifactName = "doodle",
         target = Some(
           ScalaJvm(
-            scalaVersion = MinorBinary(2, 11)
+            languageVersion = ScalaVersion.`2.11`
           )
         ),
         resolver = Some(BintrayResolver("noelwelsh", "maven"))

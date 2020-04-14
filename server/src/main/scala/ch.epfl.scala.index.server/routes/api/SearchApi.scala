@@ -55,7 +55,7 @@ class SearchApi(
       sbtVersion: Option[String]
   ): Option[ScalaTarget] = {
     (targetType,
-     scalaVersion.flatMap(BinaryVersion.parse),
+     scalaVersion.flatMap(LanguageVersion.tryParse),
      scalaJsVersion.flatMap(BinaryVersion.parse),
      scalaNativeVersion.flatMap(BinaryVersion.parse),
      sbtVersion.flatMap(BinaryVersion.parse)) match {

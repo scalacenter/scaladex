@@ -13,7 +13,7 @@ class SbtInstallTests extends FunSuite with TestHelpers {
         artifactName = "paradise",
         target = Some(
           ScalaJvm(
-            scalaVersion = PatchBinary(2, 12, 3)
+            languageVersion = ScalaVersion(PatchBinary(2, 12, 3))
           )
         )
       ).sbtInstall
@@ -33,7 +33,8 @@ class SbtInstallTests extends FunSuite with TestHelpers {
         artifactName = "scalaz-core",
         target = Some(
           ScalaJvm(
-            scalaVersion = PreReleaseBinary(2, 13, Some(0), Milestone(1))
+            languageVersion =
+              ScalaVersion(PreReleaseBinary(2, 13, Some(0), Milestone(1)))
           )
         )
       ).sbtInstall
@@ -53,7 +54,7 @@ class SbtInstallTests extends FunSuite with TestHelpers {
         artifactName = "scalajs-dom",
         target = Some(
           ScalaJs(
-            scalaVersion = MinorBinary(2, 12),
+            languageVersion = ScalaVersion.`2.12`,
             scalaJsVersion = MinorBinary(0, 6)
           )
         )
@@ -74,7 +75,7 @@ class SbtInstallTests extends FunSuite with TestHelpers {
         artifactName = "sbt-native-packager",
         target = Some(
           SbtPlugin(
-            scalaVersion = MinorBinary(2, 10),
+            languageVersion = ScalaVersion.`2.10`,
             sbtVersion = MinorBinary(0, 13)
           )
         )
@@ -95,7 +96,7 @@ class SbtInstallTests extends FunSuite with TestHelpers {
         artifactName = "doodle",
         target = Some(
           ScalaJvm(
-            scalaVersion = MinorBinary(2, 11)
+            languageVersion = ScalaVersion.`2.11`
           )
         ),
         resolver = Some(BintrayResolver("noelwelsh", "maven"))

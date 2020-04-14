@@ -1,9 +1,15 @@
 package ch.epfl.scala.index
 package server
 
-import model.{MinorBinary, Project, SemanticVersion}
+import model.{Project, SemanticVersion}
 import model.misc.SearchParams
-import model.release.{ScalaJs, ScalaNative, ScalaTarget}
+import model.release.{
+  MinorBinary,
+  ScalaVersion,
+  ScalaJs,
+  ScalaNative,
+  ScalaTarget
+}
 import data.DataPaths
 import data.elastic._
 import data.github.GithubDownload
@@ -108,7 +114,7 @@ class RelevanceTest
   test("Scala.js targetFiltering") {
     val scalaJs =
       ScalaJs(
-        scalaVersion = MinorBinary(2, 12),
+        languageVersion = ScalaVersion.`2.12`,
         scalaJsVersion = MinorBinary(0, 6)
       )
 
@@ -123,7 +129,7 @@ class RelevanceTest
   test("Scala.js targetFiltering (2)") {
     val scalaJs =
       ScalaJs(
-        scalaVersion = MinorBinary(2, 12),
+        languageVersion = ScalaVersion.`2.12`,
         scalaJsVersion = MinorBinary(0, 6)
       )
 
@@ -149,7 +155,7 @@ class RelevanceTest
   test("Scala Native targetFiltering") {
     val scalaNative =
       ScalaNative(
-        scalaVersion = MinorBinary(2, 11),
+        languageVersion = ScalaVersion.`2.11`,
         scalaNativeVersion = MinorBinary(0, 3)
       )
 

@@ -105,14 +105,18 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
                    scalaJsVersion,
                    scalaNativeVersion,
                    sbtVersion) = target match {
-                case Some(ScalaJvm(version)) =>
-                  (Jvm, Some(version), None, None, None)
-                case Some(ScalaJs(version, jsVersion)) =>
-                  (Js, Some(version), Some(jsVersion), None, None)
-                case Some(ScalaNative(version, nativeVersion)) =>
-                  (Native, Some(version), None, Some(nativeVersion), None)
-                case Some(SbtPlugin(version, sbtVersion)) =>
-                  (Sbt, Some(version), None, None, Some(sbtVersion))
+                case Some(ScalaJvm(languageVersion)) =>
+                  (Jvm, Some(languageVersion), None, None, None)
+                case Some(ScalaJs(languageVersion, jsVersion)) =>
+                  (Js, Some(languageVersion), Some(jsVersion), None, None)
+                case Some(ScalaNative(languageVersion, nativeVersion)) =>
+                  (Native,
+                   Some(languageVersion),
+                   None,
+                   Some(nativeVersion),
+                   None)
+                case Some(SbtPlugin(languageVersion, sbtVersion)) =>
+                  (Sbt, Some(languageVersion), None, None, Some(sbtVersion))
                 case None => (Java, None, None, None, None)
               }
 
@@ -138,7 +142,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
                 reverseDependencies = Seq(),
                 internalDependencies = Seq(),
                 targetType = targetType.toString,
-                scalaVersion = scalaVersion.map(_.toString),
+                scalaVersion = scalaVersion.map(_.family),
                 scalaJsVersion = scalaJsVersion.map(_.toString),
                 scalaNativeVersion = scalaNativeVersion.map(_.toString),
                 sbtVersion = sbtVersion.map(_.toString)

@@ -1,7 +1,6 @@
 package ch.epfl.scala.index.model
 
 import release._
-
 import org.scalatest._
 
 class ArtifactTests extends FunSpec with Matchers {
@@ -11,7 +10,7 @@ class ArtifactTests extends FunSpec with Matchers {
         Artifact(
           "cats-core",
           ScalaJs(
-            scalaVersion = MinorBinary(2, 11),
+            languageVersion = ScalaVersion.`2.11`,
             scalaJsVersion = MinorBinary(0, 6)
           )
         )
@@ -23,18 +22,18 @@ class ArtifactTests extends FunSpec with Matchers {
         Artifact(
           "cats-core",
           ScalaNative(
-            scalaVersion = MinorBinary(2, 11),
+            languageVersion = ScalaVersion.`2.11`,
             scalaNativeVersion = MinorBinary(0, 1)
           )
         )
       )
     }
 
-    it("parses scala rc") {
-      Artifact.parse("akka-remote-tests_2.11.0-RC4") should contain(
+    it("parses dotty versions") {
+      Artifact.parse("circe_0.23") should contain(
         Artifact(
-          "akka-remote-tests",
-          ScalaJvm(PreReleaseBinary(2, 11, Some(0), ReleaseCandidate(4)))
+          "circe",
+          ScalaJvm(DottyVersion(MinorBinary(0, 23)))
         )
       )
     }
@@ -44,7 +43,7 @@ class ArtifactTests extends FunSpec with Matchers {
         Artifact(
           "sbt-microsites",
           SbtPlugin(
-            scalaVersion = MinorBinary(2, 12),
+            languageVersion = ScalaVersion.`2.12`,
             sbtVersion = MinorBinary(1, 0)
           )
         )
@@ -59,7 +58,7 @@ class ArtifactTests extends FunSpec with Matchers {
       Artifact.parse("banana_jvm_2.11") should contain(
         Artifact(
           "banana_jvm",
-          ScalaJvm(MinorBinary(2, 11))
+          ScalaJvm(ScalaVersion.`2.11`)
         )
       )
     }

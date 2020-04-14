@@ -111,10 +111,10 @@ class DefaultReleaseTests extends FunSpec with Matchers {
 
       val targets: List[ScalaTarget] =
         List(
-          ScalaJvm(MinorBinary(2, 11)),
-          ScalaJvm(MinorBinary(2, 10)),
-          ScalaJs(MinorBinary(2, 11), MinorBinary(0, 6)),
-          ScalaJs(MinorBinary(2, 10), MinorBinary(0, 6))
+          ScalaJvm(ScalaVersion.`2.11`),
+          ScalaJvm(ScalaVersion.`2.10`),
+          ScalaJs(ScalaVersion.`2.11`, MinorBinary(0, 6)),
+          ScalaJs(ScalaVersion.`2.10`, MinorBinary(0, 6))
         )
 
       val expected =
@@ -131,7 +131,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
               repository,
               "cats-core",
               SemanticVersion(0, 6, 0),
-              Some(ScalaJvm(MinorBinary(2, 11)))
+              Some(ScalaJvm(ScalaVersion.`2.11`))
             )
           )
         )
@@ -176,7 +176,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
               SemanticVersion(2, 4, 8)
             ),
             targets = List(
-              ScalaJvm(MinorBinary(2, 11))
+              ScalaJvm(ScalaVersion.`2.11`)
             ),
             release = emptyRelease(
               MavenReference(groupdId,
@@ -187,7 +187,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
                 repository,
                 "akka-distributed-data-experimental",
                 SemanticVersion(2, 4, 8),
-                Some(ScalaJvm(MinorBinary(2, 11)))
+                Some(ScalaJvm(ScalaVersion.`2.11`))
               )
             )
           )
@@ -227,8 +227,8 @@ class DefaultReleaseTests extends FunSpec with Matchers {
 
       val targets: List[ScalaTarget] =
         List(
-          ScalaJvm(PatchBinary(2, 12, 2)),
-          ScalaJvm(MinorBinary(2, 12))
+          ScalaJvm(ScalaVersion(PatchBinary(2, 12, 2))),
+          ScalaJvm(ScalaVersion.`2.12`)
         )
 
       val expected: Option[ReleaseOptions] =
@@ -246,7 +246,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
                 repository,
                 "scalafix-core",
                 SemanticVersion(0, 5, 3),
-                Some(ScalaJvm(MinorBinary(2, 12)))
+                Some(ScalaJvm(ScalaVersion.`2.12`))
               )
             )
           )
