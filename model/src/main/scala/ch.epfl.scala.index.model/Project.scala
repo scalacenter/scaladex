@@ -7,6 +7,8 @@ import ch.epfl.scala.index.model.release.{
   ScalaNative
 }
 import misc.{GithubInfo, GithubRepo, Url}
+import ch.epfl.scala.index.model.release.LanguageVersion
+import ch.epfl.scala.index.model.release.BinaryVersion
 
 /**
  * Project representation which contains all necessary meta data to
@@ -69,14 +71,16 @@ case class Project(
     primaryTopic: Option[String] = None
 ) {
   def formatForDisplaying: Project = {
-    import BinaryVersion.sortAndFilter
     copy(
       id = None,
-      scalaVersion = sortAndFilter(scalaVersion, ScalaJvm.isValid).toList,
-      scalaJsVersion = sortAndFilter(scalaJsVersion, ScalaJs.isValid).toList,
-      scalaNativeVersion =
-        sortAndFilter(scalaNativeVersion, ScalaNative.isValid).toList,
-      sbtVersion = sortAndFilter(sbtVersion, SbtPlugin.isValid).toList
+      scalaVersion = LanguageVersion.sortFamilies(scalaVersion),
+      scalaJsVersion =
+        BinaryVersion.sortAndFilter(scalaJsVersion, ScalaJs.isValid).toList,
+      scalaNativeVersion = BinaryVersion
+        .sortAndFilter(scalaNativeVersion, ScalaNative.isValid)
+        .toList,
+      sbtVersion =
+        BinaryVersion.sortAndFilter(sbtVersion, SbtPlugin.isValid).toList
     )
   }
 

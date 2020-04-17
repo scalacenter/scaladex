@@ -59,7 +59,8 @@ case class Release(
         s"""libraryDependencies += "${maven.groupId}" % "${reference.artifact}" % "${reference.version}""""
       case Some(ScalaJs(_, _) | ScalaNative(_, _)) =>
         s"""libraryDependencies += "${maven.groupId}" %%% "${reference.artifact}" % "${reference.version}""""
-      case Some(ScalaJvm(version: PatchBinary)) =>
+      case Some(ScalaJvm(ScalaVersion(_: PatchBinary))) |
+          Some(ScalaJvm(DottyVersion(_: PatchBinary))) =>
         s"""libraryDependencies += "${maven.groupId}" % "${reference.artifact}" % "${reference.version}" cross CrossVersion.full"""
       case _ =>
         s"""libraryDependencies += "${maven.groupId}" %% "${reference.artifact}" % "${reference.version}""""
@@ -176,7 +177,7 @@ case class Release(
             "a" -> reference.artifact,
             "v" -> maven.version,
             "t" -> target.targetType.toString.toUpperCase,
-            "sv" -> latestFor(target.scalaVersion.toString)
+            "sv" -> latestFor(target.languageVersion.toString)
         )
       )
       .map(

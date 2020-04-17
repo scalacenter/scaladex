@@ -1,5 +1,6 @@
-package ch.epfl.scala.index.model
+package ch.epfl.scala.index.model.release
 
+import ch.epfl.scala.index.model.{Milestone, ReleaseCandidate, release}
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{FunSpec, Matchers}
 
@@ -17,8 +18,9 @@ class BinaryVersionTests
       ("2.13.0", PatchBinary(2, 13, 0)),
       ("0.4.0", PatchBinary(0, 4, 0)),
       ("0.4.0-M2", PreReleaseBinary(0, 4, Some(0), Milestone(2))),
-      ("0.23.0-RC1", PreReleaseBinary(0, 23, Some(0), ReleaseCandidate(1))),
-      ("1.1-M1", PreReleaseBinary(1, 1, None, Milestone(1)))
+      ("0.23.0-RC1",
+       release.PreReleaseBinary(0, 23, Some(0), ReleaseCandidate(1))),
+      ("1.1-M1", release.PreReleaseBinary(1, 1, None, Milestone(1)))
     )
 
     forAll(inputs) { (input, output) =>
@@ -32,8 +34,8 @@ class BinaryVersionTests
       (MajorBinary(1), MajorBinary(2)),
       (MajorBinary(1), MinorBinary(1, 1)), // 1.x < 1.1
       (MajorBinary(1), MinorBinary(2, 1)),
-      (PreReleaseBinary(1, 2, None, Milestone(1)), MinorBinary(1, 2)),
-      (MajorBinary(1), PreReleaseBinary(2, 0, None, Milestone(1)))
+      (release.PreReleaseBinary(1, 2, None, Milestone(1)), MinorBinary(1, 2)),
+      (MajorBinary(1), release.PreReleaseBinary(2, 0, None, Milestone(1)))
     )
 
     forAll(inputs) { (lower, higher) =>

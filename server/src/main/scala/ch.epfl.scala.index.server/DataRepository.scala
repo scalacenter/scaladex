@@ -221,13 +221,13 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
   }
 
   def getAllScalaVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("scalaVersion", notDeprecatedQuery, ScalaJvm.isValid)
+    aggregations("scalaVersion", notDeprecatedQuery)
+      .map(_.toList.sortBy(_._1))
   }
 
   def getScalaVersions(params: SearchParams): Future[List[(String, Long)]] = {
-    versionAggregations("scalaVersion",
-                        filteredSearchQuery(params),
-                        ScalaJvm.isValid)
+    aggregations("scalaVersion", notDeprecatedQuery)
+      .map(_.toList.sortBy(_._1))
       .map(addLabelsIfMissing(params.scalaVersions.toSet))
   }
 
@@ -402,7 +402,7 @@ object DataRepository {
     }
 
   private val notDeprecatedQuery: QueryDefinition = {
-    boolQuery().not(termQuery("deprecated", true))
+    not(termQuery("deprecated", true))
   }
 
   private def searchQuery(

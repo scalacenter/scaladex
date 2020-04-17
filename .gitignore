@@ -16,3 +16,4 @@ scaladex.log
 .bloop/
 .metals/
 project/metals.sbt
+project/gitignore.sbt

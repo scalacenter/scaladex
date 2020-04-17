@@ -35,7 +35,9 @@ trait ProjectProtocol {
           classOf[MajorBinary],
           classOf[MinorBinary],
           classOf[PatchBinary],
-          classOf[PreReleaseBinary]
+          classOf[PreReleaseBinary],
+          classOf[ScalaVersion],
+          classOf[DottyVersion]
         )
       )
     )

@@ -3,8 +3,14 @@ package data
 package project
 
 import cleanup._
-import model.release.{SbtPlugin, ScalaJvm, ScalaTarget}
-import model.{Artifact, BinaryVersion, SemanticVersion}
+import model.release.{
+  LanguageVersion,
+  BinaryVersion,
+  SbtPlugin,
+  ScalaJvm,
+  ScalaTarget
+}
+import model.{Artifact, SemanticVersion}
 import maven.{ReleaseModel, SbtPluginTarget}
 import org.slf4j.LoggerFactory
 
@@ -54,8 +60,8 @@ class ArtifactMetaExtractor(paths: DataPaths) {
           // Or it can be an sbt-plugin published as a maven style. In such a case the Scala target
           // is not suffixed to the artifact name but can be found in the model’s `sbtPluginTarget` member.
           case Some(SbtPluginTarget(rawScalaVersion, rawSbtVersion)) =>
-            BinaryVersion
-              .parse(rawScalaVersion)
+            LanguageVersion
+              .tryParse(rawScalaVersion)
               .zip(
                 BinaryVersion.parse(rawSbtVersion)
               ) match {
@@ -75,22 +81,21 @@ class ArtifactMetaExtractor(paths: DataPaths) {
 
       // For example: io.gatling
       case Some(ScalaTargetFromPom) =>
-        pom.dependencies
-          .find(
-            dep =>
-              dep.groupId == "org.scala-lang" &&
-                dep.artifactId == "scala-library"
-          )
-          .flatMap(dep => SemanticVersion.tryParse(dep.version))
-          .map { version =>
-            // we assume binary compatibility
-            ArtifactMeta(
-              artifactName = pom.artifactId,
-              scalaTarget = Some(ScalaJvm.fromFullVersion(version)),
-              isNonStandard = true
-            )
+        for {
+          dep <- pom.dependencies.find { dep =>
+            dep.groupId == "org.scala-lang" &&
+            dep.artifactId == "scala-library"
           }
-
+          version <- SemanticVersion.tryParse(dep.version)
+          target <- ScalaJvm.fromFullVersion(version)
+        } yield {
+          // we assume binary compatibility
+          ArtifactMeta(
+            artifactName = pom.artifactId,
+            scalaTarget = Some(target),
+            isNonStandard = true
+          )
+        }
       // For example: typesafe config
       case Some(NoScalaTargetPureJavaDependency) =>
         Some(
@@ -103,15 +108,14 @@ class ArtifactMetaExtractor(paths: DataPaths) {
 
       // For example: scala-compiler
       case Some(ScalaTargetFromVersion) =>
-        SemanticVersion
-          .tryParse(pom.version)
-          .map(
-            version =>
-              ArtifactMeta(
-                artifactName = pom.artifactId,
-                scalaTarget = Some(ScalaJvm.fromFullVersion(version)),
-                isNonStandard = true
-            )
+        for {
+          version <- SemanticVersion.tryParse(pom.version)
+          target <- ScalaJvm.fromFullVersion(version)
+        } yield
+          ArtifactMeta(
+            artifactName = pom.artifactId,
+            scalaTarget = ScalaJvm.fromFullVersion(version),
+            isNonStandard = true
           )
     }
   }

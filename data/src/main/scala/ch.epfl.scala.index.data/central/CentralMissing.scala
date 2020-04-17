@@ -15,10 +15,11 @@ import akka.stream.{Materializer, ThrottleMode}
 import akka.stream.scaladsl._
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.project.ArtifactMetaExtractor
-import ch.epfl.scala.index.model.MinorBinary
 import ch.epfl.scala.index.model.misc.Sha1
 import ch.epfl.scala.index.model.release.{
+  MinorBinary,
   SbtPlugin,
+  ScalaVersion,
   ScalaJs,
   ScalaJvm,
   ScalaNative
@@ -251,27 +252,23 @@ class CentralMissing(paths: DataPaths)(implicit val materializer: Materializer,
         .flatten
         .toSet
 
-    val scala213 = MinorBinary(2, 13)
-    val scala212 = MinorBinary(2, 12)
-    val scala211 = MinorBinary(2, 11)
-    val scala210 = MinorBinary(2, 10)
     val sbt013 = MinorBinary(0, 13)
     val sbt10 = MinorBinary(1, 0)
     val scalaJs06 = MinorBinary(0, 6)
     val native03 = MinorBinary(0, 3)
 
     val allTargets = List(
-      ScalaJvm(scala213),
-      ScalaJvm(scala212),
-      ScalaJvm(scala211),
-      ScalaJvm(scala210),
-      SbtPlugin(scala210, sbt013),
-      SbtPlugin(scala212, sbt10),
-      ScalaJs(scala213, scalaJs06),
-      ScalaJs(scala212, scalaJs06),
-      ScalaJs(scala211, scalaJs06),
-      ScalaJs(scala210, scalaJs06),
-      ScalaNative(scala211, native03)
+      ScalaJvm(ScalaVersion.`2.13`),
+      ScalaJvm(ScalaVersion.`2.12`),
+      ScalaJvm(ScalaVersion.`2.11`),
+      ScalaJvm(ScalaVersion.`2.10`),
+      SbtPlugin(ScalaVersion.`2.10`, sbt013),
+      SbtPlugin(ScalaVersion.`2.12`, sbt10),
+      ScalaJs(ScalaVersion.`2.13`, scalaJs06),
+      ScalaJs(ScalaVersion.`2.12`, scalaJs06),
+      ScalaJs(ScalaVersion.`2.11`, scalaJs06),
+      ScalaJs(ScalaVersion.`2.10`, scalaJs06),
+      ScalaNative(ScalaVersion.`2.11`, native03)
     )
 
     val releasesDownloads =
