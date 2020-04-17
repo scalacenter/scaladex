@@ -226,7 +226,7 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
   }
 
   def getScalaVersions(params: SearchParams): Future[List[(String, Long)]] = {
-    aggregations("scalaVersion", notDeprecatedQuery)
+    aggregations("scalaVersion", filteredSearchQuery(params))
       .map(_.toList.sortBy(_._1))
       .map(addLabelsIfMissing(params.scalaVersions.toSet))
   }
