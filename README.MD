@@ -3,6 +3,14 @@
 [![Travis](https://img.shields.io/travis/scalacenter/scaladex.svg?style=flat-square)](https://travis-ci.org/scalacenter/scaladex)
 [![Gitter](https://img.shields.io/gitter/room/scalacenter/scaladex.svg?style=flat-square)](https://gitter.im/scalacenter/scaladex)
 
+Scaladex is the website where all the open source Scala libraries are indexed.
+
+## Acknowledgments
+
+<a title="Scala Center" href="https://scala.epfl.ch/"><img alt="Scala Center" src="https://scala.epfl.ch/resources/img/scala-center-logo-black.png" height="60" /></a>
+
+This project is funded by the <a title="Scala Center" href="https://scala.epfl.ch/">Scala Center</a>.
+
 ## How it works
 
 We pull poms from Bintray and we receive poms from Maven Central (Sonatype).
