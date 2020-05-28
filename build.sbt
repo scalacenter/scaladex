@@ -3,7 +3,7 @@ import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
 import Deployment.githash
 
-val playJsonVersion = "2.6.2"
+val playJsonVersion = "2.9.0"
 val akkaVersion = "2.5.3"
 val akkaHttpVersion = "10.0.11"
 val elastic4sVersion = "5.4.5"
