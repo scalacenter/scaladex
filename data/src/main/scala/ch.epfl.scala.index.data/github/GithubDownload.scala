@@ -8,7 +8,7 @@ import java.nio.file.{Files, Path}
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
-import ch.epfl.scala.index.data.download.PlayWsDownloader
+import ch.epfl.scala.index.data.download.{PlayWsClient, PlayWsDownloader}
 import ch.epfl.scala.index.data.elastic.SaveLiveData
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.model.Project
@@ -16,12 +16,10 @@ import ch.epfl.scala.index.model.misc.GithubRepo
 import com.typesafe.config.ConfigFactory
 import jawn.support.json4s.Parser
 import org.joda.time.DateTime
-import org.json4s._
 import org.json4s.native.Serialization._
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
 import play.api.libs.ws._
-import play.api.libs.ws.ahc.AhcWSClient
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
@@ -330,7 +328,7 @@ class GithubDownload(paths: DataPaths,
   /**
    * Process the downloaded issues from GraphQL API
    *
-   * @param repo the current repo
+   * @param in the current repo
    * @param response the response
    * @return
    */
@@ -383,20 +381,20 @@ class GithubDownload(paths: DataPaths,
     // so won't hit rate limit but if you hit GraphQL API for more things, you would
     // need to check rate limit reset times for GraphQL API as well and pick max one
 
-    val client = wsClient
-    val baseRequest = client
-      .url("https://api.github.com")
-      .addHttpHeaders("Accept" -> "application/json")
+    val (reset1, reset2) = PlayWsClient.open().acquireAndGet { client =>
+      val baseRequest = client
+        .url("https://api.github.com")
+        .addHttpHeaders("Accept" -> "application/json")
 
-    val request1 =
-      baseRequest.addHttpHeaders("Authorization" -> s"bearer ${credential(0)}")
-    val response1 = Await.result(request1.get, Duration.Inf)
-    val reset1 = new DateTime(
-      response1.header("X-RateLimit-Reset").getOrElse("0").toLong * 1000
-    )
+      val request1 =
+        baseRequest
+          .addHttpHeaders("Authorization" -> s"bearer ${credential(0)}")
+      val response1 = Await.result(request1.get, Duration.Inf)
+      val reset1 = new DateTime(
+        response1.header("X-RateLimit-Reset").getOrElse("0").toLong * 1000
+      )
 
-    val reset2 =
-      if (credential.length == 2) {
+      val reset2 = if (credential.length == 2) {
         val request2 = baseRequest.addHttpHeaders(
           "Authorization" -> s"bearer ${credential(1)}"
         )
@@ -408,7 +406,8 @@ class GithubDownload(paths: DataPaths,
         reset1
       }
 
-    client.close()
+      (reset1, reset2)
+    }
 
     val maxReset = if (reset1.compareTo(reset2) > 0) reset1 else reset2
     val milliseconds = maxReset.getMillis - DateTime.now().getMillis
@@ -454,8 +453,7 @@ class GithubDownload(paths: DataPaths,
    * @param repo the current repository
    * @return
    */
-  private def githubInfoUrl(wsClient: AhcWSClient,
-                            repo: GithubRepo): WSRequest = {
+  private def githubInfoUrl(wsClient: WSClient, repo: GithubRepo): WSRequest = {
 
     applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo)))
   }
@@ -466,8 +464,7 @@ class GithubDownload(paths: DataPaths,
    * @param repo the current repository
    * @return
    */
-  private def githubReadmeUrl(wsClient: AhcWSClient,
-                              repo: GithubRepo): WSRequest = {
+  private def githubReadmeUrl(wsClient: WSClient, repo: GithubRepo): WSRequest = {
 
     applyReadmeHeaders(wsClient.url(mainGithubUrl(repo) + "/readme"))
   }
@@ -478,7 +475,7 @@ class GithubDownload(paths: DataPaths,
    * @param repo the current repository
    * @return
    */
-  private def githubContributorsUrl(wsClient: AhcWSClient,
+  private def githubContributorsUrl(wsClient: WSClient,
                                     repo: PaginatedGithub): WSRequest = {
 
     applyAcceptJsonHeaders(
@@ -493,7 +490,7 @@ class GithubDownload(paths: DataPaths,
    * @param repo the current repository
    * @return
    */
-  private def githubCommunityProfileUrl(wsClient: AhcWSClient,
+  private def githubCommunityProfileUrl(wsClient: WSClient,
                                         repo: GithubRepo): WSRequest = {
 
     applyCommunityProfileHeaders(
@@ -506,7 +503,7 @@ class GithubDownload(paths: DataPaths,
    *
    * @return
    */
-  private def githubGraphqlUrl(wsClient: AhcWSClient): WSRequest = {
+  private def githubGraphqlUrl(wsClient: WSClient): WSRequest = {
 
     applyAcceptJsonHeaders(wsClient.url("https://api.github.com/graphql"))
   }
@@ -517,7 +514,7 @@ class GithubDownload(paths: DataPaths,
    * @param repo the current github repo
    * @return
    */
-  private def gitterUrl(wsClient: AhcWSClient, repo: GithubRepo): WSRequest = {
+  private def gitterUrl(wsClient: WSClient, repo: GithubRepo): WSRequest = {
     wsClient.url(gitterUrlString(repo))
   }
 

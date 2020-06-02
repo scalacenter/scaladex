@@ -2,16 +2,13 @@ package ch.epfl.scala.index.data
 package bintray
 
 import download.PlayWsDownloader
-
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-import play.api.libs.ws.{WSRequest, WSResponse}
+import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 import play.api.libs.ws.ahc.AhcWSClient
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-
 import org.slf4j.LoggerFactory
 
 class BintrayDownloadPoms(paths: DataPaths)(
@@ -96,7 +93,7 @@ class BintrayDownloadPoms(paths: DataPaths)(
    * @param search the bintray Search
    * @return
    */
-  private def downloadRequest(wsClient: AhcWSClient,
+  private def downloadRequest(wsClient: WSClient,
                               search: BintraySearch): WSRequest = {
 
     if (search.isJCenter) {

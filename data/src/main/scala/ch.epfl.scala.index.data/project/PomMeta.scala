@@ -80,7 +80,9 @@ object PomMeta {
                   PomMetaStep(
                     PomMeta(
                       releaseModel = pom,
-                      created = created(metas.map(_.created)),
+                      created = created(
+                        metas.map(search => new DateTime(search.created))
+                      ),
                       resolver = resolver
                     ),
                     keep = !metas.exists(

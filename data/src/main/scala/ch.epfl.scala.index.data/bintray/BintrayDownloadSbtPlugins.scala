@@ -5,15 +5,13 @@ import java.nio.file.Files
 
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.download.PlayWsDownloader
 import ch.epfl.scala.index.data.maven._
-
 import org.apache.ivy.core.module.descriptor.ModuleDescriptor
 import org.apache.ivy.core.settings.IvySettings
 import org.apache.ivy.plugins.parser.xml.XmlModuleDescriptorParser
-import org.joda.time.{DateTime, DateTimeZone}
 import org.joda.time.format.ISODateTimeFormat
+import org.joda.time.{DateTime, DateTimeZone}
 import org.json4s.JsonAST.JValue
 import org.slf4j.LoggerFactory
 import play.api.libs.ws.{WSClient, WSResponse}
@@ -26,15 +24,14 @@ import scala.util.{Failure, Success, Try}
  * Fetches sbt plugins information
  */
 final class BintrayDownloadSbtPlugins(
-    paths: DataPaths
+    paths: DataPaths,
+    bintrayClient: BintrayClient
 )(implicit val materializer: Materializer, val system: ActorSystem)
     extends PlayWsDownloader
     with BintrayProtocol {
 
-  import system.dispatcher
-
-  val bintrayClient = new BintrayClient(paths)
   import bintrayClient._
+  import system.dispatcher
 
   assert(bintrayCredentials.nonEmpty, "this steps requires bintray user")
 
@@ -179,7 +176,7 @@ final class BintrayDownloadSbtPlugins(
 
       val request =
         client
-          .url(s"$bintrayApi/search/file")
+          .url(s"$apiUrl/search/file")
           .withQueryStringParameters(allParameters: _*)
 
       withAuth(request).get()
@@ -222,7 +219,7 @@ final class BintrayDownloadSbtPlugins(
       subject: String,
       repo: String
   )(
-      releases: List[SbtPluginRelease]
+      releases: Seq[SbtPluginRelease]
   ): Future[List[SbtPluginReleaseWithModuleDescriptor]] = {
 
     val count = releases.size
@@ -319,6 +316,14 @@ final class BintrayDownloadSbtPlugins(
 }
 
 object BintrayDownloadSbtPlugins {
+
+  def run(paths: DataPaths)(implicit system: ActorSystem,
+                            mat: Materializer): Unit = {
+    for (client <- BintrayClient.create(paths.credentials)) {
+      val download = new BintrayDownloadSbtPlugins(paths, client)
+      download.run()
+    }
+  }
 
   /**
    * @param subject User or organization name (e.g. "sbt")

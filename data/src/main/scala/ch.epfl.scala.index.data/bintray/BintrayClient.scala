@@ -2,18 +2,34 @@ package ch.epfl.scala.index.data
 package bintray
 
 import java.net.URL
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 
+import akka.actor.ActorSystem
+import akka.stream.Materializer
+import ch.epfl.scala.index.data.download.PlayWsClient
 import jawn.support.json4s.Parser
 import org.json4s.JsonAST.JValue
-import org.slf4j.LoggerFactory
-import play.api.libs.ws.{WSAuthScheme, WSRequest, WSResponse}
+import play.api.libs.ws.{WSAuthScheme, WSClient, WSRequest, WSResponse}
+import resource.ManagedResource
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
-import scala.util.control.NonFatal
 
-class BintrayClient(paths: DataPaths) {
+/**
+ * [[BintrayClient]] allows to query the Bintray REST API (https://bintray.com/docs/api/)
+ * A Bintray Client encapsulates a WSClient that should be closed after usage.
+ * A managed [[BintrayClient]] can be created using the companion object.
+ *
+ * @param credentials Path to the Bintray credentials file
+ * @param client A Play Web Service client that is used internally to communicate with the Bintray REST API
+ * @param ec
+ */
+class BintrayClient private (
+    credentials: Path,
+    val client: WSClient // TODO should be private
+)(implicit ec: ExecutionContext)
+    extends BintrayProtocol {
+  import BintrayClient._
 
   val bintrayCredentials = {
     // from bintray-sbt convention
@@ -21,8 +37,6 @@ class BintrayClient(paths: DataPaths) {
     // host = api.bintray.com
     // user = xxxxxxxxxx
     // password = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
-    val credentials = paths.credentials
 
     if (Files.exists(credentials) && Files.isDirectory(credentials)) {
       val source = scala.io.Source.fromFile(
@@ -41,12 +55,10 @@ class BintrayClient(paths: DataPaths) {
     } else Map[String, String]()
   }
 
-  private val logger = LoggerFactory.getLogger(this.getClass)
-
   val bintrayBase: String = "https://bintray.com"
 
   /** Base URL of Bintray API */
-  val bintrayApi: String = s"$bintrayBase/api/v1"
+  val apiUrl: String = s"$bintrayBase/api/v1"
 
   def withAuth(request: WSRequest): WSRequest = {
     (bintrayCredentials.get("user"), bintrayCredentials.get("password")) match {
@@ -70,8 +82,8 @@ class BintrayClient(paths: DataPaths) {
   def fetchPaginatedResource[A](
       fetchPage: Int => Future[WSResponse]
   )(
-      decode: WSResponse => List[A]
-  )(implicit ec: ExecutionContext): Future[List[A]] = {
+      decode: WSResponse => Seq[A]
+  )(implicit ec: ExecutionContext): Future[Seq[A]] = {
     for {
       // Let’s first get the first page
       firstResponse <- fetchPage(0)
@@ -89,48 +101,58 @@ class BintrayClient(paths: DataPaths) {
   }
 
   /**
-   * @return The list of the remaining queries that have to be performed to get the missing packages
-   * @param response Response of the ''first'' query
-   */
-  def remainingPages(response: WSResponse): Seq[Int] =
-    (
-      for {
-        total <- response
-          .header("X-RangeLimit-Total")
-          .flatMap(s => Try(s.toInt).toOption)
-        startPos <- response
-          .header("X-RangeLimit-StartPos")
-          .flatMap(s => Try(s.toInt).toOption)
-        endPos <- response
-          .header("X-RangeLimit-EndPos")
-          .flatMap(s => Try(s.toInt).toOption)
-        if endPos < (total - 1)
-        nextPos = endPos + 1
-        perPage = nextPos - startPos
-        remainingPageCount = Math
-          .ceil((total - nextPos).toDouble / perPage)
-          .toInt
-      } yield Seq.tabulate(remainingPageCount)(page => nextPos + page * perPage)
-    ).getOrElse(Nil)
-
-  /**
    * @param response The HTTP response that we want to decode
    * @param decode   The function that decodes the JSON content into a list of meaningful information
    * @return The decoded content. In case of (any) failure, logs the error and returns an empty list.
    */
-  def decodeSucessfulJson[A](
-      decode: JValue => List[A]
-  )(response: WSResponse): List[A] =
-    try {
-      if (response.status != 200) {
-        sys.error(
-          s"Got a response with a non-OK status: ${response.statusText} ${response.body}"
-        )
-      }
-      decode(Parser.parseUnsafe(response.body))
-    } catch {
-      case NonFatal(exn) =>
-        logger.error("Unable to decode data", exn)
-        Nil
+  def decodeSucessfulJson[A](decode: JValue => A)(response: WSResponse): A = {
+    if (response.status != 200) {
+      sys.error(
+        s"Got a response with a non-OK status: ${response.statusText} ${response.body}"
+      )
     }
+    decode(Parser.parseUnsafe(response.body))
+  }
+}
+
+object BintrayClient {
+
+  /**
+   * Creates a managed BintrayClient that will be closed automatically after usage.
+   *
+   * @param credentials Path to the Bintray credentials file
+   * @return
+   */
+  def create(credentials: Path)(
+      implicit mat: Materializer,
+      sys: ActorSystem
+  ): ManagedResource[BintrayClient] = {
+    for (client <- PlayWsClient.open())
+      yield new BintrayClient(credentials, client)(sys.dispatcher)
+  }
+
+  /**
+   * @return The list of the remaining queries that have to be performed to get the missing packages
+   * @param response Response of the ''first'' query
+   */
+  def remainingPages(response: WSResponse): Seq[Int] = {
+    val remainingPages = for {
+      total <- response
+        .header("X-RangeLimit-Total")
+        .flatMap(s => Try(s.toInt).toOption)
+      startPos <- response
+        .header("X-RangeLimit-StartPos")
+        .flatMap(s => Try(s.toInt).toOption)
+      endPos <- response
+        .header("X-RangeLimit-EndPos")
+        .flatMap(s => Try(s.toInt).toOption)
+      if endPos < (total - 1)
+      nextPos = endPos + 1
+      perPage = nextPos - startPos
+      remainingPageCount = Math
+        .ceil((total - nextPos).toDouble / perPage)
+        .toInt
+    } yield Seq.tabulate(remainingPageCount)(page => nextPos + page * perPage)
+    remainingPages.getOrElse(Seq())
+  }
 }

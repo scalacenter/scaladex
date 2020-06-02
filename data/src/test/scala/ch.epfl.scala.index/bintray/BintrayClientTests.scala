@@ -2,11 +2,11 @@ package ch.epfl.scala.index.bintray
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.bintray.BintrayClient
+import org.scalatest._
 import play.api.libs.json.JsValue
 import play.api.libs.ws.{WSCookie, WSResponse}
-import org.scalatest._
+
 import scala.xml.Elem
 
 class BintrayClientTests extends FlatSpec with Matchers {
@@ -30,18 +30,16 @@ class BintrayClientTests extends FlatSpec with Matchers {
   }
 
   def getPagination(startPos: Int, endPos: Int, total: Int): Seq[Int] = {
-    val bintrayClient = new BintrayClient(DataPaths.subIndex)
-
     val wsResponse = wsResponseWithHeaders(
       Map("X-RangeLimit-Total" -> Seq(total.toString),
           "X-RangeLimit-StartPos" -> Seq(startPos.toString),
           "X-RangeLimit-EndPos" -> Seq(endPos.toString))
     )
 
-    bintrayClient.remainingPages(wsResponse)
+    BintrayClient.remainingPages(wsResponse)
   }
 
-  def wsResponseWithHeaders(providedHeaders: Map[String, Seq[String]]) =
+  private def wsResponseWithHeaders(providedHeaders: Map[String, Seq[String]]) =
     new WSResponse {
       override def status: Int = ???
 
