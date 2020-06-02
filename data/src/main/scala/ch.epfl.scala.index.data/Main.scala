@@ -6,8 +6,8 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.data.bintray.{
   BintrayDownloadPoms,
-  BintrayDownloadSbtPlugins,
-  BintrayListPoms
+  BintrayListPoms,
+  UpdateBintraySbtPlugins
 }
 import ch.epfl.scala.index.data.central.CentralMissing
 import ch.epfl.scala.index.data.cleanup.{GithubRepoExtractor, NonStandardLib}
@@ -87,11 +87,9 @@ object Main extends LazyLogging {
         () => new DownloadParentPoms(bintray, dataPaths).run()
       ),
       // Download ivy.xml descriptors of sbt-plugins from Bintray
-      Step("sbt")(
-        () => {
-          BintrayDownloadSbtPlugins.run(dataPaths)
-        }
-      ),
+      Step("sbt") { () =>
+        UpdateBintraySbtPlugins.run(dataPaths)
+      },
       // Find missing artifacts in maven-central
       Step("central")(
         () => new CentralMissing(dataPaths).run()

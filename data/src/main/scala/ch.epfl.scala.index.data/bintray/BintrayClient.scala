@@ -60,6 +60,77 @@ class BintrayClient private (
   /** Base URL of Bintray API */
   val apiUrl: String = s"$bintrayBase/api/v1"
 
+  /**
+   * Get a list of packages in the specified repository
+   * https://bintray.com/docs/api/#_get_packages
+   */
+  def getAllPackages(subject: String, repo: String): Future[Seq[String]] = {
+    def getPage(page: Int) = {
+      val request = client
+        .url(s"$apiUrl/repos/$subject/$repo/packages")
+        .withQueryStringParameters("start_pos" -> page.toString)
+
+      withAuth(request).get()
+    }
+
+    val decodePackages = decodeSucessfulJson { json =>
+      json.children.map(child => (child \ "name").extract[String])
+    } _
+
+    fetchPaginatedResource(getPage)(decodePackages)
+  }
+
+  /**
+   * Get general information about a specified package with package name.
+   * https://bintray.com/docs/api/#_get_package
+   */
+  def getPackage(subject: String,
+                 repo: String,
+                 packageName: String): Future[BintrayPackage] = {
+    val request = client.url(s"$apiUrl/packages/$subject/$repo/$packageName")
+
+    withAuth(request).get.map {
+      decodeSucessfulJson { json =>
+        json.extract[BintrayPackage]
+      }
+    }
+  }
+
+  /**
+   * Search for a file by its name in the entire repository
+   * https://bintray.com/docs/api/#_file_search_by_name
+   *
+   * @param subject
+   * @param repo
+   * @param fileName The file name, which can take the * and ? wildcard characters
+   * @param createdAfter A date following ISO8601 format (yyyy-MM-dd’T’HH:mm:ss.SSSZ)
+   * @return the list of files
+   */
+  def searchFiles(subject: String,
+                  repo: String,
+                  fileName: String,
+                  createdAfter: String): Future[Seq[BintraySearch]] = {
+    def getPage(page: Int) = {
+      val request = client
+        .url(s"$apiUrl/search/file")
+        .withQueryStringParameters(
+          "name" -> fileName,
+          "subject" -> subject,
+          "repo" -> repo,
+          "created_after" -> createdAfter,
+          "start_pos" -> page.toString
+        )
+
+      withAuth(request).get()
+    }
+
+    val decodeFile = decodeSucessfulJson { json =>
+      json.children.map(_.extract[BintraySearch])
+    } _
+
+    fetchPaginatedResource(getPage)(decodeFile)
+  }
+
   def withAuth(request: WSRequest): WSRequest = {
     (bintrayCredentials.get("user"), bintrayCredentials.get("password")) match {
       case (Some(user), Some(password)) =>

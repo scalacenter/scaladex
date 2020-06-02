@@ -45,9 +45,8 @@ object PomMeta {
     val users = Meta.load(paths, UserProvided).groupBy(_.sha1)
     val central = Meta.load(paths, MavenCentral).groupBy(_.sha1)
     val sbtPluginsCreated =
-      SbtPluginsData(paths)
+      SbtPluginsData(paths.ivysData)
         .read()
-        ._1
         .groupBy(_.sha1)
         .mapValues(_.head.created) // Note: This is inefficient because we already loaded the data earlier and discarded the creation time
 
