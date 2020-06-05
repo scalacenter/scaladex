@@ -28,10 +28,10 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
    * @param cachedReleases use previous released cached to workaround elasticsearch consistency (write, read)
    */
   def apply(
-      pomsRepoSha: List[(ReleaseModel, LocalRepository, String)],
+      pomsRepoSha: Iterable[(ReleaseModel, LocalRepository, String)],
       stored: Boolean = true,
       cachedReleases: Map[Project.Reference, Set[Release]] = Map()
-  ): List[(Project, Seq[Release], Seq[ScalaDependency])] = {
+  ): Iterator[(Project, Seq[Release], Seq[ScalaDependency])] = {
 
     val githubRepoExtractor = new GithubRepoExtractor(paths)
 
@@ -180,12 +180,11 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
           (seed, releases)
       }
-      .toList
 
     log.info("Dependencies & Reverse Dependencies")
 
     val mavenReferenceToReleaseReference =
-      projectsAndReleases
+      projectsAndReleases.iterator
         .flatMap { case (_, releases) => releases }
         .map(release => (release.maven, release.reference))
         .toMap
@@ -219,7 +218,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
       .groupBy(d => d.target.projectReference)
       .mapValues(_.map(_.dependent.projectReference).distinct.size)
 
-    projectsAndReleases.map {
+    projectsAndReleases.iterator.map {
       case (seed, releases) =>
         val projectDependencies =
           dependenciesByProject.getOrElse(seed.reference, Seq())
@@ -239,11 +238,12 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
         val project =
           seed.toProject(
-            targetType = releases.map(_.targetType).distinct,
-            scalaVersion = releases.flatMap(_.scalaVersion).distinct,
-            scalaJsVersion = releases.flatMap(_.scalaJsVersion).distinct,
-            scalaNativeVersion = releases.flatMap(_.scalaNativeVersion).distinct,
-            sbtVersion = releases.flatMap(_.sbtVersion).distinct,
+            targetType = releases.map(_.targetType).distinct.toList,
+            scalaVersion = releases.flatMap(_.scalaVersion).distinct.toList,
+            scalaJsVersion = releases.flatMap(_.scalaJsVersion).distinct.toList,
+            scalaNativeVersion =
+              releases.flatMap(_.scalaNativeVersion).distinct.toList,
+            sbtVersion = releases.flatMap(_.sbtVersion).distinct.toList,
             dependencies = scalaDependencies.map(d => d.target.name).toSet,
             dependentCount =
               dependentCountByProject.getOrElse(seed.reference, 0)

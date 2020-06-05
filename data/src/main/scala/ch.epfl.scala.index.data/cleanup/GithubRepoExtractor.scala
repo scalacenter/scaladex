@@ -94,11 +94,12 @@ class GithubRepoExtractor(paths: DataPaths) {
   // script to generate contrib/claims.json
   def updateClaims(): Unit = {
     val poms =
-      PomsReader.loadAll(paths).collect { case Success((pom, _, _)) => pom }
+      PomsReader.loadAll(paths).map { case (pom, _, _) => pom }
 
     val notClaimed = poms
       .filter(pom => apply(pom).isEmpty)
       .map(pom => s"${pom.groupId} ${pom.artifactId}")
+      .toSeq
       .distinct
       .map(Claim(_, void))
     val out = writePretty(Claims(notClaimed ++ claims))

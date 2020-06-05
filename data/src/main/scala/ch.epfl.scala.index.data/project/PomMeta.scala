@@ -36,8 +36,8 @@ object PomMeta {
     )
   }
 
-  def apply(pomsRepoSha: List[(ReleaseModel, LocalRepository, String)],
-            paths: DataPaths): List[PomMeta] = {
+  def apply(pomsRepoSha: Iterable[(ReleaseModel, LocalRepository, String)],
+            paths: DataPaths): Seq[PomMeta] = {
 
     import LocalPomRepository._
 
@@ -62,7 +62,7 @@ object PomMeta {
     def created(metas: List[DateTime]): Option[String] =
       metas.sorted.headOption.map(format.print)
 
-    pomsRepoSha
+    pomsRepoSha.iterator
       .map {
         case (pom, repo, sha1) => {
           repo match {
@@ -149,5 +149,6 @@ object PomMeta {
           packagingOfInterest.contains(meta.releaseModel.packaging) && keep
       }
       .map(_.meta)
+      .toSeq
   }
 }

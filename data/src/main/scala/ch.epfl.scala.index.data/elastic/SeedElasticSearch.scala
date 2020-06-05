@@ -41,18 +41,12 @@ class SeedElasticSearch(
 
     logger.info("loading update data")
     val projectConverter = new ProjectConvert(paths, githubDownload)
-    val allData: Seq[(Project, Seq[Release], Seq[ScalaDependency])] =
-      projectConverter(
-        PomsReader.loadAll(paths).collect {
-          case Success(pomAndMeta) => pomAndMeta
-        }
-      )
+    val allData = projectConverter(PomsReader.loadAll(paths))
 
-    val progress =
-      ProgressBar("Indexing projects", allData.size, logger.underlying)
-    progress.start()
+    var count = 0
     allData.foreach {
       case (project, releases, dependencies) =>
+        logger.info(s"indexing ${project.reference}")
         val indexProjectF = dataRepository.insertProject(project)
         val indexReleasesF = dataRepository.insertReleases(releases)
         val indexDependenciesF = dataRepository.insertDependencies(dependencies)
@@ -63,7 +57,7 @@ class SeedElasticSearch(
           dependenciesResult <- indexDependenciesF
         } yield {
           if (releasesResult.hasFailures || dependenciesResult.hasFailures) {
-            logger.error(s"Indexing projects ${project.reference} failed")
+            logger.error(s"indexing projects ${project.reference} failed")
             releasesResult.failures.foreach(p => logger.error(p.failureMessage))
             dependenciesResult.failures.foreach(
               p => logger.error(p.failureMessage)
@@ -71,10 +65,11 @@ class SeedElasticSearch(
           }
         }
         Await.result(indexAll, Duration.Inf)
-        progress.stepBy(1)
+        count += 1
     }
-    progress.stop()
+    logger.info(s"$count projects indexed")
   }
+
 }
 
 object SeedElasticSearch {

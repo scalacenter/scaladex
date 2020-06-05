@@ -83,7 +83,7 @@ class IndexingActor(
       val (newProject, newReleases, dependencies) = converter(
         pomsRepoSha = List((pom, localRepository, data.hash)),
         cachedReleases = cachedReleases
-      ).head
+      ).next
 
       cachedReleases =
         upserts(cachedReleases, projectReference, newReleases.toSet)
