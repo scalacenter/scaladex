@@ -2,83 +2,66 @@ package ch.epfl.scala.index
 package data
 package cleanup
 
-import model.misc.GithubRepo
-import maven.PomsReader
-
-import org.json4s._
-import org.json4s.native.Serialization.{read, writePretty}
-
-import java.nio.file._
 import java.nio.charset.StandardCharsets
+import java.nio.file._
 
+import ch.epfl.scala.index.data.maven.PomsReader
+import ch.epfl.scala.index.model.misc.GithubRepo
+import org.json4s.JsonAST.{JField, JObject, JString}
+import org.json4s.native.Serialization.{read, writePretty}
+import org.json4s.{CustomSerializer, DefaultFormats, Formats, JValue}
+
+import scala.io.Source
 import scala.util.Success
 import scala.util.matching.Regex
 
 class GithubRepoExtractor(paths: DataPaths) {
-  case class Claims(claims: Map[String, Option[String]])
-  object ClaimsSerializer
-      extends CustomSerializer[Claims](
-        format =>
-          (
-            {
-              case JObject(obj) => {
-                implicit val formats = DefaultFormats
-                Claims(obj.map {
-                  case (k, v) => (k, v.extract[Option[String]])
-                }.toMap)
-              }
-            }, {
-              case c: Claims =>
-                JObject(
-                  c.claims.toList.sorted.map {
-                    case (k, v) =>
-                      JField(k, v.map(s => JString(s)).getOrElse(JNull))
-                  }
-                )
-            }
-        )
-      )
+  object ClaimSerializer
+      extends CustomSerializer[Claims](_ => (serialize, deserialize))
+  implicit val formats: Formats = DefaultFormats ++ Seq(ClaimSerializer)
 
-  /**
-   * json4s formats
-   */
-  implicit private val formats = DefaultFormats ++ Seq(ClaimsSerializer)
+  case class Claim(pattern: String, repo: String)
+  case class Claims(claims: Seq[Claim])
 
-  private val source = scala.io.Source.fromFile(paths.claims.toFile)
-  private val claims = read[Claims](source.mkString).claims
+  // repository for the not claimed projects
+  private final val void = "scalacenter/scaladex-void"
+
   private def matches(m: Regex, s: String): Boolean = m.unapplySeq(s).isDefined
-
-  val claimedRepos =
-    claims.toList.sorted.flatMap { case (k, v) => v.map((k, _)) }.map {
-      case (k, v) =>
-        val List(groupId, artifactIdRawRegex) = k.split(" ").toList
-        val artifactIdRegex =
-          artifactIdRawRegex.replaceAllLiterally("*", "(.*)").r
-        val matcher: (maven.ReleaseModel => Boolean) = pom => {
-          def artifactMatches =
-            artifactIdRawRegex == "*" ||
-              matches(artifactIdRegex, pom.artifactId)
-
-          def groupIdMaches = groupId == pom.groupId
-
-          groupIdMaches && artifactMatches
-        }
-
-        val List(organization, repo) = v.split('/').toList
-
-        (matcher, GithubRepo(organization, repo))
+  private val claims =
+    resource.managed(Source.fromFile(paths.claims.toFile)).acquireAndGet {
+      source =>
+        read[Claims](source.mkString).claims
+          .filter(_.repo != void) // when the repository is void, the project is not claimed
     }
-  source.close()
+
+  private val claimedRepos = claims
+    .map { claim =>
+      val List(groupId, artifactIdRawRegex) = claim.pattern.split(" ").toList
+      val artifactIdRegex =
+        artifactIdRawRegex.replaceAllLiterally("*", "(.*)").r
+      val matcher: maven.ReleaseModel => Boolean = pom => {
+        def artifactMatches =
+          artifactIdRawRegex == "*" ||
+            matches(artifactIdRegex, pom.artifactId)
+
+        def groupIdMaches = groupId == pom.groupId
+
+        groupIdMaches && artifactMatches
+      }
+
+      val List(organization, repo) = claim.repo.split('/').toList
+
+      (matcher, GithubRepo(organization, repo))
+    }
 
   private val movedRepositories = github.GithubReader.movedRepositories(paths)
 
   def apply(pom: maven.ReleaseModel): Option[GithubRepo] = {
     val fromPoms = pom.scm match {
-      case Some(scm) => {
+      case Some(scm) =>
         List(scm.connection, scm.developerConnection, scm.url).flatten
           .flatMap(ScmInfoParser.parse)
           .filter(g => g.organization != "" && g.repository != "")
-      }
       case None => List()
     }
 
@@ -88,10 +71,7 @@ class GithubRepoExtractor(paths: DataPaths) {
       }
 
     /* use claims first because it can be used to rewrite scmInfo */
-    val repo = fromClaims match {
-      case None => fromPoms.headOption
-      case s    => s
-    }
+    val repo = fromClaims.orElse(fromPoms.headOption)
 
     // scala xml interpolation is <url>{someVar}<url> and it's often wrong like <url>${someVar}<url>
     // after interpolation it look like <url>$thevalue<url>
@@ -100,34 +80,47 @@ class GithubRepoExtractor(paths: DataPaths) {
     }
 
     repo.map {
-      case GithubRepo(organization, repo) => {
+      case GithubRepo(organization, repo) =>
         val repo2 =
           GithubRepo(
             fixInterpolationIssue(organization.toLowerCase),
             fixInterpolationIssue(repo.toLowerCase)
           )
 
-        movedRepositories.get(repo2).getOrElse(repo2)
-      }
+        movedRepositories.getOrElse(repo2, repo2)
     }
   }
 
   // script to generate contrib/claims.json
   def updateClaims(): Unit = {
-
     val poms =
       PomsReader.loadAll(paths).collect { case Success((pom, _, _)) => pom }
 
-    val noUrl = poms.filter(pom => apply(pom).isEmpty)
-    val notClaimed =
-      noUrl.map(pom => (s"${pom.groupId} ${pom.artifactId}", None)).toMap
+    val notClaimed = poms
+      .filter(pom => apply(pom).isEmpty)
+      .map(pom => s"${pom.groupId} ${pom.artifactId}")
+      .distinct
+      .map(Claim(_, void))
     val out = writePretty(Claims(notClaimed ++ claims))
       .replaceAllLiterally("\":\"", "\": \"") // make json breath
-      .replaceAllLiterally("\":null", "\": null")
 
     Files.delete(paths.claims)
     Files.write(paths.claims, out.getBytes(StandardCharsets.UTF_8))
 
     ()
+  }
+
+  private def serialize: PartialFunction[JValue, Claims] = {
+    case JObject(obj) =>
+      val claims = obj.map { case (k, v) => Claim(k, v.extract[String]) }
+      Claims(claims)
+  }
+
+  private def deserialize: PartialFunction[Any, JValue] = {
+    case Claims(claims) =>
+      val fields = claims.sortBy(_.pattern).map { claim =>
+        JField(claim.pattern, JString(claim.repo))
+      }
+      JObject(fields.toList)
   }
 }

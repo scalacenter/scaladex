@@ -21,7 +21,6 @@ case class SbtPluginsData(ivysData: Path) extends BintrayProtocol {
     }
   }
 
-  /** @return (releases, last-downlad-date) */
   def read(): List[SbtPluginReleaseModel] = {
     if (ivysData.toFile.exists())
       Parser
@@ -33,14 +32,19 @@ case class SbtPluginsData(ivysData: Path) extends BintrayProtocol {
 
   def update(oldReleases: Seq[SbtPluginReleaseModel],
              newReleases: Seq[SbtPluginReleaseModel]): Unit = {
-    val allReleases = (oldReleases ++ newReleases).distinct
+    // use sha1 to uniquely identify a release
+    val oldReleaseMap = oldReleases.map(r => r.sha1 -> r).toMap
+    val allReleaseMap = newReleases.foldLeft(oldReleaseMap) {
+      case (acc, release) =>
+        // replace an old release with the new release based on the sha1
+        acc + (release.sha1 -> release)
+    }
+    val allReleases = allReleaseMap.values.toSeq
 
     Files.write(
       ivysData,
       write[Seq[SbtPluginReleaseModel]](allReleases).getBytes
     )
-
-    ()
   }
 
 }
@@ -55,6 +59,7 @@ object SbtPluginReleaseModel {
   def apply(
       subject: String,
       repo: String,
+      scmUrl: Option[String],
       organization: String,
       artifact: String,
       scalaVersion: String,
@@ -70,6 +75,7 @@ object SbtPluginReleaseModel {
       version = version,
       packaging = "jar",
       description = Option(descriptor.getDescription),
+      scm = Some(SourceCodeManagment(None, None, scmUrl, None)),
       dependencies = descriptor.getDependencies.toList.map { dependency =>
         val dep = dependency.getDependencyRevisionId
         Dependency(

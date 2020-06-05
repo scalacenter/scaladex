@@ -114,8 +114,7 @@ trait PlayWsDownloader {
   ): Seq[R] = {
 
     def processItem(client: WSClient, item: T, progress: ProgressBar) = {
-      val request =
-        downloadUrl(client, item).withRequestFilter(AhcCurlRequestLogger())
+      val request = downloadUrl(client, item)
       val response = request.get
 
       response.flatMap { data =>

@@ -69,7 +69,6 @@ object Main extends LazyLogging {
 
     val dataPaths = DataPaths(pathFromArgs)
 
-    val githubDownload = new GithubDownload(dataPaths)
     val steps = List(
       // List POMs of Bintray
       Step("list")({ () =>
@@ -87,6 +86,7 @@ object Main extends LazyLogging {
         () => new DownloadParentPoms(bintray, dataPaths).run()
       ),
       // Download ivy.xml descriptors of sbt-plugins from Bintray
+      // and Github information of the corresponding projects
       Step("sbt") { () =>
         UpdateBintraySbtPlugins.run(dataPaths)
       },
@@ -95,13 +95,18 @@ object Main extends LazyLogging {
         () => new CentralMissing(dataPaths).run()
       ),
       // Download additional information about projects from Github
+      // This step is not viable anymore because of the Github rate limit
+      // which is to low to update all the projects.
+      // As an alternative, the sbt steps handles the Github updates of its own projects
+      // The IndexingActor does it as well for the projects that are pushed by Maven.
       Step("github")(
-        () => githubDownload.run()
+        () => GithubDownload.run(dataPaths)
       ),
       // Re-create the ElasticSearch index
-      Step("elastic")(
-        () => new SeedElasticSearch(dataPaths, githubDownload).run()
-      )
+      Step("elastic") { () =>
+        val githubDownload = new GithubDownload(dataPaths)
+        new SeedElasticSearch(dataPaths, githubDownload).run()
+      }
     )
 
     def updateClaims(): Unit = {
