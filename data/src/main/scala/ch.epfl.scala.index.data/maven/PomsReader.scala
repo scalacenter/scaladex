@@ -45,7 +45,7 @@ object PomsReader {
       case _ => true
     }
 
-    val ivysDescriptors = SbtPluginsData(paths).load()
+    val ivysDescriptors = SbtPluginsData(paths.ivysData).load()
 
     centralPoms ::: bintrayPoms ::: usersPoms ::: ivysDescriptors
   }

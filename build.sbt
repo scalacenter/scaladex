@@ -169,7 +169,8 @@ lazy val data = project
       "org.apache.ivy" % "ivy" % "2.4.0",
       "com.typesafe.akka" %% "akka-http" % "10.0.10",
       "de.heikoseeberger" %% "akka-http-json4s" % "1.19.0",
-      "org.json4s" %% "json4s-native" % "3.5.3"
+      "org.json4s" %% "json4s-native" % "3.5.3",
+      "com.jsuereth" %% "scala-arm" % "2.0"
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),

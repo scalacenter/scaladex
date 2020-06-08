@@ -5,19 +5,17 @@ package download
 import akka.actor.ActorSystem
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
-
 import com.typesafe.config.ConfigFactory
-import play.api._
-import play.api.libs.ws._
-import play.api.libs.ws.ahc._
-import play.api.libs.ws.ahc.AhcCurlRequestLogger
-import play.api.libs.json._
-
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration.Duration
-import scala.util.{Try, Success, Failure}
-
 import org.slf4j.LoggerFactory
+import play.api._
+import play.api.libs.json._
+import play.api.libs.ws._
+import play.api.libs.ws.ahc.{AhcCurlRequestLogger, _}
+import resource.ManagedResource
+
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
+import scala.util.{Failure, Success, Try}
 
 trait PlayWsDownloader {
 
@@ -28,27 +26,6 @@ trait PlayWsDownloader {
   implicit val materializer: Materializer
 
   /**
-   * Creating a new WS Client - copied from Play website
-   *
-   * @see https://www.playframework.com/documentation/2.6.0-RC2/ScalaWS#Directly-creating-WSClient
-   */
-  def wsClient = {
-    val configuration = Configuration.reference ++ Configuration(
-      ConfigFactory.parseString("plaw.ws.followRedirects = true")
-    )
-
-    /* If running in Play, environment should be injected */
-    val environment = Environment(new java.io.File("."),
-                                  this.getClass.getClassLoader,
-                                  Mode.Prod)
-
-    val wsConfig = AhcWSClientConfigFactory.forConfig(configuration.underlying,
-                                                      environment.classLoader)
-
-    AhcWSClient(wsConfig)
-  }
-
-  /**
    * Creates a fresh client and closes it after the future returned by `f` completes.
    *
    * {{{
@@ -57,10 +34,9 @@ trait PlayWsDownloader {
    *   }
    * }}}
    */
-  def managed[A](f: WSClient => Future[A]): Future[A] =
-    Future(wsClient).flatMap(
-      client => f(client).andThen { case _ => client.close() }
-    )
+  def managed[A](f: WSClient => Future[A]): Future[A] = {
+    PlayWsClient.open().map(f).toFuture.flatten
+  }
 
   /**
    * Actual download of bunch of documents. Will loop through all and display a status bar in the console output.
@@ -75,50 +51,49 @@ trait PlayWsDownloader {
   def download[T, R](
       message: String,
       toDownload: Set[T],
-      downloadUrl: (AhcWSClient, T) => WSRequest,
+      downloadUrl: (WSClient, T) => WSRequest,
       process: (T, WSResponse) => R,
       parallelism: Int
   ): Seq[R] = {
 
-    val client = wsClient
-    val progress = ProgressBar(message, toDownload.size, log)
+    PlayWsClient.open().acquireAndGet { client =>
+      val progress = ProgressBar(message, toDownload.size, log)
 
-    def processDownloads = {
+      def processDownloads = {
 
-      Source(toDownload).mapAsyncUnordered(parallelism) { item =>
-        val request =
-          downloadUrl(client, item).withRequestFilter(AhcCurlRequestLogger())
-        val response = request.get
+        Source(toDownload).mapAsyncUnordered(parallelism) { item =>
+          val request =
+            downloadUrl(client, item).withRequestFilter(AhcCurlRequestLogger())
+          val response = request.get
 
-        response.transform(
-          data => {
-            if (toDownload.size > 1) {
-              progress.step()
+          response.transform(
+            data => {
+              if (toDownload.size > 1) {
+                progress.step()
+              }
+              process(item, data)
+            },
+            e => {
+              log.warn(
+                s"error on downloading content from ${request.url}: ${e.getMessage}"
+              )
+
+              e
             }
-            process(item, data)
-          },
-          e => {
-            log.warn(
-              s"error on downloading content from ${request.url}: ${e.getMessage}"
-            )
-
-            e
-          }
-        )
+          )
+        }
       }
-    }
 
-    if (toDownload.size > 1) {
-      progress.start()
+      if (toDownload.size > 1) {
+        progress.start()
+      }
+      val response =
+        Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
+      if (toDownload.size > 1) {
+        progress.stop()
+      }
+      response
     }
-    val response =
-      Await.result(processDownloads.runWith(Sink.seq), Duration.Inf)
-    if (toDownload.size > 1) {
-      progress.stop()
-    }
-    client.close()
-
-    response
   }
 
   /**
@@ -134,13 +109,12 @@ trait PlayWsDownloader {
   def downloadGithub[T, R](
       message: String,
       toDownload: Set[T],
-      downloadUrl: (AhcWSClient, T) => WSRequest,
+      downloadUrl: (WSClient, T) => WSRequest,
       process: (T, WSResponse) => Try[R]
   ): Seq[R] = {
 
-    def processItem(client: AhcWSClient, item: T, progress: ProgressBar) = {
-      val request =
-        downloadUrl(client, item).withRequestFilter(AhcCurlRequestLogger())
+    def processItem(client: WSClient, item: T, progress: ProgressBar) = {
+      val request = downloadUrl(client, item)
       val response = request.get
 
       response.flatMap { data =>
@@ -169,12 +143,12 @@ trait PlayWsDownloader {
   def downloadGraphql[T, R](
       message: String,
       toDownload: Set[T],
-      downloadUrl: AhcWSClient => WSRequest,
+      downloadUrl: WSClient => WSRequest,
       query: T => JsObject,
       process: (T, WSResponse) => Try[R]
   ): Seq[R] = {
 
-    def processItem(client: AhcWSClient, item: T, progress: ProgressBar) = {
+    def processItem(client: WSClient, item: T, progress: ProgressBar) = {
       val request = downloadUrl(client)
       val response =
         request.withRequestFilter(AhcCurlRequestLogger()).post(query(item))
@@ -192,10 +166,10 @@ trait PlayWsDownloader {
   private def processDownloads[T, R](
       message: String,
       toDownload: Set[T],
-      processItem: (AhcWSClient, T, ProgressBar) => Future[R]
+      processItem: (WSClient, T, ProgressBar) => Future[R]
   ): Seq[R] = {
 
-    def processItems(client: AhcWSClient, progress: ProgressBar) = {
+    def processItems(client: WSClient, progress: ProgressBar) = {
       // use minimal concurrency to avoid abuse rate limit error which is triggered
       // by making too many calls in a short period of time, see https://github.com/scalacenter/scaladex/issues/431
       val parallelism = 4
@@ -204,32 +178,55 @@ trait PlayWsDownloader {
       }
     }
 
-    val client = wsClient
-    val progress = ProgressBar(message, toDownload.size, log)
+    PlayWsClient.open().acquireAndGet { client =>
+      val progress = ProgressBar(message, toDownload.size, log)
 
-    if (toDownload.size > 1) {
-      progress.start()
-    }
+      if (toDownload.size > 1) {
+        progress.start()
+      }
 
-    val result = Await.ready(processItems(client, progress).runWith(Sink.seq),
-                             Duration.Inf)
+      val result = Await.ready(processItems(client, progress).runWith(Sink.seq),
+                               Duration.Inf)
 
-    if (toDownload.size > 1) {
-      progress.stop()
-    }
-    // pause for 1s before closing client so other threads that were trying to download
-    // don't get interrupted and throw p.s.a.i.n.u.c.D.rejectedExecution if download stopped due to error
-    Thread.sleep(1000.toLong)
-    client.close()
+      if (toDownload.size > 1) {
+        progress.stop()
+      }
+      // pause for 1s before closing client so other threads that were trying to download
+      // don't get interrupted and throw p.s.a.i.n.u.c.D.rejectedExecution if download stopped due to error
+      Thread.sleep(1000.toLong)
 
-    result.value
-      .map(_ match {
-        case Success(value) => value
-        case Failure(e) => {
-          log.warn(s"ERROR - $e")
-          Seq()
+      result.value
+        .map {
+          case Success(value) => value
+          case Failure(e) =>
+            log.warn(s"ERROR - $e")
+            Seq()
         }
-      })
-      .getOrElse(Seq())
+        .getOrElse(Seq())
+    }
+  }
+}
+
+object PlayWsClient {
+
+  /**
+   * Creates a managed Play Web Service Client.
+   * You should avoid using too many [[WSClient]]s by reusing an open [[WSClient]] as much as possible.
+   * A good balance is to use one [[WSClient]] by targeted web service.
+   */
+  def open()(implicit mat: Materializer): ManagedResource[WSClient] = {
+    val configuration = Configuration.reference ++ Configuration(
+      ConfigFactory.parseString("plaw.ws.followRedirects = true")
+    )
+
+    /* If running in Play, environment should be injected */
+    val environment = Environment(new java.io.File("."),
+                                  this.getClass.getClassLoader,
+                                  Mode.Prod)
+
+    val wsConfig = AhcWSClientConfigFactory.forConfig(configuration.underlying,
+                                                      environment.classLoader)
+
+    resource.managed(AhcWSClient(wsConfig))
   }
 }

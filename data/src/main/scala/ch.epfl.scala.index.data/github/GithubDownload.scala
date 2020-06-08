@@ -6,9 +6,9 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.Materializer
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
-import ch.epfl.scala.index.data.download.PlayWsDownloader
+import ch.epfl.scala.index.data.download.{PlayWsClient, PlayWsDownloader}
 import ch.epfl.scala.index.data.elastic.SaveLiveData
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.model.Project
@@ -16,21 +16,34 @@ import ch.epfl.scala.index.model.misc.GithubRepo
 import com.typesafe.config.ConfigFactory
 import jawn.support.json4s.Parser
 import org.joda.time.DateTime
-import org.json4s._
 import org.json4s.native.Serialization._
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
 import play.api.libs.ws._
-import play.api.libs.ws.ahc.AhcWSClient
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util._
 
+object GithubDownload {
+  def run(paths: DataPaths)(implicit system: ActorSystem,
+                            mat: Materializer): Unit = {
+    val githubRepoExtractor = new GithubRepoExtractor(paths)
+
+    val githubRepos: Set[GithubRepo] = PomsReader
+      .loadAll(paths)
+      .collect { case Success((pom, _, _)) => githubRepoExtractor(pom) }
+      .flatten
+      .toSet
+
+    new GithubDownload(paths, None).run(githubRepos)
+  }
+}
+
 class GithubDownload(paths: DataPaths,
                      privateCredentials: Option[Credentials] = None)(
     implicit val system: ActorSystem,
-    implicit val materializer: ActorMaterializer
+    implicit val materializer: Materializer
 ) extends PlayWsDownloader {
 
   private val log = LoggerFactory.getLogger(getClass)
@@ -38,18 +51,6 @@ class GithubDownload(paths: DataPaths,
   import Json4s._
 
   case class PaginatedGithub(repo: GithubRepo, page: Int)
-
-  private lazy val githubRepoExtractor = new GithubRepoExtractor(paths)
-
-  private lazy val githubRepos =
-    PomsReader
-      .loadAll(paths)
-      .collect { case Success((pom, _, _)) => githubRepoExtractor(pom) }
-      .flatten
-      .toSet
-
-  private lazy val paginatedGithubRepos =
-    githubRepos.map(repo => PaginatedGithub(repo, 1))
 
   private val config =
     ConfigFactory.load().getConfig("org.scala_lang.index.data")
@@ -132,15 +133,20 @@ class GithubDownload(paths: DataPaths,
    * @param repo the current repo
    * @param data the response data
    */
-  private def saveJson(filePath: Path, repo: GithubRepo, data: String): Path = {
+  private def saveJson(filePath: Path, repo: GithubRepo, data: String): Unit = {
 
     val dir = path(paths, repo)
     Files.createDirectories(dir)
 
-    Files.write(
-      filePath,
-      writePretty(Parser.parseUnsafe(data)).getBytes(StandardCharsets.UTF_8)
-    )
+    Parser.parseFromString(data) match {
+      case Failure(exception) =>
+        log.warn(s"json parsing failed for $repo: ${exception.getMessage}")
+      case Success(value) =>
+        Files.write(
+          filePath,
+          writePretty(value).getBytes(StandardCharsets.UTF_8)
+        )
+    }
   }
 
   /**
@@ -156,9 +162,10 @@ class GithubDownload(paths: DataPaths,
     checkGithubApiError(s"Processing Info for $repo", response)
       .map(_ => {
         if (200 == response.status) {
-
           saveJson(githubRepoInfoPath(paths, repo), repo, response.body)
           GithubReader.appendMovedRepository(paths, repo)
+        } else {
+          log.warn(s"got error status ${response.status} for $repo")
         }
 
         ()
@@ -184,6 +191,7 @@ class GithubDownload(paths: DataPaths,
 
           read[List[V3.Contributor]](response.body)
         } else {
+          log.warn(s"got error status ${response.status} for $repo")
           List()
         }
       })
@@ -247,6 +255,8 @@ class GithubDownload(paths: DataPaths,
           saveJson(githubRepoContributorsPath(paths, repo.repo),
                    repo.repo,
                    writePretty(contributors))
+        } else {
+          log.warn(s"got error status ${response.status} for $repo")
         }
 
         ()
@@ -265,7 +275,7 @@ class GithubDownload(paths: DataPaths,
                                     response: WSResponse): Try[Unit] = {
 
     checkGithubApiError(s"Processing Readme for $repo", response)
-      .map(_ => {
+      .map { _ =>
         if (200 == response.status) {
 
           val dir = path(paths, repo)
@@ -276,10 +286,10 @@ class GithubDownload(paths: DataPaths,
               .absoluteUrl(response.body, repo, "master")
               .getBytes(StandardCharsets.UTF_8)
           )
+        } else {
+          log.warn(s"got error status ${response.status} for $repo")
         }
-
-        ()
-      })
+      }
 
   }
 
@@ -296,16 +306,16 @@ class GithubDownload(paths: DataPaths,
   ): Try[Unit] = {
 
     checkGithubApiError(s"Processing Community Profile for $repo", response)
-      .map(_ => {
+      .map { _ =>
         if (200 == response.status) {
 
           saveJson(githubRepoCommunityProfilePath(paths, repo),
                    repo,
                    response.body)
+        } else {
+          log.warn(s"got error status ${response.status} for $repo")
         }
-
-        ()
-      })
+      }
 
   }
 
@@ -319,18 +329,20 @@ class GithubDownload(paths: DataPaths,
                                     response: WSResponse): Try[Unit] = {
 
     checkGithubApiError(s"Processing Topics for $repo", response)
-      .map(_ => {
-        saveJson(githubRepoTopicsPath(paths, repo), repo, response.body)
-
-        ()
-      })
+      .map { _ =>
+        if (200 == response.status) {
+          saveJson(githubRepoTopicsPath(paths, repo), repo, response.body)
+        } else {
+          log.warn(s"got error status ${response.status} for $repo")
+        }
+      }
 
   }
 
   /**
    * Process the downloaded issues from GraphQL API
    *
-   * @param repo the current repo
+   * @param in the current repo
    * @param response the response
    * @return
    */
@@ -339,13 +351,14 @@ class GithubDownload(paths: DataPaths,
 
     val (repo, _) = in
 
-    checkGithubApiError(s"Processing Issues for ${repo}", response)
-      .map(_ => {
-        saveJson(githubRepoIssuesPath(paths, repo), repo, response.body)
-
-        ()
-      })
-
+    checkGithubApiError(s"Processing Issues for $repo", response)
+      .map { _ =>
+        if (200 == response.status) {
+          saveJson(githubRepoIssuesPath(paths, repo), repo, response.body)
+        } else {
+          log.warn(s"got error status ${response.status} for $repo")
+        }
+      }
   }
 
   private def checkGithubApiError(
@@ -358,6 +371,7 @@ class GithubDownload(paths: DataPaths,
     if (0 == rateLimitRemaining) {
       pauseRateLimitReset()
     } else if (403 == response.status) {
+      log.warn("Rate Limit exceeded")
       val retryAfter = response.header("ResetAt").getOrElse("60").toInt
       throw new Exception(
         s" $message, hit Github API Abuse Rate Limit by making too many calls in a small amount of time, try again after $retryAfter s"
@@ -367,6 +381,7 @@ class GithubDownload(paths: DataPaths,
     } else if (200 != response.status &&
                404 != response.status &&
                204 != response.status) {
+      log.warn(s"Got error status ${response.status} from Github")
       // get 200 for valid response
       // get 404 for old repo that no longer exists
       // get 204 when getting contributors for empty repo,
@@ -383,20 +398,20 @@ class GithubDownload(paths: DataPaths,
     // so won't hit rate limit but if you hit GraphQL API for more things, you would
     // need to check rate limit reset times for GraphQL API as well and pick max one
 
-    val client = wsClient
-    val baseRequest = client
-      .url("https://api.github.com")
-      .addHttpHeaders("Accept" -> "application/json")
+    val (reset1, reset2) = PlayWsClient.open().acquireAndGet { client =>
+      val baseRequest = client
+        .url("https://api.github.com")
+        .addHttpHeaders("Accept" -> "application/json")
 
-    val request1 =
-      baseRequest.addHttpHeaders("Authorization" -> s"bearer ${credential(0)}")
-    val response1 = Await.result(request1.get, Duration.Inf)
-    val reset1 = new DateTime(
-      response1.header("X-RateLimit-Reset").getOrElse("0").toLong * 1000
-    )
+      val request1 =
+        baseRequest
+          .addHttpHeaders("Authorization" -> s"bearer ${credential(0)}")
+      val response1 = Await.result(request1.get, Duration.Inf)
+      val reset1 = new DateTime(
+        response1.header("X-RateLimit-Reset").getOrElse("0").toLong * 1000
+      )
 
-    val reset2 =
-      if (credential.length == 2) {
+      val reset2 = if (credential.length == 2) {
         val request2 = baseRequest.addHttpHeaders(
           "Authorization" -> s"bearer ${credential(1)}"
         )
@@ -408,7 +423,8 @@ class GithubDownload(paths: DataPaths,
         reset1
       }
 
-    client.close()
+      (reset1, reset2)
+    }
 
     val maxReset = if (reset1.compareTo(reset2) > 0) reset1 else reset2
     val milliseconds = maxReset.getMillis - DateTime.now().getMillis
@@ -454,8 +470,7 @@ class GithubDownload(paths: DataPaths,
    * @param repo the current repository
    * @return
    */
-  private def githubInfoUrl(wsClient: AhcWSClient,
-                            repo: GithubRepo): WSRequest = {
+  private def githubInfoUrl(wsClient: WSClient, repo: GithubRepo): WSRequest = {
 
     applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo)))
   }
@@ -466,8 +481,7 @@ class GithubDownload(paths: DataPaths,
    * @param repo the current repository
    * @return
    */
-  private def githubReadmeUrl(wsClient: AhcWSClient,
-                              repo: GithubRepo): WSRequest = {
+  private def githubReadmeUrl(wsClient: WSClient, repo: GithubRepo): WSRequest = {
 
     applyReadmeHeaders(wsClient.url(mainGithubUrl(repo) + "/readme"))
   }
@@ -478,7 +492,7 @@ class GithubDownload(paths: DataPaths,
    * @param repo the current repository
    * @return
    */
-  private def githubContributorsUrl(wsClient: AhcWSClient,
+  private def githubContributorsUrl(wsClient: WSClient,
                                     repo: PaginatedGithub): WSRequest = {
 
     applyAcceptJsonHeaders(
@@ -493,7 +507,7 @@ class GithubDownload(paths: DataPaths,
    * @param repo the current repository
    * @return
    */
-  private def githubCommunityProfileUrl(wsClient: AhcWSClient,
+  private def githubCommunityProfileUrl(wsClient: WSClient,
                                         repo: GithubRepo): WSRequest = {
 
     applyCommunityProfileHeaders(
@@ -506,7 +520,7 @@ class GithubDownload(paths: DataPaths,
    *
    * @return
    */
-  private def githubGraphqlUrl(wsClient: AhcWSClient): WSRequest = {
+  private def githubGraphqlUrl(wsClient: WSClient): WSRequest = {
 
     applyAcceptJsonHeaders(wsClient.url("https://api.github.com/graphql"))
   }
@@ -517,7 +531,7 @@ class GithubDownload(paths: DataPaths,
    * @param repo the current github repo
    * @return
    */
-  private def gitterUrl(wsClient: AhcWSClient, repo: GithubRepo): WSRequest = {
+  private def gitterUrl(wsClient: WSClient, repo: GithubRepo): WSRequest = {
     wsClient.url(gitterUrlString(repo))
   }
 
@@ -591,9 +605,9 @@ class GithubDownload(paths: DataPaths,
   }
 
   /**
-   * process all downloads
+   * process all githubRepos
    */
-  def run(): Unit = {
+  def run(githubRepos: Set[GithubRepo]): Unit = {
 
     downloadGithub[GithubRepo, Unit]("Downloading Repo Info",
                                      githubRepos,
@@ -619,6 +633,8 @@ class GithubDownload(paths: DataPaths,
     // todo: for later @see #112 - remember that issues are paginated - see contributors */
     // download[GithubRepo, Unit]("Downloading Issues", githubRepos, githubIssuesUrl, processIssuesResponse)
 
+    val paginatedGithubRepos = githubRepos.map(repo => PaginatedGithub(repo, 1))
+
     downloadGithub[PaginatedGithub, Unit]("Downloading Contributors",
                                           paginatedGithubRepos,
                                           githubContributorsUrl,
@@ -639,17 +655,14 @@ class GithubDownload(paths: DataPaths,
             (repo, Project.Reference(organization, repository))
         }.toList
 
-      projectReferences
-        .map {
-          case (repo, reference) =>
-            liveProjecs
-              .get(reference)
-              .flatMap(
-                form => form.beginnerIssuesLabel.map(label => (repo, label))
-              )
-        }
-        .flatten
-        .toSet
+      projectReferences.flatMap {
+        case (repo, reference) =>
+          liveProjecs
+            .get(reference)
+            .flatMap(
+              form => form.beginnerIssuesLabel.map(label => (repo, label))
+            )
+      }.toSet
     }
 
     downloadGraphql[(GithubRepo, String), Unit](

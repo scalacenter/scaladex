@@ -15,7 +15,7 @@ case class BintraySearch(
     version: String,
     owner: String,
     repo: String,
-    created: DateTime
+    created: String
 ) {
   def isJCenter = repo == "jcenter" && owner == "bintray"
 }

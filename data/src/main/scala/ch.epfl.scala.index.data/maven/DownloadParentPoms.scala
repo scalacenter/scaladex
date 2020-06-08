@@ -2,19 +2,15 @@ package ch.epfl.scala.index
 package data
 package maven
 
-import download.PlayWsDownloader
-
 import java.nio.file.{Files, Path}
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-
-import play.api.libs.ws.{WSRequest, WSResponse}
-import play.api.libs.ws.ahc.AhcWSClient
+import ch.epfl.scala.index.data.download.PlayWsDownloader
+import org.slf4j.LoggerFactory
+import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 
 import scala.util.Failure
-
-import org.slf4j.LoggerFactory
 
 class DownloadParentPoms(repository: LocalPomRepository,
                          paths: DataPaths,
@@ -41,7 +37,7 @@ class DownloadParentPoms(repository: LocalPomRepository,
    * @param dep the current depenency
    * @return
    */
-  def downloadRequest(wsClient: AhcWSClient, dep: Dependency): WSRequest = {
+  def downloadRequest(wsClient: WSClient, dep: Dependency): WSRequest = {
     val urlBase =
       if (repository == LocalPomRepository.MavenCentral)
         "https://repo1.maven.org/maven2"

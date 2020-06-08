@@ -16,7 +16,7 @@ object BintrayMeta extends BintrayProtocol {
   /**
    * read all currently downloaded poms and convert them to BintraySearch object
    *
-   * @param path the file path
+   * @param paths the file path
    * @return
    */
   def load(paths: DataPaths): List[BintraySearch] = {

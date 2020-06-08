@@ -6,8 +6,8 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.data.bintray.{
   BintrayDownloadPoms,
-  BintrayDownloadSbtPlugins,
-  BintrayListPoms
+  BintrayListPoms,
+  UpdateBintraySbtPlugins
 }
 import ch.epfl.scala.index.data.central.CentralMissing
 import ch.epfl.scala.index.data.cleanup.{GithubRepoExtractor, NonStandardLib}
@@ -17,7 +17,6 @@ import ch.epfl.scala.index.data.maven.DownloadParentPoms
 import ch.epfl.scala.index.data.util.PidLock
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import org.slf4j.LoggerFactory
 
 import scala.sys.process.Process
 
@@ -60,64 +59,58 @@ object Main extends LazyLogging {
 
     val bintray: LocalPomRepository = LocalPomRepository.Bintray
 
-    implicit val system = ActorSystem()
+    implicit val system: ActorSystem = ActorSystem()
     import system.dispatcher
-    implicit val materializer = ActorMaterializer()
+    implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-    val getPathFromArgs = {
-      val pathFromArgs =
-        if (args.isEmpty) Nil
-        else args.toList.tail
+    val pathFromArgs =
+      if (args.isEmpty) Nil
+      else args.toList.tail.take(3)
 
-      DataPaths(pathFromArgs.take(3))
-    }
+    val dataPaths = DataPaths(pathFromArgs)
 
-    val githubDownload = new GithubDownload(getPathFromArgs)
     val steps = List(
       // List POMs of Bintray
       Step("list")({ () =>
-        val listPomsStep = new BintrayListPoms(getPathFromArgs)
-
         // TODO: should be located in a config file
         val versions = List("2.13", "2.12", "2.11", "2.10")
 
-        for (version <- versions) {
-          listPomsStep.run(version)
-        }
-
-        /* do a search for non standard lib poms */
-        for (lib <- NonStandardLib.load(getPathFromArgs)) {
-          listPomsStep.run(lib.groupId, lib.artifactId)
-        }
+        BintrayListPoms.run(dataPaths, versions, NonStandardLib.load(dataPaths))
       }),
       // Download POMs from Bintray
       Step("download")(
-        () => new BintrayDownloadPoms(getPathFromArgs).run()
+        () => new BintrayDownloadPoms(dataPaths).run()
       ),
       // Download parent POMs
       Step("parent")(
-        () => new DownloadParentPoms(bintray, getPathFromArgs).run()
+        () => new DownloadParentPoms(bintray, dataPaths).run()
       ),
       // Download ivy.xml descriptors of sbt-plugins from Bintray
-      Step("sbt")(
-        () => new BintrayDownloadSbtPlugins(getPathFromArgs).run()
-      ),
+      // and Github information of the corresponding projects
+      Step("sbt") { () =>
+        UpdateBintraySbtPlugins.run(dataPaths)
+      },
       // Find missing artifacts in maven-central
       Step("central")(
-        () => new CentralMissing(getPathFromArgs).run()
+        () => new CentralMissing(dataPaths).run()
       ),
       // Download additional information about projects from Github
+      // This step is not viable anymore because of the Github rate limit
+      // which is to low to update all the projects.
+      // As an alternative, the sbt steps handles the Github updates of its own projects
+      // The IndexingActor does it as well for the projects that are pushed by Maven.
       Step("github")(
-        () => githubDownload.run()
+        () => GithubDownload.run(dataPaths)
       ),
       // Re-create the ElasticSearch index
-      Step("elastic")(
-        () => new SeedElasticSearch(getPathFromArgs, githubDownload).run()
-      )
+      Step("elastic") { () =>
+        val githubDownload = new GithubDownload(dataPaths)
+        new SeedElasticSearch(dataPaths, githubDownload).run()
+      }
     )
 
     def updateClaims(): Unit = {
-      val githubRepoExtractor = new GithubRepoExtractor(getPathFromArgs)
+      val githubRepoExtractor = new GithubRepoExtractor(dataPaths)
       githubRepoExtractor.updateClaims()
     }
 
@@ -150,7 +143,7 @@ object Main extends LazyLogging {
       }
 
     if (production) {
-      inPath(getPathFromArgs.contrib) { sh =>
+      inPath(dataPaths.contrib) { sh =>
         logger.info("Pulling the latest data from the 'contrib' repository")
         sh.exec("git", "checkout", "master")
         sh.exec("git", "remote", "update")
