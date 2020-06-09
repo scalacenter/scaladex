@@ -7,6 +7,7 @@ import java.util.UUID
 import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
+import ch.epfl.scala.index.search.DataRepository
 import ch.epfl.scala.index.model.misc.{Page, SearchParams}
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.index.views.search.html.searchresult

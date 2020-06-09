@@ -2,13 +2,16 @@ package ch.epfl.scala.index
 package server
 package routes
 
+import ch.epfl.scala.index.search.DataRepository
+import com.typesafe.scalalogging.LazyLogging
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import ch.epfl.scala.index.data.DataPaths
-import ch.epfl.scala.index.data.github.{GithubReader, Json4s}
+import ch.epfl.scala.index.data.elastic.SaveLiveData
+import ch.epfl.scala.index.data.github.{GithubReader, Json4s, GithubDownload}
 import ch.epfl.scala.index.data.project.ProjectForm
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc._
@@ -23,8 +26,9 @@ import scala.concurrent.{ExecutionContext, Future}
 class ProjectPages(
     dataRepository: DataRepository,
     session: GithubUserSession,
+    githubDownload: GithubDownload,
     paths: DataPaths
-)(implicit executionContext: ExecutionContext) {
+)(implicit executionContext: ExecutionContext) extends LazyLogging {
   import session.implicits._
 
   private def canEdit(owner: String,
@@ -283,6 +287,23 @@ class ProjectPages(
       }
     )
 
+  def updateProject(projectRef: Project.Reference, form: ProjectForm): Future[Boolean] = {
+    for {
+      projectOpt <- dataRepository.getProject(projectRef)
+      updated <- projectOpt match {
+        case Some(project) if project.id.isDefined =>
+          val updatedProject = form.update(project, paths, githubDownload)
+          val esUpdate = dataRepository.updateProject(updatedProject)
+
+          logger.info("Updating live data on the index repository")
+          val indexUpdate = SaveLiveData.saveProject(updatedProject, paths)
+
+          esUpdate.zip(indexUpdate).map(_ => true)
+        case _ => Future.successful(false)
+      }
+    } yield updated
+  }
+
   val routes: Route =
     concat(
       post(
@@ -293,15 +314,12 @@ class ProjectPages(
                 pathEnd(
                   editForm(
                     form =>
-                      onSuccess(
-                        dataRepository.updateProject(
-                          Project.Reference(organization, repository),
-                          form
-                        )
-                      ) { _ =>
-                        Thread.sleep(1000) // oh yeah
-                        redirect(Uri(s"/$organization/$repository"), SeeOther)
-                    }
+                        onSuccess {
+                          updateProject(Project.Reference(organization, repository), form)
+                        } { _ =>
+                          Thread.sleep(1000) // oh yeah
+                          redirect(Uri(s"/$organization/$repository"), SeeOther)
+                        }
                   )
               )
           )

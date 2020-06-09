@@ -9,6 +9,8 @@ import server.Directives._
 import model.StatusCodes._
 import model.headers._
 import model.headers.CacheDirectives._
+import ch.epfl.scala.index.search.DataRepository
+
 
 class Badges(dataRepository: DataRepository) {
 

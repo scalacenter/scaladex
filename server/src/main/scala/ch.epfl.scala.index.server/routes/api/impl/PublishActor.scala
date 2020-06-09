@@ -9,6 +9,7 @@ import data.DataPaths
 import akka.actor.{Actor, ActorSystem}
 import akka.stream.ActorMaterializer
 
+import ch.epfl.scala.index.search.DataRepository
 import scala.concurrent.Await
 import scala.concurrent.duration._
 

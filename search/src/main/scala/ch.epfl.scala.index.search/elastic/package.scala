@@ -1,9 +1,10 @@
-package ch.epfl.scala.index
-package data
+package ch.epfl.scala.index.search
 
-import model._
-import model.misc.GithubIssue
-import release._
+import java.io.File
+import com.typesafe.scalalogging.LazyLogging
+import ch.epfl.scala.index.model._
+import ch.epfl.scala.index.model.release._
+import ch.epfl.scala.index.model.misc.GithubIssue
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.embedded.LocalNode
 import com.sksamuel.elastic4s.ElasticDsl._
@@ -100,18 +101,14 @@ trait ProjectProtocol {
   }
 }
 
-package object elastic extends ProjectProtocol {
+package object elastic extends ProjectProtocol with LazyLogging {
 
-  private val log = LoggerFactory.getLogger(getClass)
-
-  private val config =
-    ConfigFactory.load().getConfig("org.scala_lang.index.data")
+  private val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
   private val elasticsearch = config.getString("elasticsearch")
 
   /** @see https://github.com/sksamuel/elastic4s#client for configurations */
-  lazy val esClient = {
-
-    log.info(s"elasticsearch $elasticsearch $indexName")
+  def esClient(baseDirectory: File): TcpClient = {
+    logger.info(s"elasticsearch $elasticsearch $indexName")
     if (elasticsearch == "remote") {
       TcpClient.transport(ElasticsearchClientUri("localhost", 9300))
     } else if (elasticsearch == "local" || elasticsearch == "local-prod") {
@@ -119,7 +116,7 @@ package object elastic extends ProjectProtocol {
         if (elasticsearch == "local-prod") {
           "."
         } else {
-          val base = build.info.BuildInfo.baseDirectory.toPath
+          val base = baseDirectory.toPath
           base.resolve(".esdata").toString()
         }
 
@@ -132,7 +129,7 @@ package object elastic extends ProjectProtocol {
     } else {
       val er =
         s"org.scala_lang.index.data.elasticsearch should be remote or local: $elasticsearch"
-      log.error(er)
+      logger.error(er)
       sys.error(er)
     }
   }
@@ -140,31 +137,5 @@ package object elastic extends ProjectProtocol {
   val indexName: String = config.getString("index")
 
   val projectsCollection = "projects"
-  val releasesCollection = "releases"
-
-  def blockUntilYellow(): Unit = {
-    def blockUntil(explain: String)(predicate: () => Boolean): Unit = {
-      var backoff = 0
-      var done = false
-      while (backoff <= 128 && !done) {
-        if (backoff > 0) Thread.sleep(200L * backoff)
-        backoff = backoff + 1
-        done = predicate()
-      }
-      require(done, s"Failed waiting on: $explain")
-    }
-
-    blockUntil("Expected cluster to have yellow status") { () =>
-      val status =
-        esClient
-          .execute {
-            clusterHealth()
-          }
-          .await
-          .getStatus
-
-      status == ClusterHealthStatus.YELLOW ||
-      status == ClusterHealthStatus.GREEN
-    }
-  }
+  val releasesCollection = "releases" 
 }

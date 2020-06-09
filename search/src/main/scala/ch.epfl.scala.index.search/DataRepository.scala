@@ -1,34 +1,53 @@
-package ch.epfl.scala.index
-package server
+package ch.epfl.scala.index.search
 
-import ch.epfl.scala.index.data.DataPaths
-import ch.epfl.scala.index.data.elastic._
-import ch.epfl.scala.index.data.github.GithubDownload
-import ch.epfl.scala.index.data.project.ProjectForm
+import java.io.File
+import resource.ManagedResource
+import ch.epfl.scala.index.search.elastic._
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc.{Pagination, _}
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.server.DataRepository._
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.HitReader
 import com.sksamuel.elastic4s.searches.queries.QueryDefinition
 import com.sksamuel.elastic4s.searches.sort.SortDefinition
+import com.sksamuel.elastic4s.TcpClient
 import org.elasticsearch.common.lucene.search.function.CombineFunction
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.Modifier
 import org.elasticsearch.search.sort.SortOrder
-import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
+import org.elasticsearch.cluster.health.ClusterHealthStatus
 
 /**
- * @param paths   Paths to the files storing the index
+ * @param esClient TCP client of the elasticsearch server
  */
-class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
-    implicit ec: ExecutionContext
-) {
+class DataRepository(esClient: TcpClient)(implicit ec: ExecutionContext) {
+  import elastic._
+  import DataRepository._
 
-  private val log = LoggerFactory.getLogger(getClass)
+  def waitUntilReady(): Unit = {
+    def blockUntil(explain: String)(predicate: () => Boolean): Unit = {
+      var backoff = 0
+      var done = false
+      while (backoff <= 128 && !done) {
+        if (backoff > 0) Thread.sleep(200L * backoff)
+        backoff = backoff + 1
+        done = predicate()
+      }
+      require(done, s"Failed waiting on: $explain")
+    }
+
+    blockUntil("Expected cluster to have yellow status") { () =>
+      val status = esClient.execute(clusterHealth()).await.getStatus
+      status == ClusterHealthStatus.YELLOW ||
+      status == ClusterHealthStatus.GREEN
+    }
+  }
+
+  def close(): Unit = {
+    esClient.close()
+  }
 
   def getTotalProjects(queryString: String): Future[Long] = {
     val query = must(
@@ -146,26 +165,12 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
     }
   }
 
-  def updateProject(projectRef: Project.Reference,
-                    form: ProjectForm): Future[Boolean] = {
-    for {
-      projectOpt <- getProject(projectRef)
-      updated <- projectOpt match {
-        case Some(project) if project.id.isDefined =>
-          val updatedProject = form.update(project, paths, githubDownload)
-          val esUpdate = esClient.execute(
-            update(project.id.get)
-              .in(indexName / projectsCollection)
-              .doc(updatedProject)
-          )
-
-          log.info("Updating live data on the index repository")
-          val indexUpdate = SaveLiveData.saveProject(updatedProject, paths)
-
-          esUpdate.zip(indexUpdate).map(_ => true)
-        case _ => Future.successful(false)
-      }
-    } yield updated
+  def updateProject(project: Project): Future[Unit] = {
+    esClient.execute(
+      update(project.id.get)
+        .in(indexName / projectsCollection)
+        .doc(project)
+    ).map(_ => ())
   }
 
   def getLatestProjects(): Future[List[Project]] = {
@@ -357,6 +362,16 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
 }
 
 object DataRepository {
+  def open(baseDirectory: File)(implicit ec: ExecutionContext): ManagedResource[DataRepository] = {
+    for (esClient <- resource.managed(elastic.esClient(baseDirectory))) yield {
+      new DataRepository(esClient)
+    }
+  }
+
+  def openUnsafe(baseDirectory: File)(implicit ec: ExecutionContext): DataRepository = {
+    new DataRepository(esClient(baseDirectory))
+  }
+
   private def gitHubStarScoring(query: QueryDefinition): QueryDefinition = {
     val scorer = fieldFactorScore("github.stars")
       .missing(0)

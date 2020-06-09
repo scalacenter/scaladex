@@ -1,6 +1,9 @@
 package ch.epfl.scala.index
 package server
 
+import ch.epfl.scala.index.search.DataRepository
+import ch.epfl.scala.index.search.elastic
+import build.info.BuildInfo
 import model.{Project, SemanticVersion}
 import model.misc.SearchParams
 import model.release.{
@@ -10,7 +13,6 @@ import model.release.{
   ScalaNative,
   ScalaTarget
 }
-import data.DataPaths
 import data.elastic._
 import data.github.GithubDownload
 import org.scalatest._
@@ -28,10 +30,9 @@ class RelevanceTest
   import system.dispatcher
   implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  private val paths = DataPaths(Nil)
-  private val data = new DataRepository(paths, new GithubDownload(paths))
+  private val data = DataRepository.openUnsafe(BuildInfo.baseDirectory)
 
-  blockUntilYellow()
+  data.waitUntilReady()
 
   // sometimes shows synsys/spark
   test("match for spark") {
@@ -228,6 +229,6 @@ class RelevanceTest
 
   override def afterAll {
     TestKit.shutdownActorSystem(system)
-    esClient.close()
+    data.close()
   }
 }

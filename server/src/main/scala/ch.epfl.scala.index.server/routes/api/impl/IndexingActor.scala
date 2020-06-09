@@ -4,11 +4,14 @@ package routes
 package api
 package impl
 
+import com.sksamuel.elastic4s.TcpClient
+import build.info.BuildInfo
 import akka.actor.{Actor, ActorSystem}
 import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.data.{DataPaths, LocalPomRepository, Meta, upserts}
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
-import ch.epfl.scala.index.data.elastic.{esClient, indexName}
+import ch.epfl.scala.index.search.DataRepository
+import ch.epfl.scala.index.search.elastic
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.project.ProjectConvert
@@ -29,6 +32,9 @@ class IndexingActor(
 ) extends Actor {
   private val log = LoggerFactory.getLogger(getClass)
   import system.dispatcher
+  import elastic._
+
+  lazy val esClient: TcpClient = elastic.esClient(BuildInfo.baseDirectory)
 
   def receive = {
     case updateIndexData: UpdateIndex =>

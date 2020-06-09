@@ -2,6 +2,7 @@ package ch.epfl.scala.index
 package data
 package elastic
 
+import ch.epfl.scala.index.search.ProjectProtocol
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.project._
@@ -16,8 +17,10 @@ import scala.util.Success
 class SeedElasticSearch(paths: DataPaths, githubDownload: GithubDownload)(
     implicit val ec: ExecutionContext
 ) extends ProjectProtocol {
-
   private val log = LoggerFactory.getLogger(getClass)
+
+  import ch.epfl.scala.index.search.elastic._
+  val esClient = ch.epfl.scala.index.search.elastic.esClient(build.info.BuildInfo.baseDirectory)
 
   def run(): Unit = {
 

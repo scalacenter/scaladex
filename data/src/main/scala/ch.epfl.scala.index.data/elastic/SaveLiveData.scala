@@ -9,7 +9,7 @@ import org.json4s.native.Serialization.{read, write, writePretty}
 import org.json4s.native.parseJson
 import java.nio.file._
 import java.nio.charset.StandardCharsets
-
+import ch.epfl.scala.index.search.elastic._
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -56,6 +56,7 @@ trait LiveProjectsProtocol {
 }
 
 object SaveLiveData extends LiveProjectsProtocol {
+
 
   val logger = LoggerFactory.getLogger(getClass)
 
