@@ -1,27 +1,19 @@
 package ch.epfl.scala.index.search
 
-import java.io.File
-import com.typesafe.scalalogging.LazyLogging
 import ch.epfl.scala.index.model._
-import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.model.misc.GithubIssue
+import ch.epfl.scala.index.model.release._
 import com.sksamuel.elastic4s._
-import com.sksamuel.elastic4s.embedded.LocalNode
-import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.searches.RichSearchHit
-import org.elasticsearch.cluster.health.ClusterHealthStatus
+import jawn.support.json4s.Parser
 import org.json4s._
 import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{write => nwrite}
-import com.typesafe.config.ConfigFactory
-import jawn.support.json4s.Parser
-import org.slf4j.LoggerFactory
 
 import scala.util.{Success, Try}
 
-trait ProjectProtocol {
-
-  implicit val formats = Serialization
+trait SearchProtocol {
+    implicit val formats = Serialization
     .formats(
       ShortTypeHints(
         List(
@@ -101,41 +93,4 @@ trait ProjectProtocol {
   }
 }
 
-package object elastic extends ProjectProtocol with LazyLogging {
-
-  private val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
-  private val elasticsearch = config.getString("elasticsearch")
-
-  /** @see https://github.com/sksamuel/elastic4s#client for configurations */
-  def esClient(baseDirectory: File): TcpClient = {
-    logger.info(s"elasticsearch $elasticsearch $indexName")
-    if (elasticsearch == "remote") {
-      TcpClient.transport(ElasticsearchClientUri("localhost", 9300))
-    } else if (elasticsearch == "local" || elasticsearch == "local-prod") {
-      val homePath =
-        if (elasticsearch == "local-prod") {
-          "."
-        } else {
-          val base = baseDirectory.toPath
-          base.resolve(".esdata").toString()
-        }
-
-      LocalNode(
-        LocalNode.requiredSettings(
-          clusterName = "elasticsearch-local",
-          homePath = homePath
-        )
-      ).elastic4sclient()
-    } else {
-      val er =
-        s"org.scala_lang.index.data.elasticsearch should be remote or local: $elasticsearch"
-      logger.error(er)
-      sys.error(er)
-    }
-  }
-
-  val indexName: String = config.getString("index")
-
-  val projectsCollection = "projects"
-  val releasesCollection = "releases" 
-}
+object SearchProtocol extends SearchProtocol

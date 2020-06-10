@@ -21,7 +21,6 @@ import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.StatusCode
 import ch.epfl.scala.index.search.DataRepository
 
-
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 import java.io.{PrintWriter, StringWriter}

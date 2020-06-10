@@ -28,7 +28,8 @@ class ProjectPages(
     session: GithubUserSession,
     githubDownload: GithubDownload,
     paths: DataPaths
-)(implicit executionContext: ExecutionContext) extends LazyLogging {
+)(implicit executionContext: ExecutionContext)
+    extends LazyLogging {
   import session.implicits._
 
   private def canEdit(owner: String,
@@ -287,7 +288,8 @@ class ProjectPages(
       }
     )
 
-  def updateProject(projectRef: Project.Reference, form: ProjectForm): Future[Boolean] = {
+  def updateProject(projectRef: Project.Reference,
+                    form: ProjectForm): Future[Boolean] = {
     for {
       projectOpt <- dataRepository.getProject(projectRef)
       updated <- projectOpt match {
@@ -314,12 +316,14 @@ class ProjectPages(
                 pathEnd(
                   editForm(
                     form =>
-                        onSuccess {
-                          updateProject(Project.Reference(organization, repository), form)
-                        } { _ =>
-                          Thread.sleep(1000) // oh yeah
-                          redirect(Uri(s"/$organization/$repository"), SeeOther)
-                        }
+                      onSuccess {
+                        updateProject(Project.Reference(organization,
+                                                        repository),
+                                      form)
+                      } { _ =>
+                        Thread.sleep(1000) // oh yeah
+                        redirect(Uri(s"/$organization/$repository"), SeeOther)
+                    }
                   )
               )
           )

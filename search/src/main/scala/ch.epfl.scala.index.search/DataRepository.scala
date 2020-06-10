@@ -1,29 +1,34 @@
 package ch.epfl.scala.index.search
 
 import java.io.File
-import resource.ManagedResource
-import ch.epfl.scala.index.search.elastic._
+
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc.{Pagination, _}
 import ch.epfl.scala.index.model.release._
 import com.sksamuel.elastic4s.ElasticDsl._
-import com.sksamuel.elastic4s.HitReader
+import com.sksamuel.elastic4s.{HitReader, TcpClient}
 import com.sksamuel.elastic4s.searches.queries.QueryDefinition
 import com.sksamuel.elastic4s.searches.sort.SortDefinition
-import com.sksamuel.elastic4s.TcpClient
+import org.elasticsearch.cluster.health.ClusterHealthStatus
 import org.elasticsearch.common.lucene.search.function.CombineFunction
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.Modifier
 import org.elasticsearch.search.sort.SortOrder
+import resource.ManagedResource
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
-import org.elasticsearch.cluster.health.ClusterHealthStatus
+import com.typesafe.scalalogging.LazyLogging
+import com.sksamuel.elastic4s.bulk.RichBulkResponse
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
+import com.sksamuel.elastic4s.embedded.LocalNode
+import com.sksamuel.elastic4s.ElasticsearchClientUri
 
 /**
  * @param esClient TCP client of the elasticsearch server
  */
-class DataRepository(esClient: TcpClient)(implicit ec: ExecutionContext) {
-  import elastic._
+class DataRepository(esClient: TcpClient, indexName: String)(implicit ec: ExecutionContext) 
+  extends LazyLogging {
   import DataRepository._
 
   def waitUntilReady(): Unit = {
@@ -47,6 +52,61 @@ class DataRepository(esClient: TcpClient)(implicit ec: ExecutionContext) {
 
   def close(): Unit = {
     esClient.close()
+  }
+
+  def deleteAll(): Future[Unit] = {
+    for {
+      exists <- esClient.execute(indexExists(indexName)).map(_.isExists())
+      _ <- if (exists) esClient.execute(deleteIndex(indexName)) else Future.successful(())
+    } yield ()
+  }
+
+  def create(): Future[Unit] = {
+    val request = createIndex(indexName)
+      .analysis(DataMapping.englishReadme)
+      .normalizers(DataMapping.lowercase)
+      .mappings(
+        mapping(projectsCollection).fields(DataMapping.projectFields: _*),
+        mapping(releasesCollection).fields(DataMapping.releasesFields: _*)
+      )
+
+    esClient.execute(request).map(_ => ())
+  }
+
+  def insertProjects(projects: Seq[Project]): Future[RichBulkResponse] = {
+    val requests = projects.map { project => 
+      indexInto(indexName / projectsCollection).source(project)
+    }
+    esClient.execute(bulk(requests))
+  }
+
+  def insertProject(project: Project): Future[Unit] = {
+    esClient.execute(
+      indexInto(indexName / projectsCollection)
+        .source(project)
+    ).map(_ => ())
+  }
+
+  def updateProject(project: Project): Future[Unit] = {
+    esClient.execute(
+      update(project.id.get)
+        .in(indexName / projectsCollection)
+        .doc(project)
+    ).map(_ => ())
+  }
+
+  def insertReleases(releases: Seq[Release]): Future[RichBulkResponse] = {
+    val requests = releases.map { release =>
+      indexInto(indexName / releasesCollection).source(release)
+    }
+    esClient.execute(bulk(requests))
+  }
+
+  def insertRelease(release: Release): Future[Unit] = {
+    esClient.execute(
+      indexInto(indexName / releasesCollection)
+        .source(release)
+    ).map(_ => ())
   }
 
   def getTotalProjects(queryString: String): Future[Long] = {
@@ -163,14 +223,6 @@ class DataRepository(esClient: TcpClient)(implicit ec: ExecutionContext) {
         ).map(sel => (project, sel))
       case None => None
     }
-  }
-
-  def updateProject(project: Project): Future[Unit] = {
-    esClient.execute(
-      update(project.id.get)
-        .in(indexName / projectsCollection)
-        .doc(project)
-    ).map(_ => ())
   }
 
   def getLatestProjects(): Future[List[Project]] = {
@@ -361,15 +413,44 @@ class DataRepository(esClient: TcpClient)(implicit ec: ExecutionContext) {
   }
 }
 
-object DataRepository {
+object DataRepository extends LazyLogging with SearchProtocol {
+  private val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
+  private val elasticsearch = config.getString("elasticsearch")
+  private val indexName = config.getString("index")
+
+  private val local = 
+    if (elasticsearch == "remote") false 
+    else if (elasticsearch == "local" || elasticsearch == "local-prod") true
+    else sys.error(s"org.scala_lang.index.data.elasticsearch should be remote or local: $elasticsearch")
+
   def open(baseDirectory: File)(implicit ec: ExecutionContext): ManagedResource[DataRepository] = {
-    for (esClient <- resource.managed(elastic.esClient(baseDirectory))) yield {
-      new DataRepository(esClient)
+    logger.info(s"elasticsearch $elasticsearch $indexName")
+    for (esClient <- resource.managed(esClient(baseDirectory, local))) yield {
+      new DataRepository(esClient, indexName)
     }
   }
 
   def openUnsafe(baseDirectory: File)(implicit ec: ExecutionContext): DataRepository = {
-    new DataRepository(esClient(baseDirectory))
+    logger.info(s"elasticsearch $elasticsearch $indexName")
+    new DataRepository(esClient(baseDirectory, local), indexName)
+  }
+
+  private val projectsCollection = "projects"
+  private val releasesCollection = "releases"
+
+  /** @see https://github.com/sksamuel/elastic4s#client for configurations */
+  def esClient(baseDirectory: File, local: Boolean): TcpClient = {
+    if (local) {
+      val homePath = baseDirectory.toPath.resolve(".esdata").toString()
+      LocalNode(
+        LocalNode.requiredSettings(
+          clusterName = "elasticsearch-local",
+          homePath = homePath
+        )
+      ).elastic4sclient()
+    } else {
+      TcpClient.transport(ElasticsearchClientUri("localhost", 9300))
+    }
   }
 
   private def gitHubStarScoring(query: QueryDefinition): QueryDefinition = {

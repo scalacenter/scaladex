@@ -104,8 +104,7 @@ object Main extends LazyLogging {
       ),
       // Re-create the ElasticSearch index
       Step("elastic") { () =>
-        val githubDownload = new GithubDownload(dataPaths)
-        new SeedElasticSearch(dataPaths, githubDownload).run()
+        SeedElasticSearch.run(dataPaths)
       }
     )
 

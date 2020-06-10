@@ -2,7 +2,6 @@ package ch.epfl.scala.index
 package server
 
 import ch.epfl.scala.index.search.DataRepository
-import ch.epfl.scala.index.search.elastic
 import build.info.BuildInfo
 import model.{Project, SemanticVersion}
 import model.misc.SearchParams
