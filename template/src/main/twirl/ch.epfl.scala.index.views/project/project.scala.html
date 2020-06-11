@@ -5,7 +5,8 @@
 @import ch.epfl.scala.index.model.release._
 
 @(project: Project, artifacts: List[String], versions: List[SemanticVersion],
-  targets: List[ScalaTarget], release: Release, user: Option[UserInfo],
+  targets: List[ScalaTarget], release: Release,
+  allDeps: Dependencies, user: Option[UserInfo],
   canEdit: Boolean, twitterCard: Option[TwitterSummaryCard])
 
 @main(title = project.repository, showSearch = true, user,
@@ -32,12 +33,12 @@
             @documentation(release, project)
             @install(release, project.cliArtifacts)
             @release.scastieURL.map(url => scastie(url))
-            @project.github.map(gh => statistic(gh, project.githubRepo, project.releaseCount, release.uniqueOrderedReverseDependencies.size))
+            @project.github.map(gh => statistic(gh, project.githubRepo, project.releaseCount, allDeps.reverseDependencies.size))
             @projectContributingInfo(project)
             @project.github.map(gh => contributors(gh.contributors))
             @license(release)
-            @dependencies(release)
-            @dependents(project, release)
+            @dependencies(allDeps)
+            @dependents(allDeps)
           </div>
         </div>
       </div>

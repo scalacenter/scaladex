@@ -63,8 +63,8 @@ class Badges(dataRepository: DataRepository) {
              artifact: Option[String]) = {
     parameter('target.?) { target =>
       shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
-        onSuccess(
-          dataRepository.getProjectPage(
+        onSuccess {
+          dataRepository.getProjectAndReleaseOptions(
             Project.Reference(organization, repository),
             ReleaseSelection.parse(
               target = target,
@@ -73,8 +73,7 @@ class Badges(dataRepository: DataRepository) {
               selected = None
             )
           )
-        ) {
-
+        } {
           case Some((_, options)) =>
             shieldsSvg(subject orElse artifact getOrElse repository,
                        options.release.reference.version.toString(),

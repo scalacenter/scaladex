@@ -109,7 +109,7 @@ lazy val search = project
       "org.json4s" %% "json4s-native" % "3.5.3",
       "org.spire-math" %% "jawn-json4s" % "0.11.0",
       "com.jsuereth" %% "scala-arm" % "2.0"
-    ) 
+    )
   )
   .dependsOn(model)
 

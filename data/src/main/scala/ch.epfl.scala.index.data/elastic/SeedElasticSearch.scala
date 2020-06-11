@@ -17,6 +17,9 @@ import com.typesafe.scalalogging.LazyLogging
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
 import scala.util.Success
+import ch.epfl.scala.index.model.Project
+import ch.epfl.scala.index.model.Release
+import ch.epfl.scala.index.model.release.ScalaDependency
 
 class SeedElasticSearch(
     paths: DataPaths,
@@ -38,47 +41,39 @@ class SeedElasticSearch(
 
     logger.info("loading update data")
     val projectConverter = new ProjectConvert(paths, githubDownload)
-    val newData = projectConverter(
-      PomsReader.loadAll(paths).collect {
-        case Success(pomAndMeta) => pomAndMeta
-      }
-    )
-
-    val (projects, projectReleases) = newData.unzip
-    val releases = projectReleases.flatten
+    val allData: Seq[(Project, Seq[Release], Seq[ScalaDependency])] =
+      projectConverter(
+        PomsReader.loadAll(paths).collect {
+          case Success(pomAndMeta) => pomAndMeta
+        }
+      )
 
     val progress =
-      ProgressBar("Indexing releases", releases.size, logger.underlying)
+      ProgressBar("Indexing projects", allData.size, logger.underlying)
     progress.start()
-    val bunch = 1000
-    releases.grouped(bunch).foreach { group =>
-      val bulkResults = Await.result(
-        dataRepository.insertReleases(group),
-        Duration.Inf
-      )
+    allData.foreach {
+      case (project, releases, dependencies) =>
+        val indexProjectF = dataRepository.insertProject(project)
+        val indexReleasesF = dataRepository.insertReleases(releases)
+        val indexDependenciesF = dataRepository.insertDependencies(dependencies)
 
-      if (bulkResults.hasFailures) {
-        bulkResults.failures.foreach(p => logger.error(p.failureMessage))
-        logger.error("Indexing releases failed")
-      }
-
-      progress.stepBy(bunch)
+        val indexAll = for {
+          _ <- indexProjectF
+          releasesResult <- indexReleasesF
+          dependenciesResult <- indexDependenciesF
+        } yield {
+          if (releasesResult.hasFailures || dependenciesResult.hasFailures) {
+            logger.error(s"Indexing projects ${project.reference} failed")
+            releasesResult.failures.foreach(p => logger.error(p.failureMessage))
+            dependenciesResult.failures.foreach(
+              p => logger.error(p.failureMessage)
+            )
+          }
+        }
+        Await.result(indexAll, Duration.Inf)
+        progress.stepBy(1)
     }
     progress.stop()
-
-    val bunch2 = 100
-    logger.info(s"Indexing projects (${projects.size})")
-    projects.grouped(bunch2).foreach { group =>
-      val bulkResults = Await.result(
-        dataRepository.insertProjects(group),
-        Duration.Inf
-      )
-
-      if (bulkResults.hasFailures) {
-        bulkResults.failures.foreach(p => logger.error(p.failureMessage))
-        logger.error("Indexing projects failed")
-      }
-    }
   }
 }
 

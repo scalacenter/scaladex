@@ -3,6 +3,8 @@ package ch.epfl.scala.index.search
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc.GithubIssue
 import ch.epfl.scala.index.model.release._
+import ch.epfl.scala.index.search.mapping._
+
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.searches.RichSearchHit
 import jawn.support.json4s.Parser
@@ -13,7 +15,7 @@ import org.json4s.native.Serialization.{write => nwrite}
 import scala.util.{Success, Try}
 
 trait SearchProtocol {
-    implicit val formats = Serialization
+  implicit val formats: Formats = Serialization
     .formats(
       ShortTypeHints(
         List(
@@ -82,14 +84,23 @@ trait SearchProtocol {
     override def json(project: Project): String = nwrite(project)
   }
 
-  implicit object ReleaseAs extends HitReader[Release] {
-
-    override def read(hit: Hit): Either[Throwable, Release] =
-      tryEither(nread[Release](hit).copy(id = Some(hit.id)))
+  implicit object ReleaseReader extends HitReader[ReleaseDocument] {
+    override def read(hit: Hit): Either[Throwable, ReleaseDocument] =
+      tryEither(nread[ReleaseDocument](hit).copy(id = Some(hit.id)))
   }
 
-  implicit object ReleaseIndexable extends Indexable[Release] {
-    override def json(release: Release): String = nwrite(release)
+  implicit object ReleaseIndexable extends Indexable[ReleaseDocument] {
+    override def json(release: ReleaseDocument): String = nwrite(release)
+  }
+
+  implicit object DependencyReader extends HitReader[DependencyDocument] {
+    override def read(hit: Hit): Either[Throwable, DependencyDocument] = {
+      tryEither(nread[DependencyDocument](hit).copy(id = Some(hit.id)))
+    }
+  }
+
+  implicit object DependencyIndexable extends Indexable[DependencyDocument] {
+    override def json(dep: DependencyDocument): String = nwrite(dep)
   }
 }
 

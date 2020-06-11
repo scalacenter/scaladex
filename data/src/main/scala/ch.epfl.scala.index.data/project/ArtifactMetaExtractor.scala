@@ -74,7 +74,9 @@ class ArtifactMetaExtractor(paths: DataPaths) {
                   )
                 )
               case _ =>
-                log.error("Unable to decode the Scala target")
+                log.error(
+                  s"Unable to decode the Scala target: $rawScalaVersion $rawSbtVersion"
+                )
                 None
             }
         }

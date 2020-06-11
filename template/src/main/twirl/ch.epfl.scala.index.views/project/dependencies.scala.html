@@ -1,40 +1,39 @@
-@import ch.epfl.scala.index.model.Release
-@import ch.epfl.scala.index.model.release.{Dependency, JavaDependency, ScalaDependency}
+@import ch.epfl.scala.index.model.release._
 
-@(release: Release)
+@(allDeps: Dependencies)
 <div class="dependencies box">
   <h4>
-    @{release.dependencyCount} 
+    @{allDeps.externalDependencyCount} 
     
-    @if(release.dependencyCount > 1) { 
+    @if(allDeps.externalDependencyCount > 1) { 
       Dependencies 
     } else { 
       Dependency 
     }
   </h4>
-  @dependencyBlock(release.orderedDependencies)
-  @if(release.javaDependencies.nonEmpty) {
+  @dependencyBlock(allDeps.scalaDependencies)
+  @if(allDeps.javaDependencies.nonEmpty) {
     <h5>Java
-      @if(release.javaDependencies.size > 1) { 
+      @if(allDeps.javaDependencies.size > 1) { 
         Dependencies 
       } else { 
         Dependency 
       }
     </h5>
-    @dependencyBlock(release.orderedJavaDependencies)
+    @dependencyBlock(allDeps.javaDependencies)
   }
 </div>
 
-@if(release.internalDependencies.nonEmpty) {
+@if(allDeps.internalDependencies.nonEmpty) {
 <div class="dependencies box">
-  <h4>@release.internalDependencyCount Internal 
-    @if(release.internalDependencyCount > 1) {
+  <h4>@allDeps.internalDependencies.size Internal 
+    @if(allDeps.internalDependencies.size > 1) {
       Dependencies
     } else { 
       Dependency
     }
   </h4>
-  @dependencyBlock(release.internalDependencies)
+  @dependencyBlock(allDeps.internalDependencies)
 </div>
 }
 
@@ -43,12 +42,12 @@
   <ul>
   @for(dependency <- dependencies){
     <li>
-      <a href="@dependency.reference.httpUrl" target="_blank">
-        @dependency.reference.name
+      <a href="@dependency.target.httpUrl" target="_blank">
+        @dependency.target.name
       </a>
       v@{dependency match {
-          case java: JavaDependency => java.reference.version
-          case scala: ScalaDependency => scala.reference.version.toString
+          case java: JavaDependency => java.target.version
+          case scala: ScalaDependency => scala.target.version.toString
         }}
       <span class="label label-primary">@dependency.scope</span>
     </li>

@@ -34,7 +34,7 @@ class ProjectPages(
 
   private def canEdit(owner: String,
                       repo: String,
-                      userState: Option[UserState]) = {
+                      userState: Option[UserState]): Boolean = {
     userState.exists(
       s => s.isAdmin || s.repos.contains(GithubRepo(owner, repo))
     )
@@ -63,22 +63,25 @@ class ProjectPages(
     } else Future.successful((Forbidden, views.html.forbidden(user)))
   }
 
-  private def redirectTo(owner: String,
-                         repo: String,
-                         target: Option[String],
-                         artifact: Option[String],
-                         version: Option[String],
-                         selected: Option[String]): Future[Option[Release]] = {
-
-    val selection = ReleaseSelection.parse(
-      target = target,
-      artifactName = artifact,
-      version = version,
-      selected = selected
-    )
+  private def getSelectedRelease(
+      owner: String,
+      repo: String,
+      target: Option[String],
+      artifact: Option[String],
+      version: Option[String],
+      selected: Option[String]
+  ): Future[Option[Release]] = {
 
     dataRepository
-      .getProjectPage(Project.Reference(owner, repo), selection)
+      .getProjectAndReleaseOptions(
+        Project.Reference(owner, repo),
+        ReleaseSelection.parse(
+          target = target,
+          artifactName = artifact,
+          version = version,
+          selected = selected
+        )
+      )
       .map(_.map { case (_, options) => options.release })
   }
 
@@ -156,38 +159,56 @@ class ProjectPages(
       version = version,
       selected = selected
     )
+    val projectRef = Project.Reference(owner, repo)
 
     dataRepository
-      .getProjectPage(Project.Reference(owner, repo), selection)
-      .map(_.map {
-        case (project, options) =>
-          val twitterCard = for {
-            github <- project.github
-            description <- github.description
-          } yield
-            TwitterSummaryCard(
-              site = "@scala_lang",
-              title = s"${project.organization}/${project.repository}",
-              description = description,
-              image = github.logo
+      .getProjectAndReleaseOptions(projectRef, selection)
+      .flatMap {
+        case Some((project, options)) =>
+          val releaseRef = options.release.reference
+          val dependenciesF = dataRepository.getAllDependencies(releaseRef)
+          val reverseDependenciesF =
+            dataRepository.getReverseDependencies(releaseRef)
+
+          for {
+            dependencies <- dependenciesF
+            reverseDependencies <- reverseDependenciesF
+          } yield {
+            val allDeps =
+              Dependencies(options.release, dependencies, reverseDependencies)
+
+            val versions =
+              if (project.strictVersions) options.versions.filter(_.isSemantic)
+              else options.versions
+
+            val twitterCard = for {
+              github <- project.github
+              description <- github.description
+            } yield
+              TwitterSummaryCard(
+                site = "@scala_lang",
+                title = s"${project.organization}/${project.repository}",
+                description = description,
+                image = github.logo
+              )
+
+            val page = views.project.html.project(
+              project,
+              options.artifacts,
+              versions,
+              options.targets,
+              options.release,
+              allDeps,
+              user,
+              canEdit(owner, repo, userState),
+              twitterCard
             )
 
-          val versions0 =
-            if (project.strictVersions) options.versions.filter(_.isSemantic)
-            else options.versions
+            (OK, page)
+          }
 
-          (OK,
-           views.project.html.project(
-             project,
-             options.artifacts,
-             versions0,
-             options.targets,
-             options.release,
-             user,
-             canEdit(owner, repo, userState),
-             twitterCard
-           ))
-      }.getOrElse((NotFound, views.html.notfound(user))))
+        case None => Future.successful(NotFound, views.html.notfound(user))
+      }
   }
 
   private val moved = GithubReader.movedRepositories(paths)
@@ -367,7 +388,7 @@ class ProjectPages(
                     )(
                       (artifact, version, target, selected) =>
                         onSuccess(
-                          redirectTo(
+                          getSelectedRelease(
                             owner = organization,
                             repo = repository,
                             target = target,

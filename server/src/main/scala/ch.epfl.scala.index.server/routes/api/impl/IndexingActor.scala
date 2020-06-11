@@ -80,7 +80,7 @@ class IndexingActor(
 
       val converter = new ProjectConvert(paths, githubDownload)
 
-      val (newProject, newReleases) = converter(
+      val (newProject, newReleases, dependencies) = converter(
         pomsRepoSha = List((pom, localRepository, data.hash)),
         cachedReleases = cachedReleases
       ).head
@@ -107,9 +107,22 @@ class IndexingActor(
       val releaseUpdate = newReleases.headOption match {
         case Some(release)
             if !releases.exists(r => r.reference == release.reference) =>
-          dataRepository
-            .insertRelease(release.copy(liveData = true))
-            .map(_ => log.info(s"inserting release ${release.maven}"))
+          log.info(s"inserting release ${release.maven}")
+          for {
+            _ <- dataRepository.insertRelease(release.copy(liveData = true))
+            response <- dataRepository.insertDependencies(dependencies)
+          } yield {
+            if (response.hasFailures) {
+              response.failures.foreach(f => log.error(f.failureMessage))
+              log.error(
+                s"failed inserting the ${dependencies.size} dependencies of ${release.maven}"
+              )
+            } else {
+              log.error(
+                s"Inserted ${dependencies.size} dependencies of ${release.maven}"
+              )
+            }
+          }
 
         case None => Future.successful(())
       }

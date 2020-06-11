@@ -6,7 +6,23 @@ case class ReleaseSelection(
     artifact: Option[String],
     version: Option[SemanticVersion],
     selected: Option[String]
-)
+) {
+
+  def filterTarget(release: Release): Boolean = target.forall(
+    target => release.reference.target.contains(target)
+  )
+
+  def filterArtifact(release: Release): Boolean =
+    artifact.forall(_ == release.reference.artifact)
+
+  def filterVersion(release: Release): Boolean =
+    version.forall(_ == release.reference.version)
+
+  def filterAll(release: Release): Boolean =
+    filterTarget(release) &&
+      filterArtifact(release) &&
+      filterVersion(release)
+}
 
 object ReleaseSelection {
   def parse(target: Option[String],
@@ -34,7 +50,7 @@ case class ReleaseOptions(
     release: Release
 )
 
-object DefaultRelease {
+object ReleaseOptions {
   def apply(projectRepository: String,
             selection: ReleaseSelection,
             releases: Seq[Release],
@@ -44,13 +60,13 @@ object DefaultRelease {
     val selectedReleases =
       selection.selected match {
         case Some(selected) =>
-          if (selected == "target") releases.filter(filterTarget(selection))
+          if (selected == "target") releases.filter(selection.filterTarget)
           else if (selected == "artifact")
-            releases.filter(filterArtifact(selection))
+            releases.filter(selection.filterArtifact)
           else if (selected == "version")
-            releases.filter(filterVersion(selection))
-          else releases.filter(filterAll(selection))
-        case None => releases.filter(filterAll(selection))
+            releases.filter(selection.filterVersion)
+          else releases.filter(selection.filterAll)
+        case None => releases.filter(selection.filterAll)
       }
 
     val releasesSorted = selectedReleases.view.sortBy { release =>
@@ -99,20 +115,4 @@ object DefaultRelease {
       )
     }
   }
-
-  def filterTarget(selection: ReleaseSelection)(release: Release): Boolean =
-    selection.target.forall(
-      target => release.reference.target.contains(target)
-    )
-
-  def filterArtifact(selection: ReleaseSelection)(release: Release): Boolean =
-    selection.artifact.forall(_ == release.reference.artifact)
-
-  def filterVersion(selection: ReleaseSelection)(release: Release): Boolean =
-    selection.version.forall(_ == release.reference.version)
-
-  def filterAll(selection: ReleaseSelection)(release: Release): Boolean =
-    filterTarget(selection)(release) &&
-      filterArtifact(selection)(release) &&
-      filterVersion(selection)(release)
 }
