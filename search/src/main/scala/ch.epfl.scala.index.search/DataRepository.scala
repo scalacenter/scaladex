@@ -181,11 +181,9 @@ class DataRepository(esClient: TcpClient,
    * It does not retrieve the dependencies of the releases
    */
   def getProjectReleases(project: Project.Reference): Future[Seq[Release]] = {
-    val query = nestedQuery("reference").query(
-      must(
-        termQuery("reference.organization", project.organization),
-        termQuery("reference.repository", project.repository)
-      )
+    val query = must(
+      termQuery("reference.organization", project.organization),
+      termQuery("reference.repository", project.repository)
     )
 
     val request = search(indexName / releasesCollection).query(query).size(5000)
@@ -272,13 +270,7 @@ class DataRepository(esClient: TcpClient,
    * Get all the dependencies of a release
    */
   def getAllDependencies(ref: Release.Reference): Future[Seq[ScalaDependency]] = {
-    val query = must(
-      termQuery("dependent.organization", ref.organization),
-      termQuery("dependent.repository", ref.repository),
-      termQuery("dependent.artifact", ref.artifact),
-      termQuery("dependent.version", ref.version.toString()),
-      termQuery("dependent.target", ref.target.map(_.encode).orNull)
-    )
+    val query = termQuery("dependentUrl", ref.httpUrl)
 
     val request =
       search(indexName / dependenciesCollection).query(query).size(5000)
@@ -294,13 +286,7 @@ class DataRepository(esClient: TcpClient,
   def getReverseDependencies(
       ref: Release.Reference
   ): Future[Seq[ScalaDependency]] = {
-    val query = must(
-      termQuery("target.organization", ref.organization),
-      termQuery("target.repository", ref.repository),
-      termQuery("target.artifact", ref.artifact),
-      termQuery("target.version", ref.version.toString()),
-      termQuery("target.target", ref.target.map(_.encode).orNull)
-    )
+    val query = termQuery("targetUrl", ref.httpUrl)
 
     val request = search(indexName / dependenciesCollection)
       .query(query)

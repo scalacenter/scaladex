@@ -78,16 +78,14 @@ object DataMapping extends ElasticDsl {
     dateField("updated")
   )
 
+  val referenceFields: Seq[FieldDefinition] = Seq(
+    keywordField("organization") normalizer "lowercase",
+    keywordField("repository") normalizer "lowercase",
+    keywordField("artifact") normalizer "lowercase"
+  )
+
   val releasesFields: Seq[FieldDefinition] = Seq(
-    nestedField("reference")
-      .fields(
-        Seq(
-          keywordField("organization") normalizer "lowercase",
-          keywordField("repository") normalizer "lowercase",
-          keywordField("artifact") normalizer "lowercase"
-        )
-      )
-      .includeInAll(true),
+    objectField("reference").fields(referenceFields),
     nestedField("maven").fields(
       keywordField("groupId") normalizer "lowercase",
       keywordField("artifactId") normalizer "lowercase",
@@ -111,8 +109,10 @@ object DataMapping extends ElasticDsl {
   )
 
   val dependenciesFields: Seq[FieldDefinition] = Seq(
-    objectField("dependent").fields(releaseRefFields),
-    objectField("target").fields(releaseRefFields),
+    objectField("dependent").fields(referenceFields),
+    keywordField("dependentUrl"),
+    objectField("target").fields(referenceFields),
+    keywordField("targetUrl"),
     keywordField("scope")
   )
 }
