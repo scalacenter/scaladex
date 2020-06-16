@@ -80,10 +80,12 @@ class IndexingActor(
 
       val converter = new ProjectConvert(paths, githubDownload)
 
-      val (newProject, newReleases, dependencies) = converter(
-        pomsRepoSha = List((pom, localRepository, data.hash)),
-        cachedReleases = cachedReleases
-      ).next
+      val (newProject, newReleases, dependencies) = converter
+        .convertAll(
+          List((pom, localRepository, data.hash)),
+          cachedReleases
+        )
+        .next
 
       cachedReleases =
         upserts(cachedReleases, projectReference, newReleases.toSet)

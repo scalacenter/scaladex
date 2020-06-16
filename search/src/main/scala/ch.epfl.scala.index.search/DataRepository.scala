@@ -501,6 +501,13 @@ class DataRepository(esClient: TcpClient,
 }
 
 object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
+  private val projectsCollection = "projects"
+  private val releasesCollection = "releases"
+  private val dependenciesCollection = "dependencies"
+  private val emptyBulkResponse = RichBulkResponse(
+    new BulkResponse(Array.empty, 0)
+  )
+
   private val config =
     ConfigFactory.load().getConfig("org.scala_lang.index.data")
   private val elasticsearch = config.getString("elasticsearch")
@@ -529,13 +536,6 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
     logger.info(s"elasticsearch $elasticsearch $indexName")
     new DataRepository(esClient(baseDirectory, local), indexName)
   }
-
-  private val projectsCollection = "projects"
-  private val releasesCollection = "releases"
-  private val dependenciesCollection = "dependencies"
-  private val emptyBulkResponse = RichBulkResponse(
-    new BulkResponse(Array.empty, 0)
-  )
 
   /** @see https://github.com/sksamuel/elastic4s#client for configurations */
   private def esClient(baseDirectory: File, local: Boolean): TcpClient = {

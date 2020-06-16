@@ -24,13 +24,11 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
   /**
    * @param pomsRepoSha poms and associated meta information reference
-   * @param stored read user update projects from disk
    * @param cachedReleases use previous released cached to workaround elasticsearch consistency (write, read)
    */
-  def apply(
+  def convertAll(
       pomsRepoSha: Iterable[(ReleaseModel, LocalRepository, String)],
-      stored: Boolean = true,
-      cachedReleases: Map[Project.Reference, Set[Release]] = Map()
+      cachedReleases: Map[Project.Reference, Set[Release]]
   ): Iterator[(Project, Seq[Release], Seq[ScalaDependency])] = {
 
     val githubRepoExtractor = new GithubRepoExtractor(paths)
@@ -150,12 +148,9 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
           val (max, min) = maxMinRelease(releases)
 
-          val defaultStableVersion =
-            if (stored)
-              storedProjects
-                .get(Project.Reference(organization, repository))
-                .forall(_.defaultStableVersion)
-            else true
+          val defaultStableVersion = storedProjects
+            .get(Project.Reference(organization, repository))
+            .forall(_.defaultStableVersion)
 
           val releaseOptions = ReleaseOptions(
             repository,
@@ -249,13 +244,10 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
               dependentCountByProject.getOrElse(seed.reference, 0)
           )
 
-        val updatedProject =
-          if (stored) {
-            storedProjects
-              .get(project.reference)
-              .map(_.update(project, paths, githubDownload, fromStored = true))
-              .getOrElse(project)
-          } else project
+        val updatedProject = storedProjects
+          .get(project.reference)
+          .map(_.update(project, paths, githubDownload, fromStored = true))
+          .getOrElse(project)
 
         (updatedProject, releasesWithDependencies, scalaDependencies)
     }

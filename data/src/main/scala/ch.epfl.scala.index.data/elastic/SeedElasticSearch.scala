@@ -41,7 +41,7 @@ class SeedElasticSearch(
 
     logger.info("loading update data")
     val projectConverter = new ProjectConvert(paths, githubDownload)
-    val allData = projectConverter(PomsReader.loadAll(paths))
+    val allData = projectConverter.convertAll(PomsReader.loadAll(paths), Map())
 
     var count = 0
     allData.foreach {

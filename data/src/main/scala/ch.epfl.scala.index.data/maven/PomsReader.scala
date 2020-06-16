@@ -2,6 +2,7 @@ package ch.epfl.scala.index
 package data
 package maven
 
+import resource.ManagedResource
 import java.io.File
 import java.nio.file._
 
@@ -33,17 +34,17 @@ object PomsReader {
     import ExecutionContext.Implicits._
     import LocalPomRepository._
 
-    val centralPomsF = PomsReader(MavenCentral, paths).iterator()
-    val bintrayPomsF = PomsReader(Bintray, paths).iterator()
-    val usersPomsF = PomsReader(UserProvided, paths).iterator()
     val ivysDescriptors = SbtPluginsData(paths.ivysData).iterator
 
-    val allPoms = for {
-      centralPoms <- centralPomsF
-      bintrayPoms <- bintrayPomsF
-      usersPoms <- usersPomsF
-    } yield {
-      (centralPoms ++ bintrayPoms ++ usersPoms ++ ivysDescriptors)
+    val allPomsResource = for {
+      centralPoms <- PomsReader(MavenCentral, paths).iterator()
+      bintrayPoms <- PomsReader(Bintray, paths).iterator()
+      usersPoms <- PomsReader(UserProvided, paths).iterator()
+    } yield centralPoms ++ bintrayPoms ++ usersPoms ++ ivysDescriptors
+
+    allPomsResource.acquireAndGet { allPoms =>
+      // use sha to filter duplicates out
+      allPoms
         .foldLeft(Map[String, (ReleaseModel, LocalRepository, String)]()) {
           case (acc, pom @ (_, _, sha)) =>
             if (acc.contains(sha)) acc
@@ -51,8 +52,6 @@ object PomsReader {
         }
         .values
     }
-
-    Await.result(allPoms, Duration.Inf)
   }
 
   def apply(repository: LocalPomRepository, paths: DataPaths): PomsReader = {
@@ -125,21 +124,15 @@ private[maven] class PomsReader(pomsPath: Path,
     }.map(pom => (PomConvert(pom), repository, sha1))
   }
 
-  def iterator()(
-      implicit ec: ExecutionContext
-  ): Future[Iterator[(ReleaseModel, LocalPomRepository, String)]] = {
+  def iterator()
+    : ManagedResource[Iterator[(ReleaseModel, LocalPomRepository, String)]] = {
     import scala.collection.JavaConverters._
-    import resource.managed
 
-    managed(Files.newDirectoryStream(pomsPath))
+    resource
+      .managed(Files.newDirectoryStream(pomsPath))
       .map { source =>
-        val rawPoms = source.asScala.iterator
-        Future
-          .traverse(rawPoms)(p => Future(loadOne(p).toOption))
-          .map(_.flatten)
+        source.asScala.iterator.flatMap(p => loadOne(p).toOption)
       }
-      .toFuture
-      .flatten
   }
 
   def load(): List[Try[(ReleaseModel, LocalPomRepository, String)]] = {

@@ -13,6 +13,7 @@ import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{write => nwrite}
 
 import scala.util.{Success, Try}
+import scala.util.Failure
 
 trait SearchProtocol {
   implicit val formats: Formats = Serialization
@@ -37,10 +38,6 @@ trait SearchProtocol {
       )
     )
     .preservingEmptyValues
-
-  private def tryEither[T](f: T): Either[Throwable, T] = {
-    Try(f).transform(s => Success(Right(s)), f => Success(Left(f))).get
-  }
 
   private def nread[T: Manifest](hit: Hit) =
     Parser.parseUnsafe(hit.sourceAsString).extract[T]
@@ -73,10 +70,10 @@ trait SearchProtocol {
   implicit object ProjectAs extends HitReader[Project] {
 
     override def read(hit: Hit): Either[Throwable, Project] = {
-      tryEither(
+      Try(
         checkInnerHits(hit.asInstanceOf[RichSearchHit],
                        nread[Project](hit).copy(id = Some(hit.id)))
-      )
+      ).toEither
     }
   }
 
@@ -86,7 +83,7 @@ trait SearchProtocol {
 
   implicit object ReleaseReader extends HitReader[ReleaseDocument] {
     override def read(hit: Hit): Either[Throwable, ReleaseDocument] =
-      tryEither(nread[ReleaseDocument](hit).copy(id = Some(hit.id)))
+      Try(nread[ReleaseDocument](hit).copy(id = Some(hit.id))).toEither
   }
 
   implicit object ReleaseIndexable extends Indexable[ReleaseDocument] {
@@ -95,7 +92,7 @@ trait SearchProtocol {
 
   implicit object DependencyReader extends HitReader[DependencyDocument] {
     override def read(hit: Hit): Either[Throwable, DependencyDocument] = {
-      tryEither(nread[DependencyDocument](hit).copy(id = Some(hit.id)))
+      Try(nread[DependencyDocument](hit).copy(id = Some(hit.id))).toEither
     }
   }
 
