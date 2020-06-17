@@ -3,13 +3,17 @@ package server
 package routes
 package api
 
+import scala.concurrent.Future
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+
+import ch.epfl.scala.index.search.DataRepository
 import ch.epfl.scala.index.api.AutocompletionResponse
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc.SearchParams
 import ch.epfl.scala.index.model.release._
+
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import com.softwaremill.session.SessionDirectives.optionalSession
 import com.softwaremill.session.SessionOptions.{refreshable, usingCookies}
@@ -169,41 +173,16 @@ class SearchApi(
                  scalaNativeVersion,
                  sbtVersion) =>
                   val reference = Project.Reference(organization, repository)
-
-                  val scalaTarget =
-                    parseScalaTarget(targetType,
-                                     scalaVersion,
-                                     scalaJsVersion,
-                                     scalaNativeVersion,
-                                     sbtVersion)
-
-                  val selection = new ReleaseSelection(
-                    target = scalaTarget,
-                    artifact = artifact,
-                    version = None,
-                    selected = None
+                  val scalaTarget = parseScalaTarget(
+                    targetType,
+                    scalaVersion,
+                    scalaJsVersion,
+                    scalaNativeVersion,
+                    sbtVersion
                   )
-
-                  def convert(
-                      options: ReleaseOptions
-                  ): SearchApi.ReleaseOptions = {
-                    import options._
-                    SearchApi.ReleaseOptions(
-                      artifacts,
-                      versions.sorted.map(_.toString),
-                      release.maven.groupId,
-                      release.maven.artifactId,
-                      release.maven.version
-                    )
+                  complete {
+                    getReleaseOptions(reference, scalaTarget, artifact)
                   }
-
-                  complete(
-                    dataRepository
-                      .getProjectPage(reference, selection)
-                      .map(
-                        _.map { case (_, options) => convert(options) }
-                      )
-                  )
               }
             }
           } ~
@@ -221,6 +200,36 @@ class SearchApi(
           }
       }
     }
+
+  private def getReleaseOptions(
+      projectRef: Project.Reference,
+      scalaTarget: Option[ScalaTarget],
+      artifact: Option[String]
+  ): Future[Option[SearchApi.ReleaseOptions]] = {
+    for {
+      projectAndReleaseOptions <- dataRepository.getProjectAndReleaseOptions(
+        projectRef,
+        new ReleaseSelection(
+          target = scalaTarget,
+          artifact = artifact,
+          version = None,
+          selected = None
+        )
+      )
+    } yield {
+      projectAndReleaseOptions
+        .map {
+          case (_, options) =>
+            SearchApi.ReleaseOptions(
+              options.artifacts,
+              options.versions.sorted.map(_.toString),
+              options.release.maven.groupId,
+              options.release.maven.artifactId,
+              options.release.maven.version
+            )
+        }
+    }
+  }
 
   private def autocomplete(params: SearchParams) = {
     for (projects <- dataRepository.autocompleteProjects(params))

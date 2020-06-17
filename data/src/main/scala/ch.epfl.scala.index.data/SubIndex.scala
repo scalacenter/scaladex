@@ -36,14 +36,12 @@ object SubIndex extends BintrayProtocol {
     val pomData =
       PomsReader
         .loadAll(source)
-        .map(_.map {
-          case ((pom, repo, sha)) => (pom, repo, sha, githubRepoExtractor(pom))
-        })
-        .collect {
-          case Success((pom, repo, sha, Some(github))) =>
-            (pom, repo, sha, github)
+        .flatMap {
+          case (pom, repo, sha) =>
+            githubRepoExtractor(pom)
+              .filter(repos.contains)
+              .map((pom, repo, sha, _))
         }
-        .filter { case (_, _, _, github) => repos.contains(github) }
 
     println("== Copy GitHub ==")
 

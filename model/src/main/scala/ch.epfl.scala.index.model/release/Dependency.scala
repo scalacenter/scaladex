@@ -1,17 +1,14 @@
 package ch.epfl.scala.index.model
 package release
 
-/**
- * Dependency trait to mark a class as a dependency
- */
 trait Dependency {
-  val reference: GeneralReference
+  val dependent: Release.Reference
+  val target: GeneralReference
   val scope: Option[String]
 }
 
 /**
- * General Reference to Group MavenReference and Release.Reference
- * to a category form simpler usage.
+ * Reference to either a MavenReference or a Release.Reference
  */
 trait GeneralReference {
   def name: String
@@ -20,20 +17,28 @@ trait GeneralReference {
 
 /**
  * java / maven dependency
- * @param reference contains group- and artifact id
- * @param scope the scope the dependency is used ex: test, compile, runtime
+ * A dependency toward a reference that is not indexed in Scaladex
+ * @param dependent The dependent release
+ * @param target The depended upon Maven release
+ * @param scope The ivy scope of the dependency: test, compile, runtime...
  */
 case class JavaDependency(
-    reference: MavenReference,
+    dependent: Release.Reference,
+    target: MavenReference,
     scope: Option[String]
 ) extends Dependency
 
 /**
  * Scala dependency
- * @param reference the release reference with further information
- * @param scope the scope the dependency is used ex: test, compile, runtime
+ * @param dependent The dependent release
+ * @param target The dependended upon release reference
+ * @param scope The ivy scope of the dependency: test, compile, runtime...
  */
 case class ScalaDependency(
-    reference: Release.Reference,
+    dependent: Release.Reference,
+    target: Release.Reference,
     scope: Option[String]
-) extends Dependency
+) extends Dependency {
+  def isInternal: Boolean =
+    dependent.projectReference == target.projectReference
+}

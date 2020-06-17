@@ -100,6 +100,19 @@ lazy val template = project
   .dependsOn(model)
   .enablePlugins(SbtTwirl)
 
+lazy val search = project
+  .settings(commonSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
+      "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion,
+      "org.json4s" %% "json4s-native" % "3.5.3",
+      "org.spire-math" %% "jawn-json4s" % "0.11.0",
+      "com.jsuereth" %% "scala-arm" % "2.0"
+    )
+  )
+  .dependsOn(model)
+
 lazy val api = crossProject(JSPlatform, JVMPlatform)
   .settings(commonSettings)
   .settings(playJson)
@@ -142,7 +155,7 @@ lazy val server = project
     unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
     javaOptions in reStart ++= Seq("-Xmx4g")
   )
-  .dependsOn(template, data, api.jvm)
+  .dependsOn(template, data, search, api.jvm)
   .enablePlugins(SbtSassify, JavaServerAppPackaging)
 
 lazy val model = project
@@ -160,8 +173,6 @@ lazy val data = project
       "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
       "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion,
       "com.typesafe.akka" %% "akka-stream" % akkaVersion,
-      "org.json4s" %% "json4s-native" % "3.5.3",
-      "org.spire-math" %% "jawn-json4s" % "0.11.0",
       "me.tongfei" % "progressbar" % "0.5.5",
       "org.apache.maven" % "maven-model-builder" % "3.3.9",
       "org.jsoup" % "jsoup" % "1.10.1",
@@ -177,4 +188,4 @@ lazy val data = project
     javaOptions in reStart ++= Seq("-Xmx4g")
   )
   .enablePlugins(BuildInfoPlugin, JavaAppPackaging)
-  .dependsOn(model)
+  .dependsOn(model, search)

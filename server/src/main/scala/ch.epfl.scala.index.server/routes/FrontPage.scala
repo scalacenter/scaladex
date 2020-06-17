@@ -7,7 +7,8 @@ import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import ch.epfl.scala.index.server.{DataRepository, GithubUserSession}
+import ch.epfl.scala.index.server.GithubUserSession
+import ch.epfl.scala.index.search.DataRepository
 
 import scala.concurrent.ExecutionContext
 

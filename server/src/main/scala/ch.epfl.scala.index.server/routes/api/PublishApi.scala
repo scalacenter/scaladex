@@ -12,6 +12,8 @@ import akka.http.scaladsl.server.directives._
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
+
+import ch.epfl.scala.index.search.DataRepository
 import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.server.config.OAuth2Config

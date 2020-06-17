@@ -32,7 +32,7 @@ object GithubDownload {
 
     val githubRepos: Set[GithubRepo] = PomsReader
       .loadAll(paths)
-      .collect { case Success((pom, _, _)) => githubRepoExtractor(pom) }
+      .collect { case (pom, _, _) => githubRepoExtractor(pom) }
       .flatten
       .toSet
 

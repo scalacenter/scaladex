@@ -13,9 +13,7 @@ import release._
  * @param licenses a bunch of licences
  * @param isNonStandardLib if not using artifactName_scalaVersion convention
  * @param id Elastic search id
- * @param scalaDependencies bunch of scala dependencies
  * @param javaDependencies bunch of java dependencies
- * @param reverseDependencies bunch of reversed dependencies
  */
 case class Release(
     maven: MavenReference,
@@ -28,14 +26,10 @@ case class Release(
     isNonStandardLib: Boolean,
     id: Option[String],
     liveData: Boolean,
-    /* split dependencies in 2 fields because elastic can't handle 2 different types
-     * in one field. That is a simple workaround for that
-     */
-    scalaDependencies: Seq[ScalaDependency],
+    // only the java dependencies are stored in a release
+    // a java dependency is dependency toward a release that is not indexed in Scaladex
     javaDependencies: Seq[JavaDependency],
-    reverseDependencies: Seq[ScalaDependency],
-    internalDependencies: Seq[ScalaDependency],
-    // this part for elasticsearch search
+    // TODO replace all fields below by ScalaTarget data type
     targetType: String, // JVM, JS, Native, JAVA, SBT
     scalaVersion: Option[String],
     scalaJsVersion: Option[String],
@@ -207,77 +201,6 @@ case class Release(
       .replaceAllLiterally("[major]", reference.version.major.toString)
       .replaceAllLiterally("[minor]", reference.version.minor.toString)
       .replaceAllLiterally("[name]", reference.artifact)
-  }
-
-  /**
-   * ordered scala dependencies - tests last
-   */
-  lazy val orderedDependencies = {
-    val (a, b) = scalaDependencies
-      .sortBy(_.reference.name)
-      .partition(_.scope.contains("test"))
-    b.groupBy(b => b).values.flatten.toList ++ a
-  }
-
-  /**
-   * ordered java dependencies - tests last
-   * - watch out the performance on /scala/scala-library
-   */
-  lazy val orderedJavaDependencies = {
-
-    val (a, b) = javaDependencies
-      .sortBy(_.reference.name)
-      .partition(_.scope.contains("test"))
-    b.groupBy(b => b).values.flatten.toList ++ a
-  }
-
-  /**
-   * ordered reverse scala dependencies - tests last
-   * - watch out the performance on /scala/scala-library
-   */
-  lazy val orderedReverseDependencies = {
-
-    val (a, b) = reverseDependencies.partition(_.scope.contains("test"))
-    b.groupBy(b => b).values.flatten.toList ++ a
-  }
-
-  /** collect all unique organization/artifact dependency
-   * - watch out the performance on /scala/scala-library
-   */
-  lazy val uniqueOrderedReverseDependencies: Seq[ScalaDependency] = {
-
-    orderedReverseDependencies
-      .groupBy(_.reference.name)
-      .values
-      .map(_.head)
-      .toSeq
-      .sortBy(_.reference.name)
-  }
-
-  /**
-   * number of dependencies (java + scala)
-   */
-  lazy val dependencyCount = scalaDependencies.size + javaDependencies.size
-
-  /**
-   * number of internal dependencies
-   */
-  lazy val internalDependencyCount = internalDependencies.size
-
-  /**
-   * collect a list of version for a reverse dependency
-   * - watch out the performance on /scala/scala-library
-   *
-   * @param dep current looking dependency
-   * @return
-   */
-  def versionsForReverseDependencies(
-      dep: ScalaDependency
-  ): Seq[SemanticVersion] = {
-
-    orderedReverseDependencies
-      .filter(d => d.reference.name == dep.reference.name)
-      .map(_.reference.version)
   }
 
   def isScalaLib: Boolean = reference.isScalaLib

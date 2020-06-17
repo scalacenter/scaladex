@@ -6,20 +6,18 @@ package impl
 
 import akka.actor.{Actor, ActorSystem}
 import akka.stream.ActorMaterializer
-import ch.epfl.scala.index.data.{DataPaths, LocalPomRepository, Meta, upserts}
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
-import ch.epfl.scala.index.data.elastic.{esClient, indexName}
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.project.ProjectConvert
-import ch.epfl.scala.index.model.{Project, Release}
+import ch.epfl.scala.index.data.{DataPaths, LocalPomRepository, upserts}
 import ch.epfl.scala.index.model.misc.GithubRepo
-import com.sksamuel.elastic4s.ElasticDsl._
-
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration._
-import ch.epfl.scala.index.data.elastic._
+import ch.epfl.scala.index.model.{Project, Release}
+import ch.epfl.scala.index.search.DataRepository
 import org.slf4j.LoggerFactory
+
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 class IndexingActor(
     paths: DataPaths,
@@ -82,10 +80,12 @@ class IndexingActor(
 
       val converter = new ProjectConvert(paths, githubDownload)
 
-      val (newProject, newReleases) = converter(
-        pomsRepoSha = List((pom, localRepository, data.hash)),
-        cachedReleases = cachedReleases
-      ).head
+      val (newProject, newReleases, dependencies) = converter
+        .convertAll(
+          List((pom, localRepository, data.hash)),
+          cachedReleases
+        )
+        .next
 
       cachedReleases =
         upserts(cachedReleases, projectReference, newReleases.toSet)
@@ -94,38 +94,40 @@ class IndexingActor(
         liveData = true
       )
 
-      val projectUpdate =
-        project match {
-          case Some(project) =>
-            esClient
-              .execute(
-                update(project.id.get)
-                  .in(indexName / projectsCollection)
-                  .doc(updatedProject)
-              )
-              .map(_ => log.info("updating project " + pom.artifactId))
+      val projectUpdate = project match {
+        case Some(project) =>
+          dataRepository
+            .updateProject(updatedProject.copy(id = project.id))
+            .map(_ => log.info("updating project " + pom.artifactId))
 
-          case None =>
-            esClient
-              .execute(
-                indexInto(indexName / projectsCollection)
-                  .source(updatedProject)
-              )
-              .map(_ => log.info("inserting project " + pom.artifactId))
-        }
+        case None =>
+          dataRepository
+            .insertProject(updatedProject)
+            .map(_ => log.info("inserting project " + pom.artifactId))
+      }
 
-      val releaseUpdate =
-        if (!releases.exists(r => r.reference == newReleases.head.reference)) {
-          // create new release
-          esClient
-            .execute(
-              indexInto(indexName / releasesCollection)
-                .source(
-                  newReleases.head.copy(liveData = true)
-                )
-            )
-            .map(_ => log.info(s"inserting release ${newReleases.head.maven}"))
-        } else { Future.successful(()) }
+      val releaseUpdate = newReleases.headOption match {
+        case Some(release)
+            if !releases.exists(r => r.reference == release.reference) =>
+          log.info(s"inserting release ${release.maven}")
+          for {
+            _ <- dataRepository.insertRelease(release.copy(liveData = true))
+            response <- dataRepository.insertDependencies(dependencies)
+          } yield {
+            if (response.hasFailures) {
+              response.failures.foreach(f => log.error(f.failureMessage))
+              log.error(
+                s"failed inserting the ${dependencies.size} dependencies of ${release.maven}"
+              )
+            } else {
+              log.error(
+                s"Inserted ${dependencies.size} dependencies of ${release.maven}"
+              )
+            }
+          }
+
+        case None => Future.successful(())
+      }
 
       for {
         _ <- projectUpdate

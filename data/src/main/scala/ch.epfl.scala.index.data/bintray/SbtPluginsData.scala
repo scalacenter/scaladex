@@ -10,14 +10,12 @@ import org.apache.ivy.core.module.descriptor.ModuleDescriptor
 import org.joda.time.DateTime
 import org.json4s.native.Serialization.write
 
-import scala.util.{Success, Try}
-
 case class SbtPluginsData(ivysData: Path) extends BintrayProtocol {
 
   /** @return Releases in the format expected by ProjectConvert */
-  def load(): List[Try[(ReleaseModel, LocalRepository, String)]] = {
-    read().map { release =>
-      Success((release.releaseModel, BintraySbtPlugins, release.sha1))
+  def iterator: Iterator[(ReleaseModel, LocalRepository, String)] = {
+    read().iterator.map { release =>
+      (release.releaseModel, BintraySbtPlugins, release.sha1)
     }
   }
 

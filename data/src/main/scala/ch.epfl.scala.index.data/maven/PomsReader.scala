@@ -2,6 +2,7 @@ package ch.epfl.scala.index
 package data
 package maven
 
+import resource.ManagedResource
 import java.io.File
 import java.nio.file._
 
@@ -9,8 +10,10 @@ import scala.util.{Success, Try}
 import java.util.Properties
 
 import ch.epfl.scala.index.data.bintray.SbtPluginsData
-
 import org.slf4j.LoggerFactory
+
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 case class MissingParentPom(dep: maven.Dependency) extends Exception
 
@@ -27,27 +30,28 @@ object PomsReader {
 
   def loadAll(
       paths: DataPaths
-  ): List[Try[(ReleaseModel, LocalRepository, String)]] = {
+  ): Iterable[(ReleaseModel, LocalRepository, String)] = {
+    import ExecutionContext.Implicits._
     import LocalPomRepository._
 
-    val centralPoms = PomsReader(MavenCentral, paths).load()
-    val centralShas = centralPoms.collect { case Success((_, _, sha)) => sha }.toSet
+    val ivysDescriptors = SbtPluginsData(paths.ivysData).iterator
 
-    val bintrayPoms = PomsReader(Bintray, paths).load().filter {
-      case Success((_, _, sha)) => !centralShas.contains(sha)
-      case _                    => true
+    val allPomsResource = for {
+      centralPoms <- PomsReader(MavenCentral, paths).iterator()
+      bintrayPoms <- PomsReader(Bintray, paths).iterator()
+      usersPoms <- PomsReader(UserProvided, paths).iterator()
+    } yield centralPoms ++ bintrayPoms ++ usersPoms ++ ivysDescriptors
+
+    allPomsResource.acquireAndGet { allPoms =>
+      // use sha to filter duplicates out
+      allPoms
+        .foldLeft(Map[String, (ReleaseModel, LocalRepository, String)]()) {
+          case (acc, pom @ (_, _, sha)) =>
+            if (acc.contains(sha)) acc
+            else acc + (sha -> pom)
+        }
+        .values
     }
-    val bintrayShas = bintrayPoms.collect { case Success((_, _, sha)) => sha }.toSet
-
-    val usersPoms = PomsReader(UserProvided, paths).load().filter {
-      case Success((_, _, sha)) =>
-        !centralShas.contains(sha) && !bintrayShas.contains(sha)
-      case _ => true
-    }
-
-    val ivysDescriptors = SbtPluginsData(paths.ivysData).load()
-
-    centralPoms ::: bintrayPoms ::: usersPoms ::: ivysDescriptors
   }
 
   def apply(repository: LocalPomRepository, paths: DataPaths): PomsReader = {
@@ -118,6 +122,17 @@ private[maven] class PomsReader(pomsPath: Path,
       builder.build(request).getEffectiveModel
 
     }.map(pom => (PomConvert(pom), repository, sha1))
+  }
+
+  def iterator()
+    : ManagedResource[Iterator[(ReleaseModel, LocalPomRepository, String)]] = {
+    import scala.collection.JavaConverters._
+
+    resource
+      .managed(Files.newDirectoryStream(pomsPath))
+      .map { source =>
+        source.asScala.iterator.flatMap(p => loadOne(p).toOption)
+      }
   }
 
   def load(): List[Try[(ReleaseModel, LocalPomRepository, String)]] = {

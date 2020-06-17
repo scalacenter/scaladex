@@ -3,7 +3,7 @@ package release
 
 import org.scalatest._
 
-class DefaultReleaseTests extends FunSpec with Matchers {
+class ReleaseOptionsTests extends FunSpec with Matchers {
 
   def emptyRelease(maven: MavenReference,
                    reference: Release.Reference): Release =
@@ -18,10 +18,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
       isNonStandardLib = false,
       id = None,
       liveData = false,
-      scalaDependencies = Seq(),
       javaDependencies = Seq(),
-      reverseDependencies = Seq(),
-      internalDependencies = Seq(),
       targetType = "JVM",
       scalaVersion = None,
       scalaJsVersion = None,
@@ -93,7 +90,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
       )
 
       val result =
-        DefaultRelease(repository,
+        ReleaseOptions(repository,
                        ReleaseSelection.empty,
                        releases,
                        None,
@@ -152,7 +149,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
                   ("akka-actors_2.11", "2.4.8")
                 ))
 
-      val result = DefaultRelease(
+      val result = ReleaseOptions(
         repository,
         ReleaseSelection(
           artifact = Some("akka-distributed-data-experimental"),
@@ -213,7 +210,7 @@ class DefaultReleaseTests extends FunSpec with Matchers {
       )
 
       val result =
-        DefaultRelease(repository,
+        ReleaseOptions(repository,
                        ReleaseSelection.empty,
                        releases,
                        None,

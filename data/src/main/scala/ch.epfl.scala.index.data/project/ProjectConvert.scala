@@ -24,14 +24,12 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
   /**
    * @param pomsRepoSha poms and associated meta information reference
-   * @param stored read user update projects from disk
    * @param cachedReleases use previous released cached to workaround elasticsearch consistency (write, read)
    */
-  def apply(
-      pomsRepoSha: List[(ReleaseModel, LocalRepository, String)],
-      stored: Boolean = true,
-      cachedReleases: Map[Project.Reference, Set[Release]] = Map()
-  ): List[(Project, Seq[Release])] = {
+  def convertAll(
+      pomsRepoSha: Iterable[(ReleaseModel, LocalRepository, String)],
+      cachedReleases: Map[Project.Reference, Set[Release]]
+  ): Iterator[(Project, Seq[Release], Seq[ScalaDependency])] = {
 
     val githubRepoExtractor = new GithubRepoExtractor(paths)
 
@@ -137,10 +135,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
                 isNonStandardLib = isNonStandardLib,
                 id = None,
                 liveData = false,
-                scalaDependencies = Seq(),
                 javaDependencies = Seq(),
-                reverseDependencies = Seq(),
-                internalDependencies = Seq(),
                 targetType = targetType.toString,
                 scalaVersion = scalaVersion.map(_.family),
                 scalaJsVersion = scalaJsVersion.map(_.toString),
@@ -153,14 +148,11 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
           val (max, min) = maxMinRelease(releases)
 
-          val defaultStableVersion =
-            if (stored)
-              storedProjects
-                .get(Project.Reference(organization, repository))
-                .forall(_.defaultStableVersion)
-            else true
+          val defaultStableVersion = storedProjects
+            .get(Project.Reference(organization, repository))
+            .forall(_.defaultStableVersion)
 
-          val releaseOptions = DefaultRelease(
+          val releaseOptions = ReleaseOptions(
             repository,
             ReleaseSelection.empty,
             releases,
@@ -183,12 +175,11 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
           (seed, releases)
       }
-      .toList
 
     log.info("Dependencies & Reverse Dependencies")
 
     val mavenReferenceToReleaseReference =
-      projectsAndReleases
+      projectsAndReleases.iterator
         .flatMap { case (_, releases) => releases }
         .map(release => (release.maven, release.reference))
         .toMap
@@ -200,143 +191,65 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
     val poms = pomsAndMetaClean.map { case (_, _, _, pom, _, _, _, _) => pom }
 
-    def link(reverse: Boolean) = {
-      poms.foldLeft(Map[Release.Reference, Seq[Dependency]]()) {
-        case (cache, pom) =>
-          pom.dependencies.foldLeft(cache) {
-            case (cache0, dependency) =>
-              val depMavenRef = dependencyToMaven(dependency)
-              val pomMavenRef = pomToMavenReference(pom)
-              val depRef = mavenReferenceToReleaseReference.get(depMavenRef)
-              val pomRef = mavenReferenceToReleaseReference.get(pomMavenRef)
-
-              (depRef, pomRef) match {
-
-                // Scala Library is a reverse dependency of almost all projects anyway
-                case (Some(dependencyReference), _)
-                    if reverse && dependencyReference.isScalaLib =>
-                  cache0
-
-                /* We have both, scala -> scala reference */
-                case (Some(dependencyReference), Some(pomReference)) =>
-                  val (source, target) =
-                    if (reverse) (dependencyReference, pomReference)
-                    else (pomReference, dependencyReference)
-                  upsert(cache0,
-                         source,
-                         ScalaDependency(target, dependency.scope))
-
-                /* dependency is scala reference - works now only if reverse */
-                case (Some(dependencyReference), None) =>
-                  if (reverse)
-                    upsert(cache0,
-                           dependencyReference,
-                           JavaDependency(pomMavenRef, dependency.scope))
-                  else cache0
-
-                /* works only if not reverse */
-                case (None, Some(pomReference)) =>
-                  if (!reverse)
-                    upsert(cache0,
-                           pomReference,
-                           JavaDependency(depMavenRef, dependency.scope))
-                  else cache0
-
-                /* java -> java: should not happen actually */
-                case (None, None) =>
-                  log.error(
-                    s"no reference discovered for $pomMavenRef -> $depMavenRef"
-                  )
-                  cache0
-              }
+    val allDependencies: Seq[Dependency] = poms.flatMap { pom =>
+      val pomMavenRef = pomToMavenReference(pom)
+      mavenReferenceToReleaseReference.get(pomMavenRef) match {
+        case None => Seq()
+        case Some(pomRef) =>
+          pom.dependencies.map { dep =>
+            val depMavenRef = dependencyToMaven(dep)
+            mavenReferenceToReleaseReference.get(depMavenRef) match {
+              case None         => JavaDependency(pomRef, depMavenRef, dep.scope)
+              case Some(depRef) => ScalaDependency(pomRef, depRef, dep.scope)
+            }
           }
       }
     }
 
-    val dependenciesCache = link(reverse = false)
-    val reverseDependenciesCache = link(reverse = true)
+    val dependenciesByProject =
+      allDependencies.groupBy(d => d.dependent.projectReference)
+    val dependentCountByProject = allDependencies
+      .collect { case d: ScalaDependency => d }
+      .groupBy(d => d.target.projectReference)
+      .mapValues(_.map(_.dependent.projectReference).distinct.size)
 
-    def findDependencies(release: Release): Seq[Dependency] = {
-      dependenciesCache.getOrElse(release.reference, Seq())
-    }
-
-    def findReverseDependencies(release: Release): Seq[Dependency] = {
-      reverseDependenciesCache.getOrElse(release.reference, Seq())
-    }
-
-    def collectDependencies(
-        releases: Seq[Release],
-        f: Release.Reference => Option[String]
-    ): Set[String] = {
-      (for {
-        release <- releases
-        dependency <- release.scalaDependencies
-        r <- f(dependency.reference)
-      } yield r).toSet
-    }
-
-    def dependencies(releases: Seq[Release]): Set[String] =
-      collectDependencies(releases, r => Some(r.name))
-
-    def belongsTo(reference: Project.Reference): Dependency => Boolean = {
-      //A scala project can only have scala internal dependencies
-      case scalaDependency: ScalaDependency =>
-        reference.organization == scalaDependency.reference.organization &&
-          reference.repository == scalaDependency.reference.repository
-      case _ => false
-    }
-
-    projectsAndReleases.map {
+    projectsAndReleases.iterator.map {
       case (seed, releases) =>
+        val projectDependencies =
+          dependenciesByProject.getOrElse(seed.reference, Seq())
+        val scalaDependencies = projectDependencies.collect {
+          case d: ScalaDependency => d
+        }
+        val javaDependenciesByRelease = projectDependencies
+          .collect { case d: JavaDependency => d }
+          .groupBy(d => d.dependent)
+
         val releasesWithDependencies = releases.map { release =>
-          val dependencies = findDependencies(release)
-          val externalDependencies =
-            dependencies.filterNot(belongsTo(seed.reference))
-          val internalDependencies =
-            dependencies.filter(belongsTo(seed.reference))
           release.copy(
-            scalaDependencies = externalDependencies.collect {
-              case sd: ScalaDependency => sd
-            },
-            javaDependencies = externalDependencies.collect {
-              case jd: JavaDependency => jd
-            },
-            reverseDependencies = findReverseDependencies(release).collect {
-              case sd: ScalaDependency => sd
-            },
-            internalDependencies = internalDependencies.collect {
-              case sd: ScalaDependency => sd
-            }
+            javaDependencies =
+              javaDependenciesByRelease.getOrElse(release.reference, Seq())
           )
         }
 
         val project =
           seed.toProject(
-            targetType = releases.map(_.targetType).distinct,
-            scalaVersion = releases.flatMap(_.scalaVersion).distinct,
-            scalaJsVersion = releases.flatMap(_.scalaJsVersion).distinct,
-            scalaNativeVersion = releases.flatMap(_.scalaNativeVersion).distinct,
-            sbtVersion = releases.flatMap(_.sbtVersion).distinct,
-            dependencies = dependencies(releasesWithDependencies),
-            dependentCount = releasesWithDependencies.view
-              .flatMap(_.reverseDependencies.map(_.reference))
-              .filterNot(
-                release =>
-                  belongsTo(seed.reference)(ScalaDependency(release, None))
-              )
-              .map(_.projectReference)
-              .size // Note: we don’t need to call `.distinct` because `releases` is a `Set`
+            targetType = releases.map(_.targetType).distinct.toList,
+            scalaVersion = releases.flatMap(_.scalaVersion).distinct.toList,
+            scalaJsVersion = releases.flatMap(_.scalaJsVersion).distinct.toList,
+            scalaNativeVersion =
+              releases.flatMap(_.scalaNativeVersion).distinct.toList,
+            sbtVersion = releases.flatMap(_.sbtVersion).distinct.toList,
+            dependencies = scalaDependencies.map(d => d.target.name).toSet,
+            dependentCount =
+              dependentCountByProject.getOrElse(seed.reference, 0)
           )
 
-        val updatedProject =
-          if (stored) {
-            storedProjects
-              .get(project.reference)
-              .map(_.update(project, paths, githubDownload, fromStored = true))
-              .getOrElse(project)
-          } else project
+        val updatedProject = storedProjects
+          .get(project.reference)
+          .map(_.update(project, paths, githubDownload, fromStored = true))
+          .getOrElse(project)
 
-        (updatedProject, releasesWithDependencies)
+        (updatedProject, releasesWithDependencies, scalaDependencies)
     }
   }
 }

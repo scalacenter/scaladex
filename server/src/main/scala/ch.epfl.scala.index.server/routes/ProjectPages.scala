@@ -2,13 +2,16 @@ package ch.epfl.scala.index
 package server
 package routes
 
+import ch.epfl.scala.index.search.DataRepository
+import com.typesafe.scalalogging.LazyLogging
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import ch.epfl.scala.index.data.DataPaths
-import ch.epfl.scala.index.data.github.{GithubReader, Json4s}
+import ch.epfl.scala.index.data.elastic.SaveLiveData
+import ch.epfl.scala.index.data.github.{GithubReader, Json4s, GithubDownload}
 import ch.epfl.scala.index.data.project.ProjectForm
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc._
@@ -23,13 +26,15 @@ import scala.concurrent.{ExecutionContext, Future}
 class ProjectPages(
     dataRepository: DataRepository,
     session: GithubUserSession,
+    githubDownload: GithubDownload,
     paths: DataPaths
-)(implicit executionContext: ExecutionContext) {
+)(implicit executionContext: ExecutionContext)
+    extends LazyLogging {
   import session.implicits._
 
   private def canEdit(owner: String,
                       repo: String,
-                      userState: Option[UserState]) = {
+                      userState: Option[UserState]): Boolean = {
     userState.exists(
       s => s.isAdmin || s.repos.contains(GithubRepo(owner, repo))
     )
@@ -58,22 +63,25 @@ class ProjectPages(
     } else Future.successful((Forbidden, views.html.forbidden(user)))
   }
 
-  private def redirectTo(owner: String,
-                         repo: String,
-                         target: Option[String],
-                         artifact: Option[String],
-                         version: Option[String],
-                         selected: Option[String]): Future[Option[Release]] = {
-
-    val selection = ReleaseSelection.parse(
-      target = target,
-      artifactName = artifact,
-      version = version,
-      selected = selected
-    )
+  private def getSelectedRelease(
+      owner: String,
+      repo: String,
+      target: Option[String],
+      artifact: Option[String],
+      version: Option[String],
+      selected: Option[String]
+  ): Future[Option[Release]] = {
 
     dataRepository
-      .getProjectPage(Project.Reference(owner, repo), selection)
+      .getProjectAndReleaseOptions(
+        Project.Reference(owner, repo),
+        ReleaseSelection.parse(
+          target = target,
+          artifactName = artifact,
+          version = version,
+          selected = selected
+        )
+      )
       .map(_.map { case (_, options) => options.release })
   }
 
@@ -151,38 +159,56 @@ class ProjectPages(
       version = version,
       selected = selected
     )
+    val projectRef = Project.Reference(owner, repo)
 
     dataRepository
-      .getProjectPage(Project.Reference(owner, repo), selection)
-      .map(_.map {
-        case (project, options) =>
-          val twitterCard = for {
-            github <- project.github
-            description <- github.description
-          } yield
-            TwitterSummaryCard(
-              site = "@scala_lang",
-              title = s"${project.organization}/${project.repository}",
-              description = description,
-              image = github.logo
+      .getProjectAndReleaseOptions(projectRef, selection)
+      .flatMap {
+        case Some((project, options)) =>
+          val releaseRef = options.release.reference
+          val dependenciesF = dataRepository.getAllDependencies(releaseRef)
+          val reverseDependenciesF =
+            dataRepository.getReverseDependencies(releaseRef)
+
+          for {
+            dependencies <- dependenciesF
+            reverseDependencies <- reverseDependenciesF
+          } yield {
+            val allDeps =
+              Dependencies(options.release, dependencies, reverseDependencies)
+
+            val versions =
+              if (project.strictVersions) options.versions.filter(_.isSemantic)
+              else options.versions
+
+            val twitterCard = for {
+              github <- project.github
+              description <- github.description
+            } yield
+              TwitterSummaryCard(
+                site = "@scala_lang",
+                title = s"${project.organization}/${project.repository}",
+                description = description,
+                image = github.logo
+              )
+
+            val page = views.project.html.project(
+              project,
+              options.artifacts,
+              versions,
+              options.targets,
+              options.release,
+              allDeps,
+              user,
+              canEdit(owner, repo, userState),
+              twitterCard
             )
 
-          val versions0 =
-            if (project.strictVersions) options.versions.filter(_.isSemantic)
-            else options.versions
+            (OK, page)
+          }
 
-          (OK,
-           views.project.html.project(
-             project,
-             options.artifacts,
-             versions0,
-             options.targets,
-             options.release,
-             user,
-             canEdit(owner, repo, userState),
-             twitterCard
-           ))
-      }.getOrElse((NotFound, views.html.notfound(user))))
+        case None => Future.successful(NotFound, views.html.notfound(user))
+      }
   }
 
   private val moved = GithubReader.movedRepositories(paths)
@@ -283,6 +309,24 @@ class ProjectPages(
       }
     )
 
+  def updateProject(projectRef: Project.Reference,
+                    form: ProjectForm): Future[Boolean] = {
+    for {
+      projectOpt <- dataRepository.getProject(projectRef)
+      updated <- projectOpt match {
+        case Some(project) if project.id.isDefined =>
+          val updatedProject = form.update(project, paths, githubDownload)
+          val esUpdate = dataRepository.updateProject(updatedProject)
+
+          logger.info("Updating live data on the index repository")
+          val indexUpdate = SaveLiveData.saveProject(updatedProject, paths)
+
+          esUpdate.zip(indexUpdate).map(_ => true)
+        case _ => Future.successful(false)
+      }
+    } yield updated
+  }
+
   val routes: Route =
     concat(
       post(
@@ -293,12 +337,11 @@ class ProjectPages(
                 pathEnd(
                   editForm(
                     form =>
-                      onSuccess(
-                        dataRepository.updateProject(
-                          Project.Reference(organization, repository),
-                          form
-                        )
-                      ) { _ =>
+                      onSuccess {
+                        updateProject(Project.Reference(organization,
+                                                        repository),
+                                      form)
+                      } { _ =>
                         Thread.sleep(1000) // oh yeah
                         redirect(Uri(s"/$organization/$repository"), SeeOther)
                     }
@@ -345,7 +388,7 @@ class ProjectPages(
                     )(
                       (artifact, version, target, selected) =>
                         onSuccess(
-                          redirectTo(
+                          getSelectedRelease(
                             owner = organization,
                             repo = repository,
                             target = target,

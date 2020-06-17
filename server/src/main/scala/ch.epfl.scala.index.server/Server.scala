@@ -1,6 +1,7 @@
 package ch.epfl.scala.index
 package server
 
+import build.info.BuildInfo
 import akka.actor.ActorSystem
 import akka.http.scaladsl._
 import akka.http.scaladsl.model.StatusCodes._
@@ -16,6 +17,7 @@ import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.index.server.config.ServerConfig
 import ch.epfl.scala.index.server.routes._
 import ch.epfl.scala.index.server.routes.api._
+import ch.epfl.scala.index.search.DataRepository
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import org.elasticsearch.action.search.SearchPhaseExecutionException
@@ -46,22 +48,22 @@ object Server {
       else args.toList.tail
 
     val paths = DataPaths(pathFromArgs)
-    val data = new DataRepository(paths, new GithubDownload(paths))
     val session = GithubUserSession(config)
 
+    // the DataRepository will not be closed until the end of the process,
+    // because of the sbtResolver mode
+    val data = DataRepository.openUnsafe(BuildInfo.baseDirectory)
+
     val searchPages = new SearchPages(data, session)
-
-    val userFacingRoutes =
-      concat(
-        new FrontPage(data, session).routes,
-        redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
-          concat(
-            new ProjectPages(data, session, paths).routes,
-            searchPages.routes
-          )
-        }
-      )
-
+    val userFacingRoutes = concat(
+      new FrontPage(data, session).routes,
+      redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
+        concat(
+          new ProjectPages(data, session, new GithubDownload(paths), paths).routes,
+          searchPages.routes
+        )
+      }
+    )
     val programmaticRoutes = concat(
       PublishApi(paths, data).routes,
       new SearchApi(data, session).routes,
@@ -127,14 +129,12 @@ object Server {
       }
 
     log.info("waiting for elastic to start")
-    blockUntilYellow()
+    data.waitUntilReady()
     log.info("ready")
 
     Await.result(Http().bindAndHandle(routes, "0.0.0.0", port), 20.seconds)
 
     log.info(s"port: $port")
     log.info("Application started")
-
-    ()
   }
 }

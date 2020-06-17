@@ -1,34 +1,136 @@
-package ch.epfl.scala.index
-package server
+package ch.epfl.scala.index.search
 
-import ch.epfl.scala.index.data.DataPaths
-import ch.epfl.scala.index.data.elastic._
-import ch.epfl.scala.index.data.github.GithubDownload
-import ch.epfl.scala.index.data.project.ProjectForm
+import java.io.File
+
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc.{Pagination, _}
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.server.DataRepository._
-import com.sksamuel.elastic4s.ElasticDsl._
-import com.sksamuel.elastic4s.HitReader
+import ch.epfl.scala.index.search.mapping._
+import com.sksamuel.elastic4s.bulk.RichBulkResponse
+import com.sksamuel.elastic4s.embedded.LocalNode
 import com.sksamuel.elastic4s.searches.queries.QueryDefinition
 import com.sksamuel.elastic4s.searches.sort.SortDefinition
+import com.sksamuel.elastic4s.{
+  ElasticDsl,
+  ElasticsearchClientUri,
+  HitReader,
+  TcpClient
+}
+import com.typesafe.config.ConfigFactory
+import com.typesafe.scalalogging.LazyLogging
+import org.elasticsearch.action.bulk.BulkResponse
+import org.elasticsearch.cluster.health.ClusterHealthStatus
 import org.elasticsearch.common.lucene.search.function.CombineFunction
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.Modifier
 import org.elasticsearch.search.sort.SortOrder
-import org.slf4j.LoggerFactory
+import resource.ManagedResource
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
- * @param paths   Paths to the files storing the index
+ * @param esClient TCP client of the elasticsearch server
  */
-class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
-    implicit ec: ExecutionContext
-) {
+class DataRepository(esClient: TcpClient,
+                     indexName: String)(implicit ec: ExecutionContext)
+    extends LazyLogging {
+  import DataRepository._
 
-  private val log = LoggerFactory.getLogger(getClass)
+  def waitUntilReady(): Unit = {
+    def blockUntil(explain: String)(predicate: () => Boolean): Unit = {
+      var backoff = 0
+      var done = false
+      while (backoff <= 128 && !done) {
+        if (backoff > 0) Thread.sleep(200L * backoff)
+        backoff = backoff + 1
+        done = predicate()
+      }
+      require(done, s"Failed waiting on: $explain")
+    }
+
+    blockUntil("Expected cluster to have yellow status") { () =>
+      val status = esClient.execute(clusterHealth()).await.getStatus
+      status == ClusterHealthStatus.YELLOW ||
+      status == ClusterHealthStatus.GREEN
+    }
+  }
+
+  def close(): Unit = {
+    esClient.close()
+  }
+
+  def deleteAll(): Future[Unit] = {
+    for {
+      exists <- esClient.execute(indexExists(indexName)).map(_.isExists())
+      _ <- if (exists) esClient.execute(deleteIndex(indexName))
+      else Future.successful(())
+    } yield ()
+  }
+
+  def create(): Future[Unit] = {
+    val request = createIndex(indexName)
+      .analysis(DataMapping.englishReadme)
+      .normalizers(DataMapping.lowercase)
+      .mappings(
+        mapping(projectsCollection).fields(DataMapping.projectFields: _*),
+        mapping(releasesCollection).fields(DataMapping.releasesFields: _*),
+        mapping(dependenciesCollection)
+          .fields(DataMapping.dependenciesFields: _*)
+      )
+
+    esClient.execute(request).map(_ => ())
+  }
+
+  def insertProject(project: Project): Future[Unit] = {
+    esClient
+      .execute(
+        indexInto(indexName / projectsCollection)
+          .source(project)
+      )
+      .map(_ => ())
+  }
+
+  def updateProject(project: Project): Future[Unit] = {
+    esClient
+      .execute(
+        update(project.id.get)
+          .in(indexName / projectsCollection)
+          .doc(project)
+      )
+      .map(_ => ())
+  }
+
+  def insertReleases(releases: Seq[Release]): Future[RichBulkResponse] = {
+    val requests = releases.map { r =>
+      indexInto(indexName / releasesCollection).source(ReleaseDocument(r))
+    }
+
+    esClient.execute(bulk(requests))
+  }
+
+  def insertRelease(release: Release): Future[Unit] = {
+    esClient
+      .execute {
+        indexInto(indexName / releasesCollection)
+          .source(ReleaseDocument(release))
+      }
+      .map(_ => ())
+  }
+
+  def insertDependencies(
+      dependencies: Seq[ScalaDependency]
+  ): Future[RichBulkResponse] = {
+    if (dependencies.nonEmpty) {
+      val requests = dependencies.map { d =>
+        indexInto(indexName / dependenciesCollection)
+          .source(DependencyDocument(d))
+      }
+      esClient.execute(bulk(requests))
+    } else {
+      Future.successful { emptyBulkResponse }
+    }
+
+  }
 
   def getTotalProjects(queryString: String): Future[Long] = {
     val query = must(
@@ -74,21 +176,29 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
       }
   }
 
+  /**
+   * Get all the releases of a particular project
+   * It does not retrieve the dependencies of the releases
+   */
   def getProjectReleases(project: Project.Reference): Future[Seq[Release]] = {
-    val query = nestedQuery("reference").query(
-      must(
-        termQuery("reference.organization", project.organization),
-        termQuery("reference.repository", project.repository)
-      )
+    val query = must(
+      termQuery("reference.organization", project.organization),
+      termQuery("reference.repository", project.repository)
     )
 
     val request = search(indexName / releasesCollection).query(query).size(5000)
 
-    esClient.execute(request).map(_.to[Release].filter(_.isValid))
+    esClient
+      .execute(request)
+      .map(
+        _.to[ReleaseDocument].map(_.toRelease).filter(_.isValid)
+      )
   }
 
   /**
-   * search for a maven artifact
+   * Search for the release corresponding to a maven artifact
+   * It does not retrieve the dependencies of the release
+   *
    * @param reference reference of the maven artifact
    * @return the release of this artifact if it exists
    */
@@ -103,7 +213,9 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
 
     val request = search(indexName / releasesCollection).query(query).limit(1)
 
-    esClient.execute(request).map(r => r.to[Release].headOption)
+    esClient
+      .execute(request)
+      .map(r => r.to[ReleaseDocument].headOption.map(_.toRelease))
   }
 
   def getProject(project: Project.Reference): Future[Option[Project]] = {
@@ -117,6 +229,10 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
     esClient.execute(request).map(_.to[Project].headOption)
   }
 
+  /**
+   * Get a project and all its releases
+   * It does not retrieve the dependencies of the releases
+   */
   def getProjectAndReleases(
       projectRef: Project.Reference
   ): Future[Option[(Project, Seq[Release])]] = {
@@ -129,13 +245,17 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
     } yield project.map((_, releases))
   }
 
-  def getProjectPage(
+  /**
+   * Get a project and select a release
+   * It does not retrieve the dependencies of the release
+   */
+  def getProjectAndReleaseOptions(
       ref: Project.Reference,
       selection: ReleaseSelection
   ): Future[Option[(Project, ReleaseOptions)]] = {
     getProjectAndReleases(ref).map {
       case Some((project, releases)) =>
-        DefaultRelease(
+        ReleaseOptions(
           project.repository,
           selection,
           releases,
@@ -146,26 +266,35 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
     }
   }
 
-  def updateProject(projectRef: Project.Reference,
-                    form: ProjectForm): Future[Boolean] = {
-    for {
-      projectOpt <- getProject(projectRef)
-      updated <- projectOpt match {
-        case Some(project) if project.id.isDefined =>
-          val updatedProject = form.update(project, paths, githubDownload)
-          val esUpdate = esClient.execute(
-            update(project.id.get)
-              .in(indexName / projectsCollection)
-              .doc(updatedProject)
-          )
+  /**
+   * Get all the dependencies of a release
+   */
+  def getAllDependencies(ref: Release.Reference): Future[Seq[ScalaDependency]] = {
+    val query = termQuery("dependentUrl", ref.httpUrl)
 
-          log.info("Updating live data on the index repository")
-          val indexUpdate = SaveLiveData.saveProject(updatedProject, paths)
+    val request =
+      search(indexName / dependenciesCollection).query(query).size(5000)
 
-          esUpdate.zip(indexUpdate).map(_ => true)
-        case _ => Future.successful(false)
-      }
-    } yield updated
+    esClient
+      .execute(request)
+      .map(_.to[DependencyDocument].map(_.toDependency))
+  }
+
+  /**
+   * Get all the releases which depend on a the given release
+   */
+  def getReverseDependencies(
+      ref: Release.Reference
+  ): Future[Seq[ScalaDependency]] = {
+    val query = termQuery("targetUrl", ref.httpUrl)
+
+    val request = search(indexName / dependenciesCollection)
+      .query(query)
+      .size(5000)
+
+    esClient
+      .execute(request)
+      .map(_.to[DependencyDocument].map(_.toDependency))
   }
 
   def getLatestProjects(): Future[List[Project]] = {
@@ -179,7 +308,8 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
   }
 
   def getLatestReleases(): Future[List[Release]] = {
-    getLatest[Release](releasesCollection, "released", frontPageCount)
+    getLatest[ReleaseDocument](releasesCollection, "released", frontPageCount)
+      .map(_.map(_.toRelease))
   }
 
   def getMostDependentUpon(): Future[List[Project]] = {
@@ -356,7 +486,58 @@ class DataRepository(paths: DataPaths, githubDownload: GithubDownload)(
   }
 }
 
-object DataRepository {
+object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
+  private val projectsCollection = "projects"
+  private val releasesCollection = "releases"
+  private val dependenciesCollection = "dependencies"
+  private val emptyBulkResponse = RichBulkResponse(
+    new BulkResponse(Array.empty, 0)
+  )
+
+  private val config =
+    ConfigFactory.load().getConfig("org.scala_lang.index.data")
+  private val elasticsearch = config.getString("elasticsearch")
+  private val indexName = config.getString("index")
+
+  private val local =
+    if (elasticsearch == "remote") false
+    else if (elasticsearch == "local" || elasticsearch == "local-prod") true
+    else
+      sys.error(
+        s"org.scala_lang.index.data.elasticsearch should be remote or local: $elasticsearch"
+      )
+
+  def open(
+      baseDirectory: File
+  )(implicit ec: ExecutionContext): ManagedResource[DataRepository] = {
+    logger.info(s"elasticsearch $elasticsearch $indexName")
+    for (esClient <- resource.managed(esClient(baseDirectory, local))) yield {
+      new DataRepository(esClient, indexName)
+    }
+  }
+
+  def openUnsafe(
+      baseDirectory: File
+  )(implicit ec: ExecutionContext): DataRepository = {
+    logger.info(s"elasticsearch $elasticsearch $indexName")
+    new DataRepository(esClient(baseDirectory, local), indexName)
+  }
+
+  /** @see https://github.com/sksamuel/elastic4s#client for configurations */
+  private def esClient(baseDirectory: File, local: Boolean): TcpClient = {
+    if (local) {
+      val homePath = baseDirectory.toPath.resolve(".esdata").toString
+      LocalNode(
+        LocalNode.requiredSettings(
+          clusterName = "elasticsearch-local",
+          homePath = homePath
+        )
+      ).elastic4sclient()
+    } else {
+      TcpClient.transport(ElasticsearchClientUri("localhost", 9300))
+    }
+  }
+
   private def gitHubStarScoring(query: QueryDefinition): QueryDefinition = {
     val scorer = fieldFactorScore("github.stars")
       .missing(0)
