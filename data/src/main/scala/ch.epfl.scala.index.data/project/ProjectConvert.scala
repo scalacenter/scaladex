@@ -24,11 +24,11 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
   /**
    * @param pomsRepoSha poms and associated meta information reference
-   * @param cachedReleases use previous released cached to workaround elasticsearch consistency (write, read)
+   * @param indexedReleases use previous indexed releases to update the project consistently
    */
   def convertAll(
       pomsRepoSha: Iterable[(ReleaseModel, LocalRepository, String)],
-      cachedReleases: Map[Project.Reference, Set[Release]]
+      indexedReleases: Map[Project.Reference, Seq[Release]]
   ): Iterator[(Project, Seq[Release], Seq[ScalaDependency])] = {
 
     val githubRepoExtractor = new GithubRepoExtractor(paths)
@@ -86,10 +86,10 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
         case (githubRepo @ GithubRepo(organization, repository), vs) =>
           val projectReference = Project.Reference(organization, repository)
 
-          val cachedReleasesForProject =
-            cachedReleases.getOrElse(projectReference, Set())
+          val oldReleases =
+            indexedReleases.getOrElse(projectReference, Set())
 
-          val releases = vs.map {
+          val newReleases = vs.map {
             case (_,
                   artifactName,
                   target,
@@ -142,11 +142,13 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
                 scalaNativeVersion = scalaNativeVersion.map(_.toString),
                 sbtVersion = sbtVersion.map(_.toString)
               )
-          } ++ cachedReleasesForProject
+          }
 
-          val releaseCount = releases.map(_.reference.version).size
+          val allReleases = newReleases ++ oldReleases
 
-          val (max, min) = maxMinRelease(releases)
+          val releaseCount = allReleases.map(_.reference.version).size
+
+          val (max, min) = maxMinRelease(allReleases)
 
           val defaultStableVersion = storedProjects
             .get(Project.Reference(organization, repository))
@@ -155,7 +157,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
           val releaseOptions = ReleaseOptions(
             repository,
             ReleaseSelection.empty,
-            releases,
+            allReleases,
             None,
             defaultStableVersion
           )
@@ -173,7 +175,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
               updated = max
             )
 
-          (seed, releases)
+          (seed, allReleases)
       }
 
     log.info("Dependencies & Reverse Dependencies")

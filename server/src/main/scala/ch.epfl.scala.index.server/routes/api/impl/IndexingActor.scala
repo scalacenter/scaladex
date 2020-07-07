@@ -10,7 +10,7 @@ import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.project.ProjectConvert
-import ch.epfl.scala.index.data.{DataPaths, LocalPomRepository, upserts}
+import ch.epfl.scala.index.data.{DataPaths, LocalPomRepository}
 import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.model.{Project, Release}
 import ch.epfl.scala.index.search.DataRepository
@@ -83,26 +83,19 @@ class IndexingActor(
       val (newProject, newReleases, dependencies) = converter
         .convertAll(
           List((pom, localRepository, data.hash)),
-          cachedReleases
+          project.map(p => p.reference -> releases).toMap
         )
         .next
-
-      cachedReleases =
-        upserts(cachedReleases, projectReference, newReleases.toSet)
-
-      val updatedProject = newProject.copy(
-        liveData = true
-      )
 
       val projectUpdate = project match {
         case Some(project) =>
           dataRepository
-            .updateProject(updatedProject.copy(id = project.id))
+            .updateProject(newProject.copy(id = project.id, liveData = true))
             .map(_ => log.info("updating project " + pom.artifactId))
 
         case None =>
           dataRepository
-            .insertProject(updatedProject)
+            .insertProject(newProject.copy(liveData = true))
             .map(_ => log.info("inserting project " + pom.artifactId))
       }
 
@@ -126,7 +119,7 @@ class IndexingActor(
             }
           }
 
-        case None => Future.successful(())
+        case _ => Future.successful(())
       }
 
       for {
@@ -141,8 +134,6 @@ class IndexingActor(
       _ <- updateProjectReleases(project, releases)
     } yield ()
   }
-
-  private var cachedReleases = Map.empty[Project.Reference, Set[Release]]
 }
 
 case class UpdateIndex(
