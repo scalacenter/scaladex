@@ -494,12 +494,12 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
     new BulkResponse(Array.empty, 0)
   )
 
-  private val config =
+  private lazy val config =
     ConfigFactory.load().getConfig("org.scala_lang.index.data")
-  private val elasticsearch = config.getString("elasticsearch")
-  private val indexName = config.getString("index")
+  private lazy val elasticsearch = config.getString("elasticsearch")
+  private lazy val indexName = config.getString("index")
 
-  private val local =
+  private lazy val local =
     if (elasticsearch == "remote") false
     else if (elasticsearch == "local" || elasticsearch == "local-prod") true
     else
