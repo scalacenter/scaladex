@@ -6,7 +6,7 @@ import java.nio.file.Files
 
 import ch.epfl.scala.index.model.Descending
 import com.github.nscala_time.time.Imports._
-import jawn.support.json4s.Parser
+import org.typelevel.jawn.support.json4s.Parser
 import org.joda.time.DateTime
 import org.json4s._
 import org.json4s.native.Serialization.{write => swrite}

@@ -13,7 +13,7 @@ import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubRepo
 import com.typesafe.config.ConfigFactory
-import jawn.support.json4s.Parser
+import org.typelevel.jawn.support.json4s.Parser
 import org.joda.time.DateTime
 import org.json4s.native.Serialization._
 import org.slf4j.LoggerFactory

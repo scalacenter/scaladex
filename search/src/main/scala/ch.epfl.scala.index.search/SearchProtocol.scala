@@ -7,7 +7,7 @@ import ch.epfl.scala.index.search.mapping._
 
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.searches.RichSearchHit
-import jawn.support.json4s.Parser
+import org.typelevel.jawn.support.json4s.Parser
 import org.json4s._
 import org.json4s.native.Serialization
 import org.json4s.native.Serialization.{write => nwrite}

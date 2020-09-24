@@ -6,7 +6,7 @@ import java.nio.file.{Files, Path}
 
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.download.PlayWsClient
-import jawn.support.json4s.Parser
+import org.typelevel.jawn.support.json4s.Parser
 import org.json4s.JsonAST.JValue
 import play.api.libs.ws.{WSAuthScheme, WSClient, WSRequest, WSResponse}
 import resource.ManagedResource

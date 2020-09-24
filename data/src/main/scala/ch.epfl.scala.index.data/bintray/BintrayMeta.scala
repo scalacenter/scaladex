@@ -6,7 +6,7 @@ import java.nio.file.Path
 
 import ch.epfl.scala.index.model.Descending
 import com.github.nscala_time.time.Imports._
-import jawn.support.json4s.Parser
+import org.typelevel.jawn.support.json4s.Parser
 import org.json4s._
 
 object BintrayMeta extends BintrayProtocol {

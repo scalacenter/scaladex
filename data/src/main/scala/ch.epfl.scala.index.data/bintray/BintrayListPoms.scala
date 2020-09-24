@@ -11,7 +11,7 @@ import ch.epfl.scala.index.data.cleanup.NonStandardLib
 import ch.epfl.scala.index.data.download.PlayWsDownloader
 import ch.epfl.scala.index.model._
 import com.github.nscala_time.time.Imports._
-import jawn.support.json4s.Parser
+import org.typelevel.jawn.support.json4s.Parser
 import org.json4s._
 import org.json4s.native.Serialization.write
 import org.slf4j.LoggerFactory

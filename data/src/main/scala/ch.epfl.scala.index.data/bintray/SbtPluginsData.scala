@@ -5,7 +5,7 @@ import java.nio.file.{Files, Path}
 import ch.epfl.scala.index.data.LocalRepository
 import ch.epfl.scala.index.data.LocalRepository.BintraySbtPlugins
 import ch.epfl.scala.index.data.maven._
-import jawn.support.json4s.Parser
+import org.typelevel.jawn.support.json4s.Parser
 import org.apache.ivy.core.module.descriptor.ModuleDescriptor
 import org.joda.time.DateTime
 import org.json4s.native.Serialization.write

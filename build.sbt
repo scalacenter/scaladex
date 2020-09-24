@@ -99,7 +99,7 @@ lazy val search = project
       "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
       "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion,
       "org.json4s" %% "json4s-native" % "3.6.9",
-      "org.spire-math" %% "jawn-json4s" % "0.11.0",
+      "org.typelevel" %% "jawn-json4s" % "1.0.0",
       "com.jsuereth" %% "scala-arm" % "2.0"
     )
   )
