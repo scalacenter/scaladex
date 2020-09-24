@@ -8,7 +8,6 @@ val akkaVersion = "2.6.5"
 val akkaHttpVersion = "10.1.12"
 val elastic4sVersion = "5.6.11"
 val log4jVersion = "2.13.3"
-lazy val scalaTestVersion = "3.0.1"
 
 val nscalaTime = "com.github.nscala-time" %% "nscala-time" % "2.14.0"
 
@@ -52,7 +51,7 @@ lazy val commonSettings = Seq(
     "-feature",
     "-unchecked"
   ),
-  libraryDependencies += "org.scalatest" %% "scalatest" % scalaTestVersion % Test,
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.9" % Test,
   javaOptions in reStart ++= {
     val base = (baseDirectory in ThisBuild).value
 
