@@ -8,8 +8,7 @@ val akkaVersion = "2.6.5"
 val akkaHttpVersion = "10.1.12"
 val elastic4sVersion = "5.6.11"
 val log4jVersion = "2.13.3"
-
-val nscalaTime = "com.github.nscala-time" %% "nscala-time" % "2.14.0"
+val nscalaTimeVersion = "2.24.0"
 
 lazy val logging =
   libraryDependencies ++= Seq(
@@ -85,7 +84,7 @@ lazy val template = project
   .settings(
     scalacOptions -= "-Xfatal-warnings",
     libraryDependencies ++= Seq(
-      nscalaTime,
+      "com.github.nscala-time" %% "nscala-time" % nscalaTimeVersion,
       "com.typesafe" % "config" % "1.3.1",
       "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
     )
@@ -166,7 +165,7 @@ lazy val data = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      nscalaTime,
+      "com.github.nscala-time" %% "nscala-time" % nscalaTimeVersion,
       "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
       "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion,
       "com.typesafe.akka" %% "akka-stream" % akkaVersion,
