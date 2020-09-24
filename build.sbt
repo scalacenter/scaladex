@@ -31,26 +31,28 @@ lazy val baseSettings = Seq(
   version := s"0.2.0+${githash()}"
 )
 
+val amm = inputKey[Unit]("Start Ammonite REPL")
 lazy val ammoniteSettings = Seq(
-  libraryDependencies += "com.lihaoyi" % "ammonite" % "2.0.4" % Test cross CrossVersion.full,
-  sourceGenerators in Test += Def.task {
+  amm := (Test / run).evaluated,
+  amm / aggregate := false,
+  libraryDependencies += "com.lihaoyi" % "ammonite" % "2.2.0" % Test cross CrossVersion.full,
+  Test / sourceGenerators += Def.task {
     val file = (sourceManaged in Test).value / "amm.scala"
-    IO.write(file, """object amm extends App { ammonite.Main.main(args) }""")
+    IO.write(
+      file,
+      """
+        |object AmmoniteBridge extends App {
+        |  ammonite.Main.main(args)
+        |}
+      """.stripMargin
+    )
     Seq(file)
-  }.taskValue,
-  (fullClasspath in Test) ++= {
-    (updateClassifiers in Test).value.configurations
-      .find(_.configuration.name == Test.name)
-      .get
-      .modules
-      .flatMap(_.artifacts)
-      .collect { case (a, f) if a.classifier.contains("sources") => f }
-  }
+  }.taskValue
 )
 
 lazy val commonSettings = Seq(
   resolvers += Resolver.typesafeIvyRepo("releases"),
-  scalaVersion := "2.12.10",
+  scalaVersion := "2.12.12",
   scalacOptions := Seq(
     "-deprecation",
     "-encoding",
