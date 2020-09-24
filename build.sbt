@@ -158,7 +158,7 @@ lazy val server = project
 lazy val model = project
   .settings(commonSettings)
   .settings(
-    libraryDependencies += "com.lihaoyi" %% "fastparse" % "2.2.3"
+    libraryDependencies += "com.lihaoyi" %% "fastparse" % "2.3.0"
   )
 
 lazy val data = project
