@@ -175,7 +175,7 @@ lazy val data = project
       "com.typesafe.play" %% "play-ahc-ws" % "2.8.2",
       "org.apache.ivy" % "ivy" % "2.4.0",
       "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
-      "de.heikoseeberger" %% "akka-http-json4s" % "1.19.0",
+      "de.heikoseeberger" %% "akka-http-json4s" % "1.29.1",
       "org.json4s" %% "json4s-native" % "3.5.3",
       "com.jsuereth" %% "scala-arm" % scalaArmVersion,
       "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Runtime,
