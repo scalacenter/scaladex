@@ -133,7 +133,7 @@ lazy val server = project
       "com.typesafe.play" %%% "play-json" % playJsonVersion,
       "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
-      "ch.megard" %% "akka-http-cors" % "0.2.1",
+      "ch.megard" %% "akka-http-cors" % "0.4.3",
       "com.softwaremill.akka-http-session" %% "core" % "0.5.3",
       "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
       "org.webjars.bower" % "bootstrap-sass" % "3.3.6",
