@@ -3,7 +3,6 @@ package ch.epfl.scala.index.data
 import java.nio.file.Path
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.data.bintray.{
   BintrayDownloadPoms,
   BintrayListPoms,
@@ -61,7 +60,6 @@ object Main extends LazyLogging {
 
     implicit val system: ActorSystem = ActorSystem()
     import system.dispatcher
-    implicit val materializer: ActorMaterializer = ActorMaterializer()
 
     val pathFromArgs =
       if (args.isEmpty) Nil

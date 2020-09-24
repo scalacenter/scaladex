@@ -6,7 +6,6 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.download.{PlayWsClient, PlayWsDownloader}
 import ch.epfl.scala.index.data.elastic.SaveLiveData
@@ -26,8 +25,7 @@ import scala.concurrent.duration.Duration
 import scala.util._
 
 object GithubDownload {
-  def run(paths: DataPaths)(implicit system: ActorSystem,
-                            mat: Materializer): Unit = {
+  def run(paths: DataPaths)(implicit system: ActorSystem): Unit = {
     val githubRepoExtractor = new GithubRepoExtractor(paths)
 
     val githubRepos: Set[GithubRepo] = PomsReader
@@ -42,8 +40,7 @@ object GithubDownload {
 
 class GithubDownload(paths: DataPaths,
                      privateCredentials: Option[Credentials] = None)(
-    implicit val system: ActorSystem,
-    implicit val materializer: Materializer
+    implicit val system: ActorSystem
 ) extends PlayWsDownloader {
 
   private val log = LoggerFactory.getLogger(getClass)

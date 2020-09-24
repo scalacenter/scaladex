@@ -4,18 +4,11 @@ import sbtcrossproject.CrossPlugin.autoImport.crossProject
 import Deployment.githash
 
 val playJsonVersion = "2.9.0"
-val akkaVersion = "2.5.3"
-val akkaHttpVersion = "10.0.11"
-val elastic4sVersion = "5.4.5"
+val akkaVersion = "2.6.5"
+val akkaHttpVersion = "10.1.12"
+val elastic4sVersion = "5.6.11"
+val log4jVersion = "2.13.3"
 lazy val scalaTestVersion = "3.0.1"
-
-def akka(module: String) =
-  "com.typesafe.akka" %% ("akka-" + module) % akkaVersion
-
-def akkaHttpCore = "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
-
-val playJson =
-  libraryDependencies += "com.typesafe.play" %%% "play-json" % playJsonVersion
 
 val nscalaTime = "com.github.nscala-time" %% "nscala-time" % "2.14.0"
 
@@ -95,7 +88,7 @@ lazy val template = project
     libraryDependencies ++= Seq(
       nscalaTime,
       "com.typesafe" % "config" % "1.3.1",
-      akkaHttpCore
+      "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
     )
   )
   .dependsOn(model)
@@ -116,7 +109,11 @@ lazy val search = project
 
 lazy val api = crossProject(JSPlatform, JVMPlatform)
   .settings(commonSettings)
-  .settings(playJson)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.typesafe.play" %%% "play-json" % playJsonVersion
+    )
+  )
 
 lazy val client = project
   .settings(commonSettings)
@@ -132,10 +129,10 @@ lazy val client = project
 lazy val server = project
   .settings(commonSettings)
   .settings(packageScalaJS(client))
-  .settings(playJson)
   .settings(
     libraryDependencies ++= Seq(
-      akka("testkit") % Test,
+      "com.typesafe.play" %%% "play-json" % playJsonVersion,
+      "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
       "ch.megard" %% "akka-http-cors" % "0.2.1",
       "com.softwaremill.akka-http-session" %% "core" % "0.5.3",
@@ -147,7 +144,8 @@ lazy val server = project
       "org.webjars.bower" % "font-awesome" % "4.6.3",
       "org.webjars.bower" % "jQuery" % "2.2.4",
       "org.webjars.bower" % "raven-js" % "3.11.0",
-      "org.webjars.bower" % "select2" % "4.0.3"
+      "org.webjars.bower" % "select2" % "4.0.3",
+      "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Runtime
     ),
     packageBin in Universal := (packageBin in Universal)
       .dependsOn(WebKeys.assets in Assets)
@@ -176,12 +174,13 @@ lazy val data = project
       "me.tongfei" % "progressbar" % "0.5.5",
       "org.apache.maven" % "maven-model-builder" % "3.3.9",
       "org.jsoup" % "jsoup" % "1.10.1",
-      "com.typesafe.play" %% "play-ahc-ws" % "2.6.12",
+      "com.typesafe.play" %% "play-ahc-ws" % "2.8.2",
       "org.apache.ivy" % "ivy" % "2.4.0",
-      "com.typesafe.akka" %% "akka-http" % "10.0.10",
+      "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-json4s" % "1.19.0",
       "org.json4s" %% "json4s-native" % "3.5.3",
-      "com.jsuereth" %% "scala-arm" % "2.0"
+      "com.jsuereth" %% "scala-arm" % "2.0",
+      "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Runtime,
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),

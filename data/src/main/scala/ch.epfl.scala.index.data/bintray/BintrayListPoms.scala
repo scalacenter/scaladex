@@ -5,7 +5,6 @@ package bintray
 import java.nio.file.Files
 
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Flow, Keep, Source}
 import akka.util.ByteString
 import ch.epfl.scala.index.data.cleanup.NonStandardLib
@@ -23,8 +22,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
-    implicit val system: ActorSystem,
-    implicit val materializer: Materializer
+    implicit val system: ActorSystem
 ) extends BintrayProtocol
     with PlayWsDownloader {
 
@@ -238,7 +236,7 @@ object BintrayListPoms {
       paths: DataPaths,
       scalaVersions: Seq[String],
       libs: Seq[NonStandardLib]
-  )(implicit mat: Materializer, sys: ActorSystem) = {
+  )(implicit sys: ActorSystem) = {
     for (bintrayClient <- BintrayClient.create(paths.credentials)) {
       val listPoms = new BintrayListPoms(paths, bintrayClient)
 

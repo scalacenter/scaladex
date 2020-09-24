@@ -5,7 +5,6 @@ package api
 package impl
 
 import akka.actor.{Actor, ActorSystem}
-import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.maven.ReleaseModel
@@ -22,8 +21,7 @@ import scala.concurrent.{Await, Future}
 class IndexingActor(
     paths: DataPaths,
     dataRepository: DataRepository,
-    implicit val system: ActorSystem,
-    implicit val materializer: ActorMaterializer
+    implicit val system: ActorSystem
 ) extends Actor {
   private val log = LoggerFactory.getLogger(getClass)
   import system.dispatcher

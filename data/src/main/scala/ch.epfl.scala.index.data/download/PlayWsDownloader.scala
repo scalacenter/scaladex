@@ -23,7 +23,6 @@ trait PlayWsDownloader {
 
   implicit val system: ActorSystem
   import system.dispatcher
-  implicit val materializer: Materializer
 
   /**
    * Creates a fresh client and closes it after the future returned by `f` completes.
@@ -215,8 +214,10 @@ object PlayWsClient {
    * A good balance is to use one [[WSClient]] by targeted web service.
    */
   def open()(implicit mat: Materializer): ManagedResource[WSClient] = {
-    val configuration = Configuration.reference ++ Configuration(
-      ConfigFactory.parseString("plaw.ws.followRedirects = true")
+    val configuration = Configuration.reference.withFallback(
+      Configuration(
+        ConfigFactory.parseString("plaw.ws.followRedirects = true")
+      )
     )
 
     /* If running in Play, environment should be injected */

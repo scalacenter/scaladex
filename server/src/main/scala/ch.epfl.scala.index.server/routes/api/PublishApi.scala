@@ -10,7 +10,6 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.directives._
 import akka.http.scaladsl.unmarshalling.Unmarshaller
-import akka.stream.ActorMaterializer
 import akka.util.Timeout
 
 import ch.epfl.scala.index.search.DataRepository
@@ -27,7 +26,7 @@ class PublishApi(
     paths: DataPaths,
     dataRepository: DataRepository,
     github: Github
-)(implicit system: ActorSystem, materializer: ActorMaterializer) {
+)(implicit system: ActorSystem) {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -103,8 +102,7 @@ class PublishApi(
       Props(classOf[impl.PublishActor],
             paths,
             dataRepository,
-            system,
-            materializer)
+            system)
     )
 
   private val githubCredentialsCache =
@@ -188,7 +186,7 @@ object PublishApi {
   def apply(
       paths: DataPaths,
       dataRepository: DataRepository
-  )(implicit sys: ActorSystem, mat: ActorMaterializer): PublishApi = {
+  )(implicit sys: ActorSystem): PublishApi = {
     new PublishApi(paths, dataRepository, Github())
   }
 }

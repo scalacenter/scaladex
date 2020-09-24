@@ -8,7 +8,6 @@ import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.model.misc._
 import org.json4s._
 import org.json4s.native.JsonMethods._
@@ -39,8 +38,7 @@ case class UserState(repos: Set[GithubRepo],
   def hasPublishingAuthority: Boolean = isAdmin || isSonatype
 }
 
-class Github()(implicit sys: ActorSystem, mat: ActorMaterializer)
-    extends Json4sSupport {
+class Github()(implicit sys: ActorSystem) extends Json4sSupport {
   import sys.dispatcher
 
   def getUserStateWithToken(token: String): Future[UserState] = info(token)
@@ -196,5 +194,5 @@ class Github()(implicit sys: ActorSystem, mat: ActorMaterializer)
 }
 
 object Github {
-  def apply()(implicit sys: ActorSystem, mat: ActorMaterializer) = new Github()
+  def apply()(implicit sys: ActorSystem) = new Github()
 }

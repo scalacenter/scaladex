@@ -8,12 +8,10 @@ import java.nio.file.{Files, Path}
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 import play.api.libs.ws.ahc.AhcWSClient
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import org.slf4j.LoggerFactory
 
 class BintrayDownloadPoms(paths: DataPaths)(
-    implicit val system: ActorSystem,
-    implicit val materializer: ActorMaterializer
+    implicit val system: ActorSystem
 ) extends PlayWsDownloader {
 
   private val log = LoggerFactory.getLogger(getClass)

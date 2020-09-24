@@ -1,7 +1,6 @@
 package ch.epfl.scala.index.data.elastic
 
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 
 import build.info.BuildInfo
 
@@ -73,8 +72,7 @@ class SeedElasticSearch(
 }
 
 object SeedElasticSearch {
-  def run(dataPaths: DataPaths)(implicit sys: ActorSystem,
-                                mat: Materializer): Unit = {
+  def run(dataPaths: DataPaths)(implicit sys: ActorSystem): Unit = {
     import sys.dispatcher
     for (dataRepository <- DataRepository.open(BuildInfo.baseDirectory)) {
       val githubDownload = new GithubDownload(dataPaths)

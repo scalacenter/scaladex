@@ -8,7 +8,6 @@ import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.elastic._
 import ch.epfl.scala.index.data.github.GithubDownload
@@ -41,7 +40,6 @@ object Server {
 
     implicit val system: ActorSystem = ActorSystem("scaladex")
     import system.dispatcher
-    implicit val materializer: ActorMaterializer = ActorMaterializer()
 
     val pathFromArgs =
       if (args.isEmpty) Nil

@@ -5,7 +5,6 @@ import java.time.format.DateTimeFormatter
 import java.time.{OffsetDateTime, ZoneOffset}
 
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.github.GithubDownload
@@ -187,8 +186,7 @@ object UpdateBintraySbtPlugins {
    *
    * @param paths Paths to the data directory
    */
-  def run(paths: DataPaths)(implicit mat: Materializer,
-                            sys: ActorSystem): Unit = {
+  def run(paths: DataPaths)(implicit sys: ActorSystem): Unit = {
     implicit val ec: ExecutionContext = sys.dispatcher
     val githubDownload = new GithubDownload(paths)
     val githubRepoExtractor = new GithubRepoExtractor(paths)

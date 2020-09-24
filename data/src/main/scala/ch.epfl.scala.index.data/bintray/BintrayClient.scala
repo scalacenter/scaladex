@@ -5,7 +5,6 @@ import java.net.URL
 import java.nio.file.{Files, Path}
 
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 import ch.epfl.scala.index.data.download.PlayWsClient
 import jawn.support.json4s.Parser
 import org.json4s.JsonAST.JValue
@@ -195,8 +194,7 @@ object BintrayClient {
    * @return
    */
   def create(credentials: Path)(
-      implicit mat: Materializer,
-      sys: ActorSystem
+      implicit sys: ActorSystem
   ): ManagedResource[BintrayClient] = {
     for (client <- PlayWsClient.open())
       yield new BintrayClient(credentials, client)(sys.dispatcher)
