@@ -51,7 +51,6 @@ lazy val ammoniteSettings = Seq(
 )
 
 lazy val commonSettings = Seq(
-  resolvers += Resolver.typesafeIvyRepo("releases"),
   scalaVersion := "2.12.12",
   scalacOptions := Seq(
     "-deprecation",
@@ -169,7 +168,6 @@ lazy val model = project
 lazy val data = project
   .settings(commonSettings)
   .settings(
-    resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
     libraryDependencies ++= Seq(
       nscalaTime,
       "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
