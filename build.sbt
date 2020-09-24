@@ -176,7 +176,7 @@ lazy val data = project
       "org.apache.ivy" % "ivy" % "2.4.0",
       "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-json4s" % "1.29.1",
-      "org.json4s" %% "json4s-native" % "3.5.3",
+      "org.json4s" %% "json4s-native" % "3.5.5",
       "com.jsuereth" %% "scala-arm" % scalaArmVersion,
       "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Runtime,
     ),
