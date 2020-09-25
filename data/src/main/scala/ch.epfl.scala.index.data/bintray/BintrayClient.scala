@@ -191,7 +191,7 @@ class BintrayClient private (
 object BintrayClient {
 
   /**
-   * Creates a BintrayClient that must be closed automatically after usage.
+   * Creates a BintrayClient that must be closed after usage.
    *
    * @param credentials Path to the Bintray credentials file
    * @return
