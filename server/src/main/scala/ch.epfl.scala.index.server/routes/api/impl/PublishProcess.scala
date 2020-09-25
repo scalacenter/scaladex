@@ -34,10 +34,7 @@ private[api] class PublishProcess(paths: DataPaths,
   import system.dispatcher
   private val log = LoggerFactory.getLogger(getClass)
   private val indexingActor = system.actorOf(
-    Props(classOf[impl.IndexingActor],
-          paths,
-          dataRepository,
-          system)
+    Props(classOf[impl.IndexingActor], paths, dataRepository, system)
   )
 
   /**

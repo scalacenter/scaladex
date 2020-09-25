@@ -65,7 +65,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
               .zip(
                 BinaryVersion.parse(rawSbtVersion)
               ) match {
-              case List((scalaVersion, sbtVersion)) =>
+              case Some((scalaVersion, sbtVersion)) =>
                 Some(
                   ArtifactMeta(
                     artifactName = pom.artifactId,

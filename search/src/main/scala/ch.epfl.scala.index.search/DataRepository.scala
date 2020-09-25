@@ -25,7 +25,7 @@ import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.
 import org.elasticsearch.search.sort.SortOrder
 import resource.ManagedResource
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
@@ -314,7 +314,7 @@ class DataRepository(esClient: TcpClient,
 
   def getMostDependentUpon(): Future[List[Project]] = {
     val request = search(indexName / projectsCollection)
-      .query(matchAllQuery)
+      .query(matchAllQuery())
       .limit(frontPageCount)
       .sortBy(sortQuery(Some("dependentCount")))
     esClient
@@ -576,10 +576,10 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
         fieldSort("dependentCount") missing "0" order SortOrder.DESC // mode MultiMode.Avg
       case Some("contributors") =>
         fieldSort("github.contributorCount") missing "0" order SortOrder.DESC // mode MultiMode.Avg
-      case Some("relevant") => scoreSort order SortOrder.DESC
+      case Some("relevant") => scoreSort() order SortOrder.DESC
       case Some("created")  => fieldSort("created") order SortOrder.DESC
       case Some("updated")  => fieldSort("updated") order SortOrder.DESC
-      case _                => scoreSort order SortOrder.DESC
+      case _                => scoreSort() order SortOrder.DESC
     }
 
   private val notDeprecatedQuery: QueryDefinition = {
@@ -592,7 +592,7 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
   ): QueryDefinition = {
     val (filters, plainText) =
       queryString
-        .replaceAllLiterally("/", "\\/")
+        .replace("/", "\\/")
         .split(" AND ")
         .partition(_.contains(":")) match {
         case (luceneQueries, plainTerms) =>
@@ -781,6 +781,6 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
   private def optionalQuery[P](
       param: Option[P]
   )(query: P => QueryDefinition): QueryDefinition = {
-    param.map(query).getOrElse(matchAllQuery)
+    param.map(query).getOrElse(matchAllQuery())
   }
 }

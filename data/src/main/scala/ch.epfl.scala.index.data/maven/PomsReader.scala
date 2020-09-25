@@ -15,13 +15,15 @@ import org.slf4j.LoggerFactory
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
+import scala.collection.parallel.CollectionConverters._
+
 case class MissingParentPom(dep: maven.Dependency) extends Exception
 
 object PomsReader {
   def path(dep: maven.Dependency) = {
     import dep._
     List(
-      groupId.replaceAllLiterally(".", "/"),
+      groupId.replace(".", "/"),
       artifactId,
       version,
       artifactId + "-" + version + ".pom"
@@ -126,7 +128,7 @@ private[maven] class PomsReader(pomsPath: Path,
 
   def iterator()
     : ManagedResource[Iterator[(ReleaseModel, LocalPomRepository, String)]] = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
 
     resource
       .managed(Files.newDirectoryStream(pomsPath))
@@ -136,7 +138,7 @@ private[maven] class PomsReader(pomsPath: Path,
   }
 
   def load(): List[Try[(ReleaseModel, LocalPomRepository, String)]] = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
 
     val s = Files.newDirectoryStream(pomsPath)
     val rawPoms = s.asScala.toList

@@ -213,6 +213,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
     val dependentCountByProject = allDependencies
       .collect { case d: ScalaDependency => d }
       .groupBy(d => d.target.projectReference)
+      .view
       .mapValues(_.map(_.dependent.projectReference).distinct.size)
 
     projectsAndReleases.iterator.map {

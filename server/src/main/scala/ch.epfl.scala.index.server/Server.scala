@@ -86,7 +86,7 @@ object Server {
     import session.implicits._
     val exceptionHandler = ExceptionHandler {
       case ex: Exception
-          if hasParent(classOf[SearchPhaseExecutionException], ex) =>
+          if hasParent(classOf[SearchPhaseExecutionException], ex)() =>
         ex.printStackTrace()
 
         optionalSession(refreshable, usingCookies) { userId =>

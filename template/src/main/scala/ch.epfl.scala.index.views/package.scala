@@ -114,8 +114,8 @@ package object html {
     play.twirl.api.HtmlFormat
       .escape(in)
       .toString
-      .replaceAllLiterally("url(&#x27;", "url('")
-      .replaceAllLiterally("&#x27;)", "')")
+      .replace("url(&#x27;", "url('")
+      .replace("&#x27;)", "')")
   }
 
   def formatDate(date: String): String = {

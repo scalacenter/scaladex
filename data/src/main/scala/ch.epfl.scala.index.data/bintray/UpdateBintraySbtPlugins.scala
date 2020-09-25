@@ -12,7 +12,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.ivy.core.settings.IvySettings
 import org.apache.ivy.plugins.parser.xml.XmlModuleDescriptorParser
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -72,10 +72,10 @@ class UpdateBintraySbtPlugins(
 
       // searching for ivys.xml in the sbt/sbt-plugin-releases will not look into the linked packages
       // That is why we group the packages by repositories and then we search in every repository
-      packagesByRepo = packagesToUpdate.groupBy(p => (p.owner, p.repo))
+      packagesByRepo = packagesToUpdate.groupBy(p => (p.owner, p.repo)).toSeq
 
       _ = logger.info(
-        s"found ${packagesToUpdate.size} packages to update in ${packagesByRepo.keys.size} repositories"
+        s"found ${packagesToUpdate.size} packages to update in ${packagesByRepo.size} repositories"
       )
 
       sbtPlugins <- Future

@@ -99,10 +99,7 @@ class PublishApi(
   implicit val timeout = Timeout(40.seconds)
   private val actor =
     system.actorOf(
-      Props(classOf[impl.PublishActor],
-            paths,
-            dataRepository,
-            system)
+      Props(classOf[impl.PublishActor], paths, dataRepository, system)
     )
 
   private val githubCredentialsCache =
@@ -116,7 +113,7 @@ class PublishApi(
     concat(
       get(
         path("publish")(
-          parameter('path)(
+          parameter("path")(
             path =>
               complete(
                 /* check if the release already exists - sbt will handle HTTP-Status codes
@@ -135,11 +132,11 @@ class PublishApi(
         path("publish")(
           parameters(
             (
-              'path,
-              'created.as(DateTimeUn) ? DateTime.now,
-              'readme.as[Boolean] ? true,
-              'contributors.as[Boolean] ? true,
-              'info.as[Boolean] ? true
+              "path",
+              "created".as(DateTimeUn) ? DateTime.now,
+              "readme".as[Boolean] ? true,
+              "contributors".as[Boolean] ? true,
+              "info".as[Boolean] ? true
             )
           )(
             (path, created, readme, contributors, info) =>

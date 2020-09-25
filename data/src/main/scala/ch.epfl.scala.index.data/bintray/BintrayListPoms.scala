@@ -58,7 +58,7 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
 
     request
       .withRequestFilter(AhcCurlRequestLogger())
-      .get
+      .get()
       .flatMap { response =>
         if (200 == response.status) {
           Future.successful {
@@ -149,7 +149,7 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
     /* the filter to make sure only this artifact get's added */
     def filter(bintray: BintraySearch): Boolean = {
       bintray.path.startsWith(
-        groupId.replaceAllLiterally(".", "/") + "/" + artifact
+        groupId.replace(".", "/") + "/" + artifact
       )
     }
 

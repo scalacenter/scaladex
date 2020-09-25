@@ -38,7 +38,7 @@ class GithubRepoExtractor(paths: DataPaths) {
     .map { claim =>
       val List(groupId, artifactIdRawRegex) = claim.pattern.split(" ").toList
       val artifactIdRegex =
-        artifactIdRawRegex.replaceAllLiterally("*", "(.*)").r
+        artifactIdRawRegex.replace("*", "(.*)").r
       val matcher: maven.ReleaseModel => Boolean = pom => {
         def artifactMatches =
           artifactIdRawRegex == "*" ||
@@ -103,7 +103,7 @@ class GithubRepoExtractor(paths: DataPaths) {
       .distinct
       .map(Claim(_, void))
     val out = writePretty(Claims(notClaimed ++ claims))
-      .replaceAllLiterally("\":\"", "\": \"") // make json breath
+      .replace("\":\"", "\": \"") // make json breath
 
     Files.delete(paths.claims)
     Files.write(paths.claims, out.getBytes(StandardCharsets.UTF_8))

@@ -88,7 +88,7 @@ class BintrayClient private (
                  packageName: String): Future[BintrayPackage] = {
     val request = client.url(s"$apiUrl/packages/$subject/$repo/$packageName")
 
-    withAuth(request).get.map {
+    withAuth(request).get().map {
       decodeSucessfulJson { json =>
         json.extract[BintrayPackage]
       }

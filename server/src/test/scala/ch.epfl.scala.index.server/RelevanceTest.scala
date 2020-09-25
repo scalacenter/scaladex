@@ -224,7 +224,7 @@ class RelevanceTest
     }
   }
 
-  override def afterAll {
+  override def afterAll(): Unit = {
     TestKit.shutdownActorSystem(system)
     data.close()
   }

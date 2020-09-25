@@ -29,13 +29,13 @@ class IndexingActor(
   def receive = {
     case updateIndexData: UpdateIndex =>
       // TODO be non-blocking
-      sender ! Await.result(updateIndex(
-                              updateIndexData.repo,
-                              updateIndexData.pom,
-                              updateIndexData.data,
-                              updateIndexData.localRepo
-                            ),
-                            1.minute)
+      sender() ! Await.result(updateIndex(
+                                updateIndexData.repo,
+                                updateIndexData.pom,
+                                updateIndexData.data,
+                                updateIndexData.localRepo
+                              ),
+                              1.minute)
   }
 
   /**
@@ -83,7 +83,7 @@ class IndexingActor(
           List((pom, localRepository, data.hash)),
           project.map(p => p.reference -> releases).toMap
         )
-        .next
+        .next()
 
       val projectUpdate = project match {
         case Some(project) =>

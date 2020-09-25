@@ -43,7 +43,7 @@ class ProgressBar(inner: PB, logger: Logger, count: Int) {
     val pp = ((c.toDouble / count) * 100).toInt
 
     if (printed < pp) {
-      logger.debug(pp + "%")
+      logger.debug(s"$pp%")
       printed = pp
     }
   }

@@ -90,15 +90,15 @@ class SearchApi(
         path("search") {
           get {
             parameters(
-              ('q,
-               'target,
-               'scalaVersion,
-               'page.as[Int].?,
-               'total.as[Int].?,
-               'scalaJsVersion.?,
-               'scalaNativeVersion.?,
-               'sbtVersion.?,
-               'cli.as[Boolean] ? false)
+              ("q",
+               "target",
+               "scalaVersion",
+               "page".as[Int].?,
+               "total".as[Int].?,
+               "scalaJsVersion".?,
+               "scalaNativeVersion".?,
+               "sbtVersion".?,
+               "cli".as[Boolean] ? false)
             ) {
               (
                   q,
@@ -155,14 +155,14 @@ class SearchApi(
           path("project") {
             get {
               parameters(
-                ('organization,
-                 'repository,
-                 'artifact.?,
-                 'target.?,
-                 'scalaVersion.?,
-                 'scalaJsVersion.?,
-                 'scalaNativeVersion.?,
-                 'sbtVersion.?)
+                ("organization",
+                 "repository",
+                 "artifact".?,
+                 "target".?,
+                 "scalaVersion".?,
+                 "scalaJsVersion".?,
+                 "scalaNativeVersion".?,
+                 "sbtVersion".?)
               ) {
                 (organization,
                  repository,

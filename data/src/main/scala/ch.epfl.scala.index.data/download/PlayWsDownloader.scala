@@ -63,7 +63,7 @@ trait PlayWsDownloader {
         Source(toDownload).mapAsyncUnordered(parallelism) { item =>
           val request =
             downloadUrl(client, item).withRequestFilter(AhcCurlRequestLogger())
-          val response = request.get
+          val response = request.get()
 
           response.transform(
             data => {
@@ -114,7 +114,7 @@ trait PlayWsDownloader {
 
     def processItem(client: WSClient, item: T, progress: ProgressBar) = {
       val request = downloadUrl(client, item)
-      val response = request.get
+      val response = request.get()
 
       response.flatMap { data =>
         if (toDownload.size > 1) {

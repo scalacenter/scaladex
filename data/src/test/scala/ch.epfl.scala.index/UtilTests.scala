@@ -5,39 +5,41 @@ package project
 import org.scalatest._
 
 class UtilTests extends FunSpec {
-  private val empty = Map.empty[Symbol, String]
+  private val empty = Map.empty[String, String]
 
   describe("innerJoin") {
     val left = Map(
-      'a -> "la",
-      'b -> "lb",
-      'c -> "lc"
+      "a" -> "la",
+      "b" -> "lb",
+      "c" -> "lc"
     )
 
     val right = Map(
-      'a -> "ra",
-      'b -> "rb",
-      'c -> "rc"
+      "a" -> "ra",
+      "b" -> "rb",
+      "c" -> "rc"
     )
 
     it("example") {
       assert(
         innerJoin(left, right)((a, b) => (a, b)) ==
-          Map('a -> (("la", "ra")), 'b -> (("lb", "rb")), 'c -> (("lc", "rc")))
+          Map("a" -> (("la", "ra")),
+              "b" -> (("lb", "rb")),
+              "c" -> (("lc", "rc")))
       )
     }
 
     it("discard missing left keys") {
       assert(
-        innerJoin(left - 'a, right)((_, _)) ==
-          Map('b -> (("lb", "rb")), 'c -> (("lc", "rc")))
+        innerJoin(left - "a", right)((_, _)) ==
+          Map("b" -> (("lb", "rb")), "c" -> (("lc", "rc")))
       )
     }
 
     it("discard missing right keys") {
       assert(
-        innerJoin(left, right - 'a)((_, _)) ==
-          Map('b -> (("lb", "rb")), 'c -> (("lc", "rc")))
+        innerJoin(left, right - "a")((_, _)) ==
+          Map("b" -> (("lb", "rb")), "c" -> (("lc", "rc")))
       )
     }
 
@@ -61,33 +63,33 @@ class UtilTests extends FunSpec {
   }
 
   describe("upsert") {
-    val ma = Map('a -> Seq(1))
+    val ma = Map("a" -> Seq(1))
 
     it("insert if key is not found") {
       assert(
-        upsert(ma, 'b, 1) ==
-          Map('a -> Seq(1), 'b -> Seq(1))
+        upsert(ma, "b", 1) ==
+          Map("a" -> Seq(1), "b" -> Seq(1))
       )
     }
 
     it("append if key is found") {
       assert(
-        upsert(ma, 'a, 2) == Map('a -> Seq(1, 2))
+        upsert(ma, "a", 2) == Map("a" -> Seq(1, 2))
       )
     }
   }
 
   describe("fullOuterJoin") {
     val left = Map(
-      'a -> "la",
-      'b -> "lb",
-      'c -> "lc"
+      "a" -> "la",
+      "b" -> "lb",
+      "c" -> "lc"
     )
 
     val right = Map(
-      'b -> "rb",
-      'c -> "rc",
-      'd -> "rd"
+      "b" -> "rb",
+      "c" -> "rc",
+      "d" -> "rd"
     )
     it("left empty") {
       assert(
@@ -110,10 +112,10 @@ class UtilTests extends FunSpec {
     it("example") {
       assert(
         fullOuterJoin(left, right)(_ + _)(l => l)(r => r) == Map(
-          'a -> "la",
-          'b -> "lbrb",
-          'c -> "lcrc",
-          'd -> "rd"
+          "a" -> "la",
+          "b" -> "lbrb",
+          "c" -> "lcrc",
+          "d" -> "rd"
         )
       )
     }

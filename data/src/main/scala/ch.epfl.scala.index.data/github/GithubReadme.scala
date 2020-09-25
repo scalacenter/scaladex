@@ -36,7 +36,7 @@ private[github] object GithubReadme {
           (attr, href)
         } else ("src", raw)
 
-        e.attr(at, e.absUrl(at).replaceAllLiterally(someUrl, replace))
+        e.attr(at, e.absUrl(at).replace(someUrl, replace))
       }
 
     doc.body.childNodes.toArray.mkString("")

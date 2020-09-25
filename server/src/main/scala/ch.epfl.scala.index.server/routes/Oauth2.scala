@@ -62,7 +62,7 @@ class Oauth2(config: OAuth2Config, github: Github, session: GithubUserSession)(
               complete("OK")
             ),
             pathEnd(
-              parameters(('code, 'state.?)) { (code, state) =>
+              parameters(("code", "state".?)) { (code, state) =>
                 val userStateQuery = github.getUserStateWithOauth2(
                   config.clientId,
                   config.clientSecret,

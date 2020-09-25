@@ -59,7 +59,7 @@ object CentralMissing {
       created: DateTime
   ) {
     def path: String = {
-      val groupIdPath = groupId.replaceAllLiterally(".", "/")
+      val groupIdPath = groupId.replace(".", "/")
       s"/$groupIdPath/$artifactId/$version/$artifactId-$version.pom"
     }
   }

@@ -403,7 +403,7 @@ class GithubDownload(paths: DataPaths,
       val request1 =
         baseRequest
           .addHttpHeaders("Authorization" -> s"bearer ${credential(0)}")
-      val response1 = Await.result(request1.get, Duration.Inf)
+      val response1 = Await.result(request1.get(), Duration.Inf)
       val reset1 = new DateTime(
         response1.header("X-RateLimit-Reset").getOrElse("0").toLong * 1000
       )
@@ -412,7 +412,7 @@ class GithubDownload(paths: DataPaths,
         val request2 = baseRequest.addHttpHeaders(
           "Authorization" -> s"bearer ${credential(1)}"
         )
-        val response2 = Await.result(request2.get, Duration.Inf)
+        val response2 = Await.result(request2.get(), Duration.Inf)
         new DateTime(
           response2.header("X-RateLimit-Reset").getOrElse("0").toLong * 1000
         )

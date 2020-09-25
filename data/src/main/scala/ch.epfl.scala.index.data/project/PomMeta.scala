@@ -48,6 +48,7 @@ object PomMeta {
       SbtPluginsData(paths.ivysData)
         .read()
         .groupBy(_.sha1)
+        .view
         .mapValues(_.head.created) // Note: This is inefficient because we already loaded the data earlier and discarded the creation time
 
     val packagingOfInterest = Set("aar", "jar", "bundle", "pom")
