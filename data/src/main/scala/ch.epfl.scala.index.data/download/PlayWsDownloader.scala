@@ -211,8 +211,8 @@ object PlayWsClient {
 
   /**
    * Creates a Play Web Service Client.
-   * You should avoid using too many [[WSClient]]s by reusing an open [[WSClient]] as much as possible.
-   * A good balance is to use one [[WSClient]] by targeted web service.
+   * You should avoid using too many WSClients by reusing an open WSClient as much as possible.
+   * A good balance is to use one WSClient by targeted web service.
    */
   def open()(implicit mat: Materializer): WSClient = {
     val configuration = Configuration.reference.withFallback(
