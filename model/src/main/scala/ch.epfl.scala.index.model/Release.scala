@@ -195,12 +195,12 @@ case class Release(
    */
   private def evalLink(rawLink: String): String = {
     rawLink
-      .replaceAllLiterally("[groupId]", maven.groupId.toString)
-      .replaceAllLiterally("[artifactId]", maven.artifactId.toString)
-      .replaceAllLiterally("[version]", reference.version.toString)
-      .replaceAllLiterally("[major]", reference.version.major.toString)
-      .replaceAllLiterally("[minor]", reference.version.minor.toString)
-      .replaceAllLiterally("[name]", reference.artifact)
+      .replace("[groupId]", maven.groupId.toString)
+      .replace("[artifactId]", maven.artifactId.toString)
+      .replace("[version]", reference.version.toString)
+      .replace("[major]", reference.version.major.toString)
+      .replace("[minor]", reference.version.minor.toString)
+      .replace("[name]", reference.artifact)
   }
 
   def isScalaLib: Boolean = reference.isScalaLib

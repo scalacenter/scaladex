@@ -11,7 +11,7 @@ import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.unmarshalling._
-import akka.stream.{Materializer, ThrottleMode}
+import akka.stream.{ThrottleMode}
 import akka.stream.scaladsl._
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.project.ArtifactMetaExtractor
@@ -59,7 +59,7 @@ object CentralMissing {
       created: DateTime
   ) {
     def path: String = {
-      val groupIdPath = groupId.replaceAllLiterally(".", "/")
+      val groupIdPath = groupId.replace(".", "/")
       s"/$groupIdPath/$artifactId/$version/$artifactId-$version.pom"
     }
   }
@@ -79,8 +79,7 @@ object TimestampSerializer
       )
     )
 
-class CentralMissing(paths: DataPaths)(implicit val materializer: Materializer,
-                                       val system: ActorSystem) {
+class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
   import CentralMissing._
 
   private implicit val formats = DefaultFormats ++ Seq(TimestampSerializer)

@@ -14,6 +14,7 @@ import org.json4s.{CustomSerializer, DefaultFormats, Formats, JValue}
 import scala.io.Source
 import scala.util.Success
 import scala.util.matching.Regex
+import scala.util.Using
 
 class GithubRepoExtractor(paths: DataPaths) {
   object ClaimSerializer
@@ -28,17 +29,16 @@ class GithubRepoExtractor(paths: DataPaths) {
 
   private def matches(m: Regex, s: String): Boolean = m.unapplySeq(s).isDefined
   private val claims =
-    resource.managed(Source.fromFile(paths.claims.toFile)).acquireAndGet {
-      source =>
-        read[Claims](source.mkString).claims
-          .filter(_.repo != void) // when the repository is void, the project is not claimed
+    Using.resource(Source.fromFile(paths.claims.toFile)) { source =>
+      read[Claims](source.mkString).claims
+        .filter(_.repo != void) // when the repository is void, the project is not claimed
     }
 
   private val claimedRepos = claims
     .map { claim =>
       val List(groupId, artifactIdRawRegex) = claim.pattern.split(" ").toList
       val artifactIdRegex =
-        artifactIdRawRegex.replaceAllLiterally("*", "(.*)").r
+        artifactIdRawRegex.replace("*", "(.*)").r
       val matcher: maven.ReleaseModel => Boolean = pom => {
         def artifactMatches =
           artifactIdRawRegex == "*" ||
@@ -103,7 +103,7 @@ class GithubRepoExtractor(paths: DataPaths) {
       .distinct
       .map(Claim(_, void))
     val out = writePretty(Claims(notClaimed ++ claims))
-      .replaceAllLiterally("\":\"", "\": \"") // make json breath
+      .replace("\":\"", "\": \"") // make json breath
 
     Files.delete(paths.claims)
     Files.write(paths.claims, out.getBytes(StandardCharsets.UTF_8))

@@ -6,7 +6,6 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.download.{PlayWsClient, PlayWsDownloader}
 import ch.epfl.scala.index.data.elastic.SaveLiveData
@@ -14,7 +13,7 @@ import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubRepo
 import com.typesafe.config.ConfigFactory
-import jawn.support.json4s.Parser
+import org.typelevel.jawn.support.json4s.Parser
 import org.joda.time.DateTime
 import org.json4s.native.Serialization._
 import org.slf4j.LoggerFactory
@@ -26,8 +25,7 @@ import scala.concurrent.duration.Duration
 import scala.util._
 
 object GithubDownload {
-  def run(paths: DataPaths)(implicit system: ActorSystem,
-                            mat: Materializer): Unit = {
+  def run(paths: DataPaths)(implicit system: ActorSystem): Unit = {
     val githubRepoExtractor = new GithubRepoExtractor(paths)
 
     val githubRepos: Set[GithubRepo] = PomsReader
@@ -42,8 +40,7 @@ object GithubDownload {
 
 class GithubDownload(paths: DataPaths,
                      privateCredentials: Option[Credentials] = None)(
-    implicit val system: ActorSystem,
-    implicit val materializer: Materializer
+    implicit val system: ActorSystem
 ) extends PlayWsDownloader {
 
   private val log = LoggerFactory.getLogger(getClass)
@@ -398,7 +395,7 @@ class GithubDownload(paths: DataPaths,
     // so won't hit rate limit but if you hit GraphQL API for more things, you would
     // need to check rate limit reset times for GraphQL API as well and pick max one
 
-    val (reset1, reset2) = PlayWsClient.open().acquireAndGet { client =>
+    val (reset1, reset2) = Using.resource(PlayWsClient.open()) { client =>
       val baseRequest = client
         .url("https://api.github.com")
         .addHttpHeaders("Accept" -> "application/json")
@@ -406,7 +403,7 @@ class GithubDownload(paths: DataPaths,
       val request1 =
         baseRequest
           .addHttpHeaders("Authorization" -> s"bearer ${credential(0)}")
-      val response1 = Await.result(request1.get, Duration.Inf)
+      val response1 = Await.result(request1.get(), Duration.Inf)
       val reset1 = new DateTime(
         response1.header("X-RateLimit-Reset").getOrElse("0").toLong * 1000
       )
@@ -415,7 +412,7 @@ class GithubDownload(paths: DataPaths,
         val request2 = baseRequest.addHttpHeaders(
           "Authorization" -> s"bearer ${credential(1)}"
         )
-        val response2 = Await.result(request2.get, Duration.Inf)
+        val response2 = Await.result(request2.get(), Duration.Inf)
         new DateTime(
           response2.header("X-RateLimit-Reset").getOrElse("0").toLong * 1000
         )

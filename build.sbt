@@ -4,25 +4,16 @@ import sbtcrossproject.CrossPlugin.autoImport.crossProject
 import Deployment.githash
 
 val playJsonVersion = "2.9.0"
-val akkaVersion = "2.5.3"
-val akkaHttpVersion = "10.0.11"
-val elastic4sVersion = "5.4.5"
-lazy val scalaTestVersion = "3.0.1"
-
-def akka(module: String) =
-  "com.typesafe.akka" %% ("akka-" + module) % akkaVersion
-
-def akkaHttpCore = "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
-
-val playJson =
-  libraryDependencies += "com.typesafe.play" %%% "play-json" % playJsonVersion
-
-val nscalaTime = "com.github.nscala-time" %% "nscala-time" % "2.14.0"
+val akkaVersion = "2.6.5"
+val akkaHttpVersion = "10.1.12"
+val elastic4sVersion = "5.6.11"
+val log4jVersion = "2.13.3"
+val nscalaTimeVersion = "2.24.0"
 
 lazy val logging =
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.1.7",
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
     "com.getsentry.raven" % "raven-logback" % "8.0.3"
   )
 
@@ -51,16 +42,16 @@ lazy val ammoniteSettings = Seq(
 )
 
 lazy val commonSettings = Seq(
-  resolvers += Resolver.typesafeIvyRepo("releases"),
-  scalaVersion := "2.12.12",
-  scalacOptions := Seq(
+  scalaVersion := "2.13.3",
+  scalacOptions ++= Seq(
     "-deprecation",
     "-encoding",
     "UTF-8",
     "-feature",
-    "-unchecked"
+    "-unchecked",
+    "-Xfatal-warnings"
   ),
-  libraryDependencies += "org.scalatest" %% "scalatest" % scalaTestVersion % Test,
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.9" % Test,
   javaOptions in reStart ++= {
     val base = (baseDirectory in ThisBuild).value
 
@@ -94,9 +85,9 @@ lazy val template = project
   .settings(
     scalacOptions -= "-Xfatal-warnings",
     libraryDependencies ++= Seq(
-      nscalaTime,
-      "com.typesafe" % "config" % "1.3.1",
-      akkaHttpCore
+      "com.github.nscala-time" %% "nscala-time" % nscalaTimeVersion,
+      "com.typesafe" % "config" % "1.4.0",
+      "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
     )
   )
   .dependsOn(model)
@@ -108,16 +99,19 @@ lazy val search = project
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
       "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion,
-      "org.json4s" %% "json4s-native" % "3.5.3",
-      "org.spire-math" %% "jawn-json4s" % "0.11.0",
-      "com.jsuereth" %% "scala-arm" % "2.0"
+      "org.json4s" %% "json4s-native" % "3.6.9",
+      "org.typelevel" %% "jawn-json4s" % "1.0.0"
     )
   )
   .dependsOn(model)
 
 lazy val api = crossProject(JSPlatform, JVMPlatform)
   .settings(commonSettings)
-  .settings(playJson)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.typesafe.play" %%% "play-json" % playJsonVersion
+    )
+  )
 
 lazy val client = project
   .settings(commonSettings)
@@ -133,22 +127,22 @@ lazy val client = project
 lazy val server = project
   .settings(commonSettings)
   .settings(packageScalaJS(client))
-  .settings(playJson)
   .settings(
     libraryDependencies ++= Seq(
-      akka("testkit") % Test,
+      "com.typesafe.play" %%% "play-json" % playJsonVersion,
+      "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
       "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
-      "ch.megard" %% "akka-http-cors" % "0.2.1",
-      "com.softwaremill.akka-http-session" %% "core" % "0.5.3",
+      "ch.megard" %% "akka-http-cors" % "0.4.3",
+      "com.softwaremill.akka-http-session" %% "core" % "0.5.11",
       "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
       "org.webjars.bower" % "bootstrap-sass" % "3.3.6",
       "org.webjars.bower" % "bootstrap-switch" % "3.3.2",
       "org.webjars.bower" % "bootstrap-select" % "1.10.0",
       "org.webjars.bower" % "font-awesome" % "4.6.3",
       "org.webjars.bower" % "jQuery" % "2.2.4",
       "org.webjars.bower" % "raven-js" % "3.11.0",
-      "org.webjars.bower" % "select2" % "4.0.3"
+      "org.webjars.bower" % "select2" % "4.0.3",
+      "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Runtime
     ),
     packageBin in Universal := (packageBin in Universal)
       .dependsOn(WebKeys.assets in Assets)
@@ -163,27 +157,27 @@ lazy val server = project
 lazy val model = project
   .settings(commonSettings)
   .settings(
-    libraryDependencies += "com.lihaoyi" %% "fastparse" % "2.2.3"
+    libraryDependencies += "com.lihaoyi" %% "fastparse" % "2.3.0"
   )
 
 lazy val data = project
   .settings(commonSettings)
   .settings(
-    resolvers += Resolver.bintrayRepo("hseeberger", "maven"),
     libraryDependencies ++= Seq(
-      nscalaTime,
+      "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0",
+      "com.github.nscala-time" %% "nscala-time" % nscalaTimeVersion,
       "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
       "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion,
       "com.typesafe.akka" %% "akka-stream" % akkaVersion,
       "me.tongfei" % "progressbar" % "0.5.5",
       "org.apache.maven" % "maven-model-builder" % "3.3.9",
       "org.jsoup" % "jsoup" % "1.10.1",
-      "com.typesafe.play" %% "play-ahc-ws" % "2.6.12",
+      "com.typesafe.play" %% "play-ahc-ws" % "2.8.2",
       "org.apache.ivy" % "ivy" % "2.4.0",
-      "com.typesafe.akka" %% "akka-http" % "10.0.10",
-      "de.heikoseeberger" %% "akka-http-json4s" % "1.19.0",
-      "org.json4s" %% "json4s-native" % "3.5.3",
-      "com.jsuereth" %% "scala-arm" % "2.0"
+      "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
+      "de.heikoseeberger" %% "akka-http-json4s" % "1.29.1",
+      "org.json4s" %% "json4s-native" % "3.5.5",
+      "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Runtime,
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),

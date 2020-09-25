@@ -5,20 +5,19 @@ import java.net.URL
 import java.nio.file.{Files, Path}
 
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 import ch.epfl.scala.index.data.download.PlayWsClient
-import jawn.support.json4s.Parser
+import org.typelevel.jawn.support.json4s.Parser
 import org.json4s.JsonAST.JValue
 import play.api.libs.ws.{WSAuthScheme, WSClient, WSRequest, WSResponse}
-import resource.ManagedResource
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import scala.util.Using
+import java.io.Closeable
 
 /**
  * [[BintrayClient]] allows to query the Bintray REST API (https://bintray.com/docs/api/)
- * A Bintray Client encapsulates a WSClient that should be closed after usage.
- * A managed [[BintrayClient]] can be created using the companion object.
+ * A Bintray Client encapsulates a WSClient that must be closed after usage.
  *
  * @param credentials Path to the Bintray credentials file
  * @param client A Play Web Service client that is used internally to communicate with the Bintray REST API
@@ -28,7 +27,8 @@ class BintrayClient private (
     credentials: Path,
     val client: WSClient // TODO should be private
 )(implicit ec: ExecutionContext)
-    extends BintrayProtocol {
+    extends BintrayProtocol
+    with Closeable {
   import BintrayClient._
 
   val bintrayCredentials = {
@@ -89,7 +89,7 @@ class BintrayClient private (
                  packageName: String): Future[BintrayPackage] = {
     val request = client.url(s"$apiUrl/packages/$subject/$repo/$packageName")
 
-    withAuth(request).get.map {
+    withAuth(request).get().map {
       decodeSucessfulJson { json =>
         json.extract[BintrayPackage]
       }
@@ -184,22 +184,23 @@ class BintrayClient private (
     }
     decode(Parser.parseUnsafe(response.body))
   }
+
+  def close(): Unit = client.close()
 }
 
 object BintrayClient {
 
   /**
-   * Creates a managed BintrayClient that will be closed automatically after usage.
+   * Creates a BintrayClient that must be closed after usage.
    *
    * @param credentials Path to the Bintray credentials file
    * @return
    */
   def create(credentials: Path)(
-      implicit mat: Materializer,
-      sys: ActorSystem
-  ): ManagedResource[BintrayClient] = {
-    for (client <- PlayWsClient.open())
-      yield new BintrayClient(credentials, client)(sys.dispatcher)
+      implicit sys: ActorSystem
+  ): BintrayClient = {
+    val client = PlayWsClient.open()
+    new BintrayClient(credentials, client)(sys.dispatcher)
   }
 
   /**

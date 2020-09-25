@@ -7,17 +7,17 @@ import ch.epfl.scala.index.model.misc.SearchParams
 package object routes {
   def searchParams(user: Option[UserState]): Directive1[SearchParams] =
     parameters(
-      ('q ? "*",
-       'page.as[Int] ? 1,
-       'sort.?,
-       'topics.*,
-       'targetTypes.*,
-       'scalaVersions.*,
-       'scalaJsVersions.*,
-       'scalaNativeVersions.*,
-       'sbtVersions.*,
-       'you.?,
-       'contributingSearch.as[Boolean] ? false)
+      ("q" ? "*",
+       "page".as[Int] ? 1,
+       "sort".?,
+       "topics".as[String].*,
+       "targetTypes".as[String].*,
+       "scalaVersions".as[String].*,
+       "scalaJsVersions".as[String].*,
+       "scalaNativeVersions".as[String].*,
+       "sbtVersions".as[String].*,
+       "you".?,
+       "contributingSearch".as[Boolean] ? false)
     ).tmap {
       case (q,
             page,

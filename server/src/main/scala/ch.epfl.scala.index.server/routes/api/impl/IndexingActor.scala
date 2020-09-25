@@ -5,7 +5,6 @@ package api
 package impl
 
 import akka.actor.{Actor, ActorSystem}
-import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.maven.ReleaseModel
@@ -22,8 +21,7 @@ import scala.concurrent.{Await, Future}
 class IndexingActor(
     paths: DataPaths,
     dataRepository: DataRepository,
-    implicit val system: ActorSystem,
-    implicit val materializer: ActorMaterializer
+    implicit val system: ActorSystem
 ) extends Actor {
   private val log = LoggerFactory.getLogger(getClass)
   import system.dispatcher
@@ -31,13 +29,13 @@ class IndexingActor(
   def receive = {
     case updateIndexData: UpdateIndex =>
       // TODO be non-blocking
-      sender ! Await.result(updateIndex(
-                              updateIndexData.repo,
-                              updateIndexData.pom,
-                              updateIndexData.data,
-                              updateIndexData.localRepo
-                            ),
-                            1.minute)
+      sender() ! Await.result(updateIndex(
+                                updateIndexData.repo,
+                                updateIndexData.pom,
+                                updateIndexData.data,
+                                updateIndexData.localRepo
+                              ),
+                              1.minute)
   }
 
   /**
@@ -85,7 +83,7 @@ class IndexingActor(
           List((pom, localRepository, data.hash)),
           project.map(p => p.reference -> releases).toMap
         )
-        .next
+        .next()
 
       val projectUpdate = project match {
         case Some(project) =>

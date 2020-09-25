@@ -12,7 +12,6 @@ import Uri.Query
 import StatusCodes.TemporaryRedirect
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Route
-import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.server.config.{OAuth2Config, ServerConfig}
 import headers.Referer
 import server.Directives._
@@ -63,7 +62,7 @@ class Oauth2(config: OAuth2Config, github: Github, session: GithubUserSession)(
               complete("OK")
             ),
             pathEnd(
-              parameters(('code, 'state.?)) { (code, state) =>
+              parameters(("code", "state".?)) { (code, state) =>
                 val userStateQuery = github.getUserStateWithOauth2(
                   config.clientId,
                   config.clientSecret,
@@ -102,7 +101,7 @@ object Oauth2 {
   def apply(
       config: ServerConfig,
       session: GithubUserSession
-  )(implicit sys: ActorSystem, mat: ActorMaterializer): Oauth2 = {
+  )(implicit sys: ActorSystem): Oauth2 = {
     import sys.dispatcher
     new Oauth2(config.oAuth2, Github(), session)
   }

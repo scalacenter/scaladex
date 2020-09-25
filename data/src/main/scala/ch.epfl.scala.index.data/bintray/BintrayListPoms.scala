@@ -5,14 +5,13 @@ package bintray
 import java.nio.file.Files
 
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 import akka.stream.scaladsl.{FileIO, Flow, Keep, Source}
 import akka.util.ByteString
 import ch.epfl.scala.index.data.cleanup.NonStandardLib
 import ch.epfl.scala.index.data.download.PlayWsDownloader
 import ch.epfl.scala.index.model._
 import com.github.nscala_time.time.Imports._
-import jawn.support.json4s.Parser
+import org.typelevel.jawn.support.json4s.Parser
 import org.json4s._
 import org.json4s.native.Serialization.write
 import org.slf4j.LoggerFactory
@@ -21,10 +20,10 @@ import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.Using
 
 class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
-    implicit val system: ActorSystem,
-    implicit val materializer: Materializer
+    implicit val system: ActorSystem
 ) extends BintrayProtocol
     with PlayWsDownloader {
 
@@ -60,7 +59,7 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
 
     request
       .withRequestFilter(AhcCurlRequestLogger())
-      .get
+      .get()
       .flatMap { response =>
         if (200 == response.status) {
           Future.successful {
@@ -151,7 +150,7 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
     /* the filter to make sure only this artifact get's added */
     def filter(bintray: BintraySearch): Boolean = {
       bintray.path.startsWith(
-        groupId.replaceAllLiterally(".", "/") + "/" + artifact
+        groupId.replace(".", "/") + "/" + artifact
       )
     }
 
@@ -238,8 +237,8 @@ object BintrayListPoms {
       paths: DataPaths,
       scalaVersions: Seq[String],
       libs: Seq[NonStandardLib]
-  )(implicit mat: Materializer, sys: ActorSystem) = {
-    for (bintrayClient <- BintrayClient.create(paths.credentials)) {
+  )(implicit sys: ActorSystem) = {
+    Using.resource(BintrayClient.create(paths.credentials)) { bintrayClient =>
       val listPoms = new BintrayListPoms(paths, bintrayClient)
 
       for (scalaVersion <- scalaVersions) {

@@ -14,11 +14,11 @@ import ch.epfl.scala.index.search.DataRepository
 class Badges(dataRepository: DataRepository) {
 
   private val shields = parameters(
-    ('color.?, 'style.?, 'logo.?, 'logoWidth.as[Int].?)
+    ("color".?, "style".?, "logo".?, "logoWidth".as[Int].?)
   )
 
-  private val shieldsOptionalSubject = shields & parameters('subject.?)
-  private val shieldsSubject = shields & parameters('subject)
+  private val shieldsOptionalSubject = shields & parameters("subject".?)
+  private val shieldsSubject = shields & parameters("subject")
 
   private def shieldsSvg(rawSubject: String,
                          rawStatus: String,
@@ -28,9 +28,9 @@ class Badges(dataRepository: DataRepository) {
                          logoWidth: Option[Int]) = {
 
     def shieldEscape(in: String): String =
-      in.replaceAllLiterally("-", "--")
-        .replaceAllLiterally("_", "__")
-        .replaceAllLiterally(" ", "_")
+      in.replace("-", "--")
+        .replace("_", "__")
+        .replace(" ", "_")
 
     val subject = shieldEscape(rawSubject)
     val status = shieldEscape(rawStatus)
@@ -45,7 +45,7 @@ class Badges(dataRepository: DataRepository) {
           ("logo",
            java.net.URLEncoder
              .encode(l, "ascii")
-             .replaceAllLiterally("+", "%2B"))
+             .replace("+", "%2B"))
       ),
       logoWidth.map(w => ("logoWidth", w.toString))
     ).flatten.map { case (k, v) => k + "=" + v }.mkString("?", "&", "")
@@ -61,7 +61,7 @@ class Badges(dataRepository: DataRepository) {
   def latest(organization: String,
              repository: String,
              artifact: Option[String]) = {
-    parameter('target.?) { target =>
+    parameter("target".?) { target =>
       shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
         onSuccess {
           dataRepository.getProjectAndReleaseOptions(
@@ -108,7 +108,7 @@ class Badges(dataRepository: DataRepository) {
           )
         },
         path("count.svg")(
-          parameter('q)(
+          parameter("q")(
             query =>
               shieldsSubject(
                 (color, style, logo, logoWidth, subject) =>

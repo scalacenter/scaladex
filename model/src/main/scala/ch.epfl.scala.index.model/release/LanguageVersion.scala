@@ -5,7 +5,7 @@ import fastparse.NoWhitespace._
 import fastparse._
 
 /**
- * A [[languageVersion]] is the binary version of the compiler frontend.
+ * A [[LanguageVersion]] is the binary version of the compiler frontend.
  * It can be either a [[ScalaVersion]] or a [[DottyVersion]]
  **/
 sealed trait LanguageVersion {

@@ -8,6 +8,7 @@ import play.api.libs.json.JsValue
 import play.api.libs.ws.{WSCookie, WSResponse}
 
 import scala.xml.Elem
+import java.net.URI
 
 class BintrayClientTests extends FlatSpec with Matchers {
   "BintrayClient" should "calculate pagination properly" in {
@@ -41,6 +42,9 @@ class BintrayClientTests extends FlatSpec with Matchers {
 
   private def wsResponseWithHeaders(providedHeaders: Map[String, Seq[String]]) =
     new WSResponse {
+
+      override def uri: URI = ???
+
       override def status: Int = ???
 
       override def statusText: String = ???

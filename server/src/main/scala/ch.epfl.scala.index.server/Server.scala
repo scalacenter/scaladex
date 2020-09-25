@@ -8,7 +8,6 @@ import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.elastic._
 import ch.epfl.scala.index.data.github.GithubDownload
@@ -41,7 +40,6 @@ object Server {
 
     implicit val system: ActorSystem = ActorSystem("scaladex")
     import system.dispatcher
-    implicit val materializer: ActorMaterializer = ActorMaterializer()
 
     val pathFromArgs =
       if (args.isEmpty) Nil
@@ -52,7 +50,7 @@ object Server {
 
     // the DataRepository will not be closed until the end of the process,
     // because of the sbtResolver mode
-    val data = DataRepository.openUnsafe(BuildInfo.baseDirectory)
+    val data = DataRepository.open(BuildInfo.baseDirectory)
 
     val searchPages = new SearchPages(data, session)
     val userFacingRoutes = concat(
@@ -88,7 +86,7 @@ object Server {
     import session.implicits._
     val exceptionHandler = ExceptionHandler {
       case ex: Exception
-          if hasParent(classOf[SearchPhaseExecutionException], ex) =>
+          if hasParent(classOf[SearchPhaseExecutionException], ex)() =>
         ex.printStackTrace()
 
         optionalSession(refreshable, usingCookies) { userId =>

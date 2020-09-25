@@ -129,7 +129,9 @@ object SubIndex extends BintrayProtocol {
       destination,
       SaveLiveData
         .storedProjects(source)
+        .view
         .filterKeys(reference => repos.contains(reference.githubRepo))
+        .toMap
     )
 
     copyFile(source.movedGithub, destination.movedGithub)

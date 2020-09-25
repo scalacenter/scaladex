@@ -16,7 +16,6 @@ import model.{Project, Release}
 import model.release.ReleaseSelection
 import com.sksamuel.elastic4s.ElasticDsl._
 import akka.actor.{ActorSystem, Props}
-import akka.stream.ActorMaterializer
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.StatusCode
 import ch.epfl.scala.index.search.DataRepository
@@ -29,18 +28,13 @@ import org.slf4j.LoggerFactory
 
 private[api] class PublishProcess(paths: DataPaths,
                                   dataRepository: DataRepository)(
-    implicit val system: ActorSystem,
-    implicit val materializer: ActorMaterializer
+    implicit val system: ActorSystem
 ) extends PlayWsDownloader {
 
   import system.dispatcher
   private val log = LoggerFactory.getLogger(getClass)
   private val indexingActor = system.actorOf(
-    Props(classOf[impl.IndexingActor],
-          paths,
-          dataRepository,
-          system,
-          materializer)
+    Props(classOf[impl.IndexingActor], paths, dataRepository, system)
   )
 
   /**

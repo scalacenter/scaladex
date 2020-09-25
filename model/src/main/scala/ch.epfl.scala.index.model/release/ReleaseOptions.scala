@@ -69,7 +69,7 @@ object ReleaseOptions {
         case None => releases.filter(selection.filterAll)
       }
 
-    val releasesSorted = selectedReleases.view.sortBy { release =>
+    val releasesSorted = selectedReleases.sortBy { release =>
       val ref = release.reference
       (
         // default artifact (ex: akka-actors is the default for akka/akka)
@@ -88,20 +88,20 @@ object ReleaseOptions {
     }.reverse
 
     releasesSorted.headOption.map { release =>
-      val targets = releases.view
+      val targets = releases
         .flatMap(_.reference.target)
         .distinct
         .sorted
         .reverse
         .toList
 
-      val artifacts = releases.view
+      val artifacts = releases
         .map(_.reference.artifact)
         .distinct
         .sorted
         .toList
 
-      val versions = releases.view
+      val versions = releases
         .map(_.reference.version)
         .distinct
         .sorted(SemanticVersion.ordering.reverse)

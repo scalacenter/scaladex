@@ -10,7 +10,6 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.directives._
 import akka.http.scaladsl.unmarshalling.Unmarshaller
-import akka.stream.ActorMaterializer
 import akka.util.Timeout
 
 import ch.epfl.scala.index.search.DataRepository
@@ -27,7 +26,7 @@ class PublishApi(
     paths: DataPaths,
     dataRepository: DataRepository,
     github: Github
-)(implicit system: ActorSystem, materializer: ActorMaterializer) {
+)(implicit system: ActorSystem) {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -100,11 +99,7 @@ class PublishApi(
   implicit val timeout = Timeout(40.seconds)
   private val actor =
     system.actorOf(
-      Props(classOf[impl.PublishActor],
-            paths,
-            dataRepository,
-            system,
-            materializer)
+      Props(classOf[impl.PublishActor], paths, dataRepository, system)
     )
 
   private val githubCredentialsCache =
@@ -118,7 +113,7 @@ class PublishApi(
     concat(
       get(
         path("publish")(
-          parameter('path)(
+          parameter("path")(
             path =>
               complete(
                 /* check if the release already exists - sbt will handle HTTP-Status codes
@@ -137,11 +132,11 @@ class PublishApi(
         path("publish")(
           parameters(
             (
-              'path,
-              'created.as(DateTimeUn) ? DateTime.now,
-              'readme.as[Boolean] ? true,
-              'contributors.as[Boolean] ? true,
-              'info.as[Boolean] ? true
+              "path",
+              "created".as(DateTimeUn) ? DateTime.now,
+              "readme".as[Boolean] ? true,
+              "contributors".as[Boolean] ? true,
+              "info".as[Boolean] ? true
             )
           )(
             (path, created, readme, contributors, info) =>
@@ -188,7 +183,7 @@ object PublishApi {
   def apply(
       paths: DataPaths,
       dataRepository: DataRepository
-  )(implicit sys: ActorSystem, mat: ActorMaterializer): PublishApi = {
+  )(implicit sys: ActorSystem): PublishApi = {
     new PublishApi(paths, dataRepository, Github())
   }
 }

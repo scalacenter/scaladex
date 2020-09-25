@@ -5,7 +5,7 @@ package maven
 private[maven] object PomConvert {
   def apply(model: org.apache.maven.model.Model): ReleaseModel = {
     import model._
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     import scala.util.Try
 
     def list[T](l: java.util.List[T]): List[T] =

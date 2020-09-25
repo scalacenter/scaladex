@@ -5,7 +5,6 @@ package maven
 import java.nio.file.{Files, Path}
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import ch.epfl.scala.index.data.download.PlayWsDownloader
 import org.slf4j.LoggerFactory
 import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
@@ -15,8 +14,7 @@ import scala.util.Failure
 class DownloadParentPoms(repository: LocalPomRepository,
                          paths: DataPaths,
                          tmp: Option[Path] = None)(
-    implicit val system: ActorSystem,
-    implicit val materializer: ActorMaterializer
+    implicit val system: ActorSystem
 ) extends PlayWsDownloader {
 
   private val log = LoggerFactory.getLogger(getClass)

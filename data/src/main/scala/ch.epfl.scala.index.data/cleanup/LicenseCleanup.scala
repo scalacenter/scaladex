@@ -16,7 +16,7 @@ class LicenseCleanup(paths: DataPaths) {
   byNameSource.close()
 
   private val licensesFromName =
-    License.all.groupBy(_.shortName).mapValues(_.head)
+    License.all.groupBy(_.shortName).view.mapValues(_.head).toMap
   private val variaNameToLicense: Map[String, License] =
     innerJoin(byName, licensesFromName)((_, _)).flatMap {
       case (_, (xs, license)) =>

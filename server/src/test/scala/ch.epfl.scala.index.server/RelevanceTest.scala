@@ -18,7 +18,6 @@ import org.scalatest._
 
 import scala.concurrent.Future
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import akka.testkit.TestKit
 
 class RelevanceTest
@@ -27,9 +26,8 @@ class RelevanceTest
     with BeforeAndAfterAll {
 
   import system.dispatcher
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
 
-  private val data = DataRepository.openUnsafe(BuildInfo.baseDirectory)
+  private val data = DataRepository.open(BuildInfo.baseDirectory)
 
   data.waitUntilReady()
 
@@ -226,7 +224,7 @@ class RelevanceTest
     }
   }
 
-  override def afterAll {
+  override def afterAll(): Unit = {
     TestKit.shutdownActorSystem(system)
     data.close()
   }

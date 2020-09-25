@@ -4,7 +4,7 @@ package cleanup
 
 import java.nio.file._
 
-import jawn.support.json4s.Parser
+import org.typelevel.jawn.support.json4s.Parser
 import org.json4s._
 
 /**

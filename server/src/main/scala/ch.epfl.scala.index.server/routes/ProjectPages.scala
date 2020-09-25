@@ -231,21 +231,21 @@ class ProjectPages(
       fields =>
         formFields(
           (
-            'contributorsWanted.as[Boolean] ? false,
-            'defaultArtifact.?,
-            'defaultStableVersion.as[Boolean] ? false,
-            'strictVersions.as[Boolean] ? false,
-            'deprecated.as[Boolean] ? false,
-            'artifactDeprecations.*,
-            'cliArtifacts.*,
-            'customScalaDoc.?,
-            'primaryTopic.?,
-            'beginnerIssuesLabel.?,
-            'beginnerIssues.?,
-            'selectedBeginnerIssues.*,
-            'chatroom.?,
-            'contributingGuide.?,
-            'codeOfConduct.?
+            "contributorsWanted".as[Boolean] ? false,
+            "defaultArtifact".?,
+            "defaultStableVersion".as[Boolean] ? false,
+            "strictVersions".as[Boolean] ? false,
+            "deprecated".as[Boolean] ? false,
+            "artifactDeprecations".as[String].*,
+            "cliArtifacts".as[String].*,
+            "customScalaDoc".?,
+            "primaryTopic".?,
+            "beginnerIssuesLabel".?,
+            "beginnerIssues".?,
+            "selectedBeginnerIssues".as[String].*,
+            "chatroom".?,
+            "contributingGuide".?,
+            "codeOfConduct".?
           )
         ).tmap {
           case (contributorsWanted,
@@ -384,7 +384,7 @@ class ProjectPages(
                 optionalSession(refreshable, usingCookies)(
                   userId =>
                     parameters(
-                      ('artifact.?, 'version.?, 'target.?, 'selected.?)
+                      ("artifact".?, "version".?, "target".?, "selected".?)
                     )(
                       (artifact, version, target, selected) =>
                         onSuccess(
@@ -425,7 +425,7 @@ class ProjectPages(
             (organization, repository, artifact) =>
               optionalSession(refreshable, usingCookies)(
                 userId =>
-                  parameter('target.?)(
+                  parameter("target".?)(
                     target =>
                       complete(
                         projectPage(
@@ -445,7 +445,7 @@ class ProjectPages(
             (organization, repository, artifact, version) =>
               optionalSession(refreshable, usingCookies)(
                 userId =>
-                  parameter('target.?)(
+                  parameter("target".?)(
                     target =>
                       complete(
                         projectPage(

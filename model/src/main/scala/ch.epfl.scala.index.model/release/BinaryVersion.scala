@@ -49,7 +49,7 @@ object BinaryVersion extends Parsers {
       binaryVersions: Seq[String],
       filter: BinaryVersion => Boolean
   ): Seq[String] = {
-    binaryVersions.view
+    binaryVersions
       .flatMap(parse)
       .filter(filter)
       .sorted

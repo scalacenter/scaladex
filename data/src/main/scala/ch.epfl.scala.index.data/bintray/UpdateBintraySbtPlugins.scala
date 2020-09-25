@@ -5,7 +5,6 @@ import java.time.format.DateTimeFormatter
 import java.time.{OffsetDateTime, ZoneOffset}
 
 import akka.actor.ActorSystem
-import akka.stream.Materializer
 import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.github.GithubDownload
@@ -13,11 +12,12 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.ivy.core.settings.IvySettings
 import org.apache.ivy.plugins.parser.xml.XmlModuleDescriptorParser
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.matching.Regex
+import scala.util.Using
 
 class UpdateBintraySbtPlugins(
     bintray: BintrayClient,
@@ -73,10 +73,10 @@ class UpdateBintraySbtPlugins(
 
       // searching for ivys.xml in the sbt/sbt-plugin-releases will not look into the linked packages
       // That is why we group the packages by repositories and then we search in every repository
-      packagesByRepo = packagesToUpdate.groupBy(p => (p.owner, p.repo))
+      packagesByRepo = packagesToUpdate.groupBy(p => (p.owner, p.repo)).toSeq
 
       _ = logger.info(
-        s"found ${packagesToUpdate.size} packages to update in ${packagesByRepo.keys.size} repositories"
+        s"found ${packagesToUpdate.size} packages to update in ${packagesByRepo.size} repositories"
       )
 
       sbtPlugins <- Future
@@ -187,12 +187,11 @@ object UpdateBintraySbtPlugins {
    *
    * @param paths Paths to the data directory
    */
-  def run(paths: DataPaths)(implicit mat: Materializer,
-                            sys: ActorSystem): Unit = {
+  def run(paths: DataPaths)(implicit sys: ActorSystem): Unit = {
     implicit val ec: ExecutionContext = sys.dispatcher
     val githubDownload = new GithubDownload(paths)
     val githubRepoExtractor = new GithubRepoExtractor(paths)
-    for (bintrayClient <- BintrayClient.create(paths.credentials)) {
+    Using.resource(BintrayClient.create(paths.credentials)) { bintrayClient =>
       val sbtPluginsData = SbtPluginsData(paths.ivysData)
       val updater = new UpdateBintraySbtPlugins(
         bintrayClient,
