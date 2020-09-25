@@ -9,7 +9,6 @@ val akkaHttpVersion = "10.1.12"
 val elastic4sVersion = "5.6.11"
 val log4jVersion = "2.13.3"
 val nscalaTimeVersion = "2.24.0"
-val scalaArmVersion = "2.1"
 
 lazy val logging =
   libraryDependencies ++= Seq(
@@ -101,8 +100,7 @@ lazy val search = project
       "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
       "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion,
       "org.json4s" %% "json4s-native" % "3.6.9",
-      "org.typelevel" %% "jawn-json4s" % "1.0.0",
-      "com.michaelpollmeier" %% "scala-arm" % scalaArmVersion
+      "org.typelevel" %% "jawn-json4s" % "1.0.0"
     )
   )
   .dependsOn(model)
@@ -179,7 +177,6 @@ lazy val data = project
       "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-json4s" % "1.29.1",
       "org.json4s" %% "json4s-native" % "3.5.5",
-      "com.michaelpollmeier" %% "scala-arm" % scalaArmVersion,
       "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Runtime,
     ),
     buildInfoPackage := "build.info",

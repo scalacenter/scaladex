@@ -50,7 +50,7 @@ object Server {
 
     // the DataRepository will not be closed until the end of the process,
     // because of the sbtResolver mode
-    val data = DataRepository.openUnsafe(BuildInfo.baseDirectory)
+    val data = DataRepository.open(BuildInfo.baseDirectory)
 
     val searchPages = new SearchPages(data, session)
     val userFacingRoutes = concat(

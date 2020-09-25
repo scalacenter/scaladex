@@ -395,7 +395,7 @@ class GithubDownload(paths: DataPaths,
     // so won't hit rate limit but if you hit GraphQL API for more things, you would
     // need to check rate limit reset times for GraphQL API as well and pick max one
 
-    val (reset1, reset2) = PlayWsClient.open().acquireAndGet { client =>
+    val (reset1, reset2) = Using.resource(PlayWsClient.open()) { client =>
       val baseRequest = client
         .url("https://api.github.com")
         .addHttpHeaders("Accept" -> "application/json")

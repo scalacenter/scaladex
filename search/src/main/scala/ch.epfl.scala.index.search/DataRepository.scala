@@ -23,17 +23,18 @@ import org.elasticsearch.cluster.health.ClusterHealthStatus
 import org.elasticsearch.common.lucene.search.function.CombineFunction
 import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.Modifier
 import org.elasticsearch.search.sort.SortOrder
-import resource.ManagedResource
 
 import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, Future}
+import java.io.Closeable
 
 /**
  * @param esClient TCP client of the elasticsearch server
  */
 class DataRepository(esClient: TcpClient,
                      indexName: String)(implicit ec: ExecutionContext)
-    extends LazyLogging {
+    extends LazyLogging
+    with Closeable {
   import DataRepository._
 
   def waitUntilReady(): Unit = {
@@ -508,15 +509,6 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
       )
 
   def open(
-      baseDirectory: File
-  )(implicit ec: ExecutionContext): ManagedResource[DataRepository] = {
-    logger.info(s"elasticsearch $elasticsearch $indexName")
-    for (esClient <- resource.managed(esClient(baseDirectory, local))) yield {
-      new DataRepository(esClient, indexName)
-    }
-  }
-
-  def openUnsafe(
       baseDirectory: File
   )(implicit ec: ExecutionContext): DataRepository = {
     logger.info(s"elasticsearch $elasticsearch $indexName")

@@ -11,11 +11,11 @@ import play.api._
 import play.api.libs.json._
 import play.api.libs.ws._
 import play.api.libs.ws.ahc.{AhcCurlRequestLogger, _}
-import resource.ManagedResource
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success, Try}
+import scala.util.Using
 
 trait PlayWsDownloader {
 
@@ -34,7 +34,8 @@ trait PlayWsDownloader {
    * }}}
    */
   def managed[A](f: WSClient => Future[A]): Future[A] = {
-    PlayWsClient.open().map(f).toFuture.flatten
+    val client = PlayWsClient.open()
+    f(client).andThen(_ => client.close())
   }
 
   /**
@@ -55,7 +56,7 @@ trait PlayWsDownloader {
       parallelism: Int
   ): Seq[R] = {
 
-    PlayWsClient.open().acquireAndGet { client =>
+    Using.resource(PlayWsClient.open()) { client =>
       val progress = ProgressBar(message, toDownload.size, log)
 
       def processDownloads = {
@@ -177,7 +178,7 @@ trait PlayWsDownloader {
       }
     }
 
-    PlayWsClient.open().acquireAndGet { client =>
+    Using.resource(PlayWsClient.open()) { client =>
       val progress = ProgressBar(message, toDownload.size, log)
 
       if (toDownload.size > 1) {
@@ -209,11 +210,11 @@ trait PlayWsDownloader {
 object PlayWsClient {
 
   /**
-   * Creates a managed Play Web Service Client.
+   * Creates a Play Web Service Client.
    * You should avoid using too many [[WSClient]]s by reusing an open [[WSClient]] as much as possible.
    * A good balance is to use one [[WSClient]] by targeted web service.
    */
-  def open()(implicit mat: Materializer): ManagedResource[WSClient] = {
+  def open()(implicit mat: Materializer): WSClient = {
     val configuration = Configuration.reference.withFallback(
       Configuration(
         ConfigFactory.parseString("plaw.ws.followRedirects = true")
@@ -228,6 +229,6 @@ object PlayWsClient {
     val wsConfig = AhcWSClientConfigFactory.forConfig(configuration.underlying,
                                                       environment.classLoader)
 
-    resource.managed(AhcWSClient(wsConfig))
+    AhcWSClient(wsConfig)
   }
 }

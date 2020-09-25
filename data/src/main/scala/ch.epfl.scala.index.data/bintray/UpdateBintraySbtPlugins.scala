@@ -17,6 +17,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.matching.Regex
+import scala.util.Using
 
 class UpdateBintraySbtPlugins(
     bintray: BintrayClient,
@@ -190,7 +191,7 @@ object UpdateBintraySbtPlugins {
     implicit val ec: ExecutionContext = sys.dispatcher
     val githubDownload = new GithubDownload(paths)
     val githubRepoExtractor = new GithubRepoExtractor(paths)
-    for (bintrayClient <- BintrayClient.create(paths.credentials)) {
+    Using.resource(BintrayClient.create(paths.credentials)) { bintrayClient =>
       val sbtPluginsData = SbtPluginsData(paths.ivysData)
       val updater = new UpdateBintraySbtPlugins(
         bintrayClient,

@@ -27,7 +27,7 @@ class RelevanceTest
 
   import system.dispatcher
 
-  private val data = DataRepository.openUnsafe(BuildInfo.baseDirectory)
+  private val data = DataRepository.open(BuildInfo.baseDirectory)
 
   data.waitUntilReady()
 

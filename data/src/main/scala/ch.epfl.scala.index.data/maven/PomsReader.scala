@@ -2,7 +2,6 @@ package ch.epfl.scala.index
 package data
 package maven
 
-import resource.ManagedResource
 import java.io.File
 import java.nio.file._
 
@@ -16,6 +15,8 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 import scala.collection.parallel.CollectionConverters._
+import java.io.Closeable
+import scala.util.Using
 
 case class MissingParentPom(dep: maven.Dependency) extends Exception
 
@@ -38,14 +39,12 @@ object PomsReader {
 
     val ivysDescriptors = SbtPluginsData(paths.ivysData).iterator
 
-    val allPomsResource = for {
-      centralPoms <- PomsReader(MavenCentral, paths).iterator()
-      bintrayPoms <- PomsReader(Bintray, paths).iterator()
-      usersPoms <- PomsReader(UserProvided, paths).iterator()
-    } yield centralPoms ++ bintrayPoms ++ usersPoms ++ ivysDescriptors
-
-    allPomsResource.acquireAndGet { allPoms =>
-      // use sha to filter duplicates out
+    Using.resources(
+      PomsReader(MavenCentral, paths).iterator(),
+      PomsReader(Bintray, paths).iterator(),
+      PomsReader(UserProvided, paths).iterator()
+    ) { (centralPoms, bintrayPoms, usersPoms) =>
+      val allPoms = centralPoms ++ bintrayPoms ++ usersPoms ++ ivysDescriptors
       allPoms
         .foldLeft(Map[String, (ReleaseModel, LocalRepository, String)]()) {
           case (acc, pom @ (_, _, sha)) =>
@@ -127,14 +126,20 @@ private[maven] class PomsReader(pomsPath: Path,
   }
 
   def iterator()
-    : ManagedResource[Iterator[(ReleaseModel, LocalPomRepository, String)]] = {
+    : Iterator[(ReleaseModel, LocalPomRepository, String)] with Closeable = {
     import scala.jdk.CollectionConverters._
 
-    resource
-      .managed(Files.newDirectoryStream(pomsPath))
-      .map { source =>
-        source.asScala.iterator.flatMap(p => loadOne(p).toOption)
-      }
+    val stream = Files.newDirectoryStream(pomsPath)
+    val pomsIterator = stream.asScala.iterator.flatMap(p => loadOne(p).toOption)
+
+    new Iterator[(ReleaseModel, LocalPomRepository, String)] with Closeable {
+      override def hasNext: Boolean = pomsIterator.hasNext
+
+      override def next(): (ReleaseModel, LocalPomRepository, String) =
+        pomsIterator.next()
+
+      override def close(): Unit = stream.close()
+    }
   }
 
   def load(): List[Try[(ReleaseModel, LocalPomRepository, String)]] = {

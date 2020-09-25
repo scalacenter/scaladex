@@ -14,6 +14,7 @@ import org.json4s.{CustomSerializer, DefaultFormats, Formats, JValue}
 import scala.io.Source
 import scala.util.Success
 import scala.util.matching.Regex
+import scala.util.Using
 
 class GithubRepoExtractor(paths: DataPaths) {
   object ClaimSerializer
@@ -28,10 +29,9 @@ class GithubRepoExtractor(paths: DataPaths) {
 
   private def matches(m: Regex, s: String): Boolean = m.unapplySeq(s).isDefined
   private val claims =
-    resource.managed(Source.fromFile(paths.claims.toFile)).acquireAndGet {
-      source =>
-        read[Claims](source.mkString).claims
-          .filter(_.repo != void) // when the repository is void, the project is not claimed
+    Using.resource(Source.fromFile(paths.claims.toFile)) { source =>
+      read[Claims](source.mkString).claims
+        .filter(_.repo != void) // when the repository is void, the project is not claimed
     }
 
   private val claimedRepos = claims

@@ -20,6 +20,7 @@ import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.Using
 
 class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
     implicit val system: ActorSystem
@@ -237,7 +238,7 @@ object BintrayListPoms {
       scalaVersions: Seq[String],
       libs: Seq[NonStandardLib]
   )(implicit sys: ActorSystem) = {
-    for (bintrayClient <- BintrayClient.create(paths.credentials)) {
+    Using.resource(BintrayClient.create(paths.credentials)) { bintrayClient =>
       val listPoms = new BintrayListPoms(paths, bintrayClient)
 
       for (scalaVersion <- scalaVersions) {
