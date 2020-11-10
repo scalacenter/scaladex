@@ -218,7 +218,7 @@ main {
             margin-bottom: ($line-height-computed * 1.5);
         }
         .content-contributing-project {
-            overflow-y: auto; 
+            overflow-y: auto;
 
             @extend .content-project;
             height: 500px;
@@ -596,7 +596,7 @@ main {
 
 .head-project {
     padding: 20px 0;
-    min-height: 271px;
+    min-height: 290px;
     background: url('/assets/img/head-project-background.png') no-repeat center top #0D343C;
     color: #fff;
     .bootstrap-select >  {
@@ -651,11 +651,16 @@ main {
                     rgba(255, 255, 255, 0.1),
                     $btn-primary-border);
         }
-        
+
         .dropdown-menu {
             border: none;
             background-color: rgba($gray-lighter, 0.7);
             padding: 0;
+        }
+
+        .btn-right-margin {
+            min-width: 140px;
+            text-align: left;
         }
 
         form {
