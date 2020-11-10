@@ -1,0 +1,50 @@
+name: CI
+on:
+  push:
+    branches:
+      - master 
+  pull_request:
+    branches:
+      - master 
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Scaladex
+        uses: actions/checkout@v2
+        with:
+          path: scaladex
+      - name: Checkout Scaladex small index
+        uses: actions/checkout@v2
+        with:
+          repository: scalacenter/scaladex-small-index
+          path: scaladex-small-index
+      - name: Checkout Scaladex contrib 
+        uses: actions/checkout@v2
+        with:
+          repository: scalacenter/scaladex-contrib
+          path: scaladex-contrib
+      - uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "adopt@1.8"
+      - uses: coursier/cache-action@v5
+      - name: Formatting
+        run: |
+          cd scaladex
+          ./bin/scalafmt --test      
+        shell: bash
+      - name: Load elastic search
+        run: |
+          cd scaladex
+          sbt "data/run elastic"      
+        shell: bash
+      - name: Unit tests
+        run: |
+          cd scaladex
+          sbt test      
+        shell: bash
+      - name: Package server
+        run: |
+          cd scaladex
+          sbt server/universal:packageBin
+        shell: bash
