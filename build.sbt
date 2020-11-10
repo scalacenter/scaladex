@@ -177,7 +177,7 @@ lazy val data = project
       "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-json4s" % "1.29.1",
       "org.json4s" %% "json4s-native" % "3.5.5",
-      "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Runtime,
+      "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Runtime
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),

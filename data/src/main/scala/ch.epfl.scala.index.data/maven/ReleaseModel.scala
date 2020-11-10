@@ -28,7 +28,8 @@ case class ReleaseModel(
     dependencies: List[Dependency] = Nil,
     repositories: List[Repository] = Nil,
     organization: Option[Organization] = None,
-    sbtPluginTarget: Option[SbtPluginTarget] = None // Information on the target scala and sbt versions, in case this release describes an sbt plugin
+    sbtPluginTarget: Option[SbtPluginTarget] =
+      None // Information on the target scala and sbt versions, in case this release describes an sbt plugin
 )
 
 case class SbtPluginTarget(scalaVersion: String, sbtVersion: String)
@@ -62,8 +63,10 @@ case class License(
     comments: Option[String] = None
 )
 
-/** Description of a person who has contributed to the project, but who does not
-    have commit privileges. Usually, these contributions come in the form of patches submitted. */
+/**
+ * Description of a person who has contributed to the project, but who does not
+ *    have commit privileges. Usually, these contributions come in the form of patches submitted.
+ */
 case class Contributor(
     name: Option[String],
     email: Option[String],

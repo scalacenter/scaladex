@@ -11,10 +11,12 @@ import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
 
 import scala.util.Failure
 
-class DownloadParentPoms(repository: LocalPomRepository,
-                         paths: DataPaths,
-                         tmp: Option[Path] = None)(
-    implicit val system: ActorSystem
+class DownloadParentPoms(
+    repository: LocalPomRepository,
+    paths: DataPaths,
+    tmp: Option[Path] = None
+)(implicit
+    val system: ActorSystem
 ) extends PlayWsDownloader {
 
   private val log = LoggerFactory.getLogger(getClass)
@@ -27,7 +29,7 @@ class DownloadParentPoms(repository: LocalPomRepository,
   val pomReader =
     tmp match {
       case Some(path) => PomsReader.tmp(paths, path)
-      case None       => PomsReader(repository, paths)
+      case None => PomsReader(repository, paths)
     }
 
   /**
@@ -81,8 +83,8 @@ class DownloadParentPoms(repository: LocalPomRepository,
     val parentPomsToDownload: Set[Dependency] =
       pomReader
         .load()
-        .collect {
-          case Failure(m: MissingParentPom) => m.dep
+        .collect { case Failure(m: MissingParentPom) =>
+          m.dep
         }
         .toSet
 
@@ -92,11 +94,13 @@ class DownloadParentPoms(repository: LocalPomRepository,
     if (parentPomsToDownload.size > lastFailedToDownload) {
 
       val downloaded =
-        download[Dependency, Int]("Download parent POMs",
-                                  parentPomsToDownload,
-                                  downloadRequest,
-                                  processResponse,
-                                  parallelism = 32)
+        download[Dependency, Int](
+          "Download parent POMs",
+          parentPomsToDownload,
+          downloadRequest,
+          processResponse,
+          parallelism = 32
+        )
       val failedDownloads = downloaded.sum
 
       log.warn(s"failed downloads: $failedDownloads")

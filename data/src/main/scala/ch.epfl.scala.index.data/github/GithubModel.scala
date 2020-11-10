@@ -27,7 +27,9 @@ object V3 {
       // has_wiki: Boolean,
       // has_pages: Boolean,
       forks_count: Int,
-      mirror_url: Option[String], // "mirror_url": "git://git.apache.org/spark.git",
+      mirror_url: Option[
+        String
+      ], // "mirror_url": "git://git.apache.org/spark.git",
       open_issues_count: Int,
       forks: Int,
       open_issues: Int,
@@ -65,8 +67,10 @@ object V3 {
   )
 
   case class CommunityProfile(files: CommunityFiles)
-  case class CommunityFiles(contributing: ContributingFile,
-                            code_of_conduct: CodeOfConductFile)
+  case class CommunityFiles(
+      contributing: ContributingFile,
+      code_of_conduct: CodeOfConductFile
+  )
   case class ContributingFile(html_url: Option[String])
   case class CodeOfConductFile(html_url: Option[String])
 }

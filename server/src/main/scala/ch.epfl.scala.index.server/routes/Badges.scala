@@ -20,12 +20,14 @@ class Badges(dataRepository: DataRepository) {
   private val shieldsOptionalSubject = shields & parameters("subject".?)
   private val shieldsSubject = shields & parameters("subject")
 
-  private def shieldsSvg(rawSubject: String,
-                         rawStatus: String,
-                         rawColor: Option[String],
-                         style: Option[String],
-                         logo: Option[String],
-                         logoWidth: Option[Int]) = {
+  private def shieldsSvg(
+      rawSubject: String,
+      rawStatus: String,
+      rawColor: Option[String],
+      style: Option[String],
+      logo: Option[String],
+      logoWidth: Option[Int]
+  ) = {
 
     def shieldEscape(in: String): String =
       in.replace("-", "--")
@@ -40,12 +42,13 @@ class Badges(dataRepository: DataRepository) {
     // we need a specific encoding
     val query = List(
       style.map(("style", _)),
-      logo.map(
-        l =>
-          ("logo",
-           java.net.URLEncoder
-             .encode(l, "ascii")
-             .replace("+", "%2B"))
+      logo.map(l =>
+        (
+          "logo",
+          java.net.URLEncoder
+            .encode(l, "ascii")
+            .replace("+", "%2B")
+        )
       ),
       logoWidth.map(w => ("logoWidth", w.toString))
     ).flatten.map { case (k, v) => k + "=" + v }.mkString("?", "&", "")
@@ -58,9 +61,11 @@ class Badges(dataRepository: DataRepository) {
     }
   }
 
-  def latest(organization: String,
-             repository: String,
-             artifact: Option[String]) = {
+  def latest(
+      organization: String,
+      repository: String,
+      artifact: Option[String]
+  ) = {
     parameter("target".?) { target =>
       shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
         onSuccess {
@@ -75,19 +80,23 @@ class Badges(dataRepository: DataRepository) {
           )
         } {
           case Some((_, options)) =>
-            shieldsSvg(subject orElse artifact getOrElse repository,
-                       options.release.reference.version.toString(),
-                       color,
-                       style,
-                       logo,
-                       logoWidth)
+            shieldsSvg(
+              subject orElse artifact getOrElse repository,
+              options.release.reference.version.toString(),
+              color,
+              style,
+              logo,
+              logoWidth
+            )
           case _ =>
-            shieldsSvg(subject orElse artifact getOrElse repository,
-                       "no published release",
-                       color orElse Some("lightgrey"),
-                       style,
-                       logo,
-                       logoWidth)
+            shieldsSvg(
+              subject orElse artifact getOrElse repository,
+              "no published release",
+              color orElse Some("lightgrey"),
+              style,
+              logo,
+              logoWidth
+            )
 
         }
       }
@@ -99,8 +108,8 @@ class Badges(dataRepository: DataRepository) {
       concat(
         pathPrefix(Segment / Segment) { (organization, repository) =>
           concat(
-            path(Segment / "latest.svg")(
-              artifact => latest(organization, repository, Some(artifact))
+            path(Segment / "latest.svg")(artifact =>
+              latest(organization, repository, Some(artifact))
             ),
             path("latest.svg")(
               latest(organization, repository, None)
@@ -108,19 +117,18 @@ class Badges(dataRepository: DataRepository) {
           )
         },
         path("count.svg")(
-          parameter("q")(
-            query =>
-              shieldsSubject(
-                (color, style, logo, logoWidth, subject) =>
-                  onSuccess(dataRepository.getTotalProjects(query))(
-                    count =>
-                      shieldsSvg(subject,
-                                 count.toString,
-                                 color,
-                                 style,
-                                 logo,
-                                 logoWidth)
+          parameter("q")(query =>
+            shieldsSubject((color, style, logo, logoWidth, subject) =>
+              onSuccess(dataRepository.getTotalProjects(query))(count =>
+                shieldsSvg(
+                  subject,
+                  count.toString,
+                  color,
+                  style,
+                  logo,
+                  logoWidth
                 )
+              )
             )
           )
         )

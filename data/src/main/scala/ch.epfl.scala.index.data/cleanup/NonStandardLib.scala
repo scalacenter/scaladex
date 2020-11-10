@@ -15,24 +15,29 @@ import org.json4s._
  * @param artifactId the artifact id
  * @param lookup where we can find the scala target
  */
-case class NonStandardLib(groupId: String,
-                          artifactId: String,
-                          lookup: ScalaTargetLookup)
+case class NonStandardLib(
+    groupId: String,
+    artifactId: String,
+    lookup: ScalaTargetLookup
+)
 
 sealed trait ScalaTargetLookup
 
-/** The version is encoded in the pom file
+/**
+ * The version is encoded in the pom file
  * dependency on org.scala-lang:scala-library
  * ex: io.gatling : gatling-compiler : 2.2.2
  */
 case object ScalaTargetFromPom extends ScalaTargetLookup
 
-/** The project is a plain-java project, thus no ScalaTarget.
+/**
+ * The project is a plain-java project, thus no ScalaTarget.
  * ex: com.typesafe : config : 1.3.1
  */
 case object NoScalaTargetPureJavaDependency extends ScalaTargetLookup
 
-/** The version is encoded in the version (ex: scala-library itself)
+/**
+ * The version is encoded in the version (ex: scala-library itself)
  */
 case object ScalaTargetFromVersion extends ScalaTargetLookup
 
@@ -54,19 +59,18 @@ object NonStandardLib {
       val nonStandard =
         Parser.parseFromFile(filePath.toFile).get.extract[Map[String, String]]
 
-      nonStandard.map {
-        case (artifact, rawLookup) =>
-          val lookup =
-            rawLookup match {
-              case "pom"     => ScalaTargetFromPom
-              case "java"    => NoScalaTargetPureJavaDependency
-              case "version" => ScalaTargetFromVersion
-              case _         => sys.error("unknown lookup: '" + rawLookup + "'")
-            }
+      nonStandard.map { case (artifact, rawLookup) =>
+        val lookup =
+          rawLookup match {
+            case "pom" => ScalaTargetFromPom
+            case "java" => NoScalaTargetPureJavaDependency
+            case "version" => ScalaTargetFromVersion
+            case _ => sys.error("unknown lookup: '" + rawLookup + "'")
+          }
 
-          val List(groupId, artifactId) = artifact.split(" ").toList
+        val List(groupId, artifactId) = artifact.split(" ").toList
 
-          NonStandardLib(groupId, artifactId, lookup)
+        NonStandardLib(groupId, artifactId, lookup)
       }.toList
     } else {
       List()

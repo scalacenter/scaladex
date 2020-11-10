@@ -28,8 +28,10 @@ case class SbtPluginsData(ivysData: Path) extends BintrayProtocol {
     else Nil
   }
 
-  def update(oldReleases: Seq[SbtPluginReleaseModel],
-             newReleases: Seq[SbtPluginReleaseModel]): Unit = {
+  def update(
+      oldReleases: Seq[SbtPluginReleaseModel],
+      newReleases: Seq[SbtPluginReleaseModel]
+  ): Unit = {
     // use sha1 to uniquely identify a release
     val oldReleaseMap = oldReleases.map(r => r.sha1 -> r).toMap
     val allReleaseMap = newReleases.foldLeft(oldReleaseMap) {

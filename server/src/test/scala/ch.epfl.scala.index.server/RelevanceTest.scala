@@ -168,8 +168,9 @@ class RelevanceTest
     )
   }
 
-  private def first(query: String)(org: String,
-                                   repo: String): Future[Assertion] = {
+  private def first(
+      query: String
+  )(org: String, repo: String): Future[Assertion] = {
     val params = SearchParams(queryString = query)
     data.findProjects(params).map { page =>
       assert {
@@ -180,8 +181,10 @@ class RelevanceTest
     }
   }
 
-  private def exactly(params: SearchParams,
-                      tops: List[(String, String)]): Future[Assertion] = {
+  private def exactly(
+      params: SearchParams,
+      tops: List[(String, String)]
+  ): Future[Assertion] = {
     compare(
       params,
       tops,
@@ -189,8 +192,10 @@ class RelevanceTest
     )
   }
 
-  private def top(params: SearchParams,
-                  tops: List[(String, String)]): Future[Assertion] = {
+  private def top(
+      params: SearchParams,
+      tops: List[(String, String)]
+  ): Future[Assertion] = {
     compare(
       params,
       tops,
@@ -201,8 +206,10 @@ class RelevanceTest
     )
   }
 
-  private def top(query: String,
-                  tops: List[(String, String)]): Future[Assertion] = {
+  private def top(
+      query: String,
+      tops: List[(String, String)]
+  ): Future[Assertion] = {
     val params = SearchParams(queryString = query)
     top(params, tops)
   }
@@ -213,9 +220,8 @@ class RelevanceTest
       assertFun: (Seq[Project.Reference], Seq[Project.Reference]) => Assertion
   ): Future[Assertion] = {
 
-    val expectedRefs = expected.map {
-      case (org, repo) =>
-        Project.Reference(org, repo)
+    val expectedRefs = expected.map { case (org, repo) =>
+      Project.Reference(org, repo)
     }
 
     data.findProjects(params).map { page =>

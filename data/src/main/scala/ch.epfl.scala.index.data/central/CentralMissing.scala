@@ -68,14 +68,14 @@ object CentralMissing {
 }
 
 object TimestampSerializer
-    extends CustomSerializer[DateTime](
-      format =>
-        (
-          {
-            case JInt(timestamp) => new DateTime(timestamp.toLong)
-          }, {
-            case dateTime: DateTime => JInt(dateTime.getMillis)
-          }
+    extends CustomSerializer[DateTime](format =>
+      (
+        { case JInt(timestamp) =>
+          new DateTime(timestamp.toLong)
+        },
+        { case dateTime: DateTime =>
+          JInt(dateTime.getMillis)
+        }
       )
     )
 
@@ -89,10 +89,11 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
 
   import system.dispatcher
 
-  private val mavenSearchConnectionPool
-    : Flow[(HttpRequest, ArtifactRequest),
-           (Try[HttpResponse], ArtifactRequest),
-           Http.HostConnectionPool] = {
+  private val mavenSearchConnectionPool: Flow[
+    (HttpRequest, ArtifactRequest),
+    (Try[HttpResponse], ArtifactRequest),
+    Http.HostConnectionPool
+  ] = {
 
     Http()
       .cachedHostConnectionPoolHttps[ArtifactRequest]("search.maven.org")
@@ -118,18 +119,19 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
     )
   }
 
-  private val parseJson
-    : Flow[(Try[HttpResponse], ArtifactRequest),
-           Either[String, (List[SearchDoc], ArtifactRequest)],
-           akka.NotUsed] = {
+  private val parseJson: Flow[(Try[HttpResponse], ArtifactRequest), Either[
+    String,
+    (List[SearchDoc], ArtifactRequest)
+  ], akka.NotUsed] = {
     Flow[(Try[HttpResponse], ArtifactRequest)]
       .mapAsyncUnordered(parallelism = 100) {
-        case (Success(res @ HttpResponse(StatusCodes.OK, _, entity, _)), ar) => {
+        case (
+              Success(res @ HttpResponse(StatusCodes.OK, _, entity, _)),
+              ar
+            ) => {
           Unmarshal(entity)
             .to[SearchBody]
-            .map(
-              gav => Right((gav.toDocs, ar))
-            )
+            .map(gav => Right((gav.toDocs, ar)))
         }
         case (Success(x), ar) =>
           Future.successful(
@@ -140,10 +142,11 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
       }
   }
 
-  private val mavenDownloadConnectionPool
-    : Flow[(HttpRequest, DownloadRequest),
-           (Try[HttpResponse], DownloadRequest),
-           Http.HostConnectionPool] =
+  private val mavenDownloadConnectionPool: Flow[
+    (HttpRequest, DownloadRequest),
+    (Try[HttpResponse], DownloadRequest),
+    Http.HostConnectionPool
+  ] =
     Http()
       .cachedHostConnectionPoolHttps[DownloadRequest]("repo1.maven.org")
       .throttle(
@@ -163,12 +166,16 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
   private val unmarshal =
     Unmarshaller.stringUnmarshaller.forContentTypes(MediaTypes.`text/xml`)
 
-  private val readContent: Flow[(Try[HttpResponse], DownloadRequest),
-                                Either[String, (PomContent, DownloadRequest)],
-                                akka.NotUsed] = {
+  private val readContent: Flow[(Try[HttpResponse], DownloadRequest), Either[
+    String,
+    (PomContent, DownloadRequest)
+  ], akka.NotUsed] = {
     Flow[(Try[HttpResponse], DownloadRequest)]
       .mapAsyncUnordered(parallelism = 100) {
-        case (Success(res @ HttpResponse(StatusCodes.OK, _, entity, _)), dr) => {
+        case (
+              Success(res @ HttpResponse(StatusCodes.OK, _, entity, _)),
+              dr
+            ) => {
 
           unmarshal(entity).map(pom => Right((PomContent(pom), dr)))
         }
@@ -177,15 +184,16 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
             Left(s"Unexpected status code ${x.status} for $dr")
           )
         case (Failure(e), dr) =>
-          ;
+            ;
           Future.failed(new Exception(s"Failed to fetch $dr", e))
       }
   }
 
-  private val downloadPoms
-    : Flow[Either[String, (List[SearchDoc], ArtifactRequest)],
-           Either[String, (PomContent, DownloadRequest)],
-           akka.NotUsed] = {
+  private val downloadPoms: Flow[
+    Either[String, (List[SearchDoc], ArtifactRequest)],
+    Either[String, (PomContent, DownloadRequest)],
+    akka.NotUsed
+  ] = {
 
     Flow[Either[String, (List[SearchDoc], ArtifactRequest)]]
       .flatMapConcat {
@@ -239,14 +247,12 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
     val releases: Set[(String, String)] =
       PomsReader(LocalPomRepository.MavenCentral, paths)
         .load()
-        .collect {
-          case Success((pom, _, _)) =>
-            artifactMetaExtractor(pom).flatMap(
-              meta =>
-                if (meta.scalaTarget.isDefined && !meta.isNonStandard)
-                  Some((pom.groupId, meta.artifactName))
-                else None
-            )
+        .collect { case Success((pom, _, _)) =>
+          artifactMetaExtractor(pom).flatMap(meta =>
+            if (meta.scalaTarget.isDefined && !meta.isNonStandard)
+              Some((pom.groupId, meta.artifactName))
+            else None
+          )
         }
         .flatten
         .toSet
@@ -271,11 +277,10 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
     )
 
     val releasesDownloads =
-      releases.flatMap {
-        case (groupId, artifact) =>
-          allTargets.map(
-            target => ArtifactRequest(groupId, artifact + target.encode)
-          )
+      releases.flatMap { case (groupId, artifact) =>
+        allTargets.map(target =>
+          ArtifactRequest(groupId, artifact + target.encode)
+        )
       }.toList
 
     val progress = ProgressBar("Listing", releasesDownloads.size, log)

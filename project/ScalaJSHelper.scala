@@ -9,19 +9,17 @@ object ScalaJSHelper {
     resourceGenerators in Compile += Def.task {
       val (js, map) = andSourceMap((fastOptJS in (client, Compile)).value.data)
       IO.copy(
-          Seq(
-            js -> target.value / js.getName,
-            map -> target.value / map.getName
-          )
+        Seq(
+          js -> target.value / js.getName,
+          map -> target.value / map.getName
         )
-        .toSeq
+      ).toSeq
     }.taskValue,
     mappings in (Compile, packageBin) := {
       val mappingExcludingNonOptimized =
-        (mappings in (Compile, packageBin)).value.filterNot {
-          case (f, r) =>
-            f.getName.endsWith("-fastopt.js") ||
-              f.getName.endsWith("js.map")
+        (mappings in (Compile, packageBin)).value.filterNot { case (f, r) =>
+          f.getName.endsWith("-fastopt.js") ||
+            f.getName.endsWith("js.map")
         }
 
       val optimized = {

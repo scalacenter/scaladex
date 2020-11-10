@@ -8,9 +8,8 @@ case class ReleaseSelection(
     selected: Option[String]
 ) {
 
-  def filterTarget(release: Release): Boolean = target.forall(
-    target => release.reference.target.contains(target)
-  )
+  def filterTarget(release: Release): Boolean =
+    target.forall(target => release.reference.target.contains(target))
 
   def filterArtifact(release: Release): Boolean =
     artifact.forall(_ == release.reference.artifact)
@@ -25,10 +24,12 @@ case class ReleaseSelection(
 }
 
 object ReleaseSelection {
-  def parse(target: Option[String],
-            artifactName: Option[String],
-            version: Option[String],
-            selected: Option[String]): ReleaseSelection = {
+  def parse(
+      target: Option[String],
+      artifactName: Option[String],
+      version: Option[String],
+      selected: Option[String]
+  ): ReleaseSelection = {
 
     new ReleaseSelection(
       target.flatMap(ScalaTarget.parse),
@@ -51,11 +52,13 @@ case class ReleaseOptions(
 )
 
 object ReleaseOptions {
-  def apply(projectRepository: String,
-            selection: ReleaseSelection,
-            releases: Seq[Release],
-            defaultArtifact: Option[String],
-            defaultStableVersion: Boolean): Option[ReleaseOptions] = {
+  def apply(
+      projectRepository: String,
+      selection: ReleaseSelection,
+      releases: Seq[Release],
+      defaultArtifact: Option[String],
+      defaultStableVersion: Boolean
+  ): Option[ReleaseOptions] = {
 
     val selectedReleases =
       selection.selected match {

@@ -87,8 +87,10 @@ object GithubReader {
    * @param github the current repo
    * @return
    */
-  def contributors(paths: DataPaths,
-                   github: GithubRepo): Try[List[GithubContributor]] = Try {
+  def contributors(
+      paths: DataPaths,
+      github: GithubRepo
+  ): Try[List[GithubContributor]] = Try {
 
     import Json4s._
 
@@ -130,8 +132,10 @@ object GithubReader {
    * @param github the current repo
    * @return
    */
-  def beginnerIssues(paths: DataPaths,
-                     github: GithubRepo): Try[List[GithubIssue]] = Try {
+  def beginnerIssues(
+      paths: DataPaths,
+      github: GithubRepo
+  ): Try[List[GithubIssue]] = Try {
 
     import Json4s._
 
@@ -147,12 +151,11 @@ object GithubReader {
 
     graphqlIssues
       .getOrElse(List())
-      .map(
-        issue =>
-          GithubIssue(
-            issue.number,
-            issue.title,
-            Url(issue.url)
+      .map(issue =>
+        GithubIssue(
+          issue.number,
+          issue.title,
+          Url(issue.url)
         )
       )
   }
@@ -162,8 +165,10 @@ object GithubReader {
    * @param github the git repo
    * @return
    */
-  def contributingGuide(paths: DataPaths,
-                        github: GithubRepo): Try[Option[Url]] = Try {
+  def contributingGuide(
+      paths: DataPaths,
+      github: GithubRepo
+  ): Try[Option[Url]] = Try {
 
     import Json4s._
 
@@ -202,44 +207,45 @@ object GithubReader {
   case class Moved(inner: Map[GithubRepo, GithubRepo])
   object Moved {
     object MovedSerializer
-        extends CustomSerializer[Moved](
-          format =>
-            (
-              {
-                case JObject(obj) => {
-                  implicit val formats = DefaultFormats
+        extends CustomSerializer[Moved](format =>
+          (
+            {
+              case JObject(obj) => {
+                implicit val formats = DefaultFormats
 
-                  Moved(
-                    obj.map {
-                      case (k, JString(v)) => {
-                        val List(sourceOwner, sourceRepo) = k.split('/').toList
-                        val List(destinationOwner, destinationRepo) =
-                          v.split('/').toList
+                Moved(
+                  obj.map {
+                    case (k, JString(v)) => {
+                      val List(sourceOwner, sourceRepo) = k.split('/').toList
+                      val List(destinationOwner, destinationRepo) =
+                        v.split('/').toList
 
-                        (
-                          GithubRepo(sourceOwner, sourceRepo),
-                          GithubRepo(destinationOwner, destinationRepo)
-                        )
-                      }
-                      case e => {
-                        sys.error("cannot read: " + e)
-                      }
-                    }.toMap
-                  )
-                }
-              }, {
-                case m: Moved =>
-                  JObject(
-                    m.inner.toList.sorted.map {
-                      case (GithubRepo(sourceOwner, sourceRepo),
-                            GithubRepo(destinationOwner, destinationRepo)) =>
-                        JField(
-                          s"$sourceOwner/$sourceRepo",
-                          JString(s"$destinationOwner/$destinationRepo")
-                        )
+                      (
+                        GithubRepo(sourceOwner, sourceRepo),
+                        GithubRepo(destinationOwner, destinationRepo)
+                      )
                     }
-                  )
+                    case e => {
+                      sys.error("cannot read: " + e)
+                    }
+                  }.toMap
+                )
               }
+            },
+            { case m: Moved =>
+              JObject(
+                m.inner.toList.sorted.map {
+                  case (
+                        GithubRepo(sourceOwner, sourceRepo),
+                        GithubRepo(destinationOwner, destinationRepo)
+                      ) =>
+                    JField(
+                      s"$sourceOwner/$sourceRepo",
+                      JString(s"$destinationOwner/$destinationRepo")
+                    )
+                }
+              )
+            }
           )
         )
 
@@ -253,7 +259,6 @@ object GithubReader {
 
   /**
    * keep track of repository remaning/tranfers
-   *
    */
   def appendMovedRepository(paths: DataPaths, repo: GithubRepo): Unit = {
     import Moved.formats

@@ -7,11 +7,11 @@ import fastparse._
 
 object ScalaTargetType {
   implicit val ordering: Ordering[ScalaTargetType] = Ordering.by {
-    case Jvm    => 5
-    case Js     => 4
+    case Jvm => 5
+    case Js => 4
     case Native => 3
-    case Sbt    => 2
-    case Java   => 1
+    case Sbt => 2
+    case Java => 1
   }
 }
 
@@ -47,9 +47,10 @@ case class ScalaJvm(languageVersion: LanguageVersion) extends ScalaTarget {
   val targetType: ScalaTargetType = Jvm
   val isValid: Boolean = languageVersion.isValid
 }
-case class ScalaJs(languageVersion: LanguageVersion,
-                   scalaJsVersion: BinaryVersion)
-    extends ScalaTarget {
+case class ScalaJs(
+    languageVersion: LanguageVersion,
+    scalaJsVersion: BinaryVersion
+) extends ScalaTarget {
   val render = s"scala-js $scalaJsVersion (${languageVersion.render})"
   val encode = s"_sjs${scalaJsVersion}_$languageVersion"
   val targetType: ScalaTargetType = Js
@@ -57,9 +58,10 @@ case class ScalaJs(languageVersion: LanguageVersion,
     scalaJsVersion
   )
 }
-case class ScalaNative(languageVersion: LanguageVersion,
-                       scalaNativeVersion: BinaryVersion)
-    extends ScalaTarget {
+case class ScalaNative(
+    languageVersion: LanguageVersion,
+    scalaNativeVersion: BinaryVersion
+) extends ScalaTarget {
   val render = s"scala-native $scalaNativeVersion (${languageVersion.render})"
   val encode = s"_native${scalaNativeVersion}_$languageVersion"
   val targetType: ScalaTargetType = Native
@@ -68,9 +70,10 @@ case class ScalaNative(languageVersion: LanguageVersion,
   )
 }
 
-case class SbtPlugin(languageVersion: LanguageVersion,
-                     sbtVersion: BinaryVersion)
-    extends ScalaTarget {
+case class SbtPlugin(
+    languageVersion: LanguageVersion,
+    sbtVersion: BinaryVersion
+) extends ScalaTarget {
   val render = s"sbt $sbtVersion ($languageVersion)"
   val encode = s"_${languageVersion}_$sbtVersion"
   val targetType: ScalaTargetType = Sbt
@@ -143,13 +146,13 @@ object SbtPlugin {
 
   def Parser[_: P]: P[ScalaTarget] =
     ("_" ~ LanguageVersion.Parser ~ "_" ~ BinaryVersion.Parser.filter(isValid))
-      .map {
-        case (scalaVersion, sbtVersion) =>
-          SbtPlugin(scalaVersion, sbtVersion)
-      } | ("_" ~ BinaryVersion.Parser.filter(isValid) ~ "_" ~ LanguageVersion.Parser)
-      .map {
-        case (scalaVersion, sbtVersion) =>
-          SbtPlugin(sbtVersion, scalaVersion)
+      .map { case (scalaVersion, sbtVersion) =>
+        SbtPlugin(scalaVersion, sbtVersion)
+      } | ("_" ~ BinaryVersion.Parser.filter(
+      isValid
+    ) ~ "_" ~ LanguageVersion.Parser)
+      .map { case (scalaVersion, sbtVersion) =>
+        SbtPlugin(sbtVersion, scalaVersion)
       }
 }
 
@@ -160,7 +163,7 @@ object ScalaTarget extends Parsers {
       ScalaTarget,
       (ScalaTargetType, Option[BinaryVersion], LanguageVersion)
     ] {
-      case ScalaJvm(version)           => (Jvm, None, version)
+      case ScalaJvm(version) => (Jvm, None, version)
       case ScalaJs(version, jsVersion) => (Js, Some(jsVersion), version)
       case ScalaNative(version, nativeVersion) =>
         (Native, Some(nativeVersion), version)

@@ -10,11 +10,13 @@ package misc
  * @param image URL to an image representing the content
  * @param imageAlt Alt text for the image
  */
-case class TwitterSummaryCard(site: String,
-                              title: String,
-                              description: String,
-                              image: Option[Url] = None,
-                              imageAlt: Option[String] = None) {
+case class TwitterSummaryCard(
+    site: String,
+    title: String,
+    description: String,
+    image: Option[Url] = None,
+    imageAlt: Option[String] = None
+) {
   val card: String = "summary"
 
   /**

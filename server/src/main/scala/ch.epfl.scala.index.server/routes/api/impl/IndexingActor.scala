@@ -26,16 +26,17 @@ class IndexingActor(
   private val log = LoggerFactory.getLogger(getClass)
   import system.dispatcher
 
-  def receive = {
-    case updateIndexData: UpdateIndex =>
-      // TODO be non-blocking
-      sender() ! Await.result(updateIndex(
-                                updateIndexData.repo,
-                                updateIndexData.pom,
-                                updateIndexData.data,
-                                updateIndexData.localRepo
-                              ),
-                              1.minute)
+  def receive = { case updateIndexData: UpdateIndex =>
+    // TODO be non-blocking
+    sender() ! Await.result(
+      updateIndex(
+        updateIndexData.repo,
+        updateIndexData.pom,
+        updateIndexData.data,
+        updateIndexData.localRepo
+      ),
+      1.minute
+    )
   }
 
   /**
@@ -64,17 +65,21 @@ class IndexingActor(
     log.debug("updating " + pom.artifactId)
 
     val githubDownload = new GithubDownload(paths, Some(data.credentials))
-    githubDownload.run(repo,
-                       data.downloadInfo,
-                       data.downloadReadme,
-                       data.downloadContributors)
+    githubDownload.run(
+      repo,
+      data.downloadInfo,
+      data.downloadReadme,
+      data.downloadContributors
+    )
 
     val githubRepoExtractor = new GithubRepoExtractor(paths)
     val Some(GithubRepo(organization, repository)) = githubRepoExtractor(pom)
     val projectReference = Project.Reference(organization, repository)
 
-    def updateProjectReleases(project: Option[Project],
-                              releases: Seq[Release]): Future[Unit] = {
+    def updateProjectReleases(
+        project: Option[Project],
+        releases: Seq[Release]
+    ): Future[Unit] = {
 
       val converter = new ProjectConvert(paths, githubDownload)
 

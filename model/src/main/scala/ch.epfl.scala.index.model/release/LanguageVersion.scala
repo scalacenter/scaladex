@@ -7,7 +7,7 @@ import fastparse._
 /**
  * A [[LanguageVersion]] is the binary version of the compiler frontend.
  * It can be either a [[ScalaVersion]] or a [[DottyVersion]]
- **/
+ */
 sealed trait LanguageVersion {
 
   /**
@@ -63,7 +63,7 @@ object DottyVersion {
   def isValid(version: BinaryVersion): Boolean =
     version match {
       case MinorBinary(major, minor) if major == 0 && minor < 30 => true
-      case _                                                     => false
+      case _ => false
     }
 
   def Parser[_: P]: P[DottyVersion] = {

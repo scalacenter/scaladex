@@ -18,8 +18,10 @@ object CopyToClipboard {
       val trigger = triggers.item(i)
       trigger.addEventListener(
         `type` = "click",
-        listener = listener(targetId = "data-clipboard-target",
-                            displayMsg = Some("Copied!")),
+        listener = listener(
+          targetId = "data-clipboard-target",
+          displayMsg = Some("Copied!")
+        ),
         useCapture = true
       )
     }
@@ -31,8 +33,10 @@ object CopyToClipboard {
    * @param displayMsg Change the button text for 4s by the provided text
    * @return
    */
-  private def listener(targetId: String,
-                       displayMsg: Option[String]): Event => Unit = { event =>
+  private def listener(
+      targetId: String,
+      displayMsg: Option[String]
+  ): Event => Unit = { event =>
     event.target match {
       case button: HTMLButtonElement =>
         val targetAttribute = button.getAttribute(targetId)

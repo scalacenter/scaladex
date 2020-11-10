@@ -16,14 +16,17 @@ import com.softwaremill.session.SessionOptions._
 
 import scala.concurrent.ExecutionContext
 
-class SearchPages(dataRepository: DataRepository,
-                  session: GithubUserSession)(implicit ec: ExecutionContext) {
+class SearchPages(dataRepository: DataRepository, session: GithubUserSession)(
+    implicit ec: ExecutionContext
+) {
   import dataRepository._
   import session.implicits._
 
-  private def search(params: SearchParams,
-                     user: Option[UserState],
-                     uri: String) = {
+  private def search(
+      params: SearchParams,
+      user: Option[UserState],
+      uri: String
+  ) = {
     complete {
       val resultsF = findProjects(params)
       val topicsF = getTopics(params)
@@ -68,26 +71,22 @@ class SearchPages(dataRepository: DataRepository,
         path(searchPath)(
           optionalSession(refreshable, usingCookies) { userId =>
             val user = session.getUser(userId)
-            searchParams(user)(
-              params => search(params, user, searchPath)
-            )
+            searchParams(user)(params => search(params, user, searchPath))
           }
         ),
-        path(Segment)(
-          organization =>
-            optionalSession(refreshable, usingCookies) { userId =>
-              val user = session.getUser(userId)
-              searchParams(user)(
-                params =>
-                  search(
-                    params.copy(
-                      queryString =
-                        s"${params.queryString} AND organization:$organization"
-                    ),
-                    user,
-                    organization
-                )
+        path(Segment)(organization =>
+          optionalSession(refreshable, usingCookies) { userId =>
+            val user = session.getUser(userId)
+            searchParams(user)(params =>
+              search(
+                params.copy(
+                  queryString =
+                    s"${params.queryString} AND organization:$organization"
+                ),
+                user,
+                organization
               )
+            )
           }
         )
       )

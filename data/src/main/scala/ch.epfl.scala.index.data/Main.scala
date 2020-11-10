@@ -76,30 +76,22 @@ object Main extends LazyLogging {
         BintrayListPoms.run(dataPaths, versions, NonStandardLib.load(dataPaths))
       }),
       // Download POMs from Bintray
-      Step("download")(
-        () => new BintrayDownloadPoms(dataPaths).run()
-      ),
+      Step("download")(() => new BintrayDownloadPoms(dataPaths).run()),
       // Download parent POMs
-      Step("parent")(
-        () => new DownloadParentPoms(bintray, dataPaths).run()
-      ),
+      Step("parent")(() => new DownloadParentPoms(bintray, dataPaths).run()),
       // Download ivy.xml descriptors of sbt-plugins from Bintray
       // and Github information of the corresponding projects
       Step("sbt") { () =>
         UpdateBintraySbtPlugins.run(dataPaths)
       },
       // Find missing artifacts in maven-central
-      Step("central")(
-        () => new CentralMissing(dataPaths).run()
-      ),
+      Step("central")(() => new CentralMissing(dataPaths).run()),
       // Download additional information about projects from Github
       // This step is not viable anymore because of the Github rate limit
       // which is to low to update all the projects.
       // As an alternative, the sbt steps handles the Github updates of its own projects
       // The IndexingActor does it as well for the projects that are pushed by Maven.
-      Step("github")(
-        () => GithubDownload.run(dataPaths)
-      ),
+      Step("github")(() => GithubDownload.run(dataPaths)),
       // Re-create the ElasticSearch index
       Step("elastic") { () =>
         SeedElasticSearch.run(dataPaths)

@@ -7,19 +7,22 @@ import ch.epfl.scala.index.model.misc.SearchParams
 package object routes {
   def searchParams(user: Option[UserState]): Directive1[SearchParams] =
     parameters(
-      ("q" ? "*",
-       "page".as[Int] ? 1,
-       "sort".?,
-       "topics".as[String].*,
-       "targetTypes".as[String].*,
-       "scalaVersions".as[String].*,
-       "scalaJsVersions".as[String].*,
-       "scalaNativeVersions".as[String].*,
-       "sbtVersions".as[String].*,
-       "you".?,
-       "contributingSearch".as[Boolean] ? false)
+      (
+        "q" ? "*",
+        "page".as[Int] ? 1,
+        "sort".?,
+        "topics".as[String].*,
+        "targetTypes".as[String].*,
+        "scalaVersions".as[String].*,
+        "scalaJsVersions".as[String].*,
+        "scalaNativeVersions".as[String].*,
+        "sbtVersions".as[String].*,
+        "you".?,
+        "contributingSearch".as[Boolean] ? false
+      )
     ).tmap {
-      case (q,
+      case (
+            q,
             page,
             sort,
             topics,
@@ -29,7 +32,8 @@ package object routes {
             scalaNativeVersions,
             sbtVersions,
             you,
-            contributingSearch) =>
+            contributingSearch
+          ) =>
         val userRepos = you
           .flatMap(_ => user.map(_.repos))
           .getOrElse(Set())

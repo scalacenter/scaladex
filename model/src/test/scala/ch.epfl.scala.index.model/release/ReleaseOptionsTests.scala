@@ -5,8 +5,10 @@ import org.scalatest._
 
 class ReleaseOptionsTests extends FunSpec with Matchers {
 
-  def emptyRelease(maven: MavenReference,
-                   reference: Release.Reference): Release =
+  def emptyRelease(
+      maven: MavenReference,
+      reference: Release.Reference
+  ): Release =
     Release(
       maven,
       reference,
@@ -26,28 +28,30 @@ class ReleaseOptionsTests extends FunSpec with Matchers {
       sbtVersion = None
     )
 
-  def prepare(organization: String,
-              repository: String,
-              groupdId: String,
-              releases: List[(String, String)]): Seq[Release] = {
+  def prepare(
+      organization: String,
+      repository: String,
+      groupdId: String,
+      releases: List[(String, String)]
+  ): Seq[Release] = {
     releases
-      .flatMap {
-        case (artifactId, rawVersion) =>
-          for {
-            Artifact(artifact, target) <- Artifact.parse(artifactId)
-            version <- SemanticVersion.tryParse(rawVersion)
-          } yield (artifactId, rawVersion, artifact, target, version)
+      .flatMap { case (artifactId, rawVersion) =>
+        for {
+          Artifact(artifact, target) <- Artifact.parse(artifactId)
+          version <- SemanticVersion.tryParse(rawVersion)
+        } yield (artifactId, rawVersion, artifact, target, version)
       }
-      .map {
-        case (artifactId, rawVersion, artifact, target, version) =>
-          emptyRelease(
-            MavenReference(groupdId, artifactId, rawVersion),
-            Release.Reference(organization,
-                              repository,
-                              artifact,
-                              version,
-                              Some(target))
+      .map { case (artifactId, rawVersion, artifact, target, version) =>
+        emptyRelease(
+          MavenReference(groupdId, artifactId, rawVersion),
+          Release.Reference(
+            organization,
+            repository,
+            artifact,
+            version,
+            Some(target)
           )
+        )
       }
   }
 
@@ -90,11 +94,13 @@ class ReleaseOptionsTests extends FunSpec with Matchers {
       )
 
       val result =
-        ReleaseOptions(repository,
-                       ReleaseSelection.empty,
-                       releases,
-                       None,
-                       defaultStableVersion = true)
+        ReleaseOptions(
+          repository,
+          ReleaseSelection.empty,
+          releases,
+          None,
+          defaultStableVersion = true
+        )
 
       val versions: List[SemanticVersion] =
         List(
@@ -141,13 +147,15 @@ class ReleaseOptionsTests extends FunSpec with Matchers {
       val repository = "akka"
       val groupdId = "com.typesafe.akka"
       val releases =
-        prepare(organization,
-                repository,
-                groupdId,
-                List(
-                  ("akka-distributed-data-experimental_2.11", "2.4.8"),
-                  ("akka-actors_2.11", "2.4.8")
-                ))
+        prepare(
+          organization,
+          repository,
+          groupdId,
+          List(
+            ("akka-distributed-data-experimental_2.11", "2.4.8"),
+            ("akka-actors_2.11", "2.4.8")
+          )
+        )
 
       val result = ReleaseOptions(
         repository,
@@ -176,9 +184,11 @@ class ReleaseOptionsTests extends FunSpec with Matchers {
               ScalaJvm(ScalaVersion.`2.11`)
             ),
             release = emptyRelease(
-              MavenReference(groupdId,
-                             "akka-distributed-data-experimental_2.11",
-                             "2.4.8"),
+              MavenReference(
+                groupdId,
+                "akka-distributed-data-experimental_2.11",
+                "2.4.8"
+              ),
               Release.Reference(
                 organization,
                 repository,
@@ -210,11 +220,13 @@ class ReleaseOptionsTests extends FunSpec with Matchers {
       )
 
       val result =
-        ReleaseOptions(repository,
-                       ReleaseSelection.empty,
-                       releases,
-                       None,
-                       defaultStableVersion = true)
+        ReleaseOptions(
+          repository,
+          ReleaseSelection.empty,
+          releases,
+          None,
+          defaultStableVersion = true
+        )
 
       val versions: List[SemanticVersion] =
         List(

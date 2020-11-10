@@ -28,11 +28,13 @@ class SemanticVersionTests extends FunSpec with Matchers {
           SemanticVersion(1, Some(0), Some(1), None, Some(ReleaseCandidate(1))),
           SemanticVersion(1, Some(0), Some(1), None, Some(Milestone(2))),
           SemanticVersion(1, Some(0), Some(1), None, Some(Milestone(1))),
-          SemanticVersion(1,
-                          Some(0),
-                          Some(1),
-                          None,
-                          Some(OtherPreRelease("BLABLA")))
+          SemanticVersion(
+            1,
+            Some(0),
+            Some(1),
+            None,
+            Some(OtherPreRelease("BLABLA"))
+          )
         )
       )
     }
@@ -76,11 +78,13 @@ class SemanticVersionTests extends FunSpec with Matchers {
 
       it("major.minor.patch-xyz") {
         SemanticVersion.tryParse("1.1.1-xyz") should contain(
-          SemanticVersion(1,
-                          Some(1),
-                          Some(1),
-                          None,
-                          Some(OtherPreRelease("xyz")))
+          SemanticVersion(
+            1,
+            Some(1),
+            Some(1),
+            None,
+            Some(OtherPreRelease("xyz"))
+          )
         )
       }
 
@@ -96,8 +100,12 @@ class SemanticVersionTests extends FunSpec with Matchers {
       }
 
       it("git commit") {
-        SemanticVersion.tryParse("13e7afa9c1817d45b2989e545b2e9ead21d00cef") shouldBe empty
-        SemanticVersion.tryParse("6988989374b307bc6a57f9a3d218fead6c4c634f") shouldBe empty
+        SemanticVersion.tryParse(
+          "13e7afa9c1817d45b2989e545b2e9ead21d00cef"
+        ) shouldBe empty
+        SemanticVersion.tryParse(
+          "6988989374b307bc6a57f9a3d218fead6c4c634f"
+        ) shouldBe empty
       }
 
       // relaxed semantic version

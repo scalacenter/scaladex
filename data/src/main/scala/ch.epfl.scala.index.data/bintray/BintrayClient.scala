@@ -84,9 +84,11 @@ class BintrayClient private (
    * Get general information about a specified package with package name.
    * https://bintray.com/docs/api/#_get_package
    */
-  def getPackage(subject: String,
-                 repo: String,
-                 packageName: String): Future[BintrayPackage] = {
+  def getPackage(
+      subject: String,
+      repo: String,
+      packageName: String
+  ): Future[BintrayPackage] = {
     val request = client.url(s"$apiUrl/packages/$subject/$repo/$packageName")
 
     withAuth(request).get().map {
@@ -106,10 +108,12 @@ class BintrayClient private (
    * @param createdAfter A date following ISO8601 format (yyyy-MM-dd’T’HH:mm:ss.SSSZ)
    * @return the list of files
    */
-  def searchFiles(subject: String,
-                  repo: String,
-                  fileName: String,
-                  createdAfter: String): Future[Seq[BintraySearch]] = {
+  def searchFiles(
+      subject: String,
+      repo: String,
+      fileName: String,
+      createdAfter: String
+  ): Future[Seq[BintraySearch]] = {
     def getPage(page: Int) = {
       val request = client
         .url(s"$apiUrl/search/file")
@@ -196,8 +200,8 @@ object BintrayClient {
    * @param credentials Path to the Bintray credentials file
    * @return
    */
-  def create(credentials: Path)(
-      implicit sys: ActorSystem
+  def create(credentials: Path)(implicit
+      sys: ActorSystem
   ): BintrayClient = {
     val client = PlayWsClient.open()
     new BintrayClient(credentials, client)(sys.dispatcher)

@@ -12,8 +12,9 @@ import ch.epfl.scala.index.search.DataRepository
 
 import scala.concurrent.ExecutionContext
 
-class FrontPage(dataRepository: DataRepository,
-                session: GithubUserSession)(implicit ec: ExecutionContext) {
+class FrontPage(dataRepository: DataRepository, session: GithubUserSession)(
+    implicit ec: ExecutionContext
+) {
   import session.implicits._
 
   private def frontPage(userInfo: Option[UserInfo]) = {
@@ -50,16 +51,20 @@ class FrontPage(dataRepository: DataRepository,
         xs.map(v => s"$label:$v").mkString("search?q=", " OR ", "")
 
       val ecosystems = Map(
-        "Akka" -> query("topics")("akka",
-                                  "akka-http",
-                                  "akka-persistence",
-                                  "akka-streams"),
+        "Akka" -> query("topics")(
+          "akka",
+          "akka-http",
+          "akka-persistence",
+          "akka-streams"
+        ),
         "Scala.js" -> "search?targets=scala.js_0.6",
-        "Spark" -> query("depends-on")("apache/spark-streaming",
-                                       "apache/spark-graphx",
-                                       "apache/spark-hive",
-                                       "apache/spark-mllib",
-                                       "apache/spark-sql"),
+        "Spark" -> query("depends-on")(
+          "apache/spark-streaming",
+          "apache/spark-graphx",
+          "apache/spark-hive",
+          "apache/spark-mllib",
+          "apache/spark-sql"
+        ),
         "Typelevel" -> "typelevel"
       )
 

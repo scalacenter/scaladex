@@ -10,8 +10,8 @@ import play.api.libs.ws.ahc.AhcWSClient
 import akka.actor.ActorSystem
 import org.slf4j.LoggerFactory
 
-class BintrayDownloadPoms(paths: DataPaths)(
-    implicit val system: ActorSystem
+class BintrayDownloadPoms(paths: DataPaths)(implicit
+    val system: ActorSystem
 ) extends PlayWsDownloader {
 
   private val log = LoggerFactory.getLogger(getClass)
@@ -65,9 +65,8 @@ class BintrayDownloadPoms(paths: DataPaths)(
 
     BintrayMeta
       .load(paths)
-      .filter(
-        s =>
-          !Files.exists(pomPath(s)) || !verifySHA1FileHash(pomPath(s), s.sha1)
+      .filter(s =>
+        !Files.exists(pomPath(s)) || !verifySHA1FileHash(pomPath(s), s.sha1)
       )
       .groupBy(_.sha1) // remove duplicates with sha1
       .map { case (_, vs) => vs.head }
@@ -91,8 +90,10 @@ class BintrayDownloadPoms(paths: DataPaths)(
    * @param search the bintray Search
    * @return
    */
-  private def downloadRequest(wsClient: WSClient,
-                              search: BintraySearch): WSRequest = {
+  private def downloadRequest(
+      wsClient: WSClient,
+      search: BintraySearch
+  ): WSRequest = {
 
     if (search.isJCenter) {
       wsClient.url(escape(s"https://jcenter.bintray.com/${search.path}"))
@@ -110,8 +111,10 @@ class BintrayDownloadPoms(paths: DataPaths)(
    * @param search the bintray search
    * @param response the download response
    */
-  private def processPomDownload(search: BintraySearch,
-                                 response: WSResponse): Unit = {
+  private def processPomDownload(
+      search: BintraySearch,
+      response: WSResponse
+  ): Unit = {
 
     if (200 == response.status) {
 
@@ -143,11 +146,13 @@ class BintrayDownloadPoms(paths: DataPaths)(
    */
   def run(): Unit = {
 
-    download[BintraySearch, Unit]("Downloading POMs",
-                                  searchesBySha1,
-                                  downloadRequest,
-                                  processPomDownload,
-                                  parallelism = 32)
+    download[BintraySearch, Unit](
+      "Downloading POMs",
+      searchesBySha1,
+      downloadRequest,
+      processPomDownload,
+      parallelism = 32
+    )
     ()
   }
 }

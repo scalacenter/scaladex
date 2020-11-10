@@ -31,9 +31,9 @@ import java.io.Closeable
 /**
  * @param esClient TCP client of the elasticsearch server
  */
-class DataRepository(esClient: TcpClient,
-                     indexName: String)(implicit ec: ExecutionContext)
-    extends LazyLogging
+class DataRepository(esClient: TcpClient, indexName: String)(implicit
+    ec: ExecutionContext
+) extends LazyLogging
     with Closeable {
   import DataRepository._
 
@@ -63,8 +63,9 @@ class DataRepository(esClient: TcpClient,
   def deleteAll(): Future[Unit] = {
     for {
       exists <- esClient.execute(indexExists(indexName)).map(_.isExists())
-      _ <- if (exists) esClient.execute(deleteIndex(indexName))
-      else Future.successful(())
+      _ <-
+        if (exists) esClient.execute(deleteIndex(indexName))
+        else Future.successful(())
     } yield ()
   }
 
@@ -270,7 +271,9 @@ class DataRepository(esClient: TcpClient,
   /**
    * Get all the dependencies of a release
    */
-  def getAllDependencies(ref: Release.Reference): Future[Seq[ScalaDependency]] = {
+  def getAllDependencies(
+      ref: Release.Reference
+  ): Future[Seq[ScalaDependency]] = {
     val query = termQuery("dependentUrl", ref.httpUrl)
 
     val request =
@@ -334,9 +337,8 @@ class DataRepository(esClient: TcpClient,
 
   def getAllTargetTypes(): Future[List[(String, String, Long)]] = {
     stringAggregations("targetType", notDeprecatedQuery)
-      .map(_.map {
-        case (targetType, count) =>
-          (targetType, labelizeTargetType(targetType), count)
+      .map(_.map { case (targetType, count) =>
+        (targetType, labelizeTargetType(targetType), count)
       })
   }
 
@@ -345,9 +347,8 @@ class DataRepository(esClient: TcpClient,
   ): Future[List[(String, String, Long)]] = {
     stringAggregations("targetType", filteredSearchQuery(params))
       .map(addLabelsIfMissing(params.targetTypes.toSet))
-      .map(_.map {
-        case (targetType, count) =>
-          (targetType, labelizeTargetType(targetType), count)
+      .map(_.map { case (targetType, count) =>
+        (targetType, labelizeTargetType(targetType), count)
       })
   }
 
@@ -367,16 +368,20 @@ class DataRepository(esClient: TcpClient,
   }
 
   def getScalaJsVersions(params: SearchParams): Future[List[(String, Long)]] = {
-    versionAggregations("scalaJsVersion",
-                        filteredSearchQuery(params),
-                        ScalaJs.isValid)
+    versionAggregations(
+      "scalaJsVersion",
+      filteredSearchQuery(params),
+      ScalaJs.isValid
+    )
       .map(addLabelsIfMissing(params.scalaJsVersions.toSet))
   }
 
   def getAllScalaNativeVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("scalaNativeVersion",
-                        notDeprecatedQuery,
-                        ScalaNative.isValid)
+    versionAggregations(
+      "scalaNativeVersion",
+      notDeprecatedQuery,
+      ScalaNative.isValid
+    )
   }
 
   def getScalaNativeVersions(
@@ -394,9 +399,11 @@ class DataRepository(esClient: TcpClient,
   }
 
   def getSbtVersions(params: SearchParams): Future[List[(String, Long)]] = {
-    versionAggregations("sbtVersion",
-                        filteredSearchQuery(params),
-                        SbtPlugin.isValid)
+    versionAggregations(
+      "sbtVersion",
+      filteredSearchQuery(params),
+      SbtPlugin.isValid
+    )
       .map(addLabelsIfMissing(params.sbtVersions.toSet))
   }
 
@@ -426,9 +433,11 @@ class DataRepository(esClient: TcpClient,
       .map(_.to[Project].toList)
   }
 
-  private def getLatest[T: HitReader: Manifest](collection: String,
-                                                sortingField: String,
-                                                size: Int): Future[List[T]] = {
+  private def getLatest[T: HitReader: Manifest](
+      collection: String,
+      sortingField: String,
+      size: Int
+  ): Future[List[T]] = {
     val request = search(indexName / collection)
       .query(notDeprecatedQuery)
       .sortBy(fieldSort(sortingField).order(SortOrder.DESC))
@@ -561,17 +570,25 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
   private def sortQuery(sorting: Option[String]): SortDefinition =
     sorting match {
       case Some("stars") =>
-        fieldSort("github.stars") missing "0" order SortOrder.DESC // mode MultiMode.Avg
+        fieldSort(
+          "github.stars"
+        ) missing "0" order SortOrder.DESC // mode MultiMode.Avg
       case Some("forks") =>
-        fieldSort("github.forks") missing "0" order SortOrder.DESC // mode MultiMode.Avg
+        fieldSort(
+          "github.forks"
+        ) missing "0" order SortOrder.DESC // mode MultiMode.Avg
       case Some("dependentCount") =>
-        fieldSort("dependentCount") missing "0" order SortOrder.DESC // mode MultiMode.Avg
+        fieldSort(
+          "dependentCount"
+        ) missing "0" order SortOrder.DESC // mode MultiMode.Avg
       case Some("contributors") =>
-        fieldSort("github.contributorCount") missing "0" order SortOrder.DESC // mode MultiMode.Avg
+        fieldSort(
+          "github.contributorCount"
+        ) missing "0" order SortOrder.DESC // mode MultiMode.Avg
       case Some("relevant") => scoreSort() order SortOrder.DESC
-      case Some("created")  => fieldSort("created") order SortOrder.DESC
-      case Some("updated")  => fieldSort("updated") order SortOrder.DESC
-      case _                => scoreSort() order SortOrder.DESC
+      case Some("created") => fieldSort("created") order SortOrder.DESC
+      case Some("updated") => fieldSort("updated") order SortOrder.DESC
+      case _ => scoreSort() order SortOrder.DESC
     }
 
   private val notDeprecatedQuery: QueryDefinition = {
@@ -740,10 +757,9 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
   )
 
   private def replaceFields(queryString: String) = {
-    fieldMapping.foldLeft(queryString) {
-      case (query, (input, replacement)) =>
-        val regex = s"(\\s|^)$input:".r
-        regex.replaceAllIn(query, s"$$1$replacement:")
+    fieldMapping.foldLeft(queryString) { case (query, (input, replacement)) =>
+      val regex = s"(\\s|^)$input:".r
+      regex.replaceAllIn(query, s"$$1$replacement:")
     }
   }
 
@@ -757,16 +773,19 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
   private def addLabelsIfMissing(
       labelSet: Set[String]
   )(result: List[(String, Long)]): List[(String, Long)] = {
-    val missingLabels = labelSet -- result.map { case (label, _) => label }
-      .toSet
+    val missingLabels = labelSet -- result.map { case (label, _) =>
+      label
+    }.toSet
 
     (result ++ missingLabels.map(label => (label, 0L))).sortBy {
       case (label, _) => label
     }
   }
 
-  private def optionalQuery(condition: Boolean,
-                            query: QueryDefinition): QueryDefinition = {
+  private def optionalQuery(
+      condition: Boolean,
+      query: QueryDefinition
+  ): QueryDefinition = {
     if (condition) query else matchAllQuery()
   }
 

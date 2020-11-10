@@ -4,25 +4,25 @@ import java.nio.file.{Files, Path}
 
 package object data {
 
-  def innerJoin[K, A, B, Z](m1: Map[K, A],
-                            m2: Map[K, B])(f: (A, B) => Z): Map[K, Z] = {
-    m1.flatMap {
-      case (k, a) =>
-        m2.get(k).map(b => Map(k -> f(a, b))).getOrElse(Map.empty[K, Z])
+  def innerJoin[K, A, B, Z](m1: Map[K, A], m2: Map[K, B])(
+      f: (A, B) => Z
+  ): Map[K, Z] = {
+    m1.flatMap { case (k, a) =>
+      m2.get(k).map(b => Map(k -> f(a, b))).getOrElse(Map.empty[K, Z])
     }
   }
 
   def upsert[K, V](map: Map[K, Seq[V]], k: K, v: V) = {
     map.get(k) match {
       case Some(vs) => map.updated(k, vs :+ v)
-      case None     => map.updated(k, Seq(v))
+      case None => map.updated(k, Seq(v))
     }
   }
 
   def upserts[K, V](map: Map[K, Set[V]], k: K, vs: Set[V]) = {
     map.get(k) match {
       case Some(xs) => map.updated(k, vs ++ xs)
-      case None     => map.updated(k, vs)
+      case None => map.updated(k, vs)
     }
   }
 

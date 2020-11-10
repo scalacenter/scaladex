@@ -6,8 +6,9 @@ package ch.epfl.scala.index.model.misc
  * @param name the real name of the user
  * @param avatarUrl the avatar icon
  */
-case class UserInfo(login: String,
-                    name: Option[String],
-                    avatarUrl: String,
-                    token: String)
-    extends AvatarUrl
+case class UserInfo(
+    login: String,
+    name: Option[String],
+    avatarUrl: String,
+    token: String
+) extends AvatarUrl

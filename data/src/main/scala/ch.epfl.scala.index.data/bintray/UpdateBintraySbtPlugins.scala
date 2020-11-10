@@ -33,7 +33,8 @@ class UpdateBintraySbtPlugins(
   private val baseSubject = "sbt"
   private val baseRepo = "sbt-plugin-releases"
 
-  /** Matches an ivy.xml file of an sbt-plugin release
+  /**
+   * Matches an ivy.xml file of an sbt-plugin release
    * <organization>/<artifact>/scala_<version>/sbt_<version>/<version>/ivys/ivy.xml
    */
   private val sbtPluginPathRegex: Regex =
@@ -67,8 +68,8 @@ class UpdateBintraySbtPlugins(
       allPackages <- Future.traverse(packageNames)(
         bintray.getPackage(baseSubject, baseRepo, _)
       )
-      packagesToUpdate = allPackages.filter(
-        p => parse(p.updated).isAfter(lastUpdate)
+      packagesToUpdate = allPackages.filter(p =>
+        parse(p.updated).isAfter(lastUpdate)
       )
 
       // searching for ivys.xml in the sbt/sbt-plugin-releases will not look into the linked packages
@@ -80,9 +81,8 @@ class UpdateBintraySbtPlugins(
       )
 
       sbtPlugins <- Future
-        .traverse(packagesByRepo) {
-          case ((owner, repo), packages) =>
-            getSbtPlugins(owner, repo, packages, lastUpdate)
+        .traverse(packagesByRepo) { case ((owner, repo), packages) =>
+          getSbtPlugins(owner, repo, packages, lastUpdate)
         }
         .map(_.flatten.toSeq)
 
@@ -103,12 +103,13 @@ class UpdateBintraySbtPlugins(
       filteredIvyFiles = allIvyFiles
         .filter(file => packageByName.contains(file.`package`))
       sbtPlugins <- Future
-        .traverse(filteredIvyFiles)(
-          file =>
-            downloadPluginDescriptor(owner,
-                                     repo,
-                                     packageByName(file.`package`),
-                                     file)
+        .traverse(filteredIvyFiles)(file =>
+          downloadPluginDescriptor(
+            owner,
+            repo,
+            packageByName(file.`package`),
+            file
+          )
         )
         .map(_.flatten)
     } yield sbtPlugins
@@ -121,11 +122,13 @@ class UpdateBintraySbtPlugins(
       file: BintraySearch
   ): Future[Option[SbtPluginReleaseModel]] = {
     file.path match {
-      case sbtPluginPathRegex(org,
-                              artifact,
-                              scalaVersion,
-                              sbtVersion,
-                              version) =>
+      case sbtPluginPathRegex(
+            org,
+            artifact,
+            scalaVersion,
+            sbtVersion,
+            version
+          ) =>
         Future {
           try {
             val descriptor = moduleDescriptorParser.parseDescriptor(
