@@ -42,11 +42,11 @@ object Dependencies {
   private val dependencyOrder: Ordering[Dependency] = Ordering.by { dep =>
     (
       dep.scope match {
-        case Some("compile")  => 0
+        case Some("compile") => 0
         case Some("provided") => 1
-        case Some("runtime")  => 2
-        case Some("test")     => 3
-        case _                => 4
+        case Some("runtime") => 2
+        case Some("test") => 3
+        case _ => 4
       },
       dep.target.name
     )
@@ -71,8 +71,8 @@ object Dependencies {
     javaDependencies = release.javaDependencies.sorted(dependencyOrder),
     internalDependencies =
       dependencies.filter(_.isInternal).sorted(dependencyOrder),
-    reverseDependencies = reverseDependencies.groupBy(
-      dep => (dep.dependent.projectReference, dep.dependent.artifact)
+    reverseDependencies = reverseDependencies.groupBy(dep =>
+      (dep.dependent.projectReference, dep.dependent.artifact)
     )
   )
 }

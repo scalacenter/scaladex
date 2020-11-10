@@ -185,8 +185,10 @@ trait PlayWsDownloader {
         progress.start()
       }
 
-      val result = Await.ready(processItems(client, progress).runWith(Sink.seq),
-                               Duration.Inf)
+      val result = Await.ready(
+        processItems(client, progress).runWith(Sink.seq),
+        Duration.Inf
+      )
 
       if (toDownload.size > 1) {
         progress.stop()
@@ -222,12 +224,16 @@ object PlayWsClient {
     )
 
     /* If running in Play, environment should be injected */
-    val environment = Environment(new java.io.File("."),
-                                  this.getClass.getClassLoader,
-                                  Mode.Prod)
+    val environment = Environment(
+      new java.io.File("."),
+      this.getClass.getClassLoader,
+      Mode.Prod
+    )
 
-    val wsConfig = AhcWSClientConfigFactory.forConfig(configuration.underlying,
-                                                      environment.classLoader)
+    val wsConfig = AhcWSClientConfigFactory.forConfig(
+      configuration.underlying,
+      environment.classLoader
+    )
 
     AhcWSClient(wsConfig)
   }

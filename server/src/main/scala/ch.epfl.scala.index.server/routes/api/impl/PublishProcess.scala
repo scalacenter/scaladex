@@ -26,9 +26,11 @@ import java.io.{PrintWriter, StringWriter}
 
 import org.slf4j.LoggerFactory
 
-private[api] class PublishProcess(paths: DataPaths,
-                                  dataRepository: DataRepository)(
-    implicit val system: ActorSystem
+private[api] class PublishProcess(
+    paths: DataPaths,
+    dataRepository: DataRepository
+)(implicit
+    val system: ActorSystem
 ) extends PlayWsDownloader {
 
   import system.dispatcher
@@ -65,8 +67,10 @@ private[api] class PublishProcess(paths: DataPaths,
                 Future.successful((NoContent, "No Github Repo"))
               }
               case Some(repo) => {
-                if (data.userState.hasPublishingAuthority || data.userState.repos
-                      .contains(repo)) {
+                if (
+                  data.userState.hasPublishingAuthority || data.userState.repos
+                    .contains(repo)
+                ) {
                   data.writePom(paths)
                   data.deleteTemp()
 
@@ -75,9 +79,11 @@ private[api] class PublishProcess(paths: DataPaths,
                       LocalPomRepository.MavenCentral
                     else LocalPomRepository.UserProvided
 
-                  Meta.append(paths,
-                              Meta(data.hash, data.path, data.created),
-                              repository)
+                  Meta.append(
+                    paths,
+                    Meta(data.hash, data.path, data.created),
+                    repository
+                  )
 
                   log.info(
                     s"Saved ${pom.groupId}:${pom.artifactId}:${pom.version}"
@@ -92,8 +98,10 @@ private[api] class PublishProcess(paths: DataPaths,
                   )
                   data.deleteTemp()
                   Future.successful(
-                    (Forbidden,
-                     s"${data.userState.info.login} cannot publish to ${repo.toString}")
+                    (
+                      Forbidden,
+                      s"${data.userState.info.login} cannot publish to ${repo.toString}"
+                    )
                   )
                 }
               }

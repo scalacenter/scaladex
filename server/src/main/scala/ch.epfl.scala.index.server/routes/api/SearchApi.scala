@@ -58,11 +58,13 @@ class SearchApi(
       scalaNativeVersion: Option[String],
       sbtVersion: Option[String]
   ): Option[ScalaTarget] = {
-    (targetType,
-     scalaVersion.flatMap(LanguageVersion.tryParse),
-     scalaJsVersion.flatMap(BinaryVersion.parse),
-     scalaNativeVersion.flatMap(BinaryVersion.parse),
-     sbtVersion.flatMap(BinaryVersion.parse)) match {
+    (
+      targetType,
+      scalaVersion.flatMap(LanguageVersion.tryParse),
+      scalaJsVersion.flatMap(BinaryVersion.parse),
+      scalaNativeVersion.flatMap(BinaryVersion.parse),
+      sbtVersion.flatMap(BinaryVersion.parse)
+    ) match {
 
       case (Some("JVM"), Some(scalaVersion), _, _, _) =>
         Some(ScalaJvm(scalaVersion))
@@ -70,11 +72,13 @@ class SearchApi(
       case (Some("JS"), Some(scalaVersion), Some(scalaJsVersion), _, _) =>
         Some(ScalaJs(scalaVersion, scalaJsVersion))
 
-      case (Some("NATIVE"),
+      case (
+            Some("NATIVE"),
             Some(scalaVersion),
             _,
             Some(scalaNativeVersion),
-            _) =>
+            _
+          ) =>
         Some(ScalaNative(scalaVersion, scalaNativeVersion))
 
       case (Some("SBT"), Some(scalaVersion), _, _, Some(sbtVersion)) =>
@@ -90,15 +94,17 @@ class SearchApi(
         path("search") {
           get {
             parameters(
-              ("q",
-               "target",
-               "scalaVersion",
-               "page".as[Int].?,
-               "total".as[Int].?,
-               "scalaJsVersion".?,
-               "scalaNativeVersion".?,
-               "sbtVersion".?,
-               "cli".as[Boolean] ? false)
+              (
+                "q",
+                "target",
+                "scalaVersion",
+                "page".as[Int].?,
+                "total".as[Int].?,
+                "scalaJsVersion".?,
+                "scalaNativeVersion".?,
+                "sbtVersion".?,
+                "cli".as[Boolean] ? false
+              )
             ) {
               (
                   q,
@@ -155,23 +161,27 @@ class SearchApi(
           path("project") {
             get {
               parameters(
-                ("organization",
-                 "repository",
-                 "artifact".?,
-                 "target".?,
-                 "scalaVersion".?,
-                 "scalaJsVersion".?,
-                 "scalaNativeVersion".?,
-                 "sbtVersion".?)
+                (
+                  "organization",
+                  "repository",
+                  "artifact".?,
+                  "target".?,
+                  "scalaVersion".?,
+                  "scalaJsVersion".?,
+                  "scalaNativeVersion".?,
+                  "sbtVersion".?
+                )
               ) {
-                (organization,
-                 repository,
-                 artifact,
-                 targetType,
-                 scalaVersion,
-                 scalaJsVersion,
-                 scalaNativeVersion,
-                 sbtVersion) =>
+                (
+                    organization,
+                    repository,
+                    artifact,
+                    targetType,
+                    scalaVersion,
+                    scalaJsVersion,
+                    scalaNativeVersion,
+                    sbtVersion
+                ) =>
                   val reference = Project.Reference(organization, repository)
                   val scalaTarget = parseScalaTarget(
                     targetType,
@@ -218,28 +228,26 @@ class SearchApi(
       )
     } yield {
       projectAndReleaseOptions
-        .map {
-          case (_, options) =>
-            SearchApi.ReleaseOptions(
-              options.artifacts,
-              options.versions.sorted.map(_.toString),
-              options.release.maven.groupId,
-              options.release.maven.artifactId,
-              options.release.maven.version
-            )
+        .map { case (_, options) =>
+          SearchApi.ReleaseOptions(
+            options.artifacts,
+            options.versions.sorted.map(_.toString),
+            options.release.maven.groupId,
+            options.release.maven.artifactId,
+            options.release.maven.version
+          )
         }
     }
   }
 
   private def autocomplete(params: SearchParams) = {
     for (projects <- dataRepository.autocompleteProjects(params))
-      yield
-        projects.map { project =>
-          AutocompletionResponse(
-            project.organization,
-            project.repository,
-            project.github.flatMap(_.description).getOrElse("")
-          )
-        }
+      yield projects.map { project =>
+        AutocompletionResponse(
+          project.organization,
+          project.repository,
+          project.github.flatMap(_.description).getOrElse("")
+        )
+      }
   }
 }

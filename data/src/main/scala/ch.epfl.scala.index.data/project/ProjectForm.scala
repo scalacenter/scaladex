@@ -27,26 +27,31 @@ case class ProjectForm(
     contributingGuide: Option[Url],
     codeOfConduct: Option[Url]
 ) {
-  def update(project: Project,
-             paths: DataPaths,
-             githubDownload: GithubDownload,
-             fromStored: Boolean = false): Project = {
+  def update(
+      project: Project,
+      paths: DataPaths,
+      githubDownload: GithubDownload,
+      fromStored: Boolean = false
+  ): Project = {
 
     val githubWithKeywords =
       if (project.github.isEmpty) {
         Some(GithubInfo(topics = keywords))
       } else {
-        project.github.map(
-          github => github.copy(topics = github.topics ++ keywords)
+        project.github.map(github =>
+          github.copy(topics = github.topics ++ keywords)
         )
       }
 
     val oldBeginnerIssueLabel = project.github.flatMap(_.beginnerIssuesLabel)
-    val getBeginnerIssues = fromStored && beginnerIssues.isEmpty && beginnerIssuesLabel.isDefined
+    val getBeginnerIssues =
+      fromStored && beginnerIssues.isEmpty && beginnerIssuesLabel.isDefined
     val newBeginnerIssues =
       if (getBeginnerIssues) {
-        githubDownload.runBeginnerIssues(project.githubRepo,
-                                         beginnerIssuesLabel.getOrElse(""))
+        githubDownload.runBeginnerIssues(
+          project.githubRepo,
+          beginnerIssuesLabel.getOrElse("")
+        )
         GithubReader
           .beginnerIssues(paths, project.githubRepo)
           .getOrElse(List())
@@ -67,32 +72,31 @@ case class ProjectForm(
       artifactDeprecations = artifactDeprecations,
       cliArtifacts = cliArtifacts,
       hasCli = cliArtifacts.nonEmpty,
-      github = githubWithKeywords.map(
-        github =>
-          github.copy(
-            beginnerIssuesLabel = beginnerIssuesLabel.filterNot(_ == ""),
-            beginnerIssues = newBeginnerIssues,
-            selectedBeginnerIssues = selectedBeginnerIssues,
-            // default to project's chatroom/contributingGuide/codeOfConduct
-            // if updating from stored project and stored project didn't override
-            // that value
-            chatroom =
-              if (fromStored && !newChatroom.isDefined)
-                project.github.flatMap(_.chatroom)
-              else newChatroom,
-            contributingGuide =
-              if (fromStored && !newContributingGuide.isDefined)
-                project.github.flatMap(_.contributingGuide)
-              else newContributingGuide,
-            codeOfConduct =
-              if (fromStored && !newCodeOfConduct.isDefined)
-                project.github.flatMap(_.codeOfConduct)
-              else newCodeOfConduct
+      github = githubWithKeywords.map(github =>
+        github.copy(
+          beginnerIssuesLabel = beginnerIssuesLabel.filterNot(_ == ""),
+          beginnerIssues = newBeginnerIssues,
+          selectedBeginnerIssues = selectedBeginnerIssues,
+          // default to project's chatroom/contributingGuide/codeOfConduct
+          // if updating from stored project and stored project didn't override
+          // that value
+          chatroom =
+            if (fromStored && !newChatroom.isDefined)
+              project.github.flatMap(_.chatroom)
+            else newChatroom,
+          contributingGuide =
+            if (fromStored && !newContributingGuide.isDefined)
+              project.github.flatMap(_.contributingGuide)
+            else newContributingGuide,
+          codeOfConduct =
+            if (fromStored && !newCodeOfConduct.isDefined)
+              project.github.flatMap(_.codeOfConduct)
+            else newCodeOfConduct
         )
       ),
       customScalaDoc = customScalaDoc.filterNot(_ == ""),
-      documentationLinks = documentationLinks.filterNot {
-        case (label, link) => label == "" || link == ""
+      documentationLinks = documentationLinks.filterNot { case (label, link) =>
+        label == "" || link == ""
       },
       primaryTopic = primaryTopic
     )

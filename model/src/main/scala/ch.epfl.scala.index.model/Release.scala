@@ -53,8 +53,9 @@ case class Release(
         s"""libraryDependencies += "${maven.groupId}" % "${reference.artifact}" % "${reference.version}""""
       case Some(ScalaJs(_, _) | ScalaNative(_, _)) =>
         s"""libraryDependencies += "${maven.groupId}" %%% "${reference.artifact}" % "${reference.version}""""
-      case Some(ScalaJvm(ScalaVersion(_: PatchBinary))) |
-          Some(ScalaJvm(DottyVersion(_: PatchBinary))) =>
+      case Some(ScalaJvm(ScalaVersion(_: PatchBinary))) | Some(
+            ScalaJvm(DottyVersion(_: PatchBinary))
+          ) =>
         s"""libraryDependencies += "${maven.groupId}" % "${reference.artifact}" % "${reference.version}" cross CrossVersion.full"""
       case _ =>
         s"""libraryDependencies += "${maven.groupId}" %% "${reference.artifact}" % "${reference.version}""""
@@ -164,20 +165,18 @@ case class Release(
     }
 
     reference.target
-      .map(
-        target =>
-          List(
-            "g" -> maven.groupId,
-            "a" -> reference.artifact,
-            "v" -> maven.version,
-            "t" -> target.targetType.toString.toUpperCase,
-            "sv" -> latestFor(target.languageVersion.toString)
+      .map(target =>
+        List(
+          "g" -> maven.groupId,
+          "a" -> reference.artifact,
+          "v" -> maven.version,
+          "t" -> target.targetType.toString.toUpperCase,
+          "sv" -> latestFor(target.languageVersion.toString)
         )
       )
       .map(
-        _.map {
-          case (k, v) =>
-            s"$k=$v"
+        _.map { case (k, v) =>
+          s"$k=$v"
         }.mkString(tryBaseUrl + "?", "&", "")
       )
   }
@@ -188,7 +187,8 @@ case class Release(
     documentationLinks.map { case (label, url) => (label, evalLink(url)) }
   }
 
-  /** Documentation link are often related to a release version
+  /**
+   * Documentation link are often related to a release version
    * for example: https://playframework.com/documentation/2.6.x/Home
    * we want to substitute input such as
    * https://playframework.com/documentation/[major].[minor].x/Home

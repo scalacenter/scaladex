@@ -56,7 +56,8 @@ case class Project(
     contributorsWanted: Boolean = false,
     artifactDeprecations: Set[String] = Set(),
     cliArtifacts: Set[String] = Set(),
-    hasCli: Boolean = false, // HACK This field exists only for the purpose of being indexed by ES but his value must be equal to “cliArtifacts.nonEmpty”
+    hasCli: Boolean =
+      false, // HACK This field exists only for the purpose of being indexed by ES but his value must be equal to “cliArtifacts.nonEmpty”
     liveData: Boolean = false,
     id: Option[String] = None,
     created: Option[String],

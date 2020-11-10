@@ -13,13 +13,15 @@ trait TestHelpers {
     }
   }
 
-  def release(groupId: String,
-              artifactId: String,
-              version: String,
-              artifactName: String,
-              target: Option[ScalaTarget],
-              isNonStandardLib: Boolean = false,
-              resolver: Option[Resolver] = None): Release = {
+  def release(
+      groupId: String,
+      artifactId: String,
+      version: String,
+      artifactName: String,
+      target: Option[ScalaTarget],
+      isNonStandardLib: Boolean = false,
+      resolver: Option[Resolver] = None
+  ): Release = {
     Release(
       maven = MavenReference(
         groupId = groupId,

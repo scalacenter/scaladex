@@ -71,8 +71,10 @@ trait SearchProtocol {
 
     override def read(hit: Hit): Either[Throwable, Project] = {
       Try(
-        checkInnerHits(hit.asInstanceOf[RichSearchHit],
-                       nread[Project](hit).copy(id = Some(hit.id)))
+        checkInnerHits(
+          hit.asInstanceOf[RichSearchHit],
+          nread[Project](hit).copy(id = Some(hit.id))
+        )
       ).toEither
     }
   }

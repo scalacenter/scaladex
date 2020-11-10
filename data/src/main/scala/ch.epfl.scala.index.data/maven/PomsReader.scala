@@ -56,21 +56,27 @@ object PomsReader {
   }
 
   def apply(repository: LocalPomRepository, paths: DataPaths): PomsReader = {
-    new PomsReader(paths.poms(repository),
-                   paths.parentPoms(repository),
-                   repository)
+    new PomsReader(
+      paths.poms(repository),
+      paths.parentPoms(repository),
+      repository
+    )
   }
 
   def tmp(paths: DataPaths, path: Path): PomsReader = {
-    new PomsReader(path,
-                   paths.parentPoms(LocalPomRepository.MavenCentral),
-                   LocalPomRepository.UserProvided)
+    new PomsReader(
+      path,
+      paths.parentPoms(LocalPomRepository.MavenCentral),
+      LocalPomRepository.UserProvided
+    )
   }
 }
 
-private[maven] class PomsReader(pomsPath: Path,
-                                parentPomsPath: Path,
-                                repository: LocalPomRepository) {
+private[maven] class PomsReader(
+    pomsPath: Path,
+    parentPomsPath: Path,
+    repository: LocalPomRepository
+) {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -90,9 +96,11 @@ private[maven] class PomsReader(pomsPath: Path,
     def resolveModel(parent: Parent): ModelSource2 = {
       resolveModel(parent.getGroupId, parent.getArtifactId, parent.getVersion)
     }
-    def resolveModel(groupId: String,
-                     artifactId: String,
-                     version: String): ModelSource2 = {
+    def resolveModel(
+        groupId: String,
+        artifactId: String,
+        version: String
+    ): ModelSource2 = {
       val dep = maven.Dependency(groupId, artifactId, version)
       val target = parentPomsPath.resolve(PomsReader.path(dep))
 
@@ -126,7 +134,7 @@ private[maven] class PomsReader(pomsPath: Path,
   }
 
   def iterator()
-    : Iterator[(ReleaseModel, LocalPomRepository, String)] with Closeable = {
+      : Iterator[(ReleaseModel, LocalPomRepository, String)] with Closeable = {
     import scala.jdk.CollectionConverters._
 
     val stream = Files.newDirectoryStream(pomsPath)

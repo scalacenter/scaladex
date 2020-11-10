@@ -28,17 +28,25 @@ object License {
   val CreativeCommonsZeroUniversal =
     spdx("CC0-1.0", "Creative Commons Zero v1.0 Universal")
   val CreativeCommonsAttributionNonCommercialShareAlike_2_0 =
-    spdx("CC-BY-NC-SA-2.0",
-         "Creative Commons Attribution Non Commercial Share Alike 2.0")
+    spdx(
+      "CC-BY-NC-SA-2.0",
+      "Creative Commons Attribution Non Commercial Share Alike 2.0"
+    )
   val CreativeCommonsAttributionNonCommercialShareAlike_2_5 =
-    spdx("CC-BY-NC-SA-2.5",
-         "Creative Commons Attribution Non Commercial Share Alike 2.5")
+    spdx(
+      "CC-BY-NC-SA-2.5",
+      "Creative Commons Attribution Non Commercial Share Alike 2.5"
+    )
   val CreativeCommonsAttributionNonCommercialShareAlike_3_0 =
-    spdx("CC-BY-NC-SA-3.0",
-         "Creative Commons Attribution Non Commercial Share Alike 3.0")
+    spdx(
+      "CC-BY-NC-SA-3.0",
+      "Creative Commons Attribution Non Commercial Share Alike 3.0"
+    )
   val CreativeCommonsAttributionNonCommercialShareAlike_4_0 =
-    spdx("CC-BY-NC-SA-4.0",
-         "Creative Commons Attribution Non Commercial Share Alike 4.0")
+    spdx(
+      "CC-BY-NC-SA-4.0",
+      "Creative Commons Attribution Non Commercial Share Alike 4.0"
+    )
   val CreativeCommonsAttributionShareAlike_2_5 =
     spdx("CC-BY-SA-2.5", "Creative Commons Attribution Share Alike 2.5")
   val CreativeCommonsAttribution_3_0 =
@@ -78,9 +86,11 @@ object License {
   val MPL2 = spdx("MPL-2.0", "Mozilla Public License 2.0")
   val PublicDomain = License("Public Domain", "Public Domain", None)
   val Scala =
-    License("Scala License",
-            "Scala License",
-            Some("http://www.scala-lang.org/license.html"))
+    License(
+      "Scala License",
+      "Scala License",
+      Some("http://www.scala-lang.org/license.html")
+    )
   val TypesafeSubscriptionAgreement = License(
     "Typesafe Subscription Agreement",
     "Typesafe Subscription Agreement",

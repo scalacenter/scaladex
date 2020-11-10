@@ -16,37 +16,35 @@ import scala.concurrent.{ExecutionContext, Future}
 // this allows us to save project as json object sorted by keys
 case class LiveProjects(projects: Map[Project.Reference, ProjectForm])
 object LiveProjectsSerializer
-    extends CustomSerializer[LiveProjects](
-      format =>
-        (
-          {
-            case JObject(obj) => {
-              implicit val formats = DefaultFormats
-              LiveProjects(
-                obj.map {
-                  case (k, v) =>
-                    val List(organization, repository) = k.split('/').toList
+    extends CustomSerializer[LiveProjects](format =>
+      (
+        {
+          case JObject(obj) => {
+            implicit val formats = DefaultFormats
+            LiveProjects(
+              obj.map { case (k, v) =>
+                val List(organization, repository) = k.split('/').toList
 
-                    (Project.Reference(organization, repository),
-                     v.extract[ProjectForm])
-                }.toMap
-              )
-            }
-          }, {
-            case l: LiveProjects =>
-              JObject(
-                l.projects.toList
-                  .sortBy {
-                    case (Project.Reference(organization, repository), _) =>
-                      (organization, repository)
-                  }
-                  .map {
-                    case (Project.Reference(organization, repository), v) =>
-                      import ch.epfl.scala.index.search.SearchProtocol._
-                      JField(s"$organization/$repository", parseJson(write(v)))
-                  }
-              )
+                (
+                  Project.Reference(organization, repository),
+                  v.extract[ProjectForm]
+                )
+              }.toMap
+            )
           }
+        },
+        { case l: LiveProjects =>
+          JObject(
+            l.projects.toList
+              .sortBy { case (Project.Reference(organization, repository), _) =>
+                (organization, repository)
+              }
+              .map { case (Project.Reference(organization, repository), v) =>
+                import ch.epfl.scala.index.search.SearchProtocol._
+                JField(s"$organization/$repository", parseJson(write(v)))
+              }
+          )
+        }
       )
     )
 
@@ -67,8 +65,10 @@ object SaveLiveData extends LiveProjectsProtocol {
         .mkString("")
     ).projects
 
-  def saveProjects(paths: DataPaths,
-                   live: Map[Project.Reference, ProjectForm]): Unit = {
+  def saveProjects(
+      paths: DataPaths,
+      live: Map[Project.Reference, ProjectForm]
+  ): Unit = {
     val projects = LiveProjects(live)
 
     val liveDir = paths.liveProjects.getParent
@@ -83,8 +83,9 @@ object SaveLiveData extends LiveProjectsProtocol {
   }
 
   // Note: we use a future here just to catch exceptions. Our code is blocking, though.
-  def saveProject(project: Project,
-                  paths: DataPaths)(implicit ec: ExecutionContext): Future[_] =
+  def saveProject(project: Project, paths: DataPaths)(implicit
+      ec: ExecutionContext
+  ): Future[_] =
     Future {
       concurrent.blocking {
         val stored = SaveLiveData.storedProjects(paths)

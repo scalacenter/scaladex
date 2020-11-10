@@ -34,15 +34,16 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
 
   assert(bintrayCredentials.nonEmpty, "this steps requires bintray user")
 
-  /** paginated search query for bintray - append the query string to
+  /**
+   * paginated search query for bintray - append the query string to
    * the request object
    *
    * @param page the page credentials to download
    * @return
    */
   private def discover(wsClient: WSClient, page: PomListDownload): WSRequest = {
-    val query = page.lastSearchDate.fold(Seq[(String, String)]())(
-      after => Seq("created_after" -> (after.toLocalDateTime.toString + "Z"))
+    val query = page.lastSearchDate.fold(Seq[(String, String)]())(after =>
+      Seq("created_after" -> (after.toLocalDateTime.toString + "Z"))
     ) ++ Seq("name" -> s"${page.query}*.pom", "start_pos" -> page.page.toString)
 
     withAuth(wsClient.url(s"$apiUrl/search/file"))
@@ -80,8 +81,10 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
    * @param response the current response
    * @return
    */
-  def processSearch(page: PomListDownload,
-                    response: WSResponse): List[BintraySearch] = {
+  def processSearch(
+      page: PomListDownload,
+      response: WSResponse
+  ): List[BintraySearch] = {
     try {
       Parser.parseUnsafe(response.body).extract[List[BintraySearch]]
     } catch {
@@ -132,10 +135,12 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
         .find(_.name.contains(scalaVersion))
         .map(search => new DateTime(search.created) - 2.month)
 
-    performSearchAndDownload(s"Bintray: Search POMs for scala $scalaVersion",
-                             queried,
-                             s"*_$scalaVersion",
-                             mostRecentQueriedDate)
+    performSearchAndDownload(
+      s"Bintray: Search POMs for scala $scalaVersion",
+      queried,
+      s"*_$scalaVersion",
+      mostRecentQueriedDate
+    )
   }
 
   /**
@@ -157,11 +162,13 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
     val mostRecentQueriedDate =
       queried.find(filter).map(search => new DateTime(search.created) - 2.month)
 
-    performSearchAndDownload(s"Bintray: Search Poms for $groupId:$artifact",
-                             queried,
-                             artifact,
-                             mostRecentQueriedDate,
-                             Some(filter))
+    performSearchAndDownload(
+      s"Bintray: Search Poms for $groupId:$artifact",
+      queried,
+      artifact,
+      mostRecentQueriedDate,
+      Some(filter)
+    )
   }
 
   /**
@@ -188,7 +195,7 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
 
       filter match {
         case Some(f) => bintray.filter(f)
-        case None    => bintray
+        case None => bintray
       }
     }
 
@@ -197,18 +204,18 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
       Await.result(getPagination(search, mostRecentQueriedDate), Duration.Inf)
 
     val toDownload = pagination.pages
-      .map(
-        page => PomListDownload(search, page, mostRecentQueriedDate)
-      )
+      .map(page => PomListDownload(search, page, mostRecentQueriedDate))
       .toSet
 
     /* fetch all data from bintray */
     val newQueried: Seq[List[BintraySearch]] =
-      download[PomListDownload, List[BintraySearch]](infoMessage,
-                                                     toDownload,
-                                                     discover,
-                                                     processSearch,
-                                                     parallelism = 1)
+      download[PomListDownload, List[BintraySearch]](
+        infoMessage,
+        toDownload,
+        discover,
+        processSearch,
+        parallelism = 1
+      )
 
     /* maybe we have here a problem with duplicated poms */
     val merged = newQueried

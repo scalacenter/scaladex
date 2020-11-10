@@ -57,7 +57,12 @@ object Server {
       new FrontPage(data, session).routes,
       redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
         concat(
-          new ProjectPages(data, session, new GithubDownload(paths), paths).routes,
+          new ProjectPages(
+            data,
+            session,
+            new GithubDownload(paths),
+            paths
+          ).routes,
           searchPages.routes
         )
       }

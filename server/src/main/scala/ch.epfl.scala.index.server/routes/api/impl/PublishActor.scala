@@ -12,10 +12,11 @@ import ch.epfl.scala.index.search.DataRepository
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class PublishActor(paths: DataPaths,
-                   dataRepository: DataRepository,
-                   implicit val system: ActorSystem)
-    extends Actor {
+class PublishActor(
+    paths: DataPaths,
+    dataRepository: DataRepository,
+    implicit val system: ActorSystem
+) extends Actor {
 
   private val publishProcess = new impl.PublishProcess(paths, dataRepository)
 

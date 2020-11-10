@@ -31,7 +31,9 @@ class GithubRepoExtractor(paths: DataPaths) {
   private val claims =
     Using.resource(Source.fromFile(paths.claims.toFile)) { source =>
       read[Claims](source.mkString).claims
-        .filter(_.repo != void) // when the repository is void, the project is not claimed
+        .filter(
+          _.repo != void
+        ) // when the repository is void, the project is not claimed
     }
 
   private val claimedRepos = claims
@@ -79,15 +81,14 @@ class GithubRepoExtractor(paths: DataPaths) {
       if (s.startsWith("$")) s.drop(1) else s
     }
 
-    repo.map {
-      case GithubRepo(organization, repo) =>
-        val repo2 =
-          GithubRepo(
-            fixInterpolationIssue(organization.toLowerCase),
-            fixInterpolationIssue(repo.toLowerCase)
-          )
+    repo.map { case GithubRepo(organization, repo) =>
+      val repo2 =
+        GithubRepo(
+          fixInterpolationIssue(organization.toLowerCase),
+          fixInterpolationIssue(repo.toLowerCase)
+        )
 
-        movedRepositories.getOrElse(repo2, repo2)
+      movedRepositories.getOrElse(repo2, repo2)
     }
   }
 

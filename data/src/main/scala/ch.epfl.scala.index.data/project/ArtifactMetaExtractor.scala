@@ -25,7 +25,8 @@ class ArtifactMetaExtractor(paths: DataPaths) {
 
   private val nonStandardLibs = NonStandardLib.load(paths)
 
-  /** artifactId is often use to express binary compatibility with a scala version (ScalaTarget)
+  /**
+   * artifactId is often use to express binary compatibility with a scala version (ScalaTarget)
    * if the developer follow this convention we extract the relevant parts and we mark
    * the library as standard. Otherwise we either have a library like gatling or the scala library itself
    *
@@ -34,10 +35,9 @@ class ArtifactMetaExtractor(paths: DataPaths) {
   def apply(pom: ReleaseModel): Option[ArtifactMeta] = {
     val nonStandardLookup =
       nonStandardLibs
-        .find(
-          lib =>
-            lib.groupId == pom.groupId &&
-              lib.artifactId == pom.artifactId
+        .find(lib =>
+          lib.groupId == pom.groupId &&
+            lib.artifactId == pom.artifactId
         )
         .map(_.lookup)
 
@@ -113,12 +113,11 @@ class ArtifactMetaExtractor(paths: DataPaths) {
         for {
           version <- SemanticVersion.tryParse(pom.version)
           target <- ScalaJvm.fromFullVersion(version)
-        } yield
-          ArtifactMeta(
-            artifactName = pom.artifactId,
-            scalaTarget = ScalaJvm.fromFullVersion(version),
-            isNonStandard = true
-          )
+        } yield ArtifactMeta(
+          artifactName = pom.artifactId,
+          scalaTarget = ScalaJvm.fromFullVersion(version),
+          isNonStandard = true
+        )
     }
   }
 }

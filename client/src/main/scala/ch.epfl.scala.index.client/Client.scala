@@ -32,7 +32,10 @@ object Client {
     }
   }
 
-  private def fetchAndReplaceReadme(el: Element, token: Option[String]): Unit = {
+  private def fetchAndReplaceReadme(
+      el: Element,
+      token: Option[String]
+  ): Unit = {
 
     val organization = el.attributes.getNamedItem("data-organization").value
     val repository = el.attributes.getNamedItem("data-repository").value
@@ -106,8 +109,10 @@ object Client {
     getIssues(token)
   }
 
-  private def getIssues(token: Option[String],
-                        showSelected: Boolean = false): Unit = {
+  private def getIssues(
+      token: Option[String],
+      showSelected: Boolean = false
+  ): Unit = {
     import Dom.ElementOps
     Dom.getElementById("beginnerIssuesLabel").foreach { issuesLabelEl =>
       val label = issuesLabelEl.asInput.value
@@ -139,7 +144,9 @@ object Client {
             val issues = rawIssues.asInstanceOf[js.Array[Issue]]
             Dom.getElementById("selectedBeginnerIssues").foreach { el =>
               val options = issues.map { issue =>
-                s"""<option value='${getIssueJson(issue)}' title="#${issue.number}"> #${issue.number} - ${issue.title}</option>"""
+                s"""<option value='${getIssueJson(
+                  issue
+                )}' title="#${issue.number}"> #${issue.number} - ${issue.title}</option>"""
               }
               val selectEl = el.asInstanceOf[HTMLSelectElement]
               selectEl.innerHTML = options.mkString
@@ -160,8 +167,8 @@ object Client {
                   case issue if selectedIssueNumbers.contains(issue.number) =>
                     getIssueJson(issue)
                 }
-                getIssuesSelect.selectpicker("val",
-                                             selectedIssueValues.toJSArray)
+                getIssuesSelect
+                  .selectpicker("val", selectedIssueValues.toJSArray)
               }
             }
           }

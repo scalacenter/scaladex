@@ -29,12 +29,16 @@ object Response {
   }
 }
 
-case class UserState(repos: Set[GithubRepo],
-                     orgs: Set[Response.Organization],
-                     info: UserInfo) {
+case class UserState(
+    repos: Set[GithubRepo],
+    orgs: Set[Response.Organization],
+    info: UserInfo
+) {
   def isAdmin: Boolean = orgs.contains(Response.Organization("scalacenter"))
   def isSonatype: Boolean =
-    orgs.contains(Response.Organization("sonatype")) || info.login == "central-ossrh"
+    orgs.contains(
+      Response.Organization("sonatype")
+    ) || info.login == "central-ossrh"
   def hasPublishingAuthority: Boolean = isAdmin || isSonatype
 }
 
@@ -42,10 +46,12 @@ class Github()(implicit sys: ActorSystem) extends Json4sSupport {
   import sys.dispatcher
 
   def getUserStateWithToken(token: String): Future[UserState] = info(token)
-  def getUserStateWithOauth2(clientId: String,
-                             clientSecret: String,
-                             code: String,
-                             redirectUri: String): Future[UserState] = {
+  def getUserStateWithOauth2(
+      clientId: String,
+      clientSecret: String,
+      code: String,
+      redirectUri: String
+  ): Future[UserState] = {
     def access = {
       Http()
         .singleRequest(
@@ -62,9 +68,8 @@ class Github()(implicit sys: ActorSystem) extends Json4sSupport {
             headers = List(Accept(MediaTypes.`application/json`))
           )
         )
-        .flatMap(
-          response =>
-            Unmarshal(response).to[Response.AccessToken].map(_.access_token)
+        .flatMap(response =>
+          Unmarshal(response).to[Response.AccessToken].map(_.access_token)
         )
     }
 
@@ -75,10 +80,9 @@ class Github()(implicit sys: ActorSystem) extends Json4sSupport {
     def fetchRepos(): Future[Set[GithubRepo]] = {
       def convert(repos: List[Response.Repo]): Set[GithubRepo] = {
         repos.iterator
-          .filter(
-            repo =>
-              repo.viewerPermission == "WRITE" ||
-                repo.viewerPermission == "ADMIN"
+          .filter(repo =>
+            repo.viewerPermission == "WRITE" ||
+              repo.viewerPermission == "ADMIN"
           )
           .map { repo =>
             val Array(owner, name) = repo.nameWithOwner.split("/")
@@ -86,9 +90,11 @@ class Github()(implicit sys: ActorSystem) extends Json4sSupport {
           }
           .toSet
       }
-      def loop(cursorStart: Option[String],
-               acc: Set[GithubRepo],
-               n: Int): Future[Set[GithubRepo]] = {
+      def loop(
+          cursorStart: Option[String],
+          acc: Set[GithubRepo],
+          n: Int
+      ): Future[Set[GithubRepo]] = {
         val after = cursorStart.map(s => s"""after: "$s", """).getOrElse("")
         val query =
           s"""|query {
@@ -107,23 +113,24 @@ class Github()(implicit sys: ActorSystem) extends Json4sSupport {
               |  }
               |}""".stripMargin
 
-        graphqlRequest(query).flatMap(
-          response =>
-            Unmarshal(response).to[JValue].flatMap { data =>
-              val json: JValue = data \ "data" \ "viewer" \ "repositories"
-              json match {
-                case JNothing => Future.successful(acc)
-                case _ =>
-                  val repos = json.extract[Response.AllRepos]
-                  val res = acc ++ convert(repos.nodes)
-                  if (repos.pageInfo.hasNextPage || n < 5) {
-                    loop(cursorStart = Some(repos.pageInfo.endCursor),
-                         acc = res,
-                         n + 1)
-                  } else {
-                    Future.successful(res)
-                  }
-              }
+        graphqlRequest(query).flatMap(response =>
+          Unmarshal(response).to[JValue].flatMap { data =>
+            val json: JValue = data \ "data" \ "viewer" \ "repositories"
+            json match {
+              case JNothing => Future.successful(acc)
+              case _ =>
+                val repos = json.extract[Response.AllRepos]
+                val res = acc ++ convert(repos.nodes)
+                if (repos.pageInfo.hasNextPage || n < 5) {
+                  loop(
+                    cursorStart = Some(repos.pageInfo.endCursor),
+                    acc = res,
+                    n + 1
+                  )
+                } else {
+                  Future.successful(res)
+                }
+            }
           }
         )
       }
@@ -155,11 +162,10 @@ class Github()(implicit sys: ActorSystem) extends Json4sSupport {
            |  }
            |}""".stripMargin
 
-      graphqlRequest(query).flatMap(
-        response =>
-          Unmarshal(response).to[JValue].map { data =>
-            val json = data \ "data" \ "viewer"
-            json.extract[Response.User].convert(token)
+      graphqlRequest(query).flatMap(response =>
+        Unmarshal(response).to[JValue].map { data =>
+          val json = data \ "data" \ "viewer"
+          json.extract[Response.User].convert(token)
         }
       )
     }
@@ -177,11 +183,10 @@ class Github()(implicit sys: ActorSystem) extends Json4sSupport {
            |  }
            |}""".stripMargin
 
-      graphqlRequest(query).flatMap(
-        response =>
-          Unmarshal(response).to[JValue].map { data =>
-            val json = data \ "data" \ "viewer" \ "organizations" \ "nodes"
-            json.extract[Set[Response.Organization]]
+      graphqlRequest(query).flatMap(response =>
+        Unmarshal(response).to[JValue].map { data =>
+          val json = data \ "data" \ "viewer" \ "organizations" \ "nodes"
+          json.extract[Set[Response.Organization]]
         }
       )
     }

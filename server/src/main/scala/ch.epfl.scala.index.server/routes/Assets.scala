@@ -8,17 +8,17 @@ object Assets {
   val routes =
     get(
       concat(
-        path("assets" / "lib" / Remaining)(
-          path => getFromResource("lib/" + path)
+        path("assets" / "lib" / Remaining)(path =>
+          getFromResource("lib/" + path)
         ),
-        path("assets" / "img" / Remaining)(
-          path => getFromResource("img/" + path)
+        path("assets" / "img" / Remaining)(path =>
+          getFromResource("img/" + path)
         ),
-        path("assets" / "css" / Remaining)(
-          path => getFromResource("css/" + path)
+        path("assets" / "css" / Remaining)(path =>
+          getFromResource("css/" + path)
         ),
-        path("assets" / "js" / Remaining)(
-          path => getFromResource("js/" + path)
+        path("assets" / "js" / Remaining)(path =>
+          getFromResource("js/" + path)
         ),
         path("assets" / "client-opt.js")(
           getFromResource("client-opt.js")

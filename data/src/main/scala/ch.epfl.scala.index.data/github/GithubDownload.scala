@@ -38,9 +38,11 @@ object GithubDownload {
   }
 }
 
-class GithubDownload(paths: DataPaths,
-                     privateCredentials: Option[Credentials] = None)(
-    implicit val system: ActorSystem
+class GithubDownload(
+    paths: DataPaths,
+    privateCredentials: Option[Credentials] = None
+)(implicit
+    val system: ActorSystem
 ) extends PlayWsDownloader {
 
   private val log = LoggerFactory.getLogger(getClass)
@@ -153,8 +155,10 @@ class GithubDownload(paths: DataPaths,
    * @param response the response
    * @return
    */
-  private def processInfoResponse(repo: GithubRepo,
-                                  response: WSResponse): Try[Unit] = {
+  private def processInfoResponse(
+      repo: GithubRepo,
+      response: WSResponse
+  ): Try[Unit] = {
 
     checkGithubApiError(s"Processing Info for $repo", response)
       .map(_ => {
@@ -201,8 +205,10 @@ class GithubDownload(paths: DataPaths,
    * @param response the response
    * @return
    */
-  private def processContributorResponse(repo: PaginatedGithub,
-                                         response: WSResponse): Try[Unit] = {
+  private def processContributorResponse(
+      repo: PaginatedGithub,
+      response: WSResponse
+  ): Try[Unit] = {
 
     /*
      * Github api contributor response is just a list of 30 entries, to make sure we get
@@ -242,16 +248,18 @@ class GithubDownload(paths: DataPaths,
           val currentContributors =
             convertContributorResponse(repo, response) match {
               case Success(contributors) => contributors
-              case Failure(_)            => List()
+              case Failure(_) => List()
             }
           val contributors =
             (currentContributors ++ downloadAllPages)
               .sortBy(_.contributions)
               .reverse
 
-          saveJson(githubRepoContributorsPath(paths, repo.repo),
-                   repo.repo,
-                   writePretty(contributors))
+          saveJson(
+            githubRepoContributorsPath(paths, repo.repo),
+            repo.repo,
+            writePretty(contributors)
+          )
         } else {
           log.warn(s"got error status ${response.status} for $repo")
         }
@@ -268,8 +276,10 @@ class GithubDownload(paths: DataPaths,
    * @param response the response
    * @return
    */
-  private def processReadmeResponse(repo: GithubRepo,
-                                    response: WSResponse): Try[Unit] = {
+  private def processReadmeResponse(
+      repo: GithubRepo,
+      response: WSResponse
+  ): Try[Unit] = {
 
     checkGithubApiError(s"Processing Readme for $repo", response)
       .map { _ =>
@@ -306,9 +316,11 @@ class GithubDownload(paths: DataPaths,
       .map { _ =>
         if (200 == response.status) {
 
-          saveJson(githubRepoCommunityProfilePath(paths, repo),
-                   repo,
-                   response.body)
+          saveJson(
+            githubRepoCommunityProfilePath(paths, repo),
+            repo,
+            response.body
+          )
         } else {
           log.warn(s"got error status ${response.status} for $repo")
         }
@@ -322,8 +334,10 @@ class GithubDownload(paths: DataPaths,
    * @param response the response
    * @return
    */
-  private def processTopicsResponse(repo: GithubRepo,
-                                    response: WSResponse): Try[Unit] = {
+  private def processTopicsResponse(
+      repo: GithubRepo,
+      response: WSResponse
+  ): Try[Unit] = {
 
     checkGithubApiError(s"Processing Topics for $repo", response)
       .map { _ =>
@@ -343,8 +357,10 @@ class GithubDownload(paths: DataPaths,
    * @param response the response
    * @return
    */
-  private def processIssuesResponse(in: (GithubRepo, String),
-                                    response: WSResponse): Try[Unit] = {
+  private def processIssuesResponse(
+      in: (GithubRepo, String),
+      response: WSResponse
+  ): Try[Unit] = {
 
     val (repo, _) = in
 
@@ -375,9 +391,11 @@ class GithubDownload(paths: DataPaths,
       )
     } else if (500 == response.status) {
       log.info(s" $message, received 500 response from github")
-    } else if (200 != response.status &&
-               404 != response.status &&
-               204 != response.status) {
+    } else if (
+      200 != response.status &&
+      404 != response.status &&
+      204 != response.status
+    ) {
       log.warn(s"Got error status ${response.status} from Github")
       // get 200 for valid response
       // get 404 for old repo that no longer exists
@@ -434,8 +452,10 @@ class GithubDownload(paths: DataPaths,
     log.info(s"RESUMING")
   }
 
-  private def processChatroomResponse(repo: GithubRepo,
-                                      response: WSResponse): Unit = {
+  private def processChatroomResponse(
+      repo: GithubRepo,
+      response: WSResponse
+  ): Unit = {
 
     if (200 == response.status) {
 
@@ -478,7 +498,10 @@ class GithubDownload(paths: DataPaths,
    * @param repo the current repository
    * @return
    */
-  private def githubReadmeUrl(wsClient: WSClient, repo: GithubRepo): WSRequest = {
+  private def githubReadmeUrl(
+      wsClient: WSClient,
+      repo: GithubRepo
+  ): WSRequest = {
 
     applyReadmeHeaders(wsClient.url(mainGithubUrl(repo) + "/readme"))
   }
@@ -489,8 +512,10 @@ class GithubDownload(paths: DataPaths,
    * @param repo the current repository
    * @return
    */
-  private def githubContributorsUrl(wsClient: WSClient,
-                                    repo: PaginatedGithub): WSRequest = {
+  private def githubContributorsUrl(
+      wsClient: WSClient,
+      repo: PaginatedGithub
+  ): WSRequest = {
 
     applyAcceptJsonHeaders(
       wsClient
@@ -504,8 +529,10 @@ class GithubDownload(paths: DataPaths,
    * @param repo the current repository
    * @return
    */
-  private def githubCommunityProfileUrl(wsClient: WSClient,
-                                        repo: GithubRepo): WSRequest = {
+  private def githubCommunityProfileUrl(
+      wsClient: WSClient,
+      repo: GithubRepo
+  ): WSRequest = {
 
     applyCommunityProfileHeaders(
       wsClient.url(mainGithubUrl(repo) + "/community/profile")
@@ -606,59 +633,67 @@ class GithubDownload(paths: DataPaths,
    */
   def run(githubRepos: Set[GithubRepo]): Unit = {
 
-    downloadGithub[GithubRepo, Unit]("Downloading Repo Info",
-                                     githubRepos,
-                                     githubInfoUrl,
-                                     processInfoResponse)
+    downloadGithub[GithubRepo, Unit](
+      "Downloading Repo Info",
+      githubRepos,
+      githubInfoUrl,
+      processInfoResponse
+    )
 
-    downloadGraphql[GithubRepo, Unit]("Downloading Topics",
-                                      githubRepos,
-                                      githubGraphqlUrl,
-                                      topicQuery,
-                                      processTopicsResponse)
+    downloadGraphql[GithubRepo, Unit](
+      "Downloading Topics",
+      githubRepos,
+      githubGraphqlUrl,
+      topicQuery,
+      processTopicsResponse
+    )
 
-    downloadGithub[GithubRepo, Unit]("Downloading Community Profile info",
-                                     githubRepos,
-                                     githubCommunityProfileUrl,
-                                     processCommunityProfileResponse)
+    downloadGithub[GithubRepo, Unit](
+      "Downloading Community Profile info",
+      githubRepos,
+      githubCommunityProfileUrl,
+      processCommunityProfileResponse
+    )
 
-    downloadGithub[GithubRepo, Unit]("Downloading Readme",
-                                     githubRepos,
-                                     githubReadmeUrl,
-                                     processReadmeResponse)
+    downloadGithub[GithubRepo, Unit](
+      "Downloading Readme",
+      githubRepos,
+      githubReadmeUrl,
+      processReadmeResponse
+    )
 
     // todo: for later @see #112 - remember that issues are paginated - see contributors */
     // download[GithubRepo, Unit]("Downloading Issues", githubRepos, githubIssuesUrl, processIssuesResponse)
 
     val paginatedGithubRepos = githubRepos.map(repo => PaginatedGithub(repo, 1))
 
-    downloadGithub[PaginatedGithub, Unit]("Downloading Contributors",
-                                          paginatedGithubRepos,
-                                          githubContributorsUrl,
-                                          processContributorResponse)
+    downloadGithub[PaginatedGithub, Unit](
+      "Downloading Contributors",
+      paginatedGithubRepos,
+      githubContributorsUrl,
+      processContributorResponse
+    )
 
-    download[GithubRepo, Unit]("Checking Gitter Chatroom Links",
-                               githubRepos,
-                               gitterUrl,
-                               processChatroomResponse,
-                               parallelism = 32)
+    download[GithubRepo, Unit](
+      "Checking Gitter Chatroom Links",
+      githubRepos,
+      gitterUrl,
+      processChatroomResponse,
+      parallelism = 32
+    )
 
     val reposAndBeginnerIssues: Set[(GithubRepo, String)] = {
       val liveProjecs = SaveLiveData.storedProjects(paths)
 
       val projectReferences =
-        githubRepos.map {
-          case repo @ GithubRepo(organization, repository) =>
-            (repo, Project.Reference(organization, repository))
+        githubRepos.map { case repo @ GithubRepo(organization, repository) =>
+          (repo, Project.Reference(organization, repository))
         }.toList
 
-      projectReferences.flatMap {
-        case (repo, reference) =>
-          liveProjecs
-            .get(reference)
-            .flatMap(
-              form => form.beginnerIssuesLabel.map(label => (repo, label))
-            )
+      projectReferences.flatMap { case (repo, reference) =>
+        liveProjecs
+          .get(reference)
+          .flatMap(form => form.beginnerIssuesLabel.map(label => (repo, label)))
       }.toSet
     }
 
@@ -681,52 +716,66 @@ class GithubDownload(paths: DataPaths,
    * @param readme flag if readme can be downloaded
    * @param contributors flag if contributors can be downloaded
    */
-  def run(repo: GithubRepo,
-          info: Boolean,
-          readme: Boolean,
-          contributors: Boolean): Unit = {
+  def run(
+      repo: GithubRepo,
+      info: Boolean,
+      readme: Boolean,
+      contributors: Boolean
+  ): Unit = {
 
     if (info) {
 
-      downloadGithub[GithubRepo, Unit]("Downloading Repo Info",
-                                       Set(repo),
-                                       githubInfoUrl,
-                                       processInfoResponse)
+      downloadGithub[GithubRepo, Unit](
+        "Downloading Repo Info",
+        Set(repo),
+        githubInfoUrl,
+        processInfoResponse
+      )
 
-      downloadGraphql[GithubRepo, Unit]("Downloading Topics",
-                                        Set(repo),
-                                        githubGraphqlUrl,
-                                        topicQuery,
-                                        processTopicsResponse)
+      downloadGraphql[GithubRepo, Unit](
+        "Downloading Topics",
+        Set(repo),
+        githubGraphqlUrl,
+        topicQuery,
+        processTopicsResponse
+      )
 
-      downloadGithub[GithubRepo, Unit]("Downloading Community Profile info",
-                                       Set(repo),
-                                       githubCommunityProfileUrl,
-                                       processCommunityProfileResponse)
+      downloadGithub[GithubRepo, Unit](
+        "Downloading Community Profile info",
+        Set(repo),
+        githubCommunityProfileUrl,
+        processCommunityProfileResponse
+      )
     }
 
     if (readme) {
 
-      downloadGithub[GithubRepo, Unit]("Downloading Readme",
-                                       Set(repo),
-                                       githubReadmeUrl,
-                                       processReadmeResponse)
+      downloadGithub[GithubRepo, Unit](
+        "Downloading Readme",
+        Set(repo),
+        githubReadmeUrl,
+        processReadmeResponse
+      )
     }
 
     if (contributors) {
 
       val paginated = Set(PaginatedGithub(repo, 1))
-      downloadGithub[PaginatedGithub, Unit]("Downloading Contributors",
-                                            paginated,
-                                            githubContributorsUrl,
-                                            processContributorResponse)
+      downloadGithub[PaginatedGithub, Unit](
+        "Downloading Contributors",
+        paginated,
+        githubContributorsUrl,
+        processContributorResponse
+      )
     }
 
-    download[GithubRepo, Unit]("Checking Gitter Chatroom Links",
-                               Set(repo),
-                               gitterUrl,
-                               processChatroomResponse,
-                               parallelism = 32)
+    download[GithubRepo, Unit](
+      "Checking Gitter Chatroom Links",
+      Set(repo),
+      gitterUrl,
+      processChatroomResponse,
+      parallelism = 32
+    )
 
     ()
   }

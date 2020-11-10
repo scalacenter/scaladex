@@ -27,17 +27,16 @@ class Oauth2(config: OAuth2Config, github: Github, session: GithubUserSession)(
     get(
       concat(
         path("login")(
-          optionalHeaderValueByType[Referer](())(
-            referer =>
-              redirect(
-                Uri("https://github.com/login/oauth/authorize").withQuery(
-                  Query(
-                    "client_id" -> config.clientId,
-                    "scope" -> "read:org",
-                    "state" -> referer.map(_.value).getOrElse("/")
-                  )
-                ),
-                TemporaryRedirect
+          optionalHeaderValueByType[Referer](())(referer =>
+            redirect(
+              Uri("https://github.com/login/oauth/authorize").withQuery(
+                Query(
+                  "client_id" -> config.clientId,
+                  "scope" -> "read:org",
+                  "state" -> referer.map(_.value).getOrElse("/")
+                )
+              ),
+              TemporaryRedirect
             )
           )
         ),
@@ -70,24 +69,23 @@ class Oauth2(config: OAuth2Config, github: Github, session: GithubUserSession)(
                   config.redirectUri
                 )
 
-                onSuccess(userStateQuery) {
-                  userState =>
-                    setSession(
-                      refreshable,
-                      usingCookies,
-                      session.addUser(userState)
-                    )(
-                      setNewCsrfToken(checkHeader) { ctx =>
-                        ctx.complete(
-                          HttpResponse(
-                            status = TemporaryRedirect,
-                            headers = headers
-                              .Location(Uri(state.getOrElse("/"))) :: Nil,
-                            entity = HttpEntity.Empty
-                          )
+                onSuccess(userStateQuery) { userState =>
+                  setSession(
+                    refreshable,
+                    usingCookies,
+                    session.addUser(userState)
+                  )(
+                    setNewCsrfToken(checkHeader) { ctx =>
+                      ctx.complete(
+                        HttpResponse(
+                          status = TemporaryRedirect,
+                          headers = headers
+                            .Location(Uri(state.getOrElse("/"))) :: Nil,
+                          entity = HttpEntity.Empty
                         )
-                      }
-                    )
+                      )
+                    }
+                  )
                 }
               }
             )

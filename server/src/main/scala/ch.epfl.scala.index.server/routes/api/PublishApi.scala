@@ -113,17 +113,16 @@ class PublishApi(
     concat(
       get(
         path("publish")(
-          parameter("path")(
-            path =>
-              complete(
-                /* check if the release already exists - sbt will handle HTTP-Status codes
-                 * NotFound -> allowed to write
-                 * OK -> only allowed if isSnapshot := true
-                 */
-                dataRepository.getMavenArtifact(mavenPathExtractor(path)) map {
-                  case Some(release) => (OK, "release already exists")
-                  case None          => (NotFound, "ok to publish")
-                }
+          parameter("path")(path =>
+            complete(
+              /* check if the release already exists - sbt will handle HTTP-Status codes
+               * NotFound -> allowed to write
+               * OK -> only allowed if isSnapshot := true
+               */
+              dataRepository.getMavenArtifact(mavenPathExtractor(path)) map {
+                case Some(release) => (OK, "release already exists")
+                case None => (NotFound, "ok to publish")
+              }
             )
           )
         )
@@ -138,40 +137,36 @@ class PublishApi(
               "contributors".as[Boolean] ? true,
               "info".as[Boolean] ? true
             )
-          )(
-            (path, created, readme, contributors, info) =>
-              entity(as[String])(
-                data =>
-                  extractCredentials(
-                    credentials =>
-                      authenticateBasicAsync(
-                        realm = "Scaladex Realm",
-                        githubAuthenticator(credentials)
-                      ) {
-                        case (credentials, userState) =>
-                          val publishData = impl.PublishData(
-                            path,
-                            created,
-                            data,
-                            credentials,
-                            userState,
-                            info,
-                            contributors,
-                            readme
-                          )
+          )((path, created, readme, contributors, info) =>
+            entity(as[String])(data =>
+              extractCredentials(credentials =>
+                authenticateBasicAsync(
+                  realm = "Scaladex Realm",
+                  githubAuthenticator(credentials)
+                ) { case (credentials, userState) =>
+                  val publishData = impl.PublishData(
+                    path,
+                    created,
+                    data,
+                    credentials,
+                    userState,
+                    info,
+                    contributors,
+                    readme
+                  )
 
-                          log.info(
-                            s"Received publish command: ${publishData.created} - ${publishData.path}"
-                          )
-                          log.debug(publishData.data)
+                  log.info(
+                    s"Received publish command: ${publishData.created} - ${publishData.path}"
+                  )
+                  log.debug(publishData.data)
 
-                          complete(
-                            (actor ? publishData)
-                              .mapTo[(StatusCode, String)]
-                              .map(s => s)
-                          )
-                    }
-                )
+                  complete(
+                    (actor ? publishData)
+                      .mapTo[(StatusCode, String)]
+                      .map(s => s)
+                  )
+                }
+              )
             )
           )
         )

@@ -37,10 +37,12 @@ class Autocompletion(implicit ec: ExecutionContext) {
       moveSelection(
         completionSelection.selected.map(_ - 1).filter(_ >= 0)
       )
-    } else if (event.keyCode == KeyCode.Down && completionSelection.choices.nonEmpty) {
+    } else if (
+      event.keyCode == KeyCode.Down && completionSelection.choices.nonEmpty
+    ) {
       moveSelection(
-        completionSelection.selected.fold[Option[Int]](Some(0))(
-          i => Some(math.min(i + 1, completionSelection.choices.size - 1))
+        completionSelection.selected.fold[Option[Int]](Some(0))(i =>
+          Some(math.min(i + 1, completionSelection.choices.size - 1))
         )
       )
     } else if (event.keyCode == KeyCode.Enter) {
@@ -80,8 +82,10 @@ class Autocompletion(implicit ec: ExecutionContext) {
     Dom.getResultList.fold(())(_.innerHTML = "")
   }
 
-  private def update(projects: List[AutocompletionResponse],
-                     query: String): Unit = {
+  private def update(
+      projects: List[AutocompletionResponse],
+      query: String
+  ): Unit = {
     if (Dom.getSearchQuery.contains(query)) {
       cleanResults()
       completionSelection = CompletionSelection(None, projects)

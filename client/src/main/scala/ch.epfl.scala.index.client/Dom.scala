@@ -7,22 +7,21 @@ import org.scalajs.dom.{Node, document}
 object Dom {
   def getSearchRequest: Option[SearchRequest] = {
     for (query <- getSearchQuery)
-      yield
-        SearchRequest(
-          query = query,
-          you = getElementById("you")
-            .map(_.asInput.value)
-            .contains("✓"),
-          topics = getSearchFilter("topics"),
-          targetTypes = getSearchFilter("targetTypes"),
-          scalaVersions = getSearchFilter("scalaVersions"),
-          scalaJsVersions = getSearchFilter("scalaJsVersions"),
-          scalaNativeVersions = getSearchFilter("scalaNativeVersions"),
-          sbtVersions = getSearchFilter("sbtVersions"),
-          contributingSearch = getElementById("contributing-search")
-            .map(_.asInput.value)
-            .contains("true")
-        )
+      yield SearchRequest(
+        query = query,
+        you = getElementById("you")
+          .map(_.asInput.value)
+          .contains("✓"),
+        topics = getSearchFilter("topics"),
+        targetTypes = getSearchFilter("targetTypes"),
+        scalaVersions = getSearchFilter("scalaVersions"),
+        scalaJsVersions = getSearchFilter("scalaJsVersions"),
+        scalaNativeVersions = getSearchFilter("scalaNativeVersions"),
+        sbtVersions = getSearchFilter("sbtVersions"),
+        contributingSearch = getElementById("contributing-search")
+          .map(_.asInput.value)
+          .contains("true")
+      )
   }
 
   def getSearchQuery: Option[String] =

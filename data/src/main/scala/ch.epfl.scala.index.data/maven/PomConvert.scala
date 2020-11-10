@@ -14,7 +14,9 @@ private[maven] object PomConvert {
     def map(l: java.util.Properties): Map[String, String] =
       Option(l).map(_.asScala.toMap).getOrElse(Map())
 
-    def convert(contributor: org.apache.maven.model.Contributor): Contributor = {
+    def convert(
+        contributor: org.apache.maven.model.Contributor
+    ): Contributor = {
       import contributor._
       Contributor(
         Option(getName),

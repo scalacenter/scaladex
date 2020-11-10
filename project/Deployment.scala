@@ -17,9 +17,11 @@ object Deployment {
     deployDevIndex := indexTask(data, devUserName).value
   )
 
-  def deployTask(server: Project,
-                 userName: String,
-                 port: Int): Def.Initialize[Task[Unit]] = Def.task {
+  def deployTask(
+      server: Project,
+      userName: String,
+      port: Int
+  ): Def.Initialize[Task[Unit]] = Def.task {
     val serverZip = (packageBin in (server, Universal)).value.toPath
     val deployment = deploymentTask(userName).value
     deployment.deploy(serverZip, port)
@@ -69,10 +71,12 @@ object Deployment {
   private val prodPort = 8080
 }
 
-class Deployment(rootFolder: File,
-                 logger: Logger,
-                 userName: String,
-                 version: String) {
+class Deployment(
+    rootFolder: File,
+    logger: Logger,
+    userName: String,
+    version: String
+) {
 
   def deploy(serverZip: Path, port: Int): Unit = {
     logger.info("Generate server script")

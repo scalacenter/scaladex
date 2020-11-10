@@ -5,9 +5,11 @@ package github
 import model.misc.GithubRepo
 
 private[github] object GithubReadme {
-  def absoluteUrl(readmeHtml: String,
-                  githubRepo: GithubRepo,
-                  defaultBranch: String): String = {
+  def absoluteUrl(
+      readmeHtml: String,
+      githubRepo: GithubRepo,
+      defaultBranch: String
+  ): String = {
     val GithubRepo(user, repo) = githubRepo
     import org.jsoup.Jsoup
 

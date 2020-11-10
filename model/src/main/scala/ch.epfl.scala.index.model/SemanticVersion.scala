@@ -56,14 +56,21 @@ object SemanticVersion extends Parsers with LazyLogging {
     SemanticVersion(major, Some(minor), Some(patch))
   }
 
-  def apply(major: Int, minor: Int, patch: Int, patch2: Int): SemanticVersion = {
+  def apply(
+      major: Int,
+      minor: Int,
+      patch: Int,
+      patch2: Int
+  ): SemanticVersion = {
     SemanticVersion(major, Some(minor), Some(patch), Some(patch2))
   }
 
-  def apply(major: Int,
-            minor: Int,
-            patch: Int,
-            preRelease: PreRelease): SemanticVersion = {
+  def apply(
+      major: Int,
+      minor: Int,
+      patch: Int,
+      preRelease: PreRelease
+  ): SemanticVersion = {
     SemanticVersion(major, Some(minor), Some(patch), None, Some(preRelease))
   }
 
@@ -81,9 +88,8 @@ object SemanticVersion extends Parsers with LazyLogging {
 
   def Parser[_: P]: P[SemanticVersion] = {
     ("v".? ~ Major ~ MinorP ~ PatchP ~ Patch2P ~ ("-" ~ PreRelease.Parser).? ~ MetaData.?)
-      .map {
-        case (major, minor, patch, patch2, preRelease, metadata) =>
-          SemanticVersion(major, minor, patch, patch2, preRelease, metadata)
+      .map { case (major, minor, patch, patch2, preRelease, metadata) =>
+        SemanticVersion(major, minor, patch, patch2, preRelease, metadata)
       }
   }
 

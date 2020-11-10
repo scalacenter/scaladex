@@ -21,11 +21,12 @@ final case class PatchBinary(major: Int, minor: Int, patch: Int)
   override def toString: String = s"$major.$minor.$patch"
 }
 
-final case class PreReleaseBinary(major: Int,
-                                  minor: Int,
-                                  patch: Option[Int],
-                                  preRelease: PreRelease)
-    extends BinaryVersion {
+final case class PreReleaseBinary(
+    major: Int,
+    minor: Int,
+    patch: Option[Int],
+    preRelease: PreRelease
+) extends BinaryVersion {
   override def toString: String = {
     val patchPart = patch.map(p => s".$p").getOrElse("")
     s"$major.$minor$patchPart-$preRelease"
@@ -37,7 +38,7 @@ object BinaryVersion extends Parsers {
   import fastparse._
 
   implicit val ordering: Ordering[BinaryVersion] = Ordering.by {
-    case MajorBinary(major)        => (major, None, None, None)
+    case MajorBinary(major) => (major, None, None, None)
     case MinorBinary(major, minor) => (major, Some(minor), None, None)
     case PatchBinary(major, minor, patch) =>
       (major, Some(minor), Some(patch), None)
@@ -71,9 +72,8 @@ object BinaryVersion extends Parsers {
   }
 
   private def MinorParser[_: P]: P[MinorBinary] = {
-    (Number ~ "." ~ Number ~ !("." | "-")).map {
-      case (major, minor) =>
-        MinorBinary(major, minor)
+    (Number ~ "." ~ Number ~ !("." | "-")).map { case (major, minor) =>
+      MinorBinary(major, minor)
     }
   }
 

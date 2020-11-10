@@ -23,9 +23,11 @@ class UtilTests extends FunSpec {
     it("example") {
       assert(
         innerJoin(left, right)((a, b) => (a, b)) ==
-          Map("a" -> (("la", "ra")),
-              "b" -> (("lb", "rb")),
-              "c" -> (("lc", "rc")))
+          Map(
+            "a" -> (("la", "ra")),
+            "b" -> (("lb", "rb")),
+            "c" -> (("lc", "rc"))
+          )
       )
     }
 

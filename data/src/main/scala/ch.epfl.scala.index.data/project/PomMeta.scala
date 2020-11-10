@@ -32,12 +32,14 @@ object PomMeta {
         created = None,
         resolver = None
       ),
-      keep = true,
+      keep = true
     )
   }
 
-  def apply(pomsRepoSha: Iterable[(ReleaseModel, LocalRepository, String)],
-            paths: DataPaths): Seq[PomMeta] = {
+  def apply(
+      pomsRepoSha: Iterable[(ReleaseModel, LocalRepository, String)],
+      paths: DataPaths
+  ): Seq[PomMeta] = {
 
     import LocalPomRepository._
 
@@ -49,7 +51,9 @@ object PomMeta {
         .read()
         .groupBy(_.sha1)
         .view
-        .mapValues(_.head.created) // Note: This is inefficient because we already loaded the data earlier and discarded the creation time
+        .mapValues(
+          _.head.created
+        ) // Note: This is inefficient because we already loaded the data earlier and discarded the creation time
 
     val packagingOfInterest = Set("aar", "jar", "bundle", "pom")
 
@@ -73,8 +77,8 @@ object PomMeta {
                   val resolver: Option[Resolver] =
                     if (metas.forall(_.isJCenter)) Option(JCenter)
                     else
-                      metas.headOption.map(
-                        meta => BintrayResolver(meta.owner, meta.repo)
+                      metas.headOption.map(meta =>
+                        BintrayResolver(meta.owner, meta.repo)
                       )
 
                   PomMetaStep(
@@ -85,10 +89,9 @@ object PomMeta {
                       ),
                       resolver = resolver
                     ),
-                    keep = !metas.exists(
-                      meta =>
-                        meta.owner == "typesafe" && typesafeNonOSS
-                          .contains(meta.repo)
+                    keep = !metas.exists(meta =>
+                      meta.owner == "typesafe" && typesafeNonOSS
+                        .contains(meta.repo)
                     )
                   )
                 }
@@ -145,9 +148,8 @@ object PomMeta {
           }
         }
       }
-      .filter {
-        case PomMetaStep(meta, keep) =>
-          packagingOfInterest.contains(meta.releaseModel.packaging) && keep
+      .filter { case PomMetaStep(meta, keep) =>
+        packagingOfInterest.contains(meta.releaseModel.packaging) && keep
       }
       .map(_.meta)
       .toSeq
