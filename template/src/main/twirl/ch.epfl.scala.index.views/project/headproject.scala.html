@@ -3,7 +3,7 @@
 
 @import ch.epfl.scala.index.views.html.{unescapeBackground, ensureUri}
 
-@(project: Project, artifacts: List[String], versions: List[SemanticVersion], 
+@(project: Project, artifacts: List[String], versions: List[SemanticVersion],
   targets: List[ScalaTarget], release: Release, canEdit: Boolean)
 
 <div class="head-project">
@@ -12,7 +12,7 @@
       <div class="col-md-8">
         <div class="info-project">
           <h1>
-            <a href="/@project.organization">@project.organization</a> / 
+            <a href="/@project.organization">@project.organization</a> /
             <a href="/@project.organization/@project.repository"
               target="_blank">
               @project.repository
@@ -67,7 +67,7 @@
               <input type="hidden" name="selected" value="target">
 
               <input type="hidden" name="artifact" value="@release.reference.artifact">
-              
+
               <select
                 name="target"
                 onchange="this.form.submit()"
@@ -108,7 +108,7 @@
 
             <input type="hidden" name="version" value="@release.reference.version">
           </form>
-          
+
           <form action="/@project.reference.organization/@project.reference.repository" action="GET">
             <input type="hidden" name="selected" value="version">
 
@@ -130,6 +130,12 @@
               </option>
             }
             </select>
+          </form>
+          <form>
+            <div class="btn-group">
+              <a href="/artifacts/@project.reference.organization/@project.reference.repository"
+                 class="btn btn-primary btn-right-margin">Version Matrix</a>
+            </div>
           </form>
         </div>
       </div>
