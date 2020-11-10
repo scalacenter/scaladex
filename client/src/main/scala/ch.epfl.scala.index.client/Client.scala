@@ -226,4 +226,49 @@ object Client {
 
     CopyToClipboard.addCopyListenersOnClass("btn-copy")
   }
+
+  @JSExport
+  def updateVisibleArtifactsInGrid(): Unit = {
+    def valuesOfCheckedInputsWithName(name: String): Set[String] = {
+      jQuery(s"input[name='$name']")
+        .toArray()
+        .asInstanceOf[js.Array[HTMLInputElement]]
+        .filter(_.checked)
+        .map(_.value)
+        .toSet
+    }
+
+    val selectedTargetTypes = valuesOfCheckedInputsWithName("targetType")
+    val selectedTargets = valuesOfCheckedInputsWithName("target")
+    val allRequiredClasses = selectedTargetTypes ++ selectedTargets
+
+    jQuery(".artifact-line").each { (_, elem) =>
+      val supported = allRequiredClasses.forall(elem.classList.contains(_))
+
+      if (supported) {
+        elem.classList.remove("artifact-line-hidden")
+        elem.classList.add("artifact-line-visible")
+      } else {
+        elem.classList.remove("artifact-line-visible")
+        elem.classList.add("artifact-line-hidden")
+      }
+    }
+
+    jQuery(".version-line").each { (_, elem) =>
+      val supportedCount =
+        elem.querySelectorAll("tr.artifact-line-visible").length
+
+      val versionCell =
+        elem.querySelector("td.version").asInstanceOf[HTMLTableCellElement]
+      versionCell.rowSpan = supportedCount + 1
+
+      if (supportedCount != 0) {
+        elem.classList.remove("version-line-hidden")
+        elem.classList.add("version-line-visible")
+      } else {
+        elem.classList.remove("version-line-visible")
+        elem.classList.add("version-line-hidden")
+      }
+    }
+  }
 }
