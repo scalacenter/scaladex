@@ -45,6 +45,27 @@ class SbtInstallTests extends FunSuite with TestHelpers {
     assert2(expected, obtained)
   }
 
+  test("scala3") {
+    val obtained =
+      release(
+        groupId = "org.typelevel",
+        artifactId = "circe_cats-core_3.0.0-M1",
+        version = "2.3.0-M2",
+        artifactName = "circe_cats-core",
+        target = Some(
+          ScalaJvm(
+            languageVersion =
+              DottyVersion(PreReleaseBinary(3, 0, Some(0), Milestone(1)))
+          )
+        )
+      ).sbtInstall
+
+    val expected =
+      """libraryDependencies += "org.typelevel" %% "circe_cats-core" % "2.3.0-M2""""
+
+    assertResult(expected)(obtained)
+  }
+
   test("Scala.js / Scala-Native") {
     val obtained =
       release(
