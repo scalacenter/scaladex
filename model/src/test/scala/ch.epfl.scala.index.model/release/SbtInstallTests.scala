@@ -55,7 +55,7 @@ class SbtInstallTests extends FunSuite with TestHelpers {
         target = Some(
           ScalaJvm(
             languageVersion =
-              DottyVersion(PreReleaseBinary(3, 0, Some(0), Milestone(1)))
+              Scala3Version(PreReleaseBinary(3, 0, Some(0), Milestone(1)))
           )
         )
       ).sbtInstall

@@ -6,7 +6,7 @@ import fastparse._
 
 /**
  * A [[LanguageVersion]] is the binary version of the compiler frontend.
- * It can be either a [[ScalaVersion]] or a [[DottyVersion]]
+ * It can be either a [[ScalaVersion]] or a [[Scala3Version]]
  */
 sealed trait LanguageVersion {
 
@@ -33,10 +33,15 @@ final case class ScalaVersion(version: BinaryVersion) extends LanguageVersion {
   override def toString: String = version.toString()
 }
 
-final case class DottyVersion(version: BinaryVersion) extends LanguageVersion {
-  def family = "dotty"
-  def render: String = s"dotty $version"
-  def isValid: Boolean = DottyVersion.isValid(version)
+final case class Scala3Version(version: BinaryVersion) extends LanguageVersion {
+  def family = "scala3"
+  def render: String = version match {
+    case MinorBinary(major, minor) if major == 0 && minor < 30 =>
+      s"dotty $version"
+    case PreReleaseBinary(major, _, _, _) if major == 3 => s"scala $toString"
+    case _ => toString()
+  }
+  def isValid: Boolean = Scala3Version.isValid(version)
   override def toString: String = version.toString()
 }
 
@@ -59,18 +64,19 @@ object ScalaVersion {
   }
 }
 
-object DottyVersion {
+object Scala3Version {
   def isValid(version: BinaryVersion): Boolean =
     version match {
-      case MinorBinary(major, minor) if major == 0 && minor < 30 => true
-      case PreReleaseBinary(major, _, _, _) if major == 3        => true
-      case _                                                     => false
+      case MinorBinary(major, minor) if major == 0 && minor < 30 =>
+        true // dotty versions
+      case PreReleaseBinary(major, _, _, _) if major == 3 => true
+      case _ => false
     }
 
-  def Parser[_: P]: P[DottyVersion] = {
+  def Parser[_: P]: P[Scala3Version] = {
     BinaryVersion.Parser
       .filter(isValid)
-      .map(DottyVersion(_))
+      .map(Scala3Version(_))
   }
 }
 
@@ -84,12 +90,12 @@ object LanguageVersion extends Parsers {
   }
 
   implicit val ordering: Ordering[LanguageVersion] = Ordering.by {
-    case DottyVersion(version) => (1, version)
+    case Scala3Version(version) => (1, version)
     case ScalaVersion(version) => (0, version)
   }
 
   def Parser[_: P]: P[LanguageVersion] =
-    ScalaVersion.Parser | DottyVersion.Parser
+    ScalaVersion.Parser | Scala3Version.Parser
 
   def FullParser[_: P]: P[LanguageVersion] = Parser ~ End
 }

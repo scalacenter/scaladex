@@ -93,7 +93,7 @@ object ScalaJvm {
     binaryVersion
       .collect {
         case version if ScalaVersion.isValid(version) => ScalaVersion(version)
-        case version if DottyVersion.isValid(version) => DottyVersion(version)
+        case version if Scala3Version.isValid(version) => Scala3Version(version)
       }
       .map(ScalaJvm(_))
   }

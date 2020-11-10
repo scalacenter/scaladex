@@ -33,7 +33,7 @@ class ArtifactTests extends FunSpec with Matchers {
       Artifact.parse("circe_0.23") should contain(
         Artifact(
           "circe",
-          ScalaJvm(DottyVersion(MinorBinary(0, 23)))
+          ScalaJvm(Scala3Version(MinorBinary(0, 23)))
         )
       )
     }
@@ -42,7 +42,7 @@ class ArtifactTests extends FunSpec with Matchers {
       Artifact.parse("circe_cats-core_3.0.0-M1") should contain(
         Artifact(
           "circe_cats-core",
-          ScalaJvm(DottyVersion(PreReleaseBinary(3, 0, Some(0), Milestone(1))))
+          ScalaJvm(Scala3Version(PreReleaseBinary(3, 0, Some(0), Milestone(1))))
         )
       )
     }
@@ -51,7 +51,7 @@ class ArtifactTests extends FunSpec with Matchers {
       Artifact.parse("scala3-compiler_3.0.0-M1") should contain(
         Artifact(
           "scala3-compiler",
-          ScalaJvm(DottyVersion(PreReleaseBinary(3, 0, Some(0), Milestone(1))))
+          ScalaJvm(Scala3Version(PreReleaseBinary(3, 0, Some(0), Milestone(1))))
         )
       )
     }
