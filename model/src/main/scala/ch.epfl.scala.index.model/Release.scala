@@ -54,7 +54,7 @@ case class Release(
       case Some(ScalaJs(_, _) | ScalaNative(_, _)) =>
         s"""libraryDependencies += "${maven.groupId}" %%% "${reference.artifact}" % "${reference.version}""""
       case Some(ScalaJvm(ScalaVersion(_: PatchBinary))) | Some(
-            ScalaJvm(DottyVersion(_: PatchBinary))
+            ScalaJvm(Scala3Version(_: PatchBinary))
           ) =>
         s"""libraryDependencies += "${maven.groupId}" % "${reference.artifact}" % "${reference.version}" cross CrossVersion.full"""
       case _ =>

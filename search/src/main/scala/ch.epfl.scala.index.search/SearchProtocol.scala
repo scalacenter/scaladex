@@ -33,7 +33,7 @@ trait SearchProtocol {
           classOf[PatchBinary],
           classOf[PreReleaseBinary],
           classOf[ScalaVersion],
-          classOf[DottyVersion]
+          classOf[Scala3Version]
         )
       )
     )
