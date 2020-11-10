@@ -10,9 +10,16 @@
 
 @main(title = project.repository, showSearch = true, user) {
   <main class="artifacts">
-    <a href="/@project.reference.organization/@project.reference.repository" class="btn btn-primary">
-      Back
-    </a>
+    <div class="row">
+      <div class="col-md-12">
+        <a href="/@project.reference.organization/@project.reference.repository" class="btn btn-primary">
+          Back
+        </a>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12">
 
     <table>
       <thead>
@@ -21,34 +28,59 @@
           <th rowspan="2" class="artifact">Artifacts</th>
 
           @for((targetType, count) <- targetTypes) {
-            <th colspan="@count">@targetType</th>
+            <th colspan="@count">
+              <label>
+                <input type="checkbox" name="targetType" value="supported-target-type_@targetType"
+                    onclick="ScaladexClient.updateVisibleArtifactsInGrid()">
+                @targetType
+              </label>
+            </th>
           }
         </tr>
 
         <tr>
-        @for((_, label) <- targets) {
-            <th class="target">@label</th>
+          @for((optTarget, name) <- targets) {
+            <th class="target">
+              <label>
+                <input type="checkbox" name="target" value="supported-target@(optTarget.fold("_none")(_.encode))"
+                    onclick="ScaladexClient.updateVisibleArtifactsInGrid()">
+                @name
+              </label>
+            </th>
           }
         </tr>
       </thead>
 
-      <tbody>
       @for((version, releasesByVersion) <- releases){
-        <tr>
+        <tbody class="version-line version-line-visible">
           @defining(releasesByVersion.groupBy(_.reference.artifact).toList.sortBy(_._1)) { artifacts =>
-            <td rowspan="@{artifacts.size + 1}" class="version">
-              @version
-            </td>
+            <tr>
+              <td rowspan="@{artifacts.size + 1}" class="version">
+                @version
+              </td>
+            </tr>
             @for((artifact, releasesByArtifact) <- artifacts) {
-              <tr>
-                <td class="artifact">
-                  @artifact
-                </td>
-                @defining(releasesByArtifact.groupBy(_.reference.target)) { suportedTargets =>
-
+              @defining(releasesByArtifact.groupBy(_.reference.target)) { supportedTargets =>
+                <tr class="@({
+                  val scalaTargets = supportedTargets.collect {
+                    case (Some(scalaTarget), _) => scalaTarget
+                  }.toList
+                  if (scalaTargets.isEmpty) {
+                    ""
+                  } else {
+                    "artifact-line artifact-line-visible" + (
+                      scalaTargets.map(_.targetType).distinct.map(" supported-target-type_" + _).mkString(" ")
+                    ) + (
+                      scalaTargets.map(_.encode).map(" supported-target" + _).mkString(" ")
+                    )
+                  }
+                })">
+                  <td class="artifact">
+                    @artifact
+                  </td>
                   @for((target, _) <- targets) {
                     <td class="target" title="@target.map(_.render).getOrElse("Java")">
-                    @for(release <- suportedTargets.get(target)) {
+                    @for(release <- supportedTargets.get(target)) {
                       @for(r0 <- release.headOption) {
                         <a href="@r0.reference.httpUrl" class="supported-target">
                         </a>
@@ -56,14 +88,21 @@
                     }
                     </td>
                   }
-                } 
-              </tr>
+                </tr>
+              }
             }
           }
-
-        </tr>
+        </tbody>
       }
-      </tbody>
     </table>
+
+      </div>
+    </div>
   </main>
+
+  <script type="text/javascript">
+  document.addEventListener("DOMContentLoaded", function() {
+    ScaladexClient.updateVisibleArtifactsInGrid();
+  })
+  </script>
 }
