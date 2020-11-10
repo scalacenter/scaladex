@@ -63,6 +63,7 @@ object DottyVersion {
   def isValid(version: BinaryVersion): Boolean =
     version match {
       case MinorBinary(major, minor) if major == 0 && minor < 30 => true
+      case PreReleaseBinary(major, _, _, _) if major == 3        => true
       case _                                                     => false
     }
 
