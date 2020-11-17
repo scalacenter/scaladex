@@ -17,6 +17,11 @@
               target="_blank">
               @project.repository
             </a>
+            @if(project.contributorsWanted){
+              <a class="contributors-tag" href="/search?q=contributorsWanted:true">
+                <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">
+              </a>
+            }
             @if(canEdit){
               <a href="/edit/@project.reference.organization/@project.reference.repository" class="btn btn-primary">
                 Edit
@@ -33,19 +38,21 @@
               }
             }
           }
-          @for(github <- project.github) {
-            @for(homepage <- github.homepage) {
-              @if(!homepage.target.isEmpty) {
-                <a class="homepage" href="@ensureUri(homepage.target)" target="_blank" rel="nofollow">
-                  Website <i class="fa fa-globe" aria-hidden="true"></i>
-                </a>
+          <div class="project-links">
+            @for(github <- project.github) {
+              @for(homepage <- github.homepage) {
+                @if(!homepage.target.isEmpty) {
+                  <a href="@ensureUri(homepage.target)" target="_blank" rel="nofollow">
+                    Website <i class="fa fa-globe" aria-hidden="true"></i>
+                  </a>
+                }
               }
+              <a href="https://github.com/@project.githubRepo"
+                target="_blank">
+                GitHub <i class="fa fa-github fa-lg"></i>
+              </a>
             }
-            <a href="https://github.com/@project.githubRepo"
-              target="_blank">
-              GitHub <i class="fa fa-github fa-lg"></i>
-            </a>
-          }
+          </div>
           @for(github <- project.github) {
             @if(!github.topics.isEmpty) {
               <ul class="list-inline">
@@ -59,9 +66,9 @@
       </div>
       <div class="col-md-4">
         <div class="artifact-project">
-          @if(project.contributorsWanted){
-            <a href="/search?q=contributorsWanted:true"><img src="/assets/img/contributors_tag.png" alt="Contributors Wanted"></a>
-          }
+          <a class="btn btn-primary" href="/artifacts/@project.reference.organization/@project.reference.repository" >
+            Version Matrix
+          </a>
           @if(!targets.isEmpty) {
             <form action="/@project.reference.organization/@project.reference.repository" action="GET">
               <input type="hidden" name="selected" value="target">
@@ -130,12 +137,6 @@
               </option>
             }
             </select>
-          </form>
-          <form>
-            <div class="btn-group">
-              <a href="/artifacts/@project.reference.organization/@project.reference.repository"
-                 class="btn btn-primary btn-right-margin">Version Matrix</a>
-            </div>
           </form>
         </div>
       </div>
