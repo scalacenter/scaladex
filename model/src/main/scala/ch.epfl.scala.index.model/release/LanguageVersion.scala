@@ -67,8 +67,6 @@ object ScalaVersion {
 object Scala3Version {
   def isValid(version: BinaryVersion): Boolean =
     version match {
-      case MinorBinary(major, minor) if major == 0 && minor < 30 =>
-        true // dotty versions
       case PreReleaseBinary(major, _, _, _) if major == 3 => true
       case _ => false
     }
@@ -86,7 +84,7 @@ object LanguageVersion extends Parsers {
   }
 
   def sortFamilies(languageFamilies: List[String]): List[String] = {
-    languageFamilies.sorted // alphabetical order: 2.10 < 2.11 < 2.12 < 2.13 < dotty
+    languageFamilies.sorted // alphabetical order: 2.10 < 2.11 < 2.12 < 2.13 < scala3
   }
 
   implicit val ordering: Ordering[LanguageVersion] = Ordering.by {
