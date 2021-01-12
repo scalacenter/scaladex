@@ -3,10 +3,10 @@
 @import ch.epfl.scala.index.model.release._
 
 @(project: Project, 
-  releases: Seq[(SemanticVersion, Seq[Release])],
-  targetTypes: Seq[(ScalaTargetType, Int)],
-  targets: Seq[(Option[ScalaTarget], String)],
-  user: Option[UserInfo])
+  user: Option[UserInfo],
+  targetTypesWithVersion: Map[ScalaTargetType, Seq[String]],
+  semanticVersionWithReleases: Seq[(SemanticVersion, Map[String, Seq[(Release, String)]])]
+)
 
 @main(title = project.repository, showSearch = true, user) {
   <main class="artifacts">
@@ -27,72 +27,66 @@
           <th rowspan="2" class="version">Versions</th>
           <th rowspan="2" class="artifact">Artifacts</th>
 
-          @for((targetType, count) <- targetTypes) {
-            <th colspan="@count">
+          @targetTypesWithVersion.map { case (targetType, versions) =>
+            <th colspan="@{versions.size}">
               <label>
                 <input type="checkbox" name="targetType" value="supported-target-type_@targetType"
-                    onclick="ScaladexClient.updateVisibleArtifactsInGrid()">
+                       onclick="ScaladexClient.updateVisibleArtifactsInGrid()">
                 @targetType
               </label>
             </th>
           }
         </tr>
-
         <tr>
-          @for((optTarget, name) <- targets) {
+        @defining(targetTypesWithVersion.values.flatten) { allScalaVersions =>
+          @allScalaVersions.map { version =>
             <th class="target">
               <label>
-                <input type="checkbox" name="target" value="supported-target@(optTarget.fold("_none")(_.encode))"
-                    onclick="ScaladexClient.updateVisibleArtifactsInGrid()">
-                @name
+                <input type="checkbox" name="target" value="supported-scala-version_@version"
+                       onclick="ScaladexClient.updateVisibleArtifactsInGrid()">
+                @version
               </label>
             </th>
-          }
+            }
         </tr>
       </thead>
 
-      @for((version, releasesByVersion) <- releases){
-        <tbody class="version-line version-line-visible">
-          @defining(releasesByVersion.groupBy(_.reference.artifact).toList.sortBy(_._1)) { artifacts =>
+      @semanticVersionWithReleases.map { case (semanticVersion, artifactWithReleases) =>
+      <tbody class="version-line version-line-visible">
             <tr>
-              <td rowspan="@{artifacts.size + 1}" class="version">
-                @version
+              <td rowspan="@{artifactWithReleases.size + 1}" class="version">
+                @semanticVersion
               </td>
             </tr>
-            @for((artifact, releasesByArtifact) <- artifacts) {
-              @defining(releasesByArtifact.groupBy(_.reference.target)) { supportedTargets =>
-                <tr class="@({
-                  val scalaTargets = supportedTargets.collect {
-                    case (Some(scalaTarget), _) => scalaTarget
-                  }.toList
-                  if (scalaTargets.isEmpty) {
-                    ""
-                  } else {
-                    "artifact-line artifact-line-visible" + (
-                      scalaTargets.map(_.targetType).distinct.map(" supported-target-type_" + _).mkString(" ")
-                    ) + (
-                      scalaTargets.map(_.encode).map(" supported-target" + _).mkString(" ")
-                    )
+            @artifactWithReleases.map { case (artifactName, releasesWithScalaVersion) =>
+              @defining(releasesWithScalaVersion.map(_._2)) { scalaVersions =>
+              @defining(releasesWithScalaVersion.map(_._1)) { releases =>
+              @defining( targetTypesWithVersion.filter { case (targetType, sVersions) =>
+                sVersions.intersect(scalaVersions).nonEmpty }.map(_._1)){ targetTypes =>
+                  <tr class="@({ if (targetTypes.isEmpty) { "" }
+                  else {
+                    ("artifact-line artifact-line-visible") +
+                      targetTypes.toList.distinct.map(" supported-target-type_" + _).mkString(" ") +
+                      scalaVersions.map(" supported-scala-version_" + _).mkString(" ")
                   }
-                })">
-                  <td class="artifact">
-                    @artifact
-                  </td>
-                  @for((target, _) <- targets) {
-                    <td class="target" title="@target.map(_.render).getOrElse("Java")">
-                    @for(release <- supportedTargets.get(target)) {
-                      @for(r0 <- release.headOption) {
-                        <a href="@r0.reference.httpUrl" class="supported-target">
-                        </a>
-                      }
-                    }
+                     })">
+                    <td class="artifact">
+                      @artifactName
                     </td>
+                    @allScalaVersions.map { version =>
+                      <td class="target" title="@version">
+                        @if(scalaVersions.contains(version)) {
+                          <a href="@releases.headOption.map(_.reference.httpUrl).getOrElse("")" class="supported-target"></a>
+                        }
+                      </td>
+                    }
                   }
                 </tr>
               }
             }
           }
         </tbody>
+        }
       }
     </table>
 
