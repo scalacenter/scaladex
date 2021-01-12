@@ -21,7 +21,6 @@ import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import org.json4s.native.Serialization.{read, write}
 
-import scala.collection.SortedMap
 import scala.concurrent.{ExecutionContext, Future}
 
 class ProjectPages(
