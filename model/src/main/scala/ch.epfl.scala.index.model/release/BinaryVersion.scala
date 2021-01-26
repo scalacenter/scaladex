@@ -38,7 +38,7 @@ object BinaryVersion extends Parsers {
   import fastparse._
 
   implicit val ordering: Ordering[BinaryVersion] = Ordering.by {
-    case MajorBinary(major)        => (major, None, 0, None)
+    case MajorBinary(major) => (major, None, 0, None)
     case MinorBinary(major, minor) => (major, Some(minor), 0, None)
     case PatchBinary(major, minor, patch) =>
       (major, Some(minor), patch, None)
