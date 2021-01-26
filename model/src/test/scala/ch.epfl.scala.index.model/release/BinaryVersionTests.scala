@@ -38,6 +38,8 @@ class BinaryVersionTests
       (MajorBinary(1), MinorBinary(1, 1)), // 1.x < 1.1
       (MajorBinary(1), MinorBinary(2, 1)),
       (release.PreReleaseBinary(1, 2, None, Milestone(1)), MinorBinary(1, 2)),
+      (release.PreReleaseBinary(1, 2, Some(0), Milestone(1)),
+       MinorBinary(1, 2)),
       (MajorBinary(1), release.PreReleaseBinary(2, 0, None, Milestone(1)))
     )
 
