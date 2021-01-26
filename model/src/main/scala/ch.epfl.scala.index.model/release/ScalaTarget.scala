@@ -120,12 +120,12 @@ object ScalaJs {
 
 object ScalaNative {
   val `0.3`: BinaryVersion = MinorBinary(0, 3)
-  val `0.4.0-M2`: BinaryVersion =
-    release.PreReleaseBinary(0, 4, Some(0), Milestone(2))
+  val `0.4`: BinaryVersion = MinorBinary(0, 4)
 
-  def isValid(version: BinaryVersion): Boolean = {
-    version == `0.3` || version >= `0.4.0-M2`
-  }
+  private val stableBinaryVersions = Set(`0.3`, `0.4`)
+
+  def isValid(version: BinaryVersion): Boolean =
+    stableBinaryVersions.contains(version)
 
   def Parser[_: P]: P[ScalaTarget] =
     ("_native" ~ BinaryVersion.Parser ~ "_" ~ LanguageVersion.Parser).map {
