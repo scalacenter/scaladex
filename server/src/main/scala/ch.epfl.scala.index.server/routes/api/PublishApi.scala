@@ -3,6 +3,8 @@ package server
 package routes
 package api
 
+import java.util.Base64
+
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model._
@@ -45,7 +47,7 @@ class PublishApi(
       credentialsHeader match {
         case Some(cred) => {
           val upw = new String(
-            new sun.misc.BASE64Decoder().decodeBuffer(cred.token())
+            Base64.getDecoder.decode(cred.token())
           )
           val userPass = upw.split(":")
 
