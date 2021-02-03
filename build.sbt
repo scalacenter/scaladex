@@ -6,7 +6,7 @@ import Deployment.githash
 val playJsonVersion = "2.9.0"
 val akkaVersion = "2.6.5"
 val akkaHttpVersion = "10.1.12"
-val elastic4sVersion = "5.6.11"
+val elastic4sVersion = "6.6.4"
 val log4jVersion = "2.13.3"
 val nscalaTimeVersion = "2.24.0"
 
@@ -49,7 +49,7 @@ lazy val commonSettings = Seq(
     "UTF-8",
     "-feature",
     "-unchecked",
-    "-Xfatal-warnings"
+    // "-Xfatal-warnings"
   ),
   libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.9" % Test,
   javaOptions in reStart ++= {
@@ -99,6 +99,8 @@ lazy val search = project
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
       "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion,
+      // required by elasti4s-embedded
+      "org.codelibs.elasticsearch.module" % "analysis-common" % "6.6.2",
       "org.json4s" %% "json4s-native" % "3.6.9",
       "org.typelevel" %% "jawn-json4s" % "1.0.0"
     )

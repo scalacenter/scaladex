@@ -14,7 +14,6 @@ import data.project.ProjectConvert
 import model.misc.GithubRepo
 import model.{Project, Release}
 import model.release.ReleaseSelection
-import com.sksamuel.elastic4s.ElasticDsl._
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.StatusCode

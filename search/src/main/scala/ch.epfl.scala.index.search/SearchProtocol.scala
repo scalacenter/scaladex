@@ -6,7 +6,6 @@ import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.search.mapping._
 
 import com.sksamuel.elastic4s._
-import com.sksamuel.elastic4s.searches.RichSearchHit
 import org.typelevel.jawn.support.json4s.Parser
 import org.json4s._
 import org.json4s.native.Serialization
@@ -14,6 +13,8 @@ import org.json4s.native.Serialization.{write => nwrite}
 
 import scala.util.{Success, Try}
 import scala.util.Failure
+import com.sksamuel.elastic4s.http.search.SearchHit
+import com.sksamuel.elastic4s.http.SourceAsContentBuilder
 
 trait SearchProtocol {
   implicit val formats: Formats = Serialization
@@ -39,24 +40,23 @@ trait SearchProtocol {
     )
     .preservingEmptyValues
 
-  private def nread[T: Manifest](hit: Hit) =
-    Parser.parseUnsafe(hit.sourceAsString).extract[T]
+  private def nread[T: Manifest](hit: String) =
+    Parser.parseUnsafe(hit).extract[T]
 
   // filters a project's beginnerIssues by the inner hits returned from elastic search
   // so that only the beginnerIssues that passed the nested beginnerIssues query
   // get returned
-  private def checkInnerHits(hit: RichSearchHit, p: Project): Project = {
+  private def checkInnerHits(hit: SearchHit, p: Project): Project = {
     hit.innerHits
       .get("issues")
       .collect {
-        case searchHits if searchHits.totalHits > 0 => {
+        case searchHits if searchHits.total > 0 => {
           p.copy(
             github = p.github.map { github =>
               github.copy(
-                filteredBeginnerIssues = searchHits
-                  .getHits()
+                filteredBeginnerIssues = searchHits.hits
                   .map { hit =>
-                    nread[GithubIssue](RichSearchHit(hit))
+                    nread[GithubIssue](SourceAsContentBuilder(hit.source).string())
                   }
                   .toList
               )
@@ -69,13 +69,13 @@ trait SearchProtocol {
 
   implicit object ProjectAs extends HitReader[Project] {
 
-    override def read(hit: Hit): Either[Throwable, Project] = {
+    override def read(hit: Hit): Try[Project] = {
       Try(
         checkInnerHits(
-          hit.asInstanceOf[RichSearchHit],
-          nread[Project](hit).copy(id = Some(hit.id))
+          hit.asInstanceOf[SearchHit],
+          nread[Project](hit.sourceAsString).copy(id = Some(hit.id))
         )
-      ).toEither
+      )
     }
   }
 
@@ -84,8 +84,8 @@ trait SearchProtocol {
   }
 
   implicit object ReleaseReader extends HitReader[ReleaseDocument] {
-    override def read(hit: Hit): Either[Throwable, ReleaseDocument] =
-      Try(nread[ReleaseDocument](hit).copy(id = Some(hit.id))).toEither
+    override def read(hit: Hit): Try[ReleaseDocument] =
+      Try(nread[ReleaseDocument](hit.sourceAsString).copy(id = Some(hit.id)))
   }
 
   implicit object ReleaseIndexable extends Indexable[ReleaseDocument] {
@@ -93,8 +93,8 @@ trait SearchProtocol {
   }
 
   implicit object DependencyReader extends HitReader[DependencyDocument] {
-    override def read(hit: Hit): Either[Throwable, DependencyDocument] = {
-      Try(nread[DependencyDocument](hit).copy(id = Some(hit.id))).toEither
+    override def read(hit: Hit): Try[DependencyDocument] = {
+      Try(nread[DependencyDocument](hit.sourceAsString).copy(id = Some(hit.id)))
     }
   }
 

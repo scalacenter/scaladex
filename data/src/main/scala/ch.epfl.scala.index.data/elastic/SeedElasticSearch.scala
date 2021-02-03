@@ -57,9 +57,9 @@ class SeedElasticSearch(
       } yield {
         if (releasesResult.hasFailures || dependenciesResult.hasFailures) {
           logger.error(s"indexing projects ${project.reference} failed")
-          releasesResult.failures.foreach(p => logger.error(p.failureMessage))
+          releasesResult.failures.foreach(p => logger.error(p.error.get.reason))
           dependenciesResult.failures.foreach(p =>
-            logger.error(p.failureMessage)
+            logger.error(p.error.get.reason)
           )
         }
       }
