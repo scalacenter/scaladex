@@ -111,7 +111,7 @@ class IndexingActor(
             response <- dataRepository.insertDependencies(dependencies)
           } yield {
             if (response.hasFailures) {
-              response.failures.foreach(f => log.error(f.failureMessage))
+              response.failures.foreach(f => log.error(f.error.get.reason))
               log.error(
                 s"failed inserting the ${dependencies.size} dependencies of ${release.maven}"
               )

@@ -6,35 +6,36 @@ import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc.{Pagination, _}
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.search.mapping._
-import com.sksamuel.elastic4s.bulk.RichBulkResponse
 import com.sksamuel.elastic4s.embedded.LocalNode
-import com.sksamuel.elastic4s.searches.queries.QueryDefinition
-import com.sksamuel.elastic4s.searches.sort.SortDefinition
-import com.sksamuel.elastic4s.{
-  ElasticDsl,
-  ElasticsearchClientUri,
-  HitReader,
-  TcpClient
-}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import org.elasticsearch.action.bulk.BulkResponse
-import org.elasticsearch.cluster.health.ClusterHealthStatus
-import org.elasticsearch.common.lucene.search.function.CombineFunction
-import org.elasticsearch.common.lucene.search.function.FieldValueFactorFunction.Modifier
-import org.elasticsearch.search.sort.SortOrder
 
 import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import java.io.Closeable
+import com.sksamuel.elastic4s.http.ElasticClient
+import com.sksamuel.elastic4s.http.ElasticDsl
+import com.sksamuel.elastic4s.HealthStatus
+import com.sksamuel.elastic4s.http.bulk.BulkResponse
+import com.sksamuel.elastic4s.HitReader
+import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.searches.sort.SortOrder
+import com.sksamuel.elastic4s.searches.queries.funcscorer.FieldValueFactorFunctionModifier
+import com.sksamuel.elastic4s.searches.queries.funcscorer.CombineFunction
+import com.sksamuel.elastic4s.searches.sort.Sort
+import com.sksamuel.elastic4s.http.HttpClient
+import com.sksamuel.elastic4s.http.ElasticsearchJavaRestClient
+import com.sksamuel.elastic4s.http.ElasticProperties
+import com.sksamuel.elastic4s.http.ElasticNodeEndpoint
 
 /**
  * @param esClient TCP client of the elasticsearch server
  */
-class DataRepository(esClient: TcpClient, indexName: String)(implicit
+class DataRepository(esClient: ElasticClient, indexName: String)(implicit
     ec: ExecutionContext
 ) extends LazyLogging
     with Closeable {
+  import ElasticDsl._
   import DataRepository._
 
   def waitUntilReady(): Unit = {
@@ -50,9 +51,9 @@ class DataRepository(esClient: TcpClient, indexName: String)(implicit
     }
 
     blockUntil("Expected cluster to have yellow status") { () =>
-      val status = esClient.execute(clusterHealth()).await.getStatus
-      status == ClusterHealthStatus.YELLOW ||
-      status == ClusterHealthStatus.GREEN
+      val waitForYellowStatus = clusterHealth().waitForStatus(HealthStatus.Yellow)
+      val response = esClient.execute(waitForYellowStatus).await
+      response.isSuccess
     }
   }
 
@@ -62,7 +63,7 @@ class DataRepository(esClient: TcpClient, indexName: String)(implicit
 
   def deleteAll(): Future[Unit] = {
     for {
-      exists <- esClient.execute(indexExists(indexName)).map(_.isExists())
+      exists <- esClient.execute(indexExists(indexName)).map(_.result.isExists)
       _ <-
         if (exists) esClient.execute(deleteIndex(indexName))
         else Future.successful(())
@@ -102,12 +103,12 @@ class DataRepository(esClient: TcpClient, indexName: String)(implicit
       .map(_ => ())
   }
 
-  def insertReleases(releases: Seq[Release]): Future[RichBulkResponse] = {
+  def insertReleases(releases: Seq[Release]): Future[BulkResponse] = {
     val requests = releases.map { r =>
       indexInto(indexName / releasesCollection).source(ReleaseDocument(r))
     }
 
-    esClient.execute(bulk(requests))
+    esClient.execute(bulk(requests)).map(_.result)
   }
 
   def insertRelease(release: Release): Future[Unit] = {
@@ -121,13 +122,13 @@ class DataRepository(esClient: TcpClient, indexName: String)(implicit
 
   def insertDependencies(
       dependencies: Seq[ScalaDependency]
-  ): Future[RichBulkResponse] = {
+  ): Future[BulkResponse] = {
     if (dependencies.nonEmpty) {
       val requests = dependencies.map { d =>
         indexInto(indexName / dependenciesCollection)
           .source(DependencyDocument(d))
       }
-      esClient.execute(bulk(requests))
+      esClient.execute(bulk(requests)).map(_.result)
     } else {
       Future.successful { emptyBulkResponse }
     }
@@ -139,25 +140,25 @@ class DataRepository(esClient: TcpClient, indexName: String)(implicit
       notDeprecatedQuery,
       searchQuery(queryString, contributingSearch = false)
     )
-    val request = search(indexName / projectsCollection).query(query).size(0)
-    esClient.execute(request).map(_.totalHits)
+    val request = searchWithType(indexName / projectsCollection).query(query).size(0)
+    esClient.execute(request).map(_.result.totalHits)
   }
 
   def autocompleteProjects(params: SearchParams): Future[Seq[Project]] = {
-    val request = search(indexName / projectsCollection)
+    val request = searchWithType(indexName / projectsCollection)
       .query(gitHubStarScoring(filteredSearchQuery(params)))
       .sortBy(sortQuery(params.sorting))
       .limit(5)
 
     esClient
       .execute(request)
-      .map(_.to[Project])
+      .map(_.result.to[Project])
   }
 
   def findProjects(params: SearchParams): Future[Page[Project]] = {
     def clamp(page: Int): Int = if (page <= 0) 1 else page
 
-    val request = search(indexName / projectsCollection)
+    val request = searchWithType(indexName / projectsCollection)
       .query(gitHubStarScoring(filteredSearchQuery(params)))
       .sortBy(sortQuery(params.sorting))
       .from(params.total * (clamp(params.page) - 1))
@@ -165,15 +166,15 @@ class DataRepository(esClient: TcpClient, indexName: String)(implicit
 
     esClient
       .execute(request)
-      .map { result =>
+      .map { response =>
         Page(
           Pagination(
             current = clamp(params.page),
             pageCount =
-              Math.ceil(result.totalHits / params.total.toDouble).toInt,
-            itemCount = result.totalHits
+              Math.ceil(response.result.totalHits / params.total.toDouble).toInt,
+            itemCount = response.result.totalHits
           ),
-          result.to[Project].map(_.formatForDisplaying)
+          response.result.to[Project].map(_.formatForDisplaying)
         )
       }
   }
@@ -188,12 +189,12 @@ class DataRepository(esClient: TcpClient, indexName: String)(implicit
       termQuery("reference.repository", project.repository)
     )
 
-    val request = search(indexName / releasesCollection).query(query).size(5000)
+    val request = searchWithType(indexName / releasesCollection).query(query).size(5000)
 
     esClient
       .execute(request)
       .map(
-        _.to[ReleaseDocument].map(_.toRelease).filter(_.isValid)
+        _.result.to[ReleaseDocument].map(_.toRelease).filter(_.isValid)
       )
   }
 
@@ -213,11 +214,11 @@ class DataRepository(esClient: TcpClient, indexName: String)(implicit
       )
     )
 
-    val request = search(indexName / releasesCollection).query(query).limit(1)
+    val request = searchWithType(indexName / releasesCollection).query(query).limit(1)
 
     esClient
       .execute(request)
-      .map(r => r.to[ReleaseDocument].headOption.map(_.toRelease))
+      .map(_.result.to[ReleaseDocument].headOption.map(_.toRelease))
   }
 
   def getProject(project: Project.Reference): Future[Option[Project]] = {
@@ -226,9 +227,9 @@ class DataRepository(esClient: TcpClient, indexName: String)(implicit
       termQuery("repository.keyword", project.repository)
     )
 
-    val request = search(indexName / projectsCollection).query(query).limit(1)
+    val request = searchWithType(indexName / projectsCollection).query(query).limit(1)
 
-    esClient.execute(request).map(_.to[Project].headOption)
+    esClient.execute(request).map(_.result.to[Project].headOption)
   }
 
   /**
@@ -277,11 +278,11 @@ class DataRepository(esClient: TcpClient, indexName: String)(implicit
     val query = termQuery("dependentUrl", ref.httpUrl)
 
     val request =
-      search(indexName / dependenciesCollection).query(query).size(5000)
+      searchWithType(indexName / dependenciesCollection).query(query).size(5000)
 
     esClient
       .execute(request)
-      .map(_.to[DependencyDocument].map(_.toDependency))
+      .map(_.result.to[DependencyDocument].map(_.toDependency))
   }
 
   /**
@@ -292,13 +293,13 @@ class DataRepository(esClient: TcpClient, indexName: String)(implicit
   ): Future[Seq[ScalaDependency]] = {
     val query = termQuery("targetUrl", ref.httpUrl)
 
-    val request = search(indexName / dependenciesCollection)
+    val request = searchWithType(indexName / dependenciesCollection)
       .query(query)
       .size(5000)
 
     esClient
       .execute(request)
-      .map(_.to[DependencyDocument].map(_.toDependency))
+      .map(_.result.to[DependencyDocument].map(_.toDependency))
   }
 
   def getLatestProjects(): Future[List[Project]] = {
@@ -317,13 +318,13 @@ class DataRepository(esClient: TcpClient, indexName: String)(implicit
   }
 
   def getMostDependentUpon(): Future[List[Project]] = {
-    val request = search(indexName / projectsCollection)
+    val request = searchWithType(indexName / projectsCollection)
       .query(matchAllQuery())
       .limit(frontPageCount)
       .sortBy(sortQuery(Some("dependentCount")))
     esClient
       .execute(request)
-      .map(_.to[Project].toList)
+      .map(_.result.to[Project].toList)
   }
 
   def getAllTopics(): Future[List[(String, Long)]] = {
@@ -409,28 +410,28 @@ class DataRepository(esClient: TcpClient, indexName: String)(implicit
 
   def getTotalProjects(): Future[Long] = {
     esClient
-      .execute(search(indexName / projectsCollection))
-      .map(_.totalHits)
+      .execute(searchWithType(indexName / projectsCollection))
+      .map(_.result.totalHits)
   }
 
   def getTotalReleases(): Future[Long] = {
     esClient
-      .execute(search(indexName / releasesCollection))
-      .map(_.totalHits)
+      .execute(searchWithType(indexName / releasesCollection))
+      .map(_.result.totalHits)
   }
 
   def getContributingProjects(): Future[List[Project]] = {
-    val request = search(indexName / projectsCollection)
+    val request = searchWithType(indexName / projectsCollection)
       .query(
         functionScoreQuery(contributingQuery)
-          .scorers(randomScore(scala.util.Random.nextInt(10000)))
+          .functions(randomScore(scala.util.Random.nextInt(10000)))
           .boostMode("sum")
       )
       .limit(frontPageCount)
 
     esClient
       .execute(request)
-      .map(_.to[Project].toList)
+      .map(_.result.to[Project].toList)
   }
 
   private def getLatest[T: HitReader: Manifest](
@@ -438,24 +439,24 @@ class DataRepository(esClient: TcpClient, indexName: String)(implicit
       sortingField: String,
       size: Int
   ): Future[List[T]] = {
-    val request = search(indexName / collection)
+    val request = searchWithType(indexName / collection)
       .query(notDeprecatedQuery)
       .sortBy(fieldSort(sortingField).order(SortOrder.DESC))
       .limit(size)
 
-    esClient.execute(request).map(r => r.to[T].toList)
+    esClient.execute(request).map(r => r.result.to[T].toList)
   }
 
   private def stringAggregations(
       field: String,
-      query: QueryDefinition
+      query: Query
   ): Future[List[(String, Long)]] = {
     aggregations(field, query).map(_.toList.sortBy(_._1).toList)
   }
 
   private def versionAggregations(
       field: String,
-      query: QueryDefinition,
+      query: Query,
       filterF: BinaryVersion => Boolean
   ): Future[List[(String, Long)]] = {
 
@@ -473,36 +474,34 @@ class DataRepository(esClient: TcpClient, indexName: String)(implicit
 
   private def aggregations(
       field: String,
-      query: QueryDefinition
+      query: Query
   ): Future[Map[String, Long]] = {
     val aggregationName = s"${field}_count"
 
     val aggregation = termsAggregation(aggregationName).field(field).size(50)
 
-    val request = search(indexName / projectsCollection)
+    val request = searchWithType(indexName / projectsCollection)
       .query(query)
       .aggregations(aggregation)
 
     for (response <- esClient.execute(request)) yield {
-      response.aggregations
-        .stringTermsResult(aggregationName)
-        .getBuckets
-        .asScala
+      response.result.aggregations
+        .terms(aggregationName)
+        .buckets
         .map { bucket =>
-          bucket.getKeyAsString -> bucket.getDocCount
+          bucket.key -> bucket.docCount
         }
         .toMap
     }
   }
 }
 
-object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
+object DataRepository extends LazyLogging with SearchProtocol {
+  import ElasticDsl._
   private val projectsCollection = "projects"
   private val releasesCollection = "releases"
   private val dependenciesCollection = "dependencies"
-  private val emptyBulkResponse = RichBulkResponse(
-    new BulkResponse(Array.empty, 0)
-  )
+  private val emptyBulkResponse = new BulkResponse(0, false, Seq.empty)
 
   private lazy val config =
     ConfigFactory.load().getConfig("org.scala_lang.index.data")
@@ -525,7 +524,7 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
   }
 
   /** @see https://github.com/sksamuel/elastic4s#client for configurations */
-  private def esClient(baseDirectory: File, local: Boolean): TcpClient = {
+  private def esClient(baseDirectory: File, local: Boolean): ElasticClient = {
     if (local) {
       val homePath = baseDirectory.toPath.resolve(".esdata").toString
       LocalNode(
@@ -533,22 +532,24 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
           clusterName = "elasticsearch-local",
           homePath = homePath
         )
-      ).elastic4sclient()
+      ).client(true)
     } else {
-      TcpClient.transport(ElasticsearchClientUri("localhost", 9300))
+      val props = ElasticProperties("http://localhost:9200")
+      ElasticClient(props)
     }
   }
 
-  private def gitHubStarScoring(query: QueryDefinition): QueryDefinition = {
+  private def gitHubStarScoring(query: Query): Query = {
     val scorer = fieldFactorScore("github.stars")
       .missing(0)
-      .modifier(Modifier.LN2P)
-    functionScoreQuery(query)
-      .scorers(scorer)
-      .boostMode(CombineFunction.MULTIPLY)
+      .modifier(FieldValueFactorFunctionModifier.LN2P)
+    functionScoreQuery()
+      .query(query)
+      .functions(scorer)
+      .boostMode(CombineFunction.Multiply)
   }
 
-  private def filteredSearchQuery(params: SearchParams): QueryDefinition = {
+  private def filteredSearchQuery(params: SearchParams): Query = {
     must(
       notDeprecatedQuery,
       repositoriesQuery(params.userRepos.toSeq),
@@ -567,7 +568,7 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
     )
   }
 
-  private def sortQuery(sorting: Option[String]): SortDefinition =
+  private def sortQuery(sorting: Option[String]): Sort =
     sorting match {
       case Some("stars") =>
         fieldSort(
@@ -591,14 +592,14 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
       case _ => scoreSort() order SortOrder.DESC
     }
 
-  private val notDeprecatedQuery: QueryDefinition = {
+  private val notDeprecatedQuery: Query = {
     not(termQuery("deprecated", true))
   }
 
   private def searchQuery(
       queryString: String,
       contributingSearch: Boolean
-  ): QueryDefinition = {
+  ): Query = {
     val (filters, plainText) =
       queryString
         .replace("/", "\\/")
@@ -664,11 +665,11 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
     must(filterQuery, plainTextQuery)
   }
 
-  private def topicsQuery(topics: Seq[String]): QueryDefinition = {
+  private def topicsQuery(topics: Seq[String]): Query = {
     must(topics.map(topicQuery))
   }
 
-  private def topicQuery(topic: String): QueryDefinition = {
+  private def topicQuery(topic: String): Query = {
     termQuery("github.topics.keyword", topic)
   }
 
@@ -676,11 +677,11 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
 
   private def repositoriesQuery(
       repositories: Seq[GithubRepo]
-  ): QueryDefinition = {
+  ): Query = {
     should(repositories.map(repositoryQuery))
   }
 
-  private def repositoryQuery(repo: GithubRepo): QueryDefinition = {
+  private def repositoryQuery(repo: GithubRepo): Query = {
     must(
       termQuery("organization.keyword", repo.organization),
       termQuery("repository.keyword", repo.repository)
@@ -693,7 +694,7 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
       scalaJsVersions: Seq[String],
       scalaNativeVersions: Seq[String],
       sbtVersions: Seq[String]
-  ): QueryDefinition = {
+  ): Query = {
     must(
       targetTypes.map(termQuery("targetType", _)) ++
         scalaVersions.map(termQuery("scalaVersion", _)) ++
@@ -703,7 +704,7 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
     )
   }
 
-  private def targetQuery(target: ScalaTarget): QueryDefinition = {
+  private def targetQuery(target: ScalaTarget): Query = {
     target match {
       case ScalaJvm(scalaVersion) =>
         termQuery("scalaVersion", scalaVersion.toString)
@@ -742,7 +743,7 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
    * @param queryString the query inputted by user
    * @return the elastic query definition
    */
-  private def luceneQuery(queryString: String): QueryDefinition = {
+  private def luceneQuery(queryString: String): Query = {
     stringQuery(
       replaceFields(queryString)
     )
@@ -784,14 +785,14 @@ object DataRepository extends LazyLogging with SearchProtocol with ElasticDsl {
 
   private def optionalQuery(
       condition: Boolean,
-      query: QueryDefinition
-  ): QueryDefinition = {
+      query: Query
+  ): Query = {
     if (condition) query else matchAllQuery()
   }
 
   private def optionalQuery[P](
       param: Option[P]
-  )(query: P => QueryDefinition): QueryDefinition = {
+  )(query: P => Query): Query = {
     param.map(query).getOrElse(matchAllQuery())
   }
 }

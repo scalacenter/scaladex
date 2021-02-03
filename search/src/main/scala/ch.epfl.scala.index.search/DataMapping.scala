@@ -1,8 +1,9 @@
 package ch.epfl.scala.index.search
 
-import com.sksamuel.elastic4s.ElasticDsl
+import com.sksamuel.elastic4s.http.ElasticDsl
 import com.sksamuel.elastic4s.analyzers._
 import com.sksamuel.elastic4s.mappings.FieldDefinition
+
 
 object DataMapping extends ElasticDsl {
   private val urlStrip = PatternReplaceCharFilter(
