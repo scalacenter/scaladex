@@ -11,37 +11,51 @@ import scala.sys.process._
 
 object Deployment {
   def apply(data: Project, server: Project): Seq[Def.Setting[_]] = Seq(
-    deployServer := deployTask(server, prodUserName, prodPort).value,
-    deployIndex := indexTask(data, prodUserName).value,
-    deployDevServer := deployTask(server, devUserName, devPort).value,
-    deployDevIndex := indexTask(data, devUserName).value
+    deployServer := deployTask(
+      server,
+      prodUserName,
+      prodHostname,
+      prodPort
+    ).value,
+    deployIndex := indexTask(data, prodUserName, prodHostname).value
+    // we don't have any dev environment
+    // deployDevServer := deployTask(
+    //   server,
+    //   devUserName,
+    //   devHostname,
+    //   devPort
+    // ).value,
+    // deployDevIndex := indexTask(data, devUserName, devHostname).value
   )
 
   def deployTask(
       server: Project,
       userName: String,
+      hostname: String,
       port: Int
   ): Def.Initialize[Task[Unit]] = Def.task {
     val serverZip = (packageBin in (server, Universal)).value.toPath
-    val deployment = deploymentTask(userName).value
+    val deployment = deploymentTask(userName, hostname).value
     deployment.deploy(serverZip, port)
   }
 
-  def indexTask(data: Project, userName: String): Def.Initialize[Task[Unit]] =
+  def indexTask(data: Project, userName: String, hostname: String): Def.Initialize[Task[Unit]] =
     Def.task {
       val dataZip = (packageBin in (data, Universal)).value.toPath
-      val deployment = deploymentTask(userName).value
+      val deployment = deploymentTask(userName, hostname).value
       deployment.index(dataZip)
     }
 
   private def deploymentTask(
-      userName: String
+      userName: String,
+      hostname: String
   ): Def.Initialize[Task[Deployment]] =
     Def.task {
       new Deployment(
         rootFolder = (baseDirectory in ThisBuild).value,
         logger = streams.value.log,
         userName = userName,
+        hostname = hostname,
         version = version.value
       )
     }
@@ -64,10 +78,13 @@ object Deployment {
   private val deployDevServer = taskKey[Unit]("Deploy the dev server")
   private val deployDevIndex = taskKey[Unit]("Run dev index pipeline")
 
-  private val devUserName = "devscaladex"
+  private val devUserName = "scaladex"
   private val prodUserName = "scaladex"
 
-  private val devPort = 8082
+  private val devHostname = "icvm0042.epfl.ch"
+  private val prodHostname = "icvm0042.epfl.ch"
+
+  private val devPort = 8080
   private val prodPort = 8080
 }
 
@@ -75,6 +92,7 @@ class Deployment(
     rootFolder: File,
     logger: Logger,
     userName: String,
+    hostname: String,
     version: String
 ) {
 
@@ -123,7 +141,7 @@ class Deployment(
     rsync(serverScript)
 
     val serverScriptFileName = serverScript.getFileName
-    val uri = userName + "@" + serverHostname
+    val uri = userName + "@" + hostname
     Process(s"ssh $uri ./$serverScriptFileName") ! logger
   }
 
@@ -194,15 +212,13 @@ class Deployment(
   }
 
   private def rsync(file: Path): Unit = {
-    val uri = userName + "@" + serverHostname
+    val uri = userName + "@" + hostname
     val fileName = file.getFileName
     Process(s"rsync -av --progress $file $uri:$fileName") ! logger
   }
 
   private val executablePermissions =
     PosixFilePermissions.fromString("rwxr-xr-x")
-
-  private val serverHostname = "index.scala-lang.org"
 
   private val getSentryDsn: String = {
     val scaladexCredentials = "scaladex-credentials"
