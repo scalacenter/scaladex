@@ -1,43 +1,36 @@
 package ch.epfl.scala.index.search
 
-import java.io.File
-
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc.{Pagination, _}
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.search.mapping._
-import com.sksamuel.elastic4s.embedded.LocalNode
+import com.sksamuel.elastic4s.{HealthStatus, HitReader}
+import com.sksamuel.elastic4s.http.{ElasticClient, ElasticDsl, ElasticProperties}
+import com.sksamuel.elastic4s.http.bulk.{BulkResponse, BulkResponseItem}
+import com.sksamuel.elastic4s.searches.queries.Query
+import com.sksamuel.elastic4s.searches.queries.funcscorer.{CombineFunction, FieldValueFactorFunctionModifier}
+import com.sksamuel.elastic4s.searches.sort.{Sort, SortOrder}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
+import org.testcontainers.containers.BindMode
+import org.testcontainers.elasticsearch.ElasticsearchContainer
+import org.testcontainers.utility.DockerImageName
 
-import scala.jdk.CollectionConverters._
+import java.io.{Closeable, File}
+import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermission
 import scala.concurrent.{ExecutionContext, Future}
-import java.io.Closeable
-import com.sksamuel.elastic4s.http.ElasticClient
-import com.sksamuel.elastic4s.http.ElasticDsl
-import com.sksamuel.elastic4s.HealthStatus
-import com.sksamuel.elastic4s.http.bulk.BulkResponse
-import com.sksamuel.elastic4s.HitReader
-import com.sksamuel.elastic4s.searches.queries.Query
-import com.sksamuel.elastic4s.searches.sort.SortOrder
-import com.sksamuel.elastic4s.searches.queries.funcscorer.FieldValueFactorFunctionModifier
-import com.sksamuel.elastic4s.searches.queries.funcscorer.CombineFunction
-import com.sksamuel.elastic4s.searches.sort.Sort
-import com.sksamuel.elastic4s.http.HttpClient
-import com.sksamuel.elastic4s.http.ElasticsearchJavaRestClient
-import com.sksamuel.elastic4s.http.ElasticProperties
-import com.sksamuel.elastic4s.http.ElasticNodeEndpoint
-import com.sksamuel.elastic4s.http.bulk.BulkResponseItem
+import scala.jdk.CollectionConverters._
 
 /**
  * @param esClient TCP client of the elasticsearch server
  */
-class DataRepository(esClient: ElasticClient, indexPrefix: String)(implicit
+class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchContainer], indexPrefix: String)(implicit
     ec: ExecutionContext
 ) extends LazyLogging
     with Closeable {
-  import ElasticDsl._
   import DataRepository._
+  import ElasticDsl._
 
   private val projectIndex = s"$indexPrefix-projects"
   private val releaseIndex = s"$indexPrefix-releases"
@@ -64,6 +57,7 @@ class DataRepository(esClient: ElasticClient, indexPrefix: String)(implicit
 
   def close(): Unit = {
     esClient.close()
+    container.foreach(_.close())
   }
 
   def deleteAll(): Future[Unit] = {
@@ -546,23 +540,31 @@ object DataRepository extends LazyLogging with SearchProtocol {
       baseDirectory: File
   )(implicit ec: ExecutionContext): DataRepository = {
     logger.info(s"elasticsearch $elasticsearch $indexName")
-    new DataRepository(esClient(baseDirectory, local), indexName)
-  }
 
-  /** @see https://github.com/sksamuel/elastic4s#client for configurations */
-  private def esClient(baseDirectory: File, local: Boolean): ElasticClient = {
-    if (local) {
-      val homePath = baseDirectory.toPath.resolve(".esdata").toString
-      LocalNode(
-        LocalNode.requiredSettings(
-          clusterName = "elasticsearch-local",
-          homePath = homePath
+    val container = if (local) {
+      val esData = baseDirectory.toPath().resolve(".esdata")
+      if (!Files.exists(esData)) {
+        Files.createDirectory(esData)
+        Files.setPosixFilePermissions(
+          esData,
+          Set(
+            PosixFilePermission.OTHERS_WRITE,
+            PosixFilePermission.OTHERS_READ
+          ).asJava
         )
-      ).client(true)
-    } else {
-      val props = ElasticProperties("http://localhost:9200")
-      ElasticClient(props)
-    }
+      }
+      val image = DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:6.6.2")
+      val container = new ElasticsearchContainer(image)
+      container.addFileSystemBind(esData.toString, "/usr/share/elasticsearch/data", BindMode.READ_WRITE)
+      container.start()
+      Some(container)
+    } else None
+
+    val address = container.map(_.getHttpHostAddress).getOrElse("localhost:9200")
+    val props = ElasticProperties("http://" + address)
+    val esClient = ElasticClient(props)
+
+    new DataRepository(esClient, container, indexName)
   }
 
   private def gitHubStarScoring(query: Query): Query = {
