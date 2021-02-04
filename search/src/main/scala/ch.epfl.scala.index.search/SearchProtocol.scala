@@ -54,11 +54,11 @@ trait SearchProtocol {
           p.copy(
             github = p.github.map { github =>
               github.copy(
-                filteredBeginnerIssues = searchHits.hits
-                  .map { hit =>
-                    nread[GithubIssue](SourceAsContentBuilder(hit.source).string())
-                  }
-                  .toList
+                filteredBeginnerIssues = searchHits.hits.map { hit =>
+                  nread[GithubIssue](
+                    SourceAsContentBuilder(hit.source).string()
+                  )
+                }.toList
               )
             }
           )

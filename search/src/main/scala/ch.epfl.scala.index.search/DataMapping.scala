@@ -6,8 +6,6 @@ import com.sksamuel.elastic4s.analysis._
 import com.sksamuel.elastic4s.requests.analyzers.HtmlStripCharFilter
 import com.sksamuel.elastic4s.requests.analyzers.LowercaseTokenFilter
 
-
-
 object DataMapping extends ElasticDsl {
   val urlStrip: CharFilter = PatternReplaceCharFilter(
     "url_strip",
@@ -23,18 +21,24 @@ object DataMapping extends ElasticDsl {
     "english_stop",
     language = Some(NamedStopTokenFilter.English)
   )
-  val englishStemmer: TokenFilter = StemmerTokenFilter("english_stemmer", "english")
+  val englishStemmer: TokenFilter =
+    StemmerTokenFilter("english_stemmer", "english")
   val englishPossessiveStemmer: TokenFilter = StemmerTokenFilter(
     "english_possessive_stemmer",
     "possessive_english"
   )
 
-  val englishReadme: CustomAnalyzer = 
+  val englishReadme: CustomAnalyzer =
     CustomAnalyzer(
       "english_readme",
       "standard",
       List("code_strip", "html_strip", "url_strip"),
-      List("lowercase", "english_possessive_stemmer", "english_stop", "english_stemmer")
+      List(
+        "lowercase",
+        "english_possessive_stemmer",
+        "english_stop",
+        "english_stemmer"
+      )
     )
 
   val lowercase: Normalizer =

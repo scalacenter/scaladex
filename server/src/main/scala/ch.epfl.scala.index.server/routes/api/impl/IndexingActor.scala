@@ -112,7 +112,9 @@ class IndexingActor(
           } yield {
             val failures = items.filter(_.status > 300)
             if (failures.nonEmpty) {
-              failures.foreach(f => log.error(f.error.get.reason))
+              failures.foreach(
+                _.error.foreach(error => log.error(error.reason))
+              )
               log.error(
                 s"failed inserting the ${dependencies.size} dependencies of ${release.maven}"
               )
