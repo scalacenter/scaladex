@@ -34,7 +34,11 @@ import com.sksamuel.elastic4s.http.JavaClient
 /**
  * @param esClient TCP client of the elasticsearch server
  */
-class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchContainer], indexPrefix: String)(implicit
+class DataRepository(
+    esClient: ElasticClient,
+    container: Option[ElasticsearchContainer],
+    indexPrefix: String
+)(implicit
     ec: ExecutionContext
 ) extends LazyLogging
     with Closeable {
@@ -58,7 +62,8 @@ class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchCon
     }
 
     blockUntil("Expected cluster to have yellow status") { () =>
-      val waitForYellowStatus = clusterHealth().waitForStatus(HealthStatus.Yellow)
+      val waitForYellowStatus =
+        clusterHealth().waitForStatus(HealthStatus.Yellow)
       val response = esClient.execute(waitForYellowStatus).await
       response.isSuccess
     }
@@ -70,19 +75,18 @@ class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchCon
   }
 
   def deleteAll(): Future[Unit] = {
-    def delete(index: String): Future[Unit] = {
+    def delete(index: String): Future[Unit] =
       for {
-      exists <- esClient.execute(indexExists(index)).map(_.result.isExists)
-      _ <-
-        if (exists) esClient.execute(deleteIndex(index))
-        else Future.successful(())
+        response <- esClient.execute(indexExists(index))
+        exist = response.result.isExists
+        _ <-
+          if (exist) esClient.execute(deleteIndex(index))
+          else Future.successful(())
       } yield ()
-    }
-    
-    Future.sequence(
-      Seq(projectIndex, releaseIndex, dependencyIndex).map(delete))
-        .map(_ => ()
-    )
+
+    Future
+      .sequence(Seq(projectIndex, releaseIndex, dependencyIndex).map(delete))
+      .map(_ => ())
   }
 
   def create(): Future[Unit] = {
@@ -92,12 +96,13 @@ class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchCon
         Analysis(
           analyzers = List(englishReadme),
           charFilters = List(codeStrip, urlStrip),
-          tokenFilters = List(englishStop, englishStemmer, englishPossessiveStemmer),
+          tokenFilters =
+            List(englishStop, englishStemmer, englishPossessiveStemmer),
           normalizers = List(lowercase)
         )
       )
       .mapping(MappingDefinition(projectFields))
-    
+
     val createRelease = createIndex(releaseIndex)
       .analysis(
         Analysis(
@@ -118,13 +123,17 @@ class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchCon
         MappingDefinition(dependenciesFields)
       )
 
-    Future.sequence(
-      Seq(createProject, createRelease, createDependency)
-        .map(request => esClient.execute(request))
-    ).map {
-      resps =>
-        resps.filter(_.isError).map(_.error).foreach(error => logger.info(error.reason))
-    }
+    Future
+      .sequence(
+        Seq(createProject, createRelease, createDependency)
+          .map(request => esClient.execute(request))
+      )
+      .map { resps =>
+        resps
+          .filter(_.isError)
+          .map(_.error)
+          .foreach(error => logger.info(error.reason))
+      }
   }
 
   def insertProject(project: Project): Future[Unit] = {
@@ -137,9 +146,10 @@ class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchCon
   }
 
   def updateProject(project: Project): Future[Unit] = {
-    esClient.execute(
-      updateById(projectIndex, project.id.get).doc(project)
-    )
+    esClient
+      .execute(
+        updateById(projectIndex, project.id.get).doc(project)
+      )
       .map(_ => ())
   }
 
@@ -168,13 +178,16 @@ class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchCon
         indexInto(dependencyIndex)
           .source(DependencyDocument(d))
       }
-      Future.sequence(
-        requests.grouped(1000)
-          .toSeq
-          .map { reqs =>
-            esClient.execute(bulk(reqs)).map(_.result.items)
-          }
-      ).map(_.flatten)
+      Future
+        .sequence(
+          requests
+            .grouped(1000)
+            .toSeq
+            .map { reqs =>
+              esClient.execute(bulk(reqs)).map(_.result.items)
+            }
+        )
+        .map(_.flatten)
     } else {
       Future.successful { Seq.empty }
     }
@@ -215,8 +228,9 @@ class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchCon
         Page(
           Pagination(
             current = clamp(params.page),
-            pageCount =
-              Math.ceil(response.result.totalHits / params.total.toDouble).toInt,
+            pageCount = Math
+              .ceil(response.result.totalHits / params.total.toDouble)
+              .toInt,
             itemCount = response.result.totalHits
           ),
           response.result.to[Project].map(_.formatForDisplaying)
@@ -582,16 +596,23 @@ object DataRepository extends LazyLogging with SearchProtocol {
           ).asJava
         )
       }
-      val image = DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.2")
+      val image = DockerImageName.parse(
+        "docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.2"
+      )
       val container = new ElasticsearchContainer(image)
-      container.addFileSystemBind(esData.toString, "/usr/share/elasticsearch/data", BindMode.READ_WRITE)
+      container.addFileSystemBind(
+        esData.toString,
+        "/usr/share/elasticsearch/data",
+        BindMode.READ_WRITE
+      )
       container.start()
       Some(container)
     } else None
 
-    val address = container.map(_.getHttpHostAddress).getOrElse("localhost:9200")
+    val address =
+      container.map(_.getHttpHostAddress).getOrElse("localhost:9200")
     val props = ElasticProperties("http://" + address)
-    
+
     val esClient = ElasticClient(JavaClient(props))
 
     new DataRepository(esClient, container, indexName)

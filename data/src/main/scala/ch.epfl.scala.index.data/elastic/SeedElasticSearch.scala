@@ -58,8 +58,12 @@ class SeedElasticSearch(
         val dependencyFailures = dependenciesResult.filter(_.status >= 300)
         if (releasesResult.hasFailures || dependencyFailures.nonEmpty) {
           logger.error(s"indexing projects ${project.reference} failed")
-          releasesResult.failures.foreach(p => logger.error(p.error.get.reason))
-          dependencyFailures.foreach(p => logger.error(p.error.get.reason))
+          releasesResult.failures.foreach(
+            _.error.foreach(error => logger.error(error.reason))
+          )
+          dependencyFailures.foreach(
+            _.error.foreach(error => logger.error(error.reason))
+          )
         }
       }
       Await.result(indexAll, Duration.Inf)

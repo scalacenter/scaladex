@@ -39,7 +39,11 @@ object Deployment {
     deployment.deploy(serverZip, port)
   }
 
-  def indexTask(data: Project, userName: String, hostname: String): Def.Initialize[Task[Unit]] =
+  def indexTask(
+      data: Project,
+      userName: String,
+      hostname: String
+  ): Def.Initialize[Task[Unit]] =
     Def.task {
       val dataZip = (packageBin in (data, Universal)).value.toPath
       val deployment = deploymentTask(userName, hostname).value
