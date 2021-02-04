@@ -13,8 +13,8 @@ import org.json4s.native.Serialization.{write => nwrite}
 
 import scala.util.{Success, Try}
 import scala.util.Failure
-import com.sksamuel.elastic4s.http.search.SearchHit
-import com.sksamuel.elastic4s.http.SourceAsContentBuilder
+import com.sksamuel.elastic4s.requests.searches.SearchHit
+import com.sksamuel.elastic4s.json.SourceAsContentBuilder
 
 trait SearchProtocol {
   implicit val formats: Formats = Serialization
@@ -50,7 +50,7 @@ trait SearchProtocol {
     hit.innerHits
       .get("issues")
       .collect {
-        case searchHits if searchHits.total > 0 => {
+        case searchHits if searchHits.total.value > 0 => {
           p.copy(
             github = p.github.map { github =>
               github.copy(

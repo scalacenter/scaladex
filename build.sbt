@@ -6,7 +6,7 @@ import Deployment.githash
 val playJsonVersion = "2.9.0"
 val akkaVersion = "2.6.5"
 val akkaHttpVersion = "10.1.12"
-val elastic4sVersion = "6.6.4"
+val elastic4sVersion = "7.10.2"
 val log4jVersion = "2.13.3"
 val nscalaTimeVersion = "2.24.0"
 val testcontainersVersion = "1.15.1"
@@ -50,7 +50,7 @@ lazy val commonSettings = Seq(
     "UTF-8",
     "-feature",
     "-unchecked",
-    // "-Xfatal-warnings"
+    "-Xfatal-warnings"
   ),
   libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.9" % Test,
   javaOptions in reStart ++= {
@@ -98,7 +98,7 @@ lazy val search = project
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
+      "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % elastic4sVersion,
       "org.testcontainers" % "testcontainers" % testcontainersVersion,
       "org.testcontainers" % "elasticsearch" % testcontainersVersion,
       "org.json4s" %% "json4s-native" % "3.6.9",
@@ -168,7 +168,6 @@ lazy val data = project
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0",
       "com.github.nscala-time" %% "nscala-time" % nscalaTimeVersion,
-      "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
       "com.typesafe.akka" %% "akka-stream" % akkaVersion,
       "me.tongfei" % "progressbar" % "0.5.5",
       "org.apache.maven" % "maven-model-builder" % "3.3.9",
