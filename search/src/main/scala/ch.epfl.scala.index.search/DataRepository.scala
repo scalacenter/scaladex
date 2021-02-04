@@ -27,16 +27,21 @@ import com.sksamuel.elastic4s.http.HttpClient
 import com.sksamuel.elastic4s.http.ElasticsearchJavaRestClient
 import com.sksamuel.elastic4s.http.ElasticProperties
 import com.sksamuel.elastic4s.http.ElasticNodeEndpoint
+import com.sksamuel.elastic4s.http.bulk.BulkResponseItem
 
 /**
  * @param esClient TCP client of the elasticsearch server
  */
-class DataRepository(esClient: ElasticClient, indexName: String)(implicit
+class DataRepository(esClient: ElasticClient, indexPrefix: String)(implicit
     ec: ExecutionContext
 ) extends LazyLogging
     with Closeable {
   import ElasticDsl._
   import DataRepository._
+
+  private val projectIndex = s"$indexPrefix-projects"
+  private val releaseIndex = s"$indexPrefix-releases"
+  private val dependencyIndex = s"$indexPrefix-dependencies"
 
   def waitUntilReady(): Unit = {
     def blockUntil(explain: String)(predicate: () => Boolean): Unit = {
@@ -62,32 +67,51 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
   }
 
   def deleteAll(): Future[Unit] = {
-    for {
-      exists <- esClient.execute(indexExists(indexName)).map(_.result.isExists)
+    def delete(index: String): Future[Unit] = {
+      for {
+      exists <- esClient.execute(indexExists(index)).map(_.result.isExists)
       _ <-
-        if (exists) esClient.execute(deleteIndex(indexName))
+        if (exists) esClient.execute(deleteIndex(index))
         else Future.successful(())
-    } yield ()
+      } yield ()
+    }
+    
+    Future.sequence(
+      Seq(projectIndex, releaseIndex, dependencyIndex).map(delete))
+        .map(_ => ()
+    )
   }
 
   def create(): Future[Unit] = {
-    val request = createIndex(indexName)
+    val createProject = createIndex(projectIndex)
       .analysis(DataMapping.englishReadme)
       .normalizers(DataMapping.lowercase)
       .mappings(
-        mapping(projectsCollection).fields(DataMapping.projectFields: _*),
-        mapping(releasesCollection).fields(DataMapping.releasesFields: _*),
-        mapping(dependenciesCollection)
-          .fields(DataMapping.dependenciesFields: _*)
+        mapping("project").fields(DataMapping.projectFields: _*)
+      )
+    
+    val createRelease = createIndex(releaseIndex)
+      .normalizers(DataMapping.lowercase)
+      .mappings(
+        mapping("release").fields(DataMapping.releasesFields: _*)
       )
 
-    esClient.execute(request).map(_ => ())
+    val createDependency = createIndex(dependencyIndex)
+      .normalizers(DataMapping.lowercase)
+      .mappings(
+        mapping("dependency").fields(DataMapping.dependenciesFields: _*)
+      )
+
+    Future.sequence(
+      Seq(createProject, createRelease, createDependency)
+        .map(request => esClient.execute(request))
+    ).map(_ => ())
   }
 
   def insertProject(project: Project): Future[Unit] = {
     esClient
       .execute(
-        indexInto(indexName / projectsCollection)
+        indexInto(projectIndex / "project")
           .source(project)
       )
       .map(_ => ())
@@ -97,7 +121,7 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
     esClient
       .execute(
         update(project.id.get)
-          .in(indexName / projectsCollection)
+          .in(projectIndex / "project")
           .doc(project)
       )
       .map(_ => ())
@@ -105,7 +129,7 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
 
   def insertReleases(releases: Seq[Release]): Future[BulkResponse] = {
     val requests = releases.map { r =>
-      indexInto(indexName / releasesCollection).source(ReleaseDocument(r))
+      indexInto(releaseIndex / "release").source(ReleaseDocument(r))
     }
 
     esClient.execute(bulk(requests)).map(_.result)
@@ -114,7 +138,7 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
   def insertRelease(release: Release): Future[Unit] = {
     esClient
       .execute {
-        indexInto(indexName / releasesCollection)
+        indexInto(releaseIndex / "release")
           .source(ReleaseDocument(release))
       }
       .map(_ => ())
@@ -122,17 +146,22 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
 
   def insertDependencies(
       dependencies: Seq[ScalaDependency]
-  ): Future[BulkResponse] = {
+  ): Future[Seq[BulkResponseItem]] = {
     if (dependencies.nonEmpty) {
       val requests = dependencies.map { d =>
-        indexInto(indexName / dependenciesCollection)
+        indexInto(dependencyIndex / "dependency")
           .source(DependencyDocument(d))
       }
-      esClient.execute(bulk(requests)).map(_.result)
+      Future.sequence(
+        requests.grouped(1000)
+          .toSeq
+          .map { reqs =>
+            esClient.execute(bulk(reqs)).map(_.result.items)
+          }
+      ).map(_.flatten)
     } else {
-      Future.successful { emptyBulkResponse }
+      Future.successful { Seq.empty }
     }
-
   }
 
   def getTotalProjects(queryString: String): Future[Long] = {
@@ -140,12 +169,12 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
       notDeprecatedQuery,
       searchQuery(queryString, contributingSearch = false)
     )
-    val request = searchWithType(indexName / projectsCollection).query(query).size(0)
+    val request = search(projectIndex).query(query).size(0)
     esClient.execute(request).map(_.result.totalHits)
   }
 
   def autocompleteProjects(params: SearchParams): Future[Seq[Project]] = {
-    val request = searchWithType(indexName / projectsCollection)
+    val request = search(projectIndex)
       .query(gitHubStarScoring(filteredSearchQuery(params)))
       .sortBy(sortQuery(params.sorting))
       .limit(5)
@@ -158,7 +187,7 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
   def findProjects(params: SearchParams): Future[Page[Project]] = {
     def clamp(page: Int): Int = if (page <= 0) 1 else page
 
-    val request = searchWithType(indexName / projectsCollection)
+    val request = search(projectIndex)
       .query(gitHubStarScoring(filteredSearchQuery(params)))
       .sortBy(sortQuery(params.sorting))
       .from(params.total * (clamp(params.page) - 1))
@@ -189,7 +218,7 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
       termQuery("reference.repository", project.repository)
     )
 
-    val request = searchWithType(indexName / releasesCollection).query(query).size(5000)
+    val request = search(releaseIndex).query(query).size(5000)
 
     esClient
       .execute(request)
@@ -214,7 +243,7 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
       )
     )
 
-    val request = searchWithType(indexName / releasesCollection).query(query).limit(1)
+    val request = search(releaseIndex).query(query).limit(1)
 
     esClient
       .execute(request)
@@ -227,7 +256,7 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
       termQuery("repository.keyword", project.repository)
     )
 
-    val request = searchWithType(indexName / projectsCollection).query(query).limit(1)
+    val request = search(projectIndex).query(query).limit(1)
 
     esClient.execute(request).map(_.result.to[Project].headOption)
   }
@@ -278,7 +307,7 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
     val query = termQuery("dependentUrl", ref.httpUrl)
 
     val request =
-      searchWithType(indexName / dependenciesCollection).query(query).size(5000)
+      search(dependencyIndex).query(query).size(5000)
 
     esClient
       .execute(request)
@@ -293,7 +322,7 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
   ): Future[Seq[ScalaDependency]] = {
     val query = termQuery("targetUrl", ref.httpUrl)
 
-    val request = searchWithType(indexName / dependenciesCollection)
+    val request = search(dependencyIndex)
       .query(query)
       .size(5000)
 
@@ -305,7 +334,7 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
   def getLatestProjects(): Future[List[Project]] = {
     for {
       projects <- getLatest[Project](
-        projectsCollection,
+        projectIndex,
         "created",
         frontPageCount
       )
@@ -313,12 +342,12 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
   }
 
   def getLatestReleases(): Future[List[Release]] = {
-    getLatest[ReleaseDocument](releasesCollection, "released", frontPageCount)
+    getLatest[ReleaseDocument](releaseIndex, "released", frontPageCount)
       .map(_.map(_.toRelease))
   }
 
   def getMostDependentUpon(): Future[List[Project]] = {
-    val request = searchWithType(indexName / projectsCollection)
+    val request = search(projectIndex)
       .query(matchAllQuery())
       .limit(frontPageCount)
       .sortBy(sortQuery(Some("dependentCount")))
@@ -410,18 +439,18 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
 
   def getTotalProjects(): Future[Long] = {
     esClient
-      .execute(searchWithType(indexName / projectsCollection))
+      .execute(search(projectIndex))
       .map(_.result.totalHits)
   }
 
   def getTotalReleases(): Future[Long] = {
     esClient
-      .execute(searchWithType(indexName / releasesCollection))
+      .execute(search(releaseIndex))
       .map(_.result.totalHits)
   }
 
   def getContributingProjects(): Future[List[Project]] = {
-    val request = searchWithType(indexName / projectsCollection)
+    val request = search(projectIndex)
       .query(
         functionScoreQuery(contributingQuery)
           .functions(randomScore(scala.util.Random.nextInt(10000)))
@@ -435,11 +464,11 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
   }
 
   private def getLatest[T: HitReader: Manifest](
-      collection: String,
+      index: String,
       sortingField: String,
       size: Int
   ): Future[List[T]] = {
-    val request = searchWithType(indexName / collection)
+    val request = search(index)
       .query(notDeprecatedQuery)
       .sortBy(fieldSort(sortingField).order(SortOrder.DESC))
       .limit(size)
@@ -480,7 +509,7 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
 
     val aggregation = termsAggregation(aggregationName).field(field).size(50)
 
-    val request = searchWithType(indexName / projectsCollection)
+    val request = search(projectIndex)
       .query(query)
       .aggregations(aggregation)
 
@@ -498,9 +527,6 @@ class DataRepository(esClient: ElasticClient, indexName: String)(implicit
 
 object DataRepository extends LazyLogging with SearchProtocol {
   import ElasticDsl._
-  private val projectsCollection = "projects"
-  private val releasesCollection = "releases"
-  private val dependenciesCollection = "dependencies"
   private val emptyBulkResponse = new BulkResponse(0, false, Seq.empty)
 
   private lazy val config =

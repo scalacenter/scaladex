@@ -76,7 +76,12 @@ object DataMapping extends ElasticDsl {
       textField("readme").analyzer("english_readme")
     ),
     dateField("created"),
-    dateField("updated")
+    dateField("updated"),
+    keywordField("targetType") normalizer "lowercase",
+    keywordField("scalaVersion"),
+    keywordField("scalaJsVersion"),
+    keywordField("scalaNativeVersion"),
+    keywordField("sbtVersion")
   )
 
   val referenceFields: Seq[FieldDefinition] = Seq(

@@ -108,10 +108,11 @@ class IndexingActor(
           log.info(s"inserting release ${release.maven}")
           for {
             _ <- dataRepository.insertRelease(release.copy(liveData = true))
-            response <- dataRepository.insertDependencies(dependencies)
+            items <- dataRepository.insertDependencies(dependencies)
           } yield {
-            if (response.hasFailures) {
-              response.failures.foreach(f => log.error(f.error.get.reason))
+            val failures = items.filter(_.status > 300)
+            if (failures.nonEmpty) {
+              failures.foreach(f => log.error(f.error.get.reason))
               log.error(
                 s"failed inserting the ${dependencies.size} dependencies of ${release.maven}"
               )
