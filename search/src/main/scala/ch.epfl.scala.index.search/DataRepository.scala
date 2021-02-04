@@ -4,12 +4,6 @@ import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc.{Pagination, _}
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.search.mapping._
-import com.sksamuel.elastic4s.{HealthStatus, HitReader}
-import com.sksamuel.elastic4s.http.{ElasticClient, ElasticDsl, ElasticProperties}
-import com.sksamuel.elastic4s.http.bulk.{BulkResponse, BulkResponseItem}
-import com.sksamuel.elastic4s.searches.queries.Query
-import com.sksamuel.elastic4s.searches.queries.funcscorer.{CombineFunction, FieldValueFactorFunctionModifier}
-import com.sksamuel.elastic4s.searches.sort.{Sort, SortOrder}
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import org.testcontainers.containers.BindMode
@@ -21,6 +15,21 @@ import java.nio.file.Files
 import java.nio.file.attribute.PosixFilePermission
 import scala.concurrent.{ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
+import com.sksamuel.elastic4s.{ElasticClient, ElasticDsl}
+import com.sksamuel.elastic4s.requests.common.HealthStatus
+import com.sksamuel.elastic4s.requests.bulk.BulkResponse
+import com.sksamuel.elastic4s.requests.bulk.BulkResponseItem
+import com.sksamuel.elastic4s.HitReader
+import com.sksamuel.elastic4s.requests.searches.queries.Query
+import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
+import com.sksamuel.elastic4s.ElasticProperties
+import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.FieldValueFactorFunctionModifier
+import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.CombineFunction
+import com.sksamuel.elastic4s.requests.searches.sort.Sort
+import com.sksamuel.elastic4s.analysis.Analysis
+import com.sksamuel.elastic4s.requests.mappings.MappingDefinition
+import com.sksamuel.elastic4s.requests.searches.aggs.responses.bucket.Terms
+import com.sksamuel.elastic4s.http.JavaClient
 
 /**
  * @param esClient TCP client of the elasticsearch server
@@ -77,53 +86,66 @@ class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchCon
   }
 
   def create(): Future[Unit] = {
+    import DataMapping._
     val createProject = createIndex(projectIndex)
-      .analysis(DataMapping.englishReadme)
-      .normalizers(DataMapping.lowercase)
-      .mappings(
-        mapping("project").fields(DataMapping.projectFields: _*)
+      .analysis(
+        Analysis(
+          analyzers = List(englishReadme),
+          charFilters = List(codeStrip, urlStrip),
+          tokenFilters = List(englishStop, englishStemmer, englishPossessiveStemmer),
+          normalizers = List(lowercase)
+        )
       )
+      .mapping(MappingDefinition(projectFields))
     
     val createRelease = createIndex(releaseIndex)
-      .normalizers(DataMapping.lowercase)
-      .mappings(
-        mapping("release").fields(DataMapping.releasesFields: _*)
+      .analysis(
+        Analysis(
+          analyzers = List(),
+          normalizers = List(lowercase)
+        )
       )
+      .mapping(MappingDefinition(releasesFields))
 
     val createDependency = createIndex(dependencyIndex)
-      .normalizers(DataMapping.lowercase)
-      .mappings(
-        mapping("dependency").fields(DataMapping.dependenciesFields: _*)
+      .analysis(
+        Analysis(
+          analyzers = List(),
+          normalizers = List(lowercase)
+        )
+      )
+      .mapping(
+        MappingDefinition(dependenciesFields)
       )
 
     Future.sequence(
       Seq(createProject, createRelease, createDependency)
         .map(request => esClient.execute(request))
-    ).map(_ => ())
+    ).map {
+      resps =>
+        resps.filter(_.isError).map(_.error).foreach(error => logger.info(error.reason))
+    }
   }
 
   def insertProject(project: Project): Future[Unit] = {
     esClient
       .execute(
-        indexInto(projectIndex / "project")
+        indexInto(projectIndex)
           .source(project)
       )
       .map(_ => ())
   }
 
   def updateProject(project: Project): Future[Unit] = {
-    esClient
-      .execute(
-        update(project.id.get)
-          .in(projectIndex / "project")
-          .doc(project)
-      )
+    esClient.execute(
+      updateById(projectIndex, project.id.get).doc(project)
+    )
       .map(_ => ())
   }
 
   def insertReleases(releases: Seq[Release]): Future[BulkResponse] = {
     val requests = releases.map { r =>
-      indexInto(releaseIndex / "release").source(ReleaseDocument(r))
+      indexInto(releaseIndex).source(ReleaseDocument(r))
     }
 
     esClient.execute(bulk(requests)).map(_.result)
@@ -132,7 +154,7 @@ class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchCon
   def insertRelease(release: Release): Future[Unit] = {
     esClient
       .execute {
-        indexInto(releaseIndex / "release")
+        indexInto(releaseIndex)
           .source(ReleaseDocument(release))
       }
       .map(_ => ())
@@ -143,7 +165,7 @@ class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchCon
   ): Future[Seq[BulkResponseItem]] = {
     if (dependencies.nonEmpty) {
       val requests = dependencies.map { d =>
-        indexInto(dependencyIndex / "dependency")
+        indexInto(dependencyIndex)
           .source(DependencyDocument(d))
       }
       Future.sequence(
@@ -229,7 +251,8 @@ class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchCon
    * @return the release of this artifact if it exists
    */
   def getMavenArtifact(reference: MavenReference): Future[Option[Release]] = {
-    val query = nestedQuery("maven").query(
+    val query = nestedQuery(
+      path = "maven",
       must(
         termQuery("maven.groupId", reference.groupId),
         termQuery("maven.artifactId", reference.artifactId),
@@ -464,7 +487,7 @@ class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchCon
   ): Future[List[T]] = {
     val request = search(index)
       .query(notDeprecatedQuery)
-      .sortBy(fieldSort(sortingField).order(SortOrder.DESC))
+      .sortBy(fieldSort(sortingField).desc())
       .limit(size)
 
     esClient.execute(request).map(r => r.result.to[T].toList)
@@ -501,7 +524,7 @@ class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchCon
   ): Future[Map[String, Long]] = {
     val aggregationName = s"${field}_count"
 
-    val aggregation = termsAggregation(aggregationName).field(field).size(50)
+    val aggregation = termsAgg(aggregationName, field).size(50)
 
     val request = search(projectIndex)
       .query(query)
@@ -509,7 +532,7 @@ class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchCon
 
     for (response <- esClient.execute(request)) yield {
       response.result.aggregations
-        .terms(aggregationName)
+        .result[Terms](aggregationName)
         .buckets
         .map { bucket =>
           bucket.key -> bucket.docCount
@@ -521,7 +544,6 @@ class DataRepository(esClient: ElasticClient, container: Option[ElasticsearchCon
 
 object DataRepository extends LazyLogging with SearchProtocol {
   import ElasticDsl._
-  private val emptyBulkResponse = new BulkResponse(0, false, Seq.empty)
 
   private lazy val config =
     ConfigFactory.load().getConfig("org.scala_lang.index.data")
@@ -542,18 +564,25 @@ object DataRepository extends LazyLogging with SearchProtocol {
     logger.info(s"elasticsearch $elasticsearch $indexName")
 
     val container = if (local) {
-      val esData = baseDirectory.toPath().resolve(".esdata")
+      val esData = baseDirectory.toPath.resolve(".esdata")
       if (!Files.exists(esData)) {
         Files.createDirectory(esData)
         Files.setPosixFilePermissions(
           esData,
           Set(
+            PosixFilePermission.OWNER_READ,
+            PosixFilePermission.OWNER_WRITE,
+            PosixFilePermission.OWNER_EXECUTE,
+            PosixFilePermission.GROUP_READ,
+            PosixFilePermission.GROUP_WRITE,
+            PosixFilePermission.GROUP_EXECUTE,
             PosixFilePermission.OTHERS_WRITE,
-            PosixFilePermission.OTHERS_READ
+            PosixFilePermission.OTHERS_READ,
+            PosixFilePermission.OTHERS_EXECUTE
           ).asJava
         )
       }
-      val image = DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:6.6.2")
+      val image = DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.2")
       val container = new ElasticsearchContainer(image)
       container.addFileSystemBind(esData.toString, "/usr/share/elasticsearch/data", BindMode.READ_WRITE)
       container.start()
@@ -562,7 +591,8 @@ object DataRepository extends LazyLogging with SearchProtocol {
 
     val address = container.map(_.getHttpHostAddress).getOrElse("localhost:9200")
     val props = ElasticProperties("http://" + address)
-    val esClient = ElasticClient(props)
+    
+    val esClient = ElasticClient(JavaClient(props))
 
     new DataRepository(esClient, container, indexName)
   }
@@ -614,10 +644,10 @@ object DataRepository extends LazyLogging with SearchProtocol {
         fieldSort(
           "github.contributorCount"
         ) missing "0" order SortOrder.DESC // mode MultiMode.Avg
-      case Some("relevant") => scoreSort() order SortOrder.DESC
-      case Some("created") => fieldSort("created") order SortOrder.DESC
-      case Some("updated") => fieldSort("updated") order SortOrder.DESC
-      case _ => scoreSort() order SortOrder.DESC
+      case Some("relevant") => scoreSort().order(SortOrder.Desc)
+      case Some("created") => fieldSort("created").desc()
+      case Some("updated") => fieldSort("updated").desc()
+      case _ => scoreSort().order(SortOrder.Desc)
     }
 
   private val notDeprecatedQuery: Query = {

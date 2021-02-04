@@ -19,7 +19,6 @@ import ch.epfl.scala.index.server.routes.api._
 import ch.epfl.scala.index.search.DataRepository
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
-import org.elasticsearch.action.search.SearchPhaseExecutionException
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Await
@@ -90,25 +89,6 @@ object Server {
 
     import session.implicits._
     val exceptionHandler = ExceptionHandler {
-      case ex: Exception
-          if hasParent(classOf[SearchPhaseExecutionException], ex)() =>
-        ex.printStackTrace()
-
-        optionalSession(refreshable, usingCookies) { userId =>
-          val user = session.getUser(userId)
-          searchParams(user) { params =>
-            complete(
-              (
-                UnprocessableEntity,
-                views.html.invalidQuery(
-                  session.getUser(userId).map(_.info),
-                  params
-                )
-              )
-            )
-          }
-        }
-
       case ex: Exception =>
         import java.io.{PrintWriter, StringWriter}
 
