@@ -9,6 +9,7 @@ val akkaHttpVersion = "10.1.12"
 val elastic4sVersion = "6.6.4"
 val log4jVersion = "2.13.3"
 val nscalaTimeVersion = "2.24.0"
+val testcontainersVersion = "1.15.1"
 
 lazy val logging =
   libraryDependencies ++= Seq(
@@ -98,9 +99,8 @@ lazy val search = project
   .settings(
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
-      "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion,
-      // required by elasti4s-embedded
-      "org.codelibs.elasticsearch.module" % "analysis-common" % "6.6.2",
+      "org.testcontainers" % "testcontainers" % testcontainersVersion,
+      "org.testcontainers" % "elasticsearch" % testcontainersVersion,
       "org.json4s" %% "json4s-native" % "3.6.9",
       "org.typelevel" %% "jawn-json4s" % "1.0.0"
     )
@@ -169,7 +169,6 @@ lazy val data = project
       "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0",
       "com.github.nscala-time" %% "nscala-time" % nscalaTimeVersion,
       "com.sksamuel.elastic4s" %% "elastic4s-core" % elastic4sVersion,
-      "com.sksamuel.elastic4s" %% "elastic4s-embedded" % elastic4sVersion,
       "com.typesafe.akka" %% "akka-stream" % akkaVersion,
       "me.tongfei" % "progressbar" % "0.5.5",
       "org.apache.maven" % "maven-model-builder" % "3.3.9",
