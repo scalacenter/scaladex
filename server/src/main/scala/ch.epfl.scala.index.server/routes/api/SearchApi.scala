@@ -28,6 +28,10 @@ object SearchApi {
   implicit val formatReleaseOptions: OFormat[ReleaseOptions] =
     Json.format[ReleaseOptions]
 
+  implicit val formatResult: OFormat[Result] =
+    Json.format[Result]
+
+  case class Result(currentPage: Int, pageTotal: Int, items: Seq[Project])
   case class Project(
       organization: String,
       repository: String,
@@ -164,7 +168,13 @@ class SearchApi(
                 searchParams(user) { params =>
                   val result = dataRepository
                     .findProjects(params)
-                    .map(page => page.items.map(convertProject(params.cli)))
+                    .map { page =>
+                      SearchApi.Result(
+                        currentPage = page.pagination.current,
+                        pageTotal = page.pagination.pageCount,
+                        items = page.items.map(convertProject(params.cli))
+                      )
+                    }
                   complete(result)
                 }
               }
