@@ -17,15 +17,14 @@ object Deployment {
       prodHostname,
       prodPort
     ).value,
-    deployIndex := indexTask(data, prodUserName, prodHostname).value
-    // we don't have any dev environment
-    // deployDevServer := deployTask(
-    //   server,
-    //   devUserName,
-    //   devHostname,
-    //   devPort
-    // ).value,
-    // deployDevIndex := indexTask(data, devUserName, devHostname).value
+    deployIndex := indexTask(data, prodUserName, prodHostname).value,
+    deployDevServer := deployTask(
+      server,
+      devUserName,
+      devHostname,
+      devPort
+    ).value,
+    deployDevIndex := indexTask(data, devUserName, devHostname).value
   )
 
   def deployTask(
@@ -82,13 +81,13 @@ object Deployment {
   private val deployDevServer = taskKey[Unit]("Deploy the dev server")
   private val deployDevIndex = taskKey[Unit]("Run dev index pipeline")
 
-  private val devUserName = "scaladex"
+  private val devUserName = "devscaladex"
   private val prodUserName = "scaladex"
 
   private val devHostname = "icvm0042.epfl.ch"
   private val prodHostname = "icvm0042.epfl.ch"
 
-  private val devPort = 8080
+  private val devPort = 8082
   private val prodPort = 8080
 }
 
