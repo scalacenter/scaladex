@@ -20,7 +20,6 @@ import com.softwaremill.session.SessionOptions.{refreshable, usingCookies}
 import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext
-import akka.http.scaladsl.model.HttpHeader
 
 object SearchApi {
   implicit val formatProject: OFormat[Project] =
@@ -32,8 +31,16 @@ object SearchApi {
   case class Project(
       organization: String,
       repository: String,
-      logo: Option[String] = None,
-      artifacts: List[String] = Nil
+      logo: Option[String],
+      stars: Option[Int],
+      forks: Option[Int],
+      contributorCount: Option[Int],
+      topics: Set[String],
+      artifacts: List[String],
+      scalaVersion: List[String],
+      scalaJsVersion: List[String],
+      scalaNativeVersion: List[String],
+      sbtVersion: List[String]
   )
 
   case class ReleaseOptions(
@@ -214,13 +221,23 @@ class SearchApi(
       }
     }
 
-  private def convertProject(cli: Boolean)(project: Project): SearchApi.Project = {
+  private def convertProject(
+      cli: Boolean
+  )(project: Project): SearchApi.Project = {
     val artifacts = if (cli) project.cliArtifacts.toList else project.artifacts
     SearchApi.Project(
       project.organization,
       project.repository,
       project.github.flatMap(_.logo.map(_.target)),
-      project.artifacts
+      project.github.flatMap(_.stars),
+      project.github.flatMap(_.forks),
+      project.github.map(_.contributorCount),
+      project.github.map(_.topics).getOrElse(Set.empty),
+      project.artifacts,
+      project.scalaVersion,
+      project.sbtVersion,
+      project.scalaJsVersion,
+      project.scalaNativeVersion
     )
   }
 

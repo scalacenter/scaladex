@@ -10,7 +10,7 @@ package object routes {
       (
         "q" ? "*",
         "page".as[Int] ? 1,
-        "total".as[Int] ? SearchParams.resultsPerPage,                
+        "total".as[Int] ? SearchParams.resultsPerPage,
         "sort".?,
         "topics".as[String].*,
         "targetTypes".as[String].*,
@@ -20,7 +20,7 @@ package object routes {
         "sbtVersions".as[String].*,
         "contributingSearch".as[Boolean] ? false,
         "cli".as[Boolean] ? false,
-        "you".?,
+        "you".?
       )
     ).tmap {
       case (
@@ -36,7 +36,7 @@ package object routes {
             sbtVersions,
             contributingSearch,
             cli,
-            you,
+            you
           ) =>
         val userRepos = you
           .flatMap(_ => user.map(_.repos))
