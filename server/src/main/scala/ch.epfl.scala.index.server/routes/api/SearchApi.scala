@@ -36,6 +36,7 @@ object SearchApi {
       forks: Option[Int],
       contributorCount: Option[Int],
       topics: Set[String],
+      defaultArtifact: Option[String],
       artifacts: List[String],
       scalaVersion: List[String],
       scalaJsVersion: List[String],
@@ -225,6 +226,7 @@ class SearchApi(
       cli: Boolean
   )(project: Project): SearchApi.Project = {
     val artifacts = if (cli) project.cliArtifacts.toList else project.artifacts
+    val defaultArtifact = project.defaultArtifact.filter(artifacts.contains)
     SearchApi.Project(
       project.organization,
       project.repository,
@@ -233,7 +235,8 @@ class SearchApi(
       project.github.flatMap(_.forks),
       project.github.map(_.contributorCount),
       project.github.map(_.topics).getOrElse(Set.empty),
-      project.artifacts,
+      defaultArtifact,
+      artifacts,
       project.scalaVersion,
       project.sbtVersion,
       project.scalaJsVersion,
