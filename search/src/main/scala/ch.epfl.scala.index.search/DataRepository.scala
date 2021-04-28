@@ -425,14 +425,14 @@ class DataRepository(
   }
 
   def getAllScalaJsVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("scalaJsVersion", notDeprecatedQuery, ScalaJs.isValid)
+    versionAggregations("scalaJsVersion", notDeprecatedQuery, Js.isValid)
   }
 
   def getScalaJsVersions(params: SearchParams): Future[List[(String, Long)]] = {
     versionAggregations(
       "scalaJsVersion",
       filteredSearchQuery(params),
-      ScalaJs.isValid
+      Js.isValid
     )
       .map(addLabelsIfMissing(params.scalaJsVersions.toSet))
   }
@@ -441,7 +441,7 @@ class DataRepository(
     versionAggregations(
       "scalaNativeVersion",
       notDeprecatedQuery,
-      ScalaNative.isValid
+      Native.isValid
     )
   }
 
@@ -451,19 +451,19 @@ class DataRepository(
     versionAggregations(
       "scalaNativeVersion",
       filteredSearchQuery(params),
-      ScalaNative.isValid
+      Native.isValid
     ).map(addLabelsIfMissing(params.scalaNativeVersions.toSet))
   }
 
   def getAllSbtVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("sbtVersion", notDeprecatedQuery, SbtPlugin.isValid)
+    versionAggregations("sbtVersion", notDeprecatedQuery, Sbt.isValid)
   }
 
   def getSbtVersions(params: SearchParams): Future[List[(String, Long)]] = {
     versionAggregations(
       "sbtVersion",
       filteredSearchQuery(params),
-      SbtPlugin.isValid
+      Sbt.isValid
     )
       .map(addLabelsIfMissing(params.sbtVersions.toSet))
   }
