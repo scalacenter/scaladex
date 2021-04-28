@@ -17,12 +17,15 @@ import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.project.ArtifactMetaExtractor
 import ch.epfl.scala.index.model.misc.Sha1
 import ch.epfl.scala.index.model.release.{
+  Js,
   MinorBinary,
+  Native,
+  Sbt,
   SbtPlugin,
-  ScalaVersion,
   ScalaJs,
   ScalaJvm,
-  ScalaNative
+  ScalaNative,
+  ScalaVersion
 }
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 import org.joda.time.DateTime
@@ -257,23 +260,18 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
         .flatten
         .toSet
 
-    val sbt013 = MinorBinary(0, 13)
-    val sbt10 = MinorBinary(1, 0)
-    val scalaJs06 = MinorBinary(0, 6)
-    val native03 = MinorBinary(0, 3)
-
     val allTargets = List(
       ScalaJvm(ScalaVersion.`2.13`),
       ScalaJvm(ScalaVersion.`2.12`),
       ScalaJvm(ScalaVersion.`2.11`),
       ScalaJvm(ScalaVersion.`2.10`),
-      SbtPlugin(ScalaVersion.`2.10`, sbt013),
-      SbtPlugin(ScalaVersion.`2.12`, sbt10),
-      ScalaJs(ScalaVersion.`2.13`, scalaJs06),
-      ScalaJs(ScalaVersion.`2.12`, scalaJs06),
-      ScalaJs(ScalaVersion.`2.11`, scalaJs06),
-      ScalaJs(ScalaVersion.`2.10`, scalaJs06),
-      ScalaNative(ScalaVersion.`2.11`, native03)
+      SbtPlugin(ScalaVersion.`2.10`, Sbt.`0.13`),
+      SbtPlugin(ScalaVersion.`2.12`, Sbt.`1.0`),
+      ScalaJs(ScalaVersion.`2.13`, Js.`0.6`),
+      ScalaJs(ScalaVersion.`2.12`, Js.`0.6`),
+      ScalaJs(ScalaVersion.`2.11`, Js.`0.6`),
+      ScalaJs(ScalaVersion.`2.10`, Js.`0.6`),
+      ScalaNative(ScalaVersion.`2.11`, Native.`0.3`)
     )
 
     val releasesDownloads =

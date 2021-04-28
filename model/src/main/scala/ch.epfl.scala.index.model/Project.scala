@@ -1,14 +1,17 @@
 package ch.epfl.scala.index.model
 
 import ch.epfl.scala.index.model.release.{
+  BinaryVersion,
+  Js,
+  LanguageVersion,
+  Native,
+  Sbt,
   SbtPlugin,
   ScalaJs,
   ScalaJvm,
   ScalaNative
 }
 import misc.{GithubInfo, GithubRepo, Url}
-import ch.epfl.scala.index.model.release.LanguageVersion
-import ch.epfl.scala.index.model.release.BinaryVersion
 
 /**
  * Project representation which contains all necessary meta data to
@@ -76,12 +79,11 @@ case class Project(
       id = None,
       scalaVersion = LanguageVersion.sortFamilies(scalaVersion),
       scalaJsVersion =
-        BinaryVersion.sortAndFilter(scalaJsVersion, ScalaJs.isValid).toList,
+        BinaryVersion.sortAndFilter(scalaJsVersion, Js.isValid).toList,
       scalaNativeVersion = BinaryVersion
-        .sortAndFilter(scalaNativeVersion, ScalaNative.isValid)
+        .sortAndFilter(scalaNativeVersion, Native.isValid)
         .toList,
-      sbtVersion =
-        BinaryVersion.sortAndFilter(sbtVersion, SbtPlugin.isValid).toList
+      sbtVersion = BinaryVersion.sortAndFilter(sbtVersion, Sbt.isValid).toList
     )
   }
 

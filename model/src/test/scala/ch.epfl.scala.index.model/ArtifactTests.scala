@@ -9,10 +9,7 @@ class ArtifactTests extends FunSpec with Matchers {
       Artifact.parse("cats-core_sjs0.6_2.11") should contain(
         Artifact(
           "cats-core",
-          ScalaJs(
-            languageVersion = ScalaVersion.`2.11`,
-            scalaJsVersion = MinorBinary(0, 6)
-          )
+          ScalaJs(ScalaVersion.`2.11`, Js.`0.6`)
         )
       )
     }
@@ -21,10 +18,7 @@ class ArtifactTests extends FunSpec with Matchers {
       Artifact.parse("cats-core_native0.1_2.11") should contain(
         Artifact(
           "cats-core",
-          ScalaNative(
-            languageVersion = ScalaVersion.`2.11`,
-            scalaNativeVersion = MinorBinary(0, 1)
-          )
+          ScalaNative(ScalaVersion.`2.11`, MinorBinary(0, 1))
         )
       )
     }
@@ -51,15 +45,12 @@ class ArtifactTests extends FunSpec with Matchers {
       Artifact.parse("sbt-microsites_2.12_1.0") should contain(
         Artifact(
           "sbt-microsites",
-          SbtPlugin(
-            languageVersion = ScalaVersion.`2.12`,
-            sbtVersion = MinorBinary(1, 0)
-          )
+          SbtPlugin(ScalaVersion.`2.12`, Sbt.`1.0`)
         )
       )
     }
 
-    it("does not parse unconventionnal") {
+    it("does not parse unconventional") {
       Artifact.parse("sparrow") shouldBe empty
     }
 

@@ -73,12 +73,7 @@ class SbtInstallTests extends FunSuite with TestHelpers {
         artifactId = "scalajs-dom_sjs0.6_2.12",
         version = "0.9.3",
         artifactName = "scalajs-dom",
-        target = Some(
-          ScalaJs(
-            languageVersion = ScalaVersion.`2.12`,
-            scalaJsVersion = MinorBinary(0, 6)
-          )
-        )
+        target = Some(ScalaJs(ScalaVersion.`2.12`, Js.`0.6`))
       ).sbtInstall
 
     val expected =
@@ -94,12 +89,7 @@ class SbtInstallTests extends FunSuite with TestHelpers {
         artifactId = "sbt-native-packager_2.10_0.13",
         version = "1.2.2",
         artifactName = "sbt-native-packager",
-        target = Some(
-          SbtPlugin(
-            languageVersion = ScalaVersion.`2.10`,
-            sbtVersion = MinorBinary(0, 13)
-          )
-        )
+        target = Some(SbtPlugin(ScalaVersion.`2.10`, Sbt.`0.13`))
       ).sbtInstall
 
     val expected =
