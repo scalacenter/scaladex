@@ -48,6 +48,22 @@ read the [developer guide](/CONTRIBUTING.md)
 
 ## Badges API
 
+### Show the versions of Scala supported by your project!
+
+You can add this badge to the README.MD of your own GitHub projects to show
+the versions of Scala they support:
+
+[![Scala version Badge](https://index.scala-lang.org/typelevel/cats/cats-core/latest-by-scala-version.svg)
+
+...the badge above only summarises latest JVM artifacts, if you'd like a badge
+for  Scala JS or Scala Native, add a `targetType=...` query-string parameter:
+
+[![Scala version Badge](https://index.scala-lang.org/typelevel/cats/cats-core/latest-by-scala-version.svg?targetType=js)
+
+[![Scala version Badge](https://index.scala-lang.org/typelevel/cats/cats-core/latest-by-scala-version.svg?targetType=native)
+
+### Smaller, shorter badges
+
 [![Count Badge](https://index.scala-lang.org/count.svg?q=depends-on:typelevel/cats&subject=cats&color=orange&style=flat-square)](https://index.scala-lang.org/search?q=dependencies:typelevel/cats)
 
 [![Latest version](https://index.scala-lang.org/typelevel/cats/cats-core/latest.svg?color=orange&style=flat-square)](https://index.scala-lang.org/typelevel/cats/cats-core)
