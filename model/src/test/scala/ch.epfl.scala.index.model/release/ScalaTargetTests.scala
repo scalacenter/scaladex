@@ -7,6 +7,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 class ScalaTargetTests
     extends FunSpec
     with Matchers
+    with OptionValues
     with TableDrivenPropertyChecks {
   it("should be ordered") {
     val js067 = PatchBinary(0, 6, 7)
@@ -50,5 +51,10 @@ class ScalaTargetTests
     forAll(cases) { (input, target) =>
       ScalaTarget.parse(input) should contain(target)
     }
+  }
+
+  it("should parse a string to yield a ScalaTargetType") {
+    ScalaTargetType.ofName("Js").value shouldBe Js
+    ScalaTargetType.ofName("Jvm").value shouldBe Jvm
   }
 }

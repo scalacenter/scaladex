@@ -10,6 +10,8 @@ object ScalaTargetType {
 
   implicit val ordering: Ordering[ScalaTargetType] = Ordering.by(All.indexOf(_))
 
+  def ofName(name: String): Option[ScalaTargetType] =
+    All.find(_.getClass.getSimpleName.stripSuffix("$").equalsIgnoreCase(name))
 }
 
 sealed trait ScalaTargetType

@@ -9,6 +9,7 @@ import fastparse._
  * It can be either a [[ScalaVersion]] or a [[Scala3Version]]
  */
 sealed trait LanguageVersion {
+  val version: BinaryVersion
 
   /**
    * When indexing, all dotty versions are regrouped under the 'dotty' keyword.

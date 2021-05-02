@@ -2,14 +2,15 @@ package ch.epfl.scala.index
 package server
 package routes
 
-import model._
-import release._
-import akka.http.scaladsl._
-import server.Directives._
-import model.StatusCodes._
-import model.headers._
-import model.headers.CacheDirectives._
+import akka.http.scaladsl.model.StatusCodes._
+import akka.http.scaladsl.model.headers.CacheDirectives._
+import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.server.Directives._
+import ch.epfl.scala.index.model._
+import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.search.DataRepository
+
+import scala.collection.immutable.{SortedMap, SortedSet}
 
 class Badges(dataRepository: DataRepository) {
 
@@ -103,6 +104,40 @@ class Badges(dataRepository: DataRepository) {
     }
   }
 
+  def latestByScalaVersion(
+      organization: String,
+      repository: String,
+      artifact: String
+  ) = {
+    parameter("targetType".?) { targetTypeString =>
+      shields { (color, style, logo, logoWidth) =>
+        val targetType =
+          targetTypeString.flatMap(ScalaTargetType.ofName).getOrElse(Jvm)
+        onSuccess {
+          dataRepository.getProjectReleases(
+            Project.Reference(organization, repository)
+          )
+        } { allAvailableReleases =>
+          val notableScalaSupport =
+            ArtifactScalaVersionSupport.forSpecifiedArtifactAndTargetType(
+              allAvailableReleases,
+              artifact,
+              targetType
+            )
+
+          shieldsSvg(
+            artifact,
+            notableScalaSupport.summaryOfLatestArtifactsSupportingScalaVersions,
+            color,
+            style,
+            logo,
+            logoWidth
+          )
+        }
+      }
+    }
+  }
+
   val routes =
     get(
       concat(
@@ -115,6 +150,11 @@ class Badges(dataRepository: DataRepository) {
               latest(organization, repository, None)
             )
           )
+        },
+        pathPrefix(
+          Segment / Segment / Segment / "latest-by-scala-version.svg"
+        ) { (organization, repository, artifact) =>
+          latestByScalaVersion(organization, repository, artifact)
         },
         path("count.svg")(
           parameter("q")(query =>
