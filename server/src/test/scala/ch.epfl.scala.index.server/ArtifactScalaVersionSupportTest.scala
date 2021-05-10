@@ -125,4 +125,17 @@ class ArtifactScalaVersionSupportTest extends FunSpec with Matchers {
 
   }
 
+  it(
+    "should not list Scala platform editions that are not supported by all cited versions of the Scala language"
+  ) {
+    ArtifactScalaVersionSupport(
+      Map(
+        `7.1.0` -> Seq(
+          ScalaNative(`2.13`, Native.`0.3`),
+          ScalaNative(`3.0.0-M3`, Native.`0.4`),
+        )
+      )
+    ).summaryOfLatestArtifactsSupportingScalaVersions shouldBe "7.1.0 (Scala 3.0.0-M3, 2.13)"
+  }
+
 }
