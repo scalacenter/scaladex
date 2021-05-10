@@ -118,8 +118,8 @@ class Badges(dataRepository: DataRepository) {
             Project.Reference(organization, repository)
           )
         } { allAvailableReleases =>
-          val notableScalaSupport =
-            ArtifactScalaVersionSupport.forSpecifiedArtifactAndTargetType(
+          val notableScalaSupport: String =
+            BadgesSupport.summaryOfLatestVersions(
               allAvailableReleases,
               artifact,
               targetType
@@ -127,7 +127,7 @@ class Badges(dataRepository: DataRepository) {
 
           shieldsSvg(
             artifact,
-            notableScalaSupport.summaryOfLatestArtifactsSupportingScalaVersions,
+            notableScalaSupport,
             color,
             style,
             logo,
