@@ -29,7 +29,7 @@ lazy val ammoniteSettings = Seq(
   amm / aggregate := false,
   libraryDependencies += "com.lihaoyi" % "ammonite" % "2.3.8-65-0f0d597f" % Test cross CrossVersion.full,
   Test / sourceGenerators += Def.task {
-    val file = (sourceManaged in Test).value / "amm.scala"
+    val file = (Test / sourceManaged).value / "amm.scala"
     IO.write(
       file,
       """
@@ -53,8 +53,8 @@ lazy val commonSettings = Seq(
     "-Xfatal-warnings"
   ),
   libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.9" % Test,
-  javaOptions in reStart ++= {
-    val base = (baseDirectory in ThisBuild).value
+  reStart / javaOptions ++= {
+    val base = (ThisBuild / baseDirectory).value
 
     val devCredentials = base / "../scaladex-dev-credentials/application.conf"
 
@@ -146,12 +146,12 @@ lazy val server = project
       "org.webjars.bower" % "select2" % "4.0.3",
       "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Runtime
     ),
-    packageBin in Universal := (packageBin in Universal)
-      .dependsOn(WebKeys.assets in Assets)
+    Universal / packageBin := (Universal / packageBin)
+      .dependsOn(Assets / WebKeys.assets)
       .value,
-    reStart := reStart.dependsOn(WebKeys.assets in Assets).evaluated,
-    unmanagedResourceDirectories in Compile += (WebKeys.public in Assets).value,
-    javaOptions in reStart ++= Seq("-Xmx4g")
+    reStart := reStart.dependsOn(Assets / WebKeys.assets).evaluated,
+    Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
+    reStart / javaOptions ++= Seq("-Xmx4g")
   )
   .dependsOn(template, data, search, api.jvm)
   .enablePlugins(SbtSassify, JavaServerAppPackaging)
@@ -180,8 +180,8 @@ lazy val data = project
       "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Runtime
     ),
     buildInfoPackage := "build.info",
-    buildInfoKeys := Seq[BuildInfoKey](baseDirectory in ThisBuild),
-    javaOptions in reStart ++= Seq("-Xmx4g")
+    buildInfoKeys := Seq[BuildInfoKey](ThisBuild / baseDirectory),
+    reStart / javaOptions ++= Seq("-Xmx4g")
   )
   .enablePlugins(BuildInfoPlugin, JavaAppPackaging)
   .dependsOn(model, search)
