@@ -27,7 +27,7 @@ val amm = inputKey[Unit]("Start Ammonite REPL")
 lazy val ammoniteSettings = Seq(
   amm := (Test / run).evaluated,
   amm / aggregate := false,
-  libraryDependencies += "com.lihaoyi" % "ammonite" % "2.2.0" % Test cross CrossVersion.full,
+  libraryDependencies += "com.lihaoyi" % "ammonite" % "2.3.8-65-0f0d597f" % Test cross CrossVersion.full,
   Test / sourceGenerators += Def.task {
     val file = (sourceManaged in Test).value / "amm.scala"
     IO.write(
@@ -43,7 +43,7 @@ lazy val ammoniteSettings = Seq(
 )
 
 lazy val commonSettings = Seq(
-  scalaVersion := "2.13.3",
+  scalaVersion := "2.13.5",
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding",
