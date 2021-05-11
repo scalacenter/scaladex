@@ -33,7 +33,7 @@ object Deployment {
       hostname: String,
       port: Int
   ): Def.Initialize[Task[Unit]] = Def.task {
-    val serverZip = (packageBin in (server, Universal)).value.toPath
+    val serverZip = (server / Universal / packageBin).value.toPath
     val deployment = deploymentTask(userName, hostname).value
     deployment.deploy(serverZip, port)
   }
@@ -44,7 +44,7 @@ object Deployment {
       hostname: String
   ): Def.Initialize[Task[Unit]] =
     Def.task {
-      val dataZip = (packageBin in (data, Universal)).value.toPath
+      val dataZip = (data / Universal / packageBin).value.toPath
       val deployment = deploymentTask(userName, hostname).value
       deployment.index(dataZip)
     }
@@ -55,7 +55,7 @@ object Deployment {
   ): Def.Initialize[Task[Deployment]] =
     Def.task {
       new Deployment(
-        rootFolder = (baseDirectory in ThisBuild).value,
+        rootFolder = (ThisBuild / baseDirectory).value,
         logger = streams.value.log,
         userName = userName,
         hostname = hostname,
