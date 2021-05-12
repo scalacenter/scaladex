@@ -29,7 +29,7 @@ class RelevanceTest
 
   import system.dispatcher
 
-  private val data = DataRepository.open(BuildInfo.baseDirectory)
+  private val data = DataRepository.open()
 
   data.waitUntilReady()
 

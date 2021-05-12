@@ -6,9 +6,6 @@ import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.search.mapping._
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-import org.testcontainers.containers.BindMode
-import org.testcontainers.elasticsearch.ElasticsearchContainer
-import org.testcontainers.utility.DockerImageName
 
 import java.io.{Closeable, File}
 import java.nio.file.Files
@@ -37,7 +34,6 @@ import com.sksamuel.elastic4s.requests.indexes.IndexRequest
  */
 class DataRepository(
     esClient: ElasticClient,
-    container: Option[ElasticsearchContainer],
     indexPrefix: String
 )(implicit
     ec: ExecutionContext
@@ -70,10 +66,7 @@ class DataRepository(
     }
   }
 
-  def close(): Unit = {
-    esClient.close()
-    container.foreach(_.close())
-  }
+  def close(): Unit = esClient.close()
 
   def deleteAll(): Future[Unit] = {
     def delete(index: String): Future[Unit] =
@@ -567,61 +560,14 @@ object DataRepository extends LazyLogging with SearchProtocol {
 
   private lazy val config =
     ConfigFactory.load().getConfig("org.scala_lang.index.data")
-  private lazy val elasticsearch = config.getString("elasticsearch")
   private lazy val indexName = config.getString("index")
 
-  private lazy val local =
-    if (elasticsearch == "remote") false
-    else if (elasticsearch == "local" || elasticsearch == "local-prod") true
-    else
-      sys.error(
-        s"org.scala_lang.index.data.elasticsearch should be remote or local: $elasticsearch"
-      )
+  def open()(implicit ec: ExecutionContext): DataRepository = {
+    logger.info(s"Using elasticsearch index: $indexName")
 
-  def open(
-      baseDirectory: File
-  )(implicit ec: ExecutionContext): DataRepository = {
-    logger.info(s"elasticsearch $elasticsearch $indexName")
-
-    val container = if (local) {
-      val esData = baseDirectory.toPath.resolve(".esdata")
-      if (!Files.exists(esData)) {
-        Files.createDirectory(esData)
-        Files.setPosixFilePermissions(
-          esData,
-          Set(
-            PosixFilePermission.OWNER_READ,
-            PosixFilePermission.OWNER_WRITE,
-            PosixFilePermission.OWNER_EXECUTE,
-            PosixFilePermission.GROUP_READ,
-            PosixFilePermission.GROUP_WRITE,
-            PosixFilePermission.GROUP_EXECUTE,
-            PosixFilePermission.OTHERS_WRITE,
-            PosixFilePermission.OTHERS_READ,
-            PosixFilePermission.OTHERS_EXECUTE
-          ).asJava
-        )
-      }
-      val image = DockerImageName.parse(
-        "docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.2"
-      )
-      val container = new ElasticsearchContainer(image)
-      container.addFileSystemBind(
-        esData.toString,
-        "/usr/share/elasticsearch/data",
-        BindMode.READ_WRITE
-      )
-      container.start()
-      Some(container)
-    } else None
-
-    val address =
-      container.map(_.getHttpHostAddress).getOrElse("localhost:9200")
-    val props = ElasticProperties("http://" + address)
-
+    val props = ElasticProperties("http://localhost:9200")
     val esClient = ElasticClient(JavaClient(props))
-
-    new DataRepository(esClient, container, indexName)
+    new DataRepository(esClient, indexName)
   }
 
   private def gitHubStarScoring(query: Query): Query = {
