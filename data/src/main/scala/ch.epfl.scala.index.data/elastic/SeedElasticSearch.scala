@@ -55,13 +55,11 @@ class SeedElasticSearch(
         releasesResult <- indexReleasesF
         dependenciesResult <- indexDependenciesF
       } yield {
-        val dependencyFailures = dependenciesResult.filter(_.status >= 300)
-        if (releasesResult.hasFailures || dependencyFailures.nonEmpty) {
+        val failures =
+          (releasesResult ++ dependenciesResult).filter(_.status >= 300)
+        if (failures.nonEmpty) {
           logger.error(s"indexing projects ${project.reference} failed")
-          releasesResult.failures.foreach(
-            _.error.foreach(error => logger.error(error.reason))
-          )
-          dependencyFailures.foreach(
+          failures.foreach(
             _.error.foreach(error => logger.error(error.reason))
           )
         }
