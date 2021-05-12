@@ -30,6 +30,7 @@ import com.sksamuel.elastic4s.analysis.Analysis
 import com.sksamuel.elastic4s.requests.mappings.MappingDefinition
 import com.sksamuel.elastic4s.requests.searches.aggs.responses.bucket.Terms
 import com.sksamuel.elastic4s.http.JavaClient
+import com.sksamuel.elastic4s.requests.indexes.IndexRequest
 
 /**
  * @param esClient TCP client of the elasticsearch server
@@ -153,12 +154,11 @@ class DataRepository(
       .map(_ => ())
   }
 
-  def insertReleases(releases: Seq[Release]): Future[BulkResponse] = {
+  def insertReleases(releases: Seq[Release]): Future[Seq[BulkResponseItem]] = {
     val requests = releases.map { r =>
       indexInto(releaseIndex).source(ReleaseDocument(r))
     }
-
-    esClient.execute(bulk(requests)).map(_.result)
+    insertAll(requests, 1000)
   }
 
   def insertRelease(release: Release): Future[Unit] = {
@@ -173,15 +173,21 @@ class DataRepository(
   def insertDependencies(
       dependencies: Seq[ScalaDependency]
   ): Future[Seq[BulkResponseItem]] = {
-    if (dependencies.nonEmpty) {
-      val requests = dependencies.map { d =>
-        indexInto(dependencyIndex)
-          .source(DependencyDocument(d))
-      }
+    val requests = dependencies.map { d =>
+      indexInto(dependencyIndex).source(DependencyDocument(d))
+    }
+    insertAll(requests, 1000)
+  }
+
+  private def insertAll(
+      requests: Seq[IndexRequest],
+      bulkSize: Int
+  ): Future[Seq[BulkResponseItem]] = {
+    if (requests.nonEmpty) {
       Future
         .sequence(
           requests
-            .grouped(1000)
+            .grouped(bulkSize)
             .toSeq
             .map { reqs =>
               esClient.execute(bulk(reqs)).map(_.result.items)
@@ -189,7 +195,7 @@ class DataRepository(
         )
         .map(_.flatten)
     } else {
-      Future.successful { Seq.empty }
+      Future.successful(Seq.empty)
     }
   }
 
