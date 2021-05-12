@@ -75,12 +75,11 @@ class SeedElasticSearch(
 object SeedElasticSearch {
   def run(dataPaths: DataPaths)(implicit sys: ActorSystem): Unit = {
     import sys.dispatcher
-    Using.resource(DataRepository.open(BuildInfo.baseDirectory)) {
-      dataRepository =>
-        val githubDownload = new GithubDownload(dataPaths)
-        val seed =
-          new SeedElasticSearch(dataPaths, githubDownload, dataRepository)
-        seed.run()
+    Using.resource(DataRepository.open()) { dataRepository =>
+      val githubDownload = new GithubDownload(dataPaths)
+      val seed =
+        new SeedElasticSearch(dataPaths, githubDownload, dataRepository)
+      seed.run()
     }
   }
 }

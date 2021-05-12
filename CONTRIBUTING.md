@@ -60,11 +60,9 @@ You can install a pre-commit hook with `bin/hooks.sh`.
 
 ## Standalone Elasticsearch Server
 
-If you have a standalone elasticsearch server, you can use it when indexing or running the server with the following sbt command:
-
-```
-set javaOptions in reStart += "-DELASTICSEARCH=remote"
-```
+If you have a standalone elasticsearch server running on port 9200, scaladex will automatically use it.
+Otherwise it will try to create an elasticsearch container.
+There is currently no way to use a different port for elasticsearch.
 
 ## Architecture
 
