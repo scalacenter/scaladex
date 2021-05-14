@@ -149,7 +149,9 @@ lazy val server = project
       .dependsOn(Assets / WebKeys.assets)
       .value,
     Test / test := (Test / test).dependsOn(startElasticsearch).value,
-    reStart := reStart.dependsOn(startElasticsearch).evaluated,
+    reStart := reStart
+      .dependsOn(startElasticsearch, Assets / WebKeys.assets)
+      .evaluated,
     Compile / run := (Compile / run).dependsOn(startElasticsearch).evaluated,
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
     reStart / javaOptions ++= Seq("-Xmx4g")
