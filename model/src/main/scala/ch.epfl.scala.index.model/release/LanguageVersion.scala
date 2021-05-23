@@ -66,9 +66,12 @@ object ScalaVersion {
 }
 
 object Scala3Version {
+  val `3`: Scala3Version = Scala3Version(MajorBinary(3))
+
   def isValid(version: BinaryVersion): Boolean =
     version match {
-      case PreReleaseBinary(major, _, _, _) if major == 3 => true
+      case MajorBinary(3) => true
+      case PreReleaseBinary(3, _, _, _) => true
       case _ => false
     }
 
