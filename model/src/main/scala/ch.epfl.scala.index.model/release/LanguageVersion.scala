@@ -72,7 +72,7 @@ object Scala3Version {
   def isValid(version: BinaryVersion): Boolean =
     version match {
       case MajorBinary(3) => true
-      case PreReleaseBinary(3, _, _, _) => true
+      case PreReleaseBinary(3, _, _, ReleaseCandidate(x)) => true
       case _ => false
     }
 
