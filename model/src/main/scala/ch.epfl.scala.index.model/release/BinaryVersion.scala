@@ -1,6 +1,7 @@
 package ch.epfl.scala.index.model.release
 
 import ch.epfl.scala.index.model.{Parsers, PreRelease}
+import ch.epfl.scala.index.model.ReleaseCandidate
 
 sealed trait BinaryVersion extends Ordered[BinaryVersion] {
   override def compare(that: BinaryVersion): Int = {
@@ -38,12 +39,14 @@ object BinaryVersion extends Parsers {
   import fastparse._
 
   implicit val ordering: Ordering[BinaryVersion] = Ordering.by {
-    case MajorBinary(major) => (major, None, 0, None)
-    case MinorBinary(major, minor) => (major, Some(minor), 0, None)
+    case MajorBinary(major) =>
+      (major, Int.MaxValue, Int.MaxValue, None)
+    case MinorBinary(major, minor) =>
+      (major, minor, Int.MaxValue, None)
     case PatchBinary(major, minor, patch) =>
-      (major, Some(minor), patch, None)
+      (major, minor, patch, None)
     case PreReleaseBinary(major, minor, patch, preRelease) =>
-      (major, Some(minor), patch.getOrElse(0), Some(preRelease))
+      (major, minor, patch.getOrElse(Int.MaxValue), Some(preRelease))
   }
 
   def sortAndFilter(
