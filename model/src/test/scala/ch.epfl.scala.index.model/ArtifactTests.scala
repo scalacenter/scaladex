@@ -24,19 +24,23 @@ class ArtifactTests extends FunSpec with Matchers {
     }
 
     it("parses scala3 versions") {
-      Artifact.parse("circe_cats-core_3.0.0-M3") should contain(
+      Artifact.parse("circe_cats-core_3.0.0-RC3") should contain(
         Artifact(
           "circe_cats-core",
-          ScalaJvm(Scala3Version(PreReleaseBinary(3, 0, Some(0), Milestone(3))))
+          ScalaJvm(
+            Scala3Version(PreReleaseBinary(3, 0, Some(0), ReleaseCandidate(3)))
+          )
         )
       )
     }
 
     it("parses scala3 compiler") {
-      Artifact.parse("scala3-compiler_3.0.0-M1") should contain(
+      Artifact.parse("scala3-compiler_3.0.0-RC1") should contain(
         Artifact(
           "scala3-compiler",
-          ScalaJvm(Scala3Version(PreReleaseBinary(3, 0, Some(0), Milestone(1))))
+          ScalaJvm(
+            Scala3Version(PreReleaseBinary(3, 0, Some(0), ReleaseCandidate(1)))
+          )
         )
       )
     }
