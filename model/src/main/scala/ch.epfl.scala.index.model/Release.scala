@@ -227,10 +227,14 @@ object Release {
 
     def projectReference = Project.Reference(organization, repository)
     def name = s"$organization/$artifact"
+
+    def artifactHttpPath = s"/$organization/$repository/$artifact"
+    def artifactFullHttpUrl = s"https://index.scala-lang.org$artifactHttpPath"
+    def badgeUrl: String = s"$artifactFullHttpUrl/latest-by-scala-version.svg"
     def httpUrl = {
       val targetQuery = target.map(t => s"?target=${t.encode}").getOrElse("")
 
-      s"/$organization/$repository/$artifact/$version$targetQuery"
+      s"$artifactHttpPath/$version$targetQuery"
     }
 
     def isScalaLib: Boolean = {
