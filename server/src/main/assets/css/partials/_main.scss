@@ -14,6 +14,10 @@ main {
     flex: 1;
 }
 
+.copyable-incantation {
+  user-select: all;
+}
+
 .banner {
   background: #0c353c;
   text-align: center;
@@ -493,6 +497,11 @@ main {
             margin-bottom: ($line-height-computed / 1.5);
         }
         .install {
+            .btn-copy {
+                position: absolute;
+                top: 50px;
+                right: 6px;
+            }
             .nav-tabs > li:not(.active) > a {
                 color: white;
             }
@@ -587,11 +596,6 @@ main {
     .tab-pane {
         height: 85px;
     }
-    .btn-copy {
-        position: absolute;
-        top: 50px;
-        right: 6px;
-    }
 }
 
 .head-project {
@@ -642,6 +646,55 @@ main {
             .btn {
               padding: 6px 12px;
             }
+        }
+        .overlay {
+            position: fixed;
+            z-index: 10;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            transition: opacity 500ms;
+            visibility: hidden;
+            opacity: 0;
+        }
+        .overlay:target {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .popup {
+            margin: 70px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 5px;
+            width: 60%;
+            position: relative;
+            transition: all 5s ease-in-out;
+        }
+
+        .popup h2 {
+            margin-top: 0;
+            color: #333;
+            font-family: Tahoma, Arial, sans-serif;
+        }
+        .popup .close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            transition: all 200ms;
+            font-size: 30px;
+            font-weight: bold;
+            text-decoration: none;
+            color: #333;
+        }
+        .popup .close:hover {
+            color: #06D85F;
+        }
+        .popup .content {
+            max-height: 30%;
+            overflow: auto;
         }
     }
     .artifact-project {
