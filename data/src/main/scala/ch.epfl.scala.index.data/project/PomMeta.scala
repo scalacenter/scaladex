@@ -23,20 +23,15 @@ object PomMeta {
   val format = ISODateTimeFormat.dateTime.withOffsetParsed
   private val log = LoggerFactory.getLogger(getClass)
 
-  case class PomMetaStep(meta: PomMeta, keep: Boolean)
-
-  def default(releaseModel: ReleaseModel): PomMetaStep = {
-    PomMetaStep(
-      PomMeta(
-        releaseModel = releaseModel,
-        created = None,
-        resolver = None
-      ),
-      keep = true
+  private def default(releaseModel: ReleaseModel): PomMeta = {
+    PomMeta(
+      releaseModel = releaseModel,
+      created = None,
+      resolver = None
     )
   }
 
-  def apply(
+  def all(
       pomsRepoSha: Iterable[(ReleaseModel, LocalRepository, String)],
       paths: DataPaths
   ): Seq[PomMeta] = {
@@ -68,90 +63,79 @@ object PomMeta {
       metas.sorted.headOption.map(format.print)
 
     pomsRepoSha.iterator
-      .map {
+      .filter { case (pom, _, _) =>
+        packagingOfInterest.contains(pom.packaging)
+      }
+      .flatMap {
         case (pom, repo, sha1) => {
           repo match {
             case Bintray => {
               bintray.get(sha1) match {
-                case Some(metas) => {
-                  val resolver: Option[Resolver] =
-                    if (metas.forall(_.isJCenter)) Option(JCenter)
-                    else
-                      metas.headOption.map(meta =>
-                        BintrayResolver(meta.owner, meta.repo)
-                      )
+                case Some(metas) =>
+                  def isTypesafeNonOSS(meta: BintraySearch): Boolean = {
+                    meta.owner == "typesafe" &&
+                    typesafeNonOSS.contains(meta.repo)
+                  }
 
-                  PomMetaStep(
-                    PomMeta(
-                      releaseModel = pom,
-                      created = created(
-                        metas.map(search => new DateTime(search.created))
-                      ),
-                      resolver = resolver
-                    ),
-                    keep = !metas.exists(meta =>
-                      meta.owner == "typesafe" && typesafeNonOSS
-                        .contains(meta.repo)
+                  if (metas.exists(isTypesafeNonOSS)) None
+                  else {
+                    val resolver: Option[Resolver] =
+                      if (metas.forall(_.isJCenter)) Option(JCenter)
+                      else
+                        metas.headOption.map(meta =>
+                          BintrayResolver(meta.owner, meta.repo)
+                        )
+
+                    Some(
+                      PomMeta(
+                        releaseModel = pom,
+                        created = created(
+                          metas.map(search => new DateTime(search.created))
+                        ),
+                        resolver = resolver
+                      )
                     )
-                  )
-                }
+                  }
                 case None => {
                   log.info("no meta for pom: " + sha1)
-                  default(pom)
+                  Some(default(pom))
                 }
               }
             }
             case MavenCentral => {
-              central.get(sha1) match {
-                case Some(metas) => {
-                  PomMetaStep(
-                    PomMeta(
-                      releaseModel = pom,
-                      created = created(metas.map(_.created)),
-                      resolver = None
-                    ),
-                    keep = true
+              central
+                .get(sha1)
+                .map { metas =>
+                  PomMeta(
+                    releaseModel = pom,
+                    created = created(metas.map(_.created)),
+                    resolver = None
                   )
                 }
-                case None => {
-                  log.info("no meta for pom: " + sha1)
-                  default(pom)
-                }
-              }
+                .orElse(Some(default(pom)))
             }
             case UserProvided =>
-              users.get(sha1) match {
-                case Some(metas) => {
-                  PomMetaStep(
-                    PomMeta(
-                      releaseModel = pom,
-                      created = created(metas.map(_.created)),
-                      resolver = Some(UserPublished)
-                    ),
-                    keep = true
+              users
+                .get(sha1)
+                .map { metas =>
+                  PomMeta(
+                    releaseModel = pom,
+                    created = created(metas.map(_.created)),
+                    resolver = None
                   )
                 }
-                case None => {
-                  log.info("no meta for pom: " + sha1)
-                  default(pom)
-                }
-              }
+                .orElse(Some(default(pom)))
             case BintraySbtPlugins =>
-              PomMetaStep(
+              Some(
                 PomMeta(
                   releaseModel = pom,
                   created = sbtPluginsCreated.get(sha1),
                   resolver = None
-                ),
-                keep = true
+                )
               )
           }
         }
       }
-      .filter { case PomMetaStep(meta, keep) =>
-        packagingOfInterest.contains(meta.releaseModel.packaging) && keep
-      }
-      .map(_.meta)
       .toSeq
   }
 }

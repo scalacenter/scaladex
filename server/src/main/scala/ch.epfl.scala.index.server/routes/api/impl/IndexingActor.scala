@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import ch.epfl.scala.index.model.release.ScalaDependency
 
 class IndexingActor(
     paths: DataPaths,
@@ -83,61 +84,82 @@ class IndexingActor(
 
       val converter = new ProjectConvert(paths, githubDownload)
 
-      val (newProject, newReleases, dependencies) = converter
+      converter
         .convertAll(
           List((pom, localRepository, data.hash)),
           project.map(p => p.reference -> releases).toMap
         )
-        .next()
-
-      val projectUpdate = project match {
-        case Some(project) =>
-          dataRepository
-            .updateProject(newProject.copy(id = project.id, liveData = true))
-            .map(_ => log.info("updating project " + pom.artifactId))
-
+        .nextOption() match {
+        case Some((newProject, newReleases, dependencies)) =>
+          createOrUpdateProjectReleases(
+            project,
+            newProject,
+            releases,
+            newReleases,
+            dependencies
+          )
         case None =>
-          dataRepository
-            .insertProject(newProject.copy(liveData = true))
-            .map(_ => log.info("inserting project " + pom.artifactId))
+          Future.successful(
+            log.info(s"${pom.artifactId} is not a valid Scala artifact")
+          )
       }
-
-      val releaseUpdate = newReleases.headOption match {
-        case Some(release)
-            if !releases.exists(r => r.reference == release.reference) =>
-          log.info(s"inserting release ${release.maven}")
-          for {
-            _ <- dataRepository.insertRelease(release.copy(liveData = true))
-            items <- dataRepository.insertDependencies(dependencies)
-          } yield {
-            val failures = items.filter(_.status > 300)
-            if (failures.nonEmpty) {
-              failures.foreach(
-                _.error.foreach(error => log.error(error.reason))
-              )
-              log.error(
-                s"failed inserting the ${dependencies.size} dependencies of ${release.maven}"
-              )
-            } else {
-              log.error(
-                s"Inserted ${dependencies.size} dependencies of ${release.maven}"
-              )
-            }
-          }
-
-        case _ => Future.successful(())
-      }
-
-      for {
-        _ <- projectUpdate
-        _ <- releaseUpdate
-      } yield ()
     }
 
     for {
       project <- dataRepository.getProject(projectReference)
       releases <- dataRepository.getProjectReleases(projectReference)
       _ <- updateProjectReleases(project, releases)
+    } yield ()
+  }
+
+  def createOrUpdateProjectReleases(
+      project: Option[Project],
+      newProject: Project,
+      releases: Seq[Release],
+      newReleases: Seq[Release],
+      dependencies: Seq[ScalaDependency]
+  ): Future[Unit] = {
+    val projectUpdate = project match {
+      case Some(project) =>
+        dataRepository
+          .updateProject(newProject.copy(id = project.id, liveData = true))
+          .map(_ => log.info(s"Updating project ${project.githubRepo}"))
+
+      case None =>
+        dataRepository
+          .insertProject(newProject.copy(liveData = true))
+          .map(_ => log.info(s"Creating new project ${newProject.githubRepo}"))
+    }
+
+    val releaseUpdate = newReleases.headOption match {
+      case Some(release)
+          if !releases.exists(_.reference == release.reference) =>
+        log.info(s"Adding release ${release.maven}")
+        for {
+          _ <- dataRepository.insertRelease(release.copy(liveData = true))
+          items <- dataRepository.insertDependencies(dependencies)
+        } yield {
+          val failures = items.filter(_.status > 300)
+          if (failures.nonEmpty) {
+            failures.foreach(
+              _.error.foreach(error => log.error(error.reason))
+            )
+            log.error(
+              s"Failed adding the ${dependencies.size} dependencies of ${release.maven}"
+            )
+          } else {
+            log.error(
+              s"Added ${dependencies.size} dependencies of ${release.maven}"
+            )
+          }
+        }
+
+      case _ => Future.successful(())
+    }
+
+    for {
+      _ <- projectUpdate
+      _ <- releaseUpdate
     } yield ()
   }
 }

@@ -20,7 +20,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
   private val log = LoggerFactory.getLogger(getClass)
 
-  private val artifactMetaExtractor = new ArtifactMetaExtractor(paths)
+  private val metaExtractor = new ArtifactMetaExtractor(paths)
 
   /**
    * @param pomsRepoSha poms and associated meta information reference
@@ -34,10 +34,10 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
     val githubRepoExtractor = new GithubRepoExtractor(paths)
 
     log.info("Collecting Metadata")
-    val pomsAndMetaClean = PomMeta(pomsRepoSha, paths).flatMap {
+    val pomsAndMetaClean = PomMeta.all(pomsRepoSha, paths).flatMap {
       case PomMeta(pom, created, resolver) =>
         for {
-          artifactMeta <- artifactMetaExtractor(pom)
+          artifactMeta <- metaExtractor.extractMeta(pom)
           version <- SemanticVersion.tryParse(pom.version)
           github <- githubRepoExtractor(pom)
         } yield (
