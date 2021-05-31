@@ -188,13 +188,14 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
 
   // data/run central /home/gui/scaladex/scaladex-contrib /home/gui/scaladex/scaladex-index /home/gui/scaladex/scaladex-credentials
   def run(): Unit = {
-    val artifactMetaExtractor = new ArtifactMetaExtractor(paths)
+    val metaExtractor = new ArtifactMetaExtractor(paths)
     val allGroups: Set[String] =
       PomsReader(LocalPomRepository.MavenCentral, paths)
         .load()
         .flatMap {
           case Success((pom, _, _)) =>
-            artifactMetaExtractor(pom)
+            metaExtractor
+              .extractMeta(pom)
               .filter { meta =>
                 meta.scalaTarget.isDefined && !meta.isNonStandard
               }

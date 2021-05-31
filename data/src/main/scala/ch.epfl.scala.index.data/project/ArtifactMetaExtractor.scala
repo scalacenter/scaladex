@@ -32,7 +32,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
    *
    * @return The artifact name (without suffix), the Scala target, whether this project is a usual Scala library or not
    */
-  def apply(pom: ReleaseModel): Option[ArtifactMeta] = {
+  def extractMeta(pom: ReleaseModel): Option[ArtifactMeta] = {
     val nonStandardLookup =
       nonStandardLibs
         .find(lib =>
