@@ -52,28 +52,7 @@
                 GitHub <i class="fa fa-github fa-lg"></i>
               </a>
             }
-            <a href="#badge-markdown">
-              <img src="@release.reference.badgeUrl" />
-            </a>
-            <div id="badge-markdown" class="overlay">
-              <div class="popup">
-                <h2>Create badge</h2>
-                <a class="close" href="#">&times;</a>
 
-                <div class="content">
-                  <img src="@release.reference.badgeUrl" />
-                  <div>
-                    <h5>Markdown:</h5>
-                    <pre
-                      aria-label="Badge markdown"
-                      id="copy-badge-markdown"
-                      class="copyable-incantation"
-                    >[![@release.reference.artifact Scala version support](@release.reference.badgeUrl)](@release.reference.artifactFullHttpUrl)</pre>
-                    <button class="btn-copy btn btn-primary pull-right" data-clipboard-target="copy-badge-markdown">Copy Markdown</button>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
           @for(github <- project.github) {
             @if(!github.topics.isEmpty) {
