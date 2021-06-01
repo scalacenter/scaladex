@@ -31,6 +31,7 @@
             </div>
             }
             @documentation(release, project)
+            @badges(release)
             @install(release, project.cliArtifacts)
             @release.scastieURL.map(url => scastie(url))
             @project.github.map(gh => statistic(gh, project.githubRepo, project.releaseCount, allDeps.reverseDependencies.size))
