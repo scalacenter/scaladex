@@ -230,7 +230,12 @@ object Release {
 
     def artifactHttpPath = s"/$organization/$repository/$artifact"
     def artifactFullHttpUrl = s"https://index.scala-lang.org$artifactHttpPath"
-    def badgeUrl: String = s"$artifactFullHttpUrl/latest-by-scala-version.svg"
+    private def nonDefaultTargetType = {
+      target.map(_.targetType).filter(_ != Jvm)
+    }
+    def badgeUrl: String =
+      s"$artifactFullHttpUrl/latest-by-scala-version.svg" +
+        nonDefaultTargetType.map("?targetType=" + _).mkString
     def httpUrl = {
       val targetQuery = target.map(t => s"?target=${t.encode}").getOrElse("")
 
