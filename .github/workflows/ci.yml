@@ -24,9 +24,9 @@ jobs:
         with:
           repository: scalacenter/scaladex-contrib
           path: scaladex-contrib
-      - uses: olafurpg/setup-scala@v10
+      - uses: laughedelic/coursier-setup@v1
         with:
-          java-version: "adopt@1.8"
+          jvm: "adopt:1.8"
       - uses: coursier/cache-action@v5
       - name: Formatting
         run: |
@@ -36,15 +36,15 @@ jobs:
       - name: Load elastic search
         run: |
           cd scaladex
-          sbt "data/run elastic"      
+          sbtn "data/run elastic"      
         shell: bash
       - name: Unit tests
         run: |
           cd scaladex
-          sbt test      
+          sbtn test      
         shell: bash
       - name: Package server
         run: |
           cd scaladex
-          sbt server/universal:packageBin
+          sbtn server/universal:packageBin
         shell: bash
