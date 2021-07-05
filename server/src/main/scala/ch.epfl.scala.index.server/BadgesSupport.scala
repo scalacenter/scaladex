@@ -25,7 +25,7 @@ object BadgesSupport {
   def summaryOfLatestVersions(
       scalaTargetsByArtifactVersion: Map[SemanticVersion, Set[ScalaTarget]]
   ): String = {
-    // Are ALL `ScalaTarget`s instances of ScalaTargetWithPlatformBinaryVersion withe targetTypes for platforms that
+    // Are ALL `ScalaTarget`s instances of ScalaTargetWithPlatformBinaryVersion with targetTypes for platforms that
     // *fully dictate the Scala version used*?  If so, we want to summarise by `PlatformEdition`, rather than `LanguageVersion`
     val platformTargetsByArtifactVersion: Option[
       Map[SemanticVersion, Set[ScalaTargetWithPlatformBinaryVersion]]
