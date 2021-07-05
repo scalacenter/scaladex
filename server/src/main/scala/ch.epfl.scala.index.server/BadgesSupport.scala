@@ -58,8 +58,7 @@ object BadgesSupport {
   }
 
   def summarisePlatformTargets(
-      platformEditions: Set[PlatformEdition],
-      sep: String
+      platformEditions: Set[PlatformEdition]
   ): String = {
     val platformBinaryVersionsByTargetType = SortedMap.from(
       platformEditions
@@ -72,7 +71,7 @@ object BadgesSupport {
 
     platformBinaryVersionsByTargetType
       .map { case (shortName, platformBinaryVersions) =>
-        s"$shortName ${platformBinaryVersions.mkString(sep)}"
+        s"$shortName ${platformBinaryVersions.mkString(", ")}"
       }
       .mkString(", ")
   }
@@ -174,8 +173,7 @@ object BadgesSupport {
       val targetsSummary: Option[String] =
         Option.when(platformEditionsSupportedForAllLanguageVersions.nonEmpty)(
           " - " + summarisePlatformTargets(
-            platformEditionsSupportedForAllLanguageVersions,
-            "+"
+            platformEditionsSupportedForAllLanguageVersions
           )
         )
 
@@ -205,8 +203,7 @@ object BadgesSupport {
         interestingKeyVersions: Set[PlatformEdition]
     ): String =
       summarisePlatformTargets(
-        scalaTargets.map(_.platformEdition).filter(interestingKeyVersions),
-        ", "
+        scalaTargets.map(_.platformEdition).filter(interestingKeyVersions)
       )
   }
 }

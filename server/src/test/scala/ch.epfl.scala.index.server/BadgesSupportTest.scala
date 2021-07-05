@@ -38,7 +38,7 @@ class BadgesSupportTest extends FunSpec with Matchers {
           ScalaNative(`2.13`, Native.`0.4`)
         )
       )
-    ) shouldBe "7.0.0 (Scala 2.13 - Native 0.4+0.3)"
+    ) shouldBe "7.0.0 (Scala 2.13 - Native 0.4, 0.3)"
   }
 
   it(
@@ -143,7 +143,7 @@ class BadgesSupportTest extends FunSpec with Matchers {
           ScalaNative(`2.13`, Native.`0.4`)
         )
       )
-    ) shouldBe "7.1.0 (Scala 3.0.0-M3, 2.13 - Native 0.4+0.3)"
+    ) shouldBe "7.1.0 (Scala 3.0.0-M3, 2.13 - Native 0.4, 0.3)"
 
   }
 
