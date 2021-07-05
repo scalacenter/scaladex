@@ -33,6 +33,8 @@ case class PlatformAndLanguageVersions(
 sealed trait PlatformVersionedTargetType extends ScalaTargetType {
   def encode(platformAndLanguageVersions: PlatformAndLanguageVersions): String
   val platformId: String
+  val shortName: String
+  val platformVersionDeterminesScalaVersion: Boolean = false
   val stableBinaryVersions: Set[BinaryVersion]
   def isValid(version: BinaryVersion): Boolean =
     stableBinaryVersions.contains(version)
@@ -40,6 +42,7 @@ sealed trait PlatformVersionedTargetType extends ScalaTargetType {
 }
 case object Js extends PlatformVersionedTargetType {
   val platformId = "scala-js"
+  val shortName = "JS"
   def encode(versions: PlatformAndLanguageVersions) =
     s"_sjs${versions.platform}_${versions.language}"
 
@@ -56,6 +59,7 @@ case object Js extends PlatformVersionedTargetType {
 }
 case object Native extends PlatformVersionedTargetType {
   val platformId = "scala-native"
+  val shortName = "Native"
   def encode(versions: PlatformAndLanguageVersions) =
     s"_native${versions.platform}_${versions.language}"
   val `0.3`: BinaryVersion = MinorBinary(0, 3)
@@ -72,6 +76,8 @@ case object Native extends PlatformVersionedTargetType {
 case object Java extends ScalaTargetType
 case object Sbt extends PlatformVersionedTargetType {
   val platformId = "sbt"
+  val shortName = "sbt"
+  override val platformVersionDeterminesScalaVersion = true
   def encode(versions: PlatformAndLanguageVersions) =
     s"_${versions.language}_${versions.platform}"
 
