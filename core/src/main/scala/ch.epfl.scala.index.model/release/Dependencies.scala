@@ -1,7 +1,7 @@
 package ch.epfl.scala.index.model.release
 
-import ch.epfl.scala.index.model.Release
 import ch.epfl.scala.index.model.Project
+import ch.epfl.scala.index.model.Release
 
 /**
  * Contains the dependencies and reverse dependencies of a release

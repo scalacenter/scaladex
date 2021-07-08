@@ -3,12 +3,12 @@ package server
 
 import java.util.UUID
 
+import scala.collection.parallel.mutable.ParTrieMap
+import scala.util.Try
+
 import ch.epfl.scala.index.server.config.ServerConfig
 import com.softwaremill.session._
 import org.slf4j.LoggerFactory
-
-import scala.collection.parallel.mutable.ParTrieMap
-import scala.util.Try
 
 class GithubUserSession(sessionConfig: SessionConfig) {
   private val logger = LoggerFactory.getLogger(getClass)

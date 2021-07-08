@@ -1,6 +1,6 @@
 package ch.epfl.scala.index.model
 
-import release._
+import ch.epfl.scala.index.model.release._
 import org.scalatest._
 
 class ArtifactTests extends FunSpec with Matchers {

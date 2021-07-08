@@ -1,8 +1,10 @@
 package ch.epfl.scala.services.storage.sql
 
-import ch.epfl.scala.utils.Secret
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
-import scala.util.{Failure, Success, Try}
+import ch.epfl.scala.utils.Secret
 
 sealed trait DbConf extends Product with Serializable
 

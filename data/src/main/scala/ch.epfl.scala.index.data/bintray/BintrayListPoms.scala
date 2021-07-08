@@ -4,23 +4,31 @@ package bintray
 
 import java.nio.file.Files
 
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.util.Using
+
 import akka.actor.ActorSystem
-import akka.stream.scaladsl.{FileIO, Flow, Keep, Source}
+import akka.stream.IOResult
+import akka.stream.scaladsl.FileIO
+import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl.Keep
+import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import ch.epfl.scala.index.data.cleanup.NonStandardLib
 import ch.epfl.scala.index.data.download.PlayWsDownloader
 import ch.epfl.scala.index.model._
 import com.github.nscala_time.time.Imports._
-import org.typelevel.jawn.support.json4s.Parser
 import org.json4s._
 import org.json4s.native.Serialization.write
 import org.slf4j.LoggerFactory
+import org.typelevel.jawn.support.json4s.Parser
+import play.api.libs.ws.WSClient
+import play.api.libs.ws.WSRequest
+import play.api.libs.ws.WSResponse
 import play.api.libs.ws.ahc.AhcCurlRequestLogger
-import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
-
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.Using
 
 class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
     implicit val system: ActorSystem
@@ -101,7 +109,7 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
    * @param merged the merged list
    * @return
    */
-  def writeMergedPoms(merged: List[BintraySearch]) = {
+  def writeMergedPoms(merged: List[BintraySearch]): IOResult = {
     Files.delete(BintrayMeta.path(paths))
 
     val mavenMetas = Meta.load(paths, LocalPomRepository.MavenCentral)
@@ -185,7 +193,7 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
       search: String,
       mostRecentQueriedDate: Option[DateTime],
       filter: Option[BintraySearch => Boolean] = None
-  ) = {
+  ): Unit = {
 
     if (queried.size == 1) {
       log.info(infoMessage)
@@ -244,7 +252,7 @@ object BintrayListPoms {
       paths: DataPaths,
       scalaVersions: Seq[String],
       libs: Seq[NonStandardLib]
-  )(implicit sys: ActorSystem) = {
+  )(implicit sys: ActorSystem): Unit = {
     Using.resource(BintrayClient.create(paths.credentials)) { bintrayClient =>
       val listPoms = new BintrayListPoms(paths, bintrayClient)
 

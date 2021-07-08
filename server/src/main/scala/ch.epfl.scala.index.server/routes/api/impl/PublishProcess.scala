@@ -4,25 +4,28 @@ package routes
 package api
 package impl
 
-import data._
-import data.cleanup.GithubRepoExtractor
-import data.download.PlayWsDownloader
-import data.elastic._
-import data.github._
-import data.maven.{DownloadParentPoms, PomsReader, ReleaseModel}
-import data.project.ProjectConvert
-import model.misc.GithubRepo
-import model.{Project, Release}
-import model.release.ReleaseSelection
-import akka.actor.{ActorSystem, Props}
-import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.model.StatusCode
-import ch.epfl.scala.index.search.DataRepository
+import java.io.PrintWriter
+import java.io.StringWriter
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
-import java.io.{PrintWriter, StringWriter}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
+import akka.actor.ActorSystem
+import akka.actor.Props
+import akka.http.scaladsl.model.StatusCode
+import akka.http.scaladsl.model.StatusCodes._
+import ch.epfl.scala.index.data._
+import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
+import ch.epfl.scala.index.data.download.PlayWsDownloader
+import ch.epfl.scala.index.data.maven.DownloadParentPoms
+import ch.epfl.scala.index.data.maven.PomsReader
+import ch.epfl.scala.index.data.maven.ReleaseModel
+import ch.epfl.scala.index.model.Project
+import ch.epfl.scala.index.model.Release
+import ch.epfl.scala.index.model.misc.GithubRepo
+import ch.epfl.scala.index.search.DataRepository
 import org.slf4j.LoggerFactory
 
 private[api] class PublishProcess(

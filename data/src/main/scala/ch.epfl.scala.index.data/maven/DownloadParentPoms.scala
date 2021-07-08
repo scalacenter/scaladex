@@ -2,14 +2,17 @@ package ch.epfl.scala.index
 package data
 package maven
 
-import java.nio.file.{Files, Path}
+import java.nio.file.Files
+import java.nio.file.Path
+
+import scala.util.Failure
 
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.download.PlayWsDownloader
 import org.slf4j.LoggerFactory
-import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
-
-import scala.util.Failure
+import play.api.libs.ws.WSClient
+import play.api.libs.ws.WSRequest
+import play.api.libs.ws.WSResponse
 
 class DownloadParentPoms(
     repository: LocalPomRepository,
@@ -25,8 +28,8 @@ class DownloadParentPoms(
     repository == LocalPomRepository.MavenCentral || repository == LocalPomRepository.Bintray
   )
 
-  val parentPomsPath = paths.parentPoms(repository)
-  val pomReader =
+  val parentPomsPath: Path = paths.parentPoms(repository)
+  val pomReader: PomsReader =
     tmp match {
       case Some(path) => PomsReader.tmp(paths, path)
       case None => PomsReader(repository, paths)

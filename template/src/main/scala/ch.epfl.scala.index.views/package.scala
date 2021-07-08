@@ -1,13 +1,12 @@
 package ch.epfl.scala.index
 package views
 
-import model._
-import misc.{Pagination, SearchParams}
-
-import com.typesafe.config.ConfigFactory
-
 import akka.http.scaladsl.model.Uri
-import Uri.Query
+import akka.http.scaladsl.model.Uri.Query
+import ch.epfl.scala.index.model.misc.Pagination
+import ch.epfl.scala.index.model.misc.SearchParams
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 
 package object html {
 
@@ -110,10 +109,11 @@ package object html {
     }
   }
 
-  val config = ConfigFactory.load().getConfig("org.scala_lang.index.server")
-  val production = config.getBoolean("production")
+  val config: Config =
+    ConfigFactory.load().getConfig("org.scala_lang.index.server")
+  val production: Boolean = config.getBoolean("production")
 
-  def unescapeBackground(in: String) = {
+  def unescapeBackground(in: String): String = {
     play.twirl.api.HtmlFormat
       .escape(in)
       .toString

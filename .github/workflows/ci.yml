@@ -8,6 +8,14 @@ on:
       - main 
       - develop
 jobs:
+  checks:
+    name: Scalafmt and Scalafix
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: olafurpg/setup-scala@v12
+      - run: sbt "scalafixAll --check"
+      - run: ./bin/scalafmt --test
   unit:
     runs-on: ubuntu-latest
     steps:
@@ -29,11 +37,6 @@ jobs:
         with:
           jvm: "adopt:1.8"
       - uses: coursier/cache-action@v5
-      - name: Formatting
-        run: |
-          cd scaladex
-          ./bin/scalafmt --test      
-        shell: bash
       - name: Load elastic search
         run: |
           cd scaladex

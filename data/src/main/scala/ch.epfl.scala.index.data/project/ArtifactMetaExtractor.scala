@@ -2,16 +2,16 @@ package ch.epfl.scala.index
 package data
 package project
 
-import cleanup._
-import model.release.{
-  LanguageVersion,
-  BinaryVersion,
-  SbtPlugin,
-  ScalaJvm,
-  ScalaTarget
-}
-import model.{Artifact, SemanticVersion}
-import maven.{ReleaseModel, SbtPluginTarget}
+import ch.epfl.scala.index.data.cleanup._
+import ch.epfl.scala.index.data.maven.ReleaseModel
+import ch.epfl.scala.index.data.maven.SbtPluginTarget
+import ch.epfl.scala.index.model.Artifact
+import ch.epfl.scala.index.model.SemanticVersion
+import ch.epfl.scala.index.model.release.BinaryVersion
+import ch.epfl.scala.index.model.release.LanguageVersion
+import ch.epfl.scala.index.model.release.SbtPlugin
+import ch.epfl.scala.index.model.release.ScalaJvm
+import ch.epfl.scala.index.model.release.ScalaTarget
 import org.slf4j.LoggerFactory
 
 case class ArtifactMeta(

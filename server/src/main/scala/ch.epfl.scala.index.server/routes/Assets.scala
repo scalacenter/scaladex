@@ -3,9 +3,10 @@ package server
 package routes
 
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 
 object Assets {
-  val routes =
+  val routes: Route =
     get(
       concat(
         path("assets" / "lib" / Remaining)(path =>

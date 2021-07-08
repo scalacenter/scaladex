@@ -2,7 +2,9 @@ package ch.epfl.scala.index.client
 
 import org.scalajs.dom
 import org.scalajs.dom.document
-import org.scalajs.dom.raw.{Event, HTMLButtonElement, HTMLCollection}
+import org.scalajs.dom.raw.Event
+import org.scalajs.dom.raw.HTMLButtonElement
+import org.scalajs.dom.raw.HTMLCollection
 
 object CopyToClipboard {
   private val errorPrefix = "[CopyToClipboard] -"

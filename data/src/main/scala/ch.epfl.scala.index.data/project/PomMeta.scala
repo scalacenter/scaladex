@@ -2,15 +2,13 @@ package ch.epfl.scala.index
 package data
 package project
 
-import maven.ReleaseModel
-import model.release._
-import data.bintray._
-import data.LocalRepository._
-
-import org.joda.time.DateTime
+import ch.epfl.scala.index.data.LocalRepository._
+import ch.epfl.scala.index.data.bintray._
+import ch.epfl.scala.index.data.maven.ReleaseModel
+import ch.epfl.scala.index.model.release._
 import com.github.nscala_time.time.Imports._
+import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
-
 import org.slf4j.LoggerFactory
 
 case class PomMeta(

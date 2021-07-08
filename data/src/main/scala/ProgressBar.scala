@@ -1,8 +1,8 @@
 package ch.epfl.scala.index
 package data
 
-import me.tongfei.progressbar.{ProgressBar => PB, ProgressBarStyle}
-import java.io.{PrintStream, ByteArrayOutputStream, OutputStream}
+import me.tongfei.progressbar.ProgressBarStyle
+import me.tongfei.progressbar.{ProgressBar => PB}
 import org.slf4j.Logger
 
 object ProgressBar {

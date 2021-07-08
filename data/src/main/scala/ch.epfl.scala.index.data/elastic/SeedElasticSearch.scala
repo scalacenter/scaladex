@@ -1,25 +1,17 @@
 package ch.epfl.scala.index.data.elastic
 
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
+import scala.util.Using
+
 import akka.actor.ActorSystem
-
-import build.info.BuildInfo
-
 import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.index.data.ProgressBar
 import ch.epfl.scala.index.data.project._
 import ch.epfl.scala.index.search.DataRepository
-
 import com.typesafe.scalalogging.LazyLogging
-
-import scala.concurrent.duration._
-import scala.concurrent.{Await, ExecutionContext}
-import scala.util.Success
-import ch.epfl.scala.index.model.Project
-import ch.epfl.scala.index.model.Release
-import ch.epfl.scala.index.model.release.ScalaDependency
-import scala.util.Using
 
 class SeedElasticSearch(
     paths: DataPaths,

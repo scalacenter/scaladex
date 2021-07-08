@@ -1,22 +1,18 @@
 package ch.epfl.scala.index
 package data
 
-import github._
-import bintray.{BintrayMeta, BintraySearch, BintrayProtocol}
-import cleanup.GithubRepoExtractor
-import maven.PomsReader
-import model.misc.GithubRepo
-import elastic.SaveLiveData
-
-import org.json4s._
-import org.json4s.native.JsonMethods._
-import org.json4s.native.Serialization.write
-
+import java.nio.charset.StandardCharsets
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
-import java.nio.charset.StandardCharsets
 
-import scala.util.Success
+import ch.epfl.scala.index.data.bintray.BintrayMeta
+import ch.epfl.scala.index.data.bintray.BintrayProtocol
+import ch.epfl.scala.index.data.bintray.BintraySearch
+import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
+import ch.epfl.scala.index.data.elastic.SaveLiveData
+import ch.epfl.scala.index.data.maven.PomsReader
+import ch.epfl.scala.index.model.misc.GithubRepo
+import org.json4s.native.Serialization.write
 
 object SubIndex extends BintrayProtocol {
   def generate(source: DataPaths, destination: DataPaths): Unit = {
