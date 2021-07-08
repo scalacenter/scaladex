@@ -73,7 +73,7 @@ lazy val scaladex = project
   .aggregate(
     client,
     data,
-    model,
+    core,
     server,
     api.jvm,
     api.js,
@@ -92,10 +92,11 @@ lazy val template = project
       "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
     )
   )
-  .dependsOn(model)
+  .dependsOn(core)
   .enablePlugins(SbtTwirl)
 
-lazy val search = project
+lazy val infra = project
+  .in(file("infra"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -104,7 +105,7 @@ lazy val search = project
       "org.typelevel" %% "jawn-json4s" % "1.0.0"
     )
   )
-  .dependsOn(model)
+  .dependsOn(core)
 
 lazy val api = crossProject(JSPlatform, JVMPlatform)
   .settings(commonSettings)
@@ -156,10 +157,11 @@ lazy val server = project
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
     reStart / javaOptions ++= Seq("-Xmx4g")
   )
-  .dependsOn(template, data, search, api.jvm)
+  .dependsOn(template, data, infra, api.jvm)
   .enablePlugins(SbtSassify, JavaServerAppPackaging)
 
-lazy val model = project
+lazy val core = project
+  .in(file("core"))
   .settings(commonSettings)
   .settings(
     libraryDependencies += "com.lihaoyi" %% "fastparse" % "2.3.0"
@@ -189,4 +191,4 @@ lazy val data = project
     reStart / javaOptions ++= Seq("-Xmx4g")
   )
   .enablePlugins(BuildInfoPlugin, JavaAppPackaging)
-  .dependsOn(model, search)
+  .dependsOn(core, infra)
