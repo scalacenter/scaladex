@@ -102,8 +102,14 @@ lazy val infra = project
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % elastic4sVersion,
       "org.json4s" %% "json4s-native" % "3.6.9",
-      "org.typelevel" %% "jawn-json4s" % "1.0.0"
-    )
+      "org.typelevel" %% "jawn-json4s" % "1.0.0",
+      "org.flywaydb" % "flyway-core" % "7.11.0" // for database migration
+    ) ++ Seq(
+      "org.tpolecat" %% "doobie-core",
+      "org.tpolecat" %% "doobie-h2",
+      "org.tpolecat" %% "doobie-postgres",
+      "org.tpolecat" %% "doobie-hikari"
+    ).map(_ % V.doobieVersion)
   )
   .dependsOn(core)
 
@@ -192,3 +198,7 @@ lazy val data = project
   )
   .enablePlugins(BuildInfoPlugin, JavaAppPackaging)
   .dependsOn(core, infra)
+
+lazy val V = new {
+  val doobieVersion = "0.13.4"
+}
