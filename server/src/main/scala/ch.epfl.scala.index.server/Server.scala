@@ -17,6 +17,7 @@ import ch.epfl.scala.index.server.config.ServerConfig
 import ch.epfl.scala.index.server.routes._
 import ch.epfl.scala.index.server.routes.api._
 import ch.epfl.scala.index.search.DataRepository
+import ch.epfl.scala.services.storage.sql.ScaladexRepo
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import org.slf4j.LoggerFactory
@@ -36,6 +37,8 @@ object Server {
     if (config.production) {
       PidLock.create("SERVER")
     }
+
+    val db = new ScaladexRepo(config.dbConf)
 
     implicit val system: ActorSystem = ActorSystem("scaladex")
     import system.dispatcher
@@ -113,6 +116,15 @@ object Server {
     log.info("waiting for elastic to start")
     data.waitUntilReady()
     log.info("ready")
+
+    if (config.production) {
+      db.migrate().unsafeRunSync()
+    } else {
+      db.dropTables().unsafeRunSync()
+      db.migrate().unsafeRunSync()
+      db.insertMockData().unsafeRunSync()
+      log.info("Mock data for database has been inserted")
+    }
 
     Await.result(Http().bindAndHandle(routes, "0.0.0.0", port), 20.seconds)
 
