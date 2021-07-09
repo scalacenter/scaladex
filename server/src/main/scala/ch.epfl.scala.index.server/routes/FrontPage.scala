@@ -5,15 +5,15 @@ import scala.concurrent.ExecutionContext
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.epfl.scala.index.model.misc.UserInfo
-import ch.epfl.scala.index.search.DataRepository
+import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.GithubUserSession
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.index.views.html.frontpage
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 
-class FrontPage(dataRepository: DataRepository, session: GithubUserSession)(
-    implicit ec: ExecutionContext
+class FrontPage(dataRepository: ESRepo, session: GithubUserSession)(implicit
+    ec: ExecutionContext
 ) {
   import session.implicits._
 

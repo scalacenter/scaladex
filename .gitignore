@@ -17,3 +17,5 @@ scaladex.log
 project/metals.sbt
 .bsp/
 project/gitignore.sbt
+http-client.env.json
+*.http

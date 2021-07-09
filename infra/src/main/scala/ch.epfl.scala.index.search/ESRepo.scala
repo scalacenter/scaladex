@@ -1,15 +1,15 @@
 package ch.epfl.scala.index.search
 
 import java.io.Closeable
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc.Pagination
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.search.mapping._
+import ch.epfl.scala.services.storage.sql.SqlRepo
 import com.sksamuel.elastic4s.ElasticClient
 import com.sksamuel.elastic4s.ElasticDsl
 import com.sksamuel.elastic4s.ElasticProperties
@@ -32,14 +32,14 @@ import com.typesafe.scalalogging.LazyLogging
 /**
  * @param esClient TCP client of the elasticsearch server
  */
-class DataRepository(
+class ESRepo(
     esClient: ElasticClient,
     indexPrefix: String
 )(implicit
     ec: ExecutionContext
 ) extends LazyLogging
     with Closeable {
-  import DataRepository._
+  import ESRepo._
   import ElasticDsl._
 
   private val projectIndex = s"$indexPrefix-projects"
@@ -72,6 +72,7 @@ class DataRepository(
     def delete(index: String): Future[Unit] =
       for {
         response <- esClient.execute(indexExists(index))
+        _ = println(s"response = ${response}")
         exist = response.result.isExists
         _ <-
           if (exist) esClient.execute(deleteIndex(index))
@@ -555,19 +556,19 @@ class DataRepository(
   }
 }
 
-object DataRepository extends LazyLogging with SearchProtocol {
+object ESRepo extends LazyLogging with SearchProtocol {
   import ElasticDsl._
 
   private lazy val config =
     ConfigFactory.load().getConfig("org.scala_lang.index.data")
   private lazy val indexName = config.getString("index")
 
-  def open()(implicit ec: ExecutionContext): DataRepository = {
+  def open()(implicit ec: ExecutionContext): ESRepo = {
     logger.info(s"Using elasticsearch index: $indexName")
 
     val props = ElasticProperties("http://localhost:9200")
     val esClient = ElasticClient(JavaClient(props))
-    new DataRepository(esClient, indexName)
+    new ESRepo(esClient, indexName)
   }
 
   private def gitHubStarScoring(query: Query): Query = {

@@ -10,7 +10,7 @@ sealed trait DbConf extends Product with Serializable
 
 object DbConf {
 
-  private val h2Regex = "(jdbc:h2:mem:.*)".r
+  private val h2Regex = "(jdbc:h2:*:.*)".r
   private val postgreSQLRegex =
     "(?:jdbc:)?postgres(?:ql)?://([^:]+):([^@]+)@([a-z0-9-.:/]+)".r
 

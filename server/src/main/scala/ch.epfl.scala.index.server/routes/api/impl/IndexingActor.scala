@@ -20,12 +20,12 @@ import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.Release
 import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.model.release.ScalaDependency
-import ch.epfl.scala.index.search.DataRepository
+import ch.epfl.scala.index.search.ESRepo
 import org.slf4j.LoggerFactory
 
 class IndexingActor(
     paths: DataPaths,
-    dataRepository: DataRepository,
+    dataRepository: ESRepo,
     implicit val system: ActorSystem
 ) extends Actor {
   private val log = LoggerFactory.getLogger(getClass)
