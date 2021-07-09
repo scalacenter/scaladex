@@ -2,7 +2,7 @@ package ch.epfl.scala.index
 package data
 package github
 
-import model.misc.GithubRepo
+import ch.epfl.scala.index.model.misc.GithubRepo
 
 private[github] object GithubReadme {
   def absoluteUrl(

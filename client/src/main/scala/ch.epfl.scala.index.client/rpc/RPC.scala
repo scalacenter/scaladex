@@ -1,12 +1,14 @@
 package ch.epfl.scala.index.client
 package rpc
 
-import ch.epfl.scala.index.api.{AutocompletionResponse, SearchRequest}
-import org.scalajs.dom.ext.Ajax
-import play.api.libs.json.{Json, Reads}
-
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
+
+import ch.epfl.scala.index.api.AutocompletionResponse
+import ch.epfl.scala.index.api.SearchRequest
+import org.scalajs.dom.ext.Ajax
+import play.api.libs.json.Json
+import play.api.libs.json.Reads
 
 object RPC {
   def autocomplete(

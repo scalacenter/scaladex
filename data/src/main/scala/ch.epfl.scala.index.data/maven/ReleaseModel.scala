@@ -99,7 +99,7 @@ case class Dependency(
     exclusions: Set[Exclusion] = Set(),
     optional: Boolean = false
 ) {
-  override def toString = s"$groupId $artifactId $version"
+  override def toString: String = s"$groupId $artifactId $version"
 }
 
 case class Exclusion(groupId: String, artifactId: String)

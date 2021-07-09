@@ -5,24 +5,24 @@ package api
 
 import java.util.Base64
 
-import akka.actor.{ActorSystem, Props}
+import scala.collection.mutable.{Map => MMap}
+import scala.concurrent.Future
+
+import akka.actor.ActorSystem
+import akka.actor.Props
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives._
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.util.Timeout
-
-import ch.epfl.scala.index.search.DataRepository
 import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.server.config.OAuth2Config
+import ch.epfl.scala.index.search.DataRepository
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
-
-import scala.collection.mutable.{Map => MMap}
-import scala.concurrent.Future
 
 class PublishApi(
     paths: DataPaths,
@@ -98,7 +98,7 @@ class PublishApi(
   import akka.pattern.ask
 
   import scala.concurrent.duration._
-  implicit val timeout = Timeout(40.seconds)
+  implicit val timeout: Timeout = Timeout(40.seconds)
   private val actor =
     system.actorOf(
       Props(classOf[impl.PublishActor], paths, dataRepository, system)
@@ -107,11 +107,12 @@ class PublishApi(
   private val githubCredentialsCache =
     MMap.empty[String, (data.github.Credentials, UserState)]
 
-  val DateTimeUn = Unmarshaller.strict[String, DateTime] { dateRaw =>
-    new DateTime(dateRaw.toLong * 1000L)
-  }
+  val DateTimeUn: Unmarshaller[String, DateTime] =
+    Unmarshaller.strict[String, DateTime] { dateRaw =>
+      new DateTime(dateRaw.toLong * 1000L)
+    }
 
-  val routes =
+  val routes: Route =
     concat(
       get(
         path("publish")(

@@ -2,20 +2,25 @@ package ch.epfl.scala.index
 package data
 package download
 
+import scala.concurrent.Await
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+import scala.util.Using
+
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Sink, Source}
+import akka.stream.scaladsl.Sink
+import akka.stream.scaladsl.Source
 import com.typesafe.config.ConfigFactory
 import org.slf4j.LoggerFactory
 import play.api._
 import play.api.libs.json._
 import play.api.libs.ws._
-import play.api.libs.ws.ahc.{AhcCurlRequestLogger, _}
-
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
-import scala.util.{Failure, Success, Try}
-import scala.util.Using
+import play.api.libs.ws.ahc.AhcCurlRequestLogger
+import play.api.libs.ws.ahc._
 
 trait PlayWsDownloader {
 

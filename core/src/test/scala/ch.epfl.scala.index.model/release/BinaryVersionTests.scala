@@ -1,8 +1,11 @@
 package ch.epfl.scala.index.model.release
 
-import ch.epfl.scala.index.model.{Milestone, ReleaseCandidate, release}
+import ch.epfl.scala.index.model.Milestone
+import ch.epfl.scala.index.model.ReleaseCandidate
+import ch.epfl.scala.index.model.release
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{FunSpec, Matchers}
 
 class BinaryVersionTests
     extends FunSpec

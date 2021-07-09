@@ -2,13 +2,12 @@ package ch.epfl.scala.index
 package data
 package cleanup
 
-import model._
-
+import ch.epfl.scala.index.model._
 import org.json4s._
 import org.json4s.native.Serialization.read
 
 class LicenseCleanup(paths: DataPaths) {
-  implicit private val formats = DefaultFormats
+  implicit private val formats: DefaultFormats.type = DefaultFormats
 
   private val byNameSource =
     scala.io.Source.fromFile(paths.licensesByName.toFile)

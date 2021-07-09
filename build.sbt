@@ -1,7 +1,20 @@
 import ScalaJSHelper._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
-
 import Deployment.githash
+
+inThisBuild(
+  List(
+    scalaVersion := "2.13.5",
+    semanticdbEnabled := true,
+    semanticdbVersion := scalafixSemanticdb.revision,
+    scalafixScalaBinaryVersion := "2.13",
+    scalafixDependencies ++= List(
+      "com.github.liancheng" %% "organize-imports" % "0.4.4"
+    ),
+    organization := "ch.epfl.scala.index",
+    version := s"0.2.0+${githash()}"
+  )
+)
 
 lazy val logging =
   libraryDependencies ++= Seq(
@@ -9,11 +22,6 @@ lazy val logging =
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
     "com.getsentry.raven" % "raven-logback" % "8.0.3"
   )
-
-lazy val baseSettings = Seq(
-  organization := "ch.epfl.scala.index",
-  version := s"0.2.0+${githash()}"
-)
 
 val amm = inputKey[Unit]("Start Ammonite REPL")
 lazy val ammoniteSettings = Seq(
@@ -35,14 +43,14 @@ lazy val ammoniteSettings = Seq(
 )
 
 lazy val commonSettings = Seq(
-  scalaVersion := "2.13.5",
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding",
     "UTF-8",
     "-feature",
     "-unchecked",
-    "-Xfatal-warnings"
+    "-Xfatal-warnings",
+    "-Wunused:imports"
   ),
   libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.9" % Test,
   reStart / javaOptions ++= {
@@ -56,7 +64,7 @@ lazy val commonSettings = Seq(
 
     addDevCredentials
   }
-) ++ baseSettings ++
+) ++
   addCommandAlias("start", "reStart") ++ logging ++ ammoniteSettings
 
 enablePlugins(Elasticsearch)

@@ -4,20 +4,24 @@ package routes
 package api
 package impl
 
-import akka.actor.{Actor, ActorSystem}
+import scala.concurrent.Await
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+import akka.actor.Actor
+import akka.actor.ActorSystem
+import ch.epfl.scala.index.data.DataPaths
+import ch.epfl.scala.index.data.LocalPomRepository
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.project.ProjectConvert
-import ch.epfl.scala.index.data.{DataPaths, LocalPomRepository}
+import ch.epfl.scala.index.model.Project
+import ch.epfl.scala.index.model.Release
 import ch.epfl.scala.index.model.misc.GithubRepo
-import ch.epfl.scala.index.model.{Project, Release}
+import ch.epfl.scala.index.model.release.ScalaDependency
 import ch.epfl.scala.index.search.DataRepository
 import org.slf4j.LoggerFactory
-
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
-import ch.epfl.scala.index.model.release.ScalaDependency
 
 class IndexingActor(
     paths: DataPaths,
@@ -27,17 +31,18 @@ class IndexingActor(
   private val log = LoggerFactory.getLogger(getClass)
   import system.dispatcher
 
-  def receive = { case updateIndexData: UpdateIndex =>
-    // TODO be non-blocking
-    sender() ! Await.result(
-      updateIndex(
-        updateIndexData.repo,
-        updateIndexData.pom,
-        updateIndexData.data,
-        updateIndexData.localRepo
-      ),
-      1.minute
-    )
+  def receive: PartialFunction[Any, Unit] = {
+    case updateIndexData: UpdateIndex =>
+      // TODO be non-blocking
+      sender() ! Await.result(
+        updateIndex(
+          updateIndexData.repo,
+          updateIndexData.pom,
+          updateIndexData.data,
+          updateIndexData.localRepo
+        ),
+        1.minute
+      )
   }
 
   /**

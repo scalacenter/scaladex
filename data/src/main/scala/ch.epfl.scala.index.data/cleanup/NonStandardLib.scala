@@ -4,8 +4,8 @@ package cleanup
 
 import java.nio.file._
 
-import org.typelevel.jawn.support.json4s.Parser
 import org.json4s._
+import org.typelevel.jawn.support.json4s.Parser
 
 /**
  * Non standard published lib which misses the scala version in the artifact name
@@ -46,8 +46,9 @@ object NonStandardLib {
   /**
    * json4s formats
    */
-  implicit val formats = DefaultFormats
-  implicit val serialization = native.Serialization
+  implicit val formats: DefaultFormats.type = DefaultFormats
+  implicit val serialization: org.json4s.native.Serialization.type =
+    native.Serialization
 
   /**
    * fetch non standard libs from json

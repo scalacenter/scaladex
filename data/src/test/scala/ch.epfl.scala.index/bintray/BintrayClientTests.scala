@@ -1,14 +1,16 @@
 package ch.epfl.scala.index.bintray
 
+import java.net.URI
+
+import scala.xml.Elem
+
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import ch.epfl.scala.index.data.bintray.BintrayClient
 import org.scalatest._
 import play.api.libs.json.JsValue
-import play.api.libs.ws.{WSCookie, WSResponse}
-
-import scala.xml.Elem
-import java.net.URI
+import play.api.libs.ws.WSCookie
+import play.api.libs.ws.WSResponse
 
 class BintrayClientTests extends FlatSpec with Matchers {
   "BintrayClient" should "calculate pagination properly" in {

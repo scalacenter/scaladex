@@ -2,15 +2,18 @@ package ch.epfl.scala.index
 package server
 package routes
 
+import scala.concurrent.Future
+
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.headers.CacheDirectives._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.RequestContext
+import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.RouteResult
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.search.DataRepository
-
-import scala.collection.immutable.{SortedMap, SortedSet}
 
 class Badges(dataRepository: DataRepository) {
 
@@ -66,7 +69,7 @@ class Badges(dataRepository: DataRepository) {
       organization: String,
       repository: String,
       artifact: Option[String]
-  ) = {
+  ): RequestContext => Future[RouteResult] = {
     parameter("target".?) { target =>
       shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
         onSuccess {
@@ -108,7 +111,7 @@ class Badges(dataRepository: DataRepository) {
       organization: String,
       repository: String,
       artifact: String
-  ) = {
+  ): RequestContext => Future[RouteResult] = {
     parameter("targetType".?) { targetTypeString =>
       shields { (color, style, logo, logoWidth) =>
         val targetType =
@@ -138,7 +141,7 @@ class Badges(dataRepository: DataRepository) {
     }
   }
 
-  val routes =
+  val routes: Route =
     get(
       concat(
         pathPrefix(Segment / Segment) { (organization, repository) =>

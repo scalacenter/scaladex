@@ -1,14 +1,16 @@
 package ch.epfl.scala.utils
 
-import cats.effect.{ContextShift, IO}
-import ch.epfl.scala.services.storage.sql.DbConf
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
-import doobie._
-import doobie.util.fragment.Fragment
-import doobie.implicits._
-import org.flywaydb.core.Flyway
-
 import scala.concurrent.ExecutionContext
+
+import cats.effect.ContextShift
+import cats.effect.IO
+import ch.epfl.scala.services.storage.sql.DbConf
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
+import doobie._
+import doobie.implicits._
+import doobie.util.fragment.Fragment
+import org.flywaydb.core.Flyway
 
 object DoobieUtils {
   private implicit val cs: ContextShift[IO] =
@@ -44,8 +46,8 @@ object DoobieUtils {
   }
 
   object Fragments {
-    val empty = fr0""
-    val space = fr0" "
+    val empty: Fragment = fr0""
+    val space: Fragment = fr0" "
 
     def buildInsert(
         table: Fragment,

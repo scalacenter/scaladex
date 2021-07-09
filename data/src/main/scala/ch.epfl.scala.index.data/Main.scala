@@ -2,22 +2,21 @@ package ch.epfl.scala.index.data
 
 import java.nio.file.Path
 
+import scala.sys.process.Process
+
 import akka.actor.ActorSystem
-import ch.epfl.scala.index.data.bintray.{
-  BintrayDownloadPoms,
-  BintrayListPoms,
-  UpdateBintraySbtPlugins
-}
+import ch.epfl.scala.index.data.bintray.BintrayDownloadPoms
+import ch.epfl.scala.index.data.bintray.BintrayListPoms
+import ch.epfl.scala.index.data.bintray.UpdateBintraySbtPlugins
 import ch.epfl.scala.index.data.central.CentralMissing
-import ch.epfl.scala.index.data.cleanup.{GithubRepoExtractor, NonStandardLib}
+import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
+import ch.epfl.scala.index.data.cleanup.NonStandardLib
 import ch.epfl.scala.index.data.elastic.SeedElasticSearch
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.maven.DownloadParentPoms
 import ch.epfl.scala.index.data.util.PidLock
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
-
-import scala.sys.process.Process
 
 /**
  * This application manages indexed POMs.
@@ -59,7 +58,6 @@ object Main extends LazyLogging {
     val bintray: LocalPomRepository = LocalPomRepository.Bintray
 
     implicit val system: ActorSystem = ActorSystem()
-    import system.dispatcher
 
     val pathFromArgs =
       if (args.isEmpty) Nil

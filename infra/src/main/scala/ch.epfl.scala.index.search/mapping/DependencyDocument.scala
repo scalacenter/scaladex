@@ -1,7 +1,7 @@
 package ch.epfl.scala.index.search.mapping
 
-import ch.epfl.scala.index.model.release.ScalaDependency
 import ch.epfl.scala.index.model.Release
+import ch.epfl.scala.index.model.release.ScalaDependency
 
 /**
  * A dependency document as it is stored in elasticsearch

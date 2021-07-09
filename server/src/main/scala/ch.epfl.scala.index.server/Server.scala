@@ -1,7 +1,9 @@
 package ch.epfl.scala.index
 package server
 
-import build.info.BuildInfo
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl._
 import akka.http.scaladsl.model.StatusCodes._
@@ -9,21 +11,14 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import ch.epfl.scala.index.data.DataPaths
-import ch.epfl.scala.index.data.elastic._
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.util.PidLock
-import ch.epfl.scala.index.server.TwirlSupport._
+import ch.epfl.scala.index.search.DataRepository
 import ch.epfl.scala.index.server.config.ServerConfig
 import ch.epfl.scala.index.server.routes._
 import ch.epfl.scala.index.server.routes.api._
-import ch.epfl.scala.index.search.DataRepository
 import ch.epfl.scala.services.storage.sql.ScaladexRepo
-import com.softwaremill.session.SessionDirectives._
-import com.softwaremill.session.SessionOptions._
 import org.slf4j.LoggerFactory
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
 
 object Server {
   private val log = LoggerFactory.getLogger(getClass)
@@ -90,7 +85,6 @@ object Server {
       found
     }
 
-    import session.implicits._
     val exceptionHandler = ExceptionHandler { case ex: Exception =>
       import java.io.{PrintWriter, StringWriter}
 

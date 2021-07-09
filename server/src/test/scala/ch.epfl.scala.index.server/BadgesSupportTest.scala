@@ -1,15 +1,15 @@
 package ch.epfl.scala.index.server
 
+import ch.epfl.scala.index.model.Milestone
+import ch.epfl.scala.index.model.ReleaseCandidate
+import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.release.ScalaVersion._
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.model.{Milestone, ReleaseCandidate, SemanticVersion}
-import ch.epfl.scala.index.server.BadgesSupport.{
-  SummariseLanguageVersions,
-  SummarisePlatformEditions,
-  summaryOfLatestVersions
-}
+import ch.epfl.scala.index.server.BadgesSupport.SummariseLanguageVersions
+import ch.epfl.scala.index.server.BadgesSupport.SummarisePlatformEditions
 import org.apache.commons.lang3.StringUtils.countMatches
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.FunSpec
+import org.scalatest.Matchers
 
 class BadgesSupportTest extends FunSpec with Matchers {
 

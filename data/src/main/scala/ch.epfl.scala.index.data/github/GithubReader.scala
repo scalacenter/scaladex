@@ -2,18 +2,19 @@ package ch.epfl.scala.index
 package data
 package github
 
-import model.misc._
-
-import org.json4s._
-import org.json4s.native.Serialization.{read => parse, writePretty}
-
-import java.nio.file.{Files, Path}
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
 
-import org.slf4j.LoggerFactory
-
-import scala.util.{Try, Success}
 import scala.reflect.Manifest
+import scala.util.Success
+import scala.util.Try
+
+import ch.epfl.scala.index.model.misc._
+import org.json4s._
+import org.json4s.native.Serialization.writePretty
+import org.json4s.native.Serialization.{read => parse}
+import org.slf4j.LoggerFactory
 
 /**
  * Github reader - to read all related infos from downloaded github files
@@ -249,7 +250,7 @@ object GithubReader {
           )
         )
 
-    implicit val formats = DefaultFormats ++ Seq(MovedSerializer)
+    implicit val formats: Formats = DefaultFormats ++ Seq(MovedSerializer)
   }
 
   def movedRepositories(paths: DataPaths): Map[GithubRepo, GithubRepo] = {

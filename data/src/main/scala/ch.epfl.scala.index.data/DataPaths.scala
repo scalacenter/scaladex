@@ -1,7 +1,9 @@
 package ch.epfl.scala.index
 package data
 
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 
 import org.slf4j.LoggerFactory
 
@@ -122,7 +124,7 @@ class DataPaths(
   log.info(s"index folder: $index")
   log.info(s"credentials folder: $credentials")
 
-  def assert2(cond: Boolean) = {
+  def assert2(cond: Boolean): Unit = {
     if (validate) {
       assert(cond)
     }
@@ -131,20 +133,20 @@ class DataPaths(
   assert2(Files.isDirectory(contrib))
   assert2(Files.isDirectory(index))
 
-  val claims = contrib.resolve("claims.json")
+  val claims: Path = contrib.resolve("claims.json")
   assert2(Files.exists(claims))
 
-  val licensesByName = contrib.resolve("licenses-by-name.json")
+  val licensesByName: Path = contrib.resolve("licenses-by-name.json")
   assert2(Files.exists(licensesByName))
 
-  val nonStandard = contrib.resolve("non-standard.json")
+  val nonStandard: Path = contrib.resolve("non-standard.json")
   assert2(Files.exists(nonStandard))
 
   // === live ===
   private val live = index.resolve("live")
   assert2(Files.isDirectory(live))
 
-  val liveProjects = live.resolve("projects.json")
+  val liveProjects: Path = live.resolve("projects.json")
   assert2(Files.exists(liveProjects))
 
   // === poms ===
@@ -203,28 +205,28 @@ class DataPaths(
 
   import LocalPomRepository._
 
-  def poms(repository: LocalPomRepository) =
+  def poms(repository: LocalPomRepository): Path =
     repository match {
       case Bintray => bintrayPomSha
       case MavenCentral => mavenCentralPomSha
       case UserProvided => usersPomSha
     }
 
-  def parentPoms(repository: LocalPomRepository) =
+  def parentPoms(repository: LocalPomRepository): Path =
     repository match {
       case Bintray => bintrayParentPom
       case MavenCentral => mavenCentralParentPom
       case UserProvided => usersParentPom
     }
 
-  def meta(repository: LocalPomRepository) =
+  def meta(repository: LocalPomRepository): Path =
     repository match {
       case Bintray => bintrayMeta
       case MavenCentral => mavenCentralMeta
       case UserProvided => usersMeta
     }
 
-  val github = index.resolve("github")
+  val github: Path = index.resolve("github")
 
-  val movedGithub = github.resolve("moved.json")
+  val movedGithub: Path = github.resolve("moved.json")
 }

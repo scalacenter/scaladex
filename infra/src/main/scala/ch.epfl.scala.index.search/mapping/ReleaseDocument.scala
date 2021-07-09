@@ -1,7 +1,7 @@
 package ch.epfl.scala.index.search.mapping
 
-import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.model._
+import ch.epfl.scala.index.model.release._
 
 /**
  * A release document as it is stored in elasticsearch

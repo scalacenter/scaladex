@@ -3,26 +3,28 @@ package data
 package github
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
+import java.nio.file.Files
+import java.nio.file.Path
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+import scala.util._
 
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
-import ch.epfl.scala.index.data.download.{PlayWsClient, PlayWsDownloader}
+import ch.epfl.scala.index.data.download.PlayWsClient
+import ch.epfl.scala.index.data.download.PlayWsDownloader
 import ch.epfl.scala.index.data.elastic.SaveLiveData
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubRepo
 import com.typesafe.config.ConfigFactory
-import org.typelevel.jawn.support.json4s.Parser
 import org.joda.time.DateTime
 import org.json4s.native.Serialization._
 import org.slf4j.LoggerFactory
+import org.typelevel.jawn.support.json4s.Parser
 import play.api.libs.json._
 import play.api.libs.ws._
-
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-import scala.util._
 
 object GithubDownload {
   def run(paths: DataPaths)(implicit system: ActorSystem): Unit = {

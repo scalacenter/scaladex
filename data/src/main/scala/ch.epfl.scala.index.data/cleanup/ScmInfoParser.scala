@@ -2,9 +2,8 @@ package ch.epfl.scala.index
 package data
 package cleanup
 
-import model.misc.GithubRepo
-import model.Parsers
-
+import ch.epfl.scala.index.model.Parsers
+import ch.epfl.scala.index.model.misc.GithubRepo
 import fastparse._
 
 object ScmInfoParser extends Parsers {

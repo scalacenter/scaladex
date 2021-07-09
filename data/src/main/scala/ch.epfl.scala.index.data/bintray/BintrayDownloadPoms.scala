@@ -1,14 +1,16 @@
 package ch.epfl.scala.index.data
 package bintray
 
-import download.PlayWsDownloader
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
+import java.nio.file.Files
+import java.nio.file.Path
 
-import play.api.libs.ws.{WSClient, WSRequest, WSResponse}
-import play.api.libs.ws.ahc.AhcWSClient
 import akka.actor.ActorSystem
+import ch.epfl.scala.index.data.download.PlayWsDownloader
 import org.slf4j.LoggerFactory
+import play.api.libs.ws.WSClient
+import play.api.libs.ws.WSRequest
+import play.api.libs.ws.WSResponse
 
 class BintrayDownloadPoms(paths: DataPaths)(implicit
     val system: ActorSystem
@@ -34,7 +36,7 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit
    * @param sha1 the verify hash
    * @return
    */
-  def verifyChecksum(toVerify: String, sha1: String) = {
+  def verifyChecksum(toVerify: String, sha1: String): Boolean = {
 
     val md = java.security.MessageDigest.getInstance("SHA-1")
     val computed =

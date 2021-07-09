@@ -2,8 +2,9 @@ package ch.epfl.scala.index
 package server
 package routes
 
-import ch.epfl.scala.index.search.DataRepository
-import com.typesafe.scalalogging.LazyLogging
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.model._
@@ -11,17 +12,20 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.elastic.SaveLiveData
-import ch.epfl.scala.index.data.github.{GithubDownload, GithubReader, Json4s}
+import ch.epfl.scala.index.data.github.GithubDownload
+import ch.epfl.scala.index.data.github.GithubReader
+import ch.epfl.scala.index.data.github.Json4s
 import ch.epfl.scala.index.data.project.ProjectForm
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
+import ch.epfl.scala.index.search.DataRepository
 import ch.epfl.scala.index.server.TwirlSupport._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
-import org.json4s.native.Serialization.{read, write}
-
-import scala.concurrent.{ExecutionContext, Future}
+import com.typesafe.scalalogging.LazyLogging
+import org.json4s.native.Serialization.read
+import org.json4s.native.Serialization.write
 
 class ProjectPages(
     dataRepository: DataRepository,

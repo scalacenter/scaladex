@@ -4,13 +4,13 @@ package routes
 package api
 package impl
 
-import data.DataPaths
-
-import akka.actor.{Actor, ActorSystem}
-
-import ch.epfl.scala.index.search.DataRepository
 import scala.concurrent.Await
 import scala.concurrent.duration._
+
+import akka.actor.Actor
+import akka.actor.ActorSystem
+import ch.epfl.scala.index.data.DataPaths
+import ch.epfl.scala.index.search.DataRepository
 
 class PublishActor(
     paths: DataPaths,
@@ -20,7 +20,7 @@ class PublishActor(
 
   private val publishProcess = new impl.PublishProcess(paths, dataRepository)
 
-  def receive = {
+  def receive: PartialFunction[Any, Unit] = {
     case publishData: PublishData => {
       // TODO be non-blocking, by stashing incoming messages until
       // the publish process has completed

@@ -4,16 +4,19 @@ package routes
 package api
 package impl
 
-import data.{DataPaths, LocalPomRepository}
-import data.github
-import ch.epfl.scala.index.model.misc.Sha1
-import org.joda.time.DateTime
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, Paths}
-
-import org.slf4j.LoggerFactory
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 
 import scala.util.control.NonFatal
+
+import ch.epfl.scala.index.data.DataPaths
+import ch.epfl.scala.index.data.LocalPomRepository
+import ch.epfl.scala.index.data.github
+import ch.epfl.scala.index.model.misc.Sha1
+import org.joda.time.DateTime
+import org.slf4j.LoggerFactory
 
 /**
  * Publish data model / Settings
@@ -37,8 +40,8 @@ private[api] case class PublishData(
 ) {
   private val log = LoggerFactory.getLogger(getClass)
   lazy val isPom: Boolean = path matches """.*\.pom"""
-  lazy val hash = Sha1(data)
-  lazy val tempPath = tmpPath(hash)
+  lazy val hash: String = Sha1(data)
+  lazy val tempPath: Path = tmpPath(hash)
   def savePath(paths: DataPaths): Path = pomPath(paths, hash)
 
   /**
