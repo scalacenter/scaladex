@@ -7,7 +7,7 @@ package ch.epfl.scala.index.model.misc
 case class GithubRepo(organization: String, repository: String)
     extends Ordered[GithubRepo] {
 
-  override def toString = s"$organization/$repository"
+  override def toString: String = s"$organization/$repository"
 
   override def compare(that: GithubRepo): Int =
     GithubRepo.ordering.compare(this, that)

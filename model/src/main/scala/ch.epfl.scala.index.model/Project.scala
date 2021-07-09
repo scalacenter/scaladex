@@ -1,17 +1,12 @@
 package ch.epfl.scala.index.model
 
-import ch.epfl.scala.index.model.release.{
-  BinaryVersion,
-  Js,
-  LanguageVersion,
-  Native,
-  Sbt,
-  SbtPlugin,
-  ScalaJs,
-  ScalaJvm,
-  ScalaNative
-}
-import misc.{GithubInfo, GithubRepo, Url}
+import ch.epfl.scala.index.model.misc.GithubInfo
+import ch.epfl.scala.index.model.misc.GithubRepo
+import ch.epfl.scala.index.model.release.BinaryVersion
+import ch.epfl.scala.index.model.release.Js
+import ch.epfl.scala.index.model.release.LanguageVersion
+import ch.epfl.scala.index.model.release.Native
+import ch.epfl.scala.index.model.release.Sbt
 
 /**
  * Project representation which contains all necessary meta data to
@@ -106,6 +101,6 @@ object Project {
    * @param repository github repository. ex: cats, akka, etc
    */
   case class Reference(organization: String, repository: String) {
-    def githubRepo = GithubRepo(organization, repository)
+    def githubRepo: GithubRepo = GithubRepo(organization, repository)
   }
 }

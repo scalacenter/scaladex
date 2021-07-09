@@ -1,8 +1,5 @@
 package ch.epfl.scala.index.model
 
-import ch.epfl.scala.index.model.SemanticVersion.Digit
-import fastparse.{&, P}
-
 sealed trait PreRelease {
   def isSemantic: Boolean
 }

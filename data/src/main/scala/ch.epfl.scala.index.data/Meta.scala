@@ -6,10 +6,10 @@ import java.nio.file.Files
 
 import ch.epfl.scala.index.model.Descending
 import com.github.nscala_time.time.Imports._
-import org.typelevel.jawn.support.json4s.Parser
 import org.joda.time.DateTime
 import org.json4s._
 import org.json4s.native.Serialization.{write => swrite}
+import org.typelevel.jawn.support.json4s.Parser
 
 case class Meta(
     sha1: String,
@@ -48,9 +48,10 @@ object Meta {
         )
       )
 
-  implicit val formats =
+  implicit val formats: Formats =
     DefaultFormats ++ Seq(DateTimeSerializer, MetaSerializer)
-  implicit val serialization = native.Serialization
+  implicit val serialization: org.json4s.native.Serialization.type =
+    native.Serialization
 
   def load(paths: DataPaths, repository: LocalPomRepository): List[Meta] = {
     assert(

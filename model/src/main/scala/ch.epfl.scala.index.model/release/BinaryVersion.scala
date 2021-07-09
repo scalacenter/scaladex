@@ -1,7 +1,7 @@
 package ch.epfl.scala.index.model.release
 
-import ch.epfl.scala.index.model.{Parsers, PreRelease}
-import ch.epfl.scala.index.model.ReleaseCandidate
+import ch.epfl.scala.index.model.Parsers
+import ch.epfl.scala.index.model.PreRelease
 
 sealed trait BinaryVersion extends Ordered[BinaryVersion] {
   override def compare(that: BinaryVersion): Int = {

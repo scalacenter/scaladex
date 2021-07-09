@@ -1,7 +1,8 @@
 package ch.epfl.scala.index
 package api
 
-import play.api.libs.json.{Json, Format}
+import play.api.libs.json.Format
+import play.api.libs.json.Json
 
 object AutocompletionResponse {
   implicit val jsonFormat: Format[AutocompletionResponse] =

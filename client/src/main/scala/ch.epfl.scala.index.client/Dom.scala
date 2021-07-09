@@ -1,8 +1,10 @@
 package ch.epfl.scala.index.client
 
 import ch.epfl.scala.index.api.SearchRequest
-import org.scalajs.dom.raw.{Element, HTMLInputElement}
-import org.scalajs.dom.{Node, document}
+import org.scalajs.dom.Node
+import org.scalajs.dom.document
+import org.scalajs.dom.raw.Element
+import org.scalajs.dom.raw.HTMLInputElement
 
 object Dom {
   def getSearchRequest: Option[SearchRequest] = {

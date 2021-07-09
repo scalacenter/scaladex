@@ -1,33 +1,33 @@
 package ch.epfl.scala.index.search
 
+import java.io.Closeable
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import ch.epfl.scala.index.model._
-import ch.epfl.scala.index.model.misc.{Pagination, _}
+import ch.epfl.scala.index.model.misc.Pagination
+import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.search.mapping._
-import com.typesafe.config.ConfigFactory
-import com.typesafe.scalalogging.LazyLogging
-
-import java.io.{Closeable, File}
-import java.nio.file.Files
-import java.nio.file.attribute.PosixFilePermission
-import scala.concurrent.{ExecutionContext, Future}
-import scala.jdk.CollectionConverters._
-import com.sksamuel.elastic4s.{ElasticClient, ElasticDsl}
-import com.sksamuel.elastic4s.requests.common.HealthStatus
-import com.sksamuel.elastic4s.requests.bulk.BulkResponse
-import com.sksamuel.elastic4s.requests.bulk.BulkResponseItem
-import com.sksamuel.elastic4s.HitReader
-import com.sksamuel.elastic4s.requests.searches.queries.Query
-import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
+import com.sksamuel.elastic4s.ElasticClient
+import com.sksamuel.elastic4s.ElasticDsl
 import com.sksamuel.elastic4s.ElasticProperties
-import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.FieldValueFactorFunctionModifier
-import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.CombineFunction
-import com.sksamuel.elastic4s.requests.searches.sort.Sort
+import com.sksamuel.elastic4s.HitReader
 import com.sksamuel.elastic4s.analysis.Analysis
+import com.sksamuel.elastic4s.http.JavaClient
+import com.sksamuel.elastic4s.requests.bulk.BulkResponseItem
+import com.sksamuel.elastic4s.requests.common.HealthStatus
+import com.sksamuel.elastic4s.requests.indexes.IndexRequest
 import com.sksamuel.elastic4s.requests.mappings.MappingDefinition
 import com.sksamuel.elastic4s.requests.searches.aggs.responses.bucket.Terms
-import com.sksamuel.elastic4s.http.JavaClient
-import com.sksamuel.elastic4s.requests.indexes.IndexRequest
+import com.sksamuel.elastic4s.requests.searches.queries.Query
+import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.CombineFunction
+import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.FieldValueFactorFunctionModifier
+import com.sksamuel.elastic4s.requests.searches.sort.Sort
+import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
+import com.typesafe.config.ConfigFactory
+import com.typesafe.scalalogging.LazyLogging
 
 /**
  * @param esClient TCP client of the elasticsearch server

@@ -1,35 +1,39 @@
 package ch.epfl.scala.index
 package data
 
-import model.Parsers
-import model.misc.GithubRepo
-
+import java.nio.file.Path
 import java.nio.file.Paths
+
+import ch.epfl.scala.index.model.Parsers
+import ch.epfl.scala.index.model.misc.GithubRepo
 
 package object github extends Parsers {
   private[github] def path(paths: DataPaths, github: GithubRepo) = {
     val GithubRepo(user, repo) = github
     paths.github.resolve(Paths.get(user, repo))
   }
-  def githubReadmePath(paths: DataPaths, github: GithubRepo) =
+  def githubReadmePath(paths: DataPaths, github: GithubRepo): Path =
     path(paths, github).resolve(Paths.get("README.html"))
 
-  def githubRepoInfoPath(paths: DataPaths, github: GithubRepo) =
+  def githubRepoInfoPath(paths: DataPaths, github: GithubRepo): Path =
     path(paths, github).resolve(Paths.get("repo.json"))
 
-  def githubRepoIssuesPath(paths: DataPaths, github: GithubRepo) =
+  def githubRepoIssuesPath(paths: DataPaths, github: GithubRepo): Path =
     path(paths, github).resolve(Paths.get("issues.json"))
 
-  def githubRepoContributorsPath(paths: DataPaths, github: GithubRepo) =
+  def githubRepoContributorsPath(paths: DataPaths, github: GithubRepo): Path =
     path(paths, github).resolve(Paths.get("contributors.json"))
 
-  def githubRepoTopicsPath(paths: DataPaths, github: GithubRepo) =
+  def githubRepoTopicsPath(paths: DataPaths, github: GithubRepo): Path =
     path(paths, github).resolve(Paths.get("topics.json"))
 
-  def githubRepoCommunityProfilePath(paths: DataPaths, github: GithubRepo) =
+  def githubRepoCommunityProfilePath(
+      paths: DataPaths,
+      github: GithubRepo
+  ): Path =
     path(paths, github).resolve(Paths.get("community.json"))
 
-  def githubRepoChatroomPath(paths: DataPaths, github: GithubRepo) =
+  def githubRepoChatroomPath(paths: DataPaths, github: GithubRepo): Path =
     path(paths, github).resolve(Paths.get("chatroom.txt"))
 
   /**

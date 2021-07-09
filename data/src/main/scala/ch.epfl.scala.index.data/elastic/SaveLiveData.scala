@@ -2,16 +2,21 @@ package ch.epfl.scala.index
 package data
 package elastic
 
-import model._
-import project._
-import org.json4s._
-import org.json4s.native.Serialization.{read, write, writePretty}
-import org.json4s.native.parseJson
-import java.nio.file._
 import java.nio.charset.StandardCharsets
-import org.slf4j.LoggerFactory
+import java.nio.file._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import ch.epfl.scala.index.data.project._
+import ch.epfl.scala.index.model._
+import org.json4s._
+import org.json4s.native.Serialization.read
+import org.json4s.native.Serialization.write
+import org.json4s.native.Serialization.writePretty
+import org.json4s.native.parseJson
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 // this allows us to save project as json object sorted by keys
 case class LiveProjects(projects: Map[Project.Reference, ProjectForm])
@@ -55,7 +60,7 @@ trait LiveProjectsProtocol {
 
 object SaveLiveData extends LiveProjectsProtocol {
 
-  val logger = LoggerFactory.getLogger(getClass)
+  val logger: Logger = LoggerFactory.getLogger(getClass)
 
   def storedProjects(paths: DataPaths): Map[Project.Reference, ProjectForm] =
     read[LiveProjects](

@@ -1,6 +1,6 @@
 package ch.epfl.scala.index.model
 
-import release._
+import ch.epfl.scala.index.model.release._
 
 /**
  * Artifact release representation
@@ -71,7 +71,7 @@ case class Release(
    * string representation for Ammonite loading
    * @return
    */
-  def ammInstall = {
+  def ammInstall: String = {
 
     def addResolver(r: Resolver) =
       s"""|import ammonite._, Resolvers._
@@ -96,7 +96,7 @@ case class Release(
    * string representation for maven dependency
    * @return
    */
-  def mavenInstall = {
+  def mavenInstall: String = {
     import maven._
     s"""|<dependency>
         |  <groupId>$groupId</groupId>
@@ -109,7 +109,7 @@ case class Release(
    * string representation for gradle dependency
    * @return
    */
-  def gradleInstall = {
+  def gradleInstall: String = {
     import maven._
     s"compile group: '$groupId', name: '$artifactId', version: '$version'"
   }
@@ -118,7 +118,7 @@ case class Release(
    * string representation for mill dependency
    * @return
    */
-  def millInstall = {
+  def millInstall: String = {
     def addResolver(r: Resolver) =
       r.url map (url => s"""MavenRepository("${url}")""")
     val artifactOperator = if (isNonStandardLib) ":" else "::"
@@ -225,18 +225,20 @@ object Release {
       target.exists(_.isValid)
     }
 
-    def projectReference = Project.Reference(organization, repository)
-    def name = s"$organization/$artifact"
+    def projectReference: Project.Reference =
+      Project.Reference(organization, repository)
+    def name: String = s"$organization/$artifact"
 
-    def artifactHttpPath = s"/$organization/$repository/$artifact"
-    def artifactFullHttpUrl = s"https://index.scala-lang.org$artifactHttpPath"
+    def artifactHttpPath: String = s"/$organization/$repository/$artifact"
+    def artifactFullHttpUrl: String =
+      s"https://index.scala-lang.org$artifactHttpPath"
     private def nonDefaultTargetType = {
       target.map(_.targetType).filter(_ != Jvm)
     }
     def badgeUrl: String =
       s"$artifactFullHttpUrl/latest-by-scala-version.svg" +
         nonDefaultTargetType.map("?targetType=" + _).mkString
-    def httpUrl = {
+    def httpUrl: String = {
       val targetQuery = target.map(t => s"?target=${t.encode}").getOrElse("")
 
       s"$artifactHttpPath/$version$targetQuery"

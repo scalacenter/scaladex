@@ -13,14 +13,14 @@ trait Resolver {
 
 case object JCenter extends Resolver {
   def name = "Bintray's JCenter"
-  def url = Some("https://jcenter.bintray.com")
-  def sbt = Some("Resolver.bintrayJCenter")
+  def url: Some[String] = Some("https://jcenter.bintray.com")
+  def sbt: Some[String] = Some("Resolver.bintrayJCenter")
 }
 
 case class BintrayResolver(owner: String, repo: String) extends Resolver {
-  def name = s"Bintray $owner $repo"
-  def url = Some(s"https://dl.bintray.com/$owner/$repo")
-  def sbt = Some(s"""Resolver.bintrayRepo("$owner", "$repo")""")
+  def name: String = s"Bintray $owner $repo"
+  def url: Some[String] = Some(s"https://dl.bintray.com/$owner/$repo")
+  def sbt: Some[String] = Some(s"""Resolver.bintrayRepo("$owner", "$repo")""")
 }
 
 case object UserPublished extends Resolver {

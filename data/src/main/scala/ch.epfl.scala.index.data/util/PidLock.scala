@@ -3,9 +3,9 @@ package data
 package util
 
 import java.lang.management.ManagementFactory
-
-import java.nio.file.{Files, Paths}
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Paths
 
 object PidLock {
   def create(prefix: String): Unit = {

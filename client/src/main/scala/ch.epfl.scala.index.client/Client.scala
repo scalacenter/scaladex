@@ -1,16 +1,20 @@
 package ch.epfl.scala.index
 package client
 
-import org.scalajs.dom
-import org.scalajs.dom.ext.{Ajax, KeyCode}
-import org.scalajs.dom.raw._
-import org.scalajs.dom.{Event, KeyboardEvent, document}
-import org.scalajs.jquery.jQuery
-
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.UndefOr
-import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
+import scala.scalajs.js.annotation.JSExport
+import scala.scalajs.js.annotation.JSExportTopLevel
+
+import org.scalajs.dom
+import org.scalajs.dom.Event
+import org.scalajs.dom.KeyboardEvent
+import org.scalajs.dom.document
+import org.scalajs.dom.ext.Ajax
+import org.scalajs.dom.ext.KeyCode
+import org.scalajs.dom.raw._
+import org.scalajs.jquery.jQuery
 
 @JSExportTopLevel("ScaladexClient")
 object Client {
