@@ -3,13 +3,6 @@ import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
 import Deployment.githash
 
-val playJsonVersion = "2.9.0"
-val akkaVersion = "2.6.5"
-val akkaHttpVersion = "10.1.12"
-val elastic4sVersion = "7.10.2"
-val log4jVersion = "2.13.3"
-val nscalaTimeVersion = "2.24.0"
-
 lazy val logging =
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.1.7",
@@ -73,7 +66,7 @@ lazy val scaladex = project
   .aggregate(
     client,
     data,
-    model,
+    core,
     server,
     api.jvm,
     api.js,
@@ -87,30 +80,37 @@ lazy val template = project
   .settings(
     scalacOptions -= "-Xfatal-warnings",
     libraryDependencies ++= Seq(
-      "com.github.nscala-time" %% "nscala-time" % nscalaTimeVersion,
+      "com.github.nscala-time" %% "nscala-time" % V.nscalaTimeVersion,
       "com.typesafe" % "config" % "1.4.0",
-      "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
+      "com.typesafe.akka" %% "akka-http-core" % V.akkaHttpVersion
     )
   )
-  .dependsOn(model)
+  .dependsOn(core)
   .enablePlugins(SbtTwirl)
 
-lazy val search = project
+lazy val infra = project
+  .in(file("infra"))
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % elastic4sVersion,
+      "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4sVersion,
       "org.json4s" %% "json4s-native" % "3.6.9",
-      "org.typelevel" %% "jawn-json4s" % "1.0.0"
-    )
+      "org.typelevel" %% "jawn-json4s" % "1.0.0",
+      "org.flywaydb" % "flyway-core" % "7.11.0" // for database migration
+    ) ++ Seq(
+      "org.tpolecat" %% "doobie-core",
+      "org.tpolecat" %% "doobie-h2",
+      "org.tpolecat" %% "doobie-postgres",
+      "org.tpolecat" %% "doobie-hikari"
+    ).map(_ % V.doobieVersion)
   )
-  .dependsOn(model)
+  .dependsOn(core)
 
 lazy val api = crossProject(JSPlatform, JVMPlatform)
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.play" %%% "play-json" % playJsonVersion
+      "com.typesafe.play" %%% "play-json" % V.playJsonVersion
     )
   )
 
@@ -130,12 +130,12 @@ lazy val server = project
   .settings(packageScalaJS(client))
   .settings(
     libraryDependencies ++= Seq(
-      "com.typesafe.play" %%% "play-json" % playJsonVersion,
-      "com.typesafe.akka" %% "akka-testkit" % akkaVersion % Test,
-      "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+      "com.typesafe.play" %%% "play-json" % V.playJsonVersion,
+      "com.typesafe.akka" %% "akka-testkit" % V.akkaVersion % Test,
+      "com.typesafe.akka" %% "akka-slf4j" % V.akkaVersion,
       "ch.megard" %% "akka-http-cors" % "0.4.3",
       "com.softwaremill.akka-http-session" %% "core" % "0.5.11",
-      "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
+      "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "org.webjars.bower" % "bootstrap-sass" % "3.3.6",
       "org.webjars.bower" % "bootstrap-switch" % "3.3.2",
       "org.webjars.bower" % "bootstrap-select" % "1.10.0",
@@ -143,7 +143,7 @@ lazy val server = project
       "org.webjars.bower" % "jQuery" % "2.2.4",
       "org.webjars.bower" % "raven-js" % "3.11.0",
       "org.webjars.bower" % "select2" % "4.0.3",
-      "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Runtime
+      "org.apache.logging.log4j" % "log4j-core" % V.log4jVersion % Runtime
     ),
     Universal / packageBin := (Universal / packageBin)
       .dependsOn(Assets / WebKeys.assets)
@@ -156,10 +156,11 @@ lazy val server = project
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
     reStart / javaOptions ++= Seq("-Xmx4g")
   )
-  .dependsOn(template, data, search, api.jvm)
+  .dependsOn(template, data, infra, api.jvm)
   .enablePlugins(SbtSassify, JavaServerAppPackaging)
 
-lazy val model = project
+lazy val core = project
+  .in(file("core"))
   .settings(commonSettings)
   .settings(
     libraryDependencies += "com.lihaoyi" %% "fastparse" % "2.3.0"
@@ -170,17 +171,17 @@ lazy val data = project
   .settings(
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0",
-      "com.github.nscala-time" %% "nscala-time" % nscalaTimeVersion,
-      "com.typesafe.akka" %% "akka-stream" % akkaVersion,
+      "com.github.nscala-time" %% "nscala-time" % V.nscalaTimeVersion,
+      "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
       "me.tongfei" % "progressbar" % "0.5.5",
       "org.apache.maven" % "maven-model-builder" % "3.3.9",
       "org.jsoup" % "jsoup" % "1.10.1",
       "com.typesafe.play" %% "play-ahc-ws" % "2.8.2",
       "org.apache.ivy" % "ivy" % "2.4.0",
-      "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
+      "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-json4s" % "1.29.1",
       "org.json4s" %% "json4s-native" % "3.5.5",
-      "org.apache.logging.log4j" % "log4j-core" % log4jVersion % Runtime
+      "org.apache.logging.log4j" % "log4j-core" % V.log4jVersion % Runtime
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](ThisBuild / baseDirectory),
@@ -189,4 +190,14 @@ lazy val data = project
     reStart / javaOptions ++= Seq("-Xmx4g")
   )
   .enablePlugins(BuildInfoPlugin, JavaAppPackaging)
-  .dependsOn(model, search)
+  .dependsOn(core, infra)
+
+lazy val V = new {
+  val doobieVersion = "0.13.4"
+  val playJsonVersion = "2.9.0"
+  val akkaVersion = "2.6.5"
+  val akkaHttpVersion = "10.1.12"
+  val elastic4sVersion = "7.10.2"
+  val log4jVersion = "2.13.3"
+  val nscalaTimeVersion = "2.24.0"
+}

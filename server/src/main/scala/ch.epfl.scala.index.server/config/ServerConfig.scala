@@ -1,5 +1,7 @@
 package ch.epfl.scala.index.server.config
 
+import ch.epfl.scala.services.storage.sql
+import ch.epfl.scala.services.storage.sql.DbConf
 import com.softwaremill.session.SessionConfig
 import com.typesafe.config.{Config, ConfigFactory}
 
@@ -7,7 +9,8 @@ case class ServerConfig(
     tempDirPath: String,
     production: Boolean,
     oAuth2: OAuth2Config,
-    session: SessionConfig
+    session: SessionConfig,
+    dbConf: DbConf
 )
 
 object ServerConfig {
@@ -17,7 +20,8 @@ object ServerConfig {
       tempDirPath = config.getString("tempDirPath"),
       production = config.getBoolean("production"),
       oAuth2(config.getConfig("oauth2")),
-      SessionConfig.default(config.getString("sesssion-secret"))
+      SessionConfig.default(config.getString("sesssion-secret")),
+      DbConf.from(config.getString("database-url")).get // can be refactored
     )
   }
 
