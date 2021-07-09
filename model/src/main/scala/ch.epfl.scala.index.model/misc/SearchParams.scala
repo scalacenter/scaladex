@@ -1,9 +1,7 @@
 package ch.epfl.scala.index.model
 package misc
 
-import java.util.UUID
-
-import release.ScalaTarget
+import ch.epfl.scala.index.model.release.ScalaTarget
 
 object SearchParams {
   val resultsPerPage = 20

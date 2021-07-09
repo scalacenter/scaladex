@@ -2,8 +2,8 @@ package ch.epfl.scala.index
 package data
 package bintray
 
-import org.json4s._
 import org.joda.time.DateTime
+import org.json4s._
 
 case class BintraySearch(
     sha1: String,
@@ -17,7 +17,7 @@ case class BintraySearch(
     repo: String,
     created: String
 ) {
-  def isJCenter = repo == "jcenter" && owner == "bintray"
+  def isJCenter: Boolean = repo == "jcenter" && owner == "bintray"
 }
 
 /**
@@ -49,9 +49,10 @@ trait BintrayProtocol {
   /**
    * json4s formats
    */
-  implicit val formats =
+  implicit val formats: Formats =
     DefaultFormats ++ Seq(DateTimeSerializer, BintraySearchSerializer)
-  implicit val serialization = native.Serialization
+  implicit val serialization: org.json4s.native.Serialization.type =
+    native.Serialization
 
   /**
    * BintraySearchSerializer to keep the fields ordering

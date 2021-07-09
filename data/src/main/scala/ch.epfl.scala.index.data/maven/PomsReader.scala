@@ -2,26 +2,22 @@ package ch.epfl.scala.index
 package data
 package maven
 
+import java.io.Closeable
 import java.io.File
 import java.nio.file._
-
-import scala.util.{Success, Try}
 import java.util.Properties
+
+import scala.collection.parallel.CollectionConverters._
+import scala.util.Try
+import scala.util.Using
 
 import ch.epfl.scala.index.data.bintray.SbtPluginsData
 import org.slf4j.LoggerFactory
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
-
-import scala.collection.parallel.CollectionConverters._
-import java.io.Closeable
-import scala.util.Using
-
 case class MissingParentPom(dep: maven.Dependency) extends Exception
 
 object PomsReader {
-  def path(dep: maven.Dependency) = {
+  def path(dep: maven.Dependency): String = {
     import dep._
     List(
       groupId.replace(".", "/"),
@@ -34,7 +30,6 @@ object PomsReader {
   def loadAll(
       paths: DataPaths
   ): Iterable[(ReleaseModel, LocalRepository, String)] = {
-    import ExecutionContext.Implicits._
     import LocalPomRepository._
 
     val ivysDescriptors = SbtPluginsData(paths.ivysData).iterator

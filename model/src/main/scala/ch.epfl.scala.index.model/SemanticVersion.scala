@@ -1,8 +1,8 @@
 package ch.epfl.scala.index.model
 
-import com.typesafe.scalalogging.LazyLogging
-
 import scala.util.control.NonFatal
+
+import com.typesafe.scalalogging.LazyLogging
 
 /**
  * Semantic version, separation of possible combinations

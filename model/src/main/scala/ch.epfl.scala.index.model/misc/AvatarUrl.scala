@@ -12,5 +12,5 @@ trait AvatarUrl {
    * @param size the size for the url
    * @return
    */
-  def sizedAvatarUrl(size: Int) = avatarUrl + "&s=" + size.toString
+  def sizedAvatarUrl(size: Int): String = avatarUrl + "&s=" + size.toString
 }

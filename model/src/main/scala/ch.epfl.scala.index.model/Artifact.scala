@@ -1,7 +1,7 @@
 package ch.epfl.scala.index.model
 
+import ch.epfl.scala.index.model.release.ScalaTarget
 import fastparse._
-import release.ScalaTarget
 
 case class Artifact(name: String, target: ScalaTarget)
 

@@ -5,27 +5,29 @@ package central
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
+import scala.collection.immutable.Seq
+import scala.concurrent.Await
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.unmarshalling._
-import akka.stream.{ThrottleMode}
 import akka.stream.scaladsl._
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.project.ArtifactMetaExtractor
 import ch.epfl.scala.index.model.misc.Sha1
-import ch.epfl.scala.index.model.release._
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 import org.joda.time.DateTime
 import org.json4s._
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
-import scala.collection.immutable.Seq
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
-import scala.util.{Failure, Success, Try}
 
 object CentralMissing {
   // q = g:"com.47deg" AND a:"sbt-microsites"
@@ -74,10 +76,12 @@ object TimestampSerializer
 class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
   import CentralMissing._
 
-  private implicit val formats = DefaultFormats ++ Seq(TimestampSerializer)
-  private implicit val serialization = native.Serialization
+  private implicit val formats: Formats =
+    DefaultFormats ++ Seq(TimestampSerializer)
+  private implicit val serialization: org.json4s.native.Serialization.type =
+    native.Serialization
 
-  val log = LoggerFactory.getLogger(getClass)
+  val log: Logger = LoggerFactory.getLogger(getClass)
 
   import system.dispatcher
 

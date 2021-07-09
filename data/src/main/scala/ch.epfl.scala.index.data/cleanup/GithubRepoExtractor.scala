@@ -5,16 +5,21 @@ package cleanup
 import java.nio.charset.StandardCharsets
 import java.nio.file._
 
+import scala.io.Source
+import scala.util.Using
+import scala.util.matching.Regex
+
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.model.misc.GithubRepo
-import org.json4s.JsonAST.{JField, JObject, JString}
-import org.json4s.native.Serialization.{read, writePretty}
-import org.json4s.{CustomSerializer, DefaultFormats, Formats, JValue}
-
-import scala.io.Source
-import scala.util.Success
-import scala.util.matching.Regex
-import scala.util.Using
+import org.json4s.CustomSerializer
+import org.json4s.DefaultFormats
+import org.json4s.Formats
+import org.json4s.JValue
+import org.json4s.JsonAST.JField
+import org.json4s.JsonAST.JObject
+import org.json4s.JsonAST.JString
+import org.json4s.native.Serialization.read
+import org.json4s.native.Serialization.writePretty
 
 class GithubRepoExtractor(paths: DataPaths) {
   object ClaimSerializer

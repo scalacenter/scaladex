@@ -2,21 +2,21 @@ package ch.epfl.scala.index
 package server
 package routes
 
-import com.softwaremill.session.SessionDirectives._
-import com.softwaremill.session.SessionOptions._
+import scala.concurrent.ExecutionContext
+
+import akka.actor.ActorSystem
+import akka.http.scaladsl.model.StatusCodes.TemporaryRedirect
+import akka.http.scaladsl.model.Uri.Query
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers.Referer
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
+import ch.epfl.scala.index.server.config.OAuth2Config
+import ch.epfl.scala.index.server.config.ServerConfig
 import com.softwaremill.session.CsrfDirectives._
 import com.softwaremill.session.CsrfOptions._
-import akka.http.scaladsl._
-import model._
-import Uri.Query
-import StatusCodes.TemporaryRedirect
-import akka.actor.ActorSystem
-import akka.http.scaladsl.server.Route
-import ch.epfl.scala.index.server.config.{OAuth2Config, ServerConfig}
-import headers.Referer
-import server.Directives._
-
-import scala.concurrent.ExecutionContext
+import com.softwaremill.session.SessionDirectives._
+import com.softwaremill.session.SessionOptions._
 
 class Oauth2(config: OAuth2Config, github: Github, session: GithubUserSession)(
     implicit ec: ExecutionContext

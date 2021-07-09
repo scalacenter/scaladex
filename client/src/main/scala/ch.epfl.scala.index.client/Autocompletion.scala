@@ -1,15 +1,17 @@
 package ch.epfl.scala.index.client
 
+import scala.concurrent.ExecutionContext
+
 import ch.epfl.scala.index.api.AutocompletionResponse
 import ch.epfl.scala.index.client.rpc.RPC
 import org.scalajs.dom
 import org.scalajs.dom.KeyboardEvent
 import org.scalajs.dom.ext.KeyCode
-import org.scalajs.dom.raw.{Element, HTMLUListElement, Node}
+import org.scalajs.dom.raw.Element
+import org.scalajs.dom.raw.HTMLUListElement
+import org.scalajs.dom.raw.Node
 import org.scalajs.jquery.jQuery
 import scalatags.JsDom.all._
-
-import scala.concurrent.ExecutionContext
 
 class Autocompletion(implicit ec: ExecutionContext) {
   case class CompletionSelection(

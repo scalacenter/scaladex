@@ -2,9 +2,12 @@ package ch.epfl.scala.index
 package data
 package project
 
-import data.github.{GithubDownload, GithubReader}
-import model.Project
-import model.misc.{GithubInfo, Url, GithubIssue}
+import ch.epfl.scala.index.data.github.GithubDownload
+import ch.epfl.scala.index.data.github.GithubReader
+import ch.epfl.scala.index.model.Project
+import ch.epfl.scala.index.model.misc.GithubInfo
+import ch.epfl.scala.index.model.misc.GithubIssue
+import ch.epfl.scala.index.model.misc.Url
 
 case class ProjectForm(
     // project

@@ -6,7 +6,7 @@ import fastparse._
 
 object ScalaTargetType {
 
-  val All = Seq(Java, Sbt, Native, Js, Jvm)
+  val All: Seq[ScalaTargetType] = Seq(Java, Sbt, Native, Js, Jvm)
 
   implicit val ordering: Ordering[ScalaTargetType] = Ordering.by(All.indexOf(_))
 
@@ -43,13 +43,13 @@ sealed trait PlatformVersionedTargetType extends ScalaTargetType {
 case object Js extends PlatformVersionedTargetType {
   val platformId = "scala-js"
   val shortName = "JS"
-  def encode(versions: PlatformAndLanguageVersions) =
+  def encode(versions: PlatformAndLanguageVersions): String =
     s"_sjs${versions.platform}_${versions.language}"
 
   val `0.6`: BinaryVersion = MinorBinary(0, 6)
   val `1.x`: BinaryVersion = MajorBinary(1)
 
-  val stableBinaryVersions = Set(`0.6`, `1.x`)
+  val stableBinaryVersions: Set[BinaryVersion] = Set(`0.6`, `1.x`)
 
   def Parser[_: P]: P[ScalaTarget] =
     ("_sjs" ~ BinaryVersion.Parser ~ "_" ~ LanguageVersion.Parser).map {
@@ -60,12 +60,12 @@ case object Js extends PlatformVersionedTargetType {
 case object Native extends PlatformVersionedTargetType {
   val platformId = "scala-native"
   val shortName = "Native"
-  def encode(versions: PlatformAndLanguageVersions) =
+  def encode(versions: PlatformAndLanguageVersions): String =
     s"_native${versions.platform}_${versions.language}"
   val `0.3`: BinaryVersion = MinorBinary(0, 3)
   val `0.4`: BinaryVersion = MinorBinary(0, 4)
 
-  val stableBinaryVersions = Set(`0.3`, `0.4`)
+  val stableBinaryVersions: Set[BinaryVersion] = Set(`0.3`, `0.4`)
 
   def Parser[_: P]: P[ScalaTarget] =
     ("_native" ~ BinaryVersion.Parser ~ "_" ~ LanguageVersion.Parser).map {
@@ -78,13 +78,13 @@ case object Sbt extends PlatformVersionedTargetType {
   val platformId = "sbt"
   val shortName = "sbt"
   override val platformVersionDeterminesScalaVersion = true
-  def encode(versions: PlatformAndLanguageVersions) =
+  def encode(versions: PlatformAndLanguageVersions): String =
     s"_${versions.language}_${versions.platform}"
 
   val `0.13`: BinaryVersion = MinorBinary(0, 13)
   val `1.0`: BinaryVersion = MinorBinary(1, 0)
 
-  val stableBinaryVersions = Set(`0.13`, `1.0`)
+  val stableBinaryVersions: Set[BinaryVersion] = Set(`0.13`, `1.0`)
 
   def Parser[_: P]: P[ScalaTarget] =
     ("_" ~ LanguageVersion.Parser ~ "_" ~ BinaryVersion.Parser.filter(isValid))
@@ -123,7 +123,7 @@ sealed trait ScalaTargetWithPlatformBinaryVersion extends ScalaTarget {
 
   lazy val isValid: Boolean = languageVersion.isValid && platformEdition.isValid
 
-  lazy val render = s"${platformEdition.render} ($languageVersion)"
+  lazy val render: String = s"${platformEdition.render} ($languageVersion)"
   lazy val platformAndLanguageVersions: PlatformAndLanguageVersions =
     PlatformAndLanguageVersions(languageVersion, platformEdition.version)
   lazy val encode: String = targetType.encode(platformAndLanguageVersions)
@@ -131,7 +131,7 @@ sealed trait ScalaTargetWithPlatformBinaryVersion extends ScalaTarget {
 
 case class ScalaJvm(languageVersion: LanguageVersion) extends ScalaTarget {
   val render: String = languageVersion.render
-  val encode = s"_$languageVersion"
+  val encode: String = s"_$languageVersion"
   val targetType: ScalaTargetType = Jvm
   val isValid: Boolean = languageVersion.isValid
 }
@@ -139,20 +139,21 @@ case class ScalaJs(
     languageVersion: LanguageVersion,
     scalaJsVersion: BinaryVersion
 ) extends ScalaTargetWithPlatformBinaryVersion {
-  val platformEdition = PlatformEdition(Js, scalaJsVersion)
+  val platformEdition: PlatformEdition = PlatformEdition(Js, scalaJsVersion)
 }
 case class ScalaNative(
     languageVersion: LanguageVersion,
     scalaNativeVersion: BinaryVersion
 ) extends ScalaTargetWithPlatformBinaryVersion {
-  val platformEdition = PlatformEdition(Native, scalaNativeVersion)
+  val platformEdition: PlatformEdition =
+    PlatformEdition(Native, scalaNativeVersion)
 }
 
 case class SbtPlugin(
     languageVersion: LanguageVersion,
     sbtVersion: BinaryVersion
 ) extends ScalaTargetWithPlatformBinaryVersion {
-  val platformEdition = PlatformEdition(Sbt, sbtVersion)
+  val platformEdition: PlatformEdition = PlatformEdition(Sbt, sbtVersion)
 }
 
 object ScalaJvm {

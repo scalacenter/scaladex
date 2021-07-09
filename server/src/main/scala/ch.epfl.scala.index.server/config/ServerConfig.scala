@@ -1,7 +1,8 @@
 package ch.epfl.scala.index.server.config
 
 import com.softwaremill.session.SessionConfig
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 
 case class ServerConfig(
     tempDirPath: String,

@@ -1,7 +1,5 @@
 package ch.epfl.scala.index.model
 
-import ch.epfl.scala.index.model.SemanticVersion.Digit
-
 trait Parsers {
   import fastparse._
 

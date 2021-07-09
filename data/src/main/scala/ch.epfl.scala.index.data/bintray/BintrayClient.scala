@@ -1,19 +1,23 @@
 package ch.epfl.scala.index.data
 package bintray
 
+import java.io.Closeable
 import java.net.URL
-import java.nio.file.{Files, Path}
+import java.nio.file.Files
+import java.nio.file.Path
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Try
 
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.download.PlayWsClient
-import org.typelevel.jawn.support.json4s.Parser
 import org.json4s.JsonAST.JValue
-import play.api.libs.ws.{WSAuthScheme, WSClient, WSRequest, WSResponse}
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
-import scala.util.Using
-import java.io.Closeable
+import org.typelevel.jawn.support.json4s.Parser
+import play.api.libs.ws.WSAuthScheme
+import play.api.libs.ws.WSClient
+import play.api.libs.ws.WSRequest
+import play.api.libs.ws.WSResponse
 
 /**
  * [[BintrayClient]] allows to query the Bintray REST API (https://bintray.com/docs/api/)
@@ -31,7 +35,7 @@ class BintrayClient private (
     with Closeable {
   import BintrayClient._
 
-  val bintrayCredentials = {
+  val bintrayCredentials: Map[String, String] = {
     // from bintray-sbt convention
     // cat ~/.bintray/.credentials
     // host = api.bintray.com

@@ -1,8 +1,19 @@
 package ch.epfl.scala.index.data.bintray
 
-import java.nio.file.{Files, Path}
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.time.{OffsetDateTime, ZoneOffset}
+
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.jdk.CollectionConverters._
+import scala.util.Using
+import scala.util.control.NonFatal
+import scala.util.matching.Regex
 
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.DataPaths
@@ -11,13 +22,6 @@ import ch.epfl.scala.index.data.github.GithubDownload
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.ivy.core.settings.IvySettings
 import org.apache.ivy.plugins.parser.xml.XmlModuleDescriptorParser
-
-import scala.jdk.CollectionConverters._
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.control.NonFatal
-import scala.util.matching.Regex
-import scala.util.Using
 
 class UpdateBintraySbtPlugins(
     bintray: BintrayClient,

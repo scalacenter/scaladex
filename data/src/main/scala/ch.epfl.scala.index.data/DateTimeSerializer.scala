@@ -1,10 +1,9 @@
 package ch.epfl.scala.index
 package data
 
-import org.json4s._
-
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
+import org.json4s._
 
 /**
  * Scope serializer, since Scope is not a case class json4s can't handle this by default

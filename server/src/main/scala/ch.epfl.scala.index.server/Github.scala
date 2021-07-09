@@ -1,6 +1,8 @@
 package ch.epfl.scala.index
 package server
 
+import scala.concurrent.Future
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl._
 import akka.http.scaladsl.model.HttpMethods.POST
@@ -11,8 +13,6 @@ import akka.http.scaladsl.unmarshalling.Unmarshal
 import ch.epfl.scala.index.model.misc._
 import org.json4s._
 import org.json4s.native.JsonMethods._
-
-import scala.concurrent.Future
 
 object Response {
   case class AccessToken(access_token: String)

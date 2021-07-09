@@ -1,26 +1,19 @@
 package ch.epfl.scala.index
 package server
 
-import ch.epfl.scala.index.search.DataRepository
-import build.info.BuildInfo
-import model.{Project, SemanticVersion}
-import model.misc.SearchParams
-import model.release.{
-  Js,
-  MinorBinary,
-  Native,
-  ScalaJs,
-  ScalaNative,
-  ScalaTarget,
-  ScalaVersion
-}
-import data.elastic._
-import data.github.GithubDownload
-import org.scalatest._
-
 import scala.concurrent.Future
+
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
+import ch.epfl.scala.index.model.Project
+import ch.epfl.scala.index.model.misc.SearchParams
+import ch.epfl.scala.index.model.release.Js
+import ch.epfl.scala.index.model.release.Native
+import ch.epfl.scala.index.model.release.ScalaJs
+import ch.epfl.scala.index.model.release.ScalaNative
+import ch.epfl.scala.index.model.release.ScalaVersion
+import ch.epfl.scala.index.search.DataRepository
+import org.scalatest._
 
 class RelevanceTest
     extends TestKit(ActorSystem("SbtActorTest"))
