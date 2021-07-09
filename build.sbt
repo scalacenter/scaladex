@@ -16,6 +16,20 @@ inThisBuild(
   )
 )
 
+inThisBuild(
+  List(
+    scalaVersion := "2.13.5",
+    semanticdbEnabled := true,
+    semanticdbVersion := scalafixSemanticdb.revision,
+    scalafixScalaBinaryVersion := "2.13",
+    scalafixDependencies ++= List(
+      "com.github.liancheng" %% "organize-imports" % "0.4.4"
+    ),
+    organization := "ch.epfl.scala.index",
+    version := s"0.2.0+${githash()}"
+  )
+)
+
 lazy val logging =
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.1.7",
