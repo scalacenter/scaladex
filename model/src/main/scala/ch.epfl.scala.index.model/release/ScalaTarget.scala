@@ -159,8 +159,11 @@ case class SbtPlugin(
 object ScalaJvm {
   def fromFullVersion(fullVersion: SemanticVersion): Option[ScalaJvm] = {
     val binaryVersion = fullVersion match {
-      case SemanticVersion(major, Some(minor), _, None, None, None) =>
+      case SemanticVersion(major, Some(minor), _, None, None, None)
+          if major == 2 =>
         Some(MinorBinary(major, minor))
+      case SemanticVersion(major, _, _, None, None, None) if major == 3 =>
+        Some(MajorBinary(major))
       case _ => None
     }
 

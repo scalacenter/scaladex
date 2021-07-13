@@ -86,7 +86,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
         for {
           dep <- pom.dependencies.find { dep =>
             dep.groupId == "org.scala-lang" &&
-            dep.artifactId == "scala-library"
+            (dep.artifactId == "scala-library" || dep.artifactId == "scala3-library_3")
           }
           version <- SemanticVersion.tryParse(dep.version)
           target <- ScalaJvm.fromFullVersion(version)
