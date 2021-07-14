@@ -1,20 +1,7 @@
 import ScalaJSHelper._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
 import Deployment.githash
-
-inThisBuild(
-  List(
-    scalaVersion := "2.13.5",
-    semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision,
-    scalafixScalaBinaryVersion := "2.13",
-    scalafixDependencies ++= List(
-      "com.github.liancheng" %% "organize-imports" % "0.4.4"
-    ),
-    organization := "ch.epfl.scala.index",
-    version := s"0.2.0+${githash()}"
-  )
-)
+import ESandPostgreSQLContainers.autoImport.startESandPostgreSQL
 
 inThisBuild(
   List(
@@ -63,10 +50,10 @@ lazy val commonSettings = Seq(
     "UTF-8",
     "-feature",
     "-unchecked",
-    "-Xfatal-warnings",
+//    "-Xfatal-warnings",
     "-Wunused:imports"
   ),
-  libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.9" % Test,
+  libraryDependencies += "org.scalatest" %% "scalatest" % V.scalatest % Test,
   reStart / javaOptions ++= {
     val base = (ThisBuild / baseDirectory).value
 
@@ -81,7 +68,7 @@ lazy val commonSettings = Seq(
 ) ++
   addCommandAlias("start", "reStart") ++ logging ++ ammoniteSettings
 
-enablePlugins(Elasticsearch)
+enablePlugins(ESandPostgreSQLContainers)
 
 lazy val scaladex = project
   .in(file("."))
@@ -118,7 +105,8 @@ lazy val infra = project
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4sVersion,
       "org.json4s" %% "json4s-native" % "3.6.9",
       "org.typelevel" %% "jawn-json4s" % "1.0.0",
-      "org.flywaydb" % "flyway-core" % "7.11.0" // for database migration
+      "org.flywaydb" % "flyway-core" % "7.11.0", // for database migration
+      "org.tpolecat" %% "doobie-scalatest" % V.doobieVersion % Test
     ) ++ Seq(
       "org.tpolecat" %% "doobie-core",
       "org.tpolecat" %% "doobie-h2",
@@ -170,11 +158,11 @@ lazy val server = project
     Universal / packageBin := (Universal / packageBin)
       .dependsOn(Assets / WebKeys.assets)
       .value,
-    Test / test := (Test / test).dependsOn(startElasticsearch).value,
+    Test / test := (Test / test).dependsOn(startESandPostgreSQL).value,
     reStart := reStart
-      .dependsOn(startElasticsearch, Assets / WebKeys.assets)
+      .dependsOn(startESandPostgreSQL, Assets / WebKeys.assets)
       .evaluated,
-    Compile / run := (Compile / run).dependsOn(startElasticsearch).evaluated,
+    Compile / run := (Compile / run).dependsOn(startESandPostgreSQL).evaluated,
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
     reStart / javaOptions ++= Seq("-Xmx4g")
   )
@@ -207,8 +195,8 @@ lazy val data = project
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](ThisBuild / baseDirectory),
-    reStart := reStart.dependsOn(startElasticsearch).evaluated,
-    Compile / run := (Compile / run).dependsOn(startElasticsearch).evaluated,
+    reStart := reStart.dependsOn(startESandPostgreSQL).evaluated,
+    Compile / run := (Compile / run).dependsOn(startESandPostgreSQL).evaluated,
     reStart / javaOptions ++= Seq("-Xmx4g")
   )
   .enablePlugins(BuildInfoPlugin, JavaAppPackaging)
@@ -222,4 +210,5 @@ lazy val V = new {
   val elastic4sVersion = "7.10.2"
   val log4jVersion = "2.13.3"
   val nscalaTimeVersion = "2.24.0"
+  val scalatest = "3.0.9"
 }

@@ -1,4 +1,5 @@
 CREATE TABLE projects (
-  id         CHAR(36)     NOT NULL PRIMARY KEY,
-  updated    TIMESTAMP    NOT NULL
+  organization VARCHAR(39)  NOT NULL,
+  repository   VARCHAR(100)  NOT NULL,
+  PRIMARY KEY (organization, repository)
 );

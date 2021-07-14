@@ -12,7 +12,7 @@ import ch.epfl.scala.index.model.release.Native
 import ch.epfl.scala.index.model.release.ScalaJs
 import ch.epfl.scala.index.model.release.ScalaNative
 import ch.epfl.scala.index.model.release.ScalaVersion
-import ch.epfl.scala.index.search.DataRepository
+import ch.epfl.scala.index.search.ESRepo
 import org.scalatest._
 
 class RelevanceTest
@@ -22,7 +22,7 @@ class RelevanceTest
 
   import system.dispatcher
 
-  private val data = DataRepository.open()
+  private val data = ESRepo.open()
 
   data.waitUntilReady()
 

@@ -19,7 +19,7 @@ import ch.epfl.scala.index.data.project.ProjectForm
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.search.DataRepository
+import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.TwirlSupport._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
@@ -28,7 +28,7 @@ import org.json4s.native.Serialization.read
 import org.json4s.native.Serialization.write
 
 class ProjectPages(
-    dataRepository: DataRepository,
+    dataRepository: ESRepo,
     session: GithubUserSession,
     githubDownload: GithubDownload,
     paths: DataPaths

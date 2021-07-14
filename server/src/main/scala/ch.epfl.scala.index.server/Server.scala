@@ -13,11 +13,11 @@ import akka.http.scaladsl.server._
 import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.util.PidLock
-import ch.epfl.scala.index.search.DataRepository
+import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.config.ServerConfig
 import ch.epfl.scala.index.server.routes._
 import ch.epfl.scala.index.server.routes.api._
-import ch.epfl.scala.services.storage.sql.ScaladexRepo
+import ch.epfl.scala.services.storage.sql.SqlRepo
 import org.slf4j.LoggerFactory
 
 object Server {
@@ -33,7 +33,7 @@ object Server {
       PidLock.create("SERVER")
     }
 
-    val db = new ScaladexRepo(config.dbConf)
+    val db = new SqlRepo(config.dbConf)
 
     implicit val system: ActorSystem = ActorSystem("scaladex")
     import system.dispatcher
@@ -47,7 +47,7 @@ object Server {
 
     // the DataRepository will not be closed until the end of the process,
     // because of the sbtResolver mode
-    val data = DataRepository.open()
+    val data = ESRepo.open()
 
     val searchPages = new SearchPages(data, session)
     val userFacingRoutes = concat(
@@ -112,11 +112,10 @@ object Server {
     log.info("ready")
 
     if (config.production) {
-      db.migrate().unsafeRunSync()
+      db.createTables().unsafeRunSync()
     } else {
       db.dropTables().unsafeRunSync()
-      db.migrate().unsafeRunSync()
-      db.insertMockData().unsafeRunSync()
+      db.createTables().unsafeRunSync()
       log.info("Mock data for database has been inserted")
     }
 

@@ -10,11 +10,11 @@ import scala.concurrent.duration._
 import akka.actor.Actor
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.DataPaths
-import ch.epfl.scala.index.search.DataRepository
+import ch.epfl.scala.index.search.ESRepo
 
 class PublishActor(
     paths: DataPaths,
-    dataRepository: DataRepository,
+    dataRepository: ESRepo,
     implicit val system: ActorSystem
 ) extends Actor {
 

@@ -9,14 +9,14 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import ch.epfl.scala.index.model.misc.Page
 import ch.epfl.scala.index.model.misc.SearchParams
-import ch.epfl.scala.index.search.DataRepository
+import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.index.views.search.html.searchresult
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 
-class SearchPages(dataRepository: DataRepository, session: GithubUserSession)(
-    implicit ec: ExecutionContext
+class SearchPages(dataRepository: ESRepo, session: GithubUserSession)(implicit
+    ec: ExecutionContext
 ) {
   import dataRepository._
   import session.implicits._

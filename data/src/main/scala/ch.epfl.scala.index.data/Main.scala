@@ -2,7 +2,11 @@ package ch.epfl.scala.index.data
 
 import java.nio.file.Path
 
+import scala.concurrent.Await
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 import scala.sys.process.Process
+import scala.util.Using
 
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.bintray.BintrayDownloadPoms
@@ -14,7 +18,12 @@ import ch.epfl.scala.index.data.cleanup.NonStandardLib
 import ch.epfl.scala.index.data.elastic.SeedElasticSearch
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.maven.DownloadParentPoms
+import ch.epfl.scala.index.data.maven.PomsReader
+import ch.epfl.scala.index.data.project.ProjectConvert
 import ch.epfl.scala.index.data.util.PidLock
+import ch.epfl.scala.index.search.ESRepo
+import ch.epfl.scala.services.storage.sql.DbConf
+import ch.epfl.scala.services.storage.sql.SqlRepo
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 
@@ -48,6 +57,8 @@ object Main extends LazyLogging {
   def run(args: Array[String]): Unit = {
     val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
     val production = config.getBoolean("production")
+    val dbConf = DbConf.from(config.getString("database-url")).get
+    val db = new SqlRepo(dbConf)
 
     if (production) {
       PidLock.create("DATA")
@@ -92,7 +103,10 @@ object Main extends LazyLogging {
       Step("github")(() => GithubDownload.run(dataPaths)),
       // Re-create the ElasticSearch index
       Step("elastic") { () =>
-        SeedElasticSearch.run(dataPaths)
+        import system.dispatcher
+        Using.resource(ESRepo.open()) { esRepo =>
+          Await.result(insertDataInEsAndDb(dataPaths, esRepo, db), Duration.Inf)
+        }
       }
     )
 
@@ -168,6 +182,45 @@ object Main extends LazyLogging {
         sys.error(
           s"Command '${args.mkString(" ")}' exited with status $status"
         )
+    }
+  }
+
+  private def insertDataInEsAndDb(
+      dataPaths: DataPaths,
+      esRepo: ESRepo,
+      db: SqlRepo
+  )(implicit
+      sys: ActorSystem
+  ): Future[Long] = {
+    import sys.dispatcher
+    val githubDownload = new GithubDownload(dataPaths)
+    val seed = new SeedElasticSearch(esRepo)
+
+    //convert data
+    val projectConverter = new ProjectConvert(dataPaths, githubDownload)
+    val allData =
+      projectConverter.convertAll(PomsReader.loadAll(dataPaths), Map())
+
+    logger.info("Start cleaning both ES and PostgreSQL")
+    val cleaning = for {
+      _ <- seed.cleanIndexes()
+      _ <- db.dropTables().unsafeToFuture()
+      _ <- db.createTables().unsafeToFuture()
+    } yield ()
+
+    // insertData
+    for {
+      _ <- cleaning
+      _ = allData.foreach { case (project, releases, dependencies) =>
+        for {
+          _ <- seed.insertES(project, releases, dependencies)
+          _ <- db.insertProject(project)
+        } yield ()
+      }
+      numberOfIndexedProjects <- db.countProjects()
+    } yield {
+      logger.info(s"$numberOfIndexedProjects projects have been indexed")
+      numberOfIndexedProjects
     }
   }
 }

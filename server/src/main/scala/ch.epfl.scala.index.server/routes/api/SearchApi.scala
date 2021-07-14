@@ -13,7 +13,7 @@ import ch.epfl.scala.index.api.AutocompletionResponse
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc.SearchParams
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.search.DataRepository
+import ch.epfl.scala.index.search.ESRepo
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import com.softwaremill.session.SessionDirectives.optionalSession
 import com.softwaremill.session.SessionOptions.refreshable
@@ -44,7 +44,7 @@ object SearchApi {
 }
 
 class SearchApi(
-    dataRepository: DataRepository,
+    dataRepository: ESRepo,
     session: GithubUserSession
 )(implicit val executionContext: ExecutionContext)
     extends PlayJsonSupport {

@@ -1,16 +1,20 @@
 package ch.epfl.scala.utils
 
 import scala.concurrent.ExecutionContext
-
 import cats.effect.ContextShift
 import cats.effect.IO
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.services.storage.sql.DbConf
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import doobie._
 import doobie.implicits._
 import doobie.util.fragment.Fragment
+import doobie.util.fragment.Fragment.const0
 import org.flywaydb.core.Flyway
+import org.h2.Driver
+
+import java.sql.DriverManager
 
 object DoobieUtils {
   private implicit val cs: ContextShift[IO] =
@@ -65,6 +69,6 @@ object DoobieUtils {
         where: Fragment
     ): Fragment =
       buildSelect(table, fields) ++ space ++ where
-
   }
+
 }

@@ -20,13 +20,13 @@ import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.util.Timeout
 import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.search.DataRepository
+import ch.epfl.scala.index.search.ESRepo
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
 class PublishApi(
     paths: DataPaths,
-    dataRepository: DataRepository,
+    dataRepository: ESRepo,
     github: Github
 )(implicit system: ActorSystem) {
 
@@ -180,7 +180,7 @@ class PublishApi(
 object PublishApi {
   def apply(
       paths: DataPaths,
-      dataRepository: DataRepository
+      dataRepository: ESRepo
   )(implicit sys: ActorSystem): PublishApi = {
     new PublishApi(paths, dataRepository, Github())
   }

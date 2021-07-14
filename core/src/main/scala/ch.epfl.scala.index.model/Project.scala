@@ -102,5 +102,6 @@ object Project {
    */
   case class Reference(organization: String, repository: String) {
     def githubRepo: GithubRepo = GithubRepo(organization, repository)
+    override def toString: String = s"$organization/$repository"
   }
 }

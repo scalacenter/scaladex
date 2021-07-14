@@ -13,9 +13,9 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.RouteResult
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.search.DataRepository
+import ch.epfl.scala.index.search.ESRepo
 
-class Badges(dataRepository: DataRepository) {
+class Badges(dataRepository: ESRepo) {
 
   private val shields = parameters(
     ("color".?, "style".?, "logo".?, "logoWidth".as[Int].?)
