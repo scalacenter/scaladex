@@ -1,9 +1,9 @@
 package ch.epfl.scala.index.model
 package release
 
-import org.scalatest._
+import org.scalatest.funsuite.AnyFunSuite
 
-class SbtInstallTests extends FunSuite with TestHelpers {
+class SbtInstallTests extends AnyFunSuite with TestHelpers {
   test("crossFull") {
     val obtained =
       release(

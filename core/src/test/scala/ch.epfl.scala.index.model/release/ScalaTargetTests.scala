@@ -1,11 +1,13 @@
 package ch.epfl.scala.index.model
 package release
 
-import org.scalatest._
+import org.scalatest.OptionValues
+import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 
 class ScalaTargetTests
-    extends FunSpec
+    extends AsyncFunSpec
     with Matchers
     with OptionValues
     with TableDrivenPropertyChecks {

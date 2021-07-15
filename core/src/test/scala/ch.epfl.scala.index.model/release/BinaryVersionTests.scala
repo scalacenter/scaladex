@@ -3,12 +3,12 @@ package ch.epfl.scala.index.model.release
 import ch.epfl.scala.index.model.Milestone
 import ch.epfl.scala.index.model.ReleaseCandidate
 import ch.epfl.scala.index.model.release
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 
 class BinaryVersionTests
-    extends FunSpec
+    extends AsyncFunSpec
     with Matchers
     with TableDrivenPropertyChecks {
   it("should parse any binary version") {

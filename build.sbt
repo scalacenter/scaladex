@@ -210,5 +210,5 @@ lazy val V = new {
   val elastic4sVersion = "7.10.2"
   val log4jVersion = "2.13.3"
   val nscalaTimeVersion = "2.24.0"
-  val scalatest = "3.0.9"
+  val scalatest = "3.2.9"
 }

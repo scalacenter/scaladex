@@ -2,9 +2,9 @@ package ch.epfl.scala.index
 package data
 package github
 
-import org.scalatest._
+import org.scalatest.funspec.AsyncFunSpec
 
-class LinkParserTests extends FunSpec {
+class LinkParserTests extends AsyncFunSpec {
   describe("Link parser") {
     it("quote") {
       assert(

@@ -13,7 +13,9 @@ import ch.epfl.scala.index.model.release.ScalaJs
 import ch.epfl.scala.index.model.release.ScalaNative
 import ch.epfl.scala.index.model.release.ScalaVersion
 import ch.epfl.scala.index.search.ESRepo
-import org.scalatest._
+import org.scalatest.Assertion
+import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funsuite.AsyncFunSuiteLike
 
 class RelevanceTest
     extends TestKit(ActorSystem("SbtActorTest"))

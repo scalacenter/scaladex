@@ -2,9 +2,9 @@ package ch.epfl.scala.index
 package views
 package html
 
-import org.scalatest._
+import org.scalatest.funspec.AsyncFunSpec
 
-class PaginationTests extends FunSpec {
+class PaginationTests extends AsyncFunSpec {
   describe("pagination") {
     it("base case") {
       // *1*

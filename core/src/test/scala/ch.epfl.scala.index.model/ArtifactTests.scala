@@ -1,9 +1,10 @@
 package ch.epfl.scala.index.model
 
 import ch.epfl.scala.index.model.release._
-import org.scalatest._
+import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class ArtifactTests extends FunSpec with Matchers {
+class ArtifactTests extends AsyncFunSpec with Matchers {
   describe("parsing artifacts") {
     it("parses scalajs") {
       Artifact.parse("cats-core_sjs0.6_2.11") should contain(
