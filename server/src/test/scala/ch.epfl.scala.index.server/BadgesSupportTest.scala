@@ -8,10 +8,10 @@ import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.server.BadgesSupport.SummariseLanguageVersions
 import ch.epfl.scala.index.server.BadgesSupport.SummarisePlatformEditions
 import org.apache.commons.lang3.StringUtils.countMatches
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class BadgesSupportTest extends FunSpec with Matchers {
+class BadgesSupportTest extends AsyncFunSpec with Matchers {
 
   val `3.0.0-M3`: LanguageVersion = Scala3Version(
     PreReleaseBinary(3, 0, Some(0), Milestone(3))

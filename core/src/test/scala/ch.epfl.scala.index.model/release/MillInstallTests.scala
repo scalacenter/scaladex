@@ -1,9 +1,9 @@
 package ch.epfl.scala.index.model
 package release
 
-import org.scalatest._
+import org.scalatest.funsuite.AnyFunSuite
 
-class MillInstallTests extends FunSuite with TestHelpers {
+class MillInstallTests extends AnyFunSuite with TestHelpers {
   test("mill install dependency pattern") {
     val obtained =
       release(

@@ -1,9 +1,10 @@
 package ch.epfl.scala.index.model
 package release
 
-import org.scalatest._
+import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class ReleaseOptionsTests extends FunSpec with Matchers {
+class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
 
   def emptyRelease(
       maven: MavenReference,

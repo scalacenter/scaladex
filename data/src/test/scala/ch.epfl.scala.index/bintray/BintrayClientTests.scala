@@ -7,12 +7,13 @@ import scala.xml.Elem
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import ch.epfl.scala.index.data.bintray.BintrayClient
-import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSCookie
 import play.api.libs.ws.WSResponse
 
-class BintrayClientTests extends FlatSpec with Matchers {
+class BintrayClientTests extends AnyFlatSpec with Matchers {
   "BintrayClient" should "calculate pagination properly" in {
     getPagination(
       startPos = 50,
