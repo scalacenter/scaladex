@@ -27,11 +27,24 @@ object SearchApi {
   implicit val formatReleaseOptions: OFormat[ReleaseOptions] =
     Json.format[ReleaseOptions]
 
+  implicit val formatResult: OFormat[Result] =
+    Json.format[Result]
+
+  case class Result(currentPage: Int, pageTotal: Int, items: Seq[Project])
   case class Project(
       organization: String,
       repository: String,
-      logo: Option[String] = None,
-      artifacts: List[String] = Nil
+      logo: Option[String],
+      stars: Option[Int],
+      forks: Option[Int],
+      contributorCount: Option[Int],
+      topics: Set[String],
+      defaultArtifact: Option[String],
+      artifacts: List[String],
+      scalaVersion: List[String],
+      scalaJsVersion: List[String],
+      scalaNativeVersion: List[String],
+      sbtVersion: List[String]
   )
 
   case class ReleaseOptions(
@@ -90,7 +103,8 @@ class SearchApi(
   val routes: Route =
     pathPrefix("api") {
       cors() {
-        path("search") {
+        // deprecated endpoint replaced by api/search endpoint
+        path("search-old") {
           get {
             parameters(
               (
@@ -124,17 +138,6 @@ class SearchApi(
                   sbtVersion
                 )
 
-                def convert(project: Project): SearchApi.Project = {
-                  import project._
-                  val artifacts0 = if (cli) cliArtifacts.toList else artifacts
-                  SearchApi.Project(
-                    organization,
-                    repository,
-                    project.github.flatMap(_.logo.map(_.target)),
-                    artifacts0
-                  )
-                }
-
                 scalaTarget match {
                   case Some(_) =>
                     val searchParams = SearchParams(
@@ -146,7 +149,7 @@ class SearchApi(
                     )
                     val result = dataRepository
                       .findProjects(searchParams)
-                      .map(page => page.items.map(p => convert(p)))
+                      .map(page => page.items.map(convertProject(cli)))
                     complete(OK, result)
 
                   case None =>
@@ -157,6 +160,25 @@ class SearchApi(
             }
           }
         } ~
+          path("search") {
+            get {
+              optionalSession(refreshable, usingCookies) { userId =>
+                val user = session.getUser(userId)
+                searchParams(user) { params =>
+                  val result = dataRepository
+                    .findProjects(params)
+                    .map { page =>
+                      SearchApi.Result(
+                        currentPage = page.pagination.current,
+                        pageTotal = page.pagination.pageCount,
+                        items = page.items.map(convertProject(params.cli))
+                      )
+                    }
+                  complete(result)
+                }
+              }
+            }
+          } ~
           path("project") {
             get {
               parameters(
@@ -200,15 +222,36 @@ class SearchApi(
               optionalSession(refreshable, usingCookies) { userId =>
                 val user = session.getUser(userId)
                 searchParams(user) { params =>
-                  complete {
-                    autocomplete(params)
-                  }
+                  val autoCompletion = autocomplete(params)
+                  complete(autoCompletion)
                 }
               }
             }
           }
       }
     }
+
+  private def convertProject(
+      cli: Boolean
+  )(project: Project): SearchApi.Project = {
+    val artifacts = if (cli) project.cliArtifacts.toList else project.artifacts
+    val defaultArtifact = project.defaultArtifact.filter(artifacts.contains)
+    SearchApi.Project(
+      project.organization,
+      project.repository,
+      project.github.flatMap(_.logo.map(_.target)),
+      project.github.flatMap(_.stars),
+      project.github.flatMap(_.forks),
+      project.github.map(_.contributorCount),
+      project.github.map(_.topics).getOrElse(Set.empty),
+      defaultArtifact,
+      artifacts,
+      project.scalaVersion,
+      project.sbtVersion,
+      project.scalaJsVersion,
+      project.scalaNativeVersion
+    )
+  }
 
   private def getReleaseOptions(
       projectRef: Project.Reference,

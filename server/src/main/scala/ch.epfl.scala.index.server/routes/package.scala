@@ -10,6 +10,7 @@ package object routes {
       (
         "q" ? "*",
         "page".as[Int] ? 1,
+        "total".as[Int] ? SearchParams.resultsPerPage,
         "sort".?,
         "topics".as[String].*,
         "targetTypes".as[String].*,
@@ -17,13 +18,15 @@ package object routes {
         "scalaJsVersions".as[String].*,
         "scalaNativeVersions".as[String].*,
         "sbtVersions".as[String].*,
-        "you".?,
-        "contributingSearch".as[Boolean] ? false
+        "contributingSearch".as[Boolean] ? false,
+        "cli".as[Boolean] ? false,
+        "you".?
       )
     ).tmap {
       case (
             q,
             page,
+            total,
             sort,
             topics,
             targetTypes,
@@ -31,8 +34,9 @@ package object routes {
             scalaJsVersions,
             scalaNativeVersions,
             sbtVersions,
-            you,
-            contributingSearch
+            contributingSearch,
+            cli,
+            you
           ) =>
         val userRepos = you
           .flatMap(_ => user.map(_.repos))
@@ -42,8 +46,10 @@ package object routes {
           page,
           sort,
           userRepos,
+          total = total,
           topics = topics.toList,
           targetTypes = targetTypes.toList,
+          cli = cli,
           scalaVersions = scalaVersions.toList,
           scalaJsVersions = scalaJsVersions.toList,
           scalaNativeVersions = scalaNativeVersions.toList,
