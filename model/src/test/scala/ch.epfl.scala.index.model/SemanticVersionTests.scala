@@ -1,8 +1,9 @@
 package ch.epfl.scala.index.model
 
-import org.scalatest._
+import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class SemanticVersionTests extends FunSpec with Matchers {
+class SemanticVersionTests extends AsyncFunSpec with Matchers {
   describe("semantic versionning") {
     it("has an ordering") {
       def order(versions: List[String]): List[SemanticVersion] =
