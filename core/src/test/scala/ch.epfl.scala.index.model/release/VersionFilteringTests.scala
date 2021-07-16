@@ -1,9 +1,9 @@
 package ch.epfl.scala.index.model
 package release
 
-import org.scalatest._
+import org.scalatest.funsuite.AnyFunSuite
 
-class VersionFilteringTests extends FunSuite {
+class VersionFilteringTests extends AnyFunSuite {
   test("GeoTrellis") {
     val versions = List(
       "1.2.0-astraea.9",
