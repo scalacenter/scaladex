@@ -738,20 +738,20 @@ object DataRepository extends LazyLogging with SearchProtocol {
   private def targetQuery(target: ScalaTarget): Query = {
     target match {
       case ScalaJvm(scalaVersion) =>
-        termQuery("scalaVersion", scalaVersion.toString)
+        termQuery("scalaVersion", scalaVersion.family)
       case ScalaJs(scalaVersion, jsVersion) =>
         must(
-          termQuery("scalaVersion", scalaVersion.toString),
+          termQuery("scalaVersion", scalaVersion.family),
           termQuery("scalaJsVersion", jsVersion.toString)
         )
       case ScalaNative(scalaVersion, nativeVersion) =>
         must(
-          termQuery("scalaVersion", scalaVersion.toString),
+          termQuery("scalaVersion", scalaVersion.family),
           termQuery("scalaNativeVersion", nativeVersion.toString)
         )
       case SbtPlugin(scalaVersion, sbtVersion) =>
         must(
-          termQuery("scalaVersion", scalaVersion.toString),
+          termQuery("scalaVersion", scalaVersion.family),
           termQuery("sbtVersion", sbtVersion.toString)
         )
     }
