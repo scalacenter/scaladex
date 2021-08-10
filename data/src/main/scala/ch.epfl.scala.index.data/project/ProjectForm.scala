@@ -39,14 +39,13 @@ case class ProjectForm(
 
     val githubWithKeywords =
       if (project.github.isEmpty) {
-        Some(GithubInfo(topics = keywords))
+        Some(GithubInfo.empty.copy(topics = keywords))
       } else {
         project.github.map(github =>
           github.copy(topics = github.topics ++ keywords)
         )
       }
 
-    val oldBeginnerIssueLabel = project.github.flatMap(_.beginnerIssuesLabel)
     val getBeginnerIssues =
       fromStored && beginnerIssues.isEmpty && beginnerIssuesLabel.isDefined
     val newBeginnerIssues =

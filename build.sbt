@@ -113,6 +113,11 @@ lazy val infra = project
       "org.tpolecat" %% "doobie-postgres",
       "org.tpolecat" %% "doobie-hikari"
     ).map(_ % V.doobieVersion)
+      ++ Seq(
+        "io.circe" %% "circe-core",
+        "io.circe" %% "circe-generic",
+        "io.circe" %% "circe-parser"
+      ).map(_ % V.circeVersion)
   )
   .dependsOn(core)
 
@@ -211,4 +216,5 @@ lazy val V = new {
   val log4jVersion = "2.13.3"
   val nscalaTimeVersion = "2.24.0"
   val scalatest = "3.2.9"
+  val circeVersion = "0.14.1"
 }

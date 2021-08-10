@@ -8,4 +8,5 @@ object Values {
     "jdbc:h2:mem:scaladex_db;MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1"
   )
   val db = new SqlRepo(dbConf)
+
 }

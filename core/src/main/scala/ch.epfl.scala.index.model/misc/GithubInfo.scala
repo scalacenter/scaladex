@@ -24,16 +24,16 @@ package ch.epfl.scala.index.model.misc
  * @param filteredBeginnerIssues list of beginner-friendly issues that were filtered by contributing search
  */
 case class GithubInfo(
-    name: String = "",
-    owner: String = "",
+    name: String,
+    owner: String,
+    homepage: Option[Url],
+    description: Option[String],
+    logo: Option[Url],
+    stars: Option[Int],
+    forks: Option[Int],
+    watchers: Option[Int],
+    issues: Option[Int],
     readme: Option[String] = None,
-    description: Option[String] = None,
-    homepage: Option[Url] = None,
-    logo: Option[Url] = None,
-    stars: Option[Int] = None,
-    forks: Option[Int] = None,
-    watchers: Option[Int] = None,
-    issues: Option[Int] = None,
     contributors: List[GithubContributor] = List(),
     contributorCount: Int = 0,
     commits: Option[Int] = None,
@@ -41,13 +41,14 @@ case class GithubInfo(
     contributingGuide: Option[Url] = None,
     codeOfConduct: Option[Url] = None,
     chatroom: Option[Url] = None,
+    // added by the user in project page on scaladex
     beginnerIssuesLabel: Option[String] = None,
     beginnerIssues: List[GithubIssue] = List(),
     selectedBeginnerIssues: List[GithubIssue] = List(),
     filteredBeginnerIssues: List[GithubIssue] = List()
 ) {
   def displayIssues: List[GithubIssue] = {
-    if (!filteredBeginnerIssues.isEmpty) {
+    if (filteredBeginnerIssues.nonEmpty) {
       filteredBeginnerIssues
     } else {
       val selectedIssueNumbers = selectedBeginnerIssues.map(_.number)
@@ -56,4 +57,30 @@ case class GithubInfo(
       selectedBeginnerIssues ++ remainingIssues
     }
   }
+}
+
+object GithubInfo {
+  val empty: GithubInfo = GithubInfo(
+    name = "",
+    owner = "",
+    readme = None,
+    description = None,
+    homepage = None,
+    logo = None,
+    stars = None,
+    forks = None,
+    watchers = None,
+    issues = None,
+    contributors = List(),
+    contributorCount = 0,
+    commits = None,
+    topics = Set(),
+    contributingGuide = None,
+    codeOfConduct = None,
+    chatroom = None,
+    beginnerIssuesLabel = None,
+    beginnerIssues = List(),
+    selectedBeginnerIssues = List(),
+    filteredBeginnerIssues = List()
+  )
 }

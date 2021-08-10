@@ -2,10 +2,11 @@ package ch.epfl.scala.services.storage.sql
 
 import cats.effect.{IO, Resource}
 import ch.epfl.scala.index.model.Project
+import ch.epfl.scala.index.model.misc.GithubInfo
 import doobie.implicits._
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.services.DatabaseApi
-import ch.epfl.scala.services.storage.sql.tables.ProjectTable
+import ch.epfl.scala.services.storage.sql.tables.{GithubInfoTable, ProjectTable}
 import ch.epfl.scala.utils.DoobieUtils
 
 import scala.concurrent.Future
@@ -17,14 +18,22 @@ class SqlRepo(conf: DbConf) extends DatabaseApi {
   def dropTables(): IO[Unit] = IO(flyway.clean())
 
   override def insertProject(project: NewProject): Future[NewProject] = {
-    run(ProjectTable.insert, project)
+    for {
+      p <- run(ProjectTable.insert, project)
+      _ <- project.githubInfo
+        .map(run(GithubInfoTable.insert(project), _))
+        .getOrElse(Future.successful())
+    } yield p
   }
 
   def insertProject(project: Project): Future[NewProject] =
-    run(ProjectTable.insert, NewProject.from(project))
+    insertProject(NewProject.from(project))
 
   override def countProjects(): Future[Long] =
     run(ProjectTable.indexedProjects().unique)
+
+  def countGithubInfo(): Future[Long] =
+    run(GithubInfoTable.indexedGithubInfo().unique)
 
   private def run[A](i: A => doobie.Update0, v: A): Future[A] =
     i(v).run.transact(xa).unsafeToFuture.flatMap {

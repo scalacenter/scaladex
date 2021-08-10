@@ -218,8 +218,10 @@ object Main extends LazyLogging {
         } yield ()
       }
       numberOfIndexedProjects <- db.countProjects()
+      countGithubInfo <- db.countGithubInfo()
     } yield {
       logger.info(s"$numberOfIndexedProjects projects have been indexed")
+      logger.info(s"$countGithubInfo countGithubInfo have been indexed")
       numberOfIndexedProjects
     }
   }

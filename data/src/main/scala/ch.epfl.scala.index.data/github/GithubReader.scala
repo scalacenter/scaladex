@@ -34,15 +34,20 @@ object GithubReader {
     info(paths, github).map { info =>
       val contributorList = contributors(paths, github).getOrElse(List())
       info.copy(
-        readme = readme(paths, github).toOption,
-        contributors = contributorList,
-        contributorCount = contributorList.size,
-        commits = Some(contributorList.foldLeft(0)(_ + _.contributions)),
-        topics = topics(paths, github).getOrElse(List()).toSet,
-        beginnerIssues = beginnerIssues(paths, github).getOrElse(List()),
-        contributingGuide = contributingGuide(paths, github).getOrElse(None),
-        codeOfConduct = codeOfConduct(paths, github).getOrElse(None),
-        chatroom = chatroom(paths, github).toOption
+        readme = readme(paths, github).toOption, // README.html
+        contributors = contributorList, //contributors.json
+        contributorCount = contributorList.size, //contributors.json
+        commits = Some(
+          contributorList.foldLeft(0)(_ + _.contributions)
+        ), //contributors.json
+        topics = topics(paths, github).getOrElse(List()).toSet, // topics.json
+        beginnerIssues =
+          beginnerIssues(paths, github).getOrElse(List()), //issues.json
+        contributingGuide =
+          contributingGuide(paths, github).getOrElse(None), //community.json
+        codeOfConduct =
+          codeOfConduct(paths, github).getOrElse(None), //community.json
+        chatroom = chatroom(paths, github).toOption //chatroom.txt
       )
     }.toOption
   }

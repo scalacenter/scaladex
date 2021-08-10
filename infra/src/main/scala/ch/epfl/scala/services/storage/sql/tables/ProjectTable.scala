@@ -17,8 +17,6 @@ object ProjectTable {
 
   def insert(elt: NewProject): doobie.Update0 =
     buildInsert(tableFr, fieldsFr, values(elt)).update
-  def insertMany(elts: NonEmptyList[NewProject]): doobie.ConnectionIO[Int] =
-    Update[NewProject](insert(elts.head).sql).updateMany(elts)
 
   def indexedProjects(): doobie.Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]
