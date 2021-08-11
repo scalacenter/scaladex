@@ -15,7 +15,7 @@ class GithubInfoTests
     with BeforeAndAfterAll {
   private val db = Values.db
   val transactor: doobie.Transactor[IO] = db.xa
-  private val project = NewProject("scalacenter", "scaladex", None)
+  private val project = NewProject.defaultProject("scalacenter", "scaladex")
   private val emptGithubInfo = GithubInfo.empty
 
   override def beforeAll(): Unit = db.createTables().unsafeRunSync()

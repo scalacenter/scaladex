@@ -1,6 +1,17 @@
 CREATE TABLE projects (
-  organization VARCHAR(39)  NOT NULL,
-  repository   VARCHAR(100)  NOT NULL,
+  organization         VARCHAR(39)  NOT NULL,
+  repository           VARCHAR(100)  NOT NULL,
+  defaultStableVersion BOOLEAN NOT NULL,
+  defaultArtifact      VARCHAR,
+  strictVersions       BOOLEAN NOT NULL,
+  customScalaDoc       VARCHAR,
+  documentationLinks   VARCHAR,
+  deprecated           BOOLEAN NOT NULL,
+  contributorsWanted   BOOLEAN NOT NULL,
+  artifactDeprecations VARCHAR,
+  cliArtifacts         VARCHAR,
+  primaryTopic         VARCHAR,
+  esId                 VARCHAR,
   PRIMARY KEY (organization, repository)
 );
 

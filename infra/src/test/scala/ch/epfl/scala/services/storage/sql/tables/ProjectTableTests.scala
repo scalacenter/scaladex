@@ -15,7 +15,7 @@ class ProjectTableTests
     with BeforeAndAfterAll {
   private val db = Values.db
   val transactor: doobie.Transactor[IO] = db.xa
-  private val project = NewProject("scalacenter", "scaladex", None)
+  private val project = NewProject.defaultProject("scalacenter", "scaladex")
 
   override def beforeAll(): Unit = db.createTables().unsafeRunSync()
 
@@ -27,7 +27,13 @@ class ProjectTableTests
       it("should generate the query") {
         val q = insert(project)
         check(q)
-        q.sql shouldBe s"INSERT INTO projects (organization, repository) VALUES (?, ?)"
+        q.sql shouldBe
+          s"""INSERT INTO projects (organization, repository,
+             | defaultStableVersion, defaultArtifact, strictVersions,
+             | customScalaDoc, documentationLinks, deprecated, contributorsWanted,
+             | artifactDeprecations, cliArtifacts, primaryTopic, esId)
+             | VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
+            .filterNot(_ == '\n')
       }
     }
   }

@@ -2,6 +2,7 @@ package ch.epfl.scala.utils
 
 import cats.effect.{ContextShift, IO}
 import ch.epfl.scala.index.model.misc.{GithubContributor, GithubIssue, Url}
+import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
 import ch.epfl.scala.services.storage.sql.DbConf
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import doobie._
@@ -87,6 +88,13 @@ object DoobieUtils {
       implicit val githubIssueEncoder: Encoder[GithubIssue] =
         deriveEncoder[GithubIssue]
       stringMeta.timap(fromJson[List[GithubIssue]](_).get)(toJson(_))
+    }
+    implicit val documentationLinksMeta: Meta[List[DocumentationLink]] = {
+      implicit val documentationDecoder: Decoder[DocumentationLink] =
+        deriveDecoder[DocumentationLink]
+      implicit val documentationEncoder: Encoder[DocumentationLink] =
+        deriveEncoder[DocumentationLink]
+      stringMeta.timap(fromJson[List[DocumentationLink]](_).get)(toJson(_))
     }
     implicit val topicsMeta: Meta[Set[String]] =
       stringMeta.timap(_.split(",").filter(_.nonEmpty).toSet)(
