@@ -108,6 +108,7 @@ lazy val template = project
 lazy val search = project
   .settings(commonSettings)
   .settings(
+    Test / test := (Test / test).dependsOn(startElasticsearch).value,
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % elastic4sVersion,
       "org.json4s" %% "json4s-native" % "3.6.9",
