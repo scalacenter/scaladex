@@ -72,7 +72,6 @@ class ESRepo(
     def delete(index: String): Future[Unit] =
       for {
         response <- esClient.execute(indexExists(index))
-        _ = println(s"response = ${response}")
         exist = response.result.isExists
         _ <-
           if (exist) esClient.execute(deleteIndex(index))

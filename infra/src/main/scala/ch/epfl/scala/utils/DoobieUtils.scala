@@ -1,20 +1,19 @@
 package ch.epfl.scala.utils
 
-import scala.concurrent.ExecutionContext
-import cats.effect.ContextShift
-import cats.effect.IO
-import ch.epfl.scala.index.newModel.NewProject
+import cats.effect.{ContextShift, IO}
+import ch.epfl.scala.index.model.misc.{GithubContributor, GithubIssue, Url}
 import ch.epfl.scala.services.storage.sql.DbConf
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
+import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import doobie._
 import doobie.implicits._
 import doobie.util.fragment.Fragment
-import doobie.util.fragment.Fragment.const0
+import doobie.util.meta.Meta
 import org.flywaydb.core.Flyway
-import org.h2.Driver
+import io.circe._
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 
-import java.sql.DriverManager
+import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 object DoobieUtils {
   private implicit val cs: ContextShift[IO] =
@@ -69,6 +68,36 @@ object DoobieUtils {
         where: Fragment
     ): Fragment =
       buildSelect(table, fields) ++ space ++ where
+  }
+
+  object Mappings {
+    implicit val stringMeta: Meta[String] = Meta.StringMeta
+    implicit val URLDecoder: Decoder[Url] = deriveDecoder[Url]
+    implicit val URLEncoder: Encoder[Url] = deriveEncoder[Url]
+    implicit val contributorMeta: Meta[List[GithubContributor]] = {
+      implicit val contributorDecoder: Decoder[GithubContributor] =
+        deriveDecoder[GithubContributor]
+      implicit val contributorEncoder: Encoder[GithubContributor] =
+        deriveEncoder[GithubContributor]
+      stringMeta.timap(fromJson[List[GithubContributor]](_).get)(toJson(_))
+    }
+    implicit val githubIssuesMeta: Meta[List[GithubIssue]] = {
+      implicit val githubIssueDecoder: Decoder[GithubIssue] =
+        deriveDecoder[GithubIssue]
+      implicit val githubIssueEncoder: Encoder[GithubIssue] =
+        deriveEncoder[GithubIssue]
+      stringMeta.timap(fromJson[List[GithubIssue]](_).get)(toJson(_))
+    }
+    implicit val topicsMeta: Meta[Set[String]] =
+      stringMeta.timap(_.split(",").filter(_.nonEmpty).toSet)(
+        _.mkString(",")
+      )
+
+    private def toJson[A](v: A)(implicit e: Encoder[A]): String =
+      e.apply(v).noSpaces
+
+    private def fromJson[A](s: String)(implicit d: Decoder[A]): Try[A] =
+      parser.parse(s).flatMap(d.decodeJson).toTry
   }
 
 }
