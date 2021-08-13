@@ -1,7 +1,7 @@
 package ch.epfl.scala.index.model
 package release
 
-trait Dependency {
+sealed trait Dependency {
   val dependent: Release.Reference
   val target: GeneralReference
   val scope: Option[String]

@@ -4,9 +4,13 @@ import cats.effect.{IO, Resource}
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubInfo
 import doobie.implicits._
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
 import ch.epfl.scala.services.DatabaseApi
-import ch.epfl.scala.services.storage.sql.tables.{GithubInfoTable, ProjectTable}
+import ch.epfl.scala.services.storage.sql.tables.{
+  GithubInfoTable,
+  ProjectTable,
+  ReleaseTable
+}
 import ch.epfl.scala.utils.DoobieUtils
 
 import scala.concurrent.Future
@@ -26,11 +30,20 @@ class SqlRepo(conf: DbConf) extends DatabaseApi {
     } yield p
   }
 
+  override def insertReleases(releases: Seq[NewRelease]): Future[Int] =
+    run(ReleaseTable.insertMany(releases))
+
+  def insertRelease(release: NewRelease): Future[NewRelease] =
+    run(ReleaseTable.insert, release)
+
   def insertProject(project: Project): Future[NewProject] =
     insertProject(NewProject.from(project))
 
   override def countProjects(): Future[Long] =
     run(ProjectTable.indexedProjects().unique)
+
+  override def countReleases(): Future[Long] =
+    run(ReleaseTable.indexedReleased().unique)
 
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.indexedGithubInfo().unique)
@@ -43,5 +56,5 @@ class SqlRepo(conf: DbConf) extends DatabaseApi {
     }
 
   private def run[A](v: doobie.ConnectionIO[A]): Future[A] =
-    v.transact(xa).unsafeToFuture
+    v.transact(xa).unsafeToFuture()
 }

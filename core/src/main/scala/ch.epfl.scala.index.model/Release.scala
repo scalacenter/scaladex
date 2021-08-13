@@ -19,7 +19,7 @@ case class Release(
     maven: MavenReference,
     reference: Release.Reference,
     resolver: Option[Resolver],
-    name: Option[String],
+    name: Option[String], // artifact name
     description: Option[String],
     released: Option[String],
     licenses: Set[License],

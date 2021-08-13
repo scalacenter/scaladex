@@ -103,15 +103,6 @@ class ProjectPages(
 
     val user = userState.map(_.info)
 
-    def showVersion(target: ScalaTarget): String = {
-      target match {
-        case ScalaJvm(version) => version.toString
-        case ScalaJs(version, jsVersion) => s"${jsVersion}_$version"
-        case ScalaNative(version, nativeVersion) => s"${nativeVersion}_$version"
-        case SbtPlugin(version, sbtVersion) => s"${sbtVersion}_$version"
-      }
-    }
-
     dataRepository
       .getProjectAndReleases(Project.Reference(owner, repo))
       .map {
@@ -125,7 +116,7 @@ class ProjectPages(
                   targetType,
                   releases
                     .map(
-                      _.reference.target.map(showVersion).getOrElse("Java")
+                      _.reference.target.map(_.showVersion).getOrElse("Java")
                     )
                     .distinct
                     .sorted
@@ -150,7 +141,7 @@ class ProjectPages(
                           (
                             r,
                             r.reference.target
-                              .map(showVersion)
+                              .map(_.showVersion)
                               .getOrElse("Java")
                           )
                         )

@@ -93,7 +93,7 @@ object SemanticVersion extends Parsers with LazyLogging {
       }
   }
 
-  private def FullParser[_: P] = Start ~ Parser ~ End
+  private def FullParser[_: P]: P[SemanticVersion] = Start ~ Parser ~ End
 
   def tryParse(version: String): Option[SemanticVersion] = {
     try {

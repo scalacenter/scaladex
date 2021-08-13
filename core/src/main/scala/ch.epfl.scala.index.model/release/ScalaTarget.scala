@@ -115,6 +115,15 @@ sealed trait ScalaTarget extends Ordered[ScalaTarget] {
 
   override def compare(that: ScalaTarget): Int =
     ScalaTarget.ordering.compare(this, that)
+
+  def showVersion: String = {
+    this match {
+      case ScalaJvm(version) => version.toString
+      case ScalaJs(version, jsVersion) => s"${jsVersion}_$version"
+      case ScalaNative(version, nativeVersion) => s"${nativeVersion}_$version"
+      case SbtPlugin(version, sbtVersion) => s"${sbtVersion}_$version"
+    }
+  }
 }
 
 sealed trait ScalaTargetWithPlatformBinaryVersion extends ScalaTarget {

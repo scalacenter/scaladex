@@ -1,18 +1,18 @@
 CREATE TABLE projects (
-  organization         VARCHAR(39)  NOT NULL,
-  repository           VARCHAR(100)  NOT NULL,
-  defaultStableVersion BOOLEAN NOT NULL,
-  defaultArtifact      VARCHAR,
-  strictVersions       BOOLEAN NOT NULL,
-  customScalaDoc       VARCHAR,
-  documentationLinks   VARCHAR,
-  deprecated           BOOLEAN NOT NULL,
-  contributorsWanted   BOOLEAN NOT NULL,
-  artifactDeprecations VARCHAR,
-  cliArtifacts         VARCHAR,
-  primaryTopic         VARCHAR,
-  esId                 VARCHAR,
-  PRIMARY KEY (organization, repository)
+    organization         VARCHAR(39)  NOT NULL,
+    repository           VARCHAR(100)  NOT NULL,
+    defaultStableVersion BOOLEAN NOT NULL,
+    defaultArtifact      VARCHAR,
+    strictVersions       BOOLEAN NOT NULL,
+    customScalaDoc       VARCHAR,
+    documentationLinks   VARCHAR,
+    deprecated           BOOLEAN NOT NULL,
+    contributorsWanted   BOOLEAN NOT NULL,
+    artifactDeprecations VARCHAR,
+    cliArtifacts         VARCHAR,
+    primaryTopic         VARCHAR,
+    esId                 VARCHAR,
+    PRIMARY KEY (organization, repository)
 );
 
 CREATE TABLE github_info (
@@ -39,5 +39,22 @@ CREATE TABLE github_info (
     beginnerIssues         VARCHAR,
     selectedBeginnerIssues VARCHAR,
     filteredBeginnerIssues VARCHAR,
-  PRIMARY KEY (organization, repository)
+    FOREIGN KEY (organization, repository) REFERENCES projects (organization, repository),
+    PRIMARY KEY (organization, repository)
 );
+
+CREATE TABLE releases
+(
+    groupId             VARCHAR NOT NULL,
+    artifactId          VARCHAR NOT NULL,
+    version             VARCHAR NOT NULL,
+    organization        VARCHAR NOT NULL,
+    repository          VARCHAR NOT NULL,
+    artifact            VARCHAR NOT NULL,
+    target              VARCHAR,
+    description         VARCHAR,
+    released            VARCHAR,
+    licenses            VARCHAR,
+    isNonStandardLib    BOOLEAN NOT NULL,
+    PRIMARY KEY (groupId, artifactId, version)
+)

@@ -1,12 +1,21 @@
 package ch.epfl.scala.utils
 
 import cats.effect.{ContextShift, IO}
+import ch.epfl.scala.index.model.{License, SemanticVersion}
 import ch.epfl.scala.index.model.misc.{GithubContributor, GithubIssue, Url}
-import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
+import ch.epfl.scala.index.model.release.ScalaTarget
+import ch.epfl.scala.index.newModel.NewProject.{
+  DocumentationLink,
+  Organization,
+  Repository
+}
+import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.services.storage.sql.DbConf
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import doobie._
 import doobie.implicits._
+import doobie.util.Write
 import doobie.util.fragment.Fragment
 import doobie.util.meta.Meta
 import org.flywaydb.core.Flyway
@@ -96,10 +105,52 @@ object DoobieUtils {
         deriveEncoder[DocumentationLink]
       stringMeta.timap(fromJson[List[DocumentationLink]](_).get)(toJson(_))
     }
-    implicit val topicsMeta: Meta[Set[String]] =
+    implicit val topicsMeta: Meta[Set[String]] = {
       stringMeta.timap(_.split(",").filter(_.nonEmpty).toSet)(
         _.mkString(",")
       )
+    }
+    implicit val semanticVersionMeta: Meta[SemanticVersion] =
+      stringMeta.timap(SemanticVersion.tryParse(_).get)(_.toString)
+    implicit val scalaTargetMeta: Meta[ScalaTarget] =
+      stringMeta.timap(ScalaTarget.parse(_).get)(_.render)
+    implicit val licensesMeta: Meta[Set[License]] = {
+      implicit val licenseDecoder: Decoder[License] =
+        deriveDecoder[License]
+      implicit val licenseEncoder: Encoder[License] =
+        deriveEncoder[License]
+      stringMeta.timap(fromJson[List[License]](_).get.toSet)(toJson(_))
+    }
+    implicit val newReleaseMeta: Write[NewRelease] =
+      Write[
+        (
+            String,
+            String,
+            SemanticVersion,
+            Organization,
+            Repository,
+            ArtifactName,
+            Option[ScalaTarget],
+            Option[String],
+            Option[String],
+            Set[License],
+            Boolean
+        )
+      ].contramap { r =>
+        (
+          r.maven.groupId,
+          r.maven.artifactId,
+          r.version,
+          r.organization,
+          r.repository,
+          r.artifact,
+          r.target,
+          r.description,
+          r.released,
+          r.licenses,
+          r.isNonStandardLib
+        )
+      }
 
     private def toJson[A](v: A)(implicit e: Encoder[A]): String =
       e.apply(v).noSpaces
