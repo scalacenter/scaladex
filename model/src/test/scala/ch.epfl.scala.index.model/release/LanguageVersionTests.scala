@@ -1,9 +1,9 @@
 package ch.epfl.scala.index.model.release
 
-import org.scalatest.FunSpec
-import org.scalatest.Matchers
+import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class LanguageVersionTests extends FunSpec with Matchers {
+class LanguageVersionTests extends AsyncFunSpec with Matchers {
   describe("Scala3Version") {
     it("should accept version 3") {
       assert(Scala3Version.isValid(MajorBinary(3)))

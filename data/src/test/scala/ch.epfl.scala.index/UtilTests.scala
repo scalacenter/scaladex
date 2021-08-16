@@ -2,9 +2,8 @@ package ch.epfl.scala.index
 package data
 package project
 
-import org.scalatest._
-
-class UtilTests extends FunSpec {
+import org.scalatest.funspec.AsyncFunSpec
+class UtilTests extends AsyncFunSpec {
   private val empty = Map.empty[String, String]
 
   describe("innerJoin") {
