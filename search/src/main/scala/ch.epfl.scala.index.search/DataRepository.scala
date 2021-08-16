@@ -247,7 +247,7 @@ class DataRepository(
       termQuery("reference.repository", project.repository)
     )
 
-    val request = search(releaseIndex).query(query).size(5000)
+    val request = search(releaseIndex).query(query).size(10000)
 
     esClient
       .execute(request)
