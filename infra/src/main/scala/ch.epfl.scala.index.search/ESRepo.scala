@@ -247,7 +247,7 @@ class ESRepo(
       termQuery("reference.repository", project.repository)
     )
 
-    val request = search(releaseIndex).query(query).size(5000)
+    val request = search(releaseIndex).query(query).size(10000)
 
     esClient
       .execute(request)
@@ -738,20 +738,20 @@ object ESRepo extends LazyLogging with SearchProtocol {
   private def targetQuery(target: ScalaTarget): Query = {
     target match {
       case ScalaJvm(scalaVersion) =>
-        termQuery("scalaVersion", scalaVersion.toString)
+        termQuery("scalaVersion", scalaVersion.family)
       case ScalaJs(scalaVersion, jsVersion) =>
         must(
-          termQuery("scalaVersion", scalaVersion.toString),
+          termQuery("scalaVersion", scalaVersion.family),
           termQuery("scalaJsVersion", jsVersion.toString)
         )
       case ScalaNative(scalaVersion, nativeVersion) =>
         must(
-          termQuery("scalaVersion", scalaVersion.toString),
+          termQuery("scalaVersion", scalaVersion.family),
           termQuery("scalaNativeVersion", nativeVersion.toString)
         )
       case SbtPlugin(scalaVersion, sbtVersion) =>
         must(
-          termQuery("scalaVersion", scalaVersion.toString),
+          termQuery("scalaVersion", scalaVersion.family),
           termQuery("sbtVersion", sbtVersion.toString)
         )
     }
