@@ -41,16 +41,7 @@ object SearchApi {
       artifactId: String,
       version: String
   )
-}
-
-class SearchApi(
-    dataRepository: ESRepo,
-    session: GithubUserSession
-)(implicit val executionContext: ExecutionContext)
-    extends PlayJsonSupport {
-  import session.implicits._
-
-  private def parseScalaTarget(
+  private[api] def parseScalaTarget(
       targetType: Option[String],
       scalaVersion: Option[String],
       scalaJsVersion: Option[String],
@@ -86,6 +77,14 @@ class SearchApi(
       case _ => None
     }
   }
+}
+
+class SearchApi(
+    dataRepository: ESRepo,
+    session: GithubUserSession
+)(implicit val executionContext: ExecutionContext)
+    extends PlayJsonSupport {
+  import session.implicits._
 
   val routes: Route =
     pathPrefix("api") {
@@ -116,7 +115,7 @@ class SearchApi(
                   sbtVersion,
                   cli
               ) =>
-                val scalaTarget = parseScalaTarget(
+                val scalaTarget = SearchApi.parseScalaTarget(
                   Some(targetType),
                   Some(scalaVersion),
                   scalaJsVersion,
@@ -182,7 +181,7 @@ class SearchApi(
                     sbtVersion
                 ) =>
                   val reference = Project.Reference(organization, repository)
-                  val scalaTarget = parseScalaTarget(
+                  val scalaTarget = SearchApi.parseScalaTarget(
                     targetType,
                     scalaVersion,
                     scalaJsVersion,

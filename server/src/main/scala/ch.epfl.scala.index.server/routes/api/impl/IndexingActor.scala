@@ -153,7 +153,7 @@ class IndexingActor(
               s"Failed adding the ${dependencies.size} dependencies of ${release.maven}"
             )
           } else {
-            log.error(
+            log.info(
               s"Added ${dependencies.size} dependencies of ${release.maven}"
             )
           }

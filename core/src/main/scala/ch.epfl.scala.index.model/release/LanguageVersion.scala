@@ -37,10 +37,8 @@ final case class ScalaVersion(version: BinaryVersion) extends LanguageVersion {
 final case class Scala3Version(version: BinaryVersion) extends LanguageVersion {
   def family = "scala3"
   def render: String = version match {
-    case MajorBinary(major) => s"scala $major"
-    case MinorBinary(major, minor) if major == 0 && minor < 30 =>
-      s"dotty $version"
-    case PreReleaseBinary(major, _, _, _) if major == 3 => s"scala $toString"
+    case MajorBinary(3) => s"scala 3"
+    case PreReleaseBinary(3, _, _, _) => s"scala $toString"
     case _ => toString()
   }
   def isValid: Boolean = Scala3Version.isValid(version)
