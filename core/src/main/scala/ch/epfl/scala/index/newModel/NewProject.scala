@@ -4,9 +4,10 @@ import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.newModel.NewProject._
 
+// TODO: document NewProject fields
 case class NewProject(
-    organization: String,
-    repository: String,
+    organization: Organization,
+    repository: Repository,
     githubInfo: Option[GithubInfo],
     defaultStableVersion: Boolean,
     defaultArtifact: Option[String],
@@ -22,15 +23,16 @@ case class NewProject(
 ) {
 
   val formData: NewProject.FormData = NewProject.FormData.apply(this)
-  val reference: Project.Reference = Project.Reference(organization, repository)
+  val reference: Project.Reference =
+    Project.Reference(organization.value, repository.value)
   val hasCli: Boolean = cliArtifacts.nonEmpty
 }
 
 object NewProject {
   def defaultProject(org: String, repo: String): NewProject =
     NewProject(
-      org,
-      repository = repo,
+      Organization(org),
+      repository = Repository(repo),
       githubInfo = None,
       defaultStableVersion = true,
       defaultArtifact = None,
@@ -58,6 +60,9 @@ object NewProject {
       primaryTopic: Option[String]
   )
 
+  case class Organization(value: String) extends AnyVal
+  case class Repository(value: String) extends AnyVal
+
   object FormData {
     def apply(p: NewProject): FormData =
       FormData(
@@ -80,8 +85,8 @@ object NewProject {
       DocumentationLink(label, link)
     }
     NewProject(
-      organization = p.organization,
-      repository = p.repository,
+      organization = Organization(p.organization),
+      repository = Repository(p.repository),
       githubInfo = p.github,
       defaultStableVersion = p.defaultStableVersion,
       defaultArtifact = p.defaultArtifact,

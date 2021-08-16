@@ -60,4 +60,8 @@ class ScalaTargetTests
     ScalaTargetType.ofName("Js").value shouldBe Js
     ScalaTargetType.ofName("Jvm").value shouldBe Jvm
   }
+  it("Should encode and parse a ScalaTarget") {
+    val st = ScalaJs(ScalaVersion.`2.10`, PatchBinary(0, 6, 7))
+    assert(ScalaTarget.parse(st.encode).get == st)
+  }
 }

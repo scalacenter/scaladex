@@ -21,6 +21,7 @@ import ch.epfl.scala.index.data.maven.DownloadParentPoms
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.project.ProjectConvert
 import ch.epfl.scala.index.data.util.PidLock
+import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.storage.sql.DbConf
 import ch.epfl.scala.services.storage.sql.SqlRepo
@@ -215,13 +216,17 @@ object Main extends LazyLogging {
         for {
           _ <- seed.insertES(project, releases, dependencies)
           _ <- db.insertProject(project)
+          _ <- db.insertReleases(releases.map(NewRelease.from))
         } yield ()
+        ()
       }
       numberOfIndexedProjects <- db.countProjects()
       countGithubInfo <- db.countGithubInfo()
+      countReleases <- db.countReleases()
     } yield {
       logger.info(s"$numberOfIndexedProjects projects have been indexed")
       logger.info(s"$countGithubInfo countGithubInfo have been indexed")
+      logger.info(s"$countReleases release have been indexed")
       numberOfIndexedProjects
     }
   }
