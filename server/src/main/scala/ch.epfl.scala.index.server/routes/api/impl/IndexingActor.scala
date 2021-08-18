@@ -19,7 +19,7 @@ import ch.epfl.scala.index.data.project.ProjectConvert
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.Release
 import ch.epfl.scala.index.model.misc.GithubRepo
-import ch.epfl.scala.index.model.release.ScalaDependency
+import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.index.search.ESRepo
 import org.slf4j.LoggerFactory
 
@@ -88,20 +88,20 @@ class IndexingActor(
     ): Future[Unit] = {
 
       val converter = new ProjectConvert(paths, githubDownload)
-
-      converter
+      val (projectWithReleases, dependencies) = converter
         .convertAll(
           List((pom, localRepository, data.hash)),
           project.map(p => p.reference -> releases).toMap
         )
+      projectWithReleases
         .nextOption() match {
-        case Some((newProject, newReleases, dependencies)) =>
+        case Some((newProject, newReleases)) =>
           createOrUpdateProjectReleases(
             project,
             newProject,
             releases,
             newReleases,
-            dependencies
+            dependencies // Todo: Wrong
           )
         case None =>
           Future.successful(
@@ -122,7 +122,7 @@ class IndexingActor(
       newProject: Project,
       releases: Seq[Release],
       newReleases: Seq[Release],
-      dependencies: Seq[ScalaDependency]
+      dependencies: Seq[NewDependency]
   ): Future[Unit] = {
     val projectUpdate = project match {
       case Some(project) =>
@@ -142,7 +142,9 @@ class IndexingActor(
         log.info(s"Adding release ${release.maven}")
         for {
           _ <- dataRepository.insertRelease(release.copy(liveData = true))
-          items <- dataRepository.insertDependencies(dependencies)
+          items <- dataRepository.insertDependencies(
+            Seq()
+          ) // todo: db.insertDependencies
         } yield {
           val failures = items.filter(_.status > 300)
           if (failures.nonEmpty) {

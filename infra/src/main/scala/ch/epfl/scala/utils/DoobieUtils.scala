@@ -9,7 +9,7 @@ import ch.epfl.scala.index.newModel.NewProject.{
   Organization,
   Repository
 }
-import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.{NewDependency, NewRelease}
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.services.storage.sql.DbConf
 import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
@@ -121,7 +121,7 @@ object DoobieUtils {
         deriveEncoder[License]
       stringMeta.timap(fromJson[List[License]](_).get.toSet)(toJson(_))
     }
-    implicit val newReleaseMeta: Write[NewRelease] =
+    implicit val releaseWriter: Write[NewRelease] =
       Write[
         (
             String,
@@ -152,6 +152,19 @@ object DoobieUtils {
         )
       }
 
+    implicit val dependencyWriter: Write[NewDependency] =
+      Write[(String, String, String, String, String, String, Option[String])]
+        .contramap { d =>
+          (
+            d.source.groupId,
+            d.source.artifactId,
+            d.source.version,
+            d.target.groupId,
+            d.target.artifactId,
+            d.target.version,
+            d.scope
+          )
+        }
     private def toJson[A](v: A)(implicit e: Encoder[A]): String =
       e.apply(v).noSpaces
 

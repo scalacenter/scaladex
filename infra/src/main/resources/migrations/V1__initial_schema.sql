@@ -43,8 +43,7 @@ CREATE TABLE github_info (
     PRIMARY KEY (organization, repository)
 );
 
-CREATE TABLE releases
-(
+CREATE TABLE releases (
     groupId             VARCHAR NOT NULL,
     artifactId          VARCHAR NOT NULL,
     version             VARCHAR NOT NULL,
@@ -57,4 +56,15 @@ CREATE TABLE releases
     licenses            VARCHAR,
     isNonStandardLib    BOOLEAN NOT NULL,
     PRIMARY KEY (groupId, artifactId, version)
+);
+
+CREATE TABLE dependencies (
+    source_groupId             VARCHAR NOT NULL,
+    source_artifactId          VARCHAR NOT NULL,
+    source_version             VARCHAR NOT NULL,
+    target_groupId             VARCHAR NOT NULL,
+    target_artifactId          VARCHAR NOT NULL,
+    target_version             VARCHAR NOT NULL,
+    scope                      VARCHAR,
+    PRIMARY KEY (source_groupId, source_artifactId, source_version, target_groupId, target_artifactId, target_version, scope)
 )

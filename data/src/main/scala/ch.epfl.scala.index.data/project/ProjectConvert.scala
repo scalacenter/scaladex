@@ -11,6 +11,7 @@ import ch.epfl.scala.index.data.project.ProjectConvert.ProjectSeed
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
+import ch.epfl.scala.index.newModel.NewDependency
 import com.github.nscala_time.time.Imports._
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
@@ -29,7 +30,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
   def convertAll(
       pomsRepoSha: Iterable[(ReleaseModel, LocalRepository, String)],
       indexedReleases: Map[Project.Reference, Seq[Release]]
-  ): Iterator[(Project, Seq[Release], Seq[ScalaDependency])] = {
+  ): (Iterator[(Project, Seq[Release])], Seq[NewDependency]) = {
 
     val githubRepoExtractor = new GithubRepoExtractor(paths)
 
@@ -54,9 +55,6 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
     log.info("Convert POMs to Project")
     val licenseCleanup = new LicenseCleanup(paths)
-
-    def pomToMavenReference(pom: maven.ReleaseModel) =
-      MavenReference(pom.groupId, pom.artifactId, pom.version)
 
     def maxMinRelease(
         releases: Seq[Release]
@@ -119,7 +117,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
             }
 
             Release(
-              maven = pomToMavenReference(pom),
+              maven = pom.mavenRef,
               reference = Release.Reference(
                 organization,
                 repository,
@@ -178,82 +176,42 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
         (seed, allReleases)
       }
 
-    log.info("Dependencies & Reverse Dependencies")
-
-    val mavenReferenceToReleaseReference =
-      projectsAndReleases.iterator
-        .flatMap { case (_, releases) => releases }
-        .map(release => (release.maven, release.reference))
-        .toMap
-
-    def dependencyToMaven(dependency: maven.Dependency) =
-      MavenReference(
-        dependency.groupId,
-        dependency.artifactId,
-        dependency.version
-      )
-
+    log.info("Dependencies")
     val poms = pomsAndMetaClean.map { case (_, _, _, pom, _, _, _, _) => pom }
 
-    val allDependencies: Seq[Dependency] = poms.flatMap { pom =>
-      val pomMavenRef = pomToMavenReference(pom)
-      mavenReferenceToReleaseReference.get(pomMavenRef) match {
-        case None => Seq()
-        case Some(pomRef) =>
-          pom.dependencies.map { dep =>
-            val depMavenRef = dependencyToMaven(dep)
-            mavenReferenceToReleaseReference.get(depMavenRef) match {
-              case None => JavaDependency(pomRef, depMavenRef, dep.scope)
-              case Some(depRef) => ScalaDependency(pomRef, depRef, dep.scope)
-            }
-          }
-      }
+    val allDependencies: Seq[NewDependency] = poms.flatMap { pom =>
+      val pomMavenRef = pom.mavenRef
+      pom.dependencies.map(dep =>
+        NewDependency(pomMavenRef, dep.mavenRef, dep.scope)
+      )
+    }.distinct
+
+    val projectAndReleases = projectsAndReleases.iterator.map {
+      case (seed, releases) =>
+        val releasesWithDependencies =
+          releases // todo: we will use soon NewRelase which doenst contain dependencies
+
+        val project =
+          seed.toProject(
+            targetType = releases.map(_.targetType).distinct.toList,
+            scalaVersion = releases.flatMap(_.scalaVersion).distinct.toList,
+            scalaJsVersion = releases.flatMap(_.scalaJsVersion).distinct.toList,
+            scalaNativeVersion =
+              releases.flatMap(_.scalaNativeVersion).distinct.toList,
+            sbtVersion = releases.flatMap(_.sbtVersion).distinct.toList,
+            dependencies = Set(), // todo: Remove
+            dependentCount =
+              0 // dependentCountByProject.getOrElse(seed.reference, 0): should be computed using the database
+          )
+
+        val updatedProject = storedProjects
+          .get(project.reference)
+          .map(_.update(project, paths, githubDownload, fromStored = true))
+          .getOrElse(project)
+
+        (updatedProject, releasesWithDependencies)
     }
-
-    val dependenciesByProject =
-      allDependencies.groupBy(d => d.dependent.projectReference)
-    val dependentCountByProject = allDependencies
-      .collect { case d: ScalaDependency => d }
-      .groupBy(d => d.target.projectReference)
-      .view
-      .mapValues(_.map(_.dependent.projectReference).distinct.size)
-
-    projectsAndReleases.iterator.map { case (seed, releases) =>
-      val projectDependencies =
-        dependenciesByProject.getOrElse(seed.reference, Seq())
-      val scalaDependencies = projectDependencies.collect {
-        case d: ScalaDependency => d
-      }
-      val javaDependenciesByRelease = projectDependencies
-        .collect { case d: JavaDependency => d }
-        .groupBy(d => d.dependent)
-
-      val releasesWithDependencies = releases.map { release =>
-        release.copy(
-          javaDependencies =
-            javaDependenciesByRelease.getOrElse(release.reference, Seq())
-        )
-      }
-
-      val project =
-        seed.toProject(
-          targetType = releases.map(_.targetType).distinct.toList,
-          scalaVersion = releases.flatMap(_.scalaVersion).distinct.toList,
-          scalaJsVersion = releases.flatMap(_.scalaJsVersion).distinct.toList,
-          scalaNativeVersion =
-            releases.flatMap(_.scalaNativeVersion).distinct.toList,
-          sbtVersion = releases.flatMap(_.sbtVersion).distinct.toList,
-          dependencies = scalaDependencies.map(d => d.target.name).toSet,
-          dependentCount = dependentCountByProject.getOrElse(seed.reference, 0)
-        )
-
-      val updatedProject = storedProjects
-        .get(project.reference)
-        .map(_.update(project, paths, githubDownload, fromStored = true))
-        .getOrElse(project)
-
-      (updatedProject, releasesWithDependencies, scalaDependencies)
-    }
+    (projectAndReleases, allDependencies)
   }
 }
 

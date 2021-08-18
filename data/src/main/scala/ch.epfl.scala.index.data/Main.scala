@@ -199,7 +199,7 @@ object Main extends LazyLogging {
 
     //convert data
     val projectConverter = new ProjectConvert(dataPaths, githubDownload)
-    val allData =
+    val (allData, dependencies) =
       projectConverter.convertAll(PomsReader.loadAll(dataPaths), Map())
 
     logger.info("Start cleaning both ES and PostgreSQL")
@@ -212,21 +212,24 @@ object Main extends LazyLogging {
     // insertData
     for {
       _ <- cleaning
-      _ = allData.foreach { case (project, releases, dependencies) =>
+      _ = allData.foreach { case (project, releases) =>
         for {
-          _ <- seed.insertES(project, releases, dependencies)
+          _ <- seed.insertES(project, releases)
           _ <- db.insertProject(project)
           _ <- db.insertReleases(releases.map(NewRelease.from))
         } yield ()
-        ()
       }
+      // Todo: don't insert everything at the same time
+      _ <- db.insertDependencies(dependencies)
       numberOfIndexedProjects <- db.countProjects()
       countGithubInfo <- db.countGithubInfo()
       countReleases <- db.countReleases()
+      countDependencies <- db.countDependencies()
     } yield {
       logger.info(s"$numberOfIndexedProjects projects have been indexed")
       logger.info(s"$countGithubInfo countGithubInfo have been indexed")
       logger.info(s"$countReleases release have been indexed")
+      logger.info(s"$countDependencies dependencies have been indexed")
       numberOfIndexedProjects
     }
   }
