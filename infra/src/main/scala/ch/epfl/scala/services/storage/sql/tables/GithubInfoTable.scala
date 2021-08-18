@@ -2,7 +2,6 @@ package ch.epfl.scala.services.storage.sql.tables
 
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.services.storage.sql.tables.ProjectTable.tableFr
 import ch.epfl.scala.utils.DoobieUtils.Fragments._
 import doobie.implicits._
 import doobie.util.fragment.Fragment

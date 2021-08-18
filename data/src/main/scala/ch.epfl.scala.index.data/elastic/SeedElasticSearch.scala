@@ -5,7 +5,6 @@ import scala.concurrent.Future
 
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.Release
-import ch.epfl.scala.index.model.release.ScalaDependency
 import ch.epfl.scala.index.search.ESRepo
 import com.typesafe.scalalogging.LazyLogging
 
@@ -25,20 +24,17 @@ class SeedElasticSearch(
 
   def insertES(
       project: Project,
-      releases: Seq[Release],
-      dependencies: Seq[ScalaDependency]
+      releases: Seq[Release]
   ): Future[Project.Reference] = {
     logger.info(s"indexing ${project.reference}")
     val projectF = dataRepository.insertProject(project)
     val releasesF = dataRepository.insertReleases(releases)
-    val dependenciesF = dataRepository.insertDependencies(dependencies)
     for {
       _ <- projectF
       releasesResult <- releasesF
-      dependenciesResult <- dependenciesF
     } yield {
       val failures =
-        (releasesResult ++ dependenciesResult).filter(_.status >= 300)
+        (releasesResult).filter(_.status >= 300)
       if (failures.nonEmpty) {
         logger.error(s"indexing projects ${project.reference} failed")
         failures.foreach(

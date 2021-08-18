@@ -4,9 +4,10 @@ import cats.effect.{IO, Resource}
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubInfo
 import doobie.implicits._
-import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
+import ch.epfl.scala.index.newModel.{NewDependency, NewProject, NewRelease}
 import ch.epfl.scala.services.DatabaseApi
 import ch.epfl.scala.services.storage.sql.tables.{
+  DependenciesTable,
   GithubInfoTable,
   ProjectTable,
   ReleaseTable
@@ -30,20 +31,26 @@ class SqlRepo(conf: DbConf) extends DatabaseApi {
     } yield p
   }
 
+  def insertProject(project: Project): Future[NewProject] =
+    insertProject(NewProject.from(project))
+
   override def insertReleases(releases: Seq[NewRelease]): Future[Int] =
     run(ReleaseTable.insertMany(releases))
 
   def insertRelease(release: NewRelease): Future[NewRelease] =
     run(ReleaseTable.insert, release)
 
-  def insertProject(project: Project): Future[NewProject] =
-    insertProject(NewProject.from(project))
+  override def insertDependencies(deps: Seq[NewDependency]): Future[Int] =
+    run(DependenciesTable.insertMany(deps))
 
   override def countProjects(): Future[Long] =
     run(ProjectTable.indexedProjects().unique)
 
   override def countReleases(): Future[Long] =
     run(ReleaseTable.indexedReleased().unique)
+
+  override def countDependencies(): Future[Long] =
+    run(DependenciesTable.indexedDependencies().unique)
 
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.indexedGithubInfo().unique)
