@@ -12,7 +12,7 @@ import ch.epfl.scala.index.model.release.MavenReference
 case class NewDependency(
     source: MavenReference,
     target: MavenReference,
-    scope: Option[String]
+    scope: String
 )
 
 object NewDependency {}

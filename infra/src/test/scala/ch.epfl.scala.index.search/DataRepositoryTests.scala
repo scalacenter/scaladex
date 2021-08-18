@@ -1,16 +1,17 @@
 package ch.epfl.scala.index.search
 
-import ch.epfl.scala.index.model.misc.SearchParams
-import org.scalatest._
-
 import scala.concurrent.ExecutionContext
-import ch.epfl.scala.index.model.release.ScalaJvm
-import ch.epfl.scala.index.model.release.Scala3Version
+
+import ch.epfl.scala.index.model.misc.SearchParams
 import ch.epfl.scala.index.model.release.MajorBinary
+import ch.epfl.scala.index.model.release.Scala3Version
+import ch.epfl.scala.index.model.release.ScalaJvm
+import org.scalatest._
 import org.scalatest.funsuite.AsyncFunSuite
 
 class DataRepositoryTests extends AsyncFunSuite with BeforeAndAfterAll {
-  implicit override val executionContext = ExecutionContext.Implicits.global
+  implicit override val executionContext: ExecutionContext =
+    ExecutionContext.Implicits.global
 
   private val data = ESRepo.open()
   data.waitUntilReady()

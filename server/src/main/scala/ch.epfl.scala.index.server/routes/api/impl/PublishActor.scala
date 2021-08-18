@@ -11,14 +11,17 @@ import akka.actor.Actor
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.search.ESRepo
+import ch.epfl.scala.services.DatabaseApi
 
 class PublishActor(
     paths: DataPaths,
     dataRepository: ESRepo,
+    db: DatabaseApi,
     implicit val system: ActorSystem
 ) extends Actor {
 
-  private val publishProcess = new impl.PublishProcess(paths, dataRepository)
+  private val publishProcess =
+    new impl.PublishProcess(paths, dataRepository, db)
 
   def receive: PartialFunction[Any, Unit] = {
     case publishData: PublishData => {

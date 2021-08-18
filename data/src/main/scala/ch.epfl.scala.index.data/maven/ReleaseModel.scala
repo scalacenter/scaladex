@@ -35,6 +35,9 @@ case class ReleaseModel(
 ) {
   val mavenRef: MavenReference =
     MavenReference(groupId, artifactId, version)
+
+  private val packagingOfInterest = Set("aar", "jar", "bundle", "pom")
+  val isPackagingOfInterest: Boolean = packagingOfInterest.contains(packaging)
 }
 
 case class SbtPluginTarget(scalaVersion: String, sbtVersion: String)

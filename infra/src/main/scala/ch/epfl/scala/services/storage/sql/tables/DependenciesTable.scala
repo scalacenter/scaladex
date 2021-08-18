@@ -1,8 +1,8 @@
 package ch.epfl.scala.services.storage.sql.tables
 
 import ch.epfl.scala.index.newModel.NewDependency
-import ch.epfl.scala.services.storage.sql.tables.ReleaseTable.tableFr
-import ch.epfl.scala.utils.DoobieUtils.Fragments.{buildInsert, buildSelect}
+import ch.epfl.scala.utils.DoobieUtils.Fragments.buildInsert
+import ch.epfl.scala.utils.DoobieUtils.Fragments.buildSelect
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
 import doobie.implicits._
 import doobie.util.fragment.Fragment

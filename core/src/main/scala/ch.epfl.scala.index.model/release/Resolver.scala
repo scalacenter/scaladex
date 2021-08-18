@@ -28,3 +28,11 @@ case object UserPublished extends Resolver {
   def url = None
   def sbt = None
 }
+object Resolver {
+  def from(name: String): Option[Resolver] = name match {
+    case "Bintray's JCenter" => Some(JCenter)
+    case s"Bintray $owner $repo" => Some(BintrayResolver(owner, repo))
+    case "User Published" => Some(UserPublished)
+    case _ => None
+  }
+}

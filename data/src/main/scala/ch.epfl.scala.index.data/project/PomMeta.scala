@@ -2,6 +2,9 @@ package ch.epfl.scala.index
 package data
 package project
 
+import ch.epfl.scala.index.data.LocalPomRepository.Bintray
+import ch.epfl.scala.index.data.LocalPomRepository.MavenCentral
+import ch.epfl.scala.index.data.LocalPomRepository.UserProvided
 import ch.epfl.scala.index.data.LocalRepository._
 import ch.epfl.scala.index.data.bintray._
 import ch.epfl.scala.index.data.maven.ReleaseModel
@@ -48,34 +51,18 @@ object PomMeta {
           _.head.created
         ) // Note: This is inefficient because we already loaded the data earlier and discarded the creation time
 
-    val packagingOfInterest = Set("aar", "jar", "bundle", "pom")
-
-    val typesafeNonOSS = Set(
-      "for-subscribers-only",
-      "instrumented-reactive-platform",
-      "subscribers-early-access",
-      "maven-releases" // too much noise
-    )
-
     def created(metas: List[DateTime]): Option[String] =
       metas.sorted.headOption.map(format.print)
 
     pomsRepoSha.iterator
-      .filter { case (pom, _, _) =>
-        packagingOfInterest.contains(pom.packaging)
-      }
+      .filter { case (pom, _, _) => pom.isPackagingOfInterest }
       .flatMap {
         case (pom, repo, sha1) => {
           repo match {
             case Bintray => {
               bintray.get(sha1) match {
                 case Some(metas) =>
-                  def isTypesafeNonOSS(meta: BintraySearch): Boolean = {
-                    meta.owner == "typesafe" &&
-                    typesafeNonOSS.contains(meta.repo)
-                  }
-
-                  if (metas.exists(isTypesafeNonOSS)) None
+                  if (metas.exists(_.isTypesafeNonOSS)) None
                   else {
                     val resolver: Option[Resolver] =
                       if (metas.forall(_.isJCenter)) Option(JCenter)
@@ -136,4 +123,46 @@ object PomMeta {
       }
       .toSeq
   }
+
+  def from(
+      pom: ReleaseModel,
+      created: DateTime,
+      localRepository: LocalRepository,
+      paths: DataPaths,
+      sha1: String
+  ): Option[PomMeta] = {
+    val createdString = PomMeta.format.print(created) // todo: keep Datetime
+
+    if (!pom.isPackagingOfInterest) None
+    else {
+      // the only case where resolver has a value is when it's Bintray.
+      // the only case where we don't return a PomMeta, is when it's a typesafe non OSS
+      // this code maybe not needed anymore since bintray don't store anymore projects.
+      localRepository match {
+        case Bintray =>
+          val bintray = BintrayMeta.load(paths).groupBy(_.sha1)
+          bintray.get(sha1) match {
+            case Some(metas) =>
+              if (metas.exists(_.isTypesafeNonOSS)) None
+              else {
+                val resolver =
+                  if (metas.forall(_.isJCenter)) Option(JCenter)
+                  else
+                    metas.headOption.map(meta =>
+                      BintrayResolver(meta.owner, meta.repo)
+                    )
+                Some(PomMeta(pom, Some(createdString), resolver))
+              }
+            case None =>
+              log.info("no meta for pom: " + sha1)
+              Some(PomMeta(pom, Some(createdString), None))
+          }
+        case MavenCentral => Some(PomMeta(pom, Some(createdString), None))
+        case UserProvided => Some(PomMeta(pom, Some(createdString), None))
+        case BintraySbtPlugins => Some(PomMeta(pom, Some(createdString), None))
+      }
+
+    }
+  }
+
 }

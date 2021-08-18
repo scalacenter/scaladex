@@ -26,11 +26,13 @@ import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.Release
 import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.search.ESRepo
+import ch.epfl.scala.services.DatabaseApi
 import org.slf4j.LoggerFactory
 
 private[api] class PublishProcess(
     paths: DataPaths,
-    dataRepository: ESRepo
+    dataRepository: ESRepo,
+    db: DatabaseApi
 )(implicit
     val system: ActorSystem
 ) extends PlayWsDownloader {
@@ -38,7 +40,7 @@ private[api] class PublishProcess(
   import system.dispatcher
   private val log = LoggerFactory.getLogger(getClass)
   private val indexingActor = system.actorOf(
-    Props(classOf[impl.IndexingActor], paths, dataRepository, system)
+    Props(classOf[impl.IndexingActor], paths, dataRepository, db, system)
   )
 
   /**

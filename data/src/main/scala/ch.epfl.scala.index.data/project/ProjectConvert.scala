@@ -12,6 +12,9 @@ import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.newModel.NewDependency
+import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import com.github.nscala_time.time.Imports._
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
@@ -179,12 +182,8 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
     log.info("Dependencies")
     val poms = pomsAndMetaClean.map { case (_, _, _, pom, _, _, _, _) => pom }
 
-    val allDependencies: Seq[NewDependency] = poms.flatMap { pom =>
-      val pomMavenRef = pom.mavenRef
-      pom.dependencies.map(dep =>
-        NewDependency(pomMavenRef, dep.mavenRef, dep.scope)
-      )
-    }.distinct
+    val allDependencies: Seq[NewDependency] =
+      poms.flatMap(getDependencies).distinct
 
     val projectAndReleases = projectsAndReleases.iterator.map {
       case (seed, releases) =>
@@ -212,6 +211,61 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
         (updatedProject, releasesWithDependencies)
     }
     (projectAndReleases, allDependencies)
+  }
+
+  private def getDependencies(pom: ReleaseModel): List[NewDependency] =
+    pom.dependencies
+      .map(dep =>
+        NewDependency(
+          pom.mavenRef,
+          dep.mavenRef,
+          dep.scope.getOrElse("compile")
+        )
+      )
+      .distinct
+
+  def convertOne(
+      pom: ReleaseModel,
+      localRepository: LocalRepository,
+      sha1: String,
+      created: DateTime,
+      githubRepo: GithubRepo,
+      existingProject: Option[NewProject]
+  ): Option[(NewProject, NewRelease, Seq[NewDependency])] = {
+    val pomMetaOpt = PomMeta.from(pom, created, localRepository, paths, sha1)
+    val githubInfo = GithubReader(paths, githubRepo)
+    val licenseCleanup = new LicenseCleanup(paths)
+
+    log.info("Converting the pom to a project/release/dependencies")
+    pomMetaOpt.flatMap { case PomMeta(pom, _, resolver) =>
+      for {
+        artifactMeta <- metaExtractor.extractMeta(pom)
+        version <- SemanticVersion.tryParse(pom.version)
+        project = existingProject
+          .map(_.update(githubInfo))
+          .getOrElse(
+            NewProject.defaultProject(
+              githubRepo.organization,
+              githubRepo.repository,
+              githubInfo
+            )
+          )
+        dependencies = getDependencies(pom)
+        release = NewRelease(
+          pom.mavenRef,
+          version,
+          project.organization,
+          project.repository,
+          ArtifactName(artifactMeta.artifactName),
+          artifactMeta.scalaTarget,
+          pom.description,
+          Some(created),
+          resolver,
+          licenseCleanup(pom),
+          artifactMeta.isNonStandard
+        )
+      } yield (project, release, dependencies)
+    }
   }
 }
 

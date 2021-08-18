@@ -76,6 +76,7 @@ lazy val scaladex = project
     client,
     data,
     core,
+    infra,
     server,
     api.jvm,
     api.js,
@@ -179,7 +180,10 @@ lazy val core = project
   .in(file("core"))
   .settings(commonSettings)
   .settings(
-    libraryDependencies += "com.lihaoyi" %% "fastparse" % "2.3.0"
+    libraryDependencies ++= Seq(
+      "com.lihaoyi" %% "fastparse" % "2.3.0",
+      "joda-time" % "joda-time" % "2.10.10"
+    )
   )
 
 lazy val data = project

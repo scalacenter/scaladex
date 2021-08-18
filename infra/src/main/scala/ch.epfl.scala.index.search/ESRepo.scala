@@ -1,15 +1,15 @@
 package ch.epfl.scala.index.search
 
 import java.io.Closeable
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc.Pagination
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.search.mapping._
-import ch.epfl.scala.services.storage.sql.SqlRepo
 import com.sksamuel.elastic4s.ElasticClient
 import com.sksamuel.elastic4s.ElasticDsl
 import com.sksamuel.elastic4s.ElasticProperties
