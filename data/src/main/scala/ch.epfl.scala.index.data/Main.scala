@@ -57,8 +57,9 @@ object Main extends LazyLogging {
    */
   def run(args: Array[String]): Unit = {
     val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
+    val dbConfig = ConfigFactory.load().getConfig("database")
     val production = config.getBoolean("production")
-    val dbConf = DbConf.from(config.getString("database-url")).get
+    val dbConf = DbConf.from(dbConfig.getString("database-url")).get
     val db = new SqlRepo(dbConf)
 
     if (production) {
