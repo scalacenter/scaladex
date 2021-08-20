@@ -16,12 +16,13 @@ case class ServerConfig(
 object ServerConfig {
   def load(): ServerConfig = {
     val config = ConfigFactory.load().getConfig("org.scala_lang.index.server")
+    val dbConfig = ConfigFactory.load().getConfig("database")
     ServerConfig(
       tempDirPath = config.getString("tempDirPath"),
       production = config.getBoolean("production"),
       oAuth2(config.getConfig("oauth2")),
       SessionConfig.default(config.getString("sesssion-secret")),
-      DbConf.from(config.getString("database-url")).get // can be refactored
+      DbConf.from(dbConfig.getString("database-url")).get // can be refactored
     )
   }
 
