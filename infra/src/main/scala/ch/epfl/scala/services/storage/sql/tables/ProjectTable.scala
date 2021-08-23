@@ -25,6 +25,18 @@ object ProjectTable {
   def insert(elt: NewProject): doobie.Update0 =
     buildInsert(tableFr, fieldsFr, values(elt)).update
 
+  def insertOrUpdate(elt: NewProject): doobie.Update0 = {
+    val onConflict = fr0"organization, repository"
+    val doAction = fr0"NOTHING"
+    buildInsertOrUpdate(
+      tableFr,
+      fieldsFr,
+      values(elt),
+      onConflict,
+      doAction
+    ).update
+  }
+
   def indexedProjects(): doobie.Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]
 
@@ -41,7 +53,7 @@ object ProjectTable {
     buildSelect(
       tableFr,
       fieldsFr,
-      fr0"WHERE organization=$org AND repository=$repo"
+      where(org, repo)
     ).query[NewProject]
 
 }

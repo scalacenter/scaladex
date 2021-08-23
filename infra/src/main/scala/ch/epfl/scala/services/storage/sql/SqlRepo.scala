@@ -32,6 +32,16 @@ class SqlRepo(conf: DbConf) extends DatabaseApi {
     } yield ()
   }
 
+  override def insertOrUpdateProject(project: NewProject): Future[Unit] = {
+    for {
+      _ <- run(ProjectTable.insertOrUpdate, project)
+      _ <- run(ProjectUserFormTable.insertOrUpdate(project), project.formData)
+      _ <- project.githubInfo
+        .map(run(GithubInfoTable.insertOrUpdate(project), _))
+        .getOrElse(Future.successful())
+    } yield ()
+  }
+
   override def findProject(
       projectRef: Project.Reference
   ): Future[Option[NewProject]] =

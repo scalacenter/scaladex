@@ -34,10 +34,24 @@ object ProjectUserFormTable {
       fr0" ${userData.strictVersions}, ${userData.customScalaDoc}, ${userData.documentationLinks}, ${userData.deprecated}, ${userData.contributorsWanted}," ++
       fr0" ${userData.artifactDeprecations}, ${userData.cliArtifacts}, ${userData.primaryTopic}"
 
-  def insert(elt: NewProject)(
+  def insert(p: NewProject)(
       userserData: NewProject.FormData
   ): doobie.Update0 =
-    buildInsert(tableFr, fieldsFr, values(elt, userserData)).update
+    buildInsert(tableFr, fieldsFr, values(p, userserData)).update
+
+  def insertOrUpdate(p: NewProject)(
+      userDataForm: NewProject.FormData
+  ): doobie.Update0 = {
+    val onConflict = fr0"organization, repository"
+    val doAction = fr0"NOTHING"
+    buildInsertOrUpdate(
+      tableFr,
+      fieldsFr,
+      values(p, userDataForm),
+      onConflict,
+      doAction
+    ).update
+  }
 
   def indexedProjects(): doobie.Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]
@@ -58,7 +72,7 @@ object ProjectUserFormTable {
     buildSelect(
       tableFr,
       fieldsFr,
-      fr0"WHERE organization=$org AND repository=$repo"
+      where(org, repo)
     ).query[NewProject.FormData](formDataReader)
 
   val formDataReader: Read[NewProject.FormData] =

@@ -1,6 +1,7 @@
 package ch.epfl.scala.services.storage.sql.tables
 
 import cats.effect.IO
+import ch.epfl.scala.services.storage.sql.Values
 import doobie.scalatest.IOChecker
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AsyncFunSpec
@@ -21,16 +22,20 @@ class ProjectTableTests
 
   describe("ProjectTable") {
     import ProjectTable._
-    describe("insert") {
-      it("should generate the query") {
-        val q = insert(project)
-        check(q)
-        q.sql shouldBe
-          s"""INSERT INTO projects (organization, repository, esId)
-             | VALUES (?, ?, ?)""".stripMargin
-            .filterNot(_ == '\n')
-      }
+    it("should generate insert the query") {
+      val q = insert(project)
+      check(q)
+      q.sql shouldBe
+        s"""INSERT INTO projects (organization, repository, esId)
+           | VALUES (?, ?, ?)""".stripMargin
+          .filterNot(_ == '\n')
+    }
+    it("insert Or Update") {
+      val q = insertOrUpdate(project)
+      q.sql shouldBe
+        s"""INSERT INTO projects (organization, repository, esId)
+           | VALUES (?, ?, ?) ON CONFLICT (organization, repository) DO NOTHING""".stripMargin
+          .filterNot(_ == '\n')
     }
   }
-
 }

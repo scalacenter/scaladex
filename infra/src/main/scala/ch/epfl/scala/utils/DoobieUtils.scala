@@ -78,6 +78,23 @@ object DoobieUtils {
     ): Fragment =
       fr"INSERT INTO" ++ table ++ fr0" (" ++ fields ++ fr0") VALUES (" ++ values ++ fr0")"
 
+    def buildInsertOrUpdate(
+        table: Fragment,
+        fields: Fragment,
+        values: Fragment,
+        onConflictFields: Fragment,
+        action: Fragment
+    ): Fragment =
+      buildInsert(table, fields, values) ++
+        fr" ON CONFLICT" ++ fr0"(" ++ onConflictFields ++ fr")" ++ fr"DO" ++ action
+
+    def buildUpdate(
+        table: Fragment,
+        fields: Fragment,
+        where: Fragment
+    ): Fragment =
+      fr"UPDATE" ++ table ++ fr" SET" ++ fields ++ space ++ where
+
     def buildSelect(table: Fragment, fields: Fragment): Fragment =
       fr"SELECT" ++ fields ++ fr" FROM" ++ table
 
@@ -87,6 +104,9 @@ object DoobieUtils {
         where: Fragment
     ): Fragment =
       buildSelect(table, fields) ++ space ++ where
+
+    def where(org: Organization, repo: Repository): Fragment =
+      fr0"WHERE organization=$org AND repository=$repo"
   }
 
   object Mappings {

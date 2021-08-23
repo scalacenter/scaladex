@@ -53,6 +53,22 @@ object GithubInfoTable {
   def insert(p: NewProject)(elt: GithubInfo): doobie.Update0 =
     buildInsert(tableFr, fieldsFr, values(p, elt)).update
 
+  def insertOrUpdate(p: NewProject)(g: GithubInfo): doobie.Update0 = {
+    val onConflictFields = fr0"organization, repository"
+    val fields = fr0"name=${g.name}, owner=${g.name}, homepage=${g.homepage}, description=${g.description}, logo=${g.logo}," ++
+      fr0" stars=${g.stars}, forks=${g.forks}, watchers=${g.watchers}, issues=${g.issues}, readme=${g.readme}, contributors=${g.contributors}" ++
+      fr0" contributorCount=${g.contributorCount}, commits=${g.commits}, topics=${g.topics}, contributingGuide=${g.contributingGuide}," ++
+      fr0" codeOfConduct=${g.codeOfConduct}, chatroom=${g.chatroom}"
+    val updateAction = fr"UPDATE SET" ++ fields
+    buildInsertOrUpdate(
+      tableFr,
+      fieldsFr,
+      values(p, g),
+      onConflictFields,
+      updateAction
+    ).update
+  }
+
   def selectOne(
       org: Organization,
       repo: Repository
@@ -66,7 +82,7 @@ object GithubInfoTable {
     buildSelect(
       tableFr,
       fieldsFr,
-      fr0"WHERE organization=$org AND repository=$repo"
+      where(org, repo)
     ).query[GithubInfo](githubInfoReader)
 
   val githubInfoReader: Read[GithubInfo] =
@@ -76,5 +92,4 @@ object GithubInfoTable {
 
   def indexedGithubInfo(): doobie.Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]
-
 }

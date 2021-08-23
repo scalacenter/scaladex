@@ -9,6 +9,7 @@ import ch.epfl.scala.index.newModel.NewRelease
 
 trait DatabaseApi {
   def insertProject(p: NewProject): Future[Unit]
+  def insertOrUpdateProject(p: NewProject): Future[Unit]
   def findProject(projectRef: Project.Reference): Future[Option[NewProject]]
   def insertReleases(r: Seq[NewRelease]): Future[Int]
   def insertDependencies(dependencies: Seq[NewDependency]): Future[Int]
