@@ -93,9 +93,13 @@ class IndexingActor(
       _ = converted
         .map { case (p, r, d) =>
           for {
-            _ <- db.insertProject(p)
-            _ <- db.insertReleases(Seq(r))
-            _ <- db.insertDependencies(d)
+            _ <- db.insertOrUpdateProject(p)
+            _ <- db.insertReleases(
+              Seq(r)
+            ) // todo: filter already existing releases , to only update them
+            _ <- db.insertDependencies(
+              d
+            ) // todo: filter already existing dependencies , to only update them
             _ = log.info(s"${pom.mavenRef.name} has been inserted")
           } yield ()
         }

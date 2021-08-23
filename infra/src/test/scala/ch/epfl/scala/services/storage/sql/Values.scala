@@ -1,4 +1,4 @@
-package ch.epfl.scala.services.storage.sql.tables
+package ch.epfl.scala.services.storage.sql
 
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubInfo
@@ -10,7 +10,6 @@ import ch.epfl.scala.index.newModel.NewProject.Repository
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.services.storage.sql.DbConf.H2
-import ch.epfl.scala.services.storage.sql.SqlRepo
 
 object Values {
   val dbConf: H2 = H2(

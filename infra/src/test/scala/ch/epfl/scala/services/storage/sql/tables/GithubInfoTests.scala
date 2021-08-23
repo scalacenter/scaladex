@@ -1,6 +1,7 @@
 package ch.epfl.scala.services.storage.sql.tables
 
 import cats.effect.IO
+import ch.epfl.scala.services.storage.sql.Values
 import doobie.scalatest.IOChecker
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AsyncFunSpec
@@ -22,18 +23,29 @@ class GithubInfoTests
 
   describe("ProjectTable") {
     import GithubInfoTable._
-    describe("insert") {
-      it("should generate the query") {
-        val q = insert(project)(emptyGithubInfo)
+    it("should generate the insert the query") {
+      val q = insert(project)(emptyGithubInfo)
 //        check(q)
-        q.sql shouldBe s"""INSERT INTO github_info (organization, repository, name, owner,
-                          | homepage, description, logo, stars, forks, watchers, issues, readme,
-                          | contributors, contributorCount, commits, topics, contributingGuide,
-                          | codeOfConduct, chatroom, beginnerIssuesLabel, beginnerIssues,
-                          | selectedBeginnerIssues, filteredBeginnerIssues) VALUES (?, ?, ?, ?,
-                          | ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
-          .filterNot(_ == '\n')
-      }
+      q.sql shouldBe s"""INSERT INTO github_info (organization, repository, name, owner,
+                        | homepage, description, logo, stars, forks, watchers, issues, readme,
+                        | contributors, contributorCount, commits, topics, contributingGuide,
+                        | codeOfConduct, chatroom, beginnerIssuesLabel, beginnerIssues,
+                        | selectedBeginnerIssues, filteredBeginnerIssues) VALUES (?, ?, ?, ?,
+                        | ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
+        .filterNot(_ == '\n')
+    }
+    it("should generate the insert or update query") {
+      val q = insertOrUpdate(project)(emptyGithubInfo)
+      q.sql shouldBe s"""INSERT INTO github_info (organization, repository, name, owner,
+                        | homepage, description, logo, stars, forks, watchers, issues, readme,
+                        | contributors, contributorCount, commits, topics, contributingGuide,
+                        | codeOfConduct, chatroom, beginnerIssuesLabel, beginnerIssues,
+                        | selectedBeginnerIssues, filteredBeginnerIssues) VALUES (?, ?, ?, ?,
+                        | ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        | ON CONFLICT (organization, repository) DO UPDATE SET name=?, owner=?, homepage=?, description=?,
+                        | logo=?, stars=?, forks=?, watchers=?, issues=?, readme=?, contributors=? contributorCount=?,
+                        | commits=?, topics=?, contributingGuide=?, codeOfConduct=?, chatroom=?""".stripMargin
+        .filterNot(_ == '\n')
     }
   }
 

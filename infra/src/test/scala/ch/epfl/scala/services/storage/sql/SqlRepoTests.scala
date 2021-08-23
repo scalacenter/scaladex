@@ -1,4 +1,4 @@
-package ch.epfl.scala.services.storage.sql.tables
+package ch.epfl.scala.services.storage.sql
 
 import scala.concurrent.Await
 import scala.concurrent.Future
@@ -7,6 +7,7 @@ import scala.util.Success
 import scala.util.Try
 
 import cats.effect.IO
+import ch.epfl.scala.services.storage.sql.Values
 import doobie.scalatest.IOChecker
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AsyncFunSpec

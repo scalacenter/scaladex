@@ -1,6 +1,7 @@
 package ch.epfl.scala.services.storage.sql.tables
 
 import cats.effect.IO
+import ch.epfl.scala.services.storage.sql.Values
 import doobie.scalatest.IOChecker
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AsyncFunSpec
