@@ -119,7 +119,10 @@ lazy val infra = project
         "io.circe" %% "circe-core",
         "io.circe" %% "circe-generic",
         "io.circe" %% "circe-parser"
-      ).map(_ % V.circeVersion)
+      ).map(_ % V.circeVersion),
+    // testing the database requests need to delete and create the tables,
+    // which can fail if many tests are running in parallel
+    Test / parallelExecution := false
   )
   .dependsOn(core)
 
