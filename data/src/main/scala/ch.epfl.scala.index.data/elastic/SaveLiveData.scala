@@ -63,12 +63,15 @@ object SaveLiveData extends LiveProjectsProtocol {
   val logger: Logger = LoggerFactory.getLogger(getClass)
 
   def storedProjects(paths: DataPaths): Map[Project.Reference, ProjectForm] =
-    read[LiveProjects](
+    parse(
       Files
         .readAllLines(paths.liveProjects)
         .toArray
         .mkString("")
     ).projects
+
+  def parse(s: String): LiveProjects =
+    read[LiveProjects](s)
 
   def saveProjects(
       paths: DataPaths,

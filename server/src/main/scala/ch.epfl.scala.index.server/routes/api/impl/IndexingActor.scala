@@ -12,20 +12,19 @@ import akka.actor.Actor
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.LocalPomRepository
-import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.project.ProjectConvert
 import ch.epfl.scala.index.model.Project
-import ch.epfl.scala.index.model.Release
 import ch.epfl.scala.index.model.misc.GithubRepo
-import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.index.search.ESRepo
+import ch.epfl.scala.services.DatabaseApi
 import org.slf4j.LoggerFactory
 
 class IndexingActor(
     paths: DataPaths,
     dataRepository: ESRepo,
+    db: DatabaseApi,
     implicit val system: ActorSystem
 ) extends Actor {
   private val log = LoggerFactory.getLogger(getClass)
@@ -78,95 +77,31 @@ class IndexingActor(
       data.downloadContributors
     )
 
-    val githubRepoExtractor = new GithubRepoExtractor(paths)
-    val Some(GithubRepo(organization, repository)) = githubRepoExtractor(pom)
-    val projectReference = Project.Reference(organization, repository)
-
-    def updateProjectReleases(
-        project: Option[Project],
-        releases: Seq[Release]
-    ): Future[Unit] = {
-
-      val converter = new ProjectConvert(paths, githubDownload)
-      val (projectWithReleases, dependencies) = converter
-        .convertAll(
-          List((pom, localRepository, data.hash)),
-          project.map(p => p.reference -> releases).toMap
-        )
-      projectWithReleases
-        .nextOption() match {
-        case Some((newProject, newReleases)) =>
-          createOrUpdateProjectReleases(
-            project,
-            newProject,
-            releases,
-            newReleases,
-            dependencies // Todo: Wrong
-          )
-        case None =>
-          Future.successful(
-            log.info(s"${pom.artifactId} is not a valid Scala artifact")
-          )
-      }
-    }
+    val projectReference = Project.Reference(repo.organization, repo.repository)
 
     for {
-      project <- dataRepository.getProject(projectReference)
-      releases <- dataRepository.getProjectReleases(projectReference)
-      _ <- updateProjectReleases(project, releases)
-    } yield ()
-  }
-
-  def createOrUpdateProjectReleases(
-      project: Option[Project],
-      newProject: Project,
-      releases: Seq[Release],
-      newReleases: Seq[Release],
-      dependencies: Seq[NewDependency]
-  ): Future[Unit] = {
-    val projectUpdate = project match {
-      case Some(project) =>
-        dataRepository
-          .updateProject(newProject.copy(id = project.id, liveData = true))
-          .map(_ => log.info(s"Updating project ${project.githubRepo}"))
-
-      case None =>
-        dataRepository
-          .insertProject(newProject.copy(liveData = true))
-          .map(_ => log.info(s"Creating new project ${newProject.githubRepo}"))
-    }
-
-    val releaseUpdate = newReleases.headOption match {
-      case Some(release)
-          if !releases.exists(_.reference == release.reference) =>
-        log.info(s"Adding release ${release.maven}")
-        for {
-          _ <- dataRepository.insertRelease(release.copy(liveData = true))
-          items <- dataRepository.insertDependencies(
-            Seq()
-          ) // todo: db.insertDependencies
-        } yield {
-          val failures = items.filter(_.status > 300)
-          if (failures.nonEmpty) {
-            failures.foreach(
-              _.error.foreach(error => log.error(error.reason))
-            )
-            log.error(
-              s"Failed adding the ${dependencies.size} dependencies of ${release.maven}"
-            )
-          } else {
-            log.info(
-              s"Added ${dependencies.size} dependencies of ${release.maven}"
-            )
-          }
+      project <- db.findProject(projectReference)
+      converter = new ProjectConvert(paths, githubDownload)
+      converted = converter.convertOne(
+        pom,
+        localRepository,
+        data.hash,
+        data.created,
+        repo,
+        project
+      )
+      _ = converted
+        .map { case (p, r, d) =>
+          for {
+            _ <- db.insertProject(p)
+            _ <- db.insertReleases(Seq(r))
+            _ <- db.insertDependencies(d)
+            _ = log.info(s"${pom.mavenRef.name} has been inserted")
+          } yield ()
         }
-
-      case _ => Future.successful(())
-    }
-
-    for {
-      _ <- projectUpdate
-      _ <- releaseUpdate
+        .getOrElse(
+          Future.successful(log.info(s"${pom.mavenRef.name} is not inserted"))
+        )
     } yield ()
   }
 }

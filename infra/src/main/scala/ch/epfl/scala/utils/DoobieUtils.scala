@@ -1,29 +1,38 @@
 package ch.epfl.scala.utils
 
-import cats.effect.{ContextShift, IO}
-import ch.epfl.scala.index.model.{License, SemanticVersion}
-import ch.epfl.scala.index.model.misc.{GithubContributor, GithubIssue, Url}
+import scala.concurrent.ExecutionContext
+import scala.util.Try
+
+import cats.effect.ContextShift
+import cats.effect.IO
+import ch.epfl.scala.index.model.License
+import ch.epfl.scala.index.model.SemanticVersion
+import ch.epfl.scala.index.model.misc.GithubContributor
+import ch.epfl.scala.index.model.misc.GithubIssue
+import ch.epfl.scala.index.model.misc.Url
+import ch.epfl.scala.index.model.release.Resolver
 import ch.epfl.scala.index.model.release.ScalaTarget
-import ch.epfl.scala.index.newModel.NewProject.{
-  DocumentationLink,
-  Organization,
-  Repository
-}
-import ch.epfl.scala.index.newModel.{NewDependency, NewRelease}
+import ch.epfl.scala.index.newModel.NewDependency
+import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
+import ch.epfl.scala.index.newModel.NewProject.Organization
+import ch.epfl.scala.index.newModel.NewProject.Repository
+import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.services.storage.sql.DbConf
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 import doobie._
 import doobie.implicits._
+import doobie.util.Read
 import doobie.util.Write
 import doobie.util.fragment.Fragment
 import doobie.util.meta.Meta
-import org.flywaydb.core.Flyway
 import io.circe._
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
-
-import scala.concurrent.ExecutionContext
-import scala.util.Try
+import io.circe.generic.semiauto.deriveDecoder
+import io.circe.generic.semiauto.deriveEncoder
+import org.flywaydb.core.Flyway
+import org.joda.time.DateTime
 
 object DoobieUtils {
   private implicit val cs: ContextShift[IO] =
@@ -82,8 +91,9 @@ object DoobieUtils {
 
   object Mappings {
     implicit val stringMeta: Meta[String] = Meta.StringMeta
-    implicit val URLDecoder: Decoder[Url] = deriveDecoder[Url]
-    implicit val URLEncoder: Encoder[Url] = deriveEncoder[Url]
+    implicit val URLDecoder: Decoder[Url] = Decoder.decodeString.map(Url)
+    implicit val URLEncoder: Encoder[Url] =
+      Encoder.encodeString.contramap[Url](_.target)
     implicit val contributorMeta: Meta[List[GithubContributor]] = {
       implicit val contributorDecoder: Decoder[GithubContributor] =
         deriveDecoder[GithubContributor]
@@ -121,6 +131,11 @@ object DoobieUtils {
         deriveEncoder[License]
       stringMeta.timap(fromJson[List[License]](_).get.toSet)(toJson(_))
     }
+    implicit val resolverMeta: Meta[Resolver] =
+      stringMeta.timap(Resolver.from(_).get)(_.name)
+    implicit val dateFormatMeta: Meta[DateTime] = stringMeta.timap(
+      NewRelease.format.parseDateTime
+    )(NewRelease.format.print(_))
     implicit val releaseWriter: Write[NewRelease] =
       Write[
         (
@@ -132,7 +147,8 @@ object DoobieUtils {
             ArtifactName,
             Option[ScalaTarget],
             Option[String],
-            Option[String],
+            Option[DateTime],
+            Option[Resolver],
             Set[License],
             Boolean
         )
@@ -147,13 +163,14 @@ object DoobieUtils {
           r.target,
           r.description,
           r.released,
+          r.resolver,
           r.licenses,
           r.isNonStandardLib
         )
       }
 
     implicit val dependencyWriter: Write[NewDependency] =
-      Write[(String, String, String, String, String, String, Option[String])]
+      Write[(String, String, String, String, String, String, String)]
         .contramap { d =>
           (
             d.source.groupId,
@@ -165,6 +182,29 @@ object DoobieUtils {
             d.scope
           )
         }
+
+    implicit val projectReader: Read[NewProject] = Read[
+      (
+          Organization,
+          Repository,
+          Option[String]
+      )
+    ]
+      .map {
+        case (
+              organization,
+              repository,
+              esId
+            ) =>
+          NewProject(
+            organization = organization,
+            repository = repository,
+            githubInfo = None,
+            esId = esId,
+            formData = NewProject.FormData.default
+          )
+      }
+
     private def toJson[A](v: A)(implicit e: Encoder[A]): String =
       e.apply(v).noSpaces
 

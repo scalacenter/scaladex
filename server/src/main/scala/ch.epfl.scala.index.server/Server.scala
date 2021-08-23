@@ -65,25 +65,12 @@ object Server {
       }
     )
     val programmaticRoutes = concat(
-      PublishApi(paths, data).routes,
+      PublishApi(paths, data, databaseApi = db).routes,
       new SearchApi(data, session).routes,
       Assets.routes,
       new Badges(data).routes,
       Oauth2(config, session).routes
     )
-
-    def hasParent(parentClass: Class[_], ex: Throwable)(): Boolean = {
-      var current = ex
-      def check: Boolean = parentClass == current.getClass
-      var found = check
-
-      while (!found && current.getCause != null) {
-        current = current.getCause
-        found = check
-      }
-
-      found
-    }
 
     val exceptionHandler = ExceptionHandler { case ex: Exception =>
       import java.io.{PrintWriter, StringWriter}

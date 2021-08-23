@@ -1,11 +1,8 @@
 package ch.epfl.scala.services.storage.sql.tables
 
 import cats.effect.IO
-import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.release.MavenReference
-import ch.epfl.scala.index.newModel.NewProject.{Organization, Repository}
-import ch.epfl.scala.index.newModel.{NewDependency, NewRelease}
-import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
+import ch.epfl.scala.index.newModel.NewDependency
 import doobie.scalatest.IOChecker
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AsyncFunSpec
@@ -25,7 +22,7 @@ class DependenciesTests
       "3.2.3"
     ),
     target = MavenReference("org.typelevel", "cats-core_3", "2.6.1"),
-    None
+    "compile"
   )
   override def beforeAll(): Unit = db.createTables().unsafeRunSync()
 

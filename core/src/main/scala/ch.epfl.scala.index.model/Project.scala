@@ -7,6 +7,7 @@ import ch.epfl.scala.index.model.release.Js
 import ch.epfl.scala.index.model.release.LanguageVersion
 import ch.epfl.scala.index.model.release.Native
 import ch.epfl.scala.index.model.release.Sbt
+import ch.epfl.scala.index.newModel.NewProject
 
 /**
  * Project representation which contains all necessary meta data to
@@ -101,7 +102,9 @@ object Project {
    * @param repository github repository. ex: cats, akka, etc
    */
   case class Reference(organization: String, repository: String) {
-    def githubRepo: GithubRepo = GithubRepo(organization, repository)
+    val githubRepo: GithubRepo = GithubRepo(organization, repository)
+    val org: NewProject.Organization = NewProject.Organization(organization)
+    val repo: NewProject.Repository = NewProject.Repository(repository)
     override def toString: String = s"$organization/$repository"
   }
 }

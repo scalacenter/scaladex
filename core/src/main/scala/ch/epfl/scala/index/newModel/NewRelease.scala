@@ -5,11 +5,14 @@ import ch.epfl.scala.index.model.Release
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.release.Jvm
 import ch.epfl.scala.index.model.release.MavenReference
+import ch.epfl.scala.index.model.release.Resolver
 import ch.epfl.scala.index.model.release.ScalaTarget
 import ch.epfl.scala.index.model.release.ScalaTargetType
 import ch.epfl.scala.index.newModel.NewProject.Organization
 import ch.epfl.scala.index.newModel.NewProject.Repository
 import ch.epfl.scala.index.newModel.NewRelease._
+import org.joda.time.DateTime
+import org.joda.time.format.ISODateTimeFormat
 
 /**
  * Artifact release representation
@@ -25,7 +28,8 @@ case class NewRelease(
     artifact: ArtifactName,
     target: Option[ScalaTarget], // Todo: Include JAVA HERE and remove Option
     description: Option[String],
-    released: Option[String], // TODO: should be Option[Instant]
+    released: Option[DateTime],
+    resolver: Option[Resolver],
     licenses: Set[License],
     isNonStandardLib: Boolean
 ) {
@@ -50,6 +54,7 @@ case class NewRelease(
 }
 
 object NewRelease {
+  val format = ISODateTimeFormat.dateTime.withOffsetParsed
   case class ArtifactName(value: String) extends AnyVal
 
   def from(r: Release): NewRelease = {
@@ -61,7 +66,8 @@ object NewRelease {
       version = r.reference.version,
       target = r.reference.target,
       description = r.description,
-      released = r.released,
+      released = r.released.map(format.parseDateTime),
+      resolver = r.resolver,
       licenses = r.licenses,
       isNonStandardLib = r.isNonStandardLib
     )

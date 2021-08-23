@@ -55,7 +55,7 @@ scaladex-credentials (optionnal)
 └── search-credential
  */
 
-sealed trait LocalRepository
+sealed trait LocalRepository extends Product with Serializable
 
 object LocalRepository {
   final case object BintraySbtPlugins extends LocalRepository

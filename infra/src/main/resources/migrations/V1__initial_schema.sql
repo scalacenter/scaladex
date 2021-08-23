@@ -1,16 +1,6 @@
 CREATE TABLE projects (
     organization         VARCHAR(39)  NOT NULL,
     repository           VARCHAR(100)  NOT NULL,
-    defaultStableVersion BOOLEAN NOT NULL,
-    defaultArtifact      VARCHAR,
-    strictVersions       BOOLEAN NOT NULL,
-    customScalaDoc       VARCHAR,
-    documentationLinks   VARCHAR,
-    deprecated           BOOLEAN NOT NULL,
-    contributorsWanted   BOOLEAN NOT NULL,
-    artifactDeprecations VARCHAR,
-    cliArtifacts         VARCHAR,
-    primaryTopic         VARCHAR,
     esId                 VARCHAR,
     PRIMARY KEY (organization, repository)
 );
@@ -18,8 +8,8 @@ CREATE TABLE projects (
 CREATE TABLE github_info (
     organization           VARCHAR(39)  NOT NULL,
     repository             VARCHAR(100) NOT NULL,
-    name                   VARCHAR(39),
-    owner                  VARCHAR(100),
+    name                   VARCHAR(39)  NOT NULL,
+    owner                  VARCHAR(100) NOT NULL,
     homepage               VARCHAR(2083),
     description            VARCHAR,
     logo                   VARCHAR(2083),
@@ -43,6 +33,22 @@ CREATE TABLE github_info (
     PRIMARY KEY (organization, repository)
 );
 
+CREATE TABLE project_user_data (
+   organization           VARCHAR(39)  NOT NULL,
+   repository             VARCHAR(100) NOT NULL,
+   defaultStableVersion BOOLEAN NOT NULL,
+   defaultArtifact      VARCHAR,
+   strictVersions       BOOLEAN NOT NULL,
+   customScalaDoc       VARCHAR,
+   documentationLinks   VARCHAR,
+   deprecated           BOOLEAN NOT NULL,
+   contributorsWanted   BOOLEAN NOT NULL,
+   artifactDeprecations VARCHAR,
+   cliArtifacts         VARCHAR,
+   primaryTopic         VARCHAR,
+   PRIMARY KEY (organization, repository)
+);
+
 CREATE TABLE releases (
     groupId             VARCHAR NOT NULL,
     artifactId          VARCHAR NOT NULL,
@@ -53,6 +59,7 @@ CREATE TABLE releases (
     target              VARCHAR,
     description         VARCHAR,
     released            VARCHAR,
+    resolver            VARCHAR,
     licenses            VARCHAR,
     isNonStandardLib    BOOLEAN NOT NULL,
     PRIMARY KEY (groupId, artifactId, version)

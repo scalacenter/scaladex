@@ -224,11 +224,15 @@ object Main extends LazyLogging {
       _ <- db.insertDependencies(dependencies)
       numberOfIndexedProjects <- db.countProjects()
       countGithubInfo <- db.countGithubInfo()
+      countProjectUserDataForm <- db.countProjectDataForm()
       countReleases <- db.countReleases()
       countDependencies <- db.countDependencies()
     } yield {
       logger.info(s"$numberOfIndexedProjects projects have been indexed")
       logger.info(s"$countGithubInfo countGithubInfo have been indexed")
+      logger.info(
+        s"$countProjectUserDataForm countGithubInfo have been indexed"
+      )
       logger.info(s"$countReleases release have been indexed")
       logger.info(s"$countDependencies dependencies have been indexed")
       numberOfIndexedProjects

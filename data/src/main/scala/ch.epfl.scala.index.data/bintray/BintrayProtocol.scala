@@ -18,6 +18,15 @@ case class BintraySearch(
     created: String
 ) {
   def isJCenter: Boolean = repo == "jcenter" && owner == "bintray"
+  val typesafeNonOSS: Set[String] = Set(
+    "for-subscribers-only",
+    "instrumented-reactive-platform",
+    "subscribers-early-access",
+    "maven-releases" // too much noise
+  )
+  def isTypesafeNonOSS: Boolean =
+    owner == "typesafe" &&
+      typesafeNonOSS.contains(repo)
 }
 
 /**

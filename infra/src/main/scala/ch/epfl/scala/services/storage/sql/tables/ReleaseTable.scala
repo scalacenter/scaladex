@@ -1,18 +1,10 @@
 package ch.epfl.scala.services.storage.sql.tables
 
-import cats.data.NonEmptyList
-import ch.epfl.scala.index.model.release.{MavenReference, ScalaTarget}
-import ch.epfl.scala.index.model.{License, SemanticVersion}
-import ch.epfl.scala.index.newModel.NewProject.{Organization, Repository}
-import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
-import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
-import ch.epfl.scala.services.storage.sql.tables.ProjectTable.insert
+import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.utils.DoobieUtils.Fragments._
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
 import doobie.implicits._
-import doobie.util.Write
 import doobie.util.fragment.Fragment
-import doobie.util.meta.Meta
 import doobie.util.update.Update
 
 object ReleaseTable {
@@ -28,6 +20,7 @@ object ReleaseTable {
     "target",
     "description",
     "released",
+    "resolver",
     "licenses",
     "isNonStandardLib"
   )
@@ -36,7 +29,7 @@ object ReleaseTable {
 
   private def values(r: NewRelease): Fragment =
     fr0"${r.maven.groupId}, ${r.maven.artifactId}, ${r.version}, ${r.organization}, ${r.repository}," ++
-      fr0" ${r.artifact}, ${r.target}, ${r.description}, ${r.released}, ${r.licenses}, ${r.isNonStandardLib}"
+      fr0" ${r.artifact}, ${r.target}, ${r.description}, ${r.released}, ${r.resolver}, ${r.licenses}, ${r.isNonStandardLib}"
 
   def insert(elt: NewRelease): doobie.Update0 =
     buildInsert(tableFr, fieldsFr, values(elt)).update

@@ -185,16 +185,16 @@ class Deployment(
           |  rm -rf /home/$userName/data/current
           |  mkdir /home/$userName/data/current
           |  mv /home/$userName/data/data-*/* /home/$userName/data/current
-          |  rmdir /home/$userName/data/data-*
+          |  rm /home/$userName/data-*
           |
           |  nohup /home/$userName/data/current/bin/data \\
-          |    -J-Xmx6g \\
+          |    -J-Xmx8g \\
           |    -Dlogback.output-file=data.log \\
           |    -Dlogback.configurationFile=/home/$userName/scaladex-credentials/logback.xml \\
           |    -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
           |    -Dsentry.dsn=$sentryDsn \\
           |    -Dsentry.release=$version \\
-          |    all \\
+          |    elastic \\
           |    /home/$userName/scaladex-contrib \\
           |    /home/$userName/scaladex-index \\
           |    /home/$userName/scaladex-credentials \\

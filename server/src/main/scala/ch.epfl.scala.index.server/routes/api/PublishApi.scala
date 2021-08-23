@@ -21,12 +21,14 @@ import akka.util.Timeout
 import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.search.ESRepo
+import ch.epfl.scala.services.DatabaseApi
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
 class PublishApi(
     paths: DataPaths,
     dataRepository: ESRepo,
+    db: DatabaseApi,
     github: Github
 )(implicit system: ActorSystem) {
 
@@ -101,7 +103,7 @@ class PublishApi(
   implicit val timeout: Timeout = Timeout(40.seconds)
   private val actor =
     system.actorOf(
-      Props(classOf[impl.PublishActor], paths, dataRepository, system)
+      Props(classOf[impl.PublishActor], paths, dataRepository, db, system)
     )
 
   private val githubCredentialsCache =
@@ -180,8 +182,9 @@ class PublishApi(
 object PublishApi {
   def apply(
       paths: DataPaths,
-      dataRepository: ESRepo
+      dataRepository: ESRepo,
+      databaseApi: DatabaseApi
   )(implicit sys: ActorSystem): PublishApi = {
-    new PublishApi(paths, dataRepository, Github())
+    new PublishApi(paths, dataRepository, databaseApi, Github())
   }
 }
