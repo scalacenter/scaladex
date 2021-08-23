@@ -1,5 +1,9 @@
 package ch.epfl.scala.services.storage.sql
 
+import scala.concurrent.ExecutionContext
+
+import cats.effect.ContextShift
+import cats.effect.IO
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.release.MavenReference
@@ -10,12 +14,19 @@ import ch.epfl.scala.index.newModel.NewProject.Repository
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.services.storage.sql.DbConf.H2
+import doobie.Transactor
+import doobie.util.transactor
 
 object Values {
+  private implicit val cs: ContextShift[IO] =
+    IO.contextShift(ExecutionContext.global)
   val dbConf: H2 = H2(
     "jdbc:h2:mem:scaladex_db;MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1"
   )
-  val db = new SqlRepo(dbConf)
+  val xa: transactor.Transactor.Aux[IO, Unit] =
+    Transactor.fromDriverManager[IO](dbConf.driver, dbConf.url, "", "")
+  val db = new SqlRepo(dbConf, xa)
+
   val project: NewProject =
     NewProject.defaultProject("scalacenter", "scaladex", None)
   val githubInfo = GithubInfo.empty

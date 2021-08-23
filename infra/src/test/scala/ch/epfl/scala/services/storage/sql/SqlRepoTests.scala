@@ -6,7 +6,6 @@ import scala.concurrent.duration.Duration
 import scala.util.Success
 import scala.util.Try
 
-import cats.effect.IO
 import ch.epfl.scala.services.storage.sql.Values
 import doobie.scalatest.IOChecker
 import org.scalatest.BeforeAndAfterAll
@@ -19,7 +18,7 @@ class SqlRepoTests
     with IOChecker
     with BeforeAndAfterAll {
   private val db = Values.db
-  val transactor: doobie.Transactor[IO] = db.xa
+  val transactor = Values.xa
 
   override def beforeAll(): Unit = db.createTables().unsafeRunSync()
 

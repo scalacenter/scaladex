@@ -10,6 +10,7 @@ import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
+import cats.effect.IO
 import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.util.PidLock
@@ -18,6 +19,7 @@ import ch.epfl.scala.index.server.config.ServerConfig
 import ch.epfl.scala.index.server.routes._
 import ch.epfl.scala.index.server.routes.api._
 import ch.epfl.scala.services.storage.sql.SqlRepo
+import ch.epfl.scala.utils.DoobieUtils
 import org.slf4j.LoggerFactory
 
 object Server {
@@ -32,8 +34,6 @@ object Server {
     if (config.production) {
       PidLock.create("SERVER")
     }
-
-    val db = new SqlRepo(config.dbConf)
 
     implicit val system: ActorSystem = ActorSystem("scaladex")
     import system.dispatcher
@@ -64,13 +64,6 @@ object Server {
         )
       }
     )
-    val programmaticRoutes = concat(
-      PublishApi(paths, data, databaseApi = db).routes,
-      new SearchApi(data, session).routes,
-      Assets.routes,
-      new Badges(data).routes,
-      Oauth2(config, session).routes
-    )
 
     val exceptionHandler = ExceptionHandler { case ex: Exception =>
       import java.io.{PrintWriter, StringWriter}
@@ -88,25 +81,42 @@ object Server {
         out
       )
     }
+    val transactor = DoobieUtils.transactor(config.dbConf)
+    transactor
+      .use { xa =>
+        val db = new SqlRepo(config.dbConf, xa)
+        val programmaticRoutes = concat(
+          PublishApi(paths, data, databaseApi = db).routes,
+          new SearchApi(data, session).routes,
+          Assets.routes,
+          new Badges(data).routes,
+          Oauth2(config, session).routes
+        )
 
-    val routes =
-      handleExceptions(exceptionHandler) {
-        concat(programmaticRoutes, userFacingRoutes)
+        val routes =
+          handleExceptions(exceptionHandler) {
+            concat(programmaticRoutes, userFacingRoutes)
+          }
+
+        log.info("waiting for elastic to start")
+        data.waitUntilReady()
+        log.info("ready")
+
+        IO {
+          if (config.production) {
+            db.createTables().unsafeRunSync()
+          } else {
+            db.dropTables().unsafeRunSync()
+            db.createTables().unsafeRunSync()
+            log.info("Mock data for database has been inserted")
+          }
+          Await.result(
+            Http().bindAndHandle(routes, "0.0.0.0", port),
+            20.seconds
+          )
+        }
       }
-
-    log.info("waiting for elastic to start")
-    data.waitUntilReady()
-    log.info("ready")
-
-    if (config.production) {
-      db.createTables().unsafeRunSync()
-    } else {
-      db.dropTables().unsafeRunSync()
-      db.createTables().unsafeRunSync()
-      log.info("Mock data for database has been inserted")
-    }
-
-    Await.result(Http().bindAndHandle(routes, "0.0.0.0", port), 20.seconds)
+      .unsafeRunSync()
 
     log.info(s"port: $port")
     log.info("Application started")

@@ -13,7 +13,7 @@ class ProjectUserFormTableTests
     with IOChecker
     with BeforeAndAfterAll {
   private val db = Values.db
-  val transactor: doobie.Transactor[IO] = db.xa
+  val transactor: doobie.Transactor[IO] = Values.xa
   val project = Values.projectWithGithubInfo
   override def beforeAll(): Unit = db.createTables().unsafeRunSync()
 

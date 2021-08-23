@@ -15,10 +15,11 @@ import ch.epfl.scala.services.storage.sql.tables.ProjectTable
 import ch.epfl.scala.services.storage.sql.tables.ProjectUserFormTable
 import ch.epfl.scala.services.storage.sql.tables.ReleaseTable
 import ch.epfl.scala.utils.DoobieUtils
+import ch.epfl.scala.utils.ScalaExtensions.TraversableOnceFutureExtension
 import doobie.implicits._
 
-class SqlRepo(conf: DbConf) extends DatabaseApi {
-  private[sql] val (xa, flyway) = DoobieUtils.create(conf)
+class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
+  private[sql] val flyway = DoobieUtils.flyway(conf)
   def createTables(): IO[Unit] = IO(flyway.migrate())
   def dropTables(): IO[Unit] = IO(flyway.clean())
 
@@ -64,13 +65,22 @@ class SqlRepo(conf: DbConf) extends DatabaseApi {
     insertProject(NewProject.from(project))
 
   override def insertReleases(releases: Seq[NewRelease]): Future[Int] =
-    run(ReleaseTable.insertMany(releases))
+    releases
+      .grouped(SqlRepo.sizeOfInsertMany)
+      .map(r => run(ReleaseTable.insertMany(r)))
+      .sequence
+      .map(_.sum)
 
   def insertRelease(release: NewRelease): Future[NewRelease] =
     run(ReleaseTable.insert, release)
 
-  override def insertDependencies(deps: Seq[NewDependency]): Future[Int] =
-    run(DependenciesTable.insertMany(deps))
+  override def insertDependencies(deps: Seq[NewDependency]): Future[Int] = {
+    deps
+      .grouped(SqlRepo.sizeOfInsertMany)
+      .map(d => run(DependenciesTable.insertMany(d)))
+      .sequence
+      .map(_.sum)
+  }
 
   override def countProjects(): Future[Long] =
     run(ProjectTable.indexedProjects().unique)
@@ -96,4 +106,7 @@ class SqlRepo(conf: DbConf) extends DatabaseApi {
 
   private def run[A](v: doobie.ConnectionIO[A]): Future[A] =
     v.transact(xa).unsafeToFuture()
+}
+object SqlRepo {
+  val sizeOfInsertMany = 10000
 }

@@ -13,7 +13,7 @@ class GithubInfoTests
     with IOChecker
     with BeforeAndAfterAll {
   private val db = Values.db
-  val transactor: doobie.Transactor[IO] = db.xa
+  val transactor: doobie.Transactor[IO] = Values.xa
   private val project = Values.project
   private val emptyGithubInfo = Values.githubInfo
 
