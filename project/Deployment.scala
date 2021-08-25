@@ -114,12 +114,12 @@ class Deployment(
           |whoami
           |kill `cat SERVER-PID`
           |
-          |rm /home/$userName/server/server-*
+          |rmdir /home/$userName/server/server-*
+          |find /home/$userName/ -maxdepth 1 -type f -name 'server-*' -not -name '$serverZipFileName' -delete
           |unzip -d /home/$userName/server /home/$userName/$serverZipFileName
           |rm -rf /home/$userName/server/current
           |mkdir /home/$userName/server/current
           |mv /home/$userName/server/server-*/* /home/$userName/server/current
-          |rmdir /home/$userName/server/server-*
           |
           |nohup /home/$userName/server/current/bin/server \\
           |  -J-Xmx4g \\
@@ -180,15 +180,15 @@ class Deployment(
           |
           |$cloneAllIfAbsent
           |
-          |  rm /home/$userName/data/data-*
+          |  rmdir /home/$userName/data/data-*
+          |  find /home/$userName/ -maxdepth 1 -type f -name 'data-*' -not -name '$dataZipFileName' -delete
           |  unzip -d /home/$userName/data /home/$userName/$dataZipFileName
           |  rm -rf /home/$userName/data/current
           |  mkdir /home/$userName/data/current
           |  mv /home/$userName/data/data-*/* /home/$userName/data/current
-          |  rm /home/$userName/data-*
           |
           |  nohup /home/$userName/data/current/bin/data \\
-          |    -J-Xmx8g \\
+          |    -J-Xmx10g \\
           |    -Dlogback.output-file=data.log \\
           |    -Dlogback.configurationFile=/home/$userName/scaladex-credentials/logback.xml \\
           |    -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
