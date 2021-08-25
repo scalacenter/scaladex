@@ -9,6 +9,7 @@ import scala.sys.process.Process
 import scala.util.Using
 
 import akka.actor.ActorSystem
+import cats.effect._
 import ch.epfl.scala.index.data.bintray.BintrayDownloadPoms
 import ch.epfl.scala.index.data.bintray.BintrayListPoms
 import ch.epfl.scala.index.data.bintray.UpdateBintraySbtPlugins
@@ -25,8 +26,10 @@ import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.storage.sql.DbConf
 import ch.epfl.scala.services.storage.sql.SqlRepo
+import ch.epfl.scala.utils.DoobieUtils
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
+import doobie.hikari._
 
 /**
  * This application manages indexed POMs.
@@ -60,7 +63,6 @@ object Main extends LazyLogging {
     val dbConfig = ConfigFactory.load().getConfig("database")
     val production = config.getBoolean("production")
     val dbConf = DbConf.from(dbConfig.getString("database-url")).get
-    val db = new SqlRepo(dbConf)
 
     if (production) {
       PidLock.create("DATA")
@@ -106,9 +108,21 @@ object Main extends LazyLogging {
       // Re-create the ElasticSearch index
       Step("elastic") { () =>
         import system.dispatcher
-        Using.resource(ESRepo.open()) { esRepo =>
-          Await.result(insertDataInEsAndDb(dataPaths, esRepo, db), Duration.Inf)
-        }
+        val transactor: Resource[IO, HikariTransactor[IO]] =
+          DoobieUtils.transactor(dbConf)
+        transactor
+          .use { xa =>
+            val db = new SqlRepo(dbConf, xa)
+            IO(
+              Using.resource(ESRepo.open()) { esRepo =>
+                Await.result(
+                  insertDataInEsAndDb(dataPaths, esRepo, db),
+                  Duration.Inf
+                )
+              }
+            )
+          }
+          .unsafeRunSync()
       }
     )
 
@@ -220,7 +234,7 @@ object Main extends LazyLogging {
           _ <- db.insertReleases(releases.map(NewRelease.from))
         } yield ()
       }
-      // Todo: don't insert everything at the same time
+      _ = logger.info("starting to insert all dependencies in the database")
       _ <- db.insertDependencies(dependencies)
       numberOfIndexedProjects <- db.countProjects()
       countGithubInfo <- db.countGithubInfo()
@@ -231,7 +245,7 @@ object Main extends LazyLogging {
       logger.info(s"$numberOfIndexedProjects projects have been indexed")
       logger.info(s"$countGithubInfo countGithubInfo have been indexed")
       logger.info(
-        s"$countProjectUserDataForm countGithubInfo have been indexed"
+        s"$countProjectUserDataForm countProjectUserDataForm have been indexed"
       )
       logger.info(s"$countReleases release have been indexed")
       logger.info(s"$countDependencies dependencies have been indexed")

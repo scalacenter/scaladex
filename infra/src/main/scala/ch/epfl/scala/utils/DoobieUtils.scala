@@ -5,6 +5,7 @@ import scala.util.Try
 
 import cats.effect.ContextShift
 import cats.effect.IO
+import cats.effect._
 import ch.epfl.scala.index.model.License
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubContributor
@@ -23,6 +24,7 @@ import ch.epfl.scala.services.storage.sql.DbConf
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import doobie._
+import doobie.hikari.HikariTransactor
 import doobie.implicits._
 import doobie.util.Read
 import doobie.util.Write
@@ -35,19 +37,27 @@ import org.flywaydb.core.Flyway
 import org.joda.time.DateTime
 
 object DoobieUtils {
+
   private implicit val cs: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
+  def flyway(conf: DbConf): Flyway = {
+    val datasource = getHikariDataSource(conf)
+    Flyway
+      .configure()
+      .dataSource(datasource)
+      .locations("classpath:migrations")
+      .load()
+  }
 
-  def create(conf: DbConf): (doobie.Transactor[IO], Flyway) = {
-    implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-    val xa: doobie.Transactor[IO] = conf match {
-      case c: DbConf.H2 =>
-        Transactor.fromDriverManager[IO](c.driver, c.url, "", "")
-      case c: DbConf.PostgreSQL =>
-        Transactor.fromDriverManager[IO](c.driver, c.url, c.user, c.pass.decode)
-    }
-
-    val config = new HikariConfig()
+  def transactor(conf: DbConf): Resource[IO, HikariTransactor[IO]] = {
+    val datasource = getHikariDataSource(conf)
+    for {
+      ce <- ExecutionContexts.fixedThreadPool[IO](32) // our connect EC
+      be <- Blocker[IO] // our blocking EC
+    } yield Transactor.fromDataSource[IO](datasource, ce, be)
+  }
+  private def getHikariDataSource(conf: DbConf): HikariDataSource = {
+    val config: HikariConfig = new HikariConfig()
     conf match {
       case c: DbConf.H2 =>
         config.setDriverClassName(c.driver)
@@ -58,15 +68,8 @@ object DoobieUtils {
         config.setUsername(c.user)
         config.setPassword(c.pass.decode)
     }
-    val flyway = Flyway
-      .configure()
-      .dataSource(new HikariDataSource(config))
-      .locations("classpath:migrations")
-      .load()
-
-    (xa, flyway)
+    new HikariDataSource(config)
   }
-
   object Fragments {
     val empty: Fragment = fr0""
     val space: Fragment = fr0" "
