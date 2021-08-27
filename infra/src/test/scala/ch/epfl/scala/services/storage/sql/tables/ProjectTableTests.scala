@@ -16,7 +16,7 @@ class ProjectTableTests
   val transactor: doobie.Transactor[IO] = Values.xa
   private val project = Values.project
 
-  override def beforeAll(): Unit = db.createTables().unsafeRunSync()
+  override def beforeAll(): Unit = db.migrate().unsafeRunSync()
 
   override def afterAll(): Unit = db.dropTables().unsafeRunSync()
 

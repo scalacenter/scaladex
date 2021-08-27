@@ -11,6 +11,7 @@ import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubContributor
 import ch.epfl.scala.index.model.misc.GithubIssue
 import ch.epfl.scala.index.model.misc.Url
+import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.Resolver
 import ch.epfl.scala.index.model.release.ScalaTarget
 import ch.epfl.scala.index.newModel.NewDependency
@@ -146,7 +147,7 @@ object DoobieUtils {
     implicit val semanticVersionMeta: Meta[SemanticVersion] =
       stringMeta.timap(SemanticVersion.tryParse(_).get)(_.toString)
     implicit val scalaTargetMeta: Meta[ScalaTarget] =
-      stringMeta.timap(ScalaTarget.parse(_).get)(_.render)
+      stringMeta.timap(ScalaTarget.parse(_).get)(_.encode)
     implicit val licensesMeta: Meta[Set[License]] = {
       implicit val licenseDecoder: Decoder[License] =
         deriveDecoder[License]
@@ -225,6 +226,52 @@ object DoobieUtils {
             githubInfo = None,
             esId = esId,
             formData = NewProject.FormData.default
+          )
+      }
+
+    implicit val releaseReader: Read[NewRelease] = Read[
+      (
+          String,
+          String,
+          SemanticVersion,
+          Organization,
+          Repository,
+          NewRelease.ArtifactName,
+          Option[ScalaTarget],
+          Option[String],
+          Option[DateTime],
+          Option[Resolver],
+          Set[License],
+          Boolean
+      )
+    ]
+      .map {
+        case (
+              groupId,
+              artifactId,
+              version,
+              organization,
+              repository,
+              artifact,
+              target,
+              description,
+              released,
+              resolver,
+              licenses,
+              isNonStandardLib
+            ) =>
+          NewRelease(
+            MavenReference(groupId, artifactId, version.toString),
+            version,
+            organization,
+            repository,
+            artifact,
+            target,
+            description,
+            released,
+            resolver,
+            licenses,
+            isNonStandardLib
           )
       }
 

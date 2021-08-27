@@ -1,9 +1,12 @@
 package ch.epfl.scala.index.model
 package release
 
+import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.NewRelease
+
 case class ReleaseSelection(
     target: Option[ScalaTarget],
-    artifact: Option[String],
+    artifact: Option[NewRelease.ArtifactName],
     version: Option[SemanticVersion],
     selected: Option[String]
 ) {
@@ -11,13 +14,27 @@ case class ReleaseSelection(
   def filterTarget(release: Release): Boolean =
     target.forall(target => release.reference.target.contains(target))
 
+  def filterTarget(release: NewRelease): Boolean =
+    target.forall(release.target.contains)
+
   def filterArtifact(release: Release): Boolean =
-    artifact.forall(_ == release.reference.artifact)
+    artifact.forall(_.value == release.reference.artifact)
+
+  def filterArtifact(release: NewRelease): Boolean =
+    artifact.forall(_ == release.artifact)
 
   def filterVersion(release: Release): Boolean =
     version.forall(_ == release.reference.version)
 
+  def filterVersion(release: NewRelease): Boolean =
+    version.forall(_ == release.version)
+
   def filterAll(release: Release): Boolean =
+    filterTarget(release) &&
+      filterArtifact(release) &&
+      filterVersion(release)
+
+  def filterAll(release: NewRelease): Boolean =
     filterTarget(release) &&
       filterArtifact(release) &&
       filterVersion(release)
@@ -33,7 +50,7 @@ object ReleaseSelection {
 
     new ReleaseSelection(
       target.flatMap(ScalaTarget.parse),
-      artifactName,
+      artifactName.map(NewRelease.ArtifactName),
       version.flatMap(SemanticVersion.tryParse),
       selected
     )
@@ -117,5 +134,43 @@ object ReleaseOptions {
         release
       )
     }
+  }
+  def filterReleases(
+      selection: ReleaseSelection,
+      releases: Seq[NewRelease],
+      project: NewProject
+  ): Seq[NewRelease] = {
+    val selectedReleases =
+      selection.selected match {
+        case Some(selected) =>
+          if (selected == "target") releases.filter(selection.filterTarget)
+          else if (selected == "artifact")
+            releases.filter(selection.filterArtifact)
+          else if (selected == "version")
+            releases.filter(selection.filterVersion)
+          else releases.filter(selection.filterAll)
+        case None => releases.filter(selection.filterAll)
+      }
+
+    selectedReleases.sortBy { release =>
+      (
+        // default artifact (ex: akka-actors is the default for akka/akka)
+        if (project.formData.defaultArtifact.contains(release.artifact)) 1
+        else 0,
+        // project repository (ex: shapeless)
+        if (project.repository.value == release.artifact.value) 1 else 0,
+        // alphabetically
+        release.artifact.value,
+        // stable version first
+        if (
+          project.formData.defaultStableVersion && release.version.preRelease.isDefined
+        ) 0
+        else 1,
+        // version
+        release.version,
+        // target
+        release.target
+      )
+    }.reverse
   }
 }

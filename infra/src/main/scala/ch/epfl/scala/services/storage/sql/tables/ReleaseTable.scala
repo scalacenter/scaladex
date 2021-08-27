@@ -1,5 +1,6 @@
 package ch.epfl.scala.services.storage.sql.tables
 
+import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.utils.DoobieUtils.Fragments._
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
@@ -39,5 +40,8 @@ object ReleaseTable {
 
   def indexedReleased(): doobie.Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]
+
+  def selectReleases(ref: Project.Reference): doobie.Query0[NewRelease] =
+    buildSelect(tableFr, fr0"*", where(ref.org, ref.repo)).query[NewRelease]
 
 }

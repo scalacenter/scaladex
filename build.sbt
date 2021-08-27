@@ -153,6 +153,8 @@ lazy val server = project
       "com.typesafe.play" %%% "play-json" % V.playJsonVersion,
       "com.typesafe.akka" %% "akka-testkit" % V.akkaVersion % Test,
       "com.typesafe.akka" %% "akka-slf4j" % V.akkaVersion,
+      "com.typesafe.akka" %% "akka-stream-testkit" % V.akkaVersion % Test,
+      "com.typesafe.akka" %% "akka-http-testkit" % "10.2.6" % Test,
       "ch.megard" %% "akka-http-cors" % "0.4.3",
       "com.softwaremill.akka-http-session" %% "core" % "0.5.11",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,

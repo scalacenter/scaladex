@@ -50,20 +50,6 @@ object Server {
     val data = ESRepo.open()
 
     val searchPages = new SearchPages(data, session)
-    val userFacingRoutes = concat(
-      new FrontPage(data, session).routes,
-      redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
-        concat(
-          new ProjectPages(
-            data,
-            session,
-            new GithubDownload(paths),
-            paths
-          ).routes,
-          searchPages.routes
-        )
-      }
-    )
 
     val exceptionHandler = ExceptionHandler { case ex: Exception =>
       import java.io.{PrintWriter, StringWriter}
@@ -92,6 +78,21 @@ object Server {
           new Badges(data).routes,
           Oauth2(config, session).routes
         )
+        val userFacingRoutes = concat(
+          new FrontPage(data, session).routes,
+          redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
+            concat(
+              new ProjectPages(
+                data,
+                db,
+                session,
+                new GithubDownload(paths),
+                paths
+              ).routes,
+              searchPages.routes
+            )
+          }
+        )
 
         val routes =
           handleExceptions(exceptionHandler) {
@@ -102,19 +103,13 @@ object Server {
         data.waitUntilReady()
         log.info("ready")
 
-        IO {
-          if (config.production) {
-            db.createTables().unsafeRunSync()
-          } else {
-            db.dropTables().unsafeRunSync()
-            db.createTables().unsafeRunSync()
-            log.info("Mock data for database has been inserted")
-          }
-          Await.result(
-            Http().bindAndHandle(routes, "0.0.0.0", port),
-            20.seconds
-          )
-        }
+        // apply migrations to the database if any.
+        db.migrate().unsafeRunSync()
+        Await.result(
+          Http().bindAndHandle(routes, "0.0.0.0", port),
+          20.seconds
+        )
+        IO.never
       }
       .unsafeRunSync()
 

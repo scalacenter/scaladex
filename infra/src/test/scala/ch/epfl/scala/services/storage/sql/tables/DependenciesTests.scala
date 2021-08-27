@@ -25,7 +25,7 @@ class DependenciesTests
     target = MavenReference("org.typelevel", "cats-core_3", "2.6.1"),
     "compile"
   )
-  override def beforeAll(): Unit = db.createTables().unsafeRunSync()
+  override def beforeAll(): Unit = db.migrate().unsafeRunSync()
 
   override def afterAll(): Unit = db.dropTables().unsafeRunSync()
 

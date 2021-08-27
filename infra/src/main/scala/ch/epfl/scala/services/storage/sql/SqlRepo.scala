@@ -20,7 +20,7 @@ import doobie.implicits._
 
 class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
   private[sql] val flyway = DoobieUtils.flyway(conf)
-  def createTables(): IO[Unit] = IO(flyway.migrate())
+  def migrate(): IO[Unit] = IO(flyway.migrate())
   def dropTables(): IO[Unit] = IO(flyway.clean())
 
   override def insertProject(project: NewProject): Future[Unit] = {
@@ -70,6 +70,11 @@ class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
       .map(r => run(ReleaseTable.insertMany(r)))
       .sequence
       .map(_.sum)
+
+  override def findReleases(
+      projectRef: Project.Reference
+  ): Future[Seq[NewRelease]] =
+    run(ReleaseTable.selectReleases(projectRef).to[List])
 
   def insertRelease(release: NewRelease): Future[NewRelease] =
     run(ReleaseTable.insert, release)
