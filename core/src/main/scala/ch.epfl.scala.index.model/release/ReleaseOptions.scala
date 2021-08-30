@@ -21,7 +21,7 @@ case class ReleaseSelection(
     artifact.forall(_.value == release.reference.artifact)
 
   def filterArtifact(release: NewRelease): Boolean =
-    artifact.forall(_ == release.artifact)
+    artifact.forall(_ == release.artifactName)
 
   def filterVersion(release: Release): Boolean =
     version.forall(_ == release.reference.version)
@@ -155,15 +155,15 @@ object ReleaseOptions {
     selectedReleases.sortBy { release =>
       (
         // default artifact (ex: akka-actors is the default for akka/akka)
-        if (project.formData.defaultArtifact.contains(release.artifact)) 1
+        if (project.dataForm.defaultArtifact.contains(release.artifactName)) 1
         else 0,
         // project repository (ex: shapeless)
-        if (project.repository.value == release.artifact.value) 1 else 0,
+        if (project.repository.value == release.artifactName.value) 1 else 0,
         // alphabetically
-        release.artifact.value,
+        release.artifactName.value,
         // stable version first
         if (
-          project.formData.defaultStableVersion && release.version.preRelease.isDefined
+          project.dataForm.defaultStableVersion && release.version.preRelease.isDefined
         ) 0
         else 1,
         // version

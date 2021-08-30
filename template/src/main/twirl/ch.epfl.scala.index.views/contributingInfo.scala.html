@@ -1,26 +1,26 @@
-@import ch.epfl.scala.index.model.Project
 @import ch.epfl.scala.index.model.misc.{Url, SearchParams}
+@import ch.epfl.scala.index.newModel.NewProject
 
-@(project: Project, hideProjectInfo: Boolean = false, params: Option[SearchParams] = None)
-
+@(project: NewProject, hideProjectInfo: Boolean = false, params: Option[SearchParams] = None)
+@githubInfo = @{project.githubInfo}
 @if(!hideProjectInfo) {
 <div class="content-project-header">
-  <a href="/@project.reference.organization/@project.reference.repository">
-    <img src="@{ project.github.flatMap(_.logo) match {
+  <a href="/@project.organization/@project.repository">
+    <img src="@{ githubInfo.flatMap(_.logo) match {
         case Some(Url(v)) => v
         case None => "/assets/img/avatar-list.png"
       }}" alt="project logo">
-    <h4>@project.reference.organization/@project.reference.repository</h4>
+    <h4>@project.organization/@project.repository</h4>
   </a>
 </div>
 }
 <div class="content-project-body">
-  @for(github <- project.github) {
+  @for(github <- project.githubInfo) {
     @for(description <- github.description) {
       <p class="description">@description</p>
     }
   }
-  @for(github <- project.github) {
+  @for(github <- githubInfo) {
     @params.filter(_.contributingSearch).map { p =>
       <ul>
       @for(issue <- github.displayIssues.take(6)) {
@@ -32,11 +32,11 @@
 
       @if(6 < github.displayIssues.length) {
           @for(label <- github.beginnerIssuesLabel) {
-              @if(!github.filteredBeginnerIssues.isEmpty) {
-                  <a href='https://github.com/@{project.githubRepo}/issues?utf8=✓&q=is:open label:"@label" @{p.queryString}'
+              @if(github.filteredBeginnerIssues.nonEmpty) {
+                  <a href='https://github.com/@{project.reference}/issues?utf8=✓&q=is:open label:"@label" @{p.queryString}'
                   target="_blank">More Issues ...</a>
               } else {
-                  <a href="https://github.com/@{project.githubRepo}/labels/@{label}"
+                  <a href="https://github.com/@{project.reference}/labels/@{label}"
                   target="_blank">More Issues ...</a>
               }
           }
@@ -50,7 +50,7 @@
 
       @if(3 < github.displayIssues.length) {
           @for(label <- github.beginnerIssuesLabel) {
-              <a href="https://github.com/@{project.githubRepo}/labels/@{label}"
+              <a href="https://github.com/@{project.reference}/labels/@{label}"
               target="_blank">More Issues ...</a>
           }
       }

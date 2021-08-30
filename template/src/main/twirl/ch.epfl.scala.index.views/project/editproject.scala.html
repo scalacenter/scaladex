@@ -1,11 +1,12 @@
 @import ch.epfl.scala.index.views.html.main
 
-@import ch.epfl.scala.index.model._
 @import ch.epfl.scala.index.model.misc._
-@import ch.epfl.scala.index.model.release._
+@import ch.epfl.scala.index.newModel.NewProject
 
-@(project: Project, user: Option[UserInfo], beginnerIssuesJson: String)
-
+@import ch.epfl.scala.index.newModel.NewRelease
+@import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
+@(project: NewProject, releases: Seq[NewRelease], user: Option[UserInfo], beginnerIssuesJson: String)
+@artifactNames = @{ releases.map(_.artifactName).distinct }
 @main(title = s"Edit ${project.repository}", showSearch = true, user) {
   <main id="container-project">
 
@@ -29,10 +30,10 @@
                   class="js-keywords-multiple js-states form-control"
                   id="cliArtifacts"
                   multiple="multiple">
-                @for(artifact <- project.artifacts) {
+                @for(artifact <- artifactNames) {
                   <option
                     value="@artifact" 
-                    @if(project.cliArtifacts.contains(artifact)){selected}>
+                    @if(project.dataForm.cliArtifacts.contains(artifact)){selected}>
                       @artifact
                   </option>
                 }
@@ -40,7 +41,7 @@
               </div>
 
               <div class="form-group">
-                <input type="checkbox" name="deprecated" @if(project.deprecated){ checked } id="deprecated">
+                <input type="checkbox" name="deprecated" @if(project.dataForm.deprecated){ checked } id="deprecated">
                 <label label-for="deprecated">Project Deprecated</label>
               </div>
 
@@ -51,17 +52,17 @@
                   class="js-keywords-multiple js-states form-control"
                   id="deprecations"
                   multiple="multiple">
-                @for(artifact <- project.artifacts) {
+                @for(artifact <- artifactNames) {
                   <option
                     value="@artifact" 
-                    @if(project.artifactDeprecations.contains(artifact)){selected}>
+                    @if(project.dataForm.artifactDeprecations.contains(artifact)){selected}>
                       @artifact
                   </option>
                 }
                 </select>
               </div>
 
-              @for(github <- project.github) {
+              @for(github <- project.githubInfo) {
                 <div class="form-group">
                   <label for="primary-topic">Primary Topic</label>
                   <p>The most relevant topic for this project</p>
@@ -73,7 +74,7 @@
                   @for(topic <- github.topics) {
                     <option
                       value="@topic" 
-                      @if(project.primaryTopic == Some(topic)){selected}>
+                      @if(project.dataForm.primaryTopic.contains(topic)){selected}>
                         @topic
                     </option>
                   }
@@ -144,10 +145,10 @@
                     data-live-search="true"
                     class="selectpicker" data-style="btn-primary">
 
-                  @for(artifact <- project.artifacts){
+                  @for(artifact <- artifactNames){
                     <option 
                       value="@artifact"
-                      @if(Some(artifact) == project.defaultArtifact){ selected }>
+                      @if(project.dataForm.defaultArtifact.contains(artifact)){ selected }>
                       @artifact
                     </option>
                   }
@@ -156,11 +157,11 @@
 
                 <div class="form-group">
                   <p>If possible we do not use release candidate or milestones as the last version. For example, if the artifact has version 1.2.1 and version 2.0.0-RC1 by default we will use 1.2.1. If you would prefer to select 2.0.0-RC1 uncheck this box:</p>
-                  <input type="checkbox" name="defaultStableVersion" @if(project.defaultStableVersion){ checked } id="defaultStableVersion">
+                  <input type="checkbox" name="defaultStableVersion" @if(project.dataForm.defaultStableVersion){ checked } id="defaultStableVersion">
                   <label label-for="defaultStableVersion">Do not select pre-released versions</label>
 
                   <p>Remove versions not following the semver.org specifications</p>
-                  <input type="checkbox" name="strictVersions" @if(project.strictVersions){ checked } id="strictVersions">
+                  <input type="checkbox" name="strictVersions" @if(project.dataForm.strictVersions){ checked } id="strictVersions">
                   <label label-for="strictVersions">Semantic Versions only</label>
                 </div>
 
@@ -184,7 +185,7 @@
                   <p>Default: <code>https://www.javadoc.io/doc/[groupId]/[artifactId]/[version]</code></p>
                   <input
                     name="customScalaDoc" 
-                    value="@project.customScalaDoc.map(_.toString).getOrElse("")"
+                    value="@project.dataForm.customScalaDoc.getOrElse("")"
                     placeholder="http://example.org/api/[name]/[version]"
                     type="text" 
                     class="form-control" id="customScalaDoc">
@@ -193,7 +194,7 @@
                 <fieldset class="documentation-link">
                   <legend>Documentation links</legend>
                   <ul>
-                  @for(((label, url), i) <- project.documentationLinks.zipWithIndex){
+                  @for((DocumentationLink(label, url), i) <- project.dataForm.documentationLinks.zipWithIndex){
                     <li class="list-group">
                       <input
                         name="documentationLinks[@i].label" value="@label"
@@ -206,7 +207,7 @@
                         class="form-control list-group-item">
                     </li>
                   }
-                  @for((i) <- ((project.documentationLinks.size) to (project.documentationLinks.size + 5))) {
+                  @for((i) <- ((project.dataForm.documentationLinks.size) to (project.dataForm.documentationLinks.size + 5))) {
                     <li class="list-group">
                       <input
                         name="documentationLinks[@i].label" value=""

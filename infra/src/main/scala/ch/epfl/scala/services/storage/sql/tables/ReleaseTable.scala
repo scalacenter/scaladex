@@ -30,7 +30,7 @@ object ReleaseTable {
 
   private def values(r: NewRelease): Fragment =
     fr0"${r.maven.groupId}, ${r.maven.artifactId}, ${r.version}, ${r.organization}, ${r.repository}," ++
-      fr0" ${r.artifact}, ${r.target}, ${r.description}, ${r.released}, ${r.resolver}, ${r.licenses}, ${r.isNonStandardLib}"
+      fr0" ${r.artifactName}, ${r.target}, ${r.description}, ${r.released}, ${r.resolver}, ${r.licenses}, ${r.isNonStandardLib}"
 
   def insert(elt: NewRelease): doobie.Update0 =
     buildInsert(tableFr, fieldsFr, values(elt)).update

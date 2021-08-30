@@ -1,5 +1,6 @@
-@import ch.epfl.scala.index.model.Release
-@(release: Release, cliArtifacts: Set[String])
+@import ch.epfl.scala.index.newModel.NewRelease
+
+@(release: NewRelease, cliArtifacts: Set[NewRelease.ArtifactName])
 <div class="install">
   <ul class="nav nav-tabs" role="tablist">
     <li role="presentation" class="active">
@@ -8,7 +9,7 @@
     <li role="presentation">
       <a href="#ammonite" aria-controls="ammonite" role="tab" data-toggle="tab">Amm</a>
     </li>
-    @if(cliArtifacts.contains(release.reference.artifact)) {
+    @if(cliArtifacts.contains(release.artifactName)) {
       <li role="presentation">
         <a href="#coursier" aria-controls="coursier" role="tab" data-toggle="tab">Cour</a>
       </li>    
@@ -34,7 +35,7 @@
       <pre id="copy-amm" class="copyable-incantation">@release.ammInstall</pre>
       <button class="btn-copy" data-clipboard-target="copy-amm">Copy</button>
     </div>
-    @if(cliArtifacts.contains(release.reference.artifact)) {
+    @if(cliArtifacts.contains(release.artifactName)) {
       <div role="tabpanel" class="tab-pane" id="coursier">
         <a href="https://get-coursier.io/docs/cli-overview">Coursier</a>
         <pre id="copy-coursier" class="copyable-incantation">cs launch @release.maven.groupId:@release.maven.artifactId:@release.maven.version</pre>

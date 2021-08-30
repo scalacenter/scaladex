@@ -13,7 +13,6 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import cats.effect.IO
-import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.util.PidLock
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.config.ServerConfig
@@ -60,6 +59,7 @@ object Server {
         out
       )
     }
+
     val transactor = DoobieUtils.transactor(config.dbConf)
     transactor
       .use { xa =>
@@ -76,10 +76,8 @@ object Server {
           redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
             concat(
               new ProjectPages(
-                data,
                 db,
                 session,
-                new GithubDownload(paths),
                 paths
               ).routes,
               searchPages.routes

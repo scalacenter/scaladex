@@ -8,6 +8,9 @@ import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubIssue
 import ch.epfl.scala.index.model.misc.Url
+import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
+import ch.epfl.scala.index.newModel.NewRelease
 
 case class ProjectForm(
     // project
@@ -30,6 +33,23 @@ case class ProjectForm(
     contributingGuide: Option[Url],
     codeOfConduct: Option[Url]
 ) {
+  def toUserDataForm(): NewProject.DataForm = {
+    NewProject.DataForm(
+      defaultStableVersion = defaultStableVersion,
+      defaultArtifact = defaultArtifact.map(NewRelease.ArtifactName),
+      strictVersions = strictVersions,
+      customScalaDoc = customScalaDoc.filterNot(_ == ""),
+      documentationLinks = documentationLinks.flatMap { case (label, link) =>
+        DocumentationLink.from(label, link)
+      },
+      deprecated = deprecated,
+      contributorsWanted = contributorsWanted,
+      artifactDeprecations = artifactDeprecations.map(NewRelease.ArtifactName),
+      cliArtifacts = cliArtifacts.map(NewRelease.ArtifactName),
+      primaryTopic = primaryTopic
+    )
+
+  }
   def update(
       project: Project,
       paths: DataPaths,

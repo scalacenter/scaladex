@@ -7,7 +7,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 
-class ReleasesTests
+class ReleaseTableTests
     extends AsyncFunSpec
     with Matchers
     with IOChecker

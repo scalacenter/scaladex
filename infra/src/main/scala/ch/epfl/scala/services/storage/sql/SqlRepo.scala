@@ -27,7 +27,7 @@ class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
   override def insertProject(project: NewProject): Future[Unit] = {
     for {
       _ <- run(ProjectTable.insert, project)
-      _ <- run(ProjectUserFormTable.insert(project), project.formData)
+      _ <- run(ProjectUserFormTable.insert(project), project.dataForm)
       _ <- project.githubInfo
         .map(run(GithubInfoTable.insert(project), _))
         .getOrElse(Future.successful())
@@ -47,14 +47,27 @@ class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
 
   override def insertOrUpdateProject(project: NewProject): Future[Unit] = {
     for {
-      _ <- run(ProjectTable.insertOrUpdate(project).run)
-      _ <- run(ProjectUserFormTable.insertOrUpdate(project), project.formData)
+      _ <- run(ProjectTable.insertOrUpdate, project)
+      _ <- run(ProjectUserFormTable.insertOrUpdate(project), project.dataForm)
       _ <- project.githubInfo
         .map(run(GithubInfoTable.insertOrUpdate(project), _))
         .getOrElse(Future.successful())
     } yield ()
   }
 
+  override def updateProjectForm(
+      ref: Project.Reference,
+      dataForm: NewProject.DataForm
+  ): Future[Unit] = {
+    for {
+      projectOpt <- run(ProjectTable.selectOne(ref.org, ref.repo))
+      _ <- projectOpt
+        .map(p => run(ProjectUserFormTable.update(p), dataForm))
+        .getOrElse(
+          Future.successful(println(s"Cannot update user data form for $ref"))
+        )
+    } yield ()
+  }
   override def findProject(
       projectRef: Project.Reference
   ): Future[Option[NewProject]] =
@@ -69,7 +82,7 @@ class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
     } yield project.map(
       _.copy(
         githubInfo = githubInfoTable,
-        formData = userForm.getOrElse(NewProject.FormData.default)
+        dataForm = userForm.getOrElse(NewProject.DataForm.default)
       )
     )
 

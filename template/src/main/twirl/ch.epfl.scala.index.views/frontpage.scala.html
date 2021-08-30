@@ -3,6 +3,7 @@
 @import ch.epfl.scala.index.model.misc.{Url, UserInfo}
 @import ch.epfl.scala.index.model.misc.SearchParams
 
+@import ch.epfl.scala.index.newModel.NewProject
 @(topics: List[(String, Long)],
   targetTypes: List[(String, String, Long)],
   scalaVersions: List[(String, Long)],
@@ -94,7 +95,7 @@
                 @for(project <- contributingProjects){
                     <div class="col-md-4 col-sm-6">
                         <div class="content-contributing-project box">
-                            @contributingInfo(project)
+                            @contributingInfo(NewProject.from(project))
                       </div>
                     </div>
                 }

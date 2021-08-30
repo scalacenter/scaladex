@@ -13,10 +13,8 @@ class ProjectPagesTests()
   override def afterAll(): Unit = db.dropTables().unsafeRunSync()
 
   val projectPages = new ProjectPages(
-    dataRepository = null,
     db = db,
     session = githubUserSession,
-    githubDownload = null,
     paths = dataPaths
   )
   val routes = projectPages.routes
