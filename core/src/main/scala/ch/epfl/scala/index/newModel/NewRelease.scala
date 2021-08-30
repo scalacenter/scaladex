@@ -1,6 +1,7 @@
 package ch.epfl.scala.index.newModel
 
 import ch.epfl.scala.index.model.License
+import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.Release
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.release.Jvm
@@ -35,6 +36,9 @@ case class NewRelease(
 ) {
   def targetType: ScalaTargetType = target.map(_.targetType).getOrElse(Jvm)
 
+  def projectRef: Project.Reference =
+    Project.Reference(organization.value, repository.value)
+
   def scalaVersion: Option[String] = ???
 
   def scalaJsVersion: Option[String] = ???
@@ -55,7 +59,9 @@ case class NewRelease(
 
 object NewRelease {
   val format = ISODateTimeFormat.dateTime.withOffsetParsed
-  case class ArtifactName(value: String) extends AnyVal
+  case class ArtifactName(value: String) extends AnyVal {
+    override def toString: String = value
+  }
 
   def from(r: Release): NewRelease = {
     NewRelease(

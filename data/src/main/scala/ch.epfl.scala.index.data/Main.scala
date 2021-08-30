@@ -221,7 +221,7 @@ object Main extends LazyLogging {
     val cleaning = for {
       _ <- seed.cleanIndexes()
       _ <- db.dropTables().unsafeToFuture()
-      _ <- db.createTables().unsafeToFuture()
+      _ <- db.migrate().unsafeToFuture()
     } yield ()
 
     // insertData

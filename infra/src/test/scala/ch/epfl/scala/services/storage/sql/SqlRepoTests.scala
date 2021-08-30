@@ -20,7 +20,7 @@ class SqlRepoTests
   private val db = Values.db
   val transactor = Values.xa
 
-  override def beforeAll(): Unit = db.createTables().unsafeRunSync()
+  override def beforeAll(): Unit = db.migrate().unsafeRunSync()
 
   override def afterAll(): Unit = db.dropTables().unsafeRunSync()
 
@@ -41,6 +41,13 @@ class SqlRepoTests
       val findProject =
         await(db.findProject(projectWithGithubInfo.reference))
       findProject shouldBe Success(Some(projectWithGithubInfo))
+    }
+    it("should find releases") {
+      val release = Values.release
+      val insertRelease = await(db.insertRelease(release))
+      insertRelease shouldBe Success(release)
+      val findReleases = await(db.findReleases(release.projectRef))
+      findReleases shouldBe Success(List(release))
     }
   }
 

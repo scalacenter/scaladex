@@ -39,7 +39,7 @@ object NewProject {
 
   case class FormData(
       defaultStableVersion: Boolean,
-      defaultArtifact: Option[String],
+      defaultArtifact: Option[NewRelease.ArtifactName],
       strictVersions: Boolean,
       customScalaDoc: Option[String],
       documentationLinks: List[DocumentationLink],
@@ -50,8 +50,12 @@ object NewProject {
       primaryTopic: Option[String]
   )
 
-  case class Organization(value: String) extends AnyVal
-  case class Repository(value: String) extends AnyVal
+  case class Organization(value: String) extends AnyVal {
+    override def toString(): String = value
+  }
+  case class Repository(value: String) extends AnyVal {
+    override def toString(): String = value
+  }
 
   object FormData {
     val default: FormData = FormData(
@@ -72,7 +76,7 @@ object NewProject {
       }
       FormData(
         defaultStableVersion = p.defaultStableVersion,
-        defaultArtifact = p.defaultArtifact,
+        defaultArtifact = p.defaultArtifact.map(NewRelease.ArtifactName),
         strictVersions = p.strictVersions,
         customScalaDoc = p.customScalaDoc,
         documentationLinks = documentationlinks,

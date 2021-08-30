@@ -17,7 +17,7 @@ class GithubInfoTests
   private val project = Values.project
   private val emptyGithubInfo = Values.githubInfo
 
-  override def beforeAll(): Unit = db.createTables().unsafeRunSync()
+  override def beforeAll(): Unit = db.migrate().unsafeRunSync()
 
   override def afterAll(): Unit = db.dropTables().unsafeRunSync()
 

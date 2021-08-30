@@ -19,8 +19,11 @@ import ch.epfl.scala.index.data.project.ProjectForm
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
+import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.TwirlSupport._
+import ch.epfl.scala.services.DatabaseApi
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import com.typesafe.scalalogging.LazyLogging
@@ -29,6 +32,7 @@ import org.json4s.native.Serialization.write
 
 class ProjectPages(
     dataRepository: ESRepo,
+    db: DatabaseApi,
     session: GithubUserSession,
     githubDownload: GithubDownload,
     paths: DataPaths
@@ -72,25 +76,27 @@ class ProjectPages(
   }
 
   private def getSelectedRelease(
-      owner: String,
-      repo: String,
+      org: NewProject.Organization,
+      repo: NewProject.Repository,
       target: Option[String],
       artifact: Option[String],
       version: Option[String],
       selected: Option[String]
-  ): Future[Option[Release]] = {
-
-    dataRepository
-      .getProjectAndReleaseOptions(
-        Project.Reference(owner, repo),
-        ReleaseSelection.parse(
-          target = target,
-          artifactName = artifact,
-          version = version,
-          selected = selected
-        )
-      )
-      .map(_.map { case (_, options) => options.release })
+  ): Future[Option[NewRelease]] = {
+    val releaseSelection = ReleaseSelection.parse(
+      target = target,
+      artifactName = artifact,
+      version = version,
+      selected = selected
+    )
+    val projectRef = Project.Reference(org.value, repo.value)
+    for {
+      project <- db.findProject(projectRef)
+      releases <- db.findReleases(projectRef)
+      filteredReleases = project
+        .map(p => ReleaseOptions.filterReleases(releaseSelection, releases, p))
+        .getOrElse(Nil)
+    } yield filteredReleases.headOption
   }
 
   private def artifactsPage(
@@ -240,10 +246,10 @@ class ProjectPages(
   private val moved = GithubReader.movedRepositories(paths)
 
   private def redirectMoved(
-      organization: String,
-      repository: String
+      organization: NewProject.Organization,
+      repository: NewProject.Repository
   ): Directive0 = {
-    moved.get(GithubRepo(organization, repository)) match {
+    moved.get(GithubRepo(organization.value, repository.value)) match {
       case Some(destination) =>
         redirect(
           Uri(s"/${destination.organization}/${destination.repository}"),
@@ -377,107 +383,118 @@ class ProjectPages(
           )
         )
       ),
-      get(
-        concat(
-          path("artifacts" / Segment / Segment)((organization, repository) =>
-            optionalSession(refreshable, usingCookies)(userId =>
-              pathEnd(
-                complete(
-                  artifactsPage(
-                    organization,
-                    repository,
-                    session.getUser(userId)
-                  )
+      get {
+        path("artifacts" / Segment / Segment)((organization, repository) =>
+          optionalSession(refreshable, usingCookies)(userId =>
+            pathEnd(
+              complete(
+                artifactsPage(
+                  organization,
+                  repository,
+                  session.getUser(userId)
                 )
               )
             )
-          ),
-          path("edit" / Segment / Segment)((organization, repository) =>
-            optionalSession(refreshable, usingCookies)(userId =>
-              pathEnd(
-                complete(
-                  getEditPage(organization, repository, session.getUser(userId))
-                )
-              )
-            )
-          ),
-          path(Segment / Segment)((organization, repository) =>
-            redirectMoved(organization, repository)(
-              optionalSession(refreshable, usingCookies)(userId =>
-                parameters(
-                  ("artifact".?, "version".?, "target".?, "selected".?)
-                )((artifact, version, target, selected) =>
-                  onSuccess(
-                    getSelectedRelease(
-                      owner = organization,
-                      repo = repository,
-                      target = target,
-                      artifact = artifact,
-                      version = version,
-                      selected = selected
-                    )
-                  ) {
-                    case Some(release) =>
-                      val targetParam =
-                        release.reference.target match {
-                          case Some(target) =>
-                            s"?target=${target.encode}"
-                          case None => ""
-                        }
-
-                      redirect(
-                        s"/$organization/$repository/${release.reference.artifact}/${release.reference.version}/$targetParam",
-                        StatusCodes.TemporaryRedirect
-                      )
-                    case None =>
-                      complete(
-                        NotFound,
-                        views.html.notfound(
-                          session.getUser(userId).map(_.info)
-                        )
-                      )
-                  }
-                )
-              )
-            )
-          ),
-          path(Segment / Segment / Segment)(
-            (organization, repository, artifact) =>
-              optionalSession(refreshable, usingCookies)(userId =>
-                parameter("target".?)(target =>
-                  complete(
-                    projectPage(
-                      owner = organization,
-                      repo = repository,
-                      target = target,
-                      artifact = Some(artifact),
-                      version = None,
-                      selected = None,
-                      userState = session.getUser(userId)
-                    )
-                  )
-                )
-              )
-          ),
-          path(Segment / Segment / Segment / Segment)(
-            (organization, repository, artifact, version) =>
-              optionalSession(refreshable, usingCookies)(userId =>
-                parameter("target".?)(target =>
-                  complete(
-                    projectPage(
-                      owner = organization,
-                      repo = repository,
-                      target = target,
-                      artifact = Some(artifact),
-                      version = Some(version),
-                      selected = None,
-                      userState = session.getUser(userId)
-                    )
-                  )
-                )
-              )
           )
         )
-      )
+      },
+      get {
+        path("edit" / Segment / Segment)((organization, repository) =>
+          optionalSession(refreshable, usingCookies)(userId =>
+            pathEnd(
+              complete(
+                getEditPage(organization, repository, session.getUser(userId))
+              )
+            )
+          )
+        )
+      },
+      get {
+        path(organizationM / repositoryM)((organization, repository) =>
+          redirectMoved(organization, repository)(
+            optionalSession(refreshable, usingCookies)(userId =>
+              parameters(
+                ("artifact".?, "version".?, "target".?, "selected".?)
+              )((artifact, version, target, selected) =>
+                onSuccess(
+                  getSelectedRelease(
+                    org = organization,
+                    repo = repository,
+                    target = target,
+                    artifact = artifact,
+                    version = version,
+                    selected = selected
+                  )
+                ) {
+                  case Some(release) =>
+                    val targetParam =
+                      release.target match {
+                        case Some(target) =>
+                          s"?target=${target.encode}"
+                        case None => ""
+                      }
+                    redirect(
+                      s"/$organization/$repository/${release.reference.artifact}/${release.reference.version}/$targetParam",
+                      StatusCodes.TemporaryRedirect
+                    )
+                  case None =>
+                    complete(
+                      NotFound,
+                      views.html.notfound(
+                        session.getUser(userId).map(_.info)
+                      )
+                    )
+                }
+              )
+            )
+          )
+        )
+      },
+      get {
+
+        path(Segment / Segment / Segment)(
+          (organization, repository, artifact) =>
+            optionalSession(refreshable, usingCookies)(userId =>
+              parameter("target".?)(target =>
+                complete(
+                  projectPage(
+                    owner = organization,
+                    repo = repository,
+                    target = target,
+                    artifact = Some(artifact),
+                    version = None,
+                    selected = None,
+                    userState = session.getUser(userId)
+                  )
+                )
+              )
+            )
+        )
+      },
+      get {
+        path(Segment / Segment / Segment / Segment)(
+          (organization, repository, artifact, version) =>
+            optionalSession(refreshable, usingCookies)(userId =>
+              parameter("target".?)(target =>
+                complete(
+                  projectPage(
+                    owner = organization,
+                    repo = repository,
+                    target = target,
+                    artifact = Some(artifact),
+                    version = Some(version),
+                    selected = None,
+                    userState = session.getUser(userId)
+                  )
+                )
+              )
+            )
+        )
+      }
     )
+
+  val organizationM: PathMatcher1[NewProject.Organization] =
+    Segment.map(NewProject.Organization)
+  val repositoryM: PathMatcher1[NewProject.Repository] =
+    Segment.map(NewProject.Repository)
 }

@@ -1,6 +1,7 @@
 package ch.epfl.scala.index.model
 package release
 
+import ch.epfl.scala.index.newModel.NewRelease
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -161,7 +162,8 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
       val result = ReleaseOptions(
         repository,
         ReleaseSelection(
-          artifact = Some("akka-distributed-data-experimental"),
+          artifact =
+            Some(NewRelease.ArtifactName("akka-distributed-data-experimental")),
           target = None,
           version = None,
           selected = None
