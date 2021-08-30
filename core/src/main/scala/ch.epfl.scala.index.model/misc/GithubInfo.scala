@@ -1,5 +1,7 @@
 package ch.epfl.scala.index.model.misc
 
+import ch.epfl.scala.index.newModel.NewProject
+
 /**
  * Github Info to a project
  *
@@ -47,6 +49,10 @@ case class GithubInfo(
     selectedBeginnerIssues: List[GithubIssue] = List(),
     filteredBeginnerIssues: List[GithubIssue] = List()
 ) {
+  val organization: NewProject.Organization = NewProject.Organization(name)
+  val repository: NewProject.Repository = NewProject.Repository(owner)
+  val githubRepo: GithubRepo = GithubRepo(name, owner)
+
   def displayIssues: List[GithubIssue] = {
     if (filteredBeginnerIssues.nonEmpty) {
       filteredBeginnerIssues

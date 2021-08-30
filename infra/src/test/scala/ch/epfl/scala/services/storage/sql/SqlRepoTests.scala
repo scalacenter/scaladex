@@ -56,6 +56,11 @@ class SqlRepoTests
         db.insertDependencies(Seq(dependency1, dependency2))
       ) shouldBe Success(2)
     }
+    it("should update user project form") {
+      await(
+        db.updateProjectForm(project.reference, project.dataForm)
+      ) shouldBe Success(())
+    }
   }
 
   def await[A](f: Future[A]): Try[A] = Try(

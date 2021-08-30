@@ -1,10 +1,12 @@
 @import ch.epfl.scala.index.model._
 @import ch.epfl.scala.index.model.release._
 
-@import ch.epfl.scala.index.views.html.{unescapeBackground, ensureUri}
+@import ch.epfl.scala.index.views.html.ensureUri
+@import ch.epfl.scala.index.newModel.NewProject
+@import ch.epfl.scala.index.newModel.NewRelease
 
-@(project: Project, artifacts: List[String], versions: List[SemanticVersion],
-  targets: List[ScalaTarget], release: Release, canEdit: Boolean)
+@(project: NewProject, artifacts: Seq[NewRelease.ArtifactName], versions: Seq[SemanticVersion],
+  targets: Seq[ScalaTarget], release: NewRelease, canEdit: Boolean)
 
 <div class="head-project">
   <div class="container">
@@ -17,7 +19,7 @@
               target="_blank">
               @project.repository
             </a>
-            @if(project.contributorsWanted){
+            @if(project.dataForm.contributorsWanted){
               <a class="contributors-tag" href="/search?q=contributorsWanted:true">
                 <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">
               </a>
@@ -27,34 +29,34 @@
                 Edit
               </a>
             }
-            @if(project.deprecated){
+            @if(project.dataForm.deprecated){
               [DEPRECATED]
             }
           </h1>
-          @for(github <- project.github) {
+          @for(github <- project.githubInfo) {
             @for(description <- github.description) {
-              @if(!description.isEmpty) {
+              @if(description.nonEmpty) {
                 <p class="description emojify">@description</p>
               }
             }
           }
           <div class="project-links">
-            @for(github <- project.github) {
+            @for(github <- project.githubInfo) {
               @for(homepage <- github.homepage) {
-                @if(!homepage.target.isEmpty) {
+                @if(homepage.target.nonEmpty) {
                   <a href="@ensureUri(homepage.target)" target="_blank" rel="nofollow">
                     Website <i class="fa fa-globe" aria-hidden="true"></i>
                   </a>
                 }
               }
-              <a href="https://github.com/@project.githubRepo"
+              <a href="https://github.com/@project.reference"
                 target="_blank">
                 GitHub <i class="fa fa-github fa-lg"></i>
               </a>
             }
 
           </div>
-          @for(github <- project.github) {
+          @for(github <- project.githubInfo) {
             @if(!github.topics.isEmpty) {
               <ul class="list-inline">
                 @for(topic <- github.topics) {
@@ -67,14 +69,14 @@
       </div>
       <div class="col-md-4">
         <div class="artifact-project">
-          <a class="btn btn-primary" href="/artifacts/@project.reference.organization/@project.reference.repository" >
+          <a class="btn btn-primary" href="/artifacts/@project.reference" >
             Version Matrix
           </a>
-          @if(!targets.isEmpty) {
-            <form action="/@project.reference.organization/@project.reference.repository" action="GET">
+          @if(targets.nonEmpty) {
+            <form action="/@project.reference" action="GET">
               <input type="hidden" name="selected" value="target">
 
-              <input type="hidden" name="artifact" value="@release.reference.artifact">
+              <input type="hidden" name="artifact" value="@release.artifactName">
 
               <select
                 name="target"
@@ -84,19 +86,19 @@
 
               @for(target <- targets){
                 <option value="@target.encode"
-                        @if(Some(target) == release.reference.target){ selected }>
+                        @if(release.target.contains(target)){ selected }>
                   @target.render
                 </option>
               }
               </select>
 
-              <input type="hidden" name="version" value="@release.reference.version">
+              <input type="hidden" name="version" value="@release.version">
             </form>
           }
 
-          <form action="/@project.reference.organization/@project.reference.repository" action="GET">
+          <form action="/@project.reference" action="GET">
 
-            @for(target <- release.reference.target) {
+            @for(target <- release.target) {
               <input type="hidden" name="target" value="@target.encode">
             }
 
@@ -107,22 +109,22 @@
               onchange="this.form.submit()"
               data-live-search="true"
               class="selectpicker artifact-name" data-style="btn-primary">
-            @for(artifact <- artifacts.filterNot(project.artifactDeprecations.contains)) {
-              <option value="@artifact" @if(artifact == release.reference.artifact){ selected }>
+            @for(artifact <- artifacts.filterNot(project.dataForm.artifactDeprecations.contains)) {
+              <option value="@artifact" @if(artifact == release.artifactName){ selected }>
                 @artifact
               </option>
             }
             </select>
 
-            <input type="hidden" name="version" value="@release.reference.version">
+            <input type="hidden" name="version" value="@release.version">
           </form>
 
-          <form action="/@project.reference.organization/@project.reference.repository" action="GET">
+          <form action="/@project.reference" action="GET">
             <input type="hidden" name="selected" value="version">
 
-            <input type="hidden" name="artifact" value="@release.reference.artifact">
+            <input type="hidden" name="artifact" value="@release.artifactName">
 
-            @for(target <- release.reference.target) {
+            @for(target <- release.target) {
               <input type="hidden" name="target" value="@target.encode">
             }
 
@@ -133,7 +135,7 @@
               class="selectpicker" data-style="btn-primary">
 
             @for(version <- versions){
-              <option value="@version" @if(version == release.reference.version){ selected }>
+              <option value="@version" @if(version == release.version){ selected }>
                 @version
               </option>
             }

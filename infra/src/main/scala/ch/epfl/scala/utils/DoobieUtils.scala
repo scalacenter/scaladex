@@ -139,11 +139,16 @@ object DoobieUtils {
         deriveEncoder[DocumentationLink]
       stringMeta.timap(fromJson[List[DocumentationLink]](_).get)(toJson(_))
     }
-    implicit val topicsMeta: Meta[Set[String]] = {
+    implicit val topicsMeta: Meta[Set[String]] =
       stringMeta.timap(_.split(",").filter(_.nonEmpty).toSet)(
         _.mkString(",")
       )
-    }
+    implicit val artifactNamesMeta: Meta[Set[NewRelease.ArtifactName]] =
+      stringMeta.timap(
+        _.split(",").filter(_.nonEmpty).map(NewRelease.ArtifactName).toSet
+      )(
+        _.mkString(",")
+      )
     implicit val semanticVersionMeta: Meta[SemanticVersion] =
       stringMeta.timap(SemanticVersion.tryParse(_).get)(_.toString)
     implicit val scalaTargetMeta: Meta[ScalaTarget] =
@@ -183,7 +188,7 @@ object DoobieUtils {
           r.version,
           r.organization,
           r.repository,
-          r.artifact,
+          r.artifactName,
           r.target,
           r.description,
           r.released,
@@ -225,7 +230,7 @@ object DoobieUtils {
             repository = repository,
             githubInfo = None,
             esId = esId,
-            formData = NewProject.FormData.default
+            dataForm = NewProject.DataForm.default
           )
       }
 

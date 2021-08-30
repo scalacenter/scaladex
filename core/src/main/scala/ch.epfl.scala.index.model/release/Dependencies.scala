@@ -75,4 +75,6 @@ object Dependencies {
       (dep.dependent.projectReference, dep.dependent.artifact)
     )
   )
+  def empty(ref: Release.Reference): Dependencies =
+    Dependencies(ref, Nil, Nil, Nil, Map())
 }

@@ -11,7 +11,7 @@ import ch.epfl.scala.index.model.release.ScalaJvm
 import ch.epfl.scala.index.model.release.ScalaVersion
 import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewProject.FormData
+import ch.epfl.scala.index.newModel.NewProject.DataForm
 import ch.epfl.scala.index.newModel.NewProject.Organization
 import ch.epfl.scala.index.newModel.NewProject.Repository
 import ch.epfl.scala.index.newModel.NewRelease
@@ -33,7 +33,7 @@ object Values {
   val project: NewProject =
     NewProject.defaultProject("scalacenter", "scaladex", None)
   val githubInfo = GithubInfo.empty
-  val nonDefaultFormData: FormData = FormData(
+  val nonDefaultFormData: DataForm = DataForm(
     defaultStableVersion = false,
     defaultArtifact = None,
     strictVersions = false,
@@ -61,7 +61,7 @@ object Values {
     version = SemanticVersion.tryParse("0.1.1-play2.3-M1").get,
     organization = Organization("xuwei-k"),
     repository = Repository("play-json-extra"),
-    artifact = ArtifactName("play-json-extra"),
+    artifactName = ArtifactName("play-json-extra"),
     target = Some(ScalaJvm(ScalaVersion.`2.11`)),
     description = None,
     released = None,
