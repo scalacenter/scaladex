@@ -104,21 +104,23 @@ object Server {
         // apply migrations to the database if any.
         db.migrate().unsafeRunSync()
 
-        Http()
-          .bindAndHandle(routes, config.api.endpoint, config.api.port)
-          .andThen {
-            case Failure(exception) =>
-              log.error("Unable to start the server", exception)
-              System.exit(1)
-            case Success(binding) =>
-              log.info(
-                s"Server started at http://${config.api.endpoint}:${config.api.port}"
-              )
-              sys.addShutdownHook {
-                log.info("Stopping server")
-                await(binding.terminate(hardDeadline = 10.seconds))
-              }
-          }
+        await(
+          Http()
+            .bindAndHandle(routes, config.api.endpoint, config.api.port)
+            .andThen {
+              case Failure(exception) =>
+                log.error("Unable to start the server", exception)
+                System.exit(1)
+              case Success(binding) =>
+                log.info(
+                  s"Server started at http://${config.api.endpoint}:${config.api.port}"
+                )
+                sys.addShutdownHook {
+                  log.info("Stopping server")
+                  await(binding.terminate(hardDeadline = 10.seconds))
+                }
+            }
+        )
         IO.never
       }
       .unsafeRunSync()
