@@ -128,7 +128,7 @@ class Deployment(
           |  -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
           |  -Dsentry.dsn=$sentryDsn \\
           |  -Dsentry.release=$version \\
-          |  $port \\
+          |  -Dapi.port=$port \\
           |  /home/$userName/scaladex-contrib \\
           |  /home/$userName/scaladex-index \\
           |  /home/$userName/scaladex-credentials \\

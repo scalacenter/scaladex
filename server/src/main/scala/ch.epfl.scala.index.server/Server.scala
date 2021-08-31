@@ -2,12 +2,14 @@ package ch.epfl.scala.index
 package server
 
 import scala.concurrent.Await
+import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.Failure
+import scala.util.Success
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl._
-import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import cats.effect.IO
@@ -27,10 +29,6 @@ object Server {
   val config: ServerConfig = ServerConfig.load()
 
   def main(args: Array[String]): Unit = {
-    val port =
-      if (args.isEmpty) 8080
-      else args.head.toInt
-
     if (config.production) {
       PidLock.create("SERVER")
     }
@@ -40,7 +38,7 @@ object Server {
 
     val pathFromArgs =
       if (args.isEmpty) Nil
-      else args.toList.tail
+      else args.toList
 
     val paths = DataPaths(pathFromArgs)
     val session = GithubUserSession(config)
@@ -63,7 +61,7 @@ object Server {
       log.error(out)
 
       complete(
-        InternalServerError,
+        StatusCodes.InternalServerError,
         out
       )
     }
@@ -105,15 +103,26 @@ object Server {
 
         // apply migrations to the database if any.
         db.migrate().unsafeRunSync()
-        Await.result(
-          Http().bindAndHandle(routes, "0.0.0.0", port),
-          20.seconds
-        )
+
+        Http()
+          .bindAndHandle(routes, config.api.endpoint, config.api.port)
+          .andThen {
+            case Failure(exception) =>
+              log.error("Unable to start the server", exception)
+              System.exit(1)
+            case Success(binding) =>
+              log.info(
+                s"Server started at http://${config.api.endpoint}:${config.api.port}"
+              )
+              sys.addShutdownHook {
+                log.info("Stopping server")
+                await(binding.terminate(hardDeadline = 10.seconds))
+              }
+          }
         IO.never
       }
       .unsafeRunSync()
-
-    log.info(s"port: $port")
-    log.info("Application started")
   }
+
+  private def await[A](f: Future[A]) = Await.result(f, Duration.Inf)
 }
