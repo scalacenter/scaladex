@@ -5,6 +5,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
+import ch.epfl.scala.utils.Env
 import org.slf4j.LoggerFactory
 
 /*
@@ -70,48 +71,42 @@ object LocalPomRepository {
 
 object DataPaths {
 
-  private val log = LoggerFactory.getLogger(getClass)
-
   private val base = build.info.BuildInfo.baseDirectory.toPath.getParent
+  base.resolve(Paths.get("scaladex-credentials"))
 
-  private val defaultContrib = base.resolve(Paths.get("scaladex-contrib"))
-  private val defaultIndex = base.resolve(Paths.get("scaladex-small-index"))
-  private val defaultCredentials =
-    base.resolve(Paths.get("scaladex-credentials"))
+  def from(
+      contrib: String,
+      index: String,
+      credentials: String,
+      env: Env
+  ): DataPaths = {
+    val contribPath = Paths.get(contrib)
+    val indexPath = Paths.get(index)
+    val credentialsPath = Paths.get(credentials)
+    val (contribDataPath, indexDataPath, credentialsDataPath) =
+      if (env.isLocal) {
 
-  def apply(args: List[String]): DataPaths = {
-    log.info("DataPaths args: " + args)
-    val (contrib, index, credentials) = args match {
-      case List(contrib, index, credentials) =>
-        (
-          Paths.get(contrib),
-          Paths.get(index),
-          Paths.get(credentials)
-        )
-      case _ => {
-        (
-          defaultContrib,
-          defaultIndex,
-          defaultCredentials
-        )
+        val defaultContrib =
+          if (contribPath.isAbsolute) contribPath else base.resolve(contribPath)
+        val defaultIndex =
+          if (indexPath.isAbsolute) indexPath else base.resolve(indexPath)
+        val defaultCredentials =
+          if (credentialsPath.isAbsolute) credentialsPath
+          else base.resolve(credentialsPath)
+        (defaultContrib, defaultIndex, defaultCredentials)
+      } else {
+        (contribPath, indexPath, credentialsPath)
       }
-    }
-
-    new DataPaths(contrib, index, credentials, validate = true)
-  }
-
-  def fullIndex: DataPaths = {
-    val index = base.resolve(Paths.get("scaladex-index"))
-    new DataPaths(defaultContrib, index, defaultCredentials, validate = false)
-  }
-
-  def subIndex: DataPaths = {
-    val index = base.resolve(Paths.get("scaladex-small-index"))
-    new DataPaths(defaultContrib, index, defaultCredentials, validate = false)
+    DataPaths(
+      contribDataPath,
+      indexDataPath,
+      credentialsDataPath,
+      validate = true
+    )
   }
 }
 
-class DataPaths(
+case class DataPaths(
     private[data] val contrib: Path,
     private[data] val index: Path,
     private[data] val credentials: Path,
@@ -229,4 +224,14 @@ class DataPaths(
   val github: Path = index.resolve("github")
 
   val movedGithub: Path = github.resolve("moved.json")
+
+  def fullIndex: DataPaths = {
+    val index = DataPaths.base.resolve(Paths.get("scaladex-index"))
+    copy(index = index, validate = false)
+  }
+
+  def subIndex: DataPaths = {
+    val index = DataPaths.base.resolve(Paths.get("scaladex-small-index"))
+    copy(index = index, validate = false)
+  }
 }

@@ -2,6 +2,7 @@ target/
 .sass-cache
 .idea
 .esdata/
+.postgresql/
 amm
 sbt
 server/scaladex.log

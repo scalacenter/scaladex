@@ -128,10 +128,11 @@ class Deployment(
           |  -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
           |  -Dsentry.dsn=$sentryDsn \\
           |  -Dsentry.release=$version \\
-          |  -Dapi.port=$port \\
-          |  /home/$userName/scaladex-contrib \\
-          |  /home/$userName/scaladex-index \\
-          |  /home/$userName/scaladex-credentials \\
+          |  -Dapp.port=$port \\
+          |  -Dapp.env=prod \\
+          |  -Ddata-paths.contrib=/home/$userName/scaladex-contrib \\
+          |  -Ddata-paths.index=/home/$userName/scaladex-index \\
+          |  -Ddata-paths.credentials=/home/$userName/scaladex-credentials \\
           |  &>/dev/null &
           |""".stripMargin
 
@@ -195,9 +196,9 @@ class Deployment(
           |    -Dsentry.dsn=$sentryDsn \\
           |    -Dsentry.release=$version \\
           |    elastic \\
-          |    /home/$userName/scaladex-contrib \\
-          |    /home/$userName/scaladex-index \\
-          |    /home/$userName/scaladex-credentials \\
+          |   -Ddata-paths.contrib=/home/$userName/scaladex-contrib \\
+          |   -Ddata-paths.index=/home/$userName/scaladex-index \\
+          |   -Ddata-paths.credentials=/home/$userName/scaladex-credentials \\
           |    &>/dev/null &
           |fi
           |

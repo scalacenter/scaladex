@@ -24,10 +24,8 @@ import ch.epfl.scala.index.data.project.ProjectConvert
 import ch.epfl.scala.index.data.util.PidLock
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.search.ESRepo
-import ch.epfl.scala.services.storage.sql.DbConf
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.DoobieUtils
-import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import doobie.hikari._
 
@@ -59,12 +57,9 @@ object Main extends LazyLogging {
    *              - Path of the 'credentials' Git repository
    */
   def run(args: Array[String]): Unit = {
-    val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
-    val dbConfig = ConfigFactory.load().getConfig("database")
-    val production = config.getBoolean("production")
-    val dbConf = DbConf.from(dbConfig.getString("database-url")).get
+    val config = IndexConfig.load()
 
-    if (production) {
+    if (config.env.isDevOrProd) {
       PidLock.create("DATA")
     }
 
@@ -74,11 +69,7 @@ object Main extends LazyLogging {
 
     implicit val system: ActorSystem = ActorSystem()
 
-    val pathFromArgs =
-      if (args.isEmpty) Nil
-      else args.toList.tail.take(3)
-
-    val dataPaths = DataPaths(pathFromArgs)
+    val dataPaths = config.dataPaths
 
     val steps = List(
       // List POMs of Bintray
@@ -109,10 +100,10 @@ object Main extends LazyLogging {
       Step("elastic") { () =>
         import system.dispatcher
         val transactor: Resource[IO, HikariTransactor[IO]] =
-          DoobieUtils.transactor(dbConf)
+          DoobieUtils.transactor(config.db)
         transactor
           .use { xa =>
-            val db = new SqlRepo(dbConf, xa)
+            val db = new SqlRepo(config.db, xa)
             IO(
               Using.resource(ESRepo.open()) { esRepo =>
                 Await.result(
@@ -133,8 +124,8 @@ object Main extends LazyLogging {
 
     def subIndex(): Unit = {
       SubIndex.generate(
-        source = DataPaths.fullIndex,
-        destination = DataPaths.subIndex
+        source = dataPaths.fullIndex,
+        destination = dataPaths.subIndex
       )
     }
 
@@ -159,7 +150,7 @@ object Main extends LazyLogging {
           )
       }
 
-    if (production) {
+    if (config.env.isDevOrProd) {
       inPath(dataPaths.contrib) { sh =>
         logger.info("Pulling the latest data from the 'contrib' repository")
         sh.exec("git", "checkout", "master")
