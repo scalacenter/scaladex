@@ -35,7 +35,7 @@ class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
 
   override def insertOrUpdateProject(project: NewProject): Future[Unit] = {
     for {
-      _ <- run(ProjectTable.insertOrUpdate, project)
+      _ <- run(ProjectTable.insertOrUpdate(project).run)
       _ <- run(ProjectUserFormTable.insertOrUpdate(project), project.formData)
       _ <- project.githubInfo
         .map(run(GithubInfoTable.insertOrUpdate(project), _))
@@ -102,6 +102,8 @@ class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
   def countProjectDataForm(): Future[Long] =
     run(ProjectUserFormTable.indexedProjectUserForm().unique)
 
+  // to use only when inserting one element or updating one element
+  // when expecting a row to be modified
   private def run[A](i: A => doobie.Update0, v: A): Future[A] =
     i(v).run.transact(xa).unsafeToFuture.flatMap {
       case 1 => Future.successful(v)

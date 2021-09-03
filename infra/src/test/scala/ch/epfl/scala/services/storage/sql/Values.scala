@@ -9,6 +9,7 @@ import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.ScalaJvm
 import ch.epfl.scala.index.model.release.ScalaVersion
+import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewProject.FormData
 import ch.epfl.scala.index.newModel.NewProject.Organization
@@ -67,6 +68,15 @@ object Values {
     resolver = None,
     licenses = Set(),
     isNonStandardLib = false
+  )
+  val dependency: NewDependency = NewDependency(
+    source = MavenReference(
+      "cats-effect",
+      "cats-effect-kernel_3",
+      "3.2.3"
+    ),
+    target = MavenReference("org.typelevel", "cats-core_3", "2.6.1"),
+    "compile"
   )
 
 }
