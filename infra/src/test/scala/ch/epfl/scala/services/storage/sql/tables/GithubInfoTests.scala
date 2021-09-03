@@ -43,7 +43,7 @@ class GithubInfoTests
                         | selectedBeginnerIssues, filteredBeginnerIssues) VALUES (?, ?, ?, ?,
                         | ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         | ON CONFLICT (organization, repository) DO UPDATE SET name=?, owner=?, homepage=?, description=?,
-                        | logo=?, stars=?, forks=?, watchers=?, issues=?, readme=?, contributors=? contributorCount=?,
+                        | logo=?, stars=?, forks=?, watchers=?, issues=?, readme=?, contributors=?, contributorCount=?,
                         | commits=?, topics=?, contributingGuide=?, codeOfConduct=?, chatroom=?""".stripMargin
         .filterNot(_ == '\n')
     }
