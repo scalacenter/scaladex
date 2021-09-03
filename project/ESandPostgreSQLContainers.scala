@@ -32,6 +32,7 @@ object ESandPostgreSQLContainers extends AutoPlugin {
   override lazy val globalSettings: Seq[Setting[_]] = Seq(
     startESandPostgreSQL := {
       val esData = (ThisBuild / baseDirectory).value / ".esdata"
+      val postgresqlFolder = (ThisBuild / baseDirectory).value / ".postgresql"
       val logger = streams.value.log
 
       if (esAlreadyStarted()) {
@@ -46,7 +47,7 @@ object ESandPostgreSQLContainers extends AutoPlugin {
         logger.info("PostgreSql already started")
       } else {
         logger.info("starting postgreSql")
-        startPostreSqlContainer()
+        startPostreSqlContainer(postgresqlFolder)
         logger.info("PostgreSql is started")
       }
     }
@@ -77,7 +78,7 @@ object ESandPostgreSQLContainers extends AutoPlugin {
     container.start()
   }
 
-  private def startPostreSqlContainer(): Unit = {
+  private def startPostreSqlContainer(dataFolder: File): Unit = {
     val version = "13.3"
     val database = "scaladex"
     val user = "user"
@@ -96,8 +97,15 @@ object ESandPostgreSQLContainers extends AutoPlugin {
     container.withEnv("POSTGRES_DB", database)
     container.withEnv("POSTGRES_USER", user)
     container.withEnv("POSTGRES_PASSWORD", password)
+    container.withEnv("PGDATA", dataFolder.toString)
+    container.addFileSystemBind(
+      dataFolder.toString,
+      dataFolder.toString,
+      BindMode.READ_WRITE
+    )
     container.setWaitStrategy(waitStrategy)
 
+    if (!dataFolder.exists) IO.createDirectory(dataFolder)
     workaroundToStartContainer()
     container.start()
 

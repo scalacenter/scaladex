@@ -31,8 +31,7 @@ trait CtrlTests extends AnyFunSpec with Matchers {
   val githubUserSession = new GithubUserSession(config.session)
 
   val db = new SqlRepo(dbConf, xa)
-
-  val dataPaths: DataPaths = DataPaths(List()) //
+  val dataPaths: DataPaths = config.dataPaths
 
   def insertMockData(): Unit = {
     import Values._

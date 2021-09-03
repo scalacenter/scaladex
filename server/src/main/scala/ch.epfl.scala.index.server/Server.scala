@@ -13,7 +13,6 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import cats.effect.IO
-import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.util.PidLock
 import ch.epfl.scala.index.search.ESRepo
@@ -29,18 +28,14 @@ object Server {
   val config: ServerConfig = ServerConfig.load()
 
   def main(args: Array[String]): Unit = {
-    if (config.production) {
+    if (config.api.env.isDevOrProd) {
       PidLock.create("SERVER")
     }
 
     implicit val system: ActorSystem = ActorSystem("scaladex")
     import system.dispatcher
 
-    val pathFromArgs =
-      if (args.isEmpty) Nil
-      else args.toList
-
-    val paths = DataPaths(pathFromArgs)
+    val paths = config.dataPaths
     val session = GithubUserSession(config)
 
     // the DataRepository will not be closed until the end of the process,
