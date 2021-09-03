@@ -30,6 +30,7 @@ import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.DoobieUtils
 import ch.epfl.scala.utils.ScalaExtensions._
+import ch.epfl.scala.utils.TimerUtils
 import com.typesafe.scalalogging.LazyLogging
 import doobie.hikari._
 
@@ -179,7 +180,11 @@ object Main extends LazyLogging {
   }
 
   object Step {
-    def apply(name: String)(effect: () => Unit): Step = new Step(name)(effect)
+    def apply(name: String)(effect: () => Unit): Step = new Step(name)(
+      TimerUtils.timeAndLog(effect)(duration =>
+        logger.info(s"step $name took ${duration.toMinutes} minutes")
+      )
+    )
   }
 
   def inPath(path: Path)(f: Sh => Unit): Unit = f(new Sh(path))
