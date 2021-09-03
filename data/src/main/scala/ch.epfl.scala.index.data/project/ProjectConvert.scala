@@ -33,7 +33,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
   def convertAll(
       pomsRepoSha: Iterable[(ReleaseModel, LocalRepository, String)],
       indexedReleases: Map[Project.Reference, Seq[Release]]
-  ): (Iterator[(Project, Seq[Release])], Seq[NewDependency]) = {
+  ): (Iterator[Project], Iterator[Release], Iterator[NewDependency]) = {
 
     val githubRepoExtractor = new GithubRepoExtractor(paths)
 
@@ -185,7 +185,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
     val allDependencies: Seq[NewDependency] =
       poms.flatMap(getDependencies).distinct
 
-    val projectAndReleases = projectsAndReleases.iterator.map {
+    val projectAndReleases = projectsAndReleases.map {
       case (seed, releases) =>
         val releasesWithDependencies =
           releases // todo: we will use soon NewRelase which doenst contain dependencies
@@ -210,7 +210,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
         (updatedProject, releasesWithDependencies)
     }
-    (projectAndReleases, allDependencies)
+    (projectAndReleases.keys.iterator, projectAndReleases.values.flatten.iterator, allDependencies.iterator)
   }
 
   private def getDependencies(pom: ReleaseModel): List[NewDependency] =
@@ -236,7 +236,6 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
     val githubInfo = GithubReader(paths, githubRepo)
     val licenseCleanup = new LicenseCleanup(paths)
 
-    log.info("Converting the pom to a project/release/dependencies")
     pomMetaOpt.flatMap { case PomMeta(pom, _, resolver) =>
       for {
         artifactMeta <- metaExtractor.extractMeta(pom)

@@ -1,7 +1,6 @@
 package ch.epfl.scala.services.storage.sql
 
 import scala.concurrent.ExecutionContext
-
 import cats.effect.ContextShift
 import cats.effect.IO
 import ch.epfl.scala.index.model.SemanticVersion
@@ -11,9 +10,9 @@ import ch.epfl.scala.index.model.release.ScalaJvm
 import ch.epfl.scala.index.model.release.ScalaVersion
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewProject.FormData
+import ch.epfl.scala.index.newModel.{NewDependency, NewProject, NewRelease}
 import ch.epfl.scala.index.newModel.NewProject.Organization
 import ch.epfl.scala.index.newModel.NewProject.Repository
-import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.services.storage.sql.DbConf.H2
 import doobie.Transactor
@@ -67,6 +66,15 @@ object Values {
     resolver = None,
     licenses = Set(),
     isNonStandardLib = false
+  )
+  val dependency = NewDependency(
+    source = MavenReference(
+      "cats-effect",
+      "cats-effect-kernel_3",
+      "3.2.3"
+    ),
+    target = MavenReference("org.typelevel", "cats-core_3", "2.6.1"),
+    "compile"
   )
 
 }

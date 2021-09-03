@@ -23,6 +23,7 @@ case class NewProject(
 }
 
 object NewProject {
+  def text(p: NewProject) = p.reference.toString
   def defaultProject(
       org: String,
       repo: String,

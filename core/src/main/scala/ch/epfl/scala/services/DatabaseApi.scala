@@ -14,7 +14,7 @@ trait DatabaseApi {
   def insertReleases(r: Seq[NewRelease]): Future[Int]
   def findReleases(projectRef: Project.Reference): Future[Seq[NewRelease]]
 
-  def insertDependencies(dependencies: Seq[NewDependency]): Future[Int]
+  def insertDependencies(dependencies: Iterator[NewDependency]): Future[Int]
   def countProjects(): Future[Long]
   def countReleases(): Future[Long]
   def countDependencies(): Future[Long]

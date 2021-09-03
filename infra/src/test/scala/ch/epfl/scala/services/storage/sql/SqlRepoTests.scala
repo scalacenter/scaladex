@@ -44,10 +44,15 @@ class SqlRepoTests
     }
     it("should find releases") {
       val release = Values.release
-      val insertRelease = await(db.insertRelease(release))
-      insertRelease shouldBe Success(release)
+      val insertedRows = await(db.insertRelease(release))
+      insertedRows shouldBe Success(1)
       val findReleases = await(db.findReleases(release.projectRef))
       findReleases shouldBe Success(List(release))
+    }
+    it("should insert dependencies") {
+      val dependency1 = Values.dependency
+      val dependency2 = dependency1.copy(scope = "test")
+      await(db.insertDependencies(Iterator(dependency1, dependency2))) shouldBe Success(2)
     }
   }
 

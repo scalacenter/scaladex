@@ -98,7 +98,7 @@ class IndexingActor(
               Seq(r)
             ) // todo: filter already existing releases , to only update them
             _ <- db.insertDependencies(
-              d
+              d.iterator
             ) // todo: filter already existing dependencies , to only update them
             _ = log.info(s"${pom.mavenRef.name} has been inserted")
           } yield ()

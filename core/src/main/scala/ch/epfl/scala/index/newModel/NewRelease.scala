@@ -59,6 +59,7 @@ case class NewRelease(
 
 object NewRelease {
   val format = ISODateTimeFormat.dateTime.withOffsetParsed
+  def text(r: NewRelease) = r.maven.name
   case class ArtifactName(value: String) extends AnyVal {
     override def toString: String = value
   }

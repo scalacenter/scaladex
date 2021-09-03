@@ -17,6 +17,7 @@ import ch.epfl.scala.services.storage.sql.tables.ReleaseTable
 import ch.epfl.scala.utils.DoobieUtils
 import ch.epfl.scala.utils.ScalaExtensions.TraversableOnceFutureExtension
 import doobie.implicits._
+import ch.epfl.scala.utils.ScalaExtensions._
 
 class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
   private[sql] val flyway = DoobieUtils.flyway(conf)
@@ -32,6 +33,7 @@ class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
         .getOrElse(Future.successful())
     } yield ()
   }
+
 
   override def insertOrUpdateProject(project: NewProject): Future[Unit] = {
     for {
@@ -61,8 +63,6 @@ class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
       )
     )
 
-  def insertProject(project: Project): Future[Unit] =
-    insertProject(NewProject.from(project))
 
   override def insertReleases(releases: Seq[NewRelease]): Future[Int] =
     releases
@@ -76,10 +76,10 @@ class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
   ): Future[Seq[NewRelease]] =
     run(ReleaseTable.selectReleases(projectRef).to[List])
 
-  def insertRelease(release: NewRelease): Future[NewRelease] =
+  def insertRelease(release: NewRelease): Future[Int] =
     run(ReleaseTable.insert, release)
 
-  override def insertDependencies(deps: Seq[NewDependency]): Future[Int] = {
+  override def insertDependencies(deps: Iterator[NewDependency]): Future[Int] = {
     deps
       .grouped(SqlRepo.sizeOfInsertMany)
       .map(d => run(DependenciesTable.insertMany(d)))
@@ -102,12 +102,8 @@ class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
   def countProjectDataForm(): Future[Long] =
     run(ProjectUserFormTable.indexedProjectUserForm().unique)
 
-  private def run[A](i: A => doobie.Update0, v: A): Future[A] =
-    i(v).run.transact(xa).unsafeToFuture.flatMap {
-      case 1 => Future.successful(v)
-      case code =>
-        Future.failed(new Exception(s"Failed to insert $v (code: $code)"))
-    }
+  private def run[A](i: A => doobie.Update0, v: A): Future[Int] =
+    i(v).run.transact(xa).unsafeToFuture
 
   private def run[A](v: doobie.ConnectionIO[A]): Future[A] =
     v.transact(xa).unsafeToFuture()

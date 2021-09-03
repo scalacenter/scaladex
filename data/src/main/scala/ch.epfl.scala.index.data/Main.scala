@@ -1,13 +1,10 @@
 package ch.epfl.scala.index.data
 
 import java.nio.file.Path
-
-import scala.concurrent.Await
-import scala.concurrent.Future
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.concurrent.duration.Duration
 import scala.sys.process.Process
-import scala.util.Using
-
+import scala.util.{Failure, Success, Try, Using}
 import akka.actor.ActorSystem
 import cats.effect._
 import ch.epfl.scala.index.data.bintray.BintrayDownloadPoms
@@ -18,16 +15,21 @@ import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.cleanup.NonStandardLib
 import ch.epfl.scala.index.data.elastic.SeedElasticSearch
 import ch.epfl.scala.index.data.github.GithubDownload
-import ch.epfl.scala.index.data.maven.DownloadParentPoms
-import ch.epfl.scala.index.data.maven.PomsReader
+import ch.epfl.scala.index.data.maven.{DownloadParentPoms, PomsReader, ReleaseModel}
 import ch.epfl.scala.index.data.project.ProjectConvert
 import ch.epfl.scala.index.data.util.PidLock
-import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.model.misc.GithubRepo
+import ch.epfl.scala.index.newModel.NewProject.{Organization, Repository}
+import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.DoobieUtils
 import com.typesafe.scalalogging.LazyLogging
 import doobie.hikari._
+import org.joda.time.DateTime
+import ch.epfl.scala.utils.ScalaExtensions._
+import ch.epfl.scala.utils.Timer
+
 
 /**
  * This application manages indexed POMs.
@@ -58,6 +60,7 @@ object Main extends LazyLogging {
    */
   def run(args: Array[String]): Unit = {
     val config = IndexConfig.load()
+    val global = ExecutionContext.global
 
     if (config.env.isDevOrProd) {
       PidLock.create("DATA")
@@ -106,14 +109,34 @@ object Main extends LazyLogging {
             val db = new SqlRepo(config.db, xa)
             IO(
               Using.resource(ESRepo.open()) { esRepo =>
-                Await.result(
-                  insertDataInEsAndDb(dataPaths, esRepo, db),
-                  Duration.Inf
-                )
+
+                  Timer.timeAndLog(
+                    Await.result(
+                      insertDataInEsAndDb(dataPaths, esRepo, db),
+                      Duration.Inf
+                    ))((duration, _) => logger.info(s"inserting data in elasticSearch and postgresql took ${duration.toMinutes} minutes"))
               }
             )
           }
           .unsafeRunSync()
+      },
+      // insert a specific org/repo with its releases and dependencies
+      Step("insert"){ () =>
+
+        val (org, repo) = args.toList.tail match {
+          case s"$org/$repo" :: Nil => (Organization(org), Repository(repo))
+          case res => throw new Exception(s"""expecting one argument "organization/repository" not ${res}""")
+        }
+
+        val transactor: Resource[IO, HikariTransactor[IO]] =
+          DoobieUtils.transactor(config.db)
+        transactor
+          .use { xa =>
+            val db = new SqlRepo(config.db, xa)
+            IO(
+              Await.result(insertOneProject(db, org, repo, dataPaths)(global, system), Duration.Inf)
+            )
+          }.unsafeRunSync()
       }
     )
 
@@ -205,12 +228,12 @@ object Main extends LazyLogging {
 
     //convert data
     val projectConverter = new ProjectConvert(dataPaths, githubDownload)
-    val (allData, dependencies) =
+    val (projects, releases, dependencies) =
       projectConverter.convertAll(PomsReader.loadAll(dataPaths), Map())
 
     logger.info("Start cleaning both ES and PostgreSQL")
     val cleaning = for {
-      _ <- seed.cleanIndexes()
+//      _ <- seed.cleanIndexes()
       _ <- db.dropTables().unsafeToFuture()
       _ <- db.migrate().unsafeToFuture()
     } yield ()
@@ -218,15 +241,14 @@ object Main extends LazyLogging {
     // insertData
     for {
       _ <- cleaning
-      _ = allData.foreach { case (project, releases) =>
-        for {
-          _ <- seed.insertES(project, releases)
-          _ <- db.insertProject(project)
-          _ <- db.insertReleases(releases.map(NewRelease.from))
-        } yield ()
-      }
+      insertedProject <- projects.map(NewProject.from).map(p => db.insertProject(p).failWithTry.map((p, _))).sequence
+      _ = logFailures(insertedProject, NewProject.text , "projects" )
+      insertedReleases <- releases.map(NewRelease.from).map(p => db.insertReleases(Seq(p)).failWithTry.map((p, _))).sequence
+      _ = logFailures(insertedReleases, NewRelease.text , "releases" )
       _ = logger.info("starting to insert all dependencies in the database")
-      _ <- db.insertDependencies(dependencies)
+
+      dependenciesInsertion <- db.insertDependencies(dependencies).failWithTry
+      _ = if(dependenciesInsertion.isFailure) logger.info(s"failed to insert ${dependencies.size}")
       numberOfIndexedProjects <- db.countProjects()
       countGithubInfo <- db.countGithubInfo()
       countProjectUserDataForm <- db.countProjectDataForm()
@@ -242,5 +264,42 @@ object Main extends LazyLogging {
       logger.info(s"$countDependencies dependencies have been indexed")
       numberOfIndexedProjects
     }
+  }
+
+  private def logFailures[A, B](res: Iterator[(A, Try[B])], tostring: A => String, table: String) = {
+    val failures = res.collect{ case (a, Failure(exception)) =>
+      logger.warn(s"failed to insert ${tostring(a)} because ${exception.getMessage}")
+      a
+      }
+    logger.warn(s"${failures.size} insertion failed in $table")
+  }
+
+
+  private def insertOneProject(db: SqlRepo, org: Organization, repo: Repository, dataPaths: DataPaths)(implicit ec: ExecutionContext, sys: ActorSystem): Future[Unit] = {
+    val githubDownload = new GithubDownload(dataPaths)
+    val projectConverter = new ProjectConvert(dataPaths, githubDownload)
+      val allPoms: Iterable[(ReleaseModel, LocalRepository, String)] = PomsReader.loadAll(dataPaths) // let's read everything. Didn't find a way to find the path of poms using a organization and repo
+      val githubRepoExtractor = new GithubRepoExtractor(dataPaths) // the only way to get organization and repo from a releaseModel
+      val githubRepo = GithubRepo(org.value, repo.value)
+
+      val allInsertions = allPoms.filter { case (model, _, _) =>
+        githubRepoExtractor(model).contains(githubRepo)
+      }.flatMap {case (model, repository, sha1) =>
+        projectConverter.convertOne(model, repository, sha1,
+          DateTime.now(), // should be read from meta.json :s
+          githubRepo, None)
+      }.map { case (project, release, dependencies) =>
+        println(s"release.maven = ${release.maven}")
+        (for {
+          _ <- db.insertOrUpdateProject(project).mapFailure(e => new Exception(s"Not able to insert ${project.reference} because ${e.getMessage}"))
+          _ <- db.insertRelease(release).mapFailure(e => new Exception(s"Not able to insert ${release.maven} because ${e.getMessage}"))
+          _ <- db.insertDependencies(dependencies.iterator).mapFailure(e => new Exception(s"Not able to insert dependencies for ${release.maven} because ${e.getMessage}"))
+        } yield ()).failWithTry
+      }.sequence
+    // let log failures
+    for {
+      (sucess, failures) <- allInsertions.map(elm => elm.partition {_.isSuccess})
+      _ = logger.info(s"${failures.size} failure during insertion")
+    } yield sucess.map(_.get)
   }
 }

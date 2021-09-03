@@ -3,6 +3,8 @@ package ch.epfl.scala.utils
 import scala.collection.BuildFrom
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
+import scala.util.control.NonFatal
 
 object ScalaExtensions {
   implicit class OptionExtension[A](val in: Option[A]) extends AnyVal {
@@ -21,5 +23,12 @@ object ScalaExtensions {
         bf: BuildFrom[CC[Future[A]], A, To],
         executor: ExecutionContext
     ): Future[To] = Future.sequence(in)
+  }
+  implicit class FutureExtension[A](val in: Future[A]) extends AnyVal {
+    def mapFailure(f: Throwable => Throwable)(implicit ec: ExecutionContext): Future[A] =
+      in.recoverWith { case NonFatal(e) => Future.failed(f(e)) }
+
+    def failWithTry(implicit ec: ExecutionContext): Future[Try[A]] =
+      in.map(Success(_)).recover { case NonFatal(e) => Failure(e) }
   }
 }
