@@ -14,7 +14,7 @@ object TimerUtils {
     log(duration)
     result
   }
-  private def toFiniteDuration(start: Instant, end: Instant): FiniteDuration =
+  def toFiniteDuration(start: Instant, end: Instant): FiniteDuration =
     FiniteDuration(
       end.toEpochMilli - start.toEpochMilli,
       MILLISECONDS

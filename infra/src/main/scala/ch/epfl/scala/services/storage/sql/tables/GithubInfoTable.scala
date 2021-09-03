@@ -55,7 +55,7 @@ object GithubInfoTable {
 
   def insertOrUpdate(p: NewProject)(g: GithubInfo): doobie.Update0 = {
     val onConflictFields = fr0"organization, repository"
-    val fields = fr0"name=${g.name}, owner=${g.name}, homepage=${g.homepage}, description=${g.description}, logo=${g.logo}," ++
+    val fields = fr0"name=${g.name}, owner=${g.owner}, homepage=${g.homepage}, description=${g.description}, logo=${g.logo}," ++
       fr0" stars=${g.stars}, forks=${g.forks}, watchers=${g.watchers}, issues=${g.issues}, readme=${g.readme}, contributors=${g.contributors}," ++
       fr0" contributorCount=${g.contributorCount}, commits=${g.commits}, topics=${g.topics}, contributingGuide=${g.contributingGuide}," ++
       fr0" codeOfConduct=${g.codeOfConduct}, chatroom=${g.chatroom}"

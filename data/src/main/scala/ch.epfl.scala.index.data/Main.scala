@@ -1,6 +1,7 @@
 package ch.epfl.scala.index.data
 
 import java.nio.file.Path
+import java.time.Instant
 
 import scala.concurrent.Await
 import scala.concurrent.Future
@@ -173,18 +174,16 @@ object Main extends LazyLogging {
 
   class Step(val name: String)(effect: () => Unit) {
     def run(): Unit = {
-      logger.info(s"Starting $name")
+      val start = Instant.now()
+      logger.info(s"Starting $name at ${start}")
       effect()
-      logger.info(s"$name done")
+      val duration = TimerUtils.toFiniteDuration(start, Instant.now())
+      logger.info(s"$name done in ${duration.toMinutes} minutes")
     }
   }
 
   object Step {
-    def apply(name: String)(effect: () => Unit): Step = new Step(name)(
-      TimerUtils.timeAndLog(effect)(duration =>
-        logger.info(s"step $name took ${duration.toMinutes} minutes")
-      )
-    )
+    def apply(name: String)(effect: () => Unit): Step = new Step(name)(effect)
   }
 
   def inPath(path: Path)(f: Sh => Unit): Unit = f(new Sh(path))
@@ -243,14 +242,13 @@ object Main extends LazyLogging {
       _ = logFailures(
         insertedReleases,
         (r: NewRelease) => r.maven.name,
-        "projects"
+        "releases"
       )
       dependenciesInsertion <- db
-        .insertDependencies(dependencies.toSeq)
+        .insertDependencies(dependencies)
         .failWithTry
       _ = if (dependenciesInsertion.isFailure)
         logger.info(s"failed to insert ${dependencies.size} into dependencies")
-
       // counting what have been inserted
       numberOfIndexedProjects <- db.countProjects()
       countGithubInfo <- db.countGithubInfo()
@@ -281,7 +279,7 @@ object Main extends LazyLogging {
       a
     }
     if (failures.nonEmpty)
-      logger.warn(s"${failures.size} insertion failed in $table")
+      logger.warn(s"${failures.size} insertion failed in table $table")
     else ()
   }
 }
