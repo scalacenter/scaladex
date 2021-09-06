@@ -147,6 +147,13 @@ class ESRepo(
       .map(_ => ())
   }
 
+  def insertProjects(projects: Seq[Project]): Future[Seq[BulkResponseItem]] = {
+    val requests = projects.map { p =>
+      indexInto(projectIndex).source(p)
+    }
+    insertAll(requests, 1000)
+  }
+
   def insertReleases(releases: Seq[Release]): Future[Seq[BulkResponseItem]] = {
     val requests = releases.map { r =>
       indexInto(releaseIndex).source(ReleaseDocument(r))

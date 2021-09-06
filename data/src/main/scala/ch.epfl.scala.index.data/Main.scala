@@ -235,7 +235,7 @@ object Main extends LazyLogging {
         (p: NewProject) => p.reference.toString,
         "projects"
       )
-      _ = logger.info("inserting projects to database")
+      _ = logger.info("inserting releases to database")
       insertedReleases <- db.insertReleasesWithFailures(
         releases.map(NewRelease.from)
       )
@@ -255,6 +255,8 @@ object Main extends LazyLogging {
       countProjectUserDataForm <- db.countProjectDataForm()
       countReleases <- db.countReleases()
       countDependencies <- db.countDependencies()
+      // inserting in ES
+      _ <- seed.insertES(projects, releases)
     } yield {
       logger.info(s"$numberOfIndexedProjects projects have been indexed")
       logger.info(s"$countGithubInfo countGithubInfo have been indexed")
