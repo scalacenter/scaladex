@@ -2,6 +2,7 @@ package ch.epfl.scala.services.storage.sql
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.Try
 
 import cats.effect.IO
 import ch.epfl.scala.index.model.Project
@@ -15,7 +16,7 @@ import ch.epfl.scala.services.storage.sql.tables.ProjectTable
 import ch.epfl.scala.services.storage.sql.tables.ProjectUserFormTable
 import ch.epfl.scala.services.storage.sql.tables.ReleaseTable
 import ch.epfl.scala.utils.DoobieUtils
-import ch.epfl.scala.utils.ScalaExtensions.TraversableOnceFutureExtension
+import ch.epfl.scala.utils.ScalaExtensions._
 import doobie.implicits._
 
 class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
@@ -33,9 +34,20 @@ class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
     } yield ()
   }
 
+  // this insertProjects wont fail if one insert fails
+  def insertProjectsWithFailures(
+      projects: Seq[NewProject]
+  ): Future[Seq[(NewProject, Try[Unit])]] =
+    projects.map(p => insertProject(p).failWithTry.map((p, _))).sequence
+
+  def insertReleasesWithFailures(
+      releases: Seq[NewRelease]
+  ): Future[Seq[(NewRelease, Try[NewRelease])]] =
+    releases.map(r => insertRelease(r).failWithTry.map((r, _))).sequence
+
   override def insertOrUpdateProject(project: NewProject): Future[Unit] = {
     for {
-      _ <- run(ProjectTable.insertOrUpdate, project)
+      _ <- run(ProjectTable.insertOrUpdate(project).run)
       _ <- run(ProjectUserFormTable.insertOrUpdate(project), project.formData)
       _ <- project.githubInfo
         .map(run(GithubInfoTable.insertOrUpdate(project), _))
@@ -102,6 +114,8 @@ class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
   def countProjectDataForm(): Future[Long] =
     run(ProjectUserFormTable.indexedProjectUserForm().unique)
 
+  // to use only when inserting one element or updating one element
+  // when expecting a row to be modified
   private def run[A](i: A => doobie.Update0, v: A): Future[A] =
     i(v).run.transact(xa).unsafeToFuture.flatMap {
       case 1 => Future.successful(v)

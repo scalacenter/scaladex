@@ -1,7 +1,6 @@
 package ch.epfl.scala.services.storage.sql.tables
 
 import cats.effect.IO
-import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.services.storage.sql.Values
 import doobie.scalatest.IOChecker
@@ -16,15 +15,8 @@ class DependenciesTests
     with BeforeAndAfterAll {
   private val db = Values.db
   val transactor: doobie.Transactor[IO] = Values.xa
-  val dependency: NewDependency = NewDependency(
-    source = MavenReference(
-      "cats-effect",
-      "cats-effect-kernel_3",
-      "3.2.3"
-    ),
-    target = MavenReference("org.typelevel", "cats-core_3", "2.6.1"),
-    "compile"
-  )
+  val dependency: NewDependency = Values.dependency
+
   override def beforeAll(): Unit = db.migrate().unsafeRunSync()
 
   override def afterAll(): Unit = db.dropTables().unsafeRunSync()

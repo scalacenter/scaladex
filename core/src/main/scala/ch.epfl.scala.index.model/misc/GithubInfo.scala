@@ -24,8 +24,8 @@ package ch.epfl.scala.index.model.misc
  * @param filteredBeginnerIssues list of beginner-friendly issues that were filtered by contributing search
  */
 case class GithubInfo(
-    name: String,
-    owner: String,
+    name: String, // equivalent to repository
+    owner: String, // equivalent to Organization
     homepage: Option[Url],
     description: Option[String],
     logo: Option[Url],

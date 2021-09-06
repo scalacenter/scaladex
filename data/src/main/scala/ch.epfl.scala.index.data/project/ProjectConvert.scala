@@ -33,7 +33,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
   def convertAll(
       pomsRepoSha: Iterable[(ReleaseModel, LocalRepository, String)],
       indexedReleases: Map[Project.Reference, Seq[Release]]
-  ): (Iterator[(Project, Seq[Release])], Seq[NewDependency]) = {
+  ): (Seq[Project], Seq[Release], Seq[NewDependency]) = {
 
     val githubRepoExtractor = new GithubRepoExtractor(paths)
 
@@ -185,32 +185,35 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
     val allDependencies: Seq[NewDependency] =
       poms.flatMap(getDependencies).distinct
 
-    val projectAndReleases = projectsAndReleases.iterator.map {
-      case (seed, releases) =>
-        val releasesWithDependencies =
-          releases // todo: we will use soon NewRelase which doenst contain dependencies
+    val projectWithReleases = projectsAndReleases.map { case (seed, releases) =>
+      val releasesWithDependencies =
+        releases // todo: we will use soon NewRelase which doenst contain dependencies
 
-        val project =
-          seed.toProject(
-            targetType = releases.map(_.targetType).distinct.toList,
-            scalaVersion = releases.flatMap(_.scalaVersion).distinct.toList,
-            scalaJsVersion = releases.flatMap(_.scalaJsVersion).distinct.toList,
-            scalaNativeVersion =
-              releases.flatMap(_.scalaNativeVersion).distinct.toList,
-            sbtVersion = releases.flatMap(_.sbtVersion).distinct.toList,
-            dependencies = Set(), // todo: Remove
-            dependentCount =
-              0 // dependentCountByProject.getOrElse(seed.reference, 0): should be computed using the database
-          )
+      val project =
+        seed.toProject(
+          targetType = releases.map(_.targetType).distinct.toList,
+          scalaVersion = releases.flatMap(_.scalaVersion).distinct.toList,
+          scalaJsVersion = releases.flatMap(_.scalaJsVersion).distinct.toList,
+          scalaNativeVersion =
+            releases.flatMap(_.scalaNativeVersion).distinct.toList,
+          sbtVersion = releases.flatMap(_.sbtVersion).distinct.toList,
+          dependencies = Set(), // todo: Remove
+          dependentCount =
+            0 // dependentCountByProject.getOrElse(seed.reference, 0): should be computed using the database
+        )
 
-        val updatedProject = storedProjects
-          .get(project.reference)
-          .map(_.update(project, paths, githubDownload, fromStored = true))
-          .getOrElse(project)
+      val updatedProject = storedProjects
+        .get(project.reference)
+        .map(_.update(project, paths, githubDownload, fromStored = true))
+        .getOrElse(project)
 
-        (updatedProject, releasesWithDependencies)
+      (updatedProject, releasesWithDependencies)
     }
-    (projectAndReleases, allDependencies)
+    (
+      projectWithReleases.keys.toSeq.distinct,
+      projectWithReleases.values.flatten.toSeq.distinct,
+      allDependencies
+    )
   }
 
   private def getDependencies(pom: ReleaseModel): List[NewDependency] =

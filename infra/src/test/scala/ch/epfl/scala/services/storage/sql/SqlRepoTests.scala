@@ -49,6 +49,13 @@ class SqlRepoTests
       val findReleases = await(db.findReleases(release.projectRef))
       findReleases shouldBe Success(List(release))
     }
+    it("should insert dependencies") {
+      val dependency1 = Values.dependency
+      val dependency2 = dependency1.copy(scope = "test")
+      await(
+        db.insertDependencies(Seq(dependency1, dependency2))
+      ) shouldBe Success(2)
+    }
   }
 
   def await[A](f: Future[A]): Try[A] = Try(
