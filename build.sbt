@@ -175,7 +175,9 @@ lazy val server = project
       .dependsOn(startESandPostgreSQL, Assets / WebKeys.assets)
       .evaluated,
     Compile / run / fork := true,
-    Compile / run := (Compile / run).dependsOn(startESandPostgreSQL).evaluated,
+    Compile / run := (Compile / run)
+      .dependsOn(startESandPostgreSQL, Assets / WebKeys.assets)
+      .evaluated,
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
     reStart / javaOptions ++= Seq("-Xmx4g")
   )
