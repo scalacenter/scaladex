@@ -2,6 +2,7 @@ package ch.epfl.scala.index.newModel
 
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubInfo
+import ch.epfl.scala.index.model.misc.TwitterSummaryCard
 import ch.epfl.scala.index.newModel.NewProject._
 
 // TODO: document NewProject fields
@@ -16,6 +17,12 @@ case class NewProject(
   val reference: Project.Reference =
     Project.Reference(organization.value, repository.value)
   val hasCli: Boolean = dataForm.cliArtifacts.nonEmpty
+  val twitterSummaryCard: TwitterSummaryCard = TwitterSummaryCard(
+    "@scala_lang",
+    repository.toString(),
+    githubInfo.flatMap(_.description).getOrElse(""),
+    githubInfo.flatMap(_.logo)
+  )
   //val created: datetime = firstRelease.released
   //val lastUpdated: datetime = lastReleaseAdd.released
   def update(newGithubInfo: Option[GithubInfo]): NewProject =

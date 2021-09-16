@@ -137,6 +137,7 @@ class ProjectPages(
           filteredVersions = filterVersions(project, allVersions)
           targets = releases.flatMap(_.target).distinct.sorted.reverse
           artifactNames = releases.map(_.artifactName).distinct
+          twitterCard = project.twitterSummaryCard
         } yield (
           StatusCodes.OK,
           views.project.html.project(
@@ -148,7 +149,7 @@ class ProjectPages(
             Dependencies.empty(selectedRelease.reference),
             user,
             canEdit = true,
-            None
+            Some(twitterCard)
           )
         )
       case None =>
