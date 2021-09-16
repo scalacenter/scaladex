@@ -40,7 +40,10 @@ private[api] class PublishProcess(
 
   import system.dispatcher
   private val log = LoggerFactory.getLogger(getClass)
-  private val indexingActor = system.spawn(impl.IndexingActor(paths, dataRepository, db), "indexing-actor")
+  private val indexingActor = system.spawn(
+    impl.IndexingActor(paths, dataRepository, db),
+    "indexing-actor"
+  )
 
   /**
    * write the pom file to disk if it's a pom file (SBT will also send *.pom.sha1 and *.pom.md5)

@@ -23,35 +23,37 @@ import akka.actor.typed.scaladsl.StashBuffer
 
 object IndexingActor {
   def apply(
-    paths: DataPaths,
-    dataRepository: ESRepo,
-    db: DatabaseApi,
+      paths: DataPaths,
+      dataRepository: ESRepo,
+      db: DatabaseApi
   ): Behavior[UpdateIndex] = {
-    def ready: Behavior[UpdateIndex] = Behaviors.receive { (ac: ActorContext[UpdateIndex], updateIndexData: UpdateIndex) =>
+    def ready: Behavior[UpdateIndex] = Behaviors.receive {
+      (ac: ActorContext[UpdateIndex], updateIndexData: UpdateIndex) =>
+        import ac.executionContext
 
-      import ac.executionContext
+        val f = updateIndex(
+          paths,
+          db,
+          updateIndexData.repo,
+          updateIndexData.pom,
+          updateIndexData.data,
+          updateIndexData.localRepo
+        )(ac).map(_ => ())
 
-      val f = updateIndex(
-        paths,
-        db,
-        updateIndexData.repo,
-        updateIndexData.pom,
-        updateIndexData.data,
-        updateIndexData.localRepo
-      )(ac).map(_ => ())
-
-      Behaviors.withStash(Int.MaxValue){ (buffer: StashBuffer[UpdateIndex]) =>
-        Behaviors.receiveMessage { (newMessage: UpdateIndex) =>
-          buffer.stash(newMessage)
-          if (f.isCompleted) buffer.unstashAll(ready)
-          else Behaviors.same
+        Behaviors.withStash(Int.MaxValue) {
+          (buffer: StashBuffer[UpdateIndex]) =>
+            Behaviors.receiveMessage { (newMessage: UpdateIndex) =>
+              buffer.stash(newMessage)
+              if (f.isCompleted) buffer.unstashAll(ready)
+              else Behaviors.same
+            }
         }
-      }
     }
     ready
   }
 
   private val log = LoggerFactory.getLogger(getClass)
+
   /**
    * Main task to update the scaladex index.
    * - download GitHub info if allowd
@@ -78,7 +80,9 @@ object IndexingActor {
   )(implicit ac: ActorContext[UpdateIndex]): Future[Unit] = {
     ac.log.debug("updating " + pom.artifactId)
 
-    val githubDownload = new GithubDownload(paths, Some(data.credentials))(ac.system.classicSystem)
+    val githubDownload = new GithubDownload(paths, Some(data.credentials))(
+      ac.system.classicSystem
+    )
     githubDownload.run(
       repo,
       data.downloadInfo,

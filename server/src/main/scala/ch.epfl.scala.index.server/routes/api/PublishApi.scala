@@ -102,7 +102,8 @@ class PublishApi(
   import akka.actor.typed.scaladsl.AskPattern._
 
   implicit val timeout: Timeout = Timeout(40.seconds)
-  private val actor = system.spawn(impl.PublishActor(paths, dataRepository, db), "publish-actor")
+  private val actor =
+    system.spawn(impl.PublishActor(paths, dataRepository, db), "publish-actor")
 
   private val githubCredentialsCache =
     MMap.empty[String, (data.github.Credentials, UserState)]
@@ -147,17 +148,19 @@ class PublishApi(
                   realm = "Scaladex Realm",
                   githubAuthenticator(credentials)
                 ) { case (credentials, userState) =>
-                  val publishDataAnswerTo = (a: ActorRef[(StatusCode, String)]) => impl.PublishData(
-                    path,
-                    created,
-                    data,
-                    credentials,
-                    userState,
-                    info,
-                    contributors,
-                    readme,
-                    a
-                  )
+                  val publishDataAnswerTo =
+                    (a: ActorRef[(StatusCode, String)]) =>
+                      impl.PublishData(
+                        path,
+                        created,
+                        data,
+                        credentials,
+                        userState,
+                        info,
+                        contributors,
+                        readme,
+                        a
+                      )
 
                   log.info(
                     s"Received publish command: ${created} - ${path}"
@@ -165,7 +168,10 @@ class PublishApi(
                   log.debug(data)
 
                   complete(
-                    actor.ask(ref => publishDataAnswerTo(ref))(timeout, system.scheduler.toTyped)
+                    actor.ask(ref => publishDataAnswerTo(ref))(
+                      timeout,
+                      system.scheduler.toTyped
+                    )
                   )
                 }
               )
