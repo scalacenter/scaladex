@@ -9,7 +9,6 @@ import scala.collection.mutable.{Map => MMap}
 import scala.concurrent.Future
 
 import akka.actor.ActorSystem
-import akka.actor.Props
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
@@ -24,6 +23,7 @@ import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.DatabaseApi
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
+import akka.actor.typed.ActorRef
 
 class PublishApi(
     paths: DataPaths,
@@ -97,14 +97,12 @@ class PublishApi(
     MavenReference(groupId, artifactId, version)
   }
 
-  import akka.pattern.ask
-
   import scala.concurrent.duration._
+  import akka.actor.typed.scaladsl.adapter._
+  import akka.actor.typed.scaladsl.AskPattern._
+
   implicit val timeout: Timeout = Timeout(40.seconds)
-  private val actor =
-    system.actorOf(
-      Props(classOf[impl.PublishActor], paths, dataRepository, db, system)
-    )
+  private val actor = system.spawn(impl.PublishActor(paths, dataRepository, db), "publish-actor")
 
   private val githubCredentialsCache =
     MMap.empty[String, (data.github.Credentials, UserState)]
@@ -149,7 +147,7 @@ class PublishApi(
                   realm = "Scaladex Realm",
                   githubAuthenticator(credentials)
                 ) { case (credentials, userState) =>
-                  val publishData = impl.PublishData(
+                  val publishDataAnswerTo = (a: ActorRef[(StatusCode, String)]) => impl.PublishData(
                     path,
                     created,
                     data,
@@ -157,18 +155,17 @@ class PublishApi(
                     userState,
                     info,
                     contributors,
-                    readme
+                    readme,
+                    a
                   )
 
                   log.info(
-                    s"Received publish command: ${publishData.created} - ${publishData.path}"
+                    s"Received publish command: ${created} - ${path}"
                   )
-                  log.debug(publishData.data)
+                  log.debug(data)
 
                   complete(
-                    (actor ? publishData)
-                      .mapTo[(StatusCode, String)]
-                      .map(s => s)
+                    actor.ask(ref => publishDataAnswerTo(ref))(timeout, system.scheduler.toTyped)
                   )
                 }
               )

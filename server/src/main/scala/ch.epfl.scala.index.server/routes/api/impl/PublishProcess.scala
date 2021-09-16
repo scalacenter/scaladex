@@ -13,7 +13,6 @@ import scala.util.Success
 import scala.util.Try
 
 import akka.actor.ActorSystem
-import akka.actor.Props
 import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes._
 import ch.epfl.scala.index.data._
@@ -37,11 +36,11 @@ private[api] class PublishProcess(
     val system: ActorSystem
 ) extends PlayWsDownloader {
 
+  import akka.actor.typed.scaladsl.adapter._
+
   import system.dispatcher
   private val log = LoggerFactory.getLogger(getClass)
-  private val indexingActor = system.actorOf(
-    Props(classOf[impl.IndexingActor], paths, dataRepository, db, system)
-  )
+  private val indexingActor = system.spawn(impl.IndexingActor(paths, dataRepository, db), "indexing-actor")
 
   /**
    * write the pom file to disk if it's a pom file (SBT will also send *.pom.sha1 and *.pom.md5)

@@ -17,6 +17,8 @@ import ch.epfl.scala.index.data.github
 import ch.epfl.scala.index.model.misc.Sha1
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
+import akka.actor.typed.ActorRef
+import akka.http.scaladsl.model.StatusCode
 
 /**
  * Publish data model / Settings
@@ -36,7 +38,8 @@ private[api] case class PublishData(
     userState: UserState,
     downloadInfo: Boolean,
     downloadContributors: Boolean,
-    downloadReadme: Boolean
+    downloadReadme: Boolean,
+    requester: ActorRef[(StatusCode, String)]
 ) {
   private val log = LoggerFactory.getLogger(getClass)
   lazy val isPom: Boolean = path matches """.*\.pom"""

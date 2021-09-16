@@ -4,12 +4,8 @@ package routes
 package api
 package impl
 
-import scala.concurrent.Await
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
-import akka.actor.Actor
-import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.LocalPomRepository
 import ch.epfl.scala.index.data.github.GithubDownload
@@ -20,30 +16,42 @@ import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.DatabaseApi
 import org.slf4j.LoggerFactory
+import akka.actor.typed.scaladsl.ActorContext
+import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.StashBuffer
 
-class IndexingActor(
+object IndexingActor {
+  def apply(
     paths: DataPaths,
     dataRepository: ESRepo,
     db: DatabaseApi,
-    implicit val system: ActorSystem
-) extends Actor {
-  private val log = LoggerFactory.getLogger(getClass)
-  import system.dispatcher
+  ): Behavior[UpdateIndex] = {
+    def ready: Behavior[UpdateIndex] = Behaviors.receive { (ac: ActorContext[UpdateIndex], updateIndexData: UpdateIndex) =>
 
-  def receive: PartialFunction[Any, Unit] = {
-    case updateIndexData: UpdateIndex =>
-      // TODO be non-blocking
-      sender() ! Await.result(
-        updateIndex(
-          updateIndexData.repo,
-          updateIndexData.pom,
-          updateIndexData.data,
-          updateIndexData.localRepo
-        ),
-        1.minute
-      )
+      import ac.executionContext
+
+      val f = updateIndex(
+        paths,
+        db,
+        updateIndexData.repo,
+        updateIndexData.pom,
+        updateIndexData.data,
+        updateIndexData.localRepo
+      )(ac).map(_ => ())
+
+      Behaviors.withStash(Int.MaxValue){ (buffer: StashBuffer[UpdateIndex]) =>
+        Behaviors.receiveMessage { (newMessage: UpdateIndex) =>
+          buffer.stash(newMessage)
+          if (f.isCompleted) buffer.unstashAll(ready)
+          else Behaviors.same
+        }
+      }
+    }
+    ready
   }
 
+  private val log = LoggerFactory.getLogger(getClass)
   /**
    * Main task to update the scaladex index.
    * - download GitHub info if allowd
@@ -61,15 +69,16 @@ class IndexingActor(
    * @return
    */
   private def updateIndex(
+      paths: DataPaths,
+      db: DatabaseApi,
       repo: GithubRepo,
       pom: ReleaseModel,
       data: PublishData,
       localRepository: LocalPomRepository
-  ): Future[Unit] = {
+  )(implicit ac: ActorContext[UpdateIndex]): Future[Unit] = {
+    ac.log.debug("updating " + pom.artifactId)
 
-    log.debug("updating " + pom.artifactId)
-
-    val githubDownload = new GithubDownload(paths, Some(data.credentials))
+    val githubDownload = new GithubDownload(paths, Some(data.credentials))(ac.system.classicSystem)
     githubDownload.run(
       repo,
       data.downloadInfo,
@@ -78,6 +87,7 @@ class IndexingActor(
     )
 
     val projectReference = Project.Reference(repo.organization, repo.repository)
+    import ac.executionContext
 
     for {
       project <- db.findProject(projectReference)
