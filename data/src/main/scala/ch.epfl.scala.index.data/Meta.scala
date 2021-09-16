@@ -5,6 +5,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
 import ch.epfl.scala.index.model.Descending
+import ch.epfl.scala.services.storage.DataPaths
+import ch.epfl.scala.services.storage.LocalPomRepository
 import com.github.nscala_time.time.Imports._
 import org.joda.time.DateTime
 import org.json4s._

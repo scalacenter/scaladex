@@ -1,4 +1,4 @@
-package ch.epfl.scala.utils
+package ch.epfl.scala.index.model
 
 sealed trait Env {
   def isProd: Boolean = false

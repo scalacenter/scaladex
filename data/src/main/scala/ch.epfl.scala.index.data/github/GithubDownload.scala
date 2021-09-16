@@ -14,10 +14,11 @@ import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.download.PlayWsClient
 import ch.epfl.scala.index.data.download.PlayWsDownloader
-import ch.epfl.scala.index.data.elastic.SaveLiveData
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubRepo
+import ch.epfl.scala.services.storage.DataPaths
+import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import com.typesafe.config.ConfigFactory
 import org.joda.time.DateTime
 import org.json4s.native.Serialization._
@@ -685,7 +686,7 @@ class GithubDownload(
     )
 
     val reposAndBeginnerIssues: Set[(GithubRepo, String)] = {
-      val liveProjecs = SaveLiveData.storedProjects(paths)
+      val liveProjecs = LocalStorageRepo.storedProjects(paths)
 
       val projectReferences =
         githubRepos.map { case repo @ GithubRepo(organization, repository) =>

@@ -12,6 +12,7 @@ import ch.epfl.scala.index.model.release.LanguageVersion
 import ch.epfl.scala.index.model.release.SbtPlugin
 import ch.epfl.scala.index.model.release.ScalaJvm
 import ch.epfl.scala.index.model.release.ScalaTarget
+import ch.epfl.scala.services.storage.DataPaths
 import org.slf4j.LoggerFactory
 
 case class ArtifactMeta(

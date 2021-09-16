@@ -11,10 +11,10 @@ import java.nio.file.Paths
 
 import scala.util.control.NonFatal
 
-import ch.epfl.scala.index.data.DataPaths
-import ch.epfl.scala.index.data.LocalPomRepository
 import ch.epfl.scala.index.data.github
 import ch.epfl.scala.index.model.misc.Sha1
+import ch.epfl.scala.services.storage.DataPaths
+import ch.epfl.scala.services.storage.LocalPomRepository
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 

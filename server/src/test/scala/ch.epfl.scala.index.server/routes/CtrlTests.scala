@@ -8,9 +8,10 @@ import scala.util.Try
 
 import cats.effect.ContextShift
 import cats.effect.IO
-import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.server.GithubUserSession
 import ch.epfl.scala.index.server.config.ServerConfig
+import ch.epfl.scala.services.storage.DataPaths
+import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import ch.epfl.scala.services.storage.sql.DbConf.H2
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import doobie.Transactor
@@ -32,6 +33,7 @@ trait CtrlTests extends AnyFunSpec with Matchers {
 
   val db = new SqlRepo(dbConf, xa)
   val dataPaths: DataPaths = config.dataPaths
+  val localStorage = new LocalStorageRepo(dataPaths)
 
   def insertMockData(): Unit = {
     import Values._

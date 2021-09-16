@@ -6,6 +6,7 @@ import java.nio.file.Paths
 
 import ch.epfl.scala.index.model.Parsers
 import ch.epfl.scala.index.model.misc.GithubRepo
+import ch.epfl.scala.services.storage.DataPaths
 
 package object github extends Parsers {
   private[github] def path(paths: DataPaths, github: GithubRepo) = {

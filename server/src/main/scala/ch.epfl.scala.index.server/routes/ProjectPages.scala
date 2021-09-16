@@ -11,7 +11,6 @@ import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.github.GithubReader
 import ch.epfl.scala.index.data.github.Json4s
 import ch.epfl.scala.index.model._
@@ -23,6 +22,8 @@ import ch.epfl.scala.index.newModel.NewProject.Repository
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.services.DatabaseApi
+import ch.epfl.scala.services.LocalStorageApi
+import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.utils.ScalaExtensions._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
@@ -32,6 +33,7 @@ import play.twirl.api.HtmlFormat
 
 class ProjectPages(
     db: DatabaseApi,
+    localStorage: LocalStorageApi,
     session: GithubUserSession,
     paths: DataPaths
 )(implicit executionContext: ExecutionContext)
@@ -131,7 +133,7 @@ class ProjectPages(
     val selection = ReleaseSelection.parse(
       target = target,
       artifactName = Some(artifact.value),
-      version = Some(version.toString),
+      version = version.map(_.toString),
       selected = None
     )
 
@@ -186,10 +188,14 @@ class ProjectPages(
           optionalSession(refreshable, usingCookies)(_ =>
             pathEnd(
               editForm { form =>
-                val updated = db.updateProjectForm(
-                  ref = Project.Reference(organization, repository),
-                  form.toUserDataForm()
-                )
+                val ref = Project.Reference(organization, repository)
+                val updated = for {
+                  _ <- localStorage.saveDataForm(ref, form)
+                  updated <- db.updateProjectForm(
+                    ref,
+                    form.toUserDataForm()
+                  )
+                } yield updated
                 onComplete(updated) {
                   case Success(()) =>
                     redirect(

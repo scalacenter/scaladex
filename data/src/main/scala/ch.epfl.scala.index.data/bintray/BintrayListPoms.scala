@@ -20,6 +20,8 @@ import akka.util.ByteString
 import ch.epfl.scala.index.data.cleanup.NonStandardLib
 import ch.epfl.scala.index.data.download.PlayWsDownloader
 import ch.epfl.scala.index.model._
+import ch.epfl.scala.services.storage.DataPaths
+import ch.epfl.scala.services.storage.LocalPomRepository
 import com.github.nscala_time.time.Imports._
 import org.json4s._
 import org.json4s.native.Serialization.write

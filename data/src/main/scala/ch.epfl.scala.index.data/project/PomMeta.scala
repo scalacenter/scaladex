@@ -2,13 +2,15 @@ package ch.epfl.scala.index
 package data
 package project
 
-import ch.epfl.scala.index.data.LocalPomRepository.Bintray
-import ch.epfl.scala.index.data.LocalPomRepository.MavenCentral
-import ch.epfl.scala.index.data.LocalPomRepository.UserProvided
-import ch.epfl.scala.index.data.LocalRepository._
 import ch.epfl.scala.index.data.bintray._
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.model.release._
+import ch.epfl.scala.services.storage.DataPaths
+import ch.epfl.scala.services.storage.LocalPomRepository.Bintray
+import ch.epfl.scala.services.storage.LocalPomRepository.MavenCentral
+import ch.epfl.scala.services.storage.LocalPomRepository.UserProvided
+import ch.epfl.scala.services.storage.LocalRepository
+import ch.epfl.scala.services.storage.LocalRepository.BintraySbtPlugins
 import com.github.nscala_time.time.Imports._
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
@@ -37,7 +39,7 @@ object PomMeta {
       paths: DataPaths
   ): Seq[PomMeta] = {
 
-    import LocalPomRepository._
+    import ch.epfl.scala.services.storage.LocalPomRepository._
 
     val bintray = BintrayMeta.load(paths).groupBy(_.sha1)
     val users = Meta.load(paths, UserProvided).groupBy(_.sha1)

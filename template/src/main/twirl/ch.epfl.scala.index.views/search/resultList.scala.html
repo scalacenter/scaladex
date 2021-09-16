@@ -1,6 +1,7 @@
 @import ch.epfl.scala.index.views.html._
 @import ch.epfl.scala.index.model.Project
 @import ch.epfl.scala.index.model.misc.SearchParams
+@import ch.epfl.scala.index.newModel.NewProject
 @(projects: List[Project], params: SearchParams)
 
 <ol class="list-result box">
@@ -11,7 +12,7 @@
         <div class="col-md-8">
           @if(params.contributingSearch){
             <div class="contributing-result">
-              @contributingInfo(???, params = Some(params))
+              @contributingInfo(NewProject.from(project), params = Some(params))
             </div>
           } else {
             <div>

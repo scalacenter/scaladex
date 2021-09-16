@@ -11,6 +11,7 @@ import scala.util.Success
 import scala.util.Try
 
 import ch.epfl.scala.index.model.misc._
+import ch.epfl.scala.services.storage.DataPaths
 import org.json4s._
 import org.json4s.native.Serialization.writePretty
 import org.json4s.native.Serialization.{read => parse}
