@@ -149,6 +149,9 @@ lazy val server = project
   .settings(commonSettings)
   .settings(packageScalaJS(client))
   .settings(
+    javaOptions ++= Seq(
+      "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044"
+    ),
     libraryDependencies ++= Seq(
       "com.typesafe.play" %%% "play-json" % V.playJsonVersion,
       "com.typesafe.akka" %% "akka-testkit" % V.akkaVersion % Test,
@@ -191,8 +194,11 @@ lazy val core = project
     libraryDependencies ++= Seq(
       "com.lihaoyi" %% "fastparse" % "2.3.0",
       "joda-time" % "joda-time" % "2.10.10"
-    )
+    ),
+    buildInfoPackage := "build.info",
+    buildInfoKeys := Seq[BuildInfoKey](ThisBuild / baseDirectory)
   )
+  .enablePlugins(BuildInfoPlugin)
 
 lazy val data = project
   .settings(commonSettings)
@@ -211,13 +217,11 @@ lazy val data = project
       "org.json4s" %% "json4s-native" % "3.5.5",
       "org.apache.logging.log4j" % "log4j-core" % V.log4jVersion % Runtime
     ),
-    buildInfoPackage := "build.info",
-    buildInfoKeys := Seq[BuildInfoKey](ThisBuild / baseDirectory),
     reStart := reStart.dependsOn(startESandPostgreSQL).evaluated,
     Compile / run := (Compile / run).dependsOn(startESandPostgreSQL).evaluated,
     reStart / javaOptions ++= Seq("-Xmx4g")
   )
-  .enablePlugins(BuildInfoPlugin, JavaAppPackaging)
+  .enablePlugins(JavaAppPackaging)
   .dependsOn(core, infra)
 
 lazy val V = new {

@@ -4,6 +4,7 @@ package cleanup
 
 import java.nio.file._
 
+import ch.epfl.scala.index.model.DataPaths
 import org.json4s._
 import org.typelevel.jawn.support.json4s.Parser
 

@@ -1,11 +1,10 @@
-package ch.epfl.scala.index
+package ch.epfl.scala.services.storage
 
-import ch.epfl.scala.index.data.elastic.LiveProjects
-import ch.epfl.scala.index.data.elastic.SaveLiveData
+import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 
-class SaveLiveDataTests extends AsyncFunSpec with Matchers {
+class LocalStorageRepoTests() extends AsyncFunSpec with Matchers {
   describe("encode/decode json") {
     val json =
       """|
@@ -52,7 +51,8 @@ class SaveLiveDataTests extends AsyncFunSpec with Matchers {
          |}
          |""".stripMargin
 
-    val readLiveProject: LiveProjects = SaveLiveData.parse(json)
+    val readLiveProject = LocalStorageRepo.parse(json)
     readLiveProject.projects.size should equal(1)
   }
+
 }

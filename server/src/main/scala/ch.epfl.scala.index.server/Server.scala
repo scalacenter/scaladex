@@ -18,6 +18,7 @@ import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.config.ServerConfig
 import ch.epfl.scala.index.server.routes._
 import ch.epfl.scala.index.server.routes.api._
+import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.DoobieUtils
 import org.slf4j.LoggerFactory
@@ -64,6 +65,7 @@ object Server {
     transactor
       .use { xa =>
         val db = new SqlRepo(config.dbConf, xa)
+        val localStorage = new LocalStorageRepo(config.dataPaths)
         val programmaticRoutes = concat(
           PublishApi(paths, data, databaseApi = db).routes,
           new SearchApi(data, session).routes,
@@ -77,6 +79,7 @@ object Server {
             concat(
               new ProjectPages(
                 db,
+                localStorage,
                 session,
                 paths
               ).routes,

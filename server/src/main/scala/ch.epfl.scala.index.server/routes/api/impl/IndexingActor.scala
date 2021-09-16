@@ -10,11 +10,11 @@ import scala.concurrent.duration._
 
 import akka.actor.Actor
 import akka.actor.ActorSystem
-import ch.epfl.scala.index.data.DataPaths
-import ch.epfl.scala.index.data.LocalPomRepository
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.project.ProjectConvert
+import ch.epfl.scala.index.model.DataPaths
+import ch.epfl.scala.index.model.LocalPomRepository
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.search.ESRepo

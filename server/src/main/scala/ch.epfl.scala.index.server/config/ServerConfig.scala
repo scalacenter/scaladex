@@ -1,8 +1,8 @@
 package ch.epfl.scala.index.server.config
 
-import ch.epfl.scala.index.data.DataPaths
+import ch.epfl.scala.index.model.DataPaths
+import ch.epfl.scala.index.model.Env
 import ch.epfl.scala.services.storage.sql.DbConf
-import ch.epfl.scala.utils.Env
 import com.softwaremill.session.SessionConfig
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory

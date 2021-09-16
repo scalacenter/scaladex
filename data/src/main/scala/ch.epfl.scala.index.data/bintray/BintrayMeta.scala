@@ -4,7 +4,9 @@ package bintray
 
 import java.nio.file.Path
 
+import ch.epfl.scala.index.model.DataPaths
 import ch.epfl.scala.index.model.Descending
+import ch.epfl.scala.index.model.LocalPomRepository
 import com.github.nscala_time.time.Imports._
 import org.json4s._
 import org.typelevel.jawn.support.json4s.Parser

@@ -22,6 +22,8 @@ import akka.http.scaladsl.unmarshalling._
 import akka.stream.scaladsl._
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.project.ArtifactMetaExtractor
+import ch.epfl.scala.index.model.DataPaths
+import ch.epfl.scala.index.model.LocalPomRepository
 import ch.epfl.scala.index.model.misc.Sha1
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 import org.joda.time.DateTime

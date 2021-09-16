@@ -22,6 +22,8 @@ import ch.epfl.scala.index.data.download.PlayWsDownloader
 import ch.epfl.scala.index.data.maven.DownloadParentPoms
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.maven.ReleaseModel
+import ch.epfl.scala.index.model.DataPaths
+import ch.epfl.scala.index.model.LocalPomRepository
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.Release
 import ch.epfl.scala.index.model.misc.GithubRepo

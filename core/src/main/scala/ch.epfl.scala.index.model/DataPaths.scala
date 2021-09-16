@@ -1,11 +1,9 @@
-package ch.epfl.scala.index
-package data
+package ch.epfl.scala.index.model
 
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
-import ch.epfl.scala.utils.Env
 import org.slf4j.LoggerFactory
 
 /*
@@ -107,9 +105,9 @@ object DataPaths {
 }
 
 case class DataPaths(
-    private[data] val contrib: Path,
-    private[data] val index: Path,
-    private[data] val credentials: Path,
+    contrib: Path,
+    index: Path,
+    credentials: Path,
     validate: Boolean
 ) {
 

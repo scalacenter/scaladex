@@ -1,7 +1,8 @@
 package ch.epfl.scala.index.data
 
+import ch.epfl.scala.index.model.DataPaths
+import ch.epfl.scala.index.model.Env
 import ch.epfl.scala.services.storage.sql.DbConf
-import ch.epfl.scala.utils.Env
 import com.typesafe.config.ConfigFactory
 
 case class IndexConfig(env: Env, db: DbConf, dataPaths: DataPaths)

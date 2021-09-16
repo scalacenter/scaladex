@@ -9,7 +9,7 @@ import scala.concurrent.duration._
 
 import akka.actor.Actor
 import akka.actor.ActorSystem
-import ch.epfl.scala.index.data.DataPaths
+import ch.epfl.scala.index.model.DataPaths
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.DatabaseApi
 

@@ -12,6 +12,9 @@ import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 
 package object routes {
+
+  import ch.epfl.scala.index.model.ProjectForm
+
   val organizationM: PathMatcher1[NewProject.Organization] =
     Segment.map(NewProject.Organization)
   val repositoryM: PathMatcher1[NewProject.Repository] =
@@ -67,7 +70,6 @@ package object routes {
           contributingSearch = contributingSearch
         )
     }
-  import ch.epfl.scala.index.data.project.ProjectForm
   import ch.epfl.scala.index.data.github.Json4s
   import org.json4s.native.Serialization.read
 

@@ -42,10 +42,10 @@ class ProjectUserFormTableTests
     }
     it("update user data") {
       val q = update(project)(project.dataForm)
-      q.sql shouldBe s"""|UPDATE project_user_data SET defaultStableVersion=?, defaultArtifact=?, 
-                         |strictVersions=?, customScalaDoc=?, documentationLinks=?, deprecated=?, 
-                         |contributorsWanted=?, artifactDeprecations=?, cliArtifacts?, primaryTopic=? 
-                         |WHERE organization=? AND repository=?
+      q.sql shouldBe s"""|UPDATE project_user_data SET defaultStableVersion=?, defaultArtifact=?,
+                         | strictVersions=?, customScalaDoc=?, documentationLinks=?, deprecated=?,
+                         | contributorsWanted=?, artifactDeprecations=?, cliArtifacts=?, primaryTopic=?
+                         | WHERE organization=? AND repository=?
                          |""".stripMargin.filterNot(_ == '\n')
 
     }

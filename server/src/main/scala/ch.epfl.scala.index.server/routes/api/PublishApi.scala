@@ -18,7 +18,7 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives._
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.util.Timeout
-import ch.epfl.scala.index.data.DataPaths
+import ch.epfl.scala.index.model.DataPaths
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.DatabaseApi

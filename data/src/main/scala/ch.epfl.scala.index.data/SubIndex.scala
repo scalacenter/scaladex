@@ -9,9 +9,11 @@ import ch.epfl.scala.index.data.bintray.BintrayMeta
 import ch.epfl.scala.index.data.bintray.BintrayProtocol
 import ch.epfl.scala.index.data.bintray.BintraySearch
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
-import ch.epfl.scala.index.data.elastic.SaveLiveData
 import ch.epfl.scala.index.data.maven.PomsReader
+import ch.epfl.scala.index.model.DataPaths
+import ch.epfl.scala.index.model.LocalPomRepository
 import ch.epfl.scala.index.model.misc.GithubRepo
+import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import org.json4s.native.Serialization.write
 
 object SubIndex extends BintrayProtocol {
@@ -118,9 +120,9 @@ object SubIndex extends BintrayProtocol {
     println("== Copy LiveData ==")
 
     // live
-    SaveLiveData.saveProjects(
+    LocalStorageRepo.saveProjects(
       destination,
-      SaveLiveData
+      LocalStorageRepo
         .storedProjects(source)
         .view
         .filterKeys(reference => repos.contains(reference.githubRepo))
