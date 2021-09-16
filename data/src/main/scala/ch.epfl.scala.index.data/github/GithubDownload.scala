@@ -15,7 +15,10 @@ import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.download.PlayWsClient
 import ch.epfl.scala.index.data.download.PlayWsDownloader
 import ch.epfl.scala.index.data.maven.PomsReader
+import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.index.model.Project
+import ch.epfl.scala.index.model.ProjectForm
+import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.local.LocalStorageRepo
@@ -125,6 +128,80 @@ class GithubDownload(
       request.addHttpHeaders(
         "Accept" -> "application/vnd.github.black-panther-preview+json"
       )
+    )
+  }
+  def update(
+      project: Project,
+      projectForm: ProjectForm,
+      fromStored: Boolean = false
+  ): Project = {
+    val githubWithKeywords =
+      if (project.github.isEmpty) {
+        Some(GithubInfo.empty.copy(topics = projectForm.keywords))
+      } else {
+        project.github.map(github =>
+          github.copy(topics = github.topics ++ projectForm.keywords)
+        )
+      }
+
+    val getBeginnerIssues =
+      fromStored && projectForm.beginnerIssues.isEmpty && projectForm.beginnerIssuesLabel.isDefined
+    val newBeginnerIssues =
+      if (getBeginnerIssues) {
+        runBeginnerIssues(
+          project.githubRepo,
+          projectForm.beginnerIssuesLabel.getOrElse("")
+        )
+        GithubReader
+          .beginnerIssues(paths, project.githubRepo)
+          .getOrElse(List())
+      } else projectForm.beginnerIssues
+
+    val newChatroom = projectForm.chatroom.filterNot(_.target == "")
+    val newContributingGuide =
+      projectForm.contributingGuide.filterNot(_.target == "")
+    val newCodeOfConduct = projectForm.codeOfConduct.filterNot(_.target == "")
+
+    project.copy(
+      contributorsWanted = projectForm.contributorsWanted,
+      defaultArtifact =
+        if (projectForm.defaultArtifact.isDefined) projectForm.defaultArtifact
+        else project.defaultArtifact,
+      defaultStableVersion = projectForm.defaultStableVersion,
+      strictVersions = projectForm.strictVersions,
+      deprecated = projectForm.deprecated,
+      artifactDeprecations = projectForm.artifactDeprecations,
+      cliArtifacts = projectForm.cliArtifacts,
+      hasCli = projectForm.cliArtifacts.nonEmpty,
+      github = githubWithKeywords.map(github =>
+        github.copy(
+          beginnerIssuesLabel =
+            projectForm.beginnerIssuesLabel.filterNot(_ == ""),
+          beginnerIssues = newBeginnerIssues,
+          selectedBeginnerIssues = projectForm.selectedBeginnerIssues,
+          // default to project's chatroom/contributingGuide/codeOfConduct
+          // if updating from stored project and stored project didn't override
+          // that value
+          chatroom =
+            if (fromStored && !newChatroom.isDefined)
+              project.github.flatMap(_.chatroom)
+            else newChatroom,
+          contributingGuide =
+            if (fromStored && !newContributingGuide.isDefined)
+              project.github.flatMap(_.contributingGuide)
+            else newContributingGuide,
+          codeOfConduct =
+            if (fromStored && !newCodeOfConduct.isDefined)
+              project.github.flatMap(_.codeOfConduct)
+            else newCodeOfConduct
+        )
+      ),
+      customScalaDoc = projectForm.customScalaDoc.filterNot(_ == ""),
+      documentationLinks =
+        projectForm.documentationLinks.filterNot { case (label, link) =>
+          label == "" || link == ""
+        },
+      primaryTopic = projectForm.primaryTopic
     )
   }
 

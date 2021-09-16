@@ -22,6 +22,8 @@ import akka.http.scaladsl.unmarshalling._
 import akka.stream.scaladsl._
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.project.ArtifactMetaExtractor
+import ch.epfl.scala.services.storage.DataPaths
+import ch.epfl.scala.services.storage.LocalPomRepository
 import ch.epfl.scala.index.model.misc.Sha1
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository
