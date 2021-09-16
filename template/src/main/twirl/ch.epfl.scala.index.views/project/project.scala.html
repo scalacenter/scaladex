@@ -2,7 +2,6 @@
 
 @import ch.epfl.scala.index.newModel.NewProject
 @import ch.epfl.scala.index.newModel.NewRelease
-@import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 @import ch.epfl.scala.index.model._
 @import ch.epfl.scala.index.model.misc._
 @import ch.epfl.scala.index.model.release._
@@ -13,7 +12,7 @@
   canEdit: Boolean, twitterCard: Option[TwitterSummaryCard])
 
 @main(title = project.repository.value, showSearch = true, user,
-      extraMeta = twitterCard.toSeq.map(_.toHeadMeta).flatten) {
+      extraMeta = twitterCard.map(_.toHeadMeta).getOrElse(Nil)) {
   <main id="container-project">
     @headproject(project, artifacts, versions, targets, release, canEdit)
     <div class="container">

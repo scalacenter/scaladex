@@ -35,6 +35,8 @@ case class UserState(
     info: UserInfo
 ) {
   def isAdmin: Boolean = orgs.contains(Response.Organization("scalacenter"))
+  def canEdit(githubRepo: GithubRepo): Boolean =
+    isAdmin || repos.contains(githubRepo)
   def isSonatype: Boolean =
     orgs.contains(
       Response.Organization("sonatype")
