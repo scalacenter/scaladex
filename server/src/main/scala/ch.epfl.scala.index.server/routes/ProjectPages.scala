@@ -17,8 +17,6 @@ import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewProject.Organization
-import ch.epfl.scala.index.newModel.NewProject.Repository
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.services.DatabaseApi
@@ -40,47 +38,34 @@ class ProjectPages(
     extends LazyLogging {
   import session.implicits._
 
-  private def canEdit(
-      githubRepo: GithubRepo,
-      userState: Option[UserState]
-  ): Boolean = {
-    userState.exists(s => s.isAdmin || s.repos.contains(githubRepo))
-  }
-
   private def getEditPage(
-      org: Organization,
-      repo: Repository,
-      userState: Option[UserState]
+      projectRef: Project.Reference,
+      userInfo: UserInfo
   ): Future[(StatusCode, HtmlFormat.Appendable)] = {
-    val user = userState.map(_.info)
-    val projectRef = Project.Reference(org.value, repo.value)
-    if (canEdit(projectRef.githubRepo, userState)) {
-      for {
-        project <- db.findProject(projectRef)
-        releases <- db.findReleases(projectRef)
-      } yield {
-        project
-          .map { p =>
-            val beginnerIssuesJson = p.githubInfo
-              .map { github =>
-                import Json4s._
-                write[List[GithubIssue]](github.beginnerIssues)
-              }
-              .getOrElse("")
-            (
-              StatusCodes.OK,
-              views.project.html.editproject(
-                p,
-                releases,
-                user,
-                beginnerIssuesJson
-              )
+    for {
+      projectOpt <- db.findProject(projectRef)
+      releases <- db.findReleases(projectRef)
+    } yield {
+      projectOpt
+        .map { p =>
+          val beginnerIssuesJson = p.githubInfo
+            .map { github =>
+              import Json4s._
+              write[List[GithubIssue]](github.beginnerIssues)
+            }
+            .getOrElse("")
+          (
+            StatusCodes.OK,
+            views.project.html.editproject(
+              p,
+              releases,
+              Some(userInfo),
+              beginnerIssuesJson
             )
-          }
-          .getOrElse((StatusCodes.NotFound, views.html.notfound(user)))
-      }
-    } else
-      Future.successful((StatusCodes.Forbidden, views.html.forbidden(user)))
+          )
+        }
+        .getOrElse((StatusCodes.NotFound, views.html.notfound(Some(userInfo))))
+    }
   }
 
   private def getSelectedRelease(
@@ -120,48 +105,55 @@ class ProjectPages(
       repository: NewProject.Repository,
       target: Option[String],
       artifact: NewRelease.ArtifactName,
-      version: Option[SemanticVersion]
-  ): Future[
-    (
-        NewProject,
-        NewRelease,
-        Seq[SemanticVersion],
-        Seq[ScalaTarget],
-        Seq[NewRelease.ArtifactName]
-    )
-  ] = {
+      version: Option[SemanticVersion],
+      user: Option[UserInfo]
+  ): Future[(StatusCode, HtmlFormat.Appendable)] = {
     val selection = ReleaseSelection.parse(
       target = target,
       artifactName = Some(artifact.value),
       version = version.map(_.toString),
       selected = None
     )
-
     val projectRef =
       Project.Reference(organization.value, repository.value)
-    for {
-      project <- db.findProject(projectRef).map(_.get)
-      releases <- db.findReleases(projectRef)
-      dependencies =
-        Seq() // trouver toute les dependences de project
-      // the selected Release
-      selectedRelease = ReleaseOptions.filterReleases(
-        selection,
-        releases,
-        project
-      )
-      // compute stuff
-      allVersions = releases.map(_.version)
-      filteredVersions = filterVersions(project, allVersions)
-      targets = releases.flatMap(_.target).distinct.sorted.reverse
-      artifactNames = releases.map(_.artifactName).distinct
-    } yield (
-      project,
-      selectedRelease.head,
-      filteredVersions,
-      targets,
-      artifactNames
-    )
+
+    db.findProject(projectRef).flatMap {
+      case Some(project) =>
+        for {
+          releases <- db.findReleases(projectRef)
+          dependencies =
+            Seq() // trouver toute les dependences de project
+          // the selected Release
+          selectedRelease <- ReleaseOptions
+            .filterReleases(
+              selection,
+              releases,
+              project
+            )
+            .headOption
+            .toFuture(new Exception(s"no release found for $projectRef"))
+          // compute stuff
+          allVersions = releases.map(_.version)
+          filteredVersions = filterVersions(project, allVersions)
+          targets = releases.flatMap(_.target).distinct.sorted.reverse
+          artifactNames = releases.map(_.artifactName).distinct
+        } yield (
+          StatusCodes.OK,
+          views.project.html.project(
+            project,
+            artifactNames,
+            filteredVersions,
+            targets,
+            selectedRelease,
+            Dependencies.empty(selectedRelease.reference),
+            user,
+            canEdit = true,
+            None
+          )
+        )
+      case None =>
+        Future.successful((StatusCodes.NotFound, views.html.notfound(user)))
+    }
   }
 
   private val moved = GithubReader.movedRepositories(paths)
@@ -169,17 +161,15 @@ class ProjectPages(
   private def redirectMoved(
       organization: NewProject.Organization,
       repository: NewProject.Repository
-  ): Directive0 = {
+  ): Directive0 =
     moved.get(GithubRepo(organization.value, repository.value)) match {
       case Some(destination) =>
         redirect(
           Uri(s"/${destination.organization}/${destination.repository}"),
           StatusCodes.PermanentRedirect
         )
-
       case None => pass
     }
-  }
 
   val routes: Route =
     concat(
@@ -281,11 +271,22 @@ class ProjectPages(
       get {
         path("edit" / organizationM / repositoryM)((organization, repository) =>
           optionalSession(refreshable, usingCookies)(userId =>
-            pathEnd(
-              complete(
-                getEditPage(organization, repository, session.getUser(userId))
-              )
-            )
+            pathEnd {
+              val projectRef =
+                Project.Reference(organization.value, repository.value)
+              session.getUser(userId) match {
+                case Some(userState)
+                    if userState.canEdit(projectRef.githubRepo) =>
+                  complete(getEditPage(projectRef, userState.info))
+                case maybeUser =>
+                  complete(
+                    (
+                      StatusCodes.Forbidden,
+                      views.html.forbidden(maybeUser.map(_.info))
+                    )
+                  )
+              }
+            }
           )
         )
       },
@@ -341,31 +342,11 @@ class ProjectPages(
                   repository,
                   target,
                   artifact,
-                  None
+                  None,
+                  user
                 )
                 onComplete(res) {
-                  case Success(
-                        (
-                          project,
-                          selectedRelease,
-                          versions,
-                          targets,
-                          artifactNames
-                        )
-                      ) =>
-                    complete(
-                      views.project.html.project(
-                        project,
-                        artifactNames,
-                        versions,
-                        targets,
-                        selectedRelease,
-                        Dependencies.empty(selectedRelease.reference),
-                        user,
-                        canEdit = true,
-                        None
-                      )
-                    )
+                  case Success((code, some)) => complete(code, some)
                   case Failure(e) =>
                     complete(StatusCodes.NotFound, views.html.notfound(user))
                 }
@@ -384,31 +365,11 @@ class ProjectPages(
                   repository,
                   target,
                   artifact,
-                  Some(version)
+                  Some(version),
+                  user
                 )
                 onComplete(res) {
-                  case Success(
-                        (
-                          project,
-                          selectedRelease,
-                          versions,
-                          targets,
-                          artifactNames
-                        )
-                      ) =>
-                    complete(
-                      views.project.html.project(
-                        project,
-                        artifactNames,
-                        versions,
-                        targets,
-                        selectedRelease,
-                        Dependencies.empty(selectedRelease.reference),
-                        user,
-                        canEdit = true,
-                        None
-                      )
-                    )
+                  case Success((code, some)) => complete(code, some)
                   case Failure(e) =>
                     complete(StatusCodes.NotFound, views.html.notfound(user))
                 }
@@ -417,5 +378,4 @@ class ProjectPages(
         )
       }
     )
-
 }
