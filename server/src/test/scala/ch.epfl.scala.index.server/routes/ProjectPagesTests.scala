@@ -8,9 +8,8 @@ class ProjectPagesTests()
     extends CtrlTests
     with BeforeAndAfterAll
     with ScalatestRouteTest {
-  override def beforeAll(): Unit = insertMockData()
 
-  override def afterAll(): Unit = db.dropTables().unsafeRunSync()
+  override def beforeAll(): Unit = insertMockData()
 
   val projectPages = new ProjectPages(
     db = db,
@@ -22,7 +21,6 @@ class ProjectPagesTests()
 
   describe("ProjectPageRoutes") {
     it("should return NotFound") {
-      val project = Values.project
       Get(s"/non-existing-org/non-existing-project}") ~> routes ~> check {
         status shouldEqual StatusCodes.NotFound
       }

@@ -61,6 +61,23 @@ class SqlRepoTests
         db.updateProjectForm(project.reference, project.dataForm)
       ) shouldBe Success(())
     }
+    //Todo : run those test with postgreSql! H2 doesnt support JOIN
+//    it("should find directDependencies") {
+//      val catsReleases = Seq(Values.releaseCatsCore, Values.releaseCatsKernel)
+//      await(db.insertReleases(catsReleases))
+//      val catsDependencies = Values.dependenciesForCat
+//      await(db.insertDependencies(catsDependencies))
+//      val result =  await(db.findDirectDependencies(Values.releaseCatsCore)).get
+//      result.map(_.release) should contain theSameElementsAs List(Some(Values.releaseCatsKernel), None)
+//    }
+//    it("should find reverseDependencies") {
+//      val catsReleases = Seq(Values.releaseCatsCore, Values.releaseCatsKernel)
+//      await(db.insertReleases(catsReleases))
+//      val catsDependencies = Values.dependenciesForCat
+//      await(db.insertDependencies(catsDependencies))
+//      val result =  await(db.findReverseDependencies(Values.releaseCatsKernel)).get
+//      result.map(_.release) should contain theSameElementsAs List(Some(Values.releaseCatsCore))
+//    }
   }
 
   def await[A](f: Future[A]): Try[A] = Try(

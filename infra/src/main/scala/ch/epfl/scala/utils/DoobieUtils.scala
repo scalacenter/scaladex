@@ -280,6 +280,61 @@ object DoobieUtils {
           )
       }
 
+//    // todo: Should not be necessary to write this
+    implicit val dependencyDirectReader: Read[NewDependency.Direct] = Read[
+      (
+          NewDependency,
+          Option[String],
+          Option[String],
+          Option[SemanticVersion],
+          Option[Organization],
+          Option[Repository],
+          Option[NewRelease.ArtifactName],
+          Option[ScalaTarget],
+          Option[String],
+          Option[DateTime],
+          Option[Resolver],
+          Option[Set[License]],
+          Option[Boolean]
+      )
+    ].map {
+      case (
+            dependency,
+            Some(groupId),
+            Some(artifactId),
+            Some(version),
+            Some(organization),
+            Some(repository),
+            Some(artifact),
+            target,
+            description,
+            released,
+            resolver,
+            Some(licenses),
+            Some(isNonStandardLib)
+          ) =>
+        NewDependency.Direct(
+          dependency,
+          Some(
+            NewRelease(
+              MavenReference(groupId, artifactId, version.toString),
+              version,
+              organization,
+              repository,
+              artifact,
+              target,
+              description,
+              released,
+              resolver,
+              licenses,
+              isNonStandardLib
+            )
+          )
+        )
+      case (dependency, _, _, _, _, _, _, _, _, _, _, _, _) =>
+        NewDependency.Direct(dependency, None)
+    }
+
     private def toJson[A](v: A)(implicit e: Encoder[A]): String =
       e.apply(v).noSpaces
 
