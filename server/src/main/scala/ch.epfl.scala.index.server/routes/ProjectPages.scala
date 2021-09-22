@@ -96,8 +96,8 @@ class ProjectPages(
       p: NewProject,
       allVersions: Seq[SemanticVersion]
   ): Seq[SemanticVersion] = {
-    if (p.dataForm.strictVersions) allVersions.filter(_.isSemantic)
-    else allVersions
+    (if (p.dataForm.strictVersions) allVersions.filter(_.isSemantic)
+     else allVersions).distinct.sorted.reverse
   }
 
   private def getProjectPage(
@@ -121,8 +121,6 @@ class ProjectPages(
       case Some(project) =>
         for {
           releases <- db.findReleases(projectRef)
-          dependencies =
-            Seq() // trouver toute les dependences de project
           // the selected Release
           selectedRelease <- ReleaseOptions
             .filterReleases(
@@ -132,6 +130,8 @@ class ProjectPages(
             )
             .headOption
             .toFuture(new Exception(s"no release found for $projectRef"))
+          directDependencies <- db.findDirectDependencies(selectedRelease)
+          reverseDependency <- db.findReverseDependencies(selectedRelease)
           // compute stuff
           allVersions = releases.map(_.version)
           filteredVersions = filterVersions(project, allVersions)
@@ -146,10 +146,12 @@ class ProjectPages(
             filteredVersions,
             targets,
             selectedRelease,
-            Dependencies.empty(selectedRelease.reference),
             user,
             canEdit = true,
-            Some(twitterCard)
+            Some(twitterCard),
+            releases.size,
+            directDependencies,
+            reverseDependency
           )
         )
       case None =>

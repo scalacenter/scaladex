@@ -121,6 +121,19 @@ class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
   override def countDependencies(): Future[Long] =
     run(DependenciesTable.indexedDependencies().unique)
 
+  def findDependencies(release: NewRelease): Future[List[NewDependency]] =
+    run(DependenciesTable.find(release.maven).to[List])
+
+  override def findDirectDependencies(
+      release: NewRelease
+  ): Future[List[NewDependency.Direct]] =
+    run(DependenciesTable.selectDirectDependencies(release).to[List])
+
+  override def findReverseDependencies(
+      release: NewRelease
+  ): Future[List[NewDependency.Reverse]] =
+    run(DependenciesTable.selectReverseDependencies(release).to[List])
+
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.indexedGithubInfo().unique)
 

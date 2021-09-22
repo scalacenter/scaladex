@@ -10,8 +10,8 @@ import doobie.util.update.Update
 
 object ReleaseTable {
   private val _ = documentationLinksMeta
-  private val table = "releases"
-  private val fields = Seq(
+  private[sql] val table = "releases"
+  private[sql] val fields = Seq(
     "groupId",
     "artifactId",
     "version",

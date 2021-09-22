@@ -63,6 +63,24 @@ case class NewRelease(
     target = target
   )
 
+  def artifactHttpPath: String =
+    s"/$organization/$repository/$artifactName/$version"
+  def artifactFullHttpUrl: String =
+    s"https://index.scala-lang.org$artifactHttpPath"
+
+  def httpUrl: String = {
+    val targetQuery = target.map(t => s"?target=${t.encode}").getOrElse("")
+    s"$artifactHttpPath$targetQuery"
+  }
+
+  private def nonDefaultTargetType: Option[ScalaTargetType] = {
+    target.map(_.targetType).filter(_ != Jvm)
+  }
+
+  def badgeUrl: String =
+    s"$artifactFullHttpUrl/latest-by-scala-version.svg" +
+      nonDefaultTargetType.map("?targetType=" + _).mkString
+
   def sbtInstall: String = {
     val install = target match {
       case Some(SbtPlugin(_, _)) =>

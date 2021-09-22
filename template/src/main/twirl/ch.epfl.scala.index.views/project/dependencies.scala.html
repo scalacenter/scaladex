@@ -1,55 +1,35 @@
 @import ch.epfl.scala.index.model.release._
+@import ch.epfl.scala.index.views.Formats
+@import ch.epfl.scala.index.newModel.NewDependency.Full
+@import ch.epfl.scala.index.newModel.NewDependency
+@import ch.epfl.scala.index.model.Project
 
-@(allDeps: Dependencies)
+
+@(ref: Project.Reference, allDeps: Seq[NewDependency.Direct])
+@internalDeps = @{allDeps.filter(_.isInternal(ref)).sorted}
+@remainingDeps =   @{allDeps.filterNot(_.isInternal(ref)).sorted}
 <div class="dependencies box">
-  <h4>
-    @{allDeps.externalDependencyCount} 
-    
-    @if(allDeps.externalDependencyCount > 1) { 
-      Dependencies 
-    } else { 
-      Dependency 
-    }
-  </h4>
-  @dependencyBlock(allDeps.scalaDependencies)
-  @if(allDeps.javaDependencies.nonEmpty) {
-    <h5>Java
-      @if(allDeps.javaDependencies.size > 1) { 
-        Dependencies 
-      } else { 
-        Dependency 
-      }
-    </h5>
-    @dependencyBlock(allDeps.javaDependencies)
-  }
+  <h4>@Formats.plural(remainingDeps.size, "dependency", "dependencies")</h4>
+  @dependencyBlock(remainingDeps)
 </div>
 
-@if(allDeps.internalDependencies.nonEmpty) {
+@if(internalDeps.nonEmpty) {
 <div class="dependencies box">
-  <h4>@allDeps.internalDependencies.size Internal 
-    @if(allDeps.internalDependencies.size > 1) {
-      Dependencies
-    } else { 
-      Dependency
-    }
-  </h4>
-  @dependencyBlock(allDeps.internalDependencies)
+  <h4>@Formats.plural(internalDeps.size, "internal dependency", "internal dependencies")</h4>
+  @dependencyBlock(internalDeps)
 </div>
 }
 
 @* reusable code block for dependency listing *@
-@dependencyBlock[D <: Dependency](dependencies: Seq[D]) = {
+@dependencyBlock(dependencies: Seq[NewDependency.Direct]) = {
   <ul>
-  @for(dependency <- dependencies){
+  @for(fullDep <- dependencies){
     <li>
-      <a href="@dependency.target.httpUrl" target="_blank">
-        @dependency.target.name
+      <a href="@fullDep.url" target="_blank">
+        @fullDep.name
       </a>
-      v@{dependency match {
-          case java: JavaDependency => java.target.version
-          case scala: ScalaDependency => scala.target.version.toString
-        }}
-      <span class="label label-primary">@dependency.scope</span>
+      v@{fullDep.version}
+      <span class="label label-primary">@fullDep.dependency.scope</span>
     </li>
   }
   </ul>
