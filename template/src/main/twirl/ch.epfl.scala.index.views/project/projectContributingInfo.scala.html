@@ -1,15 +1,15 @@
-@import ch.epfl.scala.index.model.Project
+@import ch.epfl.scala.index.newModel.NewProject
 @import ch.epfl.scala.index.views.html._
 
-@(project: Project)
 
-@project.github.map { github =>
-    @if(!github.beginnerIssues.isEmpty && github.chatroom.isDefined && github.contributingGuide.isDefined) {
+@(project: NewProject)
+@project.githubInfo.map { github =>
+    @if(github.beginnerIssues.nonEmpty && github.chatroom.isDefined && github.contributingGuide.isDefined) {
         <div class="box project-contributing-info">
           <h4>Contributing Info</h4>
           <p>Beginner-friendly Issues:</p>
           <div>
-            @contributingInfo(project, true)
+            @contributingInfo(project, hideProjectInfo = true)
           </div>
         </div>
     }

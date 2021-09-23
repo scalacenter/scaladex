@@ -27,6 +27,8 @@ import ch.epfl.scala.index.model.Release
 import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.DatabaseApi
+import ch.epfl.scala.services.storage.DataPaths
+import ch.epfl.scala.services.storage.LocalPomRepository
 import org.slf4j.LoggerFactory
 
 private[api] class PublishProcess(

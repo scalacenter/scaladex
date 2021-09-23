@@ -3,16 +3,7 @@ package release
 
 sealed trait Dependency {
   val dependent: Release.Reference
-  val target: GeneralReference
   val scope: Option[String]
-}
-
-/**
- * Reference to either a MavenReference or a Release.Reference
- */
-trait GeneralReference {
-  def name: String
-  def httpUrl: String
 }
 
 /**

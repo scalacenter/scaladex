@@ -22,7 +22,7 @@ object Values {
     version = SemanticVersion.tryParse("0.1.1-play2.3-M1").get,
     organization = Organization("xuwei-k"),
     repository = Repository("play-json-extra"),
-    artifact = ArtifactName("play-json-extra"),
+    artifactName = ArtifactName("play-json-extra"),
     target = Some(ScalaJvm(ScalaVersion.`2.11`)),
     description = None,
     released = None,
@@ -35,6 +35,6 @@ object Values {
     release.repository,
     Some(GithubInfo.empty),
     None,
-    NewProject.FormData.default
+    NewProject.DataForm.default
   )
 }

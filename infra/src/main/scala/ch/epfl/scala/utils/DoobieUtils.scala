@@ -139,11 +139,16 @@ object DoobieUtils {
         deriveEncoder[DocumentationLink]
       stringMeta.timap(fromJson[List[DocumentationLink]](_).get)(toJson(_))
     }
-    implicit val topicsMeta: Meta[Set[String]] = {
+    implicit val topicsMeta: Meta[Set[String]] =
       stringMeta.timap(_.split(",").filter(_.nonEmpty).toSet)(
         _.mkString(",")
       )
-    }
+    implicit val artifactNamesMeta: Meta[Set[NewRelease.ArtifactName]] =
+      stringMeta.timap(
+        _.split(",").filter(_.nonEmpty).map(NewRelease.ArtifactName).toSet
+      )(
+        _.mkString(",")
+      )
     implicit val semanticVersionMeta: Meta[SemanticVersion] =
       stringMeta.timap(SemanticVersion.tryParse(_).get)(_.toString)
     implicit val scalaTargetMeta: Meta[ScalaTarget] =
@@ -183,7 +188,7 @@ object DoobieUtils {
           r.version,
           r.organization,
           r.repository,
-          r.artifact,
+          r.artifactName,
           r.target,
           r.description,
           r.released,
@@ -225,7 +230,7 @@ object DoobieUtils {
             repository = repository,
             githubInfo = None,
             esId = esId,
-            formData = NewProject.FormData.default
+            dataForm = NewProject.DataForm.default
           )
       }
 
@@ -274,6 +279,61 @@ object DoobieUtils {
             isNonStandardLib
           )
       }
+
+//    // todo: Should not be necessary to write this
+    implicit val dependencyDirectReader: Read[NewDependency.Direct] = Read[
+      (
+          NewDependency,
+          Option[String],
+          Option[String],
+          Option[SemanticVersion],
+          Option[Organization],
+          Option[Repository],
+          Option[NewRelease.ArtifactName],
+          Option[ScalaTarget],
+          Option[String],
+          Option[DateTime],
+          Option[Resolver],
+          Option[Set[License]],
+          Option[Boolean]
+      )
+    ].map {
+      case (
+            dependency,
+            Some(groupId),
+            Some(artifactId),
+            Some(version),
+            Some(organization),
+            Some(repository),
+            Some(artifact),
+            target,
+            description,
+            released,
+            resolver,
+            Some(licenses),
+            Some(isNonStandardLib)
+          ) =>
+        NewDependency.Direct(
+          dependency,
+          Some(
+            NewRelease(
+              MavenReference(groupId, artifactId, version.toString),
+              version,
+              organization,
+              repository,
+              artifact,
+              target,
+              description,
+              released,
+              resolver,
+              licenses,
+              isNonStandardLib
+            )
+          )
+        )
+      case (dependency, _, _, _, _, _, _, _, _, _, _, _, _) =>
+        NewDependency.Direct(dependency, None)
+    }
 
     private def toJson[A](v: A)(implicit e: Encoder[A]): String =
       e.apply(v).noSpaces

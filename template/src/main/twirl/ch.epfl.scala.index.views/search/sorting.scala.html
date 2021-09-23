@@ -1,9 +1,9 @@
 @import ch.epfl.scala.index.model.misc.{Pagination, SearchParams}
 
+
 @(params: SearchParams, 
   pagination: Pagination, 
   you: Boolean)
-
 <div class="order-by">
   <form action="/search" action="GET">
     <input type="hidden" name="q" value="@params.queryString">

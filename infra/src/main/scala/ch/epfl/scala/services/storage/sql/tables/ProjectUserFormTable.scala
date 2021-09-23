@@ -29,18 +29,18 @@ object ProjectUserFormTable {
 
   private val tableFr: Fragment = Fragment.const0(table)
   private val fieldsFr: Fragment = Fragment.const0(fields.mkString(", "))
-  private def values(p: NewProject, userData: NewProject.FormData): Fragment =
+  private def values(p: NewProject, userData: NewProject.DataForm): Fragment =
     fr0"${p.organization}, ${p.repository}, ${userData.defaultStableVersion}, ${userData.defaultArtifact}," ++
       fr0" ${userData.strictVersions}, ${userData.customScalaDoc}, ${userData.documentationLinks}, ${userData.deprecated}, ${userData.contributorsWanted}," ++
       fr0" ${userData.artifactDeprecations}, ${userData.cliArtifacts}, ${userData.primaryTopic}"
 
   def insert(p: NewProject)(
-      userserData: NewProject.FormData
+      userserData: NewProject.DataForm
   ): doobie.Update0 =
     buildInsert(tableFr, fieldsFr, values(p, userserData)).update
 
   def insertOrUpdate(p: NewProject)(
-      userDataForm: NewProject.FormData
+      userDataForm: NewProject.DataForm
   ): doobie.Update0 = {
     val onConflict = fr0"organization, repository"
     val doAction = fr0"NOTHING"
@@ -53,13 +53,23 @@ object ProjectUserFormTable {
     ).update
   }
 
+  def update(p: NewProject)(
+      userData: NewProject.DataForm
+  ): doobie.Update0 = {
+    val fields = fr0"defaultStableVersion=${userData.defaultStableVersion}, defaultArtifact=${userData.defaultArtifact}," ++
+      fr0" strictVersions=${userData.strictVersions}, customScalaDoc=${userData.customScalaDoc}, documentationLinks=${userData.documentationLinks}," ++
+      fr0" deprecated=${userData.deprecated}, contributorsWanted=${userData.contributorsWanted}," ++
+      fr0" artifactDeprecations=${userData.artifactDeprecations}, cliArtifacts=${userData.cliArtifacts}, primaryTopic=${userData.primaryTopic}"
+    buildUpdate(tableFr, fields, where(p.organization, p.repository)).update
+  }
+
   def indexedProjects(): doobie.Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]
 
   def selectOne(
       org: Organization,
       repo: Repository
-  ): doobie.ConnectionIO[Option[NewProject.FormData]] =
+  ): doobie.ConnectionIO[Option[NewProject.DataForm]] =
     selectOneQuery(org, repo).option
 
   def indexedProjectUserForm(): doobie.Query0[Long] =
@@ -68,15 +78,15 @@ object ProjectUserFormTable {
   private[tables] def selectOneQuery(
       org: Organization,
       repo: Repository
-  ): doobie.Query0[NewProject.FormData] =
+  ): doobie.Query0[NewProject.DataForm] =
     buildSelect(
       tableFr,
       fieldsFr,
       where(org, repo)
-    ).query[NewProject.FormData](formDataReader)
+    ).query[NewProject.DataForm](formDataReader)
 
-  val formDataReader: Read[NewProject.FormData] =
-    Read[(Organization, Repository, NewProject.FormData)].map {
+  val formDataReader: Read[NewProject.DataForm] =
+    Read[(Organization, Repository, NewProject.DataForm)].map {
       case (_, _, userFormData) => userFormData
     }
 }

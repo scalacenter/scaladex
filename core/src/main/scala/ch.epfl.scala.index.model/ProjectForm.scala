@@ -1,13 +1,11 @@
-package ch.epfl.scala.index
-package data
-package project
+package ch.epfl.scala.index.model
 
-import ch.epfl.scala.index.data.github.GithubDownload
-import ch.epfl.scala.index.data.github.GithubReader
-import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubIssue
 import ch.epfl.scala.index.model.misc.Url
+import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
+import ch.epfl.scala.index.newModel.NewRelease
 
 case class ProjectForm(
     // project
@@ -30,13 +28,26 @@ case class ProjectForm(
     contributingGuide: Option[Url],
     codeOfConduct: Option[Url]
 ) {
+  def toUserDataForm(): NewProject.DataForm =
+    NewProject.DataForm(
+      defaultStableVersion = defaultStableVersion,
+      defaultArtifact = defaultArtifact.map(NewRelease.ArtifactName),
+      strictVersions = strictVersions,
+      customScalaDoc = customScalaDoc.filterNot(_ == ""),
+      documentationLinks = documentationLinks.flatMap { case (label, link) =>
+        DocumentationLink.from(label, link)
+      },
+      deprecated = deprecated,
+      contributorsWanted = contributorsWanted,
+      artifactDeprecations = artifactDeprecations.map(NewRelease.ArtifactName),
+      cliArtifacts = cliArtifacts.map(NewRelease.ArtifactName),
+      primaryTopic = primaryTopic
+    )
+
   def update(
       project: Project,
-      paths: DataPaths,
-      githubDownload: GithubDownload,
       fromStored: Boolean = false
   ): Project = {
-
     val githubWithKeywords =
       if (project.github.isEmpty) {
         Some(GithubInfo.empty.copy(topics = keywords))
@@ -49,18 +60,21 @@ case class ProjectForm(
     val getBeginnerIssues =
       fromStored && beginnerIssues.isEmpty && beginnerIssuesLabel.isDefined
     val newBeginnerIssues =
-      if (getBeginnerIssues) {
-        githubDownload.runBeginnerIssues(
-          project.githubRepo,
-          beginnerIssuesLabel.getOrElse("")
-        )
-        GithubReader
-          .beginnerIssues(paths, project.githubRepo)
-          .getOrElse(List())
-      } else beginnerIssues
+      // TODO: Update github beginner issues
+//      if (getBeginnerIssues) {
+//        runBeginnerIssues(
+//          project.githubRepo,
+//          beginnerIssuesLabel.getOrElse("")
+//        )
+//        GithubReader
+//          .beginnerIssues(paths, project.githubRepo)
+//          .getOrElse(List())
+//      } else
+      beginnerIssues
 
     val newChatroom = chatroom.filterNot(_.target == "")
-    val newContributingGuide = contributingGuide.filterNot(_.target == "")
+    val newContributingGuide =
+      contributingGuide.filterNot(_.target == "")
     val newCodeOfConduct = codeOfConduct.filterNot(_.target == "")
 
     project.copy(
@@ -101,32 +115,6 @@ case class ProjectForm(
         label == "" || link == ""
       },
       primaryTopic = primaryTopic
-    )
-  }
-}
-
-object ProjectForm {
-  def apply(project: Project): ProjectForm = {
-    import project._
-
-    new ProjectForm(
-      contributorsWanted,
-      github.map(_.topics).getOrElse(Set()),
-      defaultArtifact,
-      defaultStableVersion,
-      strictVersions,
-      deprecated,
-      artifactDeprecations,
-      cliArtifacts,
-      customScalaDoc,
-      documentationLinks,
-      primaryTopic,
-      github.flatMap(_.beginnerIssuesLabel),
-      github.map(_.beginnerIssues).getOrElse(List()),
-      github.map(_.selectedBeginnerIssues).getOrElse(List()),
-      github.flatMap(_.chatroom),
-      github.flatMap(_.contributingGuide),
-      github.flatMap(_.codeOfConduct)
     )
   }
 }

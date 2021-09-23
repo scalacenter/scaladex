@@ -1,18 +1,21 @@
 @import ch.epfl.scala.index.model._
 @import ch.epfl.scala.index.model.misc._
 @import ch.epfl.scala.index.model.release._
+@import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
 
-@(project: Project, 
+
+@(project: NewProject,
   user: Option[UserInfo],
   targetTypesWithVersion: Map[ScalaTargetType, Seq[String]],
-  semanticVersionWithReleases: Seq[(SemanticVersion, Map[String, Seq[(Release, String)]])]
+  semanticVersionWithReleases: Seq[(SemanticVersion, Map[NewRelease.ArtifactName, Seq[(NewRelease, String)]])]
 )
+@allScalaVersions= @{targetTypesWithVersion.values.flatten}
 
-@main(title = project.repository, showSearch = true, user) {
+@main(title = project.repository.toString, showSearch = true, user) {
   <main class="artifacts">
     <div class="row">
       <div class="col-md-12">
-        <a href="/@project.reference.organization/@project.reference.repository" class="btn btn-primary">
+        <a href="/@project.organization/@project.repository" class="btn btn-primary">
           Back
         </a>
       </div>
@@ -38,7 +41,6 @@
           }
         </tr>
         <tr>
-        @defining(targetTypesWithVersion.values.flatten) { allScalaVersions =>
           @allScalaVersions.map { version =>
             <th class="target">
               <label>
@@ -47,7 +49,7 @@
                 @version
               </label>
             </th>
-            }
+          }
         </tr>
       </thead>
 
@@ -62,7 +64,7 @@
               @defining(releasesWithScalaVersion.map(_._2)) { scalaVersions =>
               @defining(releasesWithScalaVersion.map(_._1)) { releases =>
               @defining( targetTypesWithVersion.filter { case (targetType, sVersions) =>
-                sVersions.intersect(scalaVersions).nonEmpty }.map(_._1)){ targetTypes =>
+                sVersions.intersect(scalaVersions).nonEmpty }.keys){ targetTypes =>
                   <tr class="@({ if (targetTypes.isEmpty) { "" }
                   else {
                     ("artifact-line artifact-line-visible") +
@@ -76,7 +78,7 @@
                     @allScalaVersions.map { version =>
                       <td class="target" title="@version">
                         @if(scalaVersions.contains(version)) {
-                          <a href="@releases.headOption.map(_.reference.httpUrl).getOrElse("")" class="supported-target"></a>
+                          <a href="@releases.headOption.map(_.httpUrl).getOrElse("")" class="supported-target"></a>
                         }
                       </td>
                     }
@@ -87,7 +89,6 @@
           }
         </tbody>
         }
-      }
     </table>
 
       </div>

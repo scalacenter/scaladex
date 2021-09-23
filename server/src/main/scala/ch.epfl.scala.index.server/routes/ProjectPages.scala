@@ -4,75 +4,69 @@ package routes
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
 
-import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import ch.epfl.scala.index.data.DataPaths
-import ch.epfl.scala.index.data.elastic.SaveLiveData
-import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.github.GithubReader
 import ch.epfl.scala.index.data.github.Json4s
-import ch.epfl.scala.index.data.project.ProjectForm
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
-import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.services.DatabaseApi
+import ch.epfl.scala.services.LocalStorageApi
+import ch.epfl.scala.services.storage.DataPaths
+import ch.epfl.scala.utils.ScalaExtensions._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import com.typesafe.scalalogging.LazyLogging
-import org.json4s.native.Serialization.read
 import org.json4s.native.Serialization.write
+import play.twirl.api.HtmlFormat
 
 class ProjectPages(
-    dataRepository: ESRepo,
     db: DatabaseApi,
+    localStorage: LocalStorageApi,
     session: GithubUserSession,
-    githubDownload: GithubDownload,
-    paths: DataPaths
+    paths: DataPaths,
+    env: Env
 )(implicit executionContext: ExecutionContext)
     extends LazyLogging {
   import session.implicits._
 
-  private def canEdit(
-      owner: String,
-      repo: String,
-      userState: Option[UserState]
-  ): Boolean = {
-    userState.exists(s =>
-      s.isAdmin || s.repos.contains(GithubRepo(owner, repo))
-    )
-  }
-
   private def getEditPage(
-      owner: String,
-      repo: String,
-      userState: Option[UserState]
-  ) = {
-    val user = userState.map(_.info)
-    if (canEdit(owner, repo, userState)) {
-      for {
-        project <- dataRepository.getProject(Project.Reference(owner, repo))
-      } yield {
-        project
-          .map { p =>
-            val beginnerIssuesJson = p.github
-              .map { github =>
-                import Json4s._
-                write[List[GithubIssue]](github.beginnerIssues)
-              }
-              .getOrElse("")
-            (OK, views.project.html.editproject(p, user, beginnerIssuesJson))
-          }
-          .getOrElse((NotFound, views.html.notfound(user)))
-      }
-    } else Future.successful((Forbidden, views.html.forbidden(user)))
+      projectRef: Project.Reference,
+      userInfo: UserInfo
+  ): Future[(StatusCode, HtmlFormat.Appendable)] = {
+    for {
+      projectOpt <- db.findProject(projectRef)
+      releases <- db.findReleases(projectRef)
+    } yield {
+      projectOpt
+        .map { p =>
+          val beginnerIssuesJson = p.githubInfo
+            .map { github =>
+              import Json4s._
+              write[List[GithubIssue]](github.beginnerIssues)
+            }
+            .getOrElse("")
+          (
+            StatusCodes.OK,
+            views.project.html.editproject(
+              p,
+              releases,
+              Some(userInfo),
+              beginnerIssuesJson
+            )
+          )
+        }
+        .getOrElse((StatusCodes.NotFound, views.html.notfound(Some(userInfo))))
+    }
   }
 
   private def getSelectedRelease(
@@ -99,148 +93,72 @@ class ProjectPages(
     } yield filteredReleases.headOption
   }
 
-  private def artifactsPage(
-      owner: String,
-      repo: String,
-      userState: Option[UserState]
-  ) = {
-    type ArtifactName = String
-    type ScalaVersion = String
-
-    val user = userState.map(_.info)
-
-    dataRepository
-      .getProjectAndReleases(Project.Reference(owner, repo))
-      .map {
-        case Some((project, releases)) =>
-          val targetTypesWithScalaVersion
-              : Map[ScalaTargetType, Seq[ScalaVersion]] =
-            releases
-              .groupBy(_.reference.target.map(_.targetType).getOrElse(Java))
-              .map { case (targetType, releases) =>
-                (
-                  targetType,
-                  releases
-                    .map(
-                      _.reference.target.map(_.showVersion).getOrElse("Java")
-                    )
-                    .distinct
-                    .sorted
-                    .reverse
-                )
-              }
-
-          val artifactsWithVersions: Seq[
-            (SemanticVersion, Map[ArtifactName, Seq[(Release, ScalaVersion)]])
-          ] = {
-            releases
-              .groupBy(_.reference.version)
-              .map { case (semanticVersion, releases) =>
-                (
-                  semanticVersion,
-                  releases
-                    .groupBy(_.reference.artifact)
-                    .map { case (artifactName, releases) =>
-                      (
-                        artifactName,
-                        releases.map(r =>
-                          (
-                            r,
-                            r.reference.target
-                              .map(_.showVersion)
-                              .getOrElse("Java")
-                          )
-                        )
-                      )
-                    }
-                )
-              }
-              .toSeq
-              .sortBy(_._1)
-              .reverse
-          }
-
-          (
-            OK,
-            views.html
-              .artifacts(
-                project,
-                user,
-                targetTypesWithScalaVersion,
-                artifactsWithVersions
-              )
-          )
-        case None => (NotFound, views.html.notfound(user))
-      }
+  private def filterVersions(
+      p: NewProject,
+      allVersions: Seq[SemanticVersion]
+  ): Seq[SemanticVersion] = {
+    (if (p.dataForm.strictVersions) allVersions.filter(_.isSemantic)
+     else allVersions).distinct.sorted.reverse
   }
 
-  private def projectPage(
-      owner: String,
-      repo: String,
+  private def getProjectPage(
+      organization: NewProject.Organization,
+      repository: NewProject.Repository,
       target: Option[String],
-      artifact: Option[String],
-      version: Option[String],
-      selected: Option[String],
-      userState: Option[UserState]
-  ) = {
-
-    val user = userState.map(_.info)
-
+      artifact: NewRelease.ArtifactName,
+      version: Option[SemanticVersion],
+      user: Option[UserInfo]
+  ): Future[(StatusCode, HtmlFormat.Appendable)] = {
     val selection = ReleaseSelection.parse(
       target = target,
-      artifactName = artifact,
-      version = version,
-      selected = selected
+      artifactName = Some(artifact.value),
+      version = version.map(_.toString),
+      selected = None
     )
-    val projectRef = Project.Reference(owner, repo)
+    val projectRef =
+      Project.Reference(organization.value, repository.value)
 
-    dataRepository
-      .getProjectAndReleaseOptions(projectRef, selection)
-      .flatMap {
-        case Some((project, options)) =>
-          val releaseRef = options.release.reference
-          val dependenciesF = dataRepository.getAllDependencies(releaseRef)
-          val reverseDependenciesF =
-            dataRepository.getReverseDependencies(releaseRef)
-
-          for {
-            dependencies <- dependenciesF
-            reverseDependencies <- reverseDependenciesF
-          } yield {
-            val allDeps =
-              Dependencies(options.release, dependencies, reverseDependencies)
-
-            val versions =
-              if (project.strictVersions) options.versions.filter(_.isSemantic)
-              else options.versions
-
-            val twitterCard = for {
-              github <- project.github
-              description <- github.description
-            } yield TwitterSummaryCard(
-              site = "@scala_lang",
-              title = s"${project.organization}/${project.repository}",
-              description = description,
-              image = github.logo
+    db.findProject(projectRef).flatMap {
+      case Some(project) =>
+        for {
+          releases <- db.findReleases(projectRef)
+          // the selected Release
+          selectedRelease <- ReleaseOptions
+            .filterReleases(
+              selection,
+              releases,
+              project
             )
-
-            val page = views.project.html.project(
-              project,
-              options.artifacts,
-              versions,
-              options.targets,
-              options.release,
-              allDeps,
-              user,
-              canEdit(owner, repo, userState),
-              twitterCard
-            )
-
-            (OK, page)
-          }
-
-        case None => Future.successful(NotFound, views.html.notfound(user))
-      }
+            .headOption
+            .toFuture(new Exception(s"no release found for $projectRef"))
+          directDependencies <- db.findDirectDependencies(selectedRelease)
+          reverseDependency <- db.findReverseDependencies(selectedRelease)
+          // compute stuff
+          allVersions = releases.map(_.version)
+          filteredVersions = filterVersions(project, allVersions)
+          targets = releases.flatMap(_.target).distinct.sorted.reverse
+          artifactNames = releases.map(_.artifactName).distinct.sortBy(_.value)
+          twitterCard = project.twitterSummaryCard
+        } yield (
+          StatusCodes.OK,
+          views.project.html.project(
+            env,
+            project,
+            artifactNames,
+            filteredVersions,
+            targets,
+            selectedRelease,
+            user,
+            canEdit = true,
+            Some(twitterCard),
+            releases.size,
+            directDependencies,
+            reverseDependency
+          )
+        )
+      case None =>
+        Future.successful((StatusCodes.NotFound, views.html.notfound(user)))
+    }
   }
 
   private val moved = GithubReader.movedRepositories(paths)
@@ -248,119 +166,15 @@ class ProjectPages(
   private def redirectMoved(
       organization: NewProject.Organization,
       repository: NewProject.Repository
-  ): Directive0 = {
+  ): Directive0 =
     moved.get(GithubRepo(organization.value, repository.value)) match {
       case Some(destination) =>
         redirect(
           Uri(s"/${destination.organization}/${destination.repository}"),
-          PermanentRedirect
+          StatusCodes.PermanentRedirect
         )
-
       case None => pass
     }
-  }
-
-  val editForm: Directive1[ProjectForm] =
-    formFieldSeq.tflatMap(fields =>
-      formFields(
-        (
-          "contributorsWanted".as[Boolean] ? false,
-          "defaultArtifact".?,
-          "defaultStableVersion".as[Boolean] ? false,
-          "strictVersions".as[Boolean] ? false,
-          "deprecated".as[Boolean] ? false,
-          "artifactDeprecations".as[String].*,
-          "cliArtifacts".as[String].*,
-          "customScalaDoc".?,
-          "primaryTopic".?,
-          "beginnerIssuesLabel".?,
-          "beginnerIssues".?,
-          "selectedBeginnerIssues".as[String].*,
-          "chatroom".?,
-          "contributingGuide".?,
-          "codeOfConduct".?
-        )
-      ).tmap {
-        case (
-              contributorsWanted,
-              defaultArtifact,
-              defaultStableVersion,
-              strictVersions,
-              deprecated,
-              artifactDeprecations,
-              cliArtifacts,
-              customScalaDoc,
-              primaryTopic,
-              beginnerIssuesLabel,
-              beginnerIssues,
-              selectedBeginnerIssues,
-              chatroom,
-              contributingGuide,
-              codeOfConduct
-            ) =>
-          val documentationLinks = {
-            val name = "documentationLinks"
-            val end = "]".head
-
-            fields._1
-              .filter { case (key, _) => key.startsWith(name) }
-              .groupBy { case (key, _) =>
-                key
-                  .drop("documentationLinks[".length)
-                  .takeWhile(_ != end)
-              }
-              .values
-              .map { case Vector((a, b), (_, d)) =>
-                if (a.contains("label")) (b, d)
-                else (d, b)
-              }
-              .toList
-          }
-
-          val keywords = Set[String]()
-
-          import Json4s._
-          ProjectForm(
-            contributorsWanted,
-            keywords,
-            defaultArtifact,
-            defaultStableVersion,
-            strictVersions,
-            deprecated,
-            artifactDeprecations.toSet,
-            cliArtifacts.toSet,
-            customScalaDoc,
-            documentationLinks,
-            primaryTopic,
-            beginnerIssuesLabel,
-            beginnerIssues.map(read[List[GithubIssue]](_)).getOrElse(List()),
-            selectedBeginnerIssues.map(read[GithubIssue](_)).toList,
-            chatroom.map(Url),
-            contributingGuide.map(Url),
-            codeOfConduct.map(Url)
-          )
-      }
-    )
-
-  def updateProject(
-      projectRef: Project.Reference,
-      form: ProjectForm
-  ): Future[Boolean] = {
-    for {
-      projectOpt <- dataRepository.getProject(projectRef)
-      updated <- projectOpt match {
-        case Some(project) if project.id.isDefined =>
-          val updatedProject = form.update(project, paths, githubDownload)
-          val esUpdate = dataRepository.updateProject(updatedProject)
-
-          logger.info("Updating live data on the index repository")
-          val indexUpdate = SaveLiveData.saveProject(updatedProject, paths)
-
-          esUpdate.zip(indexUpdate).map(_ => true)
-        case _ => Future.successful(false)
-      }
-    } yield updated
-  }
 
   val routes: Route =
     concat(
@@ -368,44 +182,116 @@ class ProjectPages(
         path("edit" / Segment / Segment)((organization, repository) =>
           optionalSession(refreshable, usingCookies)(_ =>
             pathEnd(
-              editForm(form =>
-                onSuccess {
-                  updateProject(
-                    Project.Reference(organization, repository),
-                    form
+              editForm { form =>
+                val ref = Project.Reference(organization, repository)
+                val updated = for {
+                  _ <- localStorage.saveDataForm(ref, form)
+                  updated <- db.updateProjectForm(
+                    ref,
+                    form.toUserDataForm()
                   )
-                } { _ =>
-                  Thread.sleep(1000) // oh yeah
-                  redirect(Uri(s"/$organization/$repository"), SeeOther)
+                } yield updated
+                onComplete(updated) {
+                  case Success(()) =>
+                    redirect(
+                      Uri(s"/$organization/$repository"),
+                      StatusCodes.SeeOther
+                    )
+                  case Failure(e) =>
+                    println(s"error sorry ${e.getMessage()}")
+                    redirect(
+                      Uri(s"/$organization/$repository"),
+                      StatusCodes.SeeOther
+                    ) // maybe we can print that it wasn't saved
                 }
-              )
+              }
             )
           )
         )
       ),
       get {
-        path("artifacts" / Segment / Segment)((organization, repository) =>
-          optionalSession(refreshable, usingCookies)(userId =>
-            pathEnd(
-              complete(
-                artifactsPage(
-                  organization,
-                  repository,
-                  session.getUser(userId)
+        path("artifacts" / organizationM / repositoryM)((org, repo) =>
+          optionalSession(refreshable, usingCookies) { userId =>
+            val user = session.getUser(userId).map(_.info)
+            val ref = Project.Reference(org.value, repo.value)
+            val res =
+              for {
+                projectOpt <- db.findProject(ref)
+                project <- projectOpt.toFuture(
+                  new Exception(s"project ${ref} not found")
                 )
+                releases <- db.findReleases(project.reference)
+                // some computation
+                targetTypesWithScalaVersion = releases
+                  .groupBy(_.target.map(_.targetType).getOrElse(Java))
+                  .map { case (targetType, releases) =>
+                    (
+                      targetType,
+                      releases.map(_.scalaVersion).distinct.sorted.reverse
+                    )
+                  }
+                artifactsWithVersions = releases
+                  .groupBy(_.version)
+                  .map { case (semanticVersion, releases) =>
+                    (
+                      semanticVersion,
+                      releases.groupBy(_.artifactName).map {
+                        case (artifactName, releases) =>
+                          (artifactName, releases.map(r => (r, r.scalaVersion)))
+                      }
+                    )
+                  }
+                  .toSeq
+                  .sortBy(_._1)
+                  .reverse
+              } yield (
+                project,
+                targetTypesWithScalaVersion,
+                artifactsWithVersions
               )
-            )
-          )
+
+            onComplete(res) {
+              case Success(
+                    (
+                      project,
+                      targetTypesWithScalaVersion,
+                      artifactsWithVersions
+                    )
+                  ) =>
+                complete(
+                  views.html.artifacts(
+                    project,
+                    user,
+                    targetTypesWithScalaVersion,
+                    artifactsWithVersions
+                  )
+                )
+              case Failure(e) =>
+                complete(StatusCodes.NotFound, views.html.notfound(user))
+
+            }
+          }
         )
       },
       get {
-        path("edit" / Segment / Segment)((organization, repository) =>
+        path("edit" / organizationM / repositoryM)((organization, repository) =>
           optionalSession(refreshable, usingCookies)(userId =>
-            pathEnd(
-              complete(
-                getEditPage(organization, repository, session.getUser(userId))
-              )
-            )
+            pathEnd {
+              val projectRef =
+                Project.Reference(organization.value, repository.value)
+              session.getUser(userId) match {
+                case Some(userState)
+                    if userState.canEdit(projectRef.githubRepo) =>
+                  complete(getEditPage(projectRef, userState.info))
+                case maybeUser =>
+                  complete(
+                    (
+                      StatusCodes.Forbidden,
+                      views.html.forbidden(maybeUser.map(_.info))
+                    )
+                  )
+              }
+            }
           )
         )
       },
@@ -434,12 +320,12 @@ class ProjectPages(
                         case None => ""
                       }
                     redirect(
-                      s"/$organization/$repository/${release.reference.artifact}/${release.reference.version}/$targetParam",
+                      s"/$organization/$repository/${release.artifactName}/${release.version}/$targetParam",
                       StatusCodes.TemporaryRedirect
                     )
                   case None =>
                     complete(
-                      NotFound,
+                      StatusCodes.NotFound,
                       views.html.notfound(
                         session.getUser(userId).map(_.info)
                       )
@@ -451,50 +337,50 @@ class ProjectPages(
         )
       },
       get {
-
-        path(Segment / Segment / Segment)(
+        path(organizationM / repositoryM / artifactM)(
           (organization, repository, artifact) =>
             optionalSession(refreshable, usingCookies)(userId =>
-              parameter("target".?)(target =>
-                complete(
-                  projectPage(
-                    owner = organization,
-                    repo = repository,
-                    target = target,
-                    artifact = Some(artifact),
-                    version = None,
-                    selected = None,
-                    userState = session.getUser(userId)
-                  )
+              parameter("target".?) { target =>
+                val user = session.getUser(userId).map(_.info)
+                val res = getProjectPage(
+                  organization,
+                  repository,
+                  target,
+                  artifact,
+                  None,
+                  user
                 )
-              )
+                onComplete(res) {
+                  case Success((code, some)) => complete(code, some)
+                  case Failure(e) =>
+                    complete(StatusCodes.NotFound, views.html.notfound(user))
+                }
+              }
             )
         )
       },
       get {
-        path(Segment / Segment / Segment / Segment)(
+        path(organizationM / repositoryM / artifactM / versionM)(
           (organization, repository, artifact, version) =>
-            optionalSession(refreshable, usingCookies)(userId =>
-              parameter("target".?)(target =>
-                complete(
-                  projectPage(
-                    owner = organization,
-                    repo = repository,
-                    target = target,
-                    artifact = Some(artifact),
-                    version = Some(version),
-                    selected = None,
-                    userState = session.getUser(userId)
-                  )
+            optionalSession(refreshable, usingCookies) { userId =>
+              parameter("target".?) { target =>
+                val user = session.getUser(userId).map(_.info)
+                val res = getProjectPage(
+                  organization,
+                  repository,
+                  target,
+                  artifact,
+                  Some(version),
+                  user
                 )
-              )
-            )
+                onComplete(res) {
+                  case Success((code, some)) => complete(code, some)
+                  case Failure(e) =>
+                    complete(StatusCodes.NotFound, views.html.notfound(user))
+                }
+              }
+            }
         )
       }
     )
-
-  val organizationM: PathMatcher1[NewProject.Organization] =
-    Segment.map(NewProject.Organization)
-  val repositoryM: PathMatcher1[NewProject.Repository] =
-    Segment.map(NewProject.Repository)
 }

@@ -170,15 +170,6 @@ class ESRepo(
       .map(_ => ())
   }
 
-  def insertDependencies(
-      dependencies: Seq[ScalaDependency]
-  ): Future[Seq[BulkResponseItem]] = {
-    val requests = dependencies.map { d =>
-      indexInto(dependencyIndex).source(DependencyDocument(d))
-    }
-    insertAll(requests, 1000)
-  }
-
   private def insertAll(
       requests: Seq[IndexRequest],
       bulkSize: Int
@@ -333,39 +324,6 @@ class ESRepo(
         ).map(sel => (project, sel))
       case None => None
     }
-  }
-
-  /**
-   * Get all the dependencies of a release
-   */
-  def getAllDependencies(
-      ref: Release.Reference
-  ): Future[Seq[ScalaDependency]] = {
-    val query = termQuery("dependentUrl", ref.httpUrl)
-
-    val request =
-      search(dependencyIndex).query(query).size(5000)
-
-    esClient
-      .execute(request)
-      .map(_.result.to[DependencyDocument].map(_.toDependency))
-  }
-
-  /**
-   * Get all the releases which depend on a the given release
-   */
-  def getReverseDependencies(
-      ref: Release.Reference
-  ): Future[Seq[ScalaDependency]] = {
-    val query = termQuery("targetUrl", ref.httpUrl)
-
-    val request = search(dependencyIndex)
-      .query(query)
-      .size(5000)
-
-    esClient
-      .execute(request)
-      .map(_.result.to[DependencyDocument].map(_.toDependency))
   }
 
   def getLatestProjects(): Future[List[Project]] = {

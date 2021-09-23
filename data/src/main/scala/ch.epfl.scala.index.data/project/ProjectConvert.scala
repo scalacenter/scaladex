@@ -4,7 +4,6 @@ package project
 
 import ch.epfl.scala.index.data.bintray._
 import ch.epfl.scala.index.data.cleanup._
-import ch.epfl.scala.index.data.elastic.SaveLiveData
 import ch.epfl.scala.index.data.github._
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.project.ProjectConvert.ProjectSeed
@@ -15,6 +14,9 @@ import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
+import ch.epfl.scala.services.storage.DataPaths
+import ch.epfl.scala.services.storage.LocalRepository
+import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import com.github.nscala_time.time.Imports._
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
@@ -78,7 +80,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
       (sorted.headOption, sorted.lastOption)
     }
 
-    val storedProjects = SaveLiveData.storedProjects(paths)
+    val storedProjects = LocalStorageRepo.storedProjects(paths)
 
     val projectsAndReleases = pomsAndMetaClean
       .groupBy { case (githubRepo, _, _, _, _, _, _, _) =>
@@ -204,7 +206,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
 
       val updatedProject = storedProjects
         .get(project.reference)
-        .map(_.update(project, paths, githubDownload, fromStored = true))
+        .map(projectForm => projectForm.update(project, fromStored = true))
         .getOrElse(project)
 
       (updatedProject, releasesWithDependencies)

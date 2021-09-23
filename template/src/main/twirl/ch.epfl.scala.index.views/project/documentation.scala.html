@@ -1,12 +1,14 @@
-@import ch.epfl.scala.index.model.{Release, Project}
-@(release: Release, project: Project)
+@import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
+@import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
+
+@(release: NewRelease, project: NewProject)
 <div class="documentation box">
   <h4>Documentation</h4>
   <ul>
-    @for(scaladoc <- release.scalaDocURL(project.customScalaDoc)){
-      <li><a href="@scaladoc.toString()" rel="nofollow" target="_blank">Scaladoc</a></li>
+    @for(scaladoc <- release.scalaDocURL(project.dataForm.customScalaDoc)){
+      <li><a href="@scaladoc" rel="nofollow" target="_blank">Scaladoc</a></li>
     }
-    @for((label, url) <- release.documentationURLs(project.documentationLinks)){
+    @for(DocumentationLink(label, url) <- release.documentationURLs(project.dataForm.documentationLinks)){
       <li>
         <a href="@url.toString()" target="_blank" rel="nofollow">
           @if(label == ""){ @url } else { @label }

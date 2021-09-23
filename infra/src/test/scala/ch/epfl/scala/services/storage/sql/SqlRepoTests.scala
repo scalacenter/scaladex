@@ -56,6 +56,33 @@ class SqlRepoTests
         db.insertDependencies(Seq(dependency1, dependency2))
       ) shouldBe Success(2)
     }
+    it("should update user project form") {
+      await(
+        db.updateProjectForm(project.reference, project.dataForm)
+      ) shouldBe Success(())
+    }
+    it("should find directDependencies") {
+      val catsReleases = Seq(Values.releaseCatsCore, Values.releaseCatsKernel)
+      await(db.insertReleases(catsReleases))
+      val catsDependencies = Values.dependenciesForCat
+      await(db.insertDependencies(catsDependencies))
+      val result = await(db.findDirectDependencies(Values.releaseCatsCore)).get
+      result.map(_.target) should contain theSameElementsAs List(
+        Some(Values.releaseCatsKernel),
+        None
+      )
+    }
+    it("should find reverseDependencies") {
+      val catsReleases = Seq(Values.releaseCatsCore, Values.releaseCatsKernel)
+      await(db.insertReleases(catsReleases))
+      val catsDependencies = Values.dependenciesForCat
+      await(db.insertDependencies(catsDependencies))
+      val result =
+        await(db.findReverseDependencies(Values.releaseCatsKernel)).get
+      result.map(_.source) should contain theSameElementsAs List(
+        Values.releaseCatsCore
+      )
+    }
   }
 
   def await[A](f: Future[A]): Try[A] = Try(

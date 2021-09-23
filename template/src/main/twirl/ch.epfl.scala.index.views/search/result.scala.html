@@ -1,10 +1,8 @@
 @import akka.http.scaladsl.model.Uri
-
+@import ch.epfl.scala.index.model.Project
+@import ch.epfl.scala.index.model.misc.{Pagination, SearchParams, UserInfo}
 @import ch.epfl.scala.index.views.html._
 
-@import ch.epfl.scala.index.model.Release
-@import ch.epfl.scala.index.model.{Project, SemanticVersion}
-@import ch.epfl.scala.index.model.misc.{Pagination, UserInfo, SearchParams, Url}
 
 @(params: SearchParams,
   uri: Uri,

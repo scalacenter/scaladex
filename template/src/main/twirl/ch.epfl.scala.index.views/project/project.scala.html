@@ -1,16 +1,17 @@
-@import ch.epfl.scala.index.views.html.main
-
-@import ch.epfl.scala.index.model._
+@import ch.epfl.scala.index.model.{SemanticVersion, Env}
 @import ch.epfl.scala.index.model.misc._
 @import ch.epfl.scala.index.model.release._
+@import ch.epfl.scala.index.newModel.{NewDependency, NewProject, NewRelease}
+@import ch.epfl.scala.index.views.html.main
 
-@(project: Project, artifacts: List[String], versions: List[SemanticVersion],
-  targets: List[ScalaTarget], release: Release,
-  allDeps: Dependencies, user: Option[UserInfo],
-  canEdit: Boolean, twitterCard: Option[TwitterSummaryCard])
 
-@main(title = project.repository, showSearch = true, user,
-      extraMeta = twitterCard.toSeq.map(_.toHeadMeta).flatten) {
+@(env: Env, project: NewProject, artifacts: Seq[NewRelease.ArtifactName], versions: Seq[SemanticVersion],
+  targets: Seq[ScalaTarget], release: NewRelease, user: Option[UserInfo],
+  canEdit: Boolean, twitterCard: Option[TwitterSummaryCard], releaseCount: Int,
+        directDependencies: Seq[NewDependency.Direct], reverseDependency: Seq[NewDependency.Reverse])
+
+@main(title = project.repository.value, showSearch = true, user,
+      extraMeta = twitterCard.map(_.toHeadMeta).getOrElse(Nil)) {
   <main id="container-project">
     @headproject(project, artifacts, versions, targets, release, canEdit)
     <div class="container">
@@ -20,26 +21,26 @@
             data-organization="@project.reference.organization"
             data-repository="@project.reference.repository">
 
-            @Html(project.github.flatMap(_.readme).getOrElse(""))
+            @Html(project.githubInfo.flatMap(_.readme).getOrElse(""))
           </div>
         </div>
         <div class="col-md-4">
           <div class="sidebar-project">
-            @if(project.artifactDeprecations.contains(release.reference.artifact)) {
+            @if(project.dataForm.artifactDeprecations.contains(release.artifactName)) {
             <div class="box">
               <h1>[DEPRECATED]</h1>
             </div>
             }
             @documentation(release, project)
-            @badges(release)
-            @install(release, project.cliArtifacts)
+            @badges(release, env)
+            @install(release, project.dataForm.cliArtifacts)
             @release.scastieURL.map(url => scastie(url))
-            @project.github.map(gh => statistic(gh, project.githubRepo, project.releaseCount, allDeps.reverseDependencies.size))
+            @project.githubInfo.map(gh => statistic(gh, project.reference.githubRepo, releaseCount, reverseDependency.size))
             @projectContributingInfo(project)
-            @project.github.map(gh => contributors(gh.contributors))
+            @project.githubInfo.map(gh => contributors(gh.contributors))
             @license(release)
-            @dependencies(allDeps)
-            @dependents(allDeps)
+            @dependencies(project.reference, directDependencies)
+            @dependents(release, reverseDependency)
           </div>
         </div>
       </div>

@@ -12,6 +12,9 @@ import scala.util.Try
 import scala.util.Using
 
 import ch.epfl.scala.index.data.bintray.SbtPluginsData
+import ch.epfl.scala.services.storage.DataPaths
+import ch.epfl.scala.services.storage.LocalPomRepository
+import ch.epfl.scala.services.storage.LocalRepository
 import org.slf4j.LoggerFactory
 
 case class MissingParentPom(dep: maven.Dependency) extends Exception
@@ -30,7 +33,7 @@ object PomsReader {
   def loadAll(
       paths: DataPaths
   ): Iterable[(ReleaseModel, LocalRepository, String)] = {
-    import LocalPomRepository._
+    import ch.epfl.scala.services.storage.LocalPomRepository._
 
     val ivysDescriptors = SbtPluginsData(paths.ivysData).iterator
 

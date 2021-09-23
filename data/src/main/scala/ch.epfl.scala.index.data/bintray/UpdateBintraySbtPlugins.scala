@@ -16,9 +16,9 @@ import scala.util.control.NonFatal
 import scala.util.matching.Regex
 
 import akka.actor.ActorSystem
-import ch.epfl.scala.index.data.DataPaths
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.github.GithubDownload
+import ch.epfl.scala.services.storage.DataPaths
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.ivy.core.settings.IvySettings
 import org.apache.ivy.plugins.parser.xml.XmlModuleDescriptorParser

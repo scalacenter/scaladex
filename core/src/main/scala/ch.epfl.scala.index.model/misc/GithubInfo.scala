@@ -47,6 +47,7 @@ case class GithubInfo(
     selectedBeginnerIssues: List[GithubIssue] = List(),
     filteredBeginnerIssues: List[GithubIssue] = List()
 ) {
+
   def displayIssues: List[GithubIssue] = {
     if (filteredBeginnerIssues.nonEmpty) {
       filteredBeginnerIssues

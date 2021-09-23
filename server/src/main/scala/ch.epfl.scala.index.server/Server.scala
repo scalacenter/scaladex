@@ -13,12 +13,12 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import cats.effect.IO
-import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.util.PidLock
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.config.ServerConfig
 import ch.epfl.scala.index.server.routes._
 import ch.epfl.scala.index.server.routes.api._
+import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.DoobieUtils
 import org.slf4j.LoggerFactory
@@ -60,10 +60,12 @@ object Server {
         out
       )
     }
+
     val transactor = DoobieUtils.transactor(config.dbConf)
     transactor
       .use { xa =>
         val db = new SqlRepo(config.dbConf, xa)
+        val localStorage = new LocalStorageRepo(config.dataPaths)
         val programmaticRoutes = concat(
           PublishApi(paths, data, databaseApi = db).routes,
           new SearchApi(data, session).routes,
@@ -76,11 +78,11 @@ object Server {
           redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
             concat(
               new ProjectPages(
-                data,
                 db,
+                localStorage,
                 session,
-                new GithubDownload(paths),
-                paths
+                paths,
+                config.api.env
               ).routes,
               searchPages.routes
             )

@@ -2,6 +2,7 @@ package ch.epfl.scala.index.newModel
 
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubInfo
+import ch.epfl.scala.index.model.misc.TwitterSummaryCard
 import ch.epfl.scala.index.newModel.NewProject._
 
 // TODO: document NewProject fields
@@ -11,15 +12,27 @@ case class NewProject(
     githubInfo: Option[GithubInfo],
     esId: Option[String],
     // form data
-    formData: FormData
+    dataForm: DataForm
 ) {
   val reference: Project.Reference =
     Project.Reference(organization.value, repository.value)
-  val hasCli: Boolean = formData.cliArtifacts.nonEmpty
+  def hasCli: Boolean = dataForm.cliArtifacts.nonEmpty
+
+  /**
+   * This is used in twitter to render the card of a scaladex project link.
+   */
+  def twitterSummaryCard: TwitterSummaryCard = TwitterSummaryCard(
+    "@scala_lang",
+    repository.toString(),
+    githubInfo.flatMap(_.description).getOrElse(""),
+    githubInfo.flatMap(_.logo)
+  )
   //val created: datetime = firstRelease.released
   //val lastUpdated: datetime = lastReleaseAdd.released
+
   def update(newGithubInfo: Option[GithubInfo]): NewProject =
     copy(githubInfo = newGithubInfo)
+  def contributorsWanted: Boolean = dataForm.contributorsWanted
 }
 
 object NewProject {
@@ -27,17 +40,17 @@ object NewProject {
       org: String,
       repo: String,
       githubInfo: Option[GithubInfo],
-      formData: FormData = FormData.default
+      formData: DataForm = DataForm.default
   ): NewProject =
     NewProject(
       Organization(org),
       repository = Repository(repo),
       githubInfo = githubInfo,
       esId = None,
-      formData = formData
+      dataForm = formData
     )
 
-  case class FormData(
+  case class DataForm(
       defaultStableVersion: Boolean,
       defaultArtifact: Option[NewRelease.ArtifactName],
       strictVersions: Boolean,
@@ -45,8 +58,8 @@ object NewProject {
       documentationLinks: List[DocumentationLink],
       deprecated: Boolean,
       contributorsWanted: Boolean,
-      artifactDeprecations: Set[String],
-      cliArtifacts: Set[String],
+      artifactDeprecations: Set[NewRelease.ArtifactName],
+      cliArtifacts: Set[NewRelease.ArtifactName],
       primaryTopic: Option[String]
   )
 
@@ -57,8 +70,8 @@ object NewProject {
     override def toString(): String = value
   }
 
-  object FormData {
-    val default: FormData = FormData(
+  object DataForm {
+    val default: DataForm = DataForm(
       defaultStableVersion = true,
       defaultArtifact = None,
       strictVersions = false,
@@ -70,11 +83,11 @@ object NewProject {
       cliArtifacts = Set(),
       primaryTopic = None
     )
-    def from(p: Project): FormData = {
+    def from(p: Project): DataForm = {
       val documentationlinks = p.documentationLinks.map { case (label, link) =>
         DocumentationLink(label, link)
       }
-      FormData(
+      DataForm(
         defaultStableVersion = p.defaultStableVersion,
         defaultArtifact = p.defaultArtifact.map(NewRelease.ArtifactName),
         strictVersions = p.strictVersions,
@@ -82,13 +95,20 @@ object NewProject {
         documentationLinks = documentationlinks,
         deprecated = p.deprecated,
         contributorsWanted = p.contributorsWanted,
-        artifactDeprecations = p.artifactDeprecations,
-        cliArtifacts = p.cliArtifacts,
+        artifactDeprecations =
+          p.artifactDeprecations.map(NewRelease.ArtifactName),
+        cliArtifacts = p.cliArtifacts.map(NewRelease.ArtifactName),
         primaryTopic = p.primaryTopic
       )
     }
   }
   case class DocumentationLink(label: String, link: String)
+  object DocumentationLink {
+    def from(label: String, link: String): Option[DocumentationLink] =
+      if (label.isEmpty || link.isEmpty) None
+      else Some(DocumentationLink(label, link))
+
+  }
 
   def from(p: Project): NewProject = {
     NewProject(
@@ -96,7 +116,7 @@ object NewProject {
       repository = Repository(p.repository),
       githubInfo = p.github,
       esId = p.id,
-      formData = FormData.from(p)
+      dataForm = DataForm.from(p)
     )
   }
 
