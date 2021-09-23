@@ -1,5 +1,6 @@
-@import ch.epfl.scala.index.model.misc.{Url, SearchParams}
+@import ch.epfl.scala.index.model.misc.{SearchParams, Url}
 @import ch.epfl.scala.index.newModel.NewProject
+
 
 @(project: NewProject, hideProjectInfo: Boolean = false, params: Option[SearchParams] = None)
 @githubInfo = @{project.githubInfo}

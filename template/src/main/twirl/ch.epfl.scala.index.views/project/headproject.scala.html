@@ -1,9 +1,8 @@
-@import ch.epfl.scala.index.model._
-@import ch.epfl.scala.index.model.release._
-
+@import ch.epfl.scala.index.model.SemanticVersion
+@import ch.epfl.scala.index.model.release.ScalaTarget
+@import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
 @import ch.epfl.scala.index.views.html.ensureUri
-@import ch.epfl.scala.index.newModel.NewProject
-@import ch.epfl.scala.index.newModel.NewRelease
+
 
 @(project: NewProject, artifacts: Seq[NewRelease.ArtifactName], versions: Seq[SemanticVersion],
   targets: Seq[ScalaTarget], release: NewRelease, canEdit: Boolean)

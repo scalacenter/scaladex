@@ -1,7 +1,6 @@
-@import ch.epfl.scala.index.model.release._
+@import ch.epfl.scala.index.newModel.{NewDependency, NewRelease}
 @import ch.epfl.scala.index.views.Formats
-@import ch.epfl.scala.index.newModel.NewDependency
-@import ch.epfl.scala.index.newModel.NewRelease
+
 
 @(release: NewRelease, reverseDeps: Seq[NewDependency.Reverse])
 @sampleReverseDeps = @{NewDependency.Reverse.sample(reverseDeps, 100)}

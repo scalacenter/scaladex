@@ -1,9 +1,8 @@
-@import ch.epfl.scala.index.model.Project
-@import ch.epfl.scala.index.model.Release
-@import ch.epfl.scala.index.model.misc.{Url, UserInfo}
-@import ch.epfl.scala.index.model.misc.SearchParams
-
+@import ch.epfl.scala.index.model.{Project, Release}
+@import ch.epfl.scala.index.model.misc.{SearchParams, Url, UserInfo}
 @import ch.epfl.scala.index.newModel.NewProject
+
+
 @(topics: List[(String, Long)],
   targetTypes: List[(String, String, Long)],
   scalaVersions: List[(String, Long)],
