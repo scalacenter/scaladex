@@ -15,7 +15,8 @@ class ProjectPagesTests()
     db = db,
     localStorage = localStorage,
     session = githubUserSession,
-    paths = dataPaths
+    paths = dataPaths,
+    env = env
   )
   val routes = projectPages.routes
 

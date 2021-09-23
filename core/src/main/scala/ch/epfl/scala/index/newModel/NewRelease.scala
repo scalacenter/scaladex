@@ -1,5 +1,6 @@
 package ch.epfl.scala.index.newModel
 
+import ch.epfl.scala.index.model.Env
 import ch.epfl.scala.index.model.License
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.Release
@@ -63,22 +64,28 @@ case class NewRelease(
     target = target
   )
 
-  def artifactHttpPath: String =
-    s"/$organization/$repository/$artifactName/$version"
-  def artifactFullHttpUrl: String =
-    s"https://index.scala-lang.org$artifactHttpPath"
-
-  def httpUrl: String = {
-    val targetQuery = target.map(t => s"?target=${t.encode}").getOrElse("")
-    s"$artifactHttpPath$targetQuery"
-  }
+  private def artifactHttpPath: String =
+    s"/$organization/$repository/$artifactName"
 
   private def nonDefaultTargetType: Option[ScalaTargetType] = {
     target.map(_.targetType).filter(_ != Jvm)
   }
+  def artifactFullHttpUrl(env: Env): String =
+    env match {
+      case Env.Prod => s"https://index.scala-lang.org$artifactHttpPath"
+      case Env.Dev =>
+        s"https://index-dev.scala-lang.org$artifactHttpPath" // todo: fix locally
+      case Env.Local =>
+        s"http://localhost:8080$artifactHttpPath" // todo: fix locally
+    }
 
-  def badgeUrl: String =
-    s"$artifactFullHttpUrl/latest-by-scala-version.svg" +
+  def httpUrl: String = {
+    val targetQuery = target.map(t => s"?target=${t.encode}").getOrElse("")
+    s"$artifactHttpPath/$version$targetQuery"
+  }
+
+  def badgeUrl(env: Env): String =
+    s"${artifactFullHttpUrl(env)}/latest-by-scala-version.svg" +
       nonDefaultTargetType.map("?targetType=" + _).mkString
 
   def sbtInstall: String = {

@@ -21,6 +21,7 @@ import org.scalatest.matchers.should.Matchers
 trait CtrlTests extends AnyFunSpec with Matchers {
 
   private val config = ServerConfig.load()
+  val env = config.api.env
   val githubUserSession = new GithubUserSession(config.session)
 
   val db = new DatabaseMockApi()

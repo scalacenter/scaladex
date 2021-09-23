@@ -81,7 +81,8 @@ object Server {
                 db,
                 localStorage,
                 session,
-                paths
+                paths,
+                config.api.env
               ).routes,
               searchPages.routes
             )

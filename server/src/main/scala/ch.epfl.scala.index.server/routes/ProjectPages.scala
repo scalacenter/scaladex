@@ -33,7 +33,8 @@ class ProjectPages(
     db: DatabaseApi,
     localStorage: LocalStorageApi,
     session: GithubUserSession,
-    paths: DataPaths
+    paths: DataPaths,
+    env: Env
 )(implicit executionContext: ExecutionContext)
     extends LazyLogging {
   import session.implicits._
@@ -136,11 +137,12 @@ class ProjectPages(
           allVersions = releases.map(_.version)
           filteredVersions = filterVersions(project, allVersions)
           targets = releases.flatMap(_.target).distinct.sorted.reverse
-          artifactNames = releases.map(_.artifactName).distinct
+          artifactNames = releases.map(_.artifactName).distinct.sortBy(_.value)
           twitterCard = project.twitterSummaryCard
         } yield (
           StatusCodes.OK,
           views.project.html.project(
+            env,
             project,
             artifactNames,
             filteredVersions,
