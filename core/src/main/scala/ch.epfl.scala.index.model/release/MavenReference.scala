@@ -14,7 +14,7 @@ case class MavenReference(
     groupId: String,
     artifactId: String,
     version: String
-) extends GeneralReference {
+) {
 
   /**
    * name accessor

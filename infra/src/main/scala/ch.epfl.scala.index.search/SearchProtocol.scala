@@ -89,16 +89,6 @@ trait SearchProtocol {
   implicit object ReleaseIndexable extends Indexable[ReleaseDocument] {
     override def json(release: ReleaseDocument): String = nwrite(release)
   }
-
-  implicit object DependencyReader extends HitReader[DependencyDocument] {
-    override def read(hit: Hit): Try[DependencyDocument] = {
-      Try(nread[DependencyDocument](hit.sourceAsString).copy(id = Some(hit.id)))
-    }
-  }
-
-  implicit object DependencyIndexable extends Indexable[DependencyDocument] {
-    override def json(dep: DependencyDocument): String = nwrite(dep)
-  }
 }
 
 object SearchProtocol extends SearchProtocol

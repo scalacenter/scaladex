@@ -78,7 +78,7 @@
                     @allScalaVersions.map { version =>
                       <td class="target" title="@version">
                         @if(scalaVersions.contains(version)) {
-                          <a href="@releases.headOption.map(_.reference.httpUrl).getOrElse("")" class="supported-target"></a>
+                          <a href="@releases.headOption.map(_.httpUrl).getOrElse("")" class="supported-target"></a>
                         }
                       </td>
                     }

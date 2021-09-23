@@ -320,7 +320,7 @@ class ProjectPages(
                         case None => ""
                       }
                     redirect(
-                      s"/$organization/$repository/${release.reference.artifact}/${release.reference.version}/$targetParam",
+                      s"/$organization/$repository/${release.artifactName}/${release.version}/$targetParam",
                       StatusCodes.TemporaryRedirect
                     )
                   case None =>

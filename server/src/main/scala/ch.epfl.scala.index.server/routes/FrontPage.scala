@@ -5,6 +5,7 @@ import scala.concurrent.ExecutionContext
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.epfl.scala.index.model.misc.UserInfo
+import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.GithubUserSession
 import ch.epfl.scala.index.server.TwirlSupport._
@@ -77,7 +78,7 @@ class FrontPage(dataRepository: ESRepo, session: GithubUserSession)(implicit
         sbtVersions,
         latestProjects,
         mostDependedUpon,
-        latestReleases,
+        latestReleases.map(NewRelease.from),
         userInfo,
         ecosystems,
         totalProjects,

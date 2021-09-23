@@ -56,7 +56,7 @@ object Release {
       artifact: String,
       version: SemanticVersion,
       target: Option[ScalaTarget]
-  ) extends GeneralReference {
+  ) {
 
     def isValid: Boolean = {
       target.exists(_.isValid)
@@ -64,21 +64,6 @@ object Release {
 
     def projectReference: Project.Reference =
       Project.Reference(organization, repository)
-    def name: String = s"$organization/$artifact"
-
-    def artifactHttpPath: String = s"/$organization/$repository/$artifact"
-    def artifactFullHttpUrl: String =
-      s"https://index.scala-lang.org$artifactHttpPath"
-
-    private def nonDefaultTargetType = {
-      target.map(_.targetType).filter(_ != Jvm)
-    }
-
-    def httpUrl: String = {
-      val targetQuery = target.map(t => s"?target=${t.encode}").getOrElse("")
-
-      s"$artifactHttpPath/$version$targetQuery"
-    }
 
     def isScalaLib: Boolean = {
       organization == "scala" &&

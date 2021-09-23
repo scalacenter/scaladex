@@ -56,14 +56,7 @@ case class NewRelease(
 
   def sbtVersion: Option[String] = ???
 
-  val reference: Release.Reference = Release.Reference(
-    organization = organization.value,
-    repository = repository.value,
-    artifact = artifactName.value,
-    version = version,
-    target = target
-  )
-
+  def name: String = s"$organization/$artifactName"
   private def artifactHttpPath: String =
     s"/$organization/$repository/$artifactName"
 
@@ -129,7 +122,7 @@ case class NewRelease(
 
     List(
       Some(
-        s"import $$ivy.`${maven.groupId}$artifactOperator${reference.artifact}:${reference.version}`"
+        s"import $$ivy.`${maven.groupId}$artifactOperator$artifactName:$version`"
       ),
       resolver.map(addResolver)
     ).flatten.mkString("\n")
@@ -165,7 +158,7 @@ case class NewRelease(
     val artifactOperator = if (isNonStandardLib) ":" else "::"
     List(
       Some(
-        s"""ivy"${maven.groupId}$artifactOperator${reference.artifact}:${reference.version}""""
+        s"""ivy"${maven.groupId}$artifactOperator$artifactName:$version""""
       ),
       resolver flatMap addResolver
     ).flatten.mkString("\n")
@@ -203,7 +196,7 @@ case class NewRelease(
       latest.getOrElse(version, version)
     }
 
-    reference.target
+    target
       .map(target =>
         List(
           "g" -> maven.groupId,
@@ -238,10 +231,10 @@ case class NewRelease(
     rawLink
       .replace("[groupId]", maven.groupId)
       .replace("[artifactId]", maven.artifactId)
-      .replace("[version]", reference.version.toString)
-      .replace("[major]", reference.version.major.toString)
-      .replace("[minor]", reference.version.minor.toString)
-      .replace("[name]", reference.artifact)
+      .replace("[version]", version.toString)
+      .replace("[major]", version.major.toString)
+      .replace("[minor]", version.minor.toString)
+      .replace("[name]", artifactName.value)
   }
 
 }

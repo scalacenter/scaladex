@@ -16,8 +16,12 @@ case class NewProject(
 ) {
   val reference: Project.Reference =
     Project.Reference(organization.value, repository.value)
-  val hasCli: Boolean = dataForm.cliArtifacts.nonEmpty
-  val twitterSummaryCard: TwitterSummaryCard = TwitterSummaryCard(
+  def hasCli: Boolean = dataForm.cliArtifacts.nonEmpty
+
+  /**
+   * This is used in twitter to render the card of a scaladex project link.
+   */
+  def twitterSummaryCard: TwitterSummaryCard = TwitterSummaryCard(
     "@scala_lang",
     repository.toString(),
     githubInfo.flatMap(_.description).getOrElse(""),
@@ -25,6 +29,7 @@ case class NewProject(
   )
   //val created: datetime = firstRelease.released
   //val lastUpdated: datetime = lastReleaseAdd.released
+
   def update(newGithubInfo: Option[GithubInfo]): NewProject =
     copy(githubInfo = newGithubInfo)
   def contributorsWanted: Boolean = dataForm.contributorsWanted

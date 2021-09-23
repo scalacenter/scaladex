@@ -1,6 +1,6 @@
-@import ch.epfl.scala.index.model.{Project, Release}
+@import ch.epfl.scala.index.model.Project
 @import ch.epfl.scala.index.model.misc.{SearchParams, Url, UserInfo}
-@import ch.epfl.scala.index.newModel.NewProject
+@import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
 
 
 @(topics: List[(String, Long)],
@@ -11,7 +11,7 @@
   sbtVersions: List[(String, Long)], 
   latestProjects: List[Project],
   mostDependedUpon: List[Project],
-  latestReleases: List[Release],
+  latestReleases: List[NewRelease],
   user: Option[UserInfo],
   ecosystems: Map[String, String],
   totalProjects: Long,
@@ -173,11 +173,11 @@
             <div class="list-result box">
                 @for(release <- latestReleases){
                 <div class="item-list">
-                    <a href="@release.reference.httpUrl">
+                    <a href="@release.httpUrl">
                         <div class="row">
                             <div class="col-md-12">
-                                <h4>@release.reference.name</h4>
-                                <span class="pull-right">@release.reference.version</span>
+                                <h4>@release.name</h4>
+                                <span class="pull-right">@release.version</span>
                             </div>
                         </div>
                     </a>

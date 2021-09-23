@@ -9,7 +9,6 @@ import ch.epfl.scala.index.model.release.MavenReference
  * @param source the maven reference of the source, ex: scaladex
  * @param target the maven reference of one of the dependant libraries of the source, ex: doobie
  */
-
 case class NewDependency(
     source: MavenReference,
     target: MavenReference,
@@ -17,22 +16,17 @@ case class NewDependency(
 )
 
 object NewDependency {
-  sealed trait Full {
-    val dependency: NewDependency
-    def url: String
-    def name: String
-  }
   final case class Direct(
       dependency: NewDependency,
-      release: Option[NewRelease]
-  ) extends Full {
-    def url: String = release match {
+      target: Option[NewRelease]
+  ) {
+    def url: String = target match {
       case Some(release) => release.httpUrl
       case None =>
         s"http://search.maven.org/#artifactdetails|${dependency.target.groupId}|${dependency.target.artifactId}|${dependency.target.version}|jar"
     }
 
-    def name: String = release match {
+    def name: String = target match {
       case Some(release) => s"${release.organization}/${release.artifactName}"
       case None =>
         s"${dependency.target.groupId}/${dependency.target.artifactId}"
@@ -41,46 +35,46 @@ object NewDependency {
     val version: String = dependency.target.version
 
     def isInternal(ref: Project.Reference): Boolean =
-      release.exists(_.projectRef == ref)
+      target.exists(_.projectRef == ref)
   }
   object Direct {
-    implicit val order: Ordering[Direct] = Ordering.by(Full.ordering)
+    implicit val order: Ordering[Direct] =
+      Ordering.by(d => ordering(d.dependency, d.name))
   }
+
   final case class Reverse(
       dependency: NewDependency,
-      dependentRelease: NewRelease
-  ) extends Full {
-    def url: String = dependentRelease.httpUrl
+      source: NewRelease
+  ) {
+    def url: String = source.httpUrl
     def name: String =
-      s"${dependentRelease.organization}/${dependentRelease.artifactName}"
+      s"${source.organization}/${source.artifactName}"
   }
+
   object Reverse {
-    implicit val order: Ordering[Reverse] = Ordering.by(Full.ordering)
+    implicit val order: Ordering[Reverse] =
+      Ordering.by(d => ordering(d.dependency, d.name))
     def sample(deps: Seq[Reverse], sampleSize: Int): Seq[Reverse] = {
       deps
-        .groupBy(r =>
-          (r.dependentRelease.projectRef, r.dependentRelease.artifactName)
-        )
+        .groupBy(r => (r.source.projectRef, r.source.artifactName))
         .values
-        .map(_.sortBy(_.dependentRelease.version))
+        .map(_.sortBy(_.source.version))
         .map(_.head)
         .toSeq
         .sorted
         .take(sampleSize)
     }
   }
-  object Full {
-    def ordering: Full => (Int, String) =
-      (dep: NewDependency.Full) =>
-        (
-          dep.dependency.scope match {
-            case "compile" => 0
-            case "provided" => 1
-            case "runtime" => 2
-            case "test" => 3
-            case _ => 4
-          },
-          dep.name
-        )
-  }
+
+  private def ordering(dependency: NewDependency, name: String): (Int, String) =
+    (
+      dependency.scope match {
+        case "compile" => 0
+        case "provided" => 1
+        case "runtime" => 2
+        case "test" => 3
+        case _ => 4
+      },
+      name
+    )
 }
