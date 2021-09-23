@@ -10,8 +10,6 @@ import ch.epfl.scala.index.data.bintray.BintrayProtocol
 import ch.epfl.scala.index.data.bintray.BintraySearch
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.services.storage.DataPaths
-import ch.epfl.scala.services.storage.LocalPomRepository
 import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository

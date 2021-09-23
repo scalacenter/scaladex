@@ -15,7 +15,6 @@ import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.download.PlayWsClient
 import ch.epfl.scala.index.data.download.PlayWsDownloader
 import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.ProjectForm
 import ch.epfl.scala.index.model.misc.GithubInfo

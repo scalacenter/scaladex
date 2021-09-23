@@ -6,10 +6,13 @@ import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
-import cats.effect.ContextShift
-import cats.effect.IO
+import ch.epfl.scala.index.model.Project
+import ch.epfl.scala.index.newModel.NewDependency
+import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.server.GithubUserSession
 import ch.epfl.scala.index.server.config.ServerConfig
+import ch.epfl.scala.services.DatabaseApi
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import org.scalatest.funspec.AnyFunSpec

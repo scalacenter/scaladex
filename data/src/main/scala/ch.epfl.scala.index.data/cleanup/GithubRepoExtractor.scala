@@ -10,7 +10,6 @@ import scala.util.Using
 import scala.util.matching.Regex
 
 import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.services.storage.DataPaths
 import org.json4s.CustomSerializer

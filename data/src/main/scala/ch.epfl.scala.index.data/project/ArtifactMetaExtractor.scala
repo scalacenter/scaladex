@@ -6,7 +6,6 @@ import ch.epfl.scala.index.data.cleanup._
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.maven.SbtPluginTarget
 import ch.epfl.scala.index.model.Artifact
-import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.release.BinaryVersion
 import ch.epfl.scala.index.model.release.LanguageVersion

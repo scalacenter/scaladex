@@ -10,7 +10,6 @@ import scala.reflect.Manifest
 import scala.util.Success
 import scala.util.Try
 
-import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.services.storage.DataPaths
 import org.json4s._

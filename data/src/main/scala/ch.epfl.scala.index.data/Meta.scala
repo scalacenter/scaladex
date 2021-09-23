@@ -4,7 +4,6 @@ package data
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
-import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.index.model.Descending
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository

@@ -4,7 +4,6 @@ package data
 import java.nio.file.Path
 import java.nio.file.Paths
 
-import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.index.model.Parsers
 import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.services.storage.DataPaths

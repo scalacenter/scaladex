@@ -4,7 +4,6 @@ package bintray
 
 import java.nio.file.Path
 
-import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.index.model.Descending
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository
