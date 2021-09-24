@@ -25,6 +25,7 @@ trait DatabaseApi {
   def findReverseDependencies(
       release: NewRelease
   ): Future[List[NewDependency.Reverse]]
+  def getAllTopics(): Future[Seq[String]]
 
   def insertDependencies(dependencies: Seq[NewDependency]): Future[Int]
   def countProjects(): Future[Long]

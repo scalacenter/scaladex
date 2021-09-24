@@ -138,6 +138,9 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO])
   ): Future[List[NewDependency.Reverse]] =
     run(DependenciesTable.selectReverseDependencies(release).to[List])
 
+  override def getAllTopics(): Future[List[String]] =
+    run(GithubInfoTable.selectAllTopics().to[List]).map(_.flatten)
+
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.indexedGithubInfo().unique)
 

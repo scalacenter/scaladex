@@ -37,6 +37,11 @@ class GithubInfoTableTests
                         | commits=?, topics=?, contributingGuide=?, codeOfConduct=?, chatroom=?""".stripMargin
         .filterNot(_ == '\n')
     }
+    it("should generate sql for getAllTopics") {
+      val q = selectAllTopics()
+      check(q)
+      q.sql shouldBe s"""SELECT topics FROM github_info where topics != ''"""
+    }
   }
 
 }

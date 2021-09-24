@@ -1,6 +1,7 @@
 package ch.epfl.scala.index.server.routes
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
@@ -10,17 +11,35 @@ import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.GithubUserSession
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.index.views.html.frontpage
+import ch.epfl.scala.services.DatabaseApi
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 
-class FrontPage(dataRepository: ESRepo, session: GithubUserSession)(implicit
+class FrontPage(
+    dataRepository: ESRepo,
+    db: DatabaseApi,
+    session: GithubUserSession
+)(implicit
     ec: ExecutionContext
 ) {
   import session.implicits._
 
+  def getTopTopics(size: Int): Future[List[(String, Int)]] = {
+    db.getAllTopics().map { topics =>
+      println(s"topics = ${topics}")
+      topics
+        .map(_.toLowerCase)
+        .groupMapReduce(identity)(_ => 1)(_ + _)
+        .toList
+        .sortBy(-_._2)
+        .take(size)
+        .sortBy(_._1)
+    }
+  }
+
   private def frontPage(userInfo: Option[UserInfo]) = {
     import dataRepository._
-    val topicsF = getAllTopics()
+    val topicsF = getTopTopics(50)
     val targetTypesF = getAllTargetTypes()
     val scalaVersionsF = getAllScalaVersions()
     val scalaJsVersionsF = getAllScalaJsVersions()

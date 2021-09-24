@@ -75,6 +75,10 @@ object GithubInfoTable {
   ): doobie.ConnectionIO[Option[GithubInfo]] =
     selectOneQuery(org, repo).option
 
+  def selectAllTopics(): doobie.Query0[Set[String]] =
+    buildSelect(tableFr, fr0"topics", fr0"where topics != ''")
+      .query[Set[String]]
+
   private[tables] def selectOneQuery(
       org: Organization,
       repo: Repository

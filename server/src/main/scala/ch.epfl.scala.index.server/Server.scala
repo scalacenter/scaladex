@@ -74,7 +74,7 @@ object Server {
           Oauth2(config, session).routes
         )
         val userFacingRoutes = concat(
-          new FrontPage(data, session).routes,
+          new FrontPage(data, db, session).routes,
           redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
             concat(
               new ProjectPages(

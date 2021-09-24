@@ -85,5 +85,7 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
 
     override def countDependencies(): Future[Long] =
       Future.successful(dependencies.size)
+
+    override def getAllTopics(): Future[Seq[String]] = Future.successful(Nil)
   }
 }
