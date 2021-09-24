@@ -130,12 +130,9 @@ package object routes {
               .toList
           }
 
-          val keywords = Set[String]()
-
           import Json4s._
           ProjectForm(
             contributorsWanted,
-            keywords,
             defaultArtifact,
             defaultStableVersion,
             strictVersions,

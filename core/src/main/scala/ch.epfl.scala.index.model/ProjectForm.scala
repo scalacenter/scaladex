@@ -3,14 +3,12 @@ package ch.epfl.scala.index.model
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubIssue
 import ch.epfl.scala.index.model.misc.Url
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.{NewGithubInfo, NewProject, NewRelease}
 import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
-import ch.epfl.scala.index.newModel.NewRelease
 
 case class ProjectForm(
     // project
     contributorsWanted: Boolean,
-    keywords: Set[String],
     defaultArtifact: Option[String],
     defaultStableVersion: Boolean,
     strictVersions: Boolean = false,
@@ -41,21 +39,17 @@ case class ProjectForm(
       contributorsWanted = contributorsWanted,
       artifactDeprecations = artifactDeprecations.map(NewRelease.ArtifactName),
       cliArtifacts = cliArtifacts.map(NewRelease.ArtifactName),
-      primaryTopic = primaryTopic
+      primaryTopic = primaryTopic,
+      beginnerIssuesLabel = beginnerIssuesLabel ,
+      beginnerIssues =beginnerIssues,
+      selectedBeginnerIssues = selectedBeginnerIssues,
+      filteredBeginnerIssues = Nil // TODO: compute this
     )
 
   def update(
       project: Project,
       fromStored: Boolean = false
   ): Project = {
-    val githubWithKeywords =
-      if (project.github.isEmpty) {
-        Some(GithubInfo.empty.copy(topics = keywords))
-      } else {
-        project.github.map(github =>
-          github.copy(topics = github.topics ++ keywords)
-        )
-      }
 
     val getBeginnerIssues =
       fromStored && beginnerIssues.isEmpty && beginnerIssuesLabel.isDefined
@@ -88,8 +82,7 @@ case class ProjectForm(
       artifactDeprecations = artifactDeprecations,
       cliArtifacts = cliArtifacts,
       hasCli = cliArtifacts.nonEmpty,
-      github = githubWithKeywords.map(github =>
-        github.copy(
+      github = Some(GithubInfo.empty.copy(
           beginnerIssuesLabel = beginnerIssuesLabel.filterNot(_ == ""),
           beginnerIssues = newBeginnerIssues,
           selectedBeginnerIssues = selectedBeginnerIssues,

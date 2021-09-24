@@ -170,7 +170,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
           ProjectSeed(
             organization = organization,
             repository = repository,
-            github = github,
+            github = github.map(_.toGithubInfo),
             artifacts = releaseOptions.map(_.artifacts.sorted).getOrElse(Nil),
             releaseCount = releaseCount,
             defaultArtifact = releaseOptions.map(_.release.reference.artifact),

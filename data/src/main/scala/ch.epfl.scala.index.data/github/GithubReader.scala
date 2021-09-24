@@ -5,12 +5,11 @@ package github
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
-
 import scala.reflect.Manifest
 import scala.util.Success
 import scala.util.Try
-
 import ch.epfl.scala.index.model.misc._
+import ch.epfl.scala.index.newModel.NewGithubInfo
 import ch.epfl.scala.services.storage.DataPaths
 import org.json4s._
 import org.json4s.native.Serialization.writePretty
@@ -30,14 +29,13 @@ object GithubReader {
    * @param github
    * @return
    */
-  def apply(paths: DataPaths, github: GithubRepo): Option[GithubInfo] = {
+  def apply(paths: DataPaths, github: GithubRepo): Option[NewGithubInfo] = {
 
     info(paths, github).map { info =>
       val contributorList = contributors(paths, github).getOrElse(List())
       info.copy(
         readme = readme(paths, github).toOption, // README.html
         contributors = contributorList, //contributors.json
-        contributorCount = contributorList.size, //contributors.json
         commits = Some(
           contributorList.foldLeft(0)(_ + _.contributions)
         ), //contributors.json
@@ -69,14 +67,14 @@ object GithubReader {
    * @param github the git repo
    * @return
    */
-  def info(paths: DataPaths, github: GithubRepo): Try[GithubInfo] = Try {
+  def info(paths: DataPaths, github: GithubRepo): Try[NewGithubInfo] = Try {
 
     import Json4s._
 
     val repoInfoPath = githubRepoInfoPath(paths, github)
     val repository = read[V3.Repository](repoInfoPath)
 
-    GithubInfo(
+    NewGithubInfo(
       name = repository.name,
       owner = repository.owner.login,
       homepage = repository.homepage.map(h => Url(h)),
@@ -118,20 +116,20 @@ object GithubReader {
    * @param github the current repo
    * @return
    */
-  def topics(paths: DataPaths, github: GithubRepo): Try[List[String]] = Try {
+  def topics(paths: DataPaths, github: GithubRepo): Try[List[NewGithubInfo.Topic]] = Try {
 
     import Json4s._
 
     val repoTopicsPath = githubRepoTopicsPath(paths, github)
     val graphqlResult = read[V4.RepositoryResult](repoTopicsPath)
-    val graphqlTopics = for {
+    (for {
       data <- graphqlResult.data
       repo <- data.repository
       topics <- repo.repositoryTopics
       nodes <- topics.nodes
-    } yield { nodes }
+      topics = nodes.flatMap(_.topic.flatMap(_.name)).map(NewGithubInfo.Topic)
+    } yield topics).getOrElse(Nil)
 
-    graphqlTopics.getOrElse(List()).map(_.topic.flatMap(_.name).getOrElse(""))
   }
 
   /**

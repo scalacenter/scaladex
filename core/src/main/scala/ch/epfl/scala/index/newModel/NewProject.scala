@@ -1,15 +1,14 @@
 package ch.epfl.scala.index.newModel
 
 import ch.epfl.scala.index.model.Project
-import ch.epfl.scala.index.model.misc.GithubInfo
-import ch.epfl.scala.index.model.misc.TwitterSummaryCard
+import ch.epfl.scala.index.model.misc.{GithubInfo, GithubIssue, TwitterSummaryCard}
 import ch.epfl.scala.index.newModel.NewProject._
 
 // TODO: document NewProject fields
 case class NewProject(
     organization: Organization,
     repository: Repository,
-    githubInfo: Option[GithubInfo],
+    githubInfo: Option[NewGithubInfo],
     esId: Option[String],
     // form data
     dataForm: DataForm
@@ -30,7 +29,7 @@ case class NewProject(
   //val created: datetime = firstRelease.released
   //val lastUpdated: datetime = lastReleaseAdd.released
 
-  def update(newGithubInfo: Option[GithubInfo]): NewProject =
+  def update(newGithubInfo: Option[NewGithubInfo]): NewProject =
     copy(githubInfo = newGithubInfo)
   def contributorsWanted: Boolean = dataForm.contributorsWanted
 }
@@ -39,7 +38,7 @@ object NewProject {
   def defaultProject(
       org: String,
       repo: String,
-      githubInfo: Option[GithubInfo],
+      githubInfo: Option[NewGithubInfo],
       formData: DataForm = DataForm.default
   ): NewProject =
     NewProject(
@@ -60,7 +59,11 @@ object NewProject {
       contributorsWanted: Boolean,
       artifactDeprecations: Set[NewRelease.ArtifactName],
       cliArtifacts: Set[NewRelease.ArtifactName],
-      primaryTopic: Option[String]
+      primaryTopic: Option[String],
+      beginnerIssuesLabel: Option[String],
+  beginnerIssues: List[GithubIssue],
+  selectedBeginnerIssues: List[GithubIssue],
+  filteredBeginnerIssues: List[GithubIssue]
   )
 
   case class Organization(value: String) extends AnyVal {
@@ -81,7 +84,11 @@ object NewProject {
       contributorsWanted = false,
       artifactDeprecations = Set(),
       cliArtifacts = Set(),
-      primaryTopic = None
+      primaryTopic = None,
+      beginnerIssuesLabel = None,
+      beginnerIssues = List(),
+      selectedBeginnerIssues = List(),
+    filteredBeginnerIssues= List()
     )
     def from(p: Project): DataForm = {
       val documentationlinks = p.documentationLinks.map { case (label, link) =>
@@ -98,7 +105,12 @@ object NewProject {
         artifactDeprecations =
           p.artifactDeprecations.map(NewRelease.ArtifactName),
         cliArtifacts = p.cliArtifacts.map(NewRelease.ArtifactName),
-        primaryTopic = p.primaryTopic
+        primaryTopic = p.primaryTopic,
+        beginnerIssuesLabel = p.github.flatMap(_.beginnerIssuesLabel),
+        beginnerIssues = p.github.map(_.beginnerIssues).getOrElse(Nil),
+        selectedBeginnerIssues = p.github.map(_.selectedBeginnerIssues).getOrElse(Nil),
+        filteredBeginnerIssues = p.github.map(_.filteredBeginnerIssues).getOrElse(Nil)
+
       )
     }
   }
@@ -114,7 +126,7 @@ object NewProject {
     NewProject(
       organization = Organization(p.organization),
       repository = Repository(p.repository),
-      githubInfo = p.github,
+      githubInfo = p.github.map(NewGithubInfo.from),
       esId = p.id,
       dataForm = DataForm.from(p)
     )
