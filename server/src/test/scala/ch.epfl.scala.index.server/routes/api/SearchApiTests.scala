@@ -26,7 +26,7 @@ class SearchApiTests extends AsyncFunSpec with Matchers {
     it("should recognize JVM/3") {
       val res =
         SearchApi.parseScalaTarget(Some("JVM"), Some("3"), None, None, None)
-      assert(res.map(_.languageVersion.render) == Some("scala 3"))
+      assert(res.flatMap(_.scalaVersion.map(_.render)) == Some("scala 3"))
     }
 
   }

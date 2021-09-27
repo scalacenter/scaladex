@@ -26,7 +26,6 @@ class FrontPage(
 
   def getTopTopics(size: Int): Future[List[(String, Int)]] = {
     db.getAllTopics().map { topics =>
-      println(s"topics = ${topics}")
       topics
         .map(_.toLowerCase)
         .groupMapReduce(identity)(_ => 1)(_ + _)

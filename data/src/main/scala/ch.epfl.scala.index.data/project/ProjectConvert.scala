@@ -9,6 +9,7 @@ import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.project.ProjectConvert.ProjectSeed
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc._
+import ch.epfl.scala.index.model.release.ScalaTargetType._
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.index.newModel.NewProject
@@ -110,15 +111,15 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
               scalaNativeVersion,
               sbtVersion
             ) = target match {
-              case Some(ScalaJvm(languageVersion)) =>
+              case Platform.ScalaJvm(languageVersion) =>
                 (Jvm, Some(languageVersion), None, None, None)
-              case Some(ScalaJs(languageVersion, jsVersion)) =>
+              case Platform.ScalaJs(languageVersion, jsVersion) =>
                 (Js, Some(languageVersion), Some(jsVersion), None, None)
-              case Some(ScalaNative(languageVersion, nativeVersion)) =>
+              case Platform.ScalaNative(languageVersion, nativeVersion) =>
                 (Native, Some(languageVersion), None, Some(nativeVersion), None)
-              case Some(SbtPlugin(languageVersion, sbtVersion)) =>
+              case Platform.SbtPlugin(languageVersion, sbtVersion) =>
                 (Sbt, Some(languageVersion), None, None, Some(sbtVersion))
-              case None => (Java, None, None, None, None)
+              case Platform.Java => (Java, None, None, None, None)
             }
 
             Release(
@@ -138,7 +139,6 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
               isNonStandardLib = isNonStandardLib,
               id = None,
               liveData = false,
-              javaDependencies = Seq(),
               targetType = targetType.toString,
               scalaVersion = scalaVersion.map(_.family),
               scalaJsVersion = scalaJsVersion.map(_.toString),

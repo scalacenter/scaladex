@@ -1,11 +1,10 @@
 @import ch.epfl.scala.index.model.SemanticVersion
-@import ch.epfl.scala.index.model.release.ScalaTarget
 @import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
 @import ch.epfl.scala.index.views.html.ensureUri
 
-
+@import ch.epfl.scala.index.model.release.Platform
 @(project: NewProject, artifacts: Seq[NewRelease.ArtifactName], versions: Seq[SemanticVersion],
-  targets: Seq[ScalaTarget], release: NewRelease, canEdit: Boolean)
+        platforms: Seq[Platform], release: NewRelease, canEdit: Boolean)
 
 <div class="head-project">
   <div class="container">
@@ -71,7 +70,7 @@
           <a class="btn btn-primary" href="/artifacts/@project.reference" >
             Version Matrix
           </a>
-          @if(targets.nonEmpty) {
+          @if(platforms.nonEmpty) {
             <form action="/@project.reference" action="GET">
               <input type="hidden" name="selected" value="target">
 
@@ -83,9 +82,9 @@
                 data-live-search="true"
                 class="selectpicker" data-style="btn-primary">
 
-              @for(target <- targets){
+              @for(target <- platforms){
                 <option value="@target.encode"
-                        @if(release.target.contains(target)){ selected }>
+                        @if(release.platform == target){ selected }>
                   @target.render
                 </option>
               }
@@ -97,9 +96,7 @@
 
           <form action="/@project.reference" action="GET">
 
-            @for(target <- release.target) {
-              <input type="hidden" name="target" value="@target.encode">
-            }
+            <input type="hidden" name="target" value="@release.platform.encode">
 
             <input type="hidden" name="selected" value="artifact">
 
@@ -123,9 +120,7 @@
 
             <input type="hidden" name="artifact" value="@release.artifactName">
 
-            @for(target <- release.target) {
-              <input type="hidden" name="target" value="@target.encode">
-            }
+            <input type="hidden" name="target" value="@release.platform.encode">
 
             <select
               name="version"

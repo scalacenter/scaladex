@@ -12,8 +12,8 @@ import ch.epfl.scala.index.model.misc.GithubContributor
 import ch.epfl.scala.index.model.misc.GithubIssue
 import ch.epfl.scala.index.model.misc.Url
 import ch.epfl.scala.index.model.release.MavenReference
+import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Resolver
-import ch.epfl.scala.index.model.release.ScalaTarget
 import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
@@ -151,8 +151,8 @@ object DoobieUtils {
       )
     implicit val semanticVersionMeta: Meta[SemanticVersion] =
       stringMeta.timap(SemanticVersion.tryParse(_).get)(_.toString)
-    implicit val scalaTargetMeta: Meta[ScalaTarget] =
-      stringMeta.timap(ScalaTarget.parse(_).get)(_.encode)
+    implicit val platformMeta: Meta[Platform] =
+      stringMeta.timap(Platform.parse(_).get)(_.encode)
     implicit val licensesMeta: Meta[Set[License]] = {
       implicit val licenseDecoder: Decoder[License] =
         deriveDecoder[License]
@@ -174,7 +174,7 @@ object DoobieUtils {
             Organization,
             Repository,
             ArtifactName,
-            Option[ScalaTarget],
+            Platform,
             Option[String],
             Option[DateTime],
             Option[Resolver],
@@ -189,7 +189,7 @@ object DoobieUtils {
           r.organization,
           r.repository,
           r.artifactName,
-          r.target,
+          r.platform,
           r.description,
           r.released,
           r.resolver,
@@ -242,7 +242,7 @@ object DoobieUtils {
           Organization,
           Repository,
           NewRelease.ArtifactName,
-          Option[ScalaTarget],
+          Platform,
           Option[String],
           Option[DateTime],
           Option[Resolver],
@@ -290,7 +290,7 @@ object DoobieUtils {
           Option[Organization],
           Option[Repository],
           Option[NewRelease.ArtifactName],
-          Option[ScalaTarget],
+          Option[Platform],
           Option[String],
           Option[DateTime],
           Option[Resolver],
@@ -306,7 +306,7 @@ object DoobieUtils {
             Some(organization),
             Some(repository),
             Some(artifact),
-            target,
+            Some(platform),
             description,
             released,
             resolver,
@@ -322,7 +322,7 @@ object DoobieUtils {
               organization,
               repository,
               artifact,
-              target,
+              platform,
               description,
               released,
               resolver,

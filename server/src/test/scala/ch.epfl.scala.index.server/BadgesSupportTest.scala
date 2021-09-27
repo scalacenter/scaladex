@@ -3,8 +3,10 @@ package ch.epfl.scala.index.server
 import ch.epfl.scala.index.model.Milestone
 import ch.epfl.scala.index.model.ReleaseCandidate
 import ch.epfl.scala.index.model.SemanticVersion
-import ch.epfl.scala.index.model.release.ScalaVersion._
-import ch.epfl.scala.index.model.release._
+import ch.epfl.scala.index.model.release.Platform
+import ch.epfl.scala.index.model.release.PreReleaseBinary
+import ch.epfl.scala.index.model.release.Scala3Version
+import ch.epfl.scala.index.model.release.ScalaLanguageVersion
 import ch.epfl.scala.index.server.BadgesSupport.SummariseLanguageVersions
 import ch.epfl.scala.index.server.BadgesSupport.SummarisePlatformEditions
 import org.apache.commons.lang3.StringUtils.countMatches
@@ -12,14 +14,16 @@ import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 
 class BadgesSupportTest extends AsyncFunSpec with Matchers {
+  import ch.epfl.scala.index.model.release.ScalaVersion._
+  import Platform._
 
-  val `3.0.0-M3`: LanguageVersion = Scala3Version(
+  val `3.0.0-M3`: ScalaLanguageVersion = Scala3Version(
     PreReleaseBinary(3, 0, Some(0), Milestone(3))
   )
-  val `3.0.0-RC2`: LanguageVersion = Scala3Version(
+  val `3.0.0-RC2`: ScalaLanguageVersion = Scala3Version(
     PreReleaseBinary(3, 0, Some(0), ReleaseCandidate(2))
   )
-  val `3.0.0-RC3`: LanguageVersion = Scala3Version(
+  val `3.0.0-RC3`: ScalaLanguageVersion = Scala3Version(
     PreReleaseBinary(3, 0, Some(0), ReleaseCandidate(3))
   )
 
@@ -34,8 +38,8 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
     BadgesSupport.summaryOfLatestVersions(
       Map(
         `7.0.0` -> Set(
-          ScalaNative(`2.13`, Native.`0.3`),
-          ScalaNative(`2.13`, Native.`0.4`)
+          ScalaNative(`2.13`, ScalaNative.`0.3`),
+          ScalaNative(`2.13`, ScalaNative.`0.4`)
         )
       )
     ) shouldBe "7.0.0 (Scala 2.13 - Native 0.4, 0.3)"
@@ -47,8 +51,8 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
     BadgesSupport.summaryOfLatestVersions(
       Map(
         `7.0.0` -> Set(
-          SbtPlugin(`2.12`, Sbt.`1.0`),
-          SbtPlugin(`2.10`, Sbt.`0.13`)
+          SbtPlugin(`2.12`, SbtPlugin.`1.0`),
+          SbtPlugin(`2.10`, SbtPlugin.`0.13`)
         )
       )
     ) shouldBe "7.0.0 (sbt 1.0, 0.13)"
@@ -137,10 +141,10 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
     SummariseLanguageVersions.summarise(
       Map(
         `7.1.0` -> Set(
-          ScalaNative(`3.0.0-M3`, Native.`0.3`),
-          ScalaNative(`2.13`, Native.`0.3`),
-          ScalaNative(`3.0.0-M3`, Native.`0.4`),
-          ScalaNative(`2.13`, Native.`0.4`)
+          ScalaNative(`3.0.0-M3`, ScalaNative.`0.3`),
+          ScalaNative(`2.13`, ScalaNative.`0.3`),
+          ScalaNative(`3.0.0-M3`, ScalaNative.`0.4`),
+          ScalaNative(`2.13`, ScalaNative.`0.4`)
         )
       )
     ) shouldBe "7.1.0 (Scala 3.0.0-M3, 2.13 - Native 0.4, 0.3)"
@@ -153,8 +157,8 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
     SummariseLanguageVersions.summarise(
       Map(
         `7.1.0` -> Set(
-          ScalaNative(`2.13`, Native.`0.3`),
-          ScalaNative(`3.0.0-M3`, Native.`0.4`)
+          ScalaNative(`2.13`, ScalaNative.`0.3`),
+          ScalaNative(`3.0.0-M3`, ScalaNative.`0.4`)
         )
       )
     ) shouldBe "7.1.0 (Scala 3.0.0-M3, 2.13)"
@@ -166,8 +170,8 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
     SummarisePlatformEditions.summarise(
       Map(
         `7.0.0` -> Set(
-          SbtPlugin(`2.12`, Sbt.`1.0`),
-          SbtPlugin(`2.10`, Sbt.`0.13`)
+          SbtPlugin(`2.12`, SbtPlugin.`1.0`),
+          SbtPlugin(`2.10`, SbtPlugin.`0.13`)
         )
       )
     ) shouldBe "7.0.0 (sbt 1.0, 0.13)"
@@ -178,10 +182,10 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
   ) {
     val summary = SummarisePlatformEditions.summarise(
       Map(
-        `7.0.0` -> Set(SbtPlugin(`2.10`, Sbt.`0.13`)),
-        `7.1.0` -> Set(SbtPlugin(`2.10`, Sbt.`0.13`)),
-        `7.2.0` -> Set(SbtPlugin(`2.12`, Sbt.`1.0`)),
-        `7.3.0` -> Set(SbtPlugin(`2.12`, Sbt.`1.0`))
+        `7.0.0` -> Set(SbtPlugin(`2.10`, SbtPlugin.`0.13`)),
+        `7.1.0` -> Set(SbtPlugin(`2.10`, SbtPlugin.`0.13`)),
+        `7.2.0` -> Set(SbtPlugin(`2.12`, SbtPlugin.`1.0`)),
+        `7.3.0` -> Set(SbtPlugin(`2.12`, SbtPlugin.`1.0`))
       )
     )
 
@@ -198,11 +202,11 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
     val summary = SummarisePlatformEditions.summarise(
       Map(
         `7.3.0` -> Set(
-          SbtPlugin(`2.12`, Sbt.`1.0`)
+          SbtPlugin(`2.12`, SbtPlugin.`1.0`)
         ),
         `7.2.0` -> Set(
-          SbtPlugin(`2.12`, Sbt.`1.0`),
-          SbtPlugin(`2.10`, Sbt.`0.13`)
+          SbtPlugin(`2.12`, SbtPlugin.`1.0`),
+          SbtPlugin(`2.10`, SbtPlugin.`0.13`)
         )
       )
     )

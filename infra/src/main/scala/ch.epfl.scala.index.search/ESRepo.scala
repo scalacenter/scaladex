@@ -21,6 +21,7 @@ import com.sksamuel.elastic4s.requests.common.HealthStatus
 import com.sksamuel.elastic4s.requests.indexes.IndexRequest
 import com.sksamuel.elastic4s.requests.mappings.MappingDefinition
 import com.sksamuel.elastic4s.requests.searches.aggs.responses.bucket.Terms
+import com.sksamuel.elastic4s.requests.searches.queries.NoopQuery
 import com.sksamuel.elastic4s.requests.searches.queries.Query
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.CombineFunction
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.FieldValueFactorFunctionModifier
@@ -397,14 +398,18 @@ class ESRepo(
   }
 
   def getAllScalaJsVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("scalaJsVersion", notDeprecatedQuery, Js.isValid)
+    versionAggregations(
+      "scalaJsVersion",
+      notDeprecatedQuery,
+      Platform.ScalaJs.isValid
+    )
   }
 
   def getScalaJsVersions(params: SearchParams): Future[List[(String, Long)]] = {
     versionAggregations(
       "scalaJsVersion",
       filteredSearchQuery(params),
-      Js.isValid
+      Platform.ScalaJs.isValid
     )
       .map(addLabelsIfMissing(params.scalaJsVersions.toSet))
   }
@@ -413,7 +418,7 @@ class ESRepo(
     versionAggregations(
       "scalaNativeVersion",
       notDeprecatedQuery,
-      Native.isValid
+      Platform.ScalaNative.isValid
     )
   }
 
@@ -423,19 +428,23 @@ class ESRepo(
     versionAggregations(
       "scalaNativeVersion",
       filteredSearchQuery(params),
-      Native.isValid
+      Platform.ScalaNative.isValid
     ).map(addLabelsIfMissing(params.scalaNativeVersions.toSet))
   }
 
   def getAllSbtVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("sbtVersion", notDeprecatedQuery, Sbt.isValid)
+    versionAggregations(
+      "sbtVersion",
+      notDeprecatedQuery,
+      Platform.SbtPlugin.isValid
+    )
   }
 
   def getSbtVersions(params: SearchParams): Future[List[(String, Long)]] = {
     versionAggregations(
       "sbtVersion",
       filteredSearchQuery(params),
-      Sbt.isValid
+      Platform.SbtPlugin.isValid
     )
       .map(addLabelsIfMissing(params.sbtVersions.toSet))
   }
@@ -709,25 +718,27 @@ object ESRepo extends LazyLogging with SearchProtocol {
     )
   }
 
-  private def targetQuery(target: ScalaTarget): Query = {
+  private def targetQuery(target: Platform): Query = {
     target match {
-      case ScalaJvm(scalaVersion) =>
-        termQuery("scalaVersion", scalaVersion.family)
-      case ScalaJs(scalaVersion, jsVersion) =>
+      case jvm: Platform.ScalaJvm =>
+        termQuery("scalaVersion", jvm.scalaVersion.get)
+      case Platform.ScalaJs(scalaVersion, jsVersion) =>
         must(
           termQuery("scalaVersion", scalaVersion.family),
           termQuery("scalaJsVersion", jsVersion.toString)
         )
-      case ScalaNative(scalaVersion, nativeVersion) =>
+      case Platform.ScalaNative(scalaVersion, nativeVersion) =>
         must(
           termQuery("scalaVersion", scalaVersion.family),
           termQuery("scalaNativeVersion", nativeVersion.toString)
         )
-      case SbtPlugin(scalaVersion, sbtVersion) =>
+      case Platform.SbtPlugin(scalaVersion, sbtVersion) =>
         must(
           termQuery("scalaVersion", scalaVersion.family),
           termQuery("sbtVersion", sbtVersion.toString)
         )
+      case Platform.Java =>
+        must(NoopQuery) // not sure
     }
   }
 

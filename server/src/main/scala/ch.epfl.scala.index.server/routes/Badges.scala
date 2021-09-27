@@ -2,6 +2,7 @@ package ch.epfl.scala.index
 package server
 package routes
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import akka.http.scaladsl.model.StatusCodes._
@@ -13,9 +14,13 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.RouteResult
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.search.ESRepo
+import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.services.DatabaseApi
 
-class Badges(dataRepository: ESRepo) {
+class Badges(db: DatabaseApi)(implicit
+    executionContext: ExecutionContext
+) {
 
   private val shields = parameters(
     ("color".?, "style".?, "logo".?, "logoWidth".as[Int].?)
@@ -66,27 +71,26 @@ class Badges(dataRepository: ESRepo) {
   }
 
   def latest(
-      organization: String,
-      repository: String,
-      artifact: Option[String]
+      organization: NewProject.Organization,
+      repository: NewProject.Repository,
+      artifact: Option[NewRelease.ArtifactName]
   ): RequestContext => Future[RouteResult] = {
-    parameter("target".?) { target =>
+    parameter("target".?) { platform =>
       shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
-        onSuccess {
-          dataRepository.getProjectAndReleaseOptions(
-            Project.Reference(organization, repository),
-            ReleaseSelection.parse(
-              target = target,
-              artifactName = artifact,
-              version = None,
-              selected = None
-            )
-          )
-        } {
-          case Some((_, options)) =>
+        val res = getSelectedRelease(
+          db,
+          organization,
+          repository,
+          platform,
+          artifact,
+          version = None,
+          selected = None
+        )
+        onSuccess(res) {
+          case Some(release) =>
             shieldsSvg(
-              subject orElse artifact getOrElse repository,
-              options.release.reference.version.toString(),
+              subject.orElse(artifact.map(_.value)).getOrElse(repository.value),
+              release.version.toString,
               color,
               style,
               logo,
@@ -94,7 +98,7 @@ class Badges(dataRepository: ESRepo) {
             )
           case _ =>
             shieldsSvg(
-              subject orElse artifact getOrElse repository,
+              subject.orElse(artifact.map(_.value)).getOrElse(repository.value),
               "no published release",
               color orElse Some("lightgrey"),
               style,
@@ -108,18 +112,21 @@ class Badges(dataRepository: ESRepo) {
   }
 
   def latestByScalaVersion(
-      organization: String,
-      repository: String,
-      artifact: String
+      organization: NewProject.Organization,
+      repository: NewProject.Repository,
+      artifact: NewRelease.ArtifactName
   ): RequestContext => Future[RouteResult] = {
     parameter("targetType".?) { targetTypeString =>
       shields { (color, style, logo, logoWidth) =>
         val targetType =
-          targetTypeString.flatMap(ScalaTargetType.ofName).getOrElse(Jvm)
+          targetTypeString
+            .flatMap(ScalaTargetType.ofName)
+            .getOrElse(ScalaTargetType.Jvm)
+        val res = db.findReleases(
+          Project.Reference(organization.value, repository.value)
+        )
         onSuccess {
-          dataRepository.getProjectReleases(
-            Project.Reference(organization, repository)
-          )
+          res
         } { allAvailableReleases =>
           val notableScalaSupport: String =
             BadgesSupport.summaryOfLatestVersions(
@@ -129,7 +136,7 @@ class Badges(dataRepository: ESRepo) {
             )
 
           shieldsSvg(
-            artifact,
+            artifact.value,
             notableScalaSupport,
             color,
             style,
@@ -142,39 +149,20 @@ class Badges(dataRepository: ESRepo) {
   }
 
   val routes: Route =
-    get(
+    get {
       concat(
-        pathPrefix(Segment / Segment) { (organization, repository) =>
-          concat(
-            path(Segment / "latest.svg")(artifact =>
-              latest(organization, repository, Some(artifact))
-            ),
-            path("latest.svg")(
-              latest(organization, repository, None)
-            )
-          )
+        path(organizationM / repositoryM / "latest.svg") { (org, repo) =>
+          latest(org, repo, None)
         },
-        pathPrefix(
-          Segment / Segment / Segment / "latest-by-scala-version.svg"
-        ) { (organization, repository, artifact) =>
-          latestByScalaVersion(organization, repository, artifact)
+        path(organizationM / repositoryM / artifactM / "latest.svg") {
+          (org, repo, artifact) =>
+            latest(org, repo, Some(artifact))
         },
-        path("count.svg")(
-          parameter("q")(query =>
-            shieldsSubject((color, style, logo, logoWidth, subject) =>
-              onSuccess(dataRepository.getTotalProjects(query))(count =>
-                shieldsSvg(
-                  subject,
-                  count.toString,
-                  color,
-                  style,
-                  logo,
-                  logoWidth
-                )
-              )
-            )
-          )
-        )
+        path(
+          organizationM / repositoryM / artifactM / "latest-by-scala-version.svg"
+        ) { (org, repo, artifact) =>
+          latestByScalaVersion(org, repo, artifact)
+        }
       )
-    )
+    }
 }

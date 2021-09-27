@@ -5,17 +5,17 @@ import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 
 case class ReleaseSelection(
-    target: Option[ScalaTarget],
+    target: Option[Platform],
     artifact: Option[NewRelease.ArtifactName],
     version: Option[SemanticVersion],
     selected: Option[String]
 ) {
 
   def filterTarget(release: Release): Boolean =
-    target.forall(target => release.reference.target.contains(target))
+    target.forall(_ == release.reference.target)
 
   def filterTarget(release: NewRelease): Boolean =
-    target.forall(release.target.contains)
+    target.forall(_ == release.platform)
 
   def filterArtifact(release: Release): Boolean =
     artifact.forall(_.value == release.reference.artifact)
@@ -42,15 +42,15 @@ case class ReleaseSelection(
 
 object ReleaseSelection {
   def parse(
-      target: Option[String],
-      artifactName: Option[String],
+      platform: Option[String],
+      artifactName: Option[NewRelease.ArtifactName],
       version: Option[String],
       selected: Option[String]
   ): ReleaseSelection = {
 
     new ReleaseSelection(
-      target.flatMap(ScalaTarget.parse),
-      artifactName.map(NewRelease.ArtifactName),
+      platform.flatMap(Platform.parse),
+      artifactName,
       version.flatMap(SemanticVersion.tryParse),
       selected
     )
@@ -64,7 +64,7 @@ object ReleaseSelection {
 case class ReleaseOptions(
     artifacts: List[String],
     versions: List[SemanticVersion],
-    targets: List[ScalaTarget],
+    targets: List[Platform],
     release: Release
 )
 
@@ -109,7 +109,7 @@ object ReleaseOptions {
 
     releasesSorted.headOption.map { release =>
       val targets = releases
-        .flatMap(_.reference.target)
+        .map(_.reference.target)
         .distinct
         .sorted
         .reverse
@@ -169,7 +169,7 @@ object ReleaseOptions {
         // version
         release.version,
         // target
-        release.target
+        release.platform
       )
     }.reverse
   }

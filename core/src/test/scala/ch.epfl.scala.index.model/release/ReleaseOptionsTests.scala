@@ -22,7 +22,6 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
       isNonStandardLib = false,
       id = None,
       liveData = false,
-      javaDependencies = Seq(),
       targetType = "JVM",
       scalaVersion = None,
       scalaJsVersion = None,
@@ -43,7 +42,7 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
           version <- SemanticVersion.tryParse(rawVersion)
         } yield (artifactId, rawVersion, artifact, target, version)
       }
-      .map { case (artifactId, rawVersion, artifact, target, version) =>
+      .map { case (artifactId, rawVersion, artifact, platform, version) =>
         emptyRelease(
           MavenReference(groupdId, artifactId, rawVersion),
           Release.Reference(
@@ -51,7 +50,7 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
             repository,
             artifact,
             version,
-            Some(target)
+            platform
           )
         )
       }
@@ -114,12 +113,12 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
           SemanticVersion(0, 4, 0)
         )
 
-      val targets: List[ScalaTarget] =
+      val targets: List[Platform] =
         List(
-          ScalaJvm(ScalaVersion.`2.11`),
-          ScalaJvm(ScalaVersion.`2.10`),
-          ScalaJs(ScalaVersion.`2.11`, MinorBinary(0, 6)),
-          ScalaJs(ScalaVersion.`2.10`, MinorBinary(0, 6))
+          Platform.ScalaJvm(ScalaVersion.`2.11`),
+          Platform.ScalaJvm(ScalaVersion.`2.10`),
+          Platform.ScalaJs(ScalaVersion.`2.11`, MinorBinary(0, 6)),
+          Platform.ScalaJs(ScalaVersion.`2.10`, MinorBinary(0, 6))
         )
 
       val expected =
@@ -136,7 +135,7 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
               repository,
               "cats-core",
               SemanticVersion(0, 6, 0),
-              Some(ScalaJvm(ScalaVersion.`2.11`))
+              Platform.ScalaJvm(ScalaVersion.`2.11`)
             )
           )
         )
@@ -184,7 +183,7 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
               SemanticVersion(2, 4, 8)
             ),
             targets = List(
-              ScalaJvm(ScalaVersion.`2.11`)
+              Platform.ScalaJvm(ScalaVersion.`2.11`)
             ),
             release = emptyRelease(
               MavenReference(
@@ -197,7 +196,7 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
                 repository,
                 "akka-distributed-data-experimental",
                 SemanticVersion(2, 4, 8),
-                Some(ScalaJvm(ScalaVersion.`2.11`))
+                Platform.ScalaJvm(ScalaVersion.`2.11`)
               )
             )
           )
@@ -237,10 +236,10 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
           SemanticVersion(0, 5, 3)
         )
 
-      val targets: List[ScalaTarget] =
+      val targets: List[Platform] =
         List(
-          ScalaJvm(ScalaVersion(PatchBinary(2, 12, 2))),
-          ScalaJvm(ScalaVersion.`2.12`)
+          Platform.ScalaJvm(ScalaVersion(PatchBinary(2, 12, 2))),
+          Platform.ScalaJvm(ScalaVersion.`2.12`)
         )
 
       val expected: Option[ReleaseOptions] =
@@ -258,7 +257,7 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
                 repository,
                 "scalafix-core",
                 SemanticVersion(0, 5, 3),
-                Some(ScalaJvm(ScalaVersion.`2.12`))
+                Platform.ScalaJvm(ScalaVersion.`2.12`)
               )
             )
           )

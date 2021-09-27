@@ -7,6 +7,7 @@ import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewProject.DataForm
 import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 
 trait DatabaseApi {
   def insertProject(p: NewProject): Future[Unit]
@@ -18,6 +19,10 @@ trait DatabaseApi {
   def findProject(projectRef: Project.Reference): Future[Option[NewProject]]
   def insertReleases(r: Seq[NewRelease]): Future[Int]
   def findReleases(projectRef: Project.Reference): Future[Seq[NewRelease]]
+  def findReleases(
+      projectRef: Project.Reference,
+      artifactName: ArtifactName
+  ): Future[Seq[NewRelease]] = Future.successful(Nil)
 
   def findDirectDependencies(
       release: NewRelease

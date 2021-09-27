@@ -3,7 +3,7 @@ package ch.epfl.scala.index.server.routes
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.release.MavenReference
-import ch.epfl.scala.index.model.release.ScalaJvm
+import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.ScalaVersion
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewProject.Organization
@@ -23,7 +23,7 @@ object Values {
     organization = Organization("xuwei-k"),
     repository = Repository("play-json-extra"),
     artifactName = ArtifactName("play-json-extra"),
-    target = Some(ScalaJvm(ScalaVersion.`2.11`)),
+    platform = Platform.ScalaJvm(ScalaVersion.`2.11`),
     description = None,
     released = None,
     resolver = None,

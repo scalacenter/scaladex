@@ -1,15 +1,22 @@
 package ch.epfl.scala.index.server
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives.Segment
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.PathMatcher1
+import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubIssue
 import ch.epfl.scala.index.model.misc.SearchParams
 import ch.epfl.scala.index.model.misc.Url
+import ch.epfl.scala.index.model.release.ReleaseOptions
+import ch.epfl.scala.index.model.release.ReleaseSelection
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.services.DatabaseApi
 
 package object routes {
 
@@ -154,4 +161,28 @@ package object routes {
           )
       }
     )
+  def getSelectedRelease(
+      db: DatabaseApi,
+      org: NewProject.Organization,
+      repo: NewProject.Repository,
+      platform: Option[String],
+      artifact: Option[NewRelease.ArtifactName],
+      version: Option[String],
+      selected: Option[String]
+  )(implicit ec: ExecutionContext): Future[Option[NewRelease]] = {
+    val releaseSelection = ReleaseSelection.parse(
+      platform = platform,
+      artifactName = artifact,
+      version = version,
+      selected = selected
+    )
+    val projectRef = Project.Reference(org.value, repo.value)
+    for {
+      project <- db.findProject(projectRef)
+      releases <- db.findReleases(projectRef)
+      filteredReleases = project
+        .map(p => ReleaseOptions.filterReleases(releaseSelection, releases, p))
+        .getOrElse(Nil)
+    } yield filteredReleases.headOption
+  }
 }

@@ -23,6 +23,7 @@ import akka.stream.scaladsl._
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.project.ArtifactMetaExtractor
 import ch.epfl.scala.index.model.misc.Sha1
+import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
@@ -203,7 +204,7 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
             metaExtractor
               .extractMeta(pom)
               .filter { meta =>
-                meta.scalaTarget.isDefined && !meta.isNonStandard
+                meta.scalaTarget != Platform.Java && !meta.isNonStandard
               }
               .map(_ => pom.groupId)
           case _ => None

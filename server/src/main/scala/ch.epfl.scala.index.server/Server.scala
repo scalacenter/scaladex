@@ -70,7 +70,7 @@ object Server {
           PublishApi(paths, data, databaseApi = db).routes,
           new SearchApi(data, session).routes,
           Assets.routes,
-          new Badges(data).routes,
+          new Badges(db).routes,
           Oauth2(config, session).routes
         )
         val userFacingRoutes = concat(

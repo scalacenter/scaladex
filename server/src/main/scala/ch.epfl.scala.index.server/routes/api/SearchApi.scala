@@ -48,20 +48,20 @@ object SearchApi {
       scalaJsVersion: Option[String],
       scalaNativeVersion: Option[String],
       sbtVersion: Option[String]
-  ): Option[ScalaTarget] = {
+  ): Option[Platform] = {
     (
       targetType,
-      scalaVersion.flatMap(LanguageVersion.tryParse),
+      scalaVersion.flatMap(ScalaLanguageVersion.tryParse),
       scalaJsVersion.flatMap(BinaryVersion.parse),
       scalaNativeVersion.flatMap(BinaryVersion.parse),
       sbtVersion.flatMap(BinaryVersion.parse)
     ) match {
 
       case (Some("JVM"), Some(scalaVersion), _, _, _) =>
-        Some(ScalaJvm(scalaVersion))
+        Some(Platform.ScalaJvm(scalaVersion))
 
       case (Some("JS"), Some(scalaVersion), Some(scalaJsVersion), _, _) =>
-        Some(ScalaJs(scalaVersion, scalaJsVersion))
+        Some(Platform.ScalaJs(scalaVersion, scalaJsVersion))
 
       case (
             Some("NATIVE"),
@@ -70,11 +70,12 @@ object SearchApi {
             Some(scalaNativeVersion),
             _
           ) =>
-        Some(ScalaNative(scalaVersion, scalaNativeVersion))
+        Some(Platform.ScalaNative(scalaVersion, scalaNativeVersion))
 
       case (Some("SBT"), Some(scalaVersion), _, _, Some(sbtVersion)) =>
-        Some(SbtPlugin(scalaVersion, sbtVersion))
+        Some(Platform.SbtPlugin(scalaVersion, sbtVersion))
 
+      case (Some("Java"), None, None, None, None) => Some(Platform.Java)
       case _ => None
     }
   }
@@ -116,7 +117,7 @@ class SearchApi(
                   sbtVersion,
                   cli
               ) =>
-                val scalaTarget = SearchApi.parseScalaTarget(
+                val platform = SearchApi.parseScalaTarget(
                   Some(targetType),
                   Some(scalaVersion),
                   scalaJsVersion,
@@ -135,11 +136,11 @@ class SearchApi(
                   )
                 }
 
-                scalaTarget match {
+                platform match {
                   case Some(_) =>
                     val searchParams = SearchParams(
                       queryString = q,
-                      targetFiltering = scalaTarget,
+                      targetFiltering = platform,
                       cli = cli,
                       page = page.getOrElse(0),
                       total = total.getOrElse(10)
@@ -151,7 +152,7 @@ class SearchApi(
 
                   case None =>
                     val errorMessage =
-                      s"something is wrong: $scalaTarget $scalaVersion $scalaJsVersion $scalaNativeVersion $sbtVersion"
+                      s"something is wrong: $platform $scalaVersion $scalaJsVersion $scalaNativeVersion $sbtVersion"
                     complete(BadRequest, errorMessage)
                 }
             }
@@ -212,7 +213,7 @@ class SearchApi(
 
   private def getReleaseOptions(
       projectRef: Project.Reference,
-      scalaTarget: Option[ScalaTarget],
+      scalaTarget: Option[Platform],
       artifact: Option[String]
   ): Future[Option[SearchApi.ReleaseOptions]] = {
     for {

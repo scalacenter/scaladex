@@ -26,9 +26,6 @@ case class Release(
     isNonStandardLib: Boolean,
     id: Option[String],
     liveData: Boolean,
-    // only the java dependencies are stored in a release
-    // a java dependency is dependency toward a release that is not indexed in Scaladex
-    javaDependencies: Seq[JavaDependency],
     // TODO replace all fields below by ScalaTarget data type
     targetType: String, // JVM, JS, Native, JAVA, SBT
     scalaVersion: Option[String],
@@ -55,11 +52,11 @@ object Release {
       repository: String,
       artifact: String,
       version: SemanticVersion,
-      target: Option[ScalaTarget]
+      target: Platform
   ) {
 
     def isValid: Boolean = {
-      target.exists(_.isValid)
+      target.isValid
     }
 
     def projectReference: Project.Reference =

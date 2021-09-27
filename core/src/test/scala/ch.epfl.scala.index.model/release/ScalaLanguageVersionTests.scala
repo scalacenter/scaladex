@@ -3,7 +3,7 @@ package ch.epfl.scala.index.model.release
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 
-class LanguageVersionTests extends AsyncFunSpec with Matchers {
+class ScalaLanguageVersionTests extends AsyncFunSpec with Matchers {
   describe("Scala3Version") {
     it("should accept version 3") {
       assert(Scala3Version.isValid(MajorBinary(3)))
@@ -24,22 +24,22 @@ class LanguageVersionTests extends AsyncFunSpec with Matchers {
 
   describe("parseScalaTarget") {
     it("should not recognize scala3") {
-      val res = LanguageVersion.tryParse("scala3")
+      val res = ScalaLanguageVersion.tryParse("scala3")
       assert(res.isEmpty, res)
     }
 
     it("should recognize 3") {
-      val res = LanguageVersion.tryParse("3")
+      val res = ScalaLanguageVersion.tryParse("3")
       assert(res.nonEmpty, res)
     }
 
     it("should not recognize 3.0.1") {
-      val res = LanguageVersion.tryParse("3.0.1")
+      val res = ScalaLanguageVersion.tryParse("3.0.1")
       assert(res.isEmpty, res)
     }
 
     it("should recognize 3.0.1-RC1") {
-      val res = LanguageVersion.tryParse("3.0.1-RC1")
+      val res = ScalaLanguageVersion.tryParse("3.0.1-RC1")
       assert(res.isDefined, res)
     }
 
