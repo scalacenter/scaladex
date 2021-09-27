@@ -1,7 +1,5 @@
 import ScalaJSHelper._
-import sbtcrossproject.CrossPlugin.autoImport.crossProject
 import Deployment.githash
-import ESandPostgreSQLContainers.autoImport.startESandPostgreSQL
 
 inThisBuild(
   List(
@@ -21,7 +19,8 @@ lazy val logging =
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.1.7",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-    "com.getsentry.raven" % "raven-logback" % "8.0.3"
+    "com.getsentry.raven" % "raven-logback" % "8.0.3",
+    "org.apache.logging.log4j" % "log4j-core" % V.log4jVersion % Runtime
   )
 
 val amm = inputKey[Unit]("Start Ammonite REPL")
@@ -54,21 +53,16 @@ lazy val commonSettings = Seq(
     "-Wunused:imports"
   ),
   libraryDependencies += "org.scalatest" %% "scalatest" % V.scalatest % Test,
-  reStart / javaOptions ++= {
+  Compile / javaOptions ++= {
     val base = (ThisBuild / baseDirectory).value
-
     val devCredentials = base / "../scaladex-dev-credentials/application.conf"
-
-    val addDevCredentials =
-      if (devCredentials.exists) Seq(s"-Dconfig.file=$devCredentials")
-      else Seq()
-
-    addDevCredentials
-  }
+    if (devCredentials.exists) Seq(s"-Dconfig.file=$devCredentials")
+    else Seq()
+  },
+  Compile / run / fork := true,
+  reStart / javaOptions := (Compile / run / javaOptions).value
 ) ++
   addCommandAlias("start", "reStart") ++ logging ++ ammoniteSettings
-
-enablePlugins(ESandPostgreSQLContainers)
 
 lazy val scaladex = project
   .in(file("."))
@@ -102,7 +96,6 @@ lazy val infra = project
   .in(file("infra"))
   .settings(commonSettings)
   .settings(
-    Test / test := (Test / test).dependsOn(startESandPostgreSQL).value,
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4sVersion,
       "org.json4s" %% "json4s-native" % "3.6.9",
@@ -114,12 +107,38 @@ lazy val infra = project
       "org.tpolecat" %% "doobie-h2",
       "org.tpolecat" %% "doobie-postgres",
       "org.tpolecat" %% "doobie-hikari"
-    ).map(_ % V.doobieVersion)
-      ++ Seq(
-        "io.circe" %% "circe-core",
-        "io.circe" %% "circe-generic",
-        "io.circe" %% "circe-parser"
-      ).map(_ % V.circeVersion),
+    ).map(_ % V.doobieVersion) ++ Seq(
+      "io.circe" %% "circe-core",
+      "io.circe" %% "circe-generic",
+      "io.circe" %% "circe-parser"
+    ).map(_ % V.circeVersion),
+    Elasticsearch.settings(defaultPort = 9200),
+    inConfig(Compile)(
+      Postgres.settings(defaultPort = 5432, database = "scaladex")
+    ),
+    Compile / run / javaOptions ++= {
+      val elasticsearchPort = startElasticsearch.value
+      val postgresPort = (Compile / startPostgres).value
+      Seq(
+        "-Xmx4g",
+        s"-Ddatabase.port=$postgresPort",
+        s"-Delasticsearch.port=$elasticsearchPort"
+      )
+    },
+    inConfig(Test)(
+      Postgres.settings(defaultPort = 5432, database = "scaladex-test")
+    ),
+    Test / javaOptions ++= {
+      val postgresPort = (Test / startPostgres).value
+      val elasticsearchPort = startElasticsearch.value
+      Seq(
+        s"-Ddatabase.port=$postgresPort",
+        s"-Ddatabase.name=scaladex-test",
+        s"-Delasticsearch.index=scaladex-test",
+        s"-Delasticsearch.port=$elasticsearchPort"
+      )
+    },
+    Test / fork := true,
     // testing the database requests need to delete and create the tables,
     // which can fail if many tests are running in parallel
     Test / parallelExecution := false
@@ -149,9 +168,6 @@ lazy val server = project
   .settings(commonSettings)
   .settings(packageScalaJS(client))
   .settings(
-    javaOptions ++= Seq(
-      "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044"
-    ),
     libraryDependencies ++= Seq(
       "com.typesafe.play" %%% "play-json" % V.playJsonVersion,
       "com.typesafe.akka" %% "akka-testkit" % V.akkaVersion % Test,
@@ -167,22 +183,11 @@ lazy val server = project
       "org.webjars.bower" % "font-awesome" % "4.6.3",
       "org.webjars" % "jquery" % "3.6.0",
       "org.webjars.bower" % "raven-js" % "3.11.0",
-      "org.webjars.bower" % "select2" % "4.0.3",
-      "org.apache.logging.log4j" % "log4j-core" % V.log4jVersion % Runtime
+      "org.webjars.bower" % "select2" % "4.0.3"
     ),
-    Universal / packageBin := (Universal / packageBin)
-      .dependsOn(Assets / WebKeys.assets)
-      .value,
-    Test / test := (Test / test).dependsOn(startESandPostgreSQL).value,
-    reStart := reStart
-      .dependsOn(startESandPostgreSQL, Assets / WebKeys.assets)
-      .evaluated,
-    Compile / run / fork := true,
-    Compile / run := (Compile / run)
-      .dependsOn(startESandPostgreSQL, Assets / WebKeys.assets)
-      .evaluated,
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
-    reStart / javaOptions ++= Seq("-Xmx4g")
+    Compile / resourceGenerators += Def.task(Seq((Assets / WebKeys.assets).value)),
+    Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value,
   )
   .dependsOn(template, data, infra, api.jvm)
   .enablePlugins(SbtSassify, JavaServerAppPackaging)
@@ -214,12 +219,9 @@ lazy val data = project
       "org.apache.ivy" % "ivy" % "2.4.0",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-json4s" % "1.29.1",
-      "org.json4s" %% "json4s-native" % "3.5.5",
-      "org.apache.logging.log4j" % "log4j-core" % V.log4jVersion % Runtime
+      "org.json4s" %% "json4s-native" % "3.5.5"
     ),
-    reStart := reStart.dependsOn(startESandPostgreSQL).evaluated,
-    Compile / run := (Compile / run).dependsOn(startESandPostgreSQL).evaluated,
-    reStart / javaOptions ++= Seq("-Xmx4g")
+    Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value
   )
   .enablePlugins(JavaAppPackaging)
   .dependsOn(core, infra)

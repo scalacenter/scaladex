@@ -2,7 +2,7 @@ target/
 .sass-cache
 .idea
 .esdata/
-.postgresql/
+.postgresql*/
 amm
 sbt
 server/scaladex.log
