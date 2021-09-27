@@ -16,14 +16,18 @@ import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 object Values {
 
   object Scalafix {
-    val reference: Project.Reference = Project.Reference("scalacenter", "scalafix")
-    val project: NewProject = 
-      NewProject.defaultProject(reference.organization, reference.repository, None)
+    val reference: Project.Reference =
+      Project.Reference("scalacenter", "scalafix")
+    val project: NewProject =
+      NewProject.defaultProject(
+        reference.organization,
+        reference.repository,
+        None
+      )
 
     val githubInfo = GithubInfo.empty
     val projectWithGithubInfo: NewProject =
       project.copy(githubInfo = Some(githubInfo))
-
 
     val dataForm: DataForm = DataForm(
       defaultStableVersion = false,
@@ -42,7 +46,8 @@ object Values {
   }
 
   object PlayJsonExtra {
-    val reference: Project.Reference = Project.Reference("xuwei-k", "play-json-extra")
+    val reference: Project.Reference =
+      Project.Reference("xuwei-k", "play-json-extra")
     val release: NewRelease = NewRelease(
       MavenReference(
         "com.github.xuwei-k",
@@ -93,7 +98,8 @@ object Values {
       )
 
     val core: NewRelease = release(ArtifactName("cats-core"), "cats-core_3")
-    val kernel: NewRelease = release(ArtifactName("cats-kernel"), "cats-kernel_3")
+    val kernel: NewRelease =
+      release(ArtifactName("cats-kernel"), "cats-kernel_3")
     val dependencies: Seq[NewDependency] = Seq(
       NewDependency(
         source = core.maven,
@@ -132,7 +138,7 @@ object Values {
     )
 
     val projectDocument: Project = Project(
-      reference.organization, 
+      reference.organization,
       reference.repository,
       defaultArtifact = Some(core.artifactName.value),
       artifacts = List(core.artifactName.value, kernel.artifactName.value),

@@ -12,8 +12,10 @@ import org.testcontainers.containers.BindMode
 
 object Elasticsearch extends AutoPlugin {
   object autoImport {
-    val elasticsearchDefaultPort = settingKey[Int]("Port of elasticserach instance")
-    val elasticsearchFolder = settingKey[File]("Folder where elasticsearch data are stored")
+    val elasticsearchDefaultPort =
+      settingKey[Int]("Port of elasticserach instance")
+    val elasticsearchFolder =
+      settingKey[File]("Folder where elasticsearch data are stored")
     val startElasticsearch = taskKey[Int](
       "Chek that elasticsearch has already started or else start a container"
     )
@@ -41,7 +43,11 @@ object Elasticsearch extends AutoPlugin {
     }
   )
 
-  private def checkOrStart(dataFolder: File, previousPort: Int, logger: Logger): Int = {
+  private def checkOrStart(
+      dataFolder: File,
+      previousPort: Int,
+      logger: Logger
+  ): Int = {
     logger.info(s"Trying to connect to elasticsearch on port $previousPort")
     if (alreadyStarted(previousPort)) {
       logger.info(s"Elasticsearch has already started on port $previousPort")
@@ -49,7 +55,9 @@ object Elasticsearch extends AutoPlugin {
     } else {
       logger.info("Trying to start elasticsearch container")
       val port = start(dataFolder)
-      logger.info(s"Elasticsearch container successfully started with port $port")
+      logger.info(
+        s"Elasticsearch container successfully started with port $port"
+      )
       port
     }
   }
@@ -57,7 +65,7 @@ object Elasticsearch extends AutoPlugin {
   private def start(dataFolder: File): Int = {
     if (!dataFolder.exists) IO.createDirectory(dataFolder)
     IO.setPermissions(dataFolder, "rwxrwxrwx")
-    
+
     CurrentThread.setContextClassLoader[DockerClientProviderStrategy]
     val image = DockerImageName
       .parse("docker.elastic.co/elasticsearch/elasticsearch-oss")

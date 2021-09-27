@@ -37,16 +37,15 @@ jobs:
         with:
           jvm: "adopt:1.8"
       - uses: coursier/cache-action@v5
-      - name: Load elastic search
-        run: |
-          cd scaladex
-          sbtn "data/run elastic"      
-        shell: bash
       - name: Unit tests
         run: |
           cd scaladex
           sbtn test      
         shell: bash
+      - name: Integration tests
+        run: |
+          cd scaladex
+          sbtn 'IntegrationTest / test'
       - name: Package server
         run: |
           cd scaladex

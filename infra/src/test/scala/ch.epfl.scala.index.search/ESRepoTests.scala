@@ -36,7 +36,9 @@ class ESRepoTests extends AsyncFunSuite with Matchers with BeforeAndAfterAll {
       _ <- data.refresh()
       page <- data.findProjects(SearchParams(queryString = "cats"))
     } yield {
-      page.items.map(_.scalaVersion) should contain theSameElementsAs List(List("scala3"))
+      page.items.map(_.scalaVersion) should contain theSameElementsAs List(
+        List("scala3")
+      )
     }
   }
 
@@ -46,7 +48,9 @@ class ESRepoTests extends AsyncFunSuite with Matchers with BeforeAndAfterAll {
       targetFiltering = Some(ScalaJvm(Scala3Version(MajorBinary(3))))
     )
     data.findProjects(params).map { page =>
-      page.items.map(_.scalaVersion) should contain theSameElementsAs List(List("scala3"))
+      page.items.map(_.scalaVersion) should contain theSameElementsAs List(
+        List("scala3")
+      )
     }
   }
 

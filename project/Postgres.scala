@@ -12,7 +12,8 @@ import scala.util.Try
 object Postgres extends AutoPlugin {
   object autoImport {
     val postgresDefaultPort = settingKey[Int]("Default port of postgres")
-    val postgresFolder = settingKey[File]("Folder where postgres data are stored")
+    val postgresFolder =
+      settingKey[File]("Folder where postgres data are stored")
     val postgresDatabase = settingKey[String]("Name of the postgres database")
     val startPostgres = taskKey[Int](
       "Chek that postgres has already started or else start a container"
@@ -47,7 +48,12 @@ object Postgres extends AutoPlugin {
     }
   )
 
-  private def checkOrStart(dataFolder: File, previousPort: Int, database: String, logger: Logger): Int = {
+  private def checkOrStart(
+      dataFolder: File,
+      previousPort: Int,
+      database: String,
+      logger: Logger
+  ): Int = {
     if (alreadyStarted(previousPort, database, logger)) {
       logger.info(s"Postgres has already started on port $previousPort")
       previousPort
@@ -85,8 +91,12 @@ object Postgres extends AutoPlugin {
     container.getFirstMappedPort()
   }
 
-  private def alreadyStarted(port: Int, database: String, logger: Logger): Boolean = {
-    // `CurrentThread.setContextClassLoader[org.postgresql.Driver]` should work but it does not 
+  private def alreadyStarted(
+      port: Int,
+      database: String,
+      logger: Logger
+  ): Boolean = {
+    // `CurrentThread.setContextClassLoader[org.postgresql.Driver]` should work but it does not
     CurrentThread.setContextClassLoader("org.postgresql.Driver")
     Try(
       DriverManager.getConnection(
@@ -94,6 +104,6 @@ object Postgres extends AutoPlugin {
         "user",
         "password"
       )
-    ).fold(fa => {println(fa); false}, _ => true)
+    ).fold(fa => { println(fa); false }, _ => true)
   }
 }

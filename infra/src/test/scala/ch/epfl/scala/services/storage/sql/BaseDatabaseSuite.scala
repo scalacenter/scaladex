@@ -10,21 +10,26 @@ import org.scalatest.Assertions
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Suite
 
-trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterAll { 
+trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterAll {
   self: Assertions with Suite =>
-  
+
   private implicit val cs: ContextShift[IO] =
-  IO.contextShift(ExecutionContext.global)
-  
+    IO.contextShift(ExecutionContext.global)
+
   private val dbConf: DatabaseConfig.PostgreSQL = DatabaseConfig
     .load()
     .get
     .asInstanceOf[DatabaseConfig.PostgreSQL]
-  
+
   override val transactor: Transactor.Aux[IO, Unit] =
     Transactor
-      .fromDriverManager[IO](dbConf.driver, dbConf.url, dbConf.user, dbConf.pass.decode)
-  
+      .fromDriverManager[IO](
+        dbConf.driver,
+        dbConf.url,
+        dbConf.user,
+        dbConf.pass.decode
+      )
+
   val db = new SqlRepo(dbConf, transactor)
 
   override def beforeAll(): Unit = {

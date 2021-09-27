@@ -52,7 +52,6 @@ lazy val commonSettings = Seq(
 //    "-Xfatal-warnings",
     "-Wunused:imports"
   ),
-  libraryDependencies += "org.scalatest" %% "scalatest" % V.scalatest % Test,
   Compile / javaOptions ++= {
     val base = (ThisBuild / baseDirectory).value
     val devCredentials = base / "../scaladex-dev-credentials/application.conf"
@@ -86,7 +85,8 @@ lazy val template = project
     libraryDependencies ++= Seq(
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTimeVersion,
       "com.typesafe" % "config" % "1.4.0",
-      "com.typesafe.akka" %% "akka-http-core" % V.akkaHttpVersion
+      "com.typesafe.akka" %% "akka-http-core" % V.akkaHttpVersion,
+      "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
   .dependsOn(core)
@@ -101,7 +101,8 @@ lazy val infra = project
       "org.json4s" %% "json4s-native" % "3.6.9",
       "org.typelevel" %% "jawn-json4s" % "1.0.0",
       "org.flywaydb" % "flyway-core" % "7.11.0", // for database migration
-      "org.tpolecat" %% "doobie-scalatest" % V.doobieVersion % Test
+      "org.tpolecat" %% "doobie-scalatest" % V.doobieVersion % Test,
+      "org.scalatest" %% "scalatest" % V.scalatest % Test
     ) ++ Seq(
       "org.tpolecat" %% "doobie-core",
       "org.tpolecat" %% "doobie-h2",
@@ -165,12 +166,14 @@ lazy val client = project
   .dependsOn(api.js)
 
 lazy val server = project
+  .configs(IntegrationTest)
   .settings(commonSettings)
   .settings(packageScalaJS(client))
   .settings(
     libraryDependencies ++= Seq(
       "com.typesafe.play" %%% "play-json" % V.playJsonVersion,
-      "com.typesafe.akka" %% "akka-testkit" % V.akkaVersion % Test,
+      "org.scalatest" %% "scalatest" % V.scalatest % "test,it",
+      "com.typesafe.akka" %% "akka-testkit" % V.akkaVersion % "test,it",
       "com.typesafe.akka" %% "akka-slf4j" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-stream-testkit" % V.akkaVersion % Test,
       "com.typesafe.akka" %% "akka-http-testkit" % "10.2.6" % Test,
@@ -186,8 +189,13 @@ lazy val server = project
       "org.webjars.bower" % "select2" % "4.0.3"
     ),
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
-    Compile / resourceGenerators += Def.task(Seq((Assets / WebKeys.assets).value)),
+    Compile / resourceGenerators += Def.task(
+      Seq((Assets / WebKeys.assets).value)
+    ),
     Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value,
+    Defaults.itSettings,
+    IntegrationTest / fork := true,
+    IntegrationTest / javaOptions ++= (infra / Compile / run / javaOptions).value
   )
   .dependsOn(template, data, infra, api.jvm)
   .enablePlugins(SbtSassify, JavaServerAppPackaging)
@@ -198,7 +206,8 @@ lazy val core = project
   .settings(
     libraryDependencies ++= Seq(
       "com.lihaoyi" %% "fastparse" % "2.3.0",
-      "joda-time" % "joda-time" % "2.10.10"
+      "joda-time" % "joda-time" % "2.10.10",
+      "org.scalatest" %% "scalatest" % V.scalatest % Test
     ),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](ThisBuild / baseDirectory)
@@ -219,7 +228,8 @@ lazy val data = project
       "org.apache.ivy" % "ivy" % "2.4.0",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-json4s" % "1.29.1",
-      "org.json4s" %% "json4s-native" % "3.5.5"
+      "org.json4s" %% "json4s-native" % "3.5.5",
+      "org.scalatest" %% "scalatest" % V.scalatest % Test
     ),
     Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value
   )

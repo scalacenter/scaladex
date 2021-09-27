@@ -1,5 +1,4 @@
 package ch.epfl.scala.index
-package server
 
 import scala.concurrent.Future
 
@@ -16,6 +15,14 @@ import ch.epfl.scala.index.search.ESRepo
 import org.scalatest.Assertion
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AsyncFunSuiteLike
+import ch.epfl.scala.index.data.elastic.SeedElasticSearch
+import ch.epfl.scala.index.server.config.ServerConfig
+import cats.effect.IO
+import ch.epfl.scala.services.storage.sql.DatabaseConfig
+import cats.effect.ContextShift
+import scala.concurrent.ExecutionContext
+import ch.epfl.scala.services.storage.sql.SqlRepo
+import ch.epfl.scala.utils.DoobieUtils
 
 class RelevanceTest
     extends TestKit(ActorSystem("SbtActorTest"))
@@ -24,9 +31,27 @@ class RelevanceTest
 
   import system.dispatcher
 
-  private val data = ESRepo.open()
+  private val config = ServerConfig.load()
+  private val esRepo = ESRepo.open()
 
-  data.waitUntilReady()
+  override def beforeAll(): Unit = {
+    esRepo.waitUntilReady()
+
+    val dbConf = config.dbConf.asInstanceOf[DatabaseConfig.PostgreSQL]
+    implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+    val transactor = DoobieUtils.transactor(config.dbConf)
+    transactor
+      .use { xa =>
+        val db = new SqlRepo(config.dbConf, xa)
+        IO.fromFuture(IO(SeedElasticSearch.run(config.dataPaths, esRepo, db)))
+      }
+      .unsafeRunSync()
+  }
+
+  override def afterAll(): Unit = {
+    TestKit.shutdownActorSystem(system)
+    esRepo.close()
+  }
 
   // sometimes shows synsys/spark
   test("match for spark") {
@@ -157,7 +182,7 @@ class RelevanceTest
       query: String
   )(org: String, repo: String): Future[Assertion] = {
     val params = SearchParams(queryString = query)
-    data.findProjects(params).map { page =>
+    esRepo.findProjects(params).map { page =>
       assert {
         page.items.headOption
           .map(_.reference)
@@ -209,14 +234,9 @@ class RelevanceTest
       Project.Reference(org, repo)
     }
 
-    data.findProjects(params).map { page =>
+    esRepo.findProjects(params).map { page =>
       val obtainedRefs = page.items.map(_.reference)
       assertFun(expectedRefs, obtainedRefs)
     }
-  }
-
-  override def afterAll(): Unit = {
-    TestKit.shutdownActorSystem(system)
-    data.close()
   }
 }
