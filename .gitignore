@@ -6,7 +6,6 @@ target/
 amm
 sbt
 server/scaladex.log
-index/
 contrib/
 bin/.coursier
 bin/.scalafmt

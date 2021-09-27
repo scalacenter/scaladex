@@ -5,7 +5,7 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.BeforeAndAfterAll
 
 class ProjectPagesTests()
-    extends CtrlTests
+    extends ControllerBaseSuite
     with BeforeAndAfterAll
     with ScalatestRouteTest {
 

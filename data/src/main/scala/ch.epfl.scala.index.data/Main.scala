@@ -221,8 +221,8 @@ object Main extends LazyLogging {
     logger.info("Start cleaning both ES and PostgreSQL")
     val cleaning = for {
       _ <- seed.cleanIndexes()
-      _ <- db.dropTables().unsafeToFuture()
-      _ <- db.migrate().unsafeToFuture()
+      _ <- db.dropTables.unsafeToFuture()
+      _ <- db.migrate.unsafeToFuture()
     } yield ()
 
     // insertData

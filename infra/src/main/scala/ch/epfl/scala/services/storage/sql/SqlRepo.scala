@@ -22,16 +22,18 @@ import doobie.implicits._
 class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO])
     extends DatabaseApi {
   private[sql] val flyway = DoobieUtils.flyway(conf)
-  def migrate(): IO[Unit] = IO(flyway.migrate())
-  def dropTables(): IO[Unit] = IO(flyway.clean())
+  def migrate: IO[Unit] = IO(flyway.migrate())
+  def dropTables: IO[Unit] = IO(flyway.clean())
 
   override def insertProject(project: NewProject): Future[Unit] = {
     for {
-      _ <- run(ProjectTable.insert, project)
-      _ <- run(ProjectUserFormTable.insert(project), project.dataForm)
+      _ <- strictRun(ProjectTable.insert(project))
+      _ <- strictRun(ProjectUserFormTable.insert(project)(project.dataForm))
       _ <- project.githubInfo
-        .map(run(GithubInfoTable.insert(project), _))
-        .getOrElse(Future.successful())
+        .map(githubInfo =>
+          strictRun(GithubInfoTable.insert(project)(githubInfo))
+        )
+        .getOrElse(Future.successful(()))
     } yield ()
   }
 
@@ -43,16 +45,18 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO])
 
   def insertReleasesWithFailures(
       releases: Seq[NewRelease]
-  ): Future[Seq[(NewRelease, Try[NewRelease])]] =
+  ): Future[Seq[(NewRelease, Try[Unit])]] =
     releases.map(r => insertRelease(r).failWithTry.map((r, _))).sequence
 
   override def insertOrUpdateProject(project: NewProject): Future[Unit] = {
     for {
-      _ <- run(ProjectTable.insertOrUpdate, project)
-      _ <- run(ProjectUserFormTable.insertOrUpdate(project), project.dataForm)
+      _ <- run(ProjectTable.insertOrUpdate(project))
+      _ <- run(ProjectUserFormTable.insertOrUpdate(project)(project.dataForm))
       _ <- project.githubInfo
-        .map(run(GithubInfoTable.insertOrUpdate(project), _))
-        .getOrElse(Future.successful())
+        .map(githubInfo =>
+          run(GithubInfoTable.insertOrUpdate(project)(githubInfo))
+        )
+        .getOrElse(Future.successful(()))
     } yield ()
   }
 
@@ -63,15 +67,13 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO])
     for {
       projectOpt <- run(ProjectTable.selectOne(ref.org, ref.repo))
       _ <- projectOpt
-        .map(p => run(ProjectUserFormTable.update(p), dataForm))
-        .getOrElse(
-          Future.successful(println(s"Cannot update user data form for $ref"))
-        )
+        .map(p => run(ProjectUserFormTable.update(p)(dataForm)))
+        .getOrElse(Future.successful(()))
     } yield ()
   }
   override def findProject(
       projectRef: Project.Reference
-  ): Future[Option[NewProject]] =
+  ): Future[Option[NewProject]] = {
     for {
       project <- run(ProjectTable.selectOne(projectRef.org, projectRef.repo))
       userForm <- run(
@@ -86,6 +88,7 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO])
         dataForm = userForm.getOrElse(NewProject.DataForm.default)
       )
     )
+  }
 
   def insertProject(project: Project): Future[Unit] =
     insertProject(NewProject.from(project))
@@ -102,8 +105,8 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO])
   ): Future[Seq[NewRelease]] =
     run(ReleaseTable.selectReleases(projectRef).to[List])
 
-  def insertRelease(release: NewRelease): Future[NewRelease] =
-    run(ReleaseTable.insert, release)
+  def insertRelease(release: NewRelease): Future[Unit] =
+    strictRun(ReleaseTable.insert(release))
 
   override def insertDependencies(deps: Seq[NewDependency]): Future[Int] = {
     deps
@@ -143,12 +146,20 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO])
 
   // to use only when inserting one element or updating one element
   // when expecting a row to be modified
-  private def run[A](i: A => doobie.Update0, v: A): Future[A] =
-    i(v).run.transact(xa).unsafeToFuture.flatMap {
-      case 1 => Future.successful(v)
-      case code =>
-        Future.failed(new Exception(s"Failed to insert $v (code: $code)"))
+  private def strictRun(
+      update: doobie.Update0,
+      expectedRows: Int = 1
+  ): Future[Unit] =
+    update.run.transact(xa).unsafeToFuture().map {
+      case `expectedRows` => ()
+      case other =>
+        throw new Exception(
+          s"Only $other rows were affected (expected: $expectedRows)"
+        )
     }
+
+  private def run(update: doobie.Update0): Future[Unit] =
+    update.run.transact(xa).unsafeToFuture().map(_ => ())
 
   private def run[A](v: doobie.ConnectionIO[A]): Future[A] =
     v.transact(xa).unsafeToFuture()

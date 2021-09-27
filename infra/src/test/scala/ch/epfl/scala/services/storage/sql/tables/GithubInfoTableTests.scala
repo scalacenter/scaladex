@@ -1,30 +1,20 @@
 package ch.epfl.scala.services.storage.sql.tables
 
-import cats.effect.IO
-import ch.epfl.scala.services.storage.sql.Values
-import doobie.scalatest.IOChecker
-import org.scalatest.BeforeAndAfterAll
+import ch.epfl.scala.index.Values
+import ch.epfl.scala.services.storage.sql.BaseDatabaseSuite
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 
 class GithubInfoTableTests
     extends AsyncFunSpec
-    with Matchers
-    with IOChecker
-    with BeforeAndAfterAll {
-  private val db = Values.db
-  val transactor: doobie.Transactor[IO] = Values.xa
-  private val project = Values.project
-  private val emptyGithubInfo = Values.githubInfo
-
-  override def beforeAll(): Unit = db.migrate().unsafeRunSync()
-
-  override def afterAll(): Unit = db.dropTables().unsafeRunSync()
+    with BaseDatabaseSuite
+    with Matchers {
+  import Values._
 
   describe("ProjectTable") {
     import GithubInfoTable._
     it("should generate the insert the query") {
-      val q = insert(project)(emptyGithubInfo)
+      val q = insert(Scalafix.project)(Scalafix.githubInfo)
 //        check(q)
       q.sql shouldBe s"""INSERT INTO github_info (organization, repository, name, owner,
                         | homepage, description, logo, stars, forks, watchers, issues, readme,
@@ -35,7 +25,7 @@ class GithubInfoTableTests
         .filterNot(_ == '\n')
     }
     it("should generate the insert or update query") {
-      val q = insertOrUpdate(project)(emptyGithubInfo)
+      val q = insertOrUpdate(Scalafix.project)(Scalafix.githubInfo)
       q.sql shouldBe s"""INSERT INTO github_info (organization, repository, name, owner,
                         | homepage, description, logo, stars, forks, watchers, issues, readme,
                         | contributors, contributorCount, commits, topics, contributingGuide,
