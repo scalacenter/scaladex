@@ -19,7 +19,8 @@ import ch.epfl.scala.utils.DoobieUtils
 import ch.epfl.scala.utils.ScalaExtensions._
 import doobie.implicits._
 
-class SqlRepo(conf: DbConf, xa: doobie.Transactor[IO]) extends DatabaseApi {
+class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO])
+    extends DatabaseApi {
   private[sql] val flyway = DoobieUtils.flyway(conf)
   def migrate(): IO[Unit] = IO(flyway.migrate())
   def dropTables(): IO[Unit] = IO(flyway.clean())

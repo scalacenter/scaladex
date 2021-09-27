@@ -110,7 +110,7 @@ package object html {
   }
 
   val config: Config =
-    ConfigFactory.load().getConfig("org.scala_lang.index.server")
+    ConfigFactory.load().getConfig("server")
   val production: Boolean = config.getBoolean("production")
 
   def unescapeBackground(in: String): String = {

@@ -55,7 +55,7 @@ class GithubDownload(
   case class PaginatedGithub(repo: GithubRepo, page: Int)
 
   private val config =
-    ConfigFactory.load().getConfig("org.scala_lang.index.data")
+    ConfigFactory.load().getConfig("data")
 
   private lazy val credential =
     if (config.hasPath("github")) {

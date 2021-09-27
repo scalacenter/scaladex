@@ -2,7 +2,7 @@ package ch.epfl.scala.index.server.config
 
 import ch.epfl.scala.index.model.Env
 import ch.epfl.scala.services.storage.DataPaths
-import ch.epfl.scala.services.storage.sql.DbConf
+import ch.epfl.scala.services.storage.sql.DatabaseConfig
 import com.softwaremill.session.SessionConfig
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
@@ -13,7 +13,7 @@ case class ServerConfig(
     oAuth2: OAuth2Config,
     session: SessionConfig,
     api: ApiConfig,
-    dbConf: DbConf,
+    dbConf: DatabaseConfig,
     dataPaths: DataPaths
 )
 case class ApiConfig(endpoint: String, port: Int, env: Env)
@@ -21,8 +21,7 @@ case class ApiConfig(endpoint: String, port: Int, env: Env)
 object ServerConfig {
   def load(): ServerConfig = {
     val allConfig = ConfigFactory.load()
-    val config = allConfig.getConfig("org.scala_lang.index.server")
-    val dbConfig = allConfig.getConfig("database")
+    val config = allConfig.getConfig("server")
     val apiConfig = allConfig.getConfig("app")
     val dataPathConf = allConfig.getConfig("data-paths")
     val contrib = dataPathConf.getString("contrib")
@@ -35,7 +34,7 @@ object ServerConfig {
       oAuth2(config.getConfig("oauth2")),
       SessionConfig.default(config.getString("sesssion-secret")),
       ApiConfig(apiConfig.getString("endpoint"), apiConfig.getInt("port"), env),
-      DbConf.from(dbConfig.getString("database-url")).get, // can be refactored
+      DatabaseConfig.from(allConfig).get, // can be refactored
       dataPaths = DataPaths.from(contrib, index, credentials, env)
     )
   }
