@@ -2,6 +2,7 @@ package ch.epfl.scala.services.storage.sql.tables
 
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.utils.DoobieUtils.Fragments._
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
 import doobie.implicits._
@@ -44,4 +45,6 @@ object ReleaseTable {
   def selectReleases(ref: Project.Reference): doobie.Query0[NewRelease] =
     buildSelect(tableFr, fr0"*", where(ref.org, ref.repo)).query[NewRelease]
 
+  def selectReleases(ref: Project.Reference, artifactName: ArtifactName): doobie.Query0[NewRelease] =
+    buildSelect(tableFr, fr0"*", fr0"WHERE organization=${ref.org} AND repository=${ref.repo} AND artifact=$artifactName").query[NewRelease]
 }

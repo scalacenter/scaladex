@@ -19,10 +19,7 @@ trait DatabaseApi {
   def findProject(projectRef: Project.Reference): Future[Option[NewProject]]
   def insertReleases(r: Seq[NewRelease]): Future[Int]
   def findReleases(projectRef: Project.Reference): Future[Seq[NewRelease]]
-  def findReleases(
-      projectRef: Project.Reference,
-      artifactName: ArtifactName
-  ): Future[Seq[NewRelease]] = Future.successful(Nil)
+  def findReleases(projectRef: Project.Reference, artifactName: ArtifactName): Future[Seq[NewRelease]]
 
   def findDirectDependencies(
       release: NewRelease

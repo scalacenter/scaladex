@@ -108,6 +108,12 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO])
   def insertRelease(release: NewRelease): Future[Unit] =
     strictRun(ReleaseTable.insert(release))
 
+  override def findReleases(
+                             projectRef: Project.Reference,
+                             artifactName: NewRelease.ArtifactName
+                           ): Future[Seq[NewRelease]] =
+    run(ReleaseTable.selectReleases(projectRef, artifactName).to[List])
+
   override def insertDependencies(deps: Seq[NewDependency]): Future[Int] = {
     deps
       .grouped(SqlRepo.sizeOfInsertMany)
