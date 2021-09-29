@@ -10,7 +10,6 @@ import ch.epfl.scala.index.model.release.PatchBinary
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Resolver
 import ch.epfl.scala.index.model.release.Scala3Version
-import ch.epfl.scala.index.model.release.ScalaTargetType
 import ch.epfl.scala.index.model.release.ScalaVersion
 import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
 import ch.epfl.scala.index.newModel.NewProject.Organization
@@ -38,7 +37,7 @@ case class NewRelease(
     licenses: Set[License],
     isNonStandardLib: Boolean
 ) {
-  def targetType: ScalaTargetType = platform.targetType
+  def targetType: Platform.Type = platform.platformType
 
   def projectRef: Project.Reference =
     Project.Reference(organization.value, repository.value)
@@ -57,9 +56,9 @@ case class NewRelease(
   private def artifactHttpPath: String =
     s"/$organization/$repository/$artifactName"
 
-  private def nonDefaultTargetType: Option[ScalaTargetType] =
-    if (platform.targetType == ScalaTargetType.Java) None
-    else Some(platform.targetType)
+  private def nonDefaultTargetType: Option[Platform.Type] =
+    if (platform.platformType == Platform.Type.Java) None
+    else Some(platform.platformType)
 
   def artifactFullHttpUrl(env: Env): String =
     env match {
@@ -197,7 +196,7 @@ case class NewRelease(
         "g" -> maven.groupId,
         "a" -> artifactName.value,
         "v" -> maven.version,
-        "t" -> platform.targetType.toString.toUpperCase,
+        "t" -> platform.platformType.toString.toUpperCase,
         "sv" -> latestFor(platform.scalaVersion.toString)
       )
         .map { case (k, v) =>

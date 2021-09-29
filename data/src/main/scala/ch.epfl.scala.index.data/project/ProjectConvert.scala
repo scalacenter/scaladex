@@ -9,7 +9,6 @@ import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.project.ProjectConvert.ProjectSeed
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc._
-import ch.epfl.scala.index.model.release.ScalaTargetType._
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.index.newModel.NewProject
@@ -112,14 +111,32 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
               sbtVersion
             ) = target match {
               case Platform.ScalaJvm(languageVersion) =>
-                (Jvm, Some(languageVersion), None, None, None)
+                (Platform.Type.Jvm, Some(languageVersion), None, None, None)
               case Platform.ScalaJs(languageVersion, jsVersion) =>
-                (Js, Some(languageVersion), Some(jsVersion), None, None)
+                (
+                  Platform.Type.Js,
+                  Some(languageVersion),
+                  Some(jsVersion),
+                  None,
+                  None
+                )
               case Platform.ScalaNative(languageVersion, nativeVersion) =>
-                (Native, Some(languageVersion), None, Some(nativeVersion), None)
+                (
+                  Platform.Type.Native,
+                  Some(languageVersion),
+                  None,
+                  Some(nativeVersion),
+                  None
+                )
               case Platform.SbtPlugin(languageVersion, sbtVersion) =>
-                (Sbt, Some(languageVersion), None, None, Some(sbtVersion))
-              case Platform.Java => (Java, None, None, None, None)
+                (
+                  Platform.Type.Sbt,
+                  Some(languageVersion),
+                  None,
+                  None,
+                  Some(sbtVersion)
+                )
+              case Platform.Java => (Platform.Type.Java, None, None, None, None)
             }
 
             Release(

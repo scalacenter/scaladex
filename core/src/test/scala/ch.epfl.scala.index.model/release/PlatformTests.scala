@@ -57,8 +57,8 @@ class PlatformTests
   }
 
   it("should parse a string to yield a ScalaTargetType") {
-    ScalaTargetType.ofName("Js").value shouldBe ScalaTargetType.Js
-    ScalaTargetType.ofName("Jvm").value shouldBe ScalaTargetType.Jvm
+    Platform.Type.ofName("Js").value shouldBe Platform.Type.Js
+    Platform.Type.ofName("Jvm").value shouldBe Platform.Type.Jvm
   }
   it("Should encode and parse a ScalaTarget") {
     val st = Platform.ScalaJs(ScalaVersion.`2.10`, MinorBinary(0, 6))

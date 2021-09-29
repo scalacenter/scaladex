@@ -11,7 +11,7 @@ sealed trait Platform extends Ordered[Platform] with Product with Serializable {
   def render: String
   def encode: String
   def shortName: String
-  def targetType: ScalaTargetType // Why ?
+  def platformType: Platform.Type
   def isValid: Boolean
   def showVersion: String =
     this match {
@@ -35,20 +35,37 @@ sealed trait Platform extends Ordered[Platform] with Product with Serializable {
   }
 }
 object Platform extends Parsers {
+  sealed trait Type extends Product with Serializable
+
+  object Type {
+    val All: Seq[Type] = Seq(Java, Sbt, Native, Js, Jvm)
+
+    implicit val ordering: Ordering[Type] = Ordering.by(All.indexOf(_))
+
+    def ofName(name: String): Option[Type] =
+      All.find(_.getClass.getSimpleName.stripSuffix("$").equalsIgnoreCase(name))
+
+    case object Java extends Type
+    case object Sbt extends Type
+    case object Native extends Type
+    case object Js extends Type
+    case object Jvm extends Type
+  }
+
   // Scala > Js > Native > Sbt > Java
   implicit val ordering: Ordering[Platform] =
     Ordering.by[
       Platform,
-      (ScalaTargetType, Option[BinaryVersion], Option[ScalaLanguageVersion])
+      (Platform.Type, Option[BinaryVersion], Option[ScalaLanguageVersion])
     ] { platform =>
-      (platform.targetType, platform.platformVersion, platform.scalaVersion)
+      (platform.platformType, platform.platformVersion, platform.scalaVersion)
     }
 
   case class SbtPlugin(scalaV: ScalaLanguageVersion, sbtV: BinaryVersion)
       extends Platform {
     override def scalaVersion: Option[ScalaLanguageVersion] = Some(scalaV)
     override def platformVersion: Option[BinaryVersion] = Some(sbtV)
-    override def targetType: ScalaTargetType = ScalaTargetType.Sbt
+    override def platformType: Platform.Type = Type.Sbt
     override def render: String = s"sbt $platformVersion ($scalaV)"
     override def encode: String = s"_${scalaV}_${sbtV}"
     override def shortName: String = "sbt"
@@ -70,7 +87,7 @@ object Platform extends Parsers {
     override def render: String = "Java"
     override def encode: String = ""
     override def shortName: String = "java"
-    override def targetType: ScalaTargetType = ScalaTargetType.Java
+    override def platformType: Platform.Type = Type.Java
     override def isValid: Boolean = true
   }
 
@@ -83,7 +100,7 @@ object Platform extends Parsers {
     override def render: String = s"scala-native $scalaNativeV ($scalaV)"
     override def encode: String = s"_native${scalaNativeV}_${scalaV}"
     override def shortName: String = "Native"
-    override def targetType: ScalaTargetType = ScalaTargetType.Native
+    override def platformType: Platform.Type = Type.Native
     override def isValid: Boolean =
       scalaV.isValid && ScalaNative.isValid(scalaNativeV)
   }
@@ -104,7 +121,7 @@ object Platform extends Parsers {
     override def render: String = s"scala-js $scalaJsV ($scalaV)"
     override def encode: String = s"_sjs${scalaJsV}_$scalaV"
     override def shortName: String = "JS"
-    override def targetType: ScalaTargetType = ScalaTargetType.Js
+    override def platformType: Platform.Type = Type.Js
     override def isValid: Boolean =
       scalaV.isValid && ScalaJs.isValid(scalaJsV)
   }
@@ -122,7 +139,7 @@ object Platform extends Parsers {
     override def scalaVersion: Option[ScalaLanguageVersion] = Some(scalaV)
     override def platformVersion: Option[BinaryVersion] = None
     override def render: String = "scalaV.render"
-    override def targetType: ScalaTargetType = ScalaTargetType.Jvm
+    override def platformType: Platform.Type = Type.Jvm
     override def encode: String = s"_$scalaV"
     override def shortName: String = "Scala"
     override def isValid: Boolean = scalaVersion.exists(_.isValid)

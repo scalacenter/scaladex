@@ -199,7 +199,7 @@ class ProjectPages(
                 releases <- db.findReleases(project.reference)
                 // some computation
                 targetTypesWithScalaVersion = releases
-                  .groupBy(_.platform.targetType)
+                  .groupBy(_.platform.platformType)
                   .map { case (targetType, releases) =>
                     (
                       targetType,
