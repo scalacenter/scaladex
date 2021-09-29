@@ -66,7 +66,7 @@ object Platform extends Parsers {
     override def scalaVersion: Option[ScalaLanguageVersion] = Some(scalaV)
     override def platformVersion: Option[BinaryVersion] = Some(sbtV)
     override def platformType: Platform.Type = Type.Sbt
-    override def render: String = s"sbt $platformVersion ($scalaV)"
+    override def render: String = s"sbt $sbtV ($scalaV)"
     override def encode: String = s"_${scalaV}_${sbtV}"
     override def shortName: String = "sbt"
     override def isValid: Boolean =
@@ -138,7 +138,7 @@ object Platform extends Parsers {
   case class ScalaJvm(scalaV: ScalaLanguageVersion) extends Platform {
     override def scalaVersion: Option[ScalaLanguageVersion] = Some(scalaV)
     override def platformVersion: Option[BinaryVersion] = None
-    override def render: String = "scalaV.render"
+    override def render: String = scalaV.render
     override def platformType: Platform.Type = Type.Jvm
     override def encode: String = s"_$scalaV"
     override def shortName: String = "Scala"
