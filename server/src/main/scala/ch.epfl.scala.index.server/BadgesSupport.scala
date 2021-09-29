@@ -45,17 +45,14 @@ object BadgesSupport {
                 platformTarget
               )
             ) if platformTarget.isSbt =>
-          println(s"platformTarget = ${platformTarget}")
           Some(platformTargets + (artifactVersion -> platformTarget))
         case _ => None
       }
       .map(_.groupMap(_._1)(_._2))
 
     k.fold({
-      println(s"SummariseLanguageVersions $scalaTargetsByArtifactVersion")
       SummariseLanguageVersions.summarise(scalaTargetsByArtifactVersion)
     })(a => {
-      println(s"summarize platform edition $a")
       SummarisePlatformEditions.summarise(a)
     })
   }
@@ -122,17 +119,14 @@ object BadgesSupport {
 
     def summarise(
         scalaTargetsByArtifactVersion: Map[SemanticVersion, Set[T]]
-    ): String = {
-      val k = (for {
+    ): String =
+      (for {
         (artifactVersion, keyVersions) <-
           SortedMap.from(
             notableSupportByArtifactVersion(scalaTargetsByArtifactVersion)
           )(SemanticVersion.ordering.reverse)
       } yield s"$artifactVersion (${summarise(scalaTargetsByArtifactVersion(artifactVersion), keyVersions)})")
         .mkString(", ")
-      println(s"k = ${k}")
-      k
-    }
 
     def summarise(scalaTargets: Set[T], interestingKeyVersions: Set[V]): String
   }
@@ -176,17 +170,12 @@ object BadgesSupport {
         val platformBinaryVersion = scalaTargetsByLanguageVersion.values.toSeq
           .map(platforms => platforms.flatMap(_.platformVersion))
           .toSet
-        println(s"platformBinaryVersion = ${platformBinaryVersion}")
         if (
           platformBinaryVersion.size == 1 && platformBinaryVersion.head.nonEmpty
         )
           scalaTargetsByLanguageVersion.values.head
         else Set()
       }
-
-      println(
-        s"platformEditionsSupportedForAllLanguageVersions = ${platformEditionsSupportedForAllLanguageVersions}"
-      )
 
       val targetsSummary: Option[String] =
         Option.when(platformEditionsSupportedForAllLanguageVersions.nonEmpty)(
@@ -215,7 +204,7 @@ object BadgesSupport {
     ): BinaryVersion = t.platformVersion.get
     override def removeSuperfluousVersionsFrom(
         versions: Set[BinaryVersion]
-    ): Set[BinaryVersion] = versions // why not
+    ): Set[BinaryVersion] = versions
     override def summarise(
         scalaTargets: Set[Platform],
         interestingKeyVersions: Set[BinaryVersion]
