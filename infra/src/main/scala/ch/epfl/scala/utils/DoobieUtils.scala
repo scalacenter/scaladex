@@ -21,7 +21,7 @@ import ch.epfl.scala.index.newModel.NewProject.Organization
 import ch.epfl.scala.index.newModel.NewProject.Repository
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
-import ch.epfl.scala.services.storage.sql.DbConf
+import ch.epfl.scala.services.storage.sql.DatabaseConfig
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import doobie._
@@ -41,7 +41,7 @@ object DoobieUtils {
 
   private implicit val cs: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
-  def flyway(conf: DbConf): Flyway = {
+  def flyway(conf: DatabaseConfig): Flyway = {
     val datasource = getHikariDataSource(conf)
     Flyway
       .configure()
@@ -50,20 +50,20 @@ object DoobieUtils {
       .load()
   }
 
-  def transactor(conf: DbConf): Resource[IO, HikariTransactor[IO]] = {
+  def transactor(conf: DatabaseConfig): Resource[IO, HikariTransactor[IO]] = {
     val datasource = getHikariDataSource(conf)
     for {
       ce <- ExecutionContexts.fixedThreadPool[IO](32) // our connect EC
       be <- Blocker[IO] // our blocking EC
     } yield Transactor.fromDataSource[IO](datasource, ce, be)
   }
-  private def getHikariDataSource(conf: DbConf): HikariDataSource = {
+  private def getHikariDataSource(conf: DatabaseConfig): HikariDataSource = {
     val config: HikariConfig = new HikariConfig()
     conf match {
-      case c: DbConf.H2 =>
+      case c: DatabaseConfig.H2 =>
         config.setDriverClassName(c.driver)
         config.setJdbcUrl(c.url)
-      case c: DbConf.PostgreSQL =>
+      case c: DatabaseConfig.PostgreSQL =>
         config.setDriverClassName(c.driver)
         config.setJdbcUrl(c.url)
         config.setUsername(c.user)

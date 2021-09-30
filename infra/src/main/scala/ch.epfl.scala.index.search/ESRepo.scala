@@ -139,6 +139,14 @@ class ESRepo(
       .map(_ => ())
   }
 
+  def refresh(): Future[Unit] = {
+    esClient
+      .execute(
+        refreshIndex(projectIndex, releaseIndex, dependencyIndex)
+      )
+      .map(_ => ())
+  }
+
   def updateProject(project: Project): Future[Unit] = {
     esClient
       .execute(
@@ -524,13 +532,14 @@ object ESRepo extends LazyLogging with SearchProtocol {
   import ElasticDsl._
 
   private lazy val config =
-    ConfigFactory.load().getConfig("org.scala_lang.index.data")
+    ConfigFactory.load().getConfig("elasticsearch")
   private lazy val indexName = config.getString("index")
+  private lazy val port = config.getInt("port")
 
   def open()(implicit ec: ExecutionContext): ESRepo = {
     logger.info(s"Using elasticsearch index: $indexName")
 
-    val props = ElasticProperties("http://localhost:9200")
+    val props = ElasticProperties(s"http://localhost:$port")
     val esClient = ElasticClient(JavaClient(props))
     new ESRepo(esClient, indexName)
   }

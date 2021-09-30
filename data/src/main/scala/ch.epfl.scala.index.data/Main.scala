@@ -4,11 +4,8 @@ import java.nio.file.Path
 import java.time.Instant
 
 import scala.concurrent.Await
-import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 import scala.sys.process.Process
-import scala.util.Failure
-import scala.util.Try
 import scala.util.Using
 
 import akka.actor.ActorSystem
@@ -22,17 +19,11 @@ import ch.epfl.scala.index.data.cleanup.NonStandardLib
 import ch.epfl.scala.index.data.elastic.SeedElasticSearch
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.maven.DownloadParentPoms
-import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.index.data.project.ProjectConvert
 import ch.epfl.scala.index.data.util.PidLock
-import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.search.ESRepo
-import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.DoobieUtils
-import ch.epfl.scala.utils.ScalaExtensions._
 import ch.epfl.scala.utils.TimerUtils
 import com.typesafe.scalalogging.LazyLogging
 import doobie.hikari._
@@ -115,7 +106,7 @@ object Main extends LazyLogging {
             IO(
               Using.resource(ESRepo.open()) { esRepo =>
                 Await.result(
-                  insertDataInEsAndDb(dataPaths, esRepo, db),
+                  SeedElasticSearch.run(dataPaths, esRepo, db),
                   Duration.Inf
                 )
               }
@@ -200,90 +191,5 @@ object Main extends LazyLogging {
           s"Command '${args.mkString(" ")}' exited with status $status"
         )
     }
-  }
-
-  private def insertDataInEsAndDb(
-      dataPaths: DataPaths,
-      esRepo: ESRepo,
-      db: SqlRepo
-  )(implicit
-      sys: ActorSystem
-  ): Future[Long] = {
-    import sys.dispatcher
-    val githubDownload = new GithubDownload(dataPaths)
-    val seed = new SeedElasticSearch(esRepo)
-
-    //convert data
-    val projectConverter = new ProjectConvert(dataPaths, githubDownload)
-    val (projects, releases, dependencies) =
-      projectConverter.convertAll(PomsReader.loadAll(dataPaths), Map())
-
-    logger.info("Start cleaning both ES and PostgreSQL")
-    val cleaning = for {
-      _ <- seed.cleanIndexes()
-      _ <- db.dropTables().unsafeToFuture()
-      _ <- db.migrate().unsafeToFuture()
-    } yield ()
-
-    // insertData
-    for {
-      _ <- cleaning
-      _ = logger.info("inserting projects to database")
-      insertedAnProject <- db.insertProjectsWithFailures(
-        projects.map(NewProject.from)
-      )
-      _ = logFailures(
-        insertedAnProject,
-        (p: NewProject) => p.reference.toString,
-        "projects"
-      )
-      _ = logger.info("inserting releases to database")
-      insertedReleases <- db.insertReleasesWithFailures(
-        releases.map(NewRelease.from)
-      )
-      _ = logFailures(
-        insertedReleases,
-        (r: NewRelease) => r.maven.name,
-        "releases"
-      )
-      dependenciesInsertion <- db
-        .insertDependencies(dependencies)
-        .failWithTry
-      _ = if (dependenciesInsertion.isFailure)
-        logger.info(s"failed to insert ${dependencies.size} into dependencies")
-      // counting what have been inserted
-      numberOfIndexedProjects <- db.countProjects()
-      countGithubInfo <- db.countGithubInfo()
-      countProjectUserDataForm <- db.countProjectDataForm()
-      countReleases <- db.countReleases()
-      countDependencies <- db.countDependencies()
-      // inserting in ES
-      _ <- seed.insertES(projects, releases)
-    } yield {
-      logger.info(s"$numberOfIndexedProjects projects have been indexed")
-      logger.info(s"$countGithubInfo countGithubInfo have been indexed")
-      logger.info(
-        s"$countProjectUserDataForm countProjectUserDataForm have been indexed"
-      )
-      logger.info(s"$countReleases release have been indexed")
-      logger.info(s"$countDependencies dependencies have been indexed")
-      numberOfIndexedProjects
-    }
-  }
-
-  private def logFailures[A, B](
-      res: Seq[(A, Try[B])],
-      toString: A => String,
-      table: String
-  ): Unit = {
-    val failures = res.collect { case (a, Failure(exception)) =>
-      logger.warn(
-        s"failed to insert ${toString(a)} because ${exception.getMessage}"
-      )
-      a
-    }
-    if (failures.nonEmpty)
-      logger.warn(s"${failures.size} insertion failed in table $table")
-    else ()
   }
 }

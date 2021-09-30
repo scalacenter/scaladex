@@ -99,7 +99,7 @@ object Server {
         log.info("ready")
 
         // apply migrations to the database if any.
-        db.migrate().unsafeRunSync()
+        db.migrate.unsafeRunSync()
 
         await(
           Http()

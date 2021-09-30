@@ -1,31 +1,21 @@
 package ch.epfl.scala.services.storage.sql.tables
 
-import cats.effect.IO
-import ch.epfl.scala.index.newModel.NewDependency
-import ch.epfl.scala.services.storage.sql.Values
-import doobie.scalatest.IOChecker
-import org.scalatest.BeforeAndAfterAll
+import ch.epfl.scala.index.Values
+import ch.epfl.scala.services.storage.sql.BaseDatabaseSuite
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 
 class DependenciesTableTests
     extends AsyncFunSpec
-    with Matchers
-    with IOChecker
-    with BeforeAndAfterAll {
-  private val db = Values.db
-  val transactor: doobie.Transactor[IO] = Values.xa
-  val dependency: NewDependency = Values.dependency
-
-  override def beforeAll(): Unit = db.migrate().unsafeRunSync()
-
-  override def afterAll(): Unit = db.dropTables().unsafeRunSync()
+    with BaseDatabaseSuite
+    with Matchers {
+  import Values._
 
   describe("ReleaseTable") {
     import DependenciesTable._
     describe("insert") {
       it("should generate the query") {
-        val q = insert(dependency)
+        val q = insert(Cats.dependency)
         check(q)
         q.sql shouldBe
           s"""|INSERT INTO dependencies (source_groupId, source_artifactId, source_version,
@@ -33,7 +23,7 @@ class DependenciesTableTests
             .filterNot(_ == '\n')
       }
       it("should generate the query for selectDirectDependencies") {
-        val q = selectDirectDependencies(Values.release)
+        val q = selectDirectDependencies(PlayJsonExtra.release)
         //        check(q)
         q.sql shouldBe
           s"""|SELECT d.source_groupId, d.source_artifactId, d.source_version, d.target_groupId, d.target_artifactId, d.target_version, d.scope,
@@ -46,7 +36,7 @@ class DependenciesTableTests
             .filterNot(_ == '\n')
       }
       it("should generate the query for selectReverseDependencies") {
-        val q = selectReverseDependencies(Values.release)
+        val q = selectReverseDependencies(PlayJsonExtra.release)
         //        check(q)
         q.sql shouldBe
           s"""|SELECT d.source_groupId, d.source_artifactId, d.source_version, d.target_groupId, d.target_artifactId, d.target_version, d.scope,

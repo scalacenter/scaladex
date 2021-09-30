@@ -34,10 +34,8 @@ object ProjectUserFormTable {
       fr0" ${userData.strictVersions}, ${userData.customScalaDoc}, ${userData.documentationLinks}, ${userData.deprecated}, ${userData.contributorsWanted}," ++
       fr0" ${userData.artifactDeprecations}, ${userData.cliArtifacts}, ${userData.primaryTopic}"
 
-  def insert(p: NewProject)(
-      userserData: NewProject.DataForm
-  ): doobie.Update0 =
-    buildInsert(tableFr, fieldsFr, values(p, userserData)).update
+  def insert(p: NewProject)(userData: NewProject.DataForm): doobie.Update0 =
+    buildInsert(tableFr, fieldsFr, values(p, userData)).update
 
   def insertOrUpdate(p: NewProject)(
       userDataForm: NewProject.DataForm

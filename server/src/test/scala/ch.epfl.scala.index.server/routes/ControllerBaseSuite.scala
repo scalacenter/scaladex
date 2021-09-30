@@ -18,7 +18,7 @@ import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-trait CtrlTests extends AnyFunSpec with Matchers {
+trait ControllerBaseSuite extends AnyFunSpec with Matchers {
 
   private val config = ServerConfig.load()
   val env = config.api.env
