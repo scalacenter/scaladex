@@ -4,8 +4,8 @@ import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.release.MavenReference
+import ch.epfl.scala.index.model.release.Platform._
 import ch.epfl.scala.index.model.release.Scala3Version
-import ch.epfl.scala.index.model.release.ScalaJvm
 import ch.epfl.scala.index.model.release.ScalaVersion
 import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.index.newModel.NewProject
@@ -58,7 +58,7 @@ object Values {
       organization = reference.org,
       repository = reference.repo,
       artifactName = ArtifactName("play-json-extra"),
-      target = Some(ScalaJvm(ScalaVersion.`2.11`)),
+      platform = ScalaJvm(ScalaVersion.`2.11`),
       description = None,
       released = None,
       resolver = None,
@@ -89,7 +89,7 @@ object Values {
         organization = reference.org,
         repository = reference.repo,
         artifactName = artifactName,
-        target = Some(ScalaJvm(Scala3Version.`3`)),
+        platform = ScalaJvm(Scala3Version.`3`),
         description = None,
         released = None,
         resolver = None,

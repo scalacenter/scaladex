@@ -1,6 +1,5 @@
 package ch.epfl.scala.index.server.routes
 
-import akka.http.scaladsl.testkit.ScalatestRouteTest
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.release.BinaryVersion
 import ch.epfl.scala.index.model.release.PatchBinary
@@ -8,12 +7,10 @@ import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Scala3Version
 import ch.epfl.scala.index.model.release.ScalaLanguageVersion
 import ch.epfl.scala.index.model.release.ScalaVersion
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
-class FrontPageTests
-    extends CtrlTests
-    with BeforeAndAfterAll
-    with ScalatestRouteTest {
+class FrontPageTests extends AnyFunSpec with Matchers {
 
   describe("FrontPageTests") {
     import ScalaVersion._
