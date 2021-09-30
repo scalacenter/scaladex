@@ -204,7 +204,7 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
             metaExtractor
               .extractMeta(pom)
               .filter { meta =>
-                meta.scalaTarget != Platform.Java && !meta.isNonStandard
+                meta.platform != Platform.Java //
               }
               .map(_ => pom.groupId)
           case _ => None

@@ -22,6 +22,7 @@ import ch.epfl.scala.index.newModel.NewProject.Repository
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.services.storage.sql.DatabaseConfig
+import ch.epfl.scala.utils.ScalaExtensions.OptionExtension
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import doobie._
@@ -152,7 +153,12 @@ object DoobieUtils {
     implicit val semanticVersionMeta: Meta[SemanticVersion] =
       stringMeta.timap(SemanticVersion.tryParse(_).get)(_.toString)
     implicit val platformMeta: Meta[Platform] =
-      stringMeta.timap(Platform.parse(_).get)(_.encode)
+      stringMeta.timap(x => {
+        Platform
+          .parse(x)
+          .toTry(new Exception(s"Failed to parse $x as Platform"))
+          .get
+      })(_.encode)
     implicit val licensesMeta: Meta[Set[License]] = {
       implicit val licenseDecoder: Decoder[License] =
         deriveDecoder[License]

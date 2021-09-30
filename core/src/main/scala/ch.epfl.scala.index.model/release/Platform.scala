@@ -35,7 +35,9 @@ sealed trait Platform extends Ordered[Platform] with Product with Serializable {
   }
 }
 object Platform extends Parsers {
-  sealed trait Type extends Product with Serializable
+  sealed trait Type extends Product with Serializable {
+    def value: String = toString.toLowerCase
+  }
 
   object Type {
     val All: Seq[Type] = Seq(Java, Sbt, Native, Js, Jvm)
@@ -140,7 +142,7 @@ object Platform extends Parsers {
     override def platformVersion: Option[BinaryVersion] = None
     override def render: String = scalaV.render
     override def platformType: Platform.Type = Type.Jvm
-    override def encode: String = s"_$scalaV"
+    override def encode: String = s"_${scalaV}"
     override def shortName: String = "Scala"
     override def isValid: Boolean = scalaVersion.exists(_.isValid)
   }

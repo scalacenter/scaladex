@@ -1,11 +1,12 @@
 package ch.epfl.scala.index.server.routes
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.UserInfo
+import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.GithubUserSession
@@ -24,26 +25,10 @@ class FrontPage(
 ) {
   import session.implicits._
 
-  def getTopTopics(size: Int): Future[List[(String, Int)]] = {
-    db.getAllTopics().map { topics =>
-      topics
-        .map(_.toLowerCase)
-        .groupMapReduce(identity)(_ => 1)(_ + _)
-        .toList
-        .sortBy(-_._2)
-        .take(size)
-        .sortBy(_._1)
-    }
-  }
-
   private def frontPage(userInfo: Option[UserInfo]) = {
     import dataRepository._
-    val topicsF = getTopTopics(50)
-    val targetTypesF = getAllTargetTypes()
-    val scalaVersionsF = getAllScalaVersions()
-    val scalaJsVersionsF = getAllScalaJsVersions()
-    val scalaNativeVersionsF = getAllScalaNativeVersions()
-    val sbtVersionsF = getAllSbtVersions()
+    val topicsF = db.getAllTopics()
+    val allPlatformsF = db.getAllPlatforms()
     val mostDependedUponF = getMostDependentUpon()
     val latestProjectsF = getLatestProjects()
     val latestReleasesF = getLatestReleases()
@@ -52,12 +37,27 @@ class FrontPage(
     val contributingProjectsF = getContributingProjects()
 
     for {
-      topics <- topicsF
-      targetTypes <- targetTypesF
-      scalaVersions <- scalaVersionsF
-      scalaJsVersions <- scalaJsVersionsF
-      scalaNativeVersions <- scalaNativeVersionsF
-      sbtVersions <- sbtVersionsF
+      topics <- topicsF.map(FrontPage.getTopTopics(_, 50))
+      allPlatforms <- allPlatformsF
+      platformTypeWithCount = FrontPage.getPlatformTypeWithCount(allPlatforms)
+      scalaFamilyWithCount = FrontPage.getScalaLanguageVersionWithCount(
+        allPlatforms
+      )
+      scalaJsVersions = FrontPage
+        .getPlatformWithCount(allPlatforms) { case p: Platform.ScalaJs =>
+          p.scalaJsV
+        }
+        .sorted
+      scalaNativeVersions = FrontPage
+        .getPlatformWithCount(allPlatforms) { case p: Platform.ScalaNative =>
+          p.scalaNativeV
+        }
+        .sorted
+      sbtVersions = FrontPage
+        .getPlatformWithCount(allPlatforms) { case p: Platform.SbtPlugin =>
+          p.sbtV
+        }
+        .sorted
       mostDependedUpon <- mostDependedUponF
       latestProjects <- latestProjectsF
       latestReleases <- latestReleasesF
@@ -89,8 +89,8 @@ class FrontPage(
 
       frontpage(
         topics,
-        targetTypes,
-        scalaVersions,
+        platformTypeWithCount,
+        scalaFamilyWithCount,
         scalaJsVersions,
         scalaNativeVersions,
         sbtVersions,
@@ -112,4 +112,41 @@ class FrontPage(
         complete(frontPage(session.getUser(userId).map(_.info)))
       }
     }
+}
+object FrontPage {
+  def getTopTopics(topics: Seq[String], size: Int): List[(String, Int)] = {
+    topics
+      .map(_.toLowerCase)
+      .groupMapReduce(identity)(_ => 1)(_ + _)
+      .toList
+      .sortBy(-_._2)
+      .take(size)
+      .sortBy(_._1)
+  }
+
+  override def hashCode(): Int = super.hashCode()
+
+  def getPlatformTypeWithCount(
+      platforms: Map[Project.Reference, Set[Platform]]
+  ): List[(Platform.Type, Int)] =
+    getPlatformWithCount(platforms) { case platform: Platform =>
+      platform.platformType
+    }.sorted
+
+  def getScalaLanguageVersionWithCount(
+      platforms: Map[Project.Reference, Set[Platform]]
+  ): List[(String, Int)] = {
+    getPlatformWithCount(platforms) {
+      case platform: Platform if platform.scalaVersion.isDefined =>
+        platform.scalaVersion.map(_.family).get
+    }.sorted
+  }
+
+  def getPlatformWithCount[A, B](
+      platforms: Map[Project.Reference, Set[A]]
+  )(collect: PartialFunction[A, B]): List[(B, Int)] =
+    platforms.values
+      .flatMap(_.collect(collect))
+      .groupMapReduce(identity)(_ => 1)(_ + _)
+      .toList
 }

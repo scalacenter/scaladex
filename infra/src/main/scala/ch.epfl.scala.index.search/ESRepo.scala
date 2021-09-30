@@ -360,20 +360,9 @@ class ESRepo(
       .map(_.result.to[Project].toList)
   }
 
-  def getAllTopics(): Future[List[(String, Long)]] = {
-    stringAggregations("github.topics.keyword", notDeprecatedQuery)
-  }
-
   def getTopics(params: SearchParams): Future[List[(String, Long)]] = {
     stringAggregations("github.topics.keyword", filteredSearchQuery(params))
       .map(addLabelsIfMissing(params.topics.toSet))
-  }
-
-  def getAllTargetTypes(): Future[List[(String, String, Long)]] = {
-    stringAggregations("targetType", notDeprecatedQuery)
-      .map(_.map { case (targetType, count) =>
-        (targetType, labelizeTargetType(targetType), count)
-      })
   }
 
   def getTargetTypes(
@@ -386,23 +375,10 @@ class ESRepo(
       })
   }
 
-  def getAllScalaVersions(): Future[List[(String, Long)]] = {
-    aggregations("scalaVersion", notDeprecatedQuery)
-      .map(_.toList.sortBy(_._1))
-  }
-
   def getScalaVersions(params: SearchParams): Future[List[(String, Long)]] = {
     aggregations("scalaVersion", filteredSearchQuery(params))
       .map(_.toList.sortBy(_._1))
       .map(addLabelsIfMissing(params.scalaVersions.toSet))
-  }
-
-  def getAllScalaJsVersions(): Future[List[(String, Long)]] = {
-    versionAggregations(
-      "scalaJsVersion",
-      notDeprecatedQuery,
-      Platform.ScalaJs.isValid
-    )
   }
 
   def getScalaJsVersions(params: SearchParams): Future[List[(String, Long)]] = {
@@ -414,14 +390,6 @@ class ESRepo(
       .map(addLabelsIfMissing(params.scalaJsVersions.toSet))
   }
 
-  def getAllScalaNativeVersions(): Future[List[(String, Long)]] = {
-    versionAggregations(
-      "scalaNativeVersion",
-      notDeprecatedQuery,
-      Platform.ScalaNative.isValid
-    )
-  }
-
   def getScalaNativeVersions(
       params: SearchParams
   ): Future[List[(String, Long)]] = {
@@ -430,14 +398,6 @@ class ESRepo(
       filteredSearchQuery(params),
       Platform.ScalaNative.isValid
     ).map(addLabelsIfMissing(params.scalaNativeVersions.toSet))
-  }
-
-  def getAllSbtVersions(): Future[List[(String, Long)]] = {
-    versionAggregations(
-      "sbtVersion",
-      notDeprecatedQuery,
-      Platform.SbtPlugin.isValid
-    )
   }
 
   def getSbtVersions(params: SearchParams): Future[List[(String, Long)]] = {

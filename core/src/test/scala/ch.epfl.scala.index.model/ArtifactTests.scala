@@ -65,6 +65,10 @@ class ArtifactTests extends AsyncFunSpec with Matchers {
       Artifact.parse("scalafix-core_2.12.2") shouldBe None
     }
 
+    it("should not parse correctly") {
+      Artifact.parse("scalafix-core_2.10_0.12") shouldBe None
+    }
+
     it("handles special case") {
       Artifact.parse("banana_jvm_2.11") should contain(
         Artifact(

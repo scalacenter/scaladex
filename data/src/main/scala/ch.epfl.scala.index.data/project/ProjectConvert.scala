@@ -49,7 +49,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
         } yield (
           github,
           artifactMeta.artifactName,
-          artifactMeta.scalaTarget,
+          artifactMeta.platform,
           pom,
           created,
           resolver,
@@ -279,7 +279,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
           project.organization,
           project.repository,
           ArtifactName(artifactMeta.artifactName),
-          artifactMeta.scalaTarget,
+          artifactMeta.platform,
           pom.description,
           Some(created),
           resolver,

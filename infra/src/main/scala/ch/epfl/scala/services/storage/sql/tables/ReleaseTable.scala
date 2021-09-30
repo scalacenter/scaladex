@@ -1,6 +1,8 @@
 package ch.epfl.scala.services.storage.sql.tables
 
 import ch.epfl.scala.index.model.Project
+import ch.epfl.scala.index.model.release.Platform
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.utils.DoobieUtils.Fragments._
@@ -45,6 +47,22 @@ object ReleaseTable {
   def selectReleases(ref: Project.Reference): doobie.Query0[NewRelease] =
     buildSelect(tableFr, fr0"*", where(ref.org, ref.repo)).query[NewRelease]
 
-  def selectReleases(ref: Project.Reference, artifactName: ArtifactName): doobie.Query0[NewRelease] =
-    buildSelect(tableFr, fr0"*", fr0"WHERE organization=${ref.org} AND repository=${ref.repo} AND artifact=$artifactName").query[NewRelease]
+  def selectReleases(
+      ref: Project.Reference,
+      artifactName: ArtifactName
+  ): doobie.Query0[NewRelease] =
+    buildSelect(
+      tableFr,
+      fr0"*",
+      fr0"WHERE organization=${ref.org} AND repository=${ref.repo} AND artifact=$artifactName"
+    ).query[NewRelease]
+
+  def selectPlatform(): doobie.Query0[
+    (NewProject.Organization, NewProject.Repository, Platform)
+  ] =
+    buildSelect(
+      tableFr,
+      fr0"organization, repository, platform",
+      fr0"GROUP BY organization, repository, platform"
+    ).query[(NewProject.Organization, NewProject.Repository, Platform)]
 }

@@ -14,6 +14,10 @@ object ScalaExtensions {
       case Some(v) => Future.successful(v)
       case None => Future.failed(e)
     }
+    def toTry(e: => Throwable): Try[A] = in match {
+      case Some(v) => Success(v)
+      case None => Failure(e)
+    }
   }
   implicit class TraversableOnceFutureExtension[
       A,

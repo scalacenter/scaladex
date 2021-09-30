@@ -123,7 +123,8 @@ class Badges(db: DatabaseApi)(implicit
             .flatMap(Platform.Type.ofName)
             .getOrElse(Platform.Type.Jvm)
         val res = db.findReleases(
-          Project.Reference(organization.value, repository.value), artifact
+          Project.Reference(organization.value, repository.value),
+          artifact
         )
         onSuccess {
           res

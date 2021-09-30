@@ -1,14 +1,16 @@
 @import ch.epfl.scala.index.model.Project
 @import ch.epfl.scala.index.model.misc.{SearchParams, Url, UserInfo}
 @import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
+@import ch.epfl.scala.index.model.release.Platform
+@import ch.epfl.scala.index.model.release.ScalaLanguageVersion
 
-
+@import ch.epfl.scala.index.model.release.BinaryVersion
 @(topics: List[(String, Int)],
-  targetTypes: List[(String, String, Long)],
-  scalaVersions: List[(String, Long)],
-  scalaJsVersions: List[(String, Long)],
-  scalaNativeVersions: List[(String, Long)],
-  sbtVersions: List[(String, Long)], 
+  platformWithCount: List[(Platform.Type, Int)],
+  scalaVersionsWithCount: List[(String, Int)],
+  scalaJsVersions: List[(BinaryVersion, Int)],
+  scalaNativeVersions: List[(BinaryVersion, Int)],
+  sbtVersions: List[(BinaryVersion, Int)],
   latestProjects: List[Project],
   mostDependedUpon: List[Project],
   latestReleases: List[NewRelease],
@@ -33,15 +35,15 @@
                     </ul>
                     <ul class="tag">
                         <li><strong>Platforms:</strong></li>
-                        @for((label, targetType, count) <- targetTypes) {
+                        @platformWithCount.map { case (platformType, count) =>
                             <li>
-                                <a href="/search?q=*&targetTypes=@targetType">@label (@count)</a>
+                                <a href="/search?q=*&targetTypes=@platformType.value">@platformType.value (@count)</a>
                             </li>
                         }
                     </ul>
                     <ul class="tag">
                         <li><strong>Scala Versions:</strong></li>
-                        @for((scalaVersion, count) <- scalaVersions) {
+                        @scalaVersionsWithCount.map { case (scalaVersion, count) =>
                             <li>
                                 <a href="/search?q=*&scalaVersions=@scalaVersion">@scalaVersion (@count)</a>
                             </li>

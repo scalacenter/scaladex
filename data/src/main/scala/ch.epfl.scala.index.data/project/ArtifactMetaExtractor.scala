@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 
 case class ArtifactMeta(
     artifactName: String,
-    scalaTarget: Platform,
+    platform: Platform,
     isNonStandard: Boolean
 )
 
@@ -40,7 +40,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
         )
         .map(_.lookup)
 
-    nonStandardLookup match {
+    val artifactMetaOption = nonStandardLookup match {
       case None =>
         pom.sbtPluginTarget match {
 
@@ -51,7 +51,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
               case Artifact(artifactName, platform) =>
                 ArtifactMeta(
                   artifactName = artifactName,
-                  scalaTarget = platform,
+                  platform = platform,
                   isNonStandard = false
                 )
             }
@@ -68,7 +68,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
                 Some(
                   ArtifactMeta(
                     artifactName = pom.artifactId,
-                    scalaTarget = Platform.SbtPlugin(scalaVersion, sbtVersion),
+                    platform = Platform.SbtPlugin(scalaVersion, sbtVersion),
                     isNonStandard = false
                   )
                 )
@@ -93,7 +93,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
           // we assume binary compatibility
           ArtifactMeta(
             artifactName = pom.artifactId,
-            scalaTarget = target,
+            platform = target,
             isNonStandard = true
           )
         }
@@ -102,7 +102,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
         Some(
           ArtifactMeta(
             artifactName = pom.artifactId,
-            scalaTarget = Platform.Java,
+            platform = Platform.Java,
             isNonStandard = true
           )
         )
@@ -114,9 +114,11 @@ class ArtifactMetaExtractor(paths: DataPaths) {
           platform <- Platform.ScalaJvm.fromFullVersion(version)
         } yield ArtifactMeta(
           artifactName = pom.artifactId,
-          scalaTarget = platform,
+          platform = platform,
           isNonStandard = true
         )
     }
+    // we need to filter Platform that are not valid
+    artifactMetaOption.filter(_.platform.isValid)
   }
 }

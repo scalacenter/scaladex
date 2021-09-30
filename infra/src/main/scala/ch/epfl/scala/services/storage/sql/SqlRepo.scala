@@ -6,6 +6,7 @@ import scala.util.Try
 
 import cats.effect.IO
 import ch.epfl.scala.index.model.Project
+import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
@@ -109,9 +110,9 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO])
     strictRun(ReleaseTable.insert(release))
 
   override def findReleases(
-                             projectRef: Project.Reference,
-                             artifactName: NewRelease.ArtifactName
-                           ): Future[Seq[NewRelease]] =
+      projectRef: Project.Reference,
+      artifactName: NewRelease.ArtifactName
+  ): Future[Seq[NewRelease]] =
     run(ReleaseTable.selectReleases(projectRef, artifactName).to[List])
 
   override def insertDependencies(deps: Seq[NewDependency]): Future[Int] = {
@@ -146,6 +147,13 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO])
 
   override def getAllTopics(): Future[List[String]] =
     run(GithubInfoTable.selectAllTopics().to[List]).map(_.flatten)
+
+  override def getAllPlatforms()
+      : Future[Map[Project.Reference, Set[Platform]]] =
+    run(ReleaseTable.selectPlatform().to[List])
+      .map(_.groupMap { case (org, repo, _) =>
+        Project.Reference(org.value, repo.value)
+      }(_._3).view.mapValues(_.toSet).toMap)
 
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.indexedGithubInfo().unique)
