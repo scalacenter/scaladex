@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: olafurpg/setup-scala@v12
-      - run: sbt "scalafixAll --check"
+      - uses: coursier/setup-action@v1
+      - run: sbtn "scalafixAll --check"
       - run: ./bin/scalafmt --test
   unit:
     runs-on: ubuntu-latest
@@ -33,21 +33,42 @@ jobs:
         with:
           repository: scalacenter/scaladex-contrib
           path: scaladex-contrib
-      - uses: laughedelic/coursier-setup@v1
+      - uses: coursier/setup-action@v1
         with:
           jvm: "adopt:1.8"
       - uses: coursier/cache-action@v5
       - name: Unit tests
         run: |
           cd scaladex
-          sbtn test      
+          sbtn test
         shell: bash
-      - name: Integration tests
-        run: |
-          cd scaladex
-          sbtn 'IntegrationTest / test'
       - name: Package server
         run: |
           cd scaladex
           sbtn server/universal:packageBin
         shell: bash
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Scaladex
+        uses: actions/checkout@v2
+        with:
+          path: scaladex
+      - name: Checkout Scaladex small index
+        uses: actions/checkout@v2
+        with:
+          repository: scalacenter/scaladex-small-index
+          path: scaladex-small-index
+      - name: Checkout Scaladex contrib
+        uses: actions/checkout@v2
+        with:
+          repository: scalacenter/scaladex-contrib
+          path: scaladex-contrib
+      - uses: coursier/setup-action@v1
+        with:
+          jvm: "adopt:1.8"
+      - uses: coursier/cache-action@v5
+      - name: Integration tests
+        run: |
+          cd scaladex
+          sbtn 'IntegrationTest / test'

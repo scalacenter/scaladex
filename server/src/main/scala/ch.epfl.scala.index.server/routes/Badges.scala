@@ -120,8 +120,8 @@ class Badges(db: DatabaseApi)(implicit
       shields { (color, style, logo, logoWidth) =>
         val targetType =
           targetTypeString
-            .flatMap(Platform.Type.ofName)
-            .getOrElse(Platform.Type.Jvm)
+            .flatMap(Platform.PlatformType.ofName)
+            .getOrElse(Platform.PlatformType.Jvm)
         val res = db.findReleases(
           Project.Reference(organization.value, repository.value),
           artifact

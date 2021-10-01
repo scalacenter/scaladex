@@ -37,7 +37,7 @@ case class NewRelease(
     licenses: Set[License],
     isNonStandardLib: Boolean
 ) {
-  def targetType: Platform.Type = platform.platformType
+  def targetType: Platform.PlatformType = platform.platformType
 
   def projectRef: Project.Reference =
     Project.Reference(organization.value, repository.value)
@@ -56,8 +56,8 @@ case class NewRelease(
   private def artifactHttpPath: String =
     s"/$organization/$repository/$artifactName"
 
-  private def nonDefaultTargetType: Option[Platform.Type] =
-    if (platform.platformType == Platform.Type.Java) None
+  private def nonDefaultTargetType: Option[Platform.PlatformType] =
+    if (platform.platformType == Platform.PlatformType.Java) None
     else Some(platform.platformType)
 
   def artifactFullHttpUrl(env: Env): String =

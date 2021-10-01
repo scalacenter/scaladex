@@ -1,6 +1,7 @@
 package ch.epfl.scala.index.model
 package release
 
+import ch.epfl.scala.index.model.release.Platform._
 import org.scalatest.OptionValues
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -17,27 +18,27 @@ class PlatformTests
     val nat03 = PatchBinary(0, 3, 0)
 
     val obtained = List(
-      Platform.ScalaJs(ScalaVersion.`2.10`, js067),
-      Platform.ScalaJs(ScalaVersion.`2.12`, js0618),
-      Platform.ScalaJs(ScalaVersion.`2.11`, js067),
-      Platform.ScalaJs(ScalaVersion.`2.11`, js0618),
-      Platform.ScalaJs(ScalaVersion.`2.10`, js0618),
-      Platform.ScalaNative(ScalaVersion.`2.11`, nat03),
-      Platform.ScalaJvm(ScalaVersion.`2.12`),
-      Platform.ScalaJvm(ScalaVersion.`2.11`),
-      Platform.ScalaJvm(ScalaVersion.`2.10`)
-    ).sorted(Platform.ordering)
+      ScalaJs(ScalaVersion.`2.10`, js067),
+      ScalaJs(ScalaVersion.`2.12`, js0618),
+      ScalaJs(ScalaVersion.`2.11`, js067),
+      ScalaJs(ScalaVersion.`2.11`, js0618),
+      ScalaJs(ScalaVersion.`2.10`, js0618),
+      ScalaNative(ScalaVersion.`2.11`, nat03),
+      ScalaJvm(ScalaVersion.`2.12`),
+      ScalaJvm(ScalaVersion.`2.11`),
+      ScalaJvm(ScalaVersion.`2.10`)
+    ).sorted(ordering)
 
     val expected = List(
-      Platform.ScalaNative(ScalaVersion.`2.11`, nat03),
-      Platform.ScalaJs(ScalaVersion.`2.10`, js067),
-      Platform.ScalaJs(ScalaVersion.`2.11`, js067),
-      Platform.ScalaJs(ScalaVersion.`2.10`, js0618),
-      Platform.ScalaJs(ScalaVersion.`2.11`, js0618),
-      Platform.ScalaJs(ScalaVersion.`2.12`, js0618),
-      Platform.ScalaJvm(ScalaVersion.`2.10`),
-      Platform.ScalaJvm(ScalaVersion.`2.11`),
-      Platform.ScalaJvm(ScalaVersion.`2.12`)
+      ScalaNative(ScalaVersion.`2.11`, nat03),
+      ScalaJs(ScalaVersion.`2.10`, js067),
+      ScalaJs(ScalaVersion.`2.11`, js067),
+      ScalaJs(ScalaVersion.`2.10`, js0618),
+      ScalaJs(ScalaVersion.`2.11`, js0618),
+      ScalaJs(ScalaVersion.`2.12`, js0618),
+      ScalaJvm(ScalaVersion.`2.10`),
+      ScalaJvm(ScalaVersion.`2.11`),
+      ScalaJvm(ScalaVersion.`2.12`)
     )
 
     assert(obtained == expected)
@@ -46,23 +47,23 @@ class PlatformTests
   it("should parse any scala target") {
     val cases = Table(
       ("input", "target"),
-      ("_2.12", Platform.ScalaJvm(ScalaVersion.`2.12`)),
-      ("_3", Platform.ScalaJvm(Scala3Version.`3`)),
-      ("_sjs0.6_2.12", Platform.ScalaJs(ScalaVersion.`2.12`, MinorBinary(0, 6)))
+      ("_2.12", ScalaJvm(ScalaVersion.`2.12`)),
+      ("_3", ScalaJvm(Scala3Version.`3`)),
+      ("_sjs0.6_2.12", ScalaJs(ScalaVersion.`2.12`, MinorBinary(0, 6)))
     )
 
     forAll(cases) { (input, target) =>
-      Platform.parse(input) should contain(target)
+      parse(input) should contain(target)
     }
   }
 
   it("should parse a string to yield a ScalaTargetType") {
-    Platform.Type.ofName("Js").value shouldBe Platform.Type.Js
-    Platform.Type.ofName("Jvm").value shouldBe Platform.Type.Jvm
+    PlatformType.ofName("Js").value shouldBe PlatformType.Js
+    PlatformType.ofName("Jvm").value shouldBe PlatformType.Jvm
   }
   it("Should encode and parse a ScalaTarget") {
-    val st = Platform.ScalaJs(ScalaVersion.`2.10`, MinorBinary(0, 6))
+    val st = ScalaJs(ScalaVersion.`2.10`, MinorBinary(0, 6))
     println(s"st.encode = ${st.encode}")
-    assert(Platform.parse(st.encode).get == st)
+    assert(parse(st.encode).get == st)
   }
 }

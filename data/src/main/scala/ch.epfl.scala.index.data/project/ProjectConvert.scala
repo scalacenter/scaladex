@@ -111,10 +111,16 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
               sbtVersion
             ) = target match {
               case Platform.ScalaJvm(languageVersion) =>
-                (Platform.Type.Jvm, Some(languageVersion), None, None, None)
+                (
+                  Platform.PlatformType.Jvm,
+                  Some(languageVersion),
+                  None,
+                  None,
+                  None
+                )
               case Platform.ScalaJs(languageVersion, jsVersion) =>
                 (
-                  Platform.Type.Js,
+                  Platform.PlatformType.Js,
                   Some(languageVersion),
                   Some(jsVersion),
                   None,
@@ -122,7 +128,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
                 )
               case Platform.ScalaNative(languageVersion, nativeVersion) =>
                 (
-                  Platform.Type.Native,
+                  Platform.PlatformType.Native,
                   Some(languageVersion),
                   None,
                   Some(nativeVersion),
@@ -130,13 +136,14 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
                 )
               case Platform.SbtPlugin(languageVersion, sbtVersion) =>
                 (
-                  Platform.Type.Sbt,
+                  Platform.PlatformType.Sbt,
                   Some(languageVersion),
                   None,
                   None,
                   Some(sbtVersion)
                 )
-              case Platform.Java => (Platform.Type.Java, None, None, None, None)
+              case Platform.Java =>
+                (Platform.PlatformType.Java, None, None, None, None)
             }
 
             Release(

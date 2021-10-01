@@ -15,7 +15,7 @@ class FrontPageTests extends AnyFunSpec with Matchers {
   describe("FrontPageTests") {
     import ScalaVersion._
     import Scala3Version._
-    import Platform.Type._
+    import Platform.PlatformType._
     val js0618 = PatchBinary(0, 6, 18)
     val nat03 = PatchBinary(0, 3, 0)
     val nat04 = PatchBinary(0, 4, 0)

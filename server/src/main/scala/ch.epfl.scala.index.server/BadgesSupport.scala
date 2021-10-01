@@ -11,7 +11,7 @@ object BadgesSupport {
   def summaryOfLatestVersions(
       allAvailableReleases: Seq[NewRelease],
       specificArtifact: NewRelease.ArtifactName,
-      specificTargetType: Platform.Type
+      specificTargetType: Platform.PlatformType
   ): String = summaryOfLatestVersions(
     (for {
       release <- allAvailableReleases if release.isValid

@@ -681,7 +681,7 @@ object ESRepo extends LazyLogging with SearchProtocol {
   private def targetQuery(target: Platform): Query = {
     target match {
       case jvm: Platform.ScalaJvm =>
-        termQuery("scalaVersion", jvm.scalaVersion.get)
+        termQuery("scalaVersion", jvm.scalaV.family)
       case Platform.ScalaJs(scalaVersion, jsVersion) =>
         must(
           termQuery("scalaVersion", scalaVersion.family),

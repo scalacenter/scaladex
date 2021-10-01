@@ -128,7 +128,7 @@ object FrontPage {
 
   def getPlatformTypeWithCount(
       platforms: Map[Project.Reference, Set[Platform]]
-  ): List[(Platform.Type, Int)] =
+  ): List[(Platform.PlatformType, Int)] =
     getPlatformWithCount(platforms) { case platform: Platform =>
       platform.platformType
     }.sorted

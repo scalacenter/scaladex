@@ -6,59 +6,62 @@ import fastparse.NoWhitespace._
 import fastparse._
 
 sealed trait Platform extends Ordered[Platform] with Product with Serializable {
+  import ch.epfl.scala.index.model.release.Platform._
+
   def scalaVersion: Option[ScalaLanguageVersion]
   def platformVersion: Option[BinaryVersion]
   def render: String
   def encode: String
   def shortName: String
-  def platformType: Platform.Type
+  def platformType: PlatformType
   def isValid: Boolean
   def showVersion: String =
     this match {
-      case Platform.ScalaJvm(version) => version.toString
-      case Platform.ScalaJs(version, jsVersion) => s"${jsVersion}_$version"
-      case Platform.ScalaNative(version, nativeVersion) =>
+      case ScalaJvm(version) => version.toString
+      case ScalaJs(version, jsVersion) => s"${jsVersion}_$version"
+      case ScalaNative(version, nativeVersion) =>
         s"${nativeVersion}_$version"
-      case Platform.SbtPlugin(version, sbtVersion) => s"${sbtVersion}_$version"
-      case Platform.Java => "Java"
+      case SbtPlugin(version, sbtVersion) => s"${sbtVersion}_$version"
+      case Java => "Java"
     }
   override def compare(that: Platform): Int =
-    Platform.ordering.compare(this, that)
+    ordering.compare(this, that)
 
   def isJava: Boolean = this match {
-    case Platform.Java => true
+    case Java => true
     case _ => false
   }
   def isSbt: Boolean = this match {
-    case _: Platform.SbtPlugin => true
+    case _: SbtPlugin => true
     case _ => false
   }
 }
+
 object Platform extends Parsers {
-  sealed trait Type extends Product with Serializable {
+  sealed trait PlatformType extends Product with Serializable {
     def value: String = toString.toLowerCase
   }
 
-  object Type {
-    val All: Seq[Type] = Seq(Java, Sbt, Native, Js, Jvm)
+  object PlatformType {
+    val all: Seq[PlatformType] = Seq(Java, Sbt, Native, Js, Jvm)
 
-    implicit val ordering: Ordering[Type] = Ordering.by(All.indexOf(_))
+    implicit val ordering: Ordering[PlatformType] = Ordering.by(all.indexOf(_))
 
-    def ofName(name: String): Option[Type] =
-      All.find(_.getClass.getSimpleName.stripSuffix("$").equalsIgnoreCase(name))
+    def ofName(name: String): Option[PlatformType] =
+      all.find(_.value == name.toLowerCase)
 
-    case object Java extends Type
-    case object Sbt extends Type
-    case object Native extends Type
-    case object Js extends Type
-    case object Jvm extends Type
+    case object Java extends PlatformType
+    case object Sbt extends PlatformType
+    case object Native extends PlatformType
+    case object Js extends PlatformType
+    case object Jvm extends PlatformType
   }
 
   // Scala > Js > Native > Sbt > Java
   implicit val ordering: Ordering[Platform] =
     Ordering.by[
       Platform,
-      (Platform.Type, Option[BinaryVersion], Option[ScalaLanguageVersion])
+      (PlatformType, Option[BinaryVersion], Option[ScalaLanguageVersion])
     ] { platform =>
       (platform.platformType, platform.platformVersion, platform.scalaVersion)
     }
@@ -67,7 +70,7 @@ object Platform extends Parsers {
       extends Platform {
     override def scalaVersion: Option[ScalaLanguageVersion] = Some(scalaV)
     override def platformVersion: Option[BinaryVersion] = Some(sbtV)
-    override def platformType: Platform.Type = Type.Sbt
+    override def platformType: PlatformType = PlatformType.Sbt
     override def render: String = s"sbt $sbtV ($scalaV)"
     override def encode: String = s"_${scalaV}_${sbtV}"
     override def shortName: String = "sbt"
@@ -89,7 +92,7 @@ object Platform extends Parsers {
     override def render: String = "Java"
     override def encode: String = ""
     override def shortName: String = "java"
-    override def platformType: Platform.Type = Type.Java
+    override def platformType: PlatformType = PlatformType.Java
     override def isValid: Boolean = true
   }
 
@@ -102,7 +105,7 @@ object Platform extends Parsers {
     override def render: String = s"scala-native $scalaNativeV ($scalaV)"
     override def encode: String = s"_native${scalaNativeV}_${scalaV}"
     override def shortName: String = "Native"
-    override def platformType: Platform.Type = Type.Native
+    override def platformType: PlatformType = PlatformType.Native
     override def isValid: Boolean =
       scalaV.isValid && ScalaNative.isValid(scalaNativeV)
   }
@@ -123,7 +126,7 @@ object Platform extends Parsers {
     override def render: String = s"scala-js $scalaJsV ($scalaV)"
     override def encode: String = s"_sjs${scalaJsV}_$scalaV"
     override def shortName: String = "JS"
-    override def platformType: Platform.Type = Type.Js
+    override def platformType: PlatformType = PlatformType.Js
     override def isValid: Boolean =
       scalaV.isValid && ScalaJs.isValid(scalaJsV)
   }
@@ -141,7 +144,7 @@ object Platform extends Parsers {
     override def scalaVersion: Option[ScalaLanguageVersion] = Some(scalaV)
     override def platformVersion: Option[BinaryVersion] = None
     override def render: String = scalaV.render
-    override def platformType: Platform.Type = Type.Jvm
+    override def platformType: PlatformType = PlatformType.Jvm
     override def encode: String = s"_${scalaV}"
     override def shortName: String = "Scala"
     override def isValid: Boolean = scalaVersion.exists(_.isValid)
