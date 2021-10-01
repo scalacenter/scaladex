@@ -21,7 +21,6 @@ class ESRepoTests extends AsyncFunSuite with Matchers with BeforeAndAfterAll {
     data.waitUntilReady()
     data.deleteAll()
     data.create()
-//    data.refresh()
   }
 
   override protected def afterAll(): Unit = {

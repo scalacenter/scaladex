@@ -2,30 +2,23 @@ package ch.epfl.scala.index.server.routes
 
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.release.BinaryVersion
-import ch.epfl.scala.index.model.release.PatchBinary
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Scala3Version
-import ch.epfl.scala.index.model.release.ScalaLanguageVersion
 import ch.epfl.scala.index.model.release.ScalaVersion
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
 class FrontPageTests extends AnyFunSpec with Matchers {
+  import ch.epfl.scala.index.server.Values._
+  import ScalaVersion._
+  import Scala3Version._
+  import Platform.PlatformType._
 
   describe("FrontPageTests") {
-    import ScalaVersion._
-    import Scala3Version._
-    import Platform.PlatformType._
-    val js0618 = PatchBinary(0, 6, 18)
-    val nat03 = PatchBinary(0, 3, 0)
-    val nat04 = PatchBinary(0, 4, 0)
-    val ref1 = Project.Reference("a", "b")
-    val ref2 = Project.Reference("c", "d")
-    val `3.0.0-RC3` =
-      Platform.ScalaJvm(ScalaLanguageVersion.tryParse("3.0.0-RC3").get)
-    val `3.0.0-RC1` =
-      Platform.ScalaJvm(ScalaLanguageVersion.tryParse("3.0.0-RC1").get)
-    val platformWithCount = Map(
+    val ref1: Project.Reference = Project.Reference("a", "b")
+    val ref2: Project.Reference = Project.Reference("c", "d")
+
+    val platformWithCount: Map[Project.Reference, Set[Platform]] = Map(
       ref1 -> Set(
         Platform.Java,
         Platform.ScalaNative(`2.11`, nat03),
@@ -36,9 +29,8 @@ class FrontPageTests extends AnyFunSpec with Matchers {
         Platform.ScalaNative(`2.13`, nat03),
         Platform.ScalaJvm(`2.13`),
         Platform.ScalaJvm(`2.12`),
-        Platform.Java,
-        `3.0.0-RC3`,
-        `3.0.0-RC1`
+        Platform.ScalaJvm(`3.0.0-RC3`),
+        Platform.Java
       )
     )
     it("getPlatformTypeWithCount") {
@@ -59,8 +51,8 @@ class FrontPageTests extends AnyFunSpec with Matchers {
         case p: Platform.ScalaNative => p.scalaNativeV
       }
       res shouldBe List(
-        (BinaryVersion.parse("0.4.0").get, 1),
-        (BinaryVersion.parse("0.3.0").get, 2)
+        (BinaryVersion.parse("0.3.0").get, 2),
+        (BinaryVersion.parse("0.4.0").get, 1)
       )
     }
   }

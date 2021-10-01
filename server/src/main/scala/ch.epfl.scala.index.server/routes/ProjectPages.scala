@@ -203,7 +203,11 @@ class ProjectPages(
                   .map { case (targetType, releases) =>
                     (
                       targetType,
-                      releases.map(_.scalaVersion).distinct.sorted.reverse
+                      releases
+                        .map(_.fullPlatformVersion)
+                        .distinct
+                        .sorted
+                        .reverse
                     )
                   }
                 artifactsWithVersions = releases
@@ -213,7 +217,10 @@ class ProjectPages(
                       semanticVersion,
                       releases.groupBy(_.artifactName).map {
                         case (artifactName, releases) =>
-                          (artifactName, releases.map(r => (r, r.scalaVersion)))
+                          (
+                            artifactName,
+                            releases.map(r => (r, r.fullPlatformVersion))
+                          )
                       }
                     )
                   }

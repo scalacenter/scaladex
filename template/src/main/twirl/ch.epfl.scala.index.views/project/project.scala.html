@@ -34,7 +34,7 @@
             @documentation(release, project)
             @badges(release, env)
             @install(release, project.dataForm.cliArtifacts)
-            @release.scastieURL.map(url => scastie(url))
+            @scastie(release.scastieURL)
             @project.githubInfo.map(gh => statistic(gh, project.reference.githubRepo, releaseCount, reverseDependency.size))
             @projectContributingInfo(project)
             @project.githubInfo.map(gh => contributors(gh.contributors))

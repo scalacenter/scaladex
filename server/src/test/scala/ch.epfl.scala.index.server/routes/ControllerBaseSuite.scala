@@ -31,7 +31,7 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
   val localStorage = new LocalStorageRepo(dataPaths)
 
   def insertMockData(): Unit = {
-    import Values._
+    import ch.epfl.scala.index.server.Values._
     // Insert mock data
     await(db.insertReleases(Seq(release))).get
     await(db.insertProject(project)).get

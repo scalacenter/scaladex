@@ -12,7 +12,6 @@ sealed trait Platform extends Ordered[Platform] with Product with Serializable {
   def platformVersion: Option[BinaryVersion]
   def render: String
   def encode: String
-  def shortName: String
   def platformType: PlatformType
   def isValid: Boolean
   def showVersion: String =
@@ -73,7 +72,6 @@ object Platform extends Parsers {
     override def platformType: PlatformType = PlatformType.Sbt
     override def render: String = s"sbt $sbtV ($scalaV)"
     override def encode: String = s"_${scalaV}_${sbtV}"
-    override def shortName: String = "sbt"
     override def isValid: Boolean =
       scalaV.isValid && SbtPlugin.isValid(sbtV)
   }
@@ -91,7 +89,6 @@ object Platform extends Parsers {
     override def platformVersion: Option[BinaryVersion] = None
     override def render: String = "Java"
     override def encode: String = ""
-    override def shortName: String = "java"
     override def platformType: PlatformType = PlatformType.Java
     override def isValid: Boolean = true
   }
@@ -104,7 +101,6 @@ object Platform extends Parsers {
     override def platformVersion: Option[BinaryVersion] = Some(scalaNativeV)
     override def render: String = s"scala-native $scalaNativeV ($scalaV)"
     override def encode: String = s"_native${scalaNativeV}_${scalaV}"
-    override def shortName: String = "Native"
     override def platformType: PlatformType = PlatformType.Native
     override def isValid: Boolean =
       scalaV.isValid && ScalaNative.isValid(scalaNativeV)
@@ -125,7 +121,6 @@ object Platform extends Parsers {
     override def platformVersion: Option[BinaryVersion] = Some(scalaJsV)
     override def render: String = s"scala-js $scalaJsV ($scalaV)"
     override def encode: String = s"_sjs${scalaJsV}_$scalaV"
-    override def shortName: String = "JS"
     override def platformType: PlatformType = PlatformType.Js
     override def isValid: Boolean =
       scalaV.isValid && ScalaJs.isValid(scalaJsV)
@@ -146,7 +141,6 @@ object Platform extends Parsers {
     override def render: String = scalaV.render
     override def platformType: PlatformType = PlatformType.Jvm
     override def encode: String = s"_${scalaV}"
-    override def shortName: String = "Scala"
     override def isValid: Boolean = scalaVersion.exists(_.isValid)
   }
 

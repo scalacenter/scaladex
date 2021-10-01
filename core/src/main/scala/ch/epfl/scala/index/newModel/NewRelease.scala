@@ -42,23 +42,13 @@ case class NewRelease(
   def projectRef: Project.Reference =
     Project.Reference(organization.value, repository.value)
 
-  def scalaVersion: String = platform.showVersion
-
-  def scalaJsVersion: Option[String] = ???
-
-  def scalaNativeVersion: Option[String] = ???
-
-  def sbtVersion: Option[String] = ???
+  def fullPlatformVersion: String = platform.showVersion
 
   def isValid: Boolean = platform.isValid
 
   def name: String = s"$organization/$artifactName"
   private def artifactHttpPath: String =
     s"/$organization/$repository/$artifactName"
-
-  private def nonDefaultTargetType: Option[Platform.PlatformType] =
-    if (platform.platformType == Platform.PlatformType.Java) None
-    else Some(platform.platformType)
 
   def artifactFullHttpUrl(env: Env): String =
     env match {
@@ -76,7 +66,10 @@ case class NewRelease(
 
   def badgeUrl(env: Env): String =
     s"${artifactFullHttpUrl(env)}/latest-by-scala-version.svg" +
-      nonDefaultTargetType.map("?targetType=" + _).mkString
+      (platform match {
+        case _: Platform.ScalaJvm => ""
+        case _ => s"?targetType=${platform.platformType}"
+      })
 
   def sbtInstall: String = {
     val install = platform match {
@@ -178,7 +171,7 @@ case class NewRelease(
   }
 
   //todo: Add tests for this
-  def scastieURL: Option[String] = {
+  def scastieURL: String = {
     val tryBaseUrl = "https://scastie.scala-lang.org/try"
 
     def latestFor(version: String): String = {
@@ -191,19 +184,17 @@ case class NewRelease(
 
       latest.getOrElse(version, version)
     }
-    Some(
-      List(
-        "g" -> maven.groupId,
-        "a" -> artifactName.value,
-        "v" -> maven.version,
-        "t" -> platform.platformType.toString.toUpperCase,
-        "sv" -> latestFor(platform.scalaVersion.toString)
-      )
-        .map { case (k, v) =>
-          s"$k=$v"
-        }
-        .mkString(tryBaseUrl + "?", "&", "")
+    List(
+      "g" -> maven.groupId,
+      "a" -> artifactName.value,
+      "v" -> maven.version,
+      "t" -> platform.platformType.toString.toUpperCase,
+      "sv" -> latestFor(platform.scalaVersion.toString)
     )
+      .map { case (k, v) =>
+        s"$k=$v"
+      }
+      .mkString(tryBaseUrl + "?", "&", "")
   }
 
   def documentationURLs(

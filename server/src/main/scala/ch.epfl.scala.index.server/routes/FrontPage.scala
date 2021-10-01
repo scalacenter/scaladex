@@ -47,17 +47,14 @@ class FrontPage(
         .getPlatformWithCount(allPlatforms) { case p: Platform.ScalaJs =>
           p.scalaJsV
         }
-        .sorted
       scalaNativeVersions = FrontPage
         .getPlatformWithCount(allPlatforms) { case p: Platform.ScalaNative =>
           p.scalaNativeV
         }
-        .sorted
       sbtVersions = FrontPage
         .getPlatformWithCount(allPlatforms) { case p: Platform.SbtPlugin =>
           p.sbtV
         }
-        .sorted
       mostDependedUpon <- mostDependedUponF
       latestProjects <- latestProjectsF
       latestReleases <- latestReleasesF
@@ -131,7 +128,7 @@ object FrontPage {
   ): List[(Platform.PlatformType, Int)] =
     getPlatformWithCount(platforms) { case platform: Platform =>
       platform.platformType
-    }.sorted
+    }
 
   def getScalaLanguageVersionWithCount(
       platforms: Map[Project.Reference, Set[Platform]]
@@ -139,14 +136,17 @@ object FrontPage {
     getPlatformWithCount(platforms) {
       case platform: Platform if platform.scalaVersion.isDefined =>
         platform.scalaVersion.map(_.family).get
-    }.sorted
+    }
   }
 
   def getPlatformWithCount[A, B](
       platforms: Map[Project.Reference, Set[A]]
-  )(collect: PartialFunction[A, B]): List[(B, Int)] =
+  )(
+      collect: PartialFunction[A, B]
+  )(implicit orderB: Ordering[(B, Int)]): List[(B, Int)] =
     platforms.values
       .flatMap(_.collect(collect))
       .groupMapReduce(identity)(_ => 1)(_ + _)
       .toList
+      .sorted
 }
