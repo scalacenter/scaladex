@@ -1,7 +1,7 @@
 package ch.epfl.scala.index.model
 package misc
 
-import ch.epfl.scala.index.model.release.ScalaTarget
+import ch.epfl.scala.index.model.release.Platform
 
 object SearchParams {
   val resultsPerPage = 20
@@ -13,7 +13,7 @@ case class SearchParams(
     sorting: Option[String] = None,
     userRepos: Set[GithubRepo] = Set(),
     total: Int = SearchParams.resultsPerPage,
-    targetFiltering: Option[ScalaTarget] = None,
+    targetFiltering: Option[Platform] = None,
     cli: Boolean = false,
     topics: List[String] = Nil,
     targetTypes: List[String] = Nil,

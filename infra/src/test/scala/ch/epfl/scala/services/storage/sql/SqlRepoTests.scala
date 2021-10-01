@@ -85,5 +85,15 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         )
       }
     }
+    it("should get all topics") {
+      val topics = Set("topics1", "topics2")
+      val projectWithTopics = Scalafix.projectWithGithubInfo.copy(githubInfo =
+        Scalafix.projectWithGithubInfo.githubInfo.map(_.copy(topics = topics))
+      )
+      for {
+        _ <- db.insertOrUpdateProject(projectWithTopics)
+        res <- db.getAllTopics()
+      } yield res shouldBe topics.toList
+    }
   }
 }

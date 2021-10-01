@@ -3,10 +3,8 @@ package ch.epfl.scala.index.model
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.model.release.BinaryVersion
-import ch.epfl.scala.index.model.release.Js
-import ch.epfl.scala.index.model.release.LanguageVersion
-import ch.epfl.scala.index.model.release.Native
-import ch.epfl.scala.index.model.release.Sbt
+import ch.epfl.scala.index.model.release.Platform
+import ch.epfl.scala.index.model.release.ScalaLanguageVersion
 import ch.epfl.scala.index.newModel.NewProject
 
 /**
@@ -73,13 +71,16 @@ case class Project(
   def formatForDisplaying: Project = {
     copy(
       id = None,
-      scalaVersion = LanguageVersion.sortFamilies(scalaVersion),
-      scalaJsVersion =
-        BinaryVersion.sortAndFilter(scalaJsVersion, Js.isValid).toList,
-      scalaNativeVersion = BinaryVersion
-        .sortAndFilter(scalaNativeVersion, Native.isValid)
+      scalaVersion = ScalaLanguageVersion.sortFamilies(scalaVersion),
+      scalaJsVersion = BinaryVersion
+        .sortAndFilter(scalaJsVersion, Platform.ScalaJs.isValid)
         .toList,
-      sbtVersion = BinaryVersion.sortAndFilter(sbtVersion, Sbt.isValid).toList
+      scalaNativeVersion = BinaryVersion
+        .sortAndFilter(scalaNativeVersion, Platform.ScalaNative.isValid)
+        .toList,
+      sbtVersion = BinaryVersion
+        .sortAndFilter(sbtVersion, Platform.ScalaNative.isValid)
+        .toList
     )
   }
 

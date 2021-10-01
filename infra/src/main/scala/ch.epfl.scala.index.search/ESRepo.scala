@@ -21,6 +21,7 @@ import com.sksamuel.elastic4s.requests.common.HealthStatus
 import com.sksamuel.elastic4s.requests.indexes.IndexRequest
 import com.sksamuel.elastic4s.requests.mappings.MappingDefinition
 import com.sksamuel.elastic4s.requests.searches.aggs.responses.bucket.Terms
+import com.sksamuel.elastic4s.requests.searches.queries.NoopQuery
 import com.sksamuel.elastic4s.requests.searches.queries.Query
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.CombineFunction
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.FieldValueFactorFunctionModifier
@@ -359,20 +360,9 @@ class ESRepo(
       .map(_.result.to[Project].toList)
   }
 
-  def getAllTopics(): Future[List[(String, Long)]] = {
-    stringAggregations("github.topics.keyword", notDeprecatedQuery)
-  }
-
   def getTopics(params: SearchParams): Future[List[(String, Long)]] = {
     stringAggregations("github.topics.keyword", filteredSearchQuery(params))
       .map(addLabelsIfMissing(params.topics.toSet))
-  }
-
-  def getAllTargetTypes(): Future[List[(String, String, Long)]] = {
-    stringAggregations("targetType", notDeprecatedQuery)
-      .map(_.map { case (targetType, count) =>
-        (targetType, labelizeTargetType(targetType), count)
-      })
   }
 
   def getTargetTypes(
@@ -385,36 +375,19 @@ class ESRepo(
       })
   }
 
-  def getAllScalaVersions(): Future[List[(String, Long)]] = {
-    aggregations("scalaVersion", notDeprecatedQuery)
-      .map(_.toList.sortBy(_._1))
-  }
-
   def getScalaVersions(params: SearchParams): Future[List[(String, Long)]] = {
     aggregations("scalaVersion", filteredSearchQuery(params))
       .map(_.toList.sortBy(_._1))
       .map(addLabelsIfMissing(params.scalaVersions.toSet))
   }
 
-  def getAllScalaJsVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("scalaJsVersion", notDeprecatedQuery, Js.isValid)
-  }
-
   def getScalaJsVersions(params: SearchParams): Future[List[(String, Long)]] = {
     versionAggregations(
       "scalaJsVersion",
       filteredSearchQuery(params),
-      Js.isValid
+      Platform.ScalaJs.isValid
     )
       .map(addLabelsIfMissing(params.scalaJsVersions.toSet))
-  }
-
-  def getAllScalaNativeVersions(): Future[List[(String, Long)]] = {
-    versionAggregations(
-      "scalaNativeVersion",
-      notDeprecatedQuery,
-      Native.isValid
-    )
   }
 
   def getScalaNativeVersions(
@@ -423,19 +396,15 @@ class ESRepo(
     versionAggregations(
       "scalaNativeVersion",
       filteredSearchQuery(params),
-      Native.isValid
+      Platform.ScalaNative.isValid
     ).map(addLabelsIfMissing(params.scalaNativeVersions.toSet))
-  }
-
-  def getAllSbtVersions(): Future[List[(String, Long)]] = {
-    versionAggregations("sbtVersion", notDeprecatedQuery, Sbt.isValid)
   }
 
   def getSbtVersions(params: SearchParams): Future[List[(String, Long)]] = {
     versionAggregations(
       "sbtVersion",
       filteredSearchQuery(params),
-      Sbt.isValid
+      Platform.SbtPlugin.isValid
     )
       .map(addLabelsIfMissing(params.sbtVersions.toSet))
   }
@@ -709,25 +678,27 @@ object ESRepo extends LazyLogging with SearchProtocol {
     )
   }
 
-  private def targetQuery(target: ScalaTarget): Query = {
+  private def targetQuery(target: Platform): Query = {
     target match {
-      case ScalaJvm(scalaVersion) =>
-        termQuery("scalaVersion", scalaVersion.family)
-      case ScalaJs(scalaVersion, jsVersion) =>
+      case jvm: Platform.ScalaJvm =>
+        termQuery("scalaVersion", jvm.scalaV.family)
+      case Platform.ScalaJs(scalaVersion, jsVersion) =>
         must(
           termQuery("scalaVersion", scalaVersion.family),
           termQuery("scalaJsVersion", jsVersion.toString)
         )
-      case ScalaNative(scalaVersion, nativeVersion) =>
+      case Platform.ScalaNative(scalaVersion, nativeVersion) =>
         must(
           termQuery("scalaVersion", scalaVersion.family),
           termQuery("scalaNativeVersion", nativeVersion.toString)
         )
-      case SbtPlugin(scalaVersion, sbtVersion) =>
+      case Platform.SbtPlugin(scalaVersion, sbtVersion) =>
         must(
           termQuery("scalaVersion", scalaVersion.family),
           termQuery("sbtVersion", sbtVersion.toString)
         )
+      case Platform.Java =>
+        must(NoopQuery) // not sure
     }
   }
 

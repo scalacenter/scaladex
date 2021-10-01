@@ -18,7 +18,7 @@ trait TestHelpers {
       artifactId: String,
       version: String,
       artifactName: String,
-      target: Option[ScalaTarget],
+      platform: Platform,
       isNonStandardLib: Boolean = false,
       resolver: Option[Resolver] = None
   ): Release = {
@@ -31,7 +31,7 @@ trait TestHelpers {
       reference = Release.Reference(
         artifact = artifactName,
         version = SemanticVersion.tryParse(version).get,
-        target = target,
+        target = platform,
         // Not necessary for the test
         organization = "GitHub-Org",
         repository = "GitHub-Repo"
@@ -45,7 +45,6 @@ trait TestHelpers {
       licenses = Set(),
       id = None,
       liveData = false,
-      javaDependencies = Seq(),
       targetType = "",
       scalaVersion = None,
       scalaJsVersion = None,

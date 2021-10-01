@@ -19,7 +19,7 @@ class ReleaseTableTests
         check(q)
         q.sql shouldBe
           s"""INSERT INTO releases (groupId, artifactId, version, organization,
-             | repository, artifact, target, description, released, resolver,
+             | repository, artifact, platform, description, released, resolver,
              | licenses, isNonStandardLib) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
             .filterNot(_ == '\n')
       }

@@ -5,17 +5,11 @@ import ch.epfl.scala.index.model.License
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.Release
 import ch.epfl.scala.index.model.SemanticVersion
-import ch.epfl.scala.index.model.release.Jvm
 import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.PatchBinary
+import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Resolver
-import ch.epfl.scala.index.model.release.SbtPlugin
 import ch.epfl.scala.index.model.release.Scala3Version
-import ch.epfl.scala.index.model.release.ScalaJs
-import ch.epfl.scala.index.model.release.ScalaJvm
-import ch.epfl.scala.index.model.release.ScalaNative
-import ch.epfl.scala.index.model.release.ScalaTarget
-import ch.epfl.scala.index.model.release.ScalaTargetType
 import ch.epfl.scala.index.model.release.ScalaVersion
 import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
 import ch.epfl.scala.index.newModel.NewProject.Organization
@@ -36,33 +30,26 @@ case class NewRelease(
     organization: Organization,
     repository: Repository,
     artifactName: ArtifactName,
-    target: Option[ScalaTarget], // Todo: Include JAVA HERE and remove Option
+    platform: Platform,
     description: Option[String],
     released: Option[DateTime],
     resolver: Option[Resolver],
     licenses: Set[License],
     isNonStandardLib: Boolean
 ) {
-  def targetType: ScalaTargetType = target.map(_.targetType).getOrElse(Jvm)
+  def targetType: Platform.PlatformType = platform.platformType
 
   def projectRef: Project.Reference =
     Project.Reference(organization.value, repository.value)
 
-  def scalaVersion: String = target.map(_.showVersion).getOrElse("Java")
+  def fullPlatformVersion: String = platform.showVersion
 
-  def scalaJsVersion: Option[String] = ???
-
-  def scalaNativeVersion: Option[String] = ???
-
-  def sbtVersion: Option[String] = ???
+  def isValid: Boolean = platform.isValid
 
   def name: String = s"$organization/$artifactName"
   private def artifactHttpPath: String =
     s"/$organization/$repository/$artifactName"
 
-  private def nonDefaultTargetType: Option[ScalaTargetType] = {
-    target.map(_.targetType).filter(_ != Jvm)
-  }
   def artifactFullHttpUrl(env: Env): String =
     env match {
       case Env.Prod => s"https://index.scala-lang.org$artifactHttpPath"
@@ -73,25 +60,27 @@ case class NewRelease(
     }
 
   def httpUrl: String = {
-    val targetQuery = target.map(t => s"?target=${t.encode}").getOrElse("")
+    val targetQuery = s"?target=${platform.encode}"
     s"$artifactHttpPath/$version$targetQuery"
   }
 
   def badgeUrl(env: Env): String =
     s"${artifactFullHttpUrl(env)}/latest-by-scala-version.svg" +
-      nonDefaultTargetType.map("?targetType=" + _).mkString
+      (platform match {
+        case _: Platform.ScalaJvm => ""
+        case _ => s"?targetType=${platform.platformType}"
+      })
 
   def sbtInstall: String = {
-    val install = target match {
-      case Some(SbtPlugin(_, _)) =>
+    val install = platform match {
+      case Platform.SbtPlugin(_, _) =>
         s"""addSbtPlugin("${maven.groupId}" % "${artifactName}" % "${version}")"""
       case _ if isNonStandardLib =>
         s"""libraryDependencies += "${maven.groupId}" % "${artifactName}" % "${version}""""
-      case Some(ScalaJs(_, _) | ScalaNative(_, _)) =>
+      case Platform.ScalaJs(_, _) | Platform.ScalaNative(_, _) =>
         s"""libraryDependencies += "${maven.groupId}" %%% "${artifactName}" % "${version}""""
-      case Some(ScalaJvm(ScalaVersion(_: PatchBinary))) | Some(
-            ScalaJvm(Scala3Version(_: PatchBinary))
-          ) =>
+      case Platform.ScalaJvm(ScalaVersion(_: PatchBinary)) |
+          Platform.ScalaJvm(Scala3Version(_: PatchBinary)) =>
         s"""libraryDependencies += "${maven.groupId}" % "${artifactName}" % "${version}" cross CrossVersion.full"""
       case _ =>
         s"""libraryDependencies += "${maven.groupId}" %% "${artifactName}" % "${version}""""
@@ -182,7 +171,7 @@ case class NewRelease(
   }
 
   //todo: Add tests for this
-  def scastieURL: Option[String] = {
+  def scastieURL: String = {
     val tryBaseUrl = "https://scastie.scala-lang.org/try"
 
     def latestFor(version: String): String = {
@@ -195,22 +184,17 @@ case class NewRelease(
 
       latest.getOrElse(version, version)
     }
-
-    target
-      .map(target =>
-        List(
-          "g" -> maven.groupId,
-          "a" -> artifactName.value,
-          "v" -> maven.version,
-          "t" -> target.targetType.toString.toUpperCase,
-          "sv" -> latestFor(target.languageVersion.toString)
-        )
-      )
-      .map(
-        _.map { case (k, v) =>
-          s"$k=$v"
-        }.mkString(tryBaseUrl + "?", "&", "")
-      )
+    List(
+      "g" -> maven.groupId,
+      "a" -> artifactName.value,
+      "v" -> maven.version,
+      "t" -> platform.platformType.toString.toUpperCase,
+      "sv" -> latestFor(platform.scalaVersion.toString)
+    )
+      .map { case (k, v) =>
+        s"$k=$v"
+      }
+      .mkString(tryBaseUrl + "?", "&", "")
   }
 
   def documentationURLs(
@@ -252,7 +236,7 @@ object NewRelease {
       repository = Repository(r.reference.repository),
       artifactName = ArtifactName(r.reference.artifact),
       version = r.reference.version,
-      target = r.reference.target,
+      platform = r.reference.target,
       description = r.description,
       released = r.released.map(format.parseDateTime),
       resolver = r.resolver,

@@ -6,7 +6,7 @@
 
 @(project: NewProject,
   user: Option[UserInfo],
-  targetTypesWithVersion: Map[ScalaTargetType, Seq[String]],
+  targetTypesWithVersion: Map[Platform.PlatformType, Seq[String]],
   semanticVersionWithReleases: Seq[(SemanticVersion, Map[NewRelease.ArtifactName, Seq[(NewRelease, String)]])]
 )
 @allScalaVersions= @{targetTypesWithVersion.values.flatten}

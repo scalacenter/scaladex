@@ -1,7 +1,10 @@
 package ch.epfl.scala.services.storage.sql.tables
 
 import ch.epfl.scala.index.model.Project
+import ch.epfl.scala.index.model.release.Platform
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.utils.DoobieUtils.Fragments._
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
 import doobie.implicits._
@@ -18,7 +21,7 @@ object ReleaseTable {
     "organization",
     "repository",
     "artifact",
-    "target",
+    "platform",
     "description",
     "released",
     "resolver",
@@ -30,7 +33,7 @@ object ReleaseTable {
 
   private def values(r: NewRelease): Fragment =
     fr0"${r.maven.groupId}, ${r.maven.artifactId}, ${r.version}, ${r.organization}, ${r.repository}," ++
-      fr0" ${r.artifactName}, ${r.target}, ${r.description}, ${r.released}, ${r.resolver}, ${r.licenses}, ${r.isNonStandardLib}"
+      fr0" ${r.artifactName}, ${r.platform}, ${r.description}, ${r.released}, ${r.resolver}, ${r.licenses}, ${r.isNonStandardLib}"
 
   def insert(elt: NewRelease): doobie.Update0 =
     buildInsert(tableFr, fieldsFr, values(elt)).update
@@ -44,4 +47,22 @@ object ReleaseTable {
   def selectReleases(ref: Project.Reference): doobie.Query0[NewRelease] =
     buildSelect(tableFr, fr0"*", where(ref.org, ref.repo)).query[NewRelease]
 
+  def selectReleases(
+      ref: Project.Reference,
+      artifactName: ArtifactName
+  ): doobie.Query0[NewRelease] =
+    buildSelect(
+      tableFr,
+      fr0"*",
+      fr0"WHERE organization=${ref.org} AND repository=${ref.repo} AND artifact=$artifactName"
+    ).query[NewRelease]
+
+  def selectPlatform(): doobie.Query0[
+    (NewProject.Organization, NewProject.Repository, Platform)
+  ] =
+    buildSelect(
+      tableFr,
+      fr0"organization, repository, platform",
+      fr0"GROUP BY organization, repository, platform"
+    ).query[(NewProject.Organization, NewProject.Repository, Platform)]
 }

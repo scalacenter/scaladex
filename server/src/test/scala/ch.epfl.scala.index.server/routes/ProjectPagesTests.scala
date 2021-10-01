@@ -2,6 +2,7 @@ package ch.epfl.scala.index.server.routes
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import ch.epfl.scala.index.server.Values
 import org.scalatest.BeforeAndAfterAll
 
 class ProjectPagesTests()

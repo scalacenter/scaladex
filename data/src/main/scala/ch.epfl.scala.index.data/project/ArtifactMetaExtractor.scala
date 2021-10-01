@@ -8,16 +8,14 @@ import ch.epfl.scala.index.data.maven.SbtPluginTarget
 import ch.epfl.scala.index.model.Artifact
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.release.BinaryVersion
-import ch.epfl.scala.index.model.release.LanguageVersion
-import ch.epfl.scala.index.model.release.SbtPlugin
-import ch.epfl.scala.index.model.release.ScalaJvm
-import ch.epfl.scala.index.model.release.ScalaTarget
+import ch.epfl.scala.index.model.release.Platform
+import ch.epfl.scala.index.model.release.ScalaLanguageVersion
 import ch.epfl.scala.services.storage.DataPaths
 import org.slf4j.LoggerFactory
 
 case class ArtifactMeta(
     artifactName: String,
-    scalaTarget: Option[ScalaTarget],
+    platform: Platform,
     isNonStandard: Boolean
 )
 
@@ -42,7 +40,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
         )
         .map(_.lookup)
 
-    nonStandardLookup match {
+    val artifactMetaOption = nonStandardLookup match {
       case None =>
         pom.sbtPluginTarget match {
 
@@ -50,10 +48,10 @@ class ArtifactMetaExtractor(paths: DataPaths) {
           // For example: akka-actors_2.12
           case None =>
             Artifact.parse(pom.artifactId).map {
-              case Artifact(artifactName, target) =>
+              case Artifact(artifactName, platform) =>
                 ArtifactMeta(
                   artifactName = artifactName,
-                  scalaTarget = Some(target),
+                  platform = platform,
                   isNonStandard = false
                 )
             }
@@ -61,7 +59,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
           // Or it can be an sbt-plugin published as a maven style. In such a case the Scala target
           // is not suffixed to the artifact name but can be found in the model’s `sbtPluginTarget` member.
           case Some(SbtPluginTarget(rawScalaVersion, rawSbtVersion)) =>
-            LanguageVersion
+            ScalaLanguageVersion
               .tryParse(rawScalaVersion)
               .zip(
                 BinaryVersion.parse(rawSbtVersion)
@@ -70,7 +68,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
                 Some(
                   ArtifactMeta(
                     artifactName = pom.artifactId,
-                    scalaTarget = Some(SbtPlugin(scalaVersion, sbtVersion)),
+                    platform = Platform.SbtPlugin(scalaVersion, sbtVersion),
                     isNonStandard = false
                   )
                 )
@@ -90,12 +88,12 @@ class ArtifactMetaExtractor(paths: DataPaths) {
             (dep.artifactId == "scala-library" || dep.artifactId == "scala3-library_3")
           }
           version <- SemanticVersion.tryParse(dep.version)
-          target <- ScalaJvm.fromFullVersion(version)
+          target <- Platform.ScalaJvm.fromFullVersion(version)
         } yield {
           // we assume binary compatibility
           ArtifactMeta(
             artifactName = pom.artifactId,
-            scalaTarget = Some(target),
+            platform = target,
             isNonStandard = true
           )
         }
@@ -104,7 +102,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
         Some(
           ArtifactMeta(
             artifactName = pom.artifactId,
-            scalaTarget = None,
+            platform = Platform.Java,
             isNonStandard = true
           )
         )
@@ -113,12 +111,14 @@ class ArtifactMetaExtractor(paths: DataPaths) {
       case Some(ScalaTargetFromVersion) =>
         for {
           version <- SemanticVersion.tryParse(pom.version)
-          target <- ScalaJvm.fromFullVersion(version)
+          platform <- Platform.ScalaJvm.fromFullVersion(version)
         } yield ArtifactMeta(
           artifactName = pom.artifactId,
-          scalaTarget = ScalaJvm.fromFullVersion(version),
+          platform = platform,
           isNonStandard = true
         )
     }
+    // we need to filter Platform that are not valid
+    artifactMetaOption.filter(_.platform.isValid)
   }
 }

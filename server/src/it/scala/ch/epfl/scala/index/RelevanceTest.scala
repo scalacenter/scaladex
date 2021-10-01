@@ -6,10 +6,7 @@ import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.SearchParams
-import ch.epfl.scala.index.model.release.Js
-import ch.epfl.scala.index.model.release.Native
-import ch.epfl.scala.index.model.release.ScalaJs
-import ch.epfl.scala.index.model.release.ScalaNative
+import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.ScalaVersion
 import ch.epfl.scala.index.search.ESRepo
 import org.scalatest.Assertion
@@ -132,7 +129,7 @@ class RelevanceTest
   }
 
   test("Scala.js targetFiltering") {
-    val scalaJs = ScalaJs(ScalaVersion.`2.12`, Js.`0.6`)
+    val scalaJs = Platform.ScalaJs(ScalaVersion.`2.12`, Platform.ScalaJs.`0.6`)
 
     top(
       SearchParams(targetFiltering = Some(scalaJs)),
@@ -143,7 +140,7 @@ class RelevanceTest
   }
 
   test("Scala.js targetFiltering (2)") {
-    val scalaJs = ScalaJs(ScalaVersion.`2.12`, Js.`0.6`)
+    val scalaJs = Platform.ScalaJs(ScalaVersion.`2.12`, Platform.ScalaJs.`0.6`)
 
     compare(
       SearchParams(targetFiltering = Some(scalaJs)),
@@ -165,7 +162,8 @@ class RelevanceTest
   }
 
   test("Scala Native targetFiltering") {
-    val scalaNative = ScalaNative(ScalaVersion.`2.11`, Native.`0.3`)
+    val scalaNative =
+      Platform.ScalaNative(ScalaVersion.`2.11`, Platform.ScalaNative.`0.3`)
 
     top(
       SearchParams(targetFiltering = Some(scalaNative)),

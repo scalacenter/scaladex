@@ -1,12 +1,13 @@
 package ch.epfl.scala.index.model
 package release
 
+import ch.epfl.scala.index.model.release.Platform._
 import org.scalatest.OptionValues
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 
-class ScalaTargetTests
+class PlatformTests
     extends AsyncFunSpec
     with Matchers
     with OptionValues
@@ -26,7 +27,7 @@ class ScalaTargetTests
       ScalaJvm(ScalaVersion.`2.12`),
       ScalaJvm(ScalaVersion.`2.11`),
       ScalaJvm(ScalaVersion.`2.10`)
-    ).sorted(ScalaTarget.ordering)
+    ).sorted(ordering)
 
     val expected = List(
       ScalaNative(ScalaVersion.`2.11`, nat03),
@@ -52,16 +53,17 @@ class ScalaTargetTests
     )
 
     forAll(cases) { (input, target) =>
-      ScalaTarget.parse(input) should contain(target)
+      parse(input) should contain(target)
     }
   }
 
   it("should parse a string to yield a ScalaTargetType") {
-    ScalaTargetType.ofName("Js").value shouldBe Js
-    ScalaTargetType.ofName("Jvm").value shouldBe Jvm
+    PlatformType.ofName("Js").value shouldBe PlatformType.Js
+    PlatformType.ofName("Jvm").value shouldBe PlatformType.Jvm
   }
   it("Should encode and parse a ScalaTarget") {
-    val st = ScalaJs(ScalaVersion.`2.10`, PatchBinary(0, 6, 7))
-    assert(ScalaTarget.parse(st.encode).get == st)
+    val st = ScalaJs(ScalaVersion.`2.10`, MinorBinary(0, 6))
+    println(s"st.encode = ${st.encode}")
+    assert(parse(st.encode).get == st)
   }
 }

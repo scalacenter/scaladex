@@ -49,7 +49,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
         } yield (
           github,
           artifactMeta.artifactName,
-          artifactMeta.scalaTarget,
+          artifactMeta.platform,
           pom,
           created,
           resolver,
@@ -110,15 +110,40 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
               scalaNativeVersion,
               sbtVersion
             ) = target match {
-              case Some(ScalaJvm(languageVersion)) =>
-                (Jvm, Some(languageVersion), None, None, None)
-              case Some(ScalaJs(languageVersion, jsVersion)) =>
-                (Js, Some(languageVersion), Some(jsVersion), None, None)
-              case Some(ScalaNative(languageVersion, nativeVersion)) =>
-                (Native, Some(languageVersion), None, Some(nativeVersion), None)
-              case Some(SbtPlugin(languageVersion, sbtVersion)) =>
-                (Sbt, Some(languageVersion), None, None, Some(sbtVersion))
-              case None => (Java, None, None, None, None)
+              case Platform.ScalaJvm(languageVersion) =>
+                (
+                  Platform.PlatformType.Jvm,
+                  Some(languageVersion),
+                  None,
+                  None,
+                  None
+                )
+              case Platform.ScalaJs(languageVersion, jsVersion) =>
+                (
+                  Platform.PlatformType.Js,
+                  Some(languageVersion),
+                  Some(jsVersion),
+                  None,
+                  None
+                )
+              case Platform.ScalaNative(languageVersion, nativeVersion) =>
+                (
+                  Platform.PlatformType.Native,
+                  Some(languageVersion),
+                  None,
+                  Some(nativeVersion),
+                  None
+                )
+              case Platform.SbtPlugin(languageVersion, sbtVersion) =>
+                (
+                  Platform.PlatformType.Sbt,
+                  Some(languageVersion),
+                  None,
+                  None,
+                  Some(sbtVersion)
+                )
+              case Platform.Java =>
+                (Platform.PlatformType.Java, None, None, None, None)
             }
 
             Release(
@@ -138,7 +163,6 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
               isNonStandardLib = isNonStandardLib,
               id = None,
               liveData = false,
-              javaDependencies = Seq(),
               targetType = targetType.toString,
               scalaVersion = scalaVersion.map(_.family),
               scalaJsVersion = scalaJsVersion.map(_.toString),
@@ -262,7 +286,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
           project.organization,
           project.repository,
           ArtifactName(artifactMeta.artifactName),
-          artifactMeta.scalaTarget,
+          artifactMeta.platform,
           pom.description,
           Some(created),
           resolver,

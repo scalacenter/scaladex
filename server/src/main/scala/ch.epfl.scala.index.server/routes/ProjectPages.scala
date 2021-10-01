@@ -69,30 +69,6 @@ class ProjectPages(
     }
   }
 
-  private def getSelectedRelease(
-      org: NewProject.Organization,
-      repo: NewProject.Repository,
-      target: Option[String],
-      artifact: Option[String],
-      version: Option[String],
-      selected: Option[String]
-  ): Future[Option[NewRelease]] = {
-    val releaseSelection = ReleaseSelection.parse(
-      target = target,
-      artifactName = artifact,
-      version = version,
-      selected = selected
-    )
-    val projectRef = Project.Reference(org.value, repo.value)
-    for {
-      project <- db.findProject(projectRef)
-      releases <- db.findReleases(projectRef)
-      filteredReleases = project
-        .map(p => ReleaseOptions.filterReleases(releaseSelection, releases, p))
-        .getOrElse(Nil)
-    } yield filteredReleases.headOption
-  }
-
   private def filterVersions(
       p: NewProject,
       allVersions: Seq[SemanticVersion]
@@ -110,8 +86,8 @@ class ProjectPages(
       user: Option[UserInfo]
   ): Future[(StatusCode, HtmlFormat.Appendable)] = {
     val selection = ReleaseSelection.parse(
-      target = target,
-      artifactName = Some(artifact.value),
+      platform = target,
+      artifactName = Some(artifact),
       version = version.map(_.toString),
       selected = None
     )
@@ -136,7 +112,7 @@ class ProjectPages(
           // compute stuff
           allVersions = releases.map(_.version)
           filteredVersions = filterVersions(project, allVersions)
-          targets = releases.flatMap(_.target).distinct.sorted.reverse
+          platforms = releases.map(_.platform).distinct.sorted.reverse
           artifactNames = releases.map(_.artifactName).distinct.sortBy(_.value)
           twitterCard = project.twitterSummaryCard
         } yield (
@@ -146,7 +122,7 @@ class ProjectPages(
             project,
             artifactNames,
             filteredVersions,
-            targets,
+            platforms,
             selectedRelease,
             user,
             canEdit = true,
@@ -223,11 +199,15 @@ class ProjectPages(
                 releases <- db.findReleases(project.reference)
                 // some computation
                 targetTypesWithScalaVersion = releases
-                  .groupBy(_.target.map(_.targetType).getOrElse(Java))
+                  .groupBy(_.platform.platformType)
                   .map { case (targetType, releases) =>
                     (
                       targetType,
-                      releases.map(_.scalaVersion).distinct.sorted.reverse
+                      releases
+                        .map(_.fullPlatformVersion)
+                        .distinct
+                        .sorted
+                        .reverse
                     )
                   }
                 artifactsWithVersions = releases
@@ -237,7 +217,10 @@ class ProjectPages(
                       semanticVersion,
                       releases.groupBy(_.artifactName).map {
                         case (artifactName, releases) =>
-                          (artifactName, releases.map(r => (r, r.scalaVersion)))
+                          (
+                            artifactName,
+                            releases.map(r => (r, r.fullPlatformVersion))
+                          )
                       }
                     )
                   }
@@ -304,21 +287,18 @@ class ProjectPages(
               )((artifact, version, target, selected) =>
                 onSuccess(
                   getSelectedRelease(
+                    db,
                     org = organization,
                     repo = repository,
-                    target = target,
-                    artifact = artifact,
+                    platform = target,
+                    artifact = artifact.map(NewRelease.ArtifactName),
                     version = version,
                     selected = selected
                   )
                 ) {
                   case Some(release) =>
                     val targetParam =
-                      release.target match {
-                        case Some(target) =>
-                          s"?target=${target.encode}"
-                        case None => ""
-                      }
+                      s"?target=${release.platform.encode}"
                     redirect(
                       s"/$organization/$repository/${release.artifactName}/${release.version}/$targetParam",
                       StatusCodes.TemporaryRedirect

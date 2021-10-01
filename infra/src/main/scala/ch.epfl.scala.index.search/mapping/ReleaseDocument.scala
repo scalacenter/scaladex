@@ -18,7 +18,6 @@ private[search] case class ReleaseDocument(
     licenses: Set[License],
     isNonStandardLib: Boolean,
     liveData: Boolean,
-    javaDependencies: Seq[JavaDependency],
     // this part for elasticsearch search
     targetType: String, // JVM, JS, Native, JAVA, SBT
     scalaVersion: Option[String],
@@ -37,7 +36,6 @@ private[search] case class ReleaseDocument(
     isNonStandardLib = isNonStandardLib,
     id = id,
     liveData = liveData,
-    javaDependencies = javaDependencies,
     targetType = targetType,
     scalaVersion = scalaVersion,
     scalaJsVersion = scalaJsVersion,
@@ -58,7 +56,6 @@ private[search] object ReleaseDocument {
     isNonStandardLib = release.isNonStandardLib,
     id = release.id,
     liveData = release.liveData,
-    javaDependencies = release.javaDependencies,
     targetType = release.targetType,
     scalaVersion = release.scalaVersion,
     scalaJsVersion = release.scalaJsVersion,

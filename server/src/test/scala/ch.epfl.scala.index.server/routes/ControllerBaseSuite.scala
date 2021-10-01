@@ -7,9 +7,11 @@ import scala.concurrent.duration.Duration
 import scala.util.Try
 
 import ch.epfl.scala.index.model.Project
+import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.index.server.GithubUserSession
 import ch.epfl.scala.index.server.config.ServerConfig
 import ch.epfl.scala.services.DatabaseApi
@@ -29,7 +31,7 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
   val localStorage = new LocalStorageRepo(dataPaths)
 
   def insertMockData(): Unit = {
-    import Values._
+    import ch.epfl.scala.index.server.Values._
     // Insert mock data
     await(db.insertReleases(Seq(release))).get
     await(db.insertProject(project)).get
@@ -65,6 +67,16 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
         projectRef: Project.Reference
     ): Future[Seq[NewRelease]] =
       Future.successful(releases.getOrElse(projectRef, Nil))
+
+    def findReleases(
+        projectRef: Project.Reference,
+        artifactName: ArtifactName
+    ): Future[Seq[NewRelease]] =
+      Future.successful(
+        releases
+          .getOrElse(projectRef, Nil)
+          .filter(_.artifactName == artifactName)
+      )
     override def findDirectDependencies(
         release: NewRelease
     ): Future[List[NewDependency.Direct]] = Future.successful(Nil)
@@ -85,5 +97,11 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
 
     override def countDependencies(): Future[Long] =
       Future.successful(dependencies.size)
+
+    override def getAllTopics(): Future[Seq[String]] = Future.successful(Nil)
+
+    override def getAllPlatforms()
+        : Future[Map[Project.Reference, Set[Platform]]] =
+      Future.successful(Map.empty)
   }
 }

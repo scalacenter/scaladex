@@ -70,11 +70,11 @@ object Server {
           PublishApi(paths, data, databaseApi = db).routes,
           new SearchApi(data, session).routes,
           Assets.routes,
-          new Badges(data).routes,
+          new Badges(db).routes,
           Oauth2(config, session).routes
         )
         val userFacingRoutes = concat(
-          new FrontPage(data, session).routes,
+          new FrontPage(data, db, session).routes,
           redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
             concat(
               new ProjectPages(
