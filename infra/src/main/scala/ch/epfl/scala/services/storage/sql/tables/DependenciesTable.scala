@@ -2,6 +2,7 @@ package ch.epfl.scala.services.storage.sql.tables
 
 import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.newModel.NewDependency
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.utils.DoobieUtils.Fragments.buildInsert
 import ch.epfl.scala.utils.DoobieUtils.Fragments.buildSelect
@@ -40,6 +41,16 @@ object DependenciesTable {
       s"d.target_artifactid = r.artifactid AND " +
       s"d.target_version = r.version"
   )
+
+  private val fullJoin =
+    fr0"( " ++ tableWithSourceReleases ++ fr0") d " ++
+      Fragment.const0(
+        s"INNER JOIN ${ReleaseTable.table} t ON " +
+          s"d.target_groupid = t.groupid AND " +
+          s"d.target_artifactid = t.artifactid AND " +
+          s"d.target_version = t.version"
+      )
+
   private val fieldstableWithRelease = Fragment.const0(
     (
       fields.map("d." + _) ++
@@ -73,7 +84,9 @@ object DependenciesTable {
     buildSelect(
       tableWithTargetReleases,
       fieldstableWithRelease,
-      fr0"WHERE d.source_groupId=${release.maven.groupId} AND d.source_artifactId=${release.maven.artifactId} AND d.source_version=${release.maven.version}"
+      fr0"WHERE d.source_groupId=${release.maven.groupId}" ++
+        fr0" AND d.source_artifactId=${release.maven.artifactId}" ++
+        fr0" AND d.source_version=${release.maven.version}"
     )
       .query[NewDependency.Direct]
   }
@@ -84,7 +97,20 @@ object DependenciesTable {
     buildSelect(
       tableWithSourceReleases,
       fieldstableWithRelease,
-      fr0"WHERE d.target_groupId=${release.maven.groupId} AND d.target_artifactId=${release.maven.artifactId} AND d.target_version=${release.maven.version}"
+      fr0"WHERE d.target_groupId=${release.maven.groupId} AND" ++
+        fr0" d.target_artifactId=${release.maven.artifactId}" ++
+        fr0" AND d.target_version=${release.maven.version}"
     )
       .query[NewDependency.Reverse]
+
+  def selectMostDependentUponProject(): doobie.Query0[
+    (NewProject.Organization, NewProject.Repository, Long)
+  ] = {
+    buildSelect(
+      fullJoin,
+      fr0"t.organization, t.repository, COUNT(DISTINCT (d.organization, d.repository)) as total",
+      fr0"GROUP BY t.organization, t.repository" ++
+        fr0" ORDER BY total DESC"
+    ).query[(NewProject.Organization, NewProject.Repository, Long)]
+  }
 }

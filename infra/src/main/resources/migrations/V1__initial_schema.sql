@@ -60,7 +60,7 @@ CREATE TABLE releases (
     description         VARCHAR,
     released            VARCHAR,
     resolver            VARCHAR,
-    licenses            VARCHAR,
+    licenses            VARCHAR NOT NULL,
     isNonStandardLib    BOOLEAN NOT NULL,
     PRIMARY KEY (groupId, artifactId, version)
 );

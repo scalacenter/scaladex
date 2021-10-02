@@ -103,5 +103,9 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
     override def getAllPlatforms()
         : Future[Map[Project.Reference, Set[Platform]]] =
       Future.successful(Map.empty)
+
+    override def getMostdependentUponProject()
+        : Future[Map[Project.Reference, Long]] =
+      Future.successful(Map())
   }
 }

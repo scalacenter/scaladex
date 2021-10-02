@@ -409,18 +409,6 @@ class ESRepo(
       .map(addLabelsIfMissing(params.sbtVersions.toSet))
   }
 
-  def getTotalProjects(): Future[Long] = {
-    esClient
-      .execute(search(projectIndex))
-      .map(_.result.totalHits)
-  }
-
-  def getTotalReleases(): Future[Long] = {
-    esClient
-      .execute(search(releaseIndex))
-      .map(_.result.totalHits)
-  }
-
   def getContributingProjects(): Future[List[Project]] = {
     val request = search(projectIndex)
       .query(

@@ -7,6 +7,7 @@ import akka.http.scaladsl.server.Route
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.UserInfo
 import ch.epfl.scala.index.model.release.Platform
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.GithubUserSession
@@ -32,8 +33,6 @@ class FrontPage(
     val mostDependedUponF = getMostDependentUpon()
     val latestProjectsF = getLatestProjects()
     val latestReleasesF = getLatestReleases()
-    val totalProjectsF = getTotalProjects()
-    val totalReleasesF = getTotalReleases()
     val contributingProjectsF = getContributingProjects()
 
     for {
@@ -55,11 +54,17 @@ class FrontPage(
         .getPlatformWithCount(allPlatforms) { case p: Platform.SbtPlugin =>
           p.sbtV
         }
-      mostDependedUpon <- mostDependedUponF
+      listOfProject <- db.getMostdependentUponProject()
+      mostDependedUpon = listOfProject.toList
+        .sortBy(_._2)
+        .reverse
+        .take(12)
+        .map(_._1)
+        .map(NewProject.withNoInfo)
       latestProjects <- latestProjectsF
       latestReleases <- latestReleasesF
-      totalProjects <- totalProjectsF
-      totalReleases <- totalReleasesF
+      totalProjects <- db.countProjects()
+      totalReleases <- db.countReleases()
       contributingProjects <- contributingProjectsF
     } yield {
 

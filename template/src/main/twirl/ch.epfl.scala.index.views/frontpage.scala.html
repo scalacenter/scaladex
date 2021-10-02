@@ -12,7 +12,7 @@
   scalaNativeVersions: List[(BinaryVersion, Int)],
   sbtVersions: List[(BinaryVersion, Int)],
   latestProjects: List[Project],
-  mostDependedUpon: List[Project],
+  mostDependedUpon: List[NewProject],
   latestReleases: List[NewRelease],
   user: Option[UserInfo],
   ecosystems: Map[String, String],
@@ -146,14 +146,14 @@
                                     <h4>@project.reference.organization/@project.reference.repository</h4>
                                 </div>
                                 <div class="content-project-body">
-                                    @for(github <- project.github) {
+                                    @for(github <- project.githubInfo) {
                                       @for(description <- github.description) {
                                         <p class="description">@description</p>
                                       }
                                     }
-                                    @for(created <- project.created) {
+@*                                    @for(created <- project.created) {
                                         @{formatDate(created)}
-                                    }
+                                    }*@
                                 </div>
                             </div>
                         </a>

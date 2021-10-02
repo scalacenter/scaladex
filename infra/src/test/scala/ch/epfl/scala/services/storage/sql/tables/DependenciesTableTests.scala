@@ -24,7 +24,7 @@ class DependenciesTableTests
       }
       it("should generate the query for selectDirectDependencies") {
         val q = selectDirectDependencies(PlayJsonExtra.release)
-        //        check(q)
+        check(q)
         q.sql shouldBe
           s"""|SELECT d.source_groupId, d.source_artifactId, d.source_version, d.target_groupId, d.target_artifactId, d.target_version, d.scope,
               | r.groupId, r.artifactId, r.version, r.organization, r.repository, r.artifact,
@@ -37,7 +37,7 @@ class DependenciesTableTests
       }
       it("should generate the query for selectReverseDependencies") {
         val q = selectReverseDependencies(PlayJsonExtra.release)
-        //        check(q)
+        check(q)
         q.sql shouldBe
           s"""|SELECT d.source_groupId, d.source_artifactId, d.source_version, d.target_groupId, d.target_artifactId, d.target_version, d.scope,
               | r.groupId, r.artifactId, r.version, r.organization, r.repository, r.artifact,
@@ -46,6 +46,18 @@ class DependenciesTableTests
               | d.source_artifactid = r.artifactid AND
               | d.source_version = r.version
               | WHERE d.target_groupId=? AND d.target_artifactId=? AND d.target_version=?""".stripMargin
+            .filterNot(_ == '\n')
+      }
+      it("should generate the query for most dependent upon projects") {
+        val q = selectMostDependentUponProject()
+        check(q)
+        q.sql shouldBe
+          s"""|SELECT t.organization, t.repository, COUNT(DISTINCT (d.organization, d.repository)) as total
+              | FROM ( dependencies d INNER JOIN releases r ON d.source_groupid = r.groupid AND
+              | d.source_artifactid = r.artifactid AND d.source_version = r.version) d
+              | INNER JOIN releases t ON d.target_groupid = t.groupid AND d.target_artifactid = t.artifactid AND
+              | d.target_version = t.version GROUP BY t.organization, t.repository
+              | ORDER BY total DESC""".stripMargin
             .filterNot(_ == '\n')
       }
     }

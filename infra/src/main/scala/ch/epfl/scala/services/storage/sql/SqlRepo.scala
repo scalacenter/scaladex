@@ -161,6 +161,13 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO])
   def countProjectDataForm(): Future[Long] =
     run(ProjectUserFormTable.indexedProjectUserForm().unique)
 
+  override def getMostdependentUponProject()
+      : Future[Map[Project.Reference, Long]] =
+    run(DependenciesTable.selectMostDependentUponProject().to[List]).map(_.map {
+      case (org, repo, count) =>
+        Project.Reference(org.value, repo.value) -> count
+    }.toMap)
+
   // to use only when inserting one element or updating one element
   // when expecting a row to be modified
   private def strictRun(

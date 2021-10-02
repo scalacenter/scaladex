@@ -33,6 +33,7 @@ trait DatabaseApi {
   ): Future[List[NewDependency.Reverse]]
   def getAllTopics(): Future[Seq[String]]
   def getAllPlatforms(): Future[Map[Project.Reference, Set[Platform]]]
+  def getMostdependentUponProject(): Future[Map[Project.Reference, Long]]
 
   def insertDependencies(dependencies: Seq[NewDependency]): Future[Int]
   def countProjects(): Future[Long]

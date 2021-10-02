@@ -119,5 +119,12 @@ object NewProject {
       dataForm = DataForm.from(p)
     )
   }
+  def withNoInfo(ref: Project.Reference): NewProject = NewProject(
+    NewProject.Organization(ref.organization),
+    NewProject.Repository(ref.repository),
+    githubInfo = None,
+    esId = None,
+    dataForm = DataForm.default
+  )
 
 }
