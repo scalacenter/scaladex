@@ -26,7 +26,7 @@ class FrontPage(dataRepository: ESRepo, session: GithubUserSession)(implicit
     val scalaJsVersionsF = getAllScalaJsVersions()
     val scalaNativeVersionsF = getAllScalaNativeVersions()
     val sbtVersionsF = getAllSbtVersions()
-    val mostDependedUponF = getMostDependentUpon()
+//    val mostDependedUponF = getMostDependentUpon()
     val latestProjectsF = getLatestProjects()
     val latestReleasesF = getLatestReleases()
     val totalProjectsF = getTotalProjects()
@@ -40,7 +40,7 @@ class FrontPage(dataRepository: ESRepo, session: GithubUserSession)(implicit
       scalaJsVersions <- scalaJsVersionsF
       scalaNativeVersions <- scalaNativeVersionsF
       sbtVersions <- sbtVersionsF
-      mostDependedUpon <- mostDependedUponF
+//      mostDependedUpon <- mostDependedUponF
       latestProjects <- latestProjectsF
       latestReleases <- latestReleasesF
       totalProjects <- totalProjectsF
@@ -77,7 +77,7 @@ class FrontPage(dataRepository: ESRepo, session: GithubUserSession)(implicit
         scalaNativeVersions,
         sbtVersions,
         latestProjects,
-        mostDependedUpon,
+        List(),
         latestReleases.map(NewRelease.from),
         userInfo,
         ecosystems,

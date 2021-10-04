@@ -12,7 +12,6 @@ $gray: rgb(88, 110, 117);
 $gray-light: rgb(125, 147, 154);
 $gray-lighter: rgb(237, 241, 241);
 
-
 // Scaffolding
 //------------------------------------------------------------------------------
 
@@ -29,7 +28,7 @@ $body-bg: $gray-lighter;
 
 $font-family-sans-serif: "Source Sans Pro", sans-serif;
 $font-family-serif: "Roboto Slab", serif;
-$font-size-base: 16px;
+$font-size-base: 1rem;
 $line-height-base: 1.528571429;
 
 $font-size-h1: floor(($font-size-base * 2.1)); // 33
@@ -79,7 +78,7 @@ $width-default: 140px;
 
 // font awesome
 //------------------------------------------------------------------------------
-$fa-font-path: "/assets/lib/font-awesome/fonts"; /* no slash at the end it's added by font-awesome */
+$fa-font-path: "/assets/lib/font-awesome"; /* no slash at the end it's added by font-awesome */
 
 // Animations
 //------------------------------------------------
@@ -94,3 +93,26 @@ $bp-medium: 768px;
 $bp-large: 992px;
 $bp-xlarge: 1130px;
 $bp-xxlarge: 1400px;
+
+// missing variable since bootstrap-sass
+$screen-md:                  992px !default;
+$screen-md-min:              $screen-md !default;
+$line-height-computed: 20px;
+$btn-primary-color: #fff !default;
+$btn-primary-bg:                 $brand-primary !default;
+$btn-primary-border:             darken($btn-primary-bg, 5%) !default;
+$font-size-base:          14px !default;
+$font-size-large:         ceil(($font-size-base * 1.25)) !default; // ~18px
+$font-size-small:         ceil(($font-size-base * 0.85)) !default; // ~12px
+$padding-base-vertical:     6px !default;
+$input-height-base:              ($line-height-computed + ($padding-base-vertical * 2) + 2) !default;
+$padding-base-horizontal:   12px !default;
+$border-radius-base: 2px;
+$btn-border-radius-base:         $border-radius-base !default;
+$padding-base-vertical:     6px !default;
+$border-radius-base:        4px !default;
+$btn-border-radius-base:         $border-radius-base !default;
+$padding-xs-vertical:       1px !default;
+$padding-xs-horizontal:     5px !default;
+$border-radius-small:       3px !default;
+$btn-border-radius-small:        $border-radius-small !default;
