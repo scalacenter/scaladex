@@ -65,21 +65,34 @@
                     </div>
                     <div class="col-md-3">
                         @user.map{ u =>
-                            <a class="btn btn-default pull-right" href="/logout">
-                                Logout
-                            </a>
-                            <a class="btn pull-right you
-                                @if(you) {
-                                    btn-primary
-                                } else {
-                                    btn-default
-                                }
-                                "
-                                href="/search?q=@params.queryString@if(!you){&you=✓}"
-                            >
-                                <img src="@u.sizedAvatarUrl(38)" alt="Your Avatar - @u.login">
-                                <span style="vertical-align: middle">Projects</span>
-                            </a>
+                        <div class="dropdown">
+                            <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+    Dropdown
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
+                                <li><a href="#">Action</a></li>
+                                <li><a href="#">Another action</a></li>
+                                <li><a href="#">Something else here</a></li>
+                                <li role="separator" class="divider"></li>
+                                <li><a href="#">Separated link</a></li>
+                            </ul>
+                        </div>
+@*                            <a class="btn btn-default pull-right" href="/logout">*@
+@*                                Logout*@
+@*                            </a>*@
+@*                            <a class="btn pull-right you*@
+@*                                @if(you) {*@
+@*                                    btn-primary*@
+@*                                } else {*@
+@*                                    btn-default*@
+@*                                }*@
+@*                                "*@
+@*                                href="/search?q=@params.queryString@if(!you){&you=✓}">*@
+@*                                <img src="@u.sizedAvatarUrl(38)" alt="Your Avatar - @u.login">*@
+@*                                <span style="vertical-align: middle">Projects</span>*@
+@*                            </a>*@
+
                         }.getOrElse {
                             <a class="btn btn-primary pull-right" href="/login">
                                 <i class="fa fa-github fa-lg" aria-hidden="true"></i> Login

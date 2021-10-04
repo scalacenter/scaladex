@@ -225,6 +225,9 @@ object Client {
       el.addEventListener[Event]("click", hideBanner _)
     }
 
+    Dom.getElementById("dropdownMenu1").foreach{el =>
+      el.addEventListener[Event]("click", _ => println("something happened"))}
+
     emojify.setConfig(
       js.Dictionary(
         "img_dir" -> "https://cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/images/basic"
