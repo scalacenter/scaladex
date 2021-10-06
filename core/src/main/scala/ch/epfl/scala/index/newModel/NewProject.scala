@@ -39,7 +39,7 @@ object NewProject {
   def defaultProject(
       org: String,
       repo: String,
-      githubInfo: Option[GithubInfo],
+      githubInfo: Option[GithubInfo] = None,
       formData: DataForm = DataForm.default
   ): NewProject =
     NewProject(
@@ -119,12 +119,4 @@ object NewProject {
       dataForm = DataForm.from(p)
     )
   }
-  def withNoInfo(ref: Project.Reference): NewProject = NewProject(
-    NewProject.Organization(ref.organization),
-    NewProject.Repository(ref.repository),
-    githubInfo = None,
-    esId = None,
-    dataForm = DataForm.default
-  )
-
 }

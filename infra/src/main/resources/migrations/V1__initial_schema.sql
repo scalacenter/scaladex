@@ -74,4 +74,13 @@ CREATE TABLE dependencies (
     target_version             VARCHAR NOT NULL,
     scope                      VARCHAR,
     PRIMARY KEY (source_groupId, source_artifactId, source_version, target_groupId, target_artifactId, target_version, scope)
+);
+
+CREATE TABLE project_dependencies
+(
+    source_organization  VARCHAR(39)  NOT NULL,
+    source_repository   VARCHAR(100) NOT NULL,
+    target_organization VARCHAR(39)  NOT NULL,
+    target_repository   VARCHAR(100) NOT NULL,
+    PRIMARY KEY (source_organization, source_repository, target_organization, target_repository)
 )

@@ -12,6 +12,7 @@ import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubIssue
 import ch.epfl.scala.index.model.misc.SearchParams
 import ch.epfl.scala.index.model.misc.Url
+import ch.epfl.scala.index.model.misc.UserState
 import ch.epfl.scala.index.model.release.ReleaseOptions
 import ch.epfl.scala.index.model.release.ReleaseSelection
 import ch.epfl.scala.index.newModel.NewProject

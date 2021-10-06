@@ -6,6 +6,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl._
 import akka.http.scaladsl.model.StatusCodes
@@ -17,11 +18,11 @@ import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.config.ServerConfig
 import ch.epfl.scala.index.server.routes._
 import ch.epfl.scala.index.server.routes.api._
-import ch.epfl.scala.services.SchedulerService
 import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.DoobieUtils
 import org.slf4j.LoggerFactory
+import scaladex.server.service.SchedulerService
 
 object Server {
   private val log = LoggerFactory.getLogger(getClass)
@@ -65,6 +66,8 @@ object Server {
     transactor
       .use { xa =>
         val db = new SqlRepo(config.dbConf, xa)
+        val scheduler = new SchedulerService(db)
+        scheduler.start()
         val localStorage = new LocalStorageRepo(config.dataPaths)
         val programmaticRoutes = concat(
           PublishApi(paths, data, databaseApi = db).routes,
@@ -75,6 +78,7 @@ object Server {
         )
         val userFacingRoutes = concat(
           new FrontPage(data, db, session).routes,
+          new AdminPages(scheduler, session).routes,
           redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
             concat(
               new ProjectPages(
@@ -94,27 +98,12 @@ object Server {
             concat(programmaticRoutes, userFacingRoutes)
           }
 
-
-
         log.info("waiting for elastic to start")
         data.waitUntilReady()
         log.info("ready")
 
         // apply migrations to the database if any.
         db.migrate.unsafeRunSync()
-
-        // Start the scheduler
-        val scheduler = new SchedulerService(db)
-        scheduler.start()
-        log.info("started")
-        //
-        scheduler.stop()
-        log.info("stoped")
-        scheduler.start()
-        log.info("started")
-
-
-
 
         await(
           Http()

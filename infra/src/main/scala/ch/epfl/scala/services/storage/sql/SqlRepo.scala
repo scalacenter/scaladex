@@ -13,6 +13,7 @@ import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.services.DatabaseApi
 import ch.epfl.scala.services.storage.sql.tables.DependenciesTable
 import ch.epfl.scala.services.storage.sql.tables.GithubInfoTable
+import ch.epfl.scala.services.storage.sql.tables.ProjectDependenciesTable
 import ch.epfl.scala.services.storage.sql.tables.ProjectTable
 import ch.epfl.scala.services.storage.sql.tables.ProjectUserFormTable
 import ch.epfl.scala.services.storage.sql.tables.ReleaseTable
@@ -161,12 +162,39 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO])
   def countProjectDataForm(): Future[Long] =
     run(ProjectUserFormTable.indexedProjectUserForm().unique)
 
-  override def getMostdependentUponProject()
-      : Future[Map[Project.Reference, Long]] =
-    run(DependenciesTable.selectMostDependentUponProject().to[List]).map(_.map {
-      case (org, repo, count) =>
-        Project.Reference(org.value, repo.value) -> count
-    }.toMap)
+  override def getAllProjectDependencies()
+      : Future[Map[Project.Reference, List[Project.Reference]]] =
+    run(DependenciesTable.getProjectWithDependentUponProjects().to[List])
+      .map(_.map { case (sourceOrg, sourceRepo, targetOrg, targetRepo) =>
+        (
+          Project.Reference(sourceOrg.value, sourceRepo.value),
+          Project.Reference(targetOrg.value, targetRepo.value)
+        )
+      }.groupMap(_._1)(_._2))
+
+  override def insertProjectWithDependentUponProjects(
+      source: Project.Reference,
+      target: List[Project.Reference]
+  ): Future[Int] =
+    run(ProjectDependenciesTable.insertMany(source, target))
+
+  override def getMostDependentUponProject(
+      max: Int
+  ): Future[List[(NewProject, Long)]] = {
+    for {
+      resF <- run(
+        ProjectDependenciesTable
+          .getMostDependentUponProjects(max)
+          .to[List]
+      )
+      res <- resF.map { case (org, repo, count) =>
+        findProject(Project.Reference(org.value, repo.value)).map(projectOpt =>
+          projectOpt.map((_ -> count))
+        )
+      }.sequence
+    } yield res.flatten
+
+  }
 
   // to use only when inserting one element or updating one element
   // when expecting a row to be modified

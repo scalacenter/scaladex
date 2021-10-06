@@ -1,0 +1,44 @@
+@import ch.epfl.scala.index.model.misc.UserState
+@import scaladex.template.SchedulerStatus
+@(user: UserState, schedulerStatus: SchedulerStatus)
+@import ch.epfl.scala.index.views.html._
+
+
+@main(title = "Admin page", showSearch = false, Some(user)) {
+    <main class="admin">
+        <div class="container">
+            <h2>Scheduler Status</h2>
+            <div class="row">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">When</th>
+                            <th scope="col" style="text-align: right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">@schedulerStatus.name</th>
+                            <td>@schedulerStatus.value</td>
+                            <td>@formatInstant(schedulerStatus.when)</td>
+                            <td style="text-align: right">
+                            @if(schedulerStatus.isRunning()) {
+                                <form action="/admin/@schedulerStatus.name/stop" method="post">
+                                    <button type="submit" class="btn btn-danger">Stop</button>
+                                </form>
+
+                            } else {
+                                <form action="/admin/@schedulerStatus.name/start" method="post">
+                                    <button type="submit" class="btn btn-success">Start</button>
+                                </form>
+                            }
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+}

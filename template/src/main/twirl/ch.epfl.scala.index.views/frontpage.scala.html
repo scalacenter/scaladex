@@ -1,10 +1,11 @@
 @import ch.epfl.scala.index.model.Project
-@import ch.epfl.scala.index.model.misc.{SearchParams, Url, UserInfo}
+@import ch.epfl.scala.index.model.misc.{SearchParams, Url}
 @import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
 @import ch.epfl.scala.index.model.release.Platform
 @import ch.epfl.scala.index.model.release.ScalaLanguageVersion
-
 @import ch.epfl.scala.index.model.release.BinaryVersion
+@import ch.epfl.scala.index.model.misc.UserState
+
 @(topics: List[(String, Int)],
   platformWithCount: List[(Platform.PlatformType, Int)],
   scalaVersionsWithCount: List[(String, Int)],
@@ -14,7 +15,7 @@
   latestProjects: List[Project],
   mostDependedUpon: List[NewProject],
   latestReleases: List[NewRelease],
-  user: Option[UserInfo],
+  user: Option[UserState],
   ecosystems: Map[String, String],
   totalProjects: Long,
   totalReleases: Long,

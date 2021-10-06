@@ -5,9 +5,8 @@ import scala.concurrent.ExecutionContext
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.epfl.scala.index.model.Project
-import ch.epfl.scala.index.model.misc.UserInfo
+import ch.epfl.scala.index.model.misc.UserState
 import ch.epfl.scala.index.model.release.Platform
-import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.GithubUserSession
@@ -26,7 +25,7 @@ class FrontPage(
 ) {
   import session.implicits._
 
-  private def frontPage(userInfo: Option[UserInfo]) = {
+  private def frontPage(userInfo: Option[UserState]) = {
     import dataRepository._
     val topicsF = db.getAllTopics()
     val allPlatformsF = db.getAllPlatforms()
@@ -54,13 +53,11 @@ class FrontPage(
         .getPlatformWithCount(allPlatforms) { case p: Platform.SbtPlugin =>
           p.sbtV
         }
-      listOfProject <- db.getMostdependentUponProject()
-      mostDependedUpon = listOfProject.toList
+      listOfProject <- db.getMostDependentUponProject(12)
+      mostDependedUpon = listOfProject
         .sortBy(_._2)
         .reverse
-        .take(12)
         .map(_._1)
-        .map(NewProject.withNoInfo)
       latestProjects <- latestProjectsF
       latestReleases <- latestReleasesF
       totalProjects <- db.countProjects()
@@ -111,7 +108,7 @@ class FrontPage(
   val routes: Route =
     pathEndOrSingleSlash {
       optionalSession(refreshable, usingCookies) { userId =>
-        complete(frontPage(session.getUser(userId).map(_.info)))
+        complete(frontPage(session.getUser(userId)))
       }
     }
 }

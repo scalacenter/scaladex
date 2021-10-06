@@ -2,7 +2,7 @@ package ch.epfl.scala.services.storage.sql.tables
 
 import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.newModel.NewDependency
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.NewProject._
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.utils.DoobieUtils.Fragments.buildInsert
 import ch.epfl.scala.utils.DoobieUtils.Fragments.buildSelect
@@ -103,14 +103,25 @@ object DependenciesTable {
     )
       .query[NewDependency.Reverse]
 
-  def selectMostDependentUponProject(): doobie.Query0[
-    (NewProject.Organization, NewProject.Repository, Long)
+  def getProjectWithDependentUponProjects(): doobie.Query0[
+    (
+        Organization,
+        Repository,
+        Organization,
+        Repository
+    )
   ] = {
     buildSelect(
       fullJoin,
-      fr0"t.organization, t.repository, COUNT(DISTINCT (d.organization, d.repository)) as total",
-      fr0"GROUP BY t.organization, t.repository" ++
-        fr0" ORDER BY total DESC"
-    ).query[(NewProject.Organization, NewProject.Repository, Long)]
+      fr0"DISTINCT t.organization, t.repository, d.organization, d.repository",
+      fr0"GROUP BY t.organization, t.repository, d.organization, d.repository"
+    ).query[
+      (
+          Organization,
+          Repository,
+          Organization,
+          Repository
+      )
+    ]
   }
 }

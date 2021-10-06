@@ -6,7 +6,7 @@
 
 
 @(env: Env, project: NewProject, artifacts: Seq[NewRelease.ArtifactName], versions: Seq[SemanticVersion],
-  platforms: Seq[Platform], release: NewRelease, user: Option[UserInfo],
+  platforms: Seq[Platform], release: NewRelease, user: Option[UserState],
   canEdit: Boolean, twitterCard: Option[TwitterSummaryCard], releaseCount: Int,
         directDependencies: Seq[NewDependency.Direct], reverseDependency: Seq[NewDependency.Reverse])
 

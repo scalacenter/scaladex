@@ -104,8 +104,18 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
         : Future[Map[Project.Reference, Set[Platform]]] =
       Future.successful(Map.empty)
 
-    override def getMostdependentUponProject()
-        : Future[Map[Project.Reference, Long]] =
+    override def getAllProjectDependencies()
+        : Future[Map[Project.Reference, List[Project.Reference]]] =
       Future.successful(Map())
+
+    override def insertProjectWithDependentUponProjects(
+        source: Project.Reference,
+        target: List[Project.Reference]
+    ): Future[Int] =
+      Future.successful(0)
+
+    override def getMostDependentUponProject(
+        max: Int
+    ): Future[List[(NewProject, Long)]] = Future.successful(Nil)
   }
 }

@@ -22,7 +22,7 @@
     <logger name="org.elasticsearch" level="INFO" />
     <logger name="org.flywaydb.*" level="INFO"/>
 
-    <root level="INFO">
+    <root level="WARN">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </root>

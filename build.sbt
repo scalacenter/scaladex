@@ -171,6 +171,9 @@ lazy val server = project
   .settings(commonSettings)
   .settings(packageScalaJS(client))
   .settings(
+    javaOptions ++= Seq(
+      "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044"
+    ),
     libraryDependencies ++= Seq(
       "com.typesafe.play" %%% "play-json" % V.playJsonVersion,
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it",
@@ -208,7 +211,6 @@ lazy val core = project
     libraryDependencies ++= Seq(
       "com.lihaoyi" %% "fastparse" % "2.3.0",
       "joda-time" % "joda-time" % "2.10.10",
-      "com.typesafe.akka" %% "akka-actor" % "2.5.32",
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     ),
     buildInfoPackage := "build.info",

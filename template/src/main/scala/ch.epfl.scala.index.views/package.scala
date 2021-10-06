@@ -1,6 +1,11 @@
 package ch.epfl.scala.index
 package views
 
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
 import ch.epfl.scala.index.model.misc.Pagination
@@ -128,4 +133,10 @@ package object html {
 
     out.print(in.parseDateTime(date))
   }
+
+  private val df = DateTimeFormatter
+    .ofPattern("dd MMM YYYY 'at' HH:mm '(UTC)'")
+    .withZone(ZoneId.systemDefault.normalized())
+    .withLocale(Locale.ENGLISH)
+  def formatInstant(i: Instant): String = df.format(i)
 }

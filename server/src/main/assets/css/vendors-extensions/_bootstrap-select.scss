@@ -2,11 +2,11 @@
 // This file contains all all CSS rules intended to re-declare some of
 // Bootstrap’s Selects default CSS.
 // -----------------------------------------------------------------------------
-//.bootstrap-select {
-//    .dropdown-toggle:focus {
-//        outline: none !important;
-//    }
-//}
+.bootstrap-select {
+    .dropdown-toggle:focus {
+        outline: none !important;
+    }
+}
 
 .order-by {
     .bootstrap-select {

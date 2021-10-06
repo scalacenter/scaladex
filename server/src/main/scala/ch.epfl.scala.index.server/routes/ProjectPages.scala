@@ -28,7 +28,6 @@ import com.softwaremill.session.SessionOptions._
 import com.typesafe.scalalogging.LazyLogging
 import org.json4s.native.Serialization.write
 import play.twirl.api.HtmlFormat
-
 class ProjectPages(
     db: DatabaseApi,
     localStorage: LocalStorageApi,
@@ -41,7 +40,7 @@ class ProjectPages(
 
   private def getEditPage(
       projectRef: Project.Reference,
-      userInfo: UserInfo
+      userInfo: UserState
   ): Future[(StatusCode, HtmlFormat.Appendable)] = {
     for {
       projectOpt <- db.findProject(projectRef)
@@ -83,7 +82,7 @@ class ProjectPages(
       target: Option[String],
       artifact: NewRelease.ArtifactName,
       version: Option[SemanticVersion],
-      user: Option[UserInfo]
+      user: Option[UserState]
   ): Future[(StatusCode, HtmlFormat.Appendable)] = {
     val selection = ReleaseSelection.parse(
       platform = target,
@@ -188,7 +187,7 @@ class ProjectPages(
       get {
         path("artifacts" / organizationM / repositoryM)((org, repo) =>
           optionalSession(refreshable, usingCookies) { userId =>
-            val user = session.getUser(userId).map(_.info)
+            val user = session.getUser(userId)
             val ref = Project.Reference(org.value, repo.value)
             val res =
               for {
@@ -265,12 +264,12 @@ class ProjectPages(
               session.getUser(userId) match {
                 case Some(userState)
                     if userState.canEdit(projectRef.githubRepo) =>
-                  complete(getEditPage(projectRef, userState.info))
+                  complete(getEditPage(projectRef, userState))
                 case maybeUser =>
                   complete(
                     (
                       StatusCodes.Forbidden,
-                      views.html.forbidden(maybeUser.map(_.info))
+                      views.html.forbidden(maybeUser)
                     )
                   )
               }
@@ -307,7 +306,7 @@ class ProjectPages(
                     complete(
                       StatusCodes.NotFound,
                       views.html.notfound(
-                        session.getUser(userId).map(_.info)
+                        session.getUser(userId)
                       )
                     )
                 }
@@ -321,7 +320,7 @@ class ProjectPages(
           (organization, repository, artifact) =>
             optionalSession(refreshable, usingCookies)(userId =>
               parameter("target".?) { target =>
-                val user = session.getUser(userId).map(_.info)
+                val user = session.getUser(userId)
                 val res = getProjectPage(
                   organization,
                   repository,
@@ -344,7 +343,7 @@ class ProjectPages(
           (organization, repository, artifact, version) =>
             optionalSession(refreshable, usingCookies) { userId =>
               parameter("target".?) { target =>
-                val user = session.getUser(userId).map(_.info)
+                val user = session.getUser(userId)
                 val res = getProjectPage(
                   organization,
                   repository,

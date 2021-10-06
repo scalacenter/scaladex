@@ -6,6 +6,10 @@ import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 
 import ch.epfl.scala.index.Values
+import ch.epfl.scala.index.model.release.MavenReference
+import ch.epfl.scala.index.newModel.NewDependency
+import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.utils.ScalaExtensions._
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -59,25 +63,27 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
 
     it("should find directDependencies") {
       for {
-        _ <- db.insertReleases(Seq(Cats.core, Cats.kernel))
+        _ <- db.insertReleases(
+          Seq(Cats.core, Cats.kernel)
+        ) // we don't inser Cats.laws
         _ <- db.insertDependencies(Cats.dependencies)
         directDependencies <- db.findDirectDependencies(Cats.core)
       } yield {
         directDependencies.map(_.target) should contain theSameElementsAs List(
           Some(Cats.kernel),
+          None,
           None
         )
       }
     }
 
     it("should find reverseDependencies") {
+      cleanTables() // to avoid duplicate key failures
       for {
         _ <- db
           .insertReleases(Seq(Cats.core, Cats.kernel))
-          .failed // ignore duplicate key failures
         _ <- db
           .insertDependencies(Cats.dependencies)
-          .failed // ignore duplicate key failures
         reverseDependencies <- db.findReverseDependencies(Cats.kernel)
       } yield {
         reverseDependencies.map(_.source) should contain theSameElementsAs List(
@@ -95,5 +101,63 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         res <- db.getAllTopics()
       } yield res shouldBe topics.toList
     }
+    it("should getProjectWithDependentUponProjects") {
+      def fakeDependency(r: NewRelease): NewDependency =
+        NewDependency(
+          source = r.maven,
+          target = MavenReference("fake", "fake_3", "version"),
+          scope = "compile"
+        )
+      cleanTables() // to avoid duplicate key failures
+
+      val projects = Seq(Cats.project, Scalafix.project, PlayJsonExtra.project)
+      val data = Map(
+        Cats.core -> Seq(
+          NewDependency(
+            source = Cats.core.maven,
+            target = MavenReference("fake", "fake_3", "version"),
+            scope = "compile"
+          )
+        ), // first case: on a artifact that doesn't have a corresponding release
+        Cats.kernel -> Seq(
+          NewDependency(
+            source = Cats.kernel.maven,
+            target = Cats.core.maven,
+            "compile"
+          )
+        ), // depends on it self
+        Scalafix.release -> Cats.dependencies.map(
+          _.copy(source = Scalafix.release.maven)
+        ), // dependencies contains two cats releases
+        Cats.laws -> Seq(), // doesn't depend on anything
+        PlayJsonExtra.release -> Seq(
+          NewDependency(
+            source = PlayJsonExtra.release.maven,
+            target = Scalafix.release.maven,
+            "compile"
+          )
+        )
+      )
+      for {
+        _ <- projects.map(db.insertProject).sequence
+        _ <- db.insertReleases(data.keys.toList)
+        _ <- db.insertDependencies(data.values.flatten.toList)
+        res <- db.getAllProjectDependencies()
+        _ <- res
+          .map(t => db.insertProjectWithDependentUponProjects(t._1, t._2))
+          .sequence
+        mostDependentProjects <- db.getMostDependentUponProject(10)
+      } yield {
+        res shouldBe Map(
+          Cats.reference -> List(Scalafix.reference, Cats.reference),
+          Scalafix.reference -> List(PlayJsonExtra.reference)
+        )
+        mostDependentProjects shouldBe List(
+          (Cats.project -> 2),
+          (Scalafix.project -> 1)
+        )
+      }
+    }
   }
+
 }

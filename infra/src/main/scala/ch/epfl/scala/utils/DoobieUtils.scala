@@ -22,7 +22,7 @@ import ch.epfl.scala.index.newModel.NewProject.Repository
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.services.storage.sql.DatabaseConfig
-import ch.epfl.scala.utils.ScalaExtensions.OptionExtension
+import ch.epfl.scala.utils.ScalaExtensions._
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import doobie._
@@ -106,9 +106,9 @@ object DoobieUtils {
     def buildSelect(
         table: Fragment,
         fields: Fragment,
-        where: Fragment
+        conditions: Fragment
     ): Fragment =
-      buildSelect(table, fields) ++ space ++ where
+      buildSelect(table, fields) ++ space ++ conditions
 
     def where(org: Organization, repo: Repository): Fragment =
       fr0"WHERE organization=$org AND repository=$repo"

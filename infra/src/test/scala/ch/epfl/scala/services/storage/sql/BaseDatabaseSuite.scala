@@ -30,9 +30,13 @@ trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterAll {
         dbConf.pass.decode
       )
 
-  val db = new SqlRepo(dbConf, transactor)
+  lazy val db = new SqlRepo(dbConf, transactor)
 
   override def beforeAll(): Unit = {
+    cleanTables()
+  }
+
+  def cleanTables(): Unit = {
     val reset = for {
       _ <- db.dropTables
       _ <- db.migrate
