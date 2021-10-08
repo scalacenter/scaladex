@@ -112,10 +112,7 @@
                         <a href="/@project.reference.organization/@project.reference.repository">
                             <div class="content-project box">
                                 <div class="content-project-header">
-                                    <img src="@{ project.github.flatMap(_.logo) match {
-                                        case Some(Url(v)) => v
-                                        case None => "/assets/img/avatar-list.png"
-                                      }}" alt="project logo">
+                                    @githubUserAvatar(project.github)
                                     <h4>@project.reference.organization/@project.reference.repository</h4>
                                 </div>
                                 <div class="content-project-body">
@@ -145,10 +142,7 @@
                         <a href="/@project.reference.organization/@project.reference.repository">
                             <div class="content-project box">
                                 <div class="content-project-header">
-                                    <img src="@{ project.github.flatMap(_.logo) match {
-                                        case Some(Url(v)) => v
-                                        case None => "/assets/img/avatar-list.png"
-                                      }}" alt="project logo">
+                                    @githubUserAvatar(project.github)
                                     <h4>@project.reference.organization/@project.reference.repository</h4>
                                 </div>
                                 <div class="content-project-body">
