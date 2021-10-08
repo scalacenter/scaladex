@@ -7,12 +7,8 @@
 @if(!hideProjectInfo) {
 <div class="content-project-header">
   <a href="/@project.organization/@project.repository">
-    <img src="@{ githubInfo.flatMap(_.logo) match {
-        case Some(Url(v)) => v
-        case None => "/assets/img/avatar-list.png"
-      }}" alt="project logo">
+    @githubUserAvatar(project)
     <h4>@project.organization/@project.repository</h4>
-  </a>
 </div>
 }
 <div class="content-project-body">
