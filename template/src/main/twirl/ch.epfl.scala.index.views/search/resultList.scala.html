@@ -17,7 +17,7 @@
             </div>
           } else {
             <div>
-              @githubUserAvatar(project)
+              @githubUserAvatar(project.github)
               <h4>@project.reference.organization/@project.reference.repository</h4>
 
               @for(github <- project.github) {
