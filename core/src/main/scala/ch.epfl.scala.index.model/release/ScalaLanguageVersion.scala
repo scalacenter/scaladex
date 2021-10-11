@@ -37,7 +37,7 @@ final case class ScalaVersion(version: BinaryVersion)
 
 final case class Scala3Version(version: BinaryVersion)
     extends ScalaLanguageVersion {
-  def family = "scala3"
+  def family = "3"
   def render: String = version match {
     case MajorBinary(3) => s"scala 3"
     case PreReleaseBinary(3, _, _, _) => s"scala $toString"
