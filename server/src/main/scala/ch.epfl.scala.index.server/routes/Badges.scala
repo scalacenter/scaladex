@@ -144,7 +144,7 @@ class Badges(db: DatabaseApi)(implicit
               s"$ver (${list.unzip._1.map(scalaV => s"Scala $scalaV").mkString(", ")})"
             }
             .mkString("; ")
-          val content = s"$pt $pv | $rawVersions"
+          val content = s"$pt${pv.map(" " + _).getOrElse("")} | $rawVersions"
           shieldsSvg(
             content,
             "",
