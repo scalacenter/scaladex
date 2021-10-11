@@ -4,6 +4,7 @@ import ch.epfl.scala.index.model.Milestone
 import ch.epfl.scala.index.model.ReleaseCandidate
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubInfo
+import ch.epfl.scala.index.model.release.BinaryVersion
 import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.PatchBinary
 import ch.epfl.scala.index.model.release.Platform
@@ -64,4 +65,70 @@ object Values {
 
   val nat03: PatchBinary = PatchBinary(0, 3, 0)
   val nat04: PatchBinary = PatchBinary(0, 4, 0)
+
+  val catsCores: List[NewRelease] = {
+    def builder(vers: String, platform: Platform): NewRelease =
+      NewRelease(
+        MavenReference(
+          "typelevel",
+          "cats-core",
+          vers
+        ),
+        version = SemanticVersion.tryParse(vers).get,
+        organization = Organization("typelevel"),
+        repository = Repository("cats"),
+        artifactName = ArtifactName("cats-core"),
+        platform = platform,
+        description = None,
+        released = None,
+        resolver = None,
+        licenses = Set(),
+        isNonStandardLib = false
+      )
+
+    List(
+      builder("2.6.1", Platform.ScalaJvm(ScalaVersion.`2.13`)),
+      builder("2.6.1", Platform.ScalaJvm(ScalaVersion.`2.12`)),
+      builder("2.6.1", Platform.ScalaJvm(Scala3Version.`3`)),
+      builder("2.5.1", Platform.ScalaJvm(ScalaVersion.`2.13`)),
+      builder("2.5.1", Platform.ScalaJvm(ScalaVersion.`2.12`)),
+      builder("2.5.1", Platform.ScalaJvm(Scala3Version.`3`)),
+      builder(
+        "2.5.1",
+        Platform.ScalaJs(ScalaVersion.`2.12`, BinaryVersion.parse("1.7.1").get)
+      ),
+      builder(
+        "2.5.1",
+        Platform.ScalaJs(ScalaVersion.`2.13`, BinaryVersion.parse("1.7.1").get)
+      ),
+      builder(
+        "2.5.1",
+        Platform.ScalaJs(Scala3Version.`3`, BinaryVersion.parse("1.7.1").get)
+      ),
+      builder(
+        "2.5.1",
+        Platform.ScalaJs(ScalaVersion.`2.12`, BinaryVersion.parse("1.2.5").get)
+      ),
+      builder(
+        "2.5.1",
+        Platform.ScalaJs(ScalaVersion.`2.13`, BinaryVersion.parse("1.2.5").get)
+      ),
+      builder(
+        "2.5.1",
+        Platform.ScalaJs(Scala3Version.`3`, BinaryVersion.parse("1.2.5").get)
+      ),
+      builder(
+        "1.3.0",
+        Platform.ScalaJs(ScalaVersion.`2.12`, BinaryVersion.parse("1.2.5").get)
+      ),
+      builder(
+        "1.3.0",
+        Platform.ScalaJs(ScalaVersion.`2.13`, BinaryVersion.parse("1.2.5").get)
+      ),
+      builder(
+        "1.3.0",
+        Platform.ScalaJs(Scala3Version.`3`, BinaryVersion.parse("1.2.5").get)
+      )
+    )
+  }
 }

@@ -12,7 +12,6 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.RequestContext
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.RouteResult
-import akka.http.scaladsl.model.HttpResponse
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.newModel.NewProject
@@ -180,7 +179,10 @@ class Badges(db: DatabaseApi)(implicit
           )
         } else {
           val badge: List[(String, SemanticVersion)] =
-            BadgeTools.mostRecentByScalaVersion(platform, platformVersion)(
+            BadgeTools.mostRecentByScalaVersion(
+              platform,
+              Some(platformVersion)
+            )(
               allReleases
             )
           val rawBadge = badge
@@ -199,7 +201,7 @@ class Badges(db: DatabaseApi)(implicit
       org: NewProject.Organization,
       repo: NewProject.Repository,
       art: NewRelease.ArtifactName
-  ) =
+  ): RequestContext => Future[RouteResult] =
     parameters("targetType", "platformVersion".?) {
       (rawPlatform, maybePlatformVers) =>
         (
