@@ -112,44 +112,6 @@ class Badges(db: DatabaseApi)(implicit
     }
   }
 
-  def latestByScalaVersion(
-      organization: NewProject.Organization,
-      repository: NewProject.Repository,
-      artifact: NewRelease.ArtifactName
-  ): RequestContext => Future[RouteResult] = {
-    parameter("targetType".?) { targetTypeString =>
-      shields { (color, style, logo, logoWidth) =>
-        val targetType =
-          targetTypeString
-            .flatMap(Platform.PlatformType.ofName)
-            .getOrElse(Platform.PlatformType.Jvm)
-        val res = db.findReleases(
-          Project.Reference(organization.value, repository.value),
-          artifact
-        )
-        onSuccess {
-          res
-        } { allAvailableReleases =>
-          val notableScalaSupport: String =
-            BadgesSupport.summaryOfLatestVersions(
-              allAvailableReleases,
-              artifact,
-              targetType
-            )
-
-          shieldsSvg(
-            artifact.value,
-            notableScalaSupport,
-            color,
-            style,
-            logo,
-            logoWidth
-          )
-        }
-      }
-    }
-  }
-
   private def javaBadge(rel: NewRelease): String =
     s"Java: ${rel.version.toString()}"
 
@@ -247,7 +209,7 @@ class Badges(db: DatabaseApi)(implicit
           case (Some(platform), Some(platformVersion)) =>
             sem(platform, platformVersion, org, repo, art)
           case (Some(platform), None) => binSem(platform, org, repo, art)
-          case _ => complete(HttpResponse(NotFound))
+          case _ => binSem(Platform.PlatformType.Jvm, org, repo, art)
         }
     }
 
@@ -260,11 +222,6 @@ class Badges(db: DatabaseApi)(implicit
         path(organizationM / repositoryM / artifactM / "latest.svg") {
           (org, repo, artifact) =>
             latest(org, repo, Some(artifact))
-        },
-        path(
-          organizationM / repositoryM / artifactM / "latest-by-scala-version.svg"
-        ) { (org, repo, artifact) =>
-          latestByScalaVersion(org, repo, artifact)
         },
         path(organizationM / repositoryM / artifactM / "on") {
           (org, repo, artifact) =>
