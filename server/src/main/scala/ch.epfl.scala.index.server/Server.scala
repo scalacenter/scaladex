@@ -6,7 +6,9 @@ import scala.concurrent.duration._
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl._
+import akka.http.scaladsl.coding.Deflate
 import akka.http.scaladsl.coding.Gzip
+import akka.http.scaladsl.coding.NoCoding
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
@@ -101,9 +103,11 @@ object Server {
     }
 
     val routes =
-      encodeResponseWith(Gzip)(handleExceptions(exceptionHandler) {
-        concat(programmaticRoutes, userFacingRoutes)
-      })
+      encodeResponseWith(Gzip, Deflate, NoCoding)(
+        handleExceptions(exceptionHandler) {
+          concat(programmaticRoutes, userFacingRoutes)
+        }
+      )
 
     log.info("waiting for elastic to start")
     data.waitUntilReady()
