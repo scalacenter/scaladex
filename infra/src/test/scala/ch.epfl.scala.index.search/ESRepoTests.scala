@@ -49,7 +49,7 @@ class ESRepoTests extends AsyncFunSuite with Matchers with BeforeAndAfterAll {
     )
     data.findProjects(params).map { page =>
       page.items.map(_.scalaVersion) should contain theSameElementsAs List(
-        List("scala3")
+        List("3")
       )
     }
   }
