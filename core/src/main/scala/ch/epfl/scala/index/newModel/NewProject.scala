@@ -2,6 +2,7 @@ package ch.epfl.scala.index.newModel
 
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubInfo
+import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.model.misc.TwitterSummaryCard
 import ch.epfl.scala.index.newModel.NewProject._
 
@@ -14,8 +15,9 @@ case class NewProject(
     // form data
     dataForm: DataForm
 ) {
-  val reference: Project.Reference =
-    Project.Reference(organization.value, repository.value)
+
+  val reference: Reference =
+    Reference(organization, repository)
   def hasCli: Boolean = dataForm.cliArtifacts.nonEmpty
 
   /**
@@ -36,6 +38,22 @@ case class NewProject(
 }
 
 object NewProject {
+
+  case class Reference(organization: Organization, repository: Repository)
+      extends Ordered[Reference] {
+    val githubRepo: GithubRepo =
+      GithubRepo(organization.value, repository.value)
+    override def toString: String = s"$organization/$repository"
+
+    override def compare(that: Reference): Int =
+      Reference.ordering.compare(this, that)
+  }
+  object Reference {
+    def from(org: String, repo: String): Reference =
+      Reference(Organization(org), Repository(repo))
+    implicit val ordering: Ordering[Reference] =
+      Ordering.by(ref => (ref.organization.value, ref.repository.value))
+  }
   def defaultProject(
       org: String,
       repo: String,

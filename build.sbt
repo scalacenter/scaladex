@@ -100,7 +100,6 @@ lazy val infra = project
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4sVersion,
       "org.json4s" %% "json4s-native" % "3.6.9",
       "org.typelevel" %% "jawn-json4s" % "1.0.0",
-      "com.typesafe.akka" %% "akka-actor" % "2.5.32",
       "org.flywaydb" % "flyway-core" % "7.11.0", // for database migration
       "org.tpolecat" %% "doobie-scalatest" % V.doobieVersion % Test,
       "org.scalatest" %% "scalatest" % V.scalatest % Test

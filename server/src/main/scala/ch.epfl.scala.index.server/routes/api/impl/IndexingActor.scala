@@ -13,8 +13,8 @@ import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.project.ProjectConvert
-import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubRepo
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.DatabaseApi
 import ch.epfl.scala.services.storage.DataPaths
@@ -77,7 +77,8 @@ class IndexingActor(
       data.downloadContributors
     )
 
-    val projectReference = Project.Reference(repo.organization, repo.repository)
+    val projectReference =
+      NewProject.Reference.from(repo.organization, repo.repository)
 
     for {
       project <- db.findProject(projectReference)

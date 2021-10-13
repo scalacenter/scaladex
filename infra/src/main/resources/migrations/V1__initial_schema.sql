@@ -65,7 +65,7 @@ CREATE TABLE releases (
     PRIMARY KEY (groupId, artifactId, version)
 );
 
-CREATE TABLE dependencies (
+CREATE TABLE release_dependencies (
     source_groupId             VARCHAR NOT NULL,
     source_artifactId          VARCHAR NOT NULL,
     source_version             VARCHAR NOT NULL,

@@ -1,8 +1,10 @@
 @import ch.epfl.scala.index.model.misc.UserState
 @import scaladex.template.SchedulerStatus
-@(user: UserState, schedulerStatus: SchedulerStatus)
 @import ch.epfl.scala.index.views.html._
+@import scala.concurrent.duration.FiniteDuration
 
+@import java.time.Instant
+@(user: UserState, schedulerName: String, schedulerStatus: SchedulerStatus)
 
 @main(title = "Admin page", showSearch = false, Some(user)) {
     <main class="admin">
@@ -15,22 +17,30 @@
                             <th scope="col">Name</th>
                             <th scope="col">Status</th>
                             <th scope="col">When</th>
+                            <th scope="col">Progress</th>
                             <th scope="col" style="text-align: right">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <th scope="row">@schedulerStatus.name</th>
+                            <th scope="row">@schedulerName</th>
                             <td>@schedulerStatus.value</td>
                             <td>@formatInstant(schedulerStatus.when)</td>
+                            <td>
+                                @schedulerStatus match {
+                                    case SchedulerStatus.Started(_, true, Some(triggeredWhen), durationOfLastRun: Option[FiniteDuration]) => { @progressbar(triggeredWhen, Instant.now(), durationOfLastRun) }
+                                    case s : SchedulerStatus.Started => { Waiting }
+                                    case _ => { _ }
+                                }
+                            </td>
                             <td style="text-align: right">
-                            @if(schedulerStatus.isRunning()) {
-                                <form action="/admin/@schedulerStatus.name/stop" method="post">
+                            @if(schedulerStatus.isStarted()) {
+                                <form action="/admin/@schedulerName/stop" method="post">
                                     <button type="submit" class="btn btn-danger">Stop</button>
                                 </form>
 
                             } else {
-                                <form action="/admin/@schedulerStatus.name/start" method="post">
+                                <form action="/admin/@schedulerName/start" method="post">
                                     <button type="submit" class="btn btn-success">Start</button>
                                 </form>
                             }

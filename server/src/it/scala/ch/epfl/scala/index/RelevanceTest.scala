@@ -1,10 +1,8 @@
 package ch.epfl.scala.index
 
 import scala.concurrent.Future
-
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
-import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.SearchParams
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.ScalaVersion
@@ -17,6 +15,8 @@ import ch.epfl.scala.index.server.config.ServerConfig
 import cats.effect.IO
 import ch.epfl.scala.services.storage.sql.DatabaseConfig
 import cats.effect.ContextShift
+import ch.epfl.scala.index.newModel.NewProject
+
 import scala.concurrent.ExecutionContext
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.DoobieUtils
@@ -184,7 +184,7 @@ class RelevanceTest
       assert {
         page.items.headOption
           .map(_.reference)
-          .contains(Project.Reference(org, repo))
+          .contains(NewProject.Reference.from(org, repo))
       }
     }
   }
@@ -225,11 +225,14 @@ class RelevanceTest
   private def compare(
       params: SearchParams,
       expected: List[(String, String)],
-      assertFun: (Seq[Project.Reference], Seq[Project.Reference]) => Assertion
+      assertFun: (
+          Seq[NewProject.Reference],
+          Seq[NewProject.Reference]
+      ) => Assertion
   ): Future[Assertion] = {
 
     val expectedRefs = expected.map { case (org, repo) =>
-      Project.Reference(org, repo)
+      NewProject.Reference.from(org, repo)
     }
 
     esRepo.findProjects(params).map { page =>

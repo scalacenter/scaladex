@@ -7,8 +7,9 @@ import scala.concurrent.ExecutionContext
 
 import ch.epfl.scala.index.Values
 import ch.epfl.scala.index.model.release.MavenReference
-import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.ProjectDependency
+import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.utils.ScalaExtensions._
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -102,8 +103,8 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
       } yield res shouldBe topics.toList
     }
     it("should getProjectWithDependentUponProjects") {
-      def fakeDependency(r: NewRelease): NewDependency =
-        NewDependency(
+      def fakeDependency(r: NewRelease): ReleaseDependency =
+        ReleaseDependency(
           source = r.maven,
           target = MavenReference("fake", "fake_3", "version"),
           scope = "compile"
@@ -113,14 +114,14 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
       val projects = Seq(Cats.project, Scalafix.project, PlayJsonExtra.project)
       val data = Map(
         Cats.core -> Seq(
-          NewDependency(
+          ReleaseDependency(
             source = Cats.core.maven,
             target = MavenReference("fake", "fake_3", "version"),
             scope = "compile"
           )
         ), // first case: on a artifact that doesn't have a corresponding release
         Cats.kernel -> Seq(
-          NewDependency(
+          ReleaseDependency(
             source = Cats.kernel.maven,
             target = Cats.core.maven,
             "compile"
@@ -131,7 +132,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         ), // dependencies contains two cats releases
         Cats.laws -> Seq(), // doesn't depend on anything
         PlayJsonExtra.release -> Seq(
-          NewDependency(
+          ReleaseDependency(
             source = PlayJsonExtra.release.maven,
             target = Scalafix.release.maven,
             "compile"
@@ -142,19 +143,18 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         _ <- projects.map(db.insertProject).sequence
         _ <- db.insertReleases(data.keys.toList)
         _ <- db.insertDependencies(data.values.flatten.toList)
-        res <- db.getAllProjectDependencies()
-        _ <- res
-          .map(t => db.insertProjectWithDependentUponProjects(t._1, t._2))
-          .sequence
+        projectDependencies <- db.getAllProjectDependencies()
+        _ <- db.insertProjectWithDependentUponProjects(projectDependencies)
         mostDependentProjects <- db.getMostDependentUponProject(10)
       } yield {
-        res shouldBe Map(
-          Cats.reference -> List(Scalafix.reference, Cats.reference),
-          Scalafix.reference -> List(PlayJsonExtra.reference)
+        projectDependencies shouldBe Seq(
+          ProjectDependency(Scalafix.reference, Cats.reference),
+          ProjectDependency(Cats.reference, Cats.reference),
+          ProjectDependency(PlayJsonExtra.reference, Scalafix.reference)
         )
         mostDependentProjects shouldBe List(
-          (Cats.project -> 2),
-          (Scalafix.project -> 1)
+          Cats.project -> 2,
+          Scalafix.project -> 1
         )
       }
     }

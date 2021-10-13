@@ -8,34 +8,56 @@ import scala.concurrent.duration._
 import akka.actor
 import akka.actor.ActorSystem
 import akka.actor.Cancellable
+import ch.epfl.scala.utils.TimerUtils
 import scaladex.template.SchedulerStatus
 
-final case class Scheduler(
-//    name: String,
-    status: SchedulerStatus,
-    cancellable: Option[Cancellable]
-)(implicit ec: ExecutionContext) {
-  val name = status.name
+class Scheduler(val name: String, runnable: Runnable)(implicit
+    ec: ExecutionContext
+) {
+  private var cancellable = Option.empty[Cancellable]
   private val system: ActorSystem = ActorSystem(name)
-  val scheduler: actor.Scheduler = system.scheduler
+  private val scheduler: actor.Scheduler = system.scheduler
+  private var _status: SchedulerStatus = SchedulerStatus.Created(Instant.now)
 
-  private def run(run: Runnable): Cancellable =
-    scheduler.scheduleWithFixedDelay(0.minute, 10.minutes)(run)
+  def status: SchedulerStatus = _status
 
-  def start(runnable: Runnable): Scheduler = {
-    val cancellable = run(runnable)
-    this.copy(
-      status = SchedulerStatus.Running(status.name, Instant.now),
-      cancellable = Some(cancellable)
-    )
+  def start(): Unit = {
+    status match {
+      case s: SchedulerStatus.Started => ()
+      case _ =>
+        val can = scheduler.scheduleWithFixedDelay(0.minute, 10.minute) {
+          _status =
+            SchedulerStatus.Started(Instant.now, running = false, None, None)
+          new Runnable {
+            def run() = {
+              val triggeredWhen = Instant.now
+              _status = _status
+                .asInstanceOf[SchedulerStatus.Started]
+                .copy(running = true, triggeredWhen = Some(triggeredWhen))
+              runnable.run()
+              _status = _status
+                .asInstanceOf[SchedulerStatus.Started]
+                .copy(
+                  running = false,
+                  triggeredWhen = None,
+                  durationOfLastRun = Some(
+                    TimerUtils.toFiniteDuration(triggeredWhen, Instant.now)
+                  )
+                )
+            }
+          }
+        }
+        cancellable = Some(can)
+    }
   }
 
-  def stop(): Scheduler = {
-    cancellable.map(_.cancel())
-    this.copy(
-      status = SchedulerStatus.Stopped(status.name, Instant.now()),
-      cancellable = None
-    )
+  def stop(): Unit = {
+    status match {
+      case s: SchedulerStatus.Started =>
+        cancellable.map(_.cancel())
+        _status = SchedulerStatus.Stopped(Instant.now)
+        cancellable = None
+      case _ => ()
+    }
   }
-
 }

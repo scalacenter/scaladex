@@ -13,6 +13,7 @@ import ch.epfl.scala.index.api.AutocompletionResponse
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc.SearchParams
 import ch.epfl.scala.index.model.release._
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.search.ESRepo
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
@@ -182,7 +183,8 @@ class SearchApi(
                     scalaNativeVersion,
                     sbtVersion
                 ) =>
-                  val reference = Project.Reference(organization, repository)
+                  val reference =
+                    NewProject.Reference.from(organization, repository)
                   val scalaTarget = SearchApi.parseScalaTarget(
                     targetType,
                     scalaVersion,
@@ -212,7 +214,7 @@ class SearchApi(
     }
 
   private def getReleaseOptions(
-      projectRef: Project.Reference,
+      projectRef: NewProject.Reference,
       scalaTarget: Option[Platform],
       artifact: Option[String]
   ): Future[Option[SearchApi.ReleaseOptions]] = {

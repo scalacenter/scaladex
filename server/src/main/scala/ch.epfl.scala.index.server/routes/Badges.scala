@@ -12,7 +12,6 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.RequestContext
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.RouteResult
-import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
@@ -123,7 +122,7 @@ class Badges(db: DatabaseApi)(implicit
             .flatMap(Platform.PlatformType.ofName)
             .getOrElse(Platform.PlatformType.Jvm)
         val res = db.findReleases(
-          Project.Reference(organization.value, repository.value),
+          NewProject.Reference(organization, repository),
           artifact
         )
         onSuccess {

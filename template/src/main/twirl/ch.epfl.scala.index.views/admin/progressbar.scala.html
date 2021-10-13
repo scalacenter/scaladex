@@ -1,0 +1,14 @@
+@import java.time.Instant
+@import scala.concurrent.duration.FiniteDuration
+@import ch.epfl.scala.utils.TimerUtils
+
+@(triggeredWhen: Instant, now: Instant, lastRunDuration: Option[FiniteDuration])
+@duration = @{TimerUtils.toFiniteDuration(triggeredWhen, now)}
+@lastRun = @{lastRunDuration.getOrElse(duration)}
+@fraction = @{TimerUtils.fraction(duration, lastRun)}
+
+<div class="progress">
+    <div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="@fraction" aria-valuemin="0" aria-valuemax="100" style="width: @fraction%">
+        @{duration.toSeconds}s (@{fraction.round} %)
+    </div>
+</div>

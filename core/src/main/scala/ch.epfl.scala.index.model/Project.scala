@@ -84,7 +84,8 @@ case class Project(
     )
   }
 
-  def reference: Project.Reference = Project.Reference(organization, repository)
+  def reference: NewProject.Reference =
+    NewProject.Reference.from(organization, repository)
 
   /**
    * create github representation for the repository
@@ -92,20 +93,4 @@ case class Project(
    * @return
    */
   def githubRepo: GithubRepo = reference.githubRepo
-}
-
-object Project {
-
-  /**
-   * Simplified project reference name ex(typelevel/cats)
-   *
-   * @param organization github organization. ex: typelevel, akka, etc
-   * @param repository github repository. ex: cats, akka, etc
-   */
-  case class Reference(organization: String, repository: String) {
-    val githubRepo: GithubRepo = GithubRepo(organization, repository)
-    val org: NewProject.Organization = NewProject.Organization(organization)
-    val repo: NewProject.Repository = NewProject.Repository(repository)
-    override def toString: String = s"$organization/$repository"
-  }
 }

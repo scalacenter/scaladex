@@ -28,6 +28,7 @@ import com.softwaremill.session.SessionOptions._
 import com.typesafe.scalalogging.LazyLogging
 import org.json4s.native.Serialization.write
 import play.twirl.api.HtmlFormat
+
 class ProjectPages(
     db: DatabaseApi,
     localStorage: LocalStorageApi,
@@ -39,7 +40,7 @@ class ProjectPages(
   import session.implicits._
 
   private def getEditPage(
-      projectRef: Project.Reference,
+      projectRef: NewProject.Reference,
       userInfo: UserState
   ): Future[(StatusCode, HtmlFormat.Appendable)] = {
     for {
@@ -91,7 +92,7 @@ class ProjectPages(
       selected = None
     )
     val projectRef =
-      Project.Reference(organization.value, repository.value)
+      NewProject.Reference(organization, repository)
 
     db.findProject(projectRef).flatMap {
       case Some(project) =>
@@ -154,11 +155,11 @@ class ProjectPages(
   val routes: Route =
     concat(
       post(
-        path("edit" / Segment / Segment)((organization, repository) =>
+        path("edit" / organizationM / repositoryM)((organization, repository) =>
           optionalSession(refreshable, usingCookies)(_ =>
             pathEnd(
               editForm { form =>
-                val ref = Project.Reference(organization, repository)
+                val ref = NewProject.Reference(organization, repository)
                 val updated = for {
                   _ <- localStorage.saveDataForm(ref, form)
                   updated <- db.updateProjectForm(
@@ -188,7 +189,7 @@ class ProjectPages(
         path("artifacts" / organizationM / repositoryM)((org, repo) =>
           optionalSession(refreshable, usingCookies) { userId =>
             val user = session.getUser(userId)
-            val ref = Project.Reference(org.value, repo.value)
+            val ref = NewProject.Reference(org, repo)
             val res =
               for {
                 projectOpt <- db.findProject(ref)
@@ -260,7 +261,7 @@ class ProjectPages(
           optionalSession(refreshable, usingCookies)(userId =>
             pathEnd {
               val projectRef =
-                Project.Reference(organization.value, repository.value)
+                NewProject.Reference(organization, repository)
               session.getUser(userId) match {
                 case Some(userState)
                     if userState.canEdit(projectRef.githubRepo) =>
