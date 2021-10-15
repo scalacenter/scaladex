@@ -114,7 +114,7 @@ class Badges(db: DatabaseApi)(implicit
   private def javaBadge(rel: NewRelease): String =
     s"Java: ${rel.version.toString()}"
 
-  private def binSem(
+  private def shieldForPlatform(
       platform: Platform.PlatformType,
       org: NewProject.Organization,
       repo: NewProject.Repository,
@@ -157,7 +157,7 @@ class Badges(db: DatabaseApi)(implicit
       }
     }
 
-  private def sem(
+  private def shieldForPlatformWithVersion(
       platform: Platform.PlatformType,
       platformVersion: BinaryVersion,
       org: NewProject.Organization,
@@ -209,9 +209,9 @@ class Badges(db: DatabaseApi)(implicit
           maybePlatformVers.flatMap(BinaryVersion.parse)
         ) match {
           case (Some(platform), Some(platformVersion)) =>
-            sem(platform, platformVersion, org, repo, art)
-          case (Some(platform), None) => binSem(platform, org, repo, art)
-          case _ => binSem(Platform.PlatformType.Jvm, org, repo, art)
+            shieldForPlatformWithVersion(platform, platformVersion, org, repo, art)
+          case (Some(platform), None) => shieldForPlatform(platform, org, repo, art)
+          case _ => shieldForPlatform(Platform.PlatformType.Jvm, org, repo, art)
         }
     }
 
