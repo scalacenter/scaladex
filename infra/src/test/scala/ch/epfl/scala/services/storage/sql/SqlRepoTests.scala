@@ -144,7 +144,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         _ <- db.insertReleases(data.keys.toList)
         _ <- db.insertDependencies(data.values.flatten.toList)
         projectDependencies <- db.getAllProjectDependencies()
-        _ <- db.insertProjectWithDependentUponProjects(projectDependencies)
+        _ <- db.insertProjectDependencies(projectDependencies)
         mostDependentProjects <- db.getMostDependentUponProject(10)
       } yield {
         projectDependencies shouldBe Seq(

@@ -21,6 +21,6 @@ object TimerUtils {
       MILLISECONDS
     ).toCoarsest
 
-  def fraction(duration: FiniteDuration, total: FiniteDuration): Double =
+  def percentage(duration: FiniteDuration, total: FiniteDuration): Double =
     duration / total * 100
 }

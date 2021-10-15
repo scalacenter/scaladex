@@ -173,7 +173,7 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO])
   override def getAllProjectDependencies(): Future[Seq[ProjectDependency]] =
     run(ReleaseDependencyTable.getAllProjectDependencies().to[List])
 
-  override def insertProjectWithDependentUponProjects(
+  override def insertProjectDependencies(
       projectDependencies: Seq[ProjectDependency]
   ): Future[Int] =
     run(ProjectDependenciesTable.insertMany(projectDependencies))

@@ -107,7 +107,7 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
     override def getAllProjectDependencies(): Future[Seq[ProjectDependency]] =
       Future.successful(Nil)
 
-    override def insertProjectWithDependentUponProjects(
+    override def insertProjectDependencies(
         projectDependencies: Seq[ProjectDependency]
     ): Future[Int] =
       Future.successful(0)

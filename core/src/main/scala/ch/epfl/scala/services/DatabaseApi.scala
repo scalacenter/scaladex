@@ -34,7 +34,7 @@ trait DatabaseApi {
   def getAllTopics(): Future[Seq[String]]
   def getAllPlatforms(): Future[Map[NewProject.Reference, Set[Platform]]]
   def getAllProjectDependencies(): Future[Seq[ProjectDependency]]
-  def insertProjectWithDependentUponProjects(
+  def insertProjectDependencies(
       projectDependencies: Seq[ProjectDependency]
   ): Future[Int]
   def getMostDependentUponProject(max: Int): Future[List[(NewProject, Long)]]

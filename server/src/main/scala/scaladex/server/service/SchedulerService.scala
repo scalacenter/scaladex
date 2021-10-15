@@ -64,10 +64,10 @@ object SchedulerService {
           )
         )
       _ <- db
-        .insertProjectWithDependentUponProjects(projectWithDependencies)
+        .insertProjectDependencies(projectWithDependencies)
         .mapFailure(e =>
           new Exception(
-            s"not able to insertProjectWithDependentUponProjects because of ${e.getMessage}"
+            s"not able to insertProjectDependencies because of ${e.getMessage}"
           )
         )
     } yield ()
