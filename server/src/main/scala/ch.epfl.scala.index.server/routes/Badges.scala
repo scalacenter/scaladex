@@ -197,7 +197,7 @@ class Badges(db: DatabaseApi)(implicit
     }
   }
 
-  def newBadgeRoute(
+  def versionBadgePlatform(
       org: NewProject.Organization,
       repo: NewProject.Repository,
       art: NewRelease.ArtifactName
@@ -209,8 +209,15 @@ class Badges(db: DatabaseApi)(implicit
           maybePlatformVers.flatMap(BinaryVersion.parse)
         ) match {
           case (Some(platform), Some(platformVersion)) =>
-            shieldForPlatformWithVersion(platform, platformVersion, org, repo, art)
-          case (Some(platform), None) => shieldForPlatform(platform, org, repo, art)
+            shieldForPlatformWithVersion(
+              platform,
+              platformVersion,
+              org,
+              repo,
+              art
+            )
+          case (Some(platform), None) =>
+            shieldForPlatform(platform, org, repo, art)
           case _ => shieldForPlatform(Platform.PlatformType.Jvm, org, repo, art)
         }
     }
@@ -225,9 +232,10 @@ class Badges(db: DatabaseApi)(implicit
           (org, repo, artifact) =>
             latest(org, repo, Some(artifact))
         },
-        path(organizationM / repositoryM / artifactM / "on") {
-          (org, repo, artifact) =>
-            newBadgeRoute(org, repo, artifact)
+        path(
+          organizationM / repositoryM / artifactM / "latest-by-scala-version.svg"
+        ) { (org, repo, artifact) =>
+          versionBadgePlatform(org, repo, artifact)
         }
       )
     }
