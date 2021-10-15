@@ -19,7 +19,9 @@ object BadgeTools {
         .map(rel => rel.platform.scalaVersion.get -> rel.version)
 
     scalaVtoSemV
-      .groupMap(_._1.family)(_._2)
+      .groupMap(_._1.family.replace("scala", ""))(
+        _._2
+      ) // family for scala 3 artifacts is Scala 3 rathen than 3
       .map { case (k, versions) => k -> versions.max }
       .toList
       .sortBy(_._1)(implicitly[Ordering[String]].reverse)

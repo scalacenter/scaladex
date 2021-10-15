@@ -146,7 +146,7 @@ object Values {
       created = None,
       updated = None,
       targetType = List("Jvm"),
-      scalaVersion = List("3"),
+      scalaVersion = List("scala3"),
       scalaJsVersion = List.empty,
       scalaNativeVersion = List.empty,
       sbtVersion = List.empty,

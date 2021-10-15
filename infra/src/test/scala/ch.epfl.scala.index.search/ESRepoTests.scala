@@ -37,7 +37,7 @@ class ESRepoTests extends AsyncFunSuite with Matchers with BeforeAndAfterAll {
       page <- data.findProjects(SearchParams(queryString = "cats"))
     } yield {
       page.items.map(_.scalaVersion) should contain theSameElementsAs List(
-        List("3")
+        List("scala3")
       )
     }
   }
@@ -49,7 +49,7 @@ class ESRepoTests extends AsyncFunSuite with Matchers with BeforeAndAfterAll {
     )
     data.findProjects(params).map { page =>
       page.items.map(_.scalaVersion) should contain theSameElementsAs List(
-        List("3")
+        List("scala3")
       )
     }
   }
