@@ -14,7 +14,7 @@ data/DATA-PID
 scaladex.log
 .bloop/
 .metals/
-project/metals.sbt
+**/project/metals.sbt
 .bsp/
 project/gitignore.sbt
 http-client.env.json
