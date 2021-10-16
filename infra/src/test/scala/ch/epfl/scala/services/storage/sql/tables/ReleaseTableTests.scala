@@ -11,18 +11,23 @@ class ReleaseTableTests
     with Matchers {
   import Values._
 
-  describe("ReleaseTable") {
-    import ReleaseTable._
-    describe("insert") {
-      it("should generate the query") {
-        val q = insert(PlayJsonExtra.release)
-        check(q)
-        q.sql shouldBe
-          s"""INSERT INTO releases (groupId, artifactId, version, organization,
-             | repository, artifact, platform, description, released, resolver,
-             | licenses, isNonStandardLib) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
-            .filterNot(_ == '\n')
-      }
+  import ReleaseTable._
+  describe("should generate the query") {
+    it("insert") {
+      val q = insert(PlayJsonExtra.release)
+      check(q)
+      q.sql shouldBe
+        s"""INSERT INTO releases (groupId, artifactId, version, organization,
+           | repository, artifact, platform, description, released, resolver,
+           | licenses, isNonStandardLib) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
+          .filterNot(_ == '\n')
+    }
+    it("selectReleases") {
+      val q = selectReleases(PlayJsonExtra.reference)
+      check(q)
+      q.sql shouldBe
+        s"""SELECT * FROM releases WHERE organization=? AND repository=?""".stripMargin
+          .filterNot(_ == '\n')
     }
   }
 }

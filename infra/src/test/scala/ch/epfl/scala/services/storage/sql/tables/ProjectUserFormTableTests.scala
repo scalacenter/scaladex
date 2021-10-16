@@ -11,9 +11,9 @@ class ProjectUserFormTableTests
     with Matchers {
   import Values._
 
-  describe("ProjectUserFormTable") {
-    import ProjectUserFormTable._
-    it("should generate insert the query") {
+  import ProjectUserFormTable._
+  describe("should generate query for") {
+    it("insert") {
       val q = insert(Scalafix.project)(Scalafix.dataForm)
       check(q)
       q.sql shouldBe
@@ -23,7 +23,7 @@ class ProjectUserFormTableTests
            | VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
           .filterNot(_ == '\n')
     }
-    it("insert Or Update") {
+    it("insertOrUpdate") {
       val q = insertOrUpdate(Scalafix.project)(Scalafix.dataForm)
       q.sql shouldBe
         s"""INSERT INTO project_user_data (organization, repository, defaultStableVersion, defaultArtifact,
@@ -34,12 +34,12 @@ class ProjectUserFormTableTests
     }
     it("update user data") {
       val q = update(Scalafix.project)(Scalafix.dataForm)
-      q.sql shouldBe s"""|UPDATE project_user_data SET defaultStableVersion=?, defaultArtifact=?,
-                         | strictVersions=?, customScalaDoc=?, documentationLinks=?, deprecated=?,
-                         | contributorsWanted=?, artifactDeprecations=?, cliArtifacts=?, primaryTopic=?
-                         | WHERE organization=? AND repository=?
-                         |""".stripMargin.filterNot(_ == '\n')
-
+      q.sql shouldBe
+        s"""|UPDATE project_user_data SET defaultStableVersion=?, defaultArtifact=?,
+            | strictVersions=?, customScalaDoc=?, documentationLinks=?, deprecated=?,
+            | contributorsWanted=?, artifactDeprecations=?, cliArtifacts=?, primaryTopic=?
+            | WHERE organization=? AND repository=?
+            |""".stripMargin.filterNot(_ == '\n')
     }
   }
 }

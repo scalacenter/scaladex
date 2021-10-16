@@ -22,9 +22,9 @@ import ch.epfl.scala.index.data.download.PlayWsDownloader
 import ch.epfl.scala.index.data.maven.DownloadParentPoms
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.maven.ReleaseModel
-import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.Release
 import ch.epfl.scala.index.model.misc.GithubRepo
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.DatabaseApi
 import ch.epfl.scala.services.storage.DataPaths
@@ -161,5 +161,5 @@ private[api] class PublishProcess(
   private def getGithubRepo(pom: ReleaseModel): Option[GithubRepo] =
     (new GithubRepoExtractor(paths)).apply(pom)
 
-  private var cachedReleases = Map.empty[Project.Reference, Set[Release]]
+  private var cachedReleases = Map.empty[NewProject.Reference, Set[Release]]
 }

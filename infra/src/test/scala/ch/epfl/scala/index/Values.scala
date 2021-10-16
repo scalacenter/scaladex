@@ -7,24 +7,23 @@ import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.Platform._
 import ch.epfl.scala.index.model.release.Scala3Version
 import ch.epfl.scala.index.model.release.ScalaVersion
-import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewProject.DataForm
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
+import ch.epfl.scala.index.newModel.ReleaseDependency
 
 object Values {
 
   object Scalafix {
-    val reference: Project.Reference =
-      Project.Reference("scalacenter", "scalafix")
     val project: NewProject =
       NewProject.defaultProject(
-        reference.organization,
-        reference.repository,
+        "scalacenter",
+        "scalafix",
         None
       )
 
+    val reference: NewProject.Reference = project.reference
     val githubInfo = GithubInfo.empty
     val projectWithGithubInfo: NewProject =
       project.copy(githubInfo = Some(githubInfo))
@@ -43,22 +42,18 @@ object Values {
     )
     val projectWithdataForm: NewProject =
       project.copy(dataForm = dataForm)
-  }
 
-  object PlayJsonExtra {
-    val reference: Project.Reference =
-      Project.Reference("xuwei-k", "play-json-extra")
     val release: NewRelease = NewRelease(
       MavenReference(
-        "com.github.xuwei-k",
-        "play-json-extra_2.10",
-        "0.1.1-play2.3-M1"
+        "ch.epfl.scala",
+        "scalafix-core_2.13",
+        "0.9.30"
       ),
-      version = SemanticVersion.tryParse("0.1.1-play2.3-M1").get,
-      organization = reference.org,
-      repository = reference.repo,
-      artifactName = ArtifactName("play-json-extra"),
-      platform = ScalaJvm(ScalaVersion.`2.11`),
+      version = SemanticVersion.tryParse("0.9.30").get,
+      organization = reference.organization,
+      repository = reference.repository,
+      artifactName = ArtifactName("scalafix-core"),
+      platform = ScalaJvm(ScalaVersion.`2.13`),
       description = None,
       released = None,
       resolver = None,
@@ -67,14 +62,43 @@ object Values {
     )
   }
 
+  object PlayJsonExtra {
+    val project: NewProject =
+      NewProject.defaultProject("xuwei-k", "play-json-extra")
+    val reference: NewProject.Reference = project.reference
+    val release: NewRelease = NewRelease(
+      MavenReference(
+        "com.github.xuwei-k",
+        "play-json-extra_2.10",
+        "0.1.1-play2.3-M1"
+      ),
+      version = SemanticVersion.tryParse("0.1.1-play2.3-M1").get,
+      organization = reference.organization,
+      repository = reference.repository,
+      artifactName = ArtifactName("play-json-extra"),
+      platform = ScalaJvm(ScalaVersion.`2.11`),
+      description = None,
+      released = None,
+      resolver = None,
+      licenses = Set(),
+      isNonStandardLib = false
+    )
+    val dependency: ReleaseDependency = {
+      ReleaseDependency(
+        source = Cats.core.maven,
+        target = release.maven,
+        "compile"
+      )
+    }
+  }
+
   object Cats {
-    val reference: Project.Reference = Project.Reference("typelevel", "cats")
     val project: NewProject = NewProject.defaultProject(
-      reference.organization,
-      reference.repository,
+      "typelevel",
+      "cats",
       None
     )
-
+    val reference: NewProject.Reference = project.reference
     private def release(
         artifactName: ArtifactName,
         artifactId: String
@@ -86,8 +110,8 @@ object Values {
           "2.6.1"
         ),
         SemanticVersion.tryParse("2.6.1").get,
-        organization = reference.org,
-        repository = reference.repo,
+        organization = reference.organization,
+        repository = reference.repository,
         artifactName = artifactName,
         platform = ScalaJvm(Scala3Version.`3`),
         description = None,
@@ -100,13 +124,17 @@ object Values {
     val core: NewRelease = release(ArtifactName("cats-core"), "cats-core_3")
     val kernel: NewRelease =
       release(ArtifactName("cats-kernel"), "cats-kernel_3")
-    val dependencies: Seq[NewDependency] = Seq(
-      NewDependency(
+    val laws: NewRelease =
+      release(ArtifactName("cats-laws"), "cats-laws_3")
+
+    val dependencies: Seq[ReleaseDependency] = Seq(
+      ReleaseDependency(
         source = core.maven,
-        target = MavenReference("org.typelevel", "cats-kernel_3", "2.6.1"),
+        target = kernel.maven,
         "compile"
       ),
-      NewDependency(
+      ReleaseDependency(source = core.maven, target = laws.maven, "compile"),
+      ReleaseDependency(
         source = core.maven,
         target = MavenReference(
           "com.gu",
@@ -117,7 +145,7 @@ object Values {
       )
     )
 
-    val dependency: NewDependency = NewDependency(
+    val dependency: ReleaseDependency = ReleaseDependency(
       source = MavenReference(
         "cats-effect",
         "cats-effect-kernel_3",
@@ -127,7 +155,7 @@ object Values {
       "compile"
     )
 
-    val testDependency: NewDependency = NewDependency(
+    val testDependency: ReleaseDependency = ReleaseDependency(
       source = MavenReference(
         "cats-effect",
         "cats-effect-kernel_3",
@@ -138,8 +166,8 @@ object Values {
     )
 
     val projectDocument: Project = Project(
-      reference.organization,
-      reference.repository,
+      reference.organization.value,
+      reference.repository.value,
       defaultArtifact = Some(core.artifactName.value),
       artifacts = List(core.artifactName.value, kernel.artifactName.value),
       releaseCount = 2,
@@ -154,4 +182,5 @@ object Values {
       dependentCount = 0
     )
   }
+
 }

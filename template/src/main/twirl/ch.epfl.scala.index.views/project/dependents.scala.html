@@ -1,9 +1,9 @@
-@import ch.epfl.scala.index.newModel.{NewDependency, NewRelease}
+@import ch.epfl.scala.index.newModel.{ReleaseDependency, NewRelease}
 @import ch.epfl.scala.index.views.Formats
 
 
-@(release: NewRelease, reverseDeps: Seq[NewDependency.Reverse])
-@sampleReverseDeps = @{NewDependency.Reverse.sample(reverseDeps, 100)}
+@(release: NewRelease, reverseDeps: Seq[ReleaseDependency.Reverse])
+@sampleReverseDeps = @{ReleaseDependency.Reverse.sample(reverseDeps, 100)}
 <div class="dependents box" id="dependents">
   <h4>
     <a href="/search?q=depends-on:@release.organization/@release.artifactName">

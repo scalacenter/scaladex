@@ -11,6 +11,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import ch.epfl.scala.index.model.misc._
+import ch.epfl.scala.index.newModel.NewProject
 import org.json4s._
 import org.json4s.native.JsonMethods._
 
@@ -27,21 +28,6 @@ object Response {
     def convert(token: String): UserInfo =
       UserInfo(login, name, avatarUrl, token)
   }
-}
-
-case class UserState(
-    repos: Set[GithubRepo],
-    orgs: Set[Response.Organization],
-    info: UserInfo
-) {
-  def isAdmin: Boolean = orgs.contains(Response.Organization("scalacenter"))
-  def canEdit(githubRepo: GithubRepo): Boolean =
-    isAdmin || repos.contains(githubRepo)
-  def isSonatype: Boolean =
-    orgs.contains(
-      Response.Organization("sonatype")
-    ) || info.login == "central-ossrh"
-  def hasPublishingAuthority: Boolean = isAdmin || isSonatype
 }
 
 class Github()(implicit sys: ActorSystem) extends Json4sSupport {
@@ -195,7 +181,7 @@ class Github()(implicit sys: ActorSystem) extends Json4sSupport {
 
     fetchOrganizations().zip(fetchUser()).zip(fetchRepos()).map {
       case ((orgs, user), repos) =>
-        UserState(repos, orgs, user)
+        UserState(repos, orgs.map(r => NewProject.Organization(r.login)), user)
     }
   }
 }

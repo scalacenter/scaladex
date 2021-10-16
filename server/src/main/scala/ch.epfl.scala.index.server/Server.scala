@@ -22,6 +22,7 @@ import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.DoobieUtils
 import org.slf4j.LoggerFactory
+import scaladex.server.service.SchedulerService
 
 object Server {
   private val log = LoggerFactory.getLogger(getClass)
@@ -65,6 +66,8 @@ object Server {
     transactor
       .use { xa =>
         val db = new SqlRepo(config.dbConf, xa)
+        val scheduler = new SchedulerService(db)
+        scheduler.start()
         val localStorage = new LocalStorageRepo(config.dataPaths)
         val programmaticRoutes = concat(
           PublishApi(paths, data, databaseApi = db).routes,
@@ -75,6 +78,7 @@ object Server {
         )
         val userFacingRoutes = concat(
           new FrontPage(data, db, session).routes,
+          new AdminPages(scheduler, session).routes,
           redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
             concat(
               new ProjectPages(

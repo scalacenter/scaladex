@@ -2,7 +2,6 @@ package ch.epfl.scala.index.newModel
 
 import ch.epfl.scala.index.model.Env
 import ch.epfl.scala.index.model.License
-import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.Release
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.release.MavenReference
@@ -39,8 +38,8 @@ case class NewRelease(
 ) {
   def targetType: Platform.PlatformType = platform.platformType
 
-  def projectRef: Project.Reference =
-    Project.Reference(organization.value, repository.value)
+  def projectRef: NewProject.Reference =
+    NewProject.Reference(organization, repository)
 
   def fullPlatformVersion: String = platform.showVersion
 

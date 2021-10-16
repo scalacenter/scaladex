@@ -1,7 +1,7 @@
-@import ch.epfl.scala.index.model.misc.{SearchParams, UserInfo}
+@import ch.epfl.scala.index.model.misc.SearchParams
+@import ch.epfl.scala.index.model.misc.UserState
 
-
-@(user: Option[UserInfo], params: SearchParams)
+@(user: Option[UserState], params: SearchParams)
 @main(title = "Invalid Query", showSearch = true, params = params, user = user) {
 <main class="container">
   <h1>Not a valid query</h1>

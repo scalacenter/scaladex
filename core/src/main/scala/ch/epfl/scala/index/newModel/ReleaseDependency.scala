@@ -1,6 +1,5 @@
 package ch.epfl.scala.index.newModel
 
-import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.release.MavenReference
 
 /**
@@ -9,41 +8,41 @@ import ch.epfl.scala.index.model.release.MavenReference
  * @param source the maven reference of the source, ex: scaladex
  * @param target the maven reference of one of the dependant libraries of the source, ex: doobie
  */
-case class NewDependency(
+case class ReleaseDependency(
     source: MavenReference,
     target: MavenReference,
     scope: String
 )
 
-object NewDependency {
+object ReleaseDependency {
   final case class Direct(
-      dependency: NewDependency,
+      releaseDep: ReleaseDependency,
       target: Option[NewRelease]
   ) {
     def url: String = target match {
-      case Some(release) => release.httpUrl
+      case Some(dep) => dep.httpUrl
       case None =>
-        s"http://search.maven.org/#artifactdetails|${dependency.target.groupId}|${dependency.target.artifactId}|${dependency.target.version}|jar"
+        s"http://search.maven.org/#artifactdetails|${releaseDep.target.groupId}|${releaseDep.target.artifactId}|${releaseDep.target.version}|jar"
     }
 
     def name: String = target match {
       case Some(release) => s"${release.organization}/${release.artifactName}"
       case None =>
-        s"${dependency.target.groupId}/${dependency.target.artifactId}"
+        s"${releaseDep.target.groupId}/${releaseDep.target.artifactId}"
     }
 
-    val version: String = dependency.target.version
+    val version: String = releaseDep.target.version
 
-    def isInternal(ref: Project.Reference): Boolean =
+    def isInternal(ref: NewProject.Reference): Boolean =
       target.exists(_.projectRef == ref)
   }
   object Direct {
     implicit val order: Ordering[Direct] =
-      Ordering.by(d => ordering(d.dependency, d.name))
+      Ordering.by(d => ordering(d.releaseDep, d.name))
   }
 
   final case class Reverse(
-      dependency: NewDependency,
+      dependency: ReleaseDependency,
       source: NewRelease
   ) {
     def url: String = source.httpUrl
@@ -66,7 +65,10 @@ object NewDependency {
     }
   }
 
-  private def ordering(dependency: NewDependency, name: String): (Int, String) =
+  private def ordering(
+      dependency: ReleaseDependency,
+      name: String
+  ): (Int, String) =
     (
       dependency.scope match {
         case "compile" => 0

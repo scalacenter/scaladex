@@ -36,8 +36,6 @@ case class Release(
 
   def isValid: Boolean =
     reference.isValid
-
-  def isScalaLib: Boolean = reference.isScalaLib
 }
 
 object Release {
@@ -58,9 +56,6 @@ object Release {
     def isValid: Boolean = {
       target.isValid
     }
-
-    def projectReference: Project.Reference =
-      Project.Reference(organization, repository)
 
     def isScalaLib: Boolean = {
       organization == "scala" &&

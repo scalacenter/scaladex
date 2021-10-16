@@ -5,7 +5,7 @@
 
 
 @(project: NewProject,
-  user: Option[UserInfo],
+  user: Option[UserState],
   targetTypesWithVersion: Map[Platform.PlatformType, Seq[String]],
   semanticVersionWithReleases: Seq[(SemanticVersion, Map[NewRelease.ArtifactName, Seq[(NewRelease, String)]])]
 )

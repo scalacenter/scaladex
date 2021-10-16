@@ -9,6 +9,7 @@ import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc.Pagination
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.search.mapping._
 import com.sksamuel.elastic4s.ElasticClient
 import com.sksamuel.elastic4s.ElasticDsl
@@ -248,7 +249,9 @@ class ESRepo(
    * Get all the releases of a particular project
    * It does not retrieve the dependencies of the releases
    */
-  def getProjectReleases(project: Project.Reference): Future[Seq[Release]] = {
+  def getProjectReleases(
+      project: NewProject.Reference
+  ): Future[Seq[Release]] = {
     val query = must(
       termQuery("reference.organization", project.organization),
       termQuery("reference.repository", project.repository)
@@ -287,7 +290,7 @@ class ESRepo(
       .map(_.result.to[ReleaseDocument].headOption.map(_.toRelease))
   }
 
-  def getProject(project: Project.Reference): Future[Option[Project]] = {
+  def getProject(project: NewProject.Reference): Future[Option[Project]] = {
     val query = must(
       termQuery("organization.keyword", project.organization),
       termQuery("repository.keyword", project.repository)
@@ -303,7 +306,7 @@ class ESRepo(
    * It does not retrieve the dependencies of the releases
    */
   def getProjectAndReleases(
-      projectRef: Project.Reference
+      projectRef: NewProject.Reference
   ): Future[Option[(Project, Seq[Release])]] = {
     val projectF = getProject(projectRef)
     val projectReleaseF = getProjectReleases(projectRef)
@@ -319,7 +322,7 @@ class ESRepo(
    * It does not retrieve the dependencies of the release
    */
   def getProjectAndReleaseOptions(
-      ref: Project.Reference,
+      ref: NewProject.Reference,
       selection: ReleaseSelection
   ): Future[Option[(Project, ReleaseOptions)]] = {
     getProjectAndReleases(ref).map {
@@ -348,16 +351,6 @@ class ESRepo(
   def getLatestReleases(): Future[List[Release]] = {
     getLatest[ReleaseDocument](releaseIndex, "released", frontPageCount)
       .map(_.map(_.toRelease))
-  }
-
-  def getMostDependentUpon(): Future[List[Project]] = {
-    val request = search(projectIndex)
-      .query(matchAllQuery())
-      .limit(frontPageCount)
-      .sortBy(sortQuery(Some("dependentCount")))
-    esClient
-      .execute(request)
-      .map(_.result.to[Project].toList)
   }
 
   def getTopics(params: SearchParams): Future[List[(String, Long)]] = {
@@ -407,18 +400,6 @@ class ESRepo(
       Platform.SbtPlugin.isValid
     )
       .map(addLabelsIfMissing(params.sbtVersions.toSet))
-  }
-
-  def getTotalProjects(): Future[Long] = {
-    esClient
-      .execute(search(projectIndex))
-      .map(_.result.totalHits)
-  }
-
-  def getTotalReleases(): Future[Long] = {
-    esClient
-      .execute(search(releaseIndex))
-      .map(_.result.totalHits)
   }
 
   def getContributingProjects(): Future[List[Project]] = {

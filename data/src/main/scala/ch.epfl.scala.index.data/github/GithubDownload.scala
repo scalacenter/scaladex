@@ -15,8 +15,8 @@ import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.download.PlayWsClient
 import ch.epfl.scala.index.data.download.PlayWsDownloader
 import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubRepo
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import com.typesafe.config.ConfigFactory
@@ -690,7 +690,7 @@ class GithubDownload(
 
       val projectReferences =
         githubRepos.map { case repo @ GithubRepo(organization, repository) =>
-          (repo, Project.Reference(organization, repository))
+          (repo, NewProject.Reference.from(organization, repository))
         }.toList
 
       projectReferences.flatMap { case (repo, reference) =>

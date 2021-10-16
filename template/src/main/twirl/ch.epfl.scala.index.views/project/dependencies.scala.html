@@ -1,9 +1,8 @@
-@import ch.epfl.scala.index.model.Project
-@import ch.epfl.scala.index.newModel.NewDependency
+@import ch.epfl.scala.index.newModel.NewProject
+@import ch.epfl.scala.index.newModel.ReleaseDependency
 @import ch.epfl.scala.index.views.Formats
 
-
-@(ref: Project.Reference, allDeps: Seq[NewDependency.Direct])
+@(ref: NewProject.Reference, allDeps: Seq[ReleaseDependency.Direct])
 @internalDeps = @{allDeps.filter(_.isInternal(ref)).sorted}
 @remainingDeps =   @{allDeps.filterNot(_.isInternal(ref)).sorted}
 <div class="dependencies box">
@@ -19,7 +18,7 @@
 }
 
 @* reusable code block for dependency listing *@
-@dependencyBlock(dependencies: Seq[NewDependency.Direct]) = {
+@dependencyBlock(dependencies: Seq[ReleaseDependency.Direct]) = {
   <ul>
   @for(fullDep <- dependencies){
     <li>
@@ -27,7 +26,7 @@
         @fullDep.name
       </a>
       v@{fullDep.version}
-      <span class="label label-primary">@fullDep.dependency.scope</span>
+      <span class="label label-primary">@fullDep.releaseDep.scope</span>
     </li>
   }
   </ul>

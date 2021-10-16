@@ -14,15 +14,15 @@ import ch.epfl.scala.index.model.misc.Url
 import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Resolver
-import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
 import ch.epfl.scala.index.newModel.NewProject.Organization
 import ch.epfl.scala.index.newModel.NewProject.Repository
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
+import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.services.storage.sql.DatabaseConfig
-import ch.epfl.scala.utils.ScalaExtensions.OptionExtension
+import ch.epfl.scala.utils.ScalaExtensions._
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import doobie._
@@ -106,9 +106,9 @@ object DoobieUtils {
     def buildSelect(
         table: Fragment,
         fields: Fragment,
-        where: Fragment
+        conditions: Fragment
     ): Fragment =
-      buildSelect(table, fields) ++ space ++ where
+      buildSelect(table, fields) ++ space ++ conditions
 
     def where(org: Organization, repo: Repository): Fragment =
       fr0"WHERE organization=$org AND repository=$repo"
@@ -204,7 +204,7 @@ object DoobieUtils {
         )
       }
 
-    implicit val dependencyWriter: Write[NewDependency] =
+    implicit val dependencyWriter: Write[ReleaseDependency] =
       Write[(String, String, String, String, String, String, String)]
         .contramap { d =>
           (
@@ -287,9 +287,9 @@ object DoobieUtils {
       }
 
 //    // todo: Should not be necessary to write this
-    implicit val dependencyDirectReader: Read[NewDependency.Direct] = Read[
+    implicit val dependencyDirectReader: Read[ReleaseDependency.Direct] = Read[
       (
-          NewDependency,
+          ReleaseDependency,
           Option[String],
           Option[String],
           Option[SemanticVersion],
@@ -319,7 +319,7 @@ object DoobieUtils {
             Some(licenses),
             Some(isNonStandardLib)
           ) =>
-        NewDependency.Direct(
+        ReleaseDependency.Direct(
           dependency,
           Some(
             NewRelease(
@@ -338,7 +338,7 @@ object DoobieUtils {
           )
         )
       case (dependency, _, _, _, _, _, _, _, _, _, _, _, _) =>
-        NewDependency.Direct(dependency, None)
+        ReleaseDependency.Direct(dependency, None)
     }
 
     private def toJson[A](v: A)(implicit e: Encoder[A]): String =

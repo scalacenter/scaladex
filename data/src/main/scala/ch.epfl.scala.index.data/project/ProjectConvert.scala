@@ -10,10 +10,10 @@ import ch.epfl.scala.index.data.project.ProjectConvert.ProjectSeed
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.newModel.NewDependency
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
+import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalRepository
 import ch.epfl.scala.services.storage.local.LocalStorageRepo
@@ -34,8 +34,8 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
    */
   def convertAll(
       pomsRepoSha: Iterable[(ReleaseModel, LocalRepository, String)],
-      indexedReleases: Map[Project.Reference, Seq[Release]]
-  ): (Seq[Project], Seq[Release], Seq[NewDependency]) = {
+      indexedReleases: Map[NewProject.Reference, Seq[Release]]
+  ): (Seq[Project], Seq[Release], Seq[ReleaseDependency]) = {
 
     val githubRepoExtractor = new GithubRepoExtractor(paths)
 
@@ -87,7 +87,8 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
         githubRepo
       }
       .map { case (githubRepo @ GithubRepo(organization, repository), vs) =>
-        val projectReference = Project.Reference(organization, repository)
+        val projectReference =
+          NewProject.Reference.from(organization, repository)
 
         val oldReleases =
           indexedReleases.getOrElse(projectReference, Set())
@@ -178,7 +179,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
         val (max, min) = maxMinRelease(allReleases)
 
         val defaultStableVersion = storedProjects
-          .get(Project.Reference(organization, repository))
+          .get(NewProject.Reference.from(organization, repository))
           .forall(_.defaultStableVersion)
 
         val releaseOptions = ReleaseOptions(
@@ -208,7 +209,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
     log.info("Dependencies")
     val poms = pomsAndMetaClean.map { case (_, _, _, pom, _, _, _, _) => pom }
 
-    val allDependencies: Seq[NewDependency] =
+    val allDependencies: Seq[ReleaseDependency] =
       poms.flatMap(getDependencies).distinct
 
     val projectWithReleases = projectsAndReleases.map { case (seed, releases) =>
@@ -242,10 +243,10 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
     )
   }
 
-  private def getDependencies(pom: ReleaseModel): List[NewDependency] =
+  private def getDependencies(pom: ReleaseModel): List[ReleaseDependency] =
     pom.dependencies
       .map(dep =>
-        NewDependency(
+        ReleaseDependency(
           pom.mavenRef,
           dep.mavenRef,
           dep.scope.getOrElse("compile")
@@ -260,7 +261,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
       created: DateTime,
       githubRepo: GithubRepo,
       existingProject: Option[NewProject]
-  ): Option[(NewProject, NewRelease, Seq[NewDependency])] = {
+  ): Option[(NewProject, NewRelease, Seq[ReleaseDependency])] = {
     val pomMetaOpt = PomMeta.from(pom, created, localRepository, paths, sha1)
     val githubInfo = GithubReader(paths, githubRepo)
     val licenseCleanup = new LicenseCleanup(paths)
@@ -311,9 +312,6 @@ object ProjectConvert {
       created: Option[String],
       updated: Option[String]
   ) {
-
-    def reference: Project.Reference =
-      Project.Reference(organization, repository)
 
     def toProject(
         targetType: List[String],

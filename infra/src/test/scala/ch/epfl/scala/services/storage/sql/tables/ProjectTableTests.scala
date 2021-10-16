@@ -11,9 +11,9 @@ class ProjectTableTests
     with Matchers {
   import Values._
 
-  describe("ProjectTable") {
-    import ProjectTable._
-    it("should generate insert the query") {
+  import ProjectTable._
+  describe("should generate insert the query for") {
+    it("insert") {
       val q = insert(Scalafix.project)
       check(q)
       q.sql shouldBe
@@ -21,7 +21,7 @@ class ProjectTableTests
            | VALUES (?, ?, ?)""".stripMargin
           .filterNot(_ == '\n')
     }
-    it("insert Or Update") {
+    it("insertOrUpdate") {
       val q = insertOrUpdate(Scalafix.project)
       q.sql shouldBe
         s"""INSERT INTO projects (organization, repository, esId)

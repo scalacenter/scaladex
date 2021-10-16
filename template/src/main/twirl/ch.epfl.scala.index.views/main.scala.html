@@ -1,11 +1,11 @@
-@import ch.epfl.scala.index.model.misc.{HeadMeta, SearchParams, UserInfo}
+@import ch.epfl.scala.index.model.misc.{HeadMeta, SearchParams}
+@import ch.epfl.scala.index.model.misc.UserState
 
-
-@(title: String, showSearch: Boolean, user: Option[UserInfo],
+@(title: String, showSearch: Boolean, user: Option[UserState],
   params: SearchParams = SearchParams(), you: Boolean = false,
   extraMeta: Seq[HeadMeta] = Seq.empty,
   totalProjects: Option[Long] = None, totalReleases: Option[Long] = None)(content: Html)
-
+@btn = @{if(you) "btn-primary" else "btn-default"}
 <!DOCTYPE HTML>
 <html lang="en">
   <head>
@@ -65,21 +65,22 @@
                     </div>
                     <div class="col-md-3">
                         @user.map{ u =>
-                            <a class="btn btn-default pull-right" href="/logout">
-                                Logout
-                            </a>
-                            <a class="btn pull-right you
-                                @if(you) {
-                                    btn-primary
-                                } else {
-                                    btn-default
-                                }
-                                "
-                                href="/search?q=@params.queryString@if(!you){&you=✓}"
-                            >
-                                <img src="@u.sizedAvatarUrl(38)" alt="Your Avatar - @u.login">
-                                <span style="vertical-align: middle">Projects</span>
-                            </a>
+                        <div class="dropdown pull-right ">
+                            <button class="btn @btn dropdown-toggle you" type="button" id="userLogging"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                                <img src="@u.info.sizedAvatarUrl(38)" alt="Your Avatar - @u.info.login">
+                                <span style="vertical-align: middle">@u.info.login</span>
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="userLogging">
+                                <li><a href="/search?q=@params.queryString@if(!you){&you=✓}">My projects</a></li>
+                                @if(u.isAdmin) {
+                                    <li><a href="/admin">Admin</a></li>
+                                    } else ()
+                                <li role="separator" class="divider"></li>
+                                <li><a href="/logout">Logout</a></li>
+                            </ul>
+
                         }.getOrElse {
                             <a class="btn btn-primary pull-right" href="/login">
                                 <i class="fa fa-github fa-lg" aria-hidden="true"></i> Login
@@ -146,7 +147,7 @@
 
         // Run client scalajs code (for instance, autocomplete)
         @if(user.isDefined) {
-          ScaladexClient.main("@user.get.token");
+          ScaladexClient.main("@user.get.info.token");
         } else {
           ScaladexClient.main();
         }

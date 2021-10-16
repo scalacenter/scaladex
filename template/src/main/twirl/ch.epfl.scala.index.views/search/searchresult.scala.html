@@ -1,15 +1,15 @@
 @import akka.http.scaladsl.model.Uri
 @import ch.epfl.scala.index.model.Project
-@import ch.epfl.scala.index.model.misc.{Pagination, SearchParams, UserInfo}
+@import ch.epfl.scala.index.model.misc.{Pagination, SearchParams}
 @import ch.epfl.scala.index.views.html._
-
+@import ch.epfl.scala.index.model.misc.UserState
 
 @(
   params: SearchParams,
   uri: Uri,
   pagination: Pagination,
   projects: List[Project],
-  user: Option[UserInfo],
+  user: Option[UserState],
   you: Boolean,
   topics: List[(String, Long)],
   targetTypes: List[(String, String, Long)],

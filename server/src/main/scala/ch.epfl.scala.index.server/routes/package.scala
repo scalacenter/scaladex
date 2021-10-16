@@ -7,11 +7,11 @@ import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives.Segment
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.PathMatcher1
-import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubIssue
 import ch.epfl.scala.index.model.misc.SearchParams
 import ch.epfl.scala.index.model.misc.Url
+import ch.epfl.scala.index.model.misc.UserState
 import ch.epfl.scala.index.model.release.ReleaseOptions
 import ch.epfl.scala.index.model.release.ReleaseSelection
 import ch.epfl.scala.index.newModel.NewProject
@@ -176,7 +176,7 @@ package object routes {
       version = version,
       selected = selected
     )
-    val projectRef = Project.Reference(org.value, repo.value)
+    val projectRef = NewProject.Reference(org, repo)
     for {
       project <- db.findProject(projectRef)
       releases <- db.findReleases(projectRef)

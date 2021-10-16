@@ -40,8 +40,8 @@ class ProjectPages(
   import session.implicits._
 
   private def getEditPage(
-      projectRef: Project.Reference,
-      userInfo: UserInfo
+      projectRef: NewProject.Reference,
+      userInfo: UserState
   ): Future[(StatusCode, HtmlFormat.Appendable)] = {
     for {
       projectOpt <- db.findProject(projectRef)
@@ -83,7 +83,7 @@ class ProjectPages(
       target: Option[String],
       artifact: NewRelease.ArtifactName,
       version: Option[SemanticVersion],
-      user: Option[UserInfo]
+      user: Option[UserState]
   ): Future[(StatusCode, HtmlFormat.Appendable)] = {
     val selection = ReleaseSelection.parse(
       platform = target,
@@ -92,7 +92,7 @@ class ProjectPages(
       selected = None
     )
     val projectRef =
-      Project.Reference(organization.value, repository.value)
+      NewProject.Reference(organization, repository)
 
     db.findProject(projectRef).flatMap {
       case Some(project) =>
@@ -155,11 +155,11 @@ class ProjectPages(
   val routes: Route =
     concat(
       post(
-        path("edit" / Segment / Segment)((organization, repository) =>
+        path("edit" / organizationM / repositoryM)((organization, repository) =>
           optionalSession(refreshable, usingCookies)(_ =>
             pathEnd(
               editForm { form =>
-                val ref = Project.Reference(organization, repository)
+                val ref = NewProject.Reference(organization, repository)
                 val updated = for {
                   _ <- localStorage.saveDataForm(ref, form)
                   updated <- db.updateProjectForm(
@@ -188,8 +188,8 @@ class ProjectPages(
       get {
         path("artifacts" / organizationM / repositoryM)((org, repo) =>
           optionalSession(refreshable, usingCookies) { userId =>
-            val user = session.getUser(userId).map(_.info)
-            val ref = Project.Reference(org.value, repo.value)
+            val user = session.getUser(userId)
+            val ref = NewProject.Reference(org, repo)
             val res =
               for {
                 projectOpt <- db.findProject(ref)
@@ -261,16 +261,16 @@ class ProjectPages(
           optionalSession(refreshable, usingCookies)(userId =>
             pathEnd {
               val projectRef =
-                Project.Reference(organization.value, repository.value)
+                NewProject.Reference(organization, repository)
               session.getUser(userId) match {
                 case Some(userState)
                     if userState.canEdit(projectRef.githubRepo) =>
-                  complete(getEditPage(projectRef, userState.info))
+                  complete(getEditPage(projectRef, userState))
                 case maybeUser =>
                   complete(
                     (
                       StatusCodes.Forbidden,
-                      views.html.forbidden(maybeUser.map(_.info))
+                      views.html.forbidden(maybeUser)
                     )
                   )
               }
@@ -307,7 +307,7 @@ class ProjectPages(
                     complete(
                       StatusCodes.NotFound,
                       views.html.notfound(
-                        session.getUser(userId).map(_.info)
+                        session.getUser(userId)
                       )
                     )
                 }
@@ -321,7 +321,7 @@ class ProjectPages(
           (organization, repository, artifact) =>
             optionalSession(refreshable, usingCookies)(userId =>
               parameter("target".?) { target =>
-                val user = session.getUser(userId).map(_.info)
+                val user = session.getUser(userId)
                 val res = getProjectPage(
                   organization,
                   repository,
@@ -344,7 +344,7 @@ class ProjectPages(
           (organization, repository, artifact, version) =>
             optionalSession(refreshable, usingCookies) { userId =>
               parameter("target".?) { target =>
-                val user = session.getUser(userId).map(_.info)
+                val user = session.getUser(userId)
                 val res = getProjectPage(
                   organization,
                   repository,

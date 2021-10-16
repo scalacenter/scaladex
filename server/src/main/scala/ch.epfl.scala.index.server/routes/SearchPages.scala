@@ -9,6 +9,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import ch.epfl.scala.index.model.misc.Page
 import ch.epfl.scala.index.model.misc.SearchParams
+import ch.epfl.scala.index.model.misc.UserState
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.index.views.search.html.searchresult
@@ -49,7 +50,7 @@ class SearchPages(dataRepository: ESRepo, session: GithubUserSession)(implicit
           uri,
           pagination,
           projects.toList,
-          user.map(_.info),
+          user,
           params.userRepos.nonEmpty,
           topics,
           targetTypes,
