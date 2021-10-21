@@ -5,12 +5,14 @@ import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.model.misc.TwitterSummaryCard
 import ch.epfl.scala.index.newModel.NewProject._
+import org.joda.time.DateTime
 
 // TODO: document NewProject fields
 case class NewProject(
     organization: Organization,
     repository: Repository,
     githubInfo: Option[GithubInfo],
+    created: Option[DateTime],
     esId: Option[String],
     // form data
     dataForm: DataForm
@@ -58,12 +60,14 @@ object NewProject {
       org: String,
       repo: String,
       githubInfo: Option[GithubInfo] = None,
+      created: Option[DateTime] = None,
       formData: DataForm = DataForm.default
   ): NewProject =
     NewProject(
       Organization(org),
       repository = Repository(repo),
       githubInfo = githubInfo,
+      created = created,
       esId = None,
       dataForm = formData
     )
@@ -133,6 +137,7 @@ object NewProject {
       organization = Organization(p.organization),
       repository = Repository(p.repository),
       githubInfo = p.github,
+      created = None,
       esId = p.id,
       dataForm = DataForm.from(p)
     )

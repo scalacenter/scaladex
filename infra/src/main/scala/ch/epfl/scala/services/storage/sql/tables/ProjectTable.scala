@@ -14,13 +14,14 @@ object ProjectTable {
   private val fields = Seq(
     "organization",
     "repository",
+    "created",
     "esId"
   )
 
   private val tableFr: Fragment = Fragment.const0(table)
   private val fieldsFr: Fragment = Fragment.const0(fields.mkString(", "))
   private def values(p: NewProject): Fragment =
-    fr0"${p.organization}, ${p.repository}, ${p.esId}"
+    fr0"${p.organization}, ${p.repository}, ${p.created}, ${p.esId}"
 
   def insert(elt: NewProject): doobie.Update0 =
     buildInsert(tableFr, fieldsFr, values(elt)).update

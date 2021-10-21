@@ -2,7 +2,6 @@ package ch.epfl.scala.utils
 
 import scala.concurrent.ExecutionContext
 import scala.util.Try
-
 import cats.effect.ContextShift
 import cats.effect.IO
 import cats.effect._
@@ -30,6 +29,7 @@ import doobie.hikari.HikariTransactor
 import doobie.implicits._
 import doobie.util.Read
 import doobie.util.Write
+import doobie.implicits._
 import doobie.util.fragment.Fragment
 import doobie.util.meta.Meta
 import io.circe._
@@ -37,6 +37,8 @@ import io.circe.generic.semiauto.deriveDecoder
 import io.circe.generic.semiauto.deriveEncoder
 import org.flywaydb.core.Flyway
 import org.joda.time.DateTime
+
+import java.time.{Instant, ZoneOffset}
 
 object DoobieUtils {
 
@@ -168,9 +170,8 @@ object DoobieUtils {
     }
     implicit val resolverMeta: Meta[Resolver] =
       stringMeta.timap(Resolver.from(_).get)(_.name)
-    implicit val dateFormatMeta: Meta[DateTime] = stringMeta.timap(
-      NewRelease.format.parseDateTime
-    )(NewRelease.format.print(_))
+//    implicit val dateFormatMeta: Meta[DateTime] =
+//    implicit val dateFormatMeta: Meta[DateTime] = Meta[Instant].timap(DateTime)
     implicit val releaseWriter: Write[NewRelease] =
       Write[
         (
@@ -222,6 +223,7 @@ object DoobieUtils {
       (
           Organization,
           Repository,
+          Option[DateTime],
           Option[String]
       )
     ]
@@ -229,12 +231,14 @@ object DoobieUtils {
         case (
               organization,
               repository,
+              created,
               esId
             ) =>
           NewProject(
             organization = organization,
             repository = repository,
             githubInfo = None,
+            created = created,
             esId = esId,
             dataForm = NewProject.DataForm.default
           )

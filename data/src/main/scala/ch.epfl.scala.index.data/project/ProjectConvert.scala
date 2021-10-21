@@ -277,7 +277,8 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
             NewProject.defaultProject(
               githubRepo.organization,
               githubRepo.repository,
-              githubInfo
+              githubInfo,
+              Some(created)
             )
           )
         dependencies = getDependencies(pom)

@@ -41,6 +41,7 @@ object Values {
     release.repository,
     Some(GithubInfo.empty),
     None,
+    None,
     NewProject.DataForm.default
   )
 

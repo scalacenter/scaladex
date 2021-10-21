@@ -38,7 +38,7 @@ trait DatabaseApi {
       projectDependencies: Seq[ProjectDependency]
   ): Future[Int]
   def getMostDependentUponProject(max: Int): Future[List[(NewProject, Long)]]
-
+  def updateCreatedIn(ref: NewProject.Reference): Future[Unit]
   def insertDependencies(dependencies: Seq[ReleaseDependency]): Future[Int]
   def countProjects(): Future[Long]
   def countReleases(): Future[Long]

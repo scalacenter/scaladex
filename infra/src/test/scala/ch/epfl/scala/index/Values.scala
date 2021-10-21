@@ -20,7 +20,7 @@ object Values {
       NewProject.defaultProject(
         "scalacenter",
         "scalafix",
-        None
+        created = None
       )
 
     val reference: NewProject.Reference = project.reference
@@ -96,7 +96,7 @@ object Values {
     val project: NewProject = NewProject.defaultProject(
       "typelevel",
       "cats",
-      None
+      created = None
     )
     val reference: NewProject.Reference = project.reference
     private def release(

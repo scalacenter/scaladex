@@ -115,5 +115,8 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
     override def getMostDependentUponProject(
         max: Int
     ): Future[List[(NewProject, Long)]] = Future.successful(Nil)
+
+    override def updateCreatedInProjects(ref: NewProject): Future[Unit] =
+      Future.successful(())
   }
 }

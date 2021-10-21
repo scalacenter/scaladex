@@ -194,6 +194,13 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO])
 
   }
 
+  override def updateCreatedIn(ref: NewProject.Reference): Future[Unit] = {
+    for {
+      project <- findReleases(ref)
+
+    } yield ()
+  }
+
   // to use only when inserting one element or updating one element
   // when expecting a row to be modified
   private def strictRun(

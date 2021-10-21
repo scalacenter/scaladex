@@ -2,6 +2,7 @@ CREATE TABLE projects (
     organization         VARCHAR(39)   NOT NULL,
     repository           VARCHAR(100)  NOT NULL,
     esId                 VARCHAR,
+    created              TIMESTAMP,
     PRIMARY KEY (organization, repository)
 );
 
@@ -58,7 +59,7 @@ CREATE TABLE releases (
     artifact            VARCHAR NOT NULL,
     platform            VARCHAR NOT NULL,
     description         VARCHAR,
-    released            VARCHAR,
+    released            TIMESTAMP,
     resolver            VARCHAR,
     licenses            VARCHAR NOT NULL,
     isNonStandardLib    BOOLEAN NOT NULL,
