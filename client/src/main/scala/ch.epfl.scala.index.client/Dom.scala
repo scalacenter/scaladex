@@ -7,7 +7,7 @@ import org.scalajs.dom.raw.Element
 import org.scalajs.dom.raw.HTMLInputElement
 
 object Dom {
-  def getSearchRequest: Option[SearchRequest] = {
+  def getSearchRequest: Option[SearchRequest] =
     for (query <- getSearchQuery)
       yield SearchRequest(
         query = query,
@@ -24,7 +24,6 @@ object Dom {
           .map(_.asInput.value)
           .contains("true")
       )
-  }
 
   def getSearchQuery: Option[String] =
     getSearchInput.map(_.value).filter(_.length > 0)
@@ -38,12 +37,11 @@ object Dom {
   def getElementById(id: String): Option[Element] =
     Option(document.getElementById(id))
 
-  private def getSearchFilter(name: String) = {
+  private def getSearchFilter(name: String) =
     getElementsByName(name)
       .map(_.asInput)
       .filter(_.checked)
       .map(_.value)
-  }
 
   private def getElementsByName(name: String): Seq[Element] = {
     val nodeList = document.getElementsByName(name)

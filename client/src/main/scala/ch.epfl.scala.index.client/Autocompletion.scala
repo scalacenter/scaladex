@@ -25,23 +25,20 @@ class Autocompletion(implicit ec: ExecutionContext) {
 
   private var completionSelection = CompletionSelection.empty
 
-  def run(event: dom.Event): Unit = {
+  def run(event: dom.Event): Unit =
     Dom.getSearchRequest match {
       case Some(request) =>
         for (autocompletion <- RPC.autocomplete(request))
           yield update(autocompletion, request.query)
       case None => cleanResults()
     }
-  }
 
   def navigate(event: KeyboardEvent): Unit = {
     if (event.keyCode == KeyCode.Up && completionSelection.choices.nonEmpty) {
       moveSelection(
         completionSelection.selected.map(_ - 1).filter(_ >= 0)
       )
-    } else if (
-      event.keyCode == KeyCode.Down && completionSelection.choices.nonEmpty
-    ) {
+    } else if (event.keyCode == KeyCode.Down && completionSelection.choices.nonEmpty) {
       moveSelection(
         completionSelection.selected.fold[Option[Int]](Some(0))(i =>
           Some(math.min(i + 1, completionSelection.choices.size - 1))
@@ -64,7 +61,7 @@ class Autocompletion(implicit ec: ExecutionContext) {
       updateSelection()
     }
 
-    def updateSelection(): Unit = {
+    def updateSelection(): Unit =
       Dom.getResultList.foreach { resultList =>
         for (i <- 0 until resultList.childElementCount) {
           val resultElement =
@@ -76,7 +73,6 @@ class Autocompletion(implicit ec: ExecutionContext) {
           }
         }
       }
-    }
   }
 
   private def cleanResults(): Unit = {
@@ -87,7 +83,7 @@ class Autocompletion(implicit ec: ExecutionContext) {
   private def update(
       projects: List[AutocompletionResponse],
       query: String
-  ): Unit = {
+  ): Unit =
     if (Dom.getSearchQuery.contains(query)) {
       cleanResults()
       completionSelection = CompletionSelection(None, projects)
@@ -100,35 +96,30 @@ class Autocompletion(implicit ec: ExecutionContext) {
           )
       }
     }
-  }
 
   private def appendResult(
       owner: String,
       repo: String,
       description: String
-  ): Option[Node] = {
+  ): Option[Node] =
     for {
       resultContainer <- Dom.getResultList
       newItem = projectSuggestion(owner, repo, description)
     } yield {
-      jQuery(newItem).find(".emojify").each { el: Element =>
-        emojify.run(el)
-      }
+      jQuery(newItem).find(".emojify").each { el: Element => emojify.run(el) }
       resultContainer.appendChild(newItem)
     }
-  }
 
   private def projectSuggestion(
       owner: String,
       repo: String,
       description: String
-  ): Element = {
+  ): Element =
     li(
       a(href := s"/$owner/$repo")(
         p(s"$owner / $repo"),
         span(cls := "emojify")(description)
       )
     ).render
-  }
 
 }

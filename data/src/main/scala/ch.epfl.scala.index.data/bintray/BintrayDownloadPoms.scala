@@ -12,9 +12,7 @@ import play.api.libs.ws.WSClient
 import play.api.libs.ws.WSRequest
 import play.api.libs.ws.WSResponse
 
-class BintrayDownloadPoms(paths: DataPaths)(implicit
-    val system: ActorSystem
-) extends PlayWsDownloader {
+class BintrayDownloadPoms(paths: DataPaths)(implicit val system: ActorSystem) extends PlayWsDownloader {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -63,17 +61,13 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit
   /**
    * get a list of bintraySearch object where no sha1 file exists
    */
-  private val searchesBySha1: Set[BintraySearch] = {
-
+  private val searchesBySha1: Set[BintraySearch] =
     BintrayMeta
       .load(paths)
-      .filter(s =>
-        !Files.exists(pomPath(s)) || !verifySHA1FileHash(pomPath(s), s.sha1)
-      )
+      .filter(s => !Files.exists(pomPath(s)) || !verifySHA1FileHash(pomPath(s), s.sha1))
       .groupBy(_.sha1) // remove duplicates with sha1
       .map { case (_, vs) => vs.head }
       .toSet
-  }
 
   /**
    * partly url encode - replaces only spaces
@@ -95,8 +89,7 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit
   private def downloadRequest(
       wsClient: WSClient,
       search: BintraySearch
-  ): WSRequest = {
-
+  ): WSRequest =
     if (search.isJCenter) {
       wsClient.url(escape(s"https://jcenter.bintray.com/${search.path}"))
     } else {
@@ -106,7 +99,6 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit
         )
       )
     }
-  }
 
   /**
    * handle the downloaded pom and write it to file
@@ -116,8 +108,7 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit
   private def processPomDownload(
       search: BintraySearch,
       response: WSResponse
-  ): Unit = {
-
+  ): Unit =
     if (200 == response.status) {
 
       val path = pomPath(search)
@@ -141,7 +132,6 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit
           response.body.toString
       )
     }
-  }
 
   /**
    * main run method

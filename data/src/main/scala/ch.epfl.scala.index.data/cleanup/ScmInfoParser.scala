@@ -26,12 +26,11 @@ object ScmInfoParser extends Parsers {
         .! ~ "/" ~ Segment.rep(1).!.map(removeDotGit)
   )
 
-  def parse(scmInfo: String): Option[GithubRepo] = {
+  def parse(scmInfo: String): Option[GithubRepo] =
     fastparse.parse(scmInfo, x => ScmUrl(x)) match {
       case Parsed.Success((organization, repo), _) =>
         Some(GithubRepo(organization, repo))
       case _ => None
     }
-  }
 
 }

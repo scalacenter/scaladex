@@ -137,8 +137,7 @@ class IndexingActor(
     }
 
     val releaseUpdate = newReleases.headOption match {
-      case Some(release)
-          if !releases.exists(_.reference == release.reference) =>
+      case Some(release) if !releases.exists(_.reference == release.reference) =>
         log.info(s"Adding release ${release.maven}")
         for {
           _ <- dataRepository.insertRelease(release.copy(liveData = true))

@@ -37,9 +37,9 @@ final case class ScalaVersion(version: BinaryVersion) extends LanguageVersion {
 final case class Scala3Version(version: BinaryVersion) extends LanguageVersion {
   def family = "scala3"
   def render: String = version match {
-    case MajorBinary(3) => s"scala 3"
+    case MajorBinary(3)               => s"scala 3"
     case PreReleaseBinary(3, _, _, _) => s"scala $toString"
-    case _ => toString()
+    case _                            => toString()
   }
   def isValid: Boolean = Scala3Version.isValid(version)
   override def toString: String = version.toString()
@@ -57,11 +57,10 @@ object ScalaVersion {
   def isValid(version: BinaryVersion): Boolean =
     stableBinaryVersions.contains(version)
 
-  def Parser[_: P]: P[ScalaVersion] = {
+  def Parser[_: P]: P[ScalaVersion] =
     BinaryVersion.Parser
       .filter(isValid)
       .map(ScalaVersion(_))
-  }
 }
 
 object Scala3Version {
@@ -69,30 +68,27 @@ object Scala3Version {
 
   def isValid(version: BinaryVersion): Boolean =
     version match {
-      case MajorBinary(3) => true
+      case MajorBinary(3)                                 => true
       case PreReleaseBinary(3, _, _, ReleaseCandidate(x)) => true
-      case _ => false
+      case _                                              => false
     }
 
-  def Parser[_: P]: P[Scala3Version] = {
+  def Parser[_: P]: P[Scala3Version] =
     BinaryVersion.Parser
       .filter(isValid)
       .map(Scala3Version(_))
-  }
 }
 
 object LanguageVersion extends Parsers {
-  def tryParse(version: String): Option[LanguageVersion] = {
+  def tryParse(version: String): Option[LanguageVersion] =
     tryParse(version, x => FullParser(x))
-  }
 
-  def sortFamilies(languageFamilies: List[String]): List[String] = {
+  def sortFamilies(languageFamilies: List[String]): List[String] =
     languageFamilies.sorted // alphabetical order: 2.10 < 2.11 < 2.12 < 2.13 < scala3
-  }
 
   implicit val ordering: Ordering[LanguageVersion] = Ordering.by {
     case Scala3Version(version) => (1, version)
-    case ScalaVersion(version) => (0, version)
+    case ScalaVersion(version)  => (0, version)
   }
 
   def Parser[_: P]: P[LanguageVersion] =

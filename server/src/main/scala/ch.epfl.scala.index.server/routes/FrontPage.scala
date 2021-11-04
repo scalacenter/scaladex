@@ -89,8 +89,6 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession)(
 
   val routes: Route =
     pathSingleSlash {
-      optionalSession(refreshable, usingCookies) { userId =>
-        complete(frontPage(session.getUser(userId).map(_.info)))
-      }
+      optionalSession(refreshable, usingCookies)(userId => complete(frontPage(session.getUser(userId).map(_.info))))
     }
 }

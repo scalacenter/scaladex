@@ -69,18 +69,16 @@ case class Project(
     dependentCount: Int,
     primaryTopic: Option[String] = None
 ) {
-  def formatForDisplaying: Project = {
+  def formatForDisplaying: Project =
     copy(
       id = None,
       scalaVersion = LanguageVersion.sortFamilies(scalaVersion),
-      scalaJsVersion =
-        BinaryVersion.sortAndFilter(scalaJsVersion, Js.isValid).toList,
+      scalaJsVersion = BinaryVersion.sortAndFilter(scalaJsVersion, Js.isValid).toList,
       scalaNativeVersion = BinaryVersion
         .sortAndFilter(scalaNativeVersion, Native.isValid)
         .toList,
       sbtVersion = BinaryVersion.sortAndFilter(sbtVersion, Sbt.isValid).toList
     )
-  }
 
   def reference: Project.Reference = Project.Reference(organization, repository)
 

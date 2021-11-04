@@ -25,7 +25,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession)(
       params: SearchParams,
       user: Option[UserState],
       uri: String
-  ) = {
+  ) =
     complete {
       val resultsF = findProjects(params)
       val topicsF = getTopics(params)
@@ -43,24 +43,21 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession)(
         scalaJsVersions <- scalaJsVersionsF
         scalaNativeVersions <- scalaNativeVersionsF
         sbtVersions <- sbtVersionsF
-      } yield {
-        searchresult(
-          params,
-          uri,
-          pagination,
-          projects.toList,
-          user.map(_.info),
-          params.userRepos.nonEmpty,
-          topics,
-          targetTypes,
-          scalaVersions,
-          scalaJsVersions,
-          scalaNativeVersions,
-          sbtVersions
-        )
-      }
+      } yield searchresult(
+        params,
+        uri,
+        pagination,
+        projects.toList,
+        user.map(_.info),
+        params.userRepos.nonEmpty,
+        topics,
+        targetTypes,
+        scalaVersions,
+        scalaJsVersions,
+        scalaNativeVersions,
+        sbtVersions
+      )
     }
-  }
 
   private val searchPath = "search"
 
@@ -79,8 +76,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession)(
             searchParams(user)(params =>
               search(
                 params.copy(
-                  queryString =
-                    s"${params.queryString} AND organization:$organization"
+                  queryString = s"${params.queryString} AND organization:$organization"
                 ),
                 user,
                 organization

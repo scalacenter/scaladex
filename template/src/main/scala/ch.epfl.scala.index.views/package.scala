@@ -19,26 +19,24 @@ package object html {
       )
     )
 
-    def appendQuery(k: String, on: Boolean): Uri = {
+    def appendQuery(k: String, on: Boolean): Uri =
       if (on) uri.appendQuery(k -> "✓")
       else uri
-    }
     def appendQuery(k: String, vs: List[String]): Uri =
-      vs.foldLeft(uri) { case (acc, v) =>
-        acc.appendQuery(k -> v)
+      vs.foldLeft(uri) {
+        case (acc, v) =>
+          acc.appendQuery(k -> v)
       }
-    def appendQuery(k: String, ov: Option[String]): Uri = {
+    def appendQuery(k: String, ov: Option[String]): Uri =
       ov match {
         case Some(v) => appendQuery(k -> v)
-        case None => uri
+        case None    => uri
       }
-    }
   }
 
-  def ensureUri(in: String): String = {
+  def ensureUri(in: String): String =
     if (in.startsWith("https://") || in.startsWith("http://")) in
     else "http://" + in
-  }
 
   def paginationUri(
       params: SearchParams,
@@ -83,7 +81,7 @@ package object html {
         "all arguments must be positive"
       )
 
-      val window = (max min toShow) / 2
+      val window = (max.min(toShow)) / 2
       val left = selected - window
       val right = selected + window
 
@@ -93,7 +91,7 @@ package object html {
           (left, right) match {
             case (l, r) if l < min => (min, min + toShow - 1)
             case (l, r) if r > max => (max - toShow + 1, max)
-            case (l, r) => (l, r - 1 + toShow % 2)
+            case (l, r)            => (l, r - 1 + toShow % 2)
           }
         }
 
@@ -113,13 +111,12 @@ package object html {
     ConfigFactory.load().getConfig("org.scala_lang.index.server")
   val production: Boolean = config.getBoolean("production")
 
-  def unescapeBackground(in: String): String = {
+  def unescapeBackground(in: String): String =
     play.twirl.api.HtmlFormat
       .escape(in)
       .toString
       .replace("url(&#x27;", "url('")
       .replace("&#x27;)", "')")
-  }
 
   def formatDate(date: String): String = {
     import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}

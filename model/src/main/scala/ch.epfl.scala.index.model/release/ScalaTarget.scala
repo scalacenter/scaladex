@@ -88,13 +88,15 @@ case object Sbt extends PlatformVersionedTargetType {
 
   def Parser[_: P]: P[ScalaTarget] =
     ("_" ~ LanguageVersion.Parser ~ "_" ~ BinaryVersion.Parser.filter(isValid))
-      .map { case (scalaVersion, sbtVersion) =>
-        SbtPlugin(scalaVersion, sbtVersion)
+      .map {
+        case (scalaVersion, sbtVersion) =>
+          SbtPlugin(scalaVersion, sbtVersion)
       } | ("_" ~ BinaryVersion.Parser.filter(
       isValid
     ) ~ "_" ~ LanguageVersion.Parser)
-      .map { case (scalaVersion, sbtVersion) =>
-        SbtPlugin(sbtVersion, scalaVersion)
+      .map {
+        case (scalaVersion, sbtVersion) =>
+          SbtPlugin(sbtVersion, scalaVersion)
       }
 }
 
@@ -159,8 +161,7 @@ case class SbtPlugin(
 object ScalaJvm {
   def fromFullVersion(fullVersion: SemanticVersion): Option[ScalaJvm] = {
     val binaryVersion = fullVersion match {
-      case SemanticVersion(major, Some(minor), _, None, None, None)
-          if major == 2 =>
+      case SemanticVersion(major, Some(minor), _, None, None, None) if major == 2 =>
         Some(MinorBinary(major, minor))
       case SemanticVersion(major, _, _, None, None, None) if major == 3 =>
         Some(MajorBinary(major))
@@ -169,7 +170,7 @@ object ScalaJvm {
 
     binaryVersion
       .collect {
-        case version if ScalaVersion.isValid(version) => ScalaVersion(version)
+        case version if ScalaVersion.isValid(version)  => ScalaVersion(version)
         case version if Scala3Version.isValid(version) => Scala3Version(version)
       }
       .map(ScalaJvm(_))
@@ -191,9 +192,8 @@ object ScalaTarget extends Parsers {
       case st: ScalaTarget => (st.targetType, None, st.languageVersion)
     }
 
-  def parse(code: String): Option[ScalaTarget] = {
+  def parse(code: String): Option[ScalaTarget] =
     tryParse(code, x => FullParser(x))
-  }
 
   def FullParser[_: P]: P[ScalaTarget] =
     Parser ~ End

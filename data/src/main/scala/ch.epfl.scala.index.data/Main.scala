@@ -23,15 +23,13 @@ import com.typesafe.scalalogging.LazyLogging
  */
 object Main extends LazyLogging {
 
-  def main(args: Array[String]): Unit = {
-    try {
-      run(args)
-    } catch {
+  def main(args: Array[String]): Unit =
+    try run(args)
+    catch {
       case fatal: Throwable =>
         logger.error("fatal error", fatal)
         sys.exit(1)
     }
-  }
 
   /**
    * Update data:
@@ -67,21 +65,19 @@ object Main extends LazyLogging {
 
     val steps = List(
       // List POMs of Bintray
-      Step("list")({ () =>
+      Step("list") { () =>
         // TODO: should be located in a config file
         val versions = List("2.13", "2.12", "2.11", "2.10")
 
         BintrayListPoms.run(dataPaths, versions, NonStandardLib.load(dataPaths))
-      }),
+      },
       // Download POMs from Bintray
       Step("download")(() => new BintrayDownloadPoms(dataPaths).run()),
       // Download parent POMs
       Step("parent")(() => new DownloadParentPoms(bintray, dataPaths).run()),
       // Download ivy.xml descriptors of sbt-plugins from Bintray
       // and Github information of the corresponding projects
-      Step("sbt") { () =>
-        UpdateBintraySbtPlugins.run(dataPaths)
-      },
+      Step("sbt")(() => UpdateBintraySbtPlugins.run(dataPaths)),
       // Find missing artifacts in maven-central
       Step("central")(() => new CentralMissing(dataPaths).run()),
       // Download additional information about projects from Github
@@ -91,9 +87,7 @@ object Main extends LazyLogging {
       // The IndexingActor does it as well for the projects that are pushed by Maven.
       Step("github")(() => GithubDownload.run(dataPaths)),
       // Re-create the ElasticSearch index
-      Step("elastic") { () =>
-        SeedElasticSearch.run(dataPaths)
-      }
+      Step("elastic")(() => SeedElasticSearch.run(dataPaths))
     )
 
     def updateClaims(): Unit = {
@@ -101,12 +95,11 @@ object Main extends LazyLogging {
       githubRepoExtractor.updateClaims()
     }
 
-    def subIndex(): Unit = {
+    def subIndex(): Unit =
       SubIndex.generate(
         source = DataPaths.fullIndex,
         destination = DataPaths.subIndex
       )
-    }
 
     val stepsToRun =
       args.headOption match {

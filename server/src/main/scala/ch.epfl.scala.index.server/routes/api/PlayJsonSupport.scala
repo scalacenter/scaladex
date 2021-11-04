@@ -58,7 +58,7 @@ trait PlayJsonSupport {
       .forContentTypes(unmarshallerContentTypes: _*)
       .mapWithCharset {
         case (ByteString.empty, _) => throw Unmarshaller.NoContentException
-        case (data, charset) => data.decodeString(charset.nioCharset.name)
+        case (data, charset)       => data.decodeString(charset.nioCharset.name)
       }
 
   private val jsonStringMarshaller =
@@ -91,8 +91,8 @@ trait PlayJsonSupport {
    * @tparam A type to encode
    * @return marshaller for any `A` value
    */
-  implicit def marshaller[A](implicit
-      writes: Writes[A],
+  implicit def marshaller[A](
+      implicit writes: Writes[A],
       printer: JsValue => String = Json.prettyPrint
   ): ToEntityMarshaller[A] =
     jsonStringMarshaller.compose(printer).compose(writes.writes)

@@ -25,13 +25,12 @@ case class Dependencies(
   def externalDependencyCount: Int =
     scalaDependencies.size + javaDependencies.size
 
-  def reverseDependencySample(size: Int): Seq[ScalaDependency] = {
+  def reverseDependencySample(size: Int): Seq[ScalaDependency] =
     reverseDependencies.values
       .map(_.head)
       .take(size)
       .toSeq
       .sorted(reverseDependencyOrder)
-  }
 }
 
 object Dependencies {
@@ -42,11 +41,11 @@ object Dependencies {
   private val dependencyOrder: Ordering[Dependency] = Ordering.by { dep =>
     (
       dep.scope match {
-        case Some("compile") => 0
+        case Some("compile")  => 0
         case Some("provided") => 1
-        case Some("runtime") => 2
-        case Some("test") => 3
-        case _ => 4
+        case Some("runtime")  => 2
+        case Some("test")     => 3
+        case _                => 4
       },
       dep.target.name
     )
@@ -55,10 +54,7 @@ object Dependencies {
   /**
    * order dependencies by dependent release
    */
-  private val reverseDependencyOrder: Ordering[Dependency] = Ordering.by {
-    dep =>
-      dep.dependent.name
-  }
+  private val reverseDependencyOrder: Ordering[Dependency] = Ordering.by(dep => dep.dependent.name)
 
   def apply(
       release: Release,
@@ -66,13 +62,9 @@ object Dependencies {
       reverseDependencies: Seq[ScalaDependency]
   ): Dependencies = Dependencies(
     release = release.reference,
-    scalaDependencies =
-      dependencies.filterNot(_.isInternal).sorted(dependencyOrder),
+    scalaDependencies = dependencies.filterNot(_.isInternal).sorted(dependencyOrder),
     javaDependencies = release.javaDependencies.sorted(dependencyOrder),
-    internalDependencies =
-      dependencies.filter(_.isInternal).sorted(dependencyOrder),
-    reverseDependencies = reverseDependencies.groupBy(dep =>
-      (dep.dependent.projectReference, dep.dependent.artifact)
-    )
+    internalDependencies = dependencies.filter(_.isInternal).sorted(dependencyOrder),
+    reverseDependencies = reverseDependencies.groupBy(dep => (dep.dependent.projectReference, dep.dependent.artifact))
   )
 }

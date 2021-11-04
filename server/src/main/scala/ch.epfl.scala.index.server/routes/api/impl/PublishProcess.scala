@@ -31,9 +31,8 @@ import org.slf4j.LoggerFactory
 private[api] class PublishProcess(
     paths: DataPaths,
     dataRepository: DataRepository
-)(implicit
-    val system: ActorSystem
-) extends PlayWsDownloader {
+)(implicit val system: ActorSystem)
+    extends PlayWsDownloader {
 
   import system.dispatcher
   private val log = LoggerFactory.getLogger(getClass)
@@ -54,7 +53,7 @@ private[api] class PublishProcess(
    * @param data the Publish data class holding all the data
    * @return
    */
-  def writeFiles(data: PublishData): Future[(StatusCode, String)] = {
+  def writeFiles(data: PublishData): Future[(StatusCode, String)] =
     if (data.isPom) {
       log.info("Publishing a POM")
       Future {
@@ -63,12 +62,11 @@ private[api] class PublishProcess(
         getTmpPom(data) match {
           case List(Success((pom, _, _))) =>
             getGithubRepo(pom) match {
-              case None => {
+              case None =>
                 log.warn("POM saved without Github information")
                 data.deleteTemp()
                 Future.successful((NoContent, "No Github Repo"))
-              }
-              case Some(repo) => {
+              case Some(repo) =>
                 if (
                   data.userState.hasPublishingAuthority || data.userState.repos
                     .contains(repo)
@@ -106,16 +104,14 @@ private[api] class PublishProcess(
                     )
                   )
                 }
-              }
             }
-          case List(Failure(e)) => {
+          case List(Failure(e)) =>
             log.error("Invalid POM " + e)
             val sw = new StringWriter()
             val pw = new PrintWriter(sw)
             e.printStackTrace(pw)
 
             Future.successful((BadRequest, "Invalid pom: " + sw.toString()))
-          }
           case _ =>
             log.error("Unable to write POM data")
             Future.successful((BadRequest, "Impossible ?"))
@@ -127,7 +123,6 @@ private[api] class PublishProcess(
       else
         Future.successful((Created, "ignoring")) // for sbt, ignore SHA1, etc
     }
-  }
 
   /**
    * Convert the POM XML data to a Maven Model

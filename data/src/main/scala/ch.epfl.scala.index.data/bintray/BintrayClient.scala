@@ -77,9 +77,7 @@ class BintrayClient private (
       withAuth(request).get()
     }
 
-    val decodePackages = decodeSucessfulJson { json =>
-      json.children.map(child => (child \ "name").extract[String])
-    } _
+    val decodePackages = decodeSucessfulJson(json => json.children.map(child => (child \ "name").extract[String])) _
 
     fetchPaginatedResource(getPage)(decodePackages)
   }
@@ -96,9 +94,7 @@ class BintrayClient private (
     val request = client.url(s"$apiUrl/packages/$subject/$repo/$packageName")
 
     withAuth(request).get().map {
-      decodeSucessfulJson { json =>
-        json.extract[BintrayPackage]
-      }
+      decodeSucessfulJson(json => json.extract[BintrayPackage])
     }
   }
 
@@ -132,20 +128,17 @@ class BintrayClient private (
       withAuth(request).get()
     }
 
-    val decodeFile = decodeSucessfulJson { json =>
-      json.children.map(_.extract[BintraySearch])
-    } _
+    val decodeFile = decodeSucessfulJson(json => json.children.map(_.extract[BintraySearch])) _
 
     fetchPaginatedResource(getPage)(decodeFile)
   }
 
-  def withAuth(request: WSRequest): WSRequest = {
+  def withAuth(request: WSRequest): WSRequest =
     (bintrayCredentials.get("user"), bintrayCredentials.get("password")) match {
       case (Some(user), Some(password)) =>
         request.withAuth(user, password, WSAuthScheme.BASIC)
       case _ => request
     }
-  }
 
   // See https://bintray.com/docs/usermanual/downloads/downloads_downloadingusingapis.html#_overview
   def downloadUrl(subject: String, repo: String, path: String): URL =
@@ -162,7 +155,7 @@ class BintrayClient private (
       fetchPage: Int => Future[WSResponse]
   )(
       decode: WSResponse => Seq[A]
-  )(implicit ec: ExecutionContext): Future[Seq[A]] = {
+  )(implicit ec: ExecutionContext): Future[Seq[A]] =
     for {
       // Let’s first get the first page
       firstResponse <- fetchPage(0)
@@ -170,14 +163,9 @@ class BintrayClient private (
       remainingResponses <- Future.traverse(remainingPages(firstResponse))(
         fetchPage
       )
-    } yield {
-      // Eventually concatenate all the results together
-      remainingResponses.foldLeft(decode(firstResponse)) {
-        (results, otherResults) =>
-          results ++ decode(otherResults)
-      }
-    }
-  }
+    } yield
+    // Eventually concatenate all the results together
+    remainingResponses.foldLeft(decode(firstResponse))((results, otherResults) => results ++ decode(otherResults))
 
   /**
    * @param response The HTTP response that we want to decode
@@ -204,9 +192,7 @@ object BintrayClient {
    * @param credentials Path to the Bintray credentials file
    * @return
    */
-  def create(credentials: Path)(implicit
-      sys: ActorSystem
-  ): BintrayClient = {
+  def create(credentials: Path)(implicit sys: ActorSystem): BintrayClient = {
     val client = PlayWsClient.open()
     new BintrayClient(credentials, client)(sys.dispatcher)
   }

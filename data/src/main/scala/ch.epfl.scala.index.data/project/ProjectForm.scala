@@ -41,9 +41,7 @@ case class ProjectForm(
       if (project.github.isEmpty) {
         Some(GithubInfo(topics = keywords))
       } else {
-        project.github.map(github =>
-          github.copy(topics = github.topics ++ keywords)
-        )
+        project.github.map(github => github.copy(topics = github.topics ++ keywords))
       }
 
     val oldBeginnerIssueLabel = project.github.flatMap(_.beginnerIssuesLabel)
@@ -98,8 +96,9 @@ case class ProjectForm(
         )
       ),
       customScalaDoc = customScalaDoc.filterNot(_ == ""),
-      documentationLinks = documentationLinks.filterNot { case (label, link) =>
-        label == "" || link == ""
+      documentationLinks = documentationLinks.filterNot {
+        case (label, link) =>
+          label == "" || link == ""
       },
       primaryTopic = primaryTopic
     )

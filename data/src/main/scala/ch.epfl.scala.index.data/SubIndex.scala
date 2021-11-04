@@ -32,39 +32,40 @@ object SubIndex extends BintrayProtocol {
     val pomData =
       PomsReader
         .loadAll(source)
-        .flatMap { case (pom, repo, sha) =>
-          githubRepoExtractor(pom)
-            .filter(repos.contains)
-            .map((pom, repo, sha, _))
+        .flatMap {
+          case (pom, repo, sha) =>
+            githubRepoExtractor(pom)
+              .filter(repos.contains)
+              .map((pom, repo, sha, _))
         }
 
     println("== Copy GitHub ==")
 
-    pomData.foreach { case (_, _, _, github) =>
-      def repoPath(paths: DataPaths): Path = {
-        val GithubRepo(org, repo) = github
-        paths.github.resolve(s"$org/$repo")
-      }
+    pomData.foreach {
+      case (_, _, _, github) =>
+        def repoPath(paths: DataPaths): Path = {
+          val GithubRepo(org, repo) = github
+          paths.github.resolve(s"$org/$repo")
+        }
 
-      val repoSource = repoPath(source)
-      if (Files.isDirectory(repoSource)) {
-        copyDir(repoSource, repoPath(destination))
-      }
+        val repoSource = repoPath(source)
+        if (Files.isDirectory(repoSource)) {
+          copyDir(repoSource, repoPath(destination))
+        }
     }
 
     println("== Copy Poms ==")
 
-    pomData.foreach { case (_, repo, sha, _) =>
-      repo match {
-        case pomRepo: LocalPomRepository => {
-          def shaPath(paths: DataPaths): Path = {
-            paths.poms(pomRepo).resolve(sha + ".pom")
-          }
+    pomData.foreach {
+      case (_, repo, sha, _) =>
+        repo match {
+          case pomRepo: LocalPomRepository =>
+            def shaPath(paths: DataPaths): Path =
+              paths.poms(pomRepo).resolve(sha + ".pom")
 
-          copyFile(shaPath(source), shaPath(destination))
+            copyFile(shaPath(source), shaPath(destination))
+          case _ => () // does not copy ivy sbt plugins
         }
-        case _ => () // does not copy ivy sbt plugins
-      }
     }
 
     println("== Copy Parent Poms ==")
@@ -75,19 +76,17 @@ object SubIndex extends BintrayProtocol {
       LocalPomRepository.MavenCentral,
       LocalPomRepository.UserProvided
     ).foreach { pomRepo =>
-      def parentShaPath(paths: DataPaths): Path = {
+      def parentShaPath(paths: DataPaths): Path =
         paths.parentPoms(pomRepo)
-      }
 
       copyDir(parentShaPath(source), parentShaPath(destination))
     }
 
-    def shasFor(forRepo: LocalPomRepository): Set[String] = {
+    def shasFor(forRepo: LocalPomRepository): Set[String] =
       pomData
         .filter { case (_, repo, _, _) => repo == forRepo }
         .map { case (_, _, sha, _) => sha }
         .toSet
-    }
 
     println("== Copy MetaData ==")
 
@@ -130,9 +129,8 @@ object SubIndex extends BintrayProtocol {
     copyFile(source.movedGithub, destination.movedGithub)
   }
 
-  private def writeFile(to: Path, content: String): Unit = {
+  private def writeFile(to: Path, content: String): Unit =
     Files.write(to, content.getBytes(StandardCharsets.UTF_8))
-  }
 
   private def copyFile(from: Path, to: Path): Unit = {
     Files.createDirectories(to.getParent)
@@ -141,7 +139,7 @@ object SubIndex extends BintrayProtocol {
     }
   }
 
-  private def copyDir(from: Path, to: Path): Unit = {
+  private def copyDir(from: Path, to: Path): Unit =
     Files.walkFileTree(
       from,
       new SimpleFileVisitor[Path] {
@@ -165,5 +163,4 @@ object SubIndex extends BintrayProtocol {
         }
       }
     )
-  }
 }

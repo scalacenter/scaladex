@@ -11,7 +11,7 @@ case class SearchRequest(
     sbtVersions: Seq[String],
     contributingSearch: Boolean
 ) {
-  def toHttpParams: Seq[(String, String)] = {
+  def toHttpParams: Seq[(String, String)] =
     Seq(s"q" -> query) ++
       optionalHttpParam(you, "you" -> "✓") ++
       toHttpParams("topics", topics) ++
@@ -21,7 +21,6 @@ case class SearchRequest(
       toHttpParams("scalaNativeVersions", scalaNativeVersions) ++
       toHttpParams("sbtVersions", sbtVersions) ++
       optionalHttpParam(contributingSearch, "contributingSearch" -> "true")
-  }
 
   private def toHttpParams(field: String, values: Seq[String]) =
     values.map(value => field -> value)
