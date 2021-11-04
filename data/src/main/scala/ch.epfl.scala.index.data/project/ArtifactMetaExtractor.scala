@@ -90,14 +90,13 @@ class ArtifactMetaExtractor(paths: DataPaths) {
           }
           version <- SemanticVersion.tryParse(dep.version)
           target <- ScalaJvm.fromFullVersion(version)
-        } yield {
-          // we assume binary compatibility
-          ArtifactMeta(
-            artifactName = pom.artifactId,
-            scalaTarget = Some(target),
-            isNonStandard = true
-          )
-        }
+        } yield
+        // we assume binary compatibility
+        ArtifactMeta(
+          artifactName = pom.artifactId,
+          scalaTarget = Some(target),
+          isNonStandard = true
+        )
       // For example: typesafe config
       case Some(NoScalaTargetPureJavaDependency) =>
         Some(

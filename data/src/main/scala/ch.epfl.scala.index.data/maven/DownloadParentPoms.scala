@@ -18,9 +18,8 @@ class DownloadParentPoms(
     repository: LocalPomRepository,
     paths: DataPaths,
     tmp: Option[Path] = None
-)(implicit
-    val system: ActorSystem
-) extends PlayWsDownloader {
+)(implicit val system: ActorSystem)
+    extends PlayWsDownloader {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -32,7 +31,7 @@ class DownloadParentPoms(
   val pomReader: PomsReader =
     tmp match {
       case Some(path) => PomsReader.tmp(paths, path)
-      case None => PomsReader(repository, paths)
+      case None       => PomsReader(repository, paths)
     }
 
   /**
@@ -58,8 +57,7 @@ class DownloadParentPoms(
    * @param response the current response
    * @return
    */
-  def processResponse(dep: Dependency, response: WSResponse): Int = {
-
+  def processResponse(dep: Dependency, response: WSResponse): Int =
     if (200 == response.status) {
 
       val pomPath = parentPomsPath.resolve(PomsReader.path(dep))
@@ -73,7 +71,6 @@ class DownloadParentPoms(
 
       0
     } else 1
-  }
 
   /**
    * do the main run
@@ -86,8 +83,9 @@ class DownloadParentPoms(
     val parentPomsToDownload: Set[Dependency] =
       pomReader
         .load()
-        .collect { case Failure(m: MissingParentPom) =>
-          m.dep
+        .collect {
+          case Failure(m: MissingParentPom) =>
+            m.dep
         }
         .toSet
 

@@ -33,8 +33,7 @@ class SbtInstallTests extends AnyFunSuite with TestHelpers {
         artifactName = "scalaz-core",
         target = Some(
           ScalaJvm(
-            languageVersion =
-              ScalaVersion(PreReleaseBinary(2, 13, Some(0), Milestone(1)))
+            languageVersion = ScalaVersion(PreReleaseBinary(2, 13, Some(0), Milestone(1)))
           )
         )
       ).sbtInstall
@@ -54,8 +53,7 @@ class SbtInstallTests extends AnyFunSuite with TestHelpers {
         artifactName = "circe_cats-core",
         target = Some(
           ScalaJvm(
-            languageVersion =
-              Scala3Version(PreReleaseBinary(3, 0, Some(0), Milestone(1)))
+            languageVersion = Scala3Version(PreReleaseBinary(3, 0, Some(0), Milestone(1)))
           )
         )
       ).sbtInstall

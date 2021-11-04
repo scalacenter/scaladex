@@ -39,7 +39,7 @@ private[api] case class PublishData(
     downloadReadme: Boolean
 ) {
   private val log = LoggerFactory.getLogger(getClass)
-  lazy val isPom: Boolean = path matches """.*\.pom"""
+  lazy val isPom: Boolean = path.matches(""".*\.pom""")
   lazy val hash: String = Sha1(data)
   lazy val tempPath: Path = tmpPath(hash)
   def savePath(paths: DataPaths): Path = pomPath(paths, hash)
@@ -80,9 +80,8 @@ private[api] case class PublishData(
   def deleteTemp(): Unit = {
     delete(tempPath)
     val directory = tempPath.getParent
-    try {
-      Files.delete(directory)
-    } catch {
+    try Files.delete(directory)
+    catch {
       case NonFatal(error) =>
         log.error("Unable to delete temporary directory", error)
     }

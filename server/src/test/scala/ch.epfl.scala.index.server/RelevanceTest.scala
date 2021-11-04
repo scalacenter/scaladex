@@ -17,10 +17,7 @@ import org.scalatest.Assertion
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AsyncFunSuiteLike
 
-class RelevanceTest
-    extends TestKit(ActorSystem("SbtActorTest"))
-    with AsyncFunSuiteLike
-    with BeforeAndAfterAll {
+class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 
   import system.dispatcher
 
@@ -169,18 +166,17 @@ class RelevanceTest
   private def exactly(
       params: SearchParams,
       tops: List[(String, String)]
-  ): Future[Assertion] = {
+  ): Future[Assertion] =
     compare(
       params,
       tops,
       (expected, obtained) => assert(expected == obtained)
     )
-  }
 
   private def top(
       params: SearchParams,
       tops: List[(String, String)]
-  ): Future[Assertion] = {
+  ): Future[Assertion] =
     compare(
       params,
       tops,
@@ -189,7 +185,6 @@ class RelevanceTest
         assert(missing.isEmpty)
       }
     )
-  }
 
   private def top(
       query: String,
@@ -205,8 +200,9 @@ class RelevanceTest
       assertFun: (Seq[Project.Reference], Seq[Project.Reference]) => Assertion
   ): Future[Assertion] = {
 
-    val expectedRefs = expected.map { case (org, repo) =>
-      Project.Reference(org, repo)
+    val expectedRefs = expected.map {
+      case (org, repo) =>
+        Project.Reference(org, repo)
     }
 
     data.findProjects(params).map { page =>

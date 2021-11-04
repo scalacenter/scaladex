@@ -34,27 +34,28 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
       repository: String,
       groupdId: String,
       releases: List[(String, String)]
-  ): Seq[Release] = {
+  ): Seq[Release] =
     releases
-      .flatMap { case (artifactId, rawVersion) =>
-        for {
-          Artifact(artifact, target) <- Artifact.parse(artifactId)
-          version <- SemanticVersion.tryParse(rawVersion)
-        } yield (artifactId, rawVersion, artifact, target, version)
+      .flatMap {
+        case (artifactId, rawVersion) =>
+          for {
+            Artifact(artifact, target) <- Artifact.parse(artifactId)
+            version <- SemanticVersion.tryParse(rawVersion)
+          } yield (artifactId, rawVersion, artifact, target, version)
       }
-      .map { case (artifactId, rawVersion, artifact, target, version) =>
-        emptyRelease(
-          MavenReference(groupdId, artifactId, rawVersion),
-          Release.Reference(
-            organization,
-            repository,
-            artifact,
-            version,
-            Some(target)
+      .map {
+        case (artifactId, rawVersion, artifact, target, version) =>
+          emptyRelease(
+            MavenReference(groupdId, artifactId, rawVersion),
+            Release.Reference(
+              organization,
+              repository,
+              artifact,
+              version,
+              Some(target)
+            )
           )
-        )
       }
-  }
 
   describe("Default Release") {
     it("latest version pre release scala") {

@@ -52,7 +52,7 @@ class Github()(implicit sys: ActorSystem) extends Json4sSupport {
       code: String,
       redirectUri: String
   ): Future[UserState] = {
-    def access = {
+    def access =
       Http()
         .singleRequest(
           HttpRequest(
@@ -68,17 +68,14 @@ class Github()(implicit sys: ActorSystem) extends Json4sSupport {
             headers = List(Accept(MediaTypes.`application/json`))
           )
         )
-        .flatMap(response =>
-          Unmarshal(response).to[Response.AccessToken].map(_.access_token)
-        )
-    }
+        .flatMap(response => Unmarshal(response).to[Response.AccessToken].map(_.access_token))
 
     access.flatMap(info)
   }
 
   private def info(token: String): Future[UserState] = {
     def fetchRepos(): Future[Set[GithubRepo]] = {
-      def convert(repos: List[Response.Repo]): Set[GithubRepo] = {
+      def convert(repos: List[Response.Repo]): Set[GithubRepo] =
         repos.iterator
           .filter(repo =>
             repo.viewerPermission == "WRITE" ||
@@ -89,7 +86,6 @@ class Github()(implicit sys: ActorSystem) extends Json4sSupport {
             GithubRepo(owner, name)
           }
           .toSet
-      }
       def loop(
           cursorStart: Option[String],
           acc: Set[GithubRepo],
@@ -144,8 +140,7 @@ class Github()(implicit sys: ActorSystem) extends Json4sSupport {
         HttpRequest(
           method = HttpMethods.POST,
           uri = Uri("https://api.github.com/graphql"),
-          entity =
-            HttpEntity(ContentTypes.`application/json`, compact(render(json))),
+          entity = HttpEntity(ContentTypes.`application/json`, compact(render(json))),
           headers = List(Authorization(OAuth2BearerToken(token)))
         )
 

@@ -48,7 +48,7 @@ object SearchApi {
       scalaJsVersion: Option[String],
       scalaNativeVersion: Option[String],
       sbtVersion: Option[String]
-  ): Option[ScalaTarget] = {
+  ): Option[ScalaTarget] =
     (
       targetType,
       scalaVersion.flatMap(LanguageVersion.tryParse),
@@ -77,7 +77,6 @@ object SearchApi {
 
       case _ => None
     }
-  }
 
 }
 
@@ -215,7 +214,7 @@ class SearchApi(
       projectRef: Project.Reference,
       scalaTarget: Option[ScalaTarget],
       artifact: Option[String]
-  ): Future[Option[SearchApi.ReleaseOptions]] = {
+  ): Future[Option[SearchApi.ReleaseOptions]] =
     for {
       projectAndReleaseOptions <- dataRepository.getProjectAndReleaseOptions(
         projectRef,
@@ -226,9 +225,9 @@ class SearchApi(
           selected = None
         )
       )
-    } yield {
-      projectAndReleaseOptions
-        .map { case (_, options) =>
+    } yield projectAndReleaseOptions
+      .map {
+        case (_, options) =>
           SearchApi.ReleaseOptions(
             options.artifacts,
             options.versions.sorted.map(_.toString),
@@ -236,11 +235,9 @@ class SearchApi(
             options.release.maven.artifactId,
             options.release.maven.version
           )
-        }
-    }
-  }
+      }
 
-  private def autocomplete(params: SearchParams) = {
+  private def autocomplete(params: SearchParams) =
     for (projects <- dataRepository.autocompleteProjects(params))
       yield projects.map { project =>
         AutocompletionResponse(
@@ -249,5 +246,4 @@ class SearchApi(
           project.github.flatMap(_.description).getOrElse("")
         )
       }
-  }
 }

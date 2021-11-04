@@ -17,9 +17,8 @@ class SeedElasticSearch(
     paths: DataPaths,
     githubDownload: GithubDownload,
     dataRepository: DataRepository
-)(implicit
-    val ec: ExecutionContext
-) extends LazyLogging {
+)(implicit val ec: ExecutionContext)
+    extends LazyLogging {
 
   def run(): Unit = {
 
@@ -36,28 +35,29 @@ class SeedElasticSearch(
     val allData = projectConverter.convertAll(PomsReader.loadAll(paths), Map())
 
     var count = 0
-    allData.foreach { case (project, releases, dependencies) =>
-      logger.info(s"indexing ${project.reference}")
-      val indexProjectF = dataRepository.insertProject(project)
-      val indexReleasesF = dataRepository.insertReleases(releases)
-      val indexDependenciesF = dataRepository.insertDependencies(dependencies)
+    allData.foreach {
+      case (project, releases, dependencies) =>
+        logger.info(s"indexing ${project.reference}")
+        val indexProjectF = dataRepository.insertProject(project)
+        val indexReleasesF = dataRepository.insertReleases(releases)
+        val indexDependenciesF = dataRepository.insertDependencies(dependencies)
 
-      val indexAll = for {
-        _ <- indexProjectF
-        releasesResult <- indexReleasesF
-        dependenciesResult <- indexDependenciesF
-      } yield {
-        val failures =
-          (releasesResult ++ dependenciesResult).filter(_.status >= 300)
-        if (failures.nonEmpty) {
-          logger.error(s"indexing projects ${project.reference} failed")
-          failures.foreach(
-            _.error.foreach(error => logger.error(error.reason))
-          )
+        val indexAll = for {
+          _ <- indexProjectF
+          releasesResult <- indexReleasesF
+          dependenciesResult <- indexDependenciesF
+        } yield {
+          val failures =
+            (releasesResult ++ dependenciesResult).filter(_.status >= 300)
+          if (failures.nonEmpty) {
+            logger.error(s"indexing projects ${project.reference} failed")
+            failures.foreach(
+              _.error.foreach(error => logger.error(error.reason))
+            )
+          }
         }
-      }
-      Await.result(indexAll, Duration.Inf)
-      count += 1
+        Await.result(indexAll, Duration.Inf)
+        count += 1
     }
     logger.info(s"$count projects indexed")
   }

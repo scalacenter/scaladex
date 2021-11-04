@@ -85,21 +85,22 @@ object Server {
       found
     }
 
-    val exceptionHandler = ExceptionHandler { case ex: Exception =>
-      import java.io.{PrintWriter, StringWriter}
+    val exceptionHandler = ExceptionHandler {
+      case ex: Exception =>
+        import java.io.{PrintWriter, StringWriter}
 
-      val sw = new StringWriter()
-      val pw = new PrintWriter(sw)
-      ex.printStackTrace(pw)
+        val sw = new StringWriter()
+        val pw = new PrintWriter(sw)
+        ex.printStackTrace(pw)
 
-      val out = sw.toString
+        val out = sw.toString
 
-      log.error(out)
+        log.error(out)
 
-      complete(
-        InternalServerError,
-        out
-      )
+        complete(
+          InternalServerError,
+          out
+        )
     }
 
     val routes =

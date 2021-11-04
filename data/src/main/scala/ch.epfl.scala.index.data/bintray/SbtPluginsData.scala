@@ -14,20 +14,16 @@ import org.typelevel.jawn.support.json4s.Parser
 case class SbtPluginsData(ivysData: Path) extends BintrayProtocol {
 
   /** @return Releases in the format expected by ProjectConvert */
-  def iterator: Iterator[(ReleaseModel, LocalRepository, String)] = {
-    read().iterator.map { release =>
-      (release.releaseModel, BintraySbtPlugins, release.sha1)
-    }
-  }
+  def iterator: Iterator[(ReleaseModel, LocalRepository, String)] =
+    read().iterator.map(release => (release.releaseModel, BintraySbtPlugins, release.sha1))
 
-  def read(): List[SbtPluginReleaseModel] = {
+  def read(): List[SbtPluginReleaseModel] =
     if (ivysData.toFile.exists())
       Parser
         .parseFromFile(ivysData.toFile)
         .get
         .extract[List[SbtPluginReleaseModel]]
     else Nil
-  }
 
   def update(
       oldReleases: Seq[SbtPluginReleaseModel],

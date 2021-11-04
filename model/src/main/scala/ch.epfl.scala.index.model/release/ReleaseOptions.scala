@@ -29,15 +29,13 @@ object ReleaseSelection {
       artifactName: Option[String],
       version: Option[String],
       selected: Option[String]
-  ): ReleaseSelection = {
-
+  ): ReleaseSelection =
     new ReleaseSelection(
       target.flatMap(ScalaTarget.parse),
       artifactName,
       version.flatMap(SemanticVersion.tryParse),
       selected
     )
-  }
   def empty = new ReleaseSelection(None, None, None, None)
 }
 

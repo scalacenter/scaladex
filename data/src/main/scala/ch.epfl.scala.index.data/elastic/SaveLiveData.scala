@@ -24,31 +24,34 @@ object LiveProjectsSerializer
     extends CustomSerializer[LiveProjects](format =>
       (
         {
-          case JObject(obj) => {
+          case JObject(obj) =>
             implicit val formats = DefaultFormats
             LiveProjects(
-              obj.map { case (k, v) =>
-                val List(organization, repository) = k.split('/').toList
+              obj.map {
+                case (k, v) =>
+                  val List(organization, repository) = k.split('/').toList
 
-                (
-                  Project.Reference(organization, repository),
-                  v.extract[ProjectForm]
-                )
+                  (
+                    Project.Reference(organization, repository),
+                    v.extract[ProjectForm]
+                  )
               }.toMap
             )
-          }
         },
-        { case l: LiveProjects =>
-          JObject(
-            l.projects.toList
-              .sortBy { case (Project.Reference(organization, repository), _) =>
-                (organization, repository)
-              }
-              .map { case (Project.Reference(organization, repository), v) =>
-                import ch.epfl.scala.index.search.SearchProtocol._
-                JField(s"$organization/$repository", parseJson(write(v)))
-              }
-          )
+        {
+          case l: LiveProjects =>
+            JObject(
+              l.projects.toList
+                .sortBy {
+                  case (Project.Reference(organization, repository), _) =>
+                    (organization, repository)
+                }
+                .map {
+                  case (Project.Reference(organization, repository), v) =>
+                    import ch.epfl.scala.index.search.SearchProtocol._
+                    JField(s"$organization/$repository", parseJson(write(v)))
+                }
+            )
         }
       )
     )
@@ -88,13 +91,11 @@ object SaveLiveData extends LiveProjectsProtocol {
   }
 
   // Note: we use a future here just to catch exceptions. Our code is blocking, though.
-  def saveProject(project: Project, paths: DataPaths)(implicit
-      ec: ExecutionContext
-  ): Future[_] =
+  def saveProject(project: Project, paths: DataPaths)(implicit ec: ExecutionContext): Future[_] =
     Future {
       concurrent.blocking {
         val stored = SaveLiveData.storedProjects(paths)
-        val newProject = (project.reference -> ProjectForm(project))
+        val newProject = project.reference -> ProjectForm(project)
 
         logger.info(s"Writing projects at ${paths.liveProjects}")
         saveProjects(paths, stored + newProject)

@@ -29,8 +29,7 @@ object GithubReader {
    * @param github
    * @return
    */
-  def apply(paths: DataPaths, github: GithubRepo): Option[GithubInfo] = {
-
+  def apply(paths: DataPaths, github: GithubRepo): Option[GithubInfo] =
     info(paths, github).map { info =>
       val contributorList = contributors(paths, github).getOrElse(List())
       info.copy(
@@ -45,7 +44,6 @@ object GithubReader {
         chatroom = chatroom(paths, github).toOption
       )
     }.toOption
-  }
 
   /**
    * read the readme file if exists
@@ -123,7 +121,7 @@ object GithubReader {
       repo <- data.repository
       topics <- repo.repositoryTopics
       nodes <- topics.nodes
-    } yield { nodes }
+    } yield nodes
 
     graphqlTopics.getOrElse(List()).map(_.topic.flatMap(_.name).getOrElse(""))
   }
@@ -211,12 +209,12 @@ object GithubReader {
         extends CustomSerializer[Moved](format =>
           (
             {
-              case JObject(obj) => {
+              case JObject(obj) =>
                 implicit val formats = DefaultFormats
 
                 Moved(
                   obj.map {
-                    case (k, JString(v)) => {
+                    case (k, JString(v)) =>
                       val List(sourceOwner, sourceRepo) = k.split('/').toList
                       val List(destinationOwner, destinationRepo) =
                         v.split('/').toList
@@ -225,27 +223,25 @@ object GithubReader {
                         GithubRepo(sourceOwner, sourceRepo),
                         GithubRepo(destinationOwner, destinationRepo)
                       )
-                    }
-                    case e => {
+                    case e =>
                       sys.error("cannot read: " + e)
-                    }
                   }.toMap
                 )
-              }
             },
-            { case m: Moved =>
-              JObject(
-                m.inner.toList.sorted.map {
-                  case (
-                        GithubRepo(sourceOwner, sourceRepo),
-                        GithubRepo(destinationOwner, destinationRepo)
-                      ) =>
-                    JField(
-                      s"$sourceOwner/$sourceRepo",
-                      JString(s"$destinationOwner/$destinationRepo")
-                    )
-                }
-              )
+            {
+              case m: Moved =>
+                JObject(
+                  m.inner.toList.sorted.map {
+                    case (
+                          GithubRepo(sourceOwner, sourceRepo),
+                          GithubRepo(destinationOwner, destinationRepo)
+                        ) =>
+                      JField(
+                        s"$sourceOwner/$sourceRepo",
+                        JString(s"$destinationOwner/$destinationRepo")
+                      )
+                  }
+                )
             }
           )
         )
@@ -264,7 +260,7 @@ object GithubReader {
   def appendMovedRepository(paths: DataPaths, repo: GithubRepo): Unit = {
     import Moved.formats
     info(paths, repo) match {
-      case Success(info) => {
+      case Success(info) =>
         val source = repo
         val destination =
           GithubRepo(info.owner.toLowerCase, info.name.toLowerCase)
@@ -280,12 +276,10 @@ object GithubReader {
             )
           }
         }
-      }
       case _ => log.warn(s"cannot read repo info: $repo")
     }
   }
 
-  private def read[T: Manifest](path: Path)(implicit formats: Formats): T = {
+  private def read[T: Manifest](path: Path)(implicit formats: Formats): T =
     parse[T](slurp(path))
-  }
 }

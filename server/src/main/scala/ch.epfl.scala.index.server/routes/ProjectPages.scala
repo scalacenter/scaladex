@@ -40,11 +40,8 @@ class ProjectPages(
       owner: String,
       repo: String,
       userState: Option[UserState]
-  ): Boolean = {
-    userState.exists(s =>
-      s.isAdmin || s.repos.contains(GithubRepo(owner, repo))
-    )
-  }
+  ): Boolean =
+    userState.exists(s => s.isAdmin || s.repos.contains(GithubRepo(owner, repo)))
 
   private def getEditPage(
       owner: String,
@@ -55,19 +52,17 @@ class ProjectPages(
     if (canEdit(owner, repo, userState)) {
       for {
         project <- dataRepository.getProject(Project.Reference(owner, repo))
-      } yield {
-        project
-          .map { p =>
-            val beginnerIssuesJson = p.github
-              .map { github =>
-                import Json4s._
-                write[List[GithubIssue]](github.beginnerIssues)
-              }
-              .getOrElse("")
-            (OK, views.project.html.editproject(p, user, beginnerIssuesJson))
-          }
-          .getOrElse((NotFound, views.html.notfound(user)))
-      }
+      } yield project
+        .map { p =>
+          val beginnerIssuesJson = p.github
+            .map { github =>
+              import Json4s._
+              write[List[GithubIssue]](github.beginnerIssues)
+            }
+            .getOrElse("")
+          (OK, views.project.html.editproject(p, user, beginnerIssuesJson))
+        }
+        .getOrElse((NotFound, views.html.notfound(user)))
     } else Future.successful((Forbidden, views.html.forbidden(user)))
   }
 
@@ -78,8 +73,7 @@ class ProjectPages(
       artifact: Option[String],
       version: Option[String],
       selected: Option[String]
-  ): Future[Option[Release]] = {
-
+  ): Future[Option[Release]] =
     dataRepository
       .getProjectAndReleaseOptions(
         Project.Reference(owner, repo),
@@ -91,7 +85,6 @@ class ProjectPages(
         )
       )
       .map(_.map { case (_, options) => options.release })
-  }
 
   private def artifactsPage(
       owner: String,
@@ -103,65 +96,65 @@ class ProjectPages(
 
     val user = userState.map(_.info)
 
-    def showVersion(target: ScalaTarget): String = {
+    def showVersion(target: ScalaTarget): String =
       target match {
-        case ScalaJvm(version) => version.toString
-        case ScalaJs(version, jsVersion) => s"${jsVersion}_$version"
+        case ScalaJvm(version)                   => version.toString
+        case ScalaJs(version, jsVersion)         => s"${jsVersion}_$version"
         case ScalaNative(version, nativeVersion) => s"${nativeVersion}_$version"
-        case SbtPlugin(version, sbtVersion) => s"${sbtVersion}_$version"
+        case SbtPlugin(version, sbtVersion)      => s"${sbtVersion}_$version"
       }
-    }
 
     dataRepository
       .getProjectAndReleases(Project.Reference(owner, repo))
       .map {
         case Some((project, releases)) =>
-          val targetTypesWithScalaVersion
-              : Map[ScalaTargetType, Seq[ScalaVersion]] =
+          val targetTypesWithScalaVersion: Map[ScalaTargetType, Seq[ScalaVersion]] =
             releases
               .groupBy(_.reference.target.map(_.targetType).getOrElse(Java))
-              .map { case (targetType, releases) =>
-                (
-                  targetType,
-                  releases
-                    .map(
-                      _.reference.target.map(showVersion).getOrElse("Java")
-                    )
-                    .distinct
-                    .sorted
-                    .reverse
-                )
+              .map {
+                case (targetType, releases) =>
+                  (
+                    targetType,
+                    releases
+                      .map(
+                        _.reference.target.map(showVersion).getOrElse("Java")
+                      )
+                      .distinct
+                      .sorted
+                      .reverse
+                  )
               }
 
           val artifactsWithVersions: Seq[
             (SemanticVersion, Map[ArtifactName, Seq[(Release, ScalaVersion)]])
-          ] = {
+          ] =
             releases
               .groupBy(_.reference.version)
-              .map { case (semanticVersion, releases) =>
-                (
-                  semanticVersion,
-                  releases
-                    .groupBy(_.reference.artifact)
-                    .map { case (artifactName, releases) =>
-                      (
-                        artifactName,
-                        releases.map(r =>
+              .map {
+                case (semanticVersion, releases) =>
+                  (
+                    semanticVersion,
+                    releases
+                      .groupBy(_.reference.artifact)
+                      .map {
+                        case (artifactName, releases) =>
                           (
-                            r,
-                            r.reference.target
-                              .map(showVersion)
-                              .getOrElse("Java")
+                            artifactName,
+                            releases.map(r =>
+                              (
+                                r,
+                                r.reference.target
+                                  .map(showVersion)
+                                  .getOrElse("Java")
+                              )
+                            )
                           )
-                        )
-                      )
-                    }
-                )
+                      }
+                  )
               }
               .toSeq
               .sortBy(_._1)
               .reverse
-          }
 
           (
             OK,
@@ -251,7 +244,7 @@ class ProjectPages(
   private def redirectMoved(
       organization: String,
       repository: String
-  ): Directive0 = {
+  ): Directive0 =
     moved.get(GithubRepo(organization, repository)) match {
       case Some(destination) =>
         redirect(
@@ -261,7 +254,6 @@ class ProjectPages(
 
       case None => pass
     }
-  }
 
   val editForm: Directive1[ProjectForm] =
     formFieldSeq.tflatMap(fields =>
@@ -307,15 +299,17 @@ class ProjectPages(
 
             fields._1
               .filter { case (key, _) => key.startsWith(name) }
-              .groupBy { case (key, _) =>
-                key
-                  .drop("documentationLinks[".length)
-                  .takeWhile(_ != end)
+              .groupBy {
+                case (key, _) =>
+                  key
+                    .drop("documentationLinks[".length)
+                    .takeWhile(_ != end)
               }
               .values
-              .map { case Vector((a, b), (_, d)) =>
-                if (a.contains("label")) (b, d)
-                else (d, b)
+              .map {
+                case Vector((a, b), (_, d)) =>
+                  if (a.contains("label")) (b, d)
+                  else (d, b)
               }
               .toList
           }
@@ -348,7 +342,7 @@ class ProjectPages(
   def updateProject(
       projectRef: Project.Reference,
       form: ProjectForm
-  ): Future[Boolean] = {
+  ): Future[Boolean] =
     for {
       projectOpt <- dataRepository.getProject(projectRef)
       updated <- projectOpt match {
@@ -363,7 +357,6 @@ class ProjectPages(
         case _ => Future.successful(false)
       }
     } yield updated
-  }
 
   val routes: Route =
     concat(
@@ -450,41 +443,39 @@ class ProjectPages(
               )
             )
           ),
-          path(Segment / Segment / Segment)(
-            (organization, repository, artifact) =>
-              optionalSession(refreshable, usingCookies)(userId =>
-                parameter("target".?)(target =>
-                  complete(
-                    projectPage(
-                      owner = organization,
-                      repo = repository,
-                      target = target,
-                      artifact = Some(artifact),
-                      version = None,
-                      selected = None,
-                      userState = session.getUser(userId)
-                    )
+          path(Segment / Segment / Segment)((organization, repository, artifact) =>
+            optionalSession(refreshable, usingCookies)(userId =>
+              parameter("target".?)(target =>
+                complete(
+                  projectPage(
+                    owner = organization,
+                    repo = repository,
+                    target = target,
+                    artifact = Some(artifact),
+                    version = None,
+                    selected = None,
+                    userState = session.getUser(userId)
                   )
                 )
               )
+            )
           ),
-          path(Segment / Segment / Segment / Segment)(
-            (organization, repository, artifact, version) =>
-              optionalSession(refreshable, usingCookies)(userId =>
-                parameter("target".?)(target =>
-                  complete(
-                    projectPage(
-                      owner = organization,
-                      repo = repository,
-                      target = target,
-                      artifact = Some(artifact),
-                      version = Some(version),
-                      selected = None,
-                      userState = session.getUser(userId)
-                    )
+          path(Segment / Segment / Segment / Segment)((organization, repository, artifact, version) =>
+            optionalSession(refreshable, usingCookies)(userId =>
+              parameter("target".?)(target =>
+                complete(
+                  projectPage(
+                    owner = organization,
+                    repo = repository,
+                    target = target,
+                    artifact = Some(artifact),
+                    version = Some(version),
+                    selected = None,
+                    userState = session.getUser(userId)
                   )
                 )
               )
+            )
           )
         )
       )

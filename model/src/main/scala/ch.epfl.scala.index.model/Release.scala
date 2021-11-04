@@ -37,9 +37,8 @@ case class Release(
     sbtVersion: Option[String]
 ) {
 
-  def isValid: Boolean = {
+  def isValid: Boolean =
     reference.isValid
-  }
 
   /**
    * string representation for sbt dependency
@@ -120,13 +119,13 @@ case class Release(
    */
   def millInstall: String = {
     def addResolver(r: Resolver) =
-      r.url map (url => s"""MavenRepository("${url}")""")
+      r.url.map(url => s"""MavenRepository("${url}")""")
     val artifactOperator = if (isNonStandardLib) ":" else "::"
     List(
       Some(
         s"""ivy"${maven.groupId}$artifactOperator${reference.artifact}:${reference.version}""""
       ),
-      resolver flatMap addResolver
+      resolver.flatMap(addResolver)
     ).flatten.mkString("\n")
   }
 
@@ -134,7 +133,7 @@ case class Release(
    * Url to the scala-docs.
    * @return
    */
-  def scalaDocURL(customScalaDoc: Option[String]): Option[String] = {
+  def scalaDocURL(customScalaDoc: Option[String]): Option[String] =
     customScalaDoc match {
       case None =>
         if (resolver.isEmpty) {
@@ -148,7 +147,6 @@ case class Release(
         } else None
       case Some(rawLink) => Some(evalLink(rawLink))
     }
-  }
 
   def scastieURL: Option[String] = {
     val tryBaseUrl = "https://scastie.scala-lang.org/try"
@@ -175,17 +173,17 @@ case class Release(
         )
       )
       .map(
-        _.map { case (k, v) =>
-          s"$k=$v"
+        _.map {
+          case (k, v) =>
+            s"$k=$v"
         }.mkString(tryBaseUrl + "?", "&", "")
       )
   }
 
   def documentationURLs(
       documentationLinks: List[(String, String)]
-  ): List[(String, String)] = {
+  ): List[(String, String)] =
     documentationLinks.map { case (label, url) => (label, evalLink(url)) }
-  }
 
   /**
    * Documentation link are often related to a release version
@@ -193,7 +191,7 @@ case class Release(
    * we want to substitute input such as
    * https://playframework.com/documentation/[major].[minor].x/Home
    */
-  private def evalLink(rawLink: String): String = {
+  private def evalLink(rawLink: String): String =
     rawLink
       .replace("[groupId]", maven.groupId.toString)
       .replace("[artifactId]", maven.artifactId.toString)
@@ -201,7 +199,6 @@ case class Release(
       .replace("[major]", reference.version.major.toString)
       .replace("[minor]", reference.version.minor.toString)
       .replace("[name]", reference.artifact)
-  }
 
   def isScalaLib: Boolean = reference.isScalaLib
 }
@@ -221,9 +218,8 @@ object Release {
       target: Option[ScalaTarget]
   ) extends GeneralReference {
 
-    def isValid: Boolean = {
+    def isValid: Boolean =
       target.exists(_.isValid)
-    }
 
     def projectReference: Project.Reference =
       Project.Reference(organization, repository)
@@ -232,9 +228,8 @@ object Release {
     def artifactHttpPath: String = s"/$organization/$repository/$artifact"
     def artifactFullHttpUrl: String =
       s"https://index.scala-lang.org$artifactHttpPath"
-    private def nonDefaultTargetType = {
+    private def nonDefaultTargetType =
       target.map(_.targetType).filter(_ != Jvm)
-    }
     def badgeUrl: String =
       s"$artifactFullHttpUrl/latest-by-scala-version.svg" +
         nonDefaultTargetType.map("?targetType=" + _).mkString
@@ -244,10 +239,9 @@ object Release {
       s"$artifactHttpPath/$version$targetQuery"
     }
 
-    def isScalaLib: Boolean = {
+    def isScalaLib: Boolean =
       organization == "scala" &&
-      repository == "scala" &&
-      artifact == "scala-library"
-    }
+        repository == "scala" &&
+        artifact == "scala-library"
   }
 }

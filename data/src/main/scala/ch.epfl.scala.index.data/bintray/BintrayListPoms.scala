@@ -92,16 +92,13 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
   def processSearch(
       page: PomListDownload,
       response: WSResponse
-  ): List[BintraySearch] = {
-    try {
-      Parser.parseUnsafe(response.body).extract[List[BintraySearch]]
-    } catch {
-      case scala.util.control.NonFatal(e) => {
+  ): List[BintraySearch] =
+    try Parser.parseUnsafe(response.body).extract[List[BintraySearch]]
+    catch {
+      case scala.util.control.NonFatal(e) =>
         log.error("failed to parse bintray search", e)
         List()
-      }
     }
-  }
 
   /**
    * write the list of BintraySerch classes back to a file
@@ -161,11 +158,10 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
     val queried = BintrayMeta.load(paths)
 
     /* the filter to make sure only this artifact get's added */
-    def filter(bintray: BintraySearch): Boolean = {
+    def filter(bintray: BintraySearch): Boolean =
       bintray.path.startsWith(
         groupId.replace(".", "/") + "/" + artifact
       )
-    }
 
     val mostRecentQueriedDate =
       queried.find(filter).map(search => new DateTime(search.created) - 2.month)
@@ -199,13 +195,11 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
       log.info(infoMessage)
     }
 
-    def applyFilter(bintray: List[BintraySearch]): List[BintraySearch] = {
-
+    def applyFilter(bintray: List[BintraySearch]): List[BintraySearch] =
       filter match {
         case Some(f) => bintray.filter(f)
-        case None => bintray
+        case None    => bintray
       }
-    }
 
     /* get the list of pages */
     val pagination: InternalBintrayPagination =
@@ -252,17 +246,14 @@ object BintrayListPoms {
       paths: DataPaths,
       scalaVersions: Seq[String],
       libs: Seq[NonStandardLib]
-  )(implicit sys: ActorSystem): Unit = {
+  )(implicit sys: ActorSystem): Unit =
     Using.resource(BintrayClient.create(paths.credentials)) { bintrayClient =>
       val listPoms = new BintrayListPoms(paths, bintrayClient)
 
-      for (scalaVersion <- scalaVersions) {
+      for (scalaVersion <- scalaVersions)
         listPoms.run(scalaVersion)
-      }
 
-      for (lib <- libs) {
+      for (lib <- libs)
         listPoms.run(lib.groupId, lib.artifactId)
-      }
     }
-  }
 }

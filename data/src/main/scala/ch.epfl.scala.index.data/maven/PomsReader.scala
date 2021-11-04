@@ -50,21 +50,19 @@ object PomsReader {
     }
   }
 
-  def apply(repository: LocalPomRepository, paths: DataPaths): PomsReader = {
+  def apply(repository: LocalPomRepository, paths: DataPaths): PomsReader =
     new PomsReader(
       paths.poms(repository),
       paths.parentPoms(repository),
       repository
     )
-  }
 
-  def tmp(paths: DataPaths, path: Path): PomsReader = {
+  def tmp(paths: DataPaths, path: Path): PomsReader =
     new PomsReader(
       path,
       paths.parentPoms(LocalPomRepository.MavenCentral),
       LocalPomRepository.UserProvided
     )
-  }
 }
 
 private[maven] class PomsReader(
@@ -88,9 +86,8 @@ private[maven] class PomsReader(
     def addRepository(repo: Repository, replace: Boolean): Unit = ()
     def addRepository(repo: Repository): Unit = ()
     def newCopy(): resolution.ModelResolver = throw new Exception("copy")
-    def resolveModel(parent: Parent): ModelSource2 = {
+    def resolveModel(parent: Parent): ModelSource2 =
       resolveModel(parent.getGroupId, parent.getArtifactId, parent.getVersion)
-    }
     def resolveModel(
         groupId: String,
         artifactId: String,
@@ -128,8 +125,7 @@ private[maven] class PomsReader(
     }.map(pom => (PomConvert(pom), repository, sha1))
   }
 
-  def iterator()
-      : Iterator[(ReleaseModel, LocalPomRepository, String)] with Closeable = {
+  def iterator(): Iterator[(ReleaseModel, LocalPomRepository, String)] with Closeable = {
     import scala.jdk.CollectionConverters._
 
     val stream = Files.newDirectoryStream(pomsPath)

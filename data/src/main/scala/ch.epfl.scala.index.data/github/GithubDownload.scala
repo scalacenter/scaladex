@@ -43,9 +43,8 @@ object GithubDownload {
 class GithubDownload(
     paths: DataPaths,
     privateCredentials: Option[Credentials] = None
-)(implicit
-    val system: ActorSystem
-) extends PlayWsDownloader {
+)(implicit val system: ActorSystem)
+    extends PlayWsDownloader {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -104,13 +103,12 @@ class GithubDownload(
    * @param request the current request
    * @return
    */
-  def applyReadmeHeaders(request: WSRequest): WSRequest = {
+  def applyReadmeHeaders(request: WSRequest): WSRequest =
     applyBasicHeaders(
       request.addHttpHeaders(
         "Accept" -> "application/vnd.github.VERSION.html"
       )
     )
-  }
 
   /**
    * Apply github authentication strategy and set response header to html
@@ -118,14 +116,12 @@ class GithubDownload(
    * @param request the current request
    * @return
    */
-  def applyCommunityProfileHeaders(request: WSRequest): WSRequest = {
-
+  def applyCommunityProfileHeaders(request: WSRequest): WSRequest =
     applyBasicHeaders(
       request.addHttpHeaders(
         "Accept" -> "application/vnd.github.black-panther-preview+json"
       )
     )
-  }
 
   /**
    * Save the json response to directory
@@ -160,10 +156,9 @@ class GithubDownload(
   private def processInfoResponse(
       repo: GithubRepo,
       response: WSResponse
-  ): Try[Unit] = {
-
+  ): Try[Unit] =
     checkGithubApiError(s"Processing Info for $repo", response)
-      .map(_ => {
+      .map { _ =>
         if (200 == response.status) {
           saveJson(githubRepoInfoPath(paths, repo), repo, response.body)
           GithubReader.appendMovedRepository(paths, repo)
@@ -172,9 +167,7 @@ class GithubDownload(
         }
 
         ()
-      })
-
-  }
+      }
 
   /**
    * Convert contributor response to a List of Contributors
@@ -186,10 +179,9 @@ class GithubDownload(
   private def convertContributorResponse(
       repo: PaginatedGithub,
       response: WSResponse
-  ): Try[List[V3.Contributor]] = {
-
+  ): Try[List[V3.Contributor]] =
     checkGithubApiError(s"Converting Contributors for ${repo.repo}", response)
-      .map(_ => {
+      .map { _ =>
         if (200 == response.status) {
 
           read[List[V3.Contributor]](response.body)
@@ -197,8 +189,7 @@ class GithubDownload(
           log.warn(s"got error status ${response.status} for $repo")
           List()
         }
-      })
-  }
+      }
 
   /**
    * Process the downloaded contributors data from repository info
@@ -242,15 +233,14 @@ class GithubDownload(
     }
 
     checkGithubApiError(s"Processing Contributors for ${repo.repo}", response)
-      .map(_ => {
-
+      .map { _ =>
         if (200 == response.status) {
 
           /* current contributors + all other pages in  amount of contributions order */
           val currentContributors =
             convertContributorResponse(repo, response) match {
               case Success(contributors) => contributors
-              case Failure(_) => List()
+              case Failure(_)            => List()
             }
           val contributors =
             (currentContributors ++ downloadAllPages)
@@ -267,7 +257,7 @@ class GithubDownload(
         }
 
         ()
-      })
+      }
 
   }
 
@@ -281,8 +271,7 @@ class GithubDownload(
   private def processReadmeResponse(
       repo: GithubRepo,
       response: WSResponse
-  ): Try[Unit] = {
-
+  ): Try[Unit] =
     checkGithubApiError(s"Processing Readme for $repo", response)
       .map { _ =>
         if (200 == response.status) {
@@ -300,8 +289,6 @@ class GithubDownload(
         }
       }
 
-  }
-
   /**
    * Process the downloaded data from repository info
    *
@@ -312,8 +299,7 @@ class GithubDownload(
   private def processCommunityProfileResponse(
       repo: GithubRepo,
       response: WSResponse
-  ): Try[Unit] = {
-
+  ): Try[Unit] =
     checkGithubApiError(s"Processing Community Profile for $repo", response)
       .map { _ =>
         if (200 == response.status) {
@@ -328,8 +314,6 @@ class GithubDownload(
         }
       }
 
-  }
-
   /**
    * Process the downloaded data from GraphQL API
    * @param repo the current repo
@@ -339,8 +323,7 @@ class GithubDownload(
   private def processTopicsResponse(
       repo: GithubRepo,
       response: WSResponse
-  ): Try[Unit] = {
-
+  ): Try[Unit] =
     checkGithubApiError(s"Processing Topics for $repo", response)
       .map { _ =>
         if (200 == response.status) {
@@ -349,8 +332,6 @@ class GithubDownload(
           log.warn(s"got error status ${response.status} for $repo")
         }
       }
-
-  }
 
   /**
    * Process the downloaded issues from GraphQL API
@@ -489,10 +470,8 @@ class GithubDownload(
    * @param repo the current repository
    * @return
    */
-  private def githubInfoUrl(wsClient: WSClient, repo: GithubRepo): WSRequest = {
-
+  private def githubInfoUrl(wsClient: WSClient, repo: GithubRepo): WSRequest =
     applyAcceptJsonHeaders(wsClient.url(mainGithubUrl(repo)))
-  }
 
   /**
    * get the Github readme url
@@ -503,10 +482,8 @@ class GithubDownload(
   private def githubReadmeUrl(
       wsClient: WSClient,
       repo: GithubRepo
-  ): WSRequest = {
-
+  ): WSRequest =
     applyReadmeHeaders(wsClient.url(mainGithubUrl(repo) + "/readme"))
-  }
 
   /**
    * get the Github contributors url
@@ -517,13 +494,11 @@ class GithubDownload(
   private def githubContributorsUrl(
       wsClient: WSClient,
       repo: PaginatedGithub
-  ): WSRequest = {
-
+  ): WSRequest =
     applyAcceptJsonHeaders(
       wsClient
         .url(mainGithubUrl(repo.repo) + s"/contributors?page=${repo.page}")
     )
-  }
 
   /**
    * get the Github community profile url
@@ -534,22 +509,18 @@ class GithubDownload(
   private def githubCommunityProfileUrl(
       wsClient: WSClient,
       repo: GithubRepo
-  ): WSRequest = {
-
+  ): WSRequest =
     applyCommunityProfileHeaders(
       wsClient.url(mainGithubUrl(repo) + "/community/profile")
     )
-  }
 
   /**
    * get the Github GraphQL API url
    *
    * @return
    */
-  private def githubGraphqlUrl(wsClient: WSClient): WSRequest = {
-
+  private def githubGraphqlUrl(wsClient: WSClient): WSRequest =
     applyAcceptJsonHeaders(wsClient.url("https://api.github.com/graphql"))
-  }
 
   /**
    * request for potential url for project's gitter room
@@ -557,9 +528,8 @@ class GithubDownload(
    * @param repo the current github repo
    * @return
    */
-  private def gitterUrl(wsClient: WSClient, repo: GithubRepo): WSRequest = {
+  private def gitterUrl(wsClient: WSClient, repo: GithubRepo): WSRequest =
     wsClient.url(gitterUrlString(repo))
-  }
 
   /**
    * potential url for project's gitter room
@@ -567,9 +537,8 @@ class GithubDownload(
    * @param repo the current github repo
    * @return
    */
-  private def gitterUrlString(repo: GithubRepo): String = {
+  private def gitterUrlString(repo: GithubRepo): String =
     s"https://gitter.im/${repo.organization}/${repo.repository}"
-  }
 
   /**
    * get the topic query used by the Github GraphQL API
@@ -688,14 +657,16 @@ class GithubDownload(
       val liveProjecs = SaveLiveData.storedProjects(paths)
 
       val projectReferences =
-        githubRepos.map { case repo @ GithubRepo(organization, repository) =>
-          (repo, Project.Reference(organization, repository))
+        githubRepos.map {
+          case repo @ GithubRepo(organization, repository) =>
+            (repo, Project.Reference(organization, repository))
         }.toList
 
-      projectReferences.flatMap { case (repo, reference) =>
-        liveProjecs
-          .get(reference)
-          .flatMap(form => form.beginnerIssuesLabel.map(label => (repo, label)))
+      projectReferences.flatMap {
+        case (repo, reference) =>
+          liveProjecs
+            .get(reference)
+            .flatMap(form => form.beginnerIssuesLabel.map(label => (repo, label)))
       }.toSet
     }
 
@@ -782,8 +753,7 @@ class GithubDownload(
     ()
   }
 
-  def runBeginnerIssues(repo: GithubRepo, beginnerIssuesLabel: String): Unit = {
-
+  def runBeginnerIssues(repo: GithubRepo, beginnerIssuesLabel: String): Unit =
     downloadGraphql[(GithubRepo, String), Unit](
       "Downloading Beginner Issues",
       Set((repo, beginnerIssuesLabel)),
@@ -791,6 +761,5 @@ class GithubDownload(
       issuesQuery,
       processIssuesResponse
     )
-  }
 
 }

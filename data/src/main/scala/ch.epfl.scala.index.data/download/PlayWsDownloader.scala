@@ -59,13 +59,11 @@ trait PlayWsDownloader {
       downloadUrl: (WSClient, T) => WSRequest,
       process: (T, WSResponse) => R,
       parallelism: Int
-  ): Seq[R] = {
-
+  ): Seq[R] =
     Using.resource(PlayWsClient.open()) { client =>
       val progress = ProgressBar(message, toDownload.size, log)
 
-      def processDownloads = {
-
+      def processDownloads =
         Source(toDownload).mapAsyncUnordered(parallelism) { item =>
           val request =
             downloadUrl(client, item).withRequestFilter(AhcCurlRequestLogger())
@@ -87,7 +85,6 @@ trait PlayWsDownloader {
             }
           )
         }
-      }
 
       if (toDownload.size > 1) {
         progress.start()
@@ -99,7 +96,6 @@ trait PlayWsDownloader {
       }
       response
     }
-  }
 
   /**
    * Actual download of bunch of documents from the Github's REST API. Will loop through all and display a status bar in the console output.
@@ -178,9 +174,7 @@ trait PlayWsDownloader {
       // use minimal concurrency to avoid abuse rate limit error which is triggered
       // by making too many calls in a short period of time, see https://github.com/scalacenter/scaladex/issues/431
       val parallelism = 4
-      Source(toDownload).mapAsyncUnordered(parallelism) { item =>
-        processItem(client, item, progress)
-      }
+      Source(toDownload).mapAsyncUnordered(parallelism)(item => processItem(client, item, progress))
     }
 
     Using.resource(PlayWsClient.open()) { client =>

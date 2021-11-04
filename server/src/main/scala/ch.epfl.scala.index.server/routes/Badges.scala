@@ -69,7 +69,7 @@ class Badges(dataRepository: DataRepository) {
       organization: String,
       repository: String,
       artifact: Option[String]
-  ): RequestContext => Future[RouteResult] = {
+  ): RequestContext => Future[RouteResult] =
     parameter("target".?) { target =>
       shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
         onSuccess {
@@ -85,7 +85,7 @@ class Badges(dataRepository: DataRepository) {
         } {
           case Some((_, options)) =>
             shieldsSvg(
-              subject orElse artifact getOrElse repository,
+              subject.orElse(artifact).getOrElse(repository),
               options.release.reference.version.toString(),
               color,
               style,
@@ -94,9 +94,9 @@ class Badges(dataRepository: DataRepository) {
             )
           case _ =>
             shieldsSvg(
-              subject orElse artifact getOrElse repository,
+              subject.orElse(artifact).getOrElse(repository),
               "no published release",
-              color orElse Some("lightgrey"),
+              color.orElse(Some("lightgrey")),
               style,
               logo,
               logoWidth
@@ -105,13 +105,12 @@ class Badges(dataRepository: DataRepository) {
         }
       }
     }
-  }
 
   def latestByScalaVersion(
       organization: String,
       repository: String,
       artifact: String
-  ): RequestContext => Future[RouteResult] = {
+  ): RequestContext => Future[RouteResult] =
     parameter("targetType".?) { targetTypeString =>
       shields { (color, style, logo, logoWidth) =>
         val targetType =
@@ -139,16 +138,13 @@ class Badges(dataRepository: DataRepository) {
         }
       }
     }
-  }
 
   val routes: Route =
     get(
       concat(
         pathPrefix(Segment / Segment) { (organization, repository) =>
           concat(
-            path(Segment / "latest.svg")(artifact =>
-              latest(organization, repository, Some(artifact))
-            ),
+            path(Segment / "latest.svg")(artifact => latest(organization, repository, Some(artifact))),
             path("latest.svg")(
               latest(organization, repository, None)
             )
@@ -156,9 +152,7 @@ class Badges(dataRepository: DataRepository) {
         },
         pathPrefix(
           Segment / Segment / Segment / "latest-by-scala-version.svg"
-        ) { (organization, repository, artifact) =>
-          latestByScalaVersion(organization, repository, artifact)
-        },
+        )((organization, repository, artifact) => latestByScalaVersion(organization, repository, artifact)),
         path("count.svg")(
           parameter("q")(query =>
             shieldsSubject((color, style, logo, logoWidth, subject) =>

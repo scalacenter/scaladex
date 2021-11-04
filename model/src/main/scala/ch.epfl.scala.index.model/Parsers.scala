@@ -15,10 +15,9 @@ trait Parsers {
   protected def tryParse[T](
       input: ParserInputSource,
       parser: P[_] => P[T]
-  ): Option[T] = {
+  ): Option[T] =
     fastparse.parse(input, parser) match {
       case Parsed.Success(v, _) => Some(v)
-      case _ => None
+      case _                    => None
     }
-  }
 }

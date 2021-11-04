@@ -9,18 +9,10 @@ object Assets {
   val routes: Route =
     get(
       concat(
-        path("assets" / "lib" / Remaining)(path =>
-          getFromResource("lib/" + path)
-        ),
-        path("assets" / "img" / Remaining)(path =>
-          getFromResource("img/" + path)
-        ),
-        path("assets" / "css" / Remaining)(path =>
-          getFromResource("css/" + path)
-        ),
-        path("assets" / "js" / Remaining)(path =>
-          getFromResource("js/" + path)
-        ),
+        path("assets" / "lib" / Remaining)(path => getFromResource("lib/" + path)),
+        path("assets" / "img" / Remaining)(path => getFromResource("img/" + path)),
+        path("assets" / "css" / Remaining)(path => getFromResource("css/" + path)),
+        path("assets" / "js" / Remaining)(path => getFromResource("js/" + path)),
         path("assets" / "client-opt.js")(
           getFromResource("client-opt.js")
         ),

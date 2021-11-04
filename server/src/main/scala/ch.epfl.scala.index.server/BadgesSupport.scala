@@ -72,8 +72,9 @@ object BadgesSupport {
     )
 
     platformBinaryVersionsByTargetType
-      .map { case (shortName, platformBinaryVersions) =>
-        s"$shortName ${platformBinaryVersions.mkString(", ")}"
+      .map {
+        case (shortName, platformBinaryVersions) =>
+          s"$shortName ${platformBinaryVersions.mkString(", ")}"
       }
       .mkString(", ")
   }
@@ -137,8 +138,7 @@ object BadgesSupport {
    * will secondarily summarise the PlatformEditions that are supported
    * for all those Scala LanguageVersions.
    */
-  object SummariseLanguageVersions
-      extends SummaryStrategy[ScalaTarget, LanguageVersion] {
+  object SummariseLanguageVersions extends SummaryStrategy[ScalaTarget, LanguageVersion] {
     override def versionFor(t: ScalaTarget): LanguageVersion = t.languageVersion
     override def removeSuperfluousVersionsFrom(
         versions: Set[LanguageVersion]
@@ -151,8 +151,7 @@ object BadgesSupport {
         scalaTargets: Set[ScalaTarget],
         interestingKeyVersions: Set[LanguageVersion]
     ): String = {
-      val scalaTargetsByLanguageVersion
-          : Map[LanguageVersion, Set[ScalaTarget]] =
+      val scalaTargetsByLanguageVersion: Map[LanguageVersion, Set[ScalaTarget]] =
         scalaTargets
           .groupBy(_.languageVersion)
           .view
@@ -164,11 +163,11 @@ object BadgesSupport {
           LanguageVersion.ordering.reverse
         )
 
-      val platformEditionsSupportedForAllLanguageVersions
-          : Set[PlatformEdition] =
+      val platformEditionsSupportedForAllLanguageVersions: Set[PlatformEdition] =
         scalaTargetsByLanguageVersion.values
-          .map(_.collect { case st: ScalaTargetWithPlatformBinaryVersion =>
-            st.platformEdition
+          .map(_.collect {
+            case st: ScalaTargetWithPlatformBinaryVersion =>
+              st.platformEdition
           })
           .reduce(_ & _)
 

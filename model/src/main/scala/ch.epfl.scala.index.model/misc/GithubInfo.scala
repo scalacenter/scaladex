@@ -46,7 +46,7 @@ case class GithubInfo(
     selectedBeginnerIssues: List[GithubIssue] = List(),
     filteredBeginnerIssues: List[GithubIssue] = List()
 ) {
-  def displayIssues: List[GithubIssue] = {
+  def displayIssues: List[GithubIssue] =
     if (!filteredBeginnerIssues.isEmpty) {
       filteredBeginnerIssues
     } else {
@@ -55,5 +55,4 @@ case class GithubInfo(
         beginnerIssues.filter(x => !selectedIssueNumbers.contains(x.number))
       selectedBeginnerIssues ++ remainingIssues
     }
-  }
 }
