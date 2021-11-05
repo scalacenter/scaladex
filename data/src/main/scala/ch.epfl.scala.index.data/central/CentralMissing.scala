@@ -67,11 +67,13 @@ object CentralMissing {
 object TimestampSerializer
     extends CustomSerializer[DateTime](format =>
       (
-        { case JInt(timestamp) =>
-          new DateTime(timestamp.toLong)
+        {
+          case JInt(timestamp) =>
+            new DateTime(timestamp.toLong)
         },
-        { case dateTime: DateTime =>
-          JInt(dateTime.getMillis)
+        {
+          case dateTime: DateTime =>
+            JInt(dateTime.getMillis)
         }
       )
     )
@@ -92,17 +94,15 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
     (HttpRequest, SearchRequest),
     (Try[HttpResponse], SearchRequest),
     Http.HostConnectionPool
-  ] = {
-
+  ] =
     Http()
       .cachedHostConnectionPoolHttps[SearchRequest]("search.maven.org")
       .throttle(
         elements = 100,
         per = 1.minute
       )
-  }
 
-  private def toHttp(request: SearchRequest): HttpRequest = {
+  private def toHttp(request: SearchRequest): HttpRequest =
     HttpRequest(
       uri = Uri("/solrsearch/select").withQuery(
         Query(
@@ -113,12 +113,8 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
       ),
       headers = List(Accept(MediaTypes.`application/json`))
     )
-  }
 
-  private def parseJson(
-      response: Try[HttpResponse],
-      request: SearchRequest
-  ): Future[(List[SearchDoc], SearchRequest)] = {
+  private def parseJson(response: Try[HttpResponse], request: SearchRequest): Future[(List[SearchDoc], SearchRequest)] =
     response match {
       case Success(HttpResponse(StatusCodes.OK, _, entity, _)) =>
         Unmarshal(entity).to[SearchBody].map(body => (body.toDocs, request))
@@ -128,13 +124,9 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
       case Failure(e) =>
         Future.failed(new Exception(s"Failed to fetch $request", e))
     }
-  }
 
-  private val mavenDownloadConnectionPool: Flow[
-    (HttpRequest, DownloadRequest),
-    (Try[HttpResponse], DownloadRequest),
-    Http.HostConnectionPool
-  ] =
+  private val mavenDownloadConnectionPool
+      : Flow[(HttpRequest, DownloadRequest), (Try[HttpResponse], DownloadRequest), Http.HostConnectionPool] =
     Http()
       .cachedHostConnectionPoolHttps[DownloadRequest]("repo1.maven.org")
       .throttle(
@@ -142,20 +134,16 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
         per = 1.minute
       )
 
-  private def toHttp(dr: DownloadRequest): HttpRequest = {
+  private def toHttp(dr: DownloadRequest): HttpRequest =
     HttpRequest(
       uri = "/maven2" + dr.path,
       headers = List(Accept(MediaTypes.`application/xml`))
     )
-  }
 
   private val unmarshal =
     Unmarshaller.stringUnmarshaller.forContentTypes(MediaTypes.`text/xml`)
 
-  private def readContent(
-      response: Try[HttpResponse],
-      request: DownloadRequest
-  ): Future[Option[PomContent]] = {
+  private def readContent(response: Try[HttpResponse], request: DownloadRequest): Future[Option[PomContent]] =
     response match {
       case Success(HttpResponse(StatusCodes.OK, _, entity, _)) =>
         unmarshal(entity).map(pom => Some((PomContent(pom, request))))
@@ -165,7 +153,6 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
       case Failure(cause) =>
         Future.failed(new Exception(s"Failed to download $request", cause))
     }
-  }
 
   private def downloadRequest(doc: SearchDoc): DownloadRequest = {
     val SearchDoc(groupId, artifactId, version, created) = doc
@@ -219,17 +206,18 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
       Source(releasesDownloads)
         .map(ar => (toHttp(ar), ar))
         .via(mavenSearchConnectionPool)
-        .mapAsync(8) { case (response, request) =>
-          parseJson(response, request)
+        .mapAsync(8) {
+          case (response, request) =>
+            parseJson(response, request)
         }
-        .mapConcat { case (docs, request) =>
-          val scala3Artifacts = docs.filter(doc =>
-            doc.a.endsWith("_3")
-          ) // && doc.timestamp.getMillis > 1620597600000L)
-          log.info(
-            s"Found ${docs.size} total artifacts and ${scala3Artifacts.size} Scala 3 artifacts in ${request.groupId}"
-          )
-          scala3Artifacts
+        .mapConcat {
+          case (docs, request) =>
+            val scala3Artifacts =
+              docs.filter(doc => doc.a.endsWith("_3")) // && doc.timestamp.getMillis > 1620597600000L)
+            log.info(
+              s"Found ${docs.size} total artifacts and ${scala3Artifacts.size} Scala 3 artifacts in ${request.groupId}"
+            )
+            scala3Artifacts
         }
 
     val downloadedPoms =
@@ -237,8 +225,9 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
         .map(downloadRequest)
         .map(req => (toHttp(req), req))
         .via(mavenDownloadConnectionPool)
-        .mapAsync(8) { case (response, request) =>
-          readContent(response, request)
+        .mapAsync(8) {
+          case (response, request) =>
+            readContent(response, request)
         }
         .mapConcat(_.toList)
 

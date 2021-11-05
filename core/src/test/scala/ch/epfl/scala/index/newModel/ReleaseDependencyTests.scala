@@ -46,8 +46,9 @@ class ReleaseDependencyTests extends AnyFunSpec with Matchers {
   private def getFulldependencies(
       refs: Seq[(MavenReference, Scope)]
   ): Seq[ReleaseDependency.Direct] =
-    refs.map { case (ref, scope) =>
-      ReleaseDependency.Direct(ReleaseDependency(releaseRef, ref, scope), None)
+    refs.map {
+      case (ref, scope) =>
+        ReleaseDependency.Direct(ReleaseDependency(releaseRef, ref, scope), None)
     }
 
 }

@@ -17,9 +17,7 @@ import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.services.DatabaseApi
 
-class Badges(db: DatabaseApi)(implicit
-    executionContext: ExecutionContext
-) {
+class Badges(db: DatabaseApi)(implicit executionContext: ExecutionContext) {
 
   private val shields = parameters(
     ("color".?, "style".?, "logo".?, "logoWidth".as[Int].?)
@@ -73,7 +71,7 @@ class Badges(db: DatabaseApi)(implicit
       organization: NewProject.Organization,
       repository: NewProject.Repository,
       artifact: Option[NewRelease.ArtifactName]
-  ): RequestContext => Future[RouteResult] = {
+  ): RequestContext => Future[RouteResult] =
     parameter("target".?) { platform =>
       shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
         val res = getSelectedRelease(
@@ -99,7 +97,7 @@ class Badges(db: DatabaseApi)(implicit
             shieldsSvg(
               subject.orElse(artifact.map(_.value)).getOrElse(repository.value),
               "no published release",
-              color orElse Some("lightgrey"),
+              color.orElse(Some("lightgrey")),
               style,
               logo,
               logoWidth
@@ -108,13 +106,12 @@ class Badges(db: DatabaseApi)(implicit
         }
       }
     }
-  }
 
   def latestByScalaVersion(
       organization: NewProject.Organization,
       repository: NewProject.Repository,
       artifact: NewRelease.ArtifactName
-  ): RequestContext => Future[RouteResult] = {
+  ): RequestContext => Future[RouteResult] =
     parameter("targetType".?) { targetTypeString =>
       shields { (color, style, logo, logoWidth) =>
         val targetType =
@@ -146,23 +143,17 @@ class Badges(db: DatabaseApi)(implicit
         }
       }
     }
-  }
 
   val routes: Route =
     get {
       concat(
-        path(organizationM / repositoryM / "latest.svg") { (org, repo) =>
-          latest(org, repo, None)
-        },
-        path(organizationM / repositoryM / artifactM / "latest.svg") {
-          (org, repo, artifact) =>
-            latest(org, repo, Some(artifact))
+        path(organizationM / repositoryM / "latest.svg")((org, repo) => latest(org, repo, None)),
+        path(organizationM / repositoryM / artifactM / "latest.svg") { (org, repo, artifact) =>
+          latest(org, repo, Some(artifact))
         },
         path(
           organizationM / repositoryM / artifactM / "latest-by-scala-version.svg"
-        ) { (org, repo, artifact) =>
-          latestByScalaVersion(org, repo, artifact)
-        }
+        )((org, repo, artifact) => latestByScalaVersion(org, repo, artifact))
       )
     }
 }

@@ -6,22 +6,20 @@ import me.tongfei.progressbar.{ProgressBar => PB}
 import org.slf4j.Logger
 
 object ProgressBar {
-  def apply(title: String, count: Int, logger: Logger): ProgressBar = {
+  def apply(title: String, count: Int, logger: Logger): ProgressBar =
     new ProgressBar(
       new PB(title, count, 1000, System.out, ProgressBarStyle.UNICODE_BLOCK),
       logger,
       count
     )
-  }
 }
 
 class ProgressBar(inner: PB, logger: Logger, count: Int) {
   var c = 0
   var printed = 0
 
-  def start(): Unit = {
+  def start(): Unit =
     inner.start()
-  }
 
   def step(): Unit = {
     inner.step()
@@ -35,9 +33,8 @@ class ProgressBar(inner: PB, logger: Logger, count: Int) {
     print()
   }
 
-  def stop(): Unit = {
+  def stop(): Unit =
     inner.stop()
-  }
 
   private def print(): Unit = {
     val pp = ((c.toDouble / count) * 100).toInt

@@ -70,15 +70,14 @@ trait BintrayProtocol {
       extends CustomSerializer[BintraySearch](format =>
         (
           {
-            case in: JValue => {
+            case in: JValue =>
               implicit val formats = DefaultFormats ++ Seq(
                 DateTimeSerializer
               )
               in.extract[BintraySearch]
-            }
           },
           {
-            case search: BintraySearch => {
+            case search: BintraySearch =>
               implicit val formats = DefaultFormats ++ Seq(
                 DateTimeSerializer
               )
@@ -94,7 +93,6 @@ trait BintrayProtocol {
                 JField("size", Extraction.decompose(search.size)),
                 JField("version", Extraction.decompose(search.version))
               )
-            }
           }
         )
       )

@@ -12,16 +12,14 @@ object DateTimeSerializer
     extends CustomSerializer[DateTime](format =>
       (
         {
-          case JString(dateTime) => {
+          case JString(dateTime) =>
             val parser = ISODateTimeFormat.dateTimeParser
             parser.parseDateTime(dateTime)
-          }
         },
         {
-          case dateTime: DateTime => {
+          case dateTime: DateTime =>
             val formatter = ISODateTimeFormat.dateTime
             JString(formatter.print(dateTime))
-          }
         }
       )
     )

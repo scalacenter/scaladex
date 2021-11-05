@@ -20,9 +20,8 @@ object DatabaseConfig {
     from(config)
   }
 
-  def from(config: Config): Try[DatabaseConfig] = {
+  def from(config: Config): Try[DatabaseConfig] =
     from(config.getString("database.url"))
-  }
 
   private def from(url: String): Try[DatabaseConfig] = url match {
     case h2Regex(value) => Success(H2(value))
@@ -35,8 +34,7 @@ object DatabaseConfig {
     val driver = "org.h2.Driver"
   }
 
-  final case class PostgreSQL(url: String, user: String, pass: Secret)
-      extends DatabaseConfig {
+  final case class PostgreSQL(url: String, user: String, pass: Secret) extends DatabaseConfig {
     val driver = "org.postgresql.Driver"
   }
 }

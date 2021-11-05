@@ -21,10 +21,7 @@ import scala.concurrent.ExecutionContext
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.DoobieUtils
 
-class RelevanceTest
-    extends TestKit(ActorSystem("SbtActorTest"))
-    with AsyncFunSuiteLike
-    with BeforeAndAfterAll {
+class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 
   import system.dispatcher
 
@@ -176,9 +173,7 @@ class RelevanceTest
     )
   }
 
-  private def first(
-      query: String
-  )(org: String, repo: String): Future[Assertion] = {
+  private def first(query: String)(org: String, repo: String): Future[Assertion] = {
     val params = SearchParams(queryString = query)
     esRepo.findProjects(params).map { page =>
       assert {
@@ -189,21 +184,14 @@ class RelevanceTest
     }
   }
 
-  private def exactly(
-      params: SearchParams,
-      tops: List[(String, String)]
-  ): Future[Assertion] = {
+  private def exactly(params: SearchParams, tops: List[(String, String)]): Future[Assertion] =
     compare(
       params,
       tops,
       (expected, obtained) => assert(expected == obtained)
     )
-  }
 
-  private def top(
-      params: SearchParams,
-      tops: List[(String, String)]
-  ): Future[Assertion] = {
+  private def top(params: SearchParams, tops: List[(String, String)]): Future[Assertion] =
     compare(
       params,
       tops,
@@ -212,12 +200,8 @@ class RelevanceTest
         assert(missing.isEmpty)
       }
     )
-  }
 
-  private def top(
-      query: String,
-      tops: List[(String, String)]
-  ): Future[Assertion] = {
+  private def top(query: String, tops: List[(String, String)]): Future[Assertion] = {
     val params = SearchParams(queryString = query)
     top(params, tops)
   }
@@ -231,8 +215,9 @@ class RelevanceTest
       ) => Assertion
   ): Future[Assertion] = {
 
-    val expectedRefs = expected.map { case (org, repo) =>
-      NewProject.Reference.from(org, repo)
+    val expectedRefs = expected.map {
+      case (org, repo) =>
+        NewProject.Reference.from(org, repo)
     }
 
     esRepo.findProjects(params).map { page =>

@@ -23,11 +23,10 @@ case class SemanticVersion(
     metadata: Option[String] = None
 ) extends Ordered[SemanticVersion] {
 
-  def isSemantic: Boolean = {
+  def isSemantic: Boolean =
     patch.isDefined &&
-    patch2.isEmpty &&
-    preRelease.forall(_.isSemantic)
-  }
+      patch2.isEmpty &&
+      preRelease.forall(_.isSemantic)
 
   override def toString: String = {
     val minorPart = minor.map(m => s".$m").getOrElse("")
@@ -38,9 +37,8 @@ case class SemanticVersion(
     s"$major$minorPart$patchPart$patch2Part$preReleasePart$metadataPart"
   }
 
-  override def compare(that: SemanticVersion): PageIndex = {
+  override def compare(that: SemanticVersion): PageIndex =
     SemanticVersion.ordering.compare(this, that)
-  }
 }
 
 object SemanticVersion extends Parsers with LazyLogging {
@@ -48,31 +46,17 @@ object SemanticVersion extends Parsers with LazyLogging {
     (x.major, x.minor, x.patch, x.patch2, x.preRelease)
   }
 
-  def apply(major: Int, minor: Int): SemanticVersion = {
+  def apply(major: Int, minor: Int): SemanticVersion =
     SemanticVersion(major, Some(minor))
-  }
 
-  def apply(major: Int, minor: Int, patch: Int): SemanticVersion = {
+  def apply(major: Int, minor: Int, patch: Int): SemanticVersion =
     SemanticVersion(major, Some(minor), Some(patch))
-  }
 
-  def apply(
-      major: Int,
-      minor: Int,
-      patch: Int,
-      patch2: Int
-  ): SemanticVersion = {
+  def apply(major: Int, minor: Int, patch: Int, patch2: Int): SemanticVersion =
     SemanticVersion(major, Some(minor), Some(patch), Some(patch2))
-  }
 
-  def apply(
-      major: Int,
-      minor: Int,
-      patch: Int,
-      preRelease: PreRelease
-  ): SemanticVersion = {
+  def apply(major: Int, minor: Int, patch: Int, preRelease: PreRelease): SemanticVersion =
     SemanticVersion(major, Some(minor), Some(patch), None, Some(preRelease))
-  }
 
   import fastparse._
   import fastparse.NoWhitespace._
@@ -86,32 +70,25 @@ object SemanticVersion extends Parsers with LazyLogging {
   private def PatchP[_: P] = ("." ~ Number).? // not really valid SemVer
   private def Patch2P[_: P] = ("." ~ Number).? // not really valid SemVer
 
-  def Parser[_: P]: P[SemanticVersion] = {
+  def Parser[_: P]: P[SemanticVersion] =
     ("v".? ~ Major ~ MinorP ~ PatchP ~ Patch2P ~ ("-" ~ PreRelease.Parser).? ~ MetaData.?)
-      .map { case (major, minor, patch, patch2, preRelease, metadata) =>
-        SemanticVersion(major, minor, patch, patch2, preRelease, metadata)
+      .map {
+        case (major, minor, patch, patch2, preRelease, metadata) =>
+          SemanticVersion(major, minor, patch, patch2, preRelease, metadata)
       }
-  }
 
   private def FullParser[_: P]: P[SemanticVersion] = Start ~ Parser ~ End
 
-  def tryParse(version: String): Option[SemanticVersion] = {
-    try {
-      fastparse.parse(version, x => FullParser(x)) match {
-        case Parsed.Success(v, _) => Some(v)
-        case _ =>
-          logger.warn(
-            s"cannot parse ${classOf[SemanticVersion].getSimpleName} $version"
-          )
-          None
-      }
+  def tryParse(version: String): Option[SemanticVersion] =
+    try fastparse.parse(version, x => FullParser(x)) match {
+      case Parsed.Success(v, _) => Some(v)
+      case _ =>
+        logger.warn(s"cannot parse ${classOf[SemanticVersion].getSimpleName} $version")
+        None
     } catch {
       case NonFatal(_) =>
-        logger.warn(
-          s"cannot parse ${classOf[SemanticVersion].getSimpleName} $version"
-        )
+        logger.warn(s"cannot parse ${classOf[SemanticVersion].getSimpleName} $version")
         None
     }
 
-  }
 }

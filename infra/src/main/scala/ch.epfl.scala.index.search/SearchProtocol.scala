@@ -45,11 +45,11 @@ trait SearchProtocol {
   // filters a project's beginnerIssues by the inner hits returned from elastic search
   // so that only the beginnerIssues that passed the nested beginnerIssues query
   // get returned
-  private def checkInnerHits(hit: SearchHit, p: Project): Project = {
+  private def checkInnerHits(hit: SearchHit, p: Project): Project =
     hit.innerHits
       .get("issues")
       .collect {
-        case searchHits if searchHits.total.value > 0 => {
+        case searchHits if searchHits.total.value > 0 =>
           p.copy(
             github = p.github.map { github =>
               github.copy(
@@ -61,21 +61,18 @@ trait SearchProtocol {
               )
             }
           )
-        }
       }
       .getOrElse(p)
-  }
 
   implicit object ProjectAs extends HitReader[Project] {
 
-    override def read(hit: Hit): Try[Project] = {
+    override def read(hit: Hit): Try[Project] =
       Try(
         checkInnerHits(
           hit.asInstanceOf[SearchHit],
           nread[Project](hit.sourceAsString).copy(id = Some(hit.id))
         )
       )
-    }
   }
 
   implicit object ProjectIndexable extends Indexable[Project] {

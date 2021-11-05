@@ -34,12 +34,8 @@ import com.typesafe.scalalogging.LazyLogging
 /**
  * @param esClient TCP client of the elasticsearch server
  */
-class ESRepo(
-    esClient: ElasticClient,
-    indexPrefix: String
-)(implicit
-    ec: ExecutionContext
-) extends LazyLogging
+class ESRepo(esClient: ElasticClient, indexPrefix: String)(implicit ec: ExecutionContext)
+    extends LazyLogging
     with Closeable {
   import ESRepo._
   import ElasticDsl._
@@ -92,8 +88,7 @@ class ESRepo(
         Analysis(
           analyzers = List(englishReadme),
           charFilters = List(codeStrip, urlStrip),
-          tokenFilters =
-            List(englishStop, englishStemmer, englishPossessiveStemmer),
+          tokenFilters = List(englishStop, englishStemmer, englishPossessiveStemmer),
           normalizers = List(lowercase)
         )
       )
@@ -132,73 +127,62 @@ class ESRepo(
       }
   }
 
-  def insertProject(project: Project): Future[Unit] = {
+  def insertProject(project: Project): Future[Unit] =
     esClient
       .execute(
         indexInto(projectIndex)
           .source(project)
       )
       .map(_ => ())
-  }
 
-  def refresh(): Future[Unit] = {
+  def refresh(): Future[Unit] =
     esClient
       .execute(
         refreshIndex(projectIndex, releaseIndex, dependencyIndex)
       )
       .map(_ => ())
-  }
 
-  def updateProject(project: Project): Future[Unit] = {
+  def updateProject(project: Project): Future[Unit] =
     esClient
       .execute(
         updateById(projectIndex, project.id.get).doc(project)
       )
       .map(_ => ())
-  }
 
   def insertProjects(projects: Seq[Project]): Future[Seq[BulkResponseItem]] = {
-    val requests = projects.map { p =>
-      indexInto(projectIndex).source(p)
-    }
+    val requests = projects.map(p => indexInto(projectIndex).source(p))
     insertAll(requests, 1000)
   }
 
   def insertReleases(releases: Seq[Release]): Future[Seq[BulkResponseItem]] = {
-    val requests = releases.map { r =>
-      indexInto(releaseIndex).source(ReleaseDocument(r))
-    }
+    val requests = releases.map(r => indexInto(releaseIndex).source(ReleaseDocument(r)))
     insertAll(requests, 1000)
   }
 
-  def insertRelease(release: Release): Future[Unit] = {
+  def insertRelease(release: Release): Future[Unit] =
     esClient
       .execute {
         indexInto(releaseIndex)
           .source(ReleaseDocument(release))
       }
       .map(_ => ())
-  }
 
   private def insertAll(
       requests: Seq[IndexRequest],
       bulkSize: Int
-  ): Future[Seq[BulkResponseItem]] = {
+  ): Future[Seq[BulkResponseItem]] =
     if (requests.nonEmpty) {
       Future
         .sequence(
           requests
             .grouped(bulkSize)
             .toSeq
-            .map { reqs =>
-              esClient.execute(bulk(reqs)).map(_.result.items)
-            }
+            .map(reqs => esClient.execute(bulk(reqs)).map(_.result.items))
         )
         .map(_.flatten)
     } else {
       Future.successful(Seq.empty)
     }
-  }
 
   def getTotalProjects(queryString: String): Future[Long] = {
     val query = must(
@@ -324,7 +308,7 @@ class ESRepo(
   def getProjectAndReleaseOptions(
       ref: NewProject.Reference,
       selection: ReleaseSelection
-  ): Future[Option[(Project, ReleaseOptions)]] = {
+  ): Future[Option[(Project, ReleaseOptions)]] =
     getProjectAndReleases(ref).map {
       case Some((project, releases)) =>
         ReleaseOptions(
@@ -336,9 +320,8 @@ class ESRepo(
         ).map(sel => (project, sel))
       case None => None
     }
-  }
 
-  def getLatestProjects(): Future[List[Project]] = {
+  def getLatestProjects(): Future[List[Project]] =
     for {
       projects <- getLatest[Project](
         projectIndex,
@@ -346,61 +329,50 @@ class ESRepo(
         frontPageCount
       )
     } yield projects.map(_.formatForDisplaying)
-  }
 
-  def getLatestReleases(): Future[List[Release]] = {
+  def getLatestReleases(): Future[List[Release]] =
     getLatest[ReleaseDocument](releaseIndex, "released", frontPageCount)
       .map(_.map(_.toRelease))
-  }
 
-  def getTopics(params: SearchParams): Future[List[(String, Long)]] = {
+  def getTopics(params: SearchParams): Future[List[(String, Long)]] =
     stringAggregations("github.topics.keyword", filteredSearchQuery(params))
       .map(addLabelsIfMissing(params.topics.toSet))
-  }
 
-  def getTargetTypes(
-      params: SearchParams
-  ): Future[List[(String, String, Long)]] = {
+  def getTargetTypes(params: SearchParams): Future[List[(String, String, Long)]] =
     stringAggregations("targetType", filteredSearchQuery(params))
       .map(addLabelsIfMissing(params.targetTypes.toSet))
-      .map(_.map { case (targetType, count) =>
-        (targetType, labelizeTargetType(targetType), count)
+      .map(_.map {
+        case (targetType, count) =>
+          (targetType, labelizeTargetType(targetType), count)
       })
-  }
 
-  def getScalaVersions(params: SearchParams): Future[List[(String, Long)]] = {
+  def getScalaVersions(params: SearchParams): Future[List[(String, Long)]] =
     aggregations("scalaVersion", filteredSearchQuery(params))
       .map(_.toList.sortBy(_._1))
       .map(addLabelsIfMissing(params.scalaVersions.toSet))
-  }
 
-  def getScalaJsVersions(params: SearchParams): Future[List[(String, Long)]] = {
+  def getScalaJsVersions(params: SearchParams): Future[List[(String, Long)]] =
     versionAggregations(
       "scalaJsVersion",
       filteredSearchQuery(params),
       Platform.ScalaJs.isValid
     )
       .map(addLabelsIfMissing(params.scalaJsVersions.toSet))
-  }
 
-  def getScalaNativeVersions(
-      params: SearchParams
-  ): Future[List[(String, Long)]] = {
+  def getScalaNativeVersions(params: SearchParams): Future[List[(String, Long)]] =
     versionAggregations(
       "scalaNativeVersion",
       filteredSearchQuery(params),
       Platform.ScalaNative.isValid
     ).map(addLabelsIfMissing(params.scalaNativeVersions.toSet))
-  }
 
-  def getSbtVersions(params: SearchParams): Future[List[(String, Long)]] = {
+  def getSbtVersions(params: SearchParams): Future[List[(String, Long)]] =
     versionAggregations(
       "sbtVersion",
       filteredSearchQuery(params),
       Platform.SbtPlugin.isValid
     )
       .map(addLabelsIfMissing(params.sbtVersions.toSet))
-  }
 
   def getContributingProjects(): Future[List[Project]] = {
     val request = search(projectIndex)
@@ -416,11 +388,7 @@ class ESRepo(
       .map(_.result.to[Project].toList)
   }
 
-  private def getLatest[T: HitReader: Manifest](
-      index: String,
-      sortingField: String,
-      size: Int
-  ): Future[List[T]] = {
+  private def getLatest[T: HitReader: Manifest](index: String, sortingField: String, size: Int): Future[List[T]] = {
     val request = search(index)
       .query(notDeprecatedQuery)
       .sortBy(fieldSort(sortingField).desc())
@@ -429,19 +397,14 @@ class ESRepo(
     esClient.execute(request).map(r => r.result.to[T].toList)
   }
 
-  private def stringAggregations(
-      field: String,
-      query: Query
-  ): Future[List[(String, Long)]] = {
+  private def stringAggregations(field: String, query: Query): Future[List[(String, Long)]] =
     aggregations(field, query).map(_.toList.sortBy(_._1).toList)
-  }
 
   private def versionAggregations(
       field: String,
       query: Query,
       filterF: BinaryVersion => Boolean
-  ): Future[List[(String, Long)]] = {
-
+  ): Future[List[(String, Long)]] =
     aggregations(field, query).map { versionAgg =>
       val filteredAgg = for {
         (version, count) <- versionAgg.toList
@@ -452,12 +415,8 @@ class ESRepo(
         .sortBy(_._1)
         .map { case (v, c) => (v.toString, c) }
     }
-  }
 
-  private def aggregations(
-      field: String,
-      query: Query
-  ): Future[Map[String, Long]] = {
+  private def aggregations(field: String, query: Query): Future[Map[String, Long]] = {
     val aggregationName = s"${field}_count"
 
     val aggregation = termsAgg(aggregationName, field).size(50)
@@ -466,15 +425,12 @@ class ESRepo(
       .query(query)
       .aggregations(aggregation)
 
-    for (response <- esClient.execute(request)) yield {
-      response.result.aggregations
+    for (response <- esClient.execute(request))
+      yield response.result.aggregations
         .result[Terms](aggregationName)
         .buckets
-        .map { bucket =>
-          bucket.key -> bucket.docCount
-        }
+        .map(bucket => bucket.key -> bucket.docCount)
         .toMap
-    }
   }
 }
 
@@ -504,7 +460,7 @@ object ESRepo extends LazyLogging with SearchProtocol {
       .boostMode(CombineFunction.Multiply)
   }
 
-  private def filteredSearchQuery(params: SearchParams): Query = {
+  private def filteredSearchQuery(params: SearchParams): Query =
     must(
       notDeprecatedQuery,
       repositoriesQuery(params.userRepos.toSeq),
@@ -521,35 +477,33 @@ object ESRepo extends LazyLogging with SearchProtocol {
       optionalQuery(params.contributingSearch, contributingQuery),
       searchQuery(params.queryString, params.contributingSearch)
     )
-  }
 
   private def sortQuery(sorting: Option[String]): Sort =
     sorting match {
       case Some("stars") =>
         fieldSort(
           "github.stars"
-        ) missing "0" order SortOrder.DESC // mode MultiMode.Avg
+        ).missing("0").order(SortOrder.DESC) // mode MultiMode.Avg
       case Some("forks") =>
         fieldSort(
           "github.forks"
-        ) missing "0" order SortOrder.DESC // mode MultiMode.Avg
+        ).missing("0").order(SortOrder.DESC) // mode MultiMode.Avg
       case Some("dependentCount") =>
         fieldSort(
           "dependentCount"
-        ) missing "0" order SortOrder.DESC // mode MultiMode.Avg
+        ).missing("0").order(SortOrder.DESC) // mode MultiMode.Avg
       case Some("contributors") =>
         fieldSort(
           "github.contributorCount"
-        ) missing "0" order SortOrder.DESC // mode MultiMode.Avg
+        ).missing("0").order(SortOrder.DESC) // mode MultiMode.Avg
       case Some("relevant") => scoreSort().order(SortOrder.Desc)
-      case Some("created") => fieldSort("created").desc()
-      case Some("updated") => fieldSort("updated").desc()
-      case _ => scoreSort().order(SortOrder.Desc)
+      case Some("created")  => fieldSort("created").desc()
+      case Some("updated")  => fieldSort("updated").desc()
+      case _                => scoreSort().order(SortOrder.Desc)
     }
 
-  private val notDeprecatedQuery: Query = {
+  private val notDeprecatedQuery: Query =
     not(termQuery("deprecated", true))
-  }
 
   private def searchQuery(
       queryString: String,
@@ -620,28 +574,24 @@ object ESRepo extends LazyLogging with SearchProtocol {
     must(filterQuery, plainTextQuery)
   }
 
-  private def topicsQuery(topics: Seq[String]): Query = {
+  private def topicsQuery(topics: Seq[String]): Query =
     must(topics.map(topicQuery))
-  }
 
-  private def topicQuery(topic: String): Query = {
+  private def topicQuery(topic: String): Query =
     termQuery("github.topics.keyword", topic)
-  }
 
   private val cliQuery = termQuery("hasCli", true)
 
   private def repositoriesQuery(
       repositories: Seq[GithubRepo]
-  ): Query = {
+  ): Query =
     should(repositories.map(repositoryQuery))
-  }
 
-  private def repositoryQuery(repo: GithubRepo): Query = {
+  private def repositoryQuery(repo: GithubRepo): Query =
     must(
       termQuery("organization.keyword", repo.organization),
       termQuery("repository.keyword", repo.repository)
     )
-  }
 
   private def targetsQuery(
       targetTypes: Seq[String],
@@ -649,7 +599,7 @@ object ESRepo extends LazyLogging with SearchProtocol {
       scalaJsVersions: Seq[String],
       scalaNativeVersions: Seq[String],
       sbtVersions: Seq[String]
-  ): Query = {
+  ): Query =
     must(
       targetTypes.map(termQuery("targetType", _)) ++
         scalaVersions.map(termQuery("scalaVersion", _)) ++
@@ -657,9 +607,8 @@ object ESRepo extends LazyLogging with SearchProtocol {
         scalaNativeVersions.map(termQuery("scalaNativeVersion", _)) ++
         sbtVersions.map(termQuery("sbtVersion", _))
     )
-  }
 
-  private def targetQuery(target: Platform): Query = {
+  private def targetQuery(target: Platform): Query =
     target match {
       case jvm: Platform.ScalaJvm =>
         termQuery("scalaVersion", jvm.scalaV.family)
@@ -681,7 +630,6 @@ object ESRepo extends LazyLogging with SearchProtocol {
       case Platform.Java =>
         must(NoopQuery) // not sure
     }
-  }
 
   private val contributingQuery = boolQuery().must(
     Seq(
@@ -700,11 +648,10 @@ object ESRepo extends LazyLogging with SearchProtocol {
    * @param queryString the query inputted by user
    * @return the elastic query definition
    */
-  private def luceneQuery(queryString: String): Query = {
+  private def luceneQuery(queryString: String): Query =
     stringQuery(
       replaceFields(queryString)
     )
-  }
 
   private val fieldMapping = Map(
     "depends-on" -> "dependencies",
@@ -714,42 +661,28 @@ object ESRepo extends LazyLogging with SearchProtocol {
     "repository" -> "repository.keyword"
   )
 
-  private def replaceFields(queryString: String) = {
-    fieldMapping.foldLeft(queryString) { case (query, (input, replacement)) =>
-      val regex = s"(\\s|^)$input:".r
-      regex.replaceAllIn(query, s"$$1$replacement:")
+  private def replaceFields(queryString: String) =
+    fieldMapping.foldLeft(queryString) {
+      case (query, (input, replacement)) =>
+        val regex = s"(\\s|^)$input:".r
+        regex.replaceAllIn(query, s"$$1$replacement:")
     }
-  }
 
   private val frontPageCount = 12
 
-  private def labelizeTargetType(targetType: String): String = {
+  private def labelizeTargetType(targetType: String): String =
     if (targetType == "JVM") "Scala (Jvm)"
     else targetType.take(1).map(_.toUpper) + targetType.drop(1).map(_.toLower)
+
+  private def addLabelsIfMissing(labelSet: Set[String])(result: List[(String, Long)]): List[(String, Long)] = {
+    val missingLabels = labelSet -- result.map { case (label, _) => label }.toSet
+
+    (result ++ missingLabels.map(label => (label, 0L))).sortBy { case (label, _) => label }
   }
 
-  private def addLabelsIfMissing(
-      labelSet: Set[String]
-  )(result: List[(String, Long)]): List[(String, Long)] = {
-    val missingLabels = labelSet -- result.map { case (label, _) =>
-      label
-    }.toSet
-
-    (result ++ missingLabels.map(label => (label, 0L))).sortBy {
-      case (label, _) => label
-    }
-  }
-
-  private def optionalQuery(
-      condition: Boolean,
-      query: Query
-  ): Query = {
+  private def optionalQuery(condition: Boolean, query: Query): Query =
     if (condition) query else matchAllQuery()
-  }
 
-  private def optionalQuery[P](
-      param: Option[P]
-  )(query: P => Query): Query = {
+  private def optionalQuery[P](param: Option[P])(query: P => Query): Query =
     param.map(query).getOrElse(matchAllQuery())
-  }
 }

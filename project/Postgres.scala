@@ -53,7 +53,7 @@ object Postgres extends AutoPlugin {
       previousPort: Int,
       database: String,
       logger: Logger
-  ): Int = {
+  ): Int =
     if (alreadyStarted(previousPort, database, logger)) {
       logger.info(s"Postgres has already started on port $previousPort")
       previousPort
@@ -63,7 +63,6 @@ object Postgres extends AutoPlugin {
       logger.info(s"Postgres container successfully started with port $port")
       port
     }
-  }
 
   private def start(dataFolder: File, database: String): Int = {
     if (!dataFolder.exists) IO.createDirectory(dataFolder)

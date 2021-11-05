@@ -53,7 +53,7 @@ object ReleaseDependency {
   object Reverse {
     implicit val order: Ordering[Reverse] =
       Ordering.by(d => ordering(d.dependency, d.name))
-    def sample(deps: Seq[Reverse], sampleSize: Int): Seq[Reverse] = {
+    def sample(deps: Seq[Reverse], sampleSize: Int): Seq[Reverse] =
       deps
         .groupBy(r => (r.source.projectRef, r.source.artifactName))
         .values
@@ -62,7 +62,6 @@ object ReleaseDependency {
         .toSeq
         .sorted
         .take(sampleSize)
-    }
   }
 
   private def ordering(
@@ -71,11 +70,11 @@ object ReleaseDependency {
   ): (Int, String) =
     (
       dependency.scope match {
-        case "compile" => 0
+        case "compile"  => 0
         case "provided" => 1
-        case "runtime" => 2
-        case "test" => 3
-        case _ => 4
+        case "runtime"  => 2
+        case "test"     => 3
+        case _          => 4
       },
       name
     )

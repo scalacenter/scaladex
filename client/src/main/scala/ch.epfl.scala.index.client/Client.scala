@@ -25,7 +25,7 @@ object Client {
   private def getIssuesSelect =
     jQuery("#selectedBeginnerIssues").asInstanceOf[js.Dynamic]
 
-  private def jumpToSearchInput(event: KeyboardEvent): Unit = {
+  private def jumpToSearchInput(event: KeyboardEvent): Unit =
     if (event.ctrlKey && event.keyCode == KeyCode.S) {
       Dom.getSearchInput.foreach { input =>
         if (event.target != input) {
@@ -34,19 +34,11 @@ object Client {
         }
       }
     }
-  }
 
-  private def fetchAndReplaceReadme(
-      el: Element,
-      token: Option[String]
-  ): Unit = {
-
+  private def fetchAndReplaceReadme(el: Element, token: Option[String]): Unit = {
     val organization = el.attributes.getNamedItem("data-organization").value
     val repository = el.attributes.getNamedItem("data-repository").value
-
-    val headers = Map(
-      "Accept" -> "application/vnd.github.VERSION.html"
-    )
+    val headers = Map("Accept" -> "application/vnd.github.VERSION.html")
 
     val headersWithCreds =
       token
@@ -102,21 +94,14 @@ object Client {
     val title: String = js.native
   }
 
-  private def getIssueJson(issue: Issue): String = {
+  private def getIssueJson(issue: Issue): String =
     s"""{ "number":${issue.number}, "title":"${issue.title
       .replace("\"", "\\\"")}", "url":{"target":"${issue.html_url}"} }"""
-  }
 
-  private def getIssuesListener(
-      token: Option[String]
-  )(event: dom.Event): Unit = {
+  private def getIssuesListener(token: Option[String])(event: dom.Event): Unit =
     getIssues(token)
-  }
 
-  private def getIssues(
-      token: Option[String],
-      showSelected: Boolean = false
-  ): Unit = {
+  private def getIssues(token: Option[String], showSelected: Boolean = false): Unit = {
     import Dom.ElementOps
     Dom.getElementById("beginnerIssuesLabel").foreach { issuesLabelEl =>
       val label = issuesLabelEl.asInput.value
@@ -137,8 +122,7 @@ object Client {
 
         Ajax
           .get(
-            url =
-              s"https://api.github.com/repos/$organization/$repository/issues?state=open&labels=$label",
+            url = s"https://api.github.com/repos/$organization/$repository/issues?state=open&labels=$label",
             data = "",
             timeout = 0,
             headers = headersWithCreds
@@ -180,9 +164,7 @@ object Client {
         Dom.getElementById("selectedBeginnerIssues").foreach { el =>
           val selectEl = el.asInstanceOf[HTMLSelectElement]
           selectEl.innerHTML = ""
-          Dom.getElementById("beginnerIssues").foreach { beginnerIssuesEl =>
-            beginnerIssuesEl.asInput.value = ""
-          }
+          Dom.getElementById("beginnerIssues").foreach(beginnerIssuesEl => beginnerIssuesEl.asInput.value = "")
           disableBeginnerIssues(true)
         }
       }
@@ -195,9 +177,8 @@ object Client {
     getIssuesSelect.selectpicker("deselectAll")
   }
 
-  private def hideBanner(event: dom.Event) = {
+  private def hideBanner(event: dom.Event) =
     jQuery(".banner").hide()
-  }
 
   @JSExport
   def main(token: UndefOr[String]): Unit = {
@@ -211,9 +192,7 @@ object Client {
         .addEventListener[KeyboardEvent]("keydown", autocompletion.navigate _)
     }
 
-    Dom.getElementById("README").foreach { readmeEl =>
-      fetchAndReplaceReadme(readmeEl, token.toOption)
-    }
+    Dom.getElementById("README").foreach(readmeEl => fetchAndReplaceReadme(readmeEl, token.toOption))
 
     Dom.getElementById("beginnerIssuesLabel").foreach { el =>
       el.addEventListener[Event]("change", getIssuesListener(token.toOption) _)
@@ -221,18 +200,14 @@ object Client {
 
     getIssues(token.toOption, showSelected = true)
 
-    Dom.getElementById("hide-banner").foreach { el =>
-      el.addEventListener[Event]("click", hideBanner _)
-    }
+    Dom.getElementById("hide-banner").foreach(el => el.addEventListener[Event]("click", hideBanner _))
 
     emojify.setConfig(
       js.Dictionary(
         "img_dir" -> "https://cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/images/basic"
       )
     )
-    jQuery(".emojify").each { el: Element =>
-      emojify.run(el)
-    }
+    jQuery(".emojify").each { el: Element => emojify.run(el) }
     emojify.run(document.body)
 
     CopyToClipboard.addCopyListenersOnClass("btn-copy")
@@ -240,14 +215,13 @@ object Client {
 
   @JSExport
   def updateVisibleArtifactsInGrid(): Unit = {
-    def valuesOfCheckedInputsWithName(name: String): Set[String] = {
+    def valuesOfCheckedInputsWithName(name: String): Set[String] =
       jQuery(s"input[name='$name']")
         .toArray()
         .asInstanceOf[js.Array[HTMLInputElement]]
         .filter(_.checked)
         .map(_.value)
         .toSet
-    }
 
     val selectedTargetTypes = valuesOfCheckedInputsWithName("targetType")
     val selectedTargets = valuesOfCheckedInputsWithName("target")

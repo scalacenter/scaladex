@@ -10,18 +10,10 @@ object Assets {
     pathPrefix("assets") {
       get(
         concat(
-          path("lib" / Remaining) { path =>
-            getFromResource("lib/" + path)
-          },
-          path("img" / Remaining) { path =>
-            getFromResource("img/" + path)
-          },
-          path("css" / Remaining) { path =>
-            getFromResource("css/" + path)
-          },
-          path("js" / Remaining) { path =>
-            getFromResource("js/" + path)
-          },
+          path("lib" / Remaining)(path => getFromResource("lib/" + path)),
+          path("img" / Remaining)(path => getFromResource("img/" + path)),
+          path("css" / Remaining)(path => getFromResource("css/" + path)),
+          path("js" / Remaining)(path => getFromResource("js/" + path)),
           path("client-opt.js")(
             getFromResource("client-opt.js")
           ),

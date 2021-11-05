@@ -17,9 +17,10 @@ object ScalaJSHelper {
     }.taskValue,
     Compile / packageBin / mappings := {
       val mappingExcludingNonOptimized =
-        (Compile / packageBin / mappings).value.filterNot { case (f, r) =>
-          f.getName.endsWith("-fastopt.js") ||
-            f.getName.endsWith("js.map")
+        (Compile / packageBin / mappings).value.filterNot {
+          case (f, r) =>
+            f.getName.endsWith("-fastopt.js") ||
+              f.getName.endsWith("js.map")
         }
 
       val optimized = {

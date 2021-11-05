@@ -29,8 +29,8 @@ case class NewProject(
     githubInfo.flatMap(_.description).getOrElse(""),
     githubInfo.flatMap(_.logo)
   )
-  //val created: datetime = firstRelease.released
-  //val lastUpdated: datetime = lastReleaseAdd.released
+  // val created: datetime = firstRelease.released
+  // val lastUpdated: datetime = lastReleaseAdd.released
 
   def update(newGithubInfo: Option[GithubInfo]): NewProject =
     copy(githubInfo = newGithubInfo)
@@ -39,8 +39,7 @@ case class NewProject(
 
 object NewProject {
 
-  case class Reference(organization: Organization, repository: Repository)
-      extends Ordered[Reference] {
+  case class Reference(organization: Organization, repository: Repository) extends Ordered[Reference] {
     val githubRepo: GithubRepo =
       GithubRepo(organization.value, repository.value)
     override def toString: String = s"$organization/$repository"
@@ -102,8 +101,9 @@ object NewProject {
       primaryTopic = None
     )
     def from(p: Project): DataForm = {
-      val documentationlinks = p.documentationLinks.map { case (label, link) =>
-        DocumentationLink(label, link)
+      val documentationlinks = p.documentationLinks.map {
+        case (label, link) =>
+          DocumentationLink(label, link)
       }
       DataForm(
         defaultStableVersion = p.defaultStableVersion,
@@ -113,8 +113,7 @@ object NewProject {
         documentationLinks = documentationlinks,
         deprecated = p.deprecated,
         contributorsWanted = p.contributorsWanted,
-        artifactDeprecations =
-          p.artifactDeprecations.map(NewRelease.ArtifactName),
+        artifactDeprecations = p.artifactDeprecations.map(NewRelease.ArtifactName),
         cliArtifacts = p.cliArtifacts.map(NewRelease.ArtifactName),
         primaryTopic = p.primaryTopic
       )
@@ -128,7 +127,7 @@ object NewProject {
 
   }
 
-  def from(p: Project): NewProject = {
+  def from(p: Project): NewProject =
     NewProject(
       organization = Organization(p.organization),
       repository = Repository(p.repository),
@@ -136,5 +135,4 @@ object NewProject {
       esId = p.id,
       dataForm = DataForm.from(p)
     )
-  }
 }

@@ -16,17 +16,11 @@ import ch.epfl.scala.index.views.search.html.searchresult
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 
-class SearchPages(dataRepository: ESRepo, session: GithubUserSession)(implicit
-    ec: ExecutionContext
-) {
+class SearchPages(dataRepository: ESRepo, session: GithubUserSession)(implicit ec: ExecutionContext) {
   import dataRepository._
   import session.implicits._
 
-  private def search(
-      params: SearchParams,
-      user: Option[UserState],
-      uri: String
-  ) = {
+  private def search(params: SearchParams, user: Option[UserState], uri: String) =
     complete {
       val resultsF = findProjects(params)
       val topicsF = getTopics(params)
@@ -44,24 +38,21 @@ class SearchPages(dataRepository: ESRepo, session: GithubUserSession)(implicit
         scalaJsVersions <- scalaJsVersionsF
         scalaNativeVersions <- scalaNativeVersionsF
         sbtVersions <- sbtVersionsF
-      } yield {
-        searchresult(
-          params,
-          uri,
-          pagination,
-          projects.toList,
-          user,
-          params.userRepos.nonEmpty,
-          topics,
-          targetTypes,
-          scalaVersions,
-          scalaJsVersions,
-          scalaNativeVersions,
-          sbtVersions
-        )
-      }
+      } yield searchresult(
+        params,
+        uri,
+        pagination,
+        projects.toList,
+        user,
+        params.userRepos.nonEmpty,
+        topics,
+        targetTypes,
+        scalaVersions,
+        scalaJsVersions,
+        scalaNativeVersions,
+        sbtVersions
+      )
     }
-  }
 
   private val searchPath = "search"
 
@@ -80,8 +71,7 @@ class SearchPages(dataRepository: ESRepo, session: GithubUserSession)(implicit
             searchParams(user)(params =>
               search(
                 params.copy(
-                  queryString =
-                    s"${params.queryString} AND organization:$organization"
+                  queryString = s"${params.queryString} AND organization:$organization"
                 ),
                 user,
                 organization

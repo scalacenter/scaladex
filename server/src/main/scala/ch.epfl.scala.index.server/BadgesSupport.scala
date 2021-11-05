@@ -52,18 +52,13 @@ object BadgesSupport {
       }
       .map(_.groupMap(_._1)(_._2))
 
-    k.fold({
+    k.fold {
       SummariseLanguageVersions
         .summarise(scalaTargetsByArtifactVersion, targetType)
-    })(a => {
-      SummarisePlatformEditions.summarise(a, targetType)
-    })
+    }(a => SummarisePlatformEditions.summarise(a, targetType))
   }
 
-  def summarisePlatformTargets(
-      shortName: String,
-      platformEditions: Set[BinaryVersion]
-  ): String = {
+  def summarisePlatformTargets(shortName: String, platformEditions: Set[BinaryVersion]): String = {
     val platformBinaryVersionsByTargetType =
       platformEditions.toSeq.sorted(
         BinaryVersion.ordering.reverse
@@ -137,16 +132,12 @@ object BadgesSupport {
    * will secondarily summarise the PlatformEditions that are supported
    * for all those Scala LanguageVersions.
    */
-  object SummariseLanguageVersions
-      extends SummaryStrategy[Platform, ScalaLanguageVersion] {
+  object SummariseLanguageVersions extends SummaryStrategy[Platform, ScalaLanguageVersion] {
     override def versionFor(t: Platform): ScalaLanguageVersion =
-      t.scalaVersion.get //todo change
+      t.scalaVersion.get // todo change
 
-    override def removeSuperfluousVersionsFrom(
-        versions: Set[ScalaLanguageVersion]
-    ): Set[
-      ScalaLanguageVersion
-    ] = // we're only interested in the latest version of a binary family
+    // we're only interested in the latest version of a binary family
+    override def removeSuperfluousVersionsFrom(versions: Set[ScalaLanguageVersion]): Set[ScalaLanguageVersion] =
       versions.groupBy(_.family).values.map(_.max).toSet
 
     override def summarise(
@@ -154,8 +145,7 @@ object BadgesSupport {
         interestingKeyVersions: Set[ScalaLanguageVersion],
         platformType: Platform.PlatformType
     ): String = {
-      val scalaTargetsByLanguageVersion
-          : Map[ScalaLanguageVersion, Set[Platform]] =
+      val scalaTargetsByLanguageVersion: Map[ScalaLanguageVersion, Set[Platform]] =
         platforms
           .groupBy(_.scalaVersion.get)
           .view
@@ -190,17 +180,9 @@ object BadgesSupport {
    * where the platform version *fully dictates* the Scala version -
    * like sbt.
    */
-  object SummarisePlatformEditions
-      extends SummaryStrategy[
-        Platform,
-        BinaryVersion
-      ] {
-    override def versionFor(
-        t: Platform
-    ): BinaryVersion = t.platformVersion.get
-    override def removeSuperfluousVersionsFrom(
-        versions: Set[BinaryVersion]
-    ): Set[BinaryVersion] = versions
+  object SummarisePlatformEditions extends SummaryStrategy[Platform, BinaryVersion] {
+    override def versionFor(t: Platform): BinaryVersion = t.platformVersion.get
+    override def removeSuperfluousVersionsFrom(versions: Set[BinaryVersion]): Set[BinaryVersion] = versions
     override def summarise(
         scalaTargets: Set[Platform],
         interestingKeyVersions: Set[BinaryVersion],

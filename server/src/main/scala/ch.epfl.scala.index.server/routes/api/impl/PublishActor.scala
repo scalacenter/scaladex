@@ -24,10 +24,9 @@ class PublishActor(
     new impl.PublishProcess(paths, dataRepository, db)
 
   def receive: PartialFunction[Any, Unit] = {
-    case publishData: PublishData => {
+    case publishData: PublishData =>
       // TODO be non-blocking, by stashing incoming messages until
       // the publish process has completed
       sender() ! Await.result(publishProcess.writeFiles(publishData), 1.minute)
-    }
   }
 }

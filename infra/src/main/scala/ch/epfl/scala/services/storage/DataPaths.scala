@@ -118,11 +118,10 @@ case class DataPaths(
   log.info(s"index folder: $index")
   log.info(s"credentials folder: $credentials")
 
-  def assert2(cond: Boolean): Unit = {
+  def assert2(cond: Boolean): Unit =
     if (validate) {
       assert(cond)
     }
-  }
 
   assert2(Files.isDirectory(contrib))
   assert2(Files.isDirectory(index))
@@ -201,21 +200,21 @@ case class DataPaths(
 
   def poms(repository: LocalPomRepository): Path =
     repository match {
-      case Bintray => bintrayPomSha
+      case Bintray      => bintrayPomSha
       case MavenCentral => mavenCentralPomSha
       case UserProvided => usersPomSha
     }
 
   def parentPoms(repository: LocalPomRepository): Path =
     repository match {
-      case Bintray => bintrayParentPom
+      case Bintray      => bintrayParentPom
       case MavenCentral => mavenCentralParentPom
       case UserProvided => usersParentPom
     }
 
   def meta(repository: LocalPomRepository): Path =
     repository match {
-      case Bintray => bintrayMeta
+      case Bintray      => bintrayMeta
       case MavenCentral => mavenCentralMeta
       case UserProvided => usersMeta
     }

@@ -84,7 +84,5 @@ object ProjectUserFormTable {
     ).query[NewProject.DataForm](formDataReader)
 
   val formDataReader: Read[NewProject.DataForm] =
-    Read[(Organization, Repository, NewProject.DataForm)].map {
-      case (_, _, userFormData) => userFormData
-    }
+    Read[(Organization, Repository, NewProject.DataForm)].map { case (_, _, userFormData) => userFormData }
 }

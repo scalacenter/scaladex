@@ -79,8 +79,7 @@ class NewReleaseTests extends AnyFunSpec with Matchers {
           artifactId = "scalajs-dom_sjs0.6_2.12",
           version = "0.9.3",
           artifactName = ArtifactName("scalajs-dom"),
-          platform =
-            Platform.ScalaJs(ScalaVersion.`2.12`, Platform.ScalaJs.`0.6`)
+          platform = Platform.ScalaJs(ScalaVersion.`2.12`, Platform.ScalaJs.`0.6`)
         ).sbtInstall
 
       val expected =
@@ -96,8 +95,7 @@ class NewReleaseTests extends AnyFunSpec with Matchers {
           artifactId = "sbt-native-packager_2.10_0.13",
           version = "1.2.2",
           artifactName = ArtifactName("sbt-native-packager"),
-          platform =
-            Platform.SbtPlugin(ScalaVersion.`2.10`, Platform.SbtPlugin.`0.13`)
+          platform = Platform.SbtPlugin(ScalaVersion.`2.10`, Platform.SbtPlugin.`0.13`)
         ).sbtInstall
 
       val expected =

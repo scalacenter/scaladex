@@ -23,8 +23,7 @@ import org.json4s.native.Serialization.read
 import org.json4s.native.Serialization.writePretty
 
 class GithubRepoExtractor(paths: DataPaths) {
-  object ClaimSerializer
-      extends CustomSerializer[Claims](_ => (serialize, deserialize))
+  object ClaimSerializer extends CustomSerializer[Claims](_ => (serialize, deserialize))
   implicit val formats: Formats = DefaultFormats ++ Seq(ClaimSerializer)
 
   case class Claim(pattern: String, repo: String)
@@ -74,27 +73,25 @@ class GithubRepoExtractor(paths: DataPaths) {
     }
 
     val fromClaims =
-      claimedRepos.find { case (matcher, _) => matcher(pom) }.map {
-        case (_, repo) => repo
-      }
+      claimedRepos.find { case (matcher, _) => matcher(pom) }.map { case (_, repo) => repo }
 
     /* use claims first because it can be used to rewrite scmInfo */
     val repo = fromClaims.orElse(fromPoms.headOption)
 
     // scala xml interpolation is <url>{someVar}<url> and it's often wrong like <url>${someVar}<url>
     // after interpolation it look like <url>$thevalue<url>
-    def fixInterpolationIssue(s: String): String = {
+    def fixInterpolationIssue(s: String): String =
       if (s.startsWith("$")) s.drop(1) else s
-    }
 
-    repo.map { case GithubRepo(organization, repo) =>
-      val repo2 =
-        GithubRepo(
-          fixInterpolationIssue(organization.toLowerCase),
-          fixInterpolationIssue(repo.toLowerCase)
-        )
+    repo.map {
+      case GithubRepo(organization, repo) =>
+        val repo2 =
+          GithubRepo(
+            fixInterpolationIssue(organization.toLowerCase),
+            fixInterpolationIssue(repo.toLowerCase)
+          )
 
-      movedRepositories.getOrElse(repo2, repo2)
+        movedRepositories.getOrElse(repo2, repo2)
     }
   }
 
@@ -126,9 +123,7 @@ class GithubRepoExtractor(paths: DataPaths) {
 
   private def deserialize: PartialFunction[Any, JValue] = {
     case Claims(claims) =>
-      val fields = claims.sortBy(_.pattern).map { claim =>
-        JField(claim.pattern, JString(claim.repo))
-      }
+      val fields = claims.sortBy(_.pattern).map(claim => JField(claim.pattern, JString(claim.repo)))
       JObject(fields.toList)
   }
 }

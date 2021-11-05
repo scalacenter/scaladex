@@ -78,9 +78,7 @@ object ReleaseDependencyTable {
       fr0"WHERE source_groupId=${m.groupId} AND source_artifactId=${m.artifactId} AND source_version=${m.version}"
     ).query[ReleaseDependency]
 
-  def selectDirectDependencies(
-      release: NewRelease
-  ): doobie.Query0[ReleaseDependency.Direct] = {
+  def selectDirectDependencies(release: NewRelease): doobie.Query0[ReleaseDependency.Direct] =
     buildSelect(
       tableWithTargetReleases,
       fieldstableWithRelease,
@@ -89,11 +87,8 @@ object ReleaseDependencyTable {
         fr0" AND d.source_version=${release.maven.version}"
     )
       .query[ReleaseDependency.Direct]
-  }
 
-  def selectReverseDependencies(
-      release: NewRelease
-  ): doobie.Query0[ReleaseDependency.Reverse] =
+  def selectReverseDependencies(release: NewRelease): doobie.Query0[ReleaseDependency.Reverse] =
     buildSelect(
       tableWithSourceReleases,
       fieldstableWithRelease,

@@ -11,9 +11,7 @@ import akka.actor.Cancellable
 import ch.epfl.scala.utils.TimerUtils
 import scaladex.template.SchedulerStatus
 
-class Scheduler(val name: String, runnable: Runnable)(implicit
-    ec: ExecutionContext
-) {
+class Scheduler(val name: String, runnable: Runnable)(implicit ec: ExecutionContext) {
   private var cancellable = Option.empty[Cancellable]
   private val system: ActorSystem = ActorSystem(name)
   private val scheduler: actor.Scheduler = system.scheduler
@@ -21,13 +19,12 @@ class Scheduler(val name: String, runnable: Runnable)(implicit
 
   def status: SchedulerStatus = _status
 
-  def start(): Unit = {
+  def start(): Unit =
     status match {
       case s: SchedulerStatus.Started => ()
       case _ =>
         val can = scheduler.scheduleWithFixedDelay(0.minute, 10.minute) {
-          _status =
-            SchedulerStatus.Started(Instant.now, running = false, None, None)
+          _status = SchedulerStatus.Started(Instant.now, running = false, None, None)
           new Runnable {
             def run() = {
               val triggeredWhen = Instant.now
@@ -49,9 +46,8 @@ class Scheduler(val name: String, runnable: Runnable)(implicit
         }
         cancellable = Some(can)
     }
-  }
 
-  def stop(): Unit = {
+  def stop(): Unit =
     status match {
       case s: SchedulerStatus.Started =>
         cancellable.map(_.cancel())
@@ -59,5 +55,4 @@ class Scheduler(val name: String, runnable: Runnable)(implicit
         cancellable = None
       case _ => ()
     }
-  }
 }

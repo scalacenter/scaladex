@@ -5,10 +5,7 @@ import ch.epfl.scala.services.storage.sql.BaseDatabaseSuite
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 
-class ProjectTableTests
-    extends AsyncFunSpec
-    with BaseDatabaseSuite
-    with Matchers {
+class ProjectTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
   import Values._
 
   import ProjectTable._

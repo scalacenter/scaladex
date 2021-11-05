@@ -29,16 +29,12 @@ class LocalStorageRepo(dataPaths: DataPaths) extends LocalStorageApi {
   private val singleThreadedContext =
     ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
 
-  override def saveDataForm(
-      ref: NewProject.Reference,
-      userData: ProjectForm
-  ): Future[Unit] = {
+  override def saveDataForm(ref: NewProject.Reference, userData: ProjectForm): Future[Unit] =
     Future {
       val stored = storedProjects(dataPaths)
-      val newProject = (ref -> userData)
+      val newProject = ref -> userData
       saveProjects(dataPaths, stored + newProject)
     }(singleThreadedContext)
-  }
 
 }
 
@@ -48,34 +44,36 @@ object LocalStorageRepo {
       extends CustomSerializer[LiveProjects](format =>
         (
           {
-            case JObject(obj) => {
+            case JObject(obj) =>
               implicit val formats = DefaultFormats
               LiveProjects(
-                obj.map { case (k, v) =>
-                  val List(organization, repository) = k.split('/').toList
+                obj.map {
+                  case (k, v) =>
+                    val List(organization, repository) = k.split('/').toList
 
-                  (
-                    NewProject.Reference.from(organization, repository),
-                    v.extract[ProjectForm]
-                  )
+                    (
+                      NewProject.Reference.from(organization, repository),
+                      v.extract[ProjectForm]
+                    )
                 }.toMap
               )
-            }
           },
-          { case l: LiveProjects =>
-            JObject(
-              l.projects.toList
-                .sortBy { case (reference, _) =>
-                  reference
-                }
-                .map {
-                  case (NewProject.Reference(organization, repository), v) =>
-                    JField(
-                      s"$organization/$repository",
-                      parseJson(write(v)(DefaultFormats))
-                    )
-                }
-            )
+          {
+            case l: LiveProjects =>
+              JObject(
+                l.projects.toList
+                  .sortBy {
+                    case (reference, _) =>
+                      reference
+                  }
+                  .map {
+                    case (NewProject.Reference(organization, repository), v) =>
+                      JField(
+                        s"$organization/$repository",
+                        parseJson(write(v)(DefaultFormats))
+                      )
+                  }
+              )
           }
         )
       )
@@ -86,10 +84,7 @@ object LocalStorageRepo {
   def parse(s: String): LiveProjects =
     read[LiveProjects](s)
 
-  def saveProjects(
-      dataPaths: DataPaths,
-      live: Map[NewProject.Reference, ProjectForm]
-  ): Unit = {
+  def saveProjects(dataPaths: DataPaths, live: Map[NewProject.Reference, ProjectForm]): Unit = {
     val projects = LiveProjects(live)
 
     val liveDir = dataPaths.liveProjects.getParent
@@ -103,9 +98,7 @@ object LocalStorageRepo {
     )
   }
 
-  def storedProjects(
-      dataPaths: DataPaths
-  ): Map[NewProject.Reference, ProjectForm] =
+  def storedProjects(dataPaths: DataPaths): Map[NewProject.Reference, ProjectForm] =
     parse(
       Files
         .readAllLines(dataPaths.liveProjects)

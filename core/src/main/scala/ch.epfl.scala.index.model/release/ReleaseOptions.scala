@@ -46,15 +46,13 @@ object ReleaseSelection {
       artifactName: Option[NewRelease.ArtifactName],
       version: Option[String],
       selected: Option[String]
-  ): ReleaseSelection = {
-
+  ): ReleaseSelection =
     new ReleaseSelection(
       platform.flatMap(Platform.parse),
       artifactName,
       version.flatMap(SemanticVersion.tryParse),
       selected
     )
-  }
   def empty = new ReleaseSelection(None, None, None, None)
 }
 
@@ -162,9 +160,7 @@ object ReleaseOptions {
         // alphabetically
         release.artifactName.value,
         // stable version first
-        if (
-          project.dataForm.defaultStableVersion && release.version.preRelease.isDefined
-        ) 0
+        if (project.dataForm.defaultStableVersion && release.version.preRelease.isDefined) 0
         else 1,
         // version
         release.version,

@@ -33,9 +33,7 @@ case class Release(
     scalaNativeVersion: Option[String],
     sbtVersion: Option[String]
 ) {
-
-  def isValid: Boolean =
-    reference.isValid
+  def isValid: Boolean = reference.isValid
 }
 
 object Release {
@@ -52,15 +50,9 @@ object Release {
       version: SemanticVersion,
       target: Platform
   ) {
+    def isValid: Boolean = target.isValid
 
-    def isValid: Boolean = {
-      target.isValid
-    }
-
-    def isScalaLib: Boolean = {
-      organization == "scala" &&
-      repository == "scala" &&
-      artifact == "scala-library"
-    }
+    def isScalaLib: Boolean =
+      organization == "scala" && repository == "scala" && artifact == "scala-library"
   }
 }
