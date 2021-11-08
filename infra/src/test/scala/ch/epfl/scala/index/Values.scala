@@ -55,7 +55,7 @@ object Values {
       artifactName = ArtifactName("scalafix-core"),
       platform = ScalaJvm(ScalaVersion.`2.13`),
       description = None,
-      released = None,
+      releasedAt = None,
       resolver = None,
       licenses = Set(),
       isNonStandardLib = false
@@ -78,7 +78,7 @@ object Values {
       artifactName = ArtifactName("play-json-extra"),
       platform = ScalaJvm(ScalaVersion.`2.11`),
       description = None,
-      released = None,
+      releasedAt = None,
       resolver = None,
       licenses = Set(),
       isNonStandardLib = false
@@ -114,7 +114,7 @@ object Values {
         artifactName = artifactName,
         platform = ScalaJvm(Scala3Version.`3`),
         description = None,
-        released = None,
+        releasedAt = None,
         resolver = None,
         licenses = Set(),
         isNonStandardLib = false

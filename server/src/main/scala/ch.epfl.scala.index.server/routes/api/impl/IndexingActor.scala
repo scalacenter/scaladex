@@ -16,7 +16,7 @@ import ch.epfl.scala.index.data.project.ProjectConvert
 import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.search.ESRepo
-import ch.epfl.scala.services.DatabaseApi
+import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository
 import org.slf4j.LoggerFactory
@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory
 class IndexingActor(
     paths: DataPaths,
     dataRepository: ESRepo,
-    db: DatabaseApi,
+    db: WebDatabase,
     implicit val system: ActorSystem
 ) extends Actor {
   private val log = LoggerFactory.getLogger(getClass)

@@ -1,5 +1,7 @@
 package ch.epfl.scala.index.server
 
+import java.time.Instant
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -7,6 +9,7 @@ import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives.Segment
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.PathMatcher1
+import akka.http.scaladsl.unmarshalling.Unmarshaller
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubIssue
 import ch.epfl.scala.index.model.misc.SearchParams
@@ -16,7 +19,7 @@ import ch.epfl.scala.index.model.release.ReleaseOptions
 import ch.epfl.scala.index.model.release.ReleaseSelection
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
-import ch.epfl.scala.services.DatabaseApi
+import ch.epfl.scala.services.WebDatabase
 
 package object routes {
 
@@ -30,6 +33,10 @@ package object routes {
     Segment.map(NewRelease.ArtifactName)
   val versionM: PathMatcher1[SemanticVersion] =
     Segment.flatMap(SemanticVersion.tryParse)
+
+  val instantUnmarshaller: Unmarshaller[String, Instant] =
+    // dataRaw is in seconds
+    Unmarshaller.strict[String, Instant](dateRaw => Instant.ofEpochSecond(dateRaw.toLong))
 
   def searchParams(user: Option[UserState]): Directive1[SearchParams] =
     parameters(
@@ -164,7 +171,7 @@ package object routes {
       }
     )
   def getSelectedRelease(
-      db: DatabaseApi,
+      db: WebDatabase,
       org: NewProject.Organization,
       repo: NewProject.Repository,
       platform: Option[String],

@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Instant
 
 import scala.util.control.NonFatal
 
@@ -31,7 +32,7 @@ import org.slf4j.LoggerFactory
  */
 private[api] case class PublishData(
     path: String,
-    created: DateTime,
+    created: Instant,
     data: String,
     credentials: github.Credentials,
     userState: UserState,
@@ -44,6 +45,8 @@ private[api] case class PublishData(
   lazy val hash: String = Sha1(data)
   lazy val tempPath: Path = tmpPath(hash)
   def savePath(paths: DataPaths): Path = pomPath(paths, hash)
+
+  val datetimeCreated = new DateTime(created.toEpochMilli)
 
   /**
    * write the file content to given path

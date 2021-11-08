@@ -2,6 +2,8 @@ package ch.epfl.scala.index
 package data
 package project
 
+import java.time.Instant
+
 import ch.epfl.scala.index.data.bintray._
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.model.release._
@@ -120,12 +122,12 @@ object PomMeta {
 
   def from(
       pom: ReleaseModel,
-      created: DateTime,
+      created: Instant,
       localRepository: LocalRepository,
       paths: DataPaths,
       sha1: String
   ): Option[PomMeta] = {
-    val createdString = PomMeta.format.print(created) // todo: keep Datetime
+    val createdString = created.toEpochMilli.toString
 
     if (!pom.isPackagingOfInterest) None
     else {

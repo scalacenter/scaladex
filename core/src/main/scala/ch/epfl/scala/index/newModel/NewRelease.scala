@@ -1,5 +1,9 @@
 package ch.epfl.scala.index.newModel
 
+import java.time.Instant
+
+import scala.util.Try
+
 import ch.epfl.scala.index.model.Env
 import ch.epfl.scala.index.model.License
 import ch.epfl.scala.index.model.Release
@@ -14,7 +18,6 @@ import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
 import ch.epfl.scala.index.newModel.NewProject.Organization
 import ch.epfl.scala.index.newModel.NewProject.Repository
 import ch.epfl.scala.index.newModel.NewRelease._
-import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
 /**
@@ -31,7 +34,7 @@ case class NewRelease(
     artifactName: ArtifactName,
     platform: Platform,
     description: Option[String],
-    released: Option[DateTime],
+    releasedAt: Option[Instant],
     resolver: Option[Resolver],
     licenses: Set[License],
     isNonStandardLib: Boolean
@@ -215,6 +218,9 @@ object NewRelease {
   case class ArtifactName(value: String) extends AnyVal {
     override def toString: String = value
   }
+  // we used to write joda.DateTime and now we moved to Instant
+  private def parseToInstant(s: String): Option[Instant] =
+    Try(format.parseDateTime(s)).map(t => Instant.ofEpochMilli(t.getMillis)).orElse(Try(Instant.parse(s))).toOption
 
   def from(r: Release): NewRelease =
     NewRelease(
@@ -225,7 +231,7 @@ object NewRelease {
       version = r.reference.version,
       platform = r.reference.target,
       description = r.description,
-      released = r.released.map(format.parseDateTime),
+      releasedAt = r.released.flatMap(parseToInstant),
       resolver = r.resolver,
       licenses = r.licenses,
       isNonStandardLib = r.isNonStandardLib

@@ -1,57 +1,55 @@
 package scaladex.server.service
 
-import java.time.Instant
-
-import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
-import scala.concurrent.duration.Duration
-import scala.util.control.NonFatal
+import scala.concurrent.duration._
 
-import ch.epfl.scala.services.DatabaseApi
+import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.services.SchedulerDatabase
 import ch.epfl.scala.utils.ScalaExtensions._
 import com.typesafe.scalalogging.LazyLogging
+import scaladex.server.service.SchedulerService._
+import scaladex.template.SchedulerStatus
 
-class SchedulerService(db: DatabaseApi) extends LazyLogging {
-  import SchedulerService._
-  implicit val ec: ExecutionContextExecutor =
-    ExecutionContext.global // should be a fixed thread pool
-  private val scaladex = new Scheduler("scaladex-scheduler", runnable)
+class SchedulerService(db: SchedulerDatabase) extends LazyLogging {
+  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
-  def start(name: String = scaladex.name): Unit =
-    if (name == scaladex.name) scaladex.start() else ()
+  private val mostDependentProjectScheduler = new Scheduler("most-dependent", mostDependentProjectJob, 1.hour)
+  private val updateProject = new Scheduler("update-projects", updateProjectJob, 30.minutes)
+
+  private val schedulers = Map[String, Scheduler](
+    mostDependentProjectScheduler.name -> mostDependentProjectScheduler,
+    updateProject.name -> updateProject
+  )
+
+  def startAll(): Unit =
+    schedulers.values.foreach(_.start())
+
+  def start(name: String): Unit =
+    schedulers.get(name).foreach(_.start())
 
   def stop(name: String): Unit =
-    if (name == scaladex.name) scaladex.stop() else ()
+    schedulers.get(name).foreach(_.stop())
 
-  def getScheduler(): Scheduler =
-    scaladex
+  def getSchedulers(): Seq[SchedulerStatus] =
+    schedulers.values.toSeq.map(_.status)
 
-  private def runnable: Runnable = new Runnable {
-    override def run(): Unit = {
-      logger.info(s"Starting the scheduler ${Instant.now}")
-      val future: Future[Unit] =
-        try for {
-          _ <- updateProjectDependenciesTable(db)
-        } yield logger.info(s"Finished running the scheduler ${Instant.now}")
-        catch {
-          case NonFatal(e) =>
-            Future.successful(
-              logger.info(
-                s"the scheduler ${scaladex.name} failed running because ${e.getMessage}"
-              )
-            )
-            Future.successful(logger.info(e.getStackTrace.mkString("\n")))
-        }
-      Await.result(future, Duration.Inf)
-    }
-  }
+  private def mostDependentProjectJob(): Future[Unit] =
+    for {
+      _ <- updateProjectDependenciesTable(db)
+    } yield ()
 
+  private def updateProjectJob(): Future[Unit] =
+    for {
+      refs <- db.getAllProjectRef()
+      _ <- updateCreatedTimeIn(db, refs)
+    } yield ()
 }
 
 object SchedulerService {
-  def updateProjectDependenciesTable(db: DatabaseApi)(implicit ec: ExecutionContext): Future[Unit] =
+
+  def updateProjectDependenciesTable(db: SchedulerDatabase)(implicit ec: ExecutionContext): Future[Unit] =
     for {
       projectWithDependencies <- db
         .getAllProjectDependencies()
@@ -67,5 +65,18 @@ object SchedulerService {
             s"not able to insertProjectDependencies because of ${e.getMessage}"
           )
         )
+
     } yield ()
+
+  private def updateCreatedTimeIn(db: SchedulerDatabase, refs: Seq[NewProject.Reference])(
+      implicit ec: ExecutionContext
+  ): Future[Seq[Unit]] =
+    refs
+      .map(ref => db.updateCreatedInProjects(ref))
+      .sequence
+      .mapFailure(e =>
+        new Exception(
+          s"not able to updateCreatedTimeIn all projects because of ${e.getMessage}"
+        )
+      )
 }

@@ -22,16 +22,14 @@ import ch.epfl.scala.index.data.download.PlayWsDownloader
 import ch.epfl.scala.index.data.maven.DownloadParentPoms
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.maven.ReleaseModel
-import ch.epfl.scala.index.model.Release
 import ch.epfl.scala.index.model.misc.GithubRepo
-import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.search.ESRepo
-import ch.epfl.scala.services.DatabaseApi
+import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository
 import org.slf4j.LoggerFactory
 
-private[api] class PublishProcess(paths: DataPaths, dataRepository: ESRepo, db: DatabaseApi)(
+private[api] class PublishProcess(paths: DataPaths, dataRepository: ESRepo, db: WebDatabase)(
     implicit val system: ActorSystem
 ) extends PlayWsDownloader {
 
@@ -82,7 +80,7 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: ESRepo, db: 
 
                   Meta.append(
                     paths,
-                    Meta(data.hash, data.path, data.created),
+                    Meta(data.hash, data.path, data.datetimeCreated),
                     repository
                   )
 
@@ -151,5 +149,4 @@ private[api] class PublishProcess(paths: DataPaths, dataRepository: ESRepo, db: 
   private def getGithubRepo(pom: ReleaseModel): Option[GithubRepo] =
     (new GithubRepoExtractor(paths)).apply(pom)
 
-  private var cachedReleases = Map.empty[NewProject.Reference, Set[Release]]
 }

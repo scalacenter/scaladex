@@ -1,5 +1,7 @@
 package ch.epfl.scala.index.server
 
+import java.time.Instant
+
 import ch.epfl.scala.index.model.Milestone
 import ch.epfl.scala.index.model.ReleaseCandidate
 import ch.epfl.scala.index.model.SemanticVersion
@@ -31,7 +33,7 @@ object Values {
     artifactName = ArtifactName("play-json-extra"),
     platform = Platform.ScalaJvm(ScalaVersion.`2.11`),
     description = None,
-    released = None,
+    releasedAt = None,
     resolver = None,
     licenses = Set(),
     isNonStandardLib = false
@@ -40,6 +42,7 @@ object Values {
     release.organization,
     release.repository,
     Some(GithubInfo.empty),
+    created = Some(Instant.now),
     None,
     NewProject.DataForm.default
   )

@@ -13,17 +13,19 @@ import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.GithubUserSession
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.index.views.html.frontpage
-import ch.epfl.scala.services.DatabaseApi
+import ch.epfl.scala.services.WebDatabase
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import play.twirl.api.HtmlFormat
 
 class FrontPage(
     dataRepository: ESRepo,
-    db: DatabaseApi,
+    db: WebDatabase,
     session: GithubUserSession
 )(implicit ec: ExecutionContext) {
   import session.implicits._
+
+  val limitOfProjectShownInFrontPage = 12
 
   private def frontPage(
       userInfo: Option[UserState]
@@ -31,10 +33,9 @@ class FrontPage(
     import dataRepository._
     val topicsF = db.getAllTopics()
     val allPlatformsF = db.getAllPlatforms()
-    val latestProjectsF = getLatestProjects()
+    val latestProjectsF = db.getLatestProjects(limitOfProjectShownInFrontPage)
     val latestReleasesF = getLatestReleases()
     val contributingProjectsF = getContributingProjects()
-
     for {
       topics <- topicsF.map(FrontPage.getTopTopics(_, 50))
       allPlatforms <- allPlatformsF
@@ -57,7 +58,7 @@ class FrontPage(
           case p: Platform.SbtPlugin =>
             p.sbtV
         }
-      listOfProject <- db.getMostDependentUponProject(12)
+      listOfProject <- db.getMostDependentUponProject(limitOfProjectShownInFrontPage)
       mostDependedUpon = listOfProject
         .sortBy(_._2)
         .reverse

@@ -2,6 +2,8 @@ package ch.epfl.scala.index
 package data
 package project
 
+import java.time.Instant
+
 import ch.epfl.scala.index.data.bintray._
 import ch.epfl.scala.index.data.cleanup._
 import ch.epfl.scala.index.data.github._
@@ -254,7 +256,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload) extends B
       pom: ReleaseModel,
       localRepository: LocalRepository,
       sha1: String,
-      created: DateTime,
+      created: Instant,
       githubRepo: GithubRepo,
       existingProject: Option[NewProject]
   ): Option[(NewProject, NewRelease, Seq[ReleaseDependency])] = {

@@ -15,7 +15,7 @@ class ReleaseTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matcher
       check(q)
       q.sql shouldBe
         s"""INSERT INTO releases (groupId, artifactId, version, organization,
-           | repository, artifact, platform, description, released, resolver,
+           | repository, artifact, platform, description, released_at, resolver,
            | licenses, isNonStandardLib) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
           .filterNot(_ == '\n')
     }
@@ -24,6 +24,16 @@ class ReleaseTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matcher
       check(q)
       q.sql shouldBe
         s"""SELECT * FROM releases WHERE organization=? AND repository=?""".stripMargin
+          .filterNot(_ == '\n')
+    }
+    it("findOldestRelease") {
+      val q = selectOldestRelease(PlayJsonExtra.reference)
+      check(q)
+      q.sql shouldBe
+        s"""SELECT * FROM releases
+           | WHERE organization=? AND repository=? AND released_at IS NOT NULL
+           | ORDER BY released_at
+           | LIMIT 1""".stripMargin
           .filterNot(_ == '\n')
     }
   }

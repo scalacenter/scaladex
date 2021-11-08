@@ -22,7 +22,7 @@ object ReleaseTable {
     "artifact",
     "platform",
     "description",
-    "released",
+    "released_at",
     "resolver",
     "licenses",
     "isNonStandardLib"
@@ -32,7 +32,7 @@ object ReleaseTable {
 
   private def values(r: NewRelease): Fragment =
     fr0"${r.maven.groupId}, ${r.maven.artifactId}, ${r.version}, ${r.organization}, ${r.repository}," ++
-      fr0" ${r.artifactName}, ${r.platform}, ${r.description}, ${r.released}, ${r.resolver}, ${r.licenses}, ${r.isNonStandardLib}"
+      fr0" ${r.artifactName}, ${r.platform}, ${r.description}, ${r.releasedAt}, ${r.resolver}, ${r.licenses}, ${r.isNonStandardLib}"
 
   def insert(elt: NewRelease): doobie.Update0 =
     buildInsert(tableFr, fieldsFr, values(elt)).update
@@ -44,7 +44,7 @@ object ReleaseTable {
     buildSelect(tableFr, fr0"count(*)").query[Long]
 
   def selectReleases(ref: NewProject.Reference): doobie.Query0[NewRelease] =
-    buildSelect(tableFr, fr0"*", where(ref.organization, ref.repository))
+    buildSelect(tableFr, fr0"*", where(ref))
       .query[NewRelease]
 
   def selectReleases(
@@ -54,7 +54,7 @@ object ReleaseTable {
     buildSelect(
       tableFr,
       fr0"*",
-      fr0"WHERE organization=${ref.organization} AND repository=${ref.repository} AND artifact=$artifactName"
+      where(ref) ++ fr0" AND artifact=$artifactName"
     ).query[NewRelease]
 
   def selectPlatform(): doobie.Query0[
@@ -65,4 +65,14 @@ object ReleaseTable {
       fr0"organization, repository, platform",
       fr0"GROUP BY organization, repository, platform"
     ).query[(NewProject.Organization, NewProject.Repository, Platform)]
+
+  def selectOldestRelease(ref: NewProject.Reference): doobie.Query0[NewRelease] =
+    buildSelect(
+      tableFr,
+      fr0"*",
+      where(ref) ++ fr0" AND released_at IS NOT NULL" ++
+        fr0" ORDER BY released_at" ++
+        fr0" LIMIT 1"
+    ).query[NewRelease]
+
 }

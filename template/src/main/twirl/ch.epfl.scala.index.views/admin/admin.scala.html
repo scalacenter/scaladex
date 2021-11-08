@@ -4,7 +4,7 @@
 @import scala.concurrent.duration.FiniteDuration
 
 @import java.time.Instant
-@(user: UserState, schedulerName: String, schedulerStatus: SchedulerStatus)
+@(user: UserState, schedulers: Seq[SchedulerStatus])
 
 @main(title = "Admin page", showSearch = false, Some(user)) {
     <main class="admin">
@@ -16,36 +16,43 @@
                         <tr>
                             <th scope="col">Name</th>
                             <th scope="col">Status</th>
-                            <th scope="col">When</th>
+                            <th scope="col">Last run at</th>
+                            <th scope="col">Duration of Last run</th>
                             <th scope="col">Progress</th>
                             <th scope="col" style="text-align: right">Action</th>
                         </tr>
                     </thead>
                     <tbody>
+                    @schedulers.map { scheduler =>
                         <tr>
-                            <th scope="row">@schedulerName</th>
-                            <td>@schedulerStatus.value</td>
-                            <td>@formatInstant(schedulerStatus.when)</td>
+                            <th scope="row">@scheduler.name</th>
+                            <td>@scheduler.status<br/>
+                                at @formatInstant(scheduler.when)</td>
+                            <td>@scheduler.lastRunAt.map(formatInstant).getOrElse("No run before")</td>
+                            <td>@scheduler.durationOfLastRun.map(_.toMinutes).getOrElse("No run before")</td>
                             <td>
-                                @schedulerStatus match {
-                                    case SchedulerStatus.Started(_, true, Some(triggeredWhen), durationOfLastRun: Option[FiniteDuration]) => { @progressbar(triggeredWhen, Instant.now(), durationOfLastRun) }
-                                    case s : SchedulerStatus.Started => { Waiting }
-                                    case _ => { _ }
+                            @scheduler match {
+                                case SchedulerStatus.Started(_, _, true, Some(triggeredWhen), durationOfLastRun: Option[FiniteDuration]) => {
+                                    @progressbar(triggeredWhen, Instant.now(), durationOfLastRun)
                                 }
+                                case s: SchedulerStatus.Started => { Waiting }
+                                case _ => { _ }
+                            }
                             </td>
                             <td style="text-align: right">
-                            @if(schedulerStatus.isStarted()) {
-                                <form action="/admin/@schedulerName/stop" method="post">
+                            @if(scheduler.isStarted()) {
+                                <form action="/admin/@{scheduler.name}/stop" method="post">
                                     <button type="submit" class="btn btn-danger">Stop</button>
                                 </form>
 
                             } else {
-                                <form action="/admin/@schedulerName/start" method="post">
+                                <form action="/admin/@{scheduler.name}/start" method="post">
                                     <button type="submit" class="btn btn-success">Start</button>
                                 </form>
                             }
                             </td>
                         </tr>
+                    }
                     </tbody>
                 </table>
             </div>

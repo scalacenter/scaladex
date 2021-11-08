@@ -1,5 +1,7 @@
 package ch.epfl.scala.index.newModel
 
+import java.time.Instant
+
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubRepo
@@ -11,6 +13,7 @@ case class NewProject(
     organization: Organization,
     repository: Repository,
     githubInfo: Option[GithubInfo],
+    created: Option[Instant], // equivalent to the first release date
     esId: Option[String],
     // form data
     dataForm: DataForm
@@ -63,6 +66,7 @@ object NewProject {
       Organization(org),
       repository = Repository(repo),
       githubInfo = githubInfo,
+      created = None,
       esId = None,
       dataForm = formData
     )
@@ -132,6 +136,7 @@ object NewProject {
       organization = Organization(p.organization),
       repository = Repository(p.repository),
       githubInfo = p.github,
+      created = None,
       esId = p.id,
       dataForm = DataForm.from(p)
     )

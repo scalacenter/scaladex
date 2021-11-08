@@ -16,7 +16,7 @@ import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.search.ESRepo
-import ch.epfl.scala.services.DatabaseApi
+import ch.epfl.scala.services.WebDatabase
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import com.softwaremill.session.SessionDirectives.optionalSession
 import com.softwaremill.session.SessionOptions.refreshable
@@ -82,7 +82,7 @@ object SearchApi {
     }
 }
 
-class SearchApi(dataRepository: ESRepo, db: DatabaseApi, session: GithubUserSession)(
+class SearchApi(dataRepository: ESRepo, db: WebDatabase, session: GithubUserSession)(
     implicit val executionContext: ExecutionContext
 ) extends PlayJsonSupport {
   import session.implicits._

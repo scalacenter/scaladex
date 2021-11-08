@@ -199,7 +199,7 @@ class NewReleaseTests extends AnyFunSpec with Matchers {
       artifactName = artifactName,
       platform = platform,
       description = None,
-      released = None,
+      releasedAt = None,
       resolver = resolver,
       licenses = Set(),
       isNonStandardLib = false
