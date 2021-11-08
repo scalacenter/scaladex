@@ -124,15 +124,17 @@ package object routes {
 
             fields._1
               .filter { case (key, _) => key.startsWith(name) }
-              .groupBy { case (key, _) =>
-                key
-                  .drop("documentationLinks[".length)
-                  .takeWhile(_ != end)
+              .groupBy {
+                case (key, _) =>
+                  key
+                    .drop("documentationLinks[".length)
+                    .takeWhile(_ != end)
               }
               .values
-              .map { case Vector((a, b), (_, d)) =>
-                if (a.contains("label")) (b, d)
-                else (d, b)
+              .map {
+                case Vector((a, b), (_, d)) =>
+                  if (a.contains("label")) (b, d)
+                  else (d, b)
               }
               .toList
           }

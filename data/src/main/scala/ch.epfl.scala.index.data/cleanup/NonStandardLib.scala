@@ -61,18 +61,19 @@ object NonStandardLib {
       val nonStandard =
         Parser.parseFromFile(filePath.toFile).get.extract[Map[String, String]]
 
-      nonStandard.map { case (artifact, rawLookup) =>
-        val lookup =
-          rawLookup match {
-            case "pom" => ScalaTargetFromPom
-            case "java" => NoScalaTargetPureJavaDependency
-            case "version" => ScalaTargetFromVersion
-            case _ => sys.error("unknown lookup: '" + rawLookup + "'")
-          }
+      nonStandard.map {
+        case (artifact, rawLookup) =>
+          val lookup =
+            rawLookup match {
+              case "pom"     => ScalaTargetFromPom
+              case "java"    => NoScalaTargetPureJavaDependency
+              case "version" => ScalaTargetFromVersion
+              case _         => sys.error("unknown lookup: '" + rawLookup + "'")
+            }
 
-        val List(groupId, artifactId) = artifact.split(" ").toList
+          val List(groupId, artifactId) = artifact.split(" ").toList
 
-        NonStandardLib(groupId, artifactId, lookup)
+          NonStandardLib(groupId, artifactId, lookup)
       }.toList
     } else {
       List()

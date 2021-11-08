@@ -21,8 +21,7 @@ import com.github.nscala_time.time.Imports._
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
-class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
-    extends BintrayProtocol {
+class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload) extends BintrayProtocol {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -64,12 +63,11 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
     def maxMinRelease(
         releases: Seq[Release]
     ): (Option[String], Option[String]) = {
-      def sortDate(rawDates: List[String]): List[String] = {
+      def sortDate(rawDates: List[String]): List[String] =
         rawDates
           .map(PomMeta.format.parseDateTime)
           .sorted(Descending[DateTime])
           .map(PomMeta.format.print)
-      }
 
       val dates = for {
         release <- releases.toList
@@ -83,127 +81,126 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
     val storedProjects = LocalStorageRepo.storedProjects(paths)
 
     val projectsAndReleases = pomsAndMetaClean
-      .groupBy { case (githubRepo, _, _, _, _, _, _, _) =>
-        githubRepo
-      }
-      .map { case (githubRepo @ GithubRepo(organization, repository), vs) =>
-        val projectReference =
-          NewProject.Reference.from(organization, repository)
+      .groupBy { case (githubRepo, _, _, _, _, _, _, _) => githubRepo }
+      .map {
+        case (githubRepo @ GithubRepo(organization, repository), vs) =>
+          val projectReference =
+            NewProject.Reference.from(organization, repository)
 
-        val oldReleases =
-          indexedReleases.getOrElse(projectReference, Set())
+          val oldReleases =
+            indexedReleases.getOrElse(projectReference, Set())
 
-        val newReleases = vs.map {
-          case (
-                _,
-                artifactName,
-                target,
-                pom,
-                created,
-                resolver,
-                version,
-                isNonStandardLib
-              ) =>
-            val (
-              targetType,
-              scalaVersion,
-              scalaJsVersion,
-              scalaNativeVersion,
-              sbtVersion
-            ) = target match {
-              case Platform.ScalaJvm(languageVersion) =>
-                (
-                  Platform.PlatformType.Jvm,
-                  Some(languageVersion),
-                  None,
-                  None,
-                  None
-                )
-              case Platform.ScalaJs(languageVersion, jsVersion) =>
-                (
-                  Platform.PlatformType.Js,
-                  Some(languageVersion),
-                  Some(jsVersion),
-                  None,
-                  None
-                )
-              case Platform.ScalaNative(languageVersion, nativeVersion) =>
-                (
-                  Platform.PlatformType.Native,
-                  Some(languageVersion),
-                  None,
-                  Some(nativeVersion),
-                  None
-                )
-              case Platform.SbtPlugin(languageVersion, sbtVersion) =>
-                (
-                  Platform.PlatformType.Sbt,
-                  Some(languageVersion),
-                  None,
-                  None,
-                  Some(sbtVersion)
-                )
-              case Platform.Java =>
-                (Platform.PlatformType.Java, None, None, None, None)
-            }
+          val newReleases = vs.map {
+            case (
+                  _,
+                  artifactName,
+                  target,
+                  pom,
+                  created,
+                  resolver,
+                  version,
+                  isNonStandardLib
+                ) =>
+              val (
+                targetType,
+                scalaVersion,
+                scalaJsVersion,
+                scalaNativeVersion,
+                sbtVersion
+              ) = target match {
+                case Platform.ScalaJvm(languageVersion) =>
+                  (
+                    Platform.PlatformType.Jvm,
+                    Some(languageVersion),
+                    None,
+                    None,
+                    None
+                  )
+                case Platform.ScalaJs(languageVersion, jsVersion) =>
+                  (
+                    Platform.PlatformType.Js,
+                    Some(languageVersion),
+                    Some(jsVersion),
+                    None,
+                    None
+                  )
+                case Platform.ScalaNative(languageVersion, nativeVersion) =>
+                  (
+                    Platform.PlatformType.Native,
+                    Some(languageVersion),
+                    None,
+                    Some(nativeVersion),
+                    None
+                  )
+                case Platform.SbtPlugin(languageVersion, sbtVersion) =>
+                  (
+                    Platform.PlatformType.Sbt,
+                    Some(languageVersion),
+                    None,
+                    None,
+                    Some(sbtVersion)
+                  )
+                case Platform.Java =>
+                  (Platform.PlatformType.Java, None, None, None, None)
+              }
 
-            Release(
-              maven = pom.mavenRef,
-              reference = Release.Reference(
-                organization,
-                repository,
-                artifactName,
-                version,
-                target
-              ),
-              resolver = resolver,
-              name = pom.name,
-              description = pom.description,
-              released = created,
-              licenses = licenseCleanup(pom),
-              isNonStandardLib = isNonStandardLib,
-              id = None,
-              liveData = false,
-              targetType = targetType.toString,
-              scalaVersion = scalaVersion.map(_.family),
-              scalaJsVersion = scalaJsVersion.map(_.toString),
-              scalaNativeVersion = scalaNativeVersion.map(_.toString),
-              sbtVersion = sbtVersion.map(_.toString)
-            )
-        }
+              Release(
+                maven = pom.mavenRef,
+                reference = Release.Reference(
+                  organization,
+                  repository,
+                  artifactName,
+                  version,
+                  target
+                ),
+                resolver = resolver,
+                name = pom.name,
+                description = pom.description,
+                released = created,
+                licenses = licenseCleanup(pom),
+                isNonStandardLib = isNonStandardLib,
+                id = None,
+                liveData = false,
+                targetType = targetType.toString,
+                scalaVersion = scalaVersion.map(_.family),
+                scalaJsVersion = scalaJsVersion.map(_.toString),
+                scalaNativeVersion = scalaNativeVersion.map(_.toString),
+                sbtVersion = sbtVersion.map(_.toString)
+              )
+          }
 
-        val allReleases = newReleases ++ oldReleases
+          val allReleases = newReleases ++ oldReleases
 
-        val releaseCount = allReleases.map(_.reference.version).size
+          val releaseCount = allReleases.map(_.reference.version).size
 
-        val (max, min) = maxMinRelease(allReleases)
+          val (max, min) = maxMinRelease(allReleases)
 
-        val defaultStableVersion = storedProjects
-          .get(NewProject.Reference.from(organization, repository))
-          .forall(_.defaultStableVersion)
+          val defaultStableVersion = storedProjects
+            .get(NewProject.Reference.from(organization, repository))
+            .forall(_.defaultStableVersion)
 
-        val releaseOptions = ReleaseOptions(
-          repository,
-          ReleaseSelection.empty,
-          allReleases,
-          None,
-          defaultStableVersion
-        )
-
-        val github = GithubReader(paths, githubRepo)
-        val seed =
-          ProjectSeed(
-            organization = organization,
-            repository = repository,
-            github = github,
-            artifacts = releaseOptions.map(_.artifacts.sorted).getOrElse(Nil),
-            releaseCount = releaseCount,
-            defaultArtifact = releaseOptions.map(_.release.reference.artifact),
-            created = min,
-            updated = max
+          val releaseOptions = ReleaseOptions(
+            repository,
+            ReleaseSelection.empty,
+            allReleases,
+            None,
+            defaultStableVersion
           )
 
-        (seed, allReleases)
+          val github = GithubReader(paths, githubRepo)
+          val seed =
+            ProjectSeed(
+              organization = organization,
+              repository = repository,
+              github = github,
+              artifacts = releaseOptions.map(_.artifacts.sorted).getOrElse(Nil),
+              releaseCount = releaseCount,
+              defaultArtifact = releaseOptions.map(_.release.reference.artifact),
+              created = min,
+              updated = max
+            )
+
+          (seed, allReleases)
       }
 
     log.info("Dependencies")
@@ -212,29 +209,28 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
     val allDependencies: Seq[ReleaseDependency] =
       poms.flatMap(getDependencies).distinct
 
-    val projectWithReleases = projectsAndReleases.map { case (seed, releases) =>
-      val releasesWithDependencies =
-        releases // todo: we will use soon NewRelase which doenst contain dependencies
+    val projectWithReleases = projectsAndReleases.map {
+      case (seed, releases) =>
+        val releasesWithDependencies = releases // todo: we will use soon NewRelase which doenst contain dependencies
 
-      val project =
-        seed.toProject(
-          targetType = releases.map(_.targetType).distinct.toList,
-          scalaVersion = releases.flatMap(_.scalaVersion).distinct.toList,
-          scalaJsVersion = releases.flatMap(_.scalaJsVersion).distinct.toList,
-          scalaNativeVersion =
-            releases.flatMap(_.scalaNativeVersion).distinct.toList,
-          sbtVersion = releases.flatMap(_.sbtVersion).distinct.toList,
-          dependencies = Set(), // todo: Remove
-          dependentCount =
-            0 // dependentCountByProject.getOrElse(seed.reference, 0): should be computed using the database
-        )
+        val project =
+          seed.toProject(
+            targetType = releases.map(_.targetType).distinct.toList,
+            scalaVersion = releases.flatMap(_.scalaVersion).distinct.toList,
+            scalaJsVersion = releases.flatMap(_.scalaJsVersion).distinct.toList,
+            scalaNativeVersion = releases.flatMap(_.scalaNativeVersion).distinct.toList,
+            sbtVersion = releases.flatMap(_.sbtVersion).distinct.toList,
+            dependencies = Set(), // todo: Remove
+            dependentCount =
+              0 // dependentCountByProject.getOrElse(seed.reference, 0): should be computed using the database
+          )
 
-      val updatedProject = storedProjects
-        .get(project.reference)
-        .map(projectForm => projectForm.update(project, fromStored = true))
-        .getOrElse(project)
+        val updatedProject = storedProjects
+          .get(project.reference)
+          .map(projectForm => projectForm.update(project, fromStored = true))
+          .getOrElse(project)
 
-      (updatedProject, releasesWithDependencies)
+        (updatedProject, releasesWithDependencies)
     }
     (
       projectWithReleases.keys.toSeq.distinct,
@@ -267,34 +263,35 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload)
     val licenseCleanup = new LicenseCleanup(paths)
 
     log.info("Converting the pom to a project/release/dependencies")
-    pomMetaOpt.flatMap { case PomMeta(pom, _, resolver) =>
-      for {
-        artifactMeta <- metaExtractor.extractMeta(pom)
-        version <- SemanticVersion.tryParse(pom.version)
-        project = existingProject
-          .map(_.update(githubInfo))
-          .getOrElse(
-            NewProject.defaultProject(
-              githubRepo.organization,
-              githubRepo.repository,
-              githubInfo
+    pomMetaOpt.flatMap {
+      case PomMeta(pom, _, resolver) =>
+        for {
+          artifactMeta <- metaExtractor.extractMeta(pom)
+          version <- SemanticVersion.tryParse(pom.version)
+          project = existingProject
+            .map(_.update(githubInfo))
+            .getOrElse(
+              NewProject.defaultProject(
+                githubRepo.organization,
+                githubRepo.repository,
+                githubInfo
+              )
             )
+          dependencies = getDependencies(pom)
+          release = NewRelease(
+            pom.mavenRef,
+            version,
+            project.organization,
+            project.repository,
+            ArtifactName(artifactMeta.artifactName),
+            artifactMeta.platform,
+            pom.description,
+            Some(created),
+            resolver,
+            licenseCleanup(pom),
+            artifactMeta.isNonStandard
           )
-        dependencies = getDependencies(pom)
-        release = NewRelease(
-          pom.mavenRef,
-          version,
-          project.organization,
-          project.repository,
-          ArtifactName(artifactMeta.artifactName),
-          artifactMeta.platform,
-          pom.description,
-          Some(created),
-          resolver,
-          licenseCleanup(pom),
-          artifactMeta.isNonStandard
-        )
-      } yield (project, release, dependencies)
+        } yield (project, release, dependencies)
     }
   }
 }

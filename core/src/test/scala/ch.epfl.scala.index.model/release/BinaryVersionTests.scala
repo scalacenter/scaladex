@@ -7,10 +7,7 @@ import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 
-class BinaryVersionTests
-    extends AsyncFunSpec
-    with Matchers
-    with TableDrivenPropertyChecks {
+class BinaryVersionTests extends AsyncFunSpec with Matchers with TableDrivenPropertyChecks {
   it("should parse any binary version") {
     val inputs = Table(
       ("input", "output"),
@@ -29,9 +26,7 @@ class BinaryVersionTests
       ("1.1-M1", release.PreReleaseBinary(1, 1, None, Milestone(1)))
     )
 
-    forAll(inputs) { (input, output) =>
-      BinaryVersion.parse(input) should contain(output)
-    }
+    forAll(inputs)((input, output) => BinaryVersion.parse(input) should contain(output))
   }
 
   it("should be ordered") {
@@ -48,8 +43,6 @@ class BinaryVersionTests
       (MajorBinary(1), release.PreReleaseBinary(2, 0, None, Milestone(1)))
     )
 
-    forAll(inputs) { (lower, higher) =>
-      lower shouldBe <(higher)
-    }
+    forAll(inputs)((lower, higher) => lower shouldBe <(higher))
   }
 }

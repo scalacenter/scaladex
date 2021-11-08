@@ -30,9 +30,9 @@ case object UserPublished extends Resolver {
 }
 object Resolver {
   def from(name: String): Option[Resolver] = name match {
-    case "Bintray's JCenter" => Some(JCenter)
+    case "Bintray's JCenter"     => Some(JCenter)
     case s"Bintray $owner $repo" => Some(BintrayResolver(owner, repo))
-    case "User Published" => Some(UserPublished)
-    case _ => None
+    case "User Published"        => Some(UserPublished)
+    case _                       => None
   }
 }

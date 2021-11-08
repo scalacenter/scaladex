@@ -67,7 +67,7 @@ case class NewRelease(
     s"${artifactFullHttpUrl(env)}/latest-by-scala-version.svg" +
       (platform match {
         case _: Platform.ScalaJvm => ""
-        case _ => s"?targetType=${platform.platformType}"
+        case _                    => s"?targetType=${platform.platformType}"
       })
 
   def sbtInstall: String = {
@@ -78,8 +78,7 @@ case class NewRelease(
         s"""libraryDependencies += "${maven.groupId}" % "${artifactName}" % "${version}""""
       case Platform.ScalaJs(_, _) | Platform.ScalaNative(_, _) =>
         s"""libraryDependencies += "${maven.groupId}" %%% "${artifactName}" % "${version}""""
-      case Platform.ScalaJvm(ScalaVersion(_: PatchBinary)) |
-          Platform.ScalaJvm(Scala3Version(_: PatchBinary)) =>
+      case Platform.ScalaJvm(ScalaVersion(_: PatchBinary)) | Platform.ScalaJvm(Scala3Version(_: PatchBinary)) =>
         s"""libraryDependencies += "${maven.groupId}" % "${artifactName}" % "${version}" cross CrossVersion.full"""
       case _ =>
         s"""libraryDependencies += "${maven.groupId}" %% "${artifactName}" % "${version}""""
@@ -120,21 +119,19 @@ case class NewRelease(
    * string representation for maven dependency
    * @return
    */
-  def mavenInstall: String = {
+  def mavenInstall: String =
     s"""|<dependency>
         |  <groupId>${maven.groupId}</groupId>
         |  <artifactId>${maven.artifactId}</artifactId>
         |  <version>$version</version>
         |</dependency>""".stripMargin
-  }
 
   /**
    * string representation for gradle dependency
    * @return
    */
-  def gradleInstall: String = {
+  def gradleInstall: String =
     s"compile group: '${maven.groupId}', name: '${maven.artifactId}', version: '${maven.version}'"
-  }
 
   /**
    * string representation for mill dependency
@@ -142,17 +139,15 @@ case class NewRelease(
    */
   def millInstall: String = {
     def addResolver(r: Resolver): Option[String] =
-      r.url map (url => s"""MavenRepository("${url}")""")
+      r.url.map(url => s"""MavenRepository("${url}")""")
     val artifactOperator = if (isNonStandardLib) ":" else "::"
     List(
-      Some(
-        s"""ivy"${maven.groupId}$artifactOperator$artifactName:$version""""
-      ),
-      resolver flatMap addResolver
+      Some(s"""ivy"${maven.groupId}$artifactOperator$artifactName:$version""""),
+      resolver.flatMap(addResolver)
     ).flatten.mkString("\n")
   }
 
-  def scalaDocURL(customScalaDoc: Option[String]): Option[String] = {
+  def scalaDocURL(customScalaDoc: Option[String]): Option[String] =
     customScalaDoc match {
       case None =>
         if (resolver.isEmpty) {
@@ -167,9 +162,8 @@ case class NewRelease(
         } else None
       case Some(rawLink) => Some(evalLink(rawLink))
     }
-  }
 
-  //todo: Add tests for this
+  // todo: Add tests for this
   def scastieURL: String = {
     val tryBaseUrl = "https://scastie.scala-lang.org/try"
 
@@ -190,19 +184,14 @@ case class NewRelease(
       "t" -> platform.platformType.toString.toUpperCase,
       "sv" -> latestFor(platform.scalaVersion.toString)
     )
-      .map { case (k, v) =>
-        s"$k=$v"
-      }
+      .map { case (k, v) => s"$k=$v" }
       .mkString(tryBaseUrl + "?", "&", "")
   }
 
   def documentationURLs(
       documentationLinks: List[DocumentationLink]
-  ): List[DocumentationLink] = {
-    documentationLinks.map { case DocumentationLink(label, url) =>
-      DocumentationLink(label, evalLink(url))
-    }
-  }
+  ): List[DocumentationLink] =
+    documentationLinks.map { case DocumentationLink(label, url) => DocumentationLink(label, evalLink(url)) }
 
   /**
    * Documentation link are often related to a release version
@@ -210,7 +199,7 @@ case class NewRelease(
    * we want to substitute input such as
    * https://playframework.com/documentation/[major].[minor].x/Home
    */
-  private def evalLink(rawLink: String): String = {
+  private def evalLink(rawLink: String): String =
     rawLink
       .replace("[groupId]", maven.groupId)
       .replace("[artifactId]", maven.artifactId)
@@ -218,7 +207,6 @@ case class NewRelease(
       .replace("[major]", version.major.toString)
       .replace("[minor]", version.minor.toString)
       .replace("[name]", artifactName.value)
-  }
 
 }
 
@@ -228,7 +216,7 @@ object NewRelease {
     override def toString: String = value
   }
 
-  def from(r: Release): NewRelease = {
+  def from(r: Release): NewRelease =
     NewRelease(
       maven = r.maven,
       organization = Organization(r.reference.organization),
@@ -242,5 +230,4 @@ object NewRelease {
       licenses = r.licenses,
       isNonStandardLib = r.isNonStandardLib
     )
-  }
 }

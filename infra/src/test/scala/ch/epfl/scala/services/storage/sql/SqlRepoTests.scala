@@ -27,27 +27,21 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
       for {
         _ <- db.insertProject(Scalafix.project)
         foundProject <- db.findProject(Scalafix.project.reference)
-      } yield {
-        foundProject shouldBe Some(Scalafix.project)
-      }
+      } yield foundProject shouldBe Some(Scalafix.project)
     }
 
     it("insert project with githubInfo") {
       for {
         _ <- db.insertOrUpdateProject(Scalafix.projectWithGithubInfo)
         foundProject <- db.findProject(Scalafix.reference)
-      } yield {
-        foundProject shouldBe Some(Scalafix.projectWithGithubInfo)
-      }
+      } yield foundProject shouldBe Some(Scalafix.projectWithGithubInfo)
     }
 
     it("should find releases") {
       for {
         _ <- db.insertRelease(PlayJsonExtra.release)
         foundReleases <- db.findReleases(PlayJsonExtra.reference)
-      } yield {
-        foundReleases shouldBe List(PlayJsonExtra.release)
-      }
+      } yield foundReleases shouldBe List(PlayJsonExtra.release)
     }
 
     it("should insert dependencies") {
@@ -69,13 +63,11 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         ) // we don't inser Cats.laws
         _ <- db.insertDependencies(Cats.dependencies)
         directDependencies <- db.findDirectDependencies(Cats.core)
-      } yield {
-        directDependencies.map(_.target) should contain theSameElementsAs List(
-          Some(Cats.kernel),
-          None,
-          None
-        )
-      }
+      } yield directDependencies.map(_.target) should contain theSameElementsAs List(
+        Some(Cats.kernel),
+        None,
+        None
+      )
     }
 
     it("should find reverseDependencies") {
@@ -86,11 +78,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         _ <- db
           .insertDependencies(Cats.dependencies)
         reverseDependencies <- db.findReverseDependencies(Cats.kernel)
-      } yield {
-        reverseDependencies.map(_.source) should contain theSameElementsAs List(
-          Cats.core
-        )
-      }
+      } yield reverseDependencies.map(_.source) should contain theSameElementsAs List(Cats.core)
     }
     it("should get all topics") {
       val topics = Set("topics1", "topics2")
@@ -152,10 +140,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
           ProjectDependency(Cats.reference, Cats.reference),
           ProjectDependency(PlayJsonExtra.reference, Scalafix.reference)
         )
-        mostDependentProjects shouldBe List(
-          Cats.project -> 2,
-          Scalafix.project -> 1
-        )
+        mostDependentProjects shouldBe List(Cats.project -> 2, Scalafix.project -> 1)
       }
     }
   }

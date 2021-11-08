@@ -39,11 +39,10 @@ object ServerConfig {
     )
   }
 
-  private def oAuth2(config: Config): OAuth2Config = {
+  private def oAuth2(config: Config): OAuth2Config =
     OAuth2Config(
       clientId = config.getString("client-id"),
       clientSecret = config.getString("client-secret"),
       redirectUri = config.getString("uri") + "/callback/done"
     )
-  }
 }

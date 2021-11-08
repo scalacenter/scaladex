@@ -82,7 +82,7 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
     )
 
     // these artifact versions are not the latest available support for any Scala language version, so uninteresting:
-    summary should not(include("7.0.0") or include("7.2.0"))
+    summary should not(include("7.0.0").or(include("7.2.0")))
 
     summary should include("7.1.0 (Scala 2.11)")
     summary should include("7.3.0 (Scala 2.12)")
@@ -194,7 +194,7 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
     )
 
     // these artifact versions are not the latest available support for any sbt version, so uninteresting:
-    summary should not(include("7.0.0") or include("7.2.0"))
+    summary should not(include("7.0.0").or(include("7.2.0")))
 
     summary should include("7.1.0 (sbt 0.13)")
     summary should include("7.3.0 (sbt 1.0)")

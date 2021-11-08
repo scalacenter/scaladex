@@ -100,8 +100,7 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
 
     override def getAllTopics(): Future[Seq[String]] = Future.successful(Nil)
 
-    override def getAllPlatforms()
-        : Future[Map[NewProject.Reference, Set[Platform]]] =
+    override def getAllPlatforms(): Future[Map[NewProject.Reference, Set[Platform]]] =
       Future.successful(Map.empty)
 
     override def getAllProjectDependencies(): Future[Seq[ProjectDependency]] =

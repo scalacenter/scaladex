@@ -49,7 +49,7 @@ object SearchApi {
       scalaJsVersion: Option[String],
       scalaNativeVersion: Option[String],
       sbtVersion: Option[String]
-  ): Option[Platform] = {
+  ): Option[Platform] =
     (
       targetType,
       scalaVersion.flatMap(ScalaLanguageVersion.tryParse),
@@ -77,15 +77,11 @@ object SearchApi {
         Some(Platform.SbtPlugin(scalaVersion, sbtVersion))
 
       case (Some("Java"), None, None, None, None) => Some(Platform.Java)
-      case _ => None
+      case _                                      => None
     }
-  }
 }
 
-class SearchApi(
-    dataRepository: ESRepo,
-    session: GithubUserSession
-)(implicit val executionContext: ExecutionContext)
+class SearchApi(dataRepository: ESRepo, session: GithubUserSession)(implicit val executionContext: ExecutionContext)
     extends PlayJsonSupport {
   import session.implicits._
 
@@ -217,7 +213,7 @@ class SearchApi(
       projectRef: NewProject.Reference,
       scalaTarget: Option[Platform],
       artifact: Option[String]
-  ): Future[Option[SearchApi.ReleaseOptions]] = {
+  ): Future[Option[SearchApi.ReleaseOptions]] =
     for {
       projectAndReleaseOptions <- dataRepository.getProjectAndReleaseOptions(
         projectRef,
@@ -228,21 +224,18 @@ class SearchApi(
           selected = None
         )
       )
-    } yield {
-      projectAndReleaseOptions
-        .map { case (_, options) =>
-          SearchApi.ReleaseOptions(
-            options.artifacts,
-            options.versions.sorted.map(_.toString),
-            options.release.maven.groupId,
-            options.release.maven.artifactId,
-            options.release.maven.version
-          )
-        }
+    } yield projectAndReleaseOptions.map {
+      case (_, options) =>
+        SearchApi.ReleaseOptions(
+          options.artifacts,
+          options.versions.sorted.map(_.toString),
+          options.release.maven.groupId,
+          options.release.maven.artifactId,
+          options.release.maven.version
+        )
     }
-  }
 
-  private def autocomplete(params: SearchParams) = {
+  private def autocomplete(params: SearchParams) =
     for (projects <- dataRepository.autocompleteProjects(params))
       yield projects.map { project =>
         AutocompletionResponse(
@@ -251,5 +244,4 @@ class SearchApi(
           project.github.flatMap(_.description).getOrElse("")
         )
       }
-  }
 }

@@ -63,7 +63,7 @@ object Deployment {
       )
     }
 
-  def githash(): String = {
+  def githash(): String =
     if (!sys.env.contains("CI")) {
       val isDirty = Process("git diff-files --quiet").! == 1
       val indexState =
@@ -73,7 +73,6 @@ object Deployment {
       Process("git rev-parse --verify HEAD").lineStream
         .mkString("") + indexState
     } else "CI"
-  }
 
   private val deployServer = taskKey[Unit]("Deploy the server")
   private val deployIndex = taskKey[Unit]("Run index pipeline")

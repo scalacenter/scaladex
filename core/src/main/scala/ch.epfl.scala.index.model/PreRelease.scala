@@ -19,10 +19,10 @@ case class OtherPreRelease(o: String) extends PreRelease {
 object PreRelease extends Parsers {
   implicit val preReleaseOrdering: Ordering[Option[PreRelease]] =
     Ordering.by {
-      case None => (3, None, None)
+      case None                       => (3, None, None)
       case Some(ReleaseCandidate(rc)) => (2, Some(rc), None)
-      case Some(Milestone(m)) => (1, Some(m), None)
-      case Some(OtherPreRelease(pr)) => (0, None, Some(pr))
+      case Some(Milestone(m))         => (1, Some(m), None)
+      case Some(OtherPreRelease(pr))  => (0, None, Some(pr))
     }
 
   import fastparse._

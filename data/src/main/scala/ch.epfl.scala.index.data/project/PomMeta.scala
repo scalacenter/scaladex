@@ -26,13 +26,12 @@ object PomMeta {
   val format = ISODateTimeFormat.dateTime.withOffsetParsed
   private val log = LoggerFactory.getLogger(getClass)
 
-  private def default(releaseModel: ReleaseModel): PomMeta = {
+  private def default(releaseModel: ReleaseModel): PomMeta =
     PomMeta(
       releaseModel = releaseModel,
       created = None,
       resolver = None
     )
-  }
 
   def all(
       pomsRepoSha: Iterable[(ReleaseModel, LocalRepository, String)],
@@ -59,19 +58,16 @@ object PomMeta {
     pomsRepoSha.iterator
       .filter { case (pom, _, _) => pom.isPackagingOfInterest }
       .flatMap {
-        case (pom, repo, sha1) => {
+        case (pom, repo, sha1) =>
           repo match {
-            case Bintray => {
+            case Bintray =>
               bintray.get(sha1) match {
                 case Some(metas) =>
                   if (metas.exists(_.isTypesafeNonOSS)) None
                   else {
                     val resolver: Option[Resolver] =
                       if (metas.forall(_.isJCenter)) Option(JCenter)
-                      else
-                        metas.headOption.map(meta =>
-                          BintrayResolver(meta.owner, meta.repo)
-                        )
+                      else metas.headOption.map(meta => BintrayResolver(meta.owner, meta.repo))
 
                     Some(
                       PomMeta(
@@ -83,13 +79,11 @@ object PomMeta {
                       )
                     )
                   }
-                case None => {
+                case None =>
                   log.info("no meta for pom: " + sha1)
                   Some(default(pom))
-                }
               }
-            }
-            case MavenCentral => {
+            case MavenCentral =>
               central
                 .get(sha1)
                 .map { metas =>
@@ -100,7 +94,6 @@ object PomMeta {
                   )
                 }
                 .orElse(Some(default(pom)))
-            }
             case UserProvided =>
               users
                 .get(sha1)
@@ -121,7 +114,6 @@ object PomMeta {
                 )
               )
           }
-        }
       }
       .toSeq
   }
@@ -150,17 +142,15 @@ object PomMeta {
                 val resolver =
                   if (metas.forall(_.isJCenter)) Option(JCenter)
                   else
-                    metas.headOption.map(meta =>
-                      BintrayResolver(meta.owner, meta.repo)
-                    )
+                    metas.headOption.map(meta => BintrayResolver(meta.owner, meta.repo))
                 Some(PomMeta(pom, Some(createdString), resolver))
               }
             case None =>
               log.info("no meta for pom: " + sha1)
               Some(PomMeta(pom, Some(createdString), None))
           }
-        case MavenCentral => Some(PomMeta(pom, Some(createdString), None))
-        case UserProvided => Some(PomMeta(pom, Some(createdString), None))
+        case MavenCentral      => Some(PomMeta(pom, Some(createdString), None))
+        case UserProvided      => Some(PomMeta(pom, Some(createdString), None))
         case BintraySbtPlugins => Some(PomMeta(pom, Some(createdString), None))
       }
 

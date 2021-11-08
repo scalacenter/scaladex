@@ -153,12 +153,12 @@ object DoobieUtils {
     implicit val semanticVersionMeta: Meta[SemanticVersion] =
       stringMeta.timap(SemanticVersion.tryParse(_).get)(_.toString)
     implicit val platformMeta: Meta[Platform] =
-      stringMeta.timap(x => {
+      stringMeta.timap { x =>
         Platform
           .parse(x)
           .toTry(new Exception(s"Failed to parse $x as Platform"))
           .get
-      })(_.encode)
+      }(_.encode)
     implicit val licensesMeta: Meta[Set[License]] = {
       implicit val licenseDecoder: Decoder[License] =
         deriveDecoder[License]

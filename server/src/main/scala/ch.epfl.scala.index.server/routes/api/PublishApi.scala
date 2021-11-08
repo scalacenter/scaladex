@@ -46,9 +46,9 @@ class PublishApi(
       credentialsHeader: Option[HttpCredentials]
   ): Credentials => Future[Option[(data.github.Credentials, UserState)]] = {
 
-    case Credentials.Provided(username) => {
+    case Credentials.Provided(username) =>
       credentialsHeader match {
-        case Some(cred) => {
+        case Some(cred) =>
           val upw = new String(
             Base64.getDecoder.decode(cred.token())
           )
@@ -59,21 +59,17 @@ class PublishApi(
           // todo - catch errors
 
           githubCredentialsCache.get(token) match {
-            case res @ Some(_) => {
+            case res @ Some(_) =>
               Future.successful(res)
-            }
-            case _ => {
+            case _ =>
               github.getUserStateWithToken(token).map { user =>
                 githubCredentialsCache(token) = (credentials, user)
                 Some((credentials, user))
               }
-            }
           }
 
-        }
         case _ => Future.successful(None)
       }
-    }
     case _ => Future.successful(None)
   }
 
@@ -111,9 +107,7 @@ class PublishApi(
     MMap.empty[String, (data.github.Credentials, UserState)]
 
   val DateTimeUn: Unmarshaller[String, DateTime] =
-    Unmarshaller.strict[String, DateTime] { dateRaw =>
-      new DateTime(dateRaw.toLong * 1000L)
-    }
+    Unmarshaller.strict[String, DateTime](dateRaw => new DateTime(dateRaw.toLong * 1000L))
 
   val routes: Route =
     concat(
@@ -125,9 +119,9 @@ class PublishApi(
                * NotFound -> allowed to write
                * OK -> only allowed if isSnapshot := true
                */
-              dataRepository.getMavenArtifact(mavenPathExtractor(path)) map {
+              dataRepository.getMavenArtifact(mavenPathExtractor(path)).map {
                 case Some(release) => (OK, "release already exists")
-                case None => (NotFound, "ok to publish")
+                case None          => (NotFound, "ok to publish")
               }
             )
           )
@@ -149,28 +143,29 @@ class PublishApi(
                 authenticateBasicAsync(
                   realm = "Scaladex Realm",
                   githubAuthenticator(credentials)
-                ) { case (credentials, userState) =>
-                  val publishData = impl.PublishData(
-                    path,
-                    created,
-                    data,
-                    credentials,
-                    userState,
-                    info,
-                    contributors,
-                    readme
-                  )
+                ) {
+                  case (credentials, userState) =>
+                    val publishData = impl.PublishData(
+                      path,
+                      created,
+                      data,
+                      credentials,
+                      userState,
+                      info,
+                      contributors,
+                      readme
+                    )
 
-                  log.info(
-                    s"Received publish command: ${publishData.created} - ${publishData.path}"
-                  )
-                  log.debug(publishData.data)
+                    log.info(
+                      s"Received publish command: ${publishData.created} - ${publishData.path}"
+                    )
+                    log.debug(publishData.data)
 
-                  complete(
-                    (actor ? publishData)
-                      .mapTo[(StatusCode, String)]
-                      .map(s => s)
-                  )
+                    complete(
+                      (actor ? publishData)
+                        .mapTo[(StatusCode, String)]
+                        .map(s => s)
+                    )
                 }
               )
             )
@@ -185,7 +180,6 @@ object PublishApi {
       paths: DataPaths,
       dataRepository: ESRepo,
       databaseApi: DatabaseApi
-  )(implicit sys: ActorSystem): PublishApi = {
+  )(implicit sys: ActorSystem): PublishApi =
     new PublishApi(paths, dataRepository, databaseApi, Github())
-  }
 }

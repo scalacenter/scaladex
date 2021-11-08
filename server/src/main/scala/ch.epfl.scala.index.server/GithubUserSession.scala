@@ -18,15 +18,14 @@ class GithubUserSession(sessionConfig: SessionConfig) {
     implicit def serializer: SessionSerializer[UUID, String] =
       new SingleValueSessionSerializer(
         _.toString(),
-        (id: String) => Try { UUID.fromString(id) }
+        (id: String) => Try(UUID.fromString(id))
       )
     implicit val sessionManager: SessionManager[UUID] =
       new SessionManager[UUID](sessionConfig)
     implicit val refreshTokenStorage: InMemoryRefreshTokenStorage[UUID] =
-      (msg: String) => {
+      (msg: String) =>
         if (msg.startsWith("Looking up token for selector")) () // borring
         else logger.info(msg)
-      }
   }
 
   private val users = ParTrieMap[UUID, UserState]()

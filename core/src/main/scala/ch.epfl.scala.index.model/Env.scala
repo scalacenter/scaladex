@@ -20,9 +20,9 @@ object Env {
   def from(s: String): Env =
     s.toLowerCase match {
       case "local" => Env.Local
-      case "prod" => Env.Prod
-      case "dev" => Env.Dev
-      case _ => Env.Prod
+      case "prod"  => Env.Prod
+      case "dev"   => Env.Dev
+      case _       => Env.Prod
     }
 
 }

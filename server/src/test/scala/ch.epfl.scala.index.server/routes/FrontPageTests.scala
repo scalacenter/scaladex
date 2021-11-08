@@ -47,9 +47,7 @@ class FrontPageTests extends AnyFunSpec with Matchers {
       )
     }
     it("should collect scalaJs") {
-      val res = FrontPage.getPlatformWithCount(platformWithCount) {
-        case p: Platform.ScalaNative => p.scalaNativeV
-      }
+      val res = FrontPage.getPlatformWithCount(platformWithCount) { case p: Platform.ScalaNative => p.scalaNativeV }
       res shouldBe List(
         (BinaryVersion.parse("0.3.0").get, 2),
         (BinaryVersion.parse("0.4.0").get, 1)

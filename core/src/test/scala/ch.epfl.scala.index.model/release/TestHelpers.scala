@@ -21,7 +21,7 @@ trait TestHelpers {
       platform: Platform,
       isNonStandardLib: Boolean = false,
       resolver: Option[Resolver] = None
-  ): Release = {
+  ): Release =
     Release(
       maven = MavenReference(
         groupId = groupId,
@@ -51,5 +51,4 @@ trait TestHelpers {
       scalaNativeVersion = None,
       sbtVersion = None
     )
-  }
 }

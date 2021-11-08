@@ -7,11 +7,7 @@ import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 
-class PlatformTests
-    extends AsyncFunSpec
-    with Matchers
-    with OptionValues
-    with TableDrivenPropertyChecks {
+class PlatformTests extends AsyncFunSpec with Matchers with OptionValues with TableDrivenPropertyChecks {
   it("should be ordered") {
     val js067 = PatchBinary(0, 6, 7)
     val js0618 = PatchBinary(0, 6, 18)
@@ -52,9 +48,7 @@ class PlatformTests
       ("_sjs0.6_2.12", ScalaJs(ScalaVersion.`2.12`, MinorBinary(0, 6)))
     )
 
-    forAll(cases) { (input, target) =>
-      parse(input) should contain(target)
-    }
+    forAll(cases)((input, target) => parse(input) should contain(target))
   }
 
   it("should parse a string to yield a ScalaTargetType") {

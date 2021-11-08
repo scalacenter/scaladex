@@ -28,15 +28,14 @@ object Meta {
       extends CustomSerializer[Meta](format =>
         (
           {
-            case in: JValue => {
+            case in: JValue =>
               implicit val formats = DefaultFormats ++ Seq(
                 DateTimeSerializer
               )
               in.extract[Meta]
-            }
           },
           {
-            case meta: Meta => {
+            case meta: Meta =>
               implicit val formats = DefaultFormats ++ Seq(
                 DateTimeSerializer
               )
@@ -45,7 +44,6 @@ object Meta {
                 JField("path", Extraction.decompose(meta.path)),
                 JField("sha1", Extraction.decompose(meta.sha1))
               )
-            }
           }
         )
       )

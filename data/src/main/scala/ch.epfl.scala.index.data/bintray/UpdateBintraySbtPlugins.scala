@@ -64,17 +64,13 @@ class UpdateBintraySbtPlugins(
     }
   }
 
-  private def getNewReleases(
-      lastUpdate: OffsetDateTime
-  ): Future[Seq[SbtPluginReleaseModel]] = {
+  private def getNewReleases(lastUpdate: OffsetDateTime): Future[Seq[SbtPluginReleaseModel]] =
     for {
       packageNames <- bintray.getAllPackages(baseSubject, baseRepo)
       allPackages <- Future.traverse(packageNames)(
         bintray.getPackage(baseSubject, baseRepo, _)
       )
-      packagesToUpdate = allPackages.filter(p =>
-        parse(p.updated).isAfter(lastUpdate)
-      )
+      packagesToUpdate = allPackages.filter(p => parse(p.updated).isAfter(lastUpdate))
 
       // searching for ivys.xml in the sbt/sbt-plugin-releases will not look into the linked packages
       // That is why we group the packages by repositories and then we search in every repository
@@ -85,13 +81,13 @@ class UpdateBintraySbtPlugins(
       )
 
       sbtPlugins <- Future
-        .traverse(packagesByRepo) { case ((owner, repo), packages) =>
-          getSbtPlugins(owner, repo, packages, lastUpdate)
+        .traverse(packagesByRepo) {
+          case ((owner, repo), packages) =>
+            getSbtPlugins(owner, repo, packages, lastUpdate)
         }
         .map(_.flatten.toSeq)
 
     } yield sbtPlugins
-  }
 
   private def getSbtPlugins(
       owner: String,
@@ -124,7 +120,7 @@ class UpdateBintraySbtPlugins(
       repo: String,
       `package`: BintrayPackage,
       file: BintraySearch
-  ): Future[Option[SbtPluginReleaseModel]] = {
+  ): Future[Option[SbtPluginReleaseModel]] =
     file.path match {
       case sbtPluginPathRegex(
             org,
@@ -165,7 +161,6 @@ class UpdateBintraySbtPlugins(
 
       case _ => Future.successful(None)
     }
-  }
 
   private def updateGithub(sbtPlugins: Seq[SbtPluginReleaseModel]): Unit = {
     val githubRepos =

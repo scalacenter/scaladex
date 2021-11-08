@@ -23,15 +23,14 @@ class SeedElasticSearch(
     dataPaths: DataPaths,
     esRepo: ESRepo,
     db: SqlRepo
-)(implicit
-    val system: ActorSystem
-) extends LazyLogging {
+)(implicit val system: ActorSystem)
+    extends LazyLogging {
   import system.dispatcher
 
   def run(): Future[Long] = {
     val githubDownload = new GithubDownload(dataPaths)
 
-    //convert data
+    // convert data
     val projectConverter = new ProjectConvert(dataPaths, githubDownload)
     val (projects, releases, dependencies) =
       projectConverter.convertAll(PomsReader.loadAll(dataPaths), Map())
@@ -89,18 +88,14 @@ class SeedElasticSearch(
     }
   }
 
-  def cleanIndexes(): Future[Unit] = {
+  def cleanIndexes(): Future[Unit] =
     for {
       _ <- esRepo.deleteAll()
       _ = logger.info("creating index")
       _ <- esRepo.create()
     } yield ()
-  }
 
-  def insertES(
-      projects: Seq[Project],
-      releases: Seq[Release]
-  ): Future[Unit] = {
+  def insertES(projects: Seq[Project], releases: Seq[Release]): Future[Unit] = {
     val projectF = esRepo.insertProjects(projects)
     val releasesF = esRepo.insertReleases(releases)
     for {
@@ -123,16 +118,13 @@ class SeedElasticSearch(
     )
   }
 
-  private def logFailures[A, B](
-      res: Seq[(A, Try[B])],
-      toString: A => String,
-      table: String
-  ): Unit = {
-    val failures = res.collect { case (a, Failure(exception)) =>
-      logger.warn(
-        s"failed to insert ${toString(a)} because ${exception.getMessage}"
-      )
-      a
+  private def logFailures[A, B](res: Seq[(A, Try[B])], toString: A => String, table: String): Unit = {
+    val failures = res.collect {
+      case (a, Failure(exception)) =>
+        logger.warn(
+          s"failed to insert ${toString(a)} because ${exception.getMessage}"
+        )
+        a
     }
     if (failures.nonEmpty)
       logger.warn(s"${failures.size} insertion failed in table $table")
@@ -141,13 +133,7 @@ class SeedElasticSearch(
 }
 
 object SeedElasticSearch {
-  def run(
-      dataPaths: DataPaths,
-      esRepo: ESRepo,
-      db: SqlRepo
-  )(implicit
-      sys: ActorSystem
-  ): Future[Long] = {
+  def run(dataPaths: DataPaths, esRepo: ESRepo, db: SqlRepo)(implicit sys: ActorSystem): Future[Long] = {
     val seed = new SeedElasticSearch(dataPaths, esRepo, db)
     seed.run()
   }

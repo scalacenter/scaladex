@@ -34,8 +34,9 @@ case class ProjectForm(
       defaultArtifact = defaultArtifact.map(NewRelease.ArtifactName),
       strictVersions = strictVersions,
       customScalaDoc = customScalaDoc.filterNot(_ == ""),
-      documentationLinks = documentationLinks.flatMap { case (label, link) =>
-        DocumentationLink.from(label, link)
+      documentationLinks = documentationLinks.flatMap {
+        case (label, link) =>
+          DocumentationLink.from(label, link)
       },
       deprecated = deprecated,
       contributorsWanted = contributorsWanted,
@@ -44,17 +45,12 @@ case class ProjectForm(
       primaryTopic = primaryTopic
     )
 
-  def update(
-      project: Project,
-      fromStored: Boolean = false
-  ): Project = {
+  def update(project: Project, fromStored: Boolean = false): Project = {
     val githubWithKeywords =
       if (project.github.isEmpty) {
         Some(GithubInfo.empty.copy(topics = keywords))
       } else {
-        project.github.map(github =>
-          github.copy(topics = github.topics ++ keywords)
-        )
+        project.github.map(github => github.copy(topics = github.topics ++ keywords))
       }
 
     val getBeginnerIssues =
@@ -111,8 +107,9 @@ case class ProjectForm(
         )
       ),
       customScalaDoc = customScalaDoc.filterNot(_ == ""),
-      documentationLinks = documentationLinks.filterNot { case (label, link) =>
-        label == "" || link == ""
+      documentationLinks = documentationLinks.filterNot {
+        case (label, link) =>
+          label == "" || link == ""
       },
       primaryTopic = primaryTopic
     )

@@ -14,9 +14,7 @@ import play.api.libs.ws.WSClient
 import play.api.libs.ws.WSRequest
 import play.api.libs.ws.WSResponse
 
-class BintrayDownloadPoms(paths: DataPaths)(implicit
-    val system: ActorSystem
-) extends PlayWsDownloader {
+class BintrayDownloadPoms(paths: DataPaths)(implicit val system: ActorSystem) extends PlayWsDownloader {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -65,17 +63,13 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit
   /**
    * get a list of bintraySearch object where no sha1 file exists
    */
-  private val searchesBySha1: Set[BintraySearch] = {
-
+  private val searchesBySha1: Set[BintraySearch] =
     BintrayMeta
       .load(paths)
-      .filter(s =>
-        !Files.exists(pomPath(s)) || !verifySHA1FileHash(pomPath(s), s.sha1)
-      )
+      .filter(s => !Files.exists(pomPath(s)) || !verifySHA1FileHash(pomPath(s), s.sha1))
       .groupBy(_.sha1) // remove duplicates with sha1
       .map { case (_, vs) => vs.head }
       .toSet
-  }
 
   /**
    * partly url encode - replaces only spaces
@@ -94,11 +88,7 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit
    * @param search the bintray Search
    * @return
    */
-  private def downloadRequest(
-      wsClient: WSClient,
-      search: BintraySearch
-  ): WSRequest = {
-
+  private def downloadRequest(wsClient: WSClient, search: BintraySearch): WSRequest =
     if (search.isJCenter) {
       wsClient.url(escape(s"https://jcenter.bintray.com/${search.path}"))
     } else {
@@ -108,48 +98,34 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit
         )
       )
     }
-  }
 
   /**
    * handle the downloaded pom and write it to file
    * @param search the bintray search
    * @param response the download response
    */
-  private def processPomDownload(
-      search: BintraySearch,
-      response: WSResponse
-  ): Unit = {
-
+  private def processPomDownload(search: BintraySearch, response: WSResponse): Unit =
     if (200 == response.status) {
-
       val path = pomPath(search)
-
       if (Files.exists(path)) {
-
         Files.delete(path)
       }
-
       if (verifyChecksum(response.body, search.sha1)) {
-
         Files.write(path, response.body.getBytes(StandardCharsets.UTF_8))
       }
-
       ()
     } else {
-
       log.warn(
         "Pom download failed\n" +
           search.toString + "\n" +
           response.body.toString
       )
     }
-  }
 
   /**
    * main run method
    */
   def run(): Unit = {
-
     download[BintraySearch, Unit](
       "Downloading POMs",
       searchesBySha1,

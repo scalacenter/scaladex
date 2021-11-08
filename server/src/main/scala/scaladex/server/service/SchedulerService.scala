@@ -32,11 +32,10 @@ class SchedulerService(db: DatabaseApi) extends LazyLogging {
     override def run(): Unit = {
       logger.info(s"Starting the scheduler ${Instant.now}")
       val future: Future[Unit] =
-        try {
-          for {
-            _ <- updateProjectDependenciesTable(db)
-          } yield logger.info(s"Finished running the scheduler ${Instant.now}")
-        } catch {
+        try for {
+          _ <- updateProjectDependenciesTable(db)
+        } yield logger.info(s"Finished running the scheduler ${Instant.now}")
+        catch {
           case NonFatal(e) =>
             Future.successful(
               logger.info(
@@ -52,9 +51,7 @@ class SchedulerService(db: DatabaseApi) extends LazyLogging {
 }
 
 object SchedulerService {
-  def updateProjectDependenciesTable(
-      db: DatabaseApi
-  )(implicit ec: ExecutionContext): Future[Unit] = {
+  def updateProjectDependenciesTable(db: DatabaseApi)(implicit ec: ExecutionContext): Future[Unit] =
     for {
       projectWithDependencies <- db
         .getAllProjectDependencies()
@@ -71,5 +68,4 @@ object SchedulerService {
           )
         )
     } yield ()
-  }
 }

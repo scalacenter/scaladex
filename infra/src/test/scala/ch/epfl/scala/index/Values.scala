@@ -83,13 +83,12 @@ object Values {
       licenses = Set(),
       isNonStandardLib = false
     )
-    val dependency: ReleaseDependency = {
+    val dependency: ReleaseDependency =
       ReleaseDependency(
         source = Cats.core.maven,
         target = release.maven,
         "compile"
       )
-    }
   }
 
   object Cats {

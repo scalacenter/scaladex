@@ -55,10 +55,11 @@ object GithubInfoTable {
 
   def insertOrUpdate(p: NewProject)(g: GithubInfo): doobie.Update0 = {
     val onConflictFields = fr0"organization, repository"
-    val fields = fr0"name=${g.name}, owner=${g.owner}, homepage=${g.homepage}, description=${g.description}, logo=${g.logo}," ++
-      fr0" stars=${g.stars}, forks=${g.forks}, watchers=${g.watchers}, issues=${g.issues}, readme=${g.readme}, contributors=${g.contributors}," ++
-      fr0" contributorCount=${g.contributorCount}, commits=${g.commits}, topics=${g.topics}, contributingGuide=${g.contributingGuide}," ++
-      fr0" codeOfConduct=${g.codeOfConduct}, chatroom=${g.chatroom}"
+    val fields =
+      fr0"name=${g.name}, owner=${g.owner}, homepage=${g.homepage}, description=${g.description}, logo=${g.logo}," ++
+        fr0" stars=${g.stars}, forks=${g.forks}, watchers=${g.watchers}, issues=${g.issues}, readme=${g.readme}, contributors=${g.contributors}," ++
+        fr0" contributorCount=${g.contributorCount}, commits=${g.commits}, topics=${g.topics}, contributingGuide=${g.contributingGuide}," ++
+        fr0" codeOfConduct=${g.codeOfConduct}, chatroom=${g.chatroom}"
     val updateAction = fr"UPDATE SET" ++ fields
     buildInsertOrUpdate(
       tableFr,
@@ -69,20 +70,14 @@ object GithubInfoTable {
     ).update
   }
 
-  def selectOne(
-      org: Organization,
-      repo: Repository
-  ): doobie.ConnectionIO[Option[GithubInfo]] =
+  def selectOne(org: Organization, repo: Repository): doobie.ConnectionIO[Option[GithubInfo]] =
     selectOneQuery(org, repo).option
 
   def selectAllTopics(): doobie.Query0[Set[String]] =
     buildSelect(tableFr, fr0"topics", fr0"where topics != ''")
       .query[Set[String]]
 
-  private[tables] def selectOneQuery(
-      org: Organization,
-      repo: Repository
-  ): doobie.Query0[GithubInfo] =
+  private[tables] def selectOneQuery(org: Organization, repo: Repository): doobie.Query0[GithubInfo] =
     buildSelect(
       tableFr,
       fieldsFr,
@@ -90,9 +85,7 @@ object GithubInfoTable {
     ).query[GithubInfo](githubInfoReader)
 
   val githubInfoReader: Read[GithubInfo] =
-    Read[(Organization, Repository, GithubInfo)].map {
-      case (_, _, githubInfo) => githubInfo
-    }
+    Read[(Organization, Repository, GithubInfo)].map { case (_, _, githubInfo) => githubInfo }
 
   def indexedGithubInfo(): doobie.Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]

@@ -22,9 +22,7 @@ class FrontPage(
     dataRepository: ESRepo,
     db: DatabaseApi,
     session: GithubUserSession
-)(implicit
-    ec: ExecutionContext
-) {
+)(implicit ec: ExecutionContext) {
   import session.implicits._
 
   private def frontPage(
@@ -45,16 +43,19 @@ class FrontPage(
         allPlatforms
       )
       scalaJsVersions = FrontPage
-        .getPlatformWithCount(allPlatforms) { case p: Platform.ScalaJs =>
-          p.scalaJsV
+        .getPlatformWithCount(allPlatforms) {
+          case p: Platform.ScalaJs =>
+            p.scalaJsV
         }
       scalaNativeVersions = FrontPage
-        .getPlatformWithCount(allPlatforms) { case p: Platform.ScalaNative =>
-          p.scalaNativeV
+        .getPlatformWithCount(allPlatforms) {
+          case p: Platform.ScalaNative =>
+            p.scalaNativeV
         }
       sbtVersions = FrontPage
-        .getPlatformWithCount(allPlatforms) { case p: Platform.SbtPlugin =>
-          p.sbtV
+        .getPlatformWithCount(allPlatforms) {
+          case p: Platform.SbtPlugin =>
+            p.sbtV
         }
       listOfProject <- db.getMostDependentUponProject(12)
       mostDependedUpon = listOfProject
@@ -110,13 +111,11 @@ class FrontPage(
 
   val routes: Route =
     pathEndOrSingleSlash {
-      optionalSession(refreshable, usingCookies) { userId =>
-        complete(frontPage(session.getUser(userId)))
-      }
+      optionalSession(refreshable, usingCookies)(userId => complete(frontPage(session.getUser(userId))))
     }
 }
 object FrontPage {
-  def getTopTopics(topics: Seq[String], size: Int): List[(String, Int)] = {
+  def getTopTopics(topics: Seq[String], size: Int): List[(String, Int)] =
     topics
       .map(_.toLowerCase)
       .groupMapReduce(identity)(_ => 1)(_ + _)
@@ -124,25 +123,24 @@ object FrontPage {
       .sortBy(-_._2)
       .take(size)
       .sortBy(_._1)
-  }
 
   override def hashCode(): Int = super.hashCode()
 
   def getPlatformTypeWithCount(
       platforms: Map[NewProject.Reference, Set[Platform]]
   ): List[(Platform.PlatformType, Int)] =
-    getPlatformWithCount(platforms) { case platform: Platform =>
-      platform.platformType
+    getPlatformWithCount(platforms) {
+      case platform: Platform =>
+        platform.platformType
     }
 
   def getScalaLanguageVersionWithCount(
       platforms: Map[NewProject.Reference, Set[Platform]]
-  ): List[(String, Int)] = {
+  ): List[(String, Int)] =
     getPlatformWithCount(platforms) {
       case platform: Platform if platform.scalaVersion.isDefined =>
         platform.scalaVersion.map(_.family).get
     }
-  }
 
   def getPlatformWithCount[A, B](
       platforms: Map[NewProject.Reference, Set[A]]

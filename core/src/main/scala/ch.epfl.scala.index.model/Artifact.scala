@@ -13,11 +13,11 @@ object Artifact extends Parsers {
       (Alpha | Digit | "-" | "." | (!(Platform.IntermediateParser ~ End) ~ "_")).rep.! ~ // must end with scala target
       Platform.Parser ~
       End
-  }.map { case (name, target) =>
-    Artifact(name, target)
+  }.map {
+    case (name, target) =>
+      Artifact(name, target)
   }
 
-  def parse(artifactId: String): Option[Artifact] = {
+  def parse(artifactId: String): Option[Artifact] =
     tryParse(artifactId, x => FullParser(x))
-  }
 }

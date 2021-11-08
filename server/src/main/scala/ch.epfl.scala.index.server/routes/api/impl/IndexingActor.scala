@@ -92,17 +92,18 @@ class IndexingActor(
         project
       )
       _ = converted
-        .map { case (p, r, d) =>
-          for {
-            _ <- db.insertOrUpdateProject(p)
-            _ <- db.insertReleases(
-              Seq(r)
-            ) // todo: filter already existing releases , to only update them
-            _ <- db.insertDependencies(
-              d
-            ) // todo: filter already existing dependencies , to only update them
-            _ = log.info(s"${pom.mavenRef.name} has been inserted")
-          } yield ()
+        .map {
+          case (p, r, d) =>
+            for {
+              _ <- db.insertOrUpdateProject(p)
+              _ <- db.insertReleases(
+                Seq(r)
+              ) // todo: filter already existing releases , to only update them
+              _ <- db.insertDependencies(
+                d
+              ) // todo: filter already existing dependencies , to only update them
+              _ = log.info(s"${pom.mavenRef.name} has been inserted")
+            } yield ()
         }
         .getOrElse(
           Future.successful(log.info(s"${pom.mavenRef.name} is not inserted"))
@@ -111,9 +112,4 @@ class IndexingActor(
   }
 }
 
-case class UpdateIndex(
-    repo: GithubRepo,
-    pom: ReleaseModel,
-    data: PublishData,
-    localRepo: LocalPomRepository
-)
+case class UpdateIndex(repo: GithubRepo, pom: ReleaseModel, data: PublishData, localRepo: LocalPomRepository)
