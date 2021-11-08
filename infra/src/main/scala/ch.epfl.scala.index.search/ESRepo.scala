@@ -320,7 +320,6 @@ class ESRepo(esClient: ElasticClient, indexPrefix: String)(implicit ec: Executio
         ).map(sel => (project, sel))
       case None => None
     }
-
   def getLatestProjects(): Future[List[Project]] =
     for {
       projects <- getLatest[Project](
