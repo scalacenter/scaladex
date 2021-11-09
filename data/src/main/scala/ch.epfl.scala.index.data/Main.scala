@@ -17,8 +17,8 @@ import ch.epfl.scala.index.data.central.CentralMissing
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.cleanup.NonStandardLib
 import ch.epfl.scala.index.data.github.GithubDownload
+import ch.epfl.scala.index.data.init.Init
 import ch.epfl.scala.index.data.maven.DownloadParentPoms
-import ch.epfl.scala.index.data.seed.Seed
 import ch.epfl.scala.index.data.util.PidLock
 import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.storage.LocalPomRepository
@@ -92,7 +92,7 @@ object Main extends LazyLogging {
       // The IndexingActor does it as well for the projects that are pushed by Maven.
       Step("github")(() => GithubDownload.run(dataPaths)),
       // Re-create the ElasticSearch index
-      Step("seed") { () =>
+      Step("init") { () =>
         import system.dispatcher
         val transactor: Resource[IO, HikariTransactor[IO]] =
           DoobieUtils.transactor(config.db)
@@ -102,7 +102,7 @@ object Main extends LazyLogging {
             IO(
               Using.resource(ESRepo.open()) { esRepo =>
                 Await.result(
-                  Seed.run(dataPaths, esRepo, db),
+                  Init.run(dataPaths, esRepo, db),
                   Duration.Inf
                 )
               }

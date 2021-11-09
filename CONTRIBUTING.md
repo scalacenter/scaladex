@@ -41,7 +41,7 @@ Into the sbt shell:
 * Populate the database (only once):
 
 ```
-data/reStart seed
+data/reStart init
 ```
 
  * Start the Scaladex server:

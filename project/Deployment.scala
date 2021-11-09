@@ -194,7 +194,7 @@ class Deployment(
           |    -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
           |    -Dsentry.dsn=$sentryDsn \\
           |    -Dsentry.release=$version \\
-          |    seed \\
+          |    init \\
           |   -Ddata-paths.contrib=/home/$userName/scaladex-contrib \\
           |   -Ddata-paths.index=/home/$userName/scaladex-index \\
           |   -Ddata-paths.credentials=/home/$userName/scaladex-credentials \\
