@@ -10,7 +10,7 @@ import ch.epfl.scala.index.search.ESRepo
 import org.scalatest.Assertion
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AsyncFunSuiteLike
-import ch.epfl.scala.index.data.elastic.SeedElasticSearch
+import ch.epfl.scala.index.data.seed.Seed
 import ch.epfl.scala.index.server.config.ServerConfig
 import cats.effect.IO
 import ch.epfl.scala.services.storage.sql.DatabaseConfig
@@ -37,7 +37,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     transactor
       .use { xa =>
         val db = new SqlRepo(config.dbConf, xa)
-        IO.fromFuture(IO(SeedElasticSearch.run(config.dataPaths, esRepo, db)))
+        IO.fromFuture(IO(Seed.run(config.dataPaths, esRepo, db)))
       }
       .unsafeRunSync()
   }
