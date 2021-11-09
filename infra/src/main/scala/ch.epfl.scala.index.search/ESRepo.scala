@@ -9,7 +9,6 @@ import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc.Pagination
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.search.mapping._
 import com.sksamuel.elastic4s.ElasticClient
 import com.sksamuel.elastic4s.ElasticDsl
@@ -184,15 +183,6 @@ class ESRepo(esClient: ElasticClient, indexPrefix: String)(implicit ec: Executio
       Future.successful(Seq.empty)
     }
 
-  def getTotalProjects(queryString: String): Future[Long] = {
-    val query = must(
-      notDeprecatedQuery,
-      searchQuery(queryString, contributingSearch = false)
-    )
-    val request = search(projectIndex).query(query).size(0)
-    esClient.execute(request).map(_.result.totalHits)
-  }
-
   def autocompleteProjects(params: SearchParams): Future[Seq[Project]] = {
     val request = search(projectIndex)
       .query(gitHubStarScoring(filteredSearchQuery(params)))
@@ -230,27 +220,6 @@ class ESRepo(esClient: ElasticClient, indexPrefix: String)(implicit ec: Executio
   }
 
   /**
-   * Get all the releases of a particular project
-   * It does not retrieve the dependencies of the releases
-   */
-  def getProjectReleases(
-      project: NewProject.Reference
-  ): Future[Seq[Release]] = {
-    val query = must(
-      termQuery("reference.organization", project.organization),
-      termQuery("reference.repository", project.repository)
-    )
-
-    val request = search(releaseIndex).query(query).size(10000)
-
-    esClient
-      .execute(request)
-      .map(
-        _.result.to[ReleaseDocument].map(_.toRelease).filter(_.isValid)
-      )
-  }
-
-  /**
    * Search for the release corresponding to a maven artifact
    * It does not retrieve the dependencies of the release
    *
@@ -274,52 +243,6 @@ class ESRepo(esClient: ElasticClient, indexPrefix: String)(implicit ec: Executio
       .map(_.result.to[ReleaseDocument].headOption.map(_.toRelease))
   }
 
-  def getProject(project: NewProject.Reference): Future[Option[Project]] = {
-    val query = must(
-      termQuery("organization.keyword", project.organization),
-      termQuery("repository.keyword", project.repository)
-    )
-
-    val request = search(projectIndex).query(query).limit(1)
-
-    esClient.execute(request).map(_.result.to[Project].headOption)
-  }
-
-  /**
-   * Get a project and all its releases
-   * It does not retrieve the dependencies of the releases
-   */
-  def getProjectAndReleases(
-      projectRef: NewProject.Reference
-  ): Future[Option[(Project, Seq[Release])]] = {
-    val projectF = getProject(projectRef)
-    val projectReleaseF = getProjectReleases(projectRef)
-
-    for {
-      project <- projectF
-      releases <- projectReleaseF
-    } yield project.map((_, releases))
-  }
-
-  /**
-   * Get a project and select a release
-   * It does not retrieve the dependencies of the release
-   */
-  def getProjectAndReleaseOptions(
-      ref: NewProject.Reference,
-      selection: ReleaseSelection
-  ): Future[Option[(Project, ReleaseOptions)]] =
-    getProjectAndReleases(ref).map {
-      case Some((project, releases)) =>
-        ReleaseOptions(
-          project.repository,
-          selection,
-          releases,
-          project.defaultArtifact,
-          project.defaultStableVersion
-        ).map(sel => (project, sel))
-      case None => None
-    }
   def getLatestProjects(): Future[List[Project]] =
     for {
       projects <- getLatest[Project](

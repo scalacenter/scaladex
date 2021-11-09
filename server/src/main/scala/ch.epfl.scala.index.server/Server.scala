@@ -72,7 +72,7 @@ object Server {
         val localStorage = new LocalStorageRepo(config.dataPaths)
         val programmaticRoutes = concat(
           PublishApi(paths, data, databaseApi = db).routes,
-          new SearchApi(data, session).routes,
+          new SearchApi(data, db, session).routes,
           Assets.routes,
           new Badges(db).routes,
           Oauth2(config, session).routes
