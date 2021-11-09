@@ -1,4 +1,4 @@
-package ch.epfl.scala.index.data.seed
+package ch.epfl.scala.index.data.init
 
 import scala.concurrent.Future
 import scala.util.Failure
@@ -19,7 +19,7 @@ import ch.epfl.scala.utils.ScalaExtensions._
 import com.sksamuel.elastic4s.requests.bulk.BulkResponseItem
 import com.typesafe.scalalogging.LazyLogging
 
-class Seed(
+class Init(
     dataPaths: DataPaths,
     esRepo: ESRepo,
     db: SqlRepo
@@ -132,9 +132,9 @@ class Seed(
   }
 }
 
-object Seed {
+object Init {
   def run(dataPaths: DataPaths, esRepo: ESRepo, db: SqlRepo)(implicit sys: ActorSystem): Future[Long] = {
-    val seed = new Seed(dataPaths, esRepo, db)
-    seed.run()
+    val init = new Init(dataPaths, esRepo, db)
+    init.run()
   }
 }
