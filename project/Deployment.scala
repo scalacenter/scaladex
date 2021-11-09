@@ -194,14 +194,15 @@ class Deployment(
           |    -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
           |    -Dsentry.dsn=$sentryDsn \\
           |    -Dsentry.release=$version \\
-          |    elastic \\
+          |    seed \\
           |   -Ddata-paths.contrib=/home/$userName/scaladex-contrib \\
           |   -Ddata-paths.index=/home/$userName/scaladex-index \\
           |   -Ddata-paths.credentials=/home/$userName/scaladex-credentials \\
           |    &>/dev/null &
           |fi
           |
-          |# list -> download -> parent -> sbt -> github -> elastic
+          |# the old workflow was:
+          |# list -> download -> parent -> sbt -> github -> seed
           |# updateClaims
           |""".stripMargin
 

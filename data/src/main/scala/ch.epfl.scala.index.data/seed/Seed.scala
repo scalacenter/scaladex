@@ -1,4 +1,4 @@
-package ch.epfl.scala.index.data.elastic
+package ch.epfl.scala.index.data.seed
 
 import scala.concurrent.Future
 import scala.util.Failure
@@ -19,7 +19,7 @@ import ch.epfl.scala.utils.ScalaExtensions._
 import com.sksamuel.elastic4s.requests.bulk.BulkResponseItem
 import com.typesafe.scalalogging.LazyLogging
 
-class SeedElasticSearch(
+class Seed(
     dataPaths: DataPaths,
     esRepo: ESRepo,
     db: SqlRepo
@@ -132,9 +132,9 @@ class SeedElasticSearch(
   }
 }
 
-object SeedElasticSearch {
+object Seed {
   def run(dataPaths: DataPaths, esRepo: ESRepo, db: SqlRepo)(implicit sys: ActorSystem): Future[Long] = {
-    val seed = new SeedElasticSearch(dataPaths, esRepo, db)
+    val seed = new Seed(dataPaths, esRepo, db)
     seed.run()
   }
 }
