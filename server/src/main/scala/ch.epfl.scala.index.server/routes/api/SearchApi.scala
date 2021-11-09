@@ -16,6 +16,7 @@ import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.search.ESRepo
+import ch.epfl.scala.services.DatabaseApi
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import com.softwaremill.session.SessionDirectives.optionalSession
 import com.softwaremill.session.SessionOptions.refreshable
@@ -81,8 +82,9 @@ object SearchApi {
     }
 }
 
-class SearchApi(dataRepository: ESRepo, session: GithubUserSession)(implicit val executionContext: ExecutionContext)
-    extends PlayJsonSupport {
+class SearchApi(dataRepository: ESRepo, db: DatabaseApi, session: GithubUserSession)(
+    implicit val executionContext: ExecutionContext
+) extends PlayJsonSupport {
   import session.implicits._
 
   val routes: Route =
@@ -213,27 +215,32 @@ class SearchApi(dataRepository: ESRepo, session: GithubUserSession)(implicit val
       projectRef: NewProject.Reference,
       scalaTarget: Option[Platform],
       artifact: Option[String]
-  ): Future[Option[SearchApi.ReleaseOptions]] =
+  ): Future[Option[SearchApi.ReleaseOptions]] = {
+    val selection = new ReleaseSelection(
+      target = scalaTarget,
+      artifact = artifact.map(NewRelease.ArtifactName),
+      version = None,
+      selected = None
+    )
     for {
-      projectAndReleaseOptions <- dataRepository.getProjectAndReleaseOptions(
-        projectRef,
-        new ReleaseSelection(
-          target = scalaTarget,
-          artifact = artifact.map(NewRelease.ArtifactName),
-          version = None,
-          selected = None
-        )
+      projectOpt <- db.findProject(projectRef)
+      releases <- db.findReleases(projectRef)
+    } yield for {
+      project <- projectOpt
+      filteredReleases = ReleaseOptions.filterReleases(selection, releases, project)
+      selected <- filteredReleases.headOption
+    } yield {
+      val artifacts = filteredReleases.map(_.artifactName.value).toList
+      val versions = filteredReleases.map(_.version.toString).toList
+      SearchApi.ReleaseOptions(
+        artifacts,
+        versions,
+        selected.maven.groupId,
+        selected.maven.artifactId,
+        selected.maven.version
       )
-    } yield projectAndReleaseOptions.map {
-      case (_, options) =>
-        SearchApi.ReleaseOptions(
-          options.artifacts,
-          options.versions.sorted.map(_.toString),
-          options.release.maven.groupId,
-          options.release.maven.artifactId,
-          options.release.maven.version
-        )
     }
+  }
 
   private def autocomplete(params: SearchParams) =
     for (projects <- dataRepository.autocompleteProjects(params))
