@@ -34,7 +34,7 @@ class ReleaseDependencyTableTests extends AsyncFunSpec with BaseDatabaseSuite wi
       q.sql shouldBe
         s"""|SELECT d.source_groupId, d.source_artifactId, d.source_version, d.target_groupId, d.target_artifactId, d.target_version, d.scope,
             | r.groupId, r.artifactId, r.version, r.organization, r.repository, r.artifact,
-            | r.platform, r.description, r.released, r.resolver, r.licenses, r.isNonStandardLib
+            | r.platform, r.description, r.released_at, r.resolver, r.licenses, r.isNonStandardLib
             | FROM release_dependencies d LEFT JOIN releases r ON d.target_groupid = r.groupid AND
             | d.target_artifactid = r.artifactid AND
             | d.target_version = r.version
@@ -48,7 +48,7 @@ class ReleaseDependencyTableTests extends AsyncFunSpec with BaseDatabaseSuite wi
       q.sql shouldBe
         s"""|SELECT d.source_groupId, d.source_artifactId, d.source_version, d.target_groupId, d.target_artifactId, d.target_version, d.scope,
             | r.groupId, r.artifactId, r.version, r.organization, r.repository, r.artifact,
-            | r.platform, r.description, r.released, r.resolver, r.licenses, r.isNonStandardLib
+            | r.platform, r.description, r.released_at, r.resolver, r.licenses, r.isNonStandardLib
             | FROM release_dependencies d INNER JOIN releases r ON d.source_groupid = r.groupid AND
             | d.source_artifactid = r.artifactid AND
             | d.source_version = r.version

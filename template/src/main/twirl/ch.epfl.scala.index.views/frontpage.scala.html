@@ -12,7 +12,7 @@
   scalaJsVersions: List[(BinaryVersion, Int)],
   scalaNativeVersions: List[(BinaryVersion, Int)],
   sbtVersions: List[(BinaryVersion, Int)],
-  latestProjects: List[Project],
+  latestProjects: Seq[NewProject],
   mostDependedUpon: List[NewProject],
   latestReleases: List[NewRelease],
   user: Option[UserState],
@@ -110,20 +110,20 @@
             <div class="row">
                 @for(project <- latestProjects){
                     <div class="col-md-4 col-sm-6">
-                        <a href="/@project.reference.organization/@project.reference.repository">
+                        <a href="/@project.organization/@project.repository">
                             <div class="content-project box">
                                 <div class="content-project-header">
-                                    @githubUserAvatar(project.github)
-                                    <h4>@project.reference.organization/@project.reference.repository</h4>
+                                    @githubUserAvatar(project.githubInfo)
+                                    <h4>@project.organization/@project.repository</h4>
                                 </div>
                                 <div class="content-project-body">
-                                    @for(github <- project.github) {
+                                    @for(github <- project.githubInfo) {
                                       @for(description <- github.description) {
                                         <p class="description emojify">@description</p>
                                       }
                                     }
                                     @for(created <- project.created) {
-                                        @{formatDate(created)}
+                                        @{formatInstant(created)}
                                     }
                                 </div>
                             </div>
@@ -140,11 +140,11 @@
             <div class="row">
                 @for(project <- mostDependedUpon){
                     <div class="col-md-4 col-sm-6">
-                        <a href="/@project.reference.organization/@project.reference.repository">
+                        <a href="/@project.organization/@project.repository">
                             <div class="content-project box">
                                 <div class="content-project-header">
                                     @githubUserAvatar(project.githubInfo)
-                                    <h4>@project.reference.organization/@project.reference.repository</h4>
+                                    <h4>@project.organization/@project.repository</h4>
                                 </div>
                                 <div class="content-project-body">
                                     @for(github <- project.githubInfo) {
@@ -152,9 +152,9 @@
                                         <p class="description">@description</p>
                                       }
                                     }
-@*                                    @for(created <- project.created) {
-                                        @{formatDate(created)}
-                                    }*@
+                                    @for(created <- project.created) {
+                                        @{formatInstant(created)}
+                                    }
                                 </div>
                             </div>
                         </a>

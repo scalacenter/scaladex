@@ -3,6 +3,7 @@ package server
 package routes
 package api
 
+import java.time.Instant
 import java.util.Base64
 
 import scala.collection.mutable.{Map => MMap}
@@ -16,20 +17,18 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives._
-import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.util.Timeout
 import ch.epfl.scala.index.model.misc.UserState
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.search.ESRepo
-import ch.epfl.scala.services.DatabaseApi
+import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.storage.DataPaths
-import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
 class PublishApi(
     paths: DataPaths,
     dataRepository: ESRepo,
-    db: DatabaseApi,
+    db: WebDatabase,
     github: Github
 )(implicit system: ActorSystem) {
 
@@ -106,9 +105,6 @@ class PublishApi(
   private val githubCredentialsCache =
     MMap.empty[String, (data.github.Credentials, UserState)]
 
-  val DateTimeUn: Unmarshaller[String, DateTime] =
-    Unmarshaller.strict[String, DateTime](dateRaw => new DateTime(dateRaw.toLong * 1000L))
-
   val routes: Route =
     concat(
       get(
@@ -132,7 +128,7 @@ class PublishApi(
           parameters(
             (
               "path",
-              "created".as(DateTimeUn) ? DateTime.now,
+              "created".as(instantUnmarshaller) ? Instant.now(),
               "readme".as[Boolean] ? true,
               "contributors".as[Boolean] ? true,
               "info".as[Boolean] ? true
@@ -179,7 +175,7 @@ object PublishApi {
   def apply(
       paths: DataPaths,
       dataRepository: ESRepo,
-      databaseApi: DatabaseApi
+      databaseApi: WebDatabase
   )(implicit sys: ActorSystem): PublishApi =
     new PublishApi(paths, dataRepository, databaseApi, Github())
 }

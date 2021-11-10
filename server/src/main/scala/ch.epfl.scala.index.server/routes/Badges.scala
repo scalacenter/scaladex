@@ -15,9 +15,9 @@ import akka.http.scaladsl.server.RouteResult
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
-import ch.epfl.scala.services.DatabaseApi
+import ch.epfl.scala.services.WebDatabase
 
-class Badges(db: DatabaseApi)(implicit executionContext: ExecutionContext) {
+class Badges(db: WebDatabase)(implicit executionContext: ExecutionContext) {
 
   private val shields = parameters(
     ("color".?, "style".?, "logo".?, "logoWidth".as[Int].?)

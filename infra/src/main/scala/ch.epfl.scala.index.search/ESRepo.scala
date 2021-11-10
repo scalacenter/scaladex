@@ -243,15 +243,6 @@ class ESRepo(esClient: ElasticClient, indexPrefix: String)(implicit ec: Executio
       .map(_.result.to[ReleaseDocument].headOption.map(_.toRelease))
   }
 
-  def getLatestProjects(): Future[List[Project]] =
-    for {
-      projects <- getLatest[Project](
-        projectIndex,
-        "created",
-        frontPageCount
-      )
-    } yield projects.map(_.formatForDisplaying)
-
   def getLatestReleases(): Future[List[Release]] =
     getLatest[ReleaseDocument](releaseIndex, "released", frontPageCount)
       .map(_.map(_.toRelease))

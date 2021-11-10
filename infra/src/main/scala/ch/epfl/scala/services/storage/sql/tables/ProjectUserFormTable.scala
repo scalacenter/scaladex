@@ -58,29 +58,23 @@ object ProjectUserFormTable {
       fr0" strictVersions=${userData.strictVersions}, customScalaDoc=${userData.customScalaDoc}, documentationLinks=${userData.documentationLinks}," ++
       fr0" deprecated=${userData.deprecated}, contributorsWanted=${userData.contributorsWanted}," ++
       fr0" artifactDeprecations=${userData.artifactDeprecations}, cliArtifacts=${userData.cliArtifacts}, primaryTopic=${userData.primaryTopic}"
-    buildUpdate(tableFr, fields, where(p.organization, p.repository)).update
+    buildUpdate(tableFr, fields, where(p.reference)).update
   }
 
   def indexedProjects(): doobie.Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]
 
-  def selectOne(
-      org: Organization,
-      repo: Repository
-  ): doobie.ConnectionIO[Option[NewProject.DataForm]] =
-    selectOneQuery(org, repo).option
+  def selectOne(ref: NewProject.Reference): doobie.ConnectionIO[Option[NewProject.DataForm]] =
+    selectOneQuery(ref).option
 
   def indexedProjectUserForm(): doobie.Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]
 
-  private[tables] def selectOneQuery(
-      org: Organization,
-      repo: Repository
-  ): doobie.Query0[NewProject.DataForm] =
+  private[tables] def selectOneQuery(ref: NewProject.Reference): doobie.Query0[NewProject.DataForm] =
     buildSelect(
       tableFr,
       fieldsFr,
-      where(org, repo)
+      where(ref)
     ).query[NewProject.DataForm](formDataReader)
 
   val formDataReader: Read[NewProject.DataForm] =

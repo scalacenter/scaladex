@@ -19,8 +19,8 @@ import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.server.TwirlSupport._
-import ch.epfl.scala.services.DatabaseApi
 import ch.epfl.scala.services.LocalStorageApi
+import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.utils.ScalaExtensions._
 import com.softwaremill.session.SessionDirectives._
@@ -30,7 +30,7 @@ import org.json4s.native.Serialization.write
 import play.twirl.api.HtmlFormat
 
 class ProjectPages(
-    db: DatabaseApi,
+    db: WebDatabase,
     localStorage: LocalStorageApi,
     session: GithubUserSession,
     paths: DataPaths,

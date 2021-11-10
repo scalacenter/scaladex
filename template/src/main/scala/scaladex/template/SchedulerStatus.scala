@@ -5,12 +5,15 @@ import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
 
 sealed trait SchedulerStatus {
+  val name: String
   val when: Instant
-  val value: String = this match {
-    case SchedulerStatus.Created(_)              => "Created"
-    case s: SchedulerStatus.Started if s.running => "Running"
-    case s: SchedulerStatus.Started              => "Started"
-    case SchedulerStatus.Stopped(_)              => "Stopped"
+  val lastRunAt: Option[Instant]
+  val durationOfLastRun: Option[FiniteDuration]
+
+  val status: String = this match {
+    case _: SchedulerStatus.Created => "Created"
+    case _: SchedulerStatus.Started => "Running"
+    case _: SchedulerStatus.Stopped => "Stopped"
   }
   def isRunning(): Boolean = this match {
     case s: SchedulerStatus.Started if s.running => true
@@ -22,12 +25,19 @@ sealed trait SchedulerStatus {
   }
 }
 object SchedulerStatus {
-  case class Created(when: Instant) extends SchedulerStatus
+  case class Created(name: String, when: Instant) extends SchedulerStatus {
+    val lastRunAt: Option[Instant] = None
+    val durationOfLastRun: Option[FiniteDuration] = None
+  }
   case class Started(
+      name: String,
       when: Instant,
       running: Boolean,
-      triggeredWhen: Option[Instant],
+      lastRunAt: Option[Instant],
       durationOfLastRun: Option[FiniteDuration]
   ) extends SchedulerStatus
-  case class Stopped(when: Instant) extends SchedulerStatus
+  case class Stopped(name: String, when: Instant) extends SchedulerStatus {
+    val lastRunAt: Option[Instant] = None
+    val durationOfLastRun: Option[FiniteDuration] = None
+  }
 }

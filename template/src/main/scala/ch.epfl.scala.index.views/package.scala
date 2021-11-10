@@ -135,5 +135,6 @@ package object html {
     .ofPattern("dd MMM YYYY 'at' HH:mm '(UTC)'")
     .withZone(ZoneId.systemDefault.normalized())
     .withLocale(Locale.ENGLISH)
+
   def formatInstant(i: Instant): String = df.format(i)
 }

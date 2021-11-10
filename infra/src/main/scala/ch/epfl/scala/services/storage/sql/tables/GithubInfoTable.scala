@@ -70,18 +70,18 @@ object GithubInfoTable {
     ).update
   }
 
-  def selectOne(org: Organization, repo: Repository): doobie.ConnectionIO[Option[GithubInfo]] =
-    selectOneQuery(org, repo).option
+  def selectOne(ref: NewProject.Reference): doobie.ConnectionIO[Option[GithubInfo]] =
+    selectOneQuery(ref).option
 
   def selectAllTopics(): doobie.Query0[Set[String]] =
     buildSelect(tableFr, fr0"topics", fr0"where topics != ''")
       .query[Set[String]]
 
-  private[tables] def selectOneQuery(org: Organization, repo: Repository): doobie.Query0[GithubInfo] =
+  private[tables] def selectOneQuery(reference: NewProject.Reference): doobie.Query0[GithubInfo] =
     buildSelect(
       tableFr,
       fieldsFr,
-      where(org, repo)
+      where(reference)
     ).query[GithubInfo](githubInfoReader)
 
   val githubInfoReader: Read[GithubInfo] =

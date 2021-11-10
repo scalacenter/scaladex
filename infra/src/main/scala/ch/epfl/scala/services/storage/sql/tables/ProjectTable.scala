@@ -1,8 +1,8 @@
 package ch.epfl.scala.services.storage.sql.tables
 
+import java.time.Instant
+
 import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewProject.Organization
-import ch.epfl.scala.index.newModel.NewProject.Repository
 import ch.epfl.scala.utils.DoobieUtils.Fragments._
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
 import doobie.implicits._
@@ -14,13 +14,14 @@ object ProjectTable {
   private val fields = Seq(
     "organization",
     "repository",
+    "created_at",
     "esId"
   )
 
   private val tableFr: Fragment = Fragment.const0(table)
   private val fieldsFr: Fragment = Fragment.const0(fields.mkString(", "))
   private def values(p: NewProject): Fragment =
-    fr0"${p.organization}, ${p.repository}, ${p.esId}"
+    fr0"${p.organization}, ${p.repository}, ${p.created}, ${p.esId}"
 
   def insert(elt: NewProject): doobie.Update0 =
     buildInsert(tableFr, fieldsFr, values(elt)).update
@@ -37,23 +38,26 @@ object ProjectTable {
     ).update
   }
 
+  def updateCreated(ref: NewProject.Reference, created: Option[Instant]): doobie.Update0 =
+    buildUpdate(tableFr, fr0"created_at=$created", where(ref)).update
+
   def indexedProjects(): doobie.Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]
 
-  def selectOne(
-      org: Organization,
-      repo: Repository
-  ): doobie.ConnectionIO[Option[NewProject]] =
-    selectOneQuery(org, repo).option
+  def selectOne(ref: NewProject.Reference): doobie.ConnectionIO[Option[NewProject]] =
+    selectOneQuery(ref).option
 
-  private[tables] def selectOneQuery(
-      org: Organization,
-      repo: Repository
-  ): doobie.Query0[NewProject] =
+  def selectLatestProjects(limit: Int): doobie.Query0[NewProject] =
     buildSelect(
       tableFr,
-      fieldsFr,
-      where(org, repo)
+      fr0"*",
+      fr0"where created_at is not null" ++ space ++ fr0"ORDER BY created_at DESC" ++ space ++ fr0"LIMIT $limit"
     ).query[NewProject]
+
+  def selectAllProjectRef(): doobie.Query0[NewProject.Reference] =
+    buildSelect(tableFr, fr0"organization, repository").query[NewProject.Reference]
+
+  private[tables] def selectOneQuery(ref: NewProject.Reference): doobie.Query0[NewProject] =
+    buildSelect(tableFr, fieldsFr, where(ref)).query[NewProject]
 
 }

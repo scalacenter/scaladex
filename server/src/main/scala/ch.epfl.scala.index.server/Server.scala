@@ -68,7 +68,7 @@ object Server {
       .use { xa =>
         val db = new SqlRepo(config.dbConf, xa)
         val scheduler = new SchedulerService(db)
-        scheduler.start()
+        scheduler.startAll()
         val localStorage = new LocalStorageRepo(config.dataPaths)
         val programmaticRoutes = concat(
           PublishApi(paths, data, databaseApi = db).routes,

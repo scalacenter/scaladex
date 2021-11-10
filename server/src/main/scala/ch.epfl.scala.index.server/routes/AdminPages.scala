@@ -40,12 +40,8 @@ class AdminPages(schedulerSrv: SchedulerService, session: GithubUserSession)(
           pathEndOrSingleSlash {
             optionalSession(refreshable, usingCookies)(userId =>
               ifAdmin(userId) { userState =>
-                val scheduler = schedulerSrv.getScheduler()
-                val html = views.admin.html.admin(
-                  userState,
-                  scheduler.name,
-                  scheduler.status
-                )
+                val schedulers = schedulerSrv.getSchedulers()
+                val html = views.admin.html.admin(userState, schedulers)
                 complete(html)
               }
             )
@@ -56,9 +52,9 @@ class AdminPages(schedulerSrv: SchedulerService, session: GithubUserSession)(
             optionalSession(refreshable, usingCookies)(userId =>
               ifAdmin(userId) { userState =>
                 schedulerSrv.start(schedulerName)
-                val scheduler = schedulerSrv.getScheduler()
+                val scheduler = schedulerSrv.getSchedulers()
                 val html = views.admin.html
-                  .admin(userState, scheduler.name, scheduler.status)
+                  .admin(userState, scheduler)
                 complete(html)
               }
             )
@@ -69,9 +65,9 @@ class AdminPages(schedulerSrv: SchedulerService, session: GithubUserSession)(
             optionalSession(refreshable, usingCookies)(userId =>
               ifAdmin(userId) { userState =>
                 schedulerSrv.stop(schedulerName)
-                val scheduler = schedulerSrv.getScheduler()
+                val schedulers = schedulerSrv.getSchedulers()
                 val html = views.admin.html
-                  .admin(userState, scheduler.name, scheduler.status)
+                  .admin(userState, schedulers)
                 complete(html)
               }
             )

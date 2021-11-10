@@ -11,7 +11,8 @@ import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.ProjectDependency
 import ch.epfl.scala.index.newModel.ReleaseDependency
-import ch.epfl.scala.services.DatabaseApi
+import ch.epfl.scala.services.SchedulerDatabase
+import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.storage.sql.tables.GithubInfoTable
 import ch.epfl.scala.services.storage.sql.tables.ProjectDependenciesTable
 import ch.epfl.scala.services.storage.sql.tables.ProjectTable
@@ -22,7 +23,7 @@ import ch.epfl.scala.utils.DoobieUtils
 import ch.epfl.scala.utils.ScalaExtensions._
 import doobie.implicits._
 
-class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends DatabaseApi {
+class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends WebDatabase with SchedulerDatabase {
   private[sql] val flyway = DoobieUtils.flyway(conf)
   def migrate: IO[Unit] = IO(flyway.migrate())
   def dropTables: IO[Unit] = IO(flyway.clean())
@@ -43,6 +44,9 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends DatabaseA
   def insertReleasesWithFailures(releases: Seq[NewRelease]): Future[Seq[(NewRelease, Try[Unit])]] =
     releases.map(r => insertRelease(r).failWithTry.map((r, _))).sequence
 
+  override def getAllProjectRef(): Future[Seq[NewProject.Reference]] =
+    run(ProjectTable.selectAllProjectRef().to[List])
+
   override def insertOrUpdateProject(project: NewProject): Future[Unit] =
     for {
       _ <- run(ProjectTable.insertOrUpdate(project))
@@ -54,9 +58,7 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends DatabaseA
 
   override def updateProjectForm(ref: NewProject.Reference, dataForm: NewProject.DataForm): Future[Unit] =
     for {
-      projectOpt <- run(
-        ProjectTable.selectOne(ref.organization, ref.repository)
-      )
+      projectOpt <- run(ProjectTable.selectOne(ref))
       _ <- projectOpt
         .map(p => run(ProjectUserFormTable.update(p)(dataForm)))
         .getOrElse(Future.successful(()))
@@ -64,17 +66,10 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends DatabaseA
 
   override def findProject(projectRef: NewProject.Reference): Future[Option[NewProject]] =
     for {
-      project <- run(
-        ProjectTable.selectOne(projectRef.organization, projectRef.repository)
-      )
-      userForm <- run(
-        ProjectUserFormTable.selectOne(
-          projectRef.organization,
-          projectRef.repository
-        )
-      )
+      project <- run(ProjectTable.selectOne(projectRef))
+      userForm <- run(ProjectUserFormTable.selectOne(projectRef))
       githubInfoTable <- project
-        .map(p => run(GithubInfoTable.selectOne(p.organization, p.repository)))
+        .map(p => run(GithubInfoTable.selectOne(p.reference)))
         .getOrElse(Future.successful(None))
     } yield project.map(
       _.copy(
@@ -140,6 +135,15 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends DatabaseA
           NewProject.Reference(org, repo)
       }(_._3).view.mapValues(_.toSet).toMap)
 
+  override def getLatestProjects(limit: Int): Future[Seq[NewProject]] =
+    for {
+      projects <- run(ProjectTable.selectLatestProjects(limit).to[List])
+      projectWithGithubInfo <- projects.map { p =>
+        run(GithubInfoTable.selectOne(p.reference))
+          .map(github => p.copy(githubInfo = github))
+      }.sequence
+    } yield projectWithGithubInfo
+
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.indexedGithubInfo().unique)
 
@@ -164,6 +168,15 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends DatabaseA
           findProject(ref).map(projectOpt => projectOpt.map(_ -> count))
       }.sequence
     } yield res.flatten
+
+  private[sql] def findOldestRelease(ref: NewProject.Reference): Future[Option[NewRelease]] =
+    run(ReleaseTable.selectOldestRelease(ref).option)
+
+  override def updateCreatedInProjects(ref: NewProject.Reference): Future[Unit] =
+    for {
+      releaseOpt <- findOldestRelease(ref)
+      _ <- run(ProjectTable.updateCreated(ref, releaseOpt.flatMap(_.releasedAt)))
+    } yield ()
 
   // to use only when inserting one element or updating one element
   // when expecting a row to be modified

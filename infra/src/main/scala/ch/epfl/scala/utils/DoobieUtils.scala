@@ -1,5 +1,7 @@
 package ch.epfl.scala.utils
 
+import java.time.Instant
+
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
@@ -31,12 +33,10 @@ import doobie.implicits._
 import doobie.util.Read
 import doobie.util.Write
 import doobie.util.fragment.Fragment
-import doobie.util.meta.Meta
 import io.circe._
 import io.circe.generic.semiauto.deriveDecoder
 import io.circe.generic.semiauto.deriveEncoder
 import org.flywaydb.core.Flyway
-import org.joda.time.DateTime
 
 object DoobieUtils {
 
@@ -110,8 +110,8 @@ object DoobieUtils {
     ): Fragment =
       buildSelect(table, fields) ++ space ++ conditions
 
-    def where(org: Organization, repo: Repository): Fragment =
-      fr0"WHERE organization=$org AND repository=$repo"
+    def where(ref: NewProject.Reference): Fragment =
+      fr0"WHERE organization=${ref.organization} AND repository=${ref.repository}"
   }
 
   object Mappings {
@@ -168,9 +168,9 @@ object DoobieUtils {
     }
     implicit val resolverMeta: Meta[Resolver] =
       stringMeta.timap(Resolver.from(_).get)(_.name)
-    implicit val dateFormatMeta: Meta[DateTime] = stringMeta.timap(
-      NewRelease.format.parseDateTime
-    )(NewRelease.format.print(_))
+
+    implicit val instantMeta: doobie.Meta[Instant] = doobie.postgres.implicits.JavaTimeInstantMeta
+
     implicit val releaseWriter: Write[NewRelease] =
       Write[
         (
@@ -182,7 +182,7 @@ object DoobieUtils {
             ArtifactName,
             Platform,
             Option[String],
-            Option[DateTime],
+            Option[Instant],
             Option[Resolver],
             Set[License],
             Boolean
@@ -197,7 +197,7 @@ object DoobieUtils {
           r.artifactName,
           r.platform,
           r.description,
-          r.released,
+          r.releasedAt,
           r.resolver,
           r.licenses,
           r.isNonStandardLib
@@ -222,6 +222,7 @@ object DoobieUtils {
       (
           Organization,
           Repository,
+          Option[Instant],
           Option[String]
       )
     ]
@@ -229,12 +230,14 @@ object DoobieUtils {
         case (
               organization,
               repository,
+              created,
               esId
             ) =>
           NewProject(
             organization = organization,
             repository = repository,
             githubInfo = None,
+            created = created,
             esId = esId,
             dataForm = NewProject.DataForm.default
           )
@@ -250,7 +253,7 @@ object DoobieUtils {
           NewRelease.ArtifactName,
           Platform,
           Option[String],
-          Option[DateTime],
+          Option[Instant],
           Option[Resolver],
           Set[License],
           Boolean
@@ -298,7 +301,7 @@ object DoobieUtils {
           Option[NewRelease.ArtifactName],
           Option[Platform],
           Option[String],
-          Option[DateTime],
+          Option[Instant],
           Option[Resolver],
           Option[Set[License]],
           Option[Boolean]
