@@ -1,13 +1,19 @@
 package ch.epfl.scala.services.storage.sql
 
+import java.time.Instant
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 import scala.concurrent.ExecutionContext
 
 import ch.epfl.scala.index.Values
+import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.release.MavenReference
+import ch.epfl.scala.index.model.release.Platform.ScalaJvm
+import ch.epfl.scala.index.model.release.ScalaVersion
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.index.newModel.ProjectDependency
 import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.utils.ScalaExtensions._
@@ -91,12 +97,6 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
       } yield res shouldBe topics.toList
     }
     it("should getProjectWithDependentUponProjects") {
-      def fakeDependency(r: NewRelease): ReleaseDependency =
-        ReleaseDependency(
-          source = r.maven,
-          target = MavenReference("fake", "fake_3", "version"),
-          scope = "compile"
-        )
       cleanTables() // to avoid duplicate key failures
 
       val projects = Seq(Cats.project, Scalafix.project, PlayJsonExtra.project)
@@ -142,6 +142,33 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         )
         mostDependentProjects shouldBe List(Cats.project -> 2, Scalafix.project -> 1)
       }
+    }
+    it("should updateCreated") {
+      val now = Instant.now
+      val newProject = NewProject.defaultProject("org", "repo") // created_at = None
+      val oneRelease = NewRelease(
+        MavenReference(
+          "something",
+          "something",
+          "0.1.1-play2.3-M1"
+        ),
+        version = SemanticVersion.tryParse("0.1.1-play2.3-M1").get,
+        organization = NewProject.Organization("org"),
+        repository = NewProject.Repository("repo"),
+        artifactName = ArtifactName("something"),
+        platform = ScalaJvm(ScalaVersion.`2.11`),
+        description = None,
+        releasedAt = Some(now),
+        resolver = None,
+        licenses = Set(),
+        isNonStandardLib = false
+      )
+      for {
+        _ <- db.insertReleases(Seq(oneRelease))
+        _ <- db.insertProject(newProject)
+        _ <- db.updateCreatedInProjects()
+        res <- db.findProject(newProject.reference)
+      } yield res.get.created.get shouldBe now
     }
   }
 

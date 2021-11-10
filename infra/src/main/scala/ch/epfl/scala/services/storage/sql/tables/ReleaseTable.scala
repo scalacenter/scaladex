@@ -1,5 +1,7 @@
 package ch.epfl.scala.services.storage.sql.tables
 
+import java.time.Instant
+
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
@@ -66,13 +68,11 @@ object ReleaseTable {
       fr0"GROUP BY organization, repository, platform"
     ).query[(NewProject.Organization, NewProject.Repository, Platform)]
 
-  def selectOldestRelease(ref: NewProject.Reference): doobie.Query0[NewRelease] =
+  def findOldestReleasesPerProjectReference(): doobie.Query0[(Instant, NewProject.Reference)] =
     buildSelect(
       tableFr,
-      fr0"*",
-      where(ref) ++ fr0" AND released_at IS NOT NULL" ++
-        fr0" ORDER BY released_at" ++
-        fr0" LIMIT 1"
-    ).query[NewRelease]
+      fr0"min(released_at) as oldest_release, organization, repository",
+      fr0"where released_at IS NOT NULL" ++ space ++ fr0"group by organization, repository"
+    ).query[(Instant, NewProject.Reference)]
 
 }

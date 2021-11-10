@@ -1,8 +1,6 @@
 package ch.epfl.scala.index
 package server
 
-import scala.concurrent.Await
-import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
@@ -18,6 +16,7 @@ import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.config.ServerConfig
 import ch.epfl.scala.index.server.routes._
 import ch.epfl.scala.index.server.routes.api._
+import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.DoobieUtils
@@ -32,19 +31,86 @@ object Server {
     if (config.api.env.isDevOrProd) {
       PidLock.create("SERVER")
     }
-
     implicit val system: ActorSystem = ActorSystem("scaladex")
     import system.dispatcher
-
-    val paths = config.dataPaths
-    val session = GithubUserSession(config)
 
     // the DataRepository will not be closed until the end of the process,
     // because of the sbtResolver mode
     val data = ESRepo.open()
 
-    val searchPages = new SearchPages(data, session)
+    val resources =
+      for {
+        webPool <- DoobieUtils.transactor(config.dbConf)
+        schedulerPool <- DoobieUtils.transactor(config.dbConf)
+      } yield (webPool, schedulerPool)
 
+    resources
+      .use {
+        case (webPool, schedulerPool) =>
+          val webDb = new SqlRepo(config.dbConf, webPool)
+          val schedulerDb = new SqlRepo(config.dbConf, schedulerPool)
+          val schedulerService = new SchedulerService(schedulerDb)
+          for {
+            _ <- init(webDb, schedulerService, data)
+            routes = configureRoutes(data, webDb, schedulerService)
+            _ <- IO(
+              Http()
+                .bindAndHandle(routes, config.api.endpoint, config.api.port)
+                .andThen {
+                  case Failure(exception) =>
+                    log.error("Unable to start the server", exception)
+                    System.exit(1)
+                  case Success(binding) =>
+                    log.info(s"Server started at http://${config.api.endpoint}:${config.api.port}")
+                    sys.addShutdownHook {
+                      log.info("Stopping server")
+                      binding.terminate(hardDeadline = 10.seconds)
+                    }
+                }
+            )
+            _ <- IO.never
+          } yield ()
+      }
+      .unsafeRunSync()
+
+  }
+
+  private def init(db: SqlRepo, scheduler: SchedulerService, esRepo: ESRepo): IO[Unit] = {
+    log.info("applying flyway migration to db")
+    for {
+      _ <- db.migrate
+      _ = log.info("wait for ElasticSearch")
+      _ <- IO(esRepo.waitUntilReady())
+      _ = log.info("starting the scheduler")
+      _ <- IO(scheduler.startAll())
+    } yield ()
+  }
+  private def configureRoutes(esRepo: ESRepo, webDb: WebDatabase, schedulerService: SchedulerService)(
+      implicit actor: ActorSystem
+  ): Route = {
+    import actor.dispatcher
+    val paths = config.dataPaths
+    val session = GithubUserSession(config)
+    val searchPages = new SearchPages(esRepo, session)
+
+    val localStorage = new LocalStorageRepo(paths)
+    val programmaticRoutes = concat(
+      PublishApi(paths, esRepo, webDb).routes,
+      new SearchApi(esRepo, webDb, session).routes,
+      Assets.routes,
+      new Badges(webDb).routes,
+      Oauth2(config, session).routes
+    )
+    val userFacingRoutes = concat(
+      new FrontPage(esRepo, webDb, session).routes,
+      new AdminPages(schedulerService, session).routes,
+      redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
+        concat(
+          new ProjectPages(webDb, localStorage, session, paths, config.api.env).routes,
+          searchPages.routes
+        )
+      }
+    )
     val exceptionHandler = ExceptionHandler {
       case ex: Exception =>
         import java.io.{PrintWriter, StringWriter}
@@ -62,71 +128,8 @@ object Server {
           out
         )
     }
-
-    val transactor = DoobieUtils.transactor(config.dbConf)
-    transactor
-      .use { xa =>
-        val db = new SqlRepo(config.dbConf, xa)
-        val scheduler = new SchedulerService(db)
-        scheduler.startAll()
-        val localStorage = new LocalStorageRepo(config.dataPaths)
-        val programmaticRoutes = concat(
-          PublishApi(paths, data, databaseApi = db).routes,
-          new SearchApi(data, db, session).routes,
-          Assets.routes,
-          new Badges(db).routes,
-          Oauth2(config, session).routes
-        )
-        val userFacingRoutes = concat(
-          new FrontPage(data, db, session).routes,
-          new AdminPages(scheduler, session).routes,
-          redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
-            concat(
-              new ProjectPages(
-                db,
-                localStorage,
-                session,
-                paths,
-                config.api.env
-              ).routes,
-              searchPages.routes
-            )
-          }
-        )
-
-        val routes =
-          handleExceptions(exceptionHandler) {
-            concat(programmaticRoutes, userFacingRoutes)
-          }
-
-        log.info("waiting for elastic to start")
-        data.waitUntilReady()
-        log.info("ready")
-
-        // apply migrations to the database if any.
-        db.migrate.unsafeRunSync()
-
-        await(
-          Http()
-            .bindAndHandle(routes, config.api.endpoint, config.api.port)
-            .andThen {
-              case Failure(exception) =>
-                log.error("Unable to start the server", exception)
-                System.exit(1)
-              case Success(binding) =>
-                log.info(
-                  s"Server started at http://${config.api.endpoint}:${config.api.port}"
-                )
-                sys.addShutdownHook {
-                  log.info("Stopping server")
-                  await(binding.terminate(hardDeadline = 10.seconds))
-                }
-            }
-        )
-        IO.never
-      }
-      .unsafeRunSync()
+    handleExceptions(exceptionHandler) {
+      concat(programmaticRoutes, userFacingRoutes)
+    }
   }
-
-  private def await[A](f: Future[A]) = Await.result(f, Duration.Inf)
 }
