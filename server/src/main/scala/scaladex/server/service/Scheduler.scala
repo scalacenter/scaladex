@@ -53,7 +53,7 @@ class Scheduler(val name: String, job: () => Future[Unit], frequency: FiniteDura
 
   def stop(): Unit =
     status match {
-      case s: SchedulerStatus.Started =>
+      case _: SchedulerStatus.Started =>
         cancellable.map(_.cancel())
         _status = SchedulerStatus.Stopped(name, Instant.now)
         cancellable = None
@@ -65,7 +65,7 @@ class Scheduler(val name: String, job: () => Future[Unit], frequency: FiniteDura
       logger.info(s"Scheduler ${name}: Starting")
       try {
         Await.result(job(), Duration.Inf)
-        logger.info("Scheduler $name: Finished")
+        logger.info(s"Scheduler $name: Finished")
       } catch {
         case NonFatal(e) =>
           logger.warn(s"Scheduler ${name}: Failed because ${e.getMessage}")

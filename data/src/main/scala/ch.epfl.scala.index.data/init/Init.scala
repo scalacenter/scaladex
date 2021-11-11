@@ -46,9 +46,7 @@ class Init(
     for {
       _ <- cleaning
       _ = logger.info("inserting projects to database")
-      insertedAnProject <- db.insertProjectsWithFailures(
-        projects.map(NewProject.from)
-      )
+      insertedAnProject <- db.insertProjectsWithFailures(projects.map(NewProject.from))
       _ = logFailures(
         insertedAnProject,
         (p: NewProject) => p.reference.toString,

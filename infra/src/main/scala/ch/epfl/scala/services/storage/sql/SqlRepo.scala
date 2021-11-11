@@ -169,13 +169,14 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends WebDataba
       }.sequence
     } yield res.flatten
 
-  private[sql] def findOldestRelease(ref: NewProject.Reference): Future[Option[NewRelease]] =
-    run(ReleaseTable.selectOldestRelease(ref).option)
-
-  override def updateCreatedInProjects(ref: NewProject.Reference): Future[Unit] =
+  // one request at time
+  override def updateCreatedInProjects(): Future[Unit] =
     for {
-      releaseOpt <- findOldestRelease(ref)
-      _ <- run(ProjectTable.updateCreated(ref, releaseOpt.flatMap(_.releasedAt)))
+      oldestReleases <- run(ReleaseTable.findOldestReleasesPerProjectReference().to[List])
+      _ <- oldestReleases.foldLeft(Future.successful(0)) {
+        case (f, (instant, ref)) =>
+          f.flatMap(_ => run(ProjectTable.updateCreated().run(instant, ref)))
+      }
     } yield ()
 
   // to use only when inserting one element or updating one element

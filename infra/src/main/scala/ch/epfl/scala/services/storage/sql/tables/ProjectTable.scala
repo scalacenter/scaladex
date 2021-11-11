@@ -7,6 +7,7 @@ import ch.epfl.scala.utils.DoobieUtils.Fragments._
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
 import doobie.implicits._
 import doobie.util.fragment.Fragment
+import doobie.util.update.Update
 
 object ProjectTable {
   private val _ = documentationLinksMeta
@@ -38,8 +39,8 @@ object ProjectTable {
     ).update
   }
 
-  def updateCreated(ref: NewProject.Reference, created: Option[Instant]): doobie.Update0 =
-    buildUpdate(tableFr, fr0"created_at=$created", where(ref)).update
+  def updateCreated(): Update[(Instant, NewProject.Reference)] =
+    Update[(Instant, NewProject.Reference)](s"UPDATE $table SET created_at=? WHERE organization=? AND repository=?")
 
   def indexedProjects(): doobie.Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]

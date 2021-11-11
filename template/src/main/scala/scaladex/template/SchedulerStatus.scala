@@ -12,7 +12,7 @@ sealed trait SchedulerStatus {
 
   val status: String = this match {
     case _: SchedulerStatus.Created => "Created"
-    case _: SchedulerStatus.Started => "Running"
+    case _: SchedulerStatus.Started => "Started"
     case _: SchedulerStatus.Stopped => "Stopped"
   }
   def isRunning(): Boolean = this match {

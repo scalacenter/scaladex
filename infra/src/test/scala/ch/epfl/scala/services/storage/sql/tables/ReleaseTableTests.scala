@@ -27,13 +27,12 @@ class ReleaseTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matcher
           .filterNot(_ == '\n')
     }
     it("findOldestRelease") {
-      val q = selectOldestRelease(PlayJsonExtra.reference)
+      val q = findOldestReleasesPerProjectReference()
       check(q)
       q.sql shouldBe
-        s"""SELECT * FROM releases
-           | WHERE organization=? AND repository=? AND released_at IS NOT NULL
-           | ORDER BY released_at
-           | LIMIT 1""".stripMargin
+        s"""SELECT min(released_at) as oldest_release, organization, repository
+           | FROM releases where released_at IS NOT NULL
+           | group by organization, repository""".stripMargin
           .filterNot(_ == '\n')
     }
   }

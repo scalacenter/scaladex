@@ -46,6 +46,7 @@ class ProjectPages(
     for {
       projectOpt <- db.findProject(projectRef)
       releases <- db.findReleases(projectRef)
+
     } yield projectOpt
       .map { p =>
         val beginnerIssuesJson = p.githubInfo

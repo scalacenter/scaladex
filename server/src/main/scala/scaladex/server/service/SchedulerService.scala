@@ -5,7 +5,6 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.services.SchedulerDatabase
 import ch.epfl.scala.utils.ScalaExtensions._
 import com.typesafe.scalalogging.LazyLogging
@@ -42,8 +41,7 @@ class SchedulerService(db: SchedulerDatabase) extends LazyLogging {
 
   private def updateProjectJob(): Future[Unit] =
     for {
-      refs <- db.getAllProjectRef()
-      _ <- updateCreatedTimeIn(db, refs)
+      _ <- updateCreatedTimeIn(db)
     } yield ()
 }
 
@@ -68,12 +66,8 @@ object SchedulerService {
 
     } yield ()
 
-  private def updateCreatedTimeIn(db: SchedulerDatabase, refs: Seq[NewProject.Reference])(
-      implicit ec: ExecutionContext
-  ): Future[Seq[Unit]] =
-    refs
-      .map(ref => db.updateCreatedInProjects(ref))
-      .sequence
+  private def updateCreatedTimeIn(db: SchedulerDatabase)(implicit ec: ExecutionContext): Future[Unit] =
+    db.updateCreatedInProjects()
       .mapFailure(e =>
         new Exception(
           s"not able to updateCreatedTimeIn all projects because of ${e.getMessage}"
