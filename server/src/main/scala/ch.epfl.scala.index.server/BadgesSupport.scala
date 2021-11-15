@@ -16,7 +16,7 @@ object BadgesSupport {
     val summary = (for {
       release <- allAvailableReleases if release.isValid
       version = release.version if release.artifactName == specificArtifact
-      scalaTarget = release.platform if release.targetType == specificTargetType
+      scalaTarget = release.platform if release.platform.platformType == specificTargetType
     } yield version -> scalaTarget)
       .groupMap(_._1)(_._2)
       .view

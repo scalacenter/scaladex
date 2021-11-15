@@ -1,6 +1,5 @@
 package ch.epfl.scala.index
 
-import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.release.MavenReference
@@ -12,6 +11,7 @@ import ch.epfl.scala.index.newModel.NewProject.DataForm
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.index.newModel.ReleaseDependency
+import ch.epfl.scala.search.ProjectDocument
 
 object Values {
 
@@ -24,7 +24,7 @@ object Values {
       )
 
     val reference: NewProject.Reference = project.reference
-    val githubInfo = GithubInfo.empty
+    val githubInfo: GithubInfo = GithubInfo.empty(reference.repository.value, reference.organization.value)
     val projectWithGithubInfo: NewProject =
       project.copy(githubInfo = Some(githubInfo))
 
@@ -126,6 +126,8 @@ object Values {
     val laws: NewRelease =
       release(ArtifactName("cats-laws"), "cats-laws_3")
 
+    val allReleases: Seq[NewRelease] = Seq(core, kernel, laws)
+
     val dependencies: Seq[ReleaseDependency] = Seq(
       ReleaseDependency(
         source = core.maven,
@@ -150,7 +152,7 @@ object Values {
         "cats-effect-kernel_3",
         "3.2.3"
       ),
-      target = MavenReference("org.typelevel", "cats-core_3", "2.6.1"),
+      target = core.maven,
       "compile"
     )
 
@@ -164,22 +166,9 @@ object Values {
       "test"
     )
 
-    val projectDocument: Project = Project(
-      reference.organization.value,
-      reference.repository.value,
-      defaultArtifact = Some(core.artifactName.value),
-      artifacts = List(core.artifactName.value, kernel.artifactName.value),
-      releaseCount = 2,
-      created = None,
-      updated = None,
-      targetType = List("Jvm"),
-      scalaVersion = List("scala3"),
-      scalaJsVersion = List.empty,
-      scalaNativeVersion = List.empty,
-      sbtVersion = List.empty,
-      dependencies = Set.empty,
-      dependentCount = 0
-    )
+    val githubInfo: GithubInfo = GithubInfo.empty(reference.repository.value, reference.organization.value)
+
+    val projectDocument: ProjectDocument = ProjectDocument(project, allReleases, 0)
   }
 
 }

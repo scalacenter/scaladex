@@ -1,25 +1,23 @@
-@import ch.epfl.scala.index.model.Project
-@import ch.epfl.scala.index.model.misc.{SearchParams, Url}
-@import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
+@import ch.epfl.scala.index.newModel.{ContributingProject, NewProject, NewRelease}
 @import ch.epfl.scala.index.model.release.Platform
-@import ch.epfl.scala.index.model.release.ScalaLanguageVersion
 @import ch.epfl.scala.index.model.release.BinaryVersion
 @import ch.epfl.scala.index.model.misc.UserState
+@import ch.epfl.scala.search.SearchParams
 
 @(topics: List[(String, Int)],
-  platformWithCount: List[(Platform.PlatformType, Int)],
-  scalaVersionsWithCount: List[(String, Int)],
-  scalaJsVersions: List[(BinaryVersion, Int)],
-  scalaNativeVersions: List[(BinaryVersion, Int)],
-  sbtVersions: List[(BinaryVersion, Int)],
+  platformTypes: Seq[(Platform.PlatformType, Int)],
+  scalaVersions:Seq[(String, Int)],
+  scalaJsVersions: Seq[(BinaryVersion, Int)],
+  scalaNativeVersions: Seq[(BinaryVersion, Int)],
+  sbtVersions: Seq[(BinaryVersion, Int)],
   latestProjects: Seq[NewProject],
-  mostDependedUpon: List[NewProject],
-  latestReleases: List[NewRelease],
+  mostDependedUpon: Seq[NewProject],
+  latestReleases: Seq[NewRelease],
   user: Option[UserState],
   ecosystems: Map[String, String],
   totalProjects: Long,
   totalReleases: Long,
-  contributingProjects: List[Project])
+  contributingProjects: Seq[ContributingProject])
 
 @main(title = "Scaladex", showSearch = false, user) {
 <main id="container-home">
@@ -36,15 +34,15 @@
                     </ul>
                     <ul class="tag">
                         <li><strong>Platforms:</strong></li>
-                        @platformWithCount.map { case (platformType, count) =>
+                        @platformTypes.map { case (platformType, count) =>
                             <li>
-                                <a href="/search?q=*&targetTypes=@platformType.value">@platformType.value (@count)</a>
+                                <a href="/search?q=*&targetTypes=@platformType.name">@platformType.label (@count)</a>
                             </li>
                         }
                     </ul>
                     <ul class="tag">
                         <li><strong>Scala Versions:</strong></li>
-                        @scalaVersionsWithCount.map { case (scalaVersion, count) =>
+                        @scalaVersions.map { case (scalaVersion, count) =>
                             <li>
                                 <a href="/search?q=*&scalaVersions=@scalaVersion">@scalaVersion (@count)</a>
                             </li>
@@ -97,7 +95,7 @@
                 @for(project <- contributingProjects){
                     <div class="col-md-4 col-sm-6">
                         <div class="content-contributing-project box">
-                            @contributingInfo(NewProject.from(project))
+                            @contributingInfo(project)
                       </div>
                     </div>
                 }
@@ -161,7 +159,7 @@
                     </div>
                 }
             </div>
-            <a class="btn btn-default" href="/search?q=*&sort=dependentCount">More ...</a>
+            <a class="btn btn-default" href="/search?q=*&sort=dependent">More ...</a>
         </div>
     </section>
     <section class="recent-releases" id="recent-releases">

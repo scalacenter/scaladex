@@ -1,4 +1,4 @@
-@import ch.epfl.scala.index.model.misc.{Pagination, SearchParams}
+@import ch.epfl.scala.search.{Pagination, SearchParams}
 
 
 @(params: SearchParams, 
@@ -46,7 +46,7 @@
         class="btn btn-default @if(params.sorting.contains("relevant") || params.sorting.isEmpty) { active }">
         Relevant
       </button>
-      <button name="sort" value="dependentCount" type="submit" 
+      <button name="sort" value="dependent" type="submit" 
         class="btn btn-default @if(params.sorting.contains("dependentCount")) { active }">
         Dependent
       </button>

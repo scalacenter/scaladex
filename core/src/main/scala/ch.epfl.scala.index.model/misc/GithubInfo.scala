@@ -44,25 +44,13 @@ case class GithubInfo(
     // added by the user in project page on scaladex
     beginnerIssuesLabel: Option[String] = None,
     beginnerIssues: List[GithubIssue] = List(),
-    selectedBeginnerIssues: List[GithubIssue] = List(),
-    filteredBeginnerIssues: List[GithubIssue] = List()
-) {
-
-  def displayIssues: List[GithubIssue] =
-    if (filteredBeginnerIssues.nonEmpty) {
-      filteredBeginnerIssues
-    } else {
-      val selectedIssueNumbers = selectedBeginnerIssues.map(_.number)
-      val remainingIssues =
-        beginnerIssues.filter(x => !selectedIssueNumbers.contains(x.number))
-      selectedBeginnerIssues ++ remainingIssues
-    }
-}
+    selectedBeginnerIssues: List[GithubIssue] = List()
+)
 
 object GithubInfo {
-  val empty: GithubInfo = GithubInfo(
-    name = "",
-    owner = "",
+  def empty(name: String, owner: String): GithubInfo = GithubInfo(
+    name,
+    owner,
     readme = None,
     description = None,
     homepage = None,
@@ -80,7 +68,6 @@ object GithubInfo {
     chatroom = None,
     beginnerIssuesLabel = None,
     beginnerIssues = List(),
-    selectedBeginnerIssues = List(),
-    filteredBeginnerIssues = List()
+    selectedBeginnerIssues = List()
   )
 }

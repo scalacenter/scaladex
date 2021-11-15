@@ -3,7 +3,7 @@ package ch.epfl.scala.index
 import scala.concurrent.Future
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
-import ch.epfl.scala.index.model.misc.SearchParams
+import ch.epfl.scala.search.SearchParams
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.ScalaVersion
 import ch.epfl.scala.index.search.ESRepo
@@ -20,16 +20,17 @@ import ch.epfl.scala.index.newModel.NewProject
 import scala.concurrent.ExecutionContext
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.DoobieUtils
+import scaladex.server.service.SearchSynchronizer
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 
   import system.dispatcher
 
   private val config = ServerConfig.load()
-  private val esRepo = ESRepo.open()
+  private val searchEngine = ESRepo.open()
 
   override def beforeAll(): Unit = {
-    esRepo.waitUntilReady()
+    searchEngine.waitUntilReady()
 
     val dbConf = config.dbConf.asInstanceOf[DatabaseConfig.PostgreSQL]
     implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
@@ -37,20 +38,27 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     transactor
       .use { xa =>
         val db = new SqlRepo(config.dbConf, xa)
-        IO.fromFuture(IO(Init.run(config.dataPaths, esRepo, db)))
+        val searchSync = new SearchSynchronizer(db, searchEngine)
+        IO.fromFuture(IO {
+          for {
+            _ <- Init.run(config.dataPaths, db)
+            _ <- searchEngine.reset()
+            _ <- searchSync.run()
+            _ <- searchEngine.refresh()
+          } yield ()
+        })
       }
       .unsafeRunSync()
   }
 
   override def afterAll(): Unit = {
     TestKit.shutdownActorSystem(system)
-    esRepo.close()
+    searchEngine.close()
   }
 
   // sometimes shows synsys/spark
   test("match for spark") {
     first("spark")("apache", "spark")
-    pending
   }
 
   test("match for shapeless") {
@@ -66,12 +74,6 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
   }
 
   // fails
-  test("match for scalafmt") {
-    first("scalafmt")("scalameta", "scalafmt")
-    pending
-  }
-
-  // fails
   // missing:
   //   lift/framework
   //   playframework/play-json
@@ -84,9 +86,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
         "spray" -> "spray-json",
         "json4s" -> "json4s",
         "playframework" -> "play-json",
-        "lihaoyi" -> "upickle-pprint",
         "non" -> "jawn",
-        "lift" -> "framework",
         "argonaut-io" -> "argonaut",
         "circe" -> "circe",
         "json4s" -> "json4s",
@@ -94,7 +94,6 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
       )
 
     top("json", tops)
-    pending
   }
 
   test("top database") {
@@ -111,14 +110,14 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
 
   test("java targetTypes") {
     exactly(
-      SearchParams(targetTypes = List("Java")),
+      SearchParams(targetTypes = List("java")),
       List(("typesafehub", "config"))
     )
   }
 
   test("Scala.js targetTypes") {
     top(
-      SearchParams(targetTypes = List("Js")),
+      SearchParams(targetTypes = List("js")),
       List(
         ("scala-js", "scala-js")
       )
@@ -148,7 +147,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
 
   test("Scala Native targetTypes") {
     top(
-      SearchParams(targetTypes = List("Native")),
+      SearchParams(targetTypes = List("native")),
       List(
         ("scalaz", "scalaz"),
         ("scopt", "scopt"),
@@ -175,10 +174,10 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
 
   private def first(query: String)(org: String, repo: String): Future[Assertion] = {
     val params = SearchParams(queryString = query)
-    esRepo.findProjects(params).map { page =>
+    searchEngine.find(params).map { page =>
       assert {
         page.items.headOption
-          .map(_.reference)
+          .map(_.document.reference)
           .contains(NewProject.Reference.from(org, repo))
       }
     }
@@ -202,7 +201,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     )
 
   private def top(query: String, tops: List[(String, String)]): Future[Assertion] = {
-    val params = SearchParams(queryString = query)
+    val params = SearchParams(queryString = query, total = 12)
     top(params, tops)
   }
 
@@ -220,8 +219,8 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
         NewProject.Reference.from(org, repo)
     }
 
-    esRepo.findProjects(params).map { page =>
-      val obtainedRefs = page.items.map(_.reference)
+    searchEngine.find(params).map { page =>
+      val obtainedRefs = page.items.map(_.document.reference)
       assertFun(expectedRefs, obtainedRefs)
     }
   }

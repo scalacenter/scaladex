@@ -1,18 +1,14 @@
-package ch.epfl.scala.index.model
-package misc
+package ch.epfl.scala.search
 
+import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.model.release.Platform
-
-object SearchParams {
-  val resultsPerPage = 20
-}
 
 case class SearchParams(
     queryString: String = "",
-    page: PageIndex = 0,
+    page: Int = 0,
     sorting: Option[String] = None,
     userRepos: Set[GithubRepo] = Set(),
-    total: Int = SearchParams.resultsPerPage,
+    total: Int = 20,
     targetFiltering: Option[Platform] = None,
     cli: Boolean = false,
     topics: List[String] = Nil,

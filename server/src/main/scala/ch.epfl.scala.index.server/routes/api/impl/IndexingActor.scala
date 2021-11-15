@@ -15,7 +15,6 @@ import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.project.ProjectConvert
 import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository
@@ -23,7 +22,6 @@ import org.slf4j.LoggerFactory
 
 class IndexingActor(
     paths: DataPaths,
-    dataRepository: ESRepo,
     db: WebDatabase,
     implicit val system: ActorSystem
 ) extends Actor {

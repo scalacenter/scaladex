@@ -6,20 +6,25 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 import ch.epfl.scala.services.SchedulerDatabase
+import ch.epfl.scala.services.SearchEngine
 import ch.epfl.scala.utils.ScalaExtensions._
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.server.service.SchedulerService._
 import scaladex.template.SchedulerStatus
 
-class SchedulerService(db: SchedulerDatabase) extends LazyLogging {
+class SchedulerService(db: SchedulerDatabase, searchEngine: SearchEngine) extends LazyLogging {
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
   private val mostDependentProjectScheduler = new Scheduler("most-dependent", mostDependentProjectJob, 1.hour)
   private val updateProject = new Scheduler("update-projects", updateProjectJob, 30.minutes)
 
+  private val searchSynchronizer = new SearchSynchronizer(db, searchEngine)
+  private val searchSyncScheduler = new Scheduler("search-synchronizer", searchSynchronizer.run, 30.minutes)
+
   private val schedulers = Map[String, Scheduler](
     mostDependentProjectScheduler.name -> mostDependentProjectScheduler,
-    updateProject.name -> updateProject
+    updateProject.name -> updateProject,
+    searchSyncScheduler.name -> searchSyncScheduler
   )
 
   def startAll(): Unit =
@@ -50,7 +55,7 @@ object SchedulerService {
   def updateProjectDependenciesTable(db: SchedulerDatabase)(implicit ec: ExecutionContext): Future[Unit] =
     for {
       projectWithDependencies <- db
-        .getAllProjectDependencies()
+        .computeProjectDependencies()
         .mapFailure(e =>
           new Exception(
             s"not able to getAllProjectDependencies because of ${e.getMessage}"

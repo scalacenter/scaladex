@@ -38,7 +38,8 @@ sealed trait Platform extends Ordered[Platform] with Product with Serializable {
 
 object Platform extends Parsers {
   sealed trait PlatformType extends Product with Serializable {
-    def value: String = toString.toLowerCase
+    def name: String = toString.toLowerCase
+    def label: String
   }
 
   object PlatformType {
@@ -47,13 +48,23 @@ object Platform extends Parsers {
     implicit val ordering: Ordering[PlatformType] = Ordering.by(all.indexOf(_))
 
     def ofName(name: String): Option[PlatformType] =
-      all.find(_.value == name.toLowerCase)
+      all.find(_.name == name.toLowerCase)
 
-    case object Java extends PlatformType
-    case object Sbt extends PlatformType
-    case object Native extends PlatformType
-    case object Js extends PlatformType
-    case object Jvm extends PlatformType
+    case object Java extends PlatformType {
+      def label: String = "Java"
+    }
+    case object Sbt extends PlatformType {
+      def label: String = "sbt"
+    }
+    case object Native extends PlatformType {
+      def label: String = "Scala Native"
+    }
+    case object Js extends PlatformType {
+      def label: String = "Scala.js"
+    }
+    case object Jvm extends PlatformType {
+      def label: String = "Scala (JVM)"
+    }
   }
 
   // Scala > Js > Native > Sbt > Java

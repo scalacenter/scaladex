@@ -39,8 +39,6 @@ case class NewRelease(
     licenses: Set[License],
     isNonStandardLib: Boolean
 ) {
-  def targetType: Platform.PlatformType = platform.platformType
-
   def projectRef: NewProject.Reference =
     NewProject.Reference(organization, repository)
 

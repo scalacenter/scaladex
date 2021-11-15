@@ -96,7 +96,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         res <- db.getAllTopics()
       } yield res shouldBe topics.toList
     }
-    it("should getProjectWithDependentUponProjects") {
+    it("should get most dependent project") {
       cleanTables() // to avoid duplicate key failures
 
       val projects = Seq(Cats.project, Scalafix.project, PlayJsonExtra.project)
@@ -131,7 +131,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         _ <- projects.map(db.insertProject).sequence
         _ <- db.insertReleases(data.keys.toList)
         _ <- db.insertDependencies(data.values.flatten.toList)
-        projectDependencies <- db.getAllProjectDependencies()
+        projectDependencies <- db.computeProjectDependencies()
         _ <- db.insertProjectDependencies(projectDependencies)
         mostDependentProjects <- db.getMostDependentUponProject(10)
       } yield {

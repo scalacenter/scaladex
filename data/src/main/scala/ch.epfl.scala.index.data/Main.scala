@@ -3,10 +3,7 @@ package ch.epfl.scala.index.data
 import java.nio.file.Path
 import java.time.Instant
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import scala.sys.process.Process
-import scala.util.Using
 
 import akka.actor.ActorSystem
 import cats.effect._
@@ -20,7 +17,6 @@ import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.init.Init
 import ch.epfl.scala.index.data.maven.DownloadParentPoms
 import ch.epfl.scala.index.data.util.PidLock
-import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.storage.LocalPomRepository
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.DoobieUtils
@@ -93,20 +89,13 @@ object Main extends LazyLogging {
       Step("github")(() => GithubDownload.run(dataPaths)),
       // Re-create the ElasticSearch index
       Step("init") { () =>
-        import system.dispatcher
+        implicit val cs = IO.contextShift(system.dispatcher)
         val transactor: Resource[IO, HikariTransactor[IO]] =
           DoobieUtils.transactor(config.db)
         transactor
           .use { xa =>
             val db = new SqlRepo(config.db, xa)
-            IO(
-              Using.resource(ESRepo.open()) { esRepo =>
-                Await.result(
-                  Init.run(dataPaths, esRepo, db),
-                  Duration.Inf
-                )
-              }
-            )
+            IO.fromFuture(IO(Init.run(dataPaths, db)))
           }
           .unsafeRunSync()
       }

@@ -23,20 +23,19 @@ import ch.epfl.scala.index.data.maven.DownloadParentPoms
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.model.misc.GithubRepo
-import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository
 import org.slf4j.LoggerFactory
 
-private[api] class PublishProcess(paths: DataPaths, dataRepository: ESRepo, db: WebDatabase)(
+private[api] class PublishProcess(paths: DataPaths, db: WebDatabase)(
     implicit val system: ActorSystem
 ) extends PlayWsDownloader {
 
   import system.dispatcher
   private val log = LoggerFactory.getLogger(getClass)
   private val indexingActor = system.actorOf(
-    Props(classOf[impl.IndexingActor], paths, dataRepository, db, system)
+    Props(classOf[impl.IndexingActor], paths, db, system)
   )
 
   /**

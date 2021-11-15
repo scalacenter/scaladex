@@ -1,8 +1,8 @@
-@import ch.epfl.scala.index.newModel.NewProject
+@import ch.epfl.scala.index.newModel.ContributingProject
 @import ch.epfl.scala.index.views.html._
 
 
-@(project: NewProject)
+@(project: ContributingProject)
 @project.githubInfo.map { github =>
     @if(github.beginnerIssues.nonEmpty && github.chatroom.isDefined && github.contributingGuide.isDefined) {
         <div class="box project-contributing-info">

@@ -6,32 +6,30 @@ import ch.epfl.scala.utils.DoobieUtils.Fragments.buildInsertOrUpdate
 import ch.epfl.scala.utils.DoobieUtils.Fragments.buildSelect
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
 import ch.epfl.scala.utils.DoobieUtils.Mappings.dependencyWriter
-import doobie.Update
+import doobie._
 import doobie.implicits._
 import doobie.util.fragment.Fragment
 
 object ProjectDependenciesTable {
-  private val _ =
-    dependencyWriter // for intellij not remove DoobieUtils.Mappings import
-  private[sql] val table = "project_dependencies"
-  private[sql] val fields = Seq(
+  private val _ = dependencyWriter // for intellij not remove DoobieUtils.Mappings import
+  private val fields = Seq(
     "source_organization",
     "source_repository",
     "target_organization",
     "target_repository"
   )
-  private val tableFr: Fragment = Fragment.const0(table)
+  val table: Fragment = Fragment.const0("project_dependencies")
   private val fieldsFr: Fragment = Fragment.const0(fields.mkString(", "))
 
   private def values(p: ProjectDependency): Fragment =
-    fr0"${p.source.organization}, ${p.source.organization}, ${p.target.organization}, ${p.target.organization}"
+    fr0"${p.source.organization}, ${p.source.repository}, ${p.target.organization}, ${p.target.repository}"
 
-  private[tables] def insertOrUpdate(p: ProjectDependency): doobie.Update0 = {
+  private[tables] def insertOrUpdate(p: ProjectDependency): Update0 = {
     val onConflict =
       fr0"source_organization, source_repository, target_organization, target_repository"
     val doAction = fr0"NOTHING"
     buildInsertOrUpdate(
-      tableFr,
+      table,
       fieldsFr,
       values(p),
       onConflict,
@@ -39,16 +37,22 @@ object ProjectDependenciesTable {
     ).update
   }
 
+  private def whereTarget(projectRef: NewProject.Reference): Fragment =
+    fr0"WHERE target_organization=${projectRef.organization} AND target_repository=${projectRef.repository}"
+
   def insertMany(
       p: Seq[ProjectDependency]
-  ): doobie.ConnectionIO[Int] =
+  ): ConnectionIO[Int] =
     Update[ProjectDependency](insertOrUpdate(p.head).sql).updateMany(p)
+
+  def countInverseDependencies(projectRef: NewProject.Reference): ConnectionIO[Int] =
+    buildSelect(table, fr0"count(*)", whereTarget(projectRef)).query[Int].unique
 
   def getMostDependentUponProjects(
       max: Int
-  ): doobie.Query0[(NewProject.Reference, Long)] =
+  ): Query0[(NewProject.Reference, Long)] =
     buildSelect(
-      tableFr,
+      table,
       fr0"target_organization, target_repository, Count(DISTINCT (source_organization, source_repository)) as total",
       fr0"GROUP BY target_organization, target_repository" ++
         fr0" ORDER BY total DESC" ++

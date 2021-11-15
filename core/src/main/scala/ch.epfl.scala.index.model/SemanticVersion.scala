@@ -37,7 +37,7 @@ case class SemanticVersion(
     s"$major$minorPart$patchPart$patch2Part$preReleasePart$metadataPart"
   }
 
-  override def compare(that: SemanticVersion): PageIndex =
+  override def compare(that: SemanticVersion): Int =
     SemanticVersion.ordering.compare(this, that)
 }
 

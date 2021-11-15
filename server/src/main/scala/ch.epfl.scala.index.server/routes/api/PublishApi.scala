@@ -20,14 +20,12 @@ import akka.http.scaladsl.server.directives._
 import akka.util.Timeout
 import ch.epfl.scala.index.model.misc.UserState
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.storage.DataPaths
 import org.slf4j.LoggerFactory
 
 class PublishApi(
     paths: DataPaths,
-    dataRepository: ESRepo,
     db: WebDatabase,
     github: Github
 )(implicit system: ActorSystem) {
@@ -99,7 +97,7 @@ class PublishApi(
   implicit val timeout: Timeout = Timeout(40.seconds)
   private val actor =
     system.actorOf(
-      Props(classOf[impl.PublishActor], paths, dataRepository, db, system)
+      Props(classOf[impl.PublishActor], paths, db, system)
     )
 
   private val githubCredentialsCache =
@@ -110,16 +108,15 @@ class PublishApi(
       get(
         path("publish")(
           parameter("path")(path =>
-            complete(
+            complete {
               /* check if the release already exists - sbt will handle HTTP-Status codes
                * NotFound -> allowed to write
                * OK -> only allowed if isSnapshot := true
                */
-              dataRepository.getMavenArtifact(mavenPathExtractor(path)).map {
-                case Some(release) => (OK, "release already exists")
-                case None          => (NotFound, "ok to publish")
-              }
-            )
+              val alreadyPublished = false // TODO check from database
+              if (alreadyPublished) (OK, "release already exists")
+              else (NotFound, "ok to publish")
+            }
           )
         )
       ),
@@ -174,8 +171,7 @@ class PublishApi(
 object PublishApi {
   def apply(
       paths: DataPaths,
-      dataRepository: ESRepo,
       databaseApi: WebDatabase
   )(implicit sys: ActorSystem): PublishApi =
-    new PublishApi(paths, dataRepository, databaseApi, Github())
+    new PublishApi(paths, databaseApi, Github())
 }

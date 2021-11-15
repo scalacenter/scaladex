@@ -5,60 +5,65 @@ import java.time.Instant
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.utils.DoobieUtils.Fragments._
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
+import doobie._
 import doobie.implicits._
 import doobie.util.fragment.Fragment
 import doobie.util.update.Update
 
 object ProjectTable {
   private val _ = documentationLinksMeta
-  private val table = "projects"
-  private val fields = Seq(
-    "organization",
-    "repository",
-    "created_at",
-    "esId"
-  )
 
+  private val table: String = "projects"
   private val tableFr: Fragment = Fragment.const0(table)
+  private val fields: Seq[String] = Seq("organization", "repository", "created_at", "esId")
   private val fieldsFr: Fragment = Fragment.const0(fields.mkString(", "))
   private def values(p: NewProject): Fragment =
     fr0"${p.organization}, ${p.repository}, ${p.created}, ${p.esId}"
 
-  def insert(elt: NewProject): doobie.Update0 =
+  private val allFields: Seq[String] = fields.map("p." + _) ++
+    GithubInfoTable.fields.drop(2).map("g." + _) ++
+    ProjectUserFormTable.fields.drop(2).map("f." + _)
+  private val allFieldsFr: Fragment = Fragment.const0(allFields.mkString(", "))
+  private val fullTable: Fragment =
+    fr0"$tableFr p " ++
+      fr0"LEFT JOIN ${GithubInfoTable.table} g ON p.organization = g.organization AND p.repository = g.repository " ++
+      fr0"LEFT JOIN ${ProjectUserFormTable.table} f ON p.organization = f.organization AND p.repository = f.repository"
+
+  def insert(elt: NewProject): Update0 =
     buildInsert(tableFr, fieldsFr, values(elt)).update
 
-  def insertOrUpdate(elt: NewProject): doobie.Update0 = {
+  def insertOrUpdate(elt: NewProject): Update0 = {
     val onConflict = fr0"organization, repository"
     val doAction = fr0"NOTHING"
-    buildInsertOrUpdate(
-      tableFr,
-      fieldsFr,
-      values(elt),
-      onConflict,
-      doAction
-    ).update
+    buildInsertOrUpdate(tableFr, fieldsFr, values(elt), onConflict, doAction).update
   }
 
   def updateCreated(): Update[(Instant, NewProject.Reference)] =
     Update[(Instant, NewProject.Reference)](s"UPDATE $table SET created_at=? WHERE organization=? AND repository=?")
 
-  def indexedProjects(): doobie.Query0[Long] =
+  def updateSearchId(ref: NewProject.Reference, id: String): Update0 =
+    buildUpdate(tableFr, fr0"esId=$id", whereRef(ref)).update
+
+  def indexedProjects(): Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]
 
-  def selectOne(ref: NewProject.Reference): doobie.ConnectionIO[Option[NewProject]] =
-    selectOneQuery(ref).option
-
-  def selectLatestProjects(limit: Int): doobie.Query0[NewProject] =
+  def selectOne(ref: NewProject.Reference): ConnectionIO[Option[NewProject]] =
     buildSelect(
-      tableFr,
-      fr0"*",
-      fr0"where created_at is not null" ++ space ++ fr0"ORDER BY created_at DESC" ++ space ++ fr0"LIMIT $limit"
+      fullTable,
+      allFieldsFr,
+      fr0"WHERE p.organization = ${ref.organization} AND p.repository = ${ref.repository}"
+    ).query[NewProject].option
+
+  def selectLatestProjects(limit: Int): Query0[NewProject] =
+    buildSelect(
+      fullTable,
+      allFieldsFr,
+      fr0"WHERE created_at IS NOT NULL ORDER BY created_at DESC LIMIT $limit"
     ).query[NewProject]
 
-  def selectAllProjectRef(): doobie.Query0[NewProject.Reference] =
+  def selectAllProjectRef(): Query0[NewProject.Reference] =
     buildSelect(tableFr, fr0"organization, repository").query[NewProject.Reference]
 
-  private[tables] def selectOneQuery(ref: NewProject.Reference): doobie.Query0[NewProject] =
-    buildSelect(tableFr, fieldsFr, where(ref)).query[NewProject]
-
+  def selectAllProjects: Query0[NewProject] =
+    buildSelect(fullTable, allFieldsFr).query[NewProject]
 }

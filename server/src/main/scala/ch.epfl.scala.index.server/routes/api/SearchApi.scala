@@ -10,12 +10,12 @@ import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.epfl.scala.index.api.AutocompletionResponse
-import ch.epfl.scala.index.model._
-import ch.epfl.scala.index.model.misc.SearchParams
 import ch.epfl.scala.index.model.release._
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
-import ch.epfl.scala.index.search.ESRepo
+import ch.epfl.scala.search.ProjectHit
+import ch.epfl.scala.search.SearchParams
+import ch.epfl.scala.services.SearchEngine
 import ch.epfl.scala.services.WebDatabase
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import com.softwaremill.session.SessionDirectives.optionalSession
@@ -34,7 +34,7 @@ object SearchApi {
       organization: String,
       repository: String,
       logo: Option[String] = None,
-      artifacts: List[String] = Nil
+      artifacts: Seq[String] = Nil
   )
 
   case class ReleaseOptions(
@@ -82,7 +82,7 @@ object SearchApi {
     }
 }
 
-class SearchApi(dataRepository: ESRepo, db: WebDatabase, session: GithubUserSession)(
+class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUserSession)(
     implicit val executionContext: ExecutionContext
 ) extends PlayJsonSupport {
   import session.implicits._
@@ -124,14 +124,13 @@ class SearchApi(dataRepository: ESRepo, db: WebDatabase, session: GithubUserSess
                   sbtVersion
                 )
 
-                def convert(project: Project): SearchApi.Project = {
-                  import project._
-                  val artifacts0 = if (cli) cliArtifacts.toList else artifacts
+                def convert(project: ProjectHit): SearchApi.Project = {
+                  import project.document._
                   SearchApi.Project(
-                    organization,
-                    repository,
-                    project.github.flatMap(_.logo.map(_.target)),
-                    artifacts0
+                    organization.value,
+                    repository.value,
+                    githubInfo.flatMap(_.logo.map(_.target)),
+                    artifactNames.map(_.value)
                   )
                 }
 
@@ -144,8 +143,8 @@ class SearchApi(dataRepository: ESRepo, db: WebDatabase, session: GithubUserSess
                       page = page.getOrElse(0),
                       total = total.getOrElse(10)
                     )
-                    val result = dataRepository
-                      .findProjects(searchParams)
+                    val result = searchEngine
+                      .find(searchParams)
                       .map(page => page.items.map(p => convert(p)))
                     complete(OK, result)
 
@@ -243,12 +242,12 @@ class SearchApi(dataRepository: ESRepo, db: WebDatabase, session: GithubUserSess
   }
 
   private def autocomplete(params: SearchParams) =
-    for (projects <- dataRepository.autocompleteProjects(params))
+    for (projects <- searchEngine.autocomplete(params))
       yield projects.map { project =>
         AutocompletionResponse(
-          project.organization,
-          project.repository,
-          project.github.flatMap(_.description).getOrElse("")
+          project.organization.value,
+          project.repository.value,
+          project.githubInfo.flatMap(_.description).getOrElse("")
         )
       }
 }

@@ -36,7 +36,7 @@
             @install(release, project.dataForm.cliArtifacts)
             @scastie(release.scastieURL)
             @project.githubInfo.map(gh => statistic(gh, project.reference.githubRepo, releaseCount, reverseDependency.size))
-            @projectContributingInfo(project)
+            @projectContributingInfo(project.contributingInfo)
             @project.githubInfo.map(gh => contributors(gh.contributors))
             @license(release)
             @dependencies(project.reference, directDependencies)

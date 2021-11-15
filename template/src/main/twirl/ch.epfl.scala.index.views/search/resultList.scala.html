@@ -1,61 +1,60 @@
-@import ch.epfl.scala.index.model.Project
-@import ch.epfl.scala.index.model.misc.SearchParams
+@import ch.epfl.scala.search.{ProjectHit, SearchParams}
 @import ch.epfl.scala.index.newModel.NewProject
 @import ch.epfl.scala.index.views.html._
 
 
-@(projects: List[Project], params: SearchParams)
+@(projects: Seq[ProjectHit], params: SearchParams)
 <ol class="list-result box">
-  @for(project <- projects){
+  @for(hit <- projects; project = hit.document){
   <li class="item-list">
-    <a href="/@project.reference.organization/@project.reference.repository">
+    <a href="/@project.organization/@project.repository">
       <div class="row">
         <div class="col-md-8">
           @if(params.contributingSearch){
             <div class="contributing-result">
-              @contributingInfo(NewProject.from(project), params = Some(params))
+              @contributingInfo(hit.contributingInfo, params = Some(params))
             </div>
           } else {
             <div>
-              @githubUserAvatar(project.github)
-              <h4>@project.reference.organization/@project.reference.repository</h4>
+              @githubUserAvatar(project.githubInfo)
+              <h4>@project.reference</h4>
 
-              @for(github <- project.github) {
+              @for(github <- project.githubInfo) {
                 @for(description <- github.description) {
                   <p class="description emojify">@description</p>
                 }
               }
-              @if(project.scalaVersion.nonEmpty){
+              @if(project.scalaVersions.nonEmpty){
                 <div>
                   Scala (JVM):
-                  @for(v <- project.scalaVersion) {
+                  @for(v <- project.scalaVersions) {
                     <span class="targets">@v</span>
                   }
                 </div>
               }
 
-              @if(project.sbtVersion.nonEmpty){
+              @if(project.sbtVersions.nonEmpty){
                 <div>
                   Sbt:
-                  @for(v <- project.sbtVersion) {
+                  @for(v <- project.sbtVersions) {
                     <span class="targets">@v</span>
                   }
                 </div>
               }
 
-              @if(project.scalaJsVersion.nonEmpty){
+              @if(project.scalaJsVersions.nonEmpty){
                 <div>
                   Scala.js:
-                  @for(v <- project.scalaJsVersion) {
+                  @for(v <- project.scalaJsVersions) {
                     <span class="targets">@v</span>
                   }
                 </div>
               }
 
-              @if(project.scalaNativeVersion.nonEmpty){
+              @if(project.scalaNativeVersions.nonEmpty){
                 <div>
-                  Scala-Native:
-                  @for(v <- project.scalaNativeVersion) {
+                  Scala Native:
+                  @for(v <- project.scalaNativeVersions) {
                     <span class="targets">@v</span>
                   }
                 </div>
@@ -66,7 +65,7 @@
         <div class="col-md-4">
           <div class="stats">
             <div>
-            @for(github <- project.github) {
+            @for(github <- project.githubInfo) {
               @if(!github.topics.isEmpty) {
                 @for(topic <- github.topics) {
                   <span class="item-filter-tag">
@@ -80,7 +79,7 @@
             </div>
 
             <div>
-            @for(github <- project.github) {
+            @for(github <- project.githubInfo) {
               @for(stars <- github.stars) {
                 <span>
                   <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">@stars <i class="fa fa-star"></i></a>

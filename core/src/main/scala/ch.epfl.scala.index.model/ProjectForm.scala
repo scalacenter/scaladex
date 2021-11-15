@@ -48,7 +48,7 @@ case class ProjectForm(
   def update(project: Project, fromStored: Boolean = false): Project = {
     val githubWithKeywords =
       if (project.github.isEmpty) {
-        Some(GithubInfo.empty.copy(topics = keywords))
+        Some(GithubInfo.empty(project.organization, project.repository).copy(topics = keywords))
       } else {
         project.github.map(github => github.copy(topics = github.topics ++ keywords))
       }
