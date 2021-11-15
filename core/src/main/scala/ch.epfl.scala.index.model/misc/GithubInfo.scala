@@ -45,7 +45,12 @@ case class GithubInfo(
     beginnerIssuesLabel: Option[String] = None,
     beginnerIssues: List[GithubIssue] = List(),
     selectedBeginnerIssues: List[GithubIssue] = List()
-)
+) {
+  def displayedIssues: Seq[GithubIssue] = {
+    val remainingIssues = beginnerIssues.filterNot(selectedBeginnerIssues.contains)
+    selectedBeginnerIssues ++ remainingIssues
+  }
+}
 
 object GithubInfo {
   def empty(name: String, owner: String): GithubInfo = GithubInfo(

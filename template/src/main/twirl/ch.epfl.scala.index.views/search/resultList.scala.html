@@ -12,7 +12,12 @@
         <div class="col-md-8">
           @if(params.contributingSearch){
             <div class="contributing-result">
-              @contributingInfo(hit.contributingInfo, params = Some(params))
+              <div class="content-project-header">
+                <a href="/@project.organization/@project.repository">
+                  @githubUserAvatar(project.githubInfo)
+                  <h4>@project.organization/@project.repository</h4>
+              </div>
+              @searchContributingInfo(hit, params)
             </div>
           } else {
             <div>

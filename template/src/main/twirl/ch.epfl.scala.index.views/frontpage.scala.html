@@ -1,4 +1,4 @@
-@import ch.epfl.scala.index.newModel.{ContributingProject, NewProject, NewRelease}
+@import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
 @import ch.epfl.scala.index.model.release.Platform
 @import ch.epfl.scala.index.model.release.BinaryVersion
 @import ch.epfl.scala.index.model.misc.UserState
@@ -17,7 +17,7 @@
   ecosystems: Map[String, String],
   totalProjects: Long,
   totalReleases: Long,
-  contributingProjects: Seq[ContributingProject])
+  contributingProjects: Seq[NewProject])
 
 @main(title = "Scaladex", showSearch = false, user) {
 <main id="container-home">
@@ -95,6 +95,11 @@
                 @for(project <- contributingProjects){
                     <div class="col-md-4 col-sm-6">
                         <div class="content-contributing-project box">
+                            <div class="content-project-header">
+                              <a href="/@project.organization/@project.repository">
+                                @githubUserAvatar(project.githubInfo)
+                                <h4>@project.organization/@project.repository</h4>
+                            </div>
                             @contributingInfo(project)
                       </div>
                     </div>

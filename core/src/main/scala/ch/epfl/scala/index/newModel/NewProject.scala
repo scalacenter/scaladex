@@ -23,9 +23,6 @@ case class NewProject(
     Reference(organization, repository)
   def hasCli: Boolean = dataForm.cliArtifacts.nonEmpty
 
-  val contributingInfo: ContributingProject =
-    ContributingProject(organization, repository, githubInfo, Seq.empty)
-
   /**
    * This is used in twitter to render the card of a scaladex project link.
    */
