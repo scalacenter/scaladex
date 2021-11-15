@@ -15,10 +15,10 @@ object ProjectTable {
 
   private val table: String = "projects"
   private val tableFr: Fragment = Fragment.const0(table)
-  private val fields: Seq[String] = Seq("organization", "repository", "created_at", "esId")
+  private val fields: Seq[String] = Seq("organization", "repository", "created_at")
   private val fieldsFr: Fragment = Fragment.const0(fields.mkString(", "))
   private def values(p: NewProject): Fragment =
-    fr0"${p.organization}, ${p.repository}, ${p.created}, ${p.esId}"
+    fr0"${p.organization}, ${p.repository}, ${p.created}"
 
   private val allFields: Seq[String] = fields.map("p." + _) ++
     GithubInfoTable.fields.drop(2).map("g." + _) ++
@@ -41,18 +41,15 @@ object ProjectTable {
   def updateCreated(): Update[(Instant, NewProject.Reference)] =
     Update[(Instant, NewProject.Reference)](s"UPDATE $table SET created_at=? WHERE organization=? AND repository=?")
 
-  def updateSearchId(ref: NewProject.Reference, id: String): Update0 =
-    buildUpdate(tableFr, fr0"esId=$id", whereRef(ref)).update
-
   def indexedProjects(): Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]
 
-  def selectOne(ref: NewProject.Reference): ConnectionIO[Option[NewProject]] =
+  def selectOne(ref: NewProject.Reference): Query0[NewProject] =
     buildSelect(
       fullTable,
       allFieldsFr,
       fr0"WHERE p.organization = ${ref.organization} AND p.repository = ${ref.repository}"
-    ).query[NewProject].option
+    ).query[NewProject]
 
   def selectLatestProjects(limit: Int): Query0[NewProject] =
     buildSelect(

@@ -60,14 +60,14 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
 
   override def updateProjectForm(ref: NewProject.Reference, dataForm: NewProject.DataForm): Future[Unit] =
     for {
-      projectOpt <- run(ProjectTable.selectOne(ref))
+      projectOpt <- run(ProjectTable.selectOne(ref).option)
       _ <- projectOpt
         .map(p => run(ProjectUserFormTable.update(p)(dataForm)))
         .getOrElse(Future.successful(()))
     } yield ()
 
   override def findProject(projectRef: NewProject.Reference): Future[Option[NewProject]] =
-    run(ProjectTable.selectOne(projectRef))
+    run(ProjectTable.selectOne(projectRef).option)
 
   def insertProject(project: Project): Future[Unit] =
     insertProject(NewProject.from(project))
@@ -166,9 +166,6 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
           f.flatMap(_ => run(ProjectTable.updateCreated().run(instant, ref)))
       }
     } yield ()
-
-  override def updateProjectSearchId(ref: NewProject.Reference, id: String): Future[Unit] =
-    strictRun(ProjectTable.updateSearchId(ref, id))
 
   // to use only when inserting one element or updating one element
   // when expecting a row to be modified

@@ -105,14 +105,8 @@ class ESRepo(esClient: ElasticClient, index: String)(implicit ec: ExecutionConte
 
   override def insert(project: ProjectDocument): Future[String] = {
     val rawDocument = RawProjectDocument.from(project)
-    val insertion = indexInto(index).source(rawDocument)
+    val insertion = indexInto(index).withId(project.id).source(rawDocument)
     esClient.execute(insertion).map(response => response.result.id)
-  }
-
-  override def update(id: String, project: ProjectDocument): Future[Unit] = {
-    val rawDocument = RawProjectDocument.from(project)
-    val update = updateById(index, id).doc(rawDocument)
-    esClient.execute(update).map(_ => ())
   }
 
   def refresh(): Future[Unit] =
@@ -177,7 +171,7 @@ class ESRepo(esClient: ElasticClient, index: String)(implicit ec: ExecutionConte
 
   private def getBeginnerIssueHits(hit: SearchHit): Seq[GithubIssue] =
     hit.innerHits
-      .get("githubInfo.beginnerIssues")
+      .get("beginnerIssues")
       .filter(_.total.value > 0)
       .toSeq
       .flatMap(_.hits)
@@ -355,7 +349,7 @@ object ESRepo extends LazyLogging {
             nestedQuery(
               "githubInfo.beginnerIssues",
               matchQuery("githubInfo.beginnerIssues.title", plainText)
-            ).inner(innerHits("issues").size(7))
+            ).inner(innerHits("beginnerIssues").size(7))
               .boost(4)
           } else matchNoneQuery()
         }

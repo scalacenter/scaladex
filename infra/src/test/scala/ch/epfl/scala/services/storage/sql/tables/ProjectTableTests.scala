@@ -14,15 +14,15 @@ class ProjectTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matcher
       val q = insert(Scalafix.project)
       check(q)
       q.sql shouldBe
-        s"""INSERT INTO projects (organization, repository, created_at, esId)
-           | VALUES (?, ?, ?, ?)""".stripMargin
+        s"""INSERT INTO projects (organization, repository, created_at)
+           | VALUES (?, ?, ?)""".stripMargin
           .filterNot(_ == '\n')
     }
     it("insertOrUpdate") {
       val q = insertOrUpdate(Scalafix.project)
       q.sql shouldBe
-        s"""INSERT INTO projects (organization, repository, created_at, esId)
-           | VALUES (?, ?, ?, ?) ON CONFLICT (organization, repository) DO NOTHING""".stripMargin
+        s"""INSERT INTO projects (organization, repository, created_at)
+           | VALUES (?, ?, ?) ON CONFLICT (organization, repository) DO NOTHING""".stripMargin
           .filterNot(_ == '\n')
     }
   }

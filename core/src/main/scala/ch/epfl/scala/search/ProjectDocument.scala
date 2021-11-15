@@ -30,6 +30,7 @@ final case class ProjectDocument(
     githubInfo: Option[GithubInfo]
 ) {
   def reference: NewProject.Reference = NewProject.Reference(organization, repository)
+  def id: String = reference.toString
 }
 
 object ProjectDocument {

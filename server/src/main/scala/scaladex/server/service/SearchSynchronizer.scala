@@ -19,7 +19,7 @@ class SearchSynchronizer(db: SchedulerDatabase, searchEngine: SearchEngine)(impl
           for {
             _ <- future
             document <- getDocument(project)
-            _ <- insertOrUpdate(project.esId, document)
+            _ <- searchEngine.insert(document)
           } yield ()
       }
     }
@@ -29,11 +29,4 @@ class SearchSynchronizer(db: SchedulerDatabase, searchEngine: SearchEngine)(impl
       releases <- db.findReleases(project.reference)
       inverseProjectDependencies <- db.countInverseProjectDependencies(project.reference)
     } yield ProjectDocument(project, releases, inverseProjectDependencies)
-
-  private def insertOrUpdate(id: Option[String], document: ProjectDocument): Future[Unit] =
-    id match {
-      case Some(id) => searchEngine.update(id, document)
-      case None =>
-        searchEngine.insert(document).flatMap(id => db.updateProjectSearchId(document.reference, id))
-    }
 }

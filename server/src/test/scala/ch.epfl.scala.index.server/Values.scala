@@ -41,9 +41,8 @@ object Values {
   val project: NewProject = NewProject(
     release.organization,
     release.repository,
-    Some(GithubInfo.empty(release.organization.value, release.repository.value)),
     created = Some(Instant.now),
-    None,
+    Some(GithubInfo.empty(release.organization.value, release.repository.value)),
     NewProject.DataForm.default
   )
 

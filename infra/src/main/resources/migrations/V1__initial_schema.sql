@@ -2,7 +2,6 @@ CREATE TABLE projects (
     organization         VARCHAR(39)   NOT NULL,
     repository           VARCHAR(100)  NOT NULL,
     created_at           TIMESTAMPTZ,
-    esId                 VARCHAR,
     PRIMARY KEY (organization, repository)
 );
 

@@ -12,11 +12,9 @@ import ch.epfl.scala.index.newModel.NewProject._
 case class NewProject(
     organization: Organization,
     repository: Repository,
-    githubInfo: Option[GithubInfo],
     created: Option[Instant], // equivalent to the first release date
-    esId: Option[String],
-    // form data
-    dataForm: DataForm
+    githubInfo: Option[GithubInfo],
+    dataForm: DataForm // form data
 ) {
 
   val reference: Reference =
@@ -67,7 +65,6 @@ object NewProject {
       repository = Repository(repo),
       githubInfo = githubInfo,
       created = None,
-      esId = None,
       dataForm = formData
     )
 
@@ -137,7 +134,6 @@ object NewProject {
       repository = Repository(p.repository),
       githubInfo = p.github,
       created = None,
-      esId = p.id,
       dataForm = DataForm.from(p)
     )
 }

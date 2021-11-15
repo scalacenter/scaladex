@@ -10,7 +10,6 @@ trait SchedulerDatabase extends WebDatabase {
   def getAllProjects(): Future[Seq[NewProject]]
   def computeProjectDependencies(): Future[Seq[ProjectDependency]]
   def updateCreatedInProjects(): Future[Unit]
-  def updateProjectSearchId(ref: NewProject.Reference, id: String): Future[Unit]
   def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int]
   def countInverseProjectDependencies(projectRef: NewProject.Reference): Future[Int]
 }
