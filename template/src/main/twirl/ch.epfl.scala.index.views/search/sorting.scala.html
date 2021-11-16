@@ -47,17 +47,18 @@
         Relevant
       </button>
       <button name="sort" value="dependent" type="submit" 
-        class="btn btn-default @if(params.sorting.contains("dependentCount")) { active }">
+        class="btn btn-default @if(params.sorting.contains("dependent")) { active }">
         Dependent
       </button>
       <button name="sort" value="created" type="submit" 
         class="btn btn-default @if(params.sorting.contains("created")) { active }">
         Created
       </button>
-      <button name="sort" value="updated" type="submit" 
+      <!-- TODO compute updatedAt along with createdAt in update-projects scheduler -->
+      <!-- <button name="sort" value="updated" type="submit" 
         class="btn btn-default @if(params.sorting.contains("updated")) { active }">
         Updated
-      </button>
+      </button> -->
       <button name="sort" value="stars" type="submit" 
         class="btn btn-default @if(params.sorting.contains("stars")) { active }">
         Stars

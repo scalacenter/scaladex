@@ -55,7 +55,7 @@
         @for((sbtVersion, count) <- sbtVersions) {
           <li>
             <label>
-              <input type="checkbox" @if(params.sbtVersions.contains(sbtVersion)) { checked }
+              <input type="checkbox" @if(params.sbtVersions.contains(sbtVersion.toString)) { checked }
                      name="sbtVersions" value="@sbtVersion" onclick="this.form.submit()">
               @sbtVersion (@count)
             </label>
@@ -69,7 +69,7 @@
         @for((scalaJsVersion, count) <- scalaJsVersions) {
           <li>
             <label>
-              <input type="checkbox" @if(params.scalaJsVersions.contains(scalaJsVersion)) { checked }
+              <input type="checkbox" @if(params.scalaJsVersions.contains(scalaJsVersion.toString)) { checked }
                      name="scalaJsVersions" value="@scalaJsVersion" onclick="this.form.submit()">
               @scalaJsVersion (@count)
             </label>
@@ -83,7 +83,7 @@
         @for((scalaNativeVersion, count) <- scalaNativeVersions) {
           <li>
             <label>
-              <input type="checkbox" @if(params.scalaNativeVersions.contains(scalaNativeVersion)) { checked }
+              <input type="checkbox" @if(params.scalaNativeVersions.contains(scalaNativeVersion.toString)) { checked }
                      name="scalaNativeVersions" value="@scalaNativeVersion" onclick="this.form.submit()">
               @scalaNativeVersion (@count)
             </label>

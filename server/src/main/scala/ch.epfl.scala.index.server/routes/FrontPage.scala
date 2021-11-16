@@ -78,13 +78,7 @@ class FrontPage(
           "akka-streams"
         ),
         "Scala.js" -> "search?targets=scala.js_0.6",
-        "Spark" -> query("depends-on")(
-          "apache/spark-streaming",
-          "apache/spark-graphx",
-          "apache/spark-hive",
-          "apache/spark-mllib",
-          "apache/spark-sql"
-        ),
+        "Spark" -> query("topics")("spark"),
         "Typelevel" -> "typelevel"
       )
 
