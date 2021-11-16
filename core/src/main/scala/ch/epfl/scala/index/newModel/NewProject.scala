@@ -57,6 +57,7 @@ object NewProject {
   def defaultProject(
       org: String,
       repo: String,
+      created: Option[Instant] = None,
       githubInfo: Option[GithubInfo] = None,
       formData: DataForm = DataForm.default
   ): NewProject =
@@ -64,7 +65,7 @@ object NewProject {
       Organization(org),
       repository = Repository(repo),
       githubInfo = githubInfo,
-      created = None,
+      created = created,
       dataForm = formData
     )
 
@@ -108,14 +109,14 @@ object NewProject {
       }
       DataForm(
         defaultStableVersion = p.defaultStableVersion,
-        defaultArtifact = p.defaultArtifact.map(NewRelease.ArtifactName),
+        defaultArtifact = p.defaultArtifact.map(NewRelease.ArtifactName.apply),
         strictVersions = p.strictVersions,
         customScalaDoc = p.customScalaDoc,
         documentationLinks = documentationlinks,
         deprecated = p.deprecated,
         contributorsWanted = p.contributorsWanted,
-        artifactDeprecations = p.artifactDeprecations.map(NewRelease.ArtifactName),
-        cliArtifacts = p.cliArtifacts.map(NewRelease.ArtifactName),
+        artifactDeprecations = p.artifactDeprecations.map(NewRelease.ArtifactName.apply),
+        cliArtifacts = p.cliArtifacts.map(NewRelease.ArtifactName.apply),
         primaryTopic = p.primaryTopic
       )
     }

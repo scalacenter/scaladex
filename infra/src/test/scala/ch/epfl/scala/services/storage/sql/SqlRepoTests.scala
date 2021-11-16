@@ -52,7 +52,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
 
     it("should insert dependencies") {
       for {
-        _ <- db.insertDependencies(Seq(Cats.dependency, Cats.testDependency))
+        _ <- db.insertDependencies(Seq(CatsEffect.dependency, CatsEffect.testDependency))
       } yield succeed
     }
 
@@ -65,12 +65,12 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
     it("should find directDependencies") {
       for {
         _ <- db.insertReleases(
-          Seq(Cats.core, Cats.kernel)
-        ) // we don't inser Cats.laws
+          Seq(Cats.core_3, Cats.kernel_3)
+        ) // we don't inser Cats.laws_3
         _ <- db.insertDependencies(Cats.dependencies)
-        directDependencies <- db.findDirectDependencies(Cats.core)
+        directDependencies <- db.findDirectDependencies(Cats.core_3)
       } yield directDependencies.map(_.target) should contain theSameElementsAs List(
-        Some(Cats.kernel),
+        Some(Cats.kernel_3),
         None,
         None
       )
@@ -80,11 +80,11 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
       cleanTables() // to avoid duplicate key failures
       for {
         _ <- db
-          .insertReleases(Seq(Cats.core, Cats.kernel))
+          .insertReleases(Seq(Cats.core_3, Cats.kernel_3))
         _ <- db
           .insertDependencies(Cats.dependencies)
-        reverseDependencies <- db.findReverseDependencies(Cats.kernel)
-      } yield reverseDependencies.map(_.source) should contain theSameElementsAs List(Cats.core)
+        reverseDependencies <- db.findReverseDependencies(Cats.kernel_3)
+      } yield reverseDependencies.map(_.source) should contain theSameElementsAs List(Cats.core_3)
     }
     it("should get all topics") {
       val topics = Set("topics1", "topics2")
@@ -101,24 +101,24 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
 
       val projects = Seq(Cats.project, Scalafix.project, PlayJsonExtra.project)
       val data = Map(
-        Cats.core -> Seq(
+        Cats.core_3 -> Seq(
           ReleaseDependency(
-            source = Cats.core.maven,
+            source = Cats.core_3.maven,
             target = MavenReference("fake", "fake_3", "version"),
             scope = "compile"
           )
         ), // first case: on a artifact that doesn't have a corresponding release
-        Cats.kernel -> Seq(
+        Cats.kernel_3 -> Seq(
           ReleaseDependency(
-            source = Cats.kernel.maven,
-            target = Cats.core.maven,
+            source = Cats.kernel_3.maven,
+            target = Cats.core_3.maven,
             "compile"
           )
         ), // depends on it self
         Scalafix.release -> Cats.dependencies.map(
           _.copy(source = Scalafix.release.maven)
         ), // dependencies contains two cats releases
-        Cats.laws -> Seq(), // doesn't depend on anything
+        Cats.laws_3 -> Seq(), // doesn't depend on anything
         PlayJsonExtra.release -> Seq(
           ReleaseDependency(
             source = PlayJsonExtra.release.maven,

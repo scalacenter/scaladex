@@ -31,7 +31,7 @@ case class ProjectForm(
   def toUserDataForm(): NewProject.DataForm =
     NewProject.DataForm(
       defaultStableVersion = defaultStableVersion,
-      defaultArtifact = defaultArtifact.map(NewRelease.ArtifactName),
+      defaultArtifact = defaultArtifact.map(NewRelease.ArtifactName.apply),
       strictVersions = strictVersions,
       customScalaDoc = customScalaDoc.filterNot(_ == ""),
       documentationLinks = documentationLinks.flatMap {
@@ -40,8 +40,8 @@ case class ProjectForm(
       },
       deprecated = deprecated,
       contributorsWanted = contributorsWanted,
-      artifactDeprecations = artifactDeprecations.map(NewRelease.ArtifactName),
-      cliArtifacts = cliArtifacts.map(NewRelease.ArtifactName),
+      artifactDeprecations = artifactDeprecations.map(NewRelease.ArtifactName.apply),
+      cliArtifacts = cliArtifacts.map(NewRelease.ArtifactName.apply),
       primaryTopic = primaryTopic
     )
 

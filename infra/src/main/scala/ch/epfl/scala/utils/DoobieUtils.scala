@@ -128,7 +128,7 @@ object DoobieUtils {
       )
     implicit val artifactNamesMeta: Meta[Set[NewRelease.ArtifactName]] =
       stringMeta.timap(
-        _.split(",").filter(_.nonEmpty).map(NewRelease.ArtifactName).toSet
+        _.split(",").filter(_.nonEmpty).map(NewRelease.ArtifactName.apply).toSet
       )(
         _.mkString(",")
       )

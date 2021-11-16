@@ -217,7 +217,7 @@ class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUser
   ): Future[Option[SearchApi.ReleaseOptions]] = {
     val selection = new ReleaseSelection(
       target = scalaTarget,
-      artifact = artifact.map(NewRelease.ArtifactName),
+      artifact = artifact.map(NewRelease.ArtifactName.apply),
       version = None,
       selected = None
     )

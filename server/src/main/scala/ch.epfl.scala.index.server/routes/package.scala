@@ -30,7 +30,7 @@ package object routes {
   val repositoryM: PathMatcher1[NewProject.Repository] =
     Segment.map(NewProject.Repository)
   val artifactM: PathMatcher1[NewRelease.ArtifactName] =
-    Segment.map(NewRelease.ArtifactName)
+    Segment.map(NewRelease.ArtifactName.apply)
   val versionM: PathMatcher1[SemanticVersion] =
     Segment.flatMap(SemanticVersion.tryParse)
 

@@ -117,6 +117,7 @@ object Platform extends Parsers {
   object ScalaNative {
     val `0.3`: BinaryVersion = MinorBinary(0, 3)
     val `0.4`: BinaryVersion = MinorBinary(0, 4)
+    val `0.4_2.13`: ScalaNative = ScalaNative(ScalaVersion.`2.13`, `0.4`)
     private val stableBinaryVersions: Set[BinaryVersion] = Set(`0.3`, `0.4`)
     def isValid(version: BinaryVersion): Boolean =
       stableBinaryVersions.contains(version)
@@ -136,6 +137,8 @@ object Platform extends Parsers {
   object ScalaJs {
     val `0.6`: BinaryVersion = MinorBinary(0, 6)
     val `1.x`: BinaryVersion = MajorBinary(1)
+    val `0.6_2.13`: ScalaJs = ScalaJs(ScalaVersion.`2.13`, `0.6`)
+    val `1_3`: ScalaJs = ScalaJs(Scala3Version.`3`, `1.x`)
 
     private val stableBinaryVersions: Set[BinaryVersion] = Set(`0.6`, `1.x`)
     def isValid(version: BinaryVersion): Boolean =
@@ -152,6 +155,9 @@ object Platform extends Parsers {
   }
 
   object ScalaJvm {
+    val `3`: ScalaJvm = ScalaJvm(Scala3Version.`3`)
+    val `2.13` = ScalaJvm(ScalaVersion.`2.13`)
+
     def fromFullVersion(fullVersion: SemanticVersion): Option[ScalaJvm] = {
       val binaryVersion = fullVersion match {
         case SemanticVersion(major, Some(minor), _, None, None, None) if major == 2 =>

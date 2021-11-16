@@ -204,7 +204,7 @@ class ESRepo(esClient: ElasticClient, index: String)(implicit ec: ExecutionConte
       .map(addMissing(params.scalaVersions))
 
   override def getScalaJsVersions(params: SearchParams): Future[Seq[(BinaryVersion, Long)]] =
-    versionAggregations("scalaJsVersion", params, Platform.ScalaJs.isValid)
+    versionAggregations("scalaJsVersions", params, Platform.ScalaJs.isValid)
       .map(addMissing(params.scalaJsVersions.flatMap(BinaryVersion.parse)))
 
   override def getScalaNativeVersions(params: SearchParams): Future[Seq[(BinaryVersion, Long)]] =
