@@ -3,6 +3,7 @@
 @import ch.epfl.scala.index.model.release._
 @import ch.epfl.scala.index.newModel.{ReleaseDependency, NewProject, NewRelease}
 @import ch.epfl.scala.index.views.html.main
+@import ch.epfl.scala.index.views.html.contributingInfo
 
 
 @(env: Env, project: NewProject, artifacts: Seq[NewRelease.ArtifactName], versions: Seq[SemanticVersion],
@@ -36,7 +37,17 @@
             @install(release, project.dataForm.cliArtifacts)
             @scastie(release.scastieURL)
             @project.githubInfo.map(gh => statistic(gh, project.reference.githubRepo, releaseCount, reverseDependency.size))
-            @projectContributingInfo(project)
+            @project.githubInfo.map { github =>
+              @if(github.beginnerIssues.nonEmpty && github.chatroom.isDefined && github.contributingGuide.isDefined) {
+                  <div class="box project-contributing-info">
+                    <h4>Contributing Info</h4>
+                    <p>Beginner-friendly Issues:</p>
+                    <div>
+                      @contributingInfo(project)
+                    </div>
+                  </div>
+              }
+            }
             @project.githubInfo.map(gh => contributors(gh.contributors))
             @license(release)
             @dependencies(project.reference, directDependencies)

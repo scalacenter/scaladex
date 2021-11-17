@@ -289,7 +289,7 @@ class ProjectPages(
                     org = organization,
                     repo = repository,
                     platform = target,
-                    artifact = artifact.map(NewRelease.ArtifactName),
+                    artifact = artifact.map(NewRelease.ArtifactName.apply),
                     version = version,
                     selected = selected
                   )

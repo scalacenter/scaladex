@@ -9,7 +9,6 @@ import ch.epfl.scala.index.model.misc.UserState
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
-import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.GithubUserSession
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.index.views.html.frontpage
@@ -19,7 +18,6 @@ import com.softwaremill.session.SessionOptions._
 import play.twirl.api.HtmlFormat
 
 class FrontPage(
-    dataRepository: ESRepo,
     db: WebDatabase,
     session: GithubUserSession
 )(implicit ec: ExecutionContext) {
@@ -30,12 +28,11 @@ class FrontPage(
   private def frontPage(
       userInfo: Option[UserState]
   ): Future[HtmlFormat.Appendable] = {
-    import dataRepository._
     val topicsF = db.getAllTopics()
     val allPlatformsF = db.getAllPlatforms()
     val latestProjectsF = db.getLatestProjects(limitOfProjectShownInFrontPage)
-    val latestReleasesF = getLatestReleases()
-    val contributingProjectsF = getContributingProjects()
+    val latestReleasesF = Future.successful(Seq.empty[NewRelease]) // TODO get from DB
+    val contributingProjectsF = Future.successful(List.empty[NewProject]) // TODO get from DB
     for {
       topics <- topicsF.map(FrontPage.getTopTopics(_, 50))
       allPlatforms <- allPlatformsF
@@ -81,13 +78,7 @@ class FrontPage(
           "akka-streams"
         ),
         "Scala.js" -> "search?targets=scala.js_0.6",
-        "Spark" -> query("depends-on")(
-          "apache/spark-streaming",
-          "apache/spark-graphx",
-          "apache/spark-hive",
-          "apache/spark-mllib",
-          "apache/spark-sql"
-        ),
+        "Spark" -> query("topics")("spark"),
         "Typelevel" -> "typelevel"
       )
 
@@ -100,7 +91,7 @@ class FrontPage(
         sbtVersions,
         latestProjects,
         mostDependedUpon,
-        latestReleases.map(NewRelease.from),
+        latestReleases,
         userInfo,
         ecosystems,
         totalProjects,

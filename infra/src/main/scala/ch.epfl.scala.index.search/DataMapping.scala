@@ -53,72 +53,26 @@ object DataMapping extends ElasticDsl {
       .fields(
         keywordField("keyword").normalizer("lowercase")
       ),
+    keywordField("artifactNames").normalizer("lowercase"),
+    dateField("createdAt"),
+    dateField("updatedAt"),
+    keywordField("platformTypes"),
+    keywordField("scalaVersions"),
+    keywordField("scalaJsVersions"),
+    keywordField("scalaNativeVersions"),
+    keywordField("sbtVersions"),
     textField("primaryTopic")
       .analyzer("english")
       .fields(
         keywordField("keyword").normalizer("lowercase")
       ),
-    keywordField("defaultArtifact").index(false),
-    keywordField("artifacts").normalizer("lowercase"),
-    keywordField("customScalaDoc").index(false),
-    keywordField("artifactDeprecations").index(false),
-    keywordField("cliArtifacts").index(false),
-    keywordField("targets"),
-    keywordField("dependencies"),
-    objectField("github").fields(
-      textField("topics")
-        .analyzer("standard")
-        .fields(
-          keywordField("keyword").normalizer("lowercase")
-        ),
-      nestedField("beginnerIssues"),
-      textField("description").analyzer("english"),
-      textField("readme").analyzer("english_readme")
-    ),
-    dateField("created"),
-    dateField("updated"),
-    keywordField("targetType").normalizer("lowercase"),
-    keywordField("scalaVersion"),
-    keywordField("scalaJsVersion"),
-    keywordField("scalaNativeVersion"),
-    keywordField("sbtVersion")
-  )
-
-  val referenceFields: Seq[FieldDefinition] = Seq(
-    keywordField("organization").normalizer("lowercase"),
-    keywordField("repository").normalizer("lowercase"),
-    keywordField("artifact").normalizer("lowercase")
-  )
-
-  val releasesFields: Seq[FieldDefinition] = Seq(
-    objectField("reference").fields(referenceFields),
-    nestedField("maven").fields(
-      keywordField("groupId").normalizer("lowercase"),
-      keywordField("artifactId").normalizer("lowercase"),
-      keywordField("version")
-    ),
-    keywordField("version"),
-    keywordField("targetType").normalizer("lowercase"),
-    keywordField("scalaVersion"),
-    keywordField("scalaJsVersion"),
-    keywordField("scalaNativeVersion"),
-    keywordField("sbtVersion"),
-    dateField("released")
-  )
-
-  private val releaseRefFields = Seq(
-    keywordField("organization").normalizer("lowercase"),
-    keywordField("repository").normalizer("lowercase"),
-    keywordField("artifact").normalizer("lowercase"),
-    keywordField("version"),
-    keywordField("target")
-  )
-
-  val dependenciesFields: Seq[FieldDefinition] = Seq(
-    objectField("dependent").fields(referenceFields),
-    keywordField("dependentUrl"),
-    objectField("target").fields(referenceFields),
-    keywordField("targetUrl"),
-    keywordField("scope")
+    textField("githubInfo.description").analyzer("english"),
+    textField("githubInfo.readme").analyzer("english_readme"),
+    textField("githubInfo.topics")
+      .analyzer("standard")
+      .fields(
+        keywordField("keyword").normalizer("lowercase")
+      ),
+    nestedField("githubInfo.beginnerIssues")
   )
 }

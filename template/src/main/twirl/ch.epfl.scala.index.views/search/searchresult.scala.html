@@ -1,6 +1,6 @@
 @import akka.http.scaladsl.model.Uri
-@import ch.epfl.scala.index.model.Project
-@import ch.epfl.scala.index.model.misc.{Pagination, SearchParams}
+@import ch.epfl.scala.index.model.release.{BinaryVersion, Platform}
+@import ch.epfl.scala.search.{Pagination, ProjectHit, SearchParams}
 @import ch.epfl.scala.index.views.html._
 @import ch.epfl.scala.index.model.misc.UserState
 
@@ -8,15 +8,15 @@
   params: SearchParams,
   uri: Uri,
   pagination: Pagination,
-  projects: List[Project],
+  projects: Seq[ProjectHit],
   user: Option[UserState],
   you: Boolean,
-  topics: List[(String, Long)],
-  targetTypes: List[(String, String, Long)],
-  scalaVersions: List[(String, Long)],
-  scalaJsVersions: List[(String, Long)],
-  scalaNativeVersions: List[(String, Long)],
-  sbtVersions: List[(String, Long)])
+  topics: Seq[(String, Long)],
+  targetTypes: Seq[(Platform.PlatformType, Long)],
+  scalaVersions: Seq[(String, Long)],
+  scalaJsVersions: Seq[(BinaryVersion, Long)],
+  scalaNativeVersions: Seq[(BinaryVersion, Long)],
+  sbtVersions: Seq[(BinaryVersion, Long)])
 @main(title = s"Search ${params.queryString}", showSearch = true, user, params, you) {
   <main id="container-search">
     <div class="container">

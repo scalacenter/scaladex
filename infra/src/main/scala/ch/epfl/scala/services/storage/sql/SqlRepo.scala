@@ -12,7 +12,6 @@ import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.ProjectDependency
 import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.services.SchedulerDatabase
-import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.storage.sql.tables.GithubInfoTable
 import ch.epfl.scala.services.storage.sql.tables.ProjectDependenciesTable
 import ch.epfl.scala.services.storage.sql.tables.ProjectTable
@@ -23,7 +22,7 @@ import ch.epfl.scala.utils.DoobieUtils
 import ch.epfl.scala.utils.ScalaExtensions._
 import doobie.implicits._
 
-class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends WebDatabase with SchedulerDatabase {
+class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends SchedulerDatabase {
   private[sql] val flyway = DoobieUtils.flyway(conf)
   def migrate: IO[Unit] = IO(flyway.migrate())
   def dropTables: IO[Unit] = IO(flyway.clean())
@@ -47,6 +46,9 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends WebDataba
   override def getAllProjectRef(): Future[Seq[NewProject.Reference]] =
     run(ProjectTable.selectAllProjectRef().to[List])
 
+  override def getAllProjects(): Future[Seq[NewProject]] =
+    run(ProjectTable.selectAllProjects.to[Seq])
+
   override def insertOrUpdateProject(project: NewProject): Future[Unit] =
     for {
       _ <- run(ProjectTable.insertOrUpdate(project))
@@ -58,25 +60,14 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends WebDataba
 
   override def updateProjectForm(ref: NewProject.Reference, dataForm: NewProject.DataForm): Future[Unit] =
     for {
-      projectOpt <- run(ProjectTable.selectOne(ref))
+      projectOpt <- run(ProjectTable.selectOne(ref).option)
       _ <- projectOpt
         .map(p => run(ProjectUserFormTable.update(p)(dataForm)))
         .getOrElse(Future.successful(()))
     } yield ()
 
   override def findProject(projectRef: NewProject.Reference): Future[Option[NewProject]] =
-    for {
-      project <- run(ProjectTable.selectOne(projectRef))
-      userForm <- run(ProjectUserFormTable.selectOne(projectRef))
-      githubInfoTable <- project
-        .map(p => run(GithubInfoTable.selectOne(p.reference)))
-        .getOrElse(Future.successful(None))
-    } yield project.map(
-      _.copy(
-        githubInfo = githubInfoTable,
-        dataForm = userForm.getOrElse(NewProject.DataForm.default)
-      )
-    )
+    run(ProjectTable.selectOne(projectRef).option)
 
   def insertProject(project: Project): Future[Unit] =
     insertProject(NewProject.from(project))
@@ -136,13 +127,7 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends WebDataba
       }(_._3).view.mapValues(_.toSet).toMap)
 
   override def getLatestProjects(limit: Int): Future[Seq[NewProject]] =
-    for {
-      projects <- run(ProjectTable.selectLatestProjects(limit).to[List])
-      projectWithGithubInfo <- projects.map { p =>
-        run(GithubInfoTable.selectOne(p.reference))
-          .map(github => p.copy(githubInfo = github))
-      }.sequence
-    } yield projectWithGithubInfo
+    run(ProjectTable.selectLatestProjects(limit).to[Seq])
 
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.indexedGithubInfo().unique)
@@ -150,11 +135,14 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends WebDataba
   def countProjectDataForm(): Future[Long] =
     run(ProjectUserFormTable.indexedProjectUserForm().unique)
 
-  override def getAllProjectDependencies(): Future[Seq[ProjectDependency]] =
+  override def computeProjectDependencies(): Future[Seq[ProjectDependency]] =
     run(ReleaseDependencyTable.getAllProjectDependencies().to[List])
 
   override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] =
     run(ProjectDependenciesTable.insertMany(projectDependencies))
+
+  override def countInverseProjectDependencies(projectRef: NewProject.Reference): Future[Int] =
+    run(ProjectDependenciesTable.countInverseDependencies(projectRef))
 
   override def getMostDependentUponProject(max: Int): Future[List[(NewProject, Long)]] =
     for {

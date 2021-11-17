@@ -1,0 +1,31 @@
+@import ch.epfl.scala.search.{ProjectHit, SearchParams}
+
+@(project: ProjectHit, params: SearchParams)
+<div class="content-project-body">
+  @for(github <- project.document.githubInfo) {
+    @github.description.map(desc => <p class="description">@desc</p>)
+    <ul>
+      @for(issue <- project.displayedIssues.take(6)) {
+        <li>
+          <a href="@issue.url.target" target="_blank">@issue</a>
+        </li>
+      }
+    </ul>
+
+    @if(6 < project.displayedIssues.length) {
+        @for(label <- github.beginnerIssuesLabel) {
+            @if(project.beginnerIssueHits.nonEmpty) {
+                <a href='https://github.com/@{project.document.reference}/issues?utf8=✓&q=is:open label:"@label" @{params.queryString}'
+                target="_blank">More Issues ...</a>
+            } else {
+                <a href="https://github.com/@{project.document.reference}/labels/@{label}"
+                target="_blank">More Issues ...</a>
+            }
+        }
+    }
+    <hr>
+    @github.contributingGuide.map(guide => <a href="@guide.target" target="_blank">Contributing Guide</a>)
+    @github.chatroom.map(chatroom => <a href="@chatroom.target" target="_blank">Chatroom</a>)
+    @github.codeOfConduct.map(coc => <a href="@coc.target" target="_blank">Code of Conduct</a>)
+  }
+</div>

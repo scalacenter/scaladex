@@ -39,8 +39,6 @@ case class NewRelease(
     licenses: Set[License],
     isNonStandardLib: Boolean
 ) {
-  def targetType: Platform.PlatformType = platform.platformType
-
   def projectRef: NewProject.Reference =
     NewProject.Reference(organization, repository)
 
@@ -218,6 +216,10 @@ object NewRelease {
   case class ArtifactName(value: String) extends AnyVal {
     override def toString: String = value
   }
+  object ArtifactName {
+    implicit val ordering: Ordering[ArtifactName] = Ordering.by(_.value)
+  }
+
   // we used to write joda.DateTime and now we moved to Instant
   private def parseToInstant(s: String): Option[Instant] =
     Try(format.parseDateTime(s)).map(t => Instant.ofEpochMilli(t.getMillis)).orElse(Try(Instant.parse(s))).toOption

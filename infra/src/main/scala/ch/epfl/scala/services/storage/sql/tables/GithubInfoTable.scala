@@ -13,8 +13,7 @@ import doobie.util.fragment.Fragment
 object GithubInfoTable {
   private val _ =
     contributorMeta // for intellij not remove DoobieUtils.Mappings import
-  private val table = "github_info"
-  private val fields = Seq(
+  val fields: Seq[String] = Seq(
     "organization",
     "repository",
     "name",
@@ -36,11 +35,10 @@ object GithubInfoTable {
     "chatroom",
     "beginnerIssuesLabel",
     "beginnerIssues",
-    "selectedBeginnerIssues",
-    "filteredBeginnerIssues"
+    "selectedBeginnerIssues"
   )
 
-  private val tableFr: Fragment = Fragment.const0(table)
+  val table: Fragment = Fragment.const0("github_info")
   private val fieldsFr: Fragment = Fragment.const0(fields.mkString(", "))
 
   private def values(p: NewProject, g: GithubInfo): Fragment =
@@ -48,10 +46,10 @@ object GithubInfoTable {
       fr0"${g.homepage}, ${g.description}, ${g.logo}, ${g.stars}, ${g.forks}," ++
       fr0" ${g.watchers}, ${g.issues},${g.readme}, ${g.contributors}, ${g.contributorCount}," ++
       fr0" ${g.commits}, ${g.topics}, ${g.contributingGuide}, ${g.codeOfConduct}, ${g.chatroom}," ++
-      fr0" ${g.beginnerIssuesLabel}, ${g.beginnerIssues}, ${g.selectedBeginnerIssues}, ${g.filteredBeginnerIssues}"
+      fr0" ${g.beginnerIssuesLabel}, ${g.beginnerIssues}, ${g.selectedBeginnerIssues}"
 
   def insert(p: NewProject)(elt: GithubInfo): doobie.Update0 =
-    buildInsert(tableFr, fieldsFr, values(p, elt)).update
+    buildInsert(table, fieldsFr, values(p, elt)).update
 
   def insertOrUpdate(p: NewProject)(g: GithubInfo): doobie.Update0 = {
     val onConflictFields = fr0"organization, repository"
@@ -62,7 +60,7 @@ object GithubInfoTable {
         fr0" codeOfConduct=${g.codeOfConduct}, chatroom=${g.chatroom}"
     val updateAction = fr"UPDATE SET" ++ fields
     buildInsertOrUpdate(
-      tableFr,
+      table,
       fieldsFr,
       values(p, g),
       onConflictFields,
@@ -70,23 +68,13 @@ object GithubInfoTable {
     ).update
   }
 
-  def selectOne(ref: NewProject.Reference): doobie.ConnectionIO[Option[GithubInfo]] =
-    selectOneQuery(ref).option
-
   def selectAllTopics(): doobie.Query0[Set[String]] =
-    buildSelect(tableFr, fr0"topics", fr0"where topics != ''")
+    buildSelect(table, fr0"topics", fr0"where topics != ''")
       .query[Set[String]]
-
-  private[tables] def selectOneQuery(reference: NewProject.Reference): doobie.Query0[GithubInfo] =
-    buildSelect(
-      tableFr,
-      fieldsFr,
-      where(reference)
-    ).query[GithubInfo](githubInfoReader)
 
   val githubInfoReader: Read[GithubInfo] =
     Read[(Organization, Repository, GithubInfo)].map { case (_, _, githubInfo) => githubInfo }
 
   def indexedGithubInfo(): doobie.Query0[Long] =
-    buildSelect(tableFr, fr0"count(*)").query[Long]
+    buildSelect(table, fr0"count(*)").query[Long]
 }

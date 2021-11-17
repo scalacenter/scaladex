@@ -276,7 +276,7 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload) extends B
               NewProject.defaultProject(
                 githubRepo.organization,
                 githubRepo.repository,
-                githubInfo
+                githubInfo = githubInfo
               )
             )
           dependencies = getDependencies(pom)

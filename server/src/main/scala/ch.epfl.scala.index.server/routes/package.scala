@@ -12,13 +12,13 @@ import akka.http.scaladsl.server.PathMatcher1
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubIssue
-import ch.epfl.scala.index.model.misc.SearchParams
 import ch.epfl.scala.index.model.misc.Url
 import ch.epfl.scala.index.model.misc.UserState
 import ch.epfl.scala.index.model.release.ReleaseOptions
 import ch.epfl.scala.index.model.release.ReleaseSelection
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.search.SearchParams
 import ch.epfl.scala.services.WebDatabase
 
 package object routes {
@@ -30,7 +30,7 @@ package object routes {
   val repositoryM: PathMatcher1[NewProject.Repository] =
     Segment.map(NewProject.Repository)
   val artifactM: PathMatcher1[NewRelease.ArtifactName] =
-    Segment.map(NewRelease.ArtifactName)
+    Segment.map(NewRelease.ArtifactName.apply)
   val versionM: PathMatcher1[SemanticVersion] =
     Segment.flatMap(SemanticVersion.tryParse)
 

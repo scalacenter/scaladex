@@ -31,7 +31,7 @@ case class ProjectForm(
   def toUserDataForm(): NewProject.DataForm =
     NewProject.DataForm(
       defaultStableVersion = defaultStableVersion,
-      defaultArtifact = defaultArtifact.map(NewRelease.ArtifactName),
+      defaultArtifact = defaultArtifact.map(NewRelease.ArtifactName.apply),
       strictVersions = strictVersions,
       customScalaDoc = customScalaDoc.filterNot(_ == ""),
       documentationLinks = documentationLinks.flatMap {
@@ -40,15 +40,15 @@ case class ProjectForm(
       },
       deprecated = deprecated,
       contributorsWanted = contributorsWanted,
-      artifactDeprecations = artifactDeprecations.map(NewRelease.ArtifactName),
-      cliArtifacts = cliArtifacts.map(NewRelease.ArtifactName),
+      artifactDeprecations = artifactDeprecations.map(NewRelease.ArtifactName.apply),
+      cliArtifacts = cliArtifacts.map(NewRelease.ArtifactName.apply),
       primaryTopic = primaryTopic
     )
 
   def update(project: Project, fromStored: Boolean = false): Project = {
     val githubWithKeywords =
       if (project.github.isEmpty) {
-        Some(GithubInfo.empty.copy(topics = keywords))
+        Some(GithubInfo.empty(project.organization, project.repository).copy(topics = keywords))
       } else {
         project.github.map(github => github.copy(topics = github.topics ++ keywords))
       }

@@ -9,19 +9,17 @@ import scala.concurrent.duration._
 
 import akka.actor.Actor
 import akka.actor.ActorSystem
-import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.storage.DataPaths
 
 class PublishActor(
     paths: DataPaths,
-    dataRepository: ESRepo,
     db: WebDatabase,
     implicit val system: ActorSystem
 ) extends Actor {
 
   private val publishProcess =
-    new impl.PublishProcess(paths, dataRepository, db)
+    new impl.PublishProcess(paths, db)
 
   def receive: PartialFunction[Any, Unit] = {
     case publishData: PublishData =>

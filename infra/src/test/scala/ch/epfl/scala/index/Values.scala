@@ -1,17 +1,21 @@
 package ch.epfl.scala.index
 
-import ch.epfl.scala.index.model.Project
+import java.time.Instant
+
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubInfo
+import ch.epfl.scala.index.model.misc.GithubIssue
+import ch.epfl.scala.index.model.misc.Url
 import ch.epfl.scala.index.model.release.MavenReference
+import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Platform._
-import ch.epfl.scala.index.model.release.Scala3Version
 import ch.epfl.scala.index.model.release.ScalaVersion
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewProject.DataForm
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.index.newModel.ReleaseDependency
+import ch.epfl.scala.search.ProjectDocument
 
 object Values {
 
@@ -20,11 +24,18 @@ object Values {
       NewProject.defaultProject(
         "scalacenter",
         "scalafix",
-        None
+        created = Some(Instant.ofEpochMilli(1475505237265L))
       )
 
     val reference: NewProject.Reference = project.reference
-    val githubInfo = GithubInfo.empty
+    val githubInfo: GithubInfo =
+      GithubInfo
+        .empty(reference.repository.value, reference.organization.value)
+        .copy(
+          stars = Some(643),
+          forks = Some(148),
+          contributorCount = 76
+        )
     val projectWithGithubInfo: NewProject =
       project.copy(githubInfo = Some(githubInfo))
 
@@ -60,6 +71,8 @@ object Values {
       licenses = Set(),
       isNonStandardLib = false
     )
+
+    val projectDocument: ProjectDocument = ProjectDocument(projectWithGithubInfo, Seq(release), 0)
   }
 
   object PlayJsonExtra {
@@ -85,7 +98,7 @@ object Values {
     )
     val dependency: ReleaseDependency =
       ReleaseDependency(
-        source = Cats.core.maven,
+        source = Cats.core_3.maven,
         target = release.maven,
         "compile"
       )
@@ -95,24 +108,38 @@ object Values {
     val project: NewProject = NewProject.defaultProject(
       "typelevel",
       "cats",
-      None
+      created = Some(Instant.ofEpochMilli(1454649333334L))
     )
     val reference: NewProject.Reference = project.reference
+    val issueAboutFoo: GithubIssue = GithubIssue(1, "Issue about foo", Url("https://github.com/typelevel/cats/pull/1"))
+    val issueAboutBar: GithubIssue = GithubIssue(2, "Issue about bar", Url("https://github.com/typelevel/cats/pull/2"))
+    val githubInfo: GithubInfo = GithubInfo
+      .empty(reference.repository.value, reference.organization.value)
+      .copy(
+        stars = Some(4337),
+        forks = Some(1081),
+        contributorCount = 392,
+        contributingGuide = Some(Url("https://github.com/typelevel/cats/blob/main/CONTRIBUTING.md")),
+        chatroom = Some(Url("https://gitter.im/typelevel/cats")),
+        beginnerIssues = List(issueAboutFoo, issueAboutBar)
+      )
+    val projectWithGithubInfo: NewProject = project.copy(githubInfo = Some(githubInfo))
     private def release(
-        artifactName: ArtifactName,
-        artifactId: String
+        name: String,
+        platform: Platform,
+        version: String = "2.6.1"
     ): NewRelease =
       NewRelease(
         MavenReference(
           "org.typelevel",
-          artifactId,
-          "2.6.1"
+          s"${name}_$platform",
+          version
         ),
-        SemanticVersion.tryParse("2.6.1").get,
+        SemanticVersion.tryParse(version).get,
         organization = reference.organization,
         repository = reference.repository,
-        artifactName = artifactName,
-        platform = ScalaJvm(Scala3Version.`3`),
+        artifactName = ArtifactName(name),
+        platform = platform,
         description = None,
         releasedAt = None,
         resolver = None,
@@ -120,21 +147,24 @@ object Values {
         isNonStandardLib = false
       )
 
-    val core: NewRelease = release(ArtifactName("cats-core"), "cats-core_3")
-    val kernel: NewRelease =
-      release(ArtifactName("cats-kernel"), "cats-kernel_3")
-    val laws: NewRelease =
-      release(ArtifactName("cats-laws"), "cats-laws_3")
+    val core_3: NewRelease = release("cats-core", ScalaJvm.`3`)
+    val core_sjs1_3: NewRelease = release("cats-core", ScalaJs.`1_3`)
+    val core_sjs06_213: NewRelease = release("cats-core", ScalaJs.`0.6_2.13`)
+    val core_native04_213: NewRelease = release("cats-core", ScalaNative.`0.4_2.13`)
+    val kernel_3: NewRelease = release("cats-kernel", ScalaJvm.`3`)
+    val laws_3: NewRelease = release("cats-laws", ScalaJvm.`3`)
+
+    val allReleases: Seq[NewRelease] = Seq(core_3, core_sjs1_3, core_sjs06_213, core_native04_213, kernel_3, laws_3)
 
     val dependencies: Seq[ReleaseDependency] = Seq(
       ReleaseDependency(
-        source = core.maven,
-        target = kernel.maven,
+        source = core_3.maven,
+        target = kernel_3.maven,
         "compile"
       ),
-      ReleaseDependency(source = core.maven, target = laws.maven, "compile"),
+      ReleaseDependency(source = core_3.maven, target = laws_3.maven, "compile"),
       ReleaseDependency(
-        source = core.maven,
+        source = core_3.maven,
         target = MavenReference(
           "com.gu",
           "ztmp-scala-automation_2.10",
@@ -144,13 +174,17 @@ object Values {
       )
     )
 
+    val projectDocument: ProjectDocument = ProjectDocument(projectWithGithubInfo, allReleases, 1)
+  }
+
+  object CatsEffect {
     val dependency: ReleaseDependency = ReleaseDependency(
       source = MavenReference(
         "cats-effect",
         "cats-effect-kernel_3",
         "3.2.3"
       ),
-      target = MavenReference("org.typelevel", "cats-core_3", "2.6.1"),
+      target = Cats.core_3.maven,
       "compile"
     )
 
@@ -162,23 +196,6 @@ object Values {
       ),
       target = MavenReference("typelevel", "scalacheck_3", "1.15.4"),
       "test"
-    )
-
-    val projectDocument: Project = Project(
-      reference.organization.value,
-      reference.repository.value,
-      defaultArtifact = Some(core.artifactName.value),
-      artifacts = List(core.artifactName.value, kernel.artifactName.value),
-      releaseCount = 2,
-      created = None,
-      updated = None,
-      targetType = List("Jvm"),
-      scalaVersion = List("scala3"),
-      scalaJsVersion = List.empty,
-      scalaNativeVersion = List.empty,
-      sbtVersion = List.empty,
-      dependencies = Set.empty,
-      dependentCount = 0
     )
   }
 

@@ -18,8 +18,8 @@ class GithubInfoTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matc
            | homepage, description, logo, stars, forks, watchers, issues, readme,
            | contributors, contributorCount, commits, topics, contributingGuide,
            | codeOfConduct, chatroom, beginnerIssuesLabel, beginnerIssues,
-           | selectedBeginnerIssues, filteredBeginnerIssues) VALUES (?, ?, ?, ?,
-           | ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
+           | selectedBeginnerIssues) VALUES (?, ?, ?, ?,
+           | ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
           .filterNot(_ == '\n')
     }
     it("insertOrUpdate") {
@@ -30,8 +30,8 @@ class GithubInfoTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matc
            | homepage, description, logo, stars, forks, watchers, issues, readme,
            | contributors, contributorCount, commits, topics, contributingGuide,
            | codeOfConduct, chatroom, beginnerIssuesLabel, beginnerIssues,
-           | selectedBeginnerIssues, filteredBeginnerIssues) VALUES (?, ?, ?, ?,
-           | ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           | selectedBeginnerIssues) VALUES (?, ?, ?, ?,
+           | ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            | ON CONFLICT (organization, repository) DO UPDATE SET name=?, owner=?, homepage=?, description=?,
            | logo=?, stars=?, forks=?, watchers=?, issues=?, readme=?, contributors=?, contributorCount=?,
            | commits=?, topics=?, contributingGuide=?, codeOfConduct=?, chatroom=?""".stripMargin

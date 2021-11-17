@@ -10,8 +10,8 @@ import scala.concurrent.duration.FiniteDuration
 
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
-import ch.epfl.scala.index.model.misc.Pagination
-import ch.epfl.scala.index.model.misc.SearchParams
+import ch.epfl.scala.search.Pagination
+import ch.epfl.scala.search.SearchParams
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 

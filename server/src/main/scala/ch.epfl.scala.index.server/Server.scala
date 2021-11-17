@@ -10,6 +10,7 @@ import akka.http.scaladsl._
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
+import cats.effect.ContextShift
 import cats.effect.IO
 import ch.epfl.scala.index.data.util.PidLock
 import ch.epfl.scala.index.search.ESRepo
@@ -33,10 +34,14 @@ object Server {
     }
     implicit val system: ActorSystem = ActorSystem("scaladex")
     import system.dispatcher
+    implicit val cs = IO.contextShift(system.dispatcher)
 
-    // the DataRepository will not be closed until the end of the process,
+    val paths = config.dataPaths
+    val session = GithubUserSession(config)
+
+    // the ESRepo will not be closed until the end of the process,
     // because of the sbtResolver mode
-    val data = ESRepo.open()
+    val searchEngine = ESRepo.open()
 
     val resources =
       for {
@@ -49,10 +54,10 @@ object Server {
         case (webPool, schedulerPool) =>
           val webDb = new SqlRepo(config.dbConf, webPool)
           val schedulerDb = new SqlRepo(config.dbConf, schedulerPool)
-          val schedulerService = new SchedulerService(schedulerDb)
+          val schedulerService = new SchedulerService(schedulerDb, searchEngine)
           for {
-            _ <- init(webDb, schedulerService, data)
-            routes = configureRoutes(data, webDb, schedulerService)
+            _ <- init(webDb, schedulerService, searchEngine)
+            routes = configureRoutes(searchEngine, webDb, schedulerService)
             _ <- IO(
               Http()
                 .bindAndHandle(routes, config.api.endpoint, config.api.port)
@@ -75,12 +80,15 @@ object Server {
 
   }
 
-  private def init(db: SqlRepo, scheduler: SchedulerService, esRepo: ESRepo): IO[Unit] = {
+  private def init(db: SqlRepo, scheduler: SchedulerService, searchEngine: ESRepo)(
+      implicit cs: ContextShift[IO]
+  ): IO[Unit] = {
     log.info("applying flyway migration to db")
     for {
       _ <- db.migrate
       _ = log.info("wait for ElasticSearch")
-      _ <- IO(esRepo.waitUntilReady())
+      _ <- IO(searchEngine.waitUntilReady())
+      _ <- IO.fromFuture(IO(searchEngine.reset()))
       _ = log.info("starting the scheduler")
       _ <- IO(scheduler.startAll())
     } yield ()
@@ -95,14 +103,14 @@ object Server {
 
     val localStorage = new LocalStorageRepo(paths)
     val programmaticRoutes = concat(
-      PublishApi(paths, esRepo, webDb).routes,
+      PublishApi(paths, webDb).routes,
       new SearchApi(esRepo, webDb, session).routes,
       Assets.routes,
       new Badges(webDb).routes,
       Oauth2(config, session).routes
     )
     val userFacingRoutes = concat(
-      new FrontPage(esRepo, webDb, session).routes,
+      new FrontPage(webDb, session).routes,
       new AdminPages(schedulerService, session).routes,
       redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
         concat(

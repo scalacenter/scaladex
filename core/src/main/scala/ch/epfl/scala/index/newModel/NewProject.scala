@@ -12,11 +12,9 @@ import ch.epfl.scala.index.newModel.NewProject._
 case class NewProject(
     organization: Organization,
     repository: Repository,
-    githubInfo: Option[GithubInfo],
     created: Option[Instant], // equivalent to the first release date
-    esId: Option[String],
-    // form data
-    dataForm: DataForm
+    githubInfo: Option[GithubInfo],
+    dataForm: DataForm // form data
 ) {
 
   val reference: Reference =
@@ -59,6 +57,7 @@ object NewProject {
   def defaultProject(
       org: String,
       repo: String,
+      created: Option[Instant] = None,
       githubInfo: Option[GithubInfo] = None,
       formData: DataForm = DataForm.default
   ): NewProject =
@@ -66,8 +65,7 @@ object NewProject {
       Organization(org),
       repository = Repository(repo),
       githubInfo = githubInfo,
-      created = None,
-      esId = None,
+      created = created,
       dataForm = formData
     )
 
@@ -111,14 +109,14 @@ object NewProject {
       }
       DataForm(
         defaultStableVersion = p.defaultStableVersion,
-        defaultArtifact = p.defaultArtifact.map(NewRelease.ArtifactName),
+        defaultArtifact = p.defaultArtifact.map(NewRelease.ArtifactName.apply),
         strictVersions = p.strictVersions,
         customScalaDoc = p.customScalaDoc,
         documentationLinks = documentationlinks,
         deprecated = p.deprecated,
         contributorsWanted = p.contributorsWanted,
-        artifactDeprecations = p.artifactDeprecations.map(NewRelease.ArtifactName),
-        cliArtifacts = p.cliArtifacts.map(NewRelease.ArtifactName),
+        artifactDeprecations = p.artifactDeprecations.map(NewRelease.ArtifactName.apply),
+        cliArtifacts = p.cliArtifacts.map(NewRelease.ArtifactName.apply),
         primaryTopic = p.primaryTopic
       )
     }
@@ -137,7 +135,6 @@ object NewProject {
       repository = Repository(p.repository),
       githubInfo = p.github,
       created = None,
-      esId = p.id,
       dataForm = DataForm.from(p)
     )
 }

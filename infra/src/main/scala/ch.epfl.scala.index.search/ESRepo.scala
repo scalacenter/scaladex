@@ -5,21 +5,24 @@ import java.io.Closeable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import ch.epfl.scala.index.model._
-import ch.epfl.scala.index.model.misc.Pagination
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.search.mapping._
+import ch.epfl.scala.search.Page
+import ch.epfl.scala.search.Pagination
+import ch.epfl.scala.search.ProjectDocument
+import ch.epfl.scala.search.ProjectHit
+import ch.epfl.scala.search.SearchParams
+import ch.epfl.scala.services.SearchEngine
+import ch.epfl.scala.utils.Codecs._
 import com.sksamuel.elastic4s.ElasticClient
 import com.sksamuel.elastic4s.ElasticDsl
 import com.sksamuel.elastic4s.ElasticProperties
-import com.sksamuel.elastic4s.HitReader
 import com.sksamuel.elastic4s.analysis.Analysis
 import com.sksamuel.elastic4s.http.JavaClient
-import com.sksamuel.elastic4s.requests.bulk.BulkResponseItem
 import com.sksamuel.elastic4s.requests.common.HealthStatus
-import com.sksamuel.elastic4s.requests.indexes.IndexRequest
 import com.sksamuel.elastic4s.requests.mappings.MappingDefinition
+import com.sksamuel.elastic4s.requests.searches.SearchHit
+import com.sksamuel.elastic4s.requests.searches.SearchRequest
 import com.sksamuel.elastic4s.requests.searches.aggs.responses.bucket.Terms
 import com.sksamuel.elastic4s.requests.searches.queries.NoopQuery
 import com.sksamuel.elastic4s.requests.searches.queries.Query
@@ -29,19 +32,17 @@ import com.sksamuel.elastic4s.requests.searches.sort.Sort
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
+import io.circe._
 
 /**
  * @param esClient TCP client of the elasticsearch server
  */
-class ESRepo(esClient: ElasticClient, indexPrefix: String)(implicit ec: ExecutionContext)
-    extends LazyLogging
+class ESRepo(esClient: ElasticClient, index: String)(implicit ec: ExecutionContext)
+    extends SearchEngine
+    with LazyLogging
     with Closeable {
   import ESRepo._
   import ElasticDsl._
-
-  private val projectIndex = s"$indexPrefix-projects"
-  private val releaseIndex = s"$indexPrefix-releases"
-  private val dependencyIndex = s"$indexPrefix-dependencies"
 
   def waitUntilReady(): Unit = {
     def blockUntil(explain: String)(predicate: () => Boolean): Unit = {
@@ -65,24 +66,25 @@ class ESRepo(esClient: ElasticClient, indexPrefix: String)(implicit ec: Executio
 
   def close(): Unit = esClient.close()
 
-  def deleteAll(): Future[Unit] = {
-    def delete(index: String): Future[Unit] =
-      for {
-        response <- esClient.execute(indexExists(index))
-        exist = response.result.isExists
-        _ <-
-          if (exist) esClient.execute(deleteIndex(index))
-          else Future.successful(())
-      } yield ()
+  def reset(): Future[Unit] =
+    for {
+      _ <- delete()
+      _ = logger.info(s"Creating index $index.")
+      _ <- create()
+    } yield logger.info(s"Index $index created")
 
-    Future
-      .sequence(Seq(projectIndex, releaseIndex, dependencyIndex).map(delete))
-      .map(_ => ())
-  }
+  private def delete(): Future[Unit] =
+    for {
+      response <- esClient.execute(indexExists(index))
+      exist = response.result.isExists
+      _ <-
+        if (exist) esClient.execute(deleteIndex(index))
+        else Future.successful(())
+    } yield ()
 
-  def create(): Future[Unit] = {
+  private def create(): Future[Unit] = {
     import DataMapping._
-    val createProject = createIndex(projectIndex)
+    val createProject = createIndex(index)
       .analysis(
         Analysis(
           analyzers = List(englishReadme),
@@ -93,248 +95,150 @@ class ESRepo(esClient: ElasticClient, indexPrefix: String)(implicit ec: Executio
       )
       .mapping(MappingDefinition(projectFields))
 
-    val createRelease = createIndex(releaseIndex)
-      .analysis(
-        Analysis(
-          analyzers = List(),
-          normalizers = List(lowercase)
-        )
-      )
-      .mapping(MappingDefinition(releasesFields))
-
-    val createDependency = createIndex(dependencyIndex)
-      .analysis(
-        Analysis(
-          analyzers = List(),
-          normalizers = List(lowercase)
-        )
-      )
-      .mapping(
-        MappingDefinition(dependenciesFields)
-      )
-
-    Future
-      .sequence(
-        Seq(createProject, createRelease, createDependency)
-          .map(request => esClient.execute(request))
-      )
-      .map { resps =>
-        resps
-          .filter(_.isError)
-          .map(_.error)
-          .foreach(error => logger.info(error.reason))
+    esClient
+      .execute(createProject)
+      .map { resp =>
+        if (resp.isError) logger.info(resp.error.reason)
+        else ()
       }
   }
 
-  def insertProject(project: Project): Future[Unit] =
-    esClient
-      .execute(
-        indexInto(projectIndex)
-          .source(project)
-      )
-      .map(_ => ())
+  override def insert(project: ProjectDocument): Future[Unit] = {
+    val rawDocument = RawProjectDocument.from(project)
+    val insertion = indexInto(index).withId(project.id).source(rawDocument)
+    esClient.execute(insertion).map(_ => ())
+  }
 
   def refresh(): Future[Unit] =
     esClient
-      .execute(
-        refreshIndex(projectIndex, releaseIndex, dependencyIndex)
-      )
+      .execute(refreshIndex(index))
       .map(_ => ())
 
-  def updateProject(project: Project): Future[Unit] =
-    esClient
-      .execute(
-        updateById(projectIndex, project.id.get).doc(project)
-      )
-      .map(_ => ())
-
-  def insertProjects(projects: Seq[Project]): Future[Seq[BulkResponseItem]] = {
-    val requests = projects.map(p => indexInto(projectIndex).source(p))
-    insertAll(requests, 1000)
-  }
-
-  def insertReleases(releases: Seq[Release]): Future[Seq[BulkResponseItem]] = {
-    val requests = releases.map(r => indexInto(releaseIndex).source(ReleaseDocument(r)))
-    insertAll(requests, 1000)
-  }
-
-  def insertRelease(release: Release): Future[Unit] =
-    esClient
-      .execute {
-        indexInto(releaseIndex)
-          .source(ReleaseDocument(release))
-      }
-      .map(_ => ())
-
-  private def insertAll(
-      requests: Seq[IndexRequest],
-      bulkSize: Int
-  ): Future[Seq[BulkResponseItem]] =
-    if (requests.nonEmpty) {
-      Future
-        .sequence(
-          requests
-            .grouped(bulkSize)
-            .toSeq
-            .map(reqs => esClient.execute(bulk(reqs)).map(_.result.items))
-        )
-        .map(_.flatten)
-    } else {
-      Future.successful(Seq.empty)
-    }
-
-  def autocompleteProjects(params: SearchParams): Future[Seq[Project]] = {
-    val request = search(projectIndex)
+  override def autocomplete(params: SearchParams): Future[Seq[ProjectDocument]] = {
+    val request = search(index)
       .query(gitHubStarScoring(filteredSearchQuery(params)))
       .sortBy(sortQuery(params.sorting))
       .limit(5)
 
     esClient
       .execute(request)
-      .map(_.result.to[Project])
+      .map(response => response.result.hits.hits.toSeq.flatMap(toProjectDocument))
   }
 
-  def findProjects(params: SearchParams): Future[Page[Project]] = {
-    def clamp(page: Int): Int = if (page <= 0) 1 else page
-
-    val request = search(projectIndex)
+  override def find(params: SearchParams): Future[Page[ProjectHit]] = {
+    val request = search(index)
       .query(gitHubStarScoring(filteredSearchQuery(params)))
       .sortBy(sortQuery(params.sorting))
-      .from(params.total * (clamp(params.page) - 1))
-      .size(params.total)
+    findPage(request, params.page, params.total)
+      .map(_.flatMap(toProjectHit))
+  }
 
+  private def findPage(request: SearchRequest, page: Int, total: Int): Future[Page[SearchHit]] = {
+    val clamp = if (page <= 0) 1 else page
+    val pagedRequest = request.from(total * (clamp - 1)).size(total)
     esClient
-      .execute(request)
+      .execute(pagedRequest)
       .map { response =>
         Page(
           Pagination(
-            current = clamp(params.page),
+            current = clamp,
             pageCount = Math
-              .ceil(response.result.totalHits / params.total.toDouble)
+              .ceil(response.result.totalHits / total.toDouble)
               .toInt,
             itemCount = response.result.totalHits
           ),
-          response.result.to[Project].map(_.formatForDisplaying)
+          response.result.hits.hits.toSeq
         )
       }
   }
 
-  /**
-   * Search for the release corresponding to a maven artifact
-   * It does not retrieve the dependencies of the release
-   *
-   * @param reference reference of the maven artifact
-   * @return the release of this artifact if it exists
-   */
-  def getMavenArtifact(reference: MavenReference): Future[Option[Release]] = {
-    val query = nestedQuery(
-      path = "maven",
-      must(
-        termQuery("maven.groupId", reference.groupId),
-        termQuery("maven.artifactId", reference.artifactId),
-        termQuery("maven.version", reference.version)
+  private def toProjectDocument(hit: SearchHit): Option[ProjectDocument] =
+    parser.decode[RawProjectDocument](hit.sourceAsString) match {
+      case Right(rawDocument) =>
+        Some(rawDocument.toProjectDocument)
+      case Left(error) =>
+        val source = hit.sourceAsMap
+        val organization = source.get("organization").getOrElse("unknown")
+        val repository = source.get("repository").getOrElse("unknown")
+        logger.warn(s"cannot decode project document of $organization/$repository: ${error.getMessage}")
+        None
+    }
+
+  private def toProjectHit(hit: SearchHit): Option[ProjectHit] = {
+    val beginnerIssueHits = getBeginnerIssueHits(hit)
+    toProjectDocument(hit).map(ProjectHit(_, beginnerIssueHits))
+  }
+
+  private def getBeginnerIssueHits(hit: SearchHit): Seq[GithubIssue] =
+    hit.innerHits
+      .get("beginnerIssues")
+      .filter(_.total.value > 0)
+      .toSeq
+      .flatMap(_.hits)
+      .flatMap { hit =>
+        parser.decode[GithubIssue](hit.sourceAsString) match {
+          case Right(issue) => Some(issue)
+          case Left(error) =>
+            logger.warn("cannot parse beginner issue: ")
+            None
+        }
+      }
+
+  override def getTopics(params: SearchParams): Future[Seq[(String, Long)]] =
+    stringAggregations("githubInfo.topics.keyword", filteredSearchQuery(params))
+      .map(addMissing(params.topics))
+
+  override def getPlatformTypes(params: SearchParams): Future[Seq[(Platform.PlatformType, Long)]] =
+    stringAggregations("platformTypes", filteredSearchQuery(params))
+      .map(addMissing(params.targetTypes))
+      .map(
+        _.flatMap {
+          case (platformType, count) =>
+            Platform.PlatformType.ofName(platformType).map((_, count))
+        }
       )
-    )
 
-    val request = search(releaseIndex).query(query).limit(1)
+  override def getScalaVersions(params: SearchParams): Future[Seq[(String, Long)]] =
+    aggregations("scalaVersions", filteredSearchQuery(params))
+      .map(_.toSeq)
+      .map(addMissing(params.scalaVersions))
 
-    esClient
-      .execute(request)
-      .map(_.result.to[ReleaseDocument].headOption.map(_.toRelease))
-  }
+  override def getScalaJsVersions(params: SearchParams): Future[Seq[(BinaryVersion, Long)]] =
+    versionAggregations("scalaJsVersions", params, Platform.ScalaJs.isValid)
+      .map(addMissing(params.scalaJsVersions.flatMap(BinaryVersion.parse)))
 
-  def getLatestReleases(): Future[List[Release]] =
-    getLatest[ReleaseDocument](releaseIndex, "released", frontPageCount)
-      .map(_.map(_.toRelease))
+  override def getScalaNativeVersions(params: SearchParams): Future[Seq[(BinaryVersion, Long)]] =
+    versionAggregations("scalaNativeVersions", params, Platform.ScalaNative.isValid)
+      .map(addMissing(params.scalaNativeVersions.flatMap(BinaryVersion.parse)))
 
-  def getTopics(params: SearchParams): Future[List[(String, Long)]] =
-    stringAggregations("github.topics.keyword", filteredSearchQuery(params))
-      .map(addLabelsIfMissing(params.topics.toSet))
-
-  def getTargetTypes(params: SearchParams): Future[List[(String, String, Long)]] =
-    stringAggregations("targetType", filteredSearchQuery(params))
-      .map(addLabelsIfMissing(params.targetTypes.toSet))
-      .map(_.map {
-        case (targetType, count) =>
-          (targetType, labelizeTargetType(targetType), count)
-      })
-
-  def getScalaVersions(params: SearchParams): Future[List[(String, Long)]] =
-    aggregations("scalaVersion", filteredSearchQuery(params))
-      .map(_.toList.sortBy(_._1))
-      .map(addLabelsIfMissing(params.scalaVersions.toSet))
-
-  def getScalaJsVersions(params: SearchParams): Future[List[(String, Long)]] =
-    versionAggregations(
-      "scalaJsVersion",
-      filteredSearchQuery(params),
-      Platform.ScalaJs.isValid
-    )
-      .map(addLabelsIfMissing(params.scalaJsVersions.toSet))
-
-  def getScalaNativeVersions(params: SearchParams): Future[List[(String, Long)]] =
-    versionAggregations(
-      "scalaNativeVersion",
-      filteredSearchQuery(params),
-      Platform.ScalaNative.isValid
-    ).map(addLabelsIfMissing(params.scalaNativeVersions.toSet))
-
-  def getSbtVersions(params: SearchParams): Future[List[(String, Long)]] =
-    versionAggregations(
-      "sbtVersion",
-      filteredSearchQuery(params),
-      Platform.SbtPlugin.isValid
-    )
-      .map(addLabelsIfMissing(params.sbtVersions.toSet))
-
-  def getContributingProjects(): Future[List[Project]] = {
-    val request = search(projectIndex)
-      .query(
-        functionScoreQuery(contributingQuery)
-          .functions(randomScore(scala.util.Random.nextInt(10000)))
-          .boostMode("sum")
-      )
-      .limit(frontPageCount)
-
-    esClient
-      .execute(request)
-      .map(_.result.to[Project].toList)
-  }
-
-  private def getLatest[T: HitReader: Manifest](index: String, sortingField: String, size: Int): Future[List[T]] = {
-    val request = search(index)
-      .query(notDeprecatedQuery)
-      .sortBy(fieldSort(sortingField).desc())
-      .limit(size)
-
-    esClient.execute(request).map(r => r.result.to[T].toList)
-  }
+  override def getSbtVersions(params: SearchParams): Future[Seq[(BinaryVersion, Long)]] =
+    versionAggregations("sbtVersions", params, Platform.SbtPlugin.isValid)
+      .map(addMissing(params.sbtVersions.flatMap(BinaryVersion.parse)))
 
   private def stringAggregations(field: String, query: Query): Future[List[(String, Long)]] =
     aggregations(field, query).map(_.toList.sortBy(_._1).toList)
 
   private def versionAggregations(
       field: String,
-      query: Query,
+      params: SearchParams,
       filterF: BinaryVersion => Boolean
-  ): Future[List[(String, Long)]] =
-    aggregations(field, query).map { versionAgg =>
-      val filteredAgg = for {
-        (version, count) <- versionAgg.toList
-        binaryVersion <- BinaryVersion.parse(version) if filterF(binaryVersion)
-      } yield (binaryVersion, count)
-
-      filteredAgg
-        .sortBy(_._1)
-        .map { case (v, c) => (v.toString, c) }
-    }
+  ): Future[Seq[(BinaryVersion, Long)]] = {
+    val searchQuery = filteredSearchQuery(params)
+    aggregations(field, searchQuery)
+      .map { versionAgg =>
+        for {
+          (version, count) <- versionAgg.toList
+          binaryVersion <- BinaryVersion.parse(version) if filterF(binaryVersion)
+        } yield (binaryVersion, count)
+      }
+  }
 
   private def aggregations(field: String, query: Query): Future[Map[String, Long]] = {
     val aggregationName = s"${field}_count"
 
     val aggregation = termsAgg(aggregationName, field).size(50)
 
-    val request = search(projectIndex)
+    val request = search(index)
       .query(query)
       .aggregations(aggregation)
 
@@ -347,11 +251,10 @@ class ESRepo(esClient: ElasticClient, indexPrefix: String)(implicit ec: Executio
   }
 }
 
-object ESRepo extends LazyLogging with SearchProtocol {
+object ESRepo extends LazyLogging {
   import ElasticDsl._
 
-  private lazy val config =
-    ConfigFactory.load().getConfig("elasticsearch")
+  private lazy val config = ConfigFactory.load().getConfig("elasticsearch")
   private lazy val indexName = config.getString("index")
   private lazy val port = config.getInt("port")
 
@@ -364,7 +267,7 @@ object ESRepo extends LazyLogging with SearchProtocol {
   }
 
   private def gitHubStarScoring(query: Query): Query = {
-    val scorer = fieldFactorScore("github.stars")
+    val scorer = fieldFactorScore("githubInfo.stars")
       .missing(0)
       .modifier(FieldValueFactorFunctionModifier.LN2P)
     functionScoreQuery()
@@ -393,26 +296,18 @@ object ESRepo extends LazyLogging with SearchProtocol {
 
   private def sortQuery(sorting: Option[String]): Sort =
     sorting match {
-      case Some("stars") =>
-        fieldSort(
-          "github.stars"
-        ).missing("0").order(SortOrder.DESC) // mode MultiMode.Avg
-      case Some("forks") =>
-        fieldSort(
-          "github.forks"
-        ).missing("0").order(SortOrder.DESC) // mode MultiMode.Avg
-      case Some("dependentCount") =>
-        fieldSort(
-          "dependentCount"
-        ).missing("0").order(SortOrder.DESC) // mode MultiMode.Avg
+      case Some(criteria @ ("stars" | "forks")) =>
+        fieldSort(s"githubInfo.$criteria").missing("0").order(SortOrder.Desc)
       case Some("contributors") =>
-        fieldSort(
-          "github.contributorCount"
-        ).missing("0").order(SortOrder.DESC) // mode MultiMode.Avg
-      case Some("relevant") => scoreSort().order(SortOrder.Desc)
-      case Some("created")  => fieldSort("created").desc()
-      case Some("updated")  => fieldSort("updated").desc()
-      case _                => scoreSort().order(SortOrder.Desc)
+        fieldSort(s"githubInfo.contributorCount").missing("0").order(SortOrder.Desc)
+      case Some(criteria @ "dependent") =>
+        fieldSort("inverseProjectDependencies").missing("0").order(SortOrder.Desc)
+      case None | Some("relevant") => scoreSort().order(SortOrder.Desc)
+      case Some("created")         => fieldSort("createdAt").desc()
+      case Some("updated")         => fieldSort("updatedAt").desc()
+      case Some(unknown) =>
+        logger.warn(s"Unknown sort criteria: $unknown")
+        scoreSort().order(SortOrder.Desc)
     }
 
   private val notDeprecatedQuery: Query =
@@ -443,19 +338,18 @@ object ESRepo extends LazyLogging with SearchProtocol {
           .field("repository", 6)
           .field("primaryTopic", 5)
           .field("organization", 5)
-          .field("github.description", 4)
-          .field("github.topics", 4)
-          .field("artifacts", 2)
+          .field("githubInfo.description", 4)
+          .field("githubInfo.topics", 4)
+          .field("artifactNames", 2)
 
-        val readmeMatch = matchQuery("github.readme", plainText)
-          .boost(0.5)
+        val readmeMatch = matchQuery("githubInfo.readme", plainText).boost(0.5)
 
         val contributingQuery = {
           if (contributingSearch) {
             nestedQuery(
-              "github.beginnerIssues",
-              matchQuery("github.beginnerIssues.title", plainText)
-            ).inner(innerHits("issues").size(7))
+              "githubInfo.beginnerIssues",
+              matchQuery("githubInfo.beginnerIssues.title", plainText)
+            ).inner(innerHits("beginnerIssues").size(7))
               .boost(4)
           } else matchNoneQuery()
         }
@@ -468,9 +362,9 @@ object ESRepo extends LazyLogging with SearchProtocol {
               prefixQuery("repository", prefix).boost(6),
               prefixQuery("primaryTopic", prefix).boost(5),
               prefixQuery("organization", prefix).boost(5),
-              prefixQuery("github.description", prefix).boost(4),
-              prefixQuery("github.topics", prefix).boost(4),
-              prefixQuery("artifacts", prefix).boost(2)
+              prefixQuery("githubInfo.description", prefix).boost(4),
+              prefixQuery("githubInfo.topics", prefix).boost(4),
+              prefixQuery("artifactNames", prefix).boost(2)
             )
           }
           .getOrElse(matchNoneQuery())
@@ -491,7 +385,7 @@ object ESRepo extends LazyLogging with SearchProtocol {
     must(topics.map(topicQuery))
 
   private def topicQuery(topic: String): Query =
-    termQuery("github.topics.keyword", topic)
+    termQuery("githubInfo.topics.keyword", topic)
 
   private val cliQuery = termQuery("hasCli", true)
 
@@ -514,31 +408,31 @@ object ESRepo extends LazyLogging with SearchProtocol {
       sbtVersions: Seq[String]
   ): Query =
     must(
-      targetTypes.map(termQuery("targetType", _)) ++
-        scalaVersions.map(termQuery("scalaVersion", _)) ++
-        scalaJsVersions.map(termQuery("scalaJsVersion", _)) ++
-        scalaNativeVersions.map(termQuery("scalaNativeVersion", _)) ++
-        sbtVersions.map(termQuery("sbtVersion", _))
+      targetTypes.map(termQuery("platformTypes", _)) ++
+        scalaVersions.map(termQuery("scalaVersions", _)) ++
+        scalaJsVersions.map(termQuery("scalaJsVersions", _)) ++
+        scalaNativeVersions.map(termQuery("scalaNativeVersions", _)) ++
+        sbtVersions.map(termQuery("sbtVersions", _))
     )
 
   private def targetQuery(target: Platform): Query =
     target match {
       case jvm: Platform.ScalaJvm =>
-        termQuery("scalaVersion", jvm.scalaV.family)
+        termQuery("scalaVersions", jvm.scalaV.family)
       case Platform.ScalaJs(scalaVersion, jsVersion) =>
         must(
-          termQuery("scalaVersion", scalaVersion.family),
-          termQuery("scalaJsVersion", jsVersion.toString)
+          termQuery("scalaVersions", scalaVersion.family),
+          termQuery("scalaJsVersions", jsVersion.toString)
         )
       case Platform.ScalaNative(scalaVersion, nativeVersion) =>
         must(
-          termQuery("scalaVersion", scalaVersion.family),
-          termQuery("scalaNativeVersion", nativeVersion.toString)
+          termQuery("scalaVersions", scalaVersion.family),
+          termQuery("scalaNativeVersions", nativeVersion.toString)
         )
       case Platform.SbtPlugin(scalaVersion, sbtVersion) =>
         must(
-          termQuery("scalaVersion", scalaVersion.family),
-          termQuery("sbtVersion", sbtVersion.toString)
+          termQuery("scalaVersions", scalaVersion.family),
+          termQuery("sbtVersions", sbtVersion.toString)
         )
       case Platform.Java =>
         must(NoopQuery) // not sure
@@ -547,11 +441,11 @@ object ESRepo extends LazyLogging with SearchProtocol {
   private val contributingQuery = boolQuery().must(
     Seq(
       nestedQuery(
-        "github.beginnerIssues",
-        existsQuery("github.beginnerIssues")
+        "githubInfo.beginnerIssues",
+        existsQuery("githubInfo.beginnerIssues")
       ),
-      existsQuery("github.contributingGuide"),
-      existsQuery("github.chatroom")
+      existsQuery("githubInfo.contributingGuide"),
+      existsQuery("githubInfo.chatroom")
     )
   )
 
@@ -567,8 +461,8 @@ object ESRepo extends LazyLogging with SearchProtocol {
     )
 
   private val fieldMapping = Map(
-    "depends-on" -> "dependencies",
-    "topics" -> "github.topics.keyword",
+    // "depends-on" -> "dependencies", TODO fix or remove depends-on query
+    "topics" -> "githubInfo.topics.keyword",
     "organization" -> "organization.keyword",
     "primaryTopic" -> "primaryTopic.keyword",
     "repository" -> "repository.keyword"
@@ -583,14 +477,10 @@ object ESRepo extends LazyLogging with SearchProtocol {
 
   private val frontPageCount = 12
 
-  private def labelizeTargetType(targetType: String): String =
-    if (targetType == "JVM") "Scala (Jvm)"
-    else targetType.take(1).map(_.toUpper) + targetType.drop(1).map(_.toLower)
-
-  private def addLabelsIfMissing(labelSet: Set[String])(result: List[(String, Long)]): List[(String, Long)] = {
-    val missingLabels = labelSet -- result.map { case (label, _) => label }.toSet
-
-    (result ++ missingLabels.map(label => (label, 0L))).sortBy { case (label, _) => label }
+  private def addMissing[T: Ordering](required: Seq[T])(result: Seq[(T, Long)]): Seq[(T, Long)] = {
+    val missingLabels = required.toSet -- result.map(_._1)
+    val toAdd = missingLabels.map(label => (label, 0L))
+    (result ++ toAdd).sortBy(_._1)
   }
 
   private def optionalQuery(condition: Boolean, query: Query): Query =

@@ -46,8 +46,7 @@ object ReleaseTable {
     buildSelect(tableFr, fr0"count(*)").query[Long]
 
   def selectReleases(ref: NewProject.Reference): doobie.Query0[NewRelease] =
-    buildSelect(tableFr, fr0"*", where(ref))
-      .query[NewRelease]
+    buildSelect(tableFr, fr0"*", whereRef(ref)).query[NewRelease]
 
   def selectReleases(
       ref: NewProject.Reference,
@@ -56,7 +55,7 @@ object ReleaseTable {
     buildSelect(
       tableFr,
       fr0"*",
-      where(ref) ++ fr0" AND artifact=$artifactName"
+      whereRef(ref) ++ fr0" AND artifact=$artifactName"
     ).query[NewRelease]
 
   def selectPlatform(): doobie.Query0[

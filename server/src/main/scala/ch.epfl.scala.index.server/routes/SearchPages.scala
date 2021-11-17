@@ -7,33 +7,32 @@ import scala.concurrent.ExecutionContext
 import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import ch.epfl.scala.index.model.misc.Page
-import ch.epfl.scala.index.model.misc.SearchParams
 import ch.epfl.scala.index.model.misc.UserState
-import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.index.views.search.html.searchresult
+import ch.epfl.scala.search.Page
+import ch.epfl.scala.search.SearchParams
+import ch.epfl.scala.services.SearchEngine
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 
-class SearchPages(dataRepository: ESRepo, session: GithubUserSession)(implicit ec: ExecutionContext) {
-  import dataRepository._
+class SearchPages(searchEngine: SearchEngine, session: GithubUserSession)(implicit ec: ExecutionContext) {
   import session.implicits._
 
   private def search(params: SearchParams, user: Option[UserState], uri: String) =
     complete {
-      val resultsF = findProjects(params)
-      val topicsF = getTopics(params)
-      val targetTypesF = getTargetTypes(params)
-      val scalaVersionsF = getScalaVersions(params)
-      val scalaJsVersionsF = getScalaJsVersions(params)
-      val scalaNativeVersionsF = getScalaNativeVersions(params)
-      val sbtVersionsF = getSbtVersions(params)
+      val resultsF = searchEngine.find(params)
+      val topicsF = searchEngine.getTopics(params)
+      val platformTypesF = searchEngine.getPlatformTypes(params)
+      val scalaVersionsF = searchEngine.getScalaVersions(params)
+      val scalaJsVersionsF = searchEngine.getScalaJsVersions(params)
+      val scalaNativeVersionsF = searchEngine.getScalaNativeVersions(params)
+      val sbtVersionsF = searchEngine.getSbtVersions(params)
 
       for {
         Page(pagination, projects) <- resultsF
         topics <- topicsF
-        targetTypes <- targetTypesF
+        targetTypes <- platformTypesF
         scalaVersions <- scalaVersionsF
         scalaJsVersions <- scalaJsVersionsF
         scalaNativeVersions <- scalaNativeVersionsF
@@ -42,7 +41,7 @@ class SearchPages(dataRepository: ESRepo, session: GithubUserSession)(implicit e
         params,
         uri,
         pagination,
-        projects.toList,
+        projects,
         user,
         params.userRepos.nonEmpty,
         topics,

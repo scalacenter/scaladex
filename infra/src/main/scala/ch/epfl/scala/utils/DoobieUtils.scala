@@ -11,8 +11,8 @@ import cats.effect._
 import ch.epfl.scala.index.model.License
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubContributor
+import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubIssue
-import ch.epfl.scala.index.model.misc.Url
 import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Resolver
@@ -24,6 +24,7 @@ import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.services.storage.sql.DatabaseConfig
+import ch.epfl.scala.utils.Codecs._
 import ch.epfl.scala.utils.ScalaExtensions._
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -34,8 +35,6 @@ import doobie.util.Read
 import doobie.util.Write
 import doobie.util.fragment.Fragment
 import io.circe._
-import io.circe.generic.semiauto.deriveDecoder
-import io.circe.generic.semiauto.deriveEncoder
 import org.flywaydb.core.Flyway
 
 object DoobieUtils {
@@ -110,43 +109,26 @@ object DoobieUtils {
     ): Fragment =
       buildSelect(table, fields) ++ space ++ conditions
 
-    def where(ref: NewProject.Reference): Fragment =
+    def whereRef(ref: NewProject.Reference): Fragment =
       fr0"WHERE organization=${ref.organization} AND repository=${ref.repository}"
   }
 
   object Mappings {
     implicit val stringMeta: Meta[String] = Meta.StringMeta
-    implicit val URLDecoder: Decoder[Url] = Decoder.decodeString.map(Url)
-    implicit val URLEncoder: Encoder[Url] =
-      Encoder.encodeString.contramap[Url](_.target)
-    implicit val contributorMeta: Meta[List[GithubContributor]] = {
-      implicit val contributorDecoder: Decoder[GithubContributor] =
-        deriveDecoder[GithubContributor]
-      implicit val contributorEncoder: Encoder[GithubContributor] =
-        deriveEncoder[GithubContributor]
+
+    implicit val contributorMeta: Meta[List[GithubContributor]] =
       stringMeta.timap(fromJson[List[GithubContributor]](_).get)(toJson(_))
-    }
-    implicit val githubIssuesMeta: Meta[List[GithubIssue]] = {
-      implicit val githubIssueDecoder: Decoder[GithubIssue] =
-        deriveDecoder[GithubIssue]
-      implicit val githubIssueEncoder: Encoder[GithubIssue] =
-        deriveEncoder[GithubIssue]
+    implicit val githubIssuesMeta: Meta[List[GithubIssue]] =
       stringMeta.timap(fromJson[List[GithubIssue]](_).get)(toJson(_))
-    }
-    implicit val documentationLinksMeta: Meta[List[DocumentationLink]] = {
-      implicit val documentationDecoder: Decoder[DocumentationLink] =
-        deriveDecoder[DocumentationLink]
-      implicit val documentationEncoder: Encoder[DocumentationLink] =
-        deriveEncoder[DocumentationLink]
+    implicit val documentationLinksMeta: Meta[List[DocumentationLink]] =
       stringMeta.timap(fromJson[List[DocumentationLink]](_).get)(toJson(_))
-    }
     implicit val topicsMeta: Meta[Set[String]] =
       stringMeta.timap(_.split(",").filter(_.nonEmpty).toSet)(
         _.mkString(",")
       )
     implicit val artifactNamesMeta: Meta[Set[NewRelease.ArtifactName]] =
       stringMeta.timap(
-        _.split(",").filter(_.nonEmpty).map(NewRelease.ArtifactName).toSet
+        _.split(",").filter(_.nonEmpty).map(NewRelease.ArtifactName.apply).toSet
       )(
         _.mkString(",")
       )
@@ -159,13 +141,8 @@ object DoobieUtils {
           .toTry(new Exception(s"Failed to parse $x as Platform"))
           .get
       }(_.encode)
-    implicit val licensesMeta: Meta[Set[License]] = {
-      implicit val licenseDecoder: Decoder[License] =
-        deriveDecoder[License]
-      implicit val licenseEncoder: Encoder[License] =
-        deriveEncoder[License]
+    implicit val licensesMeta: Meta[Set[License]] =
       stringMeta.timap(fromJson[List[License]](_).get.toSet)(toJson(_))
-    }
     implicit val resolverMeta: Meta[Resolver] =
       stringMeta.timap(Resolver.from(_).get)(_.name)
 
@@ -218,30 +195,18 @@ object DoobieUtils {
           )
         }
 
-    implicit val projectReader: Read[NewProject] = Read[
-      (
-          Organization,
-          Repository,
-          Option[Instant],
-          Option[String]
-      )
-    ]
-      .map {
-        case (
-              organization,
-              repository,
-              created,
-              esId
-            ) =>
-          NewProject(
-            organization = organization,
-            repository = repository,
-            githubInfo = None,
-            created = created,
-            esId = esId,
-            dataForm = NewProject.DataForm.default
-          )
-      }
+    implicit val projectReader: Read[NewProject] =
+      Read[(Organization, Repository, Option[Instant], Option[GithubInfo], NewProject.DataForm)]
+        .map {
+          case (organization, repository, created, githubInfo, dataForm) =>
+            NewProject(
+              organization = organization,
+              repository = repository,
+              githubInfo = githubInfo,
+              created = created,
+              dataForm = dataForm
+            )
+        }
 
     implicit val releaseReader: Read[NewRelease] = Read[
       (
