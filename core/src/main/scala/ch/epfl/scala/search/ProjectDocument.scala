@@ -16,7 +16,6 @@ final case class ProjectDocument(
     organization: NewProject.Organization,
     repository: NewProject.Repository,
     artifactNames: Seq[NewRelease.ArtifactName],
-    // contributorsWanted: Boolean = false,
     hasCli: Boolean,
     createdAt: Option[Instant],
     updatedAt: Option[Instant],

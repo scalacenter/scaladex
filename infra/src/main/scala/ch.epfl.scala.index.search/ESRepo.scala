@@ -103,10 +103,10 @@ class ESRepo(esClient: ElasticClient, index: String)(implicit ec: ExecutionConte
       }
   }
 
-  override def insert(project: ProjectDocument): Future[String] = {
+  override def insert(project: ProjectDocument): Future[Unit] = {
     val rawDocument = RawProjectDocument.from(project)
     val insertion = indexInto(index).withId(project.id).source(rawDocument)
-    esClient.execute(insertion).map(response => response.result.id)
+    esClient.execute(insertion).map(_ => ())
   }
 
   def refresh(): Future[Unit] =

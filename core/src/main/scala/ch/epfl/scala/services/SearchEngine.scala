@@ -10,7 +10,7 @@ import ch.epfl.scala.search.ProjectHit
 import ch.epfl.scala.search.SearchParams
 
 trait SearchEngine {
-  def insert(project: ProjectDocument): Future[String]
+  def insert(project: ProjectDocument): Future[Unit]
 
   def find(params: SearchParams): Future[Page[ProjectHit]]
   def autocomplete(params: SearchParams): Future[Seq[ProjectDocument]]

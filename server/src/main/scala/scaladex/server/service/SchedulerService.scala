@@ -15,16 +15,14 @@ import scaladex.template.SchedulerStatus
 class SchedulerService(db: SchedulerDatabase, searchEngine: SearchEngine) extends LazyLogging {
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
-  private val mostDependentProjectScheduler = new Scheduler("most-dependent", mostDependentProjectJob, 1.hour)
-  private val updateProject = new Scheduler("update-projects", updateProjectJob, 30.minutes)
-
+  private val mostDependentProjectScheduler = Scheduler("most-dependent", mostDependentProjectJob, 1.hour)
+  private val updateProject = Scheduler("update-projects", updateProjectJob, 30.minutes)
   private val searchSynchronizer = new SearchSynchronizer(db, searchEngine)
-  private val searchSyncScheduler = new Scheduler("search-synchronizer", searchSynchronizer.run, 30.minutes)
 
   private val schedulers = Map[String, Scheduler](
     mostDependentProjectScheduler.name -> mostDependentProjectScheduler,
     updateProject.name -> updateProject,
-    searchSyncScheduler.name -> searchSyncScheduler
+    searchSynchronizer.name -> searchSynchronizer
   )
 
   def startAll(): Unit =

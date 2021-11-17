@@ -15,13 +15,14 @@ import ch.epfl.scala.utils.TimerUtils
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.template.SchedulerStatus
 
-class Scheduler(val name: String, job: () => Future[Unit], frequency: FiniteDuration)(implicit ec: ExecutionContext)
+abstract class Scheduler(val name: String, frequency: FiniteDuration)(implicit ec: ExecutionContext)
     extends LazyLogging {
   private var cancellable = Option.empty[Cancellable]
   private val system: ActorSystem = ActorSystem(name)
   private val scheduler: actor.Scheduler = system.scheduler
   private var _status: SchedulerStatus = SchedulerStatus.Created(name, Instant.now)
 
+  def run(): Future[Unit]
   def status: SchedulerStatus = _status
 
   def start(): Unit =
@@ -64,7 +65,7 @@ class Scheduler(val name: String, job: () => Future[Unit], frequency: FiniteDura
     override def run(): Unit = {
       logger.info(s"Scheduler ${name}: Starting")
       try {
-        Await.result(job(), Duration.Inf)
+        Await.result(Scheduler.this.run(), Duration.Inf)
         logger.info(s"Scheduler $name: Finished")
       } catch {
         case NonFatal(e) =>
@@ -73,4 +74,13 @@ class Scheduler(val name: String, job: () => Future[Unit], frequency: FiniteDura
       }
     }
   }
+}
+
+object Scheduler {
+  def apply(name: String, job: () => Future[Unit], frequency: FiniteDuration)(
+      implicit ec: ExecutionContext
+  ): Scheduler =
+    new Scheduler(name, frequency) {
+      def run(): Future[Unit] = job()
+    }
 }
