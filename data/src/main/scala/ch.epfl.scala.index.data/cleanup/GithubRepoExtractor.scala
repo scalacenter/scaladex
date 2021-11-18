@@ -61,8 +61,6 @@ class GithubRepoExtractor(paths: DataPaths) {
       (matcher, GithubRepo(organization, repo))
     }
 
-  private val movedRepositories = github.GithubReader.movedRepositories(paths)
-
   def apply(pom: maven.ReleaseModel): Option[GithubRepo] = {
     val fromPoms = pom.scm match {
       case Some(scm) =>
@@ -91,7 +89,8 @@ class GithubRepoExtractor(paths: DataPaths) {
             fixInterpolationIssue(repo.toLowerCase)
           )
 
-        movedRepositories.getOrElse(repo2, repo2)
+//        movedRepositories.getOrElse(repo2, repo2)
+        repo2
     }
   }
 

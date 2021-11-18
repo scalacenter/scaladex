@@ -13,7 +13,6 @@ import ch.epfl.scala.index.data.bintray.UpdateBintraySbtPlugins
 import ch.epfl.scala.index.data.central.CentralMissing
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.cleanup.NonStandardLib
-import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.init.Init
 import ch.epfl.scala.index.data.maven.DownloadParentPoms
 import ch.epfl.scala.index.data.util.PidLock
@@ -86,7 +85,7 @@ object Main extends LazyLogging {
       // which is to low to update all the projects.
       // As an alternative, the sbt steps handles the Github updates of its own projects
       // The IndexingActor does it as well for the projects that are pushed by Maven.
-      Step("github")(() => GithubDownload.run(dataPaths)),
+      Step("github")(() => ()), // todo: maybe
       // Re-create the ElasticSearch index
       Step("init") { () =>
         implicit val cs = IO.contextShift(system.dispatcher)

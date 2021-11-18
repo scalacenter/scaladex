@@ -6,7 +6,6 @@ import java.time.Instant
 
 import ch.epfl.scala.index.data.bintray._
 import ch.epfl.scala.index.data.cleanup._
-import ch.epfl.scala.index.data.github._
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.project.ProjectConvert.ProjectSeed
 import ch.epfl.scala.index.model._
@@ -23,7 +22,7 @@ import com.github.nscala_time.time.Imports._
 import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
-class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload) extends BintrayProtocol {
+class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -189,12 +188,11 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload) extends B
             defaultStableVersion
           )
 
-          val github = GithubReader(paths, githubRepo)
           val seed =
             ProjectSeed(
               organization = organization,
               repository = repository,
-              github = github,
+              github = None,
               artifacts = releaseOptions.map(_.artifacts.sorted).getOrElse(Nil),
               releaseCount = releaseCount,
               defaultArtifact = releaseOptions.map(_.release.reference.artifact),
@@ -261,7 +259,6 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload) extends B
       existingProject: Option[NewProject]
   ): Option[(NewProject, NewRelease, Seq[ReleaseDependency])] = {
     val pomMetaOpt = PomMeta.from(pom, created, localRepository, paths, sha1)
-    val githubInfo = GithubReader(paths, githubRepo)
     val licenseCleanup = new LicenseCleanup(paths)
 
     log.info("Converting the pom to a project/release/dependencies")
@@ -271,12 +268,10 @@ class ProjectConvert(paths: DataPaths, githubDownload: GithubDownload) extends B
           artifactMeta <- metaExtractor.extractMeta(pom)
           version <- SemanticVersion.tryParse(pom.version)
           project = existingProject
-            .map(_.update(githubInfo))
             .getOrElse(
               NewProject.defaultProject(
                 githubRepo.organization,
-                githubRepo.repository,
-                githubInfo = githubInfo
+                githubRepo.repository
               )
             )
           dependencies = getDependencies(pom)

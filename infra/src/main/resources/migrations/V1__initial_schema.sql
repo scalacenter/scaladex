@@ -28,6 +28,7 @@ CREATE TABLE github_info (
     beginnerIssuesLabel    VARCHAR(1024),
     beginnerIssues         VARCHAR,
     selectedBeginnerIssues VARCHAR,
+    updated_at             TIMESTAMPTZ,
     FOREIGN KEY (organization, repository) REFERENCES projects (organization, repository),
     PRIMARY KEY (organization, repository)
 );

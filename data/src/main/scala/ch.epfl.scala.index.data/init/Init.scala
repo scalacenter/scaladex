@@ -5,7 +5,6 @@ import scala.util.Failure
 import scala.util.Try
 
 import akka.actor.ActorSystem
-import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.project.ProjectConvert
 import ch.epfl.scala.index.newModel.NewProject
@@ -13,7 +12,6 @@ import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.ScalaExtensions._
-import com.sksamuel.elastic4s.requests.bulk.BulkResponseItem
 import com.typesafe.scalalogging.LazyLogging
 
 class Init(
@@ -24,10 +22,9 @@ class Init(
   import system.dispatcher
 
   def run(): Future[Long] = {
-    val githubDownload = new GithubDownload(dataPaths)
 
     // convert data
-    val projectConverter = new ProjectConvert(dataPaths, githubDownload)
+    val projectConverter = new ProjectConvert(dataPaths)
     val (projects, releases, dependencies) =
       projectConverter.convertAll(PomsReader.loadAll(dataPaths), Map())
 
@@ -77,18 +74,6 @@ class Init(
       logger.info(s"$countDependencies dependencies have been indexed")
       numberOfIndexedProjects
     }
-  }
-
-  private def logES(res: Seq[BulkResponseItem], name: String): Unit = {
-    val (resFailures, resSuccess) = res.partition(_.status >= 300)
-    if (resFailures.nonEmpty) {
-      resFailures.foreach(
-        _.error.foreach(error => logger.error(error.reason))
-      )
-    }
-    logger.info(
-      s"${resSuccess.size} $name have been inserted into ElasticSearch"
-    )
   }
 
   private def logFailures[A, B](res: Seq[(A, Try[B])], toString: A => String, table: String): Unit = {

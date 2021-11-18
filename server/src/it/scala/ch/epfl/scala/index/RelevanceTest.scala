@@ -16,11 +16,14 @@ import cats.effect.IO
 import ch.epfl.scala.services.storage.sql.DatabaseConfig
 import cats.effect.ContextShift
 import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.server.Github
+import ch.epfl.scala.services.github.{GithubConfig, GithubImplementation}
 
 import scala.concurrent.ExecutionContext
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.DoobieUtils
-import scaladex.server.service.SearchSynchronizer
+import com.typesafe.config.ConfigFactory
+import scaladex.server.service.{GithubSynchronizer, SearchSynchronizer}
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 
@@ -32,17 +35,22 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
   override def beforeAll(): Unit = {
     searchEngine.waitUntilReady()
 
-    val dbConf = config.dbConf.asInstanceOf[DatabaseConfig.PostgreSQL]
     implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     val transactor = DoobieUtils.transactor(config.dbConf)
     transactor
       .use { xa =>
         val db = new SqlRepo(config.dbConf, xa)
         val searchSync = new SearchSynchronizer(db, searchEngine)
+
+        // Will user GITHUB_TOKEN configured in github secret
+        val githubConfig: Option[GithubConfig] = GithubConfig.from(ConfigFactory.load())
+        val github = new GithubImplementation(githubConfig.get)
+        val githubSync = new GithubSynchronizer(db, github)
         IO.fromFuture(IO {
           for {
             _ <- Init.run(config.dataPaths, db)
             _ <- searchEngine.reset()
+            _ <- githubSync.run()
             _ <- searchSync.run()
             _ <- searchEngine.refresh()
           } yield ()

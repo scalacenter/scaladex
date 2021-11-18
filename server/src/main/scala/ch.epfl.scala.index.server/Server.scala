@@ -18,6 +18,7 @@ import ch.epfl.scala.index.server.config.ServerConfig
 import ch.epfl.scala.index.server.routes._
 import ch.epfl.scala.index.server.routes.api._
 import ch.epfl.scala.services.WebDatabase
+import ch.epfl.scala.services.github.GithubConfig
 import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.DoobieUtils
@@ -36,9 +37,6 @@ object Server {
     import system.dispatcher
     implicit val cs = IO.contextShift(system.dispatcher)
 
-    val paths = config.dataPaths
-    val session = GithubUserSession(config)
-
     // the ESRepo will not be closed until the end of the process,
     // because of the sbtResolver mode
     val searchEngine = ESRepo.open()
@@ -54,7 +52,8 @@ object Server {
         case (webPool, schedulerPool) =>
           val webDb = new SqlRepo(config.dbConf, webPool)
           val schedulerDb = new SqlRepo(config.dbConf, schedulerPool)
-          val schedulerService = new SchedulerService(schedulerDb, searchEngine)
+          val githubService = GithubConfig.from(config.github)
+          val schedulerService = new SchedulerService(schedulerDb, searchEngine, githubService)
           for {
             _ <- init(webDb, schedulerService, searchEngine)
             routes = configureRoutes(searchEngine, webDb, schedulerService)

@@ -101,6 +101,9 @@ lazy val infra = project
       "org.json4s" %% "json4s-native" % "3.6.9",
       "org.typelevel" %% "jawn-json4s" % "1.0.0",
       "org.flywaydb" % "flyway-core" % "7.11.0", // for database migration
+      "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
+      "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
+      "de.heikoseeberger" %% "akka-http-circe" % "1.33.0",
       "org.tpolecat" %% "doobie-scalatest" % V.doobieVersion % Test,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     ) ++ Seq(
