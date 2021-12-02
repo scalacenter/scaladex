@@ -35,7 +35,6 @@ class GithubImplementationTests extends AsyncFunSpec with Matchers {
     it("getContributors") {
       for {
         contributors <- github.getContributors(scalafixRepo)
-        _ = println(s"contributors = ${contributors}")
       } yield assert(true)
     }
     it("getOpenIssues") {

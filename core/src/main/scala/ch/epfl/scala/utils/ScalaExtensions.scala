@@ -36,4 +36,14 @@ object ScalaExtensions {
     def failWithTry(implicit ec: ExecutionContext): Future[Try[A]] =
       in.map(Success(_)).recover { case NonFatal(e) => Failure(e) }
   }
+
+  implicit class SeqExtension[A](val seq: Seq[A]) extends AnyVal {
+    def mapSync[B](f: A => Future[B])(implicit ec: ExecutionContext): Future[Seq[B]] = 
+      seq.foldLeft(Future.successful(Seq.empty[B])) { (acc, a) =>
+        for {
+          bs <- acc
+          b <- f(a)
+        } yield bs :+ b
+      }
+  }
 }

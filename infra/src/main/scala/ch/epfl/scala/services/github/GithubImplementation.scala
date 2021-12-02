@@ -35,8 +35,13 @@ import ch.epfl.scala.services.GithubService
 import ch.epfl.scala.services.github.GithubModel.Contributor
 import ch.epfl.scala.utils.ScalaExtensions.TraversableOnceFutureExtension
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+import ch.epfl.scala.utils.ScalaExtensions._
 
 class GithubImplementation(githubConfig: GithubConfig)(implicit system: ActorSystem) extends GithubService {
+  private val credentials = OAuth2BearerToken(githubConfig.token.decode)
+  private val acceptJson = RawHeader("Accept", "application/vnd.github.v3+json")
+  private val acceptHtmlVersion = RawHeader("Accept", "application/vnd.github.VERSION.html")
+  
   private implicit val ec: ExecutionContextExecutor = system.dispatcher
   private val poolClientFlow =
     Http()
@@ -60,7 +65,7 @@ class GithubImplementation(githubConfig: GithubConfig)(implicit system: ActorSys
       case (Success(resp), p) => p.success(resp)
       case (Failure(e), p)    => p.failure(e)
     })(Keep.left)
-    .run
+    .run()
 
   override def update(repo: GithubRepo): Future[GithubInfo] =
     for {
@@ -93,42 +98,38 @@ class GithubImplementation(githubConfig: GithubConfig)(implicit system: ActorSys
     )
 
   def getReadme(repo: GithubRepo): Future[String] = {
-    val url = HttpRequest(uri = s"${mainGithubUrl(repo)}/readme")
-    val httpRequest =
-      addCredentialToHeader(url)
-        .addHeader(RawHeader("Accept", "application/vnd.github.VERSION.html"))
+    val request = HttpRequest(uri = s"${mainGithubUrl(repo)}/readme")
+      .addCredentials(credentials)
+      .addHeader(acceptHtmlVersion)
 
-    submitAndParserResponse(httpRequest)((_, entity) =>
+    send(request).flatMap { case (_, entity) =>
       entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String)
-    )
+    }
   }
 
   def getCommunityProfile(repo: GithubRepo): Future[GithubModel.CommunityProfile] = {
-    val url = HttpRequest(uri = s"${mainGithubUrl(repo)}/community/profile")
-    val httpRequest =
-      addCredentialToHeader(url)
-        .addHeader(RawHeader("Accept", "application/vnd.github.black-panther-preview+json"))
-
-    submitAndParserResponse(httpRequest)((_, entity) => Unmarshal(entity).to[GithubModel.CommunityProfile])
+    val request = HttpRequest(uri = s"${mainGithubUrl(repo)}/community/profile")
+      .addCredentials(credentials)
+      .addHeader(RawHeader("Accept", "application/vnd.github.black-panther-preview+json"))
+    get[GithubModel.CommunityProfile](request)
   }
 
   def getContributors(repo: GithubRepo): Future[List[Contributor]] = {
     def url(page: Int = 1) = HttpRequest(uri = s"${mainGithubUrl(repo)}/contributors?${perPage()}&${inPage(page)}")
 
     def getContributionPage(page: Int): Future[List[Contributor]] = {
-      val urlPage = url(page)
-      val httpRequest = applyAcceptJsonHeaders(addCredentialToHeader(urlPage))
-      submitAndParserResponse(httpRequest)((_, entity) => Unmarshal(entity).to[List[Contributor]])
+      val request = url(page).addHeader(acceptJson).addCredentials(credentials)
+      get[List[Contributor]](request)
     }
 
-    val page1Url = applyAcceptJsonHeaders(addCredentialToHeader(url()))
-    submitAndParserResponse(page1Url) { (headers, entity) =>
+    val firstPage = url().addHeader(acceptJson).addCredentials(credentials)
+    send(firstPage).flatMap { case (headers, entity) =>
       val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
       lastPage match {
         case Some(lastPage) if lastPage > 1 =>
           for {
             page1 <- Unmarshal(entity).to[List[Contributor]]
-            nextPages <- (2 to lastPage).map(getContributionPage).sequence.map(_.flatten)
+            nextPages <- (2 to lastPage).mapSync(getContributionPage).map(_.flatten)
           } yield page1 ++ nextPages.toList
 
         case _ => Unmarshal(entity).to[List[Contributor]]
@@ -137,27 +138,25 @@ class GithubImplementation(githubConfig: GithubConfig)(implicit system: ActorSys
   }
 
   def getRepoInfo(repo: GithubRepo): Future[GithubModel.Repository] = {
-    val url = HttpRequest(uri = s"${mainGithubUrl(repo)}")
-    val httpRequest = applyAcceptJsonHeaders(addCredentialToHeader(url))
-    submitAndParserResponse(httpRequest)((_, entity) => Unmarshal(entity).to[GithubModel.Repository])
+    val request = HttpRequest(uri = s"${mainGithubUrl(repo)}").addHeader(acceptJson).addCredentials(credentials)
+    get[GithubModel.Repository](request)
   }
 
   def getOpenIssues(repo: GithubRepo): Future[Seq[GithubModel.OpenIssue]] = {
     def url(page: Int = 1) = HttpRequest(uri = s"${mainGithubUrl(repo)}/issues?${perPage()}&page=$page")
 
-    def getOpenIssuePage(page: Int): Future[Seq[Option[GithubModel.OpenIssue]]] = {
-      val pageUrl = url(page)
-      val httpRequest = applyAcceptJsonHeaders(addCredentialToHeader(pageUrl))
-      submitAndParserResponse(httpRequest)((_, entity) => Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]])
+    def getOpenIssuePage(page: Int): Future[Seq[GithubModel.OpenIssue]] = {
+      val request = url(page).addHeader(acceptJson).addCredentials(credentials)
+      get[Seq[Option[GithubModel.OpenIssue]]](request).map(_.flatten)
     }
-    submitAndParserResponse(url(1)) { (headers, entity) =>
+    send(url(1)).flatMap { case (headers, entity) =>
       val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
       lastPage match {
         case Some(lastPage) if lastPage > 1 =>
           for {
             page1 <- Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]]
             nextPages <- (2 to lastPage).map(getOpenIssuePage).sequence.map(_.flatten)
-          } yield page1.flatten ++ nextPages.toList.flatten
+          } yield page1.flatten ++ nextPages
 
         case _ => Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]].map(_.flatten)
       }
@@ -180,37 +179,22 @@ class GithubImplementation(githubConfig: GithubConfig)(implicit system: ActorSys
       .flatMap(mtch => Try(mtch.group(1).toInt).toOption)
   }
 
-  // add credentials
-  private[github] def addCredentialToHeader(request: HttpRequest): HttpRequest = {
-    val credential = OAuth2BearerToken(githubConfig.token.decode)
-    request.addCredentials(credential)
-  }
+  private def get[A](request: HttpRequest)(implicit decoder: io.circe.Decoder[A]): Future[A] =
+    send(request).flatMap { case (_, entity) => Unmarshal(entity).to[A] }
 
-  private[github] def applyAcceptJsonHeaders(request: HttpRequest): HttpRequest = {
-    val header = RawHeader("Accept", "application/vnd.github.v3+json")
-    request.addHeader(header)
-  }
-
-  private[github] def applyReadmeHeaders(request: HttpRequest): HttpRequest = {
-    val header = RawHeader("Accept", "application/vnd.github.VERSION.html")
-    request.addHeader(header)
-  }
-
-  private def submitAndParserResponse[A](
-      httpRequest: HttpRequest
-  )(parse: (Seq[HttpHeader], ResponseEntity) => Future[A]): Future[A] =
-    queueRequest(httpRequest).flatMap {
+  private def send(request: HttpRequest): Future[(Seq[HttpHeader], ResponseEntity)] = {
+    queueRequest(request).flatMap {
       case r @ HttpResponse(StatusCodes.OK, headers, entity, _) =>
-        parse(headers, entity)
+        Future.successful((headers, entity))
       case r @ HttpResponse(StatusCodes.MovedPermanently, headers, entity, _) =>
         entity.discardBytes()
-        val newUrl = HttpRequest(uri = headers.find(_.is("location")).get.value())
-        submitAndParserResponse(newUrl)(parse)
-
+        val newRequest = HttpRequest(uri = headers.find(_.is("location")).get.value())
+        send(newRequest)
       case _ @HttpResponse(code, _, entity, _) =>
         entity.discardBytes()
         Future.failed(new Exception(s"Request failed, response code: $code"))
     }
+  }
 
   private def mainGithubUrl(repo: GithubRepo): String =
     s"https://api.github.com/repos/${repo.organization}/${repo.repository}"
