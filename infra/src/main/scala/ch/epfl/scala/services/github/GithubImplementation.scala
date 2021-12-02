@@ -33,15 +33,17 @@ import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.model.misc.Url
 import ch.epfl.scala.services.GithubService
 import ch.epfl.scala.services.github.GithubModel.Contributor
-import ch.epfl.scala.utils.ScalaExtensions.TraversableOnceFutureExtension
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import ch.epfl.scala.utils.ScalaExtensions._
+import com.typesafe.scalalogging.LazyLogging
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 
-class GithubImplementation(githubConfig: GithubConfig)(implicit system: ActorSystem) extends GithubService {
+class GithubImplementation(githubConfig: GithubConfig)(implicit system: ActorSystem)
+    extends GithubService
+    with LazyLogging {
   private val credentials = OAuth2BearerToken(githubConfig.token.decode)
   private val acceptJson = RawHeader("Accept", "application/vnd.github.v3+json")
   private val acceptHtmlVersion = RawHeader("Accept", "application/vnd.github.VERSION.html")
-  
+
   private implicit val ec: ExecutionContextExecutor = system.dispatcher
   private val poolClientFlow =
     Http()
@@ -90,8 +92,8 @@ class GithubImplementation(githubConfig: GithubConfig)(implicit system: ActorSys
       contributorCount = contributors.size,
       commits = Some(contributors.foldLeft(0)(_ + _.contributions)),
       topics = repoInfo.topics.toSet,
-      contributingGuide = communityProfile.contributingFile.map(Url),
-      codeOfConduct = communityProfile.codeOfConductFile.map(Url),
+      contributingGuide = communityProfile.flatMap(_.contributingFile).map(Url),
+      codeOfConduct = communityProfile.flatMap(_.codeOfConductFile).map(Url),
       chatroom = chatroom.map(Url),
       beginnerIssues = openIssues.map(_.toGithubIssue).toList,
       updatedAt = Instant.now()
@@ -102,16 +104,23 @@ class GithubImplementation(githubConfig: GithubConfig)(implicit system: ActorSys
       .addCredentials(credentials)
       .addHeader(acceptHtmlVersion)
 
-    send(request).flatMap { case (_, entity) =>
-      entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String)
+    send(request).flatMap {
+      case (_, entity) =>
+        entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String)
     }
   }
 
-  def getCommunityProfile(repo: GithubRepo): Future[GithubModel.CommunityProfile] = {
+  def getCommunityProfile(repo: GithubRepo): Future[Option[GithubModel.CommunityProfile]] = {
     val request = HttpRequest(uri = s"${mainGithubUrl(repo)}/community/profile")
       .addCredentials(credentials)
       .addHeader(RawHeader("Accept", "application/vnd.github.black-panther-preview+json"))
-    get[GithubModel.CommunityProfile](request)
+    get[GithubModel.CommunityProfile](request).failWithTry
+      .map {
+        case Success(profile) => Some(profile)
+        case Failure(exception) =>
+          logger.warn(s"""Failed to download community profile of $repo because of "${exception.getMessage}"""")
+          None
+      }
   }
 
   def getContributors(repo: GithubRepo): Future[List[Contributor]] = {
@@ -123,17 +132,18 @@ class GithubImplementation(githubConfig: GithubConfig)(implicit system: ActorSys
     }
 
     val firstPage = url().addHeader(acceptJson).addCredentials(credentials)
-    send(firstPage).flatMap { case (headers, entity) =>
-      val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
-      lastPage match {
-        case Some(lastPage) if lastPage > 1 =>
-          for {
-            page1 <- Unmarshal(entity).to[List[Contributor]]
-            nextPages <- (2 to lastPage).mapSync(getContributionPage).map(_.flatten)
-          } yield page1 ++ nextPages.toList
+    send(firstPage).flatMap {
+      case (headers, entity) =>
+        val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
+        lastPage match {
+          case Some(lastPage) if lastPage > 1 =>
+            for {
+              page1 <- Unmarshal(entity).to[List[Contributor]]
+              nextPages <- (2 to lastPage).mapSync(getContributionPage).map(_.flatten)
+            } yield page1 ++ nextPages.toList
 
-        case _ => Unmarshal(entity).to[List[Contributor]]
-      }
+          case _ => Unmarshal(entity).to[List[Contributor]]
+        }
     }
   }
 
@@ -149,17 +159,21 @@ class GithubImplementation(githubConfig: GithubConfig)(implicit system: ActorSys
       val request = url(page).addHeader(acceptJson).addCredentials(credentials)
       get[Seq[Option[GithubModel.OpenIssue]]](request).map(_.flatten)
     }
-    send(url(1)).flatMap { case (headers, entity) =>
-      val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
-      lastPage match {
-        case Some(lastPage) if lastPage > 1 =>
-          for {
-            page1 <- Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]]
-            nextPages <- (2 to lastPage).map(getOpenIssuePage).sequence.map(_.flatten)
-          } yield page1.flatten ++ nextPages
+    send(url(1)).failWithTry.flatMap {
+      case Success((headers, entity)) =>
+        val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
+        lastPage match {
+          case Some(lastPage) if lastPage > 1 =>
+            for {
+              page1 <- Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]]
+              nextPages <- (2 to lastPage).mapSync(getOpenIssuePage).map(_.flatten)
+            } yield page1.flatten ++ nextPages
 
-        case _ => Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]].map(_.flatten)
-      }
+          case _ => Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]].map(_.flatten)
+        }
+      case Failure(exception) =>
+        logger.warn(s"""Failed to download issues of $repo because of "${exception.getMessage}"""")
+        Future.successful(Seq.empty)
     }
   }
 
@@ -182,7 +196,7 @@ class GithubImplementation(githubConfig: GithubConfig)(implicit system: ActorSys
   private def get[A](request: HttpRequest)(implicit decoder: io.circe.Decoder[A]): Future[A] =
     send(request).flatMap { case (_, entity) => Unmarshal(entity).to[A] }
 
-  private def send(request: HttpRequest): Future[(Seq[HttpHeader], ResponseEntity)] = {
+  private def send(request: HttpRequest): Future[(Seq[HttpHeader], ResponseEntity)] =
     queueRequest(request).flatMap {
       case r @ HttpResponse(StatusCodes.OK, headers, entity, _) =>
         Future.successful((headers, entity))
@@ -194,7 +208,6 @@ class GithubImplementation(githubConfig: GithubConfig)(implicit system: ActorSys
         entity.discardBytes()
         Future.failed(new Exception(s"Request failed, response code: $code"))
     }
-  }
 
   private def mainGithubUrl(repo: GithubRepo): String =
     s"https://api.github.com/repos/${repo.organization}/${repo.repository}"

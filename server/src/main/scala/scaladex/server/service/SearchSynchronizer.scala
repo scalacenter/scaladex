@@ -8,8 +8,8 @@ import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.search.ProjectDocument
 import ch.epfl.scala.services.SchedulerDatabase
 import ch.epfl.scala.services.SearchEngine
-import com.typesafe.scalalogging.LazyLogging
 import ch.epfl.scala.utils.ScalaExtensions._
+import com.typesafe.scalalogging.LazyLogging
 
 class SearchSynchronizer(db: SchedulerDatabase, searchEngine: SearchEngine)(implicit ec: ExecutionContext)
     extends Scheduler("search-synchronizer", 30.minutes)

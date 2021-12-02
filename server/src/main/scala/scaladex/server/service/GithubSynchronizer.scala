@@ -18,11 +18,11 @@ class GithubSynchronizer(db: SchedulerDatabase, githubService: GithubService)(im
     extends Scheduler("github-synchronizer", 1.hour) {
   override def run(): Future[Unit] =
     db.getAllProjects().flatMap { projects =>
-      logger.info(s"Syncing search of ${projects.size} projects")
+      logger.info(s"Syncing github info of ${projects.size} projects")
       projects.grouped(10).toSeq.mapSync(updateProjects).map(_ => ())
     }
 
-  private def updateProjects(projects: Seq[NewProject]): Future[Unit] = {
+  private def updateProjects(projects: Seq[NewProject]): Future[Unit] =
     for {
       githubInfosTry <- projects
         .map(p => githubService.update(p.githubRepo).failWithTry.map((p.reference, _)))
@@ -35,7 +35,6 @@ class GithubSynchronizer(db: SchedulerDatabase, githubService: GithubService)(im
             .getOrElse(Future.successful(()))
       }.sequence
     } yield ()
-  }
 
   private def logFailures(res: Seq[(NewProject.Reference, Try[GithubInfo])]): Unit =
     res.collect {

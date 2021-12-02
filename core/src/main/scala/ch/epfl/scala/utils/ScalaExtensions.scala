@@ -38,7 +38,7 @@ object ScalaExtensions {
   }
 
   implicit class SeqExtension[A](val seq: Seq[A]) extends AnyVal {
-    def mapSync[B](f: A => Future[B])(implicit ec: ExecutionContext): Future[Seq[B]] = 
+    def mapSync[B](f: A => Future[B])(implicit ec: ExecutionContext): Future[Seq[B]] =
       seq.foldLeft(Future.successful(Seq.empty[B])) { (acc, a) =>
         for {
           bs <- acc

@@ -13,10 +13,8 @@ import org.scalatest.funsuite.AsyncFunSuiteLike
 import ch.epfl.scala.index.data.init.Init
 import ch.epfl.scala.index.server.config.ServerConfig
 import cats.effect.IO
-import ch.epfl.scala.services.storage.sql.DatabaseConfig
 import cats.effect.ContextShift
 import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.server.Github
 import ch.epfl.scala.services.github.{GithubConfig, GithubImplementation}
 
 import scala.concurrent.ExecutionContext
@@ -85,7 +83,6 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
   // missing:
   //   lift/framework
   //   playframework/play-json
-  //   non/jawn
   //   lihaoyi/upickle-pprint
   //   argonaut-io/argonaut
   test("top json") {
@@ -94,7 +91,6 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
         "spray" -> "spray-json",
         "json4s" -> "json4s",
         "playframework" -> "play-json",
-        "non" -> "jawn",
         "argonaut-io" -> "argonaut",
         "circe" -> "circe",
         "json4s" -> "json4s",
