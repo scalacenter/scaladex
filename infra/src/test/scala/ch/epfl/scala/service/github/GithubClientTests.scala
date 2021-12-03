@@ -2,18 +2,18 @@ package ch.epfl.scala.service.github
 
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.model.misc.GithubRepo
+import ch.epfl.scala.services.github.GithubClient
 import ch.epfl.scala.services.github.GithubConfig
-import ch.epfl.scala.services.github.GithubImplementation
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 
-class GithubImplementationTests extends AsyncFunSpec with Matchers {
+class GithubClientTests extends AsyncFunSpec with Matchers {
   implicit val system: ActorSystem = ActorSystem("github-downloader")
   val githubConfig: Option[GithubConfig] = GithubConfig.from(ConfigFactory.load())
 
   // Configure TOKEN_FOR_GITHUB to be able to test github api
-  val github = new GithubImplementation(githubConfig.get)
+  val github = new GithubClient(githubConfig.get)
   val scalafixRepo: GithubRepo = GithubRepo("playframework", "playframework")
 
   describe("GihhubImplementation") {

@@ -37,9 +37,7 @@ import ch.epfl.scala.utils.ScalaExtensions._
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 
-class GithubImplementation(githubConfig: GithubConfig)(implicit system: ActorSystem)
-    extends GithubService
-    with LazyLogging {
+class GithubClient(githubConfig: GithubConfig)(implicit system: ActorSystem) extends GithubService with LazyLogging {
   private val credentials = OAuth2BearerToken(githubConfig.token.decode)
   private val acceptJson = RawHeader("Accept", "application/vnd.github.v3+json")
   private val acceptHtmlVersion = RawHeader("Accept", "application/vnd.github.VERSION.html")

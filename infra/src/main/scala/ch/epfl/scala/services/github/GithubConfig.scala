@@ -10,7 +10,7 @@ case class GithubConfig(token: Secret)
 object GithubConfig {
   def from(config: Option[GithubConfig])(implicit actor: ActorSystem): GithubService =
     config match {
-      case Some(config) => new GithubImplementation(config)
+      case Some(config) => new GithubClient(config)
       case None         => new NoOpGithubImpl()
     }
 

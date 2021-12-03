@@ -19,12 +19,7 @@ object ScalaExtensions {
       case None    => Failure(e)
     }
   }
-  implicit class TraversableOnceFutureExtension[
-      A,
-      CC[X] <: IterableOnce[X],
-      To
-  ](val in: CC[Future[A]])
-      extends AnyVal {
+  implicit class TraversableOnceFutureExtension[A, CC[X] <: IterableOnce[X], To](val in: CC[Future[A]]) extends AnyVal {
     def sequence(implicit bf: BuildFrom[CC[Future[A]], A, To], executor: ExecutionContext): Future[To] =
       Future.sequence(in)
   }
