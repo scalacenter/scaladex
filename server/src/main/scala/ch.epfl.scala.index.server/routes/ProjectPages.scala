@@ -11,8 +11,6 @@ import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import ch.epfl.scala.index.data.github.GithubReader
-import ch.epfl.scala.index.data.github.Json4s
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
@@ -26,7 +24,6 @@ import ch.epfl.scala.utils.ScalaExtensions._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import com.typesafe.scalalogging.LazyLogging
-import org.json4s.native.Serialization.write
 import play.twirl.api.HtmlFormat
 
 class ProjectPages(
@@ -49,12 +46,7 @@ class ProjectPages(
 
     } yield projectOpt
       .map { p =>
-        val beginnerIssuesJson = p.githubInfo
-          .map { github =>
-            import Json4s._
-            write[List[GithubIssue]](github.beginnerIssues)
-          }
-          .getOrElse("")
+        val beginnerIssuesJson = "" // p.githubInfo.getOrElse("")
         (
           StatusCodes.OK,
           views.project.html.editproject(
@@ -134,20 +126,19 @@ class ProjectPages(
     }
   }
 
-  private val moved = GithubReader.movedRepositories(paths)
-
+  // Todo: this doesn't work yet.
   private def redirectMoved(
       organization: NewProject.Organization,
       repository: NewProject.Repository
-  ): Directive0 =
-    moved.get(GithubRepo(organization.value, repository.value)) match {
-      case Some(destination) =>
-        redirect(
-          Uri(s"/${destination.organization}/${destination.repository}"),
-          StatusCodes.PermanentRedirect
-        )
-      case None => pass
-    }
+  ): Directive0 = pass
+//    moved.get(GithubRepo(organization.value, repository.value)) match {
+//      case Some(destination) =>
+//        redirect(
+//          Uri(s"/${destination.organization}/${destination.repository}"),
+//          StatusCodes.PermanentRedirect
+//        )
+//      case None => pass
+//    }
 
   val routes: Route =
     concat(

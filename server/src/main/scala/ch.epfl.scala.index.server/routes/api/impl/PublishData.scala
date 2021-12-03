@@ -12,7 +12,6 @@ import java.time.Instant
 
 import scala.util.control.NonFatal
 
-import ch.epfl.scala.index.data.github
 import ch.epfl.scala.index.model.misc.Sha1
 import ch.epfl.scala.index.model.misc.UserState
 import ch.epfl.scala.services.storage.DataPaths
@@ -34,7 +33,6 @@ private[api] case class PublishData(
     path: String,
     created: Instant,
     data: String,
-    credentials: github.Credentials,
     userState: UserState,
     downloadInfo: Boolean,
     downloadContributors: Boolean,

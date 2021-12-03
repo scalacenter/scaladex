@@ -1,11 +1,14 @@
 package ch.epfl.scala.services.storage.sql
 
+import java.time.Instant
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
 
 import cats.effect.IO
 import ch.epfl.scala.index.model.Project
+import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
@@ -32,7 +35,7 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
       _ <- strictRun(ProjectTable.insert(project))
       _ <- strictRun(ProjectUserFormTable.insert(project)(project.dataForm))
       _ <- project.githubInfo
-        .map(githubInfo => strictRun(GithubInfoTable.insert(project)(githubInfo)))
+        .map(githubInfo => strictRun(GithubInfoTable.insert(project.reference)(githubInfo)))
         .getOrElse(Future.successful(()))
     } yield ()
 
@@ -49,12 +52,15 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
   override def getAllProjects(): Future[Seq[NewProject]] =
     run(ProjectTable.selectAllProjects.to[Seq])
 
+  override def updateGithubInfo(p: NewProject.Reference, githubInfo: GithubInfo, now: Instant): Future[Unit] =
+    run(GithubInfoTable.insertOrUpdate(p)(githubInfo, now))
+
   override def insertOrUpdateProject(project: NewProject): Future[Unit] =
     for {
       _ <- run(ProjectTable.insertOrUpdate(project))
       _ <- run(ProjectUserFormTable.insertOrUpdate(project)(project.dataForm))
       _ <- project.githubInfo
-        .map(githubInfo => run(GithubInfoTable.insertOrUpdate(project)(githubInfo)))
+        .map(githubInfo => run(GithubInfoTable.insertOrUpdate(project.reference)(githubInfo, Instant.now())))
         .getOrElse(Future.successful(()))
     } yield ()
 

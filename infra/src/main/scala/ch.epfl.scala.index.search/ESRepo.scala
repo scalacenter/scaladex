@@ -475,8 +475,6 @@ object ESRepo extends LazyLogging {
         regex.replaceAllIn(query, s"$$1$replacement:")
     }
 
-  private val frontPageCount = 12
-
   private def addMissing[T: Ordering](required: Seq[T])(result: Seq[(T, Long)]): Seq[(T, Long)] = {
     val missingLabels = required.toSet -- result.map(_._1)
     val toAdd = missingLabels.map(label => (label, 0L))

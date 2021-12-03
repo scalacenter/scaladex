@@ -1,6 +1,7 @@
 package ch.epfl.scala.index.server.config
 
 import ch.epfl.scala.index.model.Env
+import ch.epfl.scala.services.github.GithubConfig
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.sql.DatabaseConfig
 import com.softwaremill.session.SessionConfig
@@ -14,13 +15,14 @@ case class ServerConfig(
     session: SessionConfig,
     api: ApiConfig,
     dbConf: DatabaseConfig,
-    dataPaths: DataPaths
+    dataPaths: DataPaths,
+    github: Option[GithubConfig]
 )
 case class ApiConfig(endpoint: String, port: Int, env: Env)
 
 object ServerConfig {
   def load(): ServerConfig = {
-    val allConfig = ConfigFactory.load()
+    val allConfig: Config = ConfigFactory.load()
     val config = allConfig.getConfig("server")
     val apiConfig = allConfig.getConfig("app")
     val dataPathConf = allConfig.getConfig("data-paths")
@@ -35,7 +37,8 @@ object ServerConfig {
       SessionConfig.default(config.getString("sesssion-secret")),
       ApiConfig(apiConfig.getString("endpoint"), apiConfig.getInt("port"), env),
       DatabaseConfig.from(allConfig).get, // can be refactored
-      dataPaths = DataPaths.from(contrib, index, credentials, env)
+      dataPaths = DataPaths.from(contrib, index, credentials, env),
+      github = GithubConfig.from(allConfig)
     )
   }
 

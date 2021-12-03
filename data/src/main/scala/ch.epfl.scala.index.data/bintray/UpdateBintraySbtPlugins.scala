@@ -16,8 +16,6 @@ import scala.util.control.NonFatal
 import scala.util.matching.Regex
 
 import akka.actor.ActorSystem
-import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
-import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.services.storage.DataPaths
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.ivy.core.settings.IvySettings
@@ -26,8 +24,6 @@ import org.apache.ivy.plugins.parser.xml.XmlModuleDescriptorParser
 class UpdateBintraySbtPlugins(
     bintray: BintrayClient,
     sbtPluginRepo: SbtPluginsData,
-    githubRepo: GithubRepoExtractor,
-    githubDownload: GithubDownload,
     lastDownloadPath: Path
 )(implicit val ec: ExecutionContext)
     extends LazyLogging {
@@ -57,7 +53,6 @@ class UpdateBintraySbtPlugins(
       oldReleases <- oldReleasesF
       newReleases <- newReleasesF
     } yield {
-      updateGithub(newReleases)
       sbtPluginRepo.update(oldReleases, newReleases)
       val now = format(OffsetDateTime.now(ZoneOffset.UTC))
       Files.write(lastDownloadPath, Seq(now).asJava)
@@ -162,13 +157,6 @@ class UpdateBintraySbtPlugins(
       case _ => Future.successful(None)
     }
 
-  private def updateGithub(sbtPlugins: Seq[SbtPluginReleaseModel]): Unit = {
-    val githubRepos =
-      sbtPlugins.flatMap(plugin => githubRepo(plugin.releaseModel)).toSet
-    logger.info(s"updating ${githubRepos.size} Github repositories")
-    githubDownload.run(githubRepos)
-  }
-
   private def parse(dateTime: String): OffsetDateTime =
     OffsetDateTime.from(dateTimeFormatter.parse(dateTime))
   private def format(dateTime: OffsetDateTime): String =
@@ -191,15 +179,11 @@ object UpdateBintraySbtPlugins {
    */
   def run(paths: DataPaths)(implicit sys: ActorSystem): Unit = {
     implicit val ec: ExecutionContext = sys.dispatcher
-    val githubDownload = new GithubDownload(paths)
-    val githubRepoExtractor = new GithubRepoExtractor(paths)
     Using.resource(BintrayClient.create(paths.credentials)) { bintrayClient =>
       val sbtPluginsData = SbtPluginsData(paths.ivysData)
       val updater = new UpdateBintraySbtPlugins(
         bintrayClient,
         sbtPluginsData,
-        githubRepoExtractor,
-        githubDownload,
         paths.ivysLastDownload
       )
       Await.result(updater.update(), Duration.Inf)

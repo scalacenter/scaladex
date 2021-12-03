@@ -10,7 +10,6 @@ import scala.concurrent.duration._
 
 import akka.actor.Actor
 import akka.actor.ActorSystem
-import ch.epfl.scala.index.data.github.GithubDownload
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.project.ProjectConvert
 import ch.epfl.scala.index.model.misc.GithubRepo
@@ -67,20 +66,12 @@ class IndexingActor(
 
     log.debug("updating " + pom.artifactId)
 
-    val githubDownload = new GithubDownload(paths, Some(data.credentials))
-    githubDownload.run(
-      repo,
-      data.downloadInfo,
-      data.downloadReadme,
-      data.downloadContributors
-    )
-
     val projectReference =
       NewProject.Reference.from(repo.organization, repo.repository)
 
     for {
       project <- db.findProject(projectReference)
-      converter = new ProjectConvert(paths, githubDownload)
+      converter = new ProjectConvert(paths)
       converted = converter.convertOne(
         pom,
         localRepository,

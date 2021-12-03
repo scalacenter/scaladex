@@ -17,8 +17,9 @@ case class NewProject(
     dataForm: DataForm // form data
 ) {
 
-  val reference: Reference =
-    Reference(organization, repository)
+  val reference: Reference = Reference(organization, repository)
+
+  val githubRepo: GithubRepo = GithubRepo(organization.value, repository.value)
   def hasCli: Boolean = dataForm.cliArtifacts.nonEmpty
 
   /**

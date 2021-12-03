@@ -41,7 +41,7 @@ class PublishApi(
    */
   private def githubAuthenticator(
       credentialsHeader: Option[HttpCredentials]
-  ): Credentials => Future[Option[(data.github.Credentials, UserState)]] = {
+  ): Credentials => Future[Option[(String, UserState)]] = {
 
     case Credentials.Provided(username) =>
       credentialsHeader match {
@@ -52,7 +52,6 @@ class PublishApi(
           val userPass = upw.split(":")
 
           val token = userPass(1)
-          val credentials = data.github.Credentials(token)
           // todo - catch errors
 
           githubCredentialsCache.get(token) match {
@@ -60,8 +59,8 @@ class PublishApi(
               Future.successful(res)
             case _ =>
               github.getUserStateWithToken(token).map { user =>
-                githubCredentialsCache(token) = (credentials, user)
-                Some((credentials, user))
+                githubCredentialsCache(token) = (token, user)
+                Some((token, user))
               }
           }
 
@@ -101,7 +100,7 @@ class PublishApi(
     )
 
   private val githubCredentialsCache =
-    MMap.empty[String, (data.github.Credentials, UserState)]
+    MMap.empty[String, (String, UserState)]
 
   val routes: Route =
     concat(
@@ -137,12 +136,11 @@ class PublishApi(
                   realm = "Scaladex Realm",
                   githubAuthenticator(credentials)
                 ) {
-                  case (credentials, userState) =>
+                  case (_, userState) =>
                     val publishData = impl.PublishData(
                       path,
                       created,
                       data,
-                      credentials,
                       userState,
                       info,
                       contributors,
