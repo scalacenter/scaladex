@@ -10,7 +10,9 @@ case class GithubConfig(token: Secret)
 object GithubConfig {
   def from(config: Option[GithubConfig])(implicit actor: ActorSystem): GithubService =
     config match {
-      case Some(config) => new GithubClient(config)
+      case Some(config) =>
+        println(s"a token has been provided ${config.token.decode}")
+        new GithubClient(config)
       case None         => new NoOpGithubImpl()
     }
 
