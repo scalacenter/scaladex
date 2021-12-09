@@ -20,14 +20,15 @@ class SchedulerService(db: SchedulerDatabase, searchEngine: SearchEngine, github
   private val mostDependentProjectScheduler = Scheduler("most-dependent", mostDependentProjectJob, 1.hour)
   private val updateProject = Scheduler("update-projects", updateProjectJob, 30.minutes)
   private val searchSynchronizer = new SearchSynchronizer(db, searchEngine)
-  private val githubSynchronizer = new GithubSynchronizer(db, githubService)
+  private val githubSynchronizerOpt =
+    if (githubService.isScaladexTokenProvided) Some(new GithubSynchronizer(db, githubService)) else None
 
   private val schedulers = Map[String, Scheduler](
     mostDependentProjectScheduler.name -> mostDependentProjectScheduler,
     updateProject.name -> updateProject,
-    searchSynchronizer.name -> searchSynchronizer,
-    githubSynchronizer.name -> githubSynchronizer
-  )
+    searchSynchronizer.name -> searchSynchronizer
+  ) ++
+    githubSynchronizerOpt.map(g => Map(g.name -> g)).getOrElse(Map.empty)
 
   def startAll(): Unit =
     schedulers.values.foreach(_.start())

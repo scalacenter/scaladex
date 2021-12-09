@@ -1,6 +1,7 @@
 package ch.epfl.scala.index.model.misc
 
 import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.utils.Secret
 
 /**
  * github User info
@@ -13,7 +14,7 @@ case class UserInfo(
     login: String,
     name: Option[String],
     avatarUrl: String,
-    token: String
+    token: Secret
 ) extends AvatarUrl
 
 case class UserState(

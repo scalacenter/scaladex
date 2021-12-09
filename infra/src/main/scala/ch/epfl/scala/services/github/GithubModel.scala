@@ -3,7 +3,11 @@ package ch.epfl.scala.services.github
 import cats.implicits.toTraverseOps
 import ch.epfl.scala.index.model.misc.GithubContributor
 import ch.epfl.scala.index.model.misc.GithubIssue
+import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.model.misc.Url
+import ch.epfl.scala.index.model.{misc => core}
+import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.utils.Secret
 import io.circe._
 import io.circe.generic.semiauto._
 
@@ -128,4 +132,63 @@ object GithubModel {
         labelNames <- labelsJson.traverse(_.hcursor.downField("name").as[String])
       } yield if (isPullrequest.isEmpty) Some(OpenIssue(number, title, url, labelNames)) else None
   }
+
+  case class RepoWithPermission(nameWithOwner: String, viewerPermission: String)
+  case class RepoWithPermissionPage(
+      endCursor: String,
+      hasNextPage: Boolean,
+      repos: Seq[RepoWithPermission]
+  ) {
+    def toGithubRepos: Seq[(core.GithubRepo, String)] =
+      repos.collect {
+        case GithubModel.RepoWithPermission(s"$organization/$repository", permission) =>
+          GithubRepo(organization, repository) -> permission
+      }
+  }
+
+  implicit val repoWithPermissionDecoder: Decoder[RepoWithPermission] = deriveDecoder
+  implicit val githubRepoWithPermissionPageDecoder: Decoder[RepoWithPermissionPage] = deriveDecoder
+  implicit val listGithubRepoDecoder: Decoder[List[RepoWithPermissionPage]] =
+    (c: HCursor) =>
+      for {
+        repos <- c.downField("data").downField("viewer").downField("organizations").downField("nodes").as[List[Json]]
+        result <- repos.traverse { repo =>
+          for {
+            endCursor <- repo.hcursor
+              .downField("repositories")
+              .downField("pageInfo")
+              .downField("endCursor")
+              .as[String]
+            hasNextPage <- repo.hcursor
+              .downField("repositories")
+              .downField("pageInfo")
+              .downField("hasNextPage")
+              .as[Boolean]
+            repoWithPermission <- repo.hcursor
+              .downField("repositories")
+              .downField("nodes")
+              .as[List[RepoWithPermission]]
+          } yield RepoWithPermissionPage(endCursor, hasNextPage, repoWithPermission)
+        }
+      } yield result
+
+  case class UserInfo(login: String, name: Option[String], avatarUrl: String) {
+    def toCoreUserInfo(token: Secret): core.UserInfo =
+      core.UserInfo(login, name, avatarUrl, token)
+
+  }
+  val userInfoCaseClassDecoder: Decoder[UserInfo] = deriveDecoder
+  implicit val userInfoDecoder: Decoder[UserInfo] =
+    (c: HCursor) => c.downField("data").downField("viewer").as[UserInfo](userInfoCaseClassDecoder)
+
+  case class Organization(login: String) extends AnyVal {
+    def toCoreOrganization: NewProject.Organization = NewProject.Organization(login)
+  }
+  implicit val organizationsDecoder: Decoder[Seq[Organization]] =
+    (c: HCursor) =>
+      for {
+        orgsJson <- c.downField("data").downField("viewer").downField("organizations").downField("nodes").as[Seq[Json]]
+        orgs <- orgsJson.traverse(_.hcursor.downField("login").as[String])
+      } yield orgs.map(Organization)
+
 }

@@ -12,11 +12,11 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
   implicit val system: ActorSystem = ActorSystem("github-downloader")
   val githubConfig: Option[GithubConfig] = GithubConfig.from(ConfigFactory.load())
 
-  // Configure TOKEN_FOR_GITHUB to be able to test github api
-  val github = new GithubClient(githubConfig.get)
+  // you need to configure locally a token
+  val github = new GithubClient(githubConfig)
   val scalafixRepo: GithubRepo = GithubRepo("playframework", "playframework")
 
-  describe("GihhubImplementation") {
+  describe("githubClient") {
     it("getReadme") {
       for {
         readme <- github.getReadme(scalafixRepo)
@@ -45,6 +45,21 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
     it("getGiterChatRoom") {
       for {
         chatroom <- github.getGiterChatRoom(scalafixRepo)
+      } yield assert(true)
+    }
+    it("fetchMyRepo") {
+      for {
+        repos <- github.fetchUserRepo(githubConfig.get.token, Nil)
+      } yield assert(true)
+    }
+    it("fetchUser") {
+      for {
+        userInfo <- github.fetchUser(githubConfig.get.token)
+      } yield assert(true)
+    }
+    it("fetchOrganizations") {
+      for {
+        orgs <- github.fetchUserOrganizations(githubConfig.get.token)
       } yield assert(true)
     }
   }
