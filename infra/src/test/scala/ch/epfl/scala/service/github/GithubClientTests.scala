@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.services.github.GithubClient
 import ch.epfl.scala.services.github.GithubConfig
+import ch.epfl.scala.utils.Secret
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -12,11 +13,11 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
   implicit val system: ActorSystem = ActorSystem("github-downloader")
   val githubConfig: Option[GithubConfig] = GithubConfig.from(ConfigFactory.load())
 
-  // Configure TOKEN_FOR_GITHUB to be able to test github api
-  val github = new GithubClient(githubConfig.get)
+  // you need to configure locally a token
+  val github = new GithubClient(githubConfig)
   val scalafixRepo: GithubRepo = GithubRepo("playframework", "playframework")
 
-  describe("GihhubImplementation") {
+  describe("githubClient") {
     it("getReadme") {
       for {
         readme <- github.getReadme(scalafixRepo)
@@ -45,6 +46,23 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
     it("getGiterChatRoom") {
       for {
         chatroom <- github.getGiterChatRoom(scalafixRepo)
+      } yield assert(true)
+    }
+    it("fetchMyRepo") {
+      for {
+        repos <- github.fetchMyRepo(Secret("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"))
+      } yield assert(true)
+    }
+    it("fetchUser") {
+      for {
+        userInfo <- github.fetchUser(Secret("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"))
+        _ = println(userInfo)
+      } yield assert(true)
+    }
+    it("fetchOrganizations") {
+      for {
+        orgs <- github.fetchOrganizations(Secret("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"))
+        _ = println(orgs)
       } yield assert(true)
     }
   }

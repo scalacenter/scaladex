@@ -13,6 +13,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.epfl.scala.index.server.config.OAuth2Config
 import ch.epfl.scala.index.server.config.ServerConfig
+import ch.epfl.scala.services.GithubService
 import com.softwaremill.session.CsrfDirectives._
 import com.softwaremill.session.CsrfOptions._
 import com.softwaremill.session.SessionDirectives._
@@ -98,9 +99,10 @@ class Oauth2(config: OAuth2Config, github: Github, session: GithubUserSession)(
 object Oauth2 {
   def apply(
       config: ServerConfig,
-      session: GithubUserSession
+      session: GithubUserSession,
+      githubService: GithubService
   )(implicit sys: ActorSystem): Oauth2 = {
     import sys.dispatcher
-    new Oauth2(config.oAuth2, Github(), session)
+    new Oauth2(config.oAuth2, Github(githubService), session)
   }
 }

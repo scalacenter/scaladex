@@ -20,6 +20,7 @@ import akka.http.scaladsl.server.directives._
 import akka.util.Timeout
 import ch.epfl.scala.index.model.misc.UserState
 import ch.epfl.scala.index.model.release._
+import ch.epfl.scala.services.GithubService
 import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.storage.DataPaths
 import org.slf4j.LoggerFactory
@@ -169,7 +170,8 @@ class PublishApi(
 object PublishApi {
   def apply(
       paths: DataPaths,
-      databaseApi: WebDatabase
+      databaseApi: WebDatabase,
+      githubService: GithubService
   )(implicit sys: ActorSystem): PublishApi =
-    new PublishApi(paths, databaseApi, Github())
+    new PublishApi(paths, databaseApi, Github(githubService))
 }
