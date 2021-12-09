@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.services.github.GithubClient
 import ch.epfl.scala.services.github.GithubConfig
-import ch.epfl.scala.utils.Secret
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -50,17 +49,17 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
     }
     it("fetchMyRepo") {
       for {
-        repos <- github.fetchMyRepo(Secret("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"))
+        repos <- github.fetchMyRepo(githubConfig.get.token)
       } yield assert(true)
     }
     it("fetchUser") {
       for {
-        userInfo <- github.fetchUser(Secret("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"))
+        userInfo <- github.fetchUser(githubConfig.get.token)
       } yield assert(true)
     }
     it("fetchOrganizations") {
       for {
-        orgs <- github.fetchOrganizations(Secret("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"))
+        orgs <- github.fetchOrganizations(githubConfig.get.token)
       } yield assert(true)
     }
   }

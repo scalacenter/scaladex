@@ -42,7 +42,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
 
         // Will user GITHUB_TOKEN configured in github secret
         val githubConfig: Option[GithubConfig] = GithubConfig.from(ConfigFactory.load())
-        val github = new GithubClient(githubConfig.get)
+        val github = new GithubClient(githubConfig)
         val githubSync = new GithubSynchronizer(db, github)
         IO.fromFuture(IO {
           for {
