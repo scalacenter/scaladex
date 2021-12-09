@@ -42,7 +42,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd scaladex
-          sbtn test
+          sbt test
         shell: bash
       - name: Package server
         run: |
@@ -75,4 +75,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd scaladex
-          sbtn 'IntegrationTest / test'
+          sbt 'IntegrationTest / test'
