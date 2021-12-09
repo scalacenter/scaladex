@@ -12,7 +12,7 @@ trait GithubService {
   val isScaladexTokenProvided: Boolean
   def getReadme(repo: GithubRepo): Future[String]
   def update(repo: GithubRepo): Future[GithubInfo]
-  def fetchUser(myToken: Secret): Future[UserInfo]
-  def fetchOrganizations(myToken: Secret): Future[Set[NewProject.Organization]]
-  def fetchMyRepo(myToken: Secret): Future[Map[GithubRepo, String]]
+  def fetchUser(userToken: Secret): Future[UserInfo]
+  def fetchUserOrganizations(userToken: Secret): Future[Set[NewProject.Organization]]
+  def fetchUserRepo(userToken: Secret): Future[Map[GithubRepo, String]]
 }

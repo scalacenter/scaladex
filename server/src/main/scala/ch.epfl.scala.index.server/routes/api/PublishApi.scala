@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory
 class PublishApi(
     paths: DataPaths,
     db: WebDatabase,
-    github: Github
+    github: GithubAuth
 )(implicit system: ActorSystem) {
 
   private val log = LoggerFactory.getLogger(getClass)
@@ -173,5 +173,5 @@ object PublishApi {
       databaseApi: WebDatabase,
       githubService: GithubService
   )(implicit sys: ActorSystem): PublishApi =
-    new PublishApi(paths, databaseApi, Github(githubService))
+    new PublishApi(paths, databaseApi, GithubAuth(githubService))
 }

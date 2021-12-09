@@ -18,7 +18,7 @@ object Response {
   case class AccessToken(access_token: String)
 }
 
-class Github(githubClient: GithubService)(implicit sys: ActorSystem) extends Json4sSupport {
+class GithubAuth(githubClient: GithubService)(implicit sys: ActorSystem) extends Json4sSupport {
   import sys.dispatcher
 
   def getUserStateWithToken(token: String): Future[UserState] = info(token)
@@ -56,13 +56,13 @@ class Github(githubClient: GithubService)(implicit sys: ActorSystem) extends Jso
     val secret = Secret(token)
     for {
       user <- githubClient.fetchUser(secret)
-      organizations <- githubClient.fetchOrganizations(secret)
-      repos <- githubClient.fetchMyRepo(secret)
+      organizations <- githubClient.fetchUserOrganizations(secret)
+      repos <- githubClient.fetchUserRepo(secret)
       githubRepo = filterAndConvert(repos)
     } yield UserState(githubRepo, organizations, user)
   }
 }
 
-object Github {
-  def apply(client: GithubService)(implicit sys: ActorSystem) = new Github(client)
+object GithubAuth {
+  def apply(client: GithubService)(implicit sys: ActorSystem) = new GithubAuth(client)
 }

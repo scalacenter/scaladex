@@ -19,7 +19,7 @@ import com.softwaremill.session.CsrfOptions._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 
-class Oauth2(config: OAuth2Config, github: Github, session: GithubUserSession)(
+class Oauth2(config: OAuth2Config, github: GithubAuth, session: GithubUserSession)(
     implicit ec: ExecutionContext
 ) {
   import session.implicits._
@@ -103,6 +103,6 @@ object Oauth2 {
       githubService: GithubService
   )(implicit sys: ActorSystem): Oauth2 = {
     import sys.dispatcher
-    new Oauth2(config.oAuth2, Github(githubService), session)
+    new Oauth2(config.oAuth2, GithubAuth(githubService), session)
   }
 }

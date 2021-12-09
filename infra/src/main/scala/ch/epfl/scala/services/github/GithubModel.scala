@@ -133,22 +133,22 @@ object GithubModel {
       } yield if (isPullrequest.isEmpty) Some(OpenIssue(number, title, url, labelNames)) else None
   }
 
-  case class GithubRepoWithPermission(nameWithOwner: String, viewerPermission: String)
-  case class GithubRepoWithPermissionPage(
+  case class RepoWithPermission(nameWithOwner: String, viewerPermission: String)
+  case class RepoWithPermissionPage(
       endCursor: String,
       hasNextPage: Boolean,
-      repos: Seq[GithubRepoWithPermission]
+      repos: Seq[RepoWithPermission]
   ) {
     def toGithubRepos: Seq[(core.GithubRepo, String)] =
       repos.collect {
-        case GithubModel.GithubRepoWithPermission(s"$organization/$repository", permission) =>
+        case GithubModel.RepoWithPermission(s"$organization/$repository", permission) =>
           GithubRepo(organization, repository) -> permission
       }
   }
 
-  implicit val githubRepoWithPermissionDecoder: Decoder[GithubRepoWithPermission] = deriveDecoder
-  implicit val githubRepoWithPermissionPageDecoder: Decoder[GithubRepoWithPermissionPage] = deriveDecoder
-  implicit val listGithubRepoDecoder: Decoder[List[GithubRepoWithPermissionPage]] =
+  implicit val repoWithPermissionDecoder: Decoder[RepoWithPermission] = deriveDecoder
+  implicit val githubRepoWithPermissionPageDecoder: Decoder[RepoWithPermissionPage] = deriveDecoder
+  implicit val listGithubRepoDecoder: Decoder[List[RepoWithPermissionPage]] =
     (c: HCursor) =>
       for {
         repos <- c.downField("data").downField("viewer").downField("organizations").downField("nodes").as[List[Json]]
@@ -167,8 +167,8 @@ object GithubModel {
             repoWithPermission <- repo.hcursor
               .downField("repositories")
               .downField("nodes")
-              .as[List[GithubRepoWithPermission]]
-          } yield GithubRepoWithPermissionPage(endCursor, hasNextPage, repoWithPermission)
+              .as[List[RepoWithPermission]]
+          } yield RepoWithPermissionPage(endCursor, hasNextPage, repoWithPermission)
         }
       } yield result
 

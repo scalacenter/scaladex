@@ -143,7 +143,7 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
 
   def getContributors(repo: GithubRepo): Future[List[Contributor]] =
     credentials match {
-      case None              => NoTokenError()
+      case None              => noTokenError()
       case Some(credentials) => getContributors(repo, credentials)
     }
 
@@ -173,7 +173,7 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
 
   def getRepoInfo(repo: GithubRepo): Future[GithubModel.Repository] =
     credentials match {
-      case None => NoTokenError
+      case None => noTokenError
       case Some(credentials) =>
         val request = HttpRequest(uri = s"${mainGithubUrl(repo)}").addHeader(acceptJson).addCredentials(credentials)
         get[GithubModel.Repository](request)(queueRequest)
@@ -182,7 +182,7 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
   def getOpenIssues(repo: GithubRepo): Future[Seq[GithubModel.OpenIssue]] =
     credentials match {
       case Some(credentials) => getOpenIssues(repo, credentials)
-      case None              => NoTokenError
+      case None              => noTokenError
     }
 
   private def getOpenIssues(repo: GithubRepo, credentials: OAuth2BearerToken): Future[Seq[GithubModel.OpenIssue]] = {
@@ -220,7 +220,7 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
     }
   }
 
-  def fetchMyRepo(myToken: Secret): Future[Map[GithubRepo, String]] = {
+  def fetchUserRepo(userToken: Secret): Future[Map[GithubRepo, String]] = {
     val query =
       s"""|query {
           |  viewer {
@@ -247,11 +247,11 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
           |  }
           |}""".stripMargin
 
-    val request = graphqlRequest(myToken, query)
-    val githubRepoPage1 = get[List[GithubModel.GithubRepoWithPermissionPage]](request)(r => Http().singleRequest(r))
+    val request = graphqlRequest(userToken, query)
+    val githubRepoPage1 = get[List[GithubModel.RepoWithPermissionPage]](request)(r => Http().singleRequest(r))
     githubRepoPage1.map(_.flatMap(_.toGithubRepos).toMap)
   }
-  def fetchUser(myToken: Secret): Future[UserInfo] = {
+  def fetchUser(userToken: Secret): Future[UserInfo] = {
     val query =
       """|query {
          |  viewer {
@@ -260,14 +260,14 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
          |    name
          |  }
          |}""".stripMargin
-    val request = graphqlRequest(myToken, query)
+    val request = graphqlRequest(userToken, query)
     val userInfo = get[GithubModel.UserInfo](request)(r => Http().singleRequest(r))
 
-    userInfo.map(_.toCoreUserInfo(myToken))
+    userInfo.map(_.toCoreUserInfo(userToken))
   }
 
   // only the first 100 orgs
-  def fetchOrganizations(myToken: Secret): Future[Set[NewProject.Organization]] = {
+  def fetchUserOrganizations(userToken: Secret): Future[Set[NewProject.Organization]] = {
     val query =
       """|query {
          |  viewer {
@@ -278,7 +278,7 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
          |    }
          |  }
          |}""".stripMargin
-    val request = graphqlRequest(myToken, query)
+    val request = graphqlRequest(userToken, query)
     val organizations = get[Seq[GithubModel.Organization]](request)(r => Http().singleRequest(r))
     organizations.map(_.map(_.toCoreOrganization).toSet)
   }
@@ -303,7 +303,7 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
     }
   }
 
-  private def NoTokenError() = Future.failed(new Exception("Cannot connect to github because no token provided"))
+  private def noTokenError() = Future.failed(new Exception("Cannot connect to github because no token provided"))
 
   // when a token is provided, we don't use the queuing system
   private def graphqlRequest(token: Secret, query: String): HttpRequest = {
