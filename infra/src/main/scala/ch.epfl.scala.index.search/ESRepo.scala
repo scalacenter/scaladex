@@ -276,9 +276,7 @@ object ESRepo extends LazyLogging {
       .boostMode(CombineFunction.Multiply)
   }
 
-  private def filteredSearchQuery(params: SearchParams): Query = {
-    println(s"params.queryString = ${params.queryString}")
-    println(s"params.contributingSearch = ${params.contributingSearch}")
+  private def filteredSearchQuery(params: SearchParams): Query =
     must(
       notDeprecatedQuery,
       repositoriesQuery(params.userRepos.toSeq),
@@ -295,7 +293,6 @@ object ESRepo extends LazyLogging {
       optionalQuery(params.contributingSearch, contributingQuery),
       searchQuery(params.queryString, params.contributingSearch)
     )
-  }
 
   private def sortQuery(sorting: Option[String]): Sort =
     sorting match {

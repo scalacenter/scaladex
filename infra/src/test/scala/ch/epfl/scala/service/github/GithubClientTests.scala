@@ -56,13 +56,11 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
     it("fetchUser") {
       for {
         userInfo <- github.fetchUser(Secret("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"))
-        _ = println(userInfo)
       } yield assert(true)
     }
     it("fetchOrganizations") {
       for {
         orgs <- github.fetchOrganizations(Secret("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"))
-        _ = println(orgs)
       } yield assert(true)
     }
   }

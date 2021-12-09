@@ -73,7 +73,6 @@
                                 <span class="caret"></span>
                             </button>
                             <ul class="dropdown-menu" aria-labelledby="userLogging">
-                                @println(s"who is you $you")
                                 <li><a href="/search?q=@params.queryString@if(!you){&you=✓}">My projects</a></li>
                                 @if(u.isAdmin) {
                                     <li><a href="/admin">Admin</a></li>
