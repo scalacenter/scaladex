@@ -51,15 +51,12 @@ class GithubAuth(githubClient: GithubService)(implicit sys: ActorSystem) extends
 
   private def info(token: String): Future[UserState] = {
     val permissions = Seq("WRITE", "MAINTAIN", "ADMIN")
-    def filterAndConvert(repos: Map[GithubRepo, String]): Set[GithubRepo] =
-      repos.collect { case (repo, permission) if permissions.contains(permission) => repo }.toSet
     val secret = Secret(token)
     for {
       user <- githubClient.fetchUser(secret)
       organizations <- githubClient.fetchUserOrganizations(secret)
-      repos <- githubClient.fetchUserRepo(secret)
-      githubRepo = filterAndConvert(repos)
-    } yield UserState(githubRepo, organizations, user)
+      repos <- githubClient.fetchUserRepo(secret, permissions)
+    } yield UserState(repos.toSet, organizations, user)
   }
 }
 

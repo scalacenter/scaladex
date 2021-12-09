@@ -111,7 +111,7 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
 
   def getReadme(repo: GithubRepo): Future[String] =
     credentials match {
-      case None => Future.failed(new Exception("no token provided"))
+      case None => noTokenError()
       case Some(credentials) =>
         val request = HttpRequest(uri = s"${mainGithubUrl(repo)}/readme")
           .addCredentials(credentials)
@@ -173,7 +173,7 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
 
   def getRepoInfo(repo: GithubRepo): Future[GithubModel.Repository] =
     credentials match {
-      case None => noTokenError
+      case None => noTokenError()
       case Some(credentials) =>
         val request = HttpRequest(uri = s"${mainGithubUrl(repo)}").addHeader(acceptJson).addCredentials(credentials)
         get[GithubModel.Repository](request)(queueRequest)
@@ -182,7 +182,7 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
   def getOpenIssues(repo: GithubRepo): Future[Seq[GithubModel.OpenIssue]] =
     credentials match {
       case Some(credentials) => getOpenIssues(repo, credentials)
-      case None              => noTokenError
+      case None              => noTokenError()
     }
 
   private def getOpenIssues(repo: GithubRepo, credentials: OAuth2BearerToken): Future[Seq[GithubModel.OpenIssue]] = {
@@ -220,7 +220,7 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
     }
   }
 
-  def fetchUserRepo(userToken: Secret): Future[Map[GithubRepo, String]] = {
+  def fetchUserRepo(userToken: Secret, permissions: Seq[String]): Future[Seq[GithubRepo]] = {
     val query =
       s"""|query {
           |  viewer {
@@ -249,7 +249,9 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
 
     val request = graphqlRequest(userToken, query)
     val githubRepoPage1 = get[List[GithubModel.RepoWithPermissionPage]](request)(r => Http().singleRequest(r))
-    githubRepoPage1.map(_.flatMap(_.toGithubRepos).toMap)
+    githubRepoPage1.map(_.flatMap(_.toGithubRepos).collect {
+      case (repo, permission) if permissions.contains(permission) => repo
+    })
   }
   def fetchUser(userToken: Secret): Future[UserInfo] = {
     val query =

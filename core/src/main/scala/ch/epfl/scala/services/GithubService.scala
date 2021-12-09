@@ -14,5 +14,5 @@ trait GithubService {
   def update(repo: GithubRepo): Future[GithubInfo]
   def fetchUser(userToken: Secret): Future[UserInfo]
   def fetchUserOrganizations(userToken: Secret): Future[Set[NewProject.Organization]]
-  def fetchUserRepo(userToken: Secret): Future[Map[GithubRepo, String]]
+  def fetchUserRepo(userToken: Secret, permissions: Seq[String]): Future[Seq[GithubRepo]]
 }

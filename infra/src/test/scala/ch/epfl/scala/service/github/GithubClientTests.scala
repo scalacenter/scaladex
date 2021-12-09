@@ -49,7 +49,7 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
     }
     it("fetchMyRepo") {
       for {
-        repos <- github.fetchUserRepo(githubConfig.get.token)
+        repos <- github.fetchUserRepo(githubConfig.get.token, Nil)
       } yield assert(true)
     }
     it("fetchUser") {
