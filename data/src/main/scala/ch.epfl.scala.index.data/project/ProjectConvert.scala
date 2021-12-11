@@ -271,7 +271,8 @@ class ProjectConvert(paths: DataPaths) extends BintrayProtocol {
             .getOrElse(
               NewProject.defaultProject(
                 githubRepo.organization,
-                githubRepo.repository
+                githubRepo.repository,
+                now = Instant.now()
               )
             )
           dependencies = getDependencies(pom)

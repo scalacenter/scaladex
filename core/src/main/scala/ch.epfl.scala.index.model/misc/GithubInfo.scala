@@ -1,7 +1,5 @@
 package ch.epfl.scala.index.model.misc
 
-import java.time.Instant
-
 /**
  * Github Info to a project
  *
@@ -46,8 +44,7 @@ case class GithubInfo(
     // added by the user in project page on scaladex
     beginnerIssuesLabel: Option[String] = None,
     beginnerIssues: List[GithubIssue] = List(),
-    selectedBeginnerIssues: List[GithubIssue] = List(),
-    updatedAt: Instant
+    selectedBeginnerIssues: List[GithubIssue] = List()
 ) {
   def displayedIssues: Seq[GithubIssue] = {
     val remainingIssues = beginnerIssues.filterNot(selectedBeginnerIssues.contains)
@@ -76,7 +73,6 @@ object GithubInfo {
     chatroom = None,
     beginnerIssuesLabel = None,
     beginnerIssues = List(),
-    selectedBeginnerIssues = List(),
-    updatedAt = Instant.now()
+    selectedBeginnerIssues = List()
   )
 }

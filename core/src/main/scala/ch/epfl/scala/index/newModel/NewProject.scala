@@ -5,6 +5,7 @@ import java.time.Instant
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubRepo
+import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.misc.TwitterSummaryCard
 import ch.epfl.scala.index.newModel.NewProject._
 
@@ -13,6 +14,7 @@ case class NewProject(
     organization: Organization,
     repository: Repository,
     created: Option[Instant], // equivalent to the first release date
+    githubStatus: GithubStatus,
     githubInfo: Option[GithubInfo],
     dataForm: DataForm // form data
 ) {
@@ -60,11 +62,13 @@ object NewProject {
       repo: String,
       created: Option[Instant] = None,
       githubInfo: Option[GithubInfo] = None,
-      formData: DataForm = DataForm.default
+      formData: DataForm = DataForm.default,
+      now: Instant
   ): NewProject =
     NewProject(
       Organization(org),
       repository = Repository(repo),
+      githubStatus = githubInfo.map(_ => GithubStatus.Ok(now)).getOrElse(GithubStatus.Unkhown(now)),
       githubInfo = githubInfo,
       created = created,
       dataForm = formData
@@ -130,12 +134,15 @@ object NewProject {
 
   }
 
-  def from(p: Project): NewProject =
+  def from(p: Project): NewProject = {
+    val now = Instant.now()
     NewProject(
       organization = Organization(p.organization),
       repository = Repository(p.repository),
+      githubStatus = p.github.map(_ => GithubStatus.Ok(now)).getOrElse(GithubStatus.Unkhown(now)),
       githubInfo = p.github,
       created = None,
       dataForm = DataForm.from(p)
     )
+  }
 }

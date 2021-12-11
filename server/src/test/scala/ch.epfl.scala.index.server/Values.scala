@@ -6,6 +6,7 @@ import ch.epfl.scala.index.model.Milestone
 import ch.epfl.scala.index.model.ReleaseCandidate
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubInfo
+import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.PatchBinary
 import ch.epfl.scala.index.model.release.Platform
@@ -20,6 +21,7 @@ import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 
 object Values {
+  val now = Instant.now
   // Mock Data for tests
   val release: NewRelease = NewRelease(
     MavenReference(
@@ -41,7 +43,8 @@ object Values {
   val project: NewProject = NewProject(
     release.organization,
     release.repository,
-    created = Some(Instant.now),
+    created = Some(now),
+    GithubStatus.Ok(now),
     Some(GithubInfo.empty(release.organization.value, release.repository.value)),
     NewProject.DataForm.default
   )

@@ -31,7 +31,9 @@ object GithubModel {
       default_branch: String, // master
       subscribers_count: Int, // Watch
       topics: Seq[String]
-  )
+  ) {
+    def repoName: GithubRepo = GithubRepo(owner, name)
+  }
 
   implicit val repositoryDecoder: Decoder[Repository] = new Decoder[Repository] {
     final def apply(c: HCursor): Decoder.Result[Repository] =

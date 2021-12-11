@@ -1,7 +1,5 @@
 package ch.epfl.scala.services.github
 
-import java.time.Instant
-
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -35,6 +33,7 @@ import akka.stream.scaladsl.SourceQueueWithComplete
 import akka.util.ByteString
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubRepo
+import ch.epfl.scala.index.model.misc.GithubResponse
 import ch.epfl.scala.index.model.misc.Url
 import ch.epfl.scala.index.model.misc.UserInfo
 import ch.epfl.scala.index.newModel.NewProject
@@ -77,9 +76,18 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       })(Keep.left)
       .run()
 
-  def update(repo: GithubRepo): Future[GithubInfo] =
+  override def update(repo: GithubRepo): Future[GithubResponse[GithubInfo]] =
+    getRepoInfo(repo).flatMap {
+      case GithubResponse.Failed(code, reason) => Future.successful(GithubResponse.Failed(code, reason))
+      case GithubResponse.Ok(res) =>
+        update(res).map(GithubResponse.Ok.apply)
+      case GithubResponse.MovedPermanently(res) =>
+        update(res).map(GithubResponse.MovedPermanently.apply)
+    }
+
+  def update(repoInfo: GithubModel.Repository): Future[GithubInfo] = {
+    val repo = repoInfo.repoName
     for {
-      repoInfo <- getRepoInfo(repo)
       readme <- getReadme(repo)
       communityProfile <- getCommunityProfile(repo)
       contributors <- getContributors(repo)
@@ -103,18 +111,20 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       contributingGuide = communityProfile.flatMap(_.contributingFile).map(Url),
       codeOfConduct = communityProfile.flatMap(_.codeOfConductFile).map(Url),
       chatroom = chatroom.map(Url),
-      beginnerIssues = openIssues.map(_.toGithubIssue).toList,
-      updatedAt = Instant.now()
+      beginnerIssues = openIssues.map(_.toGithubIssue).toList
     )
+  }
 
+  // This method doesn't fail
   def getReadme(repo: GithubRepo): Future[String] = {
     val request = HttpRequest(uri = s"${mainGithubUrl(repo)}/readme")
       .addCredentials(credentials)
       .addHeader(acceptHtmlVersion)
 
-    process(request).flatMap {
-      case (_, entity) =>
+    getRaw(request).failWithTry.flatMap {
+      case Success((_, entity)) =>
         entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String)
+      case Failure(_) => Future.successful("")
     }
   }
 
@@ -140,7 +150,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     }
 
     val firstPage = url().addHeader(acceptJson).addCredentials(credentials)
-    process(firstPage).flatMap {
+    getRaw(firstPage).flatMap {
       case (headers, entity) =>
         val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
         lastPage match {
@@ -155,9 +165,15 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     }
   }
 
-  def getRepoInfo(repo: GithubRepo): Future[GithubModel.Repository] = {
+  def getRepoInfo(repo: GithubRepo): Future[GithubResponse[GithubModel.Repository]] = {
     val request = HttpRequest(uri = s"${mainGithubUrl(repo)}").addHeader(acceptJson).addCredentials(credentials)
-    get[GithubModel.Repository](request)
+    process(request).flatMap {
+      case GithubResponse.Ok((_, entity)) =>
+        Unmarshal(entity).to[GithubModel.Repository].map(GithubResponse.Ok(_))
+      case GithubResponse.MovedPermanently((_, entity)) =>
+        Unmarshal(entity).to[GithubModel.Repository].map(GithubResponse.MovedPermanently(_))
+      case GithubResponse.Failed(code, reason) => Future.successful(GithubResponse.Failed(code, reason))
+    }
   }
 
   def getOpenIssues(repo: GithubRepo): Future[Seq[GithubModel.OpenIssue]] = {
@@ -168,7 +184,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       get[Seq[Option[GithubModel.OpenIssue]]](request).map(_.flatten)
     }
 
-    process(url(1)).failWithTry.flatMap {
+    getRaw(url(1)).failWithTry.flatMap {
       case Success((headers, entity)) =>
         val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
         lastPage match {
@@ -340,21 +356,30 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
   private def get[A](
       request: HttpRequest
   )(implicit decoder: io.circe.Decoder[A]): Future[A] =
-    process(request).flatMap { case (_, entity) => Unmarshal(entity).to[A] }
+    getRaw(request).flatMap { case (_, entity) => Unmarshal(entity).to[A] }
 
-  private def process(
-      request: HttpRequest
-  ): Future[(Seq[HttpHeader], ResponseEntity)] =
+  private def getRaw(request: HttpRequest): Future[(Seq[HttpHeader], ResponseEntity)] =
+    process(request).map {
+      case GithubResponse.Ok((headers, entity))               => (headers, entity)
+      case GithubResponse.MovedPermanently((headers, entity)) => (headers, entity)
+      case GithubResponse.Failed(code, reason)                => throw new Exception(s"$code: $reason")
+    }
+
+  private def process(request: HttpRequest): Future[GithubResponse[(Seq[HttpHeader], ResponseEntity)]] =
     queueRequest(request).flatMap {
       case r @ HttpResponse(StatusCodes.OK, headers, entity, _) =>
-        Future.successful((headers, entity))
+        Future.successful(GithubResponse.Ok((headers, entity)))
       case r @ HttpResponse(StatusCodes.MovedPermanently, headers, entity, _) =>
         entity.discardBytes()
         val newRequest = HttpRequest(uri = headers.find(_.is("location")).get.value())
-        process(newRequest)
+        process(newRequest).map {
+          case GithubResponse.Ok(res)                    => GithubResponse.MovedPermanently(res)
+          case GithubResponse.Failed(code, errorMessage) => GithubResponse.Failed(code, errorMessage)
+          case GithubResponse.MovedPermanently(res)      => GithubResponse.MovedPermanently(res)
+        }
       case _ @HttpResponse(code, _, entity, _) =>
         entity.discardBytes()
-        Future.failed(new Exception(s"Request failed, response code: $code"))
+        Future.successful(GithubResponse.Failed(code.intValue, code.value))
     }
 
   private def mainGithubUrl(repo: GithubRepo): String =
