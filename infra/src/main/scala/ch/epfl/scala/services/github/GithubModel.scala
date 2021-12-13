@@ -147,7 +147,7 @@ object GithubModel {
 
     def toGithubRepos: Seq[core.GithubRepo] =
       nodes.collect {
-        case GithubModel.RepoWithPermission(s"$organization/$repository", _) =>
+        case GithubModel.RepoWithPermission(s"$organization/$repository", permission) =>
           GithubRepo(organization.toLowerCase, repository.toLowerCase)
       }
   }
@@ -171,12 +171,12 @@ object GithubModel {
     }
 
   val decoderForUserRepo: Decoder[RepoWithPermissionPage] =
-    (c: ACursor) => githubRepoWithPermissionPageDecoder.tryDecode(c.downField("data").downField("viewer"))
+    (c: ACursor) => githubRepoWithPermissionPageDecoder.tryDecode(c.downField("data").downField("user"))
 
   implicit val listGithubRepoDecoder: Decoder[List[RepoWithPermissionPage]] =
     (c: HCursor) =>
       for {
-        repos <- c.downField("data").downField("viewer").downField("organizations").downField("nodes").as[List[Json]]
+        repos <- c.downField("data").downField("user").downField("organizations").downField("nodes").as[List[Json]]
         result <- repos.traverse { repo =>
           repo.hcursor.as[RepoWithPermissionPage](githubRepoWithPermissionPageDecoder)
         }
@@ -197,9 +197,7 @@ object GithubModel {
   implicit val organizationsDecoder: Decoder[Seq[Organization]] =
     (c: HCursor) =>
       for {
-        co <- c.as[Json]
-        _ = println(co)
-        orgsJson <- c.downField("data").downField("viewer").downField("organizations").downField("nodes").as[Seq[Json]]
+        orgsJson <- c.downField("data").downField("user").downField("organizations").downField("nodes").as[Seq[Json]]
         orgs <- orgsJson.traverse(_.hcursor.downField("login").as[String])
       } yield orgs.map(Organization)
 

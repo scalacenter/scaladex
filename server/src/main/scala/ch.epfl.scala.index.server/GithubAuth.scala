@@ -42,9 +42,9 @@ class GithubAuth()(implicit sys: ActorSystem) extends Json4sSupport {
     val permissions = Seq("WRITE", "MAINTAIN", "ADMIN")
     for {
       user <- githubClient.fetchUser()
-      organizationsTry <- githubClient.fetchUserOrganizations().failWithTry
-      reposUnderOrgsTry <- githubClient.fetchReposUnderUserOrganizations(permissions).failWithTry
-      reposTry <- githubClient.fetchUserRepo(permissions).failWithTry
+      organizationsTry <- githubClient.fetchUserOrganizations(user.login).failWithTry
+      reposUnderOrgsTry <- githubClient.fetchReposUnderUserOrganizations(user.login, permissions).failWithTry
+      reposTry <- githubClient.fetchUserRepo(user.login, permissions).failWithTry
       orgs = organizationsTry.getOrElse(Set())
       repos = reposUnderOrgsTry.getOrElse(Nil) ++ reposTry.getOrElse(Nil)
     } yield UserState(repos.toSet, orgs, user)

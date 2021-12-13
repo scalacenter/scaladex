@@ -13,7 +13,7 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
   val githubConfig: Option[GithubConfig] = GithubConfig.from(ConfigFactory.load())
 
   // you need to configure locally a token
-  val github = new GithubClient(githubConfig.get.token)
+  val github =  new GithubClient(githubConfig.get.token)
   val scalafixRepo: GithubRepo = GithubRepo("playframework", "playframework")
 
   describe("githubClient") {
@@ -50,13 +50,15 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
     }
     it("fetchOrgaRepo") {
       for {
-        repos <- github.fetchReposUnderUserOrganizations(Nil)
+        repos <- github.fetchReposUnderUserOrganizations("atry", Nil)
         _ = println(s"repos = ${repos}")
       } yield assert(true)
     }
     it("fetchUserRepo") {
       for {
-        repos <- github.fetchUserRepo(Nil)
+        repos <- github.fetchUserRepo("atry", Nil)
+        _ = println(s"repos = ${repos}")
+        _ = println(s"repos = ${repos.size}")
       } yield assert(true)
     }
     it("fetchUser") {
@@ -66,7 +68,8 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
     }
     it("fetchUserOrganizations") {
       for {
-        orgs <- github.fetchUserOrganizations()
+        orgs <- github.fetchUserOrganizations("atry")
+        _ = println(orgs)
       } yield assert(true)
     }
   }

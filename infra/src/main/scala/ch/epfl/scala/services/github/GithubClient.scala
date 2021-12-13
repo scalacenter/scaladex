@@ -195,10 +195,10 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     }
   }
 
-  def fetchReposUnderUserOrganizations(filterPermissions: Seq[String]): Future[Seq[GithubRepo]] = {
+  def fetchReposUnderUserOrganizations(login: String, filterPermissions: Seq[String]): Future[Seq[GithubRepo]] = {
     val query =
       s"""|query {
-          | viewer {
+          |  user(login: "$login") {
           |    organizations(first: 100) {
           |      pageInfo {
           |        endCursor
@@ -229,12 +229,13 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       })
 
   }
-  def fetchUserRepo(filterPermissions: Seq[String]): Future[Seq[GithubRepo]] = {
+  def fetchUserRepo(login: String, filterPermissions: Seq[String]): Future[Seq[GithubRepo]] = {
     def query(endcursorOpt: Option[String]) = {
       val after = endcursorOpt.map(endcursor => s"""after: "$endcursor"""").getOrElse("")
       s"""|query {
-          |  viewer {
+          |  user(login: "$login") {
           |    repositories(first: 100, $after) {
+          |
           |      pageInfo {
           |        endCursor
           |        hasNextPage
@@ -289,10 +290,10 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
   }
 
   // only the first 100 orgs
-  def fetchUserOrganizations(): Future[Set[NewProject.Organization]] = {
+  def fetchUserOrganizations(login: String): Future[Set[NewProject.Organization]] = {
     val query =
-      """|query {
-         |  viewer {
+      s"""|query {
+         |  user(login: "$login") {
          |    organizations(first: 100) {
          |      nodes {
          |        login

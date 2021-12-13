@@ -11,7 +11,7 @@ trait GithubService {
   def getReadme(repo: GithubRepo): Future[String]
   def update(repo: GithubRepo): Future[GithubInfo]
   def fetchUser(): Future[UserInfo]
-  def fetchUserOrganizations(): Future[Set[NewProject.Organization]]
-  def fetchReposUnderUserOrganizations(filterPermissions: Seq[String]): Future[Seq[GithubRepo]]
-  def fetchUserRepo(filterPermissions: Seq[String]): Future[Seq[GithubRepo]]
+  def fetchUserOrganizations(login: String): Future[Set[NewProject.Organization]]
+  def fetchReposUnderUserOrganizations(login: String, filterPermissions: Seq[String]): Future[Seq[GithubRepo]]
+  def fetchUserRepo(login: String, filterPermissions: Seq[String]): Future[Seq[GithubRepo]]
 }
