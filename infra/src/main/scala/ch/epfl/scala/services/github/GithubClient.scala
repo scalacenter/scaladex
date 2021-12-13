@@ -195,19 +195,17 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     }
   }
 
-  def fetchUserRepo(filterPermissions: Seq[String]): Future[Seq[GithubRepo]] = {
+  def fetchReposUnderUserOrganizations(filterPermissions: Seq[String]): Future[Seq[GithubRepo]] = {
     val query =
       s"""|query {
-          |  viewer {
+          | viewer {
           |    organizations(first: 100) {
-          |      totalCount
           |      pageInfo {
           |        endCursor
           |        hasNextPage
           |      }
           |      nodes {
           |        repositories(first: 100, affiliations: [COLLABORATOR, ORGANIZATION_MEMBER, OWNER]) {
-          |          totalCount
           |          pageInfo {
           |            endCursor
           |            hasNextPage
@@ -224,10 +222,57 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
 
     val request = graphqlRequest(token, query)
     val githubRepoPage1 = get[List[GithubModel.RepoWithPermissionPage]](request)
-    githubRepoPage1.map(_.flatMap(_.toGithubRepos).collect {
-      case (repo, permission) if filterPermissions.contains(permission) => repo
-    })
+    if (filterPermissions.isEmpty) githubRepoPage1.map(_.flatMap(_.toGithubRepos))
+    else
+      githubRepoPage1.map(_.flatMap(_.toGithubReposWithPermission).collect {
+        case (repo, permission) if filterPermissions.contains(permission) => repo
+      })
+
   }
+  def fetchUserRepo(filterPermissions: Seq[String]): Future[Seq[GithubRepo]] = {
+    def query(endcursorOpt: Option[String]) = {
+      val after = endcursorOpt.map(endcursor => s"""after: "$endcursor"""").getOrElse("")
+      s"""|query {
+          |  viewer {
+          |    repositories(first: 100, $after) {
+          |      pageInfo {
+          |        endCursor
+          |        hasNextPage
+          |      }
+          |      nodes {
+          |        nameWithOwner
+          |        viewerPermission
+          |      }
+          |    }
+          |  }
+          |}
+          |
+          |""".stripMargin
+    }
+
+    val request = graphqlRequest(token, query(None))
+    val page1 = get[GithubModel.RepoWithPermissionPage](request)(GithubModel.decoderForUserRepo)
+    def getPageRecursively(
+        pageFut: Future[GithubModel.RepoWithPermissionPage]
+    )(previous: Future[Seq[GithubModel.RepoWithPermissionPage]]): Future[Seq[GithubModel.RepoWithPermissionPage]] =
+      pageFut.flatMap { page =>
+        if (!page.hasNextPage) previous.map(page +: _)
+        else {
+          val nextPage = get[GithubModel.RepoWithPermissionPage](graphqlRequest(token, query(Some(page.endCursor))))(
+            GithubModel.decoderForUserRepo
+          )
+          getPageRecursively(nextPage)(previous.map(page +: _))
+        }
+      }
+    val pages = getPageRecursively(page1)(Future.successful(Nil))
+
+    if (filterPermissions.isEmpty) pages.map(_.flatMap(_.toGithubRepos))
+    else
+      pages.map(_.flatMap(_.toGithubReposWithPermission).collect {
+        case (repo, permission) if filterPermissions.contains(permission) => repo
+      })
+  }
+
   def fetchUser(): Future[UserInfo] = {
     val query =
       """|query {
@@ -293,12 +338,12 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
 
   private def get[A](
       request: HttpRequest
-  )(implicit decoder: io.circe.Decoder[A], system: ActorSystem, ec: ExecutionContextExecutor): Future[A] =
+  )(implicit decoder: io.circe.Decoder[A]): Future[A] =
     process(request).flatMap { case (_, entity) => Unmarshal(entity).to[A] }
 
   private def process(
       request: HttpRequest
-  )(implicit system: ActorSystem, ec: ExecutionContextExecutor): Future[(Seq[HttpHeader], ResponseEntity)] =
+  ): Future[(Seq[HttpHeader], ResponseEntity)] =
     queueRequest(request).flatMap {
       case r @ HttpResponse(StatusCodes.OK, headers, entity, _) =>
         Future.successful((headers, entity))

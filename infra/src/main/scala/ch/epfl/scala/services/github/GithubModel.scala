@@ -137,38 +137,48 @@ object GithubModel {
   case class RepoWithPermissionPage(
       endCursor: String,
       hasNextPage: Boolean,
-      repos: Seq[RepoWithPermission]
+      nodes: Seq[RepoWithPermission]
   ) {
-    def toGithubRepos: Seq[(core.GithubRepo, String)] =
-      repos.collect {
+    def toGithubReposWithPermission: Seq[(core.GithubRepo, String)] =
+      nodes.collect {
         case GithubModel.RepoWithPermission(s"$organization/$repository", permission) =>
           GithubRepo(organization, repository) -> permission
+      }
+
+    def toGithubRepos: Seq[core.GithubRepo] =
+      nodes.collect {
+        case GithubModel.RepoWithPermission(s"$organization/$repository", _) =>
+          GithubRepo(organization, repository)
       }
   }
 
   implicit val repoWithPermissionDecoder: Decoder[RepoWithPermission] = deriveDecoder
-  implicit val githubRepoWithPermissionPageDecoder: Decoder[RepoWithPermissionPage] = deriveDecoder
+
+  val githubRepoWithPermissionPageDecoder: Decoder[RepoWithPermissionPage] =
+    (c: HCursor) => {
+      val cursor = c.downField("repositories")
+      for {
+        endCursor <- cursor
+          .downField("pageInfo")
+          .downField("endCursor")
+          .as[String]
+        hasNextPage <- cursor
+          .downField("pageInfo")
+          .downField("hasNextPage")
+          .as[Boolean]
+        repoWithPermission <- cursor.downField("nodes").as[List[RepoWithPermission]]
+      } yield RepoWithPermissionPage(endCursor, hasNextPage, repoWithPermission)
+    }
+
+  val decoderForUserRepo: Decoder[RepoWithPermissionPage] =
+    (c: ACursor) => githubRepoWithPermissionPageDecoder.tryDecode(c.downField("data").downField("viewer"))
+
   implicit val listGithubRepoDecoder: Decoder[List[RepoWithPermissionPage]] =
     (c: HCursor) =>
       for {
         repos <- c.downField("data").downField("viewer").downField("organizations").downField("nodes").as[List[Json]]
         result <- repos.traverse { repo =>
-          for {
-            endCursor <- repo.hcursor
-              .downField("repositories")
-              .downField("pageInfo")
-              .downField("endCursor")
-              .as[String]
-            hasNextPage <- repo.hcursor
-              .downField("repositories")
-              .downField("pageInfo")
-              .downField("hasNextPage")
-              .as[Boolean]
-            repoWithPermission <- repo.hcursor
-              .downField("repositories")
-              .downField("nodes")
-              .as[List[RepoWithPermission]]
-          } yield RepoWithPermissionPage(endCursor, hasNextPage, repoWithPermission)
+          repo.hcursor.as[RepoWithPermissionPage](githubRepoWithPermissionPageDecoder)
         }
       } yield result
 
@@ -187,6 +197,8 @@ object GithubModel {
   implicit val organizationsDecoder: Decoder[Seq[Organization]] =
     (c: HCursor) =>
       for {
+        co <- c.as[Json]
+        _ = println(co)
         orgsJson <- c.downField("data").downField("viewer").downField("organizations").downField("nodes").as[Seq[Json]]
         orgs <- orgsJson.traverse(_.hcursor.downField("login").as[String])
       } yield orgs.map(Organization)
