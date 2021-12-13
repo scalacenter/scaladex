@@ -54,8 +54,8 @@ object GithubModel {
         subscribers_count <- c.downField("subscribers_count").as[Int]
         topics <- c.downField("topics").as[Seq[String]]
       } yield Repository(
-        name,
-        owner,
+        name.toLowerCase,
+        owner.toLowerCase,
         avatartUrl,
         isPrivate,
         description,
@@ -142,13 +142,13 @@ object GithubModel {
     def toGithubReposWithPermission: Seq[(core.GithubRepo, String)] =
       nodes.collect {
         case GithubModel.RepoWithPermission(s"$organization/$repository", permission) =>
-          GithubRepo(organization, repository) -> permission
+          GithubRepo(organization.toLowerCase, repository.toLowerCase) -> permission
       }
 
     def toGithubRepos: Seq[core.GithubRepo] =
       nodes.collect {
         case GithubModel.RepoWithPermission(s"$organization/$repository", _) =>
-          GithubRepo(organization, repository)
+          GithubRepo(organization.toLowerCase, repository.toLowerCase)
       }
   }
 
