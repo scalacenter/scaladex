@@ -17,7 +17,6 @@ import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.config.ServerConfig
 import ch.epfl.scala.index.server.routes._
 import ch.epfl.scala.index.server.routes.api._
-import ch.epfl.scala.services.GithubService
 import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.github.GithubClient
 import ch.epfl.scala.services.storage.local.LocalStorageRepo
@@ -53,11 +52,11 @@ object Server {
         case (webPool, schedulerPool) =>
           val webDb = new SqlRepo(config.dbConf, webPool)
           val schedulerDb = new SqlRepo(config.dbConf, schedulerPool)
-          val githubService = new GithubClient(config.github)
+          val githubService = config.github.map(conf => new GithubClient(conf.token))
           val schedulerService = new SchedulerService(schedulerDb, searchEngine, githubService)
           for {
             _ <- init(webDb, schedulerService, searchEngine)
-            routes = configureRoutes(searchEngine, webDb, schedulerService, githubService)
+            routes = configureRoutes(searchEngine, webDb, schedulerService)
             _ <- IO(
               Http()
                 .bindAndHandle(routes, config.api.endpoint, config.api.port)
@@ -96,23 +95,23 @@ object Server {
   private def configureRoutes(
       esRepo: ESRepo,
       webDb: WebDatabase,
-      schedulerService: SchedulerService,
-      githubService: GithubService
+      schedulerService: SchedulerService
   )(
       implicit actor: ActorSystem
   ): Route = {
     import actor.dispatcher
     val paths = config.dataPaths
-    val session = GithubUserSession(config)
+    val githubAuth = new GithubAuth()
+    val session = new GithubUserSession(config.session)
     val searchPages = new SearchPages(esRepo, session)
 
     val localStorage = new LocalStorageRepo(paths)
     val programmaticRoutes = concat(
-      PublishApi(paths, webDb, githubService).routes,
+      new PublishApi(paths, webDb, githubAuth).routes,
       new SearchApi(esRepo, webDb, session).routes,
       Assets.routes,
       new Badges(webDb).routes,
-      Oauth2(config, session, githubService).routes
+      new Oauth2(config.oAuth2, githubAuth, session).routes
     )
     val userFacingRoutes = concat(
       new FrontPage(webDb, session).routes,

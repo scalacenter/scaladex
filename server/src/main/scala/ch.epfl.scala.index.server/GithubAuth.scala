@@ -11,55 +11,60 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import ch.epfl.scala.index.model.misc._
-import ch.epfl.scala.services.GithubService
+import ch.epfl.scala.services.github.GithubClient
 import ch.epfl.scala.utils.Secret
 
 object Response {
-  case class AccessToken(access_token: String)
+  case class AccessToken(access_token: String) {
+    val token: Secret = Secret(access_token)
+  }
 }
-
-class GithubAuth(githubClient: GithubService)(implicit sys: ActorSystem) extends Json4sSupport {
+//todo: remove Json4sSupport
+class GithubAuth()(implicit sys: ActorSystem) extends Json4sSupport {
   import sys.dispatcher
 
-  def getUserStateWithToken(token: String): Future[UserState] = info(token)
+  def getUserStateWithToken(token: String): Future[UserState] = getUserState(Secret(token))
+
   def getUserStateWithOauth2(
       clientId: String,
       clientSecret: String,
       code: String,
       redirectUri: String
-  ): Future[UserState] = {
-    def access =
-      Http()
-        .singleRequest(
-          HttpRequest(
-            method = POST,
-            uri = Uri("https://github.com/login/oauth/access_token").withQuery(
-              Query(
-                "client_id" -> clientId,
-                "client_secret" -> clientSecret,
-                "code" -> code,
-                "redirect_uri" -> redirectUri
-              )
-            ),
-            headers = List(Accept(MediaTypes.`application/json`))
-          )
-        )
-        .flatMap(response => Unmarshal(response).to[Response.AccessToken].map(_.access_token))
-
-    access.flatMap(info)
-  }
-
-  private def info(token: String): Future[UserState] = {
-    val permissions = Seq("WRITE", "MAINTAIN", "ADMIN")
-    val secret = Secret(token)
+  ): Future[UserState] =
     for {
-      user <- githubClient.fetchUser(secret)
-      organizations <- githubClient.fetchUserOrganizations(secret)
-      repos <- githubClient.fetchUserRepo(secret, permissions)
+      token <- getTokenWithOauth2(clientId, clientSecret, code, redirectUri)
+      userState <- getUserState(token)
+    } yield userState
+
+  private def getUserState(token: Secret): Future[UserState] = {
+    val githubClient = new GithubClient(token)
+    val permissions = Seq("WRITE", "MAINTAIN", "ADMIN")
+    for {
+      user <- githubClient.fetchUser()
+      organizations <- githubClient.fetchUserOrganizations()
+      repos <- githubClient.fetchUserRepo(permissions)
     } yield UserState(repos.toSet, organizations, user)
   }
-}
-
-object GithubAuth {
-  def apply(client: GithubService)(implicit sys: ActorSystem) = new GithubAuth(client)
+  private def getTokenWithOauth2(
+      clientId: String,
+      clientSecret: String,
+      code: String,
+      redirectUri: String
+  ): Future[Secret] =
+    Http()
+      .singleRequest(
+        HttpRequest(
+          method = POST,
+          uri = Uri("https://github.com/login/oauth/access_token").withQuery(
+            Query(
+              "client_id" -> clientId,
+              "client_secret" -> clientSecret,
+              "code" -> code,
+              "redirect_uri" -> redirectUri
+            )
+          ),
+          headers = List(Accept(MediaTypes.`application/json`))
+        )
+      )
+      .flatMap(response => Unmarshal(response).to[Response.AccessToken].map(_.token))
 }

@@ -5,23 +5,22 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-import ch.epfl.scala.services.GithubService
 import ch.epfl.scala.services.SchedulerDatabase
 import ch.epfl.scala.services.SearchEngine
+import ch.epfl.scala.services.github.GithubClient
 import ch.epfl.scala.utils.ScalaExtensions._
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.server.service.SchedulerService._
 import scaladex.template.SchedulerStatus
 
-class SchedulerService(db: SchedulerDatabase, searchEngine: SearchEngine, githubService: GithubService)
+class SchedulerService(db: SchedulerDatabase, searchEngine: SearchEngine, githubClientOpt: Option[GithubClient])
     extends LazyLogging {
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
   private val mostDependentProjectScheduler = Scheduler("most-dependent", mostDependentProjectJob, 1.hour)
   private val updateProject = Scheduler("update-projects", updateProjectJob, 30.minutes)
   private val searchSynchronizer = new SearchSynchronizer(db, searchEngine)
-  private val githubSynchronizerOpt =
-    if (githubService.isScaladexTokenProvided) Some(new GithubSynchronizer(db, githubService)) else None
+  private val githubSynchronizerOpt = githubClientOpt.map(client => new GithubSynchronizer(db, client))
 
   private val schedulers = Map[String, Scheduler](
     mostDependentProjectScheduler.name -> mostDependentProjectScheduler,

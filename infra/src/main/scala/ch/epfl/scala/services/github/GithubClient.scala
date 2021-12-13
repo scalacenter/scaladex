@@ -46,10 +46,8 @@ import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.syntax._
 
-class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSystem)
-    extends GithubService
-    with LazyLogging {
-  private val credentials: Option[OAuth2BearerToken] = githubConfig.map(conf => OAuth2BearerToken(conf.token.decode))
+class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubService with LazyLogging {
+  private val credentials: OAuth2BearerToken = OAuth2BearerToken(token.decode)
   private val acceptJson = RawHeader("Accept", "application/vnd.github.v3+json")
   private val acceptHtmlVersion = RawHeader("Accept", "application/vnd.github.VERSION.html")
 
@@ -79,7 +77,7 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
       })(Keep.left)
       .run()
 
-  override def update(repo: GithubRepo): Future[GithubInfo] =
+  def update(repo: GithubRepo): Future[GithubInfo] =
     for {
       repoInfo <- getRepoInfo(repo)
       readme <- getReadme(repo)
@@ -109,54 +107,40 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
       updatedAt = Instant.now()
     )
 
-  def getReadme(repo: GithubRepo): Future[String] =
-    credentials match {
-      case None => noTokenError()
-      case Some(credentials) =>
-        val request = HttpRequest(uri = s"${mainGithubUrl(repo)}/readme")
-          .addCredentials(credentials)
-          .addHeader(acceptHtmlVersion)
+  def getReadme(repo: GithubRepo): Future[String] = {
+    val request = HttpRequest(uri = s"${mainGithubUrl(repo)}/readme")
+      .addCredentials(credentials)
+      .addHeader(acceptHtmlVersion)
 
-        process(request)(queueRequest).flatMap {
-          case (_, entity) =>
-            entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String)
-        }
+    process(request).flatMap {
+      case (_, entity) =>
+        entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String)
     }
+  }
 
-  override val isScaladexTokenProvided: Boolean = credentials.exists(_ => true)
+  def getCommunityProfile(repo: GithubRepo): Future[Option[GithubModel.CommunityProfile]] = {
+    val request = HttpRequest(uri = s"${mainGithubUrl(repo)}/community/profile")
+      .addCredentials(credentials)
+      .addHeader(RawHeader("Accept", "application/vnd.github.black-panther-preview+json"))
+    get[GithubModel.CommunityProfile](request).failWithTry
+      .map {
+        case Success(profile) => Some(profile)
+        case Failure(exception) =>
+          logger.warn(s"""Failed to download community profile of $repo because of "${exception.getMessage}"""")
+          None
+      }
+  }
 
-  def getCommunityProfile(repo: GithubRepo): Future[Option[GithubModel.CommunityProfile]] =
-    credentials match {
-      case None => Future.failed(new Exception("no token provided"))
-      case Some(credentials) =>
-        val request = HttpRequest(uri = s"${mainGithubUrl(repo)}/community/profile")
-          .addCredentials(credentials)
-          .addHeader(RawHeader("Accept", "application/vnd.github.black-panther-preview+json"))
-        get[GithubModel.CommunityProfile](request)(queueRequest).failWithTry
-          .map {
-            case Success(profile) => Some(profile)
-            case Failure(exception) =>
-              logger.warn(s"""Failed to download community profile of $repo because of "${exception.getMessage}"""")
-              None
-          }
-    }
-
-  def getContributors(repo: GithubRepo): Future[List[Contributor]] =
-    credentials match {
-      case None              => noTokenError()
-      case Some(credentials) => getContributors(repo, credentials)
-    }
-
-  private def getContributors(repo: GithubRepo, credentials: OAuth2BearerToken): Future[List[Contributor]] = {
+  def getContributors(repo: GithubRepo): Future[List[Contributor]] = {
     def url(page: Int = 1) = HttpRequest(uri = s"${mainGithubUrl(repo)}/contributors?${perPage()}&${inPage(page)}")
 
     def getContributionPage(page: Int): Future[List[Contributor]] = {
       val request = url(page).addHeader(acceptJson).addCredentials(credentials)
-      get[List[Contributor]](request)(queueRequest)
+      get[List[Contributor]](request)
     }
 
     val firstPage = url().addHeader(acceptJson).addCredentials(credentials)
-    process(firstPage)(queueRequest).flatMap {
+    process(firstPage).flatMap {
       case (headers, entity) =>
         val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
         lastPage match {
@@ -171,29 +155,20 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
     }
   }
 
-  def getRepoInfo(repo: GithubRepo): Future[GithubModel.Repository] =
-    credentials match {
-      case None => noTokenError()
-      case Some(credentials) =>
-        val request = HttpRequest(uri = s"${mainGithubUrl(repo)}").addHeader(acceptJson).addCredentials(credentials)
-        get[GithubModel.Repository](request)(queueRequest)
-    }
+  def getRepoInfo(repo: GithubRepo): Future[GithubModel.Repository] = {
+    val request = HttpRequest(uri = s"${mainGithubUrl(repo)}").addHeader(acceptJson).addCredentials(credentials)
+    get[GithubModel.Repository](request)
+  }
 
-  def getOpenIssues(repo: GithubRepo): Future[Seq[GithubModel.OpenIssue]] =
-    credentials match {
-      case Some(credentials) => getOpenIssues(repo, credentials)
-      case None              => noTokenError()
-    }
-
-  private def getOpenIssues(repo: GithubRepo, credentials: OAuth2BearerToken): Future[Seq[GithubModel.OpenIssue]] = {
+  def getOpenIssues(repo: GithubRepo): Future[Seq[GithubModel.OpenIssue]] = {
     def url(page: Int = 1) = HttpRequest(uri = s"${mainGithubUrl(repo)}/issues?${perPage()}&page=$page")
 
     def getOpenIssuePage(page: Int): Future[Seq[GithubModel.OpenIssue]] = {
       val request = url(page).addHeader(acceptJson).addCredentials(credentials)
-      get[Seq[Option[GithubModel.OpenIssue]]](request)(queueRequest).map(_.flatten)
+      get[Seq[Option[GithubModel.OpenIssue]]](request).map(_.flatten)
     }
 
-    process(url(1))(queueRequest).failWithTry.flatMap {
+    process(url(1)).failWithTry.flatMap {
       case Success((headers, entity)) =>
         val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
         lastPage match {
@@ -220,7 +195,7 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
     }
   }
 
-  def fetchUserRepo(userToken: Secret, permissions: Seq[String]): Future[Seq[GithubRepo]] = {
+  def fetchUserRepo(filterPermissions: Seq[String]): Future[Seq[GithubRepo]] = {
     val query =
       s"""|query {
           |  viewer {
@@ -247,13 +222,13 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
           |  }
           |}""".stripMargin
 
-    val request = graphqlRequest(userToken, query)
-    val githubRepoPage1 = get[List[GithubModel.RepoWithPermissionPage]](request)(r => Http().singleRequest(r))
+    val request = graphqlRequest(token, query)
+    val githubRepoPage1 = get[List[GithubModel.RepoWithPermissionPage]](request)
     githubRepoPage1.map(_.flatMap(_.toGithubRepos).collect {
-      case (repo, permission) if permissions.contains(permission) => repo
+      case (repo, permission) if filterPermissions.contains(permission) => repo
     })
   }
-  def fetchUser(userToken: Secret): Future[UserInfo] = {
+  def fetchUser(): Future[UserInfo] = {
     val query =
       """|query {
          |  viewer {
@@ -262,14 +237,14 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
          |    name
          |  }
          |}""".stripMargin
-    val request = graphqlRequest(userToken, query)
-    val userInfo = get[GithubModel.UserInfo](request)(r => Http().singleRequest(r))
+    val request = graphqlRequest(token, query)
+    val userInfo = get[GithubModel.UserInfo](request)
 
-    userInfo.map(_.toCoreUserInfo(userToken))
+    userInfo.map(_.toCoreUserInfo(token))
   }
 
   // only the first 100 orgs
-  def fetchUserOrganizations(userToken: Secret): Future[Set[NewProject.Organization]] = {
+  def fetchUserOrganizations(): Future[Set[NewProject.Organization]] = {
     val query =
       """|query {
          |  viewer {
@@ -280,8 +255,8 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
          |    }
          |  }
          |}""".stripMargin
-    val request = graphqlRequest(userToken, query)
-    val organizations = get[Seq[GithubModel.Organization]](request)(r => Http().singleRequest(r))
+    val request = graphqlRequest(token, query)
+    val organizations = get[Seq[GithubModel.Organization]](request)
     organizations.map(_.map(_.toCoreOrganization).toSet)
   }
 
@@ -305,8 +280,6 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
     }
   }
 
-  private def noTokenError() = Future.failed(new Exception("Cannot connect to github because no token provided"))
-
   // when a token is provided, we don't use the queuing system
   private def graphqlRequest(token: Secret, query: String): HttpRequest = {
     val json = Map("query" -> query.asJson).asJson
@@ -318,21 +291,21 @@ class GithubClient(githubConfig: Option[GithubConfig])(implicit system: ActorSys
     )
   }
 
-  private def get[A](request: HttpRequest)(
-      send: HttpRequest => Future[HttpResponse]
+  private def get[A](
+      request: HttpRequest
   )(implicit decoder: io.circe.Decoder[A], system: ActorSystem, ec: ExecutionContextExecutor): Future[A] =
-    process(request)(send).flatMap { case (_, entity) => Unmarshal(entity).to[A] }
+    process(request).flatMap { case (_, entity) => Unmarshal(entity).to[A] }
 
-  private def process(request: HttpRequest)(
-      send: HttpRequest => Future[HttpResponse]
+  private def process(
+      request: HttpRequest
   )(implicit system: ActorSystem, ec: ExecutionContextExecutor): Future[(Seq[HttpHeader], ResponseEntity)] =
-    send(request).flatMap {
+    queueRequest(request).flatMap {
       case r @ HttpResponse(StatusCodes.OK, headers, entity, _) =>
         Future.successful((headers, entity))
       case r @ HttpResponse(StatusCodes.MovedPermanently, headers, entity, _) =>
         entity.discardBytes()
         val newRequest = HttpRequest(uri = headers.find(_.is("location")).get.value())
-        process(newRequest)(send)
+        process(newRequest)
       case _ @HttpResponse(code, _, entity, _) =>
         entity.discardBytes()
         Future.failed(new Exception(s"Request failed, response code: $code"))
