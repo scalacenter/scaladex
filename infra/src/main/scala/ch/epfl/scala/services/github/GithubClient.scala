@@ -293,14 +293,14 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
   def fetchUserOrganizations(login: String): Future[Set[NewProject.Organization]] = {
     val query =
       s"""|query {
-         |  user(login: "$login") {
-         |    organizations(first: 100) {
-         |      nodes {
-         |        login
-         |      }
-         |    }
-         |  }
-         |}""".stripMargin
+          |  user(login: "$login") {
+          |    organizations(first: 100) {
+          |      nodes {
+          |        login
+          |      }
+          |    }
+          |  }
+          |}""".stripMargin
     val request = graphqlRequest(token, query)
     val organizations = get[Seq[GithubModel.Organization]](request)
     organizations.map(_.map(_.toCoreOrganization).toSet)

@@ -13,7 +13,7 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
   val githubConfig: Option[GithubConfig] = GithubConfig.from(ConfigFactory.load())
 
   // you need to configure locally a token
-  val github =  new GithubClient(githubConfig.get.token)
+  val github = new GithubClient(githubConfig.get.token)
   val scalafixRepo: GithubRepo = GithubRepo("playframework", "playframework")
 
   describe("githubClient") {
