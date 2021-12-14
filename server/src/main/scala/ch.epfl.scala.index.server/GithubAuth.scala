@@ -12,6 +12,7 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.services.github.GithubClient
+import ch.epfl.scala.utils.ScalaExtensions.FutureExtension
 import ch.epfl.scala.utils.Secret
 
 object Response {
@@ -41,9 +42,12 @@ class GithubAuth()(implicit sys: ActorSystem) extends Json4sSupport {
     val permissions = Seq("WRITE", "MAINTAIN", "ADMIN")
     for {
       user <- githubClient.fetchUser()
-      organizations <- githubClient.fetchUserOrganizations()
-      repos <- githubClient.fetchUserRepo(permissions)
-    } yield UserState(repos.toSet, organizations, user)
+      organizationsTry <- githubClient.fetchUserOrganizations(user.login).failWithTry
+      reposUnderOrgsTry <- githubClient.fetchReposUnderUserOrganizations(user.login, permissions).failWithTry
+      reposTry <- githubClient.fetchUserRepo(user.login, permissions).failWithTry
+      orgs = organizationsTry.getOrElse(Set())
+      repos = reposUnderOrgsTry.getOrElse(Nil) ++ reposTry.getOrElse(Nil)
+    } yield UserState(repos.toSet, orgs, user)
   }
   private def getTokenWithOauth2(
       clientId: String,
