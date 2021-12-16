@@ -1,13 +1,15 @@
 package ch.epfl.scala.services.storage.sql
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+
 import scala.concurrent.ExecutionContext
+
 import ch.epfl.scala.index.Values
 import ch.epfl.scala.index.model.SemanticVersion
-import ch.epfl.scala.index.model.misc.GithubStatus.Moved
-import ch.epfl.scala.index.model.misc.{GithubInfo, GithubStatus}
+import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.Platform.ScalaJvm
 import ch.epfl.scala.index.model.release.ScalaVersion
@@ -19,8 +21,6 @@ import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.utils.ScalaExtensions._
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
-
-import java.time.temporal.ChronoUnit
 
 class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
 

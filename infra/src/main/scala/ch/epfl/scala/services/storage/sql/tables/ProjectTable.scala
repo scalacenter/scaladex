@@ -1,6 +1,7 @@
 package ch.epfl.scala.services.storage.sql.tables
 
 import java.time.Instant
+
 import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.utils.DoobieUtils.Fragments._

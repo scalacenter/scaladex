@@ -1,11 +1,14 @@
 package ch.epfl.scala.services.storage.sql
 
 import scala.concurrent.ExecutionContext
+
 import cats.effect.ContextShift
 import cats.effect.IO
 import doobie.scalatest.IOChecker
 import doobie.util.transactor.Transactor
-import org.scalatest.{Assertions, BeforeAndAfterAll, BeforeAndAfterEach, Suite}
+import org.scalatest.Assertions
+import org.scalatest.BeforeAndAfterEach
+import org.scalatest.Suite
 
 trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach {
   self: Assertions with Suite =>

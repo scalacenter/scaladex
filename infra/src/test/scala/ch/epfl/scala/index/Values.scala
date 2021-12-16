@@ -1,6 +1,8 @@
 package ch.epfl.scala.index
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
+
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubIssue
@@ -15,8 +17,6 @@ import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.search.ProjectDocument
-
-import java.time.temporal.{ChronoUnit, TemporalUnit}
 
 object Values {
   // database only store millisecond precision
