@@ -6,6 +6,7 @@ import java.time.temporal.ChronoUnit
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubIssue
+import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.misc.Url
 import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.Platform
@@ -19,44 +20,10 @@ import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.search.ProjectDocument
 
 object Values {
-  // database only store millisecond precision
   val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
   object Scalafix {
-    val project: NewProject =
-      NewProject.defaultProject(
-        "scalacenter",
-        "scalafix",
-        created = Some(Instant.ofEpochMilli(1475505237265L)),
-        now = now
-      )
-
-    val reference: NewProject.Reference = project.reference
-    val githubInfo: GithubInfo =
-      GithubInfo
-        .empty(reference.repository.value, reference.organization.value)
-        .copy(
-          stars = Some(643),
-          forks = Some(148),
-          contributorCount = 76
-        )
-    val projectWithGithubInfo: NewProject =
-      project.copy(githubInfo = Some(githubInfo))
-
-    val dataForm: DataForm = DataForm(
-      defaultStableVersion = false,
-      defaultArtifact = None,
-      strictVersions = false,
-      customScalaDoc = None,
-      documentationLinks = List(),
-      deprecated = false,
-      contributorsWanted = false,
-      artifactDeprecations = Set(),
-      cliArtifacts = Set(),
-      primaryTopic = Some("Scala3")
-    )
-    val projectWithdataForm: NewProject =
-      project.copy(dataForm = dataForm)
-
+    val reference: NewProject.Reference = NewProject.Reference.from("scalacenter", "scalafix")
+    val creationDate: Instant = Instant.ofEpochMilli(1475505237265L)
     val release: NewRelease = NewRelease(
       MavenReference(
         "ch.epfl.scala",
@@ -69,19 +36,41 @@ object Values {
       artifactName = ArtifactName("scalafix-core"),
       platform = ScalaJvm(ScalaVersion.`2.13`),
       description = None,
-      releasedAt = None,
+      releasedAt = Some(creationDate),
       resolver = None,
       licenses = Set(),
       isNonStandardLib = false
     )
-
-    val projectDocument: ProjectDocument = ProjectDocument(projectWithGithubInfo, Seq(release), 0)
+    val githubInfo: GithubInfo =
+      GithubInfo
+        .empty(reference.repository.value, reference.organization.value)
+        .copy(
+          stars = Some(643),
+          forks = Some(148),
+          contributorCount = 76,
+          topics = Set("refactoring", "dotty", "linter", "metaprogramming", "scalafix", "sbt", "rewrite", "scala")
+        )
+    val githubStatus: GithubStatus = GithubStatus.Ok(now)
+    val dataForm: DataForm = DataForm(
+      defaultStableVersion = false,
+      defaultArtifact = None,
+      strictVersions = false,
+      customScalaDoc = None,
+      documentationLinks = List(),
+      deprecated = false,
+      contributorsWanted = false,
+      artifactDeprecations = Set(),
+      cliArtifacts = Set(),
+      primaryTopic = Some("Scala3"),
+      beginnerIssuesLabel = None
+    )
+    val project: NewProject =
+      NewProject.default(reference, Some(creationDate), Some(githubInfo), Some(dataForm))
+    val projectDocument: ProjectDocument = ProjectDocument(project, Seq(release), 0)
   }
 
   object PlayJsonExtra {
-    val project: NewProject =
-      NewProject.defaultProject("xuwei-k", "play-json-extra", now = now)
-    val reference: NewProject.Reference = project.reference
+    val reference: NewProject.Reference = NewProject.Reference.from("xuwei-k", "play-json-extra")
     val release: NewRelease = NewRelease(
       MavenReference(
         "com.github.xuwei-k",
@@ -108,13 +97,12 @@ object Values {
   }
 
   object Cats {
-    val project: NewProject = NewProject.defaultProject(
-      "typelevel",
-      "cats",
+    val reference: NewProject.Reference = NewProject.Reference.from("typelevel", "cats")
+    val project: NewProject = NewProject.default(
+      reference,
       created = Some(Instant.ofEpochMilli(1454649333334L)),
       now = now
     )
-    val reference: NewProject.Reference = project.reference
     val issueAboutFoo: GithubIssue = GithubIssue(1, "Issue about foo", Url("https://github.com/typelevel/cats/pull/1"))
     val issueAboutBar: GithubIssue = GithubIssue(2, "Issue about bar", Url("https://github.com/typelevel/cats/pull/2"))
     val githubInfo: GithubInfo = GithubInfo

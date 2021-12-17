@@ -4,9 +4,9 @@ import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.ProjectDependency
 import ch.epfl.scala.index.newModel.ReleaseDependency
-import ch.epfl.scala.utils.DoobieUtils.Fragments.buildInsert
-import ch.epfl.scala.utils.DoobieUtils.Fragments.buildSelect
+import ch.epfl.scala.utils.DoobieUtils.Fragments._
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
+import ch.epfl.scala.utils.DoobieUtils._
 import doobie.implicits._
 import doobie.util.fragment.Fragment
 import doobie.util.update.Update
@@ -62,11 +62,7 @@ object ReleaseDependencyTable {
     fr0"${d.source.groupId}, ${d.source.artifactId} ,${d.source.version}, ${d.target.groupId}," ++
       fr0" ${d.target.artifactId}, ${d.target.version}, ${d.scope}"
 
-  def insert(elt: ReleaseDependency): doobie.Update0 =
-    buildInsert(tableFr, fieldsFr, values(elt)).update
-
-  def insertMany(elts: Seq[ReleaseDependency]): doobie.ConnectionIO[Int] =
-    Update[ReleaseDependency](insert(elts.head).sql).updateMany(elts)
+  val insert: Update[ReleaseDependency] = insertRequest(table, fields)
 
   def indexedDependencies(): doobie.Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]

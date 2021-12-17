@@ -73,11 +73,12 @@ object SchedulerService {
 
     } yield ()
 
-  private def updateCreatedTimeIn(db: SchedulerDatabase)(implicit ec: ExecutionContext): Future[Unit] =
-    db.updateCreatedInProjects()
-      .mapFailure(e =>
-        new Exception(
-          s"not able to updateCreatedTimeIn all projects because of ${e.getMessage}"
-        )
-      )
+  private def updateCreatedTimeIn(db: SchedulerDatabase)(implicit ec: ExecutionContext): Future[Unit] = {
+    // one request at time
+    val future = for {
+      oldestReleases <- db.computeAllProjectsCreationDate()
+      _ <- oldestReleases.mapSync { case (creationDate, ref) => db.updateProjectCreationDate(ref, creationDate) }
+    } yield ()
+    future.mapFailure(e => new Exception(s"not able to updateCreatedTimeIn all projects because of ${e.getMessage}"))
+  }
 }

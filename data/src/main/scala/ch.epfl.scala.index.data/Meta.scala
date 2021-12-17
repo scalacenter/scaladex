@@ -8,7 +8,6 @@ import ch.epfl.scala.index.model.Descending
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository
 import com.github.nscala_time.time.Imports._
-import org.joda.time.DateTime
 import org.json4s._
 import org.json4s.native.Serialization.{write => swrite}
 import org.typelevel.jawn.support.json4s.Parser
@@ -16,7 +15,7 @@ import org.typelevel.jawn.support.json4s.Parser
 case class Meta(
     sha1: String,
     path: String,
-    created: DateTime
+    created: String
 )
 
 object Meta {

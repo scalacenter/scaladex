@@ -9,7 +9,7 @@ sealed trait GithubStatus {
 
   override def toString: String = this match {
     case GithubStatus.Ok(when)      => s"GithubStatus.Ok($when)"
-    case GithubStatus.Unkhown(when) => s"GithubStatus.Unkhown($when)"
+    case GithubStatus.Unknown(when) => s"GithubStatus.Unkhown($when)"
     case GithubStatus.Moved(when, organization, repository) =>
       s"GithubStatus.Moved($when, newName = $organization/$repository)"
     case GithubStatus.NotFound(when) => s"GithubStatus.NotFound($when)"
@@ -19,7 +19,7 @@ sealed trait GithubStatus {
 
   def movedOrNotFound: Boolean = this match {
     case GithubStatus.Ok(_)           => false
-    case GithubStatus.Unkhown(_)      => false
+    case GithubStatus.Unknown(_)      => false
     case GithubStatus.Moved(_, _, _)  => true
     case GithubStatus.NotFound(_)     => true
     case GithubStatus.Failed(_, _, _) => false
@@ -28,7 +28,7 @@ sealed trait GithubStatus {
 }
 object GithubStatus {
   case class Ok(when: Instant) extends GithubStatus
-  case class Unkhown(when: Instant) extends GithubStatus
+  case class Unknown(when: Instant) extends GithubStatus
   case class Moved(when: Instant, organization: NewProject.Organization, repository: NewProject.Repository)
       extends GithubStatus
   case class NotFound(when: Instant) extends GithubStatus

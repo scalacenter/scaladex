@@ -11,9 +11,8 @@ class ReleaseTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matcher
   import ReleaseTable._
   describe("should generate the query") {
     it("insert") {
-      val q = insert(PlayJsonExtra.release)
-      check(q)
-      q.sql shouldBe
+      check(ReleaseTable.insert)
+      ReleaseTable.insert.sql shouldBe
         s"""INSERT INTO releases (groupId, artifactId, version, organization,
            | repository, artifact, platform, description, released_at, resolver,
            | licenses, isNonStandardLib) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin

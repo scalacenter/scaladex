@@ -22,7 +22,6 @@ import ch.epfl.scala.index.data.download.PlayWsDownloader
 import ch.epfl.scala.index.data.maven.DownloadParentPoms
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.maven.ReleaseModel
-import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository
@@ -37,6 +36,7 @@ private[api] class PublishProcess(paths: DataPaths, db: WebDatabase)(
   private val indexingActor = system.actorOf(
     Props(classOf[impl.IndexingActor], paths, db, system)
   )
+  private val githubExtractor = new GithubRepoExtractor(paths)
 
   /**
    * write the pom file to disk if it's a pom file (SBT will also send *.pom.sha1 and *.pom.md5)
@@ -59,7 +59,7 @@ private[api] class PublishProcess(paths: DataPaths, db: WebDatabase)(
       }.flatMap { _ =>
         getTmpPom(data) match {
           case List(Success((pom, _, _))) =>
-            getGithubRepo(pom) match {
+            githubExtractor.extract(pom) match {
               case None =>
                 log.warn("POM saved without Github information")
                 data.deleteTemp()
@@ -79,7 +79,7 @@ private[api] class PublishProcess(paths: DataPaths, db: WebDatabase)(
 
                   Meta.append(
                     paths,
-                    Meta(data.hash, data.path, data.datetimeCreated),
+                    Meta(data.hash, data.path, data.datetimeCreated.toString),
                     repository
                   )
 
@@ -138,14 +138,4 @@ private[api] class PublishProcess(paths: DataPaths, db: WebDatabase)(
 
     PomsReader.tmp(paths, path).load()
   }
-
-  /**
-   * try to extract a github repository from scm tag in Maven Model
-   *
-   * @param pom the Maven model
-   * @return
-   */
-  private def getGithubRepo(pom: ReleaseModel): Option[GithubRepo] =
-    (new GithubRepoExtractor(paths)).apply(pom)
-
 }

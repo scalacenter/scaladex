@@ -1,5 +1,7 @@
 package ch.epfl.scala.services
 
+import java.time.Instant
+
 import scala.concurrent.Future
 
 import ch.epfl.scala.index.model.release.Platform
@@ -10,11 +12,9 @@ import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.index.newModel.ReleaseDependency
 
 trait WebDatabase {
-  def insertProject(p: NewProject): Future[Unit]
-  def insertOrUpdateProject(p: NewProject): Future[Unit]
+  def insertRelease(release: NewRelease, dependencies: Seq[ReleaseDependency], time: Instant): Future[Unit]
   def updateProjectForm(ref: NewProject.Reference, dataForm: DataForm): Future[Unit]
   def findProject(projectRef: NewProject.Reference): Future[Option[NewProject]]
-  def insertReleases(r: Seq[NewRelease]): Future[Int]
   def findReleases(projectRef: NewProject.Reference): Future[Seq[NewRelease]]
   def findReleases(projectRef: NewProject.Reference, artifactName: ArtifactName): Future[Seq[NewRelease]]
   def getMostDependentUponProject(max: Int): Future[List[(NewProject, Long)]]
@@ -23,7 +23,6 @@ trait WebDatabase {
   def getAllTopics(): Future[Seq[String]]
   def getAllPlatforms(): Future[Map[NewProject.Reference, Set[Platform]]]
   def getLatestProjects(limit: Int): Future[Seq[NewProject]]
-  def insertDependencies(dependencies: Seq[ReleaseDependency]): Future[Int]
   def countProjects(): Future[Long]
   def countReleases(): Future[Long]
   def countDependencies(): Future[Long]

@@ -1,97 +1,83 @@
 package ch.epfl.scala.index.data.init
 
+import java.time.Instant
+
 import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Try
 
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.index.data.project.ProjectConvert
+import ch.epfl.scala.index.data.meta.ReleaseConverter
 import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.services.storage.DataPaths
+import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import ch.epfl.scala.services.storage.sql.SqlRepo
 import ch.epfl.scala.utils.ScalaExtensions._
 import com.typesafe.scalalogging.LazyLogging
 
 class Init(
-    dataPaths: DataPaths,
+    paths: DataPaths,
     db: SqlRepo
 )(implicit val system: ActorSystem)
     extends LazyLogging {
   import system.dispatcher
+  val converter = new ReleaseConverter(paths)
+  val localStorage = new LocalStorageRepo(paths)
 
-  def run(): Future[Long] = {
-
-    // convert data
-    val projectConverter = new ProjectConvert(dataPaths)
-    val (projects, releases, dependencies) =
-      projectConverter.convertAll(PomsReader.loadAll(dataPaths), Map())
-
-    logger.info("Start cleaning both ES and PostgreSQL")
-    val cleaning = for {
-      _ <- db.dropTables.unsafeToFuture()
-      _ <- db.migrate.unsafeToFuture()
-    } yield ()
-
-    // insertData
+  def run(): Future[Unit] = {
+    logger.info("Dropping tables")
     for {
-      _ <- cleaning
-      _ = logger.info("inserting projects to database")
-      insertedAnProject <- db.insertProjectsWithFailures(projects.map(NewProject.from))
-      _ = logFailures(
-        insertedAnProject,
-        (p: NewProject) => p.reference.toString,
-        "projects"
-      )
-      _ = logger.info("inserting releases to database")
-      insertedReleases <- db.insertReleasesWithFailures(
-        releases.map(NewRelease.from)
-      )
-      _ = logFailures(
-        insertedReleases,
-        (r: NewRelease) => r.maven.name,
-        "releases"
-      )
-      dependenciesInsertion <- db
-        .insertDependencies(dependencies)
-        .failWithTry
-      _ = if (dependenciesInsertion.isFailure)
-        logger.info(s"failed to insert ${dependencies.size} into dependencies")
+      _ <- db.dropTables.unsafeToFuture()
+      _ = logger.info("Creating tables")
+      _ <- db.migrate.unsafeToFuture()
+      _ = logger.info("Inserting all releases from local storage...")
+      _ <- insertAllReleases()
+      _ = logger.info("Inserting all data forms form local storage...")
+      _ <- insertAllDataForms()
+      _ = logger.info("Inserting all github infos form local storage...")
       // counting what have been inserted
-      numberOfIndexedProjects <- db.countProjects()
-      countGithubInfo <- db.countGithubInfo()
-      countProjectUserDataForm <- db.countProjectDataForm()
-      countReleases <- db.countReleases()
-      countDependencies <- db.countDependencies()
+      projectCount <- db.countProjects()
+      dataFormCount <- db.countProjectDataForm()
+      releaseCount <- db.countReleases()
+      dependencyCount <- db.countDependencies()
+
     } yield {
-      logger.info(s"$numberOfIndexedProjects projects have been indexed")
-      logger.info(s"$countGithubInfo countGithubInfo have been indexed")
-      logger.info(
-        s"$countProjectUserDataForm countProjectUserDataForm have been indexed"
-      )
-      logger.info(s"$countReleases release have been indexed")
-      logger.info(s"$countDependencies dependencies have been indexed")
-      numberOfIndexedProjects
+      logger.info(s"$projectCount projects are inserted")
+      logger.info(s"$dataFormCount data forms are inserted")
+      logger.info(s"$releaseCount releases are inserted")
+      logger.info(s"$dependencyCount dependencies are inserted")
     }
   }
 
-  private def logFailures[A, B](res: Seq[(A, Try[B])], toString: A => String, table: String): Unit = {
-    val failures = res.collect {
-      case (a, Failure(exception)) =>
-        logger.warn(
-          s"failed to insert ${toString(a)} because ${exception.getMessage}"
-        )
-        a
-    }
-    if (failures.nonEmpty)
-      logger.warn(s"${failures.size} insertion failed in table $table")
-    else ()
+  private def insertAllReleases(): Future[Unit] =
+    PomsReader
+      .loadAll(paths)
+      .flatMap {
+        case (pom, localRepo, sha1) =>
+          converter.convert(pom, localRepo, sha1)
+      }
+      .map {
+        case (release, dependencies) =>
+          db.insertRelease(release, dependencies, Instant.now)
+      }
+      .sequence
+      .map(_ => ())
+
+  private def insertAllDataForms(): Future[Unit] = {
+    val allDataForms = localStorage.allDataForms()
+    def updateDataForm(ref: NewProject.Reference): Future[Unit] =
+      allDataForms
+        .get(ref)
+        .map(db.updateProjectForm(ref, _))
+        .getOrElse(Future.successful(()))
+    for {
+      projectRefs <- db.getAllProjectRef()
+      _ <- projectRefs.map(updateDataForm).sequence
+    } yield ()
   }
 }
 
 object Init {
-  def run(dataPaths: DataPaths, db: SqlRepo)(implicit sys: ActorSystem): Future[Long] = {
+  def run(dataPaths: DataPaths, db: SqlRepo)(implicit sys: ActorSystem): Future[Unit] = {
     val init = new Init(dataPaths, db)
     init.run()
   }

@@ -61,7 +61,7 @@ class GithubRepoExtractor(paths: DataPaths) {
       (matcher, GithubRepo(organization, repo))
     }
 
-  def apply(pom: maven.ReleaseModel): Option[GithubRepo] = {
+  def extract(pom: maven.ReleaseModel): Option[GithubRepo] = {
     val fromPoms = pom.scm match {
       case Some(scm) =>
         List(scm.connection, scm.developerConnection, scm.url).flatten
@@ -100,7 +100,7 @@ class GithubRepoExtractor(paths: DataPaths) {
       PomsReader.loadAll(paths).map { case (pom, _, _) => pom }
 
     val notClaimed = poms
-      .filter(pom => apply(pom).isEmpty)
+      .filter(pom => extract(pom).isEmpty)
       .map(pom => s"${pom.groupId} ${pom.artifactId}")
       .toSeq
       .distinct

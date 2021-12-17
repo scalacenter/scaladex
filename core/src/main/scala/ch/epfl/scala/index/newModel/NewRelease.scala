@@ -6,7 +6,6 @@ import scala.util.Try
 
 import ch.epfl.scala.index.model.Env
 import ch.epfl.scala.index.model.License
-import ch.epfl.scala.index.model.Release
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.PatchBinary
@@ -223,19 +222,4 @@ object NewRelease {
   // we used to write joda.DateTime and now we moved to Instant
   private def parseToInstant(s: String): Option[Instant] =
     Try(format.parseDateTime(s)).map(t => Instant.ofEpochMilli(t.getMillis)).orElse(Try(Instant.parse(s))).toOption
-
-  def from(r: Release): NewRelease =
-    NewRelease(
-      maven = r.maven,
-      organization = Organization(r.reference.organization),
-      repository = Repository(r.reference.repository),
-      artifactName = ArtifactName(r.reference.artifact),
-      version = r.reference.version,
-      platform = r.reference.target,
-      description = r.description,
-      releasedAt = r.released.flatMap(parseToInstant),
-      resolver = r.resolver,
-      licenses = r.licenses,
-      isNonStandardLib = r.isNonStandardLib
-    )
 }

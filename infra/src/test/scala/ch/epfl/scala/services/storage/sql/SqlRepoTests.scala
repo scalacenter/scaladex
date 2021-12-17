@@ -8,14 +8,10 @@ import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 
 import ch.epfl.scala.index.Values
-import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.release.MavenReference
-import ch.epfl.scala.index.model.release.Platform.ScalaJvm
-import ch.epfl.scala.index.model.release.ScalaVersion
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
-import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.index.newModel.ProjectDependency
 import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.utils.ScalaExtensions._
@@ -31,76 +27,57 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
   import Values._
 
   describe("SqlRepo") {
-    it("insert project without githubInfo") {
+    it("insert release and its dependencies") {
       for {
-        _ <- db.insertProject(Scalafix.project)
-        _ = println(Scalafix.project.githubStatus)
-        foundProject <- db.findProject(Scalafix.project.reference)
-      } yield foundProject shouldBe Some(Scalafix.project)
-    }
-
-    it("insert project with githubInfo") {
-      for {
-        _ <- db.insertOrUpdateProject(Scalafix.projectWithGithubInfo)
-        foundProject <- db.findProject(Scalafix.reference)
-      } yield foundProject shouldBe Some(Scalafix.projectWithGithubInfo)
+        _ <- db.insertRelease(Cats.core_3, Cats.dependencies, now)
+        project <- db.findProject(Cats.reference)
+        releases <- db.findReleases(Cats.reference)
+        dependencies <- db.findDependencies(Cats.core_3)
+      } yield {
+        project should not be empty
+        releases should contain theSameElementsAs Seq(Cats.core_3)
+        dependencies should contain theSameElementsAs Cats.dependencies
+      }
     }
 
     it("should find releases") {
       for {
-        _ <- db.insertRelease(PlayJsonExtra.release)
+        _ <- db.insertRelease(PlayJsonExtra.release, Seq.empty, now)
         foundReleases <- db.findReleases(PlayJsonExtra.reference)
       } yield foundReleases shouldBe List(PlayJsonExtra.release)
     }
 
-    it("should insert dependencies") {
-      for {
-        _ <- db.insertDependencies(Seq(CatsEffect.dependency, CatsEffect.testDependency))
-      } yield succeed
-    }
-
     it("should update user project form") {
       for {
+        _ <- db.insertRelease(Scalafix.release, Seq.empty, now)
         _ <- db.updateProjectForm(Scalafix.reference, Scalafix.dataForm)
       } yield succeed
     }
 
     it("should find directDependencies") {
       for {
-        _ <- db.insertReleases(
-          Seq(Cats.core_3, Cats.kernel_3)
-        ) // we don't inser Cats.laws_3
-        _ <- db.insertDependencies(Cats.dependencies)
+        _ <- db.insertRelease(Cats.core_3, Cats.dependencies, now)
+        _ <- db.insertRelease(Cats.kernel_3, Seq.empty, now)
         directDependencies <- db.findDirectDependencies(Cats.core_3)
-      } yield directDependencies.map(_.target) should contain theSameElementsAs List(
-        Some(Cats.kernel_3),
-        None,
-        None
-      )
+      } yield directDependencies.map(_.target) should contain theSameElementsAs List(Some(Cats.kernel_3), None, None)
     }
 
     it("should find reverseDependencies") {
       for {
-        _ <- db
-          .insertReleases(Seq(Cats.core_3, Cats.kernel_3))
-        _ <- db
-          .insertDependencies(Cats.dependencies)
+        _ <- db.insertRelease(Cats.core_3, Cats.dependencies, now)
+        _ <- db.insertRelease(Cats.kernel_3, Seq.empty, now)
         reverseDependencies <- db.findReverseDependencies(Cats.kernel_3)
       } yield reverseDependencies.map(_.source) should contain theSameElementsAs List(Cats.core_3)
     }
     it("should get all topics") {
-      val topics = Set("topics1", "topics2")
-      val projectWithTopics = Scalafix.projectWithGithubInfo.copy(githubInfo =
-        Scalafix.projectWithGithubInfo.githubInfo.map(_.copy(topics = topics))
-      )
       for {
-        _ <- db.insertOrUpdateProject(projectWithTopics)
+        _ <- db.insertRelease(Scalafix.release, Seq.empty, now)
+        _ <- db.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, Scalafix.githubStatus)
         res <- db.getAllTopics()
-      } yield res shouldBe topics.toList
+      } yield res should contain theSameElementsAs Scalafix.githubInfo.topics
     }
     it("should get most dependent project") {
-      val projects = Seq(Cats.project, Scalafix.project, PlayJsonExtra.project)
-      val data = Map(
+      val releases: Map[NewRelease, Seq[ReleaseDependency]] = Map(
         Cats.core_3 -> Seq(
           ReleaseDependency(
             source = Cats.core_3.maven,
@@ -128,9 +105,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         )
       )
       for {
-        _ <- projects.map(db.insertProject).sequence
-        _ <- db.insertReleases(data.keys.toList)
-        _ <- db.insertDependencies(data.values.flatten.toList)
+        _ <- releases.map { case (release, dependencies) => db.insertRelease(release, dependencies, now) }.sequence
         projectDependencies <- db.computeProjectDependencies()
         _ <- db.insertProjectDependencies(projectDependencies)
         mostDependentProjects <- db.getMostDependentUponProject(10)
@@ -140,53 +115,37 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
           ProjectDependency(Cats.reference, Cats.reference),
           ProjectDependency(PlayJsonExtra.reference, Scalafix.reference)
         )
-        mostDependentProjects shouldBe List(Cats.project -> 2, Scalafix.project -> 1)
+        mostDependentProjects.map { case (project, deps) => (project.reference, deps) } shouldBe List(
+          Cats.reference -> 2,
+          Scalafix.reference -> 1
+        )
       }
     }
     it("should updateCreated") {
-      println(s"Instant.now ${Instant.now}")
-      val now = Instant.now
-      val newProject = NewProject.defaultProject("org", "repo", now = now) // created_at = None
-      val oneRelease = NewRelease(
-        MavenReference(
-          "something",
-          "something",
-          "0.1.1-play2.3-M1"
-        ),
-        version = SemanticVersion.tryParse("0.1.1-play2.3-M1").get,
-        organization = NewProject.Organization("org"),
-        repository = NewProject.Repository("repo"),
-        artifactName = ArtifactName("something"),
-        platform = ScalaJvm(ScalaVersion.`2.11`),
-        description = None,
-        releasedAt = Some(now),
-        resolver = None,
-        licenses = Set(),
-        isNonStandardLib = false
-      )
       for {
-        _ <- db.insertReleases(Seq(oneRelease))
-        _ <- db.insertProject(newProject)
-        _ <- db.updateCreatedInProjects()
-        res <- db.findProject(newProject.reference)
-      } yield res.get.created.get shouldBe now
+        _ <- db.insertRelease(Scalafix.release, Seq.empty, now)
+        projectsCreationDate <- db.computeAllProjectsCreationDate()
+        _ <- projectsCreationDate.mapSync {
+          case (creationDate, ref) => db.updateProjectCreationDate(ref, creationDate)
+        }
+        res <- db.findProject(Scalafix.reference)
+      } yield res.get.created.get shouldBe Scalafix.release.releasedAt.get
     }
     it("should createMovedProject") {
       val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
-      val repo = Scalafix.project
-      val newOrg = NewProject.Organization("scala")
-      val newRepo = NewProject.Repository("fix")
-      val newGithubInfo = Scalafix.githubInfo.copy(owner = newOrg.value, name = newRepo.value, stars = Some(10000))
-      val githubStatus = GithubStatus.Moved(now, newOrg, newRepo)
+      val newRef = NewProject.Reference.from("scala", "fix")
+      val newGithubInfo =
+        Scalafix.githubInfo.copy(owner = newRef.organization.value, name = newRef.repository.value, stars = Some(10000))
+      val moved = GithubStatus.Moved(now, newRef.organization, newRef.repository)
       for {
-        _ <- db.insertProject(repo)
-        _ <- db.createMovedProject(repo.reference, newGithubInfo, githubStatus)
-        newProject <- db.findProject(NewProject.Reference(newOrg, newRepo))
-        oldProject <- db.findProject(repo.reference)
+        _ <- db.insertRelease(Scalafix.release, Seq.empty, now)
+        _ <- db.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, Scalafix.githubStatus)
+        _ <- db.createMovedProject(Scalafix.reference, newGithubInfo, moved)
+        newProject <- db.findProject(newRef)
+        oldProject <- db.findProject(Scalafix.reference)
       } yield {
-        oldProject.get.githubStatus shouldBe githubStatus
-        newProject.get.organization shouldBe newOrg
-        newProject.get.repository shouldBe newRepo
+        oldProject.get.githubStatus shouldBe moved
+        newProject.get.reference shouldBe newRef
         newProject.get.githubStatus shouldBe GithubStatus.Ok(now)
       }
     }

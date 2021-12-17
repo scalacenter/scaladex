@@ -13,15 +13,13 @@
     </ul>
 
     @if(6 < project.displayedIssues.length) {
-        @for(label <- github.beginnerIssuesLabel) {
-            @if(project.beginnerIssueHits.nonEmpty) {
-                <a href='https://github.com/@{project.document.reference}/issues?utf8=✓&q=is:open label:"@label" @{params.queryString}'
-                target="_blank">More Issues ...</a>
-            } else {
-                <a href="https://github.com/@{project.document.reference}/labels/@{label}"
-                target="_blank">More Issues ...</a>
-            }
-        }
+      @if(project.beginnerIssueHits.nonEmpty) {
+          <a href='https://github.com/@{project.document.reference}/issues?utf8=✓&q=is:open @{params.queryString}'
+          target="_blank">More Issues ...</a>
+      } else {
+          <a href="https://github.com/@{project.document.reference}/issues"
+          target="_blank">More Issues ...</a>
+      }
     }
     <hr>
     @github.contributingGuide.map(guide => <a href="@guide.target" target="_blank">Contributing Guide</a>)

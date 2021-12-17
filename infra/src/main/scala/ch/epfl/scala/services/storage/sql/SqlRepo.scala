@@ -1,11 +1,13 @@
 package ch.epfl.scala.services.storage.sql
 
+import java.time.Instant
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.Try
+import scala.util.Failure
+import scala.util.Success
 
 import cats.effect.IO
-import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.release.Platform
@@ -22,28 +24,33 @@ import ch.epfl.scala.services.storage.sql.tables.ReleaseDependencyTable
 import ch.epfl.scala.services.storage.sql.tables.ReleaseTable
 import ch.epfl.scala.utils.DoobieUtils
 import ch.epfl.scala.utils.ScalaExtensions._
+import com.typesafe.scalalogging.LazyLogging
 import doobie.implicits._
 
-class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends SchedulerDatabase {
+class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
+
   private[sql] val flyway = DoobieUtils.flyway(conf)
   def migrate: IO[Unit] = IO(flyway.migrate())
   def dropTables: IO[Unit] = IO(flyway.clean())
 
-  override def insertProject(project: NewProject): Future[Unit] =
-    for {
-      _ <- strictRun(ProjectTable.insert(project))
-      _ <- strictRun(ProjectUserFormTable.insert(project)(project.dataForm))
-      _ <- project.githubInfo
-        .map(githubInfo => strictRun(GithubInfoTable.insert(project.reference)(githubInfo)))
-        .getOrElse(Future.successful(()))
-    } yield ()
-
-  // this insertProjects wont fail if one insert fails
-  def insertProjectsWithFailures(projects: Seq[NewProject]): Future[Seq[(NewProject, Try[Unit])]] =
-    projects.map(p => insertProject(p).failWithTry.map((p, _))).sequence
-
-  def insertReleasesWithFailures(releases: Seq[NewRelease]): Future[Seq[(NewRelease, Try[Unit])]] =
-    releases.map(r => insertRelease(r).failWithTry.map((r, _))).sequence
+  override def insertRelease(release: NewRelease, dependencies: Seq[ReleaseDependency], time: Instant): Future[Unit] = {
+    val unknownStatus = GithubStatus.Unknown(time)
+    val insertReleaseF = run(ProjectTable.insertIfNotExists.run((release.projectRef, unknownStatus)))
+      .flatMap(_ => strictRun(ReleaseTable.insert.run(release)))
+      .failWithTry
+      .map {
+        case Failure(exception) =>
+          logger.warn(s"Failed to insert ${release.maven.name} because ${exception.getMessage}")
+        case Success(value) => ()
+      }
+    val insertDepsF = run(ReleaseDependencyTable.insert.updateMany(dependencies)).failWithTry
+      .map {
+        case Failure(exception) =>
+          logger.warn(s"Failed to insert dependencies of ${release.maven.name} because ${exception.getMessage}")
+        case Success(value) => ()
+      }
+    insertReleaseF.flatMap(_ => insertDepsF)
+  }
 
   override def getAllProjectRef(): Future[Seq[NewProject.Reference]] =
     run(ProjectTable.selectAllProjectRef().to[List])
@@ -52,7 +59,7 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
     run(ProjectTable.selectAllProjects.to[Seq])
 
   override def updateGithubStatus(p: NewProject.Reference, githubStatus: GithubStatus): Future[Unit] =
-    run(ProjectTable.updateGithubStatus().run(githubStatus, p)).map(_ => ())
+    run(ProjectTable.updateGithubStatus.run(githubStatus, p)).map(_ => ())
 
   override def updateGithubInfoAndStatus(
       p: NewProject.Reference,
@@ -62,6 +69,16 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
     for {
       _ <- updateGithubStatus(p, githubStatus)
       _ <- run(GithubInfoTable.insertOrUpdate(p)(githubInfo))
+    } yield ()
+
+  override def insertOrUpdateProject(project: NewProject): Future[Unit] =
+    for {
+      _ <- run(ProjectTable.insertIfNotExists.run((project.reference, project.githubStatus)))
+      _ <- updateGithubStatus(project.reference, project.githubStatus)
+      _ <- updateProjectForm(project.reference, project.dataForm)
+      _ <- project.githubInfo
+        .map(githubInfo => run(GithubInfoTable.insertOrUpdate(project.reference)(githubInfo)))
+        .getOrElse(Future.successful(()))
     } yield ()
 
   override def createMovedProject(
@@ -83,54 +100,20 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
       _ <- insertOrUpdateProject(newProject)
     } yield ()
 
-  override def insertOrUpdateProject(project: NewProject): Future[Unit] =
-    for {
-      _ <- run(ProjectTable.insertOrUpdate(project))
-      _ <- run(ProjectUserFormTable.insertOrUpdate(project)(project.dataForm))
-      _ <- project.githubInfo
-        .map(githubInfo => run(GithubInfoTable.insertOrUpdate(project.reference)(githubInfo)))
-        .getOrElse(Future.successful(()))
-    } yield ()
-
   override def updateProjectForm(ref: NewProject.Reference, dataForm: NewProject.DataForm): Future[Unit] =
-    for {
-      projectOpt <- run(ProjectTable.selectOne(ref).option)
-      _ <- projectOpt
-        .map(p => run(ProjectUserFormTable.update(p)(dataForm)))
-        .getOrElse(Future.successful(()))
-    } yield ()
+    run(ProjectUserFormTable.insertOrUpdate(ref)(dataForm))
 
   override def findProject(projectRef: NewProject.Reference): Future[Option[NewProject]] =
     run(ProjectTable.selectOne(projectRef).option)
 
-  def insertProject(project: Project): Future[Unit] =
-    insertProject(NewProject.from(project))
-
-  override def insertReleases(releases: Seq[NewRelease]): Future[Int] =
-    releases
-      .grouped(SqlRepo.sizeOfInsertMany)
-      .map(r => run(ReleaseTable.insertMany(r)))
-      .sequence
-      .map(_.sum)
-
   override def findReleases(projectRef: NewProject.Reference): Future[Seq[NewRelease]] =
     run(ReleaseTable.selectReleases(projectRef).to[List])
-
-  def insertRelease(release: NewRelease): Future[Unit] =
-    strictRun(ReleaseTable.insert(release))
 
   override def findReleases(
       projectRef: NewProject.Reference,
       artifactName: NewRelease.ArtifactName
   ): Future[Seq[NewRelease]] =
     run(ReleaseTable.selectReleases(projectRef, artifactName).to[List])
-
-  override def insertDependencies(deps: Seq[ReleaseDependency]): Future[Int] =
-    deps
-      .grouped(SqlRepo.sizeOfInsertMany)
-      .map(d => run(ReleaseDependencyTable.insertMany(d)))
-      .sequence
-      .map(_.sum)
 
   override def countProjects(): Future[Long] =
     run(ProjectTable.indexedProjects().unique)
@@ -191,20 +174,16 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
       }.sequence
     } yield res.flatten
 
-  // one request at time
-  override def updateCreatedInProjects(): Future[Unit] =
-    for {
-      oldestReleases <- run(ReleaseTable.findOldestReleasesPerProjectReference().to[List])
-      _ <- oldestReleases.foldLeft(Future.successful(0)) {
-        case (f, (instant, ref)) =>
-          f.flatMap(_ => run(ProjectTable.updateCreated().run(instant, ref)))
-      }
-    } yield ()
+  override def computeAllProjectsCreationDate(): Future[Seq[(Instant, NewProject.Reference)]] =
+    run(ReleaseTable.findOldestReleasesPerProjectReference().to[List])
+
+  override def updateProjectCreationDate(ref: NewProject.Reference, creationDate: Instant): Future[Unit] =
+    run(ProjectTable.updateCreated.run((creationDate, ref))).map(_ => ())
 
   // to use only when inserting one element or updating one element
   // when expecting a row to be modified
-  private def strictRun(update: doobie.Update0, expectedRows: Int = 1): Future[Unit] =
-    update.run.transact(xa).unsafeToFuture().map {
+  private def strictRun(update: doobie.ConnectionIO[Int], expectedRows: Int = 1): Future[Unit] =
+    update.transact(xa).unsafeToFuture().map {
       case `expectedRows` => ()
       case other =>
         throw new Exception(

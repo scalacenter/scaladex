@@ -188,7 +188,7 @@ class Deployment(
           |  mv /home/$userName/data/data-*/* /home/$userName/data/current
           |
           |  nohup /home/$userName/data/current/bin/data \\
-          |    -J-Xmx10g \\
+          |    -J-Xmx2g \\
           |    -Dlogback.output-file=data.log \\
           |    -Dlogback.configurationFile=/home/$userName/scaladex-credentials/logback.xml \\
           |    -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\

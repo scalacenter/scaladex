@@ -11,19 +11,16 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.PathMatcher1
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import ch.epfl.scala.index.model.SemanticVersion
-import ch.epfl.scala.index.model.misc.GithubIssue
-import ch.epfl.scala.index.model.misc.Url
 import ch.epfl.scala.index.model.misc.UserState
-import ch.epfl.scala.index.model.release.ReleaseOptions
 import ch.epfl.scala.index.model.release.ReleaseSelection
 import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
 import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.search.SearchParams
 import ch.epfl.scala.services.WebDatabase
 
 package object routes {
-
-  import ch.epfl.scala.index.model.ProjectForm
 
   val organizationM: PathMatcher1[NewProject.Organization] =
     Segment.map(NewProject.Organization)
@@ -84,10 +81,9 @@ package object routes {
           contributingSearch = contributingSearch
         )
     }
-  import ch.epfl.scala.index.data.github.Json4s
-  import org.json4s.native.Serialization.read
 
-  val editForm: Directive1[ProjectForm] =
+  // TODO remove all unused parameters
+  val editForm: Directive1[NewProject.DataForm] =
     formFieldSeq.tflatMap(fields =>
       formFields(
         (
@@ -125,17 +121,14 @@ package object routes {
               contributingGuide,
               codeOfConduct
             ) =>
-          val documentationLinks = {
-            val name = "documentationLinks"
-            val end: Char = ']'
-
+          val documentationLinks =
             fields._1
-              .filter { case (key, _) => key.startsWith(name) }
+              .filter { case (key, _) => key.startsWith("documentationLinks") }
               .groupBy {
                 case (key, _) =>
                   key
                     .drop("documentationLinks[".length)
-                    .takeWhile(_ != end)
+                    .takeWhile(_ != ']')
               }
               .values
               .map {
@@ -143,31 +136,26 @@ package object routes {
                   if (a.contains("label")) (b, d)
                   else (d, b)
               }
+              .flatMap {
+                case (label, link) =>
+                  DocumentationLink.from(label, link)
+              }
               .toList
-          }
 
-          val keywords = Set[String]()
-
-          import Json4s._
-          ProjectForm(
-            contributorsWanted,
-            keywords,
-            defaultArtifact,
+          val dataForm = NewProject.DataForm(
             defaultStableVersion,
+            defaultArtifact.map(ArtifactName.apply),
             strictVersions,
-            deprecated,
-            artifactDeprecations.toSet,
-            cliArtifacts.toSet,
             customScalaDoc,
             documentationLinks,
+            deprecated,
+            contributorsWanted,
+            artifactDeprecations.map(ArtifactName.apply).toSet,
+            cliArtifacts.map(ArtifactName.apply).toSet,
             primaryTopic,
-            beginnerIssuesLabel,
-            beginnerIssues.map(read[List[GithubIssue]](_)).getOrElse(List()),
-            selectedBeginnerIssues.map(read[GithubIssue](_)).toList,
-            chatroom.map(Url),
-            contributingGuide.map(Url),
-            codeOfConduct.map(Url)
+            beginnerIssuesLabel
           )
+          Tuple1(dataForm)
       }
     )
   def getSelectedRelease(
@@ -190,7 +178,7 @@ package object routes {
       project <- db.findProject(projectRef)
       releases <- db.findReleases(projectRef)
       filteredReleases = project
-        .map(p => ReleaseOptions.filterReleases(releaseSelection, releases, p))
+        .map(p => releaseSelection.filterReleases(releases, p))
         .getOrElse(Nil)
     } yield filteredReleases.headOption
   }
@@ -210,7 +198,7 @@ package object routes {
     )
     for {
       releases <- db.findReleases(project.reference)
-      filteredReleases = ReleaseOptions.filterReleases(releaseSelection, releases, project)
+      filteredReleases = releaseSelection.filterReleases(releases, project)
     } yield filteredReleases.headOption
   }
 

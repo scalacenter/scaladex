@@ -1,5 +1,8 @@
 package ch.epfl.scala.index.server.routes
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import ch.epfl.scala.index.server.Values
@@ -7,7 +10,8 @@ import org.scalatest.BeforeAndAfterAll
 
 class ProjectPagesTests() extends ControllerBaseSuite with BeforeAndAfterAll with ScalatestRouteTest {
 
-  override def beforeAll(): Unit = insertMockData()
+  override def beforeAll(): Unit =
+    Await.result(insertMockData(), Duration.Inf)
 
   val projectPages = new ProjectPages(
     db = db,

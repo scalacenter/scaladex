@@ -72,6 +72,24 @@ object DoobieUtils {
     }
     new HikariDataSource(config)
   }
+
+  def insertOrUpdateRequest[T: Write](
+      table: String,
+      fields: Seq[String],
+      onConflictFields: Seq[String],
+      action: String = "NOTHING"
+  ): Update[T] = {
+    val insert = insertRequest(table, fields).sql
+    val onConflictFieldsStr = onConflictFields.mkString(",")
+    Update(s"$insert ON CONFLICT ($onConflictFieldsStr) DO $action")
+  }
+
+  def insertRequest[T: Write](table: String, fields: Seq[String]): Update[T] = {
+    val fieldsStr = fields.mkString(", ")
+    val valuesStr = fields.map(_ => "?").mkString(", ")
+    Update(s"INSERT INTO $table ($fieldsStr) VALUES ($valuesStr)")
+  }
+
   object Fragments {
     val empty: Fragment = fr0""
     val space: Fragment = fr0" "
@@ -200,7 +218,7 @@ object DoobieUtils {
         }
 
     implicit val projectReader: Read[NewProject] =
-      Read[(Organization, Repository, Option[Instant], GithubStatus, Option[GithubInfo], NewProject.DataForm)]
+      Read[(Organization, Repository, Option[Instant], GithubStatus, Option[GithubInfo], Option[NewProject.DataForm])]
         .map {
           case (organization, repository, created, githubStatus, githubInfo, dataForm) =>
             NewProject(
@@ -209,7 +227,7 @@ object DoobieUtils {
               githubStatus = githubStatus,
               githubInfo = githubInfo,
               created = created,
-              dataForm = dataForm
+              dataForm = dataForm.getOrElse(NewProject.DataForm.default)
             )
         }
 

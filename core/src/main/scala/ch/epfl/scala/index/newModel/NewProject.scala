@@ -2,7 +2,6 @@ package ch.epfl.scala.index.newModel
 
 import java.time.Instant
 
-import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.model.misc.GithubStatus
@@ -16,11 +15,10 @@ case class NewProject(
     created: Option[Instant], // equivalent to the first release date
     githubStatus: GithubStatus,
     githubInfo: Option[GithubInfo],
-    dataForm: DataForm // form data
+    dataForm: DataForm
 ) {
 
   val reference: Reference = Reference(organization, repository)
-
   val githubRepo: GithubRepo = GithubRepo(organization.value, repository.value)
   def hasCli: Boolean = dataForm.cliArtifacts.nonEmpty
 
@@ -33,12 +31,6 @@ case class NewProject(
     githubInfo.flatMap(_.description).getOrElse(""),
     githubInfo.flatMap(_.logo)
   )
-  // val created: datetime = firstRelease.released
-  // val lastUpdated: datetime = lastReleaseAdd.released
-
-  def update(newGithubInfo: Option[GithubInfo]): NewProject =
-    copy(githubInfo = newGithubInfo)
-  def contributorsWanted: Boolean = dataForm.contributorsWanted
 }
 
 object NewProject {
@@ -54,24 +46,29 @@ object NewProject {
   object Reference {
     def from(org: String, repo: String): Reference =
       Reference(Organization(org), Repository(repo))
+
+    def from(string: String): Reference =
+      string.split('/') match {
+        case Array(org, repo) => from(org, repo)
+      }
+
     implicit val ordering: Ordering[Reference] =
       Ordering.by(ref => (ref.organization.value, ref.repository.value))
   }
-  def defaultProject(
-      org: String,
-      repo: String,
+  def default(
+      ref: NewProject.Reference,
       created: Option[Instant] = None,
       githubInfo: Option[GithubInfo] = None,
-      formData: DataForm = DataForm.default,
-      now: Instant
+      dataForm: Option[DataForm] = None,
+      now: Instant = Instant.now()
   ): NewProject =
     NewProject(
-      Organization(org),
-      repository = Repository(repo),
-      githubStatus = githubInfo.map(_ => GithubStatus.Ok(now)).getOrElse(GithubStatus.Unkhown(now)),
+      ref.organization,
+      ref.repository,
+      githubStatus = githubInfo.map(_ => GithubStatus.Ok(now)).getOrElse(GithubStatus.Unknown(now)),
       githubInfo = githubInfo,
       created = created,
-      dataForm = formData
+      dataForm = dataForm.getOrElse(DataForm.default)
     )
 
   case class DataForm(
@@ -84,7 +81,8 @@ object NewProject {
       contributorsWanted: Boolean,
       artifactDeprecations: Set[NewRelease.ArtifactName],
       cliArtifacts: Set[NewRelease.ArtifactName],
-      primaryTopic: Option[String]
+      primaryTopic: Option[String],
+      beginnerIssuesLabel: Option[String]
   )
 
   case class Organization(value: String) extends AnyVal {
@@ -105,26 +103,9 @@ object NewProject {
       contributorsWanted = false,
       artifactDeprecations = Set(),
       cliArtifacts = Set(),
-      primaryTopic = None
+      primaryTopic = None,
+      beginnerIssuesLabel = None
     )
-    def from(p: Project): DataForm = {
-      val documentationlinks = p.documentationLinks.map {
-        case (label, link) =>
-          DocumentationLink(label, link)
-      }
-      DataForm(
-        defaultStableVersion = p.defaultStableVersion,
-        defaultArtifact = p.defaultArtifact.map(NewRelease.ArtifactName.apply),
-        strictVersions = p.strictVersions,
-        customScalaDoc = p.customScalaDoc,
-        documentationLinks = documentationlinks,
-        deprecated = p.deprecated,
-        contributorsWanted = p.contributorsWanted,
-        artifactDeprecations = p.artifactDeprecations.map(NewRelease.ArtifactName.apply),
-        cliArtifacts = p.cliArtifacts.map(NewRelease.ArtifactName.apply),
-        primaryTopic = p.primaryTopic
-      )
-    }
   }
   case class DocumentationLink(label: String, link: String)
   object DocumentationLink {
@@ -132,17 +113,5 @@ object NewProject {
       if (label.isEmpty || link.isEmpty) None
       else Some(DocumentationLink(label, link))
 
-  }
-
-  def from(p: Project): NewProject = {
-    val now = Instant.now()
-    NewProject(
-      organization = Organization(p.organization),
-      repository = Repository(p.repository),
-      githubStatus = p.github.map(_ => GithubStatus.Ok(now)).getOrElse(GithubStatus.Unkhown(now)),
-      githubInfo = p.github,
-      created = None,
-      dataForm = DataForm.from(p)
-    )
   }
 }

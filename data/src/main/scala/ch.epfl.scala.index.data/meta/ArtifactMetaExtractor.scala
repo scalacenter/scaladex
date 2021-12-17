@@ -1,6 +1,4 @@
-package ch.epfl.scala.index
-package data
-package project
+package ch.epfl.scala.index.data.meta
 
 import ch.epfl.scala.index.data.cleanup._
 import ch.epfl.scala.index.data.maven.ReleaseModel
@@ -31,7 +29,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
    *
    * @return The artifact name (without suffix), the Scala target, whether this project is a usual Scala library or not
    */
-  def extractMeta(pom: ReleaseModel): Option[ArtifactMeta] = {
+  def extract(pom: ReleaseModel): Option[ArtifactMeta] = {
     val nonStandardLookup =
       nonStandardLibs
         .find(lib =>

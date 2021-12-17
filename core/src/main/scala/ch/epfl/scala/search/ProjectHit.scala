@@ -11,5 +11,5 @@ final case class ProjectHit(
 ) {
   def displayedIssues: Seq[GithubIssue] =
     if (beginnerIssueHits.nonEmpty) beginnerIssueHits
-    else document.githubInfo.toSeq.flatMap(_.displayedIssues)
+    else document.githubInfo.toSeq.flatMap(_.beginnerIssues)
 }

@@ -16,7 +16,18 @@ import io.circe.generic.semiauto.deriveCodec
 object Codecs {
   implicit val license: Codec[License] = deriveCodec[License]
   implicit val url: Codec[Url] = fromString(_.target, Url(_))
-  implicit val documentation: Codec[NewProject.DocumentationLink] = deriveCodec[NewProject.DocumentationLink]
+
+  implicit val documentation: Codec[NewProject.DocumentationLink] =
+    Codec.from(
+      Decoder[Map[String, String]].emap { map =>
+        map.toList match {
+          case (key -> value) :: Nil => Right(NewProject.DocumentationLink(key, value))
+          case _                     => Left(s"Cannot decode json to DocumentationLink: $map")
+        }
+      },
+      Encoder[Map[String, String]].contramap(docLink => Map(docLink.label -> docLink.link))
+    )
+
   implicit val contributor: Codec[GithubContributor] = deriveCodec[GithubContributor]
   implicit val githubIssue: Codec[GithubIssue] = deriveCodec[GithubIssue]
   implicit val organization: Codec[NewProject.Organization] = fromString(_.value, NewProject.Organization.apply)
@@ -25,6 +36,7 @@ object Codecs {
   implicit val instant: Codec[Instant] = fromLong[Instant](_.toEpochMilli, Instant.ofEpochMilli)
   implicit val githubInfo: Codec[GithubInfo] = deriveCodec[GithubInfo]
   implicit val githubStatus: Codec[GithubStatus] = deriveCodec[GithubStatus]
+  implicit val dataForm: Codec[NewProject.DataForm] = deriveCodec[NewProject.DataForm]
 
   private def fromLong[A](encode: A => Long, decode: Long => A): Codec[A] =
     Codec.from(Decoder[Long].map(decode), Encoder[Long].contramap(encode))

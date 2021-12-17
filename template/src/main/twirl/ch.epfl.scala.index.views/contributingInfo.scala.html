@@ -6,11 +6,11 @@
   @for(github <- project.githubInfo) {
     @github.description.map(desc => <p class="description">@desc</p>)
     <ul>
-      @github.displayedIssues.take(3).map(issue => <a href="@issue.url.target" target="_blank">@issue</a>)
+      @github.beginnerIssues.take(3).map(issue => <a href="@issue.url.target" target="_blank">@issue</a>)
     </ul>
 
-    @if(3 < github.displayedIssues.length) {
-      @for(label <- github.beginnerIssuesLabel) {
+    @if(3 < github.beginnerIssues.length) {
+      @for(label <- project.dataForm.beginnerIssuesLabel) {
           <a href="https://github.com/@{project.reference}/labels/@{label}"
           target="_blank">More Issues ...</a>
       }

@@ -4,6 +4,8 @@ package routes
 package api
 package impl
 
+import java.time.Instant
+
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -11,9 +13,8 @@ import scala.concurrent.duration._
 import akka.actor.Actor
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.maven.ReleaseModel
-import ch.epfl.scala.index.data.project.ProjectConvert
+import ch.epfl.scala.index.data.meta.ReleaseConverter
 import ch.epfl.scala.index.model.misc.GithubRepo
-import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository
@@ -25,13 +26,13 @@ class IndexingActor(
     implicit val system: ActorSystem
 ) extends Actor {
   private val log = LoggerFactory.getLogger(getClass)
-  import system.dispatcher
+  private val releaseConverter = new ReleaseConverter(paths)
 
   def receive: PartialFunction[Any, Unit] = {
     case updateIndexData: UpdateIndex =>
       // TODO be non-blocking
       sender() ! Await.result(
-        updateIndex(
+        insertRelease(
           updateIndexData.repo,
           updateIndexData.pom,
           updateIndexData.data,
@@ -57,7 +58,7 @@ class IndexingActor(
    * @param data the main publish data
    * @return
    */
-  private def updateIndex(
+  private def insertRelease(
       repo: GithubRepo,
       pom: ReleaseModel,
       data: PublishData,
@@ -66,38 +67,17 @@ class IndexingActor(
 
     log.debug("updating " + pom.artifactId)
 
-    val projectReference =
-      NewProject.Reference.from(repo.organization, repo.repository)
-
-    for {
-      project <- db.findProject(projectReference)
-      converter = new ProjectConvert(paths)
-      converted = converter.convertOne(
-        pom,
-        localRepository,
-        data.hash,
-        data.created,
-        repo,
-        project
+    val release = releaseConverter.convert(
+      pom,
+      repo,
+      data.hash,
+      Some(data.created)
+    )
+    release
+      .map { case (release, deps) => db.insertRelease(release, deps, Instant.now) }
+      .getOrElse(
+        Future.successful(log.info(s"${pom.mavenRef.name} is not inserted"))
       )
-      _ = converted
-        .map {
-          case (p, r, d) =>
-            for {
-              _ <- db.insertOrUpdateProject(p)
-              _ <- db.insertReleases(
-                Seq(r)
-              ) // todo: filter already existing releases , to only update them
-              _ <- db.insertDependencies(
-                d
-              ) // todo: filter already existing dependencies , to only update them
-              _ = log.info(s"${pom.mavenRef.name} has been inserted")
-            } yield ()
-        }
-        .getOrElse(
-          Future.successful(log.info(s"${pom.mavenRef.name} is not inserted"))
-        )
-    } yield ()
   }
 }
 

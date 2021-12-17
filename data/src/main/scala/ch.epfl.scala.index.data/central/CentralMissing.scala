@@ -21,7 +21,7 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.unmarshalling._
 import akka.stream.scaladsl._
 import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.index.data.project.ArtifactMetaExtractor
+import ch.epfl.scala.index.data.meta.ArtifactMetaExtractor
 import ch.epfl.scala.index.model.misc.Sha1
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.services.storage.DataPaths
@@ -43,7 +43,7 @@ object CentralMissing {
       g: String,
       a: String,
       v: String,
-      timestamp: DateTime
+      timestamp: String
   )
   private[CentralMissing] case class SearchRequest(
       groupId: String
@@ -53,7 +53,7 @@ object CentralMissing {
       groupId: String,
       artifactId: String,
       version: String,
-      created: DateTime
+      created: String
   ) {
     def path: String = {
       val groupIdPath = groupId.replace(".", "/")
@@ -189,7 +189,7 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
         .flatMap {
           case Success((pom, _, _)) =>
             metaExtractor
-              .extractMeta(pom)
+              .extract(pom)
               .filter { meta =>
                 meta.platform != Platform.Java //
               }

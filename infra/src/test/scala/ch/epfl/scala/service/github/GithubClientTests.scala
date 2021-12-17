@@ -30,7 +30,6 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
     it("getRepository") {
       for {
         repo <- github.getRepoInfo(scalafixRepo)
-        _ = println(s"repo = ${repo}")
       } yield assert(true)
     }
     it("getContributors") {
@@ -51,14 +50,11 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
     it("fetchOrgaRepo") {
       for {
         repos <- github.fetchReposUnderUserOrganizations("atry", Nil)
-        _ = println(s"repos = ${repos}")
       } yield assert(true)
     }
     it("fetchUserRepo") {
       for {
         repos <- github.fetchUserRepo("atry", Nil)
-        _ = println(s"repos = ${repos}")
-        _ = println(s"repos = ${repos.size}")
       } yield assert(true)
     }
     it("fetchUser") {
@@ -69,7 +65,6 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
     it("fetchUserOrganizations") {
       for {
         orgs <- github.fetchUserOrganizations("atry")
-        _ = println(orgs)
       } yield assert(true)
     }
   }

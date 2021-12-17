@@ -1,6 +1,7 @@
 package ch.epfl.scala.index.model
 package release
 
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -9,63 +10,47 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
 
   def emptyRelease(
       maven: MavenReference,
-      reference: Release.Reference
-  ): Release =
-    Release(
+      reference: NewProject.Reference
+  ): NewRelease = {
+    val artifact = Artifact.parse(maven.artifactId).getOrElse(throw new Exception(s"cannot parse ${maven.artifactId}"))
+    val version = SemanticVersion.tryParse(maven.version).get
+    NewRelease(
       maven,
-      reference,
-      resolver = None,
-      name = None,
-      description = None,
-      released = None,
-      licenses = Set(),
-      isNonStandardLib = false,
-      id = None,
-      liveData = false,
-      targetType = "JVM",
-      scalaVersion = None,
-      scalaJsVersion = None,
-      scalaNativeVersion = None,
-      sbtVersion = None
+      version,
+      reference.organization,
+      reference.repository,
+      NewRelease.ArtifactName(artifact.name),
+      artifact.platform,
+      None,
+      None,
+      None,
+      Set.empty,
+      false
     )
+  }
 
   def prepare(
-      organization: String,
-      repository: String,
+      projectRef: NewProject.Reference,
       groupdId: String,
       releases: List[(String, String)]
-  ): Seq[Release] =
+  ): Seq[NewRelease] =
     releases
-      .flatMap {
-        case (artifactId, rawVersion) =>
-          for {
-            Artifact(artifact, target) <- Artifact.parse(artifactId)
-            version <- SemanticVersion.tryParse(rawVersion)
-          } yield (artifactId, rawVersion, artifact, target, version)
-      }
       .map {
-        case (artifactId, rawVersion, artifact, platform, version) =>
+        case (artifactId, rawVersion) =>
           emptyRelease(
             MavenReference(groupdId, artifactId, rawVersion),
-            Release.Reference(
-              organization,
-              repository,
-              artifact,
-              version,
-              platform
-            )
+            projectRef
           )
       }
 
   describe("Default Release") {
     it("latest version pre release scala") {
 
-      val organization = "typelevel"
-      val repository = "cats"
+      val projectRef = NewProject.Reference.from("typelevel", "cats")
+      val project = NewProject.default(projectRef)
       val groupdId = "org.typelevel"
       val releases = prepare(
-        organization,
-        repository,
+        projectRef,
         groupdId,
         List(
           ("cats-core_2.11", "0.6.0"),
@@ -95,63 +80,18 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
         )
       )
 
-      val result =
-        ReleaseOptions(
-          repository,
-          ReleaseSelection.empty,
-          releases,
-          None,
-          defaultStableVersion = true
-        )
+      val result = ReleaseSelection.empty.filterReleases(releases, project)
 
-      val versions: List[SemanticVersion] =
-        List(
-          SemanticVersion(0, 6, 0),
-          SemanticVersion(0, 6, 0, Milestone(2)),
-          SemanticVersion(0, 6, 0, Milestone(1)),
-          SemanticVersion(0, 5, 0),
-          SemanticVersion(0, 4, 1),
-          SemanticVersion(0, 4, 0)
-        )
-
-      val targets: List[Platform] =
-        List(
-          Platform.ScalaJvm(ScalaVersion.`2.11`),
-          Platform.ScalaJvm(ScalaVersion.`2.10`),
-          Platform.ScalaJs(ScalaVersion.`2.11`, MinorBinary(0, 6)),
-          Platform.ScalaJs(ScalaVersion.`2.10`, MinorBinary(0, 6))
-        )
-
-      val expected =
-        ReleaseOptions(
-          artifacts = List(
-            "cats-core"
-          ),
-          versions = versions,
-          targets = targets,
-          release = emptyRelease(
-            MavenReference(groupdId, "cats-core_2.11", "0.6.0"),
-            Release.Reference(
-              organization,
-              repository,
-              "cats-core",
-              SemanticVersion(0, 6, 0),
-              Platform.ScalaJvm(ScalaVersion.`2.11`)
-            )
-          )
-        )
-
-      result should contain(expected)
+      result should contain theSameElementsAs releases
     }
 
     it("selected artifact") {
-      val organization = "akka"
-      val repository = "akka"
+      val projectRef = NewProject.Reference.from("akka", "akka")
+      val project = NewProject.default(projectRef)
       val groupdId = "com.typesafe.akka"
       val releases =
         prepare(
-          organization,
-          repository,
+          projectRef,
           groupdId,
           List(
             ("akka-distributed-data-experimental_2.11", "2.4.8"),
@@ -159,113 +99,23 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
           )
         )
 
-      val result = ReleaseOptions(
-        repository,
-        ReleaseSelection(
-          artifact = Some(NewRelease.ArtifactName("akka-distributed-data-experimental")),
-          target = None,
-          version = None,
-          selected = None
-        ),
-        releases,
-        None,
-        defaultStableVersion = true
+      val selection = ReleaseSelection(
+        artifact = Some(NewRelease.ArtifactName("akka-distributed-data-experimental")),
+        target = None,
+        version = None,
+        selected = None
       )
 
-      val expected =
-        Some(
-          ReleaseOptions(
-            artifacts = List(
-              "akka-actors",
-              "akka-distributed-data-experimental"
-            ),
-            versions = List(
-              SemanticVersion(2, 4, 8)
-            ),
-            targets = List(
-              Platform.ScalaJvm(ScalaVersion.`2.11`)
-            ),
-            release = emptyRelease(
-              MavenReference(
-                groupdId,
-                "akka-distributed-data-experimental_2.11",
-                "2.4.8"
-              ),
-              Release.Reference(
-                organization,
-                repository,
-                "akka-distributed-data-experimental",
-                SemanticVersion(2, 4, 8),
-                Platform.ScalaJvm(ScalaVersion.`2.11`)
-              )
-            )
-          )
-        )
-
-      assert(result == expected)
-    }
-
-    it("scalafix ordering") {
-      // 0.5.3 on 2.12 vs 0.3.4 on 2.12.2
-
-      val organization = "scalacenter"
-      val repository = "scalafix"
-      val groupdId = "ch.epfl.scala"
-      val releases = prepare(
-        organization,
-        repository,
+      val result = selection.filterReleases(releases, project)
+      val expected = prepare(
+        projectRef,
         groupdId,
         List(
-          ("scalafix-core_2.12.2", "0.3.4"),
-          ("scalafix-core_2.12", "0.5.3")
+          ("akka-distributed-data-experimental_2.11", "2.4.8")
         )
       )
 
-      val result =
-        ReleaseOptions(
-          repository,
-          ReleaseSelection.empty,
-          releases,
-          None,
-          defaultStableVersion = true
-        )
-
-      val versions: List[SemanticVersion] =
-        List(
-          SemanticVersion(0, 3, 4),
-          SemanticVersion(0, 5, 3)
-        )
-
-      val targets: List[Platform] =
-        List(
-          Platform.ScalaJvm(ScalaVersion(PatchBinary(2, 12, 2))),
-          Platform.ScalaJvm(ScalaVersion.`2.12`)
-        )
-
-      val expected: Option[ReleaseOptions] =
-        Some(
-          ReleaseOptions(
-            artifacts = List(
-              "scalafix-core"
-            ),
-            versions = versions,
-            targets = targets,
-            release = emptyRelease(
-              MavenReference(groupdId, "scalafix-core_2.12", "0.5.3"),
-              Release.Reference(
-                organization,
-                repository,
-                "scalafix-core",
-                SemanticVersion(0, 5, 3),
-                Platform.ScalaJvm(ScalaVersion.`2.12`)
-              )
-            )
-          )
-        )
-
-      assert(
-        result.get.release.reference.version == SemanticVersion(0, 5, 3)
-      )
+      result should contain theSameElementsAs expected
     }
   }
 }

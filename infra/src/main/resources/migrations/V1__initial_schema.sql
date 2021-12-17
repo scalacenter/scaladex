@@ -27,9 +27,7 @@ CREATE TABLE github_info (
     contributingGuide      VARCHAR(2083),
     codeOfConduct          VARCHAR(2083),
     chatroom               VARCHAR(2083),
-    beginnerIssuesLabel    VARCHAR(1024),
     beginnerIssues         VARCHAR,
-    selectedBeginnerIssues VARCHAR,
     FOREIGN KEY (organization, repository) REFERENCES projects (organization, repository),
     PRIMARY KEY (organization, repository)
 );
@@ -47,6 +45,7 @@ CREATE TABLE project_user_data (
    artifactDeprecations VARCHAR,
    cliArtifacts         VARCHAR,
    primaryTopic         VARCHAR,
+   beginnerIssuesLabel    VARCHAR(1024),
    FOREIGN KEY (organization, repository) REFERENCES projects (organization, repository),
    PRIMARY KEY (organization, repository)
 );

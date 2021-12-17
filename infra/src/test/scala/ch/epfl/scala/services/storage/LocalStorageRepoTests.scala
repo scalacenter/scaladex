@@ -1,6 +1,8 @@
 package ch.epfl.scala.services.storage
 
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.services.storage.local.LocalStorageRepo
+import io.circe.parser
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -30,18 +32,6 @@ class LocalStorageRepoTests() extends AsyncFunSpec with Matchers {
          |    ],
          |    "primaryTopic":null,
          |    "beginnerIssuesLabel":"help wanted",
-         |    "beginnerIssues":[
-         |      {
-         |        "number":405,
-         |        "title":"Have `start()` method on BitcoindRpcClient return the started client rather than Unit",
-         |        "url":{
-         |          "target":"https://github.com/bitcoin-s/bitcoin-s/issues/405"
-         |        }
-         |      }
-         |    ],
-         |    "selectedBeginnerIssues":[
-         |
-         |    ],
          |    "chatroom":null,
          |    "contributingGuide":{
          |      "target":"https://bitcoin-s.org/docs/contributing"
@@ -51,8 +41,9 @@ class LocalStorageRepoTests() extends AsyncFunSpec with Matchers {
          |}
          |""".stripMargin
 
-    val readLiveProject = LocalStorageRepo.parse(json)
-    readLiveProject.projects.size should equal(1)
+    import LocalStorageRepo._
+    val dataForms = parser.decode[Map[NewProject.Reference, NewProject.DataForm]](json)
+    dataForms.toTry.get.size should equal(1)
   }
 
 }

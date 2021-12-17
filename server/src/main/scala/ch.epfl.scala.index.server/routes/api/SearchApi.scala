@@ -226,7 +226,7 @@ class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUser
       releases <- db.findReleases(projectRef)
     } yield for {
       project <- projectOpt
-      filteredReleases = ReleaseOptions.filterReleases(selection, releases, project)
+      filteredReleases = selection.filterReleases(releases, project)
       selected <- filteredReleases.headOption
     } yield {
       val artifacts = filteredReleases.map(_.artifactName.value).toList
