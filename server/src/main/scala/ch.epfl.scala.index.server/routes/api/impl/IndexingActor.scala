@@ -4,6 +4,8 @@ package routes
 package api
 package impl
 
+import java.time.Instant
+
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -72,7 +74,7 @@ class IndexingActor(
       Some(data.created)
     )
     release
-      .map { case (release, deps) => db.insertRelease(release, deps) }
+      .map { case (release, deps) => db.insertRelease(release, deps, Instant.now) }
       .getOrElse(
         Future.successful(log.info(s"${pom.mavenRef.name} is not inserted"))
       )

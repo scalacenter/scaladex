@@ -47,7 +47,7 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
     it("latest version pre release scala") {
 
       val projectRef = NewProject.Reference.from("typelevel", "cats")
-      val project = NewProject.fromRef(projectRef)
+      val project = NewProject.default(projectRef)
       val groupdId = "org.typelevel"
       val releases = prepare(
         projectRef,
@@ -87,7 +87,7 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
 
     it("selected artifact") {
       val projectRef = NewProject.Reference.from("akka", "akka")
-      val project = NewProject.fromRef(projectRef)
+      val project = NewProject.default(projectRef)
       val groupdId = "com.typesafe.akka"
       val releases =
         prepare(

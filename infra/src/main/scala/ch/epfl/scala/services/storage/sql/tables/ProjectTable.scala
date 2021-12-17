@@ -6,6 +6,7 @@ import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.utils.DoobieUtils.Fragments._
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
+import ch.epfl.scala.utils.DoobieUtils._
 import doobie._
 import doobie.implicits._
 import doobie.util.fragment.Fragment
@@ -35,15 +36,17 @@ object ProjectTable {
       fr0"LEFT JOIN ${GithubInfoTable.table} g ON p.organization = g.organization AND p.repository = g.repository " ++
       fr0"LEFT JOIN ${ProjectUserFormTable.table} f ON p.organization = f.organization AND p.repository = f.repository"
 
-  val insertOrUpdateRef: Update[NewProject.Reference] =
-    Update[NewProject.Reference](
-      s"INSERT INTO $table ($orgaAndRepo) VALUES (?, ?) ON CONFLICT ($orgaAndRepo) DO NOTHING"
+  val insertIfNotExists: Update[(NewProject.Reference, GithubStatus)] =
+    insertOrUpdateRequest(
+      table,
+      Seq("organization", "repository", "github_status"),
+      Seq("organization", "repository")
     )
 
   val updateCreated: Update[(Instant, NewProject.Reference)] =
     Update[(Instant, NewProject.Reference)](s"UPDATE $table SET created_at=? WHERE organization=? AND repository=?")
 
-  def updateGithubStatus(): Update[(GithubStatus, NewProject.Reference)] =
+  val updateGithubStatus: Update[(GithubStatus, NewProject.Reference)] =
     Update[(GithubStatus, NewProject.Reference)](
       s"UPDATE $table SET github_status=? WHERE organization=? AND repository=?"
     )

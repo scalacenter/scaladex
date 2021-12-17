@@ -1,5 +1,7 @@
 package ch.epfl.scala.services
 
+import java.time.Instant
+
 import scala.concurrent.Future
 
 import ch.epfl.scala.index.model.release.Platform
@@ -10,7 +12,7 @@ import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.index.newModel.ReleaseDependency
 
 trait WebDatabase {
-  def insertRelease(release: NewRelease, dependencies: Seq[ReleaseDependency]): Future[Unit]
+  def insertRelease(release: NewRelease, dependencies: Seq[ReleaseDependency], time: Instant): Future[Unit]
   def updateProjectForm(ref: NewProject.Reference, dataForm: DataForm): Future[Unit]
   def findProject(projectRef: NewProject.Reference): Future[Option[NewProject]]
   def findReleases(projectRef: NewProject.Reference): Future[Seq[NewRelease]]

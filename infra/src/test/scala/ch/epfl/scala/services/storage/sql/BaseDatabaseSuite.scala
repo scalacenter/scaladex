@@ -35,16 +35,14 @@ trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach {
 
   lazy val db = new SqlRepo(dbConf, transactor)
 
-  override def beforeAll(): Unit =
+  override def beforeEach(): Unit =
     Await.result(cleanTables(), Duration.Inf)
 
-  def cleanTables(): Future[Unit] = {
+  private def cleanTables(): Future[Unit] = {
     val reset = for {
       _ <- db.dropTables
       _ <- db.migrate
     } yield ()
     reset.unsafeToFuture()
   }
-
-  override def afterEach(): Unit = db.dropTables.unsafeRunSync()
 }

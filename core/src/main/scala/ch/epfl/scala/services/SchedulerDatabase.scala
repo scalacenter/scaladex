@@ -1,5 +1,7 @@
 package ch.epfl.scala.services
 
+import java.time.Instant
+
 import scala.concurrent.Future
 
 import ch.epfl.scala.index.model.misc.GithubInfo
@@ -8,6 +10,7 @@ import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.ProjectDependency
 
 trait SchedulerDatabase extends WebDatabase {
+  def insertOrUpdateProject(p: NewProject): Future[Unit]
   def getAllProjectRef(): Future[Seq[NewProject.Reference]]
   def getAllProjects(): Future[Seq[NewProject]]
   def updateGithubInfoAndStatus(

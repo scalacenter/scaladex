@@ -1,5 +1,7 @@
 package ch.epfl.scala.index.data.init
 
+import java.time.Instant
+
 import scala.concurrent.Future
 
 import akka.actor.ActorSystem
@@ -55,7 +57,7 @@ class Init(
       }
       .map {
         case (release, dependencies) =>
-          db.insertRelease(release, dependencies)
+          db.insertRelease(release, dependencies, Instant.now)
       }
       .sequence
       .map(_ => ())

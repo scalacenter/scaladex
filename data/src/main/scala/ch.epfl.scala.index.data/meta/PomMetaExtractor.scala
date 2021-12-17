@@ -17,7 +17,7 @@ import ch.epfl.scala.services.storage.LocalRepository._
 import com.typesafe.scalalogging.LazyLogging
 
 class PomMetaExtractor(
-  paths: DataPaths
+    paths: DataPaths
 ) extends LazyLogging {
   import PomMetaExtractor._
 
@@ -25,19 +25,19 @@ class PomMetaExtractor(
   private val users = Meta.load(paths, UserProvided).groupBy(_.sha1)
   private val central = Meta.load(paths, MavenCentral).groupBy(_.sha1)
   private val sbtPluginCreationDates =
-      SbtPluginsData(paths.ivysData)
-        .read()
-        .groupBy(_.sha1)
-        .view
-        .mapValues(p => parseCreationDate(p.head.created))
-        .toMap // Note: This is inefficient because we already loaded the data earlier and discarded the creation time
+    SbtPluginsData(paths.ivysData)
+      .read()
+      .groupBy(_.sha1)
+      .view
+      .mapValues(p => parseCreationDate(p.head.created))
+      .toMap // Note: This is inefficient because we already loaded the data earlier and discarded the creation time
 
   def extract(
       pom: ReleaseModel,
       creationDate: Option[Instant],
       localRepository: LocalRepository,
       sha1: String
-  ): Option[PomMeta] = {
+  ): Option[PomMeta] =
     if (!pom.isPackagingOfInterest) None
     else {
       // the only case where resolver has a value is when it's Bintray.
@@ -71,9 +71,8 @@ class PomMetaExtractor(
           Some(PomMeta(pom, creationDate.orElse(storedCreationDate), None))
       }
     }
-  }
 
-  def all(pomsRepoSha: Iterable[(ReleaseModel, LocalRepository, String)]): Seq[PomMeta] = {
+  def all(pomsRepoSha: Iterable[(ReleaseModel, LocalRepository, String)]): Seq[PomMeta] =
     pomsRepoSha.iterator
       .filter { case (pom, _, _) => pom.isPackagingOfInterest }
       .flatMap {
@@ -133,7 +132,6 @@ class PomMetaExtractor(
           }
       }
       .toSeq
-  }
 }
 
 object PomMetaExtractor {
@@ -143,4 +141,3 @@ object PomMetaExtractor {
   private def getCreationDate(dates: Seq[String]): Option[Instant] =
     dates.map(PomMetaExtractor.parseCreationDate).minOption
 }
-

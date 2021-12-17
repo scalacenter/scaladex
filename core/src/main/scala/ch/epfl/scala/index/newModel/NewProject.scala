@@ -55,25 +55,21 @@ object NewProject {
     implicit val ordering: Ordering[Reference] =
       Ordering.by(ref => (ref.organization.value, ref.repository.value))
   }
-  def defaultProject(
-      org: String,
-      repo: String,
+  def default(
+      ref: NewProject.Reference,
       created: Option[Instant] = None,
       githubInfo: Option[GithubInfo] = None,
-      dataForm: DataForm = DataForm.default,
-      now: Instant
+      dataForm: Option[DataForm] = None,
+      now: Instant = Instant.now()
   ): NewProject =
     NewProject(
-      Organization(org),
-      repository = Repository(repo),
-      githubStatus = githubInfo.map(_ => GithubStatus.Ok(now)).getOrElse(GithubStatus.Unkhown(now)),
+      ref.organization,
+      ref.repository,
+      githubStatus = githubInfo.map(_ => GithubStatus.Ok(now)).getOrElse(GithubStatus.Unknown(now)),
       githubInfo = githubInfo,
       created = created,
       dataForm = dataForm.getOrElse(DataForm.default)
     )
-
-  def fromRef(ref: NewProject.Reference): NewProject =
-    NewProject(ref.organization, ref.repository, None, None, DataForm.default)
 
   case class DataForm(
       defaultStableVersion: Boolean,

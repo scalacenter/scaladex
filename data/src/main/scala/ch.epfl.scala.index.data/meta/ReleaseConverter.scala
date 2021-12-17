@@ -21,17 +21,22 @@ class ReleaseConverter(paths: DataPaths) extends BintrayProtocol with LazyLoggin
   private val githubRepoExtractor = new GithubRepoExtractor(paths)
   private val licenseCleanup = new LicenseCleanup(paths)
 
-  def convert(pom: ReleaseModel, repo: LocalRepository, sha: String): Option[(NewRelease, Seq[ReleaseDependency])] = {
-    for  {
+  def convert(pom: ReleaseModel, repo: LocalRepository, sha: String): Option[(NewRelease, Seq[ReleaseDependency])] =
+    for {
       pomMeta <- pomMetaExtractor.extract(pom, None, repo, sha)
       version <- SemanticVersion.tryParse(pom.version)
       artifactMeta <- artifactMetaExtractor.extract(pom)
       repo <- githubRepoExtractor.extract(pom)
       converted <- convert(pom, repo, sha, pomMeta.creationDate, pomMeta.resolver)
     } yield converted
-  }
 
-  def convert(pom: ReleaseModel, repo: GithubRepo,  sha: String, creationDate: Option[Instant], resolver: Option[Resolver] = None): Option[(NewRelease, Seq[ReleaseDependency])] = {
+  def convert(
+      pom: ReleaseModel,
+      repo: GithubRepo,
+      sha: String,
+      creationDate: Option[Instant],
+      resolver: Option[Resolver] = None
+  ): Option[(NewRelease, Seq[ReleaseDependency])] =
     for {
       version <- SemanticVersion.tryParse(pom.version)
       artifactMeta <- artifactMetaExtractor.extract(pom)
@@ -50,16 +55,13 @@ class ReleaseConverter(paths: DataPaths) extends BintrayProtocol with LazyLoggin
         licenseCleanup(pom),
         artifactMeta.isNonStandard
       )
-      val dependencies = pom.dependencies
-        .map { dep =>
-          ReleaseDependency(
-            pom.mavenRef,
-            dep.mavenRef,
-            dep.scope.getOrElse("compile")
-          )
-        }
-        .distinct
+      val dependencies = pom.dependencies.map { dep =>
+        ReleaseDependency(
+          pom.mavenRef,
+          dep.mavenRef,
+          dep.scope.getOrElse("compile")
+        )
+      }.distinct
       (release, dependencies)
     }
-  }
 }

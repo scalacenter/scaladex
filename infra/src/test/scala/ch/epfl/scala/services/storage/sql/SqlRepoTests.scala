@@ -10,6 +10,7 @@ import scala.concurrent.ExecutionContext
 import ch.epfl.scala.index.Values
 import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.release.MavenReference
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.ProjectDependency
 import ch.epfl.scala.index.newModel.ReleaseDependency
@@ -28,7 +29,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
   describe("SqlRepo") {
     it("insert release and its dependencies") {
       for {
-        _ <- db.insertRelease(Cats.core_3, Cats.dependencies)
+        _ <- db.insertRelease(Cats.core_3, Cats.dependencies, now)
         project <- db.findProject(Cats.reference)
         releases <- db.findReleases(Cats.reference)
         dependencies <- db.findDependencies(Cats.core_3)
@@ -41,38 +42,37 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
 
     it("should find releases") {
       for {
-        _ <- db.insertRelease(PlayJsonExtra.release, Seq.empty)
+        _ <- db.insertRelease(PlayJsonExtra.release, Seq.empty, now)
         foundReleases <- db.findReleases(PlayJsonExtra.reference)
       } yield foundReleases shouldBe List(PlayJsonExtra.release)
     }
 
     it("should update user project form") {
       for {
-        _ <- db.insertRelease(Scalafix.release, Seq.empty)
+        _ <- db.insertRelease(Scalafix.release, Seq.empty, now)
         _ <- db.updateProjectForm(Scalafix.reference, Scalafix.dataForm)
       } yield succeed
     }
 
     it("should find directDependencies") {
       for {
-        _ <- cleanTables()
-        _ <- db.insertRelease(Cats.core_3, Cats.dependencies)
-        _ <- db.insertRelease(Cats.kernel_3, Seq.empty)
+        _ <- db.insertRelease(Cats.core_3, Cats.dependencies, now)
+        _ <- db.insertRelease(Cats.kernel_3, Seq.empty, now)
         directDependencies <- db.findDirectDependencies(Cats.core_3)
       } yield directDependencies.map(_.target) should contain theSameElementsAs List(Some(Cats.kernel_3), None, None)
     }
 
     it("should find reverseDependencies") {
       for {
-        _ <- db.insertRelease(Cats.core_3, Cats.dependencies)
-        _ <- db.insertRelease(Cats.kernel_3, Seq.empty)
+        _ <- db.insertRelease(Cats.core_3, Cats.dependencies, now)
+        _ <- db.insertRelease(Cats.kernel_3, Seq.empty, now)
         reverseDependencies <- db.findReverseDependencies(Cats.kernel_3)
       } yield reverseDependencies.map(_.source) should contain theSameElementsAs List(Cats.core_3)
     }
     it("should get all topics") {
       for {
-        _ <- db.insertRelease(Scalafix.release, Seq.empty)
-        _ <- db.updateGithubInfo(Scalafix.reference, Scalafix.githubInfo, Instant.now)
+        _ <- db.insertRelease(Scalafix.release, Seq.empty, now)
+        _ <- db.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, Scalafix.githubStatus)
         res <- db.getAllTopics()
       } yield res should contain theSameElementsAs Scalafix.githubInfo.topics
     }
@@ -105,8 +105,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         )
       )
       for {
-        _ <- cleanTables() // to avoid duplicate key failures
-        _ <- releases.map { case (release, dependencies) => db.insertRelease(release, dependencies) }.sequence
+        _ <- releases.map { case (release, dependencies) => db.insertRelease(release, dependencies, now) }.sequence
         projectDependencies <- db.computeProjectDependencies()
         _ <- db.insertProjectDependencies(projectDependencies)
         mostDependentProjects <- db.getMostDependentUponProject(10)
@@ -124,8 +123,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
     }
     it("should updateCreated") {
       for {
-        _ <- cleanTables()
-        _ <- db.insertRelease(Scalafix.release, Seq.empty)
+        _ <- db.insertRelease(Scalafix.release, Seq.empty, now)
         projectsCreationDate <- db.computeAllProjectsCreationDate()
         _ <- projectsCreationDate.mapSync {
           case (creationDate, ref) => db.updateProjectCreationDate(ref, creationDate)
@@ -135,20 +133,19 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
     }
     it("should createMovedProject") {
       val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
-      val repo = Scalafix.project
-      val newOrg = NewProject.Organization("scala")
-      val newRepo = NewProject.Repository("fix")
-      val newGithubInfo = Scalafix.githubInfo.copy(owner = newOrg.value, name = newRepo.value, stars = Some(10000))
-      val githubStatus = GithubStatus.Moved(now, newOrg, newRepo)
+      val newRef = NewProject.Reference.from("scala", "fix")
+      val newGithubInfo =
+        Scalafix.githubInfo.copy(owner = newRef.organization.value, name = newRef.repository.value, stars = Some(10000))
+      val moved = GithubStatus.Moved(now, newRef.organization, newRef.repository)
       for {
-        _ <- db.insertProject(repo)
-        _ <- db.createMovedProject(repo.reference, newGithubInfo, githubStatus)
-        newProject <- db.findProject(NewProject.Reference(newOrg, newRepo))
-        oldProject <- db.findProject(repo.reference)
+        _ <- db.insertRelease(Scalafix.release, Seq.empty, now)
+        _ <- db.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, Scalafix.githubStatus)
+        _ <- db.createMovedProject(Scalafix.reference, newGithubInfo, moved)
+        newProject <- db.findProject(newRef)
+        oldProject <- db.findProject(Scalafix.reference)
       } yield {
-        oldProject.get.githubStatus shouldBe githubStatus
-        newProject.get.organization shouldBe newOrg
-        newProject.get.repository shouldBe newRepo
+        oldProject.get.githubStatus shouldBe moved
+        newProject.get.reference shouldBe newRef
         newProject.get.githubStatus shouldBe GithubStatus.Ok(now)
       }
     }

@@ -1,5 +1,7 @@
 package ch.epfl.scala.services.storage.sql
 
+import java.time.Instant
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Failure
@@ -31,8 +33,9 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
   def migrate: IO[Unit] = IO(flyway.migrate())
   def dropTables: IO[Unit] = IO(flyway.clean())
 
-  override def insertRelease(release: NewRelease, dependencies: Seq[ReleaseDependency]): Future[Unit] = {
-    val insertReleaseF = run(ProjectTable.insertOrUpdateRef.run(release.projectRef))
+  override def insertRelease(release: NewRelease, dependencies: Seq[ReleaseDependency], time: Instant): Future[Unit] = {
+    val unknownStatus = GithubStatus.Unknown(time)
+    val insertReleaseF = run(ProjectTable.insertIfNotExists.run((release.projectRef, unknownStatus)))
       .flatMap(_ => strictRun(ReleaseTable.insert.run(release)))
       .failWithTry
       .map {
@@ -56,7 +59,7 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
     run(ProjectTable.selectAllProjects.to[Seq])
 
   override def updateGithubStatus(p: NewProject.Reference, githubStatus: GithubStatus): Future[Unit] =
-    run(ProjectTable.updateGithubStatus().run(githubStatus, p)).map(_ => ())
+    run(ProjectTable.updateGithubStatus.run(githubStatus, p)).map(_ => ())
 
   override def updateGithubInfoAndStatus(
       p: NewProject.Reference,
@@ -66,6 +69,16 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
     for {
       _ <- updateGithubStatus(p, githubStatus)
       _ <- run(GithubInfoTable.insertOrUpdate(p)(githubInfo))
+    } yield ()
+
+  override def insertOrUpdateProject(project: NewProject): Future[Unit] =
+    for {
+      _ <- run(ProjectTable.insertIfNotExists.run((project.reference, project.githubStatus)))
+      _ <- updateGithubStatus(project.reference, project.githubStatus)
+      _ <- updateProjectForm(project.reference, project.dataForm)
+      _ <- project.githubInfo
+        .map(githubInfo => run(GithubInfoTable.insertOrUpdate(project.reference)(githubInfo)))
+        .getOrElse(Future.successful(()))
     } yield ()
 
   override def createMovedProject(

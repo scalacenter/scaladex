@@ -7,6 +7,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import ch.epfl.scala.index.model.misc.GithubInfo
+import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
@@ -35,20 +36,33 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
     // Insert mock data
     implicit val ec = ExecutionContext.global
     for {
-      _ <- db.insertRelease(release, Seq.empty)
+      _ <- db.insertRelease(release, Seq.empty, now)
       _ <- db.updateProjectCreationDate(project.reference, project.created.get)
-      _ <- db.updateGithubInfo(project.reference, project.githubInfo.get, Instant.now)
+      _ <- db.updateGithubInfoAndStatus(project.reference, project.githubInfo.get, project.githubStatus)
     } yield ()
   }
 
   class DatabaseMockApi() extends SchedulerDatabase {
+
+    override def insertOrUpdateProject(p: NewProject): Future[Unit] = ???
+
+    override def createMovedProject(
+        ref: NewProject.Reference,
+        githubInfo: GithubInfo,
+        githubStatus: GithubStatus.Moved
+    ): Future[Unit] = ???
+
     private val projects = mutable.Map[NewProject.Reference, NewProject]()
     private val releases = mutable.Map[NewProject.Reference, Seq[NewRelease]]()
     private val dependencies = mutable.Seq[ReleaseDependency]()
 
-    override def insertRelease(release: NewRelease, dependencies: Seq[ReleaseDependency]): Future[Unit] = {
+    override def insertRelease(
+        release: NewRelease,
+        dependencies: Seq[ReleaseDependency],
+        now: Instant
+    ): Future[Unit] = {
       val ref = release.projectRef
-      if (!projects.contains(ref)) projects.addOne(ref -> NewProject.fromRef(ref))
+      if (!projects.contains(ref)) projects.addOne(ref -> NewProject.default(ref, now = now))
       releases.addOne(ref -> (releases.getOrElse(ref, Seq.empty) :+ release))
       dependencies.appendedAll(dependencies)
       Future.successful(())
@@ -100,8 +114,16 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
 
     override def getAllProjects(): Future[Seq[NewProject]] = ???
 
-    override def updateGithubInfo(ref: NewProject.Reference, githubInfo: GithubInfo, now: Instant): Future[Unit] =
-      Future.successful(projects.update(ref, projects(ref).copy(githubInfo = Some(githubInfo))))
+    override def updateGithubInfoAndStatus(
+        ref: NewProject.Reference,
+        githubInfo: GithubInfo,
+        githubStatus: GithubStatus
+    ): Future[Unit] =
+      Future.successful(
+        projects.update(ref, projects(ref).copy(githubInfo = Some(githubInfo), githubStatus = githubStatus))
+      )
+
+    override def updateGithubStatus(ref: NewProject.Reference, githubStatus: GithubStatus): Future[Unit] = ???
 
     override def computeProjectDependencies(): Future[Seq[ProjectDependency]] = ???
 

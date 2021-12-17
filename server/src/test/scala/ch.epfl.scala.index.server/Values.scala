@@ -1,6 +1,7 @@
 package ch.epfl.scala.index.server
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 import ch.epfl.scala.index.model.Milestone
 import ch.epfl.scala.index.model.ReleaseCandidate
@@ -21,7 +22,7 @@ import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 
 object Values {
-  val now = Instant.now
+  val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
   // Mock Data for tests
   val release: NewRelease = NewRelease(
     MavenReference(

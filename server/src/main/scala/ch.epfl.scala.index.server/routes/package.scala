@@ -198,7 +198,7 @@ package object routes {
     )
     for {
       releases <- db.findReleases(project.reference)
-      filteredReleases = ReleaseOptions.filterReleases(releaseSelection, releases, project)
+      filteredReleases = releaseSelection.filterReleases(releases, project)
     } yield filteredReleases.headOption
   }
 
