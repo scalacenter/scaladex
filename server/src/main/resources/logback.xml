@@ -17,10 +17,11 @@
     </appender>
 
     <logger name="akka" level="INFO" />
-
     <logger name="com.sksamuel" level="INFO" />
     <logger name="org.elasticsearch" level="INFO" />
     <logger name="org.flywaydb.*" level="INFO"/>
+<!--   TODO: implement authentication instead of silencing the log https://github.com/scalacenter/scaladex/issues/755-->
+    <logger name="org.elasticsearch.client.RestClient" level="ERROR"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
