@@ -1,6 +1,7 @@
 package ch.epfl.scala.index
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubInfo
@@ -18,13 +19,15 @@ import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.search.ProjectDocument
 
 object Values {
-
+  // database only store millisecond precision
+  val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
   object Scalafix {
     val project: NewProject =
       NewProject.defaultProject(
         "scalacenter",
         "scalafix",
-        created = Some(Instant.ofEpochMilli(1475505237265L))
+        created = Some(Instant.ofEpochMilli(1475505237265L)),
+        now = now
       )
 
     val reference: NewProject.Reference = project.reference
@@ -77,7 +80,7 @@ object Values {
 
   object PlayJsonExtra {
     val project: NewProject =
-      NewProject.defaultProject("xuwei-k", "play-json-extra")
+      NewProject.defaultProject("xuwei-k", "play-json-extra", now = now)
     val reference: NewProject.Reference = project.reference
     val release: NewRelease = NewRelease(
       MavenReference(
@@ -108,7 +111,8 @@ object Values {
     val project: NewProject = NewProject.defaultProject(
       "typelevel",
       "cats",
-      created = Some(Instant.ofEpochMilli(1454649333334L))
+      created = Some(Instant.ofEpochMilli(1454649333334L)),
+      now = now
     )
     val reference: NewProject.Reference = project.reference
     val issueAboutFoo: GithubIssue = GithubIssue(1, "Issue about foo", Url("https://github.com/typelevel/cats/pull/1"))

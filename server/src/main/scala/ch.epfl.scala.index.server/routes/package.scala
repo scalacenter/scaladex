@@ -194,4 +194,24 @@ package object routes {
         .getOrElse(Nil)
     } yield filteredReleases.headOption
   }
+  def getSelectedRelease(
+      db: WebDatabase,
+      project: NewProject,
+      platform: Option[String],
+      artifact: Option[NewRelease.ArtifactName],
+      version: Option[String],
+      selected: Option[String]
+  )(implicit ec: ExecutionContext): Future[Option[NewRelease]] = {
+    val releaseSelection = ReleaseSelection.parse(
+      platform = platform,
+      artifactName = artifact,
+      version = version,
+      selected = selected
+    )
+    for {
+      releases <- db.findReleases(project.reference)
+      filteredReleases = ReleaseOptions.filterReleases(releaseSelection, releases, project)
+    } yield filteredReleases.headOption
+  }
+
 }

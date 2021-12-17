@@ -126,20 +126,6 @@ class ProjectPages(
     }
   }
 
-  // Todo: this doesn't work yet.
-  private def redirectMoved(
-      organization: NewProject.Organization,
-      repository: NewProject.Repository
-  ): Directive0 = pass
-//    moved.get(GithubRepo(organization.value, repository.value)) match {
-//      case Some(destination) =>
-//        redirect(
-//          Uri(s"/${destination.organization}/${destination.repository}"),
-//          StatusCodes.PermanentRedirect
-//        )
-//      case None => pass
-//    }
-
   val routes: Route =
     concat(
       post(
@@ -269,39 +255,35 @@ class ProjectPages(
       },
       get {
         path(organizationM / repositoryM)((organization, repository) =>
-          redirectMoved(organization, repository)(
-            optionalSession(refreshable, usingCookies)(userId =>
-              parameters(
-                ("artifact".?, "version".?, "target".?, "selected".?)
-              )((artifact, version, target, selected) =>
-                onSuccess(
-                  getSelectedRelease(
-                    db,
-                    org = organization,
-                    repo = repository,
-                    platform = target,
-                    artifact = artifact.map(NewRelease.ArtifactName.apply),
-                    version = version,
-                    selected = selected
-                  )
-                ) {
-                  case Some(release) =>
-                    val targetParam =
-                      s"?target=${release.platform.encode}"
-                    redirect(
-                      s"/$organization/$repository/${release.artifactName}/${release.version}/$targetParam",
-                      StatusCodes.TemporaryRedirect
-                    )
-                  case None =>
-                    complete(
-                      StatusCodes.NotFound,
-                      views.html.notfound(
-                        session.getUser(userId)
+          optionalSession(refreshable, usingCookies)(userId =>
+            parameters(("artifact".?, "version".?, "target".?, "selected".?)) { (artifact, version, target, selected) =>
+              val projectRef = NewProject.Reference(organization, repository)
+              val fut: Future[StandardRoute] = db.findProject(projectRef).flatMap {
+                case Some(NewProject(_, _, _, GithubStatus.Moved(_, newOrg, newRepo), _, _)) =>
+                  Future.successful(redirect(Uri(s"/$newOrg/$newRepo"), StatusCodes.PermanentRedirect))
+                case Some(project) =>
+                  val releaseFut: Future[StandardRoute] =
+                    getSelectedRelease(
+                      db,
+                      project,
+                      platform = target,
+                      artifact = artifact.map(NewRelease.ArtifactName.apply),
+                      version = version,
+                      selected = selected
+                    ).map(_.map { release =>
+                      val targetParam = s"?target=${release.platform.encode}"
+                      redirect(
+                        s"/$organization/$repository/${release.artifactName}/${release.version}/$targetParam",
+                        StatusCodes.TemporaryRedirect
                       )
-                    )
-                }
-              )
-            )
+                    }.getOrElse(complete(StatusCodes.NotFound, views.html.notfound(session.getUser(userId)))))
+                  releaseFut
+                case None =>
+                  Future.successful(complete(StatusCodes.NotFound, views.html.notfound(session.getUser(userId))))
+              }
+
+              onSuccess(fut)(identity)
+            }
           )
         )
       },

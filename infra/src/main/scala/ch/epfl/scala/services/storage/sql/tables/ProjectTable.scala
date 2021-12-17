@@ -2,6 +2,7 @@ package ch.epfl.scala.services.storage.sql.tables
 
 import java.time.Instant
 
+import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.utils.DoobieUtils.Fragments._
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
@@ -15,10 +16,10 @@ object ProjectTable {
 
   private val table: String = "projects"
   private val tableFr: Fragment = Fragment.const0(table)
-  private val fields: Seq[String] = Seq("organization", "repository", "created_at")
+  private val fields: Seq[String] = Seq("organization", "repository", "created_at", "github_status")
   private val fieldsFr: Fragment = Fragment.const0(fields.mkString(", "))
   private def values(p: NewProject): Fragment =
-    fr0"${p.organization}, ${p.repository}, ${p.created}"
+    fr0"${p.organization}, ${p.repository}, ${p.created}, ${p.githubStatus}"
 
   private val allFields: Seq[String] = fields.map("p." + _) ++
     GithubInfoTable.fields.drop(2).map("g." + _) ++
@@ -40,6 +41,11 @@ object ProjectTable {
 
   def updateCreated(): Update[(Instant, NewProject.Reference)] =
     Update[(Instant, NewProject.Reference)](s"UPDATE $table SET created_at=? WHERE organization=? AND repository=?")
+
+  def updateGithubStatus(): Update[(GithubStatus, NewProject.Reference)] =
+    Update[(GithubStatus, NewProject.Reference)](
+      s"UPDATE $table SET github_status=? WHERE organization=? AND repository=?"
+    )
 
   def indexedProjects(): Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]

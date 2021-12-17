@@ -7,10 +7,10 @@ import cats.effect.IO
 import doobie.scalatest.IOChecker
 import doobie.util.transactor.Transactor
 import org.scalatest.Assertions
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Suite
 
-trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterAll {
+trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach {
   self: Assertions with Suite =>
 
   private implicit val cs: ContextShift[IO] =
@@ -32,7 +32,7 @@ trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterAll {
 
   lazy val db = new SqlRepo(dbConf, transactor)
 
-  override def beforeAll(): Unit =
+  override def beforeEach(): Unit =
     cleanTables()
 
   def cleanTables(): Unit = {
@@ -43,5 +43,5 @@ trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterAll {
     reset.unsafeRunSync()
   }
 
-  override def afterAll(): Unit = db.dropTables.unsafeRunSync()
+  override def afterEach(): Unit = db.dropTables.unsafeRunSync()
 }

@@ -1,7 +1,5 @@
 package ch.epfl.scala.services.storage.sql.tables
 
-import java.time.Instant
-
 import ch.epfl.scala.index.Values
 import ch.epfl.scala.services.storage.sql.BaseDatabaseSuite
 import org.scalatest.funspec.AsyncFunSpec
@@ -20,23 +18,23 @@ class GithubInfoTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matc
            | homepage, description, logo, stars, forks, watchers, issues, readme,
            | contributors, contributorCount, commits, topics, contributingGuide,
            | codeOfConduct, chatroom, beginnerIssuesLabel, beginnerIssues,
-           | selectedBeginnerIssues, updated_at) VALUES (?, ?, ?, ?,
-           | ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
+           | selectedBeginnerIssues) VALUES (?, ?, ?, ?,
+           | ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
           .filterNot(_ == '\n')
     }
     it("insertOrUpdate") {
-      val q = insertOrUpdate(Scalafix.reference)(Scalafix.githubInfo, Instant.now())
+      val q = insertOrUpdate(Scalafix.reference)(Scalafix.githubInfo)
       check(q)
       q.sql shouldBe
         s"""INSERT INTO github_info (organization, repository, name, owner,
            | homepage, description, logo, stars, forks, watchers, issues, readme,
            | contributors, contributorCount, commits, topics, contributingGuide,
            | codeOfConduct, chatroom, beginnerIssuesLabel, beginnerIssues,
-           | selectedBeginnerIssues, updated_at) VALUES (?, ?, ?, ?,
-           | ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           | selectedBeginnerIssues) VALUES (?, ?, ?, ?,
+           | ?, ?, ?, ?, ?, ?, ?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            | ON CONFLICT (organization, repository) DO UPDATE SET name=?, owner=?, homepage=?, description=?,
            | logo=?, stars=?, forks=?, watchers=?, issues=?, readme=?, contributors=?, contributorCount=?,
-           | commits=?, topics=?, contributingGuide=?, codeOfConduct=?, chatroom=?, updated_at=?""".stripMargin
+           | commits=?, topics=?, contributingGuide=?, codeOfConduct=?, chatroom=?""".stripMargin
           .filterNot(_ == '\n')
     }
     it("selectAllTopics") {

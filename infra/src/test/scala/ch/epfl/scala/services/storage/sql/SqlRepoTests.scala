@@ -1,6 +1,7 @@
 package ch.epfl.scala.services.storage.sql
 
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -8,6 +9,7 @@ import scala.concurrent.ExecutionContext
 
 import ch.epfl.scala.index.Values
 import ch.epfl.scala.index.model.SemanticVersion
+import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.Platform.ScalaJvm
 import ch.epfl.scala.index.model.release.ScalaVersion
@@ -32,6 +34,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
     it("insert project without githubInfo") {
       for {
         _ <- db.insertProject(Scalafix.project)
+        _ = println(Scalafix.project.githubStatus)
         foundProject <- db.findProject(Scalafix.project.reference)
       } yield foundProject shouldBe Some(Scalafix.project)
     }
@@ -77,7 +80,6 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
     }
 
     it("should find reverseDependencies") {
-      cleanTables() // to avoid duplicate key failures
       for {
         _ <- db
           .insertReleases(Seq(Cats.core_3, Cats.kernel_3))
@@ -97,8 +99,6 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
       } yield res shouldBe topics.toList
     }
     it("should get most dependent project") {
-      cleanTables() // to avoid duplicate key failures
-
       val projects = Seq(Cats.project, Scalafix.project, PlayJsonExtra.project)
       val data = Map(
         Cats.core_3 -> Seq(
@@ -144,8 +144,9 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
       }
     }
     it("should updateCreated") {
+      println(s"Instant.now ${Instant.now}")
       val now = Instant.now
-      val newProject = NewProject.defaultProject("org", "repo") // created_at = None
+      val newProject = NewProject.defaultProject("org", "repo", now = now) // created_at = None
       val oneRelease = NewRelease(
         MavenReference(
           "something",
@@ -169,6 +170,25 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         _ <- db.updateCreatedInProjects()
         res <- db.findProject(newProject.reference)
       } yield res.get.created.get shouldBe now
+    }
+    it("should createMovedProject") {
+      val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
+      val repo = Scalafix.project
+      val newOrg = NewProject.Organization("scala")
+      val newRepo = NewProject.Repository("fix")
+      val newGithubInfo = Scalafix.githubInfo.copy(owner = newOrg.value, name = newRepo.value, stars = Some(10000))
+      val githubStatus = GithubStatus.Moved(now, newOrg, newRepo)
+      for {
+        _ <- db.insertProject(repo)
+        _ <- db.createMovedProject(repo.reference, newGithubInfo, githubStatus)
+        newProject <- db.findProject(NewProject.Reference(newOrg, newRepo))
+        oldProject <- db.findProject(repo.reference)
+      } yield {
+        oldProject.get.githubStatus shouldBe githubStatus
+        newProject.get.organization shouldBe newOrg
+        newProject.get.repository shouldBe newRepo
+        newProject.get.githubStatus shouldBe GithubStatus.Ok(now)
+      }
     }
   }
 }

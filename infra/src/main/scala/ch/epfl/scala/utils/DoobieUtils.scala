@@ -13,6 +13,7 @@ import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubContributor
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubIssue
+import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Resolver
@@ -132,6 +133,9 @@ object DoobieUtils {
       )(
         _.mkString(",")
       )
+
+    implicit val githubStatusMeta: Meta[GithubStatus] =
+      stringMeta.timap(fromJson[GithubStatus](_).get)(toJson(_))
     implicit val semanticVersionMeta: Meta[SemanticVersion] =
       stringMeta.timap(SemanticVersion.tryParse(_).get)(_.toString)
     implicit val platformMeta: Meta[Platform] =
@@ -196,12 +200,13 @@ object DoobieUtils {
         }
 
     implicit val projectReader: Read[NewProject] =
-      Read[(Organization, Repository, Option[Instant], Option[GithubInfo], NewProject.DataForm)]
+      Read[(Organization, Repository, Option[Instant], GithubStatus, Option[GithubInfo], NewProject.DataForm)]
         .map {
-          case (organization, repository, created, githubInfo, dataForm) =>
+          case (organization, repository, created, githubStatus, githubInfo, dataForm) =>
             NewProject(
               organization = organization,
               repository = repository,
+              githubStatus = githubStatus,
               githubInfo = githubInfo,
               created = created,
               dataForm = dataForm

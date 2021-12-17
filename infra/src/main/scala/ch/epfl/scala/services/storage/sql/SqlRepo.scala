@@ -1,7 +1,5 @@
 package ch.epfl.scala.services.storage.sql
 
-import java.time.Instant
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
@@ -9,6 +7,7 @@ import scala.util.Try
 import cats.effect.IO
 import ch.epfl.scala.index.model.Project
 import ch.epfl.scala.index.model.misc.GithubInfo
+import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
@@ -52,15 +51,44 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
   override def getAllProjects(): Future[Seq[NewProject]] =
     run(ProjectTable.selectAllProjects.to[Seq])
 
-  override def updateGithubInfo(p: NewProject.Reference, githubInfo: GithubInfo, now: Instant): Future[Unit] =
-    run(GithubInfoTable.insertOrUpdate(p)(githubInfo, now))
+  override def updateGithubStatus(p: NewProject.Reference, githubStatus: GithubStatus): Future[Unit] =
+    run(ProjectTable.updateGithubStatus().run(githubStatus, p)).map(_ => ())
+
+  override def updateGithubInfoAndStatus(
+      p: NewProject.Reference,
+      githubInfo: GithubInfo,
+      githubStatus: GithubStatus
+  ): Future[Unit] =
+    for {
+      _ <- updateGithubStatus(p, githubStatus)
+      _ <- run(GithubInfoTable.insertOrUpdate(p)(githubInfo))
+    } yield ()
+
+  override def createMovedProject(
+      oldRef: NewProject.Reference,
+      info: GithubInfo,
+      githubStatus: GithubStatus.Moved
+  ): Future[Unit] =
+    for {
+      oldProject <- findProject(oldRef)
+      _ <- updateGithubStatus(oldRef, githubStatus)
+      newProject = NewProject(
+        NewProject.Organization(info.owner),
+        NewProject.Repository(info.name),
+        created = oldProject.flatMap(_.created), // todo:  from github
+        GithubStatus.Ok(githubStatus.when),
+        Some(info),
+        oldProject.map(_.dataForm).getOrElse(NewProject.DataForm.default)
+      )
+      _ <- insertOrUpdateProject(newProject)
+    } yield ()
 
   override def insertOrUpdateProject(project: NewProject): Future[Unit] =
     for {
       _ <- run(ProjectTable.insertOrUpdate(project))
       _ <- run(ProjectUserFormTable.insertOrUpdate(project)(project.dataForm))
       _ <- project.githubInfo
-        .map(githubInfo => run(GithubInfoTable.insertOrUpdate(project.reference)(githubInfo, Instant.now())))
+        .map(githubInfo => run(GithubInfoTable.insertOrUpdate(project.reference)(githubInfo)))
         .getOrElse(Future.successful(()))
     } yield ()
 

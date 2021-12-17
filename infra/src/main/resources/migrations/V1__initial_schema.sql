@@ -1,7 +1,9 @@
 CREATE TABLE projects (
-    organization         VARCHAR(39)   NOT NULL,
-    repository           VARCHAR(100)  NOT NULL,
-    created_at           TIMESTAMPTZ,
+    organization             VARCHAR(39)   NOT NULL,
+    repository               VARCHAR(100)  NOT NULL,
+    created_at               TIMESTAMPTZ,
+    github_status            VARCHAR NOT NULL,
+--     github_Status_updated_at TIMESTAMPTZ // an idea if we want to
     PRIMARY KEY (organization, repository)
 );
 
@@ -28,7 +30,6 @@ CREATE TABLE github_info (
     beginnerIssuesLabel    VARCHAR(1024),
     beginnerIssues         VARCHAR,
     selectedBeginnerIssues VARCHAR,
-    updated_at             TIMESTAMPTZ,
     FOREIGN KEY (organization, repository) REFERENCES projects (organization, repository),
     PRIMARY KEY (organization, repository)
 );

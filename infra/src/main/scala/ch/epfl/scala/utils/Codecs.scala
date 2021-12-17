@@ -6,6 +6,7 @@ import ch.epfl.scala.index.model.License
 import ch.epfl.scala.index.model.misc.GithubContributor
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubIssue
+import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.misc.Url
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
@@ -23,6 +24,7 @@ object Codecs {
   implicit val artifactName: Codec[NewRelease.ArtifactName] = fromString(_.value, NewRelease.ArtifactName.apply)
   implicit val instant: Codec[Instant] = fromLong[Instant](_.toEpochMilli, Instant.ofEpochMilli)
   implicit val githubInfo: Codec[GithubInfo] = deriveCodec[GithubInfo]
+  implicit val githubStatus: Codec[GithubStatus] = deriveCodec[GithubStatus]
 
   private def fromLong[A](encode: A => Long, decode: Long => A): Codec[A] =
     Codec.from(Decoder[Long].map(decode), Encoder[Long].contramap(encode))
