@@ -83,7 +83,7 @@ object Deployment {
   private val devUserName = "devscaladex"
   private val prodUserName = "scaladex"
 
-  private val devHostname = "icvm0042.epfl.ch"
+  private val devHostname = "scalagesrv1.epfl.ch"
   private val prodHostname = "icvm0042.epfl.ch"
 
   private val devPort = 8082
