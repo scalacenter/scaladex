@@ -58,6 +58,11 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
   override def getAllProjects(): Future[Seq[NewProject]] =
     run(ProjectTable.selectAllProjects.to[Seq])
 
+  override def updateReleases(releases: Seq[NewRelease], newRef: NewProject.Reference): Future[Int] = {
+    val mavenReferences = releases.map(r => newRef -> r.maven)
+    run(ReleaseTable.updateProjectRef.updateMany(mavenReferences))
+  }
+
   override def updateGithubStatus(p: NewProject.Reference, githubStatus: GithubStatus): Future[Unit] =
     run(ProjectTable.updateGithubStatus.run(githubStatus, p)).map(_ => ())
 

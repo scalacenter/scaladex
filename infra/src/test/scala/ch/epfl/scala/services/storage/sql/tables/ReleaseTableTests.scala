@@ -34,5 +34,13 @@ class ReleaseTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matcher
            | group by organization, repository""".stripMargin
           .filterNot(_ == '\n')
     }
+    it("updateProjectRef") {
+      val q = updateProjectRef()
+      check(q)
+      q.sql shouldBe
+        s"""UPDATE releases SET organization=?, repository=?
+           | WHERE groupId=? AND artifactId=? AND version=?""".stripMargin
+          .filterNot(_ == '\n')
+    }
   }
 }
