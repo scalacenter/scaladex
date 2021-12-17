@@ -2,6 +2,7 @@ package ch.epfl.scala.services.storage.sql.tables
 
 import java.time.Instant
 
+import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
@@ -42,6 +43,11 @@ object ReleaseTable {
 
   def indexedReleased(): Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]
+
+  val updateProjectRef: Update[(NewProject.Reference, MavenReference)] =
+    Update[(NewProject.Reference, MavenReference)](
+      s"UPDATE $table SET organization=?, repository=? WHERE groupId=? AND artifactId=? AND version=?"
+    )
 
   def selectReleases(ref: NewProject.Reference): Query0[NewRelease] =
     buildSelect(tableFr, fr0"*", whereRef(ref)).query[NewRelease]

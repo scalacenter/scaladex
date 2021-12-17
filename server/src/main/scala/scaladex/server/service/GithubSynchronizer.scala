@@ -51,7 +51,7 @@ class GithubSynchronizer(db: SchedulerDatabase, githubService: GithubService)(im
       case GithubResponse.Failed(code, reason) =>
         val githubStatus =
           if (code == 404) GithubStatus.NotFound(now) else GithubStatus.Failed(now, code, reason)
-        logger.info(s"failed to download github info for $repo because of $GithubStatus}")
+        logger.info(s"failed to download github info for $repo because of $githubStatus}")
         db.updateGithubStatus(repo, githubStatus)
     }
 }

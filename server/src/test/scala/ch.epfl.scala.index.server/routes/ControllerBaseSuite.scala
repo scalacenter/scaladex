@@ -135,5 +135,7 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
     override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] = ???
 
     override def countInverseProjectDependencies(projectRef: NewProject.Reference): Future[Int] = ???
+
+    override def updateReleases(release: Seq[NewRelease], newRef: NewProject.Reference): Future[Int] = ???
   }
 }

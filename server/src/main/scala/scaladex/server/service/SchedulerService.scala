@@ -21,11 +21,13 @@ class SchedulerService(db: SchedulerDatabase, searchEngine: SearchEngine, github
   private val updateProject = Scheduler("update-projects", updateProjectJob, 30.minutes)
   private val searchSynchronizer = new SearchSynchronizer(db, searchEngine)
   private val githubSynchronizerOpt = githubClientOpt.map(client => new GithubSynchronizer(db, client))
+  private val moveReleasesSynchronizer = new MoveReleasesSynchronizer(db)
 
   private val schedulers = Map[String, Scheduler](
     mostDependentProjectScheduler.name -> mostDependentProjectScheduler,
     updateProject.name -> updateProject,
-    searchSynchronizer.name -> searchSynchronizer
+    searchSynchronizer.name -> searchSynchronizer,
+    moveReleasesSynchronizer.name -> moveReleasesSynchronizer
   ) ++
     githubSynchronizerOpt.map(g => Map(g.name -> g)).getOrElse(Map.empty)
 
