@@ -22,7 +22,8 @@ trait SchedulerDatabase extends WebDatabase {
   ): Future[Unit]
   def updateGithubStatus(ref: NewProject.Reference, githubStatus: GithubStatus): Future[Unit]
   def computeProjectDependencies(): Future[Seq[ProjectDependency]]
-  def updateCreatedInProjects(): Future[Unit]
+  def computeAllProjectsCreationDate(): Future[Seq[(Instant, NewProject.Reference)]]
+  def updateProjectCreationDate(ref: NewProject.Reference, creationDate: Instant): Future[Unit]
   def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int]
   def countInverseProjectDependencies(projectRef: NewProject.Reference): Future[Int]
 }

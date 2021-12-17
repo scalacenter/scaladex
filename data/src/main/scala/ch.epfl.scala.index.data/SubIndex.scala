@@ -36,7 +36,8 @@ object SubIndex extends BintrayProtocol {
         .loadAll(source)
         .flatMap {
           case (pom, repo, sha) =>
-            githubRepoExtractor(pom)
+            githubRepoExtractor
+              .extract(pom)
               .filter(repos.contains)
               .map((pom, repo, sha, _))
         }
@@ -118,11 +119,12 @@ object SubIndex extends BintrayProtocol {
 
     println("== Copy LiveData ==")
 
+    val destinationStorage = new LocalStorageRepo(destination)
+    val sourceStorage = new LocalStorageRepo(source)
     // live
-    LocalStorageRepo.saveProjects(
-      destination,
-      LocalStorageRepo
-        .storedProjects(source)
+    destinationStorage.saveAllDataForms(
+      sourceStorage
+        .allDataForms()
         .view
         .filterKeys(reference => repos.contains(reference.githubRepo))
         .toMap

@@ -8,6 +8,8 @@ import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
 import ch.epfl.scala.utils.DoobieUtils.Fragments._
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
+import ch.epfl.scala.utils.DoobieUtils._
+import doobie._
 import doobie.implicits._
 import doobie.util.fragment.Fragment
 import doobie.util.update.Update
@@ -36,16 +38,12 @@ object ReleaseTable {
     fr0"${r.maven.groupId}, ${r.maven.artifactId}, ${r.version}, ${r.organization}, ${r.repository}," ++
       fr0" ${r.artifactName}, ${r.platform}, ${r.description}, ${r.releasedAt}, ${r.resolver}, ${r.licenses}, ${r.isNonStandardLib}"
 
-  def insert(elt: NewRelease): doobie.Update0 =
-    buildInsert(tableFr, fieldsFr, values(elt)).update
+  val insert: Update[NewRelease] = insertRequest(table, fields)
 
-  def insertMany(elts: Seq[NewRelease]): doobie.ConnectionIO[Int] =
-    Update[NewRelease](insert(elts.head).sql).updateMany(elts)
-
-  def indexedReleased(): doobie.Query0[Long] =
+  def indexedReleased(): Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]
 
-  def selectReleases(ref: NewProject.Reference): doobie.Query0[NewRelease] =
+  def selectReleases(ref: NewProject.Reference): Query0[NewRelease] =
     buildSelect(tableFr, fr0"*", whereRef(ref)).query[NewRelease]
 
   def selectReleases(
@@ -58,7 +56,7 @@ object ReleaseTable {
       whereRef(ref) ++ fr0" AND artifact=$artifactName"
     ).query[NewRelease]
 
-  def selectPlatform(): doobie.Query0[
+  def selectPlatform(): Query0[
     (NewProject.Organization, NewProject.Repository, Platform)
   ] =
     buildSelect(
@@ -67,7 +65,7 @@ object ReleaseTable {
       fr0"GROUP BY organization, repository, platform"
     ).query[(NewProject.Organization, NewProject.Repository, Platform)]
 
-  def findOldestReleasesPerProjectReference(): doobie.Query0[(Instant, NewProject.Reference)] =
+  def findOldestReleasesPerProjectReference(): Query0[(Instant, NewProject.Reference)] =
     buildSelect(
       tableFr,
       fr0"min(released_at) as oldest_release, organization, repository",

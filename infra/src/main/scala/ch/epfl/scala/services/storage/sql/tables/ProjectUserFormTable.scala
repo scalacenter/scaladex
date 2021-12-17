@@ -23,20 +23,18 @@ object ProjectUserFormTable {
     "contributorsWanted",
     "artifactDeprecations",
     "cliArtifacts",
-    "primaryTopic"
+    "primaryTopic",
+    "beginnerIssuesLabel"
   )
 
   val table: Fragment = Fragment.const0("project_user_data")
   private val fieldsFr: Fragment = Fragment.const0(fields.mkString(", "))
-  private def values(p: NewProject, userData: NewProject.DataForm): Fragment =
+  private def values(p: NewProject.Reference, userData: NewProject.DataForm): Fragment =
     fr0"${p.organization}, ${p.repository}, ${userData.defaultStableVersion}, ${userData.defaultArtifact}," ++
       fr0" ${userData.strictVersions}, ${userData.customScalaDoc}, ${userData.documentationLinks}, ${userData.deprecated}, ${userData.contributorsWanted}," ++
-      fr0" ${userData.artifactDeprecations}, ${userData.cliArtifacts}, ${userData.primaryTopic}"
+      fr0" ${userData.artifactDeprecations}, ${userData.cliArtifacts}, ${userData.primaryTopic}, ${userData.beginnerIssuesLabel}"
 
-  def insert(p: NewProject)(userData: NewProject.DataForm): doobie.Update0 =
-    buildInsert(table, fieldsFr, values(p, userData)).update
-
-  def insertOrUpdate(p: NewProject)(
+  def insertOrUpdate(ref: NewProject.Reference)(
       userDataForm: NewProject.DataForm
   ): doobie.Update0 = {
     val onConflict = fr0"organization, repository"
@@ -44,20 +42,10 @@ object ProjectUserFormTable {
     buildInsertOrUpdate(
       table,
       fieldsFr,
-      values(p, userDataForm),
+      values(ref, userDataForm),
       onConflict,
       doAction
     ).update
-  }
-
-  def update(p: NewProject)(
-      userData: NewProject.DataForm
-  ): doobie.Update0 = {
-    val fields = fr0"defaultStableVersion=${userData.defaultStableVersion}, defaultArtifact=${userData.defaultArtifact}," ++
-      fr0" strictVersions=${userData.strictVersions}, customScalaDoc=${userData.customScalaDoc}, documentationLinks=${userData.documentationLinks}," ++
-      fr0" deprecated=${userData.deprecated}, contributorsWanted=${userData.contributorsWanted}," ++
-      fr0" artifactDeprecations=${userData.artifactDeprecations}, cliArtifacts=${userData.cliArtifacts}, primaryTopic=${userData.primaryTopic}"
-    buildUpdate(table, fields, whereRef(p.reference)).update
   }
 
   def indexedProjects(): doobie.Query0[Long] =

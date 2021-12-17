@@ -11,11 +11,10 @@ class ReleaseDependencyTableTests extends AsyncFunSpec with BaseDatabaseSuite wi
   import ReleaseDependencyTable._
   describe("should generate the query for") {
     it("insert") {
-      val q = insert(CatsEffect.dependency)
-      check(q)
-      q.sql shouldBe
+      check(ReleaseDependencyTable.insert)
+      ReleaseDependencyTable.insert.sql shouldBe
         s"""|INSERT INTO release_dependencies (source_groupId, source_artifactId, source_version,
-            | target_groupId, target_artifactId, target_version, scope) VALUES (?, ? ,?, ?, ?, ?, ?)""".stripMargin
+            | target_groupId, target_artifactId, target_version, scope) VALUES (?, ?, ?, ?, ?, ?, ?)""".stripMargin
           .filterNot(_ == '\n')
     }
     it("find") {

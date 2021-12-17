@@ -1,6 +1,9 @@
 package ch.epfl.scala.services.storage.sql
 
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.concurrent.duration.Duration
 
 import cats.effect.ContextShift
 import cats.effect.IO
@@ -32,15 +35,15 @@ trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach {
 
   lazy val db = new SqlRepo(dbConf, transactor)
 
-  override def beforeEach(): Unit =
-    cleanTables()
+  override def beforeAll(): Unit =
+    Await.result(cleanTables(), Duration.Inf)
 
-  def cleanTables(): Unit = {
+  def cleanTables(): Future[Unit] = {
     val reset = for {
       _ <- db.dropTables
       _ <- db.migrate
     } yield ()
-    reset.unsafeRunSync()
+    reset.unsafeToFuture()
   }
 
   override def afterEach(): Unit = db.dropTables.unsafeRunSync()

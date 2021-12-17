@@ -33,9 +33,7 @@ object GithubInfoTable {
     "contributingGuide",
     "codeOfConduct",
     "chatroom",
-    "beginnerIssuesLabel",
-    "beginnerIssues",
-    "selectedBeginnerIssues"
+    "beginnerIssues"
   )
 
   val table: Fragment = Fragment.const0("github_info")
@@ -46,7 +44,7 @@ object GithubInfoTable {
       fr0"${g.homepage}, ${g.description}, ${g.logo}, ${g.stars}, ${g.forks}," ++
       fr0" ${g.watchers}, ${g.issues},${g.readme}, ${g.contributors}, ${g.contributorCount}," ++
       fr0" ${g.commits}, ${g.topics}, ${g.contributingGuide}, ${g.codeOfConduct}, ${g.chatroom}," ++
-      fr0" ${g.beginnerIssuesLabel}, ${g.beginnerIssues}, ${g.selectedBeginnerIssues}"
+      fr0" ${g.beginnerIssues}"
 
   def insert(p: NewProject.Reference)(elt: GithubInfo): doobie.Update0 =
     buildInsert(table, fieldsFr, values(p, elt)).update

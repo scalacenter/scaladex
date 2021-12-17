@@ -18,8 +18,13 @@ object ProjectTable {
   private val tableFr: Fragment = Fragment.const0(table)
   private val fields: Seq[String] = Seq("organization", "repository", "created_at", "github_status")
   private val fieldsFr: Fragment = Fragment.const0(fields.mkString(", "))
+  private val orgaAndRepo: String = "organization, repository"
+
   private def values(p: NewProject): Fragment =
     fr0"${p.organization}, ${p.repository}, ${p.created}, ${p.githubStatus}"
+
+  private def values(ref: NewProject.Reference): Fragment =
+    fr0"${ref.organization}, ${ref.repository}"
 
   private val allFields: Seq[String] = fields.map("p." + _) ++
     GithubInfoTable.fields.drop(2).map("g." + _) ++
@@ -30,16 +35,12 @@ object ProjectTable {
       fr0"LEFT JOIN ${GithubInfoTable.table} g ON p.organization = g.organization AND p.repository = g.repository " ++
       fr0"LEFT JOIN ${ProjectUserFormTable.table} f ON p.organization = f.organization AND p.repository = f.repository"
 
-  def insert(elt: NewProject): Update0 =
-    buildInsert(tableFr, fieldsFr, values(elt)).update
+  val insertOrUpdateRef: Update[NewProject.Reference] =
+    Update[NewProject.Reference](
+      s"INSERT INTO $table ($orgaAndRepo) VALUES (?, ?) ON CONFLICT ($orgaAndRepo) DO NOTHING"
+    )
 
-  def insertOrUpdate(elt: NewProject): Update0 = {
-    val onConflict = fr0"organization, repository"
-    val doAction = fr0"NOTHING"
-    buildInsertOrUpdate(tableFr, fieldsFr, values(elt), onConflict, doAction).update
-  }
-
-  def updateCreated(): Update[(Instant, NewProject.Reference)] =
+  val updateCreated: Update[(Instant, NewProject.Reference)] =
     Update[(Instant, NewProject.Reference)](s"UPDATE $table SET created_at=? WHERE organization=? AND repository=?")
 
   def updateGithubStatus(): Update[(GithubStatus, NewProject.Reference)] =

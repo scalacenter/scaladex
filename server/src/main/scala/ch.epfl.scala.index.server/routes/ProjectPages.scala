@@ -43,19 +43,10 @@ class ProjectPages(
     for {
       projectOpt <- db.findProject(projectRef)
       releases <- db.findReleases(projectRef)
-
     } yield projectOpt
       .map { p =>
-        val beginnerIssuesJson = "" // p.githubInfo.getOrElse("")
-        (
-          StatusCodes.OK,
-          views.project.html.editproject(
-            p,
-            releases,
-            Some(userInfo),
-            beginnerIssuesJson
-          )
-        )
+        val page = views.project.html.editproject(p, releases, Some(userInfo))
+        (StatusCodes.OK, page)
       }
       .getOrElse((StatusCodes.NotFound, views.html.notfound(Some(userInfo))))
 
@@ -88,12 +79,8 @@ class ProjectPages(
         for {
           releases <- db.findReleases(projectRef)
           // the selected Release
-          selectedRelease <- ReleaseOptions
-            .filterReleases(
-              selection,
-              releases,
-              project
-            )
+          selectedRelease <- selection
+            .filterReleases(releases, project)
             .headOption
             .toFuture(new Exception(s"no release found for $projectRef"))
           directDependencies <- db.findDirectDependencies(selectedRelease)
@@ -136,10 +123,7 @@ class ProjectPages(
                 val ref = NewProject.Reference(organization, repository)
                 val updated = for {
                   _ <- localStorage.saveDataForm(ref, form)
-                  updated <- db.updateProjectForm(
-                    ref,
-                    form.toUserDataForm()
-                  )
+                  updated <- db.updateProjectForm(ref, form)
                 } yield updated
                 onComplete(updated) {
                   case Success(()) =>

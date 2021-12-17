@@ -1,6 +1,8 @@
 package ch.epfl.scala.index.search
 
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.Duration
 
 import ch.epfl.scala.index.Values
 import ch.epfl.scala.index.model.release.Platform
@@ -19,7 +21,7 @@ class ESRepoTests extends AsyncFunSuite with Matchers with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
     searchEngine.waitUntilReady()
-    searchEngine.reset()
+    Await.result(searchEngine.reset(), Duration.Inf)
   }
 
   override protected def afterAll(): Unit =

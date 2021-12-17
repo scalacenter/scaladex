@@ -9,6 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Instant
+import java.time.OffsetDateTime
 
 import scala.util.control.NonFatal
 
@@ -16,7 +17,6 @@ import ch.epfl.scala.index.model.misc.Sha1
 import ch.epfl.scala.index.model.misc.UserState
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository
-import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
 
 /**
@@ -44,7 +44,7 @@ private[api] case class PublishData(
   lazy val tempPath: Path = tmpPath(hash)
   def savePath(paths: DataPaths): Path = pomPath(paths, hash)
 
-  val datetimeCreated = new DateTime(created.toEpochMilli)
+  val datetimeCreated: OffsetDateTime = OffsetDateTime.from(created)
 
   /**
    * write the file content to given path
