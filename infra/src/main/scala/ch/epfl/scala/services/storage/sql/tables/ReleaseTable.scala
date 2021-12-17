@@ -44,7 +44,7 @@ object ReleaseTable {
   def indexedReleased(): Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]
 
-  def updateProjectRef(): Update[(NewProject.Reference, MavenReference)] =
+  val updateProjectRef: Update[(NewProject.Reference, MavenReference)] =
     Update[(NewProject.Reference, MavenReference)](
       s"UPDATE $table SET organization=?, repository=? WHERE groupId=? AND artifactId=? AND version=?"
     )
