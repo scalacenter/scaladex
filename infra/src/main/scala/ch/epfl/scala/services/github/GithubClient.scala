@@ -85,7 +85,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
         update(res).map(GithubResponse.MovedPermanently.apply)
     }
 
-  def update(repoInfo: GithubModel.Repository): Future[GithubInfo] = {
+  private def update(repoInfo: GithubModel.Repository): Future[GithubInfo] = {
     val repo = repoInfo.repoName
     for {
       readme <- getReadme(repo)

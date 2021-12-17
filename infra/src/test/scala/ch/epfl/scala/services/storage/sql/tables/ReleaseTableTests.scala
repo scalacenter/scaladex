@@ -35,7 +35,7 @@ class ReleaseTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matcher
           .filterNot(_ == '\n')
     }
     it("updateProjectRef") {
-      val q = updateProjectRef()
+      val q = updateProjectRef
       check(q)
       q.sql shouldBe
         s"""UPDATE releases SET organization=?, repository=?
