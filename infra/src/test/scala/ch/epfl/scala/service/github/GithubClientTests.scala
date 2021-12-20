@@ -1,7 +1,7 @@
 package ch.epfl.scala.service.github
 
 import akka.actor.ActorSystem
-import ch.epfl.scala.index.model.misc.GithubRepo
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.services.github.GithubClient
 import ch.epfl.scala.services.github.GithubConfig
 import com.typesafe.config.ConfigFactory
@@ -14,7 +14,7 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
 
   // you need to configure locally a token
   val github = new GithubClient(githubConfig.get.token)
-  val scalafixRepo: GithubRepo = GithubRepo("playframework", "playframework")
+  val scalafixRepo: NewProject.Reference = NewProject.Reference.from("playframework", "playframework")
 
   describe("githubClient") {
     it("getReadme") {

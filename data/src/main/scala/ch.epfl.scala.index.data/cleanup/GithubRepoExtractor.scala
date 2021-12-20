@@ -10,7 +10,7 @@ import scala.util.Using
 import scala.util.matching.Regex
 
 import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.index.model.misc.GithubRepo
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.services.storage.DataPaths
 import org.json4s.CustomSerializer
 import org.json4s.DefaultFormats
@@ -58,15 +58,15 @@ class GithubRepoExtractor(paths: DataPaths) {
 
       val List(organization, repo) = claim.repo.split('/').toList
 
-      (matcher, GithubRepo(organization, repo))
+      (matcher, NewProject.Reference.from(organization, repo))
     }
 
-  def extract(pom: maven.ReleaseModel): Option[GithubRepo] = {
+  def extract(pom: maven.ReleaseModel): Option[NewProject.Reference] = {
     val fromPoms = pom.scm match {
       case Some(scm) =>
         List(scm.connection, scm.developerConnection, scm.url).flatten
           .flatMap(ScmInfoParser.parse)
-          .filter(g => g.organization != "" && g.repository != "")
+          .filter(g => !g.organization.isEmpty() && !g.repository.isEmpty())
       case None => List()
     }
 
@@ -82,15 +82,11 @@ class GithubRepoExtractor(paths: DataPaths) {
       if (s.startsWith("$")) s.drop(1) else s
 
     repo.map {
-      case GithubRepo(organization, repo) =>
-        val repo2 =
-          GithubRepo(
-            fixInterpolationIssue(organization.toLowerCase),
-            fixInterpolationIssue(repo.toLowerCase)
-          )
-
-//        movedRepositories.getOrElse(repo2, repo2)
-        repo2
+      case NewProject.Reference(organization, repo) =>
+        NewProject.Reference.from(
+          fixInterpolationIssue(organization.value),
+          fixInterpolationIssue(repo.value)
+        )
     }
   }
 

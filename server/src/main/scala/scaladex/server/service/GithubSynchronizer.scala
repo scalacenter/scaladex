@@ -27,7 +27,7 @@ class GithubSynchronizer(db: SchedulerDatabase, githubService: GithubService)(im
   private def updateProject(project: NewProject): Future[Unit] = {
     val now = Instant.now()
     for {
-      githubInfosResponse <- githubService.update(project.githubRepo)
+      githubInfosResponse <- githubService.update(project.reference)
       _ <- updateDbAndLog(project.reference, githubInfosResponse, now)
     } yield ()
   }

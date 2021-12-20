@@ -223,7 +223,7 @@ class ProjectPages(
               val projectRef =
                 NewProject.Reference(organization, repository)
               session.getUser(userId) match {
-                case Some(userState) if userState.canEdit(projectRef.githubRepo) =>
+                case Some(userState) if userState.canEdit(projectRef) =>
                   complete(getEditPage(projectRef, userState))
                 case maybeUser =>
                   complete(

@@ -3,7 +3,6 @@ package ch.epfl.scala.services.github
 import cats.implicits.toTraverseOps
 import ch.epfl.scala.index.model.misc.GithubContributor
 import ch.epfl.scala.index.model.misc.GithubIssue
-import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.model.misc.Url
 import ch.epfl.scala.index.model.{misc => core}
 import ch.epfl.scala.index.newModel.NewProject
@@ -32,7 +31,7 @@ object GithubModel {
       subscribers_count: Int, // Watch
       topics: Seq[String]
   ) {
-    def repoName: GithubRepo = GithubRepo(owner, name)
+    def repoName: NewProject.Reference = NewProject.Reference.from(owner, name)
   }
 
   implicit val repositoryDecoder: Decoder[Repository] = new Decoder[Repository] {
@@ -141,16 +140,16 @@ object GithubModel {
       hasNextPage: Boolean,
       nodes: Seq[RepoWithPermission]
   ) {
-    def toGithubReposWithPermission: Seq[(core.GithubRepo, String)] =
+    def toGithubReposWithPermission: Seq[(NewProject.Reference, String)] =
       nodes.collect {
         case GithubModel.RepoWithPermission(s"$organization/$repository", permission) =>
-          GithubRepo(organization.toLowerCase, repository.toLowerCase) -> permission
+          NewProject.Reference.from(organization, repository) -> permission
       }
 
-    def toGithubRepos: Seq[core.GithubRepo] =
+    def toGithubRepos: Seq[NewProject.Reference] =
       nodes.collect {
         case GithubModel.RepoWithPermission(s"$organization/$repository", permission) =>
-          GithubRepo(organization.toLowerCase, repository.toLowerCase)
+          NewProject.Reference.from(organization, repository)
       }
   }
 
