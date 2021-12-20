@@ -39,7 +39,7 @@ jobs:
       - uses: coursier/cache-action@v5
       - name: Unit tests
         env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN_FOR_GITHUB }}
+          TOKEN_FOR_GITHUB: ${{ secrets.TOKEN_FOR_GITHUB }}
         run: |
           cd scaladex
           sbtn test
@@ -72,7 +72,7 @@ jobs:
       - uses: coursier/cache-action@v5
       - name: Integration tests
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TOKEN_FOR_GITHUB: ${{ secrets.TOKEN_FOR_GITHUB }}
         run: |
           cd scaladex
           sbtn 'IntegrationTest / test'

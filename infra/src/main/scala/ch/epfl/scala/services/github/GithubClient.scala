@@ -381,7 +381,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
         }
       case _ @HttpResponse(code, _, entity, _) =>
         entity.discardBytes()
-        Future.successful(GithubResponse.Failed(code.intValue, code.value))
+        Future.successful(GithubResponse.Failed(code.intValue, code.reason()))
     }
 
   private def mainGithubUrl(ref: NewProject.Reference): String =
