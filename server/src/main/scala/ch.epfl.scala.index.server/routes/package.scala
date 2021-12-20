@@ -23,9 +23,9 @@ import ch.epfl.scala.services.WebDatabase
 package object routes {
 
   val organizationM: PathMatcher1[NewProject.Organization] =
-    Segment.map(NewProject.Organization)
+    Segment.map(NewProject.Organization.apply)
   val repositoryM: PathMatcher1[NewProject.Repository] =
-    Segment.map(NewProject.Repository)
+    Segment.map(NewProject.Repository.apply)
   val artifactM: PathMatcher1[NewRelease.ArtifactName] =
     Segment.map(NewRelease.ArtifactName.apply)
   val versionM: PathMatcher1[SemanticVersion] =

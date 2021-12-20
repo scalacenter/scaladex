@@ -85,11 +85,17 @@ object NewProject {
       beginnerIssuesLabel: Option[String]
   )
 
-  case class Organization(value: String) extends AnyVal {
+  case class Organization private (value: String) extends AnyVal {
     override def toString(): String = value
   }
-  case class Repository(value: String) extends AnyVal {
+  case class Repository private (value: String) extends AnyVal {
     override def toString(): String = value
+  }
+  object Organization {
+    def apply(v: String): Organization = new Organization(v.toLowerCase())
+  }
+  object Repository {
+    def apply(v: String): Repository = new Repository(v.toLowerCase())
   }
 
   object DataForm {
