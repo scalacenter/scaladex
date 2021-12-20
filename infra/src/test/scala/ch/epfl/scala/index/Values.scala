@@ -12,17 +12,17 @@ import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Platform._
 import ch.epfl.scala.index.model.release.ScalaVersion
-import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewProject.DataForm
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
+import ch.epfl.scala.index.newModel.Project
+import ch.epfl.scala.index.newModel.Project.DataForm
 import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.search.ProjectDocument
 
 object Values {
   val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
   object Scalafix {
-    val reference: NewProject.Reference = NewProject.Reference.from("scalacenter", "scalafix")
+    val reference: Project.Reference = Project.Reference.from("scalacenter", "scalafix")
     val creationDate: Instant = Instant.ofEpochMilli(1475505237265L)
     val release: NewRelease = NewRelease(
       MavenReference(
@@ -64,13 +64,13 @@ object Values {
       primaryTopic = Some("Scala3"),
       beginnerIssuesLabel = None
     )
-    val project: NewProject =
-      NewProject.default(reference, Some(creationDate), Some(githubInfo), Some(dataForm))
+    val project: Project =
+      Project.default(reference, Some(creationDate), Some(githubInfo), Some(dataForm))
     val projectDocument: ProjectDocument = ProjectDocument(project, Seq(release), 0)
   }
 
   object PlayJsonExtra {
-    val reference: NewProject.Reference = NewProject.Reference.from("xuwei-k", "play-json-extra")
+    val reference: Project.Reference = Project.Reference.from("xuwei-k", "play-json-extra")
     val release: NewRelease = NewRelease(
       MavenReference(
         "com.github.xuwei-k",
@@ -97,8 +97,8 @@ object Values {
   }
 
   object Cats {
-    val reference: NewProject.Reference = NewProject.Reference.from("typelevel", "cats")
-    val project: NewProject = NewProject.default(
+    val reference: Project.Reference = Project.Reference.from("typelevel", "cats")
+    val project: Project = Project.default(
       reference,
       created = Some(Instant.ofEpochMilli(1454649333334L)),
       now = now
@@ -115,7 +115,7 @@ object Values {
         chatroom = Some(Url("https://gitter.im/typelevel/cats")),
         beginnerIssues = List(issueAboutFoo, issueAboutBar)
       )
-    val projectWithGithubInfo: NewProject = project.copy(githubInfo = Some(githubInfo))
+    val projectWithGithubInfo: Project = project.copy(githubInfo = Some(githubInfo))
     private def release(
         name: String,
         platform: Platform,

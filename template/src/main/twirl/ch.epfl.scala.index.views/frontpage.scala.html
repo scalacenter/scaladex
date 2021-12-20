@@ -1,4 +1,4 @@
-@import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
+@import ch.epfl.scala.index.newModel.{Project, NewRelease}
 @import ch.epfl.scala.index.model.release.Platform
 @import ch.epfl.scala.index.model.release.BinaryVersion
 @import ch.epfl.scala.index.model.misc.UserState
@@ -12,14 +12,14 @@
   scalaJsVersions: Seq[(BinaryVersion, Int)],
   scalaNativeVersions: Seq[(BinaryVersion, Int)],
   sbtVersions: Seq[(BinaryVersion, Int)],
-  latestProjects: Seq[NewProject],
-  mostDependedUpon: Seq[NewProject],
+  latestProjects: Seq[Project],
+  mostDependedUpon: Seq[Project],
   latestReleases: Seq[NewRelease],
   user: Option[UserState],
   ecosystems: Map[String, String],
   totalProjects: Long,
   totalReleases: Long,
-  contributingProjects: Seq[NewProject]
+  contributingProjects: Seq[Project]
 )
 
 @main(production, title = "Scaladex", showSearch = false, user) {

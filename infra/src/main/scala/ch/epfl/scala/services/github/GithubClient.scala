@@ -35,7 +35,7 @@ import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubResponse
 import ch.epfl.scala.index.model.misc.Url
 import ch.epfl.scala.index.model.misc.UserInfo
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.services.GithubService
 import ch.epfl.scala.services.github.GithubModel.Contributor
 import ch.epfl.scala.utils.ScalaExtensions._
@@ -75,7 +75,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       })(Keep.left)
       .run()
 
-  override def update(ref: NewProject.Reference): Future[GithubResponse[GithubInfo]] =
+  override def update(ref: Project.Reference): Future[GithubResponse[GithubInfo]] =
     getRepoInfo(ref).flatMap {
       case GithubResponse.Failed(code, reason) => Future.successful(GithubResponse.Failed(code, reason))
       case GithubResponse.Ok(res) =>
@@ -115,7 +115,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
   }
 
   // This method doesn't fail
-  def getReadme(ref: NewProject.Reference): Future[String] = {
+  def getReadme(ref: Project.Reference): Future[String] = {
     val request = HttpRequest(uri = s"${mainGithubUrl(ref)}/readme")
       .addCredentials(credentials)
       .addHeader(acceptHtmlVersion)
@@ -127,7 +127,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     }
   }
 
-  def getCommunityProfile(ref: NewProject.Reference): Future[Option[GithubModel.CommunityProfile]] = {
+  def getCommunityProfile(ref: Project.Reference): Future[Option[GithubModel.CommunityProfile]] = {
     val request = HttpRequest(uri = s"${mainGithubUrl(ref)}/community/profile")
       .addCredentials(credentials)
       .addHeader(RawHeader("Accept", "application/vnd.github.black-panther-preview+json"))
@@ -140,7 +140,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       }
   }
 
-  def getContributors(ref: NewProject.Reference): Future[List[Contributor]] = {
+  def getContributors(ref: Project.Reference): Future[List[Contributor]] = {
     def url(page: Int = 1) = HttpRequest(uri = s"${mainGithubUrl(ref)}/contributors?${perPage()}&${inPage(page)}")
 
     def getContributionPage(page: Int): Future[List[Contributor]] = {
@@ -164,7 +164,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     }
   }
 
-  def getRepoInfo(ref: NewProject.Reference): Future[GithubResponse[GithubModel.Repository]] = {
+  def getRepoInfo(ref: Project.Reference): Future[GithubResponse[GithubModel.Repository]] = {
     val request = HttpRequest(uri = s"${mainGithubUrl(ref)}").addHeader(acceptJson).addCredentials(credentials)
     process(request).flatMap {
       case GithubResponse.Ok((_, entity)) =>
@@ -175,7 +175,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     }
   }
 
-  def getOpenIssues(ref: NewProject.Reference): Future[Seq[GithubModel.OpenIssue]] = {
+  def getOpenIssues(ref: Project.Reference): Future[Seq[GithubModel.OpenIssue]] = {
     def url(page: Int = 1) = HttpRequest(uri = s"${mainGithubUrl(ref)}/issues?${perPage()}&page=$page")
 
     def getOpenIssuePage(page: Int): Future[Seq[GithubModel.OpenIssue]] = {
@@ -201,7 +201,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     }
   }
 
-  def getGiterChatRoom(ref: NewProject.Reference): Future[Option[String]] = {
+  def getGiterChatRoom(ref: Project.Reference): Future[Option[String]] = {
     val url = s"https://gitter.im/${ref.organization}/${ref.repository}"
     val httpRequest = HttpRequest(uri = s"https://gitter.im/${ref.organization}/${ref.repository}")
     queueRequest(httpRequest).map {
@@ -213,7 +213,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
   def fetchReposUnderUserOrganizations(
       login: String,
       filterPermissions: Seq[String]
-  ): Future[Seq[NewProject.Reference]] = {
+  ): Future[Seq[Project.Reference]] = {
     val query =
       s"""|query {
           |  user(login: "$login") {
@@ -247,7 +247,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       })
 
   }
-  def fetchUserRepo(login: String, filterPermissions: Seq[String]): Future[Seq[NewProject.Reference]] = {
+  def fetchUserRepo(login: String, filterPermissions: Seq[String]): Future[Seq[Project.Reference]] = {
     def query(endcursorOpt: Option[String]) = {
       val after = endcursorOpt.map(endcursor => s"""after: "$endcursor"""").getOrElse("")
       s"""|query {
@@ -308,7 +308,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
   }
 
   // only the first 100 orgs
-  def fetchUserOrganizations(login: String): Future[Set[NewProject.Organization]] = {
+  def fetchUserOrganizations(login: String): Future[Set[Project.Organization]] = {
     val query =
       s"""|query {
           |  user(login: "$login") {
@@ -384,7 +384,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
         Future.successful(GithubResponse.Failed(code.intValue, code.reason()))
     }
 
-  private def mainGithubUrl(ref: NewProject.Reference): String =
+  private def mainGithubUrl(ref: Project.Reference): String =
     s"https://api.github.com/repos/${ref.organization}/${ref.repository}"
 
   private def inPage(page: Int = 1): String =

@@ -10,8 +10,8 @@ import scala.concurrent.ExecutionContext
 import ch.epfl.scala.index.Values
 import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.release.MavenReference
-import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.index.newModel.ProjectDependency
 import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.utils.ScalaExtensions._
@@ -133,7 +133,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
     }
     it("should createMovedProject") {
       val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
-      val newRef = NewProject.Reference.from("scala", "fix")
+      val newRef = Project.Reference.from("scala", "fix")
       val newGithubInfo =
         Scalafix.githubInfo.copy(owner = newRef.organization.value, name = newRef.repository.value, stars = Some(10000))
       val moved = GithubStatus.Moved(now, newRef.organization, newRef.repository)

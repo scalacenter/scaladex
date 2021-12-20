@@ -2,10 +2,10 @@ package ch.epfl.scala.services
 
 import scala.concurrent.Future
 
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 
 trait LocalStorageApi {
-  def saveDataForm(ref: NewProject.Reference, userData: NewProject.DataForm): Future[Unit]
-  def allDataForms(): Map[NewProject.Reference, NewProject.DataForm]
-  def saveAllDataForms(dataForms: Map[NewProject.Reference, NewProject.DataForm]): Unit
+  def saveDataForm(ref: Project.Reference, userData: Project.DataForm): Future[Unit]
+  def allDataForms(): Map[Project.Reference, Project.DataForm]
+  def saveAllDataForms(dataForms: Map[Project.Reference, Project.DataForm]): Unit
 }

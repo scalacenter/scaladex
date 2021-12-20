@@ -13,10 +13,10 @@ import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Resolver
 import ch.epfl.scala.index.model.release.Scala3Version
 import ch.epfl.scala.index.model.release.ScalaVersion
-import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
-import ch.epfl.scala.index.newModel.NewProject.Organization
-import ch.epfl.scala.index.newModel.NewProject.Repository
 import ch.epfl.scala.index.newModel.NewRelease._
+import ch.epfl.scala.index.newModel.Project.DocumentationLink
+import ch.epfl.scala.index.newModel.Project.Organization
+import ch.epfl.scala.index.newModel.Project.Repository
 import org.joda.time.format.ISODateTimeFormat
 
 /**
@@ -38,8 +38,8 @@ case class NewRelease(
     licenses: Set[License],
     isNonStandardLib: Boolean
 ) {
-  def projectRef: NewProject.Reference =
-    NewProject.Reference(organization, repository)
+  def projectRef: Project.Reference =
+    Project.Reference(organization, repository)
 
   def fullPlatformVersion: String = platform.showVersion
 

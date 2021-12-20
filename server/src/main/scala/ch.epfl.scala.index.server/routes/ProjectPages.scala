@@ -14,8 +14,8 @@ import akka.http.scaladsl.server._
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.services.LocalStorageApi
 import ch.epfl.scala.services.WebDatabase
@@ -38,7 +38,7 @@ class ProjectPages(
   import session.implicits._
 
   private def getEditPage(
-      projectRef: NewProject.Reference,
+      projectRef: Project.Reference,
       userInfo: UserState
   ): Future[(StatusCode, HtmlFormat.Appendable)] =
     for {
@@ -52,15 +52,15 @@ class ProjectPages(
       .getOrElse((StatusCodes.NotFound, views.html.notfound(production, Some(userInfo))))
 
   private def filterVersions(
-      p: NewProject,
+      p: Project,
       allVersions: Seq[SemanticVersion]
   ): Seq[SemanticVersion] =
     (if (p.dataForm.strictVersions) allVersions.filter(_.isSemantic)
      else allVersions).distinct.sorted.reverse
 
   private def getProjectPage(
-      organization: NewProject.Organization,
-      repository: NewProject.Repository,
+      organization: Project.Organization,
+      repository: Project.Repository,
       target: Option[String],
       artifact: NewRelease.ArtifactName,
       version: Option[SemanticVersion],
@@ -73,7 +73,7 @@ class ProjectPages(
       selected = None
     )
     val projectRef =
-      NewProject.Reference(organization, repository)
+      Project.Reference(organization, repository)
 
     db.findProject(projectRef).flatMap {
       case Some(project) =>
@@ -122,7 +122,7 @@ class ProjectPages(
           optionalSession(refreshable, usingCookies)(_ =>
             pathEnd(
               editForm { form =>
-                val ref = NewProject.Reference(organization, repository)
+                val ref = Project.Reference(organization, repository)
                 val updated = for {
                   _ <- localStorage.saveDataForm(ref, form)
                   updated <- db.updateProjectForm(ref, form)
@@ -149,7 +149,7 @@ class ProjectPages(
         path("artifacts" / organizationM / repositoryM)((org, repo) =>
           optionalSession(refreshable, usingCookies) { userId =>
             val user = session.getUser(userId)
-            val ref = NewProject.Reference(org, repo)
+            val ref = Project.Reference(org, repo)
             val res =
               for {
                 projectOpt <- db.findProject(ref)
@@ -224,7 +224,7 @@ class ProjectPages(
           optionalSession(refreshable, usingCookies)(userId =>
             pathEnd {
               val projectRef =
-                NewProject.Reference(organization, repository)
+                Project.Reference(organization, repository)
               session.getUser(userId) match {
                 case Some(userState) if userState.canEdit(projectRef) =>
                   complete(getEditPage(projectRef, userState))
@@ -244,9 +244,9 @@ class ProjectPages(
         path(organizationM / repositoryM)((organization, repository) =>
           optionalSession(refreshable, usingCookies)(userId =>
             parameters(("artifact".?, "version".?, "target".?, "selected".?)) { (artifact, version, target, selected) =>
-              val projectRef = NewProject.Reference(organization, repository)
+              val projectRef = Project.Reference(organization, repository)
               val fut: Future[StandardRoute] = db.findProject(projectRef).flatMap {
-                case Some(NewProject(_, _, _, GithubStatus.Moved(_, newOrg, newRepo), _, _)) =>
+                case Some(Project(_, _, _, GithubStatus.Moved(_, newOrg, newRepo), _, _)) =>
                   Future.successful(redirect(Uri(s"/$newOrg/$newRepo"), StatusCodes.PermanentRedirect))
                 case Some(project) =>
                   val releaseFut: Future[StandardRoute] =

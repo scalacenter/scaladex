@@ -13,19 +13,19 @@ import akka.http.scaladsl.unmarshalling.Unmarshaller
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.UserState
 import ch.epfl.scala.index.model.release.ReleaseSelection
-import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
+import ch.epfl.scala.index.newModel.Project
+import ch.epfl.scala.index.newModel.Project.DocumentationLink
 import ch.epfl.scala.search.SearchParams
 import ch.epfl.scala.services.WebDatabase
 
 package object routes {
 
-  val organizationM: PathMatcher1[NewProject.Organization] =
-    Segment.map(NewProject.Organization.apply)
-  val repositoryM: PathMatcher1[NewProject.Repository] =
-    Segment.map(NewProject.Repository.apply)
+  val organizationM: PathMatcher1[Project.Organization] =
+    Segment.map(Project.Organization.apply)
+  val repositoryM: PathMatcher1[Project.Repository] =
+    Segment.map(Project.Repository.apply)
   val artifactM: PathMatcher1[NewRelease.ArtifactName] =
     Segment.map(NewRelease.ArtifactName.apply)
   val versionM: PathMatcher1[SemanticVersion] =
@@ -83,7 +83,7 @@ package object routes {
     }
 
   // TODO remove all unused parameters
-  val editForm: Directive1[NewProject.DataForm] =
+  val editForm: Directive1[Project.DataForm] =
     formFieldSeq.tflatMap(fields =>
       formFields(
         (
@@ -142,7 +142,7 @@ package object routes {
               }
               .toList
 
-          val dataForm = NewProject.DataForm(
+          val dataForm = Project.DataForm(
             defaultStableVersion,
             defaultArtifact.map(ArtifactName.apply),
             strictVersions,
@@ -160,8 +160,8 @@ package object routes {
     )
   def getSelectedRelease(
       db: WebDatabase,
-      org: NewProject.Organization,
-      repo: NewProject.Repository,
+      org: Project.Organization,
+      repo: Project.Repository,
       platform: Option[String],
       artifact: Option[NewRelease.ArtifactName],
       version: Option[String],
@@ -173,7 +173,7 @@ package object routes {
       version = version,
       selected = selected
     )
-    val projectRef = NewProject.Reference(org, repo)
+    val projectRef = Project.Reference(org, repo)
     for {
       project <- db.findProject(projectRef)
       releases <- db.findReleases(projectRef)
@@ -184,7 +184,7 @@ package object routes {
   }
   def getSelectedRelease(
       db: WebDatabase,
-      project: NewProject,
+      project: Project,
       platform: Option[String],
       artifact: Option[NewRelease.ArtifactName],
       version: Option[String],

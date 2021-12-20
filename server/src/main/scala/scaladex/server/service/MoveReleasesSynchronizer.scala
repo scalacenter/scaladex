@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 import ch.epfl.scala.index.model.misc.GithubStatus
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.services.SchedulerDatabase
 import ch.epfl.scala.utils.ScalaExtensions.TraversableOnceFutureExtension
 
@@ -15,8 +15,8 @@ class MoveReleasesSynchronizer(db: SchedulerDatabase)(implicit ec: ExecutionCont
     for {
       allProjects <- db.getAllProjects()
       moved = allProjects.collect {
-        case NewProject(oldRog, oldRepo, _, _ @GithubStatus.Moved(_, newOrg, newRepo), _, _) =>
-          NewProject.Reference(oldRog, oldRepo) -> NewProject.Reference(newOrg, newRepo)
+        case Project(oldRog, oldRepo, _, _ @GithubStatus.Moved(_, newOrg, newRepo), _, _) =>
+          Project.Reference(oldRog, oldRepo) -> Project.Reference(newOrg, newRepo)
       }.toMap
       numberOfUpdated <- moved.map {
         case (oldRef, newRef) => db.findReleases(oldRef).flatMap(releases => db.updateReleases(releases, newRef))

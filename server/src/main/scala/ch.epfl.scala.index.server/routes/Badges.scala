@@ -13,8 +13,8 @@ import akka.http.scaladsl.server.RequestContext
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.RouteResult
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.services.WebDatabase
 
 class Badges(db: WebDatabase)(implicit executionContext: ExecutionContext) {
@@ -68,8 +68,8 @@ class Badges(db: WebDatabase)(implicit executionContext: ExecutionContext) {
   }
 
   def latest(
-      organization: NewProject.Organization,
-      repository: NewProject.Repository,
+      organization: Project.Organization,
+      repository: Project.Repository,
       artifact: Option[NewRelease.ArtifactName]
   ): RequestContext => Future[RouteResult] =
     parameter("target".?) { platform =>
@@ -108,8 +108,8 @@ class Badges(db: WebDatabase)(implicit executionContext: ExecutionContext) {
     }
 
   def latestByScalaVersion(
-      organization: NewProject.Organization,
-      repository: NewProject.Repository,
+      organization: Project.Organization,
+      repository: Project.Repository,
       artifact: NewRelease.ArtifactName
   ): RequestContext => Future[RouteResult] =
     parameter("targetType".?) { targetTypeString =>
@@ -119,7 +119,7 @@ class Badges(db: WebDatabase)(implicit executionContext: ExecutionContext) {
             .flatMap(Platform.PlatformType.ofName)
             .getOrElse(Platform.PlatformType.Jvm)
         val res = db.findReleases(
-          NewProject.Reference(organization, repository),
+          Project.Reference(organization, repository),
           artifact
         )
         onSuccess {

@@ -5,7 +5,7 @@ import ch.epfl.scala.index.model.misc.GithubContributor
 import ch.epfl.scala.index.model.misc.GithubIssue
 import ch.epfl.scala.index.model.misc.Url
 import ch.epfl.scala.index.model.{misc => core}
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.utils.Secret
 import io.circe._
 import io.circe.generic.semiauto._
@@ -31,7 +31,7 @@ object GithubModel {
       subscribers_count: Int, // Watch
       topics: Seq[String]
   ) {
-    def repoName: NewProject.Reference = NewProject.Reference.from(owner, name)
+    def repoName: Project.Reference = Project.Reference.from(owner, name)
   }
 
   implicit val repositoryDecoder: Decoder[Repository] = new Decoder[Repository] {
@@ -140,16 +140,16 @@ object GithubModel {
       hasNextPage: Boolean,
       nodes: Seq[RepoWithPermission]
   ) {
-    def toGithubReposWithPermission: Seq[(NewProject.Reference, String)] =
+    def toGithubReposWithPermission: Seq[(Project.Reference, String)] =
       nodes.collect {
         case GithubModel.RepoWithPermission(s"$organization/$repository", permission) =>
-          NewProject.Reference.from(organization, repository) -> permission
+          Project.Reference.from(organization, repository) -> permission
       }
 
-    def toGithubRepos: Seq[NewProject.Reference] =
+    def toGithubRepos: Seq[Project.Reference] =
       nodes.collect {
         case GithubModel.RepoWithPermission(s"$organization/$repository", permission) =>
-          NewProject.Reference.from(organization, repository)
+          Project.Reference.from(organization, repository)
       }
   }
 
@@ -193,7 +193,7 @@ object GithubModel {
     (c: HCursor) => c.downField("data").downField("viewer").as[UserInfo](userInfoCaseClassDecoder)
 
   case class Organization(login: String) extends AnyVal {
-    def toCoreOrganization: NewProject.Organization = NewProject.Organization(login)
+    def toCoreOrganization: Project.Organization = Project.Organization(login)
   }
   implicit val organizationsDecoder: Decoder[Seq[Organization]] =
     (c: HCursor) =>

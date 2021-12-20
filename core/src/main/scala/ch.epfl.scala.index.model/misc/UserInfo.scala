@@ -1,6 +1,6 @@
 package ch.epfl.scala.index.model.misc
 
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.utils.Secret
 
 /**
@@ -18,16 +18,16 @@ case class UserInfo(
 ) extends AvatarUrl
 
 case class UserState(
-    repos: Set[NewProject.Reference],
-    orgs: Set[NewProject.Organization],
+    repos: Set[Project.Reference],
+    orgs: Set[Project.Organization],
     info: UserInfo
 ) {
-  def isAdmin: Boolean = orgs.contains(NewProject.Organization("scalacenter"))
-  def canEdit(githubRepo: NewProject.Reference): Boolean =
+  def isAdmin: Boolean = orgs.contains(Project.Organization("scalacenter"))
+  def canEdit(githubRepo: Project.Reference): Boolean =
     isAdmin || repos.contains(githubRepo)
   def isSonatype: Boolean =
     orgs.contains(
-      NewProject.Organization("sonatype")
+      Project.Organization("sonatype")
     ) || info.login == "central-ossrh"
   def hasPublishingAuthority: Boolean = isAdmin || isSonatype
 }

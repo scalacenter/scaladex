@@ -9,7 +9,7 @@ import scala.concurrent.duration.DurationInt
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubResponse
 import ch.epfl.scala.index.model.misc.GithubStatus
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.services.GithubService
 import ch.epfl.scala.services.SchedulerDatabase
 import ch.epfl.scala.utils.ScalaExtensions._
@@ -24,7 +24,7 @@ class GithubSynchronizer(db: SchedulerDatabase, githubService: GithubService)(im
       filtered.mapSync(updateProject).map(_ => ())
     }
 
-  private def updateProject(project: NewProject): Future[Unit] = {
+  private def updateProject(project: Project): Future[Unit] = {
     val now = Instant.now()
     for {
       githubInfosResponse <- githubService.update(project.reference)
@@ -33,7 +33,7 @@ class GithubSynchronizer(db: SchedulerDatabase, githubService: GithubService)(im
   }
 
   def updateDbAndLog(
-      repo: NewProject.Reference,
+      repo: Project.Reference,
       githubInfosResponse: GithubResponse[GithubInfo],
       now: Instant
   ): Future[Unit] =
@@ -44,7 +44,7 @@ class GithubSynchronizer(db: SchedulerDatabase, githubService: GithubService)(im
 
       case GithubResponse.MovedPermanently(info) =>
         val githubStatus =
-          GithubStatus.Moved(now, NewProject.Organization(info.owner), NewProject.Repository(info.name))
+          GithubStatus.Moved(now, Project.Organization(info.owner), Project.Repository(info.name))
         logger.info(s"$repo moved to $githubStatus")
         db.createMovedProject(repo, info, githubStatus)
 

@@ -1,13 +1,13 @@
 package ch.epfl.scala.search
 
 import ch.epfl.scala.index.model.release.Platform
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 
 case class SearchParams(
     queryString: String = "",
     page: Int = 0,
     sorting: Option[String] = None,
-    userRepos: Set[NewProject.Reference] = Set(),
+    userRepos: Set[Project.Reference] = Set(),
     total: Int = 20,
     targetFiltering: Option[Platform] = None,
     cli: Boolean = false,

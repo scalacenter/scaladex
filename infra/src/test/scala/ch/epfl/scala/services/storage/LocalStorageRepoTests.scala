@@ -1,6 +1,6 @@
 package ch.epfl.scala.services.storage
 
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import io.circe.parser
 import org.scalatest.funspec.AsyncFunSpec
@@ -42,7 +42,7 @@ class LocalStorageRepoTests() extends AsyncFunSpec with Matchers {
          |""".stripMargin
 
     import LocalStorageRepo._
-    val dataForms = parser.decode[Map[NewProject.Reference, NewProject.DataForm]](json)
+    val dataForms = parser.decode[Map[Project.Reference, Project.DataForm]](json)
     dataForms.toTry.get.size should equal(1)
   }
 

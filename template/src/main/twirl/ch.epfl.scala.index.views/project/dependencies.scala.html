@@ -1,8 +1,8 @@
-@import ch.epfl.scala.index.newModel.NewProject
+@import ch.epfl.scala.index.newModel.Project
 @import ch.epfl.scala.index.newModel.ReleaseDependency
 @import ch.epfl.scala.index.views.Formats
 
-@(ref: NewProject.Reference, allDeps: Seq[ReleaseDependency.Direct])
+@(ref: Project.Reference, allDeps: Seq[ReleaseDependency.Direct])
 @internalDeps = @{allDeps.filter(_.isInternal(ref)).sorted}
 @remainingDeps =   @{allDeps.filterNot(_.isInternal(ref)).sorted}
 <div class="dependencies box">

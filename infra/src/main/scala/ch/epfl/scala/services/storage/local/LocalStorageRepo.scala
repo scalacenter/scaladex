@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Try
 
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.services.LocalStorageApi
 import ch.epfl.scala.services.storage.DataPaths
 import io.circe._
@@ -19,21 +19,21 @@ class LocalStorageRepo(dataPaths: DataPaths) extends LocalStorageApi {
   private val singleThreadedContext = // TODO: Use a lock instead
     ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
 
-  override def saveDataForm(ref: NewProject.Reference, userData: NewProject.DataForm): Future[Unit] =
+  override def saveDataForm(ref: Project.Reference, userData: Project.DataForm): Future[Unit] =
     Future {
       val stored = allDataForms()
       saveAllDataForms(stored + (ref -> userData))
     }(singleThreadedContext)
 
-  override def allDataForms(): Map[NewProject.Reference, NewProject.DataForm] = {
+  override def allDataForms(): Map[Project.Reference, Project.DataForm] = {
     val fileContent = Files
       .readAllLines(dataPaths.liveProjects)
       .toArray
       .mkString("")
-    parser.decode[Map[NewProject.Reference, NewProject.DataForm]](fileContent).toTry.get
+    parser.decode[Map[Project.Reference, Project.DataForm]](fileContent).toTry.get
   }
 
-  override def saveAllDataForms(dataForms: Map[NewProject.Reference, NewProject.DataForm]): Unit = {
+  override def saveAllDataForms(dataForms: Map[Project.Reference, Project.DataForm]): Unit = {
     val liveDir = dataPaths.liveProjects.getParent
     if (!Files.isDirectory(liveDir)) {
       Files.createDirectory(liveDir)
@@ -48,18 +48,18 @@ class LocalStorageRepo(dataPaths: DataPaths) extends LocalStorageApi {
 
 object LocalStorageRepo {
   import ch.epfl.scala.utils.Codecs._
-  implicit val decoder: Decoder[Map[NewProject.Reference, NewProject.DataForm]] =
+  implicit val decoder: Decoder[Map[Project.Reference, Project.DataForm]] =
     Decoder[Map[String, Json]].emap { map =>
-      map.foldLeft[Either[String, Map[NewProject.Reference, NewProject.DataForm]]](Right(Map.empty)) {
+      map.foldLeft[Either[String, Map[Project.Reference, Project.DataForm]]](Right(Map.empty)) {
         case (acc, (key, json)) =>
           for {
             res <- acc
-            ref <- Try(NewProject.Reference.from(key)).toEither.left.map(_.getMessage)
-            dataForm <- json.as[NewProject.DataForm].left.map(_.getMessage)
+            ref <- Try(Project.Reference.from(key)).toEither.left.map(_.getMessage)
+            dataForm <- json.as[Project.DataForm].left.map(_.getMessage)
           } yield res + (ref -> dataForm)
       }
     }
 
-  implicit val encoder: Encoder[Map[NewProject.Reference, NewProject.DataForm]] =
+  implicit val encoder: Encoder[Map[Project.Reference, Project.DataForm]] =
     Encoder[Map[String, Json]].contramap(map => map.map { case (key, value) => key.toString -> value.asJson })
 }

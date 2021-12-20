@@ -15,11 +15,11 @@ import ch.epfl.scala.index.model.release.PreReleaseBinary
 import ch.epfl.scala.index.model.release.Scala3Version
 import ch.epfl.scala.index.model.release.ScalaLanguageVersion
 import ch.epfl.scala.index.model.release.ScalaVersion
-import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewProject.Organization
-import ch.epfl.scala.index.newModel.NewProject.Repository
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
+import ch.epfl.scala.index.newModel.Project
+import ch.epfl.scala.index.newModel.Project.Organization
+import ch.epfl.scala.index.newModel.Project.Repository
 
 object Values {
   val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
@@ -41,13 +41,13 @@ object Values {
     licenses = Set(),
     isNonStandardLib = false
   )
-  val project: NewProject = NewProject(
+  val project: Project = Project(
     release.organization,
     release.repository,
     created = Some(now),
     GithubStatus.Ok(now),
     Some(GithubInfo.empty(release.organization.value, release.repository.value)),
-    NewProject.DataForm.default
+    Project.DataForm.default
   )
 
   val `3.0.0-M3`: ScalaLanguageVersion = Scala3Version(

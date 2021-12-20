@@ -33,7 +33,7 @@ object ReleaseDependency {
 
     val version: String = releaseDep.target.version
 
-    def isInternal(ref: NewProject.Reference): Boolean =
+    def isInternal(ref: Project.Reference): Boolean =
       target.exists(_.projectRef == ref)
   }
   object Direct {

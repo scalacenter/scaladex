@@ -11,8 +11,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.epfl.scala.index.api.AutocompletionResponse
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.search.ProjectHit
 import ch.epfl.scala.search.SearchParams
 import ch.epfl.scala.services.SearchEngine
@@ -181,7 +181,7 @@ class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUser
                     sbtVersion
                 ) =>
                   val reference =
-                    NewProject.Reference.from(organization, repository)
+                    Project.Reference.from(organization, repository)
                   val scalaTarget = SearchApi.parseScalaTarget(
                     targetType,
                     scalaVersion,
@@ -211,7 +211,7 @@ class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUser
     }
 
   private def getReleaseOptions(
-      projectRef: NewProject.Reference,
+      projectRef: Project.Reference,
       scalaTarget: Option[Platform],
       artifact: Option[String]
   ): Future[Option[SearchApi.ReleaseOptions]] = {

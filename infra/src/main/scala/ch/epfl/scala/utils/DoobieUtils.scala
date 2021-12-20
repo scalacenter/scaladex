@@ -17,12 +17,12 @@ import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Resolver
-import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
-import ch.epfl.scala.index.newModel.NewProject.Organization
-import ch.epfl.scala.index.newModel.NewProject.Repository
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
+import ch.epfl.scala.index.newModel.Project
+import ch.epfl.scala.index.newModel.Project.DocumentationLink
+import ch.epfl.scala.index.newModel.Project.Organization
+import ch.epfl.scala.index.newModel.Project.Repository
 import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.services.storage.sql.DatabaseConfig
 import ch.epfl.scala.utils.Codecs._
@@ -128,7 +128,7 @@ object DoobieUtils {
     ): Fragment =
       buildSelect(table, fields) ++ space ++ conditions
 
-    def whereRef(ref: NewProject.Reference): Fragment =
+    def whereRef(ref: Project.Reference): Fragment =
       fr0"WHERE organization=${ref.organization} AND repository=${ref.repository}"
   }
 
@@ -217,17 +217,17 @@ object DoobieUtils {
           )
         }
 
-    implicit val projectReader: Read[NewProject] =
-      Read[(Organization, Repository, Option[Instant], GithubStatus, Option[GithubInfo], Option[NewProject.DataForm])]
+    implicit val projectReader: Read[Project] =
+      Read[(Organization, Repository, Option[Instant], GithubStatus, Option[GithubInfo], Option[Project.DataForm])]
         .map {
           case (organization, repository, created, githubStatus, githubInfo, dataForm) =>
-            NewProject(
+            Project(
               organization = organization,
               repository = repository,
               githubStatus = githubStatus,
               githubInfo = githubInfo,
               created = created,
-              dataForm = dataForm.getOrElse(NewProject.DataForm.default)
+              dataForm = dataForm.getOrElse(Project.DataForm.default)
             )
         }
 

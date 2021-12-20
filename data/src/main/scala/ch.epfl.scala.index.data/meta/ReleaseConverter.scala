@@ -7,8 +7,8 @@ import ch.epfl.scala.index.data.cleanup._
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.release.Resolver
-import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalRepository
@@ -29,7 +29,7 @@ class ReleaseConverter(paths: DataPaths) extends BintrayProtocol with LazyLoggin
 
   def convert(
       pom: ReleaseModel,
-      projectRef: NewProject.Reference,
+      projectRef: Project.Reference,
       sha: String,
       creationDate: Option[Instant],
       resolver: Option[Resolver] = None

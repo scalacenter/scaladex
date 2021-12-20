@@ -5,10 +5,10 @@ import java.time.Instant
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.misc.TwitterSummaryCard
-import ch.epfl.scala.index.newModel.NewProject._
+import ch.epfl.scala.index.newModel.Project._
 
 // TODO: document NewProject fields
-case class NewProject(
+case class Project(
     organization: Organization,
     repository: Repository,
     created: Option[Instant], // equivalent to the first release date
@@ -31,7 +31,7 @@ case class NewProject(
   )
 }
 
-object NewProject {
+object Project {
 
   case class Reference(organization: Organization, repository: Repository) extends Ordered[Reference] {
     override def toString: String = s"$organization/$repository"
@@ -52,13 +52,13 @@ object NewProject {
       Ordering.by(ref => (ref.organization.value, ref.repository.value))
   }
   def default(
-      ref: NewProject.Reference,
+      ref: Project.Reference,
       created: Option[Instant] = None,
       githubInfo: Option[GithubInfo] = None,
       dataForm: Option[DataForm] = None,
       now: Instant = Instant.now()
-  ): NewProject =
-    NewProject(
+  ): Project =
+    Project(
       ref.organization,
       ref.repository,
       githubStatus = githubInfo.map(_ => GithubStatus.Ok(now)).getOrElse(GithubStatus.Unknown(now)),

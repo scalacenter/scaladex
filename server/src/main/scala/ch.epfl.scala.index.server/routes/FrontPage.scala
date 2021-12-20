@@ -7,8 +7,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.epfl.scala.index.model.misc.UserState
 import ch.epfl.scala.index.model.release.Platform
-import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.index.server.GithubUserSession
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.index.views.html.frontpage
@@ -33,7 +33,7 @@ class FrontPage(
     val allPlatformsF = db.getAllPlatforms()
     val latestProjectsF = db.getLatestProjects(limitOfProjectShownInFrontPage)
     val latestReleasesF = Future.successful(Seq.empty[NewRelease]) // TODO get from DB
-    val contributingProjectsF = Future.successful(List.empty[NewProject]) // TODO get from DB
+    val contributingProjectsF = Future.successful(List.empty[Project]) // TODO get from DB
     for {
       topics <- topicsF.map(FrontPage.getTopTopics(_, 50))
       allPlatforms <- allPlatformsF
@@ -121,7 +121,7 @@ object FrontPage {
   override def hashCode(): Int = super.hashCode()
 
   def getPlatformTypeWithCount(
-      platforms: Map[NewProject.Reference, Set[Platform]]
+      platforms: Map[Project.Reference, Set[Platform]]
   ): List[(Platform.PlatformType, Int)] =
     getPlatformWithCount(platforms) {
       case platform: Platform =>
@@ -129,7 +129,7 @@ object FrontPage {
     }
 
   def getScalaLanguageVersionWithCount(
-      platforms: Map[NewProject.Reference, Set[Platform]]
+      platforms: Map[Project.Reference, Set[Platform]]
   ): List[(String, Int)] =
     getPlatformWithCount(platforms) {
       case platform: Platform if platform.scalaVersion.isDefined =>
@@ -137,7 +137,7 @@ object FrontPage {
     }
 
   def getPlatformWithCount[A, B](
-      platforms: Map[NewProject.Reference, Set[A]]
+      platforms: Map[Project.Reference, Set[A]]
   )(
       collect: PartialFunction[A, B]
   )(implicit orderB: Ordering[(B, Int)]): List[(B, Int)] =

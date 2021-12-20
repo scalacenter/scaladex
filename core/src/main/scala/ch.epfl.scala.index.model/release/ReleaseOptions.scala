@@ -1,8 +1,8 @@
 package ch.epfl.scala.index.model
 package release
 
-import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Project
 
 case class ReleaseSelection(
     target: Option[Platform],
@@ -26,7 +26,7 @@ case class ReleaseSelection(
 
   def filterReleases(
       releases: Seq[NewRelease],
-      project: NewProject
+      project: Project
   ): Seq[NewRelease] = {
     val selectedReleases =
       selected match {

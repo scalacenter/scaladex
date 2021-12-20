@@ -4,9 +4,9 @@ import java.time.Instant
 
 import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.Platform
-import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
 import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.utils.DoobieUtils.Fragments._
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
 import ch.epfl.scala.utils.DoobieUtils._
@@ -44,16 +44,16 @@ object ReleaseTable {
   def indexedReleased(): Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]
 
-  val updateProjectRef: Update[(NewProject.Reference, MavenReference)] =
-    Update[(NewProject.Reference, MavenReference)](
+  val updateProjectRef: Update[(Project.Reference, MavenReference)] =
+    Update[(Project.Reference, MavenReference)](
       s"UPDATE $table SET organization=?, repository=? WHERE groupId=? AND artifactId=? AND version=?"
     )
 
-  def selectReleases(ref: NewProject.Reference): Query0[NewRelease] =
+  def selectReleases(ref: Project.Reference): Query0[NewRelease] =
     buildSelect(tableFr, fr0"*", whereRef(ref)).query[NewRelease]
 
   def selectReleases(
-      ref: NewProject.Reference,
+      ref: Project.Reference,
       artifactName: ArtifactName
   ): doobie.Query0[NewRelease] =
     buildSelect(
@@ -63,19 +63,19 @@ object ReleaseTable {
     ).query[NewRelease]
 
   def selectPlatform(): Query0[
-    (NewProject.Organization, NewProject.Repository, Platform)
+    (Project.Organization, Project.Repository, Platform)
   ] =
     buildSelect(
       tableFr,
       fr0"organization, repository, platform",
       fr0"GROUP BY organization, repository, platform"
-    ).query[(NewProject.Organization, NewProject.Repository, Platform)]
+    ).query[(Project.Organization, Project.Repository, Platform)]
 
-  def findOldestReleasesPerProjectReference(): Query0[(Instant, NewProject.Reference)] =
+  def findOldestReleasesPerProjectReference(): Query0[(Instant, Project.Reference)] =
     buildSelect(
       tableFr,
       fr0"min(released_at) as oldest_release, organization, repository",
       fr0"where released_at IS NOT NULL" ++ space ++ fr0"group by organization, repository"
-    ).query[(Instant, NewProject.Reference)]
+    ).query[(Instant, Project.Reference)]
 
 }

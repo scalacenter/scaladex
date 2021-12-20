@@ -7,7 +7,7 @@ import scala.concurrent.Future
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.meta.ReleaseConverter
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import ch.epfl.scala.services.storage.sql.SqlRepo
@@ -64,7 +64,7 @@ class Init(
 
   private def insertAllDataForms(): Future[Unit] = {
     val allDataForms = localStorage.allDataForms()
-    def updateDataForm(ref: NewProject.Reference): Future[Unit] =
+    def updateDataForm(ref: Project.Reference): Future[Unit] =
       allDataForms
         .get(ref)
         .map(db.updateProjectForm(ref, _))
