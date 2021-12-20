@@ -18,12 +18,12 @@ case class UserInfo(
 ) extends AvatarUrl
 
 case class UserState(
-    repos: Set[GithubRepo],
+    repos: Set[NewProject.Reference],
     orgs: Set[NewProject.Organization],
     info: UserInfo
 ) {
   def isAdmin: Boolean = orgs.contains(NewProject.Organization("scalacenter"))
-  def canEdit(githubRepo: GithubRepo): Boolean =
+  def canEdit(githubRepo: NewProject.Reference): Boolean =
     isAdmin || repos.contains(githubRepo)
   def isSonatype: Boolean =
     orgs.contains(

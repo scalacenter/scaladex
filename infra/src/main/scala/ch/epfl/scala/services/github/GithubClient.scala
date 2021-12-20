@@ -32,7 +32,6 @@ import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.SourceQueueWithComplete
 import akka.util.ByteString
 import ch.epfl.scala.index.model.misc.GithubInfo
-import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.model.misc.GithubResponse
 import ch.epfl.scala.index.model.misc.Url
 import ch.epfl.scala.index.model.misc.UserInfo
@@ -76,8 +75,8 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       })(Keep.left)
       .run()
 
-  override def update(repo: GithubRepo): Future[GithubResponse[GithubInfo]] =
-    getRepoInfo(repo).flatMap {
+  override def update(ref: NewProject.Reference): Future[GithubResponse[GithubInfo]] =
+    getRepoInfo(ref).flatMap {
       case GithubResponse.Failed(code, reason) => Future.successful(GithubResponse.Failed(code, reason))
       case GithubResponse.Ok(res) =>
         update(res).map(GithubResponse.Ok.apply)
@@ -116,8 +115,8 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
   }
 
   // This method doesn't fail
-  def getReadme(repo: GithubRepo): Future[String] = {
-    val request = HttpRequest(uri = s"${mainGithubUrl(repo)}/readme")
+  def getReadme(ref: NewProject.Reference): Future[String] = {
+    val request = HttpRequest(uri = s"${mainGithubUrl(ref)}/readme")
       .addCredentials(credentials)
       .addHeader(acceptHtmlVersion)
 
@@ -128,21 +127,21 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     }
   }
 
-  def getCommunityProfile(repo: GithubRepo): Future[Option[GithubModel.CommunityProfile]] = {
-    val request = HttpRequest(uri = s"${mainGithubUrl(repo)}/community/profile")
+  def getCommunityProfile(ref: NewProject.Reference): Future[Option[GithubModel.CommunityProfile]] = {
+    val request = HttpRequest(uri = s"${mainGithubUrl(ref)}/community/profile")
       .addCredentials(credentials)
       .addHeader(RawHeader("Accept", "application/vnd.github.black-panther-preview+json"))
     get[GithubModel.CommunityProfile](request).failWithTry
       .map {
         case Success(profile) => Some(profile)
         case Failure(exception) =>
-          logger.warn(s"""Failed to download community profile of $repo because of "${exception.getMessage}"""")
+          logger.warn(s"""Failed to download community profile of $ref because of "${exception.getMessage}"""")
           None
       }
   }
 
-  def getContributors(repo: GithubRepo): Future[List[Contributor]] = {
-    def url(page: Int = 1) = HttpRequest(uri = s"${mainGithubUrl(repo)}/contributors?${perPage()}&${inPage(page)}")
+  def getContributors(ref: NewProject.Reference): Future[List[Contributor]] = {
+    def url(page: Int = 1) = HttpRequest(uri = s"${mainGithubUrl(ref)}/contributors?${perPage()}&${inPage(page)}")
 
     def getContributionPage(page: Int): Future[List[Contributor]] = {
       val request = url(page).addHeader(acceptJson).addCredentials(credentials)
@@ -165,8 +164,8 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     }
   }
 
-  def getRepoInfo(repo: GithubRepo): Future[GithubResponse[GithubModel.Repository]] = {
-    val request = HttpRequest(uri = s"${mainGithubUrl(repo)}").addHeader(acceptJson).addCredentials(credentials)
+  def getRepoInfo(ref: NewProject.Reference): Future[GithubResponse[GithubModel.Repository]] = {
+    val request = HttpRequest(uri = s"${mainGithubUrl(ref)}").addHeader(acceptJson).addCredentials(credentials)
     process(request).flatMap {
       case GithubResponse.Ok((_, entity)) =>
         Unmarshal(entity).to[GithubModel.Repository].map(GithubResponse.Ok(_))
@@ -176,8 +175,8 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     }
   }
 
-  def getOpenIssues(repo: GithubRepo): Future[Seq[GithubModel.OpenIssue]] = {
-    def url(page: Int = 1) = HttpRequest(uri = s"${mainGithubUrl(repo)}/issues?${perPage()}&page=$page")
+  def getOpenIssues(ref: NewProject.Reference): Future[Seq[GithubModel.OpenIssue]] = {
+    def url(page: Int = 1) = HttpRequest(uri = s"${mainGithubUrl(ref)}/issues?${perPage()}&page=$page")
 
     def getOpenIssuePage(page: Int): Future[Seq[GithubModel.OpenIssue]] = {
       val request = url(page).addHeader(acceptJson).addCredentials(credentials)
@@ -197,21 +196,24 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
           case _ => Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]].map(_.flatten)
         }
       case Failure(exception) =>
-        logger.warn(s"""Failed to download issues of $repo because of "${exception.getMessage}"""")
+        logger.warn(s"""Failed to download issues of $ref because of "${exception.getMessage}"""")
         Future.successful(Seq.empty)
     }
   }
 
-  def getGiterChatRoom(repo: GithubRepo): Future[Option[String]] = {
-    val url = s"https://gitter.im/${repo.organization}/${repo.repository}"
-    val httpRequest = HttpRequest(uri = s"https://gitter.im/${repo.organization}/${repo.repository}")
+  def getGiterChatRoom(ref: NewProject.Reference): Future[Option[String]] = {
+    val url = s"https://gitter.im/${ref.organization}/${ref.repository}"
+    val httpRequest = HttpRequest(uri = s"https://gitter.im/${ref.organization}/${ref.repository}")
     queueRequest(httpRequest).map {
       case _ @HttpResponse(StatusCodes.OK, _, _, _) => Some(url)
       case _                                        => None
     }
   }
 
-  def fetchReposUnderUserOrganizations(login: String, filterPermissions: Seq[String]): Future[Seq[GithubRepo]] = {
+  def fetchReposUnderUserOrganizations(
+      login: String,
+      filterPermissions: Seq[String]
+  ): Future[Seq[NewProject.Reference]] = {
     val query =
       s"""|query {
           |  user(login: "$login") {
@@ -245,7 +247,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       })
 
   }
-  def fetchUserRepo(login: String, filterPermissions: Seq[String]): Future[Seq[GithubRepo]] = {
+  def fetchUserRepo(login: String, filterPermissions: Seq[String]): Future[Seq[NewProject.Reference]] = {
     def query(endcursorOpt: Option[String]) = {
       val after = endcursorOpt.map(endcursor => s"""after: "$endcursor"""").getOrElse("")
       s"""|query {
@@ -379,11 +381,11 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
         }
       case _ @HttpResponse(code, _, entity, _) =>
         entity.discardBytes()
-        Future.successful(GithubResponse.Failed(code.intValue, code.value))
+        Future.successful(GithubResponse.Failed(code.intValue, code.reason()))
     }
 
-  private def mainGithubUrl(repo: GithubRepo): String =
-    s"https://api.github.com/repos/${repo.organization}/${repo.repository}"
+  private def mainGithubUrl(ref: NewProject.Reference): String =
+    s"https://api.github.com/repos/${ref.organization}/${ref.repository}"
 
   private def inPage(page: Int = 1): String =
     s"page=$page"

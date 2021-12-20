@@ -3,7 +3,6 @@ package ch.epfl.scala.index.newModel
 import java.time.Instant
 
 import ch.epfl.scala.index.model.misc.GithubInfo
-import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.misc.TwitterSummaryCard
 import ch.epfl.scala.index.newModel.NewProject._
@@ -19,7 +18,6 @@ case class NewProject(
 ) {
 
   val reference: Reference = Reference(organization, repository)
-  val githubRepo: GithubRepo = GithubRepo(organization.value, repository.value)
   def hasCli: Boolean = dataForm.cliArtifacts.nonEmpty
 
   /**
@@ -36,8 +34,6 @@ case class NewProject(
 object NewProject {
 
   case class Reference(organization: Organization, repository: Repository) extends Ordered[Reference] {
-    val githubRepo: GithubRepo =
-      GithubRepo(organization.value, repository.value)
     override def toString: String = s"$organization/$repository"
 
     override def compare(that: Reference): Int =
@@ -85,11 +81,19 @@ object NewProject {
       beginnerIssuesLabel: Option[String]
   )
 
-  case class Organization(value: String) extends AnyVal {
+  case class Organization private (value: String) extends AnyVal {
     override def toString(): String = value
+    def isEmpty(): Boolean = value.isEmpty
   }
-  case class Repository(value: String) extends AnyVal {
+  case class Repository private (value: String) extends AnyVal {
     override def toString(): String = value
+    def isEmpty(): Boolean = value.isEmpty
+  }
+  object Organization {
+    def apply(v: String): Organization = new Organization(v.toLowerCase())
+  }
+  object Repository {
+    def apply(v: String): Repository = new Repository(v.toLowerCase())
   }
 
   object DataForm {

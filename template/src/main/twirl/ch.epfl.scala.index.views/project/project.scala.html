@@ -36,7 +36,7 @@
             @badges(release, env)
             @install(release, project.dataForm.cliArtifacts)
             @scastie(release.scastieURL)
-            @project.githubInfo.map(gh => statistic(gh, project.reference.githubRepo, releaseCount, reverseDependency.size))
+            @project.githubInfo.map(gh => statistic(gh, project.reference, releaseCount, reverseDependency.size))
             @project.githubInfo.map { github =>
               @if(github.beginnerIssues.nonEmpty && github.chatroom.isDefined && github.contributingGuide.isDefined) {
                   <div class="box project-contributing-info">

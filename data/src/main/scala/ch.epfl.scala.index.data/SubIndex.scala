@@ -10,7 +10,7 @@ import ch.epfl.scala.index.data.bintray.BintrayProtocol
 import ch.epfl.scala.index.data.bintray.BintraySearch
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.index.model.misc.GithubRepo
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository
 import ch.epfl.scala.services.storage.local.LocalStorageRepo
@@ -18,9 +18,9 @@ import org.json4s.native.Serialization.write
 
 object SubIndex extends BintrayProtocol {
   def generate(source: DataPaths, destination: DataPaths): Unit = {
-    def splitRepo(in: String): GithubRepo = {
+    def splitRepo(in: String): NewProject.Reference = {
       val List(owner, repo) = in.split('/').toList
-      GithubRepo(owner.toLowerCase, repo.toLowerCase)
+      NewProject.Reference.from(owner, repo)
     }
 
     val repos =
@@ -45,11 +45,9 @@ object SubIndex extends BintrayProtocol {
     println("== Copy GitHub ==")
 
     pomData.foreach {
-      case (_, _, _, github) =>
-        def repoPath(paths: DataPaths): Path = {
-          val GithubRepo(org, repo) = github
-          paths.github.resolve(s"$org/$repo")
-        }
+      case (_, _, _, projectRef) =>
+        def repoPath(paths: DataPaths): Path =
+          paths.github.resolve(s"${projectRef.organization}/${projectRef.repository}")
 
         val repoSource = repoPath(source)
         if (Files.isDirectory(repoSource)) {
@@ -126,7 +124,7 @@ object SubIndex extends BintrayProtocol {
       sourceStorage
         .allDataForms()
         .view
-        .filterKeys(reference => repos.contains(reference.githubRepo))
+        .filterKeys(reference => repos.contains(reference))
         .toMap
     )
 

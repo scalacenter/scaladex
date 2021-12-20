@@ -7,6 +7,7 @@ import scala.concurrent.Future
 
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
+import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.search.Page
 import ch.epfl.scala.search.Pagination
 import ch.epfl.scala.search.ProjectDocument
@@ -390,14 +391,14 @@ object ESRepo extends LazyLogging {
   private val cliQuery = termQuery("hasCli", true)
 
   private def repositoriesQuery(
-      repositories: Seq[GithubRepo]
+      repositories: Seq[NewProject.Reference]
   ): Query =
     should(repositories.map(repositoryQuery))
 
-  private def repositoryQuery(repo: GithubRepo): Query =
+  private def repositoryQuery(repo: NewProject.Reference): Query =
     must(
-      termQuery("organization.keyword", repo.organization),
-      termQuery("repository.keyword", repo.repository)
+      termQuery("organization.keyword", repo.organization.value),
+      termQuery("repository.keyword", repo.repository.value)
     )
 
   private def targetsQuery(

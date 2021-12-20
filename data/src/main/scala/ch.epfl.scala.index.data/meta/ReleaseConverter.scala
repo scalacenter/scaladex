@@ -6,7 +6,6 @@ import ch.epfl.scala.index.data.bintray._
 import ch.epfl.scala.index.data.cleanup._
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.model._
-import ch.epfl.scala.index.model.misc.GithubRepo
 import ch.epfl.scala.index.model.release.Resolver
 import ch.epfl.scala.index.newModel.NewProject
 import ch.epfl.scala.index.newModel.NewRelease
@@ -24,15 +23,13 @@ class ReleaseConverter(paths: DataPaths) extends BintrayProtocol with LazyLoggin
   def convert(pom: ReleaseModel, repo: LocalRepository, sha: String): Option[(NewRelease, Seq[ReleaseDependency])] =
     for {
       pomMeta <- pomMetaExtractor.extract(pom, None, repo, sha)
-      version <- SemanticVersion.tryParse(pom.version)
-      artifactMeta <- artifactMetaExtractor.extract(pom)
       repo <- githubRepoExtractor.extract(pom)
       converted <- convert(pom, repo, sha, pomMeta.creationDate, pomMeta.resolver)
     } yield converted
 
   def convert(
       pom: ReleaseModel,
-      repo: GithubRepo,
+      projectRef: NewProject.Reference,
       sha: String,
       creationDate: Option[Instant],
       resolver: Option[Resolver] = None
@@ -41,7 +38,6 @@ class ReleaseConverter(paths: DataPaths) extends BintrayProtocol with LazyLoggin
       version <- SemanticVersion.tryParse(pom.version)
       artifactMeta <- artifactMetaExtractor.extract(pom)
     } yield {
-      val projectRef = NewProject.Reference.from(repo.organization, repo.repository)
       val release = NewRelease(
         pom.mavenRef,
         version,
