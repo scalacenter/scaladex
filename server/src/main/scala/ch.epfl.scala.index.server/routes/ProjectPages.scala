@@ -27,6 +27,7 @@ import com.typesafe.scalalogging.LazyLogging
 import play.twirl.api.HtmlFormat
 
 class ProjectPages(
+    production: Boolean,
     db: WebDatabase,
     localStorage: LocalStorageApi,
     session: GithubUserSession,
@@ -45,10 +46,10 @@ class ProjectPages(
       releases <- db.findReleases(projectRef)
     } yield projectOpt
       .map { p =>
-        val page = views.project.html.editproject(p, releases, Some(userInfo))
+        val page = views.project.html.editproject(production, p, releases, Some(userInfo))
         (StatusCodes.OK, page)
       }
-      .getOrElse((StatusCodes.NotFound, views.html.notfound(Some(userInfo))))
+      .getOrElse((StatusCodes.NotFound, views.html.notfound(production, Some(userInfo))))
 
   private def filterVersions(
       p: NewProject,
@@ -94,6 +95,7 @@ class ProjectPages(
         } yield (
           StatusCodes.OK,
           views.project.html.project(
+            production,
             env,
             project,
             artifactNames,
@@ -109,7 +111,7 @@ class ProjectPages(
           )
         )
       case None =>
-        Future.successful((StatusCodes.NotFound, views.html.notfound(user)))
+        Future.successful((StatusCodes.NotFound, views.html.notfound(production, user)))
     }
   }
 
@@ -203,6 +205,7 @@ class ProjectPages(
                   ) =>
                 complete(
                   views.html.artifacts(
+                    production,
                     project,
                     user,
                     targetTypesWithScalaVersion,
@@ -210,7 +213,7 @@ class ProjectPages(
                   )
                 )
               case Failure(e) =>
-                complete(StatusCodes.NotFound, views.html.notfound(user))
+                complete(StatusCodes.NotFound, views.html.notfound(production, user))
 
             }
           }
@@ -229,7 +232,7 @@ class ProjectPages(
                   complete(
                     (
                       StatusCodes.Forbidden,
-                      views.html.forbidden(maybeUser)
+                      views.html.forbidden(production, maybeUser)
                     )
                   )
               }
@@ -260,10 +263,10 @@ class ProjectPages(
                         s"/$organization/$repository/${release.artifactName}/${release.version}/$targetParam",
                         StatusCodes.TemporaryRedirect
                       )
-                    }.getOrElse(complete(StatusCodes.NotFound, views.html.notfound(session.getUser(userId)))))
+                    }.getOrElse(complete(StatusCodes.NotFound, views.html.notfound(production, session.getUser(userId)))))
                   releaseFut
                 case None =>
-                  Future.successful(complete(StatusCodes.NotFound, views.html.notfound(session.getUser(userId))))
+                  Future.successful(complete(StatusCodes.NotFound, views.html.notfound(production, session.getUser(userId))))
               }
 
               onSuccess(fut)(identity)
@@ -287,7 +290,7 @@ class ProjectPages(
               onComplete(res) {
                 case Success((code, some)) => complete(code, some)
                 case Failure(e) =>
-                  complete(StatusCodes.NotFound, views.html.notfound(user))
+                  complete(StatusCodes.NotFound, views.html.notfound(production, user))
               }
             }
           )
@@ -309,7 +312,7 @@ class ProjectPages(
               onComplete(res) {
                 case Success((code, some)) => complete(code, some)
                 case Failure(e) =>
-                  complete(StatusCodes.NotFound, views.html.notfound(user))
+                  complete(StatusCodes.NotFound, views.html.notfound(production, user))
               }
             }
           }

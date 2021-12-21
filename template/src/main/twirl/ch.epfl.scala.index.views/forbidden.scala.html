@@ -1,7 +1,7 @@
 @import ch.epfl.scala.index.model.misc.UserState
 
-@(user: Option[UserState])
-@main(title = "Forbidden", showSearch = true, user) {
+@(production: Boolean, user: Option[UserState])
+@main(production, title = "Forbidden", showSearch = true, user) {
 <main>
   <h1>Forbidden</h1>
 </main>

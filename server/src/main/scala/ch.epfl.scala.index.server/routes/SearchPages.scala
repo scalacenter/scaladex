@@ -16,7 +16,7 @@ import ch.epfl.scala.services.SearchEngine
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 
-class SearchPages(searchEngine: SearchEngine, session: GithubUserSession)(implicit ec: ExecutionContext) {
+class SearchPages(production: Boolean, searchEngine: SearchEngine, session: GithubUserSession)(implicit ec: ExecutionContext) {
   import session.implicits._
 
   private def search(params: SearchParams, user: Option[UserState], uri: String) =
@@ -38,6 +38,7 @@ class SearchPages(searchEngine: SearchEngine, session: GithubUserSession)(implic
         scalaNativeVersions <- scalaNativeVersionsF
         sbtVersions <- sbtVersionsF
       } yield searchresult(
+        production,
         params,
         uri,
         pagination,

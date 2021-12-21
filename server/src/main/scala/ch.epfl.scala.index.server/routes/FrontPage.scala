@@ -18,6 +18,7 @@ import com.softwaremill.session.SessionOptions._
 import play.twirl.api.HtmlFormat
 
 class FrontPage(
+    production: Boolean,
     db: WebDatabase,
     session: GithubUserSession
 )(implicit ec: ExecutionContext) {
@@ -83,6 +84,7 @@ class FrontPage(
       )
 
       frontpage(
+        production,
         topics,
         platformTypeWithCount,
         scalaFamilyWithCount,

@@ -19,7 +19,6 @@ lazy val logging =
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.1.7",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-    "com.getsentry.raven" % "raven-logback" % "8.0.3",
     "org.apache.logging.log4j" % "log4j-core" % V.log4jVersion % Runtime
   )
 
@@ -191,7 +190,6 @@ lazy val server = project
       "org.webjars" % "bootstrap-select" % "1.13.18",
       "org.webjars.bower" % "font-awesome" % "4.6.3",
       "org.webjars" % "jquery" % "3.6.0",
-      "org.webjars.bower" % "raven-js" % "3.11.0",
       "org.webjars.bower" % "select2" % "4.0.3"
     ),
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
@@ -248,7 +246,7 @@ lazy val V = new {
   val akkaVersion = "2.6.5"
   val akkaHttpVersion = "10.1.12"
   val elastic4sVersion = "7.10.2"
-  val log4jVersion = "2.15.0"
+  val log4jVersion = "2.17.0"
   val nscalaTimeVersion = "2.24.0"
   val scalatest = "3.2.9"
   val circeVersion = "0.14.1"

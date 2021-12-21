@@ -17,7 +17,7 @@ import com.softwaremill.session.SessionOptions.refreshable
 import com.softwaremill.session.SessionOptions.usingCookies
 import scaladex.server.service.SchedulerService
 
-class AdminPages(schedulerSrv: SchedulerService, session: GithubUserSession)(
+class AdminPages(production: Boolean, schedulerSrv: SchedulerService, session: GithubUserSession)(
     implicit ec: ExecutionContext
 ) {
 
@@ -28,7 +28,7 @@ class AdminPages(schedulerSrv: SchedulerService, session: GithubUserSession)(
       case Some(userState) if userState.isAdmin =>
         res(userState)
       case maybeUser =>
-        complete(StatusCodes.Forbidden, views.html.forbidden(maybeUser))
+        complete(StatusCodes.Forbidden, views.html.forbidden(production, maybeUser))
     }
 
   val routes: Route = {
@@ -41,7 +41,7 @@ class AdminPages(schedulerSrv: SchedulerService, session: GithubUserSession)(
             optionalSession(refreshable, usingCookies)(userId =>
               ifAdmin(userId) { userState =>
                 val schedulers = schedulerSrv.getSchedulers()
-                val html = views.admin.html.admin(userState, schedulers)
+                val html = views.admin.html.admin(production, userState, schedulers)
                 complete(html)
               }
             )
@@ -54,7 +54,7 @@ class AdminPages(schedulerSrv: SchedulerService, session: GithubUserSession)(
                 schedulerSrv.start(schedulerName)
                 val scheduler = schedulerSrv.getSchedulers()
                 val html = views.admin.html
-                  .admin(userState, scheduler)
+                  .admin(production, userState, scheduler)
                 complete(html)
               }
             )
@@ -67,7 +67,7 @@ class AdminPages(schedulerSrv: SchedulerService, session: GithubUserSession)(
                 schedulerSrv.stop(schedulerName)
                 val schedulers = schedulerSrv.getSchedulers()
                 val html = views.admin.html
-                  .admin(userState, schedulers)
+                  .admin(production, userState, schedulers)
                 complete(html)
               }
             )

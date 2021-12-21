@@ -5,6 +5,7 @@
 @import ch.epfl.scala.index.model.misc.UserState
 
 @(
+  production: Boolean,
   params: SearchParams,
   uri: Uri,
   pagination: Pagination,
@@ -17,7 +18,7 @@
   scalaJsVersions: Seq[(BinaryVersion, Long)],
   scalaNativeVersions: Seq[(BinaryVersion, Long)],
   sbtVersions: Seq[(BinaryVersion, Long)])
-@main(title = s"Search ${params.queryString}", showSearch = true, user, params, you) {
+@main(production, title = s"Search ${params.queryString}", showSearch = true, user, params, you) {
   <main id="container-search">
     <div class="container">
       @result(

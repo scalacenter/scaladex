@@ -56,7 +56,7 @@ object Server {
           val schedulerService = new SchedulerService(schedulerDb, searchEngine, githubService)
           for {
             _ <- init(webDb, schedulerService, searchEngine)
-            routes = configureRoutes(searchEngine, webDb, schedulerService)
+            routes = configureRoutes(config.production, searchEngine, webDb, schedulerService)
             _ <- IO(
               Http()
                 .bindAndHandle(routes, config.api.endpoint, config.api.port)
@@ -93,6 +93,7 @@ object Server {
     } yield ()
   }
   private def configureRoutes(
+      production: Boolean,
       esRepo: ESRepo,
       webDb: WebDatabase,
       schedulerService: SchedulerService
@@ -103,7 +104,7 @@ object Server {
     val paths = config.dataPaths
     val githubAuth = new GithubAuth()
     val session = new GithubUserSession(config.session)
-    val searchPages = new SearchPages(esRepo, session)
+    val searchPages = new SearchPages(production, esRepo, session)
 
     val localStorage = new LocalStorageRepo(paths)
     val programmaticRoutes = concat(
@@ -114,11 +115,11 @@ object Server {
       new Oauth2(config.oAuth2, githubAuth, session).routes
     )
     val userFacingRoutes = concat(
-      new FrontPage(webDb, session).routes,
-      new AdminPages(schedulerService, session).routes,
+      new FrontPage(production, webDb, session).routes,
+      new AdminPages(production, schedulerService, session).routes,
       redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
         concat(
-          new ProjectPages(webDb, localStorage, session, paths, config.api.env).routes,
+          new ProjectPages(config.production, webDb, localStorage, session, paths, config.api.env).routes,
           searchPages.routes
         )
       }

@@ -4,14 +4,16 @@
 @import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
 
 
-@(project: NewProject,
+@(
+  production: Boolean,
+  project: NewProject,
   user: Option[UserState],
   targetTypesWithVersion: Map[Platform.PlatformType, Seq[String]],
   semanticVersionWithReleases: Seq[(SemanticVersion, Map[NewRelease.ArtifactName, Seq[(NewRelease, String)]])]
 )
 @allScalaVersions= @{targetTypesWithVersion.values.flatten}
 
-@main(title = project.repository.toString, showSearch = true, user) {
+@main(production, title = project.repository.toString, showSearch = true, user) {
   <main class="artifacts">
     <div class="row">
       <div class="col-md-12">
