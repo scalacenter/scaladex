@@ -15,7 +15,7 @@ import ch.epfl.scala.index.views.search.html.searchresult
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 
-class SearchPages(dataRepository: DataRepository, session: GithubUserSession)(
+class SearchPages(production: Boolean, dataRepository: DataRepository, session: GithubUserSession)(
     implicit ec: ExecutionContext
 ) {
   import dataRepository._
@@ -44,6 +44,7 @@ class SearchPages(dataRepository: DataRepository, session: GithubUserSession)(
         scalaNativeVersions <- scalaNativeVersionsF
         sbtVersions <- sbtVersionsF
       } yield searchresult(
+        production,
         params,
         uri,
         pagination,

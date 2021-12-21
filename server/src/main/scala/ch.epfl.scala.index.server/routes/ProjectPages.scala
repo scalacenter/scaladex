@@ -28,6 +28,7 @@ import org.json4s.native.Serialization.read
 import org.json4s.native.Serialization.write
 
 class ProjectPages(
+    production: Boolean,
     dataRepository: DataRepository,
     session: GithubUserSession,
     githubDownload: GithubDownload,
@@ -60,10 +61,10 @@ class ProjectPages(
               write[List[GithubIssue]](github.beginnerIssues)
             }
             .getOrElse("")
-          (OK, views.project.html.editproject(p, user, beginnerIssuesJson))
+          (OK, views.project.html.editproject(production, p, user, beginnerIssuesJson))
         }
-        .getOrElse((NotFound, views.html.notfound(user)))
-    } else Future.successful((Forbidden, views.html.forbidden(user)))
+        .getOrElse((NotFound, views.html.notfound(production, user)))
+    } else Future.successful((Forbidden, views.html.forbidden(production, user)))
   }
 
   private def getSelectedRelease(
@@ -160,13 +161,14 @@ class ProjectPages(
             OK,
             views.html
               .artifacts(
+                production,
                 project,
                 user,
                 targetTypesWithScalaVersion,
                 artifactsWithVersions
               )
           )
-        case None => (NotFound, views.html.notfound(user))
+        case None => (NotFound, views.html.notfound(production, user))
       }
   }
 
@@ -221,6 +223,7 @@ class ProjectPages(
             )
 
             val page = views.project.html.project(
+              production,
               project,
               options.artifacts,
               versions,
@@ -235,7 +238,7 @@ class ProjectPages(
             (OK, page)
           }
 
-        case None => Future.successful(NotFound, views.html.notfound(user))
+        case None => Future.successful(NotFound, views.html.notfound(production, user))
       }
   }
 
@@ -435,6 +438,7 @@ class ProjectPages(
                       complete(
                         NotFound,
                         views.html.notfound(
+                          production,
                           session.getUser(userId).map(_.info)
                         )
                       )

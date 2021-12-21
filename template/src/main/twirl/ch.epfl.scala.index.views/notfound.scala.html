@@ -1,7 +1,7 @@
 @import ch.epfl.scala.index.model._
 @import ch.epfl.scala.index.model.misc.UserInfo
-@(user: Option[UserInfo])
-@main(title = "Not found", showSearch = true, user) {
+@(production: Boolean, user: Option[UserInfo])
+@main(production, title = "Not found", showSearch = true, user) {
 <main class="container">
   <h1>Not found</h1>
 </main>
