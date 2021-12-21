@@ -266,7 +266,9 @@ class ProjectPages(
                     }.getOrElse(complete(StatusCodes.NotFound, views.html.notfound(production, session.getUser(userId)))))
                   releaseFut
                 case None =>
-                  Future.successful(complete(StatusCodes.NotFound, views.html.notfound(production, session.getUser(userId))))
+                  Future.successful(
+                    complete(StatusCodes.NotFound, views.html.notfound(production, session.getUser(userId)))
+                  )
               }
 
               onSuccess(fut)(identity)
