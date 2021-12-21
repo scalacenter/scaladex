@@ -1,7 +1,7 @@
 @import ch.epfl.scala.index.model.misc.UserState
 
-@(user: Option[UserState])
-@main(title = "Not found", showSearch = true, user) {
+@(production: Boolean, user: Option[UserState])
+@main(production, title = "Not found", showSearch = true, user) {
 <main class="container">
   <h1>Not found</h1>
 </main>

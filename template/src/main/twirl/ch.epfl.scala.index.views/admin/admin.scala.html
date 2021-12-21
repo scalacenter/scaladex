@@ -4,9 +4,9 @@
 @import scala.concurrent.duration.FiniteDuration
 
 @import java.time.Instant
-@(user: UserState, schedulers: Seq[SchedulerStatus])
+@(production: Boolean, user: UserState, schedulers: Seq[SchedulerStatus])
 
-@main(title = "Admin page", showSearch = false, Some(user)) {
+@main(production, title = "Admin page", showSearch = false, Some(user)) {
     <main class="admin">
         <div class="container">
             <h2>Scheduler Status</h2>

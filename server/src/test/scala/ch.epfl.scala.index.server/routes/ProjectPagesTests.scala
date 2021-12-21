@@ -14,6 +14,7 @@ class ProjectPagesTests() extends ControllerBaseSuite with BeforeAndAfterAll wit
     Await.result(insertMockData(), Duration.Inf)
 
   val projectPages = new ProjectPages(
+    false,
     db = db,
     localStorage = localStorage,
     session = githubUserSession,

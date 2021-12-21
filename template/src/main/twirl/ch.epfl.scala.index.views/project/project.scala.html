@@ -6,12 +6,15 @@
 @import ch.epfl.scala.index.views.html.contributingInfo
 
 
-@(env: Env, project: NewProject, artifacts: Seq[NewRelease.ArtifactName], versions: Seq[SemanticVersion],
+@(
+  production: Boolean,
+  env: Env, project: NewProject, artifacts: Seq[NewRelease.ArtifactName], versions: Seq[SemanticVersion],
   platforms: Seq[Platform], release: NewRelease, user: Option[UserState],
   canEdit: Boolean, twitterCard: Option[TwitterSummaryCard], releaseCount: Int,
-        directDependencies: Seq[ReleaseDependency.Direct], reverseDependency: Seq[ReleaseDependency.Reverse])
+  directDependencies: Seq[ReleaseDependency.Direct], reverseDependency: Seq[ReleaseDependency.Reverse]
+)
 
-@main(title = project.repository.value, showSearch = true, user,
+@main(production, title = project.repository.value, showSearch = true, user,
       extraMeta = twitterCard.map(_.toHeadMeta).getOrElse(Nil)) {
   <main id="container-project">
     @headproject(project, artifacts, versions, platforms, release, canEdit)

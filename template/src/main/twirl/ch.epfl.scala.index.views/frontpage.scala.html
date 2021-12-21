@@ -4,7 +4,9 @@
 @import ch.epfl.scala.index.model.misc.UserState
 @import ch.epfl.scala.search.SearchParams
 
-@(topics: List[(String, Int)],
+@(
+  production: Boolean,
+  topics: List[(String, Int)],
   platformTypes: Seq[(Platform.PlatformType, Int)],
   scalaVersions:Seq[(String, Int)],
   scalaJsVersions: Seq[(BinaryVersion, Int)],
@@ -17,9 +19,10 @@
   ecosystems: Map[String, String],
   totalProjects: Long,
   totalReleases: Long,
-  contributingProjects: Seq[NewProject])
+  contributingProjects: Seq[NewProject]
+)
 
-@main(title = "Scaladex", showSearch = false, user) {
+@main(production, title = "Scaladex", showSearch = false, user) {
 <main id="container-home">
     <section class="content-search-home">
         <div class="container">
