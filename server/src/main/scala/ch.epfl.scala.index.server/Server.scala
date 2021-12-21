@@ -49,12 +49,13 @@ object Server {
     // because of the sbtResolver mode
     val data = DataRepository.open()
 
-    val searchPages = new SearchPages(data, session)
+    val searchPages = new SearchPages(config.production, data, session)
     val userFacingRoutes = concat(
-      new FrontPage(data, session).routes,
+      new FrontPage(config.production, data, session).routes,
       redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
         concat(
           new ProjectPages(
+            config.production,
             data,
             session,
             new GithubDownload(paths),

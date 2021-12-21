@@ -3,7 +3,9 @@
 @import ch.epfl.scala.index.model.misc.{Url, UserInfo}
 @import ch.epfl.scala.index.model.misc.SearchParams
 
-@(topics: List[(String, Long)],
+@(
+  production: Boolean,
+  topics: List[(String, Long)],
   targetTypes: List[(String, String, Long)],
   scalaVersions: List[(String, Long)],
   scalaJsVersions: List[(String, Long)],
@@ -16,9 +18,10 @@
   ecosystems: Map[String, String],
   totalProjects: Long,
   totalReleases: Long,
-  contributingProjects: List[Project])
+  contributingProjects: List[Project]
+)
 
-@main(title = "Scaladex", showSearch = false, user) {
+@main(production, title = "Scaladex", showSearch = false, user) {
 <main id="container-home">
     <section class="content-search-home">
         <div class="container">

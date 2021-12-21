@@ -2,13 +2,15 @@
 @import ch.epfl.scala.index.model.misc._
 @import ch.epfl.scala.index.model.release._
 
-@(project: Project, 
+@(
+  production: Boolean,
+  project: Project, 
   user: Option[UserInfo],
   targetTypesWithVersion: Map[ScalaTargetType, Seq[String]],
   semanticVersionWithReleases: Seq[(SemanticVersion, Map[String, Seq[(Release, String)]])]
 )
 
-@main(title = project.repository, showSearch = true, user) {
+@main(production, title = project.repository, showSearch = true, user) {
   <main class="artifacts">
     <div class="row">
       <div class="col-md-12">

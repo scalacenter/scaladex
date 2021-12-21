@@ -12,7 +12,7 @@ import ch.epfl.scala.index.views.html.frontpage
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 
-class FrontPage(dataRepository: DataRepository, session: GithubUserSession)(
+class FrontPage(production: Boolean, dataRepository: DataRepository, session: GithubUserSession)(
     implicit ec: ExecutionContext
 ) {
   import session.implicits._
@@ -69,6 +69,7 @@ class FrontPage(dataRepository: DataRepository, session: GithubUserSession)(
       )
 
       frontpage(
+        production,
         topics,
         targetTypes,
         scalaVersions,

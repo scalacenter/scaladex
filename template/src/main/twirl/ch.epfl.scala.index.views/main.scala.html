@@ -1,7 +1,7 @@
 @import ch.epfl.scala.index.model._
 @import ch.epfl.scala.index.model.misc.{UserInfo, SearchParams, HeadMeta}
 
-@(title: String, showSearch: Boolean, user: Option[UserInfo],
+@(production: Boolean, title: String, showSearch: Boolean, user: Option[UserInfo],
   params: SearchParams = SearchParams(), you: Boolean = false,
   extraMeta: Seq[HeadMeta] = Seq.empty,
   totalProjects: Option[Long] = None, totalReleases: Option[Long] = None)(content: Html)
@@ -125,7 +125,6 @@
         <script src="/assets/client-fastopt.js"></script>
     }
 
-    <script src="/assets/lib/raven-js/dist/raven.min.js"></script>
     <script src="/assets/lib/jQuery/dist/jquery.min.js"></script>
     <script src="/assets/lib/bootstrap-sass/assets/javascripts/bootstrap.min.js"></script>
     <script src="/assets/lib/bootstrap-select/dist/js/bootstrap-select.min.js"></script>
@@ -133,6 +132,9 @@
     <script src="/assets/lib/bootstrap-switch/dist/js/bootstrap-switch.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/js/emojify.js"></script>
 
+    @if(production) {
+      <script defer data-domain="index.scala-lang.org" src="https://plausible.scala-lang.org/js/script.js"></script>
+    }
 
     <script>
         // Tooltips
@@ -149,18 +151,6 @@
         } else {
           ScaladexClient.main();
         }
-
-    </script>
-    <script>
-      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-      })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-
-      ga('create', 'UA-574683-15', 'auto');
-      ga('send', 'pageview');
-
-      Raven.config('https://d9ae900df7ef420b86063800d541d712@@sentry.io/185020').install()
     </script>
 </body>
 </html>

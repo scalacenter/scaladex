@@ -20,8 +20,7 @@ inThisBuild(
 lazy val logging =
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.1.7",
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-    "com.getsentry.raven" % "raven-logback" % "8.0.3"
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
   )
 
 val amm = inputKey[Unit]("Start Ammonite REPL")
@@ -145,7 +144,6 @@ lazy val server = project
       "org.webjars.bower" % "bootstrap-select" % "1.10.0",
       "org.webjars.bower" % "font-awesome" % "4.6.3",
       "org.webjars.bower" % "jQuery" % "2.2.4",
-      "org.webjars.bower" % "raven-js" % "3.11.0",
       "org.webjars.bower" % "select2" % "4.0.3",
       "org.apache.logging.log4j" % "log4j-core" % V.log4jVersion % Runtime
     ),
