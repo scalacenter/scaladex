@@ -98,7 +98,7 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
         Project.Organization(info.owner),
         Project.Repository(info.name),
         creationDate = oldProject.flatMap(_.creationDate), // todo:  from github
-        GithubStatus.Ok(githubStatus.update),
+        GithubStatus.Ok(githubStatus.updateDate),
         Some(info),
         oldProject.map(_.dataForm).getOrElse(Project.DataForm.default)
       )

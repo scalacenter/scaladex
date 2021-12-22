@@ -197,26 +197,26 @@ object DoobieUtils {
     implicit val githubStatusRead: Read[GithubStatus] =
       Read[(String, Instant, Option[Organization], Option[Repository], Option[Int], Option[String])]
         .map {
-          case ("Unknown", update, _, _, _, _)  => GithubStatus.Unknown(update)
-          case ("Ok", update, _, _, _, _)       => GithubStatus.Ok(update)
-          case ("NotFound", update, _, _, _, _) => GithubStatus.NotFound(update)
-          case ("Moved", update, Some(organization), Some(repository), _, _) =>
-            GithubStatus.Moved(update, organization, repository)
-          case ("Failed", update, _, _, Some(errorCode), Some(errorMessage)) =>
-            GithubStatus.Failed(update, errorCode, errorMessage)
+          case ("Unknown", updateDate, _, _, _, _)  => GithubStatus.Unknown(updateDate)
+          case ("Ok", updateDate, _, _, _, _)       => GithubStatus.Ok(updateDate)
+          case ("NotFound", updateDate, _, _, _, _) => GithubStatus.NotFound(updateDate)
+          case ("Moved", updateDate, Some(organization), Some(repository), _, _) =>
+            GithubStatus.Moved(updateDate, organization, repository)
+          case ("Failed", updateDate, _, _, Some(errorCode), Some(errorMessage)) =>
+            GithubStatus.Failed(updateDate, errorCode, errorMessage)
           case invalid =>
             throw new Exception(s"Cannot read github status from database: $invalid")
         }
     implicit val githubStatusWrite: Write[GithubStatus] =
       Write[(String, Instant, Option[Organization], Option[Repository], Option[Int], Option[String])]
         .contramap {
-          case GithubStatus.Unknown(update)  => ("Unknown", update, None, None, None, None)
-          case GithubStatus.Ok(update)       => ("Ok", update, None, None, None, None)
-          case GithubStatus.NotFound(update) => ("NotFound", update, None, None, None, None)
-          case GithubStatus.Moved(update, organization, repository) =>
-            ("Moved", update, Some(organization), Some(repository), None, None)
-          case GithubStatus.Failed(update, errorCode, errorMessage) =>
-            ("Failed", update, None, None, Some(errorCode), Some(errorMessage))
+          case GithubStatus.Unknown(updateDate)  => ("Unknown", updateDate, None, None, None, None)
+          case GithubStatus.Ok(updateDate)       => ("Ok", updateDate, None, None, None, None)
+          case GithubStatus.NotFound(updateDate) => ("NotFound", updateDate, None, None, None, None)
+          case GithubStatus.Moved(updateDate, organization, repository) =>
+            ("Moved", updateDate, Some(organization), Some(repository), None, None)
+          case GithubStatus.Failed(updateDate, errorCode, errorMessage) =>
+            ("Failed", updateDate, None, None, Some(errorCode), Some(errorMessage))
         }
 
     implicit val projectReader: Read[Project] =

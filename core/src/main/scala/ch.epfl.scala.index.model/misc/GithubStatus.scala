@@ -5,16 +5,16 @@ import java.time.Instant
 import ch.epfl.scala.index.newModel.Project
 
 sealed trait GithubStatus {
-  val update: Instant
+  val updateDate: Instant
 
   override def toString: String = this match {
-    case GithubStatus.Ok(update)      => s"GithubStatus.Ok($update)"
-    case GithubStatus.Unknown(update) => s"GithubStatus.Unkhown($update)"
-    case GithubStatus.Moved(update, organization, repository) =>
-      s"GithubStatus.Moved($update, newName = $organization/$repository)"
-    case GithubStatus.NotFound(update) => s"GithubStatus.NotFound($update)"
-    case GithubStatus.Failed(update, errorCode, errorMessage) =>
-      s"GithubStatus.Failed($update, code = $errorCode, reason = $errorMessage)"
+    case GithubStatus.Ok(updateDate)      => s"GithubStatus.Ok($updateDate)"
+    case GithubStatus.Unknown(updateDate) => s"GithubStatus.Unkhown($updateDate)"
+    case GithubStatus.Moved(updateDate, organization, repository) =>
+      s"GithubStatus.Moved($updateDate, newName = $organization/$repository)"
+    case GithubStatus.NotFound(updateDate) => s"GithubStatus.NotFound($updateDate)"
+    case GithubStatus.Failed(updateDate, errorCode, errorMessage) =>
+      s"GithubStatus.Failed($updateDate, code = $errorCode, reason = $errorMessage)"
   }
 
   def movedOrNotFound: Boolean = this match {
@@ -27,10 +27,10 @@ sealed trait GithubStatus {
 
 }
 object GithubStatus {
-  case class Ok(update: Instant) extends GithubStatus
-  case class Unknown(update: Instant) extends GithubStatus
-  case class Moved(update: Instant, organization: Project.Organization, repository: Project.Repository)
+  case class Ok(updateDate: Instant) extends GithubStatus
+  case class Unknown(updateDate: Instant) extends GithubStatus
+  case class Moved(updateDate: Instant, organization: Project.Organization, repository: Project.Repository)
       extends GithubStatus
-  case class NotFound(update: Instant) extends GithubStatus
-  case class Failed(update: Instant, errorCode: Int, errorMessage: String) extends GithubStatus
+  case class NotFound(updateDate: Instant) extends GithubStatus
+  case class Failed(updateDate: Instant, errorCode: Int, errorMessage: String) extends GithubStatus
 }

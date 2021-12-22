@@ -311,7 +311,7 @@ object ESRepo extends LazyLogging {
         fieldSort("inverseProjectDependencies").missing("0").order(SortOrder.Desc)
       case None | Some("relevant") => scoreSort().order(SortOrder.Desc)
       case Some("created")         => fieldSort("creationDate").desc()
-      case Some("updated")         => fieldSort("update").desc()
+      case Some("updated")         => fieldSort("updateDate").desc()
       case Some(unknown) =>
         logger.warn(s"Unknown sort criteria: $unknown")
         scoreSort().order(SortOrder.Desc)

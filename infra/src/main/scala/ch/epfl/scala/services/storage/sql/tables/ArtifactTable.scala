@@ -51,7 +51,7 @@ object ArtifactTable {
     buildSelect(
       tableFr,
       fr0"*",
-      whereRef(ref) ++ fr0" AND artifact=$artifactName"
+      whereRef(ref) ++ fr0" AND artifact_name=$artifactName"
     ).query[Artifact]
 
   def selectPlatform(): Query0[(Project.Organization, Project.Repository, Platform)] =

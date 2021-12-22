@@ -18,7 +18,7 @@ final case class ProjectDocument(
     artifactNames: Seq[Artifact.Name],
     hasCli: Boolean,
     creationDate: Option[Instant],
-    update: Option[Instant],
+    updateDate: Option[Instant],
     platformTypes: Seq[Platform.PlatformType],
     scalaVersions: Seq[String], // scala version families TODO move to BinaryVersion
     scalaJsVersions: Seq[BinaryVersion],
@@ -48,7 +48,7 @@ object ProjectDocument {
       releases.map(_.artifactName).sorted.distinct,
       hasCli,
       creationDate,
-      update = None,
+      updateDate = None,
       platforms.map(_.platformType).sorted.distinct,
       platforms.flatMap(_.scalaVersion).map(_.family).sorted.distinct,
       platforms.collect { case ScalaJs(_, scalaJsV) => scalaJsV }.sorted.distinct,

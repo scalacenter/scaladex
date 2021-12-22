@@ -4,7 +4,7 @@ CREATE TABLE projects (
     creation_date            TIMESTAMPTZ,
     -- github status can be: Unknown, Ok, Moved, NotFound, Failed
     github_status            VARCHAR(10)  NOT NULL,
-    github_update            TIMESTAMPTZ  NOT NULL,
+    github_update_date       TIMESTAMPTZ  NOT NULL,
     -- in case of Moved
     new_organization         VARCHAR(39),
     new_repository           VARCHAR(100),
