@@ -1,5 +1,5 @@
-@import ch.epfl.scala.search.SearchParams
-@import ch.epfl.scala.index.model.misc.UserState
+@import scaladex.core.model.search.SearchParams
+@import scaladex.core.model.UserState
 
 @(production: Boolean, user: Option[UserState], params: SearchParams)
 @main(production, title = "Invalid Query", showSearch = true, params = params, user = user) {

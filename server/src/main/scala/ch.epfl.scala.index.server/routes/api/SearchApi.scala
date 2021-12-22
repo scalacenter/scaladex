@@ -10,18 +10,21 @@ import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.epfl.scala.index.api.AutocompletionResponse
-import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.newModel.Artifact
-import ch.epfl.scala.index.newModel.Project
-import ch.epfl.scala.search.ProjectHit
-import ch.epfl.scala.search.SearchParams
-import ch.epfl.scala.services.SearchEngine
-import ch.epfl.scala.services.WebDatabase
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import com.softwaremill.session.SessionDirectives.optionalSession
 import com.softwaremill.session.SessionOptions.refreshable
 import com.softwaremill.session.SessionOptions.usingCookies
 import play.api.libs.json._
+import scaladex.core.model.Artifact
+import scaladex.core.model.ArtifactSelection
+import scaladex.core.model.BinaryVersion
+import scaladex.core.model.Platform
+import scaladex.core.model.Project
+import scaladex.core.model.ScalaLanguageVersion
+import scaladex.core.model.search.ProjectHit
+import scaladex.core.model.search.SearchParams
+import scaladex.core.service.SearchEngine
+import scaladex.core.service.WebDatabase
 
 object SearchApi {
   implicit val formatProject: OFormat[Project] =

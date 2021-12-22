@@ -1,9 +1,9 @@
 package ch.epfl.scala.index.data
 
-import ch.epfl.scala.index.model.Env
-import ch.epfl.scala.services.storage.DataPaths
-import ch.epfl.scala.services.storage.sql.DatabaseConfig
 import com.typesafe.config.ConfigFactory
+import scaladex.core.model.Env
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.sql.DatabaseConfig
 
 case class IndexConfig(env: Env, db: DatabaseConfig, dataPaths: DataPaths)
 

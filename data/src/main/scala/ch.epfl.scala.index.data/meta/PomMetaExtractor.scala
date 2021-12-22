@@ -7,14 +7,14 @@ import ch.epfl.scala.index.data.Meta
 import ch.epfl.scala.index.data.bintray.BintrayMeta
 import ch.epfl.scala.index.data.bintray.SbtPluginsData
 import ch.epfl.scala.index.data.maven.ReleaseModel
-import ch.epfl.scala.index.model.release.BintrayResolver
-import ch.epfl.scala.index.model.release.JCenter
-import ch.epfl.scala.index.model.release.Resolver
-import ch.epfl.scala.services.storage.DataPaths
-import ch.epfl.scala.services.storage.LocalPomRepository._
-import ch.epfl.scala.services.storage.LocalRepository
-import ch.epfl.scala.services.storage.LocalRepository._
 import com.typesafe.scalalogging.LazyLogging
+import scaladex.core.model.BintrayResolver
+import scaladex.core.model.JCenter
+import scaladex.core.model.Resolver
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository._
+import scaladex.infra.storage.LocalRepository
+import scaladex.infra.storage.LocalRepository._
 
 class PomMetaExtractor(
     paths: DataPaths

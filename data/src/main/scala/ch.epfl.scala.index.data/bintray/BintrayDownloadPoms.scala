@@ -7,12 +7,12 @@ import java.nio.file.Path
 
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.download.PlayWsDownloader
-import ch.epfl.scala.services.storage.DataPaths
-import ch.epfl.scala.services.storage.LocalPomRepository
 import org.slf4j.LoggerFactory
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.WSRequest
 import play.api.libs.ws.WSResponse
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
 
 class BintrayDownloadPoms(paths: DataPaths)(implicit val system: ActorSystem) extends PlayWsDownloader {
 

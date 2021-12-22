@@ -10,15 +10,14 @@ import akka.http.scaladsl.server.Directives.Segment
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.PathMatcher1
 import akka.http.scaladsl.unmarshalling.Unmarshaller
-import ch.epfl.scala.index.model.SemanticVersion
-import ch.epfl.scala.index.model.misc.UserState
-import ch.epfl.scala.index.model.release.ArtifactSelection
-import ch.epfl.scala.index.newModel.Artifact
-import ch.epfl.scala.index.newModel.Artifact.Name
-import ch.epfl.scala.index.newModel.Project
-import ch.epfl.scala.index.newModel.Project.DocumentationLink
-import ch.epfl.scala.search.SearchParams
-import ch.epfl.scala.services.WebDatabase
+import scaladex.core.model.Artifact
+import scaladex.core.model.ArtifactSelection
+import scaladex.core.model.Project
+import scaladex.core.model.SemanticVersion
+import scaladex.core.model.UserState
+import scaladex.core.model.search
+import scaladex.core.model.search.SearchParams
+import scaladex.core.service.WebDatabase
 
 package object routes {
 
@@ -67,7 +66,7 @@ package object routes {
         val userRepos = you
           .flatMap(_ => user.map(_.repos))
           .getOrElse(Set())
-        SearchParams(
+        search.SearchParams(
           q,
           page,
           sort,
@@ -138,20 +137,20 @@ package object routes {
               }
               .flatMap {
                 case (label, link) =>
-                  DocumentationLink.from(label, link)
+                  Project.DocumentationLink.from(label, link)
               }
               .toList
 
           val dataForm = Project.DataForm(
             defaultStableVersion,
-            defaultArtifact.map(Name.apply),
+            defaultArtifact.map(Artifact.Name.apply),
             strictVersions,
             customScalaDoc,
             documentationLinks,
             deprecated,
             contributorsWanted,
-            artifactDeprecations.map(Name.apply).toSet,
-            cliArtifacts.map(Name.apply).toSet,
+            artifactDeprecations.map(Artifact.Name.apply).toSet,
+            cliArtifacts.map(Artifact.Name.apply).toSet,
             primaryTopic,
             beginnerIssuesLabel
           )

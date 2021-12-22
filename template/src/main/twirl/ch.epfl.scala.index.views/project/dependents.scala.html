@@ -1,6 +1,6 @@
-@import ch.epfl.scala.index.newModel.{ArtifactDependency, Artifact}
 @import ch.epfl.scala.index.views.Formats
-
+@import scaladex.core.model.Artifact
+@import scaladex.core.model.ArtifactDependency
 
 @(artifact: Artifact, reverseDeps: Seq[ArtifactDependency.Reverse])
 @sampleReverseDeps = @{ArtifactDependency.Reverse.sample(reverseDeps, 100)}

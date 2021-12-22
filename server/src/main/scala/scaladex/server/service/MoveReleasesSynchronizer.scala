@@ -4,10 +4,10 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-import ch.epfl.scala.index.model.misc.GithubStatus
-import ch.epfl.scala.index.newModel.Project
-import ch.epfl.scala.services.SchedulerDatabase
-import ch.epfl.scala.utils.ScalaExtensions.TraversableOnceFutureExtension
+import scaladex.core.model.GithubStatus
+import scaladex.core.model.Project
+import scaladex.core.service.SchedulerDatabase
+import scaladex.core.util.ScalaExtensions._
 
 class MoveReleasesSynchronizer(db: SchedulerDatabase)(implicit ec: ExecutionContext)
     extends Scheduler("move-releases-synchronizer", 5.minutes) {

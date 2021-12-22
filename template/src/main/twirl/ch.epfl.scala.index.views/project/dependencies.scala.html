@@ -1,6 +1,6 @@
-@import ch.epfl.scala.index.newModel.Project
-@import ch.epfl.scala.index.newModel.ArtifactDependency
 @import ch.epfl.scala.index.views.Formats
+@import scaladex.core.model.ArtifactDependency
+@import scaladex.core.model.Project
 
 @(ref: Project.Reference, allDeps: Seq[ArtifactDependency.Direct])
 @internalDeps = @{allDeps.filter(_.isInternal(ref)).sorted}

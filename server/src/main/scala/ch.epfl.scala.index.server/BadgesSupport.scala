@@ -3,9 +3,11 @@ package ch.epfl.scala.index.server
 import scala.collection.immutable.SortedMap
 import scala.collection.immutable.SortedSet
 
-import ch.epfl.scala.index.model.SemanticVersion
-import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.newModel.Artifact
+import scaladex.core.model.Artifact
+import scaladex.core.model.BinaryVersion
+import scaladex.core.model.Platform
+import scaladex.core.model.ScalaLanguageVersion
+import scaladex.core.model.SemanticVersion
 
 object BadgesSupport {
   def summaryOfLatestVersions(

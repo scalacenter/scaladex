@@ -11,8 +11,8 @@ import scala.util.control.NonFatal
 import akka.actor
 import akka.actor.ActorSystem
 import akka.actor.Cancellable
-import ch.epfl.scala.utils.TimerUtils
 import com.typesafe.scalalogging.LazyLogging
+import scaladex.core.util.TimerUtils
 import scaladex.template.SchedulerStatus
 
 abstract class Scheduler(val name: String, frequency: FiniteDuration)(implicit ec: ExecutionContext)

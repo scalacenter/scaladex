@@ -1,5 +1,8 @@
-@import ch.epfl.scala.search.{Pagination, SearchParams}
-@import ch.epfl.scala.index.model.release.{BinaryVersion, Platform}
+
+@import scaladex.core.model.search.SearchParams
+@import scaladex.core.model.search.Pagination
+@import scaladex.core.model.Platform
+@import scaladex.core.model.BinaryVersion
 
 @(params: SearchParams,
   topics: Seq[(String, Long)],

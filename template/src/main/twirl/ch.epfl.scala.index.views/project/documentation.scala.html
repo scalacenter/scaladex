@@ -1,5 +1,5 @@
-@import ch.epfl.scala.index.newModel.Project.DocumentationLink
-@import ch.epfl.scala.index.newModel.{Project, Artifact}
+@import scaladex.core.model.Project
+@import scaladex.core.model.Artifact
 
 @(release: Artifact, project: Project)
 <div class="documentation box">
@@ -8,7 +8,7 @@
     @for(scaladoc <- release.scalaDocURL(project.dataForm.customScalaDoc)){
       <li><a href="@scaladoc" rel="nofollow" target="_blank">Scaladoc</a></li>
     }
-    @for(DocumentationLink(label, url) <- release.documentationURLs(project.dataForm.documentationLinks)){
+    @for(Project.DocumentationLink(label, url) <- release.documentationURLs(project.dataForm.documentationLinks)){
       <li>
         <a href="@url.toString()" target="_blank" rel="nofollow">
           @if(label == ""){ @url } else { @label }

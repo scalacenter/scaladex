@@ -1,7 +1,7 @@
-@import ch.epfl.scala.search.{ProjectHit, SearchParams}
-@import ch.epfl.scala.index.newModel.Project
 @import ch.epfl.scala.index.views.html._
 
+@import scaladex.core.model.search.ProjectHit
+@import scaladex.core.model.search.SearchParams
 
 @(projects: Seq[ProjectHit], params: SearchParams)
 <ol class="list-result box">

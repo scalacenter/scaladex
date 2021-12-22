@@ -5,11 +5,11 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-import ch.epfl.scala.services.SchedulerDatabase
-import ch.epfl.scala.services.SearchEngine
-import ch.epfl.scala.services.github.GithubClient
-import ch.epfl.scala.utils.ScalaExtensions._
 import com.typesafe.scalalogging.LazyLogging
+import scaladex.core.service.SchedulerDatabase
+import scaladex.core.service.SearchEngine
+import scaladex.core.util.ScalaExtensions._
+import scaladex.infra.github.GithubClient
 import scaladex.server.service.SchedulerService._
 import scaladex.template.SchedulerStatus
 

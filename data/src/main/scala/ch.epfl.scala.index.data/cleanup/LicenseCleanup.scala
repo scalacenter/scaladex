@@ -2,10 +2,10 @@ package ch.epfl.scala.index
 package data
 package cleanup
 
-import ch.epfl.scala.index.model._
-import ch.epfl.scala.services.storage.DataPaths
 import org.json4s._
 import org.json4s.native.Serialization.read
+import scaladex.core.model.License
+import scaladex.infra.storage.DataPaths
 
 class LicenseCleanup(paths: DataPaths) {
   implicit private val formats: DefaultFormats.type = DefaultFormats

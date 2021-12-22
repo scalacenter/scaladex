@@ -10,10 +10,13 @@ import scala.collection.parallel.CollectionConverters._
 import scala.util.Try
 
 import ch.epfl.scala.index.data.bintray.SbtPluginsData
-import ch.epfl.scala.services.storage.DataPaths
-import ch.epfl.scala.services.storage.LocalPomRepository
-import ch.epfl.scala.services.storage.LocalRepository
 import org.slf4j.LoggerFactory
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
+import scaladex.infra.storage.LocalPomRepository.Bintray
+import scaladex.infra.storage.LocalPomRepository.MavenCentral
+import scaladex.infra.storage.LocalPomRepository.UserProvided
+import scaladex.infra.storage.LocalRepository
 
 case class MissingParentPom(dep: maven.Dependency) extends Exception
 
@@ -31,7 +34,6 @@ object PomsReader {
   def loadAll(
       paths: DataPaths
   ): Iterator[(ReleaseModel, LocalRepository, String)] = {
-    import ch.epfl.scala.services.storage.LocalPomRepository._
 
     val ivysDescriptors = SbtPluginsData(paths.ivysData).iterator
     val centralPoms = PomsReader(MavenCentral, paths).iterator

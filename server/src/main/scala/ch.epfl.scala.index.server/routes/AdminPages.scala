@@ -8,13 +8,13 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.StandardRoute
-import ch.epfl.scala.index.model.misc.UserState
 import ch.epfl.scala.index.server.GithubUserSession
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.index.views
 import com.softwaremill.session.SessionDirectives.optionalSession
 import com.softwaremill.session.SessionOptions.refreshable
 import com.softwaremill.session.SessionOptions.usingCookies
+import scaladex.core.model.UserState
 import scaladex.server.service.SchedulerService
 
 class AdminPages(production: Boolean, schedulerSrv: SchedulerService, session: GithubUserSession)(

@@ -3,13 +3,13 @@ package ch.epfl.scala.index.data.meta
 import ch.epfl.scala.index.data.cleanup._
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.maven.SbtPluginTarget
-import ch.epfl.scala.index.model.SemanticVersion
-import ch.epfl.scala.index.model.release.BinaryVersion
-import ch.epfl.scala.index.model.release.Platform
-import ch.epfl.scala.index.model.release.ScalaLanguageVersion
-import ch.epfl.scala.index.newModel.Artifact
-import ch.epfl.scala.services.storage.DataPaths
 import org.slf4j.LoggerFactory
+import scaladex.core.model.Artifact
+import scaladex.core.model.BinaryVersion
+import scaladex.core.model.Platform
+import scaladex.core.model.ScalaLanguageVersion
+import scaladex.core.model.SemanticVersion
+import scaladex.infra.storage.DataPaths
 
 case class ArtifactMeta(
     artifactName: String,

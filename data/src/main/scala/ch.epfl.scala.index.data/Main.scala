@@ -16,12 +16,12 @@ import ch.epfl.scala.index.data.cleanup.NonStandardLib
 import ch.epfl.scala.index.data.init.Init
 import ch.epfl.scala.index.data.maven.DownloadParentPoms
 import ch.epfl.scala.index.data.util.PidLock
-import ch.epfl.scala.services.storage.LocalPomRepository
-import ch.epfl.scala.services.storage.sql.SqlRepo
-import ch.epfl.scala.utils.DoobieUtils
-import ch.epfl.scala.utils.TimerUtils
 import com.typesafe.scalalogging.LazyLogging
 import doobie.hikari._
+import scaladex.core.util.TimerUtils
+import scaladex.infra.storage.LocalPomRepository
+import scaladex.infra.storage.sql.SqlRepo
+import scaladex.infra.util.DoobieUtils
 
 /**
  * This application manages indexed POMs.

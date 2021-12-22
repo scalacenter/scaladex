@@ -1,8 +1,12 @@
 @import akka.http.scaladsl.model.Uri
-@import ch.epfl.scala.index.model.release.{BinaryVersion, Platform}
-@import ch.epfl.scala.search.{Pagination, ProjectHit, SearchParams}
 @import ch.epfl.scala.index.views.html._
-@import ch.epfl.scala.index.model.misc.UserState
+
+@import scaladex.core.model.search.Pagination
+@import scaladex.core.model.search.SearchParams
+@import scaladex.core.model.search.ProjectHit
+@import scaladex.core.model.Platform
+@import scaladex.core.model.UserState
+@import scaladex.core.model.BinaryVersion
 
 @(params: SearchParams,
   uri: Uri,

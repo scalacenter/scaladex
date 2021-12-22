@@ -18,11 +18,11 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives._
 import akka.util.Timeout
-import ch.epfl.scala.index.model.misc.UserState
-import ch.epfl.scala.index.newModel.Artifact
-import ch.epfl.scala.services.WebDatabase
-import ch.epfl.scala.services.storage.DataPaths
 import org.slf4j.LoggerFactory
+import scaladex.core.model.Artifact
+import scaladex.core.model.UserState
+import scaladex.core.service.WebDatabase
+import scaladex.infra.storage.DataPaths
 
 class PublishApi(
     paths: DataPaths,

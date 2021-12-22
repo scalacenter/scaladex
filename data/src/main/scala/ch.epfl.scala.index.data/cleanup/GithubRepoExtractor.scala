@@ -10,8 +10,6 @@ import scala.util.Using
 import scala.util.matching.Regex
 
 import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.index.newModel.Project
-import ch.epfl.scala.services.storage.DataPaths
 import org.json4s.CustomSerializer
 import org.json4s.DefaultFormats
 import org.json4s.Formats
@@ -21,6 +19,8 @@ import org.json4s.JsonAST.JObject
 import org.json4s.JsonAST.JString
 import org.json4s.native.Serialization.read
 import org.json4s.native.Serialization.writePretty
+import scaladex.core.model.Project
+import scaladex.infra.storage.DataPaths
 
 class GithubRepoExtractor(paths: DataPaths) {
   object ClaimSerializer extends CustomSerializer[Claims](_ => (serialize, deserialize))

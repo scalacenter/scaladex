@@ -4,12 +4,12 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 import ch.epfl.scala.index.data.maven._
-import ch.epfl.scala.services.storage.LocalRepository
-import ch.epfl.scala.services.storage.LocalRepository.BintraySbtPlugins
 import org.apache.ivy.core.module.descriptor.ModuleDescriptor
 import org.joda.time.DateTime
 import org.json4s.native.Serialization.write
 import org.typelevel.jawn.support.json4s.Parser
+import scaladex.infra.storage.LocalRepository
+import scaladex.infra.storage.LocalRepository.BintraySbtPlugins
 
 case class SbtPluginsData(ivysData: Path) extends BintrayProtocol {
 

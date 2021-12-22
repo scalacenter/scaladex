@@ -2,7 +2,7 @@ package ch.epfl.scala.index
 package data
 package maven
 
-import ch.epfl.scala.index.newModel.Artifact
+import scaladex.core.model.Artifact
 
 /** Abstract model of a released artifact. Initially modeled after the POM model. Tweaked to fit with ivy.xml descriptors */
 // POM Model

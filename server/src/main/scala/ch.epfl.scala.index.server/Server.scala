@@ -13,16 +13,16 @@ import akka.http.scaladsl.server._
 import cats.effect.ContextShift
 import cats.effect.IO
 import ch.epfl.scala.index.data.util.PidLock
-import ch.epfl.scala.index.search.ESRepo
 import ch.epfl.scala.index.server.config.ServerConfig
 import ch.epfl.scala.index.server.routes._
 import ch.epfl.scala.index.server.routes.api._
-import ch.epfl.scala.services.WebDatabase
-import ch.epfl.scala.services.github.GithubClient
-import ch.epfl.scala.services.storage.local.LocalStorageRepo
-import ch.epfl.scala.services.storage.sql.SqlRepo
-import ch.epfl.scala.utils.DoobieUtils
 import org.slf4j.LoggerFactory
+import scaladex.core.service.WebDatabase
+import scaladex.infra.elasticsearch.ESRepo
+import scaladex.infra.github.GithubClient
+import scaladex.infra.storage.local.LocalStorageRepo
+import scaladex.infra.storage.sql.SqlRepo
+import scaladex.infra.util.DoobieUtils
 import scaladex.server.service.SchedulerService
 
 object Server {

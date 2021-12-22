@@ -13,11 +13,11 @@ import java.time.OffsetDateTime
 
 import scala.util.control.NonFatal
 
-import ch.epfl.scala.index.model.misc.Sha1
-import ch.epfl.scala.index.model.misc.UserState
-import ch.epfl.scala.services.storage.DataPaths
-import ch.epfl.scala.services.storage.LocalPomRepository
 import org.slf4j.LoggerFactory
+import scaladex.core.model.Sha1
+import scaladex.core.model.UserState
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
 
 /**
  * Publish data model / Settings

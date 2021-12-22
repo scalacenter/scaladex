@@ -14,11 +14,11 @@ import akka.actor.Actor
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.meta.ReleaseConverter
-import ch.epfl.scala.index.newModel.Project
-import ch.epfl.scala.services.WebDatabase
-import ch.epfl.scala.services.storage.DataPaths
-import ch.epfl.scala.services.storage.LocalPomRepository
 import org.slf4j.LoggerFactory
+import scaladex.core.model.Project
+import scaladex.core.service.WebDatabase
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
 
 class IndexingActor(
     paths: DataPaths,

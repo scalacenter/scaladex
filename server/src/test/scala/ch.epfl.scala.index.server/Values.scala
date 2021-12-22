@@ -3,18 +3,18 @@ package ch.epfl.scala.index.server
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-import ch.epfl.scala.index.model.Milestone
-import ch.epfl.scala.index.model.ReleaseCandidate
-import ch.epfl.scala.index.model.SemanticVersion
-import ch.epfl.scala.index.model.misc.GithubInfo
-import ch.epfl.scala.index.model.misc.GithubStatus
-import ch.epfl.scala.index.model.release.PatchBinary
-import ch.epfl.scala.index.model.release.PreReleaseBinary
-import ch.epfl.scala.index.model.release.Scala3Version
-import ch.epfl.scala.index.model.release.ScalaLanguageVersion
-import ch.epfl.scala.index.newModel.Artifact
-import ch.epfl.scala.index.newModel.Artifact._
-import ch.epfl.scala.index.newModel.Project
+import scaladex.core.model.Artifact
+import scaladex.core.model.Artifact._
+import scaladex.core.model.GithubInfo
+import scaladex.core.model.GithubStatus
+import scaladex.core.model.Milestone
+import scaladex.core.model.PatchBinary
+import scaladex.core.model.PreReleaseBinary
+import scaladex.core.model.Project
+import scaladex.core.model.ReleaseCandidate
+import scaladex.core.model.Scala3Version
+import scaladex.core.model.ScalaLanguageVersion
+import scaladex.core.model.SemanticVersion
 
 object Values {
   val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)

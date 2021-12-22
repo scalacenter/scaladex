@@ -1,11 +1,10 @@
-@import ch.epfl.scala.index.newModel.Artifact
+@import scaladex.core.model.Artifact
 
-
-@(release: Artifact)
+@(artifact: Artifact)
 <div class="license box">
   <h4>License</h4>
   <ul>
-    @for(license <- release.licenses) {
+    @for(license <- artifact.licenses) {
       <li><a href='@license.url.getOrElse("#")'>@license.shortName</a></li>
     }
   </ul>
