@@ -93,6 +93,7 @@ lazy val template = project
 
 lazy val infra = project
   .in(file("infra"))
+  .configs(IntegrationTest)
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -104,7 +105,7 @@ lazy val infra = project
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-circe" % "1.33.0",
       "org.tpolecat" %% "doobie-scalatest" % V.doobieVersion % Test,
-      "org.scalatest" %% "scalatest" % V.scalatest % Test
+      "org.scalatest" %% "scalatest" % V.scalatest % "test,it"
     ) ++ Seq(
       "org.tpolecat" %% "doobie-core",
       "org.tpolecat" %% "doobie-h2",
@@ -144,7 +145,10 @@ lazy val infra = project
     Test / fork := true,
     // testing the database requests need to delete and create the tables,
     // which can fail if many tests are running in parallel
-    Test / parallelExecution := false
+    Test / parallelExecution := false,
+    Defaults.itSettings,
+    IntegrationTest / fork := true,
+    IntegrationTest / javaOptions ++= (Test / javaOptions).value
   )
   .dependsOn(core)
 

@@ -38,8 +38,6 @@ jobs:
           jvm: "adopt:1.8"
       - uses: coursier/cache-action@v5
       - name: Unit tests
-        env:
-          TOKEN_FOR_GITHUB: ${{ secrets.TOKEN }}
         run: |
           cd scaladex
           sbtn test
