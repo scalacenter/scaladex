@@ -1,9 +1,7 @@
-package ch.epfl.scala.service.github
+package ch.epfl.scala.services.github
 
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.newModel.Project
-import ch.epfl.scala.services.github.GithubClient
-import ch.epfl.scala.services.github.GithubConfig
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
