@@ -1,7 +1,7 @@
 @import ch.epfl.scala.search.SearchParams
-@import ch.epfl.scala.index.newModel.NewProject
+@import ch.epfl.scala.index.newModel.Project
 
-@(project: NewProject)
+@(project: Project)
 <div class="content-project-body">
   @for(github <- project.githubInfo) {
     @github.description.map(desc => <p class="description">@desc</p>)

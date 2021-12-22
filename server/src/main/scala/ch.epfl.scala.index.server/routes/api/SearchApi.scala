@@ -11,8 +11,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.epfl.scala.index.api.AutocompletionResponse
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Artifact
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.search.ProjectHit
 import ch.epfl.scala.search.SearchParams
 import ch.epfl.scala.services.SearchEngine
@@ -181,7 +181,7 @@ class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUser
                     sbtVersion
                 ) =>
                   val reference =
-                    NewProject.Reference.from(organization, repository)
+                    Project.Reference.from(organization, repository)
                   val scalaTarget = SearchApi.parseScalaTarget(
                     targetType,
                     scalaVersion,
@@ -211,13 +211,13 @@ class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUser
     }
 
   private def getReleaseOptions(
-      projectRef: NewProject.Reference,
+      projectRef: Project.Reference,
       scalaTarget: Option[Platform],
       artifact: Option[String]
   ): Future[Option[SearchApi.ReleaseOptions]] = {
-    val selection = new ReleaseSelection(
+    val selection = new ArtifactSelection(
       target = scalaTarget,
-      artifact = artifact.map(NewRelease.ArtifactName.apply),
+      artifactNames = artifact.map(Artifact.Name.apply),
       version = None,
       selected = None
     )
@@ -226,17 +226,17 @@ class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUser
       releases <- db.findReleases(projectRef)
     } yield for {
       project <- projectOpt
-      filteredReleases = selection.filterReleases(releases, project)
-      selected <- filteredReleases.headOption
+      filteredArtifacts = selection.filterReleases(releases, project)
+      selected <- filteredArtifacts.headOption
     } yield {
-      val artifacts = filteredReleases.map(_.artifactName.value).toList
-      val versions = filteredReleases.map(_.version.toString).toList
+      val artifacts = filteredArtifacts.map(_.artifactName.value).toList
+      val versions = filteredArtifacts.map(_.version.toString).toList
       SearchApi.ReleaseOptions(
         artifacts,
         versions,
-        selected.maven.groupId,
-        selected.maven.artifactId,
-        selected.maven.version
+        selected.groupId.value,
+        selected.artifactId,
+        selected.version.toString
       )
     }
   }

@@ -1,9 +1,9 @@
 package ch.epfl.scala.services.storage.sql.tables
 
 import ch.epfl.scala.index.model.misc.GithubInfo
-import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewProject.Organization
-import ch.epfl.scala.index.newModel.NewProject.Repository
+import ch.epfl.scala.index.newModel.Project
+import ch.epfl.scala.index.newModel.Project.Organization
+import ch.epfl.scala.index.newModel.Project.Repository
 import ch.epfl.scala.utils.DoobieUtils.Fragments._
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
 import doobie.implicits._
@@ -39,17 +39,17 @@ object GithubInfoTable {
   val table: Fragment = Fragment.const0("github_info")
   private val fieldsFr: Fragment = Fragment.const0(fields.mkString(", "))
 
-  private def values(p: NewProject.Reference, g: GithubInfo): Fragment =
+  private def values(p: Project.Reference, g: GithubInfo): Fragment =
     fr0"${p.organization}, ${p.repository}, ${g.name}, ${g.owner}, " ++
       fr0"${g.homepage}, ${g.description}, ${g.logo}, ${g.stars}, ${g.forks}," ++
       fr0" ${g.watchers}, ${g.issues},${g.readme}, ${g.contributors}, ${g.contributorCount}," ++
       fr0" ${g.commits}, ${g.topics}, ${g.contributingGuide}, ${g.codeOfConduct}, ${g.chatroom}," ++
       fr0" ${g.beginnerIssues}"
 
-  def insert(p: NewProject.Reference)(elt: GithubInfo): doobie.Update0 =
+  def insert(p: Project.Reference)(elt: GithubInfo): doobie.Update0 =
     buildInsert(table, fieldsFr, values(p, elt)).update
 
-  def insertOrUpdate(p: NewProject.Reference)(g: GithubInfo): doobie.Update0 = {
+  def insertOrUpdate(p: Project.Reference)(g: GithubInfo): doobie.Update0 = {
     val onConflictFields = fr0"organization, repository"
     val fields =
       fr0"name=${g.name}, owner=${g.owner}, homepage=${g.homepage}, description=${g.description}, logo=${g.logo}," ++

@@ -12,22 +12,22 @@ import akka.http.scaladsl.server.PathMatcher1
 import akka.http.scaladsl.unmarshalling.Unmarshaller
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.UserState
-import ch.epfl.scala.index.model.release.ReleaseSelection
-import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
-import ch.epfl.scala.index.newModel.NewRelease
-import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
+import ch.epfl.scala.index.model.release.ArtifactSelection
+import ch.epfl.scala.index.newModel.Artifact
+import ch.epfl.scala.index.newModel.Artifact.Name
+import ch.epfl.scala.index.newModel.Project
+import ch.epfl.scala.index.newModel.Project.DocumentationLink
 import ch.epfl.scala.search.SearchParams
 import ch.epfl.scala.services.WebDatabase
 
 package object routes {
 
-  val organizationM: PathMatcher1[NewProject.Organization] =
-    Segment.map(NewProject.Organization.apply)
-  val repositoryM: PathMatcher1[NewProject.Repository] =
-    Segment.map(NewProject.Repository.apply)
-  val artifactM: PathMatcher1[NewRelease.ArtifactName] =
-    Segment.map(NewRelease.ArtifactName.apply)
+  val organizationM: PathMatcher1[Project.Organization] =
+    Segment.map(Project.Organization.apply)
+  val repositoryM: PathMatcher1[Project.Repository] =
+    Segment.map(Project.Repository.apply)
+  val artifactM: PathMatcher1[Artifact.Name] =
+    Segment.map(Artifact.Name.apply)
   val versionM: PathMatcher1[SemanticVersion] =
     Segment.flatMap(SemanticVersion.tryParse)
 
@@ -83,7 +83,7 @@ package object routes {
     }
 
   // TODO remove all unused parameters
-  val editForm: Directive1[NewProject.DataForm] =
+  val editForm: Directive1[Project.DataForm] =
     formFieldSeq.tflatMap(fields =>
       formFields(
         (
@@ -142,16 +142,16 @@ package object routes {
               }
               .toList
 
-          val dataForm = NewProject.DataForm(
+          val dataForm = Project.DataForm(
             defaultStableVersion,
-            defaultArtifact.map(ArtifactName.apply),
+            defaultArtifact.map(Name.apply),
             strictVersions,
             customScalaDoc,
             documentationLinks,
             deprecated,
             contributorsWanted,
-            artifactDeprecations.map(ArtifactName.apply).toSet,
-            cliArtifacts.map(ArtifactName.apply).toSet,
+            artifactDeprecations.map(Name.apply).toSet,
+            cliArtifacts.map(Name.apply).toSet,
             primaryTopic,
             beginnerIssuesLabel
           )
@@ -160,20 +160,20 @@ package object routes {
     )
   def getSelectedRelease(
       db: WebDatabase,
-      org: NewProject.Organization,
-      repo: NewProject.Repository,
+      org: Project.Organization,
+      repo: Project.Repository,
       platform: Option[String],
-      artifact: Option[NewRelease.ArtifactName],
+      artifact: Option[Artifact.Name],
       version: Option[String],
       selected: Option[String]
-  )(implicit ec: ExecutionContext): Future[Option[NewRelease]] = {
-    val releaseSelection = ReleaseSelection.parse(
+  )(implicit ec: ExecutionContext): Future[Option[Artifact]] = {
+    val releaseSelection = ArtifactSelection.parse(
       platform = platform,
       artifactName = artifact,
       version = version,
       selected = selected
     )
-    val projectRef = NewProject.Reference(org, repo)
+    val projectRef = Project.Reference(org, repo)
     for {
       project <- db.findProject(projectRef)
       releases <- db.findReleases(projectRef)
@@ -184,13 +184,13 @@ package object routes {
   }
   def getSelectedRelease(
       db: WebDatabase,
-      project: NewProject,
+      project: Project,
       platform: Option[String],
-      artifact: Option[NewRelease.ArtifactName],
+      artifact: Option[Artifact.Name],
       version: Option[String],
       selected: Option[String]
-  )(implicit ec: ExecutionContext): Future[Option[NewRelease]] = {
-    val releaseSelection = ReleaseSelection.parse(
+  )(implicit ec: ExecutionContext): Future[Option[Artifact]] = {
+    val releaseSelection = ArtifactSelection.parse(
       platform = platform,
       artifactName = artifact,
       version = version,

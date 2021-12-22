@@ -6,29 +6,29 @@ import scala.concurrent.Future
 
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubStatus
-import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Artifact
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.index.newModel.ProjectDependency
 
 trait SchedulerDatabase extends WebDatabase {
-  def insertOrUpdateProject(p: NewProject): Future[Unit]
-  def getAllProjectRef(): Future[Seq[NewProject.Reference]]
-  def getAllProjects(): Future[Seq[NewProject]]
-  def updateReleases(release: Seq[NewRelease], newRef: NewProject.Reference): Future[Int]
+  def insertOrUpdateProject(p: Project): Future[Unit]
+  def getAllProjectRef(): Future[Seq[Project.Reference]]
+  def getAllProjects(): Future[Seq[Project]]
+  def updateReleases(release: Seq[Artifact], newRef: Project.Reference): Future[Int]
   def updateGithubInfoAndStatus(
-      p: NewProject.Reference,
+      p: Project.Reference,
       githubInfo: GithubInfo,
       githubStatus: GithubStatus
   ): Future[Unit]
   def createMovedProject(
-      ref: NewProject.Reference,
+      ref: Project.Reference,
       githubInfo: GithubInfo,
       githubStatus: GithubStatus.Moved
   ): Future[Unit]
-  def updateGithubStatus(ref: NewProject.Reference, githubStatus: GithubStatus): Future[Unit]
+  def updateGithubStatus(ref: Project.Reference, githubStatus: GithubStatus): Future[Unit]
   def computeProjectDependencies(): Future[Seq[ProjectDependency]]
-  def computeAllProjectsCreationDate(): Future[Seq[(Instant, NewProject.Reference)]]
-  def updateProjectCreationDate(ref: NewProject.Reference, creationDate: Instant): Future[Unit]
+  def computeAllProjectsCreationDate(): Future[Seq[(Instant, Project.Reference)]]
+  def updateProjectCreationDate(ref: Project.Reference, creationDate: Instant): Future[Unit]
   def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int]
-  def countInverseProjectDependencies(projectRef: NewProject.Reference): Future[Int]
+  def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int]
 }

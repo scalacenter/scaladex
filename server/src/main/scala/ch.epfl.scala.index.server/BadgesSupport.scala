@@ -5,18 +5,18 @@ import scala.collection.immutable.SortedSet
 
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Artifact
 
 object BadgesSupport {
   def summaryOfLatestVersions(
-      allAvailableReleases: Seq[NewRelease],
-      specificArtifact: NewRelease.ArtifactName,
+      allAvailableReleases: Seq[Artifact],
+      specificArtifact: Artifact.Name,
       specificTargetType: Platform.PlatformType
   ): String = {
     val summary = (for {
-      release <- allAvailableReleases if release.isValid
-      version = release.version if release.artifactName == specificArtifact
-      scalaTarget = release.platform if release.platform.platformType == specificTargetType
+      artifact <- allAvailableReleases if artifact.isValid
+      version = artifact.version if artifact.artifactName == specificArtifact
+      scalaTarget = artifact.platform if artifact.platform.platformType == specificTargetType
     } yield version -> scalaTarget)
       .groupMap(_._1)(_._2)
       .view

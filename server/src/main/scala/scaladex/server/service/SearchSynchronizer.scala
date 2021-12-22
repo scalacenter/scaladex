@@ -4,7 +4,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.search.ProjectDocument
 import ch.epfl.scala.services.SchedulerDatabase
 import ch.epfl.scala.services.SearchEngine
@@ -20,7 +20,7 @@ class SearchSynchronizer(db: SchedulerDatabase, searchEngine: SearchEngine)(impl
       projects.mapSync(insertDocument).map(_ => ())
     }
 
-  private def insertDocument(project: NewProject): Future[Unit] =
+  private def insertDocument(project: Project): Future[Unit] =
     for {
       releases <- db.findReleases(project.reference)
       inverseProjectDependencies <- db.countInverseProjectDependencies(project.reference)

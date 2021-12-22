@@ -1,10 +1,10 @@
 package ch.epfl.scala.index.newModel
 
-import ch.epfl.scala.index.model.release.MavenReference
+import ch.epfl.scala.index.newModel.Artifact.MavenReference
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-class ReleaseDependencyTests extends AnyFunSpec with Matchers {
+class ArtifactDependencyTests extends AnyFunSpec with Matchers {
   type Scope = String
   val releaseRef: MavenReference =
     MavenReference("org.typelevel", "cats-core_3", "2.6.1")
@@ -45,10 +45,10 @@ class ReleaseDependencyTests extends AnyFunSpec with Matchers {
 
   private def getFulldependencies(
       refs: Seq[(MavenReference, Scope)]
-  ): Seq[ReleaseDependency.Direct] =
+  ): Seq[ArtifactDependency.Direct] =
     refs.map {
       case (ref, scope) =>
-        ReleaseDependency.Direct(ReleaseDependency(releaseRef, ref, scope), None)
+        ArtifactDependency.Direct(ArtifactDependency(releaseRef, ref, scope), None)
     }
 
 }

@@ -1,10 +1,11 @@
 @import ch.epfl.scala.index.model.misc.Url
-@import ch.epfl.scala.index.newModel.NewProject.DocumentationLink
-@import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
+@import ch.epfl.scala.index.newModel.Project.DocumentationLink
+@import ch.epfl.scala.index.newModel.{Project, Artifact}
 @import ch.epfl.scala.index.views.html.main
 @import ch.epfl.scala.index.model.misc.UserState
 
-@(production: Boolean, project: NewProject, releases: Seq[NewRelease], user: Option[UserState])
+@(production: Boolean, project: Project, releases: Seq[Artifact], user: Option[UserState])
+
 @artifactNames = @{ releases.map(_.artifactName).distinct }
 @main(production, title = s"Edit ${project.repository}", showSearch = true, user) {
   <main id="container-project">

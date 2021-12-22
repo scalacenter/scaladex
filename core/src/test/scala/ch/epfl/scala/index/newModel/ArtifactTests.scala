@@ -3,31 +3,30 @@ package ch.epfl.scala.index.newModel
 import ch.epfl.scala.index.model.Milestone
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.release.BintrayResolver
-import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.PatchBinary
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.PreReleaseBinary
 import ch.epfl.scala.index.model.release.Resolver
 import ch.epfl.scala.index.model.release.Scala3Version
 import ch.epfl.scala.index.model.release.ScalaVersion
-import ch.epfl.scala.index.newModel.NewProject.Organization
-import ch.epfl.scala.index.newModel.NewProject.Repository
-import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
+import ch.epfl.scala.index.newModel.Artifact.ArtifactId
+import ch.epfl.scala.index.newModel.Artifact.GroupId
+import ch.epfl.scala.index.newModel.Artifact.Name
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-class NewReleaseTests extends AnyFunSpec with Matchers {
+class ArtifactTests extends AnyFunSpec with Matchers {
   describe("sbtInstall") {
     it("crossFull") {
       val obtained =
-        release(
+        createArtifact(
           groupId = "org.scalamacros",
           artifactId = "paradise_2.12.3",
           version = "2.1.1",
-          artifactName = ArtifactName("paradise"),
           platform = Platform.ScalaJvm(
             ScalaVersion(PatchBinary(2, 12, 3))
-          )
+          ),
+          artifactName = Some(Name("paradise"))
         ).sbtInstall
 
       val expected =
@@ -38,14 +37,14 @@ class NewReleaseTests extends AnyFunSpec with Matchers {
 
     it("binary") {
       val obtained =
-        release(
+        createArtifact(
           groupId = "org.scalaz",
           artifactId = "scalaz-core_2.13.0-M1",
           version = "7.2.14",
-          artifactName = ArtifactName("scalaz-core"),
           platform = Platform.ScalaJvm(
             ScalaVersion(PreReleaseBinary(2, 13, Some(0), Milestone(1)))
-          )
+          ),
+          artifactName = Some(Name("scalaz-core"))
         ).sbtInstall
 
       val expected =
@@ -56,14 +55,14 @@ class NewReleaseTests extends AnyFunSpec with Matchers {
 
     it("scala3") {
       val obtained =
-        release(
+        createArtifact(
           groupId = "org.typelevel",
           artifactId = "circe_cats-core_3.0.0-M1",
           version = "2.3.0-M2",
-          artifactName = ArtifactName("circe_cats-core"),
           platform = Platform.ScalaJvm(
             Scala3Version(PreReleaseBinary(3, 0, Some(0), Milestone(1)))
-          )
+          ),
+          artifactName = Some(Name("circe_cats-core"))
         ).sbtInstall
 
       val expected =
@@ -74,11 +73,10 @@ class NewReleaseTests extends AnyFunSpec with Matchers {
 
     it("Scala.js / Scala-Native") {
       val obtained =
-        release(
+        createArtifact(
           groupId = "org.scala-js",
           artifactId = "scalajs-dom_sjs0.6_2.12",
           version = "0.9.3",
-          artifactName = ArtifactName("scalajs-dom"),
           platform = Platform.ScalaJs(ScalaVersion.`2.12`, Platform.ScalaJs.`0.6`)
         ).sbtInstall
 
@@ -90,11 +88,10 @@ class NewReleaseTests extends AnyFunSpec with Matchers {
 
     it("sbt-plugin") {
       val obtained =
-        release(
+        createArtifact(
           groupId = "com.typesafe.sbt",
           artifactId = "sbt-native-packager_2.10_0.13",
           version = "1.2.2",
-          artifactName = ArtifactName("sbt-native-packager"),
           platform = Platform.SbtPlugin(ScalaVersion.`2.10`, Platform.SbtPlugin.`0.13`)
         ).sbtInstall
 
@@ -106,11 +103,10 @@ class NewReleaseTests extends AnyFunSpec with Matchers {
 
     it("resolvers") {
       val obtained =
-        release(
+        createArtifact(
           groupId = "underscoreio",
           artifactId = "doodle_2.11",
           version = "0.8.2",
-          artifactName = ArtifactName("doodle"),
           platform = Platform.ScalaJvm(
             ScalaVersion.`2.11`
           ),
@@ -126,11 +122,10 @@ class NewReleaseTests extends AnyFunSpec with Matchers {
 
     it("Java") {
       val obtained =
-        release(
+        createArtifact(
           groupId = "com.typesafe",
           artifactId = "config",
           version = "1.3.1",
-          artifactName = ArtifactName("config"),
           platform = Platform.Java
         ).sbtInstall
 
@@ -143,11 +138,10 @@ class NewReleaseTests extends AnyFunSpec with Matchers {
   describe("millInstall") {
     it("mill install dependency pattern") {
       val obtained =
-        release(
+        createArtifact(
           groupId = "org.http4s",
           version = "0.18.12",
           artifactId = "http4s-core_2.12",
-          artifactName = ArtifactName("http4s-core"),
           platform = Platform.ScalaJvm(
             ScalaVersion(PatchBinary(2, 12, 3))
           )
@@ -161,11 +155,10 @@ class NewReleaseTests extends AnyFunSpec with Matchers {
 
     it("resolvers") {
       val obtained =
-        release(
+        createArtifact(
           groupId = "underscoreio",
           artifactId = "doodle_2.11",
           version = "0.8.2",
-          artifactName = ArtifactName("doodle"),
           platform = Platform.ScalaJvm(
             ScalaVersion.`2.11`
           ),
@@ -179,29 +172,31 @@ class NewReleaseTests extends AnyFunSpec with Matchers {
       assert(expected == obtained)
     }
   }
-  private def release(
+  private def createArtifact(
       groupId: String,
       artifactId: String,
       version: String,
       platform: Platform,
-      artifactName: ArtifactName,
+      artifactName: Option[Artifact.Name] = None,
       resolver: Option[Resolver] = None
-  ) =
-    NewRelease(
-      MavenReference(
-        groupId,
-        artifactId,
-        version
-      ),
+  ) = {
+    // An artifact always have an artifactId that can be parsed, but in the case we don't really care about if it can
+    // be parsed or not, we just want to test methods in artifacts like sbtInstall
+    // in fact those tests don't make sense, since it's not supposed to happen except if an Artifact is created without parsing.
+    val artifactIdResult =
+      artifactName.map(name => ArtifactId(name, platform)).orElse(Artifact.ArtifactId.parse(artifactId)).get
+    Artifact(
+      groupId = GroupId(groupId),
+      artifactId = artifactId,
       version = SemanticVersion.tryParse(version).get,
-      organization = Organization(""),
-      repository = Repository(""),
-      artifactName = artifactName,
-      platform = platform,
+      artifactName = artifactIdResult.name,
+      platform = artifactIdResult.platform,
+      projectRef = Project.Reference.from("", ""),
       description = None,
       releasedAt = None,
       resolver = resolver,
       licenses = Set(),
       isNonStandardLib = false
     )
+  }
 }

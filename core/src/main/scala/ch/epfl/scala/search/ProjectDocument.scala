@@ -8,14 +8,14 @@ import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Platform.SbtPlugin
 import ch.epfl.scala.index.model.release.Platform.ScalaJs
 import ch.epfl.scala.index.model.release.Platform.ScalaNative
-import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Artifact
+import ch.epfl.scala.index.newModel.Project
 
 // Project document indexed by the search engine
 final case class ProjectDocument(
-    organization: NewProject.Organization,
-    repository: NewProject.Repository,
-    artifactNames: Seq[NewRelease.ArtifactName],
+    organization: Project.Organization,
+    repository: Project.Repository,
+    artifactNames: Seq[Artifact.Name],
     hasCli: Boolean,
     createdAt: Option[Instant],
     updatedAt: Option[Instant],
@@ -28,12 +28,12 @@ final case class ProjectDocument(
     primaryTopic: Option[String],
     githubInfo: Option[GithubInfo]
 ) {
-  def reference: NewProject.Reference = NewProject.Reference(organization, repository)
+  def reference: Project.Reference = Project.Reference(organization, repository)
   def id: String = reference.toString
 }
 
 object ProjectDocument {
-  def apply(project: NewProject, releases: Seq[NewRelease], inverseProjectDependencies: Int): ProjectDocument = {
+  def apply(project: Project, releases: Seq[Artifact], inverseProjectDependencies: Int): ProjectDocument = {
     import project._
     val platforms = releases.map(_.platform)
     ProjectDocument(

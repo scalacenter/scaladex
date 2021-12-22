@@ -1,15 +1,15 @@
 @import ch.epfl.scala.index.model._
 @import ch.epfl.scala.index.model.misc._
 @import ch.epfl.scala.index.model.release._
-@import ch.epfl.scala.index.newModel.{NewProject, NewRelease}
+@import ch.epfl.scala.index.newModel.{Project, Artifact}
 
 
 @(
   production: Boolean,
-  project: NewProject,
+  project: Project,
   user: Option[UserState],
   targetTypesWithVersion: Map[Platform.PlatformType, Seq[String]],
-  semanticVersionWithReleases: Seq[(SemanticVersion, Map[NewRelease.ArtifactName, Seq[(NewRelease, String)]])]
+  semanticVersionWithReleases: Seq[(SemanticVersion, Map[Artifact.Name, Seq[(Artifact, String)]])]
 )
 @allScalaVersions= @{targetTypesWithVersion.values.flatten}
 

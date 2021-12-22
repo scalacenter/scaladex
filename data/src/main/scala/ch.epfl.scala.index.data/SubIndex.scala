@@ -10,7 +10,7 @@ import ch.epfl.scala.index.data.bintray.BintrayProtocol
 import ch.epfl.scala.index.data.bintray.BintraySearch
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository
 import ch.epfl.scala.services.storage.local.LocalStorageRepo
@@ -18,9 +18,9 @@ import org.json4s.native.Serialization.write
 
 object SubIndex extends BintrayProtocol {
   def generate(source: DataPaths, destination: DataPaths): Unit = {
-    def splitRepo(in: String): NewProject.Reference = {
+    def splitRepo(in: String): Project.Reference = {
       val List(owner, repo) = in.split('/').toList
-      NewProject.Reference.from(owner, repo)
+      Project.Reference.from(owner, repo)
     }
 
     val repos =

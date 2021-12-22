@@ -10,7 +10,7 @@ import scala.util.Using
 import scala.util.matching.Regex
 
 import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.services.storage.DataPaths
 import org.json4s.CustomSerializer
 import org.json4s.DefaultFormats
@@ -58,10 +58,10 @@ class GithubRepoExtractor(paths: DataPaths) {
 
       val List(organization, repo) = claim.repo.split('/').toList
 
-      (matcher, NewProject.Reference.from(organization, repo))
+      (matcher, Project.Reference.from(organization, repo))
     }
 
-  def extract(pom: maven.ReleaseModel): Option[NewProject.Reference] = {
+  def extract(pom: maven.ReleaseModel): Option[Project.Reference] = {
     val fromPoms = pom.scm match {
       case Some(scm) =>
         List(scm.connection, scm.developerConnection, scm.url).flatten
@@ -82,8 +82,8 @@ class GithubRepoExtractor(paths: DataPaths) {
       if (s.startsWith("$")) s.drop(1) else s
 
     repo.map {
-      case NewProject.Reference(organization, repo) =>
-        NewProject.Reference.from(
+      case Project.Reference(organization, repo) =>
+        Project.Reference.from(
           fixInterpolationIssue(organization.value),
           fixInterpolationIssue(repo.value)
         )

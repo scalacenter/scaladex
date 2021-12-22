@@ -8,33 +8,31 @@ import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubIssue
 import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.misc.Url
-import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Platform._
-import ch.epfl.scala.index.model.release.ScalaVersion
-import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewProject.DataForm
-import ch.epfl.scala.index.newModel.NewRelease
-import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
-import ch.epfl.scala.index.newModel.ReleaseDependency
+import ch.epfl.scala.index.newModel.Artifact
+import ch.epfl.scala.index.newModel.Artifact.ArtifactId
+import ch.epfl.scala.index.newModel.Artifact.GroupId
+import ch.epfl.scala.index.newModel.Artifact.MavenReference
+import ch.epfl.scala.index.newModel.Artifact.Name
+import ch.epfl.scala.index.newModel.ArtifactDependency
+import ch.epfl.scala.index.newModel.Project
+import ch.epfl.scala.index.newModel.Project.DataForm
 import ch.epfl.scala.search.ProjectDocument
 
 object Values {
   val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
   object Scalafix {
-    val reference: NewProject.Reference = NewProject.Reference.from("scalacenter", "scalafix")
+    val reference: Project.Reference = Project.Reference.from("scalacenter", "scalafix")
     val creationDate: Instant = Instant.ofEpochMilli(1475505237265L)
-    val release: NewRelease = NewRelease(
-      MavenReference(
-        "ch.epfl.scala",
-        "scalafix-core_2.13",
-        "0.9.30"
-      ),
+    val artifactId: ArtifactId = ArtifactId.parse("scalafix-core_2.13").get
+    val release: Artifact = Artifact(
+      groupId = GroupId("ch.epfl.scala"),
+      artifactId = artifactId.value,
       version = SemanticVersion.tryParse("0.9.30").get,
-      organization = reference.organization,
-      repository = reference.repository,
-      artifactName = ArtifactName("scalafix-core"),
-      platform = ScalaJvm(ScalaVersion.`2.13`),
+      artifactName = artifactId.name,
+      platform = artifactId.platform,
+      projectRef = reference,
       description = None,
       releasedAt = Some(creationDate),
       resolver = None,
@@ -64,41 +62,38 @@ object Values {
       primaryTopic = Some("Scala3"),
       beginnerIssuesLabel = None
     )
-    val project: NewProject =
-      NewProject.default(reference, Some(creationDate), Some(githubInfo), Some(dataForm))
+    val project: Project =
+      Project.default(reference, Some(creationDate), Some(githubInfo), Some(dataForm))
     val projectDocument: ProjectDocument = ProjectDocument(project, Seq(release), 0)
   }
 
   object PlayJsonExtra {
-    val reference: NewProject.Reference = NewProject.Reference.from("xuwei-k", "play-json-extra")
-    val release: NewRelease = NewRelease(
-      MavenReference(
-        "com.github.xuwei-k",
-        "play-json-extra_2.10",
-        "0.1.1-play2.3-M1"
-      ),
+    val reference: Project.Reference = Project.Reference.from("xuwei-k", "play-json-extra")
+    val artifactId: ArtifactId = ArtifactId.parse("play-json-extra_2.11").get
+    val artifact: Artifact = Artifact(
+      groupId = GroupId("com.github.xuwei-k"),
+      artifactId = artifactId.value,
       version = SemanticVersion.tryParse("0.1.1-play2.3-M1").get,
-      organization = reference.organization,
-      repository = reference.repository,
-      artifactName = ArtifactName("play-json-extra"),
-      platform = ScalaJvm(ScalaVersion.`2.11`),
+      artifactName = artifactId.name,
+      platform = artifactId.platform,
+      projectRef = reference,
       description = None,
       releasedAt = None,
       resolver = None,
       licenses = Set(),
       isNonStandardLib = false
     )
-    val dependency: ReleaseDependency =
-      ReleaseDependency(
-        source = Cats.core_3.maven,
-        target = release.maven,
+    val dependency: ArtifactDependency =
+      ArtifactDependency(
+        source = Cats.core_3.mavenReference,
+        target = artifact.mavenReference,
         "compile"
       )
   }
 
   object Cats {
-    val reference: NewProject.Reference = NewProject.Reference.from("typelevel", "cats")
-    val project: NewProject = NewProject.default(
+    val reference: Project.Reference = Project.Reference.from("typelevel", "cats")
+    val project: Project = Project.default(
       reference,
       created = Some(Instant.ofEpochMilli(1454649333334L)),
       now = now
@@ -115,53 +110,51 @@ object Values {
         chatroom = Some(Url("https://gitter.im/typelevel/cats")),
         beginnerIssues = List(issueAboutFoo, issueAboutBar)
       )
-    val projectWithGithubInfo: NewProject = project.copy(githubInfo = Some(githubInfo))
-    private def release(
+    val projectWithGithubInfo: Project = project.copy(githubInfo = Some(githubInfo))
+    private def getArtifact(
         name: String,
         platform: Platform,
         version: String = "2.6.1"
-    ): NewRelease =
-      NewRelease(
-        MavenReference(
-          "org.typelevel",
-          s"${name}_$platform",
-          version
-        ),
-        SemanticVersion.tryParse(version).get,
-        organization = reference.organization,
-        repository = reference.repository,
-        artifactName = ArtifactName(name),
+    ): Artifact = {
+      val artifactId = ArtifactId(Name(name), platform)
+      Artifact(
+        groupId = GroupId("org.typelevel"),
+        artifactId = artifactId.value,
+        version = SemanticVersion.tryParse(version).get,
+        artifactName = artifactId.name,
         platform = platform,
+        projectRef = reference,
         description = None,
         releasedAt = None,
         resolver = None,
         licenses = Set(),
         isNonStandardLib = false
       )
+    }
 
-    val core_3: NewRelease = release("cats-core", ScalaJvm.`3`)
-    val core_sjs1_3: NewRelease = release("cats-core", ScalaJs.`1_3`)
-    val core_sjs06_213: NewRelease = release("cats-core", ScalaJs.`0.6_2.13`)
-    val core_native04_213: NewRelease = release("cats-core", ScalaNative.`0.4_2.13`)
-    val kernel_3: NewRelease = release("cats-kernel", ScalaJvm.`3`)
-    val laws_3: NewRelease = release("cats-laws", ScalaJvm.`3`)
+    val core_3: Artifact = getArtifact("cats-core", ScalaJvm.`3`)
+    val core_sjs1_3: Artifact = getArtifact("cats-core", ScalaJs.`1_3`)
+    val core_sjs06_213: Artifact = getArtifact("cats-core", ScalaJs.`0.6_2.13`)
+    val core_native04_213: Artifact = getArtifact("cats-core", ScalaNative.`0.4_2.13`)
+    val kernel_3: Artifact = getArtifact("cats-kernel", ScalaJvm.`3`)
+    val laws_3: Artifact = getArtifact("cats-laws", ScalaJvm.`3`)
 
-    val allReleases: Seq[NewRelease] = Seq(core_3, core_sjs1_3, core_sjs06_213, core_native04_213, kernel_3, laws_3)
+    val allReleases: Seq[Artifact] = Seq(core_3, core_sjs1_3, core_sjs06_213, core_native04_213, kernel_3, laws_3)
 
-    val dependencies: Seq[ReleaseDependency] = Seq(
-      ReleaseDependency(
-        source = core_3.maven,
-        target = kernel_3.maven,
+    val dependencies: Seq[ArtifactDependency] = Seq(
+      ArtifactDependency(
+        source = core_3.mavenReference,
+        target = kernel_3.mavenReference,
         "compile"
       ),
-      ReleaseDependency(source = core_3.maven, target = laws_3.maven, "compile"),
-      ReleaseDependency(
-        source = core_3.maven,
+      ArtifactDependency(source = core_3.mavenReference, target = laws_3.mavenReference, "compile"),
+      ArtifactDependency(
+        source = core_3.mavenReference,
         target = MavenReference(
           "com.gu",
           "ztmp-scala-automation_2.10",
           "1.9"
-        ), // dependency with a corresponding release
+        ), // dependency with a corresponding getArtifact
         "compile"
       )
     )
@@ -170,17 +163,17 @@ object Values {
   }
 
   object CatsEffect {
-    val dependency: ReleaseDependency = ReleaseDependency(
+    val dependency: ArtifactDependency = ArtifactDependency(
       source = MavenReference(
         "cats-effect",
         "cats-effect-kernel_3",
         "3.2.3"
       ),
-      target = Cats.core_3.maven,
+      target = Cats.core_3.mavenReference,
       "compile"
     )
 
-    val testDependency: ReleaseDependency = ReleaseDependency(
+    val testDependency: ArtifactDependency = ArtifactDependency(
       source = MavenReference(
         "cats-effect",
         "cats-effect-kernel_3",

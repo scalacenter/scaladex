@@ -2,7 +2,7 @@ package ch.epfl.scala.index.model.misc
 
 import java.time.Instant
 
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 
 sealed trait GithubStatus {
   val when: Instant
@@ -29,7 +29,7 @@ sealed trait GithubStatus {
 object GithubStatus {
   case class Ok(when: Instant) extends GithubStatus
   case class Unknown(when: Instant) extends GithubStatus
-  case class Moved(when: Instant, organization: NewProject.Organization, repository: NewProject.Repository)
+  case class Moved(when: Instant, organization: Project.Organization, repository: Project.Repository)
       extends GithubStatus
   case class NotFound(when: Instant) extends GithubStatus
   case class Failed(when: Instant, errorCode: Int, errorMessage: String) extends GithubStatus

@@ -7,7 +7,7 @@ import scala.concurrent.Future
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.meta.ReleaseConverter
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import ch.epfl.scala.services.storage.sql.SqlRepo
@@ -37,7 +37,7 @@ class Init(
       // counting what have been inserted
       projectCount <- db.countProjects()
       dataFormCount <- db.countProjectDataForm()
-      releaseCount <- db.countReleases()
+      releaseCount <- db.countArtifacts()
       dependencyCount <- db.countDependencies()
 
     } yield {
@@ -64,7 +64,7 @@ class Init(
 
   private def insertAllDataForms(): Future[Unit] = {
     val allDataForms = localStorage.allDataForms()
-    def updateDataForm(ref: NewProject.Reference): Future[Unit] =
+    def updateDataForm(ref: Project.Reference): Future[Unit] =
       allDataForms
         .get(ref)
         .map(db.updateProjectForm(ref, _))

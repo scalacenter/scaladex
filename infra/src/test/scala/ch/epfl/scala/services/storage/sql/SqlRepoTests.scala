@@ -9,11 +9,10 @@ import scala.concurrent.ExecutionContext
 
 import ch.epfl.scala.index.Values
 import ch.epfl.scala.index.model.misc.GithubStatus
-import ch.epfl.scala.index.model.release.MavenReference
-import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Artifact
+import ch.epfl.scala.index.newModel.ArtifactDependency
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.index.newModel.ProjectDependency
-import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.utils.ScalaExtensions._
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -42,9 +41,9 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
 
     it("should find releases") {
       for {
-        _ <- db.insertRelease(PlayJsonExtra.release, Seq.empty, now)
+        _ <- db.insertRelease(PlayJsonExtra.artifact, Seq.empty, now)
         foundReleases <- db.findReleases(PlayJsonExtra.reference)
-      } yield foundReleases shouldBe List(PlayJsonExtra.release)
+      } yield foundReleases shouldBe List(PlayJsonExtra.artifact)
     }
 
     it("should update user project form") {
@@ -77,29 +76,29 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
       } yield res should contain theSameElementsAs Scalafix.githubInfo.topics
     }
     it("should get most dependent project") {
-      val releases: Map[NewRelease, Seq[ReleaseDependency]] = Map(
+      val releases: Map[Artifact, Seq[ArtifactDependency]] = Map(
         Cats.core_3 -> Seq(
-          ReleaseDependency(
-            source = Cats.core_3.maven,
-            target = MavenReference("fake", "fake_3", "version"),
+          ArtifactDependency(
+            source = Cats.core_3.mavenReference,
+            target = Artifact.MavenReference("fake", "fake_3", "version"),
             scope = "compile"
           )
         ), // first case: on a artifact that doesn't have a corresponding release
         Cats.kernel_3 -> Seq(
-          ReleaseDependency(
-            source = Cats.kernel_3.maven,
-            target = Cats.core_3.maven,
+          ArtifactDependency(
+            source = Cats.kernel_3.mavenReference,
+            target = Cats.core_3.mavenReference,
             "compile"
           )
         ), // depends on it self
         Scalafix.release -> Cats.dependencies.map(
-          _.copy(source = Scalafix.release.maven)
+          _.copy(source = Scalafix.release.mavenReference)
         ), // dependencies contains two cats releases
         Cats.laws_3 -> Seq(), // doesn't depend on anything
-        PlayJsonExtra.release -> Seq(
-          ReleaseDependency(
-            source = PlayJsonExtra.release.maven,
-            target = Scalafix.release.maven,
+        PlayJsonExtra.artifact -> Seq(
+          ArtifactDependency(
+            source = PlayJsonExtra.artifact.mavenReference,
+            target = Scalafix.release.mavenReference,
             "compile"
           )
         )
@@ -133,7 +132,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
     }
     it("should createMovedProject") {
       val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
-      val newRef = NewProject.Reference.from("scala", "fix")
+      val newRef = Project.Reference.from("scala", "fix")
       val newGithubInfo =
         Scalafix.githubInfo.copy(owner = newRef.organization.value, name = newRef.repository.value, stars = Some(10000))
       val moved = GithubStatus.Moved(now, newRef.organization, newRef.repository)

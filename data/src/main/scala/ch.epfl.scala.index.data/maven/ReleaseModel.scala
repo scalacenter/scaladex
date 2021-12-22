@@ -2,7 +2,7 @@ package ch.epfl.scala.index
 package data
 package maven
 
-import ch.epfl.scala.index.model.release.MavenReference
+import ch.epfl.scala.index.newModel.Artifact
 
 /** Abstract model of a released artifact. Initially modeled after the POM model. Tweaked to fit with ivy.xml descriptors */
 // POM Model
@@ -33,8 +33,8 @@ case class ReleaseModel(
     sbtPluginTarget: Option[SbtPluginTarget] =
       None // Information on the target scala and sbt versions, in case this release describes an sbt plugin
 ) {
-  val mavenRef: MavenReference =
-    MavenReference(groupId, artifactId, version)
+  val mavenRef: Artifact.MavenReference =
+    Artifact.MavenReference(groupId, artifactId, version)
 
   private val packagingOfInterest = Set("aar", "jar", "bundle", "pom")
   val isPackagingOfInterest: Boolean = packagingOfInterest.contains(packaging)
@@ -107,7 +107,7 @@ case class Dependency(
     exclusions: Set[Exclusion] = Set(),
     optional: Boolean = false
 ) {
-  val mavenRef: MavenReference = MavenReference(groupId, artifactId, version)
+  val mavenRef: Artifact.MavenReference = Artifact.MavenReference(groupId, artifactId, version)
   override def toString: String = s"$groupId $artifactId $version"
 }
 

@@ -1,6 +1,6 @@
 package ch.epfl.scala.services.storage.sql.tables
 
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.index.newModel.ProjectDependency
 import ch.epfl.scala.utils.DoobieUtils.Fragments.buildInsertOrUpdate
 import ch.epfl.scala.utils.DoobieUtils.Fragments.buildSelect
@@ -37,7 +37,7 @@ object ProjectDependenciesTable {
     ).update
   }
 
-  private def whereTarget(projectRef: NewProject.Reference): Fragment =
+  private def whereTarget(projectRef: Project.Reference): Fragment =
     fr0"WHERE target_organization=${projectRef.organization} AND target_repository=${projectRef.repository}"
 
   def insertMany(
@@ -45,17 +45,17 @@ object ProjectDependenciesTable {
   ): ConnectionIO[Int] =
     Update[ProjectDependency](insertOrUpdate(p.head).sql).updateMany(p)
 
-  def countInverseDependencies(projectRef: NewProject.Reference): ConnectionIO[Int] =
+  def countInverseDependencies(projectRef: Project.Reference): ConnectionIO[Int] =
     buildSelect(table, fr0"count(*)", whereTarget(projectRef)).query[Int].unique
 
   def getMostDependentUponProjects(
       max: Int
-  ): Query0[(NewProject.Reference, Long)] =
+  ): Query0[(Project.Reference, Long)] =
     buildSelect(
       table,
       fr0"target_organization, target_repository, Count(DISTINCT (source_organization, source_repository)) as total",
       fr0"GROUP BY target_organization, target_repository" ++
         fr0" ORDER BY total DESC" ++
         fr0" LIMIT ${max.toLong}"
-    ).query[(NewProject.Reference, Long)]
+    ).query[(Project.Reference, Long)]
 }

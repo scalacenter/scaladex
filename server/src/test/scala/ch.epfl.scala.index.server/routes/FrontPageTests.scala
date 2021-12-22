@@ -4,7 +4,7 @@ import ch.epfl.scala.index.model.release.BinaryVersion
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Scala3Version
 import ch.epfl.scala.index.model.release.ScalaVersion
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -15,10 +15,10 @@ class FrontPageTests extends AnyFunSpec with Matchers {
   import Platform.PlatformType._
 
   describe("FrontPageTests") {
-    val ref1: NewProject.Reference = NewProject.Reference.from("a", "b")
-    val ref2: NewProject.Reference = NewProject.Reference.from("c", "d")
+    val ref1: Project.Reference = Project.Reference.from("a", "b")
+    val ref2: Project.Reference = Project.Reference.from("c", "d")
 
-    val platformWithCount: Map[NewProject.Reference, Set[Platform]] = Map(
+    val platformWithCount: Map[Project.Reference, Set[Platform]] = Map(
       ref1 -> Set(
         Platform.Java,
         Platform.ScalaNative(`2.11`, nat03),

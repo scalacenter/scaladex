@@ -14,7 +14,7 @@ import ch.epfl.scala.index.data.init.Init
 import ch.epfl.scala.index.server.config.ServerConfig
 import cats.effect.IO
 import cats.effect.ContextShift
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.services.github.{GithubConfig, GithubClient}
 
 import scala.concurrent.ExecutionContext
@@ -182,7 +182,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
       assert {
         page.items.headOption
           .map(_.document.reference)
-          .contains(NewProject.Reference.from(org, repo))
+          .contains(Project.Reference.from(org, repo))
       }
     }
   }
@@ -213,14 +213,14 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
       params: SearchParams,
       expected: List[(String, String)],
       assertFun: (
-          Seq[NewProject.Reference],
-          Seq[NewProject.Reference]
+          Seq[Project.Reference],
+          Seq[Project.Reference]
       ) => Assertion
   ): Future[Assertion] = {
 
     val expectedRefs = expected.map {
       case (org, repo) =>
-        NewProject.Reference.from(org, repo)
+        Project.Reference.from(org, repo)
     }
 
     searchEngine.find(params).map { page =>

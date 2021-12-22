@@ -1,8 +1,8 @@
 package ch.epfl.scala.services.storage.sql.tables
 
-import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewProject.Organization
-import ch.epfl.scala.index.newModel.NewProject.Repository
+import ch.epfl.scala.index.newModel.Project
+import ch.epfl.scala.index.newModel.Project.Organization
+import ch.epfl.scala.index.newModel.Project.Repository
 import ch.epfl.scala.utils.DoobieUtils.Fragments._
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
 import doobie.implicits._
@@ -29,13 +29,13 @@ object ProjectUserFormTable {
 
   val table: Fragment = Fragment.const0("project_user_data")
   private val fieldsFr: Fragment = Fragment.const0(fields.mkString(", "))
-  private def values(p: NewProject.Reference, userData: NewProject.DataForm): Fragment =
+  private def values(p: Project.Reference, userData: Project.DataForm): Fragment =
     fr0"${p.organization}, ${p.repository}, ${userData.defaultStableVersion}, ${userData.defaultArtifact}," ++
       fr0" ${userData.strictVersions}, ${userData.customScalaDoc}, ${userData.documentationLinks}, ${userData.deprecated}, ${userData.contributorsWanted}," ++
       fr0" ${userData.artifactDeprecations}, ${userData.cliArtifacts}, ${userData.primaryTopic}, ${userData.beginnerIssuesLabel}"
 
-  def insertOrUpdate(ref: NewProject.Reference)(
-      userDataForm: NewProject.DataForm
+  def insertOrUpdate(ref: Project.Reference)(
+      userDataForm: Project.DataForm
   ): doobie.Update0 = {
     val onConflict = fr0"organization, repository"
     val doAction = fr0"NOTHING"
@@ -54,6 +54,6 @@ object ProjectUserFormTable {
   def indexedProjectUserForm(): doobie.Query0[Long] =
     buildSelect(table, fr0"count(*)").query[Long]
 
-  val formDataReader: Read[NewProject.DataForm] =
-    Read[(Organization, Repository, NewProject.DataForm)].map { case (_, _, userFormData) => userFormData }
+  val formDataReader: Read[Project.DataForm] =
+    Read[(Organization, Repository, Project.DataForm)].map { case (_, _, userFormData) => userFormData }
 }

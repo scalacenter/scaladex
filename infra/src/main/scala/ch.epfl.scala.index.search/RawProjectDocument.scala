@@ -5,8 +5,8 @@ import java.time.Instant
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.release.BinaryVersion
 import ch.epfl.scala.index.model.release.Platform
-import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Artifact
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.search.ProjectDocument
 import com.sksamuel.elastic4s.Indexable
 import io.circe.Codec
@@ -16,9 +16,9 @@ import io.circe.generic.semiauto
 // A RawProjectDocument is a ProjectDocument where values are not yet validated.
 // It can contain invalid values that will be filtered when converting to ProjectDocument.
 case class RawProjectDocument(
-    organization: NewProject.Organization,
-    repository: NewProject.Repository,
-    artifactNames: Seq[NewRelease.ArtifactName],
+    organization: Project.Organization,
+    repository: Project.Repository,
+    artifactNames: Seq[Artifact.Name],
     hasCli: Boolean,
     createdAt: Option[Instant],
     updatedAt: Option[Instant],

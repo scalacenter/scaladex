@@ -14,7 +14,7 @@ import akka.actor.Actor
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.data.meta.ReleaseConverter
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalPomRepository
@@ -59,7 +59,7 @@ class IndexingActor(
    * @return
    */
   private def insertRelease(
-      projectRef: NewProject.Reference,
+      projectRef: Project.Reference,
       pom: ReleaseModel,
       data: PublishData,
       localRepository: LocalPomRepository
@@ -81,4 +81,4 @@ class IndexingActor(
   }
 }
 
-case class UpdateIndex(repo: NewProject.Reference, pom: ReleaseModel, data: PublishData, localRepo: LocalPomRepository)
+case class UpdateIndex(repo: Project.Reference, pom: ReleaseModel, data: PublishData, localRepo: LocalPomRepository)

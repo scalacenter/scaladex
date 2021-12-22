@@ -3,7 +3,7 @@ package data
 package cleanup
 
 import ch.epfl.scala.index.model.Parsers
-import ch.epfl.scala.index.newModel.NewProject
+import ch.epfl.scala.index.newModel.Project
 import fastparse._
 
 object ScmInfoParser extends Parsers {
@@ -26,10 +26,10 @@ object ScmInfoParser extends Parsers {
         .! ~ "/" ~ Segment.rep(1).!.map(removeDotGit)
   )
 
-  def parse(scmInfo: String): Option[NewProject.Reference] =
+  def parse(scmInfo: String): Option[Project.Reference] =
     fastparse.parse(scmInfo, x => ScmUrl(x)) match {
       case Parsed.Success((organization, repo), _) =>
-        Some(NewProject.Reference.from(organization, repo))
+        Some(Project.Reference.from(organization, repo))
       case _ => None
     }
 

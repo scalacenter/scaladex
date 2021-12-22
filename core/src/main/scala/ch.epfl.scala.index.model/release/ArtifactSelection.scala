@@ -1,33 +1,33 @@
 package ch.epfl.scala.index.model
 package release
 
-import ch.epfl.scala.index.newModel.NewProject
-import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Artifact
+import ch.epfl.scala.index.newModel.Project
 
-case class ReleaseSelection(
+case class ArtifactSelection(
     target: Option[Platform],
-    artifact: Option[NewRelease.ArtifactName],
+    artifactNames: Option[Artifact.Name],
     version: Option[SemanticVersion],
     selected: Option[String]
 ) {
-  private def filterTarget(release: NewRelease): Boolean =
+  private def filterTarget(release: Artifact): Boolean =
     target.forall(_ == release.platform)
 
-  private def filterArtifact(release: NewRelease): Boolean =
-    artifact.forall(_ == release.artifactName)
+  private def filterArtifact(release: Artifact): Boolean =
+    artifactNames.forall(_ == release.artifactName)
 
-  private def filterVersion(release: NewRelease): Boolean =
+  private def filterVersion(release: Artifact): Boolean =
     version.forall(_ == release.version)
 
-  private def filterAll(release: NewRelease): Boolean =
+  private def filterAll(release: Artifact): Boolean =
     filterTarget(release) &&
       filterArtifact(release) &&
       filterVersion(release)
 
   def filterReleases(
-      releases: Seq[NewRelease],
-      project: NewProject
-  ): Seq[NewRelease] = {
+      releases: Seq[Artifact],
+      project: Project
+  ): Seq[Artifact] = {
     val selectedReleases =
       selected match {
         case Some(selected) =>
@@ -61,18 +61,18 @@ case class ReleaseSelection(
   }
 }
 
-object ReleaseSelection {
+object ArtifactSelection {
   def parse(
       platform: Option[String],
-      artifactName: Option[NewRelease.ArtifactName],
+      artifactName: Option[Artifact.Name],
       version: Option[String],
       selected: Option[String]
-  ): ReleaseSelection =
-    new ReleaseSelection(
+  ): ArtifactSelection =
+    new ArtifactSelection(
       platform.flatMap(Platform.parse),
       artifactName,
       version.flatMap(SemanticVersion.tryParse),
       selected
     )
-  def empty = new ReleaseSelection(None, None, None, None)
+  def empty = new ArtifactSelection(None, None, None, None)
 }
