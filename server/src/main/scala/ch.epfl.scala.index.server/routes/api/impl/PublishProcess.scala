@@ -22,10 +22,10 @@ import ch.epfl.scala.index.data.download.PlayWsDownloader
 import ch.epfl.scala.index.data.maven.DownloadParentPoms
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.maven.ReleaseModel
-import ch.epfl.scala.services.WebDatabase
-import ch.epfl.scala.services.storage.DataPaths
-import ch.epfl.scala.services.storage.LocalPomRepository
 import org.slf4j.LoggerFactory
+import scaladex.core.service.WebDatabase
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
 
 private[api] class PublishProcess(paths: DataPaths, db: WebDatabase)(
     implicit val system: ActorSystem

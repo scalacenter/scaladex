@@ -1,12 +1,12 @@
 package ch.epfl.scala.index.server.config
 
-import ch.epfl.scala.index.model.Env
-import ch.epfl.scala.services.github.GithubConfig
-import ch.epfl.scala.services.storage.DataPaths
-import ch.epfl.scala.services.storage.sql.DatabaseConfig
 import com.softwaremill.session.SessionConfig
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import scaladex.core.model.Env
+import scaladex.infra.github.GithubConfig
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.sql.DatabaseConfig
 
 case class ServerConfig(
     tempDirPath: String,

@@ -5,17 +5,17 @@ import scala.concurrent.Future
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import ch.epfl.scala.index.model.misc.UserState
-import ch.epfl.scala.index.model.release.Platform
-import ch.epfl.scala.index.newModel.Artifact
-import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.index.server.GithubUserSession
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.index.views.html.frontpage
-import ch.epfl.scala.services.WebDatabase
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import play.twirl.api.HtmlFormat
+import scaladex.core.model.Artifact
+import scaladex.core.model.Platform
+import scaladex.core.model.Project
+import scaladex.core.model.UserState
+import scaladex.core.service.WebDatabase
 
 class FrontPage(
     production: Boolean,

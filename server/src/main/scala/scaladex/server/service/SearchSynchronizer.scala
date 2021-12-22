@@ -4,13 +4,13 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-import ch.epfl.scala.index.model.misc.GithubStatus
-import ch.epfl.scala.index.newModel.Project
-import ch.epfl.scala.search.ProjectDocument
-import ch.epfl.scala.services.SchedulerDatabase
-import ch.epfl.scala.services.SearchEngine
-import ch.epfl.scala.utils.ScalaExtensions._
 import com.typesafe.scalalogging.LazyLogging
+import scaladex.core.model.GithubStatus
+import scaladex.core.model.Project
+import scaladex.core.model.search.ProjectDocument
+import scaladex.core.service.SchedulerDatabase
+import scaladex.core.service.SearchEngine
+import scaladex.core.util.ScalaExtensions._
 
 class SearchSynchronizer(db: SchedulerDatabase, searchEngine: SearchEngine)(implicit ec: ExecutionContext)
     extends Scheduler("search-synchronizer", 30.minutes)

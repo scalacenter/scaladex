@@ -1,14 +1,14 @@
 package ch.epfl.scala.index.server
 
-import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.server.BadgesSupport.SummariseLanguageVersions
 import ch.epfl.scala.index.server.BadgesSupport.SummarisePlatformEditions
 import org.apache.commons.lang3.StringUtils.countMatches
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
+import scaladex.core.model.Platform
 
 class BadgesSupportTest extends AsyncFunSpec with Matchers {
-  import ch.epfl.scala.index.model.release.ScalaVersion._
+  import scaladex.core.model.ScalaVersion._
   import Platform._
   import Values._
 

@@ -7,12 +7,12 @@ import scala.concurrent.Future
 import akka.actor.ActorSystem
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.meta.ReleaseConverter
-import ch.epfl.scala.index.newModel.Project
-import ch.epfl.scala.services.storage.DataPaths
-import ch.epfl.scala.services.storage.local.LocalStorageRepo
-import ch.epfl.scala.services.storage.sql.SqlRepo
-import ch.epfl.scala.utils.ScalaExtensions._
 import com.typesafe.scalalogging.LazyLogging
+import scaladex.core.model.Project
+import scaladex.core.util.ScalaExtensions._
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.local.LocalStorageRepo
+import scaladex.infra.storage.sql.SqlRepo
 
 class Init(
     paths: DataPaths,

@@ -3,7 +3,7 @@ package ch.epfl.scala.index.data.meta
 import java.time.Instant
 
 import ch.epfl.scala.index.data.maven.ReleaseModel
-import ch.epfl.scala.index.model.release._
+import scaladex.core.model.Resolver
 
 case class PomMeta(
     releaseModel: ReleaseModel,

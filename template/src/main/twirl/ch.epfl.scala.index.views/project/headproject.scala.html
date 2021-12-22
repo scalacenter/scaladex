@@ -1,8 +1,9 @@
-@import ch.epfl.scala.index.model.SemanticVersion
-@import ch.epfl.scala.index.newModel.{Project, Artifact}
 @import ch.epfl.scala.index.views.html.ensureUri
+@import scaladex.core.model.Project
+@import scaladex.core.model.Artifact
+@import scaladex.core.model.SemanticVersion
+@import scaladex.core.model.Platform
 
-@import ch.epfl.scala.index.model.release.Platform
 @(project: Project, artifacts: Seq[Artifact.Name], versions: Seq[SemanticVersion],
         platforms: Seq[Platform], artifact: Artifact, canEdit: Boolean)
 

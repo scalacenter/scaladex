@@ -16,10 +16,10 @@ import scala.util.control.NonFatal
 import scala.util.matching.Regex
 
 import akka.actor.ActorSystem
-import ch.epfl.scala.services.storage.DataPaths
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.ivy.core.settings.IvySettings
 import org.apache.ivy.plugins.parser.xml.XmlModuleDescriptorParser
+import scaladex.infra.storage.DataPaths
 
 class UpdateBintraySbtPlugins(
     bintray: BintrayClient,

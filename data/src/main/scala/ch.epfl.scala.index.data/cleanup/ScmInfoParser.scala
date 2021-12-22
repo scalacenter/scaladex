@@ -2,9 +2,9 @@ package ch.epfl.scala.index
 package data
 package cleanup
 
-import ch.epfl.scala.index.model.Parsers
-import ch.epfl.scala.index.newModel.Project
 import fastparse._
+import scaladex.core.model.Project
+import scaladex.core.util.Parsers
 
 object ScmInfoParser extends Parsers {
   import fastparse.NoWhitespace._

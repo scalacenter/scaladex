@@ -5,14 +5,14 @@ import java.time.Instant
 import ch.epfl.scala.index.data.bintray._
 import ch.epfl.scala.index.data.cleanup._
 import ch.epfl.scala.index.data.maven.ReleaseModel
-import ch.epfl.scala.index.model._
-import ch.epfl.scala.index.model.release.Resolver
-import ch.epfl.scala.index.newModel.Artifact
-import ch.epfl.scala.index.newModel.ArtifactDependency
-import ch.epfl.scala.index.newModel.Project
-import ch.epfl.scala.services.storage.DataPaths
-import ch.epfl.scala.services.storage.LocalRepository
 import com.typesafe.scalalogging.LazyLogging
+import scaladex.core.model.Artifact
+import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.Project
+import scaladex.core.model.Resolver
+import scaladex.core.model.SemanticVersion
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalRepository
 
 class ReleaseConverter(paths: DataPaths) extends BintrayProtocol with LazyLogging {
   private val artifactMetaExtractor = new ArtifactMetaExtractor(paths)

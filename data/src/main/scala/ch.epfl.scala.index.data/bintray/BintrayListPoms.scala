@@ -19,9 +19,6 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import ch.epfl.scala.index.data.cleanup.NonStandardLib
 import ch.epfl.scala.index.data.download.PlayWsDownloader
-import ch.epfl.scala.index.model._
-import ch.epfl.scala.services.storage.DataPaths
-import ch.epfl.scala.services.storage.LocalPomRepository
 import com.github.nscala_time.time.Imports._
 import org.json4s._
 import org.json4s.native.Serialization.write
@@ -31,6 +28,9 @@ import play.api.libs.ws.WSClient
 import play.api.libs.ws.WSRequest
 import play.api.libs.ws.WSResponse
 import play.api.libs.ws.ahc.AhcCurlRequestLogger
+import scaladex.core.util.Ordering.Descending
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
 
 class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
     implicit val system: ActorSystem

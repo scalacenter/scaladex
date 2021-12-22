@@ -22,15 +22,15 @@ import akka.http.scaladsl.unmarshalling._
 import akka.stream.scaladsl._
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.meta.ArtifactMetaExtractor
-import ch.epfl.scala.index.model.misc.Sha1
-import ch.epfl.scala.index.model.release.Platform
-import ch.epfl.scala.services.storage.DataPaths
-import ch.epfl.scala.services.storage.LocalPomRepository
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 import org.joda.time.DateTime
 import org.json4s._
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import scaladex.core.model.Platform
+import scaladex.core.model.Sha1
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
 
 object CentralMissing {
   // q = g:"com.47deg" AND a:"sbt-microsites"

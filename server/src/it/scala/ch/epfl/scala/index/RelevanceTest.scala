@@ -3,10 +3,6 @@ package ch.epfl.scala.index
 import scala.concurrent.Future
 import akka.actor.ActorSystem
 import akka.testkit.TestKit
-import ch.epfl.scala.search.SearchParams
-import ch.epfl.scala.index.model.release.Platform
-import ch.epfl.scala.index.model.release.ScalaVersion
-import ch.epfl.scala.index.search.ESRepo
 import org.scalatest.Assertion
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AsyncFunSuiteLike
@@ -14,13 +10,15 @@ import ch.epfl.scala.index.data.init.Init
 import ch.epfl.scala.index.server.config.ServerConfig
 import cats.effect.IO
 import cats.effect.ContextShift
-import ch.epfl.scala.index.newModel.Project
-import ch.epfl.scala.services.github.{GithubConfig, GithubClient}
 
 import scala.concurrent.ExecutionContext
-import ch.epfl.scala.services.storage.sql.SqlRepo
-import ch.epfl.scala.utils.DoobieUtils
 import com.typesafe.config.ConfigFactory
+import scaladex.core.model.Project
+import scaladex.core.model.search.SearchParams
+import scaladex.infra.elasticsearch.ESRepo
+import scaladex.infra.github.{GithubClient, GithubConfig}
+import scaladex.infra.storage.sql.SqlRepo
+import scaladex.infra.util.DoobieUtils
 import scaladex.server.service.{GithubSynchronizer, SearchSynchronizer}
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {

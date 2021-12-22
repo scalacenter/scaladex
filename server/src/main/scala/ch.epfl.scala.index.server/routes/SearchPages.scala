@@ -7,14 +7,14 @@ import scala.concurrent.ExecutionContext
 import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import ch.epfl.scala.index.model.misc.UserState
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.index.views.search.html.searchresult
-import ch.epfl.scala.search.Page
-import ch.epfl.scala.search.SearchParams
-import ch.epfl.scala.services.SearchEngine
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
+import scaladex.core.model.UserState
+import scaladex.core.model.search.Page
+import scaladex.core.model.search.SearchParams
+import scaladex.core.service.SearchEngine
 
 class SearchPages(production: Boolean, searchEngine: SearchEngine, session: GithubUserSession)(
     implicit ec: ExecutionContext

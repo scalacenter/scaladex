@@ -12,10 +12,10 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.RequestContext
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.RouteResult
-import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.newModel.Artifact
-import ch.epfl.scala.index.newModel.Project
-import ch.epfl.scala.services.WebDatabase
+import scaladex.core.model.Artifact
+import scaladex.core.model.Platform
+import scaladex.core.model.Project
+import scaladex.core.service.WebDatabase
 
 class Badges(db: WebDatabase)(implicit executionContext: ExecutionContext) {
 

@@ -6,21 +6,20 @@ import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import ch.epfl.scala.index.model.misc.GithubInfo
-import ch.epfl.scala.index.model.misc.GithubStatus
-import ch.epfl.scala.index.model.release.Platform
-import ch.epfl.scala.index.newModel.Artifact
-import ch.epfl.scala.index.newModel.Artifact.Name
-import ch.epfl.scala.index.newModel.ArtifactDependency
-import ch.epfl.scala.index.newModel.Project
-import ch.epfl.scala.index.newModel.ProjectDependency
 import ch.epfl.scala.index.server.GithubUserSession
 import ch.epfl.scala.index.server.config.ServerConfig
-import ch.epfl.scala.services.SchedulerDatabase
-import ch.epfl.scala.services.storage.DataPaths
-import ch.epfl.scala.services.storage.local.LocalStorageRepo
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import scaladex.core.model.Artifact
+import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.GithubInfo
+import scaladex.core.model.GithubStatus
+import scaladex.core.model.Platform
+import scaladex.core.model.Project
+import scaladex.core.model.ProjectDependency
+import scaladex.core.service.SchedulerDatabase
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.local.LocalStorageRepo
 
 trait ControllerBaseSuite extends AnyFunSpec with Matchers {
   private val config = ServerConfig.load()
@@ -75,7 +74,7 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
     override def findReleases(projectRef: Project.Reference): Future[Seq[Artifact]] =
       Future.successful(releases.getOrElse(projectRef, Nil))
 
-    def findReleases(projectRef: Project.Reference, artifactName: Name): Future[Seq[Artifact]] =
+    def findReleases(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]] =
       Future.successful(
         releases
           .getOrElse(projectRef, Nil)

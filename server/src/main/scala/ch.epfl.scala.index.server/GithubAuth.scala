@@ -10,10 +10,10 @@ import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import ch.epfl.scala.index.model.misc._
-import ch.epfl.scala.services.github.GithubClient
-import ch.epfl.scala.utils.ScalaExtensions.FutureExtension
-import ch.epfl.scala.utils.Secret
+import scaladex.core.model.UserState
+import scaladex.core.util.ScalaExtensions._
+import scaladex.core.util.Secret
+import scaladex.infra.github.GithubClient
 
 object Response {
   case class AccessToken(access_token: String) {

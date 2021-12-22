@@ -6,13 +6,13 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
-import ch.epfl.scala.index.model.misc.GithubInfo
-import ch.epfl.scala.index.model.misc.GithubResponse
-import ch.epfl.scala.index.model.misc.GithubStatus
-import ch.epfl.scala.index.newModel.Project
-import ch.epfl.scala.services.GithubService
-import ch.epfl.scala.services.SchedulerDatabase
-import ch.epfl.scala.utils.ScalaExtensions._
+import scaladex.core.model.GithubInfo
+import scaladex.core.model.GithubResponse
+import scaladex.core.model.GithubStatus
+import scaladex.core.model.Project
+import scaladex.core.service.GithubService
+import scaladex.core.service.SchedulerDatabase
+import scaladex.core.util.ScalaExtensions._
 
 class GithubSynchronizer(db: SchedulerDatabase, githubService: GithubService)(implicit ec: ExecutionContext)
     extends Scheduler("github-synchronizer", 1.hour) {

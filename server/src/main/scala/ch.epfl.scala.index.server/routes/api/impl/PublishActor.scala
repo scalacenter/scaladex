@@ -9,8 +9,8 @@ import scala.concurrent.duration._
 
 import akka.actor.Actor
 import akka.actor.ActorSystem
-import ch.epfl.scala.services.WebDatabase
-import ch.epfl.scala.services.storage.DataPaths
+import scaladex.core.service.WebDatabase
+import scaladex.infra.storage.DataPaths
 
 class PublishActor(
     paths: DataPaths,

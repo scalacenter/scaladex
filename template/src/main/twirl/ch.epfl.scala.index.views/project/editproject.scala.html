@@ -1,8 +1,9 @@
-@import ch.epfl.scala.index.model.misc.Url
-@import ch.epfl.scala.index.newModel.Project.DocumentationLink
-@import ch.epfl.scala.index.newModel.{Project, Artifact}
 @import ch.epfl.scala.index.views.html.main
-@import ch.epfl.scala.index.model.misc.UserState
+@import scaladex.core.model.Artifact
+@import scaladex.core.model.Project
+@import scaladex.core.model.UserState
+@import scaladex.core.model.Url
+@import scaladex.core.model.Project.DocumentationLink
 
 @(production: Boolean, project: Project, releases: Seq[Artifact], user: Option[UserState])
 

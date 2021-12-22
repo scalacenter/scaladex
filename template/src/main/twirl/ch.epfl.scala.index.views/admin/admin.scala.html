@@ -1,8 +1,8 @@
-@import ch.epfl.scala.index.model.misc.UserState
 @import scaladex.template.SchedulerStatus
 @import ch.epfl.scala.index.views.html._
-@import scala.concurrent.duration.FiniteDuration
+@import scaladex.core.model.UserState
 
+@import scala.concurrent.duration.FiniteDuration
 @import java.time.Instant
 @(production: Boolean, user: UserState, schedulers: Seq[SchedulerStatus])
 

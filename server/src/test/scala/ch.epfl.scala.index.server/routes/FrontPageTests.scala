@@ -1,17 +1,15 @@
 package ch.epfl.scala.index.server.routes
 
-import ch.epfl.scala.index.model.release.BinaryVersion
-import ch.epfl.scala.index.model.release.Platform
-import ch.epfl.scala.index.model.release.Scala3Version
-import ch.epfl.scala.index.model.release.ScalaVersion
-import ch.epfl.scala.index.newModel.Project
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import scaladex.core.model.BinaryVersion
+import scaladex.core.model.Platform
+import scaladex.core.model.Project
 
 class FrontPageTests extends AnyFunSpec with Matchers {
   import ch.epfl.scala.index.server.Values._
-  import ScalaVersion._
-  import Scala3Version._
+  import scaladex.core.model.ScalaVersion._
+  import scaladex.core.model.Scala3Version._
   import Platform.PlatformType._
 
   describe("FrontPageTests") {

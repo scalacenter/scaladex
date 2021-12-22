@@ -10,10 +10,10 @@ import scala.concurrent.duration.FiniteDuration
 
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
-import ch.epfl.scala.search.Pagination
-import ch.epfl.scala.search.SearchParams
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import scaladex.core.model.search.Pagination
+import scaladex.core.model.search.SearchParams
 
 package object html {
 
