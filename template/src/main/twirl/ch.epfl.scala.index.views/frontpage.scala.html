@@ -101,7 +101,7 @@
                           <div class="content-contributing-project box">
                               <div class="content-project-header">
                                 <a href="/@project.organization/@project.repository">
-                                  @githubUserAvatar(project.githubInfo)
+                                  @githubUserAvatar(project.githubInfo.flatMap(_.logo))
                                   <h4>@project.organization/@project.repository</h4>
                               </div>
                               @contributingInfo(project)
@@ -121,7 +121,7 @@
                         <a href="/@project.organization/@project.repository">
                             <div class="content-project box">
                                 <div class="content-project-header">
-                                    @githubUserAvatar(project.githubInfo)
+                                    @githubUserAvatar(project.githubInfo.flatMap(_.logo))
                                     <h4>@project.organization/@project.repository</h4>
                                 </div>
                                 <div class="content-project-body">
@@ -151,7 +151,7 @@
                         <a href="/@project.organization/@project.repository">
                             <div class="content-project box">
                                 <div class="content-project-header">
-                                    @githubUserAvatar(project.githubInfo)
+                                    @githubUserAvatar(project.githubInfo.flatMap(_.logo))
                                     <h4>@project.organization/@project.repository</h4>
                                 </div>
                                 <div class="content-project-body">

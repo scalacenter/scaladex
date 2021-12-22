@@ -44,7 +44,7 @@ class GithubSynchronizer(db: SchedulerDatabase, githubService: GithubService)(im
 
       case GithubResponse.MovedPermanently(info) =>
         val githubStatus =
-          GithubStatus.Moved(now, Project.Organization(info.owner), Project.Repository(info.name))
+          GithubStatus.Moved(now, Project.Reference(info.organization, info.repository))
         logger.info(s"$repo moved to $githubStatus")
         db.createMovedProject(repo, info, githubStatus)
 

@@ -14,14 +14,14 @@
             <div class="contributing-result">
               <div class="content-project-header">
                 <a href="/@project.organization/@project.repository">
-                  @githubUserAvatar(project.githubInfo)
+                  @githubUserAvatar(project.githubInfo.flatMap(_.avatarUrl))
                   <h4>@project.organization/@project.repository</h4>
               </div>
               @searchContributingInfo(hit, params)
             </div>
           } else {
             <div>
-              @githubUserAvatar(project.githubInfo)
+              @githubUserAvatar(project.githubInfo.flatMap(_.avatarUrl))
               <h4>@project.reference</h4>
 
               @for(github <- project.githubInfo) {
@@ -71,7 +71,7 @@
           <div class="stats">
             <div>
             @for(github <- project.githubInfo) {
-              @if(!github.topics.isEmpty) {
+              @if(github.topics.nonEmpty) {
                 @for(topic <- github.topics) {
                   <span class="item-filter-tag">
                     <a href="/search?topics=@topic">
@@ -96,7 +96,7 @@
                 </span>
               }
               <span>
-                <a data-toggle="tooltip" data-placement="bottom" title="Contributors" href="#">@github.contributors.size <i class="fa fa-users"></i></a>
+                <a data-toggle="tooltip" data-placement="bottom" title="Contributors" href="#">@github.contributorCount <i class="fa fa-users"></i></a>
               </span>
             }
             </div>

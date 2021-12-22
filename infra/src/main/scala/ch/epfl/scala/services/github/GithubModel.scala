@@ -31,7 +31,7 @@ object GithubModel {
       subscribers_count: Int, // Watch
       topics: Seq[String]
   ) {
-    def repoName: Project.Reference = Project.Reference.from(owner, name)
+    def projectRef: Project.Reference = Project.Reference.from(owner, name)
   }
 
   implicit val repositoryDecoder: Decoder[Repository] = new Decoder[Repository] {

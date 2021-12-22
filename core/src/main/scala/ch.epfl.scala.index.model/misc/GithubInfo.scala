@@ -1,5 +1,10 @@
 package ch.epfl.scala.index.model.misc
 
+import ch.epfl.scala.index.newModel.Project
+import ch.epfl.scala.index.newModel.Project.Organization
+import ch.epfl.scala.index.newModel.Project.Repository
+import ch.epfl.scala.search.GithubInfoDocument
+
 /**
  * Github Info to a project
  *
@@ -24,8 +29,7 @@ package ch.epfl.scala.index.model.misc
  * @param filteredBeginnerIssues list of beginner-friendly issues that were filtered by contributing search
  */
 case class GithubInfo(
-    name: String, // equivalent to repository
-    owner: String, // equivalent to Organization
+    projectRef: Project.Reference,
     homepage: Option[Url],
     description: Option[String],
     logo: Option[Url],
@@ -35,29 +39,45 @@ case class GithubInfo(
     issues: Option[Int],
     readme: Option[String] = None,
     contributors: List[GithubContributor] = List(),
-    contributorCount: Int = 0,
     commits: Option[Int] = None,
     topics: Set[String] = Set(),
     contributingGuide: Option[Url] = None,
     codeOfConduct: Option[Url] = None,
     chatroom: Option[Url] = None,
-    beginnerIssues: List[GithubIssue] = List()
-)
+    beginnerIssues: List[GithubIssue] = List() // right now it's all issues, not only beginners issues
+) {
+  val organization: Organization = projectRef.organization
+  val repository: Repository = projectRef.repository
+  val contributorCount: Int = contributors.size
+
+  def toDocument: GithubInfoDocument =
+    GithubInfoDocument(
+      avatarUrl = logo,
+      description = description,
+      readme = readme,
+      beginnerIssues = beginnerIssues,
+      topics = topics.toSeq,
+      contributingGuide = contributingGuide,
+      chatroom = chatroom,
+      codeOfConduct = codeOfConduct,
+      stars = stars,
+      forks = forks,
+      contributorCount = contributorCount
+    )
+}
 
 object GithubInfo {
-  def empty(name: String, owner: String): GithubInfo = GithubInfo(
-    name,
-    owner,
+  def empty(repository: String, organization: String): GithubInfo = GithubInfo(
+    Project.Reference.from(organization, repository),
     readme = None,
-    description = None,
     homepage = None,
+    description = None,
     logo = None,
     stars = None,
     forks = None,
     watchers = None,
     issues = None,
     contributors = List(),
-    contributorCount = 0,
     commits = None,
     topics = Set(),
     contributingGuide = None,

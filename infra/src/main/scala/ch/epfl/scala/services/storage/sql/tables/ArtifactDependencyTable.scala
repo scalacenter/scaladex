@@ -11,8 +11,6 @@ import doobie.util.fragment.Fragment
 import doobie.util.update.Update
 
 object ArtifactDependencyTable {
-  private val _ =
-    dependencyWriter // for intellij not remove DoobieUtils.Mappings import
   private[sql] val table = "artifact_dependencies"
   private[sql] val fields = Seq(
     "source_group_id",

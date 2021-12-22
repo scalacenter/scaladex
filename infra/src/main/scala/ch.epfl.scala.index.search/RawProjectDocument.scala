@@ -2,11 +2,11 @@ package ch.epfl.scala.index.search
 
 import java.time.Instant
 
-import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.release.BinaryVersion
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.newModel.Artifact
 import ch.epfl.scala.index.newModel.Project
+import ch.epfl.scala.search.GithubInfoDocument
 import ch.epfl.scala.search.ProjectDocument
 import com.sksamuel.elastic4s.Indexable
 import io.circe.Codec
@@ -29,8 +29,8 @@ case class RawProjectDocument(
     sbtVersions: Seq[String],
     inverseProjectDependencies: Int,
     primaryTopic: Option[String],
-    githubInfo: Option[GithubInfo],
-    formerReferences: Seq[Project.Reference]
+    formerReferences: Seq[Project.Reference],
+    githubInfo: Option[GithubInfoDocument]
 ) {
   def toProjectDocument: ProjectDocument = ProjectDocument(
     organization,
@@ -46,8 +46,8 @@ case class RawProjectDocument(
     sbtVersions.flatMap(BinaryVersion.parse).filter(Platform.SbtPlugin.isValid).sorted,
     inverseProjectDependencies,
     primaryTopic,
-    githubInfo,
-    formerReferences
+    formerReferences,
+    githubInfo
   )
 }
 
@@ -73,8 +73,8 @@ object RawProjectDocument {
       sbtVersions.map(_.toString),
       inverseProjectDependencies,
       primaryTopic,
-      githubInfo,
-      formerReferences
+      formerReferences,
+      githubInfo
     )
   }
 }

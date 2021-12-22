@@ -17,7 +17,6 @@ import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Resolver
 import ch.epfl.scala.index.newModel.Artifact
-import ch.epfl.scala.index.newModel.ArtifactDependency
 import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.index.newModel.Project.DocumentationLink
 import ch.epfl.scala.index.newModel.Project.Organization
@@ -180,20 +179,6 @@ object DoobieUtils {
     implicit val projectReferenceWrite: doobie.Write[Project.Reference] =
       Write[(String, String)].contramap(p => (p.organization.value, p.repository.value))
 
-    implicit val dependencyWriter: Write[ArtifactDependency] =
-      Write[(String, String, String, String, String, String, String)]
-        .contramap { d =>
-          (
-            d.source.groupId,
-            d.source.artifactId,
-            d.source.version,
-            d.target.groupId,
-            d.target.artifactId,
-            d.target.version,
-            d.scope
-          )
-        }
-
     implicit val githubStatusRead: Read[GithubStatus] =
       Read[(String, Instant, Option[Organization], Option[Repository], Option[Int], Option[String])]
         .map {
@@ -201,7 +186,7 @@ object DoobieUtils {
           case ("Ok", updateDate, _, _, _, _)       => GithubStatus.Ok(updateDate)
           case ("NotFound", updateDate, _, _, _, _) => GithubStatus.NotFound(updateDate)
           case ("Moved", updateDate, Some(organization), Some(repository), _, _) =>
-            GithubStatus.Moved(updateDate, organization, repository)
+            GithubStatus.Moved(updateDate, Project.Reference(organization, repository))
           case ("Failed", updateDate, _, _, Some(errorCode), Some(errorMessage)) =>
             GithubStatus.Failed(updateDate, errorCode, errorMessage)
           case invalid =>
@@ -213,8 +198,8 @@ object DoobieUtils {
           case GithubStatus.Unknown(updateDate)  => ("Unknown", updateDate, None, None, None, None)
           case GithubStatus.Ok(updateDate)       => ("Ok", updateDate, None, None, None, None)
           case GithubStatus.NotFound(updateDate) => ("NotFound", updateDate, None, None, None, None)
-          case GithubStatus.Moved(updateDate, organization, repository) =>
-            ("Moved", updateDate, Some(organization), Some(repository), None, None)
+          case GithubStatus.Moved(updateDate, projectRef) =>
+            ("Moved", updateDate, Some(projectRef.organization), Some(projectRef.repository), None, None)
           case GithubStatus.Failed(updateDate, errorCode, errorMessage) =>
             ("Failed", updateDate, None, None, Some(errorCode), Some(errorMessage))
         }

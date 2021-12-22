@@ -212,7 +212,11 @@ lazy val core = project
       "com.lihaoyi" %% "fastparse" % "2.3.0",
       "joda-time" % "joda-time" % "2.10.10",
       "org.scalatest" %% "scalatest" % V.scalatest % Test
-    ),
+    ) ++ Seq(
+      "io.circe" %% "circe-core",
+      "io.circe" %% "circe-generic",
+      "io.circe" %% "circe-parser"
+    ).map(_ % V.circeVersion),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](ThisBuild / baseDirectory)
   )

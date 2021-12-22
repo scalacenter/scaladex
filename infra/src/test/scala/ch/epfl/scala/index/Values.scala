@@ -44,7 +44,6 @@ object Values {
         .copy(
           stars = Some(643),
           forks = Some(148),
-          contributorCount = 76,
           topics = Set("refactoring", "dotty", "linter", "metaprogramming", "scalafix", "sbt", "rewrite", "scala")
         )
     val dataForm: DataForm = DataForm(
@@ -62,7 +61,9 @@ object Values {
     )
     val project: Project =
       Project.default(reference, None, Some(githubInfo), Some(dataForm), now = now)
-    val projectDocument: ProjectDocument = ProjectDocument(project, Seq(artifact), 0, Seq.empty)
+
+    val projectDocument: ProjectDocument =
+      ProjectDocument(project.copy(creationDate = Some(now.minus(1, ChronoUnit.MINUTES))), Seq(artifact), 0, Seq.empty)
   }
 
   object PlayJsonExtra {
@@ -98,7 +99,6 @@ object Values {
       .copy(
         stars = Some(4337),
         forks = Some(1081),
-        contributorCount = 392,
         contributingGuide = Some(Url("https://github.com/typelevel/cats/blob/main/CONTRIBUTING.md")),
         chatroom = Some(Url("https://gitter.im/typelevel/cats")),
         beginnerIssues = List(issueAboutFoo, issueAboutBar)
@@ -156,7 +156,8 @@ object Values {
       )
     )
 
-    val projectDocument: ProjectDocument = ProjectDocument(project, allReleases, 1, Seq.empty)
+    val projectDocument: ProjectDocument =
+      ProjectDocument(project.copy(creationDate = Some(now.minus(1, ChronoUnit.MINUTES))), allReleases, 1, Seq.empty)
   }
 
   object CatsEffect {

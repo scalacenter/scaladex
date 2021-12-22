@@ -26,13 +26,15 @@ object ProjectTable {
     fr0"${ref.organization}, ${ref.repository}"
 
   private val allFields: Seq[String] = fields.map("p." + _) ++
-    GithubInfoTable.fields.drop(2).map("g." + _) ++
+    GithubInfoTable.fields.map("g." + _) ++
     ProjectUserFormTable.fields.drop(2).map("f." + _)
   private val allFieldsFr: Fragment = Fragment.const0(allFields.mkString(", "))
+
   private val fullTable: String =
     s"$table p " +
       s"LEFT JOIN ${GithubInfoTable.table} g ON p.organization = g.organization AND p.repository = g.repository " +
       s"LEFT JOIN ${ProjectUserFormTable.table} f ON p.organization = f.organization AND p.repository = f.repository"
+
   private val fullTableFr: Fragment = Fragment.const(fullTable)
 
   val insertIfNotExists: Update[(Project.Reference, GithubStatus)] =

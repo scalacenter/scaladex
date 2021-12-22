@@ -129,7 +129,7 @@ class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUser
                   SearchApi.Project(
                     organization.value,
                     repository.value,
-                    githubInfo.flatMap(_.logo.map(_.target)),
+                    githubInfo.flatMap(_.avatarUrl.map(_.target)),
                     artifactNames.map(_.value)
                   )
                 }

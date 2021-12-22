@@ -73,7 +73,7 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
   ): Future[Unit] =
     for {
       _ <- updateGithubStatus(p, githubStatus)
-      _ <- run(GithubInfoTable.insertOrUpdate(p)(githubInfo))
+      _ <- run(GithubInfoTable.insertOrUpdate(githubInfo))
     } yield ()
 
   override def createMovedProject(
@@ -85,8 +85,8 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
       oldProject <- findProject(oldRef)
       _ <- updateGithubStatus(oldRef, githubStatus)
       newProject = Project(
-        Project.Organization(info.owner),
-        Project.Repository(info.name),
+        info.organization,
+        info.repository,
         creationDate = oldProject.flatMap(_.creationDate), // todo:  from github
         GithubStatus.Ok(githubStatus.updateDate),
         Some(info),
@@ -95,7 +95,7 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
       _ <- run(ProjectTable.insertIfNotExists.run((newProject.reference, newProject.githubStatus)))
       _ <- updateProjectForm(newProject.reference, newProject.dataForm)
       _ <- newProject.githubInfo
-        .map(githubInfo => run(GithubInfoTable.insertOrUpdate(newProject.reference)(githubInfo)))
+        .map(githubInfo => run(GithubInfoTable.insertOrUpdate(githubInfo)))
         .getOrElse(Future.successful(()))
     } yield ()
 

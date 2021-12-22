@@ -5,13 +5,11 @@ import ch.epfl.scala.index.newModel.ProjectDependency
 import ch.epfl.scala.utils.DoobieUtils.Fragments.buildInsertOrUpdate
 import ch.epfl.scala.utils.DoobieUtils.Fragments.buildSelect
 import ch.epfl.scala.utils.DoobieUtils.Mappings._
-import ch.epfl.scala.utils.DoobieUtils.Mappings.dependencyWriter
 import doobie._
 import doobie.implicits._
 import doobie.util.fragment.Fragment
 
 object ProjectDependenciesTable {
-  private val _ = dependencyWriter // for intellij not remove DoobieUtils.Mappings import
   private val fields = Seq(
     "source_organization",
     "source_repository",

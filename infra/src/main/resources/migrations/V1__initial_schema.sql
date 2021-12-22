@@ -17,8 +17,6 @@ CREATE TABLE projects (
 CREATE TABLE github_info (
     organization           VARCHAR(39)  NOT NULL,
     repository             VARCHAR(100) NOT NULL,
-    name                   VARCHAR(100) NOT NULL, -- equivalent to repository
-    owner                  VARCHAR(39)  NOT NULL, -- equivalent to organization
     homepage               VARCHAR(2083),
     description            VARCHAR,
     logo                   VARCHAR(2083),
@@ -28,7 +26,6 @@ CREATE TABLE github_info (
     issues                 INT,
     readme                 TEXT,
     contributors           VARCHAR,
-    contributorCount       INT,
     commits                INT,
     topics                 VARCHAR(1024) NOT NULL,
     contributingGuide      VARCHAR(2083),
@@ -46,7 +43,7 @@ CREATE TABLE project_user_data (
    defaultArtifact      VARCHAR,
    strictVersions       BOOLEAN      NOT NULL,
    customScalaDoc       VARCHAR,
-   documentationLinks   VARCHAR,
+   documentationLinks   VARCHAR      NOT NULL,
    deprecated           BOOLEAN      NOT NULL,
    contributorsWanted   BOOLEAN      NOT NULL,
    artifactDeprecations VARCHAR,

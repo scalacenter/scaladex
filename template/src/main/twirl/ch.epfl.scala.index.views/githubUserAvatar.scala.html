@@ -1,7 +1,7 @@
 @import ch.epfl.scala.index.model.misc.{GithubInfo, AvatarUrl, Url}
 
-@(githubInfo: Option[GithubInfo], size: Int=28)
+@(avatarUrl: Option[Url], size: Int=28)
 
-<img src="@{ githubInfo.flatMap(_.logo) match {
+<img src="@{ avatarUrl match {
     case Some(Url(v)) => new AvatarUrl { val avatarUrl = v }.sizedAvatarUrl(size)
     case None => " /assets/img/avatar-list.png" }}" alt="project logo" loading="lazy">
