@@ -159,7 +159,7 @@ object Values {
     )
 
     val projectDocument: ProjectDocument =
-      ProjectDocument(project.copy(creationDate = Some(now.minus(1, ChronoUnit.MINUTES))), allReleases, 1, Seq.empty)
+      ProjectDocument(project.copy(creationDate = Some(now.minus(10, ChronoUnit.MINUTES))), allReleases, 1, Seq.empty)
   }
 
   object CatsEffect {
