@@ -2,10 +2,10 @@ package ch.epfl.scala.services.storage.sql.tables
 
 import ch.epfl.scala.index.Values
 import ch.epfl.scala.services.storage.sql.BaseDatabaseSuite
-import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-class ArtifactDependencyTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
+class ArtifactDependencyTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
   import Values._
 
   import ArtifactDependencyTable._
@@ -30,13 +30,11 @@ class ArtifactDependencyTableTests extends AsyncFunSpec with BaseDatabaseSuite w
     it("selectDirectDependencies") {
       val q = selectDirectDependencies(PlayJsonExtra.artifact)
       check(q)
-      succeed
     }
 
     it("selectReverseDependencies") {
       val q = selectReverseDependencies(PlayJsonExtra.artifact)
       check(q)
-      succeed
     }
     it("getAllProjectDependencies") {
       val q = getAllProjectDependencies()
