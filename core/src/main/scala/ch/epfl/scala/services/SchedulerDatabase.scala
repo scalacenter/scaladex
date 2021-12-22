@@ -11,7 +11,6 @@ import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.index.newModel.ProjectDependency
 
 trait SchedulerDatabase extends WebDatabase {
-  def insertOrUpdateProject(p: Project): Future[Unit]
   def getAllProjectRef(): Future[Seq[Project.Reference]]
   def getAllProjects(): Future[Seq[Project]]
   def updateReleases(release: Seq[Artifact], newRef: Project.Reference): Future[Int]

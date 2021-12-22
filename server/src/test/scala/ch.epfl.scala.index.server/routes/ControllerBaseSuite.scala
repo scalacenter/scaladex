@@ -44,8 +44,6 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
 
   class DatabaseMockApi() extends SchedulerDatabase {
 
-    override def insertOrUpdateProject(p: Project): Future[Unit] = ???
-
     override def createMovedProject(
         ref: Project.Reference,
         githubInfo: GithubInfo,
