@@ -27,7 +27,7 @@ class SearchSynchronizer(db: SchedulerDatabase, searchEngine: SearchEngine)(impl
             Project.Reference(newOrga, newRepo) -> Project.Reference(p.organization, p.repository)
         }
         .groupMap { case (newRef, ref) => newRef } { case (newRef, ref) => ref }
-      projectsToDelete = allProjectsAndStatus.collect { 
+      projectsToDelete = allProjectsAndStatus.collect {
         case (p, GithubStatus.NotFound(_) | GithubStatus.Failed(_, _, _)) => p.reference
       }
       projectsToSync = allProjectsAndStatus.collect { case (p, GithubStatus.Ok(_) | GithubStatus.Unknown(_)) => p }

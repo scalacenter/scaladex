@@ -6,7 +6,6 @@ import java.time.temporal.ChronoUnit
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubIssue
-import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.misc.Url
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Platform._
@@ -26,7 +25,7 @@ object Values {
     val reference: Project.Reference = Project.Reference.from("scalacenter", "scalafix")
     val creationDate: Instant = Instant.ofEpochMilli(1475505237265L)
     val artifactId: ArtifactId = ArtifactId.parse("scalafix-core_2.13").get
-    val release: Artifact = Artifact(
+    val artifact: Artifact = Artifact(
       groupId = GroupId("ch.epfl.scala"),
       artifactId = artifactId.value,
       version = SemanticVersion.tryParse("0.9.30").get,
@@ -48,7 +47,6 @@ object Values {
           contributorCount = 76,
           topics = Set("refactoring", "dotty", "linter", "metaprogramming", "scalafix", "sbt", "rewrite", "scala")
         )
-    val githubStatus: GithubStatus = GithubStatus.Ok(now)
     val dataForm: DataForm = DataForm(
       defaultStableVersion = false,
       defaultArtifact = None,
@@ -63,8 +61,8 @@ object Values {
       beginnerIssuesLabel = None
     )
     val project: Project =
-      Project.default(reference, Some(creationDate), Some(githubInfo), Some(dataForm))
-    val projectDocument: ProjectDocument = ProjectDocument(project, Seq(release), 0, Seq.empty)
+      Project.default(reference, None, Some(githubInfo), Some(dataForm), now = now)
+    val projectDocument: ProjectDocument = ProjectDocument(project, Seq(artifact), 0, Seq.empty)
   }
 
   object PlayJsonExtra {
@@ -78,7 +76,7 @@ object Values {
       platform = artifactId.platform,
       projectRef = reference,
       description = None,
-      releaseDate = None,
+      releaseDate = Some(Instant.ofEpochMilli(1411736618000L)),
       resolver = None,
       licenses = Set(),
       isNonStandardLib = false
@@ -93,11 +91,6 @@ object Values {
 
   object Cats {
     val reference: Project.Reference = Project.Reference.from("typelevel", "cats")
-    val project: Project = Project.default(
-      reference,
-      creationDate = Some(Instant.ofEpochMilli(1454649333334L)),
-      now = now
-    )
     val issueAboutFoo: GithubIssue = GithubIssue(1, "Issue about foo", Url("https://github.com/typelevel/cats/pull/1"))
     val issueAboutBar: GithubIssue = GithubIssue(2, "Issue about bar", Url("https://github.com/typelevel/cats/pull/2"))
     val githubInfo: GithubInfo = GithubInfo
@@ -110,7 +103,11 @@ object Values {
         chatroom = Some(Url("https://gitter.im/typelevel/cats")),
         beginnerIssues = List(issueAboutFoo, issueAboutBar)
       )
-    val projectWithGithubInfo: Project = project.copy(githubInfo = Some(githubInfo))
+    val project: Project = Project.default(
+      reference,
+      githubInfo = Some(githubInfo),
+      now = now
+    )
     private def getArtifact(
         name: String,
         platform: Platform,
@@ -125,7 +122,7 @@ object Values {
         platform = platform,
         projectRef = reference,
         description = None,
-        releaseDate = None,
+        releaseDate = Some(Instant.ofEpochMilli(1620911032000L)),
         resolver = None,
         licenses = Set(),
         isNonStandardLib = false
@@ -159,7 +156,7 @@ object Values {
       )
     )
 
-    val projectDocument: ProjectDocument = ProjectDocument(projectWithGithubInfo, allReleases, 1, Seq.empty)
+    val projectDocument: ProjectDocument = ProjectDocument(project, allReleases, 1, Seq.empty)
   }
 
   object CatsEffect {

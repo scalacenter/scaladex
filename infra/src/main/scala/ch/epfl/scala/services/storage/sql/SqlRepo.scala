@@ -76,16 +76,6 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
       _ <- run(GithubInfoTable.insertOrUpdate(p)(githubInfo))
     } yield ()
 
-  override def insertOrUpdateProject(project: Project): Future[Unit] =
-    for {
-      _ <- run(ProjectTable.insertIfNotExists.run((project.reference, project.githubStatus)))
-      _ <- updateGithubStatus(project.reference, project.githubStatus)
-      _ <- updateProjectForm(project.reference, project.dataForm)
-      _ <- project.githubInfo
-        .map(githubInfo => run(GithubInfoTable.insertOrUpdate(project.reference)(githubInfo)))
-        .getOrElse(Future.successful(()))
-    } yield ()
-
   override def createMovedProject(
       oldRef: Project.Reference,
       info: GithubInfo,
@@ -102,7 +92,11 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
         Some(info),
         oldProject.map(_.dataForm).getOrElse(Project.DataForm.default)
       )
-      _ <- insertOrUpdateProject(newProject)
+      _ <- run(ProjectTable.insertIfNotExists.run((newProject.reference, newProject.githubStatus)))
+      _ <- updateProjectForm(newProject.reference, newProject.dataForm)
+      _ <- newProject.githubInfo
+        .map(githubInfo => run(GithubInfoTable.insertOrUpdate(newProject.reference)(githubInfo)))
+        .getOrElse(Future.successful(()))
     } yield ()
 
   override def updateProjectForm(ref: Project.Reference, dataForm: Project.DataForm): Future[Unit] =
@@ -128,9 +122,6 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
 
   override def countDependencies(): Future[Long] =
     run(ArtifactDependencyTable.indexedDependencies().unique)
-
-  def findDependencies(release: Artifact): Future[List[ArtifactDependency]] =
-    run(ArtifactDependencyTable.find(release.mavenReference).to[List])
 
   override def findDirectDependencies(release: Artifact): Future[List[ArtifactDependency.Direct]] =
     run(ArtifactDependencyTable.selectDirectDependencies(release).to[List])
