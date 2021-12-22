@@ -73,6 +73,10 @@ object DataMapping extends ElasticDsl {
       .fields(
         keywordField("keyword").normalizer("lowercase")
       ),
-    nestedField("githubInfo.beginnerIssues")
+    nestedField("githubInfo.beginnerIssues"),
+    objectField("formerReferences").fields(
+      textField("organization").analyzer("standard"),
+      textField("repository").analyzer("standard")
+    )
   )
 }

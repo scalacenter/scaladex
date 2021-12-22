@@ -32,6 +32,7 @@ object Codecs {
   implicit val githubIssue: Codec[GithubIssue] = deriveCodec[GithubIssue]
   implicit val organization: Codec[Project.Organization] = fromString(_.value, Project.Organization.apply)
   implicit val repository: Codec[Project.Repository] = fromString(_.value, Project.Repository.apply)
+  implicit val reference: Codec[Project.Reference] = deriveCodec
   implicit val artifactName: Codec[Artifact.Name] = fromString(_.value, Artifact.Name.apply)
   implicit val instant: Codec[Instant] = fromLong[Instant](_.toEpochMilli, Instant.ofEpochMilli)
   implicit val githubInfo: Codec[GithubInfo] = deriveCodec[GithubInfo]

@@ -8,6 +8,7 @@ import ch.epfl.scala.index.Values
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Scala3Version
 import ch.epfl.scala.index.model.release.ScalaVersion
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.search.SearchParams
 import org.scalatest._
 import org.scalatest.funsuite.AsyncFunSuite
@@ -107,5 +108,24 @@ class ESRepoTests extends AsyncFunSuite with Matchers with BeforeAndAfterAll {
       _ <- searchEngine.refresh()
       scalaNativeVersions <- searchEngine.getScalaNativeVersions(params)
     } yield scalaNativeVersions should contain theSameElementsAs expected
+  }
+
+  test("remove missing document should not fail") {
+    for {
+      _ <- searchEngine.delete(Cats.reference)
+    } yield succeed
+  }
+
+  test("should find project by former reference") {
+    val cats = Cats.projectDocument.copy(formerReferences = Seq(Project.Reference.from("kindlevel", "dogs")))
+    for {
+      _ <- searchEngine.insert(cats)
+      _ <- searchEngine.refresh()
+      byFormerOrga <- searchEngine.find(SearchParams("kindlevel"))
+      byFormerRepo <- searchEngine.find(SearchParams("dogs"))
+    } yield {
+      byFormerOrga.items.map(_.document) should contain theSameElementsAs Seq(cats)
+      byFormerRepo.items.map(_.document) should contain theSameElementsAs Seq(cats)
+    }
   }
 }

@@ -42,6 +42,7 @@ class ESRepo(esClient: ElasticClient, index: String)(implicit ec: ExecutionConte
     extends SearchEngine
     with LazyLogging
     with Closeable {
+
   import ESRepo._
   import ElasticDsl._
 
@@ -108,6 +109,11 @@ class ESRepo(esClient: ElasticClient, index: String)(implicit ec: ExecutionConte
     val rawDocument = RawProjectDocument.from(project)
     val insertion = indexInto(index).withId(project.id).source(rawDocument)
     esClient.execute(insertion).map(_ => ())
+  }
+
+  override def delete(reference: Project.Reference): Future[Unit] = {
+    val deletion = deleteById(index, reference.toString)
+    esClient.execute(deletion).map(_ => ())
   }
 
   def refresh(): Future[Unit] =
@@ -304,8 +310,8 @@ object ESRepo extends LazyLogging {
       case Some(criteria @ "dependent") =>
         fieldSort("inverseProjectDependencies").missing("0").order(SortOrder.Desc)
       case None | Some("relevant") => scoreSort().order(SortOrder.Desc)
-      case Some("created")         => fieldSort("createdAt").desc()
-      case Some("updated")         => fieldSort("updatedAt").desc()
+      case Some("created")         => fieldSort("creationDate").desc()
+      case Some("updated")         => fieldSort("update").desc()
       case Some(unknown) =>
         logger.warn(s"Unknown sort criteria: $unknown")
         scoreSort().order(SortOrder.Desc)
@@ -339,6 +345,8 @@ object ESRepo extends LazyLogging {
           .field("repository", 6)
           .field("primaryTopic", 5)
           .field("organization", 5)
+          .field("formerReferences.repository", 5)
+          .field("formerReferences.organization", 4)
           .field("githubInfo.description", 4)
           .field("githubInfo.topics", 4)
           .field("artifactNames", 2)
@@ -363,6 +371,8 @@ object ESRepo extends LazyLogging {
               prefixQuery("repository", prefix).boost(6),
               prefixQuery("primaryTopic", prefix).boost(5),
               prefixQuery("organization", prefix).boost(5),
+              prefixQuery("formerReferences.repository", prefix).boost(5),
+              prefixQuery("formerReferences.organization", prefix).boost(4),
               prefixQuery("githubInfo.description", prefix).boost(4),
               prefixQuery("githubInfo.topics", prefix).boost(4),
               prefixQuery("artifactNames", prefix).boost(2)

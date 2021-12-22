@@ -64,7 +64,7 @@ object Values {
     )
     val project: Project =
       Project.default(reference, Some(creationDate), Some(githubInfo), Some(dataForm))
-    val projectDocument: ProjectDocument = ProjectDocument(project, Seq(release), 0)
+    val projectDocument: ProjectDocument = ProjectDocument(project, Seq(release), 0, Seq.empty)
   }
 
   object PlayJsonExtra {
@@ -159,7 +159,7 @@ object Values {
       )
     )
 
-    val projectDocument: ProjectDocument = ProjectDocument(projectWithGithubInfo, allReleases, 1)
+    val projectDocument: ProjectDocument = ProjectDocument(projectWithGithubInfo, allReleases, 1, Seq.empty)
   }
 
   object CatsEffect {

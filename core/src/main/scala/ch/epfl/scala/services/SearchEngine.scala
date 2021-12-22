@@ -4,6 +4,7 @@ import scala.concurrent.Future
 
 import ch.epfl.scala.index.model.release.BinaryVersion
 import ch.epfl.scala.index.model.release.Platform
+import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.search.Page
 import ch.epfl.scala.search.ProjectDocument
 import ch.epfl.scala.search.ProjectHit
@@ -11,6 +12,7 @@ import ch.epfl.scala.search.SearchParams
 
 trait SearchEngine {
   def insert(project: ProjectDocument): Future[Unit]
+  def delete(reference: Project.Reference): Future[Unit]
 
   def find(params: SearchParams): Future[Page[ProjectHit]]
   def autocomplete(params: SearchParams): Future[Seq[ProjectDocument]]
