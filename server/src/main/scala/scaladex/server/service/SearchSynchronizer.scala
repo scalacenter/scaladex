@@ -23,8 +23,8 @@ class SearchSynchronizer(db: SchedulerDatabase, searchEngine: SearchEngine)(impl
       // Create a map of project reference to their old references
       movedProjects = allProjectsAndStatus
         .collect {
-          case (p, GithubStatus.Moved(_, newOrga, newRepo)) =>
-            Project.Reference(newOrga, newRepo) -> Project.Reference(p.organization, p.repository)
+          case (p, GithubStatus.Moved(_, newRef)) =>
+            newRef -> Project.Reference(p.organization, p.repository)
         }
         .groupMap { case (newRef, ref) => newRef } { case (newRef, ref) => ref }
       projectsToDelete = allProjectsAndStatus.collect {

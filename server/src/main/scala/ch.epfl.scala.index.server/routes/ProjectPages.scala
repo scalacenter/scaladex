@@ -246,8 +246,8 @@ class ProjectPages(
             parameters(("artifact".?, "version".?, "target".?, "selected".?)) { (artifact, version, target, selected) =>
               val projectRef = Project.Reference(organization, repository)
               val fut: Future[StandardRoute] = db.findProject(projectRef).flatMap {
-                case Some(Project(_, _, _, GithubStatus.Moved(_, newOrg, newRepo), _, _)) =>
-                  Future.successful(redirect(Uri(s"/$newOrg/$newRepo"), StatusCodes.PermanentRedirect))
+                case Some(Project(_, _, _, GithubStatus.Moved(_, newProjectRef), _, _)) =>
+                  Future.successful(redirect(Uri(s"/$newProjectRef"), StatusCodes.PermanentRedirect))
                 case Some(project) =>
                   val releaseFut: Future[StandardRoute] =
                     getSelectedRelease(

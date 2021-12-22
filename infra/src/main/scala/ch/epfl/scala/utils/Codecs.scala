@@ -4,18 +4,17 @@ import java.time.Instant
 
 import ch.epfl.scala.index.model.License
 import ch.epfl.scala.index.model.misc.GithubContributor
-import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubIssue
-import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.misc.Url
 import ch.epfl.scala.index.newModel.Artifact
 import ch.epfl.scala.index.newModel.Project
+import ch.epfl.scala.search.GithubInfoDocument
 import io.circe._
 import io.circe.generic.semiauto.deriveCodec
 
 object Codecs {
   implicit val license: Codec[License] = deriveCodec[License]
-  implicit val url: Codec[Url] = fromString(_.target, Url(_))
+  implicit val url: Codec[Url] = fromString(_.target, Url)
 
   implicit val documentation: Codec[Project.DocumentationLink] =
     Codec.from(
@@ -35,8 +34,7 @@ object Codecs {
   implicit val reference: Codec[Project.Reference] = deriveCodec
   implicit val artifactName: Codec[Artifact.Name] = fromString(_.value, Artifact.Name.apply)
   implicit val instant: Codec[Instant] = fromLong[Instant](_.toEpochMilli, Instant.ofEpochMilli)
-  implicit val githubInfo: Codec[GithubInfo] = deriveCodec[GithubInfo]
-  implicit val githubStatus: Codec[GithubStatus] = deriveCodec[GithubStatus]
+  implicit val githubInfoDocumentCodec: Codec[GithubInfoDocument] = deriveCodec[GithubInfoDocument]
   implicit val dataForm: Codec[Project.DataForm] = deriveCodec[Project.DataForm]
 
   private def fromLong[A](encode: A => Long, decode: Long => A): Codec[A] =

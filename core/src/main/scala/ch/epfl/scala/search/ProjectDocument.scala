@@ -2,7 +2,6 @@ package ch.epfl.scala.search
 
 import java.time.Instant
 
-import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.release.BinaryVersion
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Platform.SbtPlugin
@@ -26,8 +25,8 @@ final case class ProjectDocument(
     sbtVersions: Seq[BinaryVersion],
     inverseProjectDependencies: Int,
     primaryTopic: Option[String],
-    githubInfo: Option[GithubInfo],
-    formerReferences: Seq[Project.Reference]
+    formerReferences: Seq[Project.Reference],
+    githubInfo: Option[GithubInfoDocument]
 ) {
   def reference: Project.Reference = Project.Reference(organization, repository)
   def id: String = reference.toString
@@ -56,8 +55,9 @@ object ProjectDocument {
       platforms.collect { case SbtPlugin(_, sbtV) => sbtV }.sorted.distinct,
       inverseProjectDependencies,
       dataForm.primaryTopic,
-      githubInfo,
-      formerReferences
+      formerReferences,
+      project.githubInfo.map(_.toDocument)
     )
   }
+
 }

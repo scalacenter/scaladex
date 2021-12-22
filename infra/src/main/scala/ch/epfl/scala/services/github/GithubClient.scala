@@ -85,16 +85,15 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     }
 
   private def update(repoInfo: GithubModel.Repository): Future[GithubInfo] = {
-    val repo = repoInfo.repoName
+    val ref = repoInfo.projectRef
     for {
-      readme <- getReadme(repo)
-      communityProfile <- getCommunityProfile(repo)
-      contributors <- getContributors(repo)
-      openIssues <- getOpenIssues(repo)
-      chatroom <- getGiterChatRoom(repo)
+      readme <- getReadme(ref)
+      communityProfile <- getCommunityProfile(ref)
+      contributors <- getContributors(ref)
+      openIssues <- getOpenIssues(ref)
+      chatroom <- getGiterChatRoom(ref)
     } yield GithubInfo(
-      name = repoInfo.name,
-      owner = repoInfo.owner,
+      projectRef = ref,
       homepage = repoInfo.homepage.map(Url),
       description = repoInfo.description,
       logo = Option(repoInfo.avatartUrl).map(Url),
@@ -104,7 +103,6 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       issues = Option(repoInfo.open_issues),
       readme = Option(readme),
       contributors = contributors.map(_.toGithubContributor),
-      contributorCount = contributors.size,
       commits = Some(contributors.foldLeft(0)(_ + _.contributions)),
       topics = repoInfo.topics.toSet,
       contributingGuide = communityProfile.flatMap(_.contributingFile).map(Url),

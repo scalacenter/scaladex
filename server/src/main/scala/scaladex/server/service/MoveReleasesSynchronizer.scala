@@ -15,8 +15,8 @@ class MoveReleasesSynchronizer(db: SchedulerDatabase)(implicit ec: ExecutionCont
     for {
       allProjects <- db.getAllProjects()
       moved = allProjects.collect {
-        case Project(oldRog, oldRepo, _, _ @GithubStatus.Moved(_, newOrg, newRepo), _, _) =>
-          Project.Reference(oldRog, oldRepo) -> Project.Reference(newOrg, newRepo)
+        case Project(oldRef, oldRepo, _, _ @GithubStatus.Moved(_, newRef), _, _) =>
+          Project.Reference(oldRef, oldRepo) -> newRef
       }.toMap
       numberOfUpdated <- moved.map {
         case (oldRef, newRef) => db.findReleases(oldRef).flatMap(releases => db.updateReleases(releases, newRef))
