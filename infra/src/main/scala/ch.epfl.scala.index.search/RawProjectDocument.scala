@@ -20,8 +20,8 @@ case class RawProjectDocument(
     repository: Project.Repository,
     artifactNames: Seq[Artifact.Name],
     hasCli: Boolean,
-    createdAt: Option[Instant],
-    updatedAt: Option[Instant],
+    creationDate: Option[Instant],
+    updateDate: Option[Instant],
     platformTypes: Seq[String],
     scalaVersions: Seq[String],
     scalaJsVersions: Seq[String],
@@ -29,15 +29,16 @@ case class RawProjectDocument(
     sbtVersions: Seq[String],
     inverseProjectDependencies: Int,
     primaryTopic: Option[String],
-    githubInfo: Option[GithubInfo]
+    githubInfo: Option[GithubInfo],
+    formerReferences: Seq[Project.Reference]
 ) {
   def toProjectDocument: ProjectDocument = ProjectDocument(
     organization,
     repository,
     artifactNames,
     hasCli,
-    createdAt,
-    updatedAt,
+    creationDate,
+    updateDate,
     platformTypes.flatMap(Platform.PlatformType.ofName).sorted,
     scalaVersions,
     scalaJsVersions.flatMap(BinaryVersion.parse).filter(Platform.ScalaJs.isValid).sorted,
@@ -45,14 +46,15 @@ case class RawProjectDocument(
     sbtVersions.flatMap(BinaryVersion.parse).filter(Platform.SbtPlugin.isValid).sorted,
     inverseProjectDependencies,
     primaryTopic,
-    githubInfo
+    githubInfo,
+    formerReferences
   )
 }
 
 object RawProjectDocument {
   import ch.epfl.scala.utils.Codecs._
   import io.circe.syntax._
-  implicit val codec: Codec[RawProjectDocument] = semiauto.deriveCodec[RawProjectDocument]
+  implicit val codec: Codec[RawProjectDocument] = semiauto.deriveCodec
   implicit val indexable: Indexable[RawProjectDocument] = rawDocument => Printer.noSpaces.print(rawDocument.asJson)
 
   def from(project: ProjectDocument): RawProjectDocument = {
@@ -62,8 +64,8 @@ object RawProjectDocument {
       repository,
       artifactNames,
       hasCli,
-      createdAt,
-      updatedAt,
+      creationDate,
+      updateDate,
       platformTypes.map(_.name),
       scalaVersions,
       scalaJsVersions.map(_.toString),
@@ -71,7 +73,8 @@ object RawProjectDocument {
       sbtVersions.map(_.toString),
       inverseProjectDependencies,
       primaryTopic,
-      githubInfo
+      githubInfo,
+      formerReferences
     )
   }
 }

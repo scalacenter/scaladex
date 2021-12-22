@@ -53,7 +53,7 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
   }
 
   override def getAllProjectRef(): Future[Seq[Project.Reference]] =
-    run(ProjectTable.selectAllProjectRef().to[List])
+    run(ProjectTable.selectAllProjectRef.to[List])
 
   override def getAllProjects(): Future[Seq[Project]] =
     run(ProjectTable.selectAllProjects.to[Seq])
@@ -97,8 +97,8 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
       newProject = Project(
         Project.Organization(info.owner),
         Project.Repository(info.name),
-        created = oldProject.flatMap(_.created), // todo:  from github
-        GithubStatus.Ok(githubStatus.when),
+        creationDate = oldProject.flatMap(_.creationDate), // todo:  from github
+        GithubStatus.Ok(githubStatus.updateDate),
         Some(info),
         oldProject.map(_.dataForm).getOrElse(Project.DataForm.default)
       )
@@ -121,7 +121,7 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
     run(ArtifactTable.selectArtifacts(projectRef, artifactName).to[List])
 
   override def countProjects(): Future[Long] =
-    run(ProjectTable.indexedProjects().unique)
+    run(ProjectTable.countProjects.unique)
 
   override def countArtifacts(): Future[Long] =
     run(ArtifactTable.indexedArtifacts().unique)

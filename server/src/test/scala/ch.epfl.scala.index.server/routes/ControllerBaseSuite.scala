@@ -36,8 +36,8 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
     // Insert mock data
     implicit val ec = ExecutionContext.global
     for {
-      _ <- db.insertRelease(release, Seq.empty, now)
-      _ <- db.updateProjectCreationDate(project.reference, project.created.get)
+      _ <- db.insertRelease(artifact, Seq.empty, now)
+      _ <- db.updateProjectCreationDate(project.reference, project.creationDate.get)
       _ <- db.updateGithubInfoAndStatus(project.reference, project.githubInfo.get, project.githubStatus)
     } yield ()
   }
@@ -130,7 +130,7 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
     override def computeAllProjectsCreationDate(): Future[Seq[(Instant, Project.Reference)]] = ???
 
     override def updateProjectCreationDate(ref: Project.Reference, creationDate: Instant): Future[Unit] =
-      Future.successful(projects.update(ref, projects(ref).copy(created = Some(creationDate))))
+      Future.successful(projects.update(ref, projects(ref).copy(creationDate = Some(creationDate))))
 
     override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] = ???
 

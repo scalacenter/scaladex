@@ -27,7 +27,7 @@ object ArtifactTable {
     "organization",
     "repository",
     "description",
-    "released_at",
+    "release_date",
     "resolver",
     "licenses",
     "isNonStandardLib"
@@ -51,7 +51,7 @@ object ArtifactTable {
     buildSelect(
       tableFr,
       fr0"*",
-      whereRef(ref) ++ fr0" AND artifact=$artifactName"
+      whereRef(ref) ++ fr0" AND artifact_name=$artifactName"
     ).query[Artifact]
 
   def selectPlatform(): Query0[(Project.Organization, Project.Repository, Platform)] =
@@ -64,8 +64,8 @@ object ArtifactTable {
   def findOldestArtifactsPerProjectReference(): Query0[(Instant, Project.Reference)] =
     buildSelect(
       tableFr,
-      fr0"min(released_at) as oldest_artifact, organization, repository",
-      fr0"where released_at IS NOT NULL" ++ space ++ fr0"group by organization, repository"
+      fr0"min(release_date) as oldest_artifact, organization, repository",
+      fr0"where release_date IS NOT NULL" ++ space ++ fr0"group by organization, repository"
     ).query[(Instant, Project.Reference)]
 
 }

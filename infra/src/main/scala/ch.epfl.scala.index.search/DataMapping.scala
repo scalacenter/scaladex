@@ -54,8 +54,8 @@ object DataMapping extends ElasticDsl {
         keywordField("keyword").normalizer("lowercase")
       ),
     keywordField("artifactNames").normalizer("lowercase"),
-    dateField("createdAt"),
-    dateField("updatedAt"),
+    dateField("creationDate"),
+    dateField("updateDate"),
     keywordField("platformTypes"),
     keywordField("scalaVersions"),
     keywordField("scalaJsVersions"),
@@ -68,11 +68,18 @@ object DataMapping extends ElasticDsl {
       ),
     textField("githubInfo.description").analyzer("english"),
     textField("githubInfo.readme").analyzer("english_readme"),
+    intField("githubInfo.forks"),
+    intField("githubInfo.stars"),
+    intField("githubInfo.contributorCount"),
     textField("githubInfo.topics")
       .analyzer("standard")
       .fields(
         keywordField("keyword").normalizer("lowercase")
       ),
-    nestedField("githubInfo.beginnerIssues")
+    nestedField("githubInfo.beginnerIssues"),
+    objectField("formerReferences").fields(
+      textField("organization").analyzer("standard"),
+      textField("repository").analyzer("standard")
+    )
   )
 }

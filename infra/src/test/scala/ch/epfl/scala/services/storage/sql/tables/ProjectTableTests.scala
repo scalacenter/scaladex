@@ -5,13 +5,15 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
 class ProjectTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
-  it("insertOrUpdateRef") {
+  it("check insertIfNotExists") {
     check(ProjectTable.insertIfNotExists)
   }
 
-  it("updateGithubStatus") {
-    ProjectTable.updateGithubStatus.sql shouldBe
-      s"""UPDATE projects SET github_status=? WHERE organization=? AND repository=?""".stripMargin
-        .filterNot(_ == '\n')
+  it("check updateGithubStatus") {
+    check(ProjectTable.updateGithubStatus)
+  }
+
+  it("check selectAllProjects") {
+    check(ProjectTable.selectAllProjects)
   }
 }

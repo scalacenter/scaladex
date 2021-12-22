@@ -1,7 +1,5 @@
 package ch.epfl.scala.services.storage.sql
 
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -128,10 +126,9 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
           case (creationDate, ref) => db.updateProjectCreationDate(ref, creationDate)
         }
         res <- db.findProject(Scalafix.reference)
-      } yield res.get.created.get shouldBe Scalafix.release.releasedAt.get
+      } yield res.get.creationDate.get shouldBe Scalafix.release.releaseDate.get
     }
     it("should createMovedProject") {
-      val now = Instant.now().truncatedTo(ChronoUnit.MILLIS)
       val newRef = Project.Reference.from("scala", "fix")
       val newGithubInfo =
         Scalafix.githubInfo.copy(owner = newRef.organization.value, name = newRef.repository.value, stars = Some(10000))

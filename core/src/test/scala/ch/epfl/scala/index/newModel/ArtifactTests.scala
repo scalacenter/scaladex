@@ -193,7 +193,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       platform = artifactIdResult.platform,
       projectRef = Project.Reference.from("", ""),
       description = None,
-      releasedAt = None,
+      releaseDate = None,
       resolver = resolver,
       licenses = Set(),
       isNonStandardLib = false

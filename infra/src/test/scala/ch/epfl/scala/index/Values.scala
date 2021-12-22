@@ -34,7 +34,7 @@ object Values {
       platform = artifactId.platform,
       projectRef = reference,
       description = None,
-      releasedAt = Some(creationDate),
+      releaseDate = Some(creationDate),
       resolver = None,
       licenses = Set(),
       isNonStandardLib = false
@@ -64,7 +64,7 @@ object Values {
     )
     val project: Project =
       Project.default(reference, Some(creationDate), Some(githubInfo), Some(dataForm))
-    val projectDocument: ProjectDocument = ProjectDocument(project, Seq(release), 0)
+    val projectDocument: ProjectDocument = ProjectDocument(project, Seq(release), 0, Seq.empty)
   }
 
   object PlayJsonExtra {
@@ -78,7 +78,7 @@ object Values {
       platform = artifactId.platform,
       projectRef = reference,
       description = None,
-      releasedAt = None,
+      releaseDate = None,
       resolver = None,
       licenses = Set(),
       isNonStandardLib = false
@@ -95,7 +95,7 @@ object Values {
     val reference: Project.Reference = Project.Reference.from("typelevel", "cats")
     val project: Project = Project.default(
       reference,
-      created = Some(Instant.ofEpochMilli(1454649333334L)),
+      creationDate = Some(Instant.ofEpochMilli(1454649333334L)),
       now = now
     )
     val issueAboutFoo: GithubIssue = GithubIssue(1, "Issue about foo", Url("https://github.com/typelevel/cats/pull/1"))
@@ -125,7 +125,7 @@ object Values {
         platform = platform,
         projectRef = reference,
         description = None,
-        releasedAt = None,
+        releaseDate = None,
         resolver = None,
         licenses = Set(),
         isNonStandardLib = false
@@ -159,7 +159,7 @@ object Values {
       )
     )
 
-    val projectDocument: ProjectDocument = ProjectDocument(projectWithGithubInfo, allReleases, 1)
+    val projectDocument: ProjectDocument = ProjectDocument(projectWithGithubInfo, allReleases, 1, Seq.empty)
   }
 
   object CatsEffect {

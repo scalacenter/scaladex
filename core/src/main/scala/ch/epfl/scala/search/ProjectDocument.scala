@@ -17,8 +17,8 @@ final case class ProjectDocument(
     repository: Project.Repository,
     artifactNames: Seq[Artifact.Name],
     hasCli: Boolean,
-    createdAt: Option[Instant],
-    updatedAt: Option[Instant],
+    creationDate: Option[Instant],
+    updateDate: Option[Instant],
     platformTypes: Seq[Platform.PlatformType],
     scalaVersions: Seq[String], // scala version families TODO move to BinaryVersion
     scalaJsVersions: Seq[BinaryVersion],
@@ -26,14 +26,20 @@ final case class ProjectDocument(
     sbtVersions: Seq[BinaryVersion],
     inverseProjectDependencies: Int,
     primaryTopic: Option[String],
-    githubInfo: Option[GithubInfo]
+    githubInfo: Option[GithubInfo],
+    formerReferences: Seq[Project.Reference]
 ) {
   def reference: Project.Reference = Project.Reference(organization, repository)
   def id: String = reference.toString
 }
 
 object ProjectDocument {
-  def apply(project: Project, releases: Seq[Artifact], inverseProjectDependencies: Int): ProjectDocument = {
+  def apply(
+      project: Project,
+      releases: Seq[Artifact],
+      inverseProjectDependencies: Int,
+      formerReferences: Seq[Project.Reference]
+  ): ProjectDocument = {
     import project._
     val platforms = releases.map(_.platform)
     ProjectDocument(
@@ -41,8 +47,8 @@ object ProjectDocument {
       repository,
       releases.map(_.artifactName).sorted.distinct,
       hasCli,
-      created,
-      updatedAt = None,
+      creationDate,
+      updateDate = None,
       platforms.map(_.platformType).sorted.distinct,
       platforms.flatMap(_.scalaVersion).map(_.family).sorted.distinct,
       platforms.collect { case ScalaJs(_, scalaJsV) => scalaJsV }.sorted.distinct,
@@ -50,7 +56,8 @@ object ProjectDocument {
       platforms.collect { case SbtPlugin(_, sbtV) => sbtV }.sorted.distinct,
       inverseProjectDependencies,
       dataForm.primaryTopic,
-      githubInfo
+      githubInfo,
+      formerReferences
     )
   }
 }

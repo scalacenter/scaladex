@@ -27,7 +27,8 @@ object ProjectUserFormTable {
     "beginnerIssuesLabel"
   )
 
-  val table: Fragment = Fragment.const0("project_user_data")
+  val table: String = "project_user_data"
+  val tableFr: Fragment = Fragment.const0(table)
   private val fieldsFr: Fragment = Fragment.const0(fields.mkString(", "))
   private def values(p: Project.Reference, userData: Project.DataForm): Fragment =
     fr0"${p.organization}, ${p.repository}, ${userData.defaultStableVersion}, ${userData.defaultArtifact}," ++
@@ -40,7 +41,7 @@ object ProjectUserFormTable {
     val onConflict = fr0"organization, repository"
     val doAction = fr0"NOTHING"
     buildInsertOrUpdate(
-      table,
+      tableFr,
       fieldsFr,
       values(ref, userDataForm),
       onConflict,
@@ -49,10 +50,10 @@ object ProjectUserFormTable {
   }
 
   def indexedProjects(): doobie.Query0[Long] =
-    buildSelect(table, fr0"count(*)").query[Long]
+    buildSelect(tableFr, fr0"count(*)").query[Long]
 
   def indexedProjectUserForm(): doobie.Query0[Long] =
-    buildSelect(table, fr0"count(*)").query[Long]
+    buildSelect(tableFr, fr0"count(*)").query[Long]
 
   val formDataReader: Read[Project.DataForm] =
     Read[(Organization, Repository, Project.DataForm)].map { case (_, _, userFormData) => userFormData }

@@ -2,21 +2,16 @@ package ch.epfl.scala.services.storage.sql.tables
 
 import ch.epfl.scala.index.Values
 import ch.epfl.scala.services.storage.sql.BaseDatabaseSuite
-import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-class ArtifactTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
+class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
   import Values._
 
   import ArtifactTable._
   describe("should generate the query") {
-    it("insert") {
+    it("check insert") {
       check(ArtifactTable.insert)
-      ArtifactTable.insert.sql shouldBe
-        s"""|INSERT INTO artifacts (group_id, artifact_id, version, artifact_name, platform,
-            | organization, repository, description, released_at, resolver,
-            | licenses, isNonStandardLib) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
-          .filterNot(_ == '\n')
     }
     it("selectArtifacts") {
       val q = selectArtifacts(PlayJsonExtra.reference)
@@ -25,14 +20,13 @@ class ArtifactTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matche
         s"""SELECT * FROM artifacts WHERE organization=? AND repository=?""".stripMargin
           .filterNot(_ == '\n')
     }
-    it("findOldestArtifactsPerProjectReference") {
+    it("check selectArtifacts by name") {
+      val q = selectArtifacts(Cats.reference, Cats.core_3.artifactName)
+      check(q)
+    }
+    it("check findOldestArtifactsPerProjectReference") {
       val q = findOldestArtifactsPerProjectReference()
       check(q)
-      q.sql shouldBe
-        s"""SELECT min(released_at) as oldest_artifact, organization, repository
-           | FROM artifacts where released_at IS NOT NULL
-           | group by organization, repository""".stripMargin
-          .filterNot(_ == '\n')
     }
     it("updateProjectRef") {
       val q = updateProjectRef
