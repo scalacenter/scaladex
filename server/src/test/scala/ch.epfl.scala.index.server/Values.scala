@@ -20,7 +20,7 @@ object Values {
   val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
   // Mock Data for tests
   val artifactId: ArtifactId = ArtifactId.parse("play-json-extra_2.11").get
-  val release: Artifact = Artifact(
+  val artifact: Artifact = Artifact(
     groupId = GroupId("com.github.xuwei-k"),
     artifactId = artifactId.value,
     version = SemanticVersion.tryParse("0.1.1-play2.3-M1").get,
@@ -28,17 +28,17 @@ object Values {
     platform = artifactId.platform,
     projectRef = Project.Reference.from("xuwei-k", "play-json-extra"),
     description = None,
-    releasedAt = None,
+    releaseDate = None,
     resolver = None,
     licenses = Set(),
     isNonStandardLib = false
   )
   val project: Project = Project(
-    release.projectRef.organization,
-    release.projectRef.repository,
-    created = Some(now),
+    artifact.projectRef.organization,
+    artifact.projectRef.repository,
+    creationDate = Some(now),
     GithubStatus.Ok(now),
-    Some(GithubInfo.empty(release.projectRef.organization.value, release.projectRef.repository.value)),
+    Some(GithubInfo.empty(artifact.projectRef.organization.value, artifact.projectRef.repository.value)),
     Project.DataForm.default
   )
 

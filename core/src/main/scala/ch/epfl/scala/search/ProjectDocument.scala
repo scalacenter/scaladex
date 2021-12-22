@@ -41,7 +41,7 @@ object ProjectDocument {
       repository,
       releases.map(_.artifactName).sorted.distinct,
       hasCli,
-      created,
+      creationDate,
       updatedAt = None,
       platforms.map(_.platformType).sorted.distinct,
       platforms.flatMap(_.scalaVersion).map(_.family).sorted.distinct,

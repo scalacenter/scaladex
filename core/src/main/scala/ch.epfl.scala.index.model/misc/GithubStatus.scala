@@ -5,16 +5,16 @@ import java.time.Instant
 import ch.epfl.scala.index.newModel.Project
 
 sealed trait GithubStatus {
-  val when: Instant
+  val update: Instant
 
   override def toString: String = this match {
-    case GithubStatus.Ok(when)      => s"GithubStatus.Ok($when)"
-    case GithubStatus.Unknown(when) => s"GithubStatus.Unkhown($when)"
-    case GithubStatus.Moved(when, organization, repository) =>
-      s"GithubStatus.Moved($when, newName = $organization/$repository)"
-    case GithubStatus.NotFound(when) => s"GithubStatus.NotFound($when)"
-    case GithubStatus.Failed(when, errorCode, errorMessage) =>
-      s"GithubStatus.Failed($when, code = $errorCode, reason = $errorMessage)"
+    case GithubStatus.Ok(update)      => s"GithubStatus.Ok($update)"
+    case GithubStatus.Unknown(update) => s"GithubStatus.Unkhown($update)"
+    case GithubStatus.Moved(update, organization, repository) =>
+      s"GithubStatus.Moved($update, newName = $organization/$repository)"
+    case GithubStatus.NotFound(update) => s"GithubStatus.NotFound($update)"
+    case GithubStatus.Failed(update, errorCode, errorMessage) =>
+      s"GithubStatus.Failed($update, code = $errorCode, reason = $errorMessage)"
   }
 
   def movedOrNotFound: Boolean = this match {
@@ -27,10 +27,10 @@ sealed trait GithubStatus {
 
 }
 object GithubStatus {
-  case class Ok(when: Instant) extends GithubStatus
-  case class Unknown(when: Instant) extends GithubStatus
-  case class Moved(when: Instant, organization: Project.Organization, repository: Project.Repository)
+  case class Ok(update: Instant) extends GithubStatus
+  case class Unknown(update: Instant) extends GithubStatus
+  case class Moved(update: Instant, organization: Project.Organization, repository: Project.Repository)
       extends GithubStatus
-  case class NotFound(when: Instant) extends GithubStatus
-  case class Failed(when: Instant, errorCode: Int, errorMessage: String) extends GithubStatus
+  case class NotFound(update: Instant) extends GithubStatus
+  case class Failed(update: Instant, errorCode: Int, errorMessage: String) extends GithubStatus
 }

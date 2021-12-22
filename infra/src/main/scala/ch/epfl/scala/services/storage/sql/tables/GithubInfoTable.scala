@@ -36,7 +36,8 @@ object GithubInfoTable {
     "beginnerIssues"
   )
 
-  val table: Fragment = Fragment.const0("github_info")
+  val table: String = "github_info"
+  val tableFr: Fragment = Fragment.const0(table)
   private val fieldsFr: Fragment = Fragment.const0(fields.mkString(", "))
 
   private def values(p: Project.Reference, g: GithubInfo): Fragment =
@@ -47,7 +48,7 @@ object GithubInfoTable {
       fr0" ${g.beginnerIssues}"
 
   def insert(p: Project.Reference)(elt: GithubInfo): doobie.Update0 =
-    buildInsert(table, fieldsFr, values(p, elt)).update
+    buildInsert(tableFr, fieldsFr, values(p, elt)).update
 
   def insertOrUpdate(p: Project.Reference)(g: GithubInfo): doobie.Update0 = {
     val onConflictFields = fr0"organization, repository"
@@ -58,7 +59,7 @@ object GithubInfoTable {
         fr0" codeOfConduct=${g.codeOfConduct}, chatroom=${g.chatroom}"
     val updateAction = fr"UPDATE SET" ++ fields
     buildInsertOrUpdate(
-      table,
+      tableFr,
       fieldsFr,
       values(p, g),
       onConflictFields,
@@ -67,12 +68,12 @@ object GithubInfoTable {
   }
 
   def selectAllTopics(): doobie.Query0[Set[String]] =
-    buildSelect(table, fr0"topics", fr0"where topics != ''")
+    buildSelect(tableFr, fr0"topics", fr0"where topics != ''")
       .query[Set[String]]
 
   val githubInfoReader: Read[GithubInfo] =
     Read[(Organization, Repository, GithubInfo)].map { case (_, _, githubInfo) => githubInfo }
 
   def indexedGithubInfo(): doobie.Query0[Long] =
-    buildSelect(table, fr0"count(*)").query[Long]
+    buildSelect(tableFr, fr0"count(*)").query[Long]
 }

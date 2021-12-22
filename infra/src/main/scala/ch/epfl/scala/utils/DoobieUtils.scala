@@ -88,6 +88,23 @@ object DoobieUtils {
     Update(s"INSERT INTO $table ($fieldsStr) VALUES ($valuesStr)")
   }
 
+  def updateRequest[T: Write](table: String, fields: Seq[String], keys: Seq[String]): Update[T] = {
+    val fieldsStr = fields.map(f => s"$f=?").mkString(", ")
+    val keysStr = keys.map(k => s"$k=?").mkString(" AND ")
+    Update(s"UPDATE $table SET $fieldsStr WHERE $keysStr")
+  }
+
+  def selectRequest[A: Read](table: String, fields: Seq[String]): Query0[A] = {
+    val fieldsStr = fields.mkString(", ")
+    Query0(s"SELECT $fieldsStr FROM $table")
+  }
+
+  def selectRequest[A: Write, B: Read](table: String, fields: Seq[String], keys: Seq[String]): Query[A, B] = {
+    val fieldsStr = fields.mkString(", ")
+    val keysStr = keys.map(k => s"$k=?").mkString(" AND ")
+    Query(s"SELECT $fieldsStr FROM $table WHERE $keysStr")
+  }
+
   object Fragments {
     val empty: Fragment = fr0""
     val space: Fragment = fr0" "
@@ -131,36 +148,31 @@ object DoobieUtils {
   }
 
   object Mappings {
-    implicit val stringMeta: Meta[String] = Meta.StringMeta
-
     implicit val contributorMeta: Meta[List[GithubContributor]] =
-      stringMeta.timap(fromJson[List[GithubContributor]](_).get)(toJson(_))
+      Meta[String].timap(fromJson[List[GithubContributor]](_).get)(toJson(_))
     implicit val githubIssuesMeta: Meta[List[GithubIssue]] =
-      stringMeta.timap(fromJson[List[GithubIssue]](_).get)(toJson(_))
+      Meta[String].timap(fromJson[List[GithubIssue]](_).get)(toJson(_))
     implicit val documentationLinksMeta: Meta[List[DocumentationLink]] =
-      stringMeta.timap(fromJson[List[DocumentationLink]](_).get)(toJson(_))
+      Meta[String].timap(fromJson[List[DocumentationLink]](_).get)(toJson(_))
     implicit val topicsMeta: Meta[Set[String]] =
-      stringMeta.timap(_.split(",").filter(_.nonEmpty).toSet)(
+      Meta[String].timap(_.split(",").filter(_.nonEmpty).toSet)(
         _.mkString(",")
       )
     implicit val artifactNamesMeta: Meta[Set[Artifact.Name]] =
-      stringMeta.timap(_.split(",").filter(_.nonEmpty).map(Artifact.Name.apply).toSet)(_.mkString(","))
-
-    implicit val githubStatusMeta: Meta[GithubStatus] =
-      stringMeta.timap(fromJson[GithubStatus](_).get)(toJson(_))
+      Meta[String].timap(_.split(",").filter(_.nonEmpty).map(Artifact.Name.apply).toSet)(_.mkString(","))
     implicit val semanticVersionMeta: Meta[SemanticVersion] =
-      stringMeta.timap(SemanticVersion.tryParse(_).get)(_.toString)
+      Meta[String].timap(SemanticVersion.tryParse(_).get)(_.toString)
     implicit val platformMeta: Meta[Platform] =
-      stringMeta.timap { x =>
+      Meta[String].timap { x =>
         Platform
           .parse(x)
           .toTry(new Exception(s"Failed to parse $x as Platform"))
           .get
       }(_.encode)
     implicit val licensesMeta: Meta[Set[License]] =
-      stringMeta.timap(fromJson[List[License]](_).get.toSet)(toJson(_))
+      Meta[String].timap(fromJson[List[License]](_).get.toSet)(toJson(_))
     implicit val resolverMeta: Meta[Resolver] =
-      stringMeta.timap(Resolver.from(_).get)(_.name)
+      Meta[String].timap(Resolver.from(_).get)(_.name)
 
     implicit val instantMeta: doobie.Meta[Instant] = doobie.postgres.implicits.JavaTimeInstantMeta
     implicit val projectReferenceRead: doobie.Read[Project.Reference] =
@@ -182,16 +194,41 @@ object DoobieUtils {
           )
         }
 
+    implicit val githubStatusRead: Read[GithubStatus] =
+      Read[(String, Instant, Option[Organization], Option[Repository], Option[Int], Option[String])]
+        .map {
+          case ("Unknown", update, _, _, _, _)  => GithubStatus.Unknown(update)
+          case ("Ok", update, _, _, _, _)       => GithubStatus.Ok(update)
+          case ("NotFound", update, _, _, _, _) => GithubStatus.NotFound(update)
+          case ("Moved", update, Some(organization), Some(repository), _, _) =>
+            GithubStatus.Moved(update, organization, repository)
+          case ("Failed", update, _, _, Some(errorCode), Some(errorMessage)) =>
+            GithubStatus.Failed(update, errorCode, errorMessage)
+          case invalid =>
+            throw new Exception(s"Cannot read github status from database: $invalid")
+        }
+    implicit val githubStatusWrite: Write[GithubStatus] =
+      Write[(String, Instant, Option[Organization], Option[Repository], Option[Int], Option[String])]
+        .contramap {
+          case GithubStatus.Unknown(update)  => ("Unknown", update, None, None, None, None)
+          case GithubStatus.Ok(update)       => ("Ok", update, None, None, None, None)
+          case GithubStatus.NotFound(update) => ("NotFound", update, None, None, None, None)
+          case GithubStatus.Moved(update, organization, repository) =>
+            ("Moved", update, Some(organization), Some(repository), None, None)
+          case GithubStatus.Failed(update, errorCode, errorMessage) =>
+            ("Failed", update, None, None, Some(errorCode), Some(errorMessage))
+        }
+
     implicit val projectReader: Read[Project] =
       Read[(Organization, Repository, Option[Instant], GithubStatus, Option[GithubInfo], Option[Project.DataForm])]
         .map {
-          case (organization, repository, created, githubStatus, githubInfo, dataForm) =>
+          case (organization, repository, creationDate, githubStatus, githubInfo, dataForm) =>
             Project(
               organization = organization,
               repository = repository,
               githubStatus = githubStatus,
               githubInfo = githubInfo,
-              created = created,
+              creationDate = creationDate,
               dataForm = dataForm.getOrElse(Project.DataForm.default)
             )
         }

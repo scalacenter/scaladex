@@ -11,7 +11,7 @@ import ch.epfl.scala.index.newModel.Project._
 case class Project(
     organization: Organization,
     repository: Repository,
-    created: Option[Instant], // equivalent to the first release date
+    creationDate: Option[Instant], // date of the first known release
     githubStatus: GithubStatus,
     githubInfo: Option[GithubInfo],
     dataForm: DataForm
@@ -53,7 +53,7 @@ object Project {
   }
   def default(
       ref: Project.Reference,
-      created: Option[Instant] = None,
+      creationDate: Option[Instant] = None,
       githubInfo: Option[GithubInfo] = None,
       dataForm: Option[DataForm] = None,
       now: Instant = Instant.now()
@@ -63,7 +63,7 @@ object Project {
       ref.repository,
       githubStatus = githubInfo.map(_ => GithubStatus.Ok(now)).getOrElse(GithubStatus.Unknown(now)),
       githubInfo = githubInfo,
-      created = created,
+      creationDate = creationDate,
       dataForm = dataForm.getOrElse(DataForm.default)
     )
 

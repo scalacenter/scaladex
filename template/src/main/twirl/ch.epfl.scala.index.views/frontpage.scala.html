@@ -130,7 +130,7 @@
                                         <p class="description emojify">@description</p>
                                       }
                                     }
-                                    @for(created <- project.created) {
+                                    @for(created <- project.creationDate) {
                                         @{formatInstant(created)}
                                     }
                                 </div>
@@ -160,7 +160,7 @@
                                         <p class="description">@description</p>
                                       }
                                     }
-                                    @for(created <- project.created) {
+                                    @for(created <- project.creationDate) {
                                         @{formatInstant(created)}
                                     }
                                 </div>

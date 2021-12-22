@@ -35,7 +35,7 @@ case class Artifact(
     platform: Platform,
     projectRef: Project.Reference,
     description: Option[String],
-    releasedAt: Option[Instant],
+    releaseDate: Option[Instant],
     resolver: Option[Resolver],
     licenses: Set[License],
     isNonStandardLib: Boolean

@@ -1,8 +1,16 @@
 CREATE TABLE projects (
-    organization             VARCHAR(39)   NOT NULL,
-    repository               VARCHAR(100)  NOT NULL,
-    created_at               TIMESTAMPTZ,
-    github_status            VARCHAR NOT NULL,
+    organization             VARCHAR(39)  NOT NULL,
+    repository               VARCHAR(100) NOT NULL,
+    creation_date            TIMESTAMPTZ,
+    -- github status can be: Unknown, Ok, Moved, NotFound, Failed
+    github_status            VARCHAR(10)  NOT NULL,
+    github_update            TIMESTAMPTZ  NOT NULL,
+    -- in case of Moved
+    new_organization         VARCHAR(39),
+    new_repository           VARCHAR(100),
+    -- in case of Failed
+    error_code               INT,
+    error_message            VARCHAR(300),
     PRIMARY KEY (organization, repository)
 );
 
@@ -59,7 +67,7 @@ CREATE TABLE artifacts (
     organization        VARCHAR NOT NULL,
     repository          VARCHAR NOT NULL,
     description         VARCHAR,
-    released_at         TIMESTAMPTZ,
+    release_date        TIMESTAMPTZ,
     resolver            VARCHAR,
     licenses            VARCHAR NOT NULL,
     isNonStandardLib    BOOLEAN NOT NULL,
