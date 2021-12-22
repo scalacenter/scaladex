@@ -19,7 +19,7 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives._
 import akka.util.Timeout
 import ch.epfl.scala.index.model.misc.UserState
-import ch.epfl.scala.index.model.release._
+import ch.epfl.scala.index.newModel.Artifact
 import ch.epfl.scala.services.WebDatabase
 import ch.epfl.scala.services.storage.DataPaths
 import org.slf4j.LoggerFactory
@@ -77,7 +77,7 @@ class PublishApi(
    * @param path the real publishing path
    * @return MavenReference
    */
-  private def mavenPathExtractor(path: String): MavenReference = {
+  private def mavenPathExtractor(path: String): Artifact.MavenReference = {
 
     val segments = path.split("/").toList
     val size = segments.size
@@ -87,7 +87,7 @@ class PublishApi(
     val version = segments(size - 2)
     val groupId = segments.slice(takeFrom, size - 3).mkString(".")
 
-    MavenReference(groupId, artifactId, version)
+    Artifact.MavenReference(groupId, artifactId, version)
   }
 
   import akka.pattern.ask

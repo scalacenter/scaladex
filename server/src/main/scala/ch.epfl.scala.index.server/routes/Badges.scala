@@ -13,7 +13,7 @@ import akka.http.scaladsl.server.RequestContext
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.RouteResult
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Artifact
 import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.services.WebDatabase
 
@@ -70,7 +70,7 @@ class Badges(db: WebDatabase)(implicit executionContext: ExecutionContext) {
   def latest(
       organization: Project.Organization,
       repository: Project.Repository,
-      artifact: Option[NewRelease.ArtifactName]
+      artifact: Option[Artifact.Name]
   ): RequestContext => Future[RouteResult] =
     parameter("target".?) { platform =>
       shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
@@ -110,7 +110,7 @@ class Badges(db: WebDatabase)(implicit executionContext: ExecutionContext) {
   def latestByScalaVersion(
       organization: Project.Organization,
       repository: Project.Repository,
-      artifact: NewRelease.ArtifactName
+      artifact: Artifact.Name
   ): RequestContext => Future[RouteResult] =
     parameter("targetType".?) { targetTypeString =>
       shields { (color, style, logo, logoWidth) =>

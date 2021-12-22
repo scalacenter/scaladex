@@ -37,7 +37,7 @@ class Init(
       // counting what have been inserted
       projectCount <- db.countProjects()
       dataFormCount <- db.countProjectDataForm()
-      releaseCount <- db.countReleases()
+      releaseCount <- db.countArtifacts()
       dependencyCount <- db.countDependencies()
 
     } yield {

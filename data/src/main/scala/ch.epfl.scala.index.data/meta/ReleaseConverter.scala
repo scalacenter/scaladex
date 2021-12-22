@@ -7,9 +7,9 @@ import ch.epfl.scala.index.data.cleanup._
 import ch.epfl.scala.index.data.maven.ReleaseModel
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.release.Resolver
-import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Artifact
+import ch.epfl.scala.index.newModel.ArtifactDependency
 import ch.epfl.scala.index.newModel.Project
-import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.services.storage.DataPaths
 import ch.epfl.scala.services.storage.LocalRepository
 import com.typesafe.scalalogging.LazyLogging
@@ -20,7 +20,7 @@ class ReleaseConverter(paths: DataPaths) extends BintrayProtocol with LazyLoggin
   private val githubRepoExtractor = new GithubRepoExtractor(paths)
   private val licenseCleanup = new LicenseCleanup(paths)
 
-  def convert(pom: ReleaseModel, repo: LocalRepository, sha: String): Option[(NewRelease, Seq[ReleaseDependency])] =
+  def convert(pom: ReleaseModel, repo: LocalRepository, sha: String): Option[(Artifact, Seq[ArtifactDependency])] =
     for {
       pomMeta <- pomMetaExtractor.extract(pom, None, repo, sha)
       repo <- githubRepoExtractor.extract(pom)
@@ -33,18 +33,18 @@ class ReleaseConverter(paths: DataPaths) extends BintrayProtocol with LazyLoggin
       sha: String,
       creationDate: Option[Instant],
       resolver: Option[Resolver] = None
-  ): Option[(NewRelease, Seq[ReleaseDependency])] =
+  ): Option[(Artifact, Seq[ArtifactDependency])] =
     for {
       version <- SemanticVersion.tryParse(pom.version)
       artifactMeta <- artifactMetaExtractor.extract(pom)
     } yield {
-      val release = NewRelease(
-        pom.mavenRef,
+      val release = Artifact(
+        Artifact.GroupId(pom.groupId),
+        pom.artifactId,
         version,
-        projectRef.organization,
-        projectRef.repository,
-        NewRelease.ArtifactName(artifactMeta.artifactName),
+        Artifact.Name(artifactMeta.artifactName),
         artifactMeta.platform,
+        projectRef,
         pom.description,
         creationDate,
         resolver,
@@ -52,7 +52,7 @@ class ReleaseConverter(paths: DataPaths) extends BintrayProtocol with LazyLoggin
         artifactMeta.isNonStandard
       )
       val dependencies = pom.dependencies.map { dep =>
-        ReleaseDependency(
+        ArtifactDependency(
           pom.mavenRef,
           dep.mavenRef,
           dep.scope.getOrElse("compile")

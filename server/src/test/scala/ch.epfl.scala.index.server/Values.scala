@@ -8,33 +8,25 @@ import ch.epfl.scala.index.model.ReleaseCandidate
 import ch.epfl.scala.index.model.SemanticVersion
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubStatus
-import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.PatchBinary
-import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.PreReleaseBinary
 import ch.epfl.scala.index.model.release.Scala3Version
 import ch.epfl.scala.index.model.release.ScalaLanguageVersion
-import ch.epfl.scala.index.model.release.ScalaVersion
-import ch.epfl.scala.index.newModel.NewRelease
-import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
+import ch.epfl.scala.index.newModel.Artifact
+import ch.epfl.scala.index.newModel.Artifact._
 import ch.epfl.scala.index.newModel.Project
-import ch.epfl.scala.index.newModel.Project.Organization
-import ch.epfl.scala.index.newModel.Project.Repository
 
 object Values {
   val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
   // Mock Data for tests
-  val release: NewRelease = NewRelease(
-    MavenReference(
-      "com.github.xuwei-k",
-      "play-json-extra_2.10",
-      "0.1.1-play2.3-M1"
-    ),
+  val artifactId: ArtifactId = ArtifactId.parse("play-json-extra_2.11").get
+  val release: Artifact = Artifact(
+    groupId = GroupId("com.github.xuwei-k"),
+    artifactId = artifactId.value,
     version = SemanticVersion.tryParse("0.1.1-play2.3-M1").get,
-    organization = Organization("xuwei-k"),
-    repository = Repository("play-json-extra"),
-    artifactName = ArtifactName("play-json-extra"),
-    platform = Platform.ScalaJvm(ScalaVersion.`2.11`),
+    artifactName = artifactId.name,
+    platform = artifactId.platform,
+    projectRef = Project.Reference.from("xuwei-k", "play-json-extra"),
     description = None,
     releasedAt = None,
     resolver = None,
@@ -42,11 +34,11 @@ object Values {
     isNonStandardLib = false
   )
   val project: Project = Project(
-    release.organization,
-    release.repository,
+    release.projectRef.organization,
+    release.projectRef.repository,
     created = Some(now),
     GithubStatus.Ok(now),
-    Some(GithubInfo.empty(release.organization.value, release.repository.value)),
+    Some(GithubInfo.empty(release.projectRef.organization.value, release.projectRef.repository.value)),
     Project.DataForm.default
   )
 

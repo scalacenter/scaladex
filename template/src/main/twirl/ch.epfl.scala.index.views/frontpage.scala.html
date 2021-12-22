@@ -1,4 +1,4 @@
-@import ch.epfl.scala.index.newModel.{Project, NewRelease}
+@import ch.epfl.scala.index.newModel.{Project, Artifact}
 @import ch.epfl.scala.index.model.release.Platform
 @import ch.epfl.scala.index.model.release.BinaryVersion
 @import ch.epfl.scala.index.model.misc.UserState
@@ -14,7 +14,7 @@
   sbtVersions: Seq[(BinaryVersion, Int)],
   latestProjects: Seq[Project],
   mostDependedUpon: Seq[Project],
-  latestReleases: Seq[NewRelease],
+  latestReleases: Seq[Artifact],
   user: Option[UserState],
   ecosystems: Map[String, String],
   totalProjects: Long,
@@ -181,7 +181,7 @@
                     <a href="@release.httpUrl">
                         <div class="row">
                             <div class="col-md-12">
-                                <h4>@release.name</h4>
+                                <h4>@release.artifactName</h4>
                                 <span class="pull-right">@release.version</span>
                             </div>
                         </div>

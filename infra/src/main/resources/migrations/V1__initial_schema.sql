@@ -3,7 +3,6 @@ CREATE TABLE projects (
     repository               VARCHAR(100)  NOT NULL,
     created_at               TIMESTAMPTZ,
     github_status            VARCHAR NOT NULL,
---     github_Status_updated_at TIMESTAMPTZ // an idea if we want to
     PRIMARY KEY (organization, repository)
 );
 
@@ -50,31 +49,32 @@ CREATE TABLE project_user_data (
    PRIMARY KEY (organization, repository)
 );
 
-CREATE TABLE releases (
-    groupId             VARCHAR NOT NULL,
-    artifactId          VARCHAR NOT NULL,
+
+CREATE TABLE artifacts (
+    group_id            VARCHAR NOT NULL,
+    artifact_id         VARCHAR NOT NULL,
     version             VARCHAR NOT NULL,
+    artifact_name       VARCHAR NOT NULL,
+    platform            VARCHAR NOT NULL,
     organization        VARCHAR NOT NULL,
     repository          VARCHAR NOT NULL,
-    artifact            VARCHAR NOT NULL,
-    platform            VARCHAR NOT NULL,
     description         VARCHAR,
     released_at         TIMESTAMPTZ,
     resolver            VARCHAR,
     licenses            VARCHAR NOT NULL,
     isNonStandardLib    BOOLEAN NOT NULL,
-    PRIMARY KEY (groupId, artifactId, version)
+    PRIMARY KEY (group_id, artifact_id, version)
 );
 
-CREATE TABLE release_dependencies (
-    source_groupId             VARCHAR NOT NULL,
-    source_artifactId          VARCHAR NOT NULL,
+CREATE TABLE artifact_dependencies (
+    source_group_id            VARCHAR NOT NULL,
+    source_artifact_id         VARCHAR NOT NULL,
     source_version             VARCHAR NOT NULL,
-    target_groupId             VARCHAR NOT NULL,
-    target_artifactId          VARCHAR NOT NULL,
+    target_group_id            VARCHAR NOT NULL,
+    target_artifact_id         VARCHAR NOT NULL,
     target_version             VARCHAR NOT NULL,
     scope                      VARCHAR,
-    PRIMARY KEY (source_groupId, source_artifactId, source_version, target_groupId, target_artifactId, target_version, scope)
+    PRIMARY KEY (source_group_id, source_artifact_id, source_version, target_group_id, target_artifact_id, target_version, scope)
 );
 
 CREATE TABLE project_dependencies

@@ -14,7 +14,7 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
 
   // you need to configure locally a token
   val github = new GithubClient(githubConfig.get.token)
-  val scalafixRepo: Project.Reference = Project.Reference.from("playframework", "playframework")
+  val scalafixRepo: Project.Reference = Project.Reference.from("scala", "scala")
 
   describe("githubClient") {
     it("getReadme") {

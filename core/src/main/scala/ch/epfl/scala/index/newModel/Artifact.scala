@@ -2,21 +2,19 @@ package ch.epfl.scala.index.newModel
 
 import java.time.Instant
 
-import scala.util.Try
-
 import ch.epfl.scala.index.model.Env
 import ch.epfl.scala.index.model.License
+import ch.epfl.scala.index.model.Parsers
 import ch.epfl.scala.index.model.SemanticVersion
-import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.PatchBinary
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Resolver
 import ch.epfl.scala.index.model.release.Scala3Version
 import ch.epfl.scala.index.model.release.ScalaVersion
-import ch.epfl.scala.index.newModel.NewRelease._
 import ch.epfl.scala.index.newModel.Project.DocumentationLink
-import ch.epfl.scala.index.newModel.Project.Organization
-import ch.epfl.scala.index.newModel.Project.Repository
+import fastparse.P
+import fastparse.Start
+import fastparse._
 import org.joda.time.format.ISODateTimeFormat
 
 /**
@@ -25,29 +23,31 @@ import org.joda.time.format.ISODateTimeFormat
  * @param isNonStandardLib if not using artifactName_scalaVersion convention
  */
 
-case class NewRelease(
-    maven: MavenReference,
+case class Artifact(
+    groupId: Artifact.GroupId,
+    // artifactId is redundant with ArtifactName + platform
+    // it's kept because we need to do joins with ArtifactDependency on MavenReference
+    // It's also possible to create a new key for Artifact: ArtifactReference(GroupId, ArtifactId, SemanticVersion)
+    // and keep untyped MavenReference ArtifactDependency.
+    artifactId: String,
     version: SemanticVersion,
-    organization: Organization,
-    repository: Repository,
-    artifactName: ArtifactName,
+    artifactName: Artifact.Name,
     platform: Platform,
+    projectRef: Project.Reference,
     description: Option[String],
     releasedAt: Option[Instant],
     resolver: Option[Resolver],
     licenses: Set[License],
     isNonStandardLib: Boolean
 ) {
-  def projectRef: Project.Reference =
-    Project.Reference(organization, repository)
 
   def fullPlatformVersion: String = platform.showVersion
 
   def isValid: Boolean = platform.isValid
 
-  def name: String = s"$organization/$artifactName"
-  private def artifactHttpPath: String =
-    s"/$organization/$repository/$artifactName"
+  private def artifactHttpPath: String = s"/${projectRef.organization}/${projectRef.repository}/$artifactName"
+
+  val mavenReference: Artifact.MavenReference = Artifact.MavenReference(groupId.value, artifactId, version.toString)
 
   def artifactFullHttpUrl(env: Env): String =
     env match {
@@ -73,15 +73,15 @@ case class NewRelease(
   def sbtInstall: String = {
     val install = platform match {
       case Platform.SbtPlugin(_, _) =>
-        s"""addSbtPlugin("${maven.groupId}" % "${artifactName}" % "${version}")"""
+        s"""addSbtPlugin("$groupId" % "$artifactName" % "$version")"""
       case _ if isNonStandardLib =>
-        s"""libraryDependencies += "${maven.groupId}" % "${artifactName}" % "${version}""""
+        s"""libraryDependencies += "$groupId" % "$artifactName" % "$version""""
       case Platform.ScalaJs(_, _) | Platform.ScalaNative(_, _) =>
-        s"""libraryDependencies += "${maven.groupId}" %%% "${artifactName}" % "${version}""""
+        s"""libraryDependencies += "$groupId" %%% "$artifactName" % "$version""""
       case Platform.ScalaJvm(ScalaVersion(_: PatchBinary)) | Platform.ScalaJvm(Scala3Version(_: PatchBinary)) =>
-        s"""libraryDependencies += "${maven.groupId}" % "${artifactName}" % "${version}" cross CrossVersion.full"""
+        s"""libraryDependencies += "$groupId" % "$artifactName" % "$version" cross CrossVersion.full"""
       case _ =>
-        s"""libraryDependencies += "${maven.groupId}" %% "${artifactName}" % "${version}""""
+        s"""libraryDependencies += "$groupId" %% "$artifactName" % "$version""""
     }
 
     List(
@@ -109,7 +109,7 @@ case class NewRelease(
 
     List(
       Some(
-        s"import $$ivy.`${maven.groupId}$artifactOperator$artifactName:$version`"
+        s"import $$ivy.`${groupId}$artifactOperator$artifactName:$version`"
       ),
       resolver.map(addResolver)
     ).flatten.mkString("\n")
@@ -121,8 +121,8 @@ case class NewRelease(
    */
   def mavenInstall: String =
     s"""|<dependency>
-        |  <groupId>${maven.groupId}</groupId>
-        |  <artifactId>${maven.artifactId}</artifactId>
+        |  <groupId>$groupId</groupId>
+        |  <artifactId>$artifactId</artifactId>
         |  <version>$version</version>
         |</dependency>""".stripMargin
 
@@ -131,7 +131,7 @@ case class NewRelease(
    * @return
    */
   def gradleInstall: String =
-    s"compile group: '${maven.groupId}', name: '${maven.artifactId}', version: '${maven.version}'"
+    s"compile group: '$groupId', name: '$artifactId', version: '$version'"
 
   /**
    * string representation for mill dependency
@@ -142,7 +142,7 @@ case class NewRelease(
       r.url.map(url => s"""MavenRepository("${url}")""")
     val artifactOperator = if (isNonStandardLib) ":" else "::"
     List(
-      Some(s"""ivy"${maven.groupId}$artifactOperator$artifactName:$version""""),
+      Some(s"""ivy"$groupId$artifactOperator$artifactName:$version""""),
       resolver.flatMap(addResolver)
     ).flatten.mkString("\n")
   }
@@ -157,7 +157,7 @@ case class NewRelease(
            * HEAD to check 403 vs 200
            */
           Some(
-            s"https://www.javadoc.io/doc/${maven.groupId}/${maven.artifactId}/$version"
+            s"https://www.javadoc.io/doc/$groupId/$artifactId/$version"
           )
         } else None
       case Some(rawLink) => Some(evalLink(rawLink))
@@ -178,9 +178,9 @@ case class NewRelease(
       latest.getOrElse(version, version)
     }
     List(
-      "g" -> maven.groupId,
+      "g" -> groupId,
       "a" -> artifactName.value,
-      "v" -> maven.version,
+      "v" -> version,
       "t" -> platform.platformType.toString.toUpperCase,
       "sv" -> latestFor(platform.scalaVersion.toString)
     )
@@ -201,8 +201,8 @@ case class NewRelease(
    */
   private def evalLink(rawLink: String): String =
     rawLink
-      .replace("[groupId]", maven.groupId)
-      .replace("[artifactId]", maven.artifactId)
+      .replace("[groupId]", groupId.toString)
+      .replace("[artifactId]", artifactId)
       .replace("[version]", version.toString)
       .replace("[major]", version.major.toString)
       .replace("[minor]", version.minor.toString)
@@ -210,16 +210,49 @@ case class NewRelease(
 
 }
 
-object NewRelease {
+object Artifact {
   val format = ISODateTimeFormat.dateTime.withOffsetParsed
-  case class ArtifactName(value: String) extends AnyVal {
+
+  case class Name(value: String) extends AnyVal {
     override def toString: String = value
   }
-  object ArtifactName {
-    implicit val ordering: Ordering[ArtifactName] = Ordering.by(_.value)
+  object Name {
+    implicit val ordering: Ordering[Name] = Ordering.by(_.value)
   }
 
-  // we used to write joda.DateTime and now we moved to Instant
-  private def parseToInstant(s: String): Option[Instant] =
-    Try(format.parseDateTime(s)).map(t => Instant.ofEpochMilli(t.getMillis)).orElse(Try(Instant.parse(s))).toOption
+  case class GroupId(value: String) extends AnyVal {
+    override def toString: String = value
+  }
+  case class ArtifactId(name: Name, platform: Platform) {
+    def value: String = s"${name}${platform.encode}"
+  }
+
+  object ArtifactId extends Parsers {
+    import fastparse.NoWhitespace._
+
+    private def FullParser[_: P] = {
+      Start ~
+        (Alpha | Digit | "-" | "." | (!(Platform.IntermediateParser ~ End) ~ "_")).rep.! ~ // must end with scala target
+        Platform.Parser ~
+        End
+    }.map {
+      case (name, target) =>
+        ArtifactId(Name(name), target)
+    }
+
+    def parse(artifactId: String): Option[ArtifactId] =
+      tryParse(artifactId, x => FullParser(x))
+  }
+
+  case class MavenReference(groupId: String, artifactId: String, version: String) {
+
+    def name: String = s"$groupId/$artifactId"
+
+    /**
+     * url to maven page with related information to this reference
+     */
+    def httpUrl: String =
+      s"http://search.maven.org/#artifactdetails|$groupId|$artifactId|$version|jar"
+  }
+
 }

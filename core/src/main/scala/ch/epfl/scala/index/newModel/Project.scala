@@ -69,14 +69,14 @@ object Project {
 
   case class DataForm(
       defaultStableVersion: Boolean,
-      defaultArtifact: Option[NewRelease.ArtifactName],
+      defaultArtifact: Option[Artifact.Name],
       strictVersions: Boolean,
       customScalaDoc: Option[String],
       documentationLinks: List[DocumentationLink],
       deprecated: Boolean,
       contributorsWanted: Boolean,
-      artifactDeprecations: Set[NewRelease.ArtifactName],
-      cliArtifacts: Set[NewRelease.ArtifactName],
+      artifactDeprecations: Set[Artifact.Name],
+      cliArtifacts: Set[Artifact.Name],
       primaryTopic: Option[String],
       beginnerIssuesLabel: Option[String]
   )

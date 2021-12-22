@@ -1,10 +1,10 @@
 @import ch.epfl.scala.index.model.SemanticVersion
-@import ch.epfl.scala.index.newModel.{Project, NewRelease}
+@import ch.epfl.scala.index.newModel.{Project, Artifact}
 @import ch.epfl.scala.index.views.html.ensureUri
 
 @import ch.epfl.scala.index.model.release.Platform
-@(project: Project, artifacts: Seq[NewRelease.ArtifactName], versions: Seq[SemanticVersion],
-        platforms: Seq[Platform], release: NewRelease, canEdit: Boolean)
+@(project: Project, artifacts: Seq[Artifact.Name], versions: Seq[SemanticVersion],
+        platforms: Seq[Platform], artifact: Artifact, canEdit: Boolean)
 
 <div class="head-project">
   <div class="container">
@@ -55,7 +55,7 @@
 
           </div>
           @for(github <- project.githubInfo) {
-            @if(!github.topics.isEmpty) {
+            @if(github.topics.nonEmpty) {
               <ul class="list-inline">
                 @for(topic <- github.topics) {
                   <li><a href="/search?topics=@topic">@topic</a></li>
@@ -74,7 +74,7 @@
             <form action="/@project.reference" action="GET">
               <input type="hidden" name="selected" value="target">
 
-              <input type="hidden" name="artifact" value="@release.artifactName">
+              <input type="hidden" name="artifact" value="@artifact.artifactName">
 
               <select
                 name="target"
@@ -84,19 +84,19 @@
 
               @for(target <- platforms){
                 <option value="@target.encode"
-                        @if(release.platform == target){ selected }>
+                        @if(artifact.platform == target){ selected }>
                   @target.render
                 </option>
               }
               </select>
 
-              <input type="hidden" name="version" value="@release.version">
+              <input type="hidden" name="version" value="@artifact.version">
             </form>
           }
 
           <form action="/@project.reference" action="GET">
 
-            <input type="hidden" name="target" value="@release.platform.encode">
+            <input type="hidden" name="target" value="@artifact.platform.encode">
 
             <input type="hidden" name="selected" value="artifact">
 
@@ -105,22 +105,22 @@
               onchange="this.form.submit()"
               data-live-search="true"
               class="selectpicker artifact-name" data-style="btn-primary">
-            @for(artifact <- artifacts.filterNot(project.dataForm.artifactDeprecations.contains)) {
-              <option value="@artifact" @if(artifact == release.artifactName){ selected }>
-                @artifact
+            @for(artifactName <- artifacts.filterNot(project.dataForm.artifactDeprecations.contains)) {
+              <option value="@artifactName" @if(artifactName == artifact.artifactName){ selected }>
+                @artifactName
               </option>
             }
             </select>
 
-            <input type="hidden" name="version" value="@release.version">
+            <input type="hidden" name="version" value="@artifact.version">
           </form>
 
           <form action="/@project.reference" action="GET">
             <input type="hidden" name="selected" value="version">
 
-            <input type="hidden" name="artifact" value="@release.artifactName">
+            <input type="hidden" name="artifact" value="@artifact.artifactName">
 
-            <input type="hidden" name="target" value="@release.platform.encode">
+            <input type="hidden" name="target" value="@artifact.platform.encode">
 
             <select
               name="version"
@@ -129,7 +129,7 @@
               class="selectpicker" data-style="btn-primary">
 
             @for(version <- versions){
-              <option value="@version" @if(version == release.version){ selected }>
+              <option value="@version" @if(version == artifact.version){ selected }>
                 @version
               </option>
             }

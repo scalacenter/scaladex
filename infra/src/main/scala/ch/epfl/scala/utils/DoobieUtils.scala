@@ -14,16 +14,14 @@ import ch.epfl.scala.index.model.misc.GithubContributor
 import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubIssue
 import ch.epfl.scala.index.model.misc.GithubStatus
-import ch.epfl.scala.index.model.release.MavenReference
 import ch.epfl.scala.index.model.release.Platform
 import ch.epfl.scala.index.model.release.Resolver
-import ch.epfl.scala.index.newModel.NewRelease
-import ch.epfl.scala.index.newModel.NewRelease.ArtifactName
+import ch.epfl.scala.index.newModel.Artifact
+import ch.epfl.scala.index.newModel.ArtifactDependency
 import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.index.newModel.Project.DocumentationLink
 import ch.epfl.scala.index.newModel.Project.Organization
 import ch.epfl.scala.index.newModel.Project.Repository
-import ch.epfl.scala.index.newModel.ReleaseDependency
 import ch.epfl.scala.services.storage.sql.DatabaseConfig
 import ch.epfl.scala.utils.Codecs._
 import ch.epfl.scala.utils.ScalaExtensions._
@@ -145,12 +143,8 @@ object DoobieUtils {
       stringMeta.timap(_.split(",").filter(_.nonEmpty).toSet)(
         _.mkString(",")
       )
-    implicit val artifactNamesMeta: Meta[Set[NewRelease.ArtifactName]] =
-      stringMeta.timap(
-        _.split(",").filter(_.nonEmpty).map(NewRelease.ArtifactName.apply).toSet
-      )(
-        _.mkString(",")
-      )
+    implicit val artifactNamesMeta: Meta[Set[Artifact.Name]] =
+      stringMeta.timap(_.split(",").filter(_.nonEmpty).map(Artifact.Name.apply).toSet)(_.mkString(","))
 
     implicit val githubStatusMeta: Meta[GithubStatus] =
       stringMeta.timap(fromJson[GithubStatus](_).get)(toJson(_))
@@ -169,41 +163,12 @@ object DoobieUtils {
       stringMeta.timap(Resolver.from(_).get)(_.name)
 
     implicit val instantMeta: doobie.Meta[Instant] = doobie.postgres.implicits.JavaTimeInstantMeta
+    implicit val projectReferenceRead: doobie.Read[Project.Reference] =
+      Read[(Organization, Repository)].map { case (org, repo) => Project.Reference(org, repo) }
+    implicit val projectReferenceWrite: doobie.Write[Project.Reference] =
+      Write[(String, String)].contramap(p => (p.organization.value, p.repository.value))
 
-    implicit val releaseWriter: Write[NewRelease] =
-      Write[
-        (
-            String,
-            String,
-            SemanticVersion,
-            Organization,
-            Repository,
-            ArtifactName,
-            Platform,
-            Option[String],
-            Option[Instant],
-            Option[Resolver],
-            Set[License],
-            Boolean
-        )
-      ].contramap { r =>
-        (
-          r.maven.groupId,
-          r.maven.artifactId,
-          r.version,
-          r.organization,
-          r.repository,
-          r.artifactName,
-          r.platform,
-          r.description,
-          r.releasedAt,
-          r.resolver,
-          r.licenses,
-          r.isNonStandardLib
-        )
-      }
-
-    implicit val dependencyWriter: Write[ReleaseDependency] =
+    implicit val dependencyWriter: Write[ArtifactDependency] =
       Write[(String, String, String, String, String, String, String)]
         .contramap { d =>
           (
@@ -230,107 +195,6 @@ object DoobieUtils {
               dataForm = dataForm.getOrElse(Project.DataForm.default)
             )
         }
-
-    implicit val releaseReader: Read[NewRelease] = Read[
-      (
-          String,
-          String,
-          SemanticVersion,
-          Organization,
-          Repository,
-          NewRelease.ArtifactName,
-          Platform,
-          Option[String],
-          Option[Instant],
-          Option[Resolver],
-          Set[License],
-          Boolean
-      )
-    ]
-      .map {
-        case (
-              groupId,
-              artifactId,
-              version,
-              organization,
-              repository,
-              artifact,
-              target,
-              description,
-              released,
-              resolver,
-              licenses,
-              isNonStandardLib
-            ) =>
-          NewRelease(
-            MavenReference(groupId, artifactId, version.toString),
-            version,
-            organization,
-            repository,
-            artifact,
-            target,
-            description,
-            released,
-            resolver,
-            licenses,
-            isNonStandardLib
-          )
-      }
-
-//    // todo: Should not be necessary to write this
-    implicit val dependencyDirectReader: Read[ReleaseDependency.Direct] = Read[
-      (
-          ReleaseDependency,
-          Option[String],
-          Option[String],
-          Option[SemanticVersion],
-          Option[Organization],
-          Option[Repository],
-          Option[NewRelease.ArtifactName],
-          Option[Platform],
-          Option[String],
-          Option[Instant],
-          Option[Resolver],
-          Option[Set[License]],
-          Option[Boolean]
-      )
-    ].map {
-      case (
-            dependency,
-            Some(groupId),
-            Some(artifactId),
-            Some(version),
-            Some(organization),
-            Some(repository),
-            Some(artifact),
-            Some(platform),
-            description,
-            released,
-            resolver,
-            Some(licenses),
-            Some(isNonStandardLib)
-          ) =>
-        ReleaseDependency.Direct(
-          dependency,
-          Some(
-            NewRelease(
-              MavenReference(groupId, artifactId, version.toString),
-              version,
-              organization,
-              repository,
-              artifact,
-              platform,
-              description,
-              released,
-              resolver,
-              licenses,
-              isNonStandardLib
-            )
-          )
-        )
-      case (dependency, _, _, _, _, _, _, _, _, _, _, _, _) =>
-        ReleaseDependency.Direct(dependency, None)
-    }
 
     private def toJson[A](v: A)(implicit e: Encoder[A]): String =
       e.apply(v).noSpaces

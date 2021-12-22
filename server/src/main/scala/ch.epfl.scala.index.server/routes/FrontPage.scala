@@ -7,7 +7,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.epfl.scala.index.model.misc.UserState
 import ch.epfl.scala.index.model.release.Platform
-import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Artifact
 import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.index.server.GithubUserSession
 import ch.epfl.scala.index.server.TwirlSupport._
@@ -32,7 +32,7 @@ class FrontPage(
     val topicsF = db.getAllTopics()
     val allPlatformsF = db.getAllPlatforms()
     val latestProjectsF = db.getLatestProjects(limitOfProjectShownInFrontPage)
-    val latestReleasesF = Future.successful(Seq.empty[NewRelease]) // TODO get from DB
+    val latestReleasesF = Future.successful(Seq.empty[Artifact]) // TODO get from DB
     val contributingProjectsF = Future.successful(List.empty[Project]) // TODO get from DB
     for {
       topics <- topicsF.map(FrontPage.getTopTopics(_, 50))
@@ -64,7 +64,7 @@ class FrontPage(
       latestProjects <- latestProjectsF
       latestReleases <- latestReleasesF
       totalProjects <- db.countProjects()
-      totalReleases <- db.countReleases()
+      totalReleases <- db.countArtifacts()
       contributingProjects <- contributingProjectsF
     } yield {
 

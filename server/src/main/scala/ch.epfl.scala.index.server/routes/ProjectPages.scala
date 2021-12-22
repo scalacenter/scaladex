@@ -14,7 +14,7 @@ import akka.http.scaladsl.server._
 import ch.epfl.scala.index.model._
 import ch.epfl.scala.index.model.misc._
 import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Artifact
 import ch.epfl.scala.index.newModel.Project
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.services.LocalStorageApi
@@ -62,11 +62,11 @@ class ProjectPages(
       organization: Project.Organization,
       repository: Project.Repository,
       target: Option[String],
-      artifact: NewRelease.ArtifactName,
+      artifact: Artifact.Name,
       version: Option[SemanticVersion],
       user: Option[UserState]
   ): Future[(StatusCode, HtmlFormat.Appendable)] = {
-    val selection = ReleaseSelection.parse(
+    val selection = ArtifactSelection.parse(
       platform = target,
       artifactName = Some(artifact),
       version = version.map(_.toString),
@@ -254,13 +254,13 @@ class ProjectPages(
                       db,
                       project,
                       platform = target,
-                      artifact = artifact.map(NewRelease.ArtifactName.apply),
+                      artifact = artifact.map(Artifact.Name.apply),
                       version = version,
                       selected = selected
-                    ).map(_.map { release =>
-                      val targetParam = s"?target=${release.platform.encode}"
+                    ).map(_.map { artifact =>
+                      val targetParam = s"?target=${artifact.platform.encode}"
                       redirect(
-                        s"/$organization/$repository/${release.artifactName}/${release.version}/$targetParam",
+                        s"/$organization/$repository/${artifact.artifactName}/${artifact.version}/$targetParam",
                         StatusCodes.TemporaryRedirect
                       )
                     }.getOrElse(complete(StatusCodes.NotFound, views.html.notfound(production, session.getUser(userId)))))

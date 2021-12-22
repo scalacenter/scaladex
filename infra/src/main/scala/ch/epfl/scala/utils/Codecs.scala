@@ -8,7 +8,7 @@ import ch.epfl.scala.index.model.misc.GithubInfo
 import ch.epfl.scala.index.model.misc.GithubIssue
 import ch.epfl.scala.index.model.misc.GithubStatus
 import ch.epfl.scala.index.model.misc.Url
-import ch.epfl.scala.index.newModel.NewRelease
+import ch.epfl.scala.index.newModel.Artifact
 import ch.epfl.scala.index.newModel.Project
 import io.circe._
 import io.circe.generic.semiauto.deriveCodec
@@ -32,7 +32,7 @@ object Codecs {
   implicit val githubIssue: Codec[GithubIssue] = deriveCodec[GithubIssue]
   implicit val organization: Codec[Project.Organization] = fromString(_.value, Project.Organization.apply)
   implicit val repository: Codec[Project.Repository] = fromString(_.value, Project.Repository.apply)
-  implicit val artifactName: Codec[NewRelease.ArtifactName] = fromString(_.value, NewRelease.ArtifactName.apply)
+  implicit val artifactName: Codec[Artifact.Name] = fromString(_.value, Artifact.Name.apply)
   implicit val instant: Codec[Instant] = fromLong[Instant](_.toEpochMilli, Instant.ofEpochMilli)
   implicit val githubInfo: Codec[GithubInfo] = deriveCodec[GithubInfo]
   implicit val githubStatus: Codec[GithubStatus] = deriveCodec[GithubStatus]
