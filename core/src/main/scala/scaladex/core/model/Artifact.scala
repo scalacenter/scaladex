@@ -5,7 +5,6 @@ import java.time.Instant
 import fastparse.P
 import fastparse.Start
 import fastparse._
-import org.joda.time.format.ISODateTimeFormat
 import scaladex.core.model.Project.DocumentationLink
 import scaladex.core.util.Parsers
 
@@ -203,8 +202,6 @@ case class Artifact(
 }
 
 object Artifact {
-  val format = ISODateTimeFormat.dateTime.withOffsetParsed
-
   case class Name(value: String) extends AnyVal {
     override def toString: String = value
   }
