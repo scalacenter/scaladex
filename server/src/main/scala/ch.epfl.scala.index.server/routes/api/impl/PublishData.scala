@@ -10,6 +10,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Instant
 import java.time.OffsetDateTime
+import java.time.ZoneId
 
 import scala.util.control.NonFatal
 
@@ -44,7 +45,7 @@ private[api] case class PublishData(
   lazy val tempPath: Path = tmpPath(hash)
   def savePath(paths: DataPaths): Path = pomPath(paths, hash)
 
-  val datetimeCreated: OffsetDateTime = OffsetDateTime.from(created)
+  val datetimeCreated: OffsetDateTime = created.atOffset(ZoneId.systemDefault.normalized().getRules.getOffset(created))
 
   /**
    * write the file content to given path
