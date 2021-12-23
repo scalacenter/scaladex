@@ -1,5 +1,9 @@
 package scaladex.infra.github
 
+import java.time.Instant
+
+import scala.util.Try
+
 import cats.implicits.toTraverseOps
 import io.circe._
 import io.circe.generic.semiauto._
@@ -12,6 +16,7 @@ import scaladex.core.util.Secret
 
 object GithubModel {
 
+  def parseToInstant(s: String): Option[Instant] = Try(Instant.parse(s)).toOption
   case class Repository(
       name: String, // cat
       owner: String, // owner.login
@@ -19,8 +24,8 @@ object GithubModel {
       isPrivate: Boolean,
       description: Option[String],
       isFork: Boolean,
-      createdAt: String, // format: "2015-01-28T20:26:48Z",
-      updatedAt: String,
+      createdAt: Option[String], // format: "2015-01-28T20:26:48Z",
+      updatedAt: Option[String],
       homepage: Option[String], // http://typelevel.org/cats/
       stargazers_count: Int, // stars
       forks_count: Int,
@@ -31,6 +36,8 @@ object GithubModel {
       subscribers_count: Int, // Watch
       topics: Seq[String]
   ) {
+
+    def creationDate: Option[Instant] = createdAt.flatMap(parseToInstant)
     def projectRef: Project.Reference = Project.Reference.from(owner, name)
   }
 
@@ -43,8 +50,8 @@ object GithubModel {
         isPrivate <- c.downField("private").as[Boolean]
         description <- c.downField("description").as[Option[String]]
         isFork <- c.downField("fork").as[Boolean]
-        createdAt <- c.downField("created_at").as[String]
-        updatedAt <- c.downField("updated_at").as[String]
+        createdAt <- c.downField("created_at").as[Option[String]]
+        updatedAt <- c.downField("updated_at").as[Option[String]]
         homepage <- c.downField("homepage").as[Option[String]]
         stars <- c.downField("stargazers_count").as[Int]
         forks_count <- c.downField("forks_count").as[Int]

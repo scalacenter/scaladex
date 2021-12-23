@@ -19,11 +19,8 @@ object ProjectTable {
   private val tableFr: Fragment = Fragment.const0(table)
   private val githubStatusFields =
     Seq("github_status", "github_update_date", "new_organization", "new_repository", "error_code", "error_message")
-  private val fields: Seq[String] = Seq("organization", "repository", "creation_date") ++ githubStatusFields
-  private val fieldsFr: Fragment = Fragment.const0(fields.mkString(", "))
 
-  private def values(ref: Project.Reference): Fragment =
-    fr0"${ref.organization}, ${ref.repository}"
+  private val fields: Seq[String] = Seq("organization", "repository", "creation_date") ++ githubStatusFields
 
   private val allFields: Seq[String] = fields.map("p." + _) ++
     GithubInfoTable.fields.map("g." + _) ++
@@ -64,12 +61,12 @@ object ProjectTable {
     buildSelect(
       fullTableFr,
       allFieldsFr,
-      fr0"WHERE creation_date IS NOT NULL ORDER BY creation_date DESC LIMIT $limit"
+      fr0"WHERE p.creation_date IS NOT NULL ORDER BY p.creation_date DESC LIMIT ${limit.toLong}"
     ).query[Project]
 
   val selectAllProjectRef: Query0[Project.Reference] =
     selectRequest(table, Seq("organization", "repository"))
 
   def selectAllProjects: Query0[Project] =
-    selectRequest(fullTable.toString, allFields)
+    selectRequest(fullTable, allFields)
 }

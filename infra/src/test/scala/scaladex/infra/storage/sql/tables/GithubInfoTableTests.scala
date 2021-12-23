@@ -14,10 +14,10 @@ class GithubInfoTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matc
       check(q)
       q.sql shouldBe
         s"""INSERT INTO github_info (organization, repository,
-           | homepage, description, logo, stars, forks, watchers, issues, readme,
-           | contributors, commits, topics, contributingGuide,
-           | codeOfConduct, chatroom, beginnerIssues) VALUES (?, ?, ?, ?,
-           | ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
+           | homepage, description, logo, stars, forks, watchers, issues, creation_date, readme,
+           | contributors, commits, topics, contributing_guide,
+           | code_of_conduct, chatroom, open_issues) VALUES (?, ?, ?, ?,
+           | ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
           .filterNot(_ == '\n')
     }
     it("insertOrUpdate") {
@@ -25,13 +25,13 @@ class GithubInfoTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matc
       check(q)
       q.sql shouldBe
         s"""INSERT INTO github_info (organization, repository,
-           | homepage, description, logo, stars, forks, watchers, issues, readme,
-           | contributors, commits, topics, contributingGuide,
-           | codeOfConduct, chatroom, beginnerIssues) VALUES (?, ?, ?, ?,
-           | ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           | homepage, description, logo, stars, forks, watchers, issues, creation_date, readme,
+           | contributors, commits, topics, contributing_guide,
+           | code_of_conduct, chatroom, open_issues) VALUES (?, ?, ?, ?,
+           | ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            | ON CONFLICT (organization, repository) DO UPDATE SET homepage=?, description=?,
-           | logo=?, stars=?, forks=?, watchers=?, issues=?, readme=?, contributors=?,
-           | commits=?, topics=?, contributingGuide=?, codeOfConduct=?, chatroom=?, beginnerIssues=?""".stripMargin
+           | logo=?, stars=?, forks=?, watchers=?, issues=?, creation_date=?, readme=?, contributors=?,
+           | commits=?, topics=?, contributing_guide=?, code_of_conduct=?, chatroom=?, open_issues=?""".stripMargin
           .filterNot(_ == '\n')
     }
     it("selectAllTopics") {
