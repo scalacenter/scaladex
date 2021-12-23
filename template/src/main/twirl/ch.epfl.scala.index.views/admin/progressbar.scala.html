@@ -1,6 +1,7 @@
 @import java.time.Instant
 @import scala.concurrent.duration.FiniteDuration
 @import scaladex.core.util.TimerUtils
+@import ch.epfl.scala.index.views.html._
 
 @(triggeredWhen: Instant, now: Instant, lastRunDuration: Option[FiniteDuration])
 @duration = @{TimerUtils.toFiniteDuration(triggeredWhen, now)}
@@ -9,6 +10,6 @@
 
 <div class="progress">
     <div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="@percentage" aria-valuemin="0" aria-valuemax="100" style="width: @percentage%">
-        @{duration.toSeconds}s (@{percentage.round} %)
+        @{prettyPrint(duration)} @{percentage.round} %)
     </div>
 </div>
