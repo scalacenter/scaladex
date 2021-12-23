@@ -42,8 +42,8 @@ class LocalStorageRepoTests() extends AsyncFunSpec with Matchers {
          |""".stripMargin
 
     import LocalStorageRepo._
-    val dataForms = parser.decode[Map[Project.Reference, Project.DataForm]](json)
-    dataForms.toTry.get.size should equal(1)
+    val settings = parser.decode[Map[Project.Reference, Project.Settings]](json)
+    settings.toTry.get.size should equal(1)
   }
 
 }

@@ -36,20 +36,20 @@ CREATE TABLE github_info (
     PRIMARY KEY (organization, repository)
 );
 
-CREATE TABLE project_user_data (
-   organization         VARCHAR(39)  NOT NULL,
-   repository           VARCHAR(100) NOT NULL,
-   defaultStableVersion BOOLEAN      NOT NULL,
-   defaultArtifact      VARCHAR,
-   strictVersions       BOOLEAN      NOT NULL,
-   customScalaDoc       VARCHAR,
-   documentationLinks   VARCHAR      NOT NULL,
-   deprecated           BOOLEAN      NOT NULL,
-   contributorsWanted   BOOLEAN      NOT NULL,
-   artifactDeprecations VARCHAR,
-   cliArtifacts         VARCHAR,
-   primaryTopic         VARCHAR,
-   beginnerIssuesLabel    VARCHAR(1024),
+CREATE TABLE project_settings (
+   organization           VARCHAR(39)  NOT NULL,
+   repository             VARCHAR(100) NOT NULL,
+   default_stable_version BOOLEAN      NOT NULL,
+   default_artifact       VARCHAR,
+   strict_versions        BOOLEAN      NOT NULL,
+   custom_scaladoc        VARCHAR,
+   documentation_links    VARCHAR      NOT NULL,
+   deprecated             BOOLEAN      NOT NULL,
+   contributors_wanted    BOOLEAN      NOT NULL,
+   artifact_deprecations  VARCHAR,
+   cli_artifacts          VARCHAR,
+   primary_topic          VARCHAR,
+   beginner_issues_label  VARCHAR(1024),
    FOREIGN KEY (organization, repository) REFERENCES projects (organization, repository),
    PRIMARY KEY (organization, repository)
 );

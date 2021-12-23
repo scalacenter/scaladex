@@ -82,7 +82,7 @@ package object routes {
     }
 
   // TODO remove all unused parameters
-  val editForm: Directive1[Project.DataForm] =
+  val editForm: Directive1[Project.Settings] =
     formFieldSeq.tflatMap(fields =>
       formFields(
         (
@@ -141,7 +141,7 @@ package object routes {
               }
               .toList
 
-          val dataForm = Project.DataForm(
+          val settings = Project.Settings(
             defaultStableVersion,
             defaultArtifact.map(Artifact.Name.apply),
             strictVersions,
@@ -154,7 +154,7 @@ package object routes {
             primaryTopic,
             beginnerIssuesLabel
           )
-          Tuple1(dataForm)
+          Tuple1(settings)
       }
     )
   def getSelectedRelease(

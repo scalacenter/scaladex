@@ -52,7 +52,7 @@ object ProjectDocument {
       platforms.collect { case ScalaNative(_, scalaNativeV) => scalaNativeV }.sorted.distinct,
       platforms.collect { case SbtPlugin(_, sbtV) => sbtV }.sorted.distinct,
       inverseProjectDependencies,
-      dataForm.primaryTopic,
+      settings.primaryTopic,
       formerReferences,
       project.githubInfo.map(_.toDocument)
     )

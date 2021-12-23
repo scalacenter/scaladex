@@ -10,11 +10,11 @@ case class Project(
     creationDate: Option[Instant], // date of the first known release
     githubStatus: GithubStatus,
     githubInfo: Option[GithubInfo],
-    dataForm: DataForm
+    settings: Settings
 ) {
 
   val reference: Reference = Reference(organization, repository)
-  def hasCli: Boolean = dataForm.cliArtifacts.nonEmpty
+  def hasCli: Boolean = settings.cliArtifacts.nonEmpty
 
   /**
    * This is used in twitter to render the card of a scaladex project link.
@@ -51,7 +51,7 @@ object Project {
       ref: Project.Reference,
       creationDate: Option[Instant] = None,
       githubInfo: Option[GithubInfo] = None,
-      dataForm: Option[DataForm] = None,
+      settings: Option[Settings] = None,
       now: Instant = Instant.now()
   ): Project =
     Project(
@@ -60,10 +60,10 @@ object Project {
       githubStatus = githubInfo.map(_ => GithubStatus.Ok(now)).getOrElse(GithubStatus.Unknown(now)),
       githubInfo = githubInfo,
       creationDate = creationDate,
-      dataForm = dataForm.getOrElse(DataForm.default)
+      settings = settings.getOrElse(Settings.default)
     )
 
-  case class DataForm(
+  case class Settings(
       defaultStableVersion: Boolean,
       defaultArtifact: Option[Artifact.Name],
       strictVersions: Boolean,
@@ -92,8 +92,8 @@ object Project {
     def apply(v: String): Repository = new Repository(v.toLowerCase())
   }
 
-  object DataForm {
-    val default: DataForm = DataForm(
+  object Settings {
+    val default: Settings = Settings(
       defaultStableVersion = true,
       defaultArtifact = None,
       strictVersions = false,

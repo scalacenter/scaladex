@@ -203,16 +203,16 @@ object DoobieUtils {
         }
 
     implicit val projectReader: Read[Project] =
-      Read[(Organization, Repository, Option[Instant], GithubStatus, Option[GithubInfo], Option[Project.DataForm])]
+      Read[(Organization, Repository, Option[Instant], GithubStatus, Option[GithubInfo], Option[Project.Settings])]
         .map {
-          case (organization, repository, creationDate, githubStatus, githubInfo, dataForm) =>
+          case (organization, repository, creationDate, githubStatus, githubInfo, settings) =>
             Project(
               organization = organization,
               repository = repository,
               githubStatus = githubStatus,
               githubInfo = githubInfo,
               creationDate = creationDate,
-              dataForm = dataForm.getOrElse(Project.DataForm.default)
+              settings = settings.getOrElse(Project.Settings.default)
             )
         }
 

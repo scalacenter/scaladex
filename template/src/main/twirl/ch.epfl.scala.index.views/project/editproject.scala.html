@@ -20,7 +20,7 @@
 
             <form action="/edit/@project.organization/@project.repository" method="POST">
               <div class="form-group">
-                <input type="checkbox" name="contributorsWanted" @if(project.dataForm.contributorsWanted){ checked }> 
+                <input type="checkbox" name="contributorsWanted" @if(project.settings.contributorsWanted){ checked }> 
                 <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">
               </div>
 
@@ -34,7 +34,7 @@
                 @for(artifact <- artifactNames) {
                   <option
                     value="@artifact" 
-                    @if(project.dataForm.cliArtifacts.contains(artifact)){selected}>
+                    @if(project.settings.cliArtifacts.contains(artifact)){selected}>
                       @artifact
                   </option>
                 }
@@ -42,7 +42,7 @@
               </div>
 
               <div class="form-group">
-                <input type="checkbox" name="deprecated" @if(project.dataForm.deprecated){ checked } id="deprecated">
+                <input type="checkbox" name="deprecated" @if(project.settings.deprecated){ checked } id="deprecated">
                 <label label-for="deprecated">Project Deprecated</label>
               </div>
 
@@ -56,7 +56,7 @@
                 @for(artifact <- artifactNames) {
                   <option
                     value="@artifact" 
-                    @if(project.dataForm.artifactDeprecations.contains(artifact)){selected}>
+                    @if(project.settings.artifactDeprecations.contains(artifact)){selected}>
                       @artifact
                   </option>
                 }
@@ -75,7 +75,7 @@
                   @for(topic <- github.topics) {
                     <option
                       value="@topic" 
-                      @if(project.dataForm.primaryTopic.contains(topic)){selected}>
+                      @if(project.settings.primaryTopic.contains(topic)){selected}>
                         @topic
                     </option>
                   }
@@ -89,7 +89,7 @@
                     Contributing Search, it needs to have a Beginner Issues Label, Chatroom
                     and Contributing Guide. The Code of Conduct is optional.</p>
                     <label for="beginnerIssuesLabel">Beginner Issues Label</label>
-                    <input id="beginnerIssuesLabel" name="beginnerIssuesLabel" value="@project.dataForm.beginnerIssuesLabel.getOrElse("")"
+                    <input id="beginnerIssuesLabel" name="beginnerIssuesLabel" value="@project.settings.beginnerIssuesLabel.getOrElse("")"
                       placeholder="Label used to mark beginner-friendly Issues on Github"
                       class="form-control list-group-item" data-organization="@project.reference.organization"
                       data-repository="@project.reference.repository">
@@ -134,7 +134,7 @@
                   @for(artifact <- artifactNames){
                     <option 
                       value="@artifact"
-                      @if(project.dataForm.defaultArtifact.contains(artifact)){ selected }>
+                      @if(project.settings.defaultArtifact.contains(artifact)){ selected }>
                       @artifact
                     </option>
                   }
@@ -143,11 +143,11 @@
 
                 <div class="form-group">
                   <p>If possible we do not use release candidate or milestones as the last version. For example, if the artifact has version 1.2.1 and version 2.0.0-RC1 by default we will use 1.2.1. If you would prefer to select 2.0.0-RC1 uncheck this box:</p>
-                  <input type="checkbox" name="defaultStableVersion" @if(project.dataForm.defaultStableVersion){ checked } id="defaultStableVersion">
+                  <input type="checkbox" name="defaultStableVersion" @if(project.settings.defaultStableVersion){ checked } id="defaultStableVersion">
                   <label label-for="defaultStableVersion">Do not select pre-released versions</label>
 
                   <p>Remove versions not following the semver.org specifications</p>
-                  <input type="checkbox" name="strictVersions" @if(project.dataForm.strictVersions){ checked } id="strictVersions">
+                  <input type="checkbox" name="strictVersions" @if(project.settings.strictVersions){ checked } id="strictVersions">
                   <label label-for="strictVersions">Semantic Versions only</label>
                 </div>
 
@@ -171,7 +171,7 @@
                   <p>Default: <code>https://www.javadoc.io/doc/[groupId]/[artifactId]/[version]</code></p>
                   <input
                     name="customScalaDoc" 
-                    value="@project.dataForm.customScalaDoc.getOrElse("")"
+                    value="@project.settings.customScalaDoc.getOrElse("")"
                     placeholder="http://example.org/api/[name]/[version]"
                     type="text" 
                     class="form-control" id="customScalaDoc">
@@ -180,7 +180,7 @@
                 <fieldset class="documentation-link">
                   <legend>Documentation links</legend>
                   <ul>
-                  @for((DocumentationLink(label, url), i) <- project.dataForm.documentationLinks.zipWithIndex){
+                  @for((DocumentationLink(label, url), i) <- project.settings.documentationLinks.zipWithIndex){
                     <li class="list-group">
                       <input
                         name="documentationLinks[@i].label" value="@label"
@@ -193,7 +193,7 @@
                         class="form-control list-group-item">
                     </li>
                   }
-                  @for((i) <- ((project.dataForm.documentationLinks.size) to (project.dataForm.documentationLinks.size + 5))) {
+                  @for((i) <- ((project.settings.documentationLinks.size) to (project.settings.documentationLinks.size + 5))) {
                     <li class="list-group">
                       <input
                         name="documentationLinks[@i].label" value=""
