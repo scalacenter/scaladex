@@ -80,10 +80,7 @@ class Autocompletion(implicit ec: ExecutionContext) {
     Dom.getResultList.fold(())(_.innerHTML = "")
   }
 
-  private def update(
-      projects: List[AutocompletionResponse],
-      query: String
-  ): Unit =
+  private def update(projects: List[AutocompletionResponse], query: String): Unit =
     if (Dom.getSearchQuery.contains(query)) {
       cleanResults()
       completionSelection = CompletionSelection(None, projects)
@@ -97,11 +94,7 @@ class Autocompletion(implicit ec: ExecutionContext) {
       }
     }
 
-  private def appendResult(
-      owner: String,
-      repo: String,
-      description: String
-  ): Option[Node] =
+  private def appendResult(owner: String, repo: String, description: String): Option[Node] =
     for {
       resultContainer <- Dom.getResultList
       newItem = projectSuggestion(owner, repo, description)
@@ -110,11 +103,7 @@ class Autocompletion(implicit ec: ExecutionContext) {
       resultContainer.appendChild(newItem)
     }
 
-  private def projectSuggestion(
-      owner: String,
-      repo: String,
-      description: String
-  ): Element =
+  private def projectSuggestion(owner: String, repo: String, description: String): Element =
     li(
       a(href := s"/$owner/$repo")(
         p(s"$owner / $repo"),

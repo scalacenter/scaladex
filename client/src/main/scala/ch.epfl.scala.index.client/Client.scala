@@ -35,17 +35,10 @@ object Client {
       }
     }
 
-  private def fetchAndReplaceReadme(
-      el: Element,
-      token: Option[String]
-  ): Unit = {
-
+  private def fetchAndReplaceReadme(el: Element, token: Option[String]): Unit = {
     val organization = el.attributes.getNamedItem("data-organization").value
     val repository = el.attributes.getNamedItem("data-repository").value
-
-    val headers = Map(
-      "Accept" -> "application/vnd.github.VERSION.html"
-    )
+    val headers = Map("Accept" -> "application/vnd.github.VERSION.html")
 
     val headersWithCreds =
       token
@@ -105,15 +98,10 @@ object Client {
     s"""{ "number":${issue.number}, "title":"${issue.title
       .replace("\"", "\\\"")}", "url":{"target":"${issue.html_url}"} }"""
 
-  private def getIssuesListener(
-      token: Option[String]
-  )(event: dom.Event): Unit =
+  private def getIssuesListener(token: Option[String])(event: dom.Event): Unit =
     getIssues(token)
 
-  private def getIssues(
-      token: Option[String],
-      showSelected: Boolean = false
-  ): Unit = {
+  private def getIssues(token: Option[String], showSelected: Boolean = false): Unit = {
     import Dom.ElementOps
     Dom.getElementById("beginnerIssuesLabel").foreach { issuesLabelEl =>
       val label = issuesLabelEl.asInput.value

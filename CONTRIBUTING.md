@@ -38,10 +38,10 @@ sbt
 
 Into the sbt shell:
 
-* Populate the elastic search index (only once):
+* Populate the database (only once):
 
 ```
-data/reStart elastic
+data/reStart init
 ```
 
  * Start the Scaladex server:

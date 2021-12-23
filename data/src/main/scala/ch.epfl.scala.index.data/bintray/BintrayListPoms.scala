@@ -19,7 +19,6 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import ch.epfl.scala.index.data.cleanup.NonStandardLib
 import ch.epfl.scala.index.data.download.PlayWsDownloader
-import ch.epfl.scala.index.model._
 import com.github.nscala_time.time.Imports._
 import org.json4s._
 import org.json4s.native.Serialization.write
@@ -29,6 +28,9 @@ import play.api.libs.ws.WSClient
 import play.api.libs.ws.WSRequest
 import play.api.libs.ws.WSResponse
 import play.api.libs.ws.ahc.AhcCurlRequestLogger
+import scaladex.core.util.Ordering.Descending
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
 
 class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
     implicit val system: ActorSystem
@@ -60,10 +62,7 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
   }
 
   /** Fetch bintray first, to find out the pages remaining */
-  def getPagination(
-      query: String,
-      lastCheckDate: Option[DateTime]
-  ): Future[InternalBintrayPagination] = {
+  def getPagination(query: String, lastCheckDate: Option[DateTime]): Future[InternalBintrayPagination] = {
     val request = discover(client, PomListDownload(query, 0, lastCheckDate))
 
     request
@@ -89,10 +88,7 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
    * @param response the current response
    * @return
    */
-  def processSearch(
-      page: PomListDownload,
-      response: WSResponse
-  ): List[BintraySearch] =
+  def processSearch(page: PomListDownload, response: WSResponse): List[BintraySearch] =
     try Parser.parseUnsafe(response.body).extract[List[BintraySearch]]
     catch {
       case scala.util.control.NonFatal(e) =>
@@ -190,7 +186,6 @@ class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
       mostRecentQueriedDate: Option[DateTime],
       filter: Option[BintraySearch => Boolean] = None
   ): Unit = {
-
     if (queried.size == 1) {
       log.info(infoMessage)
     }
@@ -242,11 +237,7 @@ object BintrayListPoms {
    * @param scalaVersions The list of desired scala versions
    * @param libs The list of desired non-standard libs
    */
-  def run(
-      paths: DataPaths,
-      scalaVersions: Seq[String],
-      libs: Seq[NonStandardLib]
-  )(implicit sys: ActorSystem): Unit =
+  def run(paths: DataPaths, scalaVersions: Seq[String], libs: Seq[NonStandardLib])(implicit sys: ActorSystem): Unit =
     Using.resource(BintrayClient.create(paths.credentials)) { bintrayClient =>
       val listPoms = new BintrayListPoms(paths, bintrayClient)
 

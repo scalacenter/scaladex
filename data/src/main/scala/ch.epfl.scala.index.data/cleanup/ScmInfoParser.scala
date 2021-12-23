@@ -2,9 +2,9 @@ package ch.epfl.scala.index
 package data
 package cleanup
 
-import ch.epfl.scala.index.model.Parsers
-import ch.epfl.scala.index.model.misc.GithubRepo
 import fastparse._
+import scaladex.core.model.Project
+import scaladex.core.util.Parsers
 
 object ScmInfoParser extends Parsers {
   import fastparse.NoWhitespace._
@@ -26,10 +26,10 @@ object ScmInfoParser extends Parsers {
         .! ~ "/" ~ Segment.rep(1).!.map(removeDotGit)
   )
 
-  def parse(scmInfo: String): Option[GithubRepo] =
+  def parse(scmInfo: String): Option[Project.Reference] =
     fastparse.parse(scmInfo, x => ScmUrl(x)) match {
       case Parsed.Success((organization, repo), _) =>
-        Some(GithubRepo(organization, repo))
+        Some(Project.Reference.from(organization, repo))
       case _ => None
     }
 

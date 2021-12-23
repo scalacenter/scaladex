@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.WSRequest
 import play.api.libs.ws.WSResponse
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
 
 class DownloadParentPoms(
     repository: LocalPomRepository,

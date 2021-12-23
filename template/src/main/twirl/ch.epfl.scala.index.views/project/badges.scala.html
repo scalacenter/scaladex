@@ -1,10 +1,12 @@
-@import ch.epfl.scala.index.model.Release
-@(release: Release)
+@import scaladex.core.model.Artifact
+@import scaladex.core.model.Env
+
+@(artifact: Artifact, env: Env)
 <div class="box badge-showcase">
   <h4>Markdown Badge</h4>
   <div style="overflow: hidden">
   <a href="#badge-markdown">
-    <img src="@release.reference.badgeUrl" />
+    <img src="@artifact.badgeUrl(env)" />
   </a>
   </div>
   <div id="badge-markdown" class="overlay">
@@ -13,14 +15,14 @@
       <a class="close" href="#">&times;</a>
 
       <div class="content">
-        <img src="@release.reference.badgeUrl" />
+        <img src="@artifact.badgeUrl(env)" />
         <div>
           <h5>Markdown:</h5>
           <pre
           aria-label="Badge markdown"
           id="copy-badge-markdown"
           class="copyable-incantation"
-          >[![@release.reference.artifact Scala version support](@release.reference.badgeUrl)](@release.reference.artifactFullHttpUrl)</pre>
+          >[![@artifact.artifactName Scala version support](@artifact.badgeUrl(env)](@artifact.artifactFullHttpUrl(env)</pre>
           <button class="btn-copy btn btn-primary pull-right" data-clipboard-target="copy-badge-markdown">Copy Markdown</button>
         </div>
       </div>

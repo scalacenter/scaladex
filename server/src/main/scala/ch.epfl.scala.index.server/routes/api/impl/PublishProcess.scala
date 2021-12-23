@@ -22,23 +22,21 @@ import ch.epfl.scala.index.data.download.PlayWsDownloader
 import ch.epfl.scala.index.data.maven.DownloadParentPoms
 import ch.epfl.scala.index.data.maven.PomsReader
 import ch.epfl.scala.index.data.maven.ReleaseModel
-import ch.epfl.scala.index.model.Project
-import ch.epfl.scala.index.model.Release
-import ch.epfl.scala.index.model.misc.GithubRepo
-import ch.epfl.scala.index.search.DataRepository
 import org.slf4j.LoggerFactory
+import scaladex.core.service.WebDatabase
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
 
-private[api] class PublishProcess(
-    paths: DataPaths,
-    dataRepository: DataRepository
-)(implicit val system: ActorSystem)
-    extends PlayWsDownloader {
+private[api] class PublishProcess(paths: DataPaths, db: WebDatabase)(
+    implicit val system: ActorSystem
+) extends PlayWsDownloader {
 
   import system.dispatcher
   private val log = LoggerFactory.getLogger(getClass)
   private val indexingActor = system.actorOf(
-    Props(classOf[impl.IndexingActor], paths, dataRepository, system)
+    Props(classOf[impl.IndexingActor], paths, db, system)
   )
+  private val githubExtractor = new GithubRepoExtractor(paths)
 
   /**
    * write the pom file to disk if it's a pom file (SBT will also send *.pom.sha1 and *.pom.md5)
@@ -61,7 +59,7 @@ private[api] class PublishProcess(
       }.flatMap { _ =>
         getTmpPom(data) match {
           case List(Success((pom, _, _))) =>
-            getGithubRepo(pom) match {
+            githubExtractor.extract(pom) match {
               case None =>
                 log.warn("POM saved without Github information")
                 data.deleteTemp()
@@ -81,7 +79,7 @@ private[api] class PublishProcess(
 
                   Meta.append(
                     paths,
-                    Meta(data.hash, data.path, data.created),
+                    Meta(data.hash, data.path, data.datetimeCreated.toString),
                     repository
                   )
 
@@ -130,9 +128,7 @@ private[api] class PublishProcess(
    * @param data the XML String data
    * @return
    */
-  private def getTmpPom(
-      data: PublishData
-  ): List[Try[(ReleaseModel, LocalPomRepository, String)]] = {
+  private def getTmpPom(data: PublishData): List[Try[(ReleaseModel, LocalPomRepository, String)]] = {
     val path = data.tempPath.getParent
 
     val downloadParentPomsStep =
@@ -142,15 +138,4 @@ private[api] class PublishProcess(
 
     PomsReader.tmp(paths, path).load()
   }
-
-  /**
-   * try to extract a github repository from scm tag in Maven Model
-   *
-   * @param pom the Maven model
-   * @return
-   */
-  private def getGithubRepo(pom: ReleaseModel): Option[GithubRepo] =
-    (new GithubRepoExtractor(paths)).apply(pom)
-
-  private var cachedReleases = Map.empty[Project.Reference, Set[Release]]
 }

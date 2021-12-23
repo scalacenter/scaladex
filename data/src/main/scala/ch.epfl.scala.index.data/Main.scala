@@ -1,22 +1,27 @@
 package ch.epfl.scala.index.data
 
 import java.nio.file.Path
+import java.time.Instant
 
 import scala.sys.process.Process
 
 import akka.actor.ActorSystem
+import cats.effect._
 import ch.epfl.scala.index.data.bintray.BintrayDownloadPoms
 import ch.epfl.scala.index.data.bintray.BintrayListPoms
 import ch.epfl.scala.index.data.bintray.UpdateBintraySbtPlugins
 import ch.epfl.scala.index.data.central.CentralMissing
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
 import ch.epfl.scala.index.data.cleanup.NonStandardLib
-import ch.epfl.scala.index.data.elastic.SeedElasticSearch
-import ch.epfl.scala.index.data.github.GithubDownload
+import ch.epfl.scala.index.data.init.Init
 import ch.epfl.scala.index.data.maven.DownloadParentPoms
 import ch.epfl.scala.index.data.util.PidLock
-import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
+import doobie.hikari._
+import scaladex.core.util.TimerUtils
+import scaladex.infra.storage.LocalPomRepository
+import scaladex.infra.storage.sql.SqlRepo
+import scaladex.infra.util.DoobieUtils
 
 /**
  * This application manages indexed POMs.
@@ -44,10 +49,9 @@ object Main extends LazyLogging {
    *              - Path of the 'credentials' Git repository
    */
   def run(args: Array[String]): Unit = {
-    val config = ConfigFactory.load().getConfig("org.scala_lang.index.data")
-    val production = config.getBoolean("production")
+    val config = IndexConfig.load()
 
-    if (production) {
+    if (config.env.isDevOrProd) {
       PidLock.create("DATA")
     }
 
@@ -57,11 +61,7 @@ object Main extends LazyLogging {
 
     implicit val system: ActorSystem = ActorSystem()
 
-    val pathFromArgs =
-      if (args.isEmpty) Nil
-      else args.toList.tail.take(3)
-
-    val dataPaths = DataPaths(pathFromArgs)
+    val dataPaths = config.dataPaths
 
     val steps = List(
       // List POMs of Bintray
@@ -85,9 +85,19 @@ object Main extends LazyLogging {
       // which is to low to update all the projects.
       // As an alternative, the sbt steps handles the Github updates of its own projects
       // The IndexingActor does it as well for the projects that are pushed by Maven.
-      Step("github")(() => GithubDownload.run(dataPaths)),
+      Step("github")(() => ()), // todo: maybe
       // Re-create the ElasticSearch index
-      Step("elastic")(() => SeedElasticSearch.run(dataPaths))
+      Step("init") { () =>
+        implicit val cs = IO.contextShift(system.dispatcher)
+        val transactor: Resource[IO, HikariTransactor[IO]] =
+          DoobieUtils.transactor(config.db)
+        transactor
+          .use { xa =>
+            val db = new SqlRepo(config.db, xa)
+            IO.fromFuture(IO(Init.run(dataPaths, db)))
+          }
+          .unsafeRunSync()
+      }
     )
 
     def updateClaims(): Unit = {
@@ -97,8 +107,8 @@ object Main extends LazyLogging {
 
     def subIndex(): Unit =
       SubIndex.generate(
-        source = DataPaths.fullIndex,
-        destination = DataPaths.subIndex
+        source = dataPaths.fullIndex,
+        destination = dataPaths.subIndex
       )
 
     val stepsToRun =
@@ -122,7 +132,7 @@ object Main extends LazyLogging {
           )
       }
 
-    if (production) {
+    if (config.env.isDevOrProd) {
       inPath(dataPaths.contrib) { sh =>
         logger.info("Pulling the latest data from the 'contrib' repository")
         sh.exec("git", "checkout", "master")
@@ -140,9 +150,11 @@ object Main extends LazyLogging {
 
   class Step(val name: String)(effect: () => Unit) {
     def run(): Unit = {
-      logger.info(s"Starting $name")
+      val start = Instant.now()
+      logger.info(s"Starting $name at ${start}")
       effect()
-      logger.info(s"$name done")
+      val duration = TimerUtils.toFiniteDuration(start, Instant.now())
+      logger.info(s"$name done in ${duration.toMinutes} minutes")
     }
   }
 

@@ -1,6 +1,4 @@
 import ScalaJSHelper._
-import sbtcrossproject.CrossPlugin.autoImport.crossProject
-
 import Deployment.githash
 
 inThisBuild(
@@ -20,7 +18,8 @@ inThisBuild(
 lazy val logging =
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.1.7",
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
+    "org.apache.logging.log4j" % "log4j-core" % V.log4jVersion % Runtime
   )
 
 val amm = inputKey[Unit]("Start Ammonite REPL")
@@ -43,39 +42,33 @@ lazy val ammoniteSettings = Seq(
 )
 
 lazy val commonSettings = Seq(
-  scalaVersion := "2.13.5",
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding",
     "UTF-8",
     "-feature",
     "-unchecked",
-    "-Xfatal-warnings",
+//    "-Xfatal-warnings",
     "-Wunused:imports"
   ),
-  libraryDependencies += "org.scalatest" %% "scalatest" % V.scalatest % Test,
-  reStart / javaOptions ++= {
+  Compile / javaOptions ++= {
     val base = (ThisBuild / baseDirectory).value
-
     val devCredentials = base / "../scaladex-dev-credentials/application.conf"
-
-    val addDevCredentials =
-      if (devCredentials.exists) Seq(s"-Dconfig.file=$devCredentials")
-      else Seq()
-
-    addDevCredentials
-  }
+    if (devCredentials.exists) Seq(s"-Dconfig.file=$devCredentials")
+    else Seq()
+  },
+  Compile / run / fork := true,
+  reStart / javaOptions := (Compile / run / javaOptions).value
 ) ++
   addCommandAlias("start", "reStart") ++ logging ++ ammoniteSettings
-
-enablePlugins(Elasticsearch)
 
 lazy val scaladex = project
   .in(file("."))
   .aggregate(
     client,
     data,
-    model,
+    core,
+    infra,
     server,
     api.jvm,
     api.js,
@@ -91,23 +84,73 @@ lazy val template = project
     libraryDependencies ++= Seq(
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTimeVersion,
       "com.typesafe" % "config" % "1.4.0",
-      "com.typesafe.akka" %% "akka-http-core" % V.akkaHttpVersion
+      "com.typesafe.akka" %% "akka-http-core" % V.akkaHttpVersion,
+      "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
-  .dependsOn(model)
+  .dependsOn(core)
   .enablePlugins(SbtTwirl)
 
-lazy val search = project
+lazy val infra = project
+  .in(file("infra"))
+  .configs(IntegrationTest)
   .settings(commonSettings)
   .settings(
-    Test / test := (Test / test).dependsOn(startElasticsearch).value,
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4sVersion,
       "org.json4s" %% "json4s-native" % "3.6.9",
-      "org.typelevel" %% "jawn-json4s" % "1.0.0"
-    )
+      "org.typelevel" %% "jawn-json4s" % "1.0.0",
+      "org.flywaydb" % "flyway-core" % "7.11.0", // for database migration
+      "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
+      "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
+      "de.heikoseeberger" %% "akka-http-circe" % "1.33.0",
+      "org.tpolecat" %% "doobie-scalatest" % V.doobieVersion % Test,
+      "org.scalatest" %% "scalatest" % V.scalatest % "test,it"
+    ) ++ Seq(
+      "org.tpolecat" %% "doobie-core",
+      "org.tpolecat" %% "doobie-h2",
+      "org.tpolecat" %% "doobie-postgres",
+      "org.tpolecat" %% "doobie-hikari"
+    ).map(_ % V.doobieVersion) ++ Seq(
+      "io.circe" %% "circe-core",
+      "io.circe" %% "circe-generic",
+      "io.circe" %% "circe-parser"
+    ).map(_ % V.circeVersion),
+    Elasticsearch.settings(defaultPort = 9200),
+    inConfig(Compile)(
+      Postgres.settings(defaultPort = 5432, database = "scaladex")
+    ),
+    Compile / run / javaOptions ++= {
+      val elasticsearchPort = startElasticsearch.value
+      val postgresPort = (Compile / startPostgres).value
+      Seq(
+        "-Xmx4g",
+        s"-Ddatabase.port=$postgresPort",
+        s"-Delasticsearch.port=$elasticsearchPort"
+      )
+    },
+    inConfig(Test)(
+      Postgres.settings(defaultPort = 5432, database = "scaladex-test")
+    ),
+    Test / javaOptions ++= {
+      val postgresPort = (Test / startPostgres).value
+      val elasticsearchPort = startElasticsearch.value
+      Seq(
+        s"-Ddatabase.port=$postgresPort",
+        s"-Ddatabase.name=scaladex-test",
+        s"-Delasticsearch.index=scaladex-test",
+        s"-Delasticsearch.port=$elasticsearchPort"
+      )
+    },
+    Test / fork := true,
+    // testing the database requests need to delete and create the tables,
+    // which can fail if many tests are running in parallel
+    Test / parallelExecution := false,
+    Defaults.itSettings,
+    IntegrationTest / fork := true,
+    IntegrationTest / javaOptions ++= (Test / javaOptions).value
   )
-  .dependsOn(model)
+  .dependsOn(core)
 
 lazy val api = crossProject(JSPlatform, JVMPlatform)
   .settings(commonSettings)
@@ -129,43 +172,59 @@ lazy val client = project
   .dependsOn(api.js)
 
 lazy val server = project
+  .configs(IntegrationTest)
   .settings(commonSettings)
   .settings(packageScalaJS(client))
   .settings(
+    javaOptions ++= Seq(
+      "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044"
+    ),
     libraryDependencies ++= Seq(
       "com.typesafe.play" %%% "play-json" % V.playJsonVersion,
-      "com.typesafe.akka" %% "akka-testkit" % V.akkaVersion % Test,
+      "org.scalatest" %% "scalatest" % V.scalatest % "test,it",
+      "com.typesafe.akka" %% "akka-testkit" % V.akkaVersion % "test,it",
       "com.typesafe.akka" %% "akka-slf4j" % V.akkaVersion,
+      "com.typesafe.akka" %% "akka-stream-testkit" % V.akkaVersion % Test,
+      "com.typesafe.akka" %% "akka-http-testkit" % "10.2.6" % Test,
       "ch.megard" %% "akka-http-cors" % "0.4.3",
       "com.softwaremill.akka-http-session" %% "core" % "0.5.11",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
-      "org.webjars.bower" % "bootstrap-sass" % "3.3.6",
-      "org.webjars.bower" % "bootstrap-switch" % "3.3.2",
-      "org.webjars.bower" % "bootstrap-select" % "1.10.0",
+      "org.webjars" % "bootstrap-sass" % "3.4.1",
+      "org.webjars" % "bootstrap-switch" % "3.3.2",
+      "org.webjars" % "bootstrap-select" % "1.13.18",
       "org.webjars.bower" % "font-awesome" % "4.6.3",
-      "org.webjars.bower" % "jQuery" % "2.2.4",
-      "org.webjars.bower" % "select2" % "4.0.3",
-      "org.apache.logging.log4j" % "log4j-core" % V.log4jVersion % Runtime
+      "org.webjars" % "jquery" % "3.6.0",
+      "org.webjars.bower" % "select2" % "4.0.3"
     ),
-    Universal / packageBin := (Universal / packageBin)
-      .dependsOn(Assets / WebKeys.assets)
-      .value,
-    Test / test := (Test / test).dependsOn(startElasticsearch).value,
-    reStart := reStart
-      .dependsOn(startElasticsearch, Assets / WebKeys.assets)
-      .evaluated,
-    Compile / run := (Compile / run).dependsOn(startElasticsearch).evaluated,
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
-    reStart / javaOptions ++= Seq("-Xmx4g")
+    Compile / resourceGenerators += Def.task(
+      Seq((Assets / WebKeys.assets).value)
+    ),
+    Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value,
+    Defaults.itSettings,
+    IntegrationTest / fork := true,
+    IntegrationTest / javaOptions ++= (infra / Compile / run / javaOptions).value
   )
-  .dependsOn(template, data, search, api.jvm)
+  .dependsOn(template, data, infra, api.jvm)
   .enablePlugins(SbtSassify, JavaServerAppPackaging)
 
-lazy val model = project
+lazy val core = project
+  .in(file("core"))
   .settings(commonSettings)
   .settings(
-    libraryDependencies += "com.lihaoyi" %% "fastparse" % "2.3.0"
+    libraryDependencies ++= Seq(
+      "com.lihaoyi" %% "fastparse" % "2.3.0",
+//      "joda-time" % "joda-time" % "2.10.10",
+      "org.scalatest" %% "scalatest" % V.scalatest % Test
+    ) ++ Seq(
+      "io.circe" %% "circe-core",
+      "io.circe" %% "circe-generic",
+      "io.circe" %% "circe-parser"
+    ).map(_ % V.circeVersion),
+    buildInfoPackage := "build.info",
+    buildInfoKeys := Seq[BuildInfoKey](ThisBuild / baseDirectory)
   )
+  .enablePlugins(BuildInfoPlugin)
 
 lazy val data = project
   .settings(commonSettings)
@@ -182,23 +241,21 @@ lazy val data = project
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-json4s" % "1.29.1",
       "org.json4s" %% "json4s-native" % "3.5.5",
-      "org.apache.logging.log4j" % "log4j-core" % V.log4jVersion % Runtime
+      "org.scalatest" %% "scalatest" % V.scalatest % Test
     ),
-    buildInfoPackage := "build.info",
-    buildInfoKeys := Seq[BuildInfoKey](ThisBuild / baseDirectory),
-    reStart := reStart.dependsOn(startElasticsearch).evaluated,
-    Compile / run := (Compile / run).dependsOn(startElasticsearch).evaluated,
-    reStart / javaOptions ++= Seq("-Xmx4g")
+    Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value
   )
-  .enablePlugins(BuildInfoPlugin, JavaAppPackaging)
-  .dependsOn(model, search)
+  .enablePlugins(JavaAppPackaging)
+  .dependsOn(core, infra)
 
 lazy val V = new {
-  val scalatest = "3.2.9"
+  val doobieVersion = "0.13.4"
   val playJsonVersion = "2.9.0"
   val akkaVersion = "2.6.5"
   val akkaHttpVersion = "10.1.12"
   val elastic4sVersion = "7.10.2"
   val log4jVersion = "2.17.0"
   val nscalaTimeVersion = "2.24.0"
+  val scalatest = "3.2.9"
+  val circeVersion = "0.14.1"
 }

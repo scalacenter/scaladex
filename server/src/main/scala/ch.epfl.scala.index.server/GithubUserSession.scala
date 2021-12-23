@@ -6,9 +6,9 @@ import java.util.UUID
 import scala.collection.parallel.mutable.ParTrieMap
 import scala.util.Try
 
-import ch.epfl.scala.index.server.config.ServerConfig
 import com.softwaremill.session._
 import org.slf4j.LoggerFactory
+import scaladex.core.model.UserState
 
 class GithubUserSession(sessionConfig: SessionConfig) {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -36,9 +36,4 @@ class GithubUserSession(sessionConfig: SessionConfig) {
   }
 
   def getUser(id: Option[UUID]): Option[UserState] = id.flatMap(users.get)
-}
-
-object GithubUserSession {
-  def apply(config: ServerConfig): GithubUserSession =
-    new GithubUserSession(config.session)
 }

@@ -4,17 +4,18 @@ package data
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
-import ch.epfl.scala.index.model.Descending
 import com.github.nscala_time.time.Imports._
-import org.joda.time.DateTime
 import org.json4s._
 import org.json4s.native.Serialization.{write => swrite}
 import org.typelevel.jawn.support.json4s.Parser
+import scaladex.core.util.Ordering.Descending
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
 
 case class Meta(
     sha1: String,
     path: String,
-    created: DateTime
+    created: String
 )
 
 object Meta {

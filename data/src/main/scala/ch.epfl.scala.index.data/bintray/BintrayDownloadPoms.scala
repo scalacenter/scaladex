@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.WSRequest
 import play.api.libs.ws.WSResponse
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
 
 class BintrayDownloadPoms(paths: DataPaths)(implicit val system: ActorSystem) extends PlayWsDownloader {
 
@@ -86,10 +88,7 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit val system: ActorSystem) ex
    * @param search the bintray Search
    * @return
    */
-  private def downloadRequest(
-      wsClient: WSClient,
-      search: BintraySearch
-  ): WSRequest =
+  private def downloadRequest(wsClient: WSClient, search: BintraySearch): WSRequest =
     if (search.isJCenter) {
       wsClient.url(escape(s"https://jcenter.bintray.com/${search.path}"))
     } else {
@@ -105,27 +104,17 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit val system: ActorSystem) ex
    * @param search the bintray search
    * @param response the download response
    */
-  private def processPomDownload(
-      search: BintraySearch,
-      response: WSResponse
-  ): Unit =
+  private def processPomDownload(search: BintraySearch, response: WSResponse): Unit =
     if (200 == response.status) {
-
       val path = pomPath(search)
-
       if (Files.exists(path)) {
-
         Files.delete(path)
       }
-
       if (verifyChecksum(response.body, search.sha1)) {
-
         Files.write(path, response.body.getBytes(StandardCharsets.UTF_8))
       }
-
       ()
     } else {
-
       log.warn(
         "Pom download failed\n" +
           search.toString + "\n" +
@@ -137,7 +126,6 @@ class BintrayDownloadPoms(paths: DataPaths)(implicit val system: ActorSystem) ex
    * main run method
    */
   def run(): Unit = {
-
     download[BintraySearch, Unit](
       "Downloading POMs",
       searchesBySha1,

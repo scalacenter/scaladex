@@ -114,7 +114,7 @@ trait PlayWsDownloader {
       process: (T, WSResponse) => Try[R]
   ): Seq[R] = {
 
-    def processItem(client: WSClient, item: T, progress: ProgressBar) = {
+    def processItem(client: WSClient, item: T, progress: ProgressBar): Future[R] = {
       val request = downloadUrl(client, item)
       val response = request.get()
 

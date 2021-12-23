@@ -10,15 +10,21 @@ import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.epfl.scala.index.api.AutocompletionResponse
-import ch.epfl.scala.index.model._
-import ch.epfl.scala.index.model.misc.SearchParams
-import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.search.DataRepository
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import com.softwaremill.session.SessionDirectives.optionalSession
 import com.softwaremill.session.SessionOptions.refreshable
 import com.softwaremill.session.SessionOptions.usingCookies
 import play.api.libs.json._
+import scaladex.core.model.Artifact
+import scaladex.core.model.ArtifactSelection
+import scaladex.core.model.BinaryVersion
+import scaladex.core.model.Platform
+import scaladex.core.model.Project
+import scaladex.core.model.ScalaLanguageVersion
+import scaladex.core.model.search.ProjectHit
+import scaladex.core.model.search.SearchParams
+import scaladex.core.service.SearchEngine
+import scaladex.core.service.WebDatabase
 
 object SearchApi {
   implicit val formatProject: OFormat[Project] =
@@ -31,7 +37,7 @@ object SearchApi {
       organization: String,
       repository: String,
       logo: Option[String] = None,
-      artifacts: List[String] = Nil
+      artifacts: Seq[String] = Nil
   )
 
   case class ReleaseOptions(
@@ -41,27 +47,26 @@ object SearchApi {
       artifactId: String,
       version: String
   )
-
   private[api] def parseScalaTarget(
       targetType: Option[String],
       scalaVersion: Option[String],
       scalaJsVersion: Option[String],
       scalaNativeVersion: Option[String],
       sbtVersion: Option[String]
-  ): Option[ScalaTarget] =
+  ): Option[Platform] =
     (
       targetType,
-      scalaVersion.flatMap(LanguageVersion.tryParse),
+      scalaVersion.flatMap(ScalaLanguageVersion.tryParse),
       scalaJsVersion.flatMap(BinaryVersion.parse),
       scalaNativeVersion.flatMap(BinaryVersion.parse),
       sbtVersion.flatMap(BinaryVersion.parse)
     ) match {
 
       case (Some("JVM"), Some(scalaVersion), _, _, _) =>
-        Some(ScalaJvm(scalaVersion))
+        Some(Platform.ScalaJvm(scalaVersion))
 
       case (Some("JS"), Some(scalaVersion), Some(scalaJsVersion), _, _) =>
-        Some(ScalaJs(scalaVersion, scalaJsVersion))
+        Some(Platform.ScalaJs(scalaVersion, scalaJsVersion))
 
       case (
             Some("NATIVE"),
@@ -70,21 +75,19 @@ object SearchApi {
             Some(scalaNativeVersion),
             _
           ) =>
-        Some(ScalaNative(scalaVersion, scalaNativeVersion))
+        Some(Platform.ScalaNative(scalaVersion, scalaNativeVersion))
 
       case (Some("SBT"), Some(scalaVersion), _, _, Some(sbtVersion)) =>
-        Some(SbtPlugin(scalaVersion, sbtVersion))
+        Some(Platform.SbtPlugin(scalaVersion, sbtVersion))
 
-      case _ => None
+      case (Some("Java"), None, None, None, None) => Some(Platform.Java)
+      case _                                      => None
     }
-
 }
 
-class SearchApi(
-    dataRepository: DataRepository,
-    session: GithubUserSession
-)(implicit val executionContext: ExecutionContext)
-    extends PlayJsonSupport {
+class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUserSession)(
+    implicit val executionContext: ExecutionContext
+) extends PlayJsonSupport {
   import session.implicits._
 
   val routes: Route =
@@ -116,7 +119,7 @@ class SearchApi(
                   sbtVersion,
                   cli
               ) =>
-                val scalaTarget = SearchApi.parseScalaTarget(
+                val platform = SearchApi.parseScalaTarget(
                   Some(targetType),
                   Some(scalaVersion),
                   scalaJsVersion,
@@ -124,34 +127,33 @@ class SearchApi(
                   sbtVersion
                 )
 
-                def convert(project: Project): SearchApi.Project = {
-                  import project._
-                  val artifacts0 = if (cli) cliArtifacts.toList else artifacts
+                def convert(project: ProjectHit): SearchApi.Project = {
+                  import project.document._
                   SearchApi.Project(
-                    organization,
-                    repository,
-                    project.github.flatMap(_.logo.map(_.target)),
-                    artifacts0
+                    organization.value,
+                    repository.value,
+                    githubInfo.flatMap(_.avatarUrl.map(_.target)),
+                    artifactNames.map(_.value)
                   )
                 }
 
-                scalaTarget match {
+                platform match {
                   case Some(_) =>
                     val searchParams = SearchParams(
                       queryString = q,
-                      targetFiltering = scalaTarget,
+                      targetFiltering = platform,
                       cli = cli,
                       page = page.getOrElse(0),
                       total = total.getOrElse(10)
                     )
-                    val result = dataRepository
-                      .findProjects(searchParams)
+                    val result = searchEngine
+                      .find(searchParams)
                       .map(page => page.items.map(p => convert(p)))
                     complete(OK, result)
 
                   case None =>
                     val errorMessage =
-                      s"something is wrong: $scalaTarget $scalaVersion $scalaJsVersion $scalaNativeVersion $sbtVersion"
+                      s"something is wrong: $platform $scalaVersion $scalaJsVersion $scalaNativeVersion $sbtVersion"
                     complete(BadRequest, errorMessage)
                 }
             }
@@ -181,7 +183,8 @@ class SearchApi(
                     scalaNativeVersion,
                     sbtVersion
                 ) =>
-                  val reference = Project.Reference(organization, repository)
+                  val reference =
+                    Project.Reference.from(organization, repository)
                   val scalaTarget = SearchApi.parseScalaTarget(
                     targetType,
                     scalaVersion,
@@ -212,38 +215,42 @@ class SearchApi(
 
   private def getReleaseOptions(
       projectRef: Project.Reference,
-      scalaTarget: Option[ScalaTarget],
+      scalaTarget: Option[Platform],
       artifact: Option[String]
-  ): Future[Option[SearchApi.ReleaseOptions]] =
+  ): Future[Option[SearchApi.ReleaseOptions]] = {
+    val selection = new ArtifactSelection(
+      target = scalaTarget,
+      artifactNames = artifact.map(Artifact.Name.apply),
+      version = None,
+      selected = None
+    )
     for {
-      projectAndReleaseOptions <- dataRepository.getProjectAndReleaseOptions(
-        projectRef,
-        new ReleaseSelection(
-          target = scalaTarget,
-          artifact = artifact,
-          version = None,
-          selected = None
-        )
+      projectOpt <- db.findProject(projectRef)
+      releases <- db.findReleases(projectRef)
+    } yield for {
+      project <- projectOpt
+      filteredArtifacts = selection.filterReleases(releases, project)
+      selected <- filteredArtifacts.headOption
+    } yield {
+      val artifacts = filteredArtifacts.map(_.artifactName.value).toList
+      val versions = filteredArtifacts.map(_.version.toString).toList
+      SearchApi.ReleaseOptions(
+        artifacts,
+        versions,
+        selected.groupId.value,
+        selected.artifactId,
+        selected.version.toString
       )
-    } yield projectAndReleaseOptions
-      .map {
-        case (_, options) =>
-          SearchApi.ReleaseOptions(
-            options.artifacts,
-            options.versions.sorted.map(_.toString),
-            options.release.maven.groupId,
-            options.release.maven.artifactId,
-            options.release.maven.version
-          )
-      }
+    }
+  }
 
   private def autocomplete(params: SearchParams) =
-    for (projects <- dataRepository.autocompleteProjects(params))
+    for (projects <- searchEngine.autocomplete(params))
       yield projects.map { project =>
         AutocompletionResponse(
-          project.organization,
-          project.repository,
-          project.github.flatMap(_.description).getOrElse("")
+          project.organization.value,
+          project.repository.value,
+          project.githubInfo.flatMap(_.description).getOrElse("")
         )
       }
 }

@@ -1,13 +1,16 @@
-@import ch.epfl.scala.index.model.SemanticVersion
-@import ch.epfl.scala.index.model.misc.{Pagination, SearchParams}
+
+@import scaladex.core.model.search.SearchParams
+@import scaladex.core.model.search.Pagination
+@import scaladex.core.model.Platform
+@import scaladex.core.model.BinaryVersion
 
 @(params: SearchParams,
-  topics: List[(String, Long)],
-  targetTypes: List[(String, String, Long)],
-  scalaVersions: List[(String, Long)],
-  scalaJsVersions: List[(String, Long)],
-  scalaNativeVersions: List[(String, Long)],
-  sbtVersions: List[(String, Long)],
+  topics: Seq[(String, Long)],
+  platformTypes: Seq[(Platform.PlatformType, Long)],
+  scalaVersions: Seq[(String, Long)],
+  scalaJsVersions: Seq[(BinaryVersion, Long)],
+  scalaNativeVersions: Seq[(BinaryVersion, Long)],
+  sbtVersions: Seq[(BinaryVersion, Long)],
   pagination: Pagination,
   you: Boolean)
 
@@ -23,13 +26,13 @@
     <fieldset>
       <legend>Target</legend>
       <ul>
-      @for((targetType, label, count) <- targetTypes) {
+      @for((platformType, count) <- platformTypes) {
         <li>
           <label>
-            <input type="checkbox" @if(params.targetTypes.contains(targetType)) { checked }
-                   name="targetTypes" value="@targetType" onclick="this.form.submit()">
+            <input type="checkbox" @if(params.targetTypes.contains(platformType.name)) { checked }
+                   name="targetTypes" value="@platformType.name" onclick="this.form.submit()">
                    
-            @label (@count)
+            @platformType.label (@count)
           </label>
         </li>
       }
@@ -55,7 +58,7 @@
         @for((sbtVersion, count) <- sbtVersions) {
           <li>
             <label>
-              <input type="checkbox" @if(params.sbtVersions.contains(sbtVersion)) { checked }
+              <input type="checkbox" @if(params.sbtVersions.contains(sbtVersion.toString)) { checked }
                      name="sbtVersions" value="@sbtVersion" onclick="this.form.submit()">
               @sbtVersion (@count)
             </label>
@@ -69,7 +72,7 @@
         @for((scalaJsVersion, count) <- scalaJsVersions) {
           <li>
             <label>
-              <input type="checkbox" @if(params.scalaJsVersions.contains(scalaJsVersion)) { checked }
+              <input type="checkbox" @if(params.scalaJsVersions.contains(scalaJsVersion.toString)) { checked }
                      name="scalaJsVersions" value="@scalaJsVersion" onclick="this.form.submit()">
               @scalaJsVersion (@count)
             </label>
@@ -83,7 +86,7 @@
         @for((scalaNativeVersion, count) <- scalaNativeVersions) {
           <li>
             <label>
-              <input type="checkbox" @if(params.scalaNativeVersions.contains(scalaNativeVersion)) { checked }
+              <input type="checkbox" @if(params.scalaNativeVersions.contains(scalaNativeVersion.toString)) { checked }
                      name="scalaNativeVersions" value="@scalaNativeVersion" onclick="this.form.submit()">
               @scalaNativeVersion (@count)
             </label>
@@ -95,7 +98,7 @@
     <fieldset>
       <legend>Topics</legend>
       <ul>
-        @for((topic, count) <- topics.toList.sortBy(_._1)) {
+        @for((topic, count) <- topics.sortBy(_._1)) {
         <li>
           <label>
             <input type="checkbox" @if(params.topics.contains(topic)) { checked }

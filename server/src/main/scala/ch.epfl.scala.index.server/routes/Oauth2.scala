@@ -4,7 +4,6 @@ package routes
 
 import scala.concurrent.ExecutionContext
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes.TemporaryRedirect
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model._
@@ -12,13 +11,12 @@ import akka.http.scaladsl.model.headers.Referer
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.epfl.scala.index.server.config.OAuth2Config
-import ch.epfl.scala.index.server.config.ServerConfig
 import com.softwaremill.session.CsrfDirectives._
 import com.softwaremill.session.CsrfOptions._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 
-class Oauth2(config: OAuth2Config, github: Github, session: GithubUserSession)(
+class Oauth2(config: OAuth2Config, githubAuth: GithubAuth, session: GithubUserSession)(
     implicit ec: ExecutionContext
 ) {
   import session.implicits._
@@ -62,7 +60,7 @@ class Oauth2(config: OAuth2Config, github: Github, session: GithubUserSession)(
             ),
             pathEnd(
               parameters(("code", "state".?)) { (code, state) =>
-                val userStateQuery = github.getUserStateWithOauth2(
+                val userStateQuery = githubAuth.getUserStateWithOauth2(
                   config.clientId,
                   config.clientSecret,
                   code,
@@ -93,14 +91,4 @@ class Oauth2(config: OAuth2Config, github: Github, session: GithubUserSession)(
         )
       )
     )
-}
-
-object Oauth2 {
-  def apply(
-      config: ServerConfig,
-      session: GithubUserSession
-  )(implicit sys: ActorSystem): Oauth2 = {
-    import sys.dispatcher
-    new Oauth2(config.oAuth2, Github(), session)
-  }
 }

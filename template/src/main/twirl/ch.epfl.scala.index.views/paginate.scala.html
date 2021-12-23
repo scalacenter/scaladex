@@ -1,8 +1,7 @@
-@import ch.epfl.scala.index.model.misc.Pagination
 @import akka.http.scaladsl.model.Uri
+@import scaladex.core.model.search.Pagination
 
 @(pagination: Pagination, uriFun: Int => Uri)
-
 <nav>
   <ul class="pagination">
     @defining(paginationRender(pagination.current, pagination.pageCount)) { case (prev, sels, next) =>

@@ -3,6 +3,7 @@ package server
 package routes
 package api
 
+import java.time.Instant
 import java.util.Base64
 
 import scala.collection.mutable.{Map => MMap}
@@ -16,18 +17,17 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives._
-import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.util.Timeout
-import ch.epfl.scala.index.data.DataPaths
-import ch.epfl.scala.index.model.release._
-import ch.epfl.scala.index.search.DataRepository
-import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
+import scaladex.core.model.Artifact
+import scaladex.core.model.UserState
+import scaladex.core.service.WebDatabase
+import scaladex.infra.storage.DataPaths
 
 class PublishApi(
     paths: DataPaths,
-    dataRepository: DataRepository,
-    github: Github
+    db: WebDatabase,
+    github: GithubAuth
 )(implicit system: ActorSystem) {
 
   private val log = LoggerFactory.getLogger(getClass)
@@ -41,7 +41,7 @@ class PublishApi(
    */
   private def githubAuthenticator(
       credentialsHeader: Option[HttpCredentials]
-  ): Credentials => Future[Option[(data.github.Credentials, UserState)]] = {
+  ): Credentials => Future[Option[(String, UserState)]] = {
 
     case Credentials.Provided(username) =>
       credentialsHeader match {
@@ -52,7 +52,6 @@ class PublishApi(
           val userPass = upw.split(":")
 
           val token = userPass(1)
-          val credentials = data.github.Credentials(token)
           // todo - catch errors
 
           githubCredentialsCache.get(token) match {
@@ -60,8 +59,8 @@ class PublishApi(
               Future.successful(res)
             case _ =>
               github.getUserStateWithToken(token).map { user =>
-                githubCredentialsCache(token) = (credentials, user)
-                Some((credentials, user))
+                githubCredentialsCache(token) = (token, user)
+                Some((token, user))
               }
           }
 
@@ -78,7 +77,7 @@ class PublishApi(
    * @param path the real publishing path
    * @return MavenReference
    */
-  private def mavenPathExtractor(path: String): MavenReference = {
+  private def mavenPathExtractor(path: String): Artifact.MavenReference = {
 
     val segments = path.split("/").toList
     val size = segments.size
@@ -88,7 +87,7 @@ class PublishApi(
     val version = segments(size - 2)
     val groupId = segments.slice(takeFrom, size - 3).mkString(".")
 
-    MavenReference(groupId, artifactId, version)
+    Artifact.MavenReference(groupId, artifactId, version)
   }
 
   import akka.pattern.ask
@@ -97,30 +96,26 @@ class PublishApi(
   implicit val timeout: Timeout = Timeout(40.seconds)
   private val actor =
     system.actorOf(
-      Props(classOf[impl.PublishActor], paths, dataRepository, system)
+      Props(classOf[impl.PublishActor], paths, db, system)
     )
 
   private val githubCredentialsCache =
-    MMap.empty[String, (data.github.Credentials, UserState)]
-
-  val DateTimeUn: Unmarshaller[String, DateTime] =
-    Unmarshaller.strict[String, DateTime](dateRaw => new DateTime(dateRaw.toLong * 1000L))
+    MMap.empty[String, (String, UserState)]
 
   val routes: Route =
     concat(
       get(
         path("publish")(
           parameter("path")(path =>
-            complete(
+            complete {
               /* check if the release already exists - sbt will handle HTTP-Status codes
                * NotFound -> allowed to write
                * OK -> only allowed if isSnapshot := true
                */
-              dataRepository.getMavenArtifact(mavenPathExtractor(path)).map {
-                case Some(release) => (OK, "release already exists")
-                case None          => (NotFound, "ok to publish")
-              }
-            )
+              val alreadyPublished = false // TODO check from database
+              if (alreadyPublished) (OK, "release already exists")
+              else (NotFound, "ok to publish")
+            }
           )
         )
       ),
@@ -129,7 +124,7 @@ class PublishApi(
           parameters(
             (
               "path",
-              "created".as(DateTimeUn) ? DateTime.now,
+              "created".as(instantUnmarshaller) ? Instant.now(),
               "readme".as[Boolean] ? true,
               "contributors".as[Boolean] ? true,
               "info".as[Boolean] ? true
@@ -141,12 +136,11 @@ class PublishApi(
                   realm = "Scaladex Realm",
                   githubAuthenticator(credentials)
                 ) {
-                  case (credentials, userState) =>
+                  case (_, userState) =>
                     val publishData = impl.PublishData(
                       path,
                       created,
                       data,
-                      credentials,
                       userState,
                       info,
                       contributors,
@@ -170,12 +164,4 @@ class PublishApi(
         )
       )
     )
-}
-
-object PublishApi {
-  def apply(
-      paths: DataPaths,
-      dataRepository: DataRepository
-  )(implicit sys: ActorSystem): PublishApi =
-    new PublishApi(paths, dataRepository, Github())
 }

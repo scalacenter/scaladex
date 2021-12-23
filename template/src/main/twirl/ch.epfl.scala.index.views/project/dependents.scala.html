@@ -1,35 +1,31 @@
-@import ch.epfl.scala.index.model.release._
+@import ch.epfl.scala.index.views.Formats
+@import scaladex.core.model.Artifact
+@import scaladex.core.model.ArtifactDependency
 
-@(allDeps: Dependencies)
-@if(!allDeps.release.isScalaLib) {
-  <div class="dependents box" id="dependents">
-    <h4>
-      <a href="/search?q=depends-on:@allDeps.release.organization/@allDeps.release.artifact">
-        Artifact Dependents
+@(artifact: Artifact, reverseDeps: Seq[ArtifactDependency.Reverse])
+@sampleReverseDeps = @{ArtifactDependency.Reverse.sample(reverseDeps, 100)}
+<div class="dependents box" id="dependents">
+  <h4>
+    <a href="/search?q=depends-on:@artifact.artifactName">
+      Artifact Dependents
+    </a>
+  </h4>
+
+  <hr>
+
+  <h4>@Formats.plural(sampleReverseDeps.size, "dependent")
+  </h4>
+  <ul>
+  @for(fullDep <- sampleReverseDeps){
+    <li>
+      <a href="@fullDep.url" target="_blank">
+      @fullDep.name
       </a>
-    </h4>
-    
-    <hr>
-
-    <h4>@allDeps.reverseDependencies.size
-      @if(allDeps.reverseDependencies.size > 1) {
-        Dependents
-      } else {
-        Dependent
-      }
-    </h4>
-    <ul>
-    @for(dependency <- allDeps.reverseDependencySample(100)){
-      <li>
-        <a href="@dependency.dependent.httpUrl" target="_blank">
-        @dependency.dependent.name
-        </a>
-        <span class="label label-primary">@dependency.scope</span>
-      </li>
-    }
-    @if(100 < allDeps.reverseDependencies.size) {
-      <p>Only showing 100 dependents</p>
-    }
-    </ul>  
-  </div>
-}
+      <span class="label label-primary">@fullDep.dependency.scope</span>
+    </li>
+  }
+  @if(100 < sampleReverseDeps.size) {
+    <p>Only showing 100 dependents</p>
+  }
+  </ul>
+</div>

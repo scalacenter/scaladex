@@ -21,13 +21,16 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.unmarshalling._
 import akka.stream.scaladsl._
 import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.index.data.project.ArtifactMetaExtractor
-import ch.epfl.scala.index.model.misc.Sha1
+import ch.epfl.scala.index.data.meta.ArtifactMetaExtractor
 import de.heikoseeberger.akkahttpjson4s.Json4sSupport._
 import org.joda.time.DateTime
 import org.json4s._
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import scaladex.core.model.Platform
+import scaladex.core.model.Sha1
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
 
 object CentralMissing {
   // q = g:"com.47deg" AND a:"sbt-microsites"
@@ -40,7 +43,7 @@ object CentralMissing {
       g: String,
       a: String,
       v: String,
-      timestamp: DateTime
+      timestamp: String
   )
   private[CentralMissing] case class SearchRequest(
       groupId: String
@@ -50,7 +53,7 @@ object CentralMissing {
       groupId: String,
       artifactId: String,
       version: String,
-      created: DateTime
+      created: String
   ) {
     def path: String = {
       val groupIdPath = groupId.replace(".", "/")
@@ -111,10 +114,7 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
       headers = List(Accept(MediaTypes.`application/json`))
     )
 
-  private def parseJson(
-      response: Try[HttpResponse],
-      request: SearchRequest
-  ): Future[(List[SearchDoc], SearchRequest)] =
+  private def parseJson(response: Try[HttpResponse], request: SearchRequest): Future[(List[SearchDoc], SearchRequest)] =
     response match {
       case Success(HttpResponse(StatusCodes.OK, _, entity, _)) =>
         Unmarshal(entity).to[SearchBody].map(body => (body.toDocs, request))
@@ -125,11 +125,8 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
         Future.failed(new Exception(s"Failed to fetch $request", e))
     }
 
-  private val mavenDownloadConnectionPool: Flow[
-    (HttpRequest, DownloadRequest),
-    (Try[HttpResponse], DownloadRequest),
-    Http.HostConnectionPool
-  ] =
+  private val mavenDownloadConnectionPool
+      : Flow[(HttpRequest, DownloadRequest), (Try[HttpResponse], DownloadRequest), Http.HostConnectionPool] =
     Http()
       .cachedHostConnectionPoolHttps[DownloadRequest]("repo1.maven.org")
       .throttle(
@@ -146,10 +143,7 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
   private val unmarshal =
     Unmarshaller.stringUnmarshaller.forContentTypes(MediaTypes.`text/xml`)
 
-  private def readContent(
-      response: Try[HttpResponse],
-      request: DownloadRequest
-  ): Future[Option[PomContent]] =
+  private def readContent(response: Try[HttpResponse], request: DownloadRequest): Future[Option[PomContent]] =
     response match {
       case Success(HttpResponse(StatusCodes.OK, _, entity, _)) =>
         unmarshal(entity).map(pom => Some((PomContent(pom, request))))
@@ -195,8 +189,10 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
         .flatMap {
           case Success((pom, _, _)) =>
             metaExtractor
-              .extractMeta(pom)
-              .filter(meta => meta.scalaTarget.isDefined && !meta.isNonStandard)
+              .extract(pom)
+              .filter { meta =>
+                meta.platform != Platform.Java //
+              }
               .map(_ => pom.groupId)
           case _ => None
         }

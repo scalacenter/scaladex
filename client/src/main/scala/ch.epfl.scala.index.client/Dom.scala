@@ -37,7 +37,7 @@ object Dom {
   def getElementById(id: String): Option[Element] =
     Option(document.getElementById(id))
 
-  private def getSearchFilter(name: String) =
+  private def getSearchFilter(name: String): Seq[String] =
     getElementsByName(name)
       .map(_.asInput)
       .filter(_.checked)

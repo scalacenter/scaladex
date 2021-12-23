@@ -1,6 +1,6 @@
-@import ch.epfl.scala.index.model._
-@import ch.epfl.scala.index.model.misc.UserInfo
-@(production: Boolean, user: Option[UserInfo])
+@import scaladex.core.model.UserState
+
+@(production: Boolean, user: Option[UserState])
 @main(production, title = "Not found", showSearch = true, user) {
 <main class="container">
   <h1>Not found</h1>

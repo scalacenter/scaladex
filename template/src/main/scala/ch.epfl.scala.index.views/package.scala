@@ -1,12 +1,19 @@
 package ch.epfl.scala.index
 package views
 
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+import scala.concurrent.duration.FiniteDuration
+
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
-import ch.epfl.scala.index.model.misc.Pagination
-import ch.epfl.scala.index.model.misc.SearchParams
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import scaladex.core.model.search.Pagination
+import scaladex.core.model.search.SearchParams
 
 package object html {
 
@@ -108,7 +115,7 @@ package object html {
   }
 
   val config: Config =
-    ConfigFactory.load().getConfig("org.scala_lang.index.server")
+    ConfigFactory.load().getConfig("server")
   val production: Boolean = config.getBoolean("production")
 
   def unescapeBackground(in: String): String =
@@ -125,4 +132,21 @@ package object html {
 
     out.print(in.parseDateTime(date))
   }
+
+  private val df = DateTimeFormatter
+    .ofPattern("dd MMM YYYY 'at' HH:mm '(UTC)'")
+    .withZone(ZoneId.systemDefault.normalized())
+    .withLocale(Locale.ENGLISH)
+
+  def formatInstant(i: Instant): String = df.format(i)
+
+  def prettyPrint(d: FiniteDuration): String =
+    d match {
+      case d if d.toSeconds == 0 => s"${d.toMillis.toString} milliseconds"
+      case d if d.toMinutes == 0 => s"${d.toSeconds.toString} seconds"
+      case d if d.toHours == 0   => s"${d.toMinutes.toString} minutes"
+      case d if d.toDays == 0    => s"${d.toHours.toString} hours"
+      case d if d.toDays != 0    => s"${d.toDays.toString} days"
+      case _                     => d.toString()
+    }
 }

@@ -9,16 +9,18 @@ import ch.epfl.scala.index.data.bintray.BintrayMeta
 import ch.epfl.scala.index.data.bintray.BintrayProtocol
 import ch.epfl.scala.index.data.bintray.BintraySearch
 import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
-import ch.epfl.scala.index.data.elastic.SaveLiveData
 import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.index.model.misc.GithubRepo
 import org.json4s.native.Serialization.write
+import scaladex.core.model.Project
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
+import scaladex.infra.storage.local.LocalStorageRepo
 
 object SubIndex extends BintrayProtocol {
   def generate(source: DataPaths, destination: DataPaths): Unit = {
-    def splitRepo(in: String): GithubRepo = {
+    def splitRepo(in: String): Project.Reference = {
       val List(owner, repo) = in.split('/').toList
-      GithubRepo(owner.toLowerCase, repo.toLowerCase)
+      Project.Reference.from(owner, repo)
     }
 
     val repos =
@@ -34,7 +36,8 @@ object SubIndex extends BintrayProtocol {
         .loadAll(source)
         .flatMap {
           case (pom, repo, sha) =>
-            githubRepoExtractor(pom)
+            githubRepoExtractor
+              .extract(pom)
               .filter(repos.contains)
               .map((pom, repo, sha, _))
         }
@@ -42,11 +45,9 @@ object SubIndex extends BintrayProtocol {
     println("== Copy GitHub ==")
 
     pomData.foreach {
-      case (_, _, _, github) =>
-        def repoPath(paths: DataPaths): Path = {
-          val GithubRepo(org, repo) = github
-          paths.github.resolve(s"$org/$repo")
-        }
+      case (_, _, _, projectRef) =>
+        def repoPath(paths: DataPaths): Path =
+          paths.github.resolve(s"${projectRef.organization}/${projectRef.repository}")
 
         val repoSource = repoPath(source)
         if (Files.isDirectory(repoSource)) {
@@ -116,13 +117,14 @@ object SubIndex extends BintrayProtocol {
 
     println("== Copy LiveData ==")
 
+    val destinationStorage = new LocalStorageRepo(destination)
+    val sourceStorage = new LocalStorageRepo(source)
     // live
-    SaveLiveData.saveProjects(
-      destination,
-      SaveLiveData
-        .storedProjects(source)
+    destinationStorage.saveAllProjectSettings(
+      sourceStorage
+        .getAllProjectSettings()
         .view
-        .filterKeys(reference => repos.contains(reference.githubRepo))
+        .filterKeys(reference => repos.contains(reference))
         .toMap
     )
 

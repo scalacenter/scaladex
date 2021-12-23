@@ -1,91 +1,129 @@
 package ch.epfl.scala.index
 package server
 
-import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.util.Failure
+import scala.util.Success
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl._
-import akka.http.scaladsl.coding.Deflate
-import akka.http.scaladsl.coding.Gzip
-import akka.http.scaladsl.coding.NoCoding
-import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import ch.epfl.scala.index.data.DataPaths
-import ch.epfl.scala.index.data.github.GithubDownload
+import cats.effect.ContextShift
+import cats.effect.IO
 import ch.epfl.scala.index.data.util.PidLock
-import ch.epfl.scala.index.search.DataRepository
 import ch.epfl.scala.index.server.config.ServerConfig
 import ch.epfl.scala.index.server.routes._
 import ch.epfl.scala.index.server.routes.api._
 import org.slf4j.LoggerFactory
+import scaladex.core.service.WebDatabase
+import scaladex.infra.elasticsearch.ESRepo
+import scaladex.infra.github.GithubClient
+import scaladex.infra.storage.local.LocalStorageRepo
+import scaladex.infra.storage.sql.SqlRepo
+import scaladex.infra.util.DoobieUtils
+import scaladex.server.service.SchedulerService
 
 object Server {
   private val log = LoggerFactory.getLogger(getClass)
   val config: ServerConfig = ServerConfig.load()
 
   def main(args: Array[String]): Unit = {
-    val port =
-      if (args.isEmpty) 8080
-      else args.head.toInt
-
-    if (config.production) {
+    if (config.api.env.isDevOrProd) {
       PidLock.create("SERVER")
     }
-
     implicit val system: ActorSystem = ActorSystem("scaladex")
     import system.dispatcher
+    implicit val cs = IO.contextShift(system.dispatcher)
 
-    val pathFromArgs =
-      if (args.isEmpty) Nil
-      else args.toList.tail
-
-    val paths = DataPaths(pathFromArgs)
-    val session = GithubUserSession(config)
-
-    // the DataRepository will not be closed until the end of the process,
+    // the ESRepo will not be closed until the end of the process,
     // because of the sbtResolver mode
-    val data = DataRepository.open()
+    val searchEngine = ESRepo.open()
 
-    val searchPages = new SearchPages(config.production, data, session)
+    val resources =
+      for {
+        webPool <- DoobieUtils.transactor(config.dbConf)
+        schedulerPool <- DoobieUtils.transactor(config.dbConf)
+      } yield (webPool, schedulerPool)
+
+    resources
+      .use {
+        case (webPool, schedulerPool) =>
+          val webDb = new SqlRepo(config.dbConf, webPool)
+          val schedulerDb = new SqlRepo(config.dbConf, schedulerPool)
+          val githubService = config.github.map(conf => new GithubClient(conf.token))
+          val schedulerService = new SchedulerService(schedulerDb, searchEngine, githubService)
+          for {
+            _ <- init(webDb, schedulerService, searchEngine)
+            routes = configureRoutes(config.production, searchEngine, webDb, schedulerService)
+            _ <- IO(
+              Http()
+                .bindAndHandle(routes, config.api.endpoint, config.api.port)
+                .andThen {
+                  case Failure(exception) =>
+                    log.error("Unable to start the server", exception)
+                    System.exit(1)
+                  case Success(binding) =>
+                    log.info(s"Server started at http://${config.api.endpoint}:${config.api.port}")
+                    sys.addShutdownHook {
+                      log.info("Stopping server")
+                      binding.terminate(hardDeadline = 10.seconds)
+                    }
+                }
+            )
+            _ <- IO.never
+          } yield ()
+      }
+      .unsafeRunSync()
+
+  }
+
+  private def init(db: SqlRepo, scheduler: SchedulerService, searchEngine: ESRepo)(
+      implicit cs: ContextShift[IO]
+  ): IO[Unit] = {
+    log.info("applying flyway migration to db")
+    for {
+      _ <- db.migrate
+      _ = log.info("wait for ElasticSearch")
+      _ <- IO(searchEngine.waitUntilReady())
+      _ <- IO.fromFuture(IO(searchEngine.reset()))
+      _ = log.info("starting the scheduler")
+      _ <- IO(scheduler.startAll())
+    } yield ()
+  }
+  private def configureRoutes(
+      production: Boolean,
+      esRepo: ESRepo,
+      webDb: WebDatabase,
+      schedulerService: SchedulerService
+  )(
+      implicit actor: ActorSystem
+  ): Route = {
+    import actor.dispatcher
+    val paths = config.dataPaths
+    val githubAuth = new GithubAuth()
+    val session = new GithubUserSession(config.session)
+    val searchPages = new SearchPages(production, esRepo, session)
+
+    val localStorage = new LocalStorageRepo(paths)
+    val programmaticRoutes = concat(
+      new PublishApi(paths, webDb, githubAuth).routes,
+      new SearchApi(esRepo, webDb, session).routes,
+      Assets.routes,
+      new Badges(webDb).routes,
+      new Oauth2(config.oAuth2, githubAuth, session).routes
+    )
     val userFacingRoutes = concat(
-      new FrontPage(config.production, data, session).routes,
+      new FrontPage(production, webDb, session).routes,
+      new AdminPages(production, schedulerService, session).routes,
       redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
         concat(
-          new ProjectPages(
-            config.production,
-            data,
-            session,
-            new GithubDownload(paths),
-            paths
-          ).routes,
+          new ProjectPages(config.production, webDb, localStorage, session, paths, config.api.env).routes,
           searchPages.routes
         )
       }
     )
-    val programmaticRoutes = concat(
-      PublishApi(paths, data).routes,
-      new SearchApi(data, session).routes,
-      Assets.routes,
-      new Badges(data).routes,
-      Oauth2(config, session).routes
-    )
-
-    def hasParent(parentClass: Class[_], ex: Throwable)(): Boolean = {
-      var current = ex
-      def check: Boolean = parentClass == current.getClass
-      var found = check
-
-      while (!found && current.getCause != null) {
-        current = current.getCause
-        found = check
-      }
-
-      found
-    }
-
     val exceptionHandler = ExceptionHandler {
       case ex: Exception =>
         import java.io.{PrintWriter, StringWriter}
@@ -99,28 +137,12 @@ object Server {
         log.error(out)
 
         complete(
-          InternalServerError,
+          StatusCodes.InternalServerError,
           out
         )
     }
-
-    val routes =
-      encodeResponseWith(Gzip, Deflate, NoCoding)(
-        handleExceptions(exceptionHandler) {
-          concat(programmaticRoutes, userFacingRoutes)
-        }
-      )
-
-    log.info("waiting for elastic to start")
-    data.waitUntilReady()
-    log.info("ready")
-
-    Await.result(
-      Http().bindAndHandle(routes, "0.0.0.0", port),
-      20.seconds
-    )
-
-    log.info(s"port: $port")
-    log.info("Application started")
+    handleExceptions(exceptionHandler) {
+      concat(programmaticRoutes, userFacingRoutes)
+    }
   }
 }

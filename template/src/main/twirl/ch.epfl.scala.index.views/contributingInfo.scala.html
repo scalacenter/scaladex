@@ -1,64 +1,22 @@
-@import ch.epfl.scala.index.model.Project
-@import ch.epfl.scala.index.model.misc.{Url, SearchParams}
+@import scaladex.core.model.Project
 
-@(project: Project, hideProjectInfo: Boolean = false, params: Option[SearchParams] = None)
-
-@if(!hideProjectInfo) {
-<div class="content-project-header">
-  <a href="/@project.reference.organization/@project.reference.repository">
-    @githubUserAvatar(project)
-    <h4>@project.reference.organization/@project.reference.repository</h4>
-  </a>
-</div>
-}
+@(project: Project)
 <div class="content-project-body">
-  @for(github <- project.github) {
-    @for(description <- github.description) {
-      <p class="description">@description</p>
-    }
-  }
-  @for(github <- project.github) {
-    @params.filter(_.contributingSearch).map { p =>
-      <ul>
-      @for(issue <- github.displayIssues.take(6)) {
-        <li>
-          <a href="@issue.url.target" target="_blank">@issue</a>
-        </li>
-      }
-      </ul>
+  @for(github <- project.githubInfo) {
+    @github.description.map(desc => <p class="description">@desc</p>)
+    <ul>
+      @github.beginnerIssues.take(3).map(issue => <a href="@issue.url.target" target="_blank">@issue</a>)
+    </ul>
 
-      @if(6 < github.displayIssues.length) {
-          @for(label <- github.beginnerIssuesLabel) {
-              @if(!github.filteredBeginnerIssues.isEmpty) {
-                  <a href='https://github.com/@{project.githubRepo}/issues?utf8=✓&q=is:open label:"@label" @{p.queryString}'
-                  target="_blank">More Issues ...</a>
-              } else {
-                  <a href="https://github.com/@{project.githubRepo}/labels/@{label}"
-                  target="_blank">More Issues ...</a>
-              }
-          }
-      }
-    }.getOrElse {
-      <ul>
-      @for(issue <- github.displayIssues.take(3)) {
-          <a href="@issue.url.target" target="_blank">@issue</a>
-      }
-      </ul>
-
-      @if(3 < github.displayIssues.length) {
-          @for(label <- github.beginnerIssuesLabel) {
-              <a href="https://github.com/@{project.githubRepo}/labels/@{label}"
-              target="_blank">More Issues ...</a>
-          }
+    @if(3 < github.beginnerIssues.length) {
+      @for(label <- project.settings.beginnerIssuesLabel) {
+          <a href="https://github.com/@{project.reference}/labels/@{label}"
+          target="_blank">More Issues ...</a>
       }
     }
     <hr>
-    @for(contributingGuide <- github.contributingGuide; chatroom <- github.chatroom) {
-      <a href="@contributingGuide.target" target="_blank">Contributing Guide</a>
-      <a href="@chatroom.target" target="_blank">Chatroom</a>
-      @for(codeOfConduct <- github.codeOfConduct) {
-        <a href="@codeOfConduct.target" target="_blank">Code of Conduct</a>
-      }
-    }
+    @github.contributingGuide.map(guide => <a href="@guide.target" target="_blank">Contributing Guide</a>)
+    @github.chatroom.map(chatroom => <a href="@chatroom.target" target="_blank">Chatroom</a>)
+    @github.codeOfConduct.map(coc => <a href="@coc.target" target="_blank">Code of Conduct</a>)
   }
 </div>

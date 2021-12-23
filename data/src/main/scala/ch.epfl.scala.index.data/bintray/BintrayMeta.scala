@@ -4,10 +4,12 @@ package bintray
 
 import java.nio.file.Path
 
-import ch.epfl.scala.index.model.Descending
 import com.github.nscala_time.time.Imports._
 import org.json4s._
 import org.typelevel.jawn.support.json4s.Parser
+import scaladex.core.util.Ordering.Descending
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
 
 object BintrayMeta extends BintrayProtocol {
 

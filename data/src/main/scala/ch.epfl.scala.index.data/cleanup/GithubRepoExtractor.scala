@@ -10,7 +10,6 @@ import scala.util.Using
 import scala.util.matching.Regex
 
 import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.index.model.misc.GithubRepo
 import org.json4s.CustomSerializer
 import org.json4s.DefaultFormats
 import org.json4s.Formats
@@ -20,6 +19,8 @@ import org.json4s.JsonAST.JObject
 import org.json4s.JsonAST.JString
 import org.json4s.native.Serialization.read
 import org.json4s.native.Serialization.writePretty
+import scaladex.core.model.Project
+import scaladex.infra.storage.DataPaths
 
 class GithubRepoExtractor(paths: DataPaths) {
   object ClaimSerializer extends CustomSerializer[Claims](_ => (serialize, deserialize))
@@ -57,17 +58,15 @@ class GithubRepoExtractor(paths: DataPaths) {
 
       val List(organization, repo) = claim.repo.split('/').toList
 
-      (matcher, GithubRepo(organization, repo))
+      (matcher, Project.Reference.from(organization, repo))
     }
 
-  private val movedRepositories = github.GithubReader.movedRepositories(paths)
-
-  def apply(pom: maven.ReleaseModel): Option[GithubRepo] = {
+  def extract(pom: maven.ReleaseModel): Option[Project.Reference] = {
     val fromPoms = pom.scm match {
       case Some(scm) =>
         List(scm.connection, scm.developerConnection, scm.url).flatten
           .flatMap(ScmInfoParser.parse)
-          .filter(g => g.organization != "" && g.repository != "")
+          .filter(g => !g.organization.isEmpty() && !g.repository.isEmpty())
       case None => List()
     }
 
@@ -83,14 +82,11 @@ class GithubRepoExtractor(paths: DataPaths) {
       if (s.startsWith("$")) s.drop(1) else s
 
     repo.map {
-      case GithubRepo(organization, repo) =>
-        val repo2 =
-          GithubRepo(
-            fixInterpolationIssue(organization.toLowerCase),
-            fixInterpolationIssue(repo.toLowerCase)
-          )
-
-        movedRepositories.getOrElse(repo2, repo2)
+      case Project.Reference(organization, repo) =>
+        Project.Reference.from(
+          fixInterpolationIssue(organization.value),
+          fixInterpolationIssue(repo.value)
+        )
     }
   }
 
@@ -100,7 +96,7 @@ class GithubRepoExtractor(paths: DataPaths) {
       PomsReader.loadAll(paths).map { case (pom, _, _) => pom }
 
     val notClaimed = poms
-      .filter(pom => apply(pom).isEmpty)
+      .filter(pom => extract(pom).isEmpty)
       .map(pom => s"${pom.groupId} ${pom.artifactId}")
       .toSeq
       .distinct

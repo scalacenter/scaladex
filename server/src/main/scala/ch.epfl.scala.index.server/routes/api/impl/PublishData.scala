@@ -8,15 +8,16 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Instant
+import java.time.OffsetDateTime
 
 import scala.util.control.NonFatal
 
-import ch.epfl.scala.index.data.DataPaths
-import ch.epfl.scala.index.data.LocalPomRepository
-import ch.epfl.scala.index.data.github
-import ch.epfl.scala.index.model.misc.Sha1
-import org.joda.time.DateTime
 import org.slf4j.LoggerFactory
+import scaladex.core.model.Sha1
+import scaladex.core.model.UserState
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
 
 /**
  * Publish data model / Settings
@@ -30,9 +31,8 @@ import org.slf4j.LoggerFactory
  */
 private[api] case class PublishData(
     path: String,
-    created: DateTime,
+    created: Instant,
     data: String,
-    credentials: github.Credentials,
     userState: UserState,
     downloadInfo: Boolean,
     downloadContributors: Boolean,
@@ -43,6 +43,8 @@ private[api] case class PublishData(
   lazy val hash: String = Sha1(data)
   lazy val tempPath: Path = tmpPath(hash)
   def savePath(paths: DataPaths): Path = pomPath(paths, hash)
+
+  val datetimeCreated: OffsetDateTime = OffsetDateTime.from(created)
 
   /**
    * write the file content to given path

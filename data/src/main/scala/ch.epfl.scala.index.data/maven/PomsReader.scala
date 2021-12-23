@@ -2,17 +2,21 @@ package ch.epfl.scala.index
 package data
 package maven
 
-import java.io.Closeable
 import java.io.File
 import java.nio.file._
 import java.util.Properties
 
 import scala.collection.parallel.CollectionConverters._
 import scala.util.Try
-import scala.util.Using
 
 import ch.epfl.scala.index.data.bintray.SbtPluginsData
 import org.slf4j.LoggerFactory
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.LocalPomRepository
+import scaladex.infra.storage.LocalPomRepository.Bintray
+import scaladex.infra.storage.LocalPomRepository.MavenCentral
+import scaladex.infra.storage.LocalPomRepository.UserProvided
+import scaladex.infra.storage.LocalRepository
 
 case class MissingParentPom(dep: maven.Dependency) extends Exception
 
@@ -29,25 +33,13 @@ object PomsReader {
 
   def loadAll(
       paths: DataPaths
-  ): Iterable[(ReleaseModel, LocalRepository, String)] = {
-    import LocalPomRepository._
+  ): Iterator[(ReleaseModel, LocalRepository, String)] = {
 
     val ivysDescriptors = SbtPluginsData(paths.ivysData).iterator
-
-    Using.resources(
-      PomsReader(MavenCentral, paths).iterator(),
-      PomsReader(Bintray, paths).iterator(),
-      PomsReader(UserProvided, paths).iterator()
-    ) { (centralPoms, bintrayPoms, usersPoms) =>
-      val allPoms = centralPoms ++ bintrayPoms ++ usersPoms ++ ivysDescriptors
-      allPoms
-        .foldLeft(Map[String, (ReleaseModel, LocalRepository, String)]()) {
-          case (acc, pom @ (_, _, sha)) =>
-            if (acc.contains(sha)) acc
-            else acc + (sha -> pom)
-        }
-        .values
-    }
+    val centralPoms = PomsReader(MavenCentral, paths).iterator
+    val bintrayPoms = PomsReader(Bintray, paths).iterator
+    val userPoms = PomsReader(UserProvided, paths).iterator
+    centralPoms ++ bintrayPoms ++ userPoms ++ ivysDescriptors
   }
 
   def apply(repository: LocalPomRepository, paths: DataPaths): PomsReader =
@@ -125,20 +117,11 @@ private[maven] class PomsReader(
     }.map(pom => (PomConvert(pom), repository, sha1))
   }
 
-  def iterator(): Iterator[(ReleaseModel, LocalPomRepository, String)] with Closeable = {
+  def iterator: Iterator[(ReleaseModel, LocalPomRepository, String)] = {
     import scala.jdk.CollectionConverters._
 
-    val stream = Files.newDirectoryStream(pomsPath)
-    val pomsIterator = stream.asScala.iterator.flatMap(p => loadOne(p).toOption)
-
-    new Iterator[(ReleaseModel, LocalPomRepository, String)] with Closeable {
-      override def hasNext: Boolean = pomsIterator.hasNext
-
-      override def next(): (ReleaseModel, LocalPomRepository, String) =
-        pomsIterator.next()
-
-      override def close(): Unit = stream.close()
-    }
+    val stream = Files.newDirectoryStream(pomsPath).iterator
+    Files.newDirectoryStream(pomsPath).iterator.asScala.flatMap(p => loadOne(p).toOption)
   }
 
   def load(): List[Try[(ReleaseModel, LocalPomRepository, String)]] = {

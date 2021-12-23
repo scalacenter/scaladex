@@ -1,60 +1,65 @@
 @import ch.epfl.scala.index.views.html._
-@import ch.epfl.scala.index.model.Project
-@import ch.epfl.scala.index.model.release.ScalaTarget
-@import ch.epfl.scala.index.model.misc.SearchParams
-@(projects: List[Project], params: SearchParams)
 
+@import scaladex.core.model.search.ProjectHit
+@import scaladex.core.model.search.SearchParams
+
+@(projects: Seq[ProjectHit], params: SearchParams)
 <ol class="list-result box">
-  @for(project <- projects){
+  @for(hit <- projects; project = hit.document){
   <li class="item-list">
-    <a href="/@project.reference.organization/@project.reference.repository">
+    <a href="/@project.organization/@project.repository">
       <div class="row">
         <div class="col-md-8">
           @if(params.contributingSearch){
             <div class="contributing-result">
-              @contributingInfo(project, params = Some(params))
+              <div class="content-project-header">
+                <a href="/@project.organization/@project.repository">
+                  @githubUserAvatar(project.githubInfo.flatMap(_.avatarUrl))
+                  <h4>@project.organization/@project.repository</h4>
+              </div>
+              @searchContributingInfo(hit, params)
             </div>
           } else {
             <div>
-              @githubUserAvatar(project)
-              <h4>@project.reference.organization/@project.reference.repository</h4>
+              @githubUserAvatar(project.githubInfo.flatMap(_.avatarUrl))
+              <h4>@project.reference</h4>
 
-              @for(github <- project.github) {
+              @for(github <- project.githubInfo) {
                 @for(description <- github.description) {
                   <p class="description emojify">@description</p>
                 }
               }
-              @if(project.scalaVersion.nonEmpty){
+              @if(project.scalaVersions.nonEmpty){
                 <div>
                   Scala (JVM):
-                  @for(v <- project.scalaVersion) {
+                  @for(v <- project.scalaVersions) {
                     <span class="targets">@v</span>
                   }
                 </div>
               }
 
-              @if(project.sbtVersion.nonEmpty){
+              @if(project.sbtVersions.nonEmpty){
                 <div>
                   Sbt:
-                  @for(v <- project.sbtVersion) {
+                  @for(v <- project.sbtVersions) {
                     <span class="targets">@v</span>
                   }
                 </div>
               }
 
-              @if(project.scalaJsVersion.nonEmpty){
+              @if(project.scalaJsVersions.nonEmpty){
                 <div>
                   Scala.js:
-                  @for(v <- project.scalaJsVersion) {
+                  @for(v <- project.scalaJsVersions) {
                     <span class="targets">@v</span>
                   }
                 </div>
               }
 
-              @if(project.scalaNativeVersion.nonEmpty){
+              @if(project.scalaNativeVersions.nonEmpty){
                 <div>
-                  Scala-Native:
-                  @for(v <- project.scalaNativeVersion) {
+                  Scala Native:
+                  @for(v <- project.scalaNativeVersions) {
                     <span class="targets">@v</span>
                   }
                 </div>
@@ -65,8 +70,8 @@
         <div class="col-md-4">
           <div class="stats">
             <div>
-            @for(github <- project.github) {
-              @if(!github.topics.isEmpty) {
+            @for(github <- project.githubInfo) {
+              @if(github.topics.nonEmpty) {
                 @for(topic <- github.topics) {
                   <span class="item-filter-tag">
                     <a href="/search?topics=@topic">
@@ -79,7 +84,7 @@
             </div>
 
             <div>
-            @for(github <- project.github) {
+            @for(github <- project.githubInfo) {
               @for(stars <- github.stars) {
                 <span>
                   <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">@stars <i class="fa fa-star"></i></a>
@@ -91,7 +96,7 @@
                 </span>
               }
               <span>
-                <a data-toggle="tooltip" data-placement="bottom" title="Contributors" href="#">@github.contributors.size <i class="fa fa-users"></i></a>
+                <a data-toggle="tooltip" data-placement="bottom" title="Contributors" href="#">@github.contributorCount <i class="fa fa-users"></i></a>
               </span>
             }
             </div>

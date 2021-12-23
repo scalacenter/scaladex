@@ -1,10 +1,39 @@
 package ch.epfl.scala.index.server
 
+import java.time.Instant
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
 import akka.http.scaladsl.server.Directive1
+import akka.http.scaladsl.server.Directives.Segment
 import akka.http.scaladsl.server.Directives._
-import ch.epfl.scala.index.model.misc.SearchParams
+import akka.http.scaladsl.server.PathMatcher1
+import akka.http.scaladsl.unmarshalling.Unmarshaller
+import scaladex.core.model.Artifact
+import scaladex.core.model.ArtifactSelection
+import scaladex.core.model.Project
+import scaladex.core.model.SemanticVersion
+import scaladex.core.model.UserState
+import scaladex.core.model.search
+import scaladex.core.model.search.SearchParams
+import scaladex.core.service.WebDatabase
 
 package object routes {
+
+  val organizationM: PathMatcher1[Project.Organization] =
+    Segment.map(Project.Organization.apply)
+  val repositoryM: PathMatcher1[Project.Repository] =
+    Segment.map(Project.Repository.apply)
+  val artifactM: PathMatcher1[Artifact.Name] =
+    Segment.map(Artifact.Name.apply)
+  val versionM: PathMatcher1[SemanticVersion] =
+    Segment.flatMap(SemanticVersion.tryParse)
+
+  val instantUnmarshaller: Unmarshaller[String, Instant] =
+    // dataRaw is in seconds
+    Unmarshaller.strict[String, Instant](dateRaw => Instant.ofEpochSecond(dateRaw.toLong))
+
   def searchParams(user: Option[UserState]): Directive1[SearchParams] =
     parameters(
       (
@@ -37,7 +66,7 @@ package object routes {
         val userRepos = you
           .flatMap(_ => user.map(_.repos))
           .getOrElse(Set())
-        SearchParams(
+        search.SearchParams(
           q,
           page,
           sort,
@@ -51,4 +80,125 @@ package object routes {
           contributingSearch = contributingSearch
         )
     }
+
+  // TODO remove all unused parameters
+  val editForm: Directive1[Project.Settings] =
+    formFieldSeq.tflatMap(fields =>
+      formFields(
+        (
+          "contributorsWanted".as[Boolean] ? false,
+          "defaultArtifact".?,
+          "defaultStableVersion".as[Boolean] ? false,
+          "strictVersions".as[Boolean] ? false,
+          "deprecated".as[Boolean] ? false,
+          "artifactDeprecations".as[String].*,
+          "cliArtifacts".as[String].*,
+          "customScalaDoc".?,
+          "primaryTopic".?,
+          "beginnerIssuesLabel".?,
+          "beginnerIssues".?,
+          "selectedBeginnerIssues".as[String].*,
+          "chatroom".?,
+          "contributingGuide".?,
+          "codeOfConduct".?
+        )
+      ).tmap {
+        case (
+              contributorsWanted,
+              defaultArtifact,
+              defaultStableVersion,
+              strictVersions,
+              deprecated,
+              artifactDeprecations,
+              cliArtifacts,
+              customScalaDoc,
+              primaryTopic,
+              beginnerIssuesLabel,
+              beginnerIssues,
+              selectedBeginnerIssues,
+              chatroom,
+              contributingGuide,
+              codeOfConduct
+            ) =>
+          val documentationLinks =
+            fields._1
+              .filter { case (key, _) => key.startsWith("documentationLinks") }
+              .groupBy {
+                case (key, _) =>
+                  key
+                    .drop("documentationLinks[".length)
+                    .takeWhile(_ != ']')
+              }
+              .values
+              .map {
+                case Vector((a, b), (_, d)) =>
+                  if (a.contains("label")) (b, d)
+                  else (d, b)
+              }
+              .flatMap {
+                case (label, link) =>
+                  Project.DocumentationLink.from(label, link)
+              }
+              .toList
+
+          val settings = Project.Settings(
+            defaultStableVersion,
+            defaultArtifact.map(Artifact.Name.apply),
+            strictVersions,
+            customScalaDoc,
+            documentationLinks,
+            deprecated,
+            contributorsWanted,
+            artifactDeprecations.map(Artifact.Name.apply).toSet,
+            cliArtifacts.map(Artifact.Name.apply).toSet,
+            primaryTopic,
+            beginnerIssuesLabel
+          )
+          Tuple1(settings)
+      }
+    )
+  def getSelectedRelease(
+      db: WebDatabase,
+      org: Project.Organization,
+      repo: Project.Repository,
+      platform: Option[String],
+      artifact: Option[Artifact.Name],
+      version: Option[String],
+      selected: Option[String]
+  )(implicit ec: ExecutionContext): Future[Option[Artifact]] = {
+    val releaseSelection = ArtifactSelection.parse(
+      platform = platform,
+      artifactName = artifact,
+      version = version,
+      selected = selected
+    )
+    val projectRef = Project.Reference(org, repo)
+    for {
+      project <- db.findProject(projectRef)
+      releases <- db.findReleases(projectRef)
+      filteredReleases = project
+        .map(p => releaseSelection.filterReleases(releases, p))
+        .getOrElse(Nil)
+    } yield filteredReleases.headOption
+  }
+  def getSelectedRelease(
+      db: WebDatabase,
+      project: Project,
+      platform: Option[String],
+      artifact: Option[Artifact.Name],
+      version: Option[String],
+      selected: Option[String]
+  )(implicit ec: ExecutionContext): Future[Option[Artifact]] = {
+    val releaseSelection = ArtifactSelection.parse(
+      platform = platform,
+      artifactName = artifact,
+      version = version,
+      selected = selected
+    )
+    for {
+      releases <- db.findReleases(project.reference)
+      filteredReleases = releaseSelection.filterReleases(releases, project)
+    } yield filteredReleases.headOption
+  }
+
 }

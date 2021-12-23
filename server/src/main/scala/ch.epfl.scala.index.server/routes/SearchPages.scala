@@ -7,38 +7,34 @@ import scala.concurrent.ExecutionContext
 import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import ch.epfl.scala.index.model.misc.Page
-import ch.epfl.scala.index.model.misc.SearchParams
-import ch.epfl.scala.index.search.DataRepository
 import ch.epfl.scala.index.server.TwirlSupport._
 import ch.epfl.scala.index.views.search.html.searchresult
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
+import scaladex.core.model.UserState
+import scaladex.core.model.search.Page
+import scaladex.core.model.search.SearchParams
+import scaladex.core.service.SearchEngine
 
-class SearchPages(production: Boolean, dataRepository: DataRepository, session: GithubUserSession)(
+class SearchPages(production: Boolean, searchEngine: SearchEngine, session: GithubUserSession)(
     implicit ec: ExecutionContext
 ) {
-  import dataRepository._
   import session.implicits._
 
-  private def search(
-      params: SearchParams,
-      user: Option[UserState],
-      uri: String
-  ) =
+  private def search(params: SearchParams, user: Option[UserState], uri: String) =
     complete {
-      val resultsF = findProjects(params)
-      val topicsF = getTopics(params)
-      val targetTypesF = getTargetTypes(params)
-      val scalaVersionsF = getScalaVersions(params)
-      val scalaJsVersionsF = getScalaJsVersions(params)
-      val scalaNativeVersionsF = getScalaNativeVersions(params)
-      val sbtVersionsF = getSbtVersions(params)
+      val resultsF = searchEngine.find(params)
+      val topicsF = searchEngine.getTopics(params)
+      val platformTypesF = searchEngine.getPlatformTypes(params)
+      val scalaVersionsF = searchEngine.getScalaVersions(params)
+      val scalaJsVersionsF = searchEngine.getScalaJsVersions(params)
+      val scalaNativeVersionsF = searchEngine.getScalaNativeVersions(params)
+      val sbtVersionsF = searchEngine.getSbtVersions(params)
 
       for {
         Page(pagination, projects) <- resultsF
         topics <- topicsF
-        targetTypes <- targetTypesF
+        targetTypes <- platformTypesF
         scalaVersions <- scalaVersionsF
         scalaJsVersions <- scalaJsVersionsF
         scalaNativeVersions <- scalaNativeVersionsF
@@ -48,8 +44,8 @@ class SearchPages(production: Boolean, dataRepository: DataRepository, session: 
         params,
         uri,
         pagination,
-        projects.toList,
-        user.map(_.info),
+        projects,
+        user,
         params.userRepos.nonEmpty,
         topics,
         targetTypes,
