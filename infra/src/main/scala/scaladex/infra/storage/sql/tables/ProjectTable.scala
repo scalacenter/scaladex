@@ -19,6 +19,7 @@ object ProjectTable {
   private val tableFr: Fragment = Fragment.const0(table)
   private val githubStatusFields =
     Seq("github_status", "github_update_date", "new_organization", "new_repository", "error_code", "error_message")
+
   private val fields: Seq[String] = Seq("organization", "repository", "creation_date") ++ githubStatusFields
   private val fieldsFr: Fragment = Fragment.const0(fields.mkString(", "))
 

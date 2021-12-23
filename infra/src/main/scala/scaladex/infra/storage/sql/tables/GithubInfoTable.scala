@@ -23,10 +23,10 @@ object GithubInfoTable {
     "contributors",
     "commits",
     "topics",
-    "contributingGuide",
-    "codeOfConduct",
+    "contributing_guide",
+    "code_of_conduct",
     "chatroom",
-    "beginnerIssues"
+    "open_issues"
   )
 
   val table: String = "github_info"
@@ -46,8 +46,8 @@ object GithubInfoTable {
     val fields =
       fr0"homepage=${g.homepage}, description=${g.description}, logo=${g.logo}," ++
         fr0" stars=${g.stars}, forks=${g.forks}, watchers=${g.watchers}, issues=${g.issues}, readme=${g.readme}, contributors=${g.contributors}," ++
-        fr0" commits=${g.commits}, topics=${g.topics}, contributingGuide=${g.contributingGuide}," ++
-        fr0" codeOfConduct=${g.codeOfConduct}, chatroom=${g.chatroom}, beginnerIssues=${g.beginnerIssues}"
+        fr0" commits=${g.commits}, topics=${g.topics}, contributing_guide=${g.contributingGuide}," ++
+        fr0" code_of_conduct=${g.codeOfConduct}, chatroom=${g.chatroom}, open_issues=${g.beginnerIssues}"
     val updateAction = fr"UPDATE SET" ++ fields
     buildInsertOrUpdate(
       tableFr,

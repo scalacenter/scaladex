@@ -28,10 +28,10 @@ CREATE TABLE github_info (
     contributors           VARCHAR,
     commits                INT,
     topics                 VARCHAR(1024) NOT NULL,
-    contributingGuide      VARCHAR(2083),
-    codeOfConduct          VARCHAR(2083),
+    contributing_guide      VARCHAR(2083),
+    code_of_conduct          VARCHAR(2083),
     chatroom               VARCHAR(2083),
-    beginnerIssues         VARCHAR,
+    open_issues         VARCHAR,
     FOREIGN KEY (organization, repository) REFERENCES projects (organization, repository),
     PRIMARY KEY (organization, repository)
 );
@@ -67,7 +67,7 @@ CREATE TABLE artifacts (
     release_date        TIMESTAMPTZ,
     resolver            VARCHAR,
     licenses            VARCHAR NOT NULL,
-    isNonStandardLib    BOOLEAN NOT NULL,
+    is_non_standard_lib BOOLEAN NOT NULL,
     PRIMARY KEY (group_id, artifact_id, version)
 );
 

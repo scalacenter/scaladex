@@ -29,7 +29,7 @@ object ArtifactTable {
     "release_date",
     "resolver",
     "licenses",
-    "isNonStandardLib"
+    "is_non_standard_Lib"
   )
   private val tableFr: Fragment = Fragment.const0(table)
 

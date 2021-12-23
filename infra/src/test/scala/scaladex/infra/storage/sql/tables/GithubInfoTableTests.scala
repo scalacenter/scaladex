@@ -15,8 +15,8 @@ class GithubInfoTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matc
       q.sql shouldBe
         s"""INSERT INTO github_info (organization, repository,
            | homepage, description, logo, stars, forks, watchers, issues, readme,
-           | contributors, commits, topics, contributingGuide,
-           | codeOfConduct, chatroom, beginnerIssues) VALUES (?, ?, ?, ?,
+           | contributors, commits, topics, contributing_guide,
+           | code_of_conduct, chatroom, open_issues) VALUES (?, ?, ?, ?,
            | ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
           .filterNot(_ == '\n')
     }
@@ -26,12 +26,12 @@ class GithubInfoTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matc
       q.sql shouldBe
         s"""INSERT INTO github_info (organization, repository,
            | homepage, description, logo, stars, forks, watchers, issues, readme,
-           | contributors, commits, topics, contributingGuide,
-           | codeOfConduct, chatroom, beginnerIssues) VALUES (?, ?, ?, ?,
+           | contributors, commits, topics, contributing_guide,
+           | code_of_conduct, chatroom, open_issues) VALUES (?, ?, ?, ?,
            | ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            | ON CONFLICT (organization, repository) DO UPDATE SET homepage=?, description=?,
            | logo=?, stars=?, forks=?, watchers=?, issues=?, readme=?, contributors=?,
-           | commits=?, topics=?, contributingGuide=?, codeOfConduct=?, chatroom=?, beginnerIssues=?""".stripMargin
+           | commits=?, topics=?, contributing_guide=?, code_of_conduct=?, chatroom=?, open_issues=?""".stripMargin
           .filterNot(_ == '\n')
     }
     it("selectAllTopics") {
