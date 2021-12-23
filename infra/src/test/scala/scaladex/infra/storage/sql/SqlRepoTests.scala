@@ -221,9 +221,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         _ <- db.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, GithubStatus.Ok(now))
         _ <- db.createMovedProject(Scalafix.reference, newGithubInfo, moved)
         newProject <- db.findProject(newRef)
-        _ = println(s"newProject $newProject")
         oldProject <- db.findProject(Scalafix.reference)
-        _ = println("fine here")
       } yield {
         oldProject.get.githubStatus shouldBe moved
         newProject.get.reference shouldBe newRef

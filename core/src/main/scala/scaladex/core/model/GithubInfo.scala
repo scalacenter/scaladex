@@ -1,5 +1,7 @@
 package scaladex.core.model
 
+import java.time.Instant
+
 import scaladex.core.model.Project._
 import scaladex.core.model.search.GithubInfoDocument
 
@@ -35,6 +37,7 @@ case class GithubInfo(
     forks: Option[Int],
     watchers: Option[Int],
     issues: Option[Int],
+    creationDate: Option[Instant],
     readme: Option[String] = None,
     contributors: List[GithubContributor] = List(),
     commits: Option[Int] = None,
@@ -75,6 +78,7 @@ object GithubInfo {
     forks = None,
     watchers = None,
     issues = None,
+    creationDate = None,
     contributors = List(),
     commits = None,
     topics = Set(),

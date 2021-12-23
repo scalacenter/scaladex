@@ -17,4 +17,10 @@ class ProjectTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers 
   it("check selectAllProjects") {
     check(ProjectTable.selectAllProjects)
   }
+  it("check updateCreated") {
+    check(ProjectTable.updateCreated)
+  }
+  it("check selectLatestProjects") {
+    check(ProjectTable.selectLatestProjects(5))
+  }
 }

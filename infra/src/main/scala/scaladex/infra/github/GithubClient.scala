@@ -101,6 +101,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       forks = Option(repoInfo.forks),
       watchers = Option(repoInfo.subscribers_count),
       issues = Option(repoInfo.open_issues),
+      creationDate = repoInfo.creationDate,
       readme = readme,
       contributors = contributors.map(_.toGithubContributor),
       commits = Some(contributors.foldLeft(0)(_ + _.contributions)),

@@ -19,6 +19,7 @@ object GithubInfoTable {
     "forks",
     "watchers",
     "issues",
+    "creation_date",
     "readme",
     "contributors",
     "commits",
@@ -35,7 +36,7 @@ object GithubInfoTable {
 
   private def values(g: GithubInfo): Fragment =
     fr0"${g.organization}, ${g.repository}, ${g.homepage}, ${g.description}, ${g.logo}, ${g.stars}, ${g.forks}," ++
-      fr0" ${g.watchers}, ${g.issues}, ${g.readme}, ${g.contributors}," ++
+      fr0" ${g.watchers}, ${g.issues}, ${g.creationDate}, ${g.readme}, ${g.contributors}," ++
       fr0" ${g.commits}, ${g.topics}, ${g.contributingGuide}, ${g.codeOfConduct}, ${g.chatroom}, ${g.beginnerIssues}"
 
   def insert(elt: GithubInfo): doobie.Update0 =
@@ -45,7 +46,8 @@ object GithubInfoTable {
     val onConflictFields = fr0"organization, repository"
     val fields =
       fr0"homepage=${g.homepage}, description=${g.description}, logo=${g.logo}," ++
-        fr0" stars=${g.stars}, forks=${g.forks}, watchers=${g.watchers}, issues=${g.issues}, readme=${g.readme}, contributors=${g.contributors}," ++
+        fr0" stars=${g.stars}, forks=${g.forks}, watchers=${g.watchers}, issues=${g.issues}, creation_date=${g.creationDate}," ++
+        fr0" readme=${g.readme}, contributors=${g.contributors}," ++
         fr0" commits=${g.commits}, topics=${g.topics}, contributing_guide=${g.contributingGuide}," ++
         fr0" code_of_conduct=${g.codeOfConduct}, chatroom=${g.chatroom}, open_issues=${g.beginnerIssues}"
     val updateAction = fr"UPDATE SET" ++ fields

@@ -24,14 +24,15 @@ CREATE TABLE github_info (
     forks                  INT,
     watchers               INT,
     issues                 INT,
+    creation_date          TIMESTAMPTZ,
     readme                 TEXT,
     contributors           VARCHAR,
     commits                INT,
     topics                 VARCHAR(1024) NOT NULL,
-    contributing_guide      VARCHAR(2083),
-    code_of_conduct          VARCHAR(2083),
+    contributing_guide     VARCHAR(2083),
+    code_of_conduct        VARCHAR(2083),
     chatroom               VARCHAR(2083),
-    open_issues         VARCHAR,
+    open_issues            VARCHAR,
     FOREIGN KEY (organization, repository) REFERENCES projects (organization, repository),
     PRIMARY KEY (organization, repository)
 );
