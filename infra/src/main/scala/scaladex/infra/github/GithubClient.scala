@@ -101,7 +101,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       forks = Option(repoInfo.forks),
       watchers = Option(repoInfo.subscribers_count),
       issues = Option(repoInfo.open_issues),
-      readme = Option(readme),
+      readme = readme,
       contributors = contributors.map(_.toGithubContributor),
       commits = Some(contributors.foldLeft(0)(_ + _.contributions)),
       topics = repoInfo.topics.toSet,
@@ -112,16 +112,17 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     )
   }
 
-  // This method doesn't fail
-  def getReadme(ref: Project.Reference): Future[String] = {
+  def getReadme(ref: Project.Reference): Future[Option[String]] = {
     val request = HttpRequest(uri = s"${mainGithubUrl(ref)}/readme")
       .addCredentials(credentials)
       .addHeader(acceptHtmlVersion)
 
     getRaw(request).failWithTry.flatMap {
       case Success((_, entity)) =>
-        entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String)
-      case Failure(_) => Future.successful("")
+        entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String).map(Option.apply)
+      case Failure(_) =>
+        // a project may not have a readme file
+        Future.successful(None)
     }
   }
 
@@ -131,10 +132,8 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       .addHeader(RawHeader("Accept", "application/vnd.github.black-panther-preview+json"))
     get[GithubModel.CommunityProfile](request).failWithTry
       .map {
-        case Success(profile) => Some(profile)
-        case Failure(exception) =>
-          logger.warn(s"""Failed to download community profile of $ref because of "${exception.getMessage}"""")
-          None
+        case Success(profile)   => Some(profile)
+        case Failure(exception) => None
       }
   }
 
@@ -194,7 +193,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
           case _ => Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]].map(_.flatten)
         }
       case Failure(exception) =>
-        logger.warn(s"""Failed to download issues of $ref because of "${exception.getMessage}"""")
+        // the issue feature can be disabled
         Future.successful(Seq.empty)
     }
   }
