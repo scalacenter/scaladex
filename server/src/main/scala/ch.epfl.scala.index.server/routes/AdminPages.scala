@@ -5,6 +5,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 
 import akka.http.scaladsl.model.StatusCodes
+import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.StandardRoute
@@ -50,12 +51,9 @@ class AdminPages(production: Boolean, schedulerSrv: SchedulerService, session: G
         post {
           path(Segment / "start") { schedulerName =>
             optionalSession(refreshable, usingCookies)(userId =>
-              ifAdmin(userId) { userState =>
+              ifAdmin(userId) { _ =>
                 schedulerSrv.start(schedulerName)
-                val scheduler = schedulerSrv.getSchedulers()
-                val html = views.admin.html
-                  .admin(production, userState, scheduler)
-                complete(html)
+                redirect(Uri("/admin"), StatusCodes.SeeOther)
               }
             )
           }
@@ -63,12 +61,9 @@ class AdminPages(production: Boolean, schedulerSrv: SchedulerService, session: G
         post {
           path(Segment / "stop") { schedulerName =>
             optionalSession(refreshable, usingCookies)(userId =>
-              ifAdmin(userId) { userState =>
+              ifAdmin(userId) { _ =>
                 schedulerSrv.stop(schedulerName)
-                val schedulers = schedulerSrv.getSchedulers()
-                val html = views.admin.html
-                  .admin(production, userState, schedulers)
-                complete(html)
+                redirect(Uri("/admin"), StatusCodes.SeeOther)
               }
             )
           }
