@@ -214,7 +214,7 @@ lazy val core = project
   .settings(
     libraryDependencies ++= Seq(
       "com.lihaoyi" %% "fastparse" % "2.3.0",
-      "joda-time" % "joda-time" % "2.10.10",
+//      "joda-time" % "joda-time" % "2.10.10",
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     ) ++ Seq(
       "io.circe" %% "circe-core",
