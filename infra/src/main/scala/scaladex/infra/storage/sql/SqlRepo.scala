@@ -24,8 +24,8 @@ import scaladex.infra.storage.sql.tables.ArtifactDependencyTable
 import scaladex.infra.storage.sql.tables.ArtifactTable
 import scaladex.infra.storage.sql.tables.GithubInfoTable
 import scaladex.infra.storage.sql.tables.ProjectDependenciesTable
+import scaladex.infra.storage.sql.tables.ProjectSettingsTable
 import scaladex.infra.storage.sql.tables.ProjectTable
-import scaladex.infra.storage.sql.tables.ProjectUserFormTable
 import scaladex.infra.util.DoobieUtils
 
 class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
@@ -91,17 +91,17 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
         creationDate = oldProject.flatMap(_.creationDate), // todo:  from github
         GithubStatus.Ok(githubStatus.updateDate),
         Some(info),
-        oldProject.map(_.dataForm).getOrElse(Project.DataForm.default)
+        oldProject.map(_.settings).getOrElse(Project.Settings.default)
       )
       _ <- run(ProjectTable.insertIfNotExists.run((newProject.reference, newProject.githubStatus)))
-      _ <- updateProjectForm(newProject.reference, newProject.dataForm)
+      _ <- updateProjectSettings(newProject.reference, newProject.settings)
       _ <- newProject.githubInfo
         .map(githubInfo => run(GithubInfoTable.insertOrUpdate(githubInfo)))
         .getOrElse(Future.successful(()))
     } yield ()
 
-  override def updateProjectForm(ref: Project.Reference, dataForm: Project.DataForm): Future[Unit] =
-    run(ProjectUserFormTable.insertOrUpdate(ref)(dataForm))
+  override def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit] =
+    run(ProjectSettingsTable.insertOrUpdate(ref)(settings))
 
   override def findProject(projectRef: Project.Reference): Future[Option[Project]] =
     run(ProjectTable.selectOne(projectRef).option)
@@ -146,8 +146,8 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.indexedGithubInfo().unique)
 
-  def countProjectDataForm(): Future[Long] =
-    run(ProjectUserFormTable.indexedProjectUserForm().unique)
+  def countProjectSettings(): Future[Long] =
+    run(ProjectSettingsTable.count().unique)
 
   override def computeProjectDependencies(): Future[Seq[ProjectDependency]] =
     run(ArtifactDependencyTable.getAllProjectDependencies().to[List])

@@ -20,6 +20,8 @@ import scaladex.infra.github.{GithubClient, GithubConfig}
 import scaladex.infra.storage.sql.SqlRepo
 import scaladex.infra.util.DoobieUtils
 import scaladex.server.service.{GithubSynchronizer, SearchSynchronizer}
+import scaladex.core.model.Platform
+import scaladex.core.model.ScalaVersion
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 

@@ -18,7 +18,7 @@
               target="_blank">
               @project.repository
             </a>
-            @if(project.dataForm.contributorsWanted){
+            @if(project.settings.contributorsWanted){
               <a class="contributors-tag" href="/search?q=contributorsWanted:true">
                 <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">
               </a>
@@ -28,7 +28,7 @@
                 Edit
               </a>
             }
-            @if(project.dataForm.deprecated){
+            @if(project.settings.deprecated){
               [DEPRECATED]
             }
           </h1>
@@ -106,7 +106,7 @@
               onchange="this.form.submit()"
               data-live-search="true"
               class="selectpicker artifact-name" data-style="btn-primary">
-            @for(artifactName <- artifacts.filterNot(project.dataForm.artifactDeprecations.contains)) {
+            @for(artifactName <- artifacts.filterNot(project.settings.artifactDeprecations.contains)) {
               <option value="@artifactName" @if(artifactName == artifact.artifactName){ selected }>
                 @artifactName
               </option>

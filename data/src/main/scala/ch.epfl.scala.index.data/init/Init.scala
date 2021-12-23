@@ -32,17 +32,17 @@ class Init(
       _ = logger.info("Inserting all releases from local storage...")
       _ <- insertAllReleases()
       _ = logger.info("Inserting all data forms form local storage...")
-      _ <- insertAllDataForms()
+      _ <- insertAllProjectSettings()
       _ = logger.info("Inserting all github infos form local storage...")
       // counting what have been inserted
       projectCount <- db.countProjects()
-      dataFormCount <- db.countProjectDataForm()
+      settingsCount <- db.countProjectSettings()
       releaseCount <- db.countArtifacts()
       dependencyCount <- db.countDependencies()
 
     } yield {
       logger.info(s"$projectCount projects are inserted")
-      logger.info(s"$dataFormCount data forms are inserted")
+      logger.info(s"$settingsCount project settings are inserted")
       logger.info(s"$releaseCount releases are inserted")
       logger.info(s"$dependencyCount dependencies are inserted")
     }
@@ -62,16 +62,16 @@ class Init(
       .sequence
       .map(_ => ())
 
-  private def insertAllDataForms(): Future[Unit] = {
-    val allDataForms = localStorage.allDataForms()
-    def updateDataForm(ref: Project.Reference): Future[Unit] =
-      allDataForms
+  private def insertAllProjectSettings(): Future[Unit] = {
+    val allSettings = localStorage.getAllProjectSettings()
+    def updateSettings(ref: Project.Reference): Future[Unit] =
+      allSettings
         .get(ref)
-        .map(db.updateProjectForm(ref, _))
+        .map(db.updateProjectSettings(ref, _))
         .getOrElse(Future.successful(()))
     for {
       projectRefs <- db.getAllProjectRef()
-      _ <- projectRefs.map(updateDataForm).sequence
+      _ <- projectRefs.map(updateSettings).sequence
     } yield ()
   }
 }

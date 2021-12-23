@@ -120,9 +120,9 @@ object SubIndex extends BintrayProtocol {
     val destinationStorage = new LocalStorageRepo(destination)
     val sourceStorage = new LocalStorageRepo(source)
     // live
-    destinationStorage.saveAllDataForms(
+    destinationStorage.saveAllProjectSettings(
       sourceStorage
-        .allDataForms()
+        .getAllProjectSettings()
         .view
         .filterKeys(reference => repos.contains(reference))
         .toMap

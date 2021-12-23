@@ -13,7 +13,7 @@ import scaladex.core.model.Url
 import scaladex.core.model.search.GithubInfoDocument
 
 object Codecs {
-  implicit val license: Codec[License] = deriveCodec[License]
+  implicit val license: Codec[License] = deriveCodec
   implicit val url: Codec[Url] = fromString(_.target, Url)
 
   implicit val documentation: Codec[Project.DocumentationLink] =
@@ -27,15 +27,15 @@ object Codecs {
       Encoder[Map[String, String]].contramap(docLink => Map(docLink.label -> docLink.link))
     )
 
-  implicit val contributor: Codec[GithubContributor] = deriveCodec[GithubContributor]
-  implicit val githubIssue: Codec[GithubIssue] = deriveCodec[GithubIssue]
+  implicit val contributor: Codec[GithubContributor] = deriveCodec
+  implicit val githubIssue: Codec[GithubIssue] = deriveCodec
   implicit val organization: Codec[Project.Organization] = fromString(_.value, Project.Organization.apply)
   implicit val repository: Codec[Project.Repository] = fromString(_.value, Project.Repository.apply)
   implicit val reference: Codec[Project.Reference] = deriveCodec
   implicit val artifactName: Codec[Artifact.Name] = fromString(_.value, Artifact.Name.apply)
   implicit val instant: Codec[Instant] = fromLong[Instant](_.toEpochMilli, Instant.ofEpochMilli)
-  implicit val githubInfoDocumentCodec: Codec[GithubInfoDocument] = deriveCodec[GithubInfoDocument]
-  implicit val dataForm: Codec[Project.DataForm] = deriveCodec[Project.DataForm]
+  implicit val githubInfoDocumentCodec: Codec[GithubInfoDocument] = deriveCodec
+  implicit val settings: Codec[Project.Settings] = deriveCodec
 
   private def fromLong[A](encode: A => Long, decode: Long => A): Codec[A] =
     Codec.from(Decoder[Long].map(decode), Encoder[Long].contramap(encode))

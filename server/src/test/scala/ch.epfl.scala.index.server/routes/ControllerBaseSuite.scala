@@ -65,7 +65,7 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
       Future.successful(())
     }
 
-    override def updateProjectForm(ref: Project.Reference, dataForm: Project.DataForm): Future[Unit] =
+    override def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit] =
       Future.successful(())
 
     override def findProject(projectRef: Project.Reference): Future[Option[Project]] =

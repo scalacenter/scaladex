@@ -39,7 +39,7 @@ object Values {
     creationDate = Some(now),
     GithubStatus.Ok(now),
     Some(GithubInfo.empty(artifact.projectRef.organization.value, artifact.projectRef.repository.value)),
-    Project.DataForm.default
+    Project.Settings.default
   )
 
   val `3.0.0-M3`: ScalaLanguageVersion = Scala3Version(

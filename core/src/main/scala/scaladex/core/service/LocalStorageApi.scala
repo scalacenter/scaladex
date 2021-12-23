@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import scaladex.core.model.Project
 
 trait LocalStorageApi {
-  def saveDataForm(ref: Project.Reference, userData: Project.DataForm): Future[Unit]
-  def allDataForms(): Map[Project.Reference, Project.DataForm]
-  def saveAllDataForms(dataForms: Map[Project.Reference, Project.DataForm]): Unit
+  def saveProjectSettings(ref: Project.Reference, userData: Project.Settings): Future[Unit]
+  def getAllProjectSettings(): Map[Project.Reference, Project.Settings]
+  def saveAllProjectSettings(projectSettings: Map[Project.Reference, Project.Settings]): Unit
 }

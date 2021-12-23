@@ -33,14 +33,14 @@
         </div>
         <div class="col-md-4">
           <div class="sidebar-project">
-            @if(project.dataForm.artifactDeprecations.contains(release.artifactName)) {
+            @if(project.settings.artifactDeprecations.contains(release.artifactName)) {
             <div class="box">
               <h1>[DEPRECATED]</h1>
             </div>
             }
             @documentation(release, project)
             @badges(release, env)
-            @install(release, project.dataForm.cliArtifacts)
+            @install(release, project.settings.cliArtifacts)
             @scastie(release.scastieURL)
             @project.githubInfo.map(gh => statistic(gh, project.reference, releaseCount, reverseDependency.size))
             @project.githubInfo.map { github =>

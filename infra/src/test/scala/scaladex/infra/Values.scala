@@ -12,7 +12,7 @@ import scaladex.core.model.GithubIssue
 import scaladex.core.model.Platform
 import scaladex.core.model.Platform._
 import scaladex.core.model.Project
-import scaladex.core.model.Project.DataForm
+import scaladex.core.model.Project.Settings
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.Url
 import scaladex.core.model.search.ProjectDocument
@@ -45,7 +45,7 @@ object Values {
           forks = Some(148),
           topics = Set("refactoring", "dotty", "linter", "metaprogramming", "scalafix", "sbt", "rewrite", "scala")
         )
-    val dataForm: DataForm = DataForm(
+    val settings: Settings = Settings(
       defaultStableVersion = false,
       defaultArtifact = None,
       strictVersions = false,
@@ -59,7 +59,7 @@ object Values {
       beginnerIssuesLabel = None
     )
     val project: Project =
-      Project.default(reference, None, Some(githubInfo), Some(dataForm), now = now)
+      Project.default(reference, None, Some(githubInfo), Some(settings), now = now)
 
     val projectDocument: ProjectDocument =
       ProjectDocument(project.copy(creationDate = Some(now.minus(1, ChronoUnit.MINUTES))), Seq(artifact), 0, Seq.empty)

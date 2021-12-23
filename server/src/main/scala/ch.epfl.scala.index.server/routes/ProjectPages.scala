@@ -57,7 +57,7 @@ class ProjectPages(
       p: Project,
       allVersions: Seq[SemanticVersion]
   ): Seq[SemanticVersion] =
-    (if (p.dataForm.strictVersions) allVersions.filter(_.isSemantic)
+    (if (p.settings.strictVersions) allVersions.filter(_.isSemantic)
      else allVersions).distinct.sorted.reverse
 
   private def getProjectPage(
@@ -126,8 +126,8 @@ class ProjectPages(
               editForm { form =>
                 val ref = Project.Reference(organization, repository)
                 val updated = for {
-                  _ <- localStorage.saveDataForm(ref, form)
-                  updated <- db.updateProjectForm(ref, form)
+                  _ <- localStorage.saveProjectSettings(ref, form)
+                  updated <- db.updateProjectSettings(ref, form)
                 } yield updated
                 onComplete(updated) {
                   case Success(()) =>

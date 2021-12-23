@@ -48,7 +48,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         _ <- db.updateGithubInfoAndStatus(Cats.reference, Cats.githubInfo, GithubStatus.Ok(now))
         _ <- db.insertRelease(Scalafix.artifact, Seq.empty, now)
         _ <- db.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, GithubStatus.Ok(now))
-        _ <- db.updateProjectForm(Scalafix.reference, Scalafix.dataForm)
+        _ <- db.updateProjectSettings(Scalafix.reference, Scalafix.settings)
         allProjects <- db.getAllProjects()
       } yield allProjects should contain theSameElementsAs Seq(Cats.project, Scalafix.project)
     }
@@ -95,18 +95,18 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         _ <- db.insertRelease(Scalafix.artifact, Seq.empty, now)
         _ <- db.insertRelease(PlayJsonExtra.artifact, Seq.empty, now)
         _ <- db.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, GithubStatus.Ok(now))
-        _ <- db.updateProjectForm(Scalafix.reference, Scalafix.dataForm)
+        _ <- db.updateProjectSettings(Scalafix.reference, Scalafix.settings)
         projects <- db.countProjects()
         artifacts <- db.countArtifacts()
         dependencies <- db.countDependencies()
         githubInfos <- db.countGithubInfo()
-        dataForms <- db.countProjectDataForm()
+        settings <- db.countProjectSettings()
       } yield {
         projects shouldBe 3L
         artifacts shouldBe 4L
         dependencies shouldBe 3L
         githubInfos shouldBe 1L
-        dataForms shouldBe 1L
+        settings shouldBe 1L
       }
     }
 

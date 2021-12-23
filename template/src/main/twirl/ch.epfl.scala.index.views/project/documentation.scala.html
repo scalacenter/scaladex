@@ -5,10 +5,10 @@
 <div class="documentation box">
   <h4>Documentation</h4>
   <ul>
-    @for(scaladoc <- release.scalaDocURL(project.dataForm.customScalaDoc)){
+    @for(scaladoc <- release.scalaDocURL(project.settings.customScalaDoc)){
       <li><a href="@scaladoc" rel="nofollow" target="_blank">Scaladoc</a></li>
     }
-    @for(Project.DocumentationLink(label, url) <- release.documentationURLs(project.dataForm.documentationLinks)){
+    @for(Project.DocumentationLink(label, url) <- release.documentationURLs(project.settings.documentationLinks)){
       <li>
         <a href="@url.toString()" target="_blank" rel="nofollow">
           @if(label == ""){ @url } else { @label }
