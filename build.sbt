@@ -18,8 +18,7 @@ inThisBuild(
 lazy val logging =
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.1.7",
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-    "org.apache.logging.log4j" % "log4j-core" % V.log4jVersion % Runtime
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
   )
 
 val amm = inputKey[Unit]("Start Ammonite REPL")
