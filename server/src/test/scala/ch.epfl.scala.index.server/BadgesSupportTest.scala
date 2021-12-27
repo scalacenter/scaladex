@@ -6,22 +6,23 @@ import org.apache.commons.lang3.StringUtils.countMatches
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.Platform
+import scaladex.core.model.SemanticVersion
 
 class BadgesSupportTest extends AsyncFunSpec with Matchers {
   import scaladex.core.model.ScalaVersion._
+  import scaladex.core.model.Scala3Version._
   import Platform._
-  import Values._
+  
+  val `7.0.0`: SemanticVersion = SemanticVersion(7, 0, 0)
+  val `7.1.0`: SemanticVersion = SemanticVersion(7, 1, 0)
+  val `7.2.0`: SemanticVersion = SemanticVersion(7, 2, 0)
+  val `7.3.0`: SemanticVersion = SemanticVersion(7, 3, 0)
 
   it(
     "use the SummariseLanguageVersions strategy if any targets are not for platforms that fully determine the Scala version"
   ) {
     BadgesSupport.summaryOfLatestVersions(
-      Map(
-        `7.0.0` -> Set(
-          ScalaNative(`2.13`, ScalaNative.`0.3`),
-          ScalaNative(`2.13`, ScalaNative.`0.4`)
-        )
-      ),
+      Map(`7.0.0` -> Set(ScalaNative.`0.3_2.13`, ScalaNative.`0.4_2.13`)),
       PlatformType.Native
     ) shouldBe "7.0.0 (Scala 2.13 - Native 0.4, 0.3)"
   }
@@ -129,9 +130,9 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
       Map(
         `7.1.0` -> Set(
           ScalaNative(`3.0.0-M3`, ScalaNative.`0.3`),
-          ScalaNative(`2.13`, ScalaNative.`0.3`),
+          ScalaNative.`0.3_2.13`,
           ScalaNative(`3.0.0-M3`, ScalaNative.`0.4`),
-          ScalaNative(`2.13`, ScalaNative.`0.4`)
+          ScalaNative.`0.4_2.13`
         )
       ),
       PlatformType.Native
@@ -145,7 +146,7 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
         `7.1.0` -> Set(
           ScalaNative(`3.0.0-M3`, ScalaNative.`0.3`),
           ScalaNative(`3.0.0-M3`, ScalaNative.`0.4`),
-          ScalaNative(`2.13`, ScalaNative.`0.4`)
+          ScalaNative.`0.4_2.13`
         )
       ),
       PlatformType.Native
@@ -158,7 +159,7 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
     SummariseLanguageVersions.summarise(
       Map(
         `7.1.0` -> Set(
-          ScalaNative(`2.13`, ScalaNative.`0.3`),
+          ScalaNative.`0.3_2.13`,
           ScalaNative(`3.0.0-M3`, ScalaNative.`0.4`)
         )
       ),

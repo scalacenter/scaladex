@@ -20,6 +20,7 @@ import scaladex.core.model.ProjectDependency
 import scaladex.core.service.SchedulerDatabase
 import scaladex.infra.storage.DataPaths
 import scaladex.infra.storage.local.LocalStorageRepo
+import scaladex.core.test.Values
 
 trait ControllerBaseSuite extends AnyFunSpec with Matchers {
   private val config = ServerConfig.load()
@@ -31,13 +32,13 @@ trait ControllerBaseSuite extends AnyFunSpec with Matchers {
   val localStorage = new LocalStorageRepo(dataPaths)
 
   def insertMockData(): Future[Unit] = {
-    import ch.epfl.scala.index.server.Values._
+    import Values.PlayJsonExtra._
     // Insert mock data
     implicit val ec = ExecutionContext.global
     for {
-      _ <- db.insertRelease(artifact, Seq.empty, now)
-      _ <- db.updateProjectCreationDate(project.reference, project.creationDate.get)
-      _ <- db.updateGithubInfoAndStatus(project.reference, project.githubInfo.get, project.githubStatus)
+      _ <- db.insertRelease(artifact, Seq.empty, Values.now)
+      _ <- db.updateProjectCreationDate(reference, creationDate)
+      _ <- db.updateGithubInfoAndStatus(reference, githubInfo, GithubStatus.Ok(Values.now))
     } yield ()
   }
 

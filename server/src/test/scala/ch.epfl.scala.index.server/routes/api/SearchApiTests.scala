@@ -1,10 +1,9 @@
 package ch.epfl.scala.index
 package server.routes.api
 
-import org.scalatest.funspec.AsyncFunSpec
-import org.scalatest.matchers.should.Matchers
+import ch.epfl.scala.index.server.routes.ControllerBaseSuite
 
-class SearchApiTests extends AsyncFunSpec with Matchers {
+class SearchApiTests extends ControllerBaseSuite {
   describe("parseScalaTarget") {
     it("should not recognize 3.x.y") {
       val res =

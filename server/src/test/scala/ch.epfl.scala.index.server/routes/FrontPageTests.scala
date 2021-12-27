@@ -7,7 +7,6 @@ import scaladex.core.model.Platform
 import scaladex.core.model.Project
 
 class FrontPageTests extends AnyFunSpec with Matchers {
-  import ch.epfl.scala.index.server.Values._
   import scaladex.core.model.ScalaVersion._
   import scaladex.core.model.Scala3Version._
   import Platform.PlatformType._
@@ -19,12 +18,12 @@ class FrontPageTests extends AnyFunSpec with Matchers {
     val platformWithCount: Map[Project.Reference, Set[Platform]] = Map(
       ref1 -> Set(
         Platform.Java,
-        Platform.ScalaNative(`2.11`, nat03),
-        Platform.ScalaNative(`2.12`, nat03),
-        Platform.ScalaNative(`2.12`, nat04)
+        Platform.ScalaNative(`2.11`, Platform.ScalaNative.`0.3`),
+        Platform.ScalaNative(`2.12`, Platform.ScalaNative.`0.3`),
+        Platform.ScalaNative(`2.12`, Platform.ScalaNative.`0.4`)
       ),
       ref2 -> Set(
-        Platform.ScalaNative(`2.13`, nat03),
+        Platform.ScalaNative(`2.13`, Platform.ScalaNative.`0.3`),
         Platform.ScalaJvm(`2.13`),
         Platform.ScalaJvm(`2.12`),
         Platform.ScalaJvm(`3.0.0-RC3`),
@@ -44,11 +43,11 @@ class FrontPageTests extends AnyFunSpec with Matchers {
         (`3`.family, 1)
       )
     }
-    it("should collect scalaJs") {
+    it("should collect ScalaNative") {
       val res = FrontPage.getPlatformWithCount(platformWithCount) { case p: Platform.ScalaNative => p.scalaNativeV }
       res shouldBe List(
-        (BinaryVersion.parse("0.3.0").get, 2),
-        (BinaryVersion.parse("0.4.0").get, 1)
+        (BinaryVersion.parse("0.3").get, 2),
+        (BinaryVersion.parse("0.4").get, 1)
       )
     }
   }

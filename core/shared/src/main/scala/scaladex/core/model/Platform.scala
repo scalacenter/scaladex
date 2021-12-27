@@ -117,6 +117,7 @@ object Platform extends Parsers {
     val `0.3`: BinaryVersion = MinorBinary(0, 3)
     val `0.4`: BinaryVersion = MinorBinary(0, 4)
     val `0.4_2.13`: ScalaNative = ScalaNative(ScalaVersion.`2.13`, `0.4`)
+    val `0.3_2.13`: ScalaNative = ScalaNative(ScalaVersion.`2.13`, `0.3`)
     private val stableBinaryVersions: Set[BinaryVersion] = Set(`0.3`, `0.4`)
     def isValid(version: BinaryVersion): Boolean =
       stableBinaryVersions.contains(version)

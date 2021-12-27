@@ -39,7 +39,7 @@ object Values {
     )
     val githubInfo: GithubInfo =
       GithubInfo
-        .empty(reference.repository.value, reference.organization.value)
+        .default(reference)
         .copy(
           stars = Some(643),
           forks = Some(148),
@@ -67,6 +67,7 @@ object Values {
 
   object PlayJsonExtra {
     val reference: Project.Reference = Project.Reference.from("xuwei-k", "play-json-extra")
+    val creationDate: Instant = Instant.ofEpochMilli(1411736618000L)
     val artifactId: ArtifactId = ArtifactId.parse("play-json-extra_2.11").get
     val artifact: Artifact = Artifact(
       groupId = GroupId("com.github.xuwei-k"),
@@ -76,7 +77,7 @@ object Values {
       platform = artifactId.platform,
       projectRef = reference,
       description = None,
-      releaseDate = Some(Instant.ofEpochMilli(1411736618000L)),
+      releaseDate = Some(creationDate),
       resolver = None,
       licenses = Set(),
       isNonStandardLib = false
@@ -87,6 +88,7 @@ object Values {
         target = artifact.mavenReference,
         "compile"
       )
+    val githubInfo = GithubInfo.default(reference)
   }
 
   object Cats {
@@ -96,7 +98,7 @@ object Values {
     val issueAboutBar: GithubIssue =
       model.GithubIssue(2, "Issue about bar", Url("https://github.com/typelevel/cats/pull/2"))
     val githubInfo: GithubInfo = GithubInfo
-      .empty(reference.repository.value, reference.organization.value)
+      .default(reference)
       .copy(
         stars = Some(4337),
         forks = Some(1081),
