@@ -1,4 +1,4 @@
-package scaladex.infra
+package scaladex.core.test
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit

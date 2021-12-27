@@ -6,7 +6,7 @@ import scaladex.core.model.ProjectDependency
 import scaladex.infra.storage.sql.BaseDatabaseSuite
 
 class ProjectDependenciesTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
-  import scaladex.infra.Values._
+  import scaladex.core.test.Values._
 
   import scaladex.infra.storage.sql.tables.ProjectDependenciesTable._
   describe("should generate insert the query for") {

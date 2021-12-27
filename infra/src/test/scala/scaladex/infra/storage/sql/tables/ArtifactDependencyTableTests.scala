@@ -6,7 +6,7 @@ import scaladex.infra.storage.sql.BaseDatabaseSuite
 import scaladex.infra.storage.sql.tables.ArtifactDependencyTable
 
 class ArtifactDependencyTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
-  import scaladex.infra.Values._
+  import scaladex.core.test.Values._
 
   import scaladex.infra.storage.sql.tables.ArtifactDependencyTable._
   describe("should generate the query for") {

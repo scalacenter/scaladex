@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import scaladex.infra.storage.sql.BaseDatabaseSuite
 
 class ProjectSettingsTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
-  import scaladex.infra.Values._
+  import scaladex.core.test.Values._
 
   describe("should generate query for") {
     it("check insertOrUpdate") {

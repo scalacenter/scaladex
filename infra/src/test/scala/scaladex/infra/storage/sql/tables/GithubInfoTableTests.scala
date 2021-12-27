@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import scaladex.infra.storage.sql.BaseDatabaseSuite
 
 class GithubInfoTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
-  import scaladex.infra.Values._
+  import scaladex.core.test.Values._
 
   import scaladex.infra.storage.sql.tables.GithubInfoTable._
   describe("should generate the query for") {

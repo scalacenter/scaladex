@@ -20,7 +20,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
   override implicit val executionContext: ExecutionContext =
     ExecutionContext.fromExecutorService(executorService)
 
-  import scaladex.infra.Values._
+  import scaladex.core.test.Values._
 
   describe("SqlRepo") {
     it("insert release and its dependencies") {

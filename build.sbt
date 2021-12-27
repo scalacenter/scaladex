@@ -143,7 +143,7 @@ lazy val infra = project
     IntegrationTest / fork := true,
     IntegrationTest / javaOptions ++= (Test / javaOptions).value
   )
-  .dependsOn(core.jvm)
+  .dependsOn(core.jvm  % "compile->compile;test->test")
 
 lazy val webclient = project
   .settings(
@@ -193,7 +193,7 @@ lazy val server = project
     IntegrationTest / fork := true,
     IntegrationTest / javaOptions ++= (infra / Compile / run / javaOptions).value
   )
-  .dependsOn(template, data, infra)
+  .dependsOn(template, data, infra, core.jvm % "compile->compile;test->test")
   .enablePlugins(SbtSassify, JavaServerAppPackaging)
 
 lazy val core = crossProject(JSPlatform, JVMPlatform)
@@ -238,7 +238,7 @@ lazy val data = project
     Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value
   )
   .enablePlugins(JavaAppPackaging)
-  .dependsOn(core.jvm, infra)
+  .dependsOn(core.jvm % "compile->compile;test->test", infra)
 
 lazy val V = new {
   val doobieVersion = "0.13.4"
