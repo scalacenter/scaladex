@@ -1,5 +1,4 @@
-package ch.epfl.scala.index
-package api
+package scaladex.core.api
 
 import play.api.libs.json.Format
 import play.api.libs.json.Json

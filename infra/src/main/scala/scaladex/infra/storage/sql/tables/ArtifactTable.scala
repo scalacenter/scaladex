@@ -14,7 +14,7 @@ import scaladex.infra.util.DoobieUtils.Mappings._
 import scaladex.infra.util.DoobieUtils.insertRequest
 
 object ArtifactTable {
-  private val _ = documentationLinksMeta
+  locally { val _ = contributorMeta }
   private[sql] val table = "artifacts"
 
   private[sql] val fields = Seq(

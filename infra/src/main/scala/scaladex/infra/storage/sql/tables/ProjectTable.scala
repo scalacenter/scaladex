@@ -13,7 +13,7 @@ import scaladex.infra.util.DoobieUtils.Mappings._
 import scaladex.infra.util.DoobieUtils._
 
 object ProjectTable {
-  private val _ = documentationLinksMeta
+  locally { val _ = contributorMeta }
 
   private val table: String = "projects"
   private val tableFr: Fragment = Fragment.const0(table)

@@ -10,8 +10,8 @@ object ScalaJSHelper {
       val (js, map) = andSourceMap((client / Compile / fastOptJS).value.data)
       IO.copy(
         Seq(
-          js -> target.value / js.getName,
-          map -> target.value / map.getName
+          js -> (Compile / resourceManaged).value / js.getName,
+          map -> (Compile / resourceManaged).value / map.getName
         )
       ).toSeq
     }.taskValue,
