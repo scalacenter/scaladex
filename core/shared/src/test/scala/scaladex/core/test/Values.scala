@@ -88,7 +88,7 @@ object Values {
         target = artifact.mavenReference,
         "compile"
       )
-    val githubInfo = GithubInfo.default(reference)
+    val githubInfo: GithubInfo = GithubInfo.default(reference)
   }
 
   object Cats {

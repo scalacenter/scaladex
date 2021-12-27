@@ -12,7 +12,7 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
   import scaladex.core.model.ScalaVersion._
   import scaladex.core.model.Scala3Version._
   import Platform._
-  
+
   val `7.0.0`: SemanticVersion = SemanticVersion(7, 0, 0)
   val `7.1.0`: SemanticVersion = SemanticVersion(7, 1, 0)
   val `7.2.0`: SemanticVersion = SemanticVersion(7, 2, 0)
