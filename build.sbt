@@ -15,7 +15,7 @@ inThisBuild(
   )
 )
 
-lazy val logging =
+lazy val loggingSettings =
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.1.7",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
@@ -23,7 +23,7 @@ lazy val logging =
   )
 
 val amm = inputKey[Unit]("Start Ammonite REPL")
-lazy val ammoniteSettings = Seq(
+lazy val ammoniteSettings = Def.settings(
   amm := (Test / run).evaluated,
   amm / aggregate := false,
   libraryDependencies += ("com.lihaoyi" % "ammonite" % "2.3.8-65-0f0d597f" % Test).cross(CrossVersion.full),
@@ -41,16 +41,19 @@ lazy val ammoniteSettings = Seq(
   }.taskValue
 )
 
-lazy val commonSettings = Seq(
+lazy val scalacOptionsSettings = Def.settings(
   scalacOptions ++= Seq(
     "-deprecation",
     "-encoding",
     "UTF-8",
     "-feature",
     "-unchecked",
-//    "-Xfatal-warnings",
+    "-Xfatal-warnings",
     "-Wunused:imports"
-  ),
+  )
+)
+
+lazy val runSettings = Def.settings(
   Compile / javaOptions ++= {
     val base = (ThisBuild / baseDirectory).value
     val devCredentials = base / "../scaladex-dev-credentials/application.conf"
@@ -58,28 +61,18 @@ lazy val commonSettings = Seq(
     else Seq()
   },
   Compile / run / fork := true,
-  reStart / javaOptions := (Compile / run / javaOptions).value
-) ++
-  addCommandAlias("start", "reStart") ++ logging ++ ammoniteSettings
+  reStart / javaOptions := (Compile / run / javaOptions).value,
+  addCommandAlias("start", "reStart")
+)
 
 lazy val scaladex = project
   .in(file("."))
-  .aggregate(
-    client,
-    data,
-    core,
-    infra,
-    server,
-    api.jvm,
-    api.js,
-    template
-  )
-  .settings(commonSettings)
+  .aggregate(webclient, data, core.jvm, core.js, infra, server, template)
   .settings(Deployment(data, server))
 
 lazy val template = project
-  .settings(commonSettings)
   .settings(
+    scalacOptionsSettings,
     scalacOptions -= "-Xfatal-warnings",
     libraryDependencies ++= Seq(
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTimeVersion,
@@ -88,14 +81,15 @@ lazy val template = project
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
-  .dependsOn(core)
+  .dependsOn(core.jvm)
   .enablePlugins(SbtTwirl)
 
 lazy val infra = project
   .in(file("infra"))
   .configs(IntegrationTest)
-  .settings(commonSettings)
   .settings(
+    scalacOptionsSettings,
+    loggingSettings,
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4sVersion,
       "org.json4s" %% "json4s-native" % "3.6.9",
@@ -150,32 +144,27 @@ lazy val infra = project
     IntegrationTest / fork := true,
     IntegrationTest / javaOptions ++= (Test / javaOptions).value
   )
-  .dependsOn(core)
+  .dependsOn(core.jvm)
 
-lazy val api = crossProject(JSPlatform, JVMPlatform)
-  .settings(commonSettings)
+lazy val webclient = project
   .settings(
-    libraryDependencies ++= Seq(
-      "com.typesafe.play" %%% "play-json" % V.playJsonVersion
-    )
-  )
-
-lazy val client = project
-  .settings(commonSettings)
-  .settings(
+    scalacOptionsSettings,
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "scalatags" % "0.8.6",
       "be.doeraene" %%% "scalajs-jquery" % "1.0.0"
     )
   )
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(api.js)
+  .dependsOn(core.js)
 
 lazy val server = project
   .configs(IntegrationTest)
-  .settings(commonSettings)
-  .settings(packageScalaJS(client))
   .settings(
+    scalacOptionsSettings,
+    loggingSettings,
+    runSettings,
+    ammoniteSettings,
+    packageScalaJS(webclient),
     javaOptions ++= Seq(
       "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044"
     ),
@@ -205,21 +194,22 @@ lazy val server = project
     IntegrationTest / fork := true,
     IntegrationTest / javaOptions ++= (infra / Compile / run / javaOptions).value
   )
-  .dependsOn(template, data, infra, api.jvm)
+  .dependsOn(template, data, infra)
   .enablePlugins(SbtSassify, JavaServerAppPackaging)
 
-lazy val core = project
+lazy val core = crossProject(JSPlatform, JVMPlatform)
   .in(file("core"))
-  .settings(commonSettings)
   .settings(
+    scalacOptionsSettings,
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %% "fastparse" % "2.3.0",
-//      "joda-time" % "joda-time" % "2.10.10",
-      "org.scalatest" %% "scalatest" % V.scalatest % Test
+      "com.lihaoyi" %%% "fastparse" % "2.3.0",
+      "io.github.cquiroz" %%% "scala-java-time" % "2.2.2",
+      "com.typesafe.play" %%% "play-json" % V.playJsonVersion,
+      "org.scalatest" %%% "scalatest" % V.scalatest % Test
     ) ++ Seq(
-      "io.circe" %% "circe-core",
-      "io.circe" %% "circe-generic",
-      "io.circe" %% "circe-parser"
+      "io.circe" %%% "circe-core",
+      "io.circe" %%% "circe-generic",
+      "io.circe" %%% "circe-parser"
     ).map(_ % V.circeVersion),
     buildInfoPackage := "build.info",
     buildInfoKeys := Seq[BuildInfoKey](ThisBuild / baseDirectory)
@@ -227,8 +217,11 @@ lazy val core = project
   .enablePlugins(BuildInfoPlugin)
 
 lazy val data = project
-  .settings(commonSettings)
   .settings(
+    scalacOptionsSettings,
+    runSettings,
+    ammoniteSettings,
+    loggingSettings,
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0",
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTimeVersion,
@@ -246,7 +239,7 @@ lazy val data = project
     Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value
   )
   .enablePlugins(JavaAppPackaging)
-  .dependsOn(core, infra)
+  .dependsOn(core.jvm, infra)
 
 lazy val V = new {
   val doobieVersion = "0.13.4"

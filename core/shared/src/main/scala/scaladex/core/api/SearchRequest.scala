@@ -1,5 +1,6 @@
-package ch.epfl.scala.index.api
+package scaladex.core.api
 
+/** TODO: This is duplicate of SearchParams, we should remove one of the two */
 case class SearchRequest(
     query: String,
     you: Boolean,

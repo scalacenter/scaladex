@@ -7,8 +7,7 @@ import scaladex.infra.util.DoobieUtils.Fragments._
 import scaladex.infra.util.DoobieUtils.Mappings._
 
 object GithubInfoTable {
-  private val _ =
-    contributorMeta // for intellij not remove DoobieUtils.Mappings import
+  locally { val _ = contributorMeta } // for intellij not remove DoobieUtils.Mappings import
   val fields: Seq[String] = Seq(
     "organization",
     "repository",

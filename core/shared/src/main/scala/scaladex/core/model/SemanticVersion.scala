@@ -2,7 +2,6 @@ package scaladex.core.model
 
 import scala.util.control.NonFatal
 
-import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.util.Parsers
 
 /**
@@ -42,7 +41,7 @@ case class SemanticVersion(
     SemanticVersion.ordering.compare(this, that)
 }
 
-object SemanticVersion extends Parsers with LazyLogging {
+object SemanticVersion extends Parsers {
   implicit val ordering: Ordering[SemanticVersion] = Ordering.by { x =>
     (x.major, x.minor, x.patch, x.patch2, x.preRelease)
   }
@@ -83,13 +82,8 @@ object SemanticVersion extends Parsers with LazyLogging {
   def tryParse(version: String): Option[SemanticVersion] =
     try fastparse.parse(version, x => FullParser(x)) match {
       case Parsed.Success(v, _) => Some(v)
-      case _ =>
-        logger.warn(s"cannot parse ${classOf[SemanticVersion].getSimpleName} $version")
-        None
+      case _                    => None
     } catch {
-      case NonFatal(_) =>
-        logger.warn(s"cannot parse ${classOf[SemanticVersion].getSimpleName} $version")
-        None
+      case NonFatal(_) => None
     }
-
 }

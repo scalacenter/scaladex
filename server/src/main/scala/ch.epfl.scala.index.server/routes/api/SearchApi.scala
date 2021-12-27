@@ -9,12 +9,12 @@ import scala.concurrent.Future
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import ch.epfl.scala.index.api.AutocompletionResponse
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import com.softwaremill.session.SessionDirectives.optionalSession
 import com.softwaremill.session.SessionOptions.refreshable
 import com.softwaremill.session.SessionOptions.usingCookies
 import play.api.libs.json._
+import scaladex.core.api.AutocompletionResponse
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactSelection
 import scaladex.core.model.BinaryVersion

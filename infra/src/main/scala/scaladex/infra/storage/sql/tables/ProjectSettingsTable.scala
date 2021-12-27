@@ -9,7 +9,7 @@ import scaladex.infra.util.DoobieUtils.Fragments._
 import scaladex.infra.util.DoobieUtils.Mappings._
 
 object ProjectSettingsTable {
-  private val _ = documentationLinksMeta
+  locally { val _ = contributorMeta }
   val fields: Seq[String] = Seq(
     "organization",
     "repository",

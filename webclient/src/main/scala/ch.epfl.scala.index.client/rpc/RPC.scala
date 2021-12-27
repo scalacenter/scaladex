@@ -4,11 +4,11 @@ package rpc
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
-import ch.epfl.scala.index.api.AutocompletionResponse
-import ch.epfl.scala.index.api.SearchRequest
 import org.scalajs.dom.ext.Ajax
 import play.api.libs.json.Json
 import play.api.libs.json.Reads
+import scaladex.core.api.AutocompletionResponse
+import scaladex.core.api.SearchRequest
 
 object RPC {
   def autocomplete(

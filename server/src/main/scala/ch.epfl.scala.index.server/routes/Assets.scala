@@ -14,17 +14,17 @@ object Assets {
           path("img" / Remaining)(path => getFromResource("img/" + path)),
           path("css" / Remaining)(path => getFromResource("css/" + path)),
           path("js" / Remaining)(path => getFromResource("js/" + path)),
-          path("client-opt.js")(
-            getFromResource("client-opt.js")
+          path("webclient-opt.js")(
+            getFromResource("webclient-opt.js")
           ),
-          path("client-fastopt.js")(
-            getFromResource("client-fastopt.js")
+          path("webclient-fastopt.js")(
+            getFromResource("webclient-fastopt.js")
           ),
-          path("client-opt.js.map")(
-            getFromResource("client-opt.js.map")
+          path("webclient-opt.js.map")(
+            getFromResource("webclient-opt.js.map")
           ),
-          path("client-fastopt.js.map")(
-            getFromResource("client-fastopt.js.map")
+          path("webclient-fastopt.js.map")(
+            getFromResource("webclient-fastopt.js.map")
           ),
           path("opensearch.xml")(
             getFromResource("opensearch.xml")
