@@ -21,7 +21,6 @@ import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.ScalaLanguageVersion
-import scaladex.core.model.SemanticVersion
 import scaladex.core.model.search.ProjectHit
 import scaladex.core.model.search.SearchParams
 import scaladex.core.service.SearchEngine
@@ -233,8 +232,8 @@ class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUser
       filteredArtifacts = selection.filterReleases(releases, project)
       selected <- filteredArtifacts.headOption
     } yield {
-      val artifacts = filteredArtifacts.map(_.artifactName).distinct.sorted
-      val versions = filteredArtifacts.map(_.version).distinct.sorted(Ordering[SemanticVersion].reverse)
+      val artifacts = filteredArtifacts.map(_.artifactName).distinct
+      val versions = filteredArtifacts.map(_.version).distinct
       SearchApi.ReleaseOptions(
         artifacts.map(_.value),
         versions.map(_.toString),

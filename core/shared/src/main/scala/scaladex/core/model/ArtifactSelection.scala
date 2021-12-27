@@ -24,7 +24,7 @@ case class ArtifactSelection(
       releases: Seq[Artifact],
       project: Project
   ): Seq[Artifact] = {
-    val selectedReleases =
+    val filteredArtifacts =
       selected match {
         case Some(selected) =>
           if (selected == "target") releases.filter(filterTarget)
@@ -36,7 +36,7 @@ case class ArtifactSelection(
         case None => releases.filter(filterAll)
       }
 
-    selectedReleases.sortBy { release =>
+    filteredArtifacts.sortBy { release =>
       (
         // default artifact (ex: akka-actors is the default for akka/akka)
         project.settings.defaultArtifact.contains(release.artifactName),
@@ -53,14 +53,14 @@ case class ArtifactSelection(
       )
     }(
       Ordering.Tuple6(
+        Ordering[Boolean],
+        Ordering[Boolean],
+        Ordering[Artifact.Name].reverse,
         Ordering[Boolean].reverse,
-        Ordering[Boolean].reverse,
-        Ordering[Artifact.Name],
-        Ordering[Boolean].reverse,
-        Ordering[SemanticVersion].reverse,
-        Ordering[Platform].reverse
+        Ordering[SemanticVersion],
+        Ordering[Platform]
       )
-    )
+    ).reverse
   }
 }
 
