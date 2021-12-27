@@ -39,21 +39,28 @@ case class ArtifactSelection(
     selectedReleases.sortBy { release =>
       (
         // default artifact (ex: akka-actors is the default for akka/akka)
-        if (project.settings.defaultArtifact.contains(release.artifactName)) 1
-        else 0,
+        project.settings.defaultArtifact.contains(release.artifactName),
         // project repository (ex: shapeless)
-        if (project.repository.value == release.artifactName.value) 1 else 0,
+        project.repository.value == release.artifactName.value,
         // alphabetically
-        release.artifactName.value,
+        release.artifactName,
         // stable version first
-        if (project.settings.defaultStableVersion && release.version.preRelease.isDefined) 0
-        else 1,
+        project.settings.defaultStableVersion && release.version.preRelease.isDefined,
         // version
         release.version,
         // target
         release.platform
       )
-    }.reverse
+    }(
+      Ordering.Tuple6(
+        Ordering[Boolean].reverse,
+        Ordering[Boolean].reverse,
+        Ordering[Artifact.Name],
+        Ordering[Boolean].reverse,
+        Ordering[SemanticVersion].reverse,
+        Ordering[Platform].reverse
+      )
+    )
   }
 }
 

@@ -6,17 +6,12 @@ import org.apache.commons.lang3.StringUtils.countMatches
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.Platform
-import scaladex.core.model.SemanticVersion
 
 class BadgesSupportTest extends AsyncFunSpec with Matchers {
   import scaladex.core.model.ScalaVersion._
   import scaladex.core.model.Scala3Version._
   import Platform._
-
-  val `7.0.0`: SemanticVersion = SemanticVersion(7, 0, 0)
-  val `7.1.0`: SemanticVersion = SemanticVersion(7, 1, 0)
-  val `7.2.0`: SemanticVersion = SemanticVersion(7, 2, 0)
-  val `7.3.0`: SemanticVersion = SemanticVersion(7, 3, 0)
+  import scaladex.core.test.Values._
 
   it(
     "use the SummariseLanguageVersions strategy if any targets are not for platforms that fully determine the Scala version"

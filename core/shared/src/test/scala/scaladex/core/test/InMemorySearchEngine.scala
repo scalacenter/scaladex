@@ -1,5 +1,6 @@
 package scaladex.core.test
 
+import scala.collection.mutable
 import scala.concurrent.Future
 
 import scaladex.core.model.BinaryVersion
@@ -12,8 +13,12 @@ import scaladex.core.model.search.SearchParams
 import scaladex.core.service.SearchEngine
 
 class InMemorySearchEngine extends SearchEngine {
+  val allDocuments: mutable.Map[Project.Reference, ProjectDocument] = mutable.Map.empty
 
-  override def insert(project: ProjectDocument): Future[Unit] = ???
+  override def insert(project: ProjectDocument): Future[Unit] = {
+    allDocuments.update(project.reference, project)
+    Future.successful(())
+  }
 
   override def delete(reference: Project.Reference): Future[Unit] = ???
 
@@ -32,6 +37,5 @@ class InMemorySearchEngine extends SearchEngine {
   override def getScalaNativeVersions(params: SearchParams): Future[Seq[(BinaryVersion, Long)]] = ???
 
   override def getSbtVersions(params: SearchParams): Future[Seq[(BinaryVersion, Long)]] = ???
-
 
 }

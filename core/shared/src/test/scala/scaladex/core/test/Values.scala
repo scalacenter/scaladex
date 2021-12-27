@@ -20,6 +20,13 @@ import scaladex.core.model.search.ProjectDocument
 object Values {
   val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
 
+  val `2.6.1` = SemanticVersion(2, 6, 1)
+  val `2.7.0` = SemanticVersion(2, 7, 0)
+  val `7.0.0` = SemanticVersion(7, 0, 0)
+  val `7.1.0` = SemanticVersion(7, 1, 0)
+  val `7.2.0` = SemanticVersion(7, 2, 0)
+  val `7.3.0` = SemanticVersion(7, 3, 0)
+
   object Scalafix {
     val reference: Project.Reference = Project.Reference.from("scalacenter", "scalafix")
     val creationDate: Instant = Instant.ofEpochMilli(1475505237265L)
@@ -84,7 +91,7 @@ object Values {
     )
     val dependency: ArtifactDependency =
       ArtifactDependency(
-        source = Cats.core_3.mavenReference,
+        source = Cats.`core_3:2.6.1`.mavenReference,
         target = artifact.mavenReference,
         "compile"
       )
@@ -111,17 +118,18 @@ object Values {
       githubInfo = Some(githubInfo),
       now = now
     )
+    val groupId: GroupId = GroupId("org.typelevel")
 
     private def getArtifact(
         name: String,
         platform: Platform,
-        version: String = "2.6.1"
+        version: SemanticVersion = `2.6.1`
     ): Artifact = {
       val artifactId = ArtifactId(Name(name), platform)
       Artifact(
-        groupId = GroupId("org.typelevel"),
+        groupId = groupId,
         artifactId = artifactId.value,
-        version = SemanticVersion.tryParse(version).get,
+        version = version,
         artifactName = artifactId.name,
         platform = platform,
         projectRef = reference,
@@ -133,24 +141,26 @@ object Values {
       )
     }
 
-    val core_3: Artifact = getArtifact("cats-core", ScalaJvm.`3`)
+    val `core_3:2.6.1`: Artifact = getArtifact("cats-core", ScalaJvm.`3`)
+    val `core_3:2.7.0`: Artifact = getArtifact("cats-core", ScalaJvm.`3`, `2.7.0`)
     val core_sjs1_3: Artifact = getArtifact("cats-core", ScalaJs.`1_3`)
     val core_sjs06_213: Artifact = getArtifact("cats-core", ScalaJs.`0.6_2.13`)
     val core_native04_213: Artifact = getArtifact("cats-core", ScalaNative.`0.4_2.13`)
     val kernel_3: Artifact = getArtifact("cats-kernel", ScalaJvm.`3`)
     val laws_3: Artifact = getArtifact("cats-laws", ScalaJvm.`3`)
 
-    val allReleases: Seq[Artifact] = Seq(core_3, core_sjs1_3, core_sjs06_213, core_native04_213, kernel_3, laws_3)
+    val allReleases: Seq[Artifact] =
+      Seq(`core_3:2.6.1`, `core_3:2.7.0`, core_sjs1_3, core_sjs06_213, core_native04_213, kernel_3, laws_3)
 
     val dependencies: Seq[ArtifactDependency] = Seq(
       ArtifactDependency(
-        source = core_3.mavenReference,
+        source = `core_3:2.6.1`.mavenReference,
         target = kernel_3.mavenReference,
         "compile"
       ),
-      ArtifactDependency(source = core_3.mavenReference, target = laws_3.mavenReference, "compile"),
+      ArtifactDependency(source = `core_3:2.6.1`.mavenReference, target = laws_3.mavenReference, "compile"),
       ArtifactDependency(
-        source = core_3.mavenReference,
+        source = `core_3:2.6.1`.mavenReference,
         target = MavenReference(
           "com.gu",
           "ztmp-scala-automation_2.10",
@@ -171,7 +181,7 @@ object Values {
         "cats-effect-kernel_3",
         "3.2.3"
       ),
-      target = Cats.core_3.mavenReference,
+      target = Cats.`core_3:2.6.1`.mavenReference,
       "compile"
     )
 

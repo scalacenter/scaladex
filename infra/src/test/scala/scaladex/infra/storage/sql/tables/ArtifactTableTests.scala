@@ -21,7 +21,7 @@ class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers
           .filterNot(_ == '\n')
     }
     it("check selectArtifacts by name") {
-      val q = selectArtifacts(Cats.reference, Cats.core_3.artifactName)
+      val q = selectArtifacts(Cats.reference, Cats.`core_3:2.6.1`.artifactName)
       check(q)
     }
     it("check findOldestArtifactsPerProjectReference") {
