@@ -4,7 +4,7 @@ import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.Artifact._
 
-class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
+class ArtifactSelectionTests extends AsyncFunSpec with Matchers {
 
   def emptyRelease(
       maven: MavenReference,
@@ -113,6 +113,7 @@ class ReleaseOptionsTests extends AsyncFunSpec with Matchers {
           ("akka-distributed-data-experimental_2.11", "2.4.8")
         )
       )
+      println(result)
 
       result should contain theSameElementsAs expected
     }

@@ -6,7 +6,7 @@ import scaladex.infra.storage.sql.BaseDatabaseSuite
 import scaladex.infra.storage.sql.tables.ArtifactTable
 
 class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
-  import scaladex.infra.Values._
+  import scaladex.core.test.Values._
 
   import scaladex.infra.storage.sql.tables.ArtifactTable._
   describe("should generate the query") {
@@ -21,7 +21,7 @@ class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers
           .filterNot(_ == '\n')
     }
     it("check selectArtifacts by name") {
-      val q = selectArtifacts(Cats.reference, Cats.core_3.artifactName)
+      val q = selectArtifacts(Cats.reference, Cats.`core_3:2.6.1`.artifactName)
       check(q)
     }
     it("check findOldestArtifactsPerProjectReference") {

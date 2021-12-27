@@ -20,23 +20,23 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
   override implicit val executionContext: ExecutionContext =
     ExecutionContext.fromExecutorService(executorService)
 
-  import scaladex.infra.Values._
+  import scaladex.core.test.Values._
 
   describe("SqlRepo") {
     it("insert release and its dependencies") {
       for {
-        _ <- db.insertRelease(Cats.core_3, Cats.dependencies, now)
+        _ <- db.insertRelease(Cats.`core_3:2.6.1`, Cats.dependencies, now)
         project <- db.findProject(Cats.reference)
         releases <- db.findReleases(Cats.reference)
       } yield {
         project should not be empty
-        releases should contain theSameElementsAs Seq(Cats.core_3)
+        releases should contain theSameElementsAs Seq(Cats.`core_3:2.6.1`)
       }
     }
 
     it("should get all project references") {
       for {
-        _ <- db.insertRelease(Cats.core_3, Cats.dependencies, now)
+        _ <- db.insertRelease(Cats.`core_3:2.6.1`, Cats.dependencies, now)
         _ <- db.insertRelease(PlayJsonExtra.artifact, Seq.empty, now)
         foundReferences <- db.getAllProjectRef()
       } yield foundReferences should contain theSameElementsAs Seq(PlayJsonExtra.reference, Cats.reference)
@@ -44,7 +44,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
 
     it("should get all projects") {
       for {
-        _ <- db.insertRelease(Cats.core_3, Cats.dependencies, now)
+        _ <- db.insertRelease(Cats.`core_3:2.6.1`, Cats.dependencies, now)
         _ <- db.updateGithubInfoAndStatus(Cats.reference, Cats.githubInfo, GithubStatus.Ok(now))
         _ <- db.insertRelease(Scalafix.artifact, Seq.empty, now)
         _ <- db.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, GithubStatus.Ok(now))
@@ -56,15 +56,15 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
     it("should update artifacts") {
       val newRef = Project.Reference.from("kindlevel", "dogs")
       for {
-        _ <- db.insertRelease(Cats.core_3, Cats.dependencies, now)
+        _ <- db.insertRelease(Cats.`core_3:2.6.1`, Cats.dependencies, now)
         _ <- db.insertRelease(Cats.core_sjs1_3, Seq.empty, now)
-        _ <- db.updateReleases(Seq(Cats.core_3, Cats.core_sjs1_3), newRef)
+        _ <- db.updateReleases(Seq(Cats.`core_3:2.6.1`, Cats.core_sjs1_3), newRef)
         oldReleases <- db.findReleases(Cats.reference)
         movedReleases <- db.findReleases(newRef)
       } yield {
         oldReleases shouldBe empty
         movedReleases should contain theSameElementsAs Seq(
-          Cats.core_3.copy(projectRef = newRef),
+          Cats.`core_3:2.6.1`.copy(projectRef = newRef),
           Cats.core_sjs1_3.copy(projectRef = newRef)
         )
       }
@@ -82,15 +82,15 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
 
     it("should find artifacts by name") {
       for {
-        _ <- db.insertRelease(Cats.core_3, Cats.dependencies, now)
+        _ <- db.insertRelease(Cats.`core_3:2.6.1`, Cats.dependencies, now)
         _ <- db.insertRelease(Cats.core_sjs1_3, Seq.empty, now)
-        artifacts <- db.findReleases(Cats.reference, Cats.core_3.artifactName)
-      } yield artifacts should contain theSameElementsAs Seq(Cats.core_3, Cats.core_sjs1_3)
+        artifacts <- db.findReleases(Cats.reference, Cats.`core_3:2.6.1`.artifactName)
+      } yield artifacts should contain theSameElementsAs Seq(Cats.`core_3:2.6.1`, Cats.core_sjs1_3)
     }
 
     it("should count projects, artifacts, dependencies, github infos and data forms") {
       for {
-        _ <- db.insertRelease(Cats.core_3, Cats.dependencies, now)
+        _ <- db.insertRelease(Cats.`core_3:2.6.1`, Cats.dependencies, now)
         _ <- db.insertRelease(Cats.core_sjs1_3, Seq.empty, now)
         _ <- db.insertRelease(Scalafix.artifact, Seq.empty, now)
         _ <- db.insertRelease(PlayJsonExtra.artifact, Seq.empty, now)
@@ -112,18 +112,18 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
 
     it("should find directDependencies") {
       for {
-        _ <- db.insertRelease(Cats.core_3, Cats.dependencies, now)
+        _ <- db.insertRelease(Cats.`core_3:2.6.1`, Cats.dependencies, now)
         _ <- db.insertRelease(Cats.kernel_3, Seq.empty, now)
-        directDependencies <- db.findDirectDependencies(Cats.core_3)
+        directDependencies <- db.findDirectDependencies(Cats.`core_3:2.6.1`)
       } yield directDependencies.map(_.target) should contain theSameElementsAs List(Some(Cats.kernel_3), None, None)
     }
 
     it("should find reverseDependencies") {
       for {
-        _ <- db.insertRelease(Cats.core_3, Cats.dependencies, now)
+        _ <- db.insertRelease(Cats.`core_3:2.6.1`, Cats.dependencies, now)
         _ <- db.insertRelease(Cats.kernel_3, Seq.empty, now)
         reverseDependencies <- db.findReverseDependencies(Cats.kernel_3)
-      } yield reverseDependencies.map(_.source) should contain theSameElementsAs List(Cats.core_3)
+      } yield reverseDependencies.map(_.source) should contain theSameElementsAs List(Cats.`core_3:2.6.1`)
     }
 
     it("should get all topics") {
@@ -136,13 +136,13 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
 
     it("should get all platforms") {
       for {
-        _ <- db.insertRelease(Cats.core_3, Seq.empty, now)
+        _ <- db.insertRelease(Cats.`core_3:2.6.1`, Seq.empty, now)
         _ <- db.insertRelease(Cats.core_native04_213, Seq.empty, now)
         _ <- db.insertRelease(Cats.core_sjs1_3, Seq.empty, now)
         _ <- db.insertRelease(Cats.core_sjs06_213, Seq.empty, now)
         res <- db.getAllPlatforms()
       } yield res(Cats.reference) should contain theSameElementsAs Set(
-        Cats.core_3.platform,
+        Cats.`core_3:2.6.1`.platform,
         Cats.core_native04_213.platform,
         Cats.core_sjs1_3.platform,
         Cats.core_sjs06_213.platform
@@ -151,9 +151,9 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
 
     it("should get most dependent project") {
       val releases: Map[Artifact, Seq[ArtifactDependency]] = Map(
-        Cats.core_3 -> Seq(
+        Cats.`core_3:2.6.1` -> Seq(
           ArtifactDependency(
-            source = Cats.core_3.mavenReference,
+            source = Cats.`core_3:2.6.1`.mavenReference,
             target = Artifact.MavenReference("fake", "fake_3", "version"),
             scope = "compile"
           )
@@ -161,7 +161,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
         Cats.kernel_3 -> Seq(
           ArtifactDependency(
             source = Cats.kernel_3.mavenReference,
-            target = Cats.core_3.mavenReference,
+            target = Cats.`core_3:2.6.1`.mavenReference,
             "compile"
           )
         ), // depends on it self
@@ -199,14 +199,14 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
     it("should update creation date and get latest project") {
       for {
         _ <- db.insertRelease(Scalafix.artifact, Seq.empty, now)
-        _ <- db.insertRelease(Cats.core_3, Seq.empty, now)
+        _ <- db.insertRelease(Cats.`core_3:2.6.1`, Seq.empty, now)
         _ <- db.insertRelease(PlayJsonExtra.artifact, Seq.empty, now)
         creationDates <- db.computeAllProjectsCreationDate()
         _ <- creationDates.mapSync { case (creationDate, ref) => db.updateProjectCreationDate(ref, creationDate) }
         latestProject <- db.getLatestProjects(2)
       } yield (latestProject.map(p => p.reference -> p.creationDate) should contain).theSameElementsInOrderAs(
         Seq(
-          Cats.reference -> Cats.core_3.releaseDate,
+          Cats.reference -> Cats.`core_3:2.6.1`.releaseDate,
           Scalafix.reference -> Scalafix.artifact.releaseDate
         )
       )

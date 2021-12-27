@@ -38,14 +38,14 @@ case class GithubInfo(
     watchers: Option[Int],
     issues: Option[Int],
     creationDate: Option[Instant],
-    readme: Option[String] = None,
-    contributors: List[GithubContributor] = List(),
-    commits: Option[Int] = None,
-    topics: Set[String] = Set(),
-    contributingGuide: Option[Url] = None,
-    codeOfConduct: Option[Url] = None,
-    chatroom: Option[Url] = None,
-    beginnerIssues: List[GithubIssue] = List() // right now it's all issues, not only beginners issues
+    readme: Option[String],
+    contributors: List[GithubContributor],
+    commits: Option[Int],
+    topics: Set[String],
+    contributingGuide: Option[Url],
+    codeOfConduct: Option[Url],
+    chatroom: Option[Url],
+    beginnerIssues: List[GithubIssue] // right now it's all issues, not only beginners issues
 ) {
   val organization: Organization = projectRef.organization
   val repository: Repository = projectRef.repository
@@ -68,8 +68,8 @@ case class GithubInfo(
 }
 
 object GithubInfo {
-  def empty(repository: String, organization: String): GithubInfo = GithubInfo(
-    Project.Reference.from(organization, repository),
+  def default(reference: Project.Reference): GithubInfo = GithubInfo(
+    reference,
     readme = None,
     homepage = None,
     description = None,

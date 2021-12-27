@@ -28,7 +28,7 @@ class ESRepoTests extends AsyncFunSuite with Matchers with BeforeAndAfterAll {
   override protected def afterAll(): Unit =
     searchEngine.close()
 
-  import scaladex.infra.Values._
+  import scaladex.core.test.Values._
 
   test("match for cats with scala3") {
     for {
