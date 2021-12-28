@@ -1,5 +1,4 @@
-package ch.epfl.scala.index.client
-package rpc
+package scaladex.client.rpc
 
 import scala.concurrent.Future
 import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue

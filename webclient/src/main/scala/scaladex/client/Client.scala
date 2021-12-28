@@ -1,5 +1,4 @@
-package ch.epfl.scala.index
-package client
+package scaladex.client
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
