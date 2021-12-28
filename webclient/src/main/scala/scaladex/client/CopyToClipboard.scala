@@ -1,4 +1,4 @@
-package ch.epfl.scala.index.client
+package scaladex.client
 
 import org.scalajs.dom
 import org.scalajs.dom.document

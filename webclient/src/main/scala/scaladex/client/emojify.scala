@@ -1,4 +1,4 @@
-package ch.epfl.scala.index.client
+package scaladex.client
 
 import scala.scalajs.js
 

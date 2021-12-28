@@ -1,8 +1,7 @@
-package ch.epfl.scala.index.client
+package scaladex.client
 
 import scala.concurrent.ExecutionContext
 
-import ch.epfl.scala.index.client.rpc.RPC
 import org.scalajs.dom
 import org.scalajs.dom.KeyboardEvent
 import org.scalajs.dom.ext.KeyCode
@@ -10,6 +9,7 @@ import org.scalajs.dom.raw.Element
 import org.scalajs.dom.raw.HTMLUListElement
 import org.scalajs.dom.raw.Node
 import org.scalajs.jquery.jQuery
+import scaladex.client.rpc.RPC
 import scaladex.core.api.AutocompletionResponse
 import scalatags.JsDom.all._
 
