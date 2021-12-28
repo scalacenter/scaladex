@@ -6,7 +6,7 @@ import akka.testkit.TestKit
 import org.scalatest.Assertion
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AsyncFunSuiteLike
-import ch.epfl.scala.index.data.init.Init
+import scaladex.data.init.Init
 import ch.epfl.scala.index.server.config.ServerConfig
 import cats.effect.IO
 import cats.effect.ContextShift
