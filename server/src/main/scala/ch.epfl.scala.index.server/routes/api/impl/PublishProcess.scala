@@ -16,14 +16,14 @@ import akka.actor.ActorSystem
 import akka.actor.Props
 import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes._
-import ch.epfl.scala.index.data._
-import ch.epfl.scala.index.data.cleanup.GithubRepoExtractor
-import ch.epfl.scala.index.data.download.PlayWsDownloader
-import ch.epfl.scala.index.data.maven.DownloadParentPoms
-import ch.epfl.scala.index.data.maven.PomsReader
-import ch.epfl.scala.index.data.maven.ReleaseModel
 import org.slf4j.LoggerFactory
 import scaladex.core.service.WebDatabase
+import scaladex.data._
+import scaladex.data.cleanup.GithubRepoExtractor
+import scaladex.data.download.PlayWsDownloader
+import scaladex.data.maven.DownloadParentPoms
+import scaladex.data.maven.PomsReader
+import scaladex.data.maven.ReleaseModel
 import scaladex.infra.storage.DataPaths
 import scaladex.infra.storage.LocalPomRepository
 

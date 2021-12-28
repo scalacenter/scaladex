@@ -12,11 +12,11 @@ import scala.concurrent.duration._
 
 import akka.actor.Actor
 import akka.actor.ActorSystem
-import ch.epfl.scala.index.data.maven.ReleaseModel
-import ch.epfl.scala.index.data.meta.ReleaseConverter
 import org.slf4j.LoggerFactory
 import scaladex.core.model.Project
 import scaladex.core.service.WebDatabase
+import scaladex.data.maven.ReleaseModel
+import scaladex.data.meta.ReleaseConverter
 import scaladex.infra.storage.DataPaths
 import scaladex.infra.storage.LocalPomRepository
 

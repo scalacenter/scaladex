@@ -109,7 +109,7 @@ This repository contains the POMs and project information added by users.
 
 If you want to update the data:
 
-The entry point is at [data/Main.scala](/data/src/main/scala/ch.epfl.scala.index.data/Main.scala)
+The entry point is at [data/Main.scala](/data/src/main/scala/scaladex/data/Main.scala)
 
 ### List Poms
 
