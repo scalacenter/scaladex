@@ -7,7 +7,6 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.epfl.scala.index.server.GithubUserSession
 import ch.epfl.scala.index.server.TwirlSupport._
-import ch.epfl.scala.index.views.html.frontpage
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import play.twirl.api.HtmlFormat
@@ -16,6 +15,7 @@ import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.UserState
 import scaladex.core.service.WebDatabase
+import scaladex.view.html.frontpage
 
 class FrontPage(
     production: Boolean,

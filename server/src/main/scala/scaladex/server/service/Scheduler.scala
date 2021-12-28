@@ -13,7 +13,7 @@ import akka.actor.ActorSystem
 import akka.actor.Cancellable
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.util.TimerUtils
-import scaladex.template.SchedulerStatus
+import scaladex.view.SchedulerStatus
 
 abstract class Scheduler(val name: String, frequency: FiniteDuration)(implicit ec: ExecutionContext)
     extends LazyLogging {

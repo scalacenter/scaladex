@@ -8,13 +8,13 @@ import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import ch.epfl.scala.index.server.TwirlSupport._
-import ch.epfl.scala.index.views.search.html.searchresult
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import scaladex.core.model.UserState
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.SearchParams
 import scaladex.core.service.SearchEngine
+import scaladex.view.search.html.searchresult
 
 class SearchPages(production: Boolean, searchEngine: SearchEngine, session: GithubUserSession)(
     implicit ec: ExecutionContext

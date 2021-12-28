@@ -1,4 +1,4 @@
-@import ch.epfl.scala.index.views.html.contributingInfo
+@import scaladex.view.html.contributingInfo
 @import scaladex.core.model.Project
 @import scaladex.core.model.Artifact
 @import akka.http.scaladsl.model.headers.LinkParams.title
@@ -8,7 +8,7 @@
 @import scaladex.core.model.Platform
 @import scaladex.core.model.TwitterSummaryCard
 @import scaladex.core.model.ArtifactDependency
-@import ch.epfl.scala.index.views.html.main
+@import scaladex.view.html.main
 
 @(
   production: Boolean, env: Env, project: Project, artifacts: Seq[Artifact.Name], versions: Seq[SemanticVersion],

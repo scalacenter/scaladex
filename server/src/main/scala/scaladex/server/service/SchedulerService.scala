@@ -11,7 +11,7 @@ import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions._
 import scaladex.infra.github.GithubClient
 import scaladex.server.service.SchedulerService._
-import scaladex.template.SchedulerStatus
+import scaladex.view.SchedulerStatus
 
 class SchedulerService(db: SchedulerDatabase, searchEngine: SearchEngine, githubClientOpt: Option[GithubClient])
     extends LazyLogging {

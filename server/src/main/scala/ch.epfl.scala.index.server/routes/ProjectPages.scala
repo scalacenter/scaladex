@@ -27,6 +27,7 @@ import scaladex.core.service.LocalStorageApi
 import scaladex.core.service.WebDatabase
 import scaladex.core.util.ScalaExtensions._
 import scaladex.infra.storage.DataPaths
+import scaladex.view
 
 class ProjectPages(
     production: Boolean,
@@ -48,10 +49,10 @@ class ProjectPages(
       releases <- db.findReleases(projectRef)
     } yield projectOpt
       .map { p =>
-        val page = views.project.html.editproject(production, p, releases, Some(userInfo))
+        val page = view.project.html.editproject(production, p, releases, Some(userInfo))
         (StatusCodes.OK, page)
       }
-      .getOrElse((StatusCodes.NotFound, views.html.notfound(production, Some(userInfo))))
+      .getOrElse((StatusCodes.NotFound, view.html.notfound(production, Some(userInfo))))
 
   private def filterVersions(
       p: Project,
@@ -96,7 +97,7 @@ class ProjectPages(
           twitterCard = project.twitterSummaryCard
         } yield (
           StatusCodes.OK,
-          views.project.html.project(
+          view.project.html.project(
             production,
             env,
             project,
@@ -113,7 +114,7 @@ class ProjectPages(
           )
         )
       case None =>
-        Future.successful((StatusCodes.NotFound, views.html.notfound(production, user)))
+        Future.successful((StatusCodes.NotFound, view.html.notfound(production, user)))
     }
   }
 
@@ -206,7 +207,7 @@ class ProjectPages(
                     )
                   ) =>
                 complete(
-                  views.html.artifacts(
+                  view.html.artifacts(
                     production,
                     project,
                     user,
@@ -215,7 +216,7 @@ class ProjectPages(
                   )
                 )
               case Failure(e) =>
-                complete(StatusCodes.NotFound, views.html.notfound(production, user))
+                complete(StatusCodes.NotFound, view.html.notfound(production, user))
 
             }
           }
@@ -234,7 +235,7 @@ class ProjectPages(
                   complete(
                     (
                       StatusCodes.Forbidden,
-                      views.html.forbidden(production, maybeUser)
+                      view.html.forbidden(production, maybeUser)
                     )
                   )
               }
@@ -265,11 +266,11 @@ class ProjectPages(
                         s"/$organization/$repository/${artifact.artifactName}/${artifact.version}/$targetParam",
                         StatusCodes.TemporaryRedirect
                       )
-                    }.getOrElse(complete(StatusCodes.NotFound, views.html.notfound(production, session.getUser(userId)))))
+                    }.getOrElse(complete(StatusCodes.NotFound, view.html.notfound(production, session.getUser(userId)))))
                   releaseFut
                 case None =>
                   Future.successful(
-                    complete(StatusCodes.NotFound, views.html.notfound(production, session.getUser(userId)))
+                    complete(StatusCodes.NotFound, view.html.notfound(production, session.getUser(userId)))
                   )
               }
 
@@ -294,7 +295,7 @@ class ProjectPages(
               onComplete(res) {
                 case Success((code, some)) => complete(code, some)
                 case Failure(e) =>
-                  complete(StatusCodes.NotFound, views.html.notfound(production, user))
+                  complete(StatusCodes.NotFound, view.html.notfound(production, user))
               }
             }
           )
@@ -316,7 +317,7 @@ class ProjectPages(
               onComplete(res) {
                 case Success((code, some)) => complete(code, some)
                 case Failure(e) =>
-                  complete(StatusCodes.NotFound, views.html.notfound(production, user))
+                  complete(StatusCodes.NotFound, view.html.notfound(production, user))
               }
             }
           }

@@ -1,5 +1,4 @@
-package ch.epfl.scala.index
-package views
+package scaladex.view
 
 import java.time.Instant
 import java.time.ZoneId

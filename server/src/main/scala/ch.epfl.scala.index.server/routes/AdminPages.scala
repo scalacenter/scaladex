@@ -11,12 +11,12 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.StandardRoute
 import ch.epfl.scala.index.server.GithubUserSession
 import ch.epfl.scala.index.server.TwirlSupport._
-import ch.epfl.scala.index.views
 import com.softwaremill.session.SessionDirectives.optionalSession
 import com.softwaremill.session.SessionOptions.refreshable
 import com.softwaremill.session.SessionOptions.usingCookies
 import scaladex.core.model.UserState
 import scaladex.server.service.SchedulerService
+import scaladex.view
 
 class AdminPages(production: Boolean, schedulerSrv: SchedulerService, session: GithubUserSession)(
     implicit ec: ExecutionContext
@@ -29,7 +29,7 @@ class AdminPages(production: Boolean, schedulerSrv: SchedulerService, session: G
       case Some(userState) if userState.isAdmin =>
         res(userState)
       case maybeUser =>
-        complete(StatusCodes.Forbidden, views.html.forbidden(production, maybeUser))
+        complete(StatusCodes.Forbidden, view.html.forbidden(production, maybeUser))
     }
 
   val routes: Route = {
@@ -42,7 +42,7 @@ class AdminPages(production: Boolean, schedulerSrv: SchedulerService, session: G
             optionalSession(refreshable, usingCookies)(userId =>
               ifAdmin(userId) { userState =>
                 val schedulers = schedulerSrv.getSchedulers()
-                val html = views.admin.html.admin(production, userState, schedulers)
+                val html = view.admin.html.admin(production, userState, schedulers)
                 complete(html)
               }
             )

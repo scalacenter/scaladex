@@ -1,7 +1,7 @@
 @import java.time.Instant
 @import scala.concurrent.duration.FiniteDuration
 @import scaladex.core.util.TimerUtils
-@import ch.epfl.scala.index.views.html._
+@import scaladex.view.html._
 
 @(triggeredWhen: Instant, now: Instant, lastRunDuration: Option[FiniteDuration])
 @duration = @{TimerUtils.toFiniteDuration(triggeredWhen, now)}
