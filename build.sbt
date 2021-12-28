@@ -10,7 +10,7 @@ inThisBuild(
     scalafixDependencies ++= List(
       "com.github.liancheng" %% "organize-imports" % "0.4.4"
     ),
-    organization := "ch.epfl.scala.index",
+    organization := "ch.epfl.scala",
     version := s"0.2.0+${githash()}"
   )
 )
