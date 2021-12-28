@@ -1,4 +1,4 @@
-package scaladex.template
+package scaladex.view
 
 import java.time.Instant
 

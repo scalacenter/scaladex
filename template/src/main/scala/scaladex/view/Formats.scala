@@ -1,4 +1,4 @@
-package ch.epfl.scala.index.views
+package scaladex.view
 
 object Formats {
   // TODO: add tests

@@ -1,10 +1,8 @@
-package ch.epfl.scala.index
-package views
-package html
+package scaladex.view.html
 
 import org.scalatest.funspec.AsyncFunSpec
 
-class PaginationTests extends AsyncFunSpec {
+class PackageTests extends AsyncFunSpec {
   describe("pagination") {
     it("base case") {
       // *1*
