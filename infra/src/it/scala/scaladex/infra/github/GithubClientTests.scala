@@ -14,6 +14,8 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
   implicit val system: ActorSystem = ActorSystem("github-client-tests")
   val config: Option[GithubConfig] = GithubConfig.from(ConfigFactory.load())
 
+  val isCI = System.getenv("CI") != null
+
   // you need to configure locally a token
   val client = new GithubClient(config.get.token)
 
@@ -52,20 +54,24 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
       yield response should matchPattern { case GithubResponse.MovedPermanently(_) => () }
   }
 
-  it("getUserOrganizationRepositories") {
-    for (repos <- client.getUserOrganizationRepositories("atry", Nil))
-      yield repos should not be empty
-  }
-  it("getUserRepositories") {
-    for (repos <- client.getUserRepositories("atry", Nil))
-      yield repos should not be empty
-  }
   it("getUserInfo") {
     for (userInfo <- client.getUserInfo())
       yield succeed
   }
-  it("getUserOrganizations") {
-    for (orgs <- client.getUserOrganizations("atry"))
-      yield orgs should not be empty
+
+  if (!isCI) {
+    it("getUserOrganizationRepositories") {
+      for (repos <- client.getUserOrganizationRepositories("atry", Nil))
+        yield repos should not be empty
+    }
+    it("getUserRepositories") {
+      for (repos <- client.getUserRepositories("atry", Nil))
+        yield repos should not be empty
+    }
+    it("getUserOrganizations") {
+      for (orgs <- client.getUserOrganizations("atry"))
+        yield orgs should not be empty
+    }
   }
+
 }
