@@ -24,6 +24,7 @@ import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.stream.OverflowStrategy
 import akka.stream.QueueOfferResult
 import akka.stream.scaladsl.Keep
@@ -75,8 +76,8 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       })(Keep.left)
       .run()
 
-  override def update(ref: Project.Reference): Future[GithubResponse[GithubInfo]] =
-    getRepoInfo(ref).flatMap {
+  override def getProjectInfo(ref: Project.Reference): Future[GithubResponse[GithubInfo]] =
+    getRepository(ref).flatMap {
       case GithubResponse.Failed(code, reason) => Future.successful(GithubResponse.Failed(code, reason))
       case GithubResponse.Ok(res) =>
         update(res).map(GithubResponse.Ok.apply)
@@ -91,7 +92,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       communityProfile <- getCommunityProfile(ref)
       contributors <- getContributors(ref)
       openIssues <- getOpenIssues(ref)
-      chatroom <- getGiterChatRoom(ref)
+      chatroom <- getGitterChatRoom(ref)
     } yield GithubInfo(
       projectRef = ref,
       homepage = repoInfo.homepage.map(Url),
@@ -118,24 +119,21 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       .addCredentials(credentials)
       .addHeader(acceptHtmlVersion)
 
-    getRaw(request).failWithTry.flatMap {
-      case Success((_, entity)) =>
-        entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String).map(Option.apply)
-      case Failure(_) =>
-        // a project may not have a readme file
-        Future.successful(None)
-    }
+    getRaw(request)
+      .flatMap {
+        case (_, entity) =>
+          entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String).map(Option.apply)
+      }
+      .fallbackTo(Future.successful(None))
   }
 
   def getCommunityProfile(ref: Project.Reference): Future[Option[GithubModel.CommunityProfile]] = {
     val request = HttpRequest(uri = s"${mainGithubUrl(ref)}/community/profile")
       .addCredentials(credentials)
       .addHeader(RawHeader("Accept", "application/vnd.github.black-panther-preview+json"))
-    get[GithubModel.CommunityProfile](request).failWithTry
-      .map {
-        case Success(profile)   => Some(profile)
-        case Failure(exception) => None
-      }
+    get[GithubModel.CommunityProfile](request)
+      .map(Some.apply)
+      .fallbackTo(Future.successful(None))
   }
 
   def getContributors(ref: Project.Reference): Future[List[Contributor]] = {
@@ -162,7 +160,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     }
   }
 
-  def getRepoInfo(ref: Project.Reference): Future[GithubResponse[GithubModel.Repository]] = {
+  def getRepository(ref: Project.Reference): Future[GithubResponse[GithubModel.Repository]] = {
     val request = HttpRequest(uri = s"${mainGithubUrl(ref)}").addHeader(acceptJson).addCredentials(credentials)
     process(request).flatMap {
       case GithubResponse.Ok((_, entity)) =>
@@ -199,16 +197,20 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     }
   }
 
-  def getGiterChatRoom(ref: Project.Reference): Future[Option[String]] = {
-    val url = s"https://gitter.im/${ref.organization}/${ref.repository}"
-    val httpRequest = HttpRequest(uri = s"https://gitter.im/${ref.organization}/${ref.repository}")
-    queueRequest(httpRequest).map {
-      case _ @HttpResponse(StatusCodes.OK, _, _, _) => Some(url)
-      case _                                        => None
+  def getGitterChatRoom(ref: Project.Reference): Future[Option[String]] = {
+    val uri = s"https://gitter.im/$ref"
+    val request = HttpRequest(uri = uri)
+    Http().singleRequest(request).map {
+      case _ @HttpResponse(StatusCodes.OK, _, entity, _) =>
+        entity.discardBytes()
+        Some(uri)
+      case resp =>
+        resp.entity.discardBytes()
+        None
     }
   }
 
-  def fetchReposUnderUserOrganizations(
+  def getUserOrganizationRepositories(
       login: String,
       filterPermissions: Seq[String]
   ): Future[Seq[Project.Reference]] = {
@@ -236,16 +238,15 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
           |  }
           |}""".stripMargin
 
-    val request = graphqlRequest(token, query)
+    val request = graphqlRequest(query)
     val githubRepoPage1 = get[List[GithubModel.RepoWithPermissionPage]](request)
     if (filterPermissions.isEmpty) githubRepoPage1.map(_.flatMap(_.toGithubRepos))
     else
       githubRepoPage1.map(_.flatMap(_.toGithubReposWithPermission).collect {
         case (repo, permission) if filterPermissions.contains(permission) => repo
       })
-
   }
-  def fetchUserRepo(login: String, filterPermissions: Seq[String]): Future[Seq[Project.Reference]] = {
+  def getUserRepositories(login: String, filterPermissions: Seq[String]): Future[Seq[Project.Reference]] = {
     def query(endcursorOpt: Option[String]) = {
       val after = endcursorOpt.map(endcursor => s"""after: "$endcursor"""").getOrElse("")
       s"""|query {
@@ -267,7 +268,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
           |""".stripMargin
     }
 
-    val request = graphqlRequest(token, query(None))
+    val request = graphqlRequest(query(None))
     val page1 = get[GithubModel.RepoWithPermissionPage](request)(GithubModel.decoderForUserRepo)
     def getPageRecursively(
         pageFut: Future[GithubModel.RepoWithPermissionPage]
@@ -275,7 +276,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       pageFut.flatMap { page =>
         if (!page.hasNextPage) previous.map(page +: _)
         else {
-          val nextPage = get[GithubModel.RepoWithPermissionPage](graphqlRequest(token, query(Some(page.endCursor))))(
+          val nextPage = get[GithubModel.RepoWithPermissionPage](graphqlRequest(query(Some(page.endCursor))))(
             GithubModel.decoderForUserRepo
           )
           getPageRecursively(nextPage)(previous.map(page +: _))
@@ -290,7 +291,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       })
   }
 
-  def fetchUser(): Future[UserInfo] = {
+  def getUserInfo(): Future[UserInfo] = {
     val query =
       """|query {
          |  viewer {
@@ -299,14 +300,14 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
          |    name
          |  }
          |}""".stripMargin
-    val request = graphqlRequest(token, query)
+    val request = graphqlRequest(query)
     val userInfo = get[GithubModel.UserInfo](request)
 
     userInfo.map(_.toCoreUserInfo(token))
   }
 
   // only the first 100 orgs
-  def fetchUserOrganizations(login: String): Future[Set[Project.Organization]] = {
+  def getUserOrganizations(login: String): Future[Set[Project.Organization]] = {
     val query =
       s"""|query {
           |  user(login: "$login") {
@@ -317,7 +318,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
           |    }
           |  }
           |}""".stripMargin
-    val request = graphqlRequest(token, query)
+    val request = graphqlRequest(query)
     val organizations = get[Seq[GithubModel.Organization]](request)
     organizations.map(_.map(_.toCoreOrganization).toSet)
   }
@@ -342,8 +343,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     }
   }
 
-  // when a token is provided, we don't use the queuing system
-  private def graphqlRequest(token: Secret, query: String): HttpRequest = {
+  private def graphqlRequest(query: String): HttpRequest = {
     val json = Map("query" -> query.asJson).asJson
     HttpRequest(
       method = HttpMethods.POST,
@@ -378,12 +378,12 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
           case GithubResponse.MovedPermanently(res)      => GithubResponse.MovedPermanently(res)
         }
       case _ @HttpResponse(code, _, entity, _) =>
-        entity.discardBytes()
-        Future.successful(GithubResponse.Failed(code.intValue, code.reason()))
+        implicit val unmarshaller = Unmarshaller.byteStringUnmarshaller
+        Unmarshal(entity).to[String].map(errorMessage => GithubResponse.Failed(code.intValue, errorMessage))
     }
 
   private def mainGithubUrl(ref: Project.Reference): String =
-    s"https://api.github.com/repos/${ref.organization}/${ref.repository}"
+    s"https://api.github.com/repos/$ref"
 
   private def inPage(page: Int = 1): String =
     s"page=$page"

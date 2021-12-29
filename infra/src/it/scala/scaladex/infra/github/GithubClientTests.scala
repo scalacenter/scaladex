@@ -7,65 +7,65 @@ import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.Project
 import scaladex.infra.github.GithubClient
 import scaladex.infra.github.GithubConfig
+import scaladex.core.model.GithubResponse
+import scaladex.core.test.Values._
 
 class GithubClientTests extends AsyncFunSpec with Matchers {
-  implicit val system: ActorSystem = ActorSystem("github-downloader")
-  val githubConfig: Option[GithubConfig] = GithubConfig.from(ConfigFactory.load())
+  implicit val system: ActorSystem = ActorSystem("github-client-tests")
+  val config: Option[GithubConfig] = GithubConfig.from(ConfigFactory.load())
 
   // you need to configure locally a token
-  val github = new GithubClient(githubConfig.get.token)
-  val scalafixRepo: Project.Reference = Project.Reference.from("scala", "scala")
+  val client = new GithubClient(config.get.token)
 
-  describe("githubClient") {
-    it("getReadme") {
-      for {
-        readme <- github.getReadme(scalafixRepo)
-      } yield assert(readme.nonEmpty)
-    }
-    it("getCommunity") {
-      for {
-        communityProfile <- github.getCommunityProfile(scalafixRepo)
-      } yield assert(true)
-    }
-    it("getRepository") {
-      for {
-        repo <- github.getRepoInfo(scalafixRepo)
-      } yield assert(true)
-    }
-    it("getContributors") {
-      for {
-        contributors <- github.getContributors(scalafixRepo)
-      } yield assert(true)
-    }
-    it("getOpenIssues") {
-      for {
-        openIssues <- github.getOpenIssues(scalafixRepo)
-      } yield assert(true)
-    }
-    it("getGiterChatRoom") {
-      for {
-        chatroom <- github.getGiterChatRoom(scalafixRepo)
-      } yield assert(true)
-    }
-    it("fetchOrgaRepo") {
-      for {
-        repos <- github.fetchReposUnderUserOrganizations("atry", Nil)
-      } yield assert(true)
-    }
-    it("fetchUserRepo") {
-      for {
-        repos <- github.fetchUserRepo("atry", Nil)
-      } yield assert(true)
-    }
-    it("fetchUser") {
-      for {
-        userInfo <- github.fetchUser()
-      } yield assert(true)
-    }
-    it("fetchUserOrganizations") {
-      for {
-        orgs <- github.fetchUserOrganizations("atry")
-      } yield assert(true)
-    }
+  it("getProjectInfo") {
+    for (response <- client.getProjectInfo(Scalafix.reference))
+      yield response should matchPattern { case GithubResponse.Ok(_) => () }
+  }
+  it("getRepository") {
+    for (response <- client.getRepository(Scalafix.reference))
+      yield response should matchPattern { case GithubResponse.Ok(_) => () }
+  }
+  it("getReadme") {
+    for (readme <- client.getReadme(Scalafix.reference))
+      yield readme shouldBe defined
+  }
+  it("getCommunity") {
+    for (communityProfile <- client.getCommunityProfile(Scalafix.reference))
+      yield communityProfile shouldBe defined
+  }
+  it("getContributors") {
+    for (contributors <- client.getContributors(Scalafix.reference))
+      yield contributors should not be empty
+  }
+  it("getOpenIssues") {
+    for (openIssues <- client.getOpenIssues(Scalafix.reference))
+      yield openIssues should not be empty
+  }
+  it("getGitterChatRoom") {
+    for (chatroom <- client.getGitterChatRoom(Scalafix.reference))
+      yield chatroom shouldBe defined
+  }
+
+  it("should return moved project") {
+    val reference = Project.Reference.from("rickynils", "scalacheck")
+    for (response <- client.getProjectInfo(reference))
+      yield response should matchPattern { case GithubResponse.MovedPermanently(_) => () }
+  }
+
+  it("getUserOrganizationRepositories") {
+    for (repos <- client.getUserOrganizationRepositories("atry", Nil))
+      yield repos should not be empty
+  }
+  it("getUserRepositories") {
+    for (repos <- client.getUserRepositories("atry", Nil))
+      yield repos should not be empty
+  }
+  it("getUserInfo") {
+    for (userInfo <- client.getUserInfo())
+      yield succeed
+  }
+  it("getUserOrganizations") {
+    for (orgs <- client.getUserOrganizations("atry"))
+      yield orgs should not be empty
   }
 }
