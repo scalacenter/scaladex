@@ -53,11 +53,11 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
     insertReleaseF.flatMap(_ => insertDepsF)
   }
 
-  override def getAllProjectRef(): Future[Seq[Project.Reference]] =
-    run(ProjectTable.selectAllProjectRef.to[List])
+  override def getAllProjectStatuses(): Future[Map[Project.Reference, GithubStatus]] =
+    run(ProjectTable.selectReferenceAndStatus.to[Seq]).map(_.toMap)
 
   override def getAllProjects(): Future[Seq[Project]] =
-    run(ProjectTable.selectAllProjects.to[Seq])
+    run(ProjectTable.selectProjects.to[Seq])
 
   override def updateReleases(releases: Seq[Artifact], newRef: Project.Reference): Future[Int] = {
     val mavenReferences = releases.map(r => newRef -> r.mavenReference)

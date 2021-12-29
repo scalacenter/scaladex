@@ -34,20 +34,20 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
       }
     }
 
-    it("should get all project references") {
+    it("should get all project statuses") {
       for {
         _ <- db.insertRelease(Cats.`core_3:2.6.1`, Cats.dependencies, now)
         _ <- db.insertRelease(PlayJsonExtra.artifact, Seq.empty, now)
-        foundReferences <- db.getAllProjectRef()
-      } yield foundReferences should contain theSameElementsAs Seq(PlayJsonExtra.reference, Cats.reference)
+        projectStatuses <- db.getAllProjectStatuses()
+      } yield projectStatuses.keys should contain theSameElementsAs Seq(PlayJsonExtra.reference, Cats.reference)
     }
 
-    it("should get all projects") {
+    it("should get all projects statuses") {
       for {
         _ <- db.insertRelease(Cats.`core_3:2.6.1`, Cats.dependencies, now)
-        _ <- db.updateGithubInfoAndStatus(Cats.reference, Cats.githubInfo, GithubStatus.Ok(now))
+        _ <- db.updateGithubInfoAndStatus(Cats.reference, Cats.githubInfo, ok)
         _ <- db.insertRelease(Scalafix.artifact, Seq.empty, now)
-        _ <- db.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, GithubStatus.Ok(now))
+        _ <- db.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, ok)
         _ <- db.updateProjectSettings(Scalafix.reference, Scalafix.settings)
         allProjects <- db.getAllProjects()
       } yield allProjects should contain theSameElementsAs Seq(Cats.project, Scalafix.project)
@@ -74,7 +74,7 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
       val failed = GithubStatus.Failed(now, 405, "Unauthorized")
       for {
         _ <- db.insertRelease(Scalafix.artifact, Seq.empty, now)
-        _ <- db.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, GithubStatus.Ok(now))
+        _ <- db.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, ok)
         _ <- db.updateGithubStatus(Scalafix.reference, failed)
         scalafix <- db.findProject(Scalafix.reference)
       } yield scalafix.get.githubStatus shouldBe failed

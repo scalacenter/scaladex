@@ -17,10 +17,12 @@ object ProjectTable {
 
   private val table: String = "projects"
   private val tableFr: Fragment = Fragment.const0(table)
+
+  private val referenceFields = Seq("organization", "repository")
   private val githubStatusFields =
     Seq("github_status", "github_update_date", "new_organization", "new_repository", "error_code", "error_message")
 
-  private val fields: Seq[String] = Seq("organization", "repository", "creation_date") ++ githubStatusFields
+  private val fields: Seq[String] = referenceFields ++ Seq("creation_date") ++ githubStatusFields
 
   private val allFields: Seq[String] = fields.map("p." + _) ++
     GithubInfoTable.fields.map("g." + _) ++
@@ -37,15 +39,15 @@ object ProjectTable {
   val insertIfNotExists: Update[(Project.Reference, GithubStatus)] =
     insertOrUpdateRequest(
       table,
-      Seq("organization", "repository") ++ githubStatusFields,
-      Seq("organization", "repository")
+      referenceFields ++ githubStatusFields,
+      referenceFields
     )
 
   val updateCreated: Update[(Instant, Project.Reference)] =
-    updateRequest(table, Seq("creation_date"), Seq("organization", "repository"))
+    updateRequest(table, Seq("creation_date"), referenceFields)
 
   val updateGithubStatus: Update[(GithubStatus, Project.Reference)] =
-    updateRequest(table, githubStatusFields, Seq("organization", "repository"))
+    updateRequest(table, githubStatusFields, referenceFields)
 
   val countProjects: Query0[Long] =
     buildSelect(tableFr, fr0"count(*)").query[Long]
@@ -64,9 +66,9 @@ object ProjectTable {
       fr0"WHERE p.creation_date IS NOT NULL ORDER BY p.creation_date DESC LIMIT ${limit.toLong}"
     ).query[Project]
 
-  val selectAllProjectRef: Query0[Project.Reference] =
-    selectRequest(table, Seq("organization", "repository"))
+  val selectReferenceAndStatus: Query0[(Project.Reference, GithubStatus)] =
+    selectRequest(table, referenceFields ++ githubStatusFields)
 
-  def selectAllProjects: Query0[Project] =
+  val selectProjects: Query0[Project] =
     selectRequest(fullTable, allFields)
 }

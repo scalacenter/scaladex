@@ -11,8 +11,8 @@ import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 
 trait SchedulerDatabase extends WebDatabase {
-  def getAllProjectRef(): Future[Seq[Project.Reference]]
   def getAllProjects(): Future[Seq[Project]]
+  def getAllProjectStatuses(): Future[Map[Project.Reference, GithubStatus]]
   def updateReleases(release: Seq[Artifact], newRef: Project.Reference): Future[Int]
   def updateGithubInfoAndStatus(
       p: Project.Reference,

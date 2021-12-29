@@ -15,6 +15,7 @@ import scaladex.core.model.ProjectDependency
 import scaladex.core.service.SchedulerDatabase
 
 class InMemoryDatabase extends SchedulerDatabase {
+
   private val projects = mutable.Map[Project.Reference, Project]()
   private val releases = mutable.Map[Project.Reference, Seq[Artifact]]()
   private val dependencies = mutable.Seq[ArtifactDependency]()
@@ -79,7 +80,7 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getMostDependentUponProject(max: Int): Future[List[(Project, Long)]] =
     Future.successful(Nil)
 
-  override def getAllProjectRef(): Future[Seq[Project.Reference]] = ???
+  override def getAllProjectStatuses(): Future[Map[Project.Reference, GithubStatus]] = ???
 
   override def getAllProjects(): Future[Seq[Project]] = ???
 

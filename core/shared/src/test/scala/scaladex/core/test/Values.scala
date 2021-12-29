@@ -3,12 +3,12 @@ package scaladex.core.test
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-import scaladex.core.model
 import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact._
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubIssue
+import scaladex.core.model.GithubStatus
 import scaladex.core.model.Platform
 import scaladex.core.model.Platform._
 import scaladex.core.model.Project
@@ -19,6 +19,7 @@ import scaladex.core.model.search.ProjectDocument
 
 object Values {
   val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
+  val ok: GithubStatus = GithubStatus.Ok(now)
 
   val `2.6.1` = SemanticVersion(2, 6, 1)
   val `2.7.0` = SemanticVersion(2, 7, 0)
@@ -101,9 +102,9 @@ object Values {
   object Cats {
     val reference: Project.Reference = Project.Reference.from("typelevel", "cats")
     val issueAboutFoo: GithubIssue =
-      model.GithubIssue(1, "Issue about foo", Url("https://github.com/typelevel/cats/pull/1"))
+      GithubIssue(1, "Issue about foo", Url("https://github.com/typelevel/cats/pull/1"))
     val issueAboutBar: GithubIssue =
-      model.GithubIssue(2, "Issue about bar", Url("https://github.com/typelevel/cats/pull/2"))
+      GithubIssue(2, "Issue about bar", Url("https://github.com/typelevel/cats/pull/2"))
     val githubInfo: GithubInfo = GithubInfo
       .default(reference)
       .copy(
