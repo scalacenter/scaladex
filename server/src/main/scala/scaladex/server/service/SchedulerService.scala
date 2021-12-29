@@ -10,53 +10,33 @@ import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions._
 import scaladex.infra.github.GithubClient
-import scaladex.server.service.SchedulerService._
 import scaladex.view.SchedulerStatus
 
 class SchedulerService(db: SchedulerDatabase, searchEngine: SearchEngine, githubClientOpt: Option[GithubClient])
     extends LazyLogging {
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
-  private val mostDependentProjectScheduler = Scheduler("most-dependent", mostDependentProjectJob, 1.hour)
-  private val updateProject = Scheduler("update-projects", updateProjectJob, 30.minutes)
-  private val searchSynchronizer = new SearchSynchronizer(db, searchEngine)
-  private val githubSynchronizerOpt = githubClientOpt.map(client => new GithubSynchronizer(db, client))
-  private val moveReleasesSynchronizer = new MoveReleasesSynchronizer(db)
-
-  private val schedulers = Map[String, Scheduler](
-    mostDependentProjectScheduler.name -> mostDependentProjectScheduler,
-    updateProject.name -> updateProject,
-    searchSynchronizer.name -> searchSynchronizer,
-    moveReleasesSynchronizer.name -> moveReleasesSynchronizer
-  ) ++
-    githubSynchronizerOpt.map(g => Map(g.name -> g)).getOrElse(Map.empty)
+  private val schedulers = Seq(
+    Scheduler("update-project-dependencies", updateProjectDependencies, 1.hour),
+    Scheduler("update-project-creation-date", updateProjectCreationDate, 30.minutes),
+    new SearchSynchronizer(db, searchEngine),
+    new MoveReleasesSynchronizer(db)
+  ) ++ githubClientOpt.map(client => new GithubUpdater(db, client))
+  private val schedulerMap = schedulers.map(s => s.name -> s).toMap
 
   def startAll(): Unit =
-    schedulers.values.foreach(_.start())
+    schedulerMap.values.foreach(_.start())
 
   def start(name: String): Unit =
-    schedulers.get(name).foreach(_.start())
+    schedulerMap.get(name).foreach(_.start())
 
   def stop(name: String): Unit =
-    schedulers.get(name).foreach(_.stop())
+    schedulerMap.get(name).foreach(_.stop())
 
   def getSchedulers(): Seq[SchedulerStatus] =
-    schedulers.values.toSeq.map(_.status)
+    schedulerMap.values.toSeq.map(_.status)
 
-  private def mostDependentProjectJob(): Future[Unit] =
-    for {
-      _ <- updateProjectDependenciesTable(db)
-    } yield ()
-
-  private def updateProjectJob(): Future[Unit] =
-    for {
-      _ <- updateCreatedTimeIn(db)
-    } yield ()
-}
-
-object SchedulerService {
-
-  def updateProjectDependenciesTable(db: SchedulerDatabase)(implicit ec: ExecutionContext): Future[Unit] =
+  private def updateProjectDependencies(): Future[Unit] =
     for {
       projectWithDependencies <- db
         .computeProjectDependencies()
@@ -75,7 +55,7 @@ object SchedulerService {
 
     } yield ()
 
-  private def updateCreatedTimeIn(db: SchedulerDatabase)(implicit ec: ExecutionContext): Future[Unit] = {
+  private def updateProjectCreationDate(): Future[Unit] = {
     // one request at time
     val future = for {
       oldestReleases <- db.computeAllProjectsCreationDate()

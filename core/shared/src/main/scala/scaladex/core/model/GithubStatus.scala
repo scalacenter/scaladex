@@ -15,14 +15,15 @@ sealed trait GithubStatus {
       s"GithubStatus.Failed($updateDate, code = $errorCode, reason = $errorMessage)"
   }
 
-  def movedOrNotFound: Boolean = this match {
-    case GithubStatus.Ok(_)           => false
-    case GithubStatus.Unknown(_)      => false
-    case GithubStatus.Moved(_, _)     => true
-    case GithubStatus.NotFound(_)     => true
-    case GithubStatus.Failed(_, _, _) => false
+  def moved: Boolean = this match {
+    case GithubStatus.Moved(_, _) => true
+    case _                        => false
   }
 
+  def notFound: Boolean = this match {
+    case GithubStatus.NotFound(_) => true
+    case _                        => false
+  }
 }
 object GithubStatus {
   case class Ok(updateDate: Instant) extends GithubStatus

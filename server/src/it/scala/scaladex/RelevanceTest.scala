@@ -19,7 +19,7 @@ import scaladex.infra.elasticsearch.ESRepo
 import scaladex.infra.github.{GithubClient, GithubConfig}
 import scaladex.infra.storage.sql.SqlRepo
 import scaladex.infra.util.DoobieUtils
-import scaladex.server.service.{GithubSynchronizer, SearchSynchronizer}
+import scaladex.server.service.{GithubUpdater, SearchSynchronizer}
 import scaladex.core.model.Platform
 import scaladex.core.model.ScalaVersion
 
@@ -43,7 +43,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
         // Will use GITHUB_TOKEN configured in github secret
         val githubConfig: Option[GithubConfig] = GithubConfig.from(ConfigFactory.load())
         val github = new GithubClient(githubConfig.get.token)
-        val githubSync = new GithubSynchronizer(db, github)
+        val githubSync = new GithubUpdater(db, github)
         IO.fromFuture(IO {
           for {
             _ <- Init.run(config.dataPaths, db)

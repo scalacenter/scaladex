@@ -13,7 +13,7 @@ import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions._
 
 class SearchSynchronizer(db: SchedulerDatabase, searchEngine: SearchEngine)(implicit ec: ExecutionContext)
-    extends Scheduler("search-synchronizer", 30.minutes)
+    extends Scheduler("sync-search", 30.minutes)
     with LazyLogging {
   override def run(): Future[Unit] =
     for {
@@ -24,7 +24,7 @@ class SearchSynchronizer(db: SchedulerDatabase, searchEngine: SearchEngine)(impl
       movedProjects = allProjectsAndStatus
         .collect {
           case (p, GithubStatus.Moved(_, newRef)) =>
-            newRef -> Project.Reference(p.organization, p.repository)
+            newRef -> p.reference
         }
         .groupMap { case (newRef, ref) => newRef } { case (newRef, ref) => ref }
       projectsToDelete = allProjectsAndStatus.collect {

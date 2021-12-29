@@ -14,30 +14,31 @@ import scaladex.core.service.GithubService
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions._
 
-class GithubSynchronizer(db: SchedulerDatabase, githubService: GithubService)(implicit ec: ExecutionContext)
-    extends Scheduler("github-synchronizer", 1.hour) {
+class GithubUpdater(db: SchedulerDatabase, githubService: GithubService)(implicit ec: ExecutionContext)
+    extends Scheduler("github-updater", 1.hour) {
   override def run(): Future[Unit] =
-    db.getAllProjects().flatMap { projects =>
-      val filtered = projects.filterNot(_.githubStatus.movedOrNotFound)
+    db.getAllProjectStatuses().flatMap { projectStatuses =>
+      val projectToUpdate =
+        projectStatuses.collect { case (ref, status) if !status.moved && !status.notFound => ref }.toSeq
 
-      logger.info(s"Syncing github info of ${filtered.size} projects")
-      filtered.mapSync(updateProject).map(_ => ())
+      logger.info(s"Updating github info of ${projectToUpdate.size} projects")
+      projectToUpdate.mapSync(update).map(_ => ())
     }
 
-  private def updateProject(project: Project): Future[Unit] = {
+  private def update(ref: Project.Reference): Future[Unit] = {
     val now = Instant.now()
     for {
-      githubInfosResponse <- githubService.getProjectInfo(project.reference)
-      _ <- updateDbAndLog(project.reference, githubInfosResponse, now)
+      response <- githubService.getProjectInfo(ref)
+      _ <- updateDbAndLog(ref, response, now)
     } yield ()
   }
 
   def updateDbAndLog(
       repo: Project.Reference,
-      githubInfosResponse: GithubResponse[GithubInfo],
+      response: GithubResponse[GithubInfo],
       now: Instant
   ): Future[Unit] =
-    githubInfosResponse match {
+    response match {
       case GithubResponse.Ok(info) =>
         val githubStatus = GithubStatus.Ok(now)
         db.updateGithubInfoAndStatus(repo, info, githubStatus)
@@ -51,7 +52,7 @@ class GithubSynchronizer(db: SchedulerDatabase, githubService: GithubService)(im
       case GithubResponse.Failed(code, reason) =>
         val githubStatus =
           if (code == 404) GithubStatus.NotFound(now) else GithubStatus.Failed(now, code, reason)
-        logger.info(s"failed to download github info for $repo because of $githubStatus}")
+        logger.info(s"Failed to download github info for $repo because of $githubStatus}")
         db.updateGithubStatus(repo, githubStatus)
     }
 }
