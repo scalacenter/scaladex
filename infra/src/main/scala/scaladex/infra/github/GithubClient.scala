@@ -366,13 +366,14 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       case GithubResponse.Failed(code, reason)                => throw new Exception(s"$code: $reason")
     }
 
-  private def process(request: HttpRequest): Future[GithubResponse[(Seq[HttpHeader], ResponseEntity)]] =
+  private def process(request: HttpRequest): Future[GithubResponse[(Seq[HttpHeader], ResponseEntity)]] = {
+    assert(request.headers.contains(Authorization(credentials)))
     queueRequest(request).flatMap {
       case r @ HttpResponse(StatusCodes.OK, headers, entity, _) =>
         Future.successful(GithubResponse.Ok((headers, entity)))
       case r @ HttpResponse(StatusCodes.MovedPermanently, headers, entity, _) =>
         entity.discardBytes()
-        val newRequest = HttpRequest(uri = headers.find(_.is("location")).get.value())
+        val newRequest = HttpRequest(uri = headers.find(_.is("location")).get.value()).withHeaders(request.headers)
         process(newRequest).map {
           case GithubResponse.Ok(res)                    => GithubResponse.MovedPermanently(res)
           case GithubResponse.Failed(code, errorMessage) => GithubResponse.Failed(code, errorMessage)
@@ -382,6 +383,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
         implicit val unmarshaller = Unmarshaller.byteStringUnmarshaller
         Unmarshal(entity).to[String].map(errorMessage => GithubResponse.Failed(code.intValue, errorMessage))
     }
+  }
 
   private def repoUrl(ref: Project.Reference): String =
     s"https://api.github.com/repos/$ref"
