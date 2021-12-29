@@ -143,7 +143,7 @@ lazy val infra = project
     IntegrationTest / fork := true,
     IntegrationTest / javaOptions ++= (Test / javaOptions).value
   )
-  .dependsOn(core.jvm % "compile->compile;test->test")
+  .dependsOn(core.jvm % "compile->compile;test->test;it->test")
 
 lazy val webclient = project
   .settings(

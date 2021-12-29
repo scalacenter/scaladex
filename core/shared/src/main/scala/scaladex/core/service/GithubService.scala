@@ -8,9 +8,9 @@ import scaladex.core.model.Project
 import scaladex.core.model.UserInfo
 
 trait GithubService {
-  def update(ref: Project.Reference): Future[GithubResponse[GithubInfo]]
-  def fetchUser(): Future[UserInfo]
-  def fetchUserOrganizations(login: String): Future[Set[Project.Organization]]
-  def fetchReposUnderUserOrganizations(login: String, filterPermissions: Seq[String]): Future[Seq[Project.Reference]]
-  def fetchUserRepo(login: String, filterPermissions: Seq[String]): Future[Seq[Project.Reference]]
+  def getProjectInfo(ref: Project.Reference): Future[GithubResponse[GithubInfo]]
+  def getUserInfo(): Future[UserInfo]
+  def getUserOrganizations(login: String): Future[Set[Project.Organization]]
+  def getUserOrganizationRepositories(login: String, filterPermissions: Seq[String]): Future[Seq[Project.Reference]]
+  def getUserRepositories(login: String, filterPermissions: Seq[String]): Future[Seq[Project.Reference]]
 }
