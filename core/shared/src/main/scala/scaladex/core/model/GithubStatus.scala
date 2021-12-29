@@ -28,7 +28,7 @@ sealed trait GithubStatus {
 object GithubStatus {
   case class Ok(updateDate: Instant) extends GithubStatus
   case class Unknown(updateDate: Instant) extends GithubStatus
-  case class Moved(updateDate: Instant, projectRef: Project.Reference) extends GithubStatus
+  case class Moved(updateDate: Instant, destination: Project.Reference) extends GithubStatus
   case class NotFound(updateDate: Instant) extends GithubStatus
   case class Failed(updateDate: Instant, errorCode: Int, errorMessage: String) extends GithubStatus
 }

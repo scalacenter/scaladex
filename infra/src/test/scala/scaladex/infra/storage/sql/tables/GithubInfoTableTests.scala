@@ -1,44 +1,12 @@
 package scaladex.infra.storage.sql.tables
 
-import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import scaladex.infra.storage.sql.BaseDatabaseSuite
+import scaladex.infra.storage.sql.tables.GithubInfoTable
 
-class GithubInfoTableTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
-  import scaladex.core.test.Values._
-
-  import scaladex.infra.storage.sql.tables.GithubInfoTable._
-  describe("should generate the query for") {
-    it("insert") {
-      val q = insert(Scalafix.githubInfo)
-      check(q)
-      q.sql shouldBe
-        s"""INSERT INTO github_info (organization, repository,
-           | homepage, description, logo, stars, forks, watchers, issues, creation_date, readme,
-           | contributors, commits, topics, contributing_guide,
-           | code_of_conduct, chatroom, open_issues) VALUES (?, ?, ?, ?,
-           | ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
-          .filterNot(_ == '\n')
-    }
-    it("insertOrUpdate") {
-      val q = insertOrUpdate(Scalafix.githubInfo)
-      check(q)
-      q.sql shouldBe
-        s"""INSERT INTO github_info (organization, repository,
-           | homepage, description, logo, stars, forks, watchers, issues, creation_date, readme,
-           | contributors, commits, topics, contributing_guide,
-           | code_of_conduct, chatroom, open_issues) VALUES (?, ?, ?, ?,
-           | ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-           | ON CONFLICT (organization, repository) DO UPDATE SET homepage=?, description=?,
-           | logo=?, stars=?, forks=?, watchers=?, issues=?, creation_date=?, readme=?, contributors=?,
-           | commits=?, topics=?, contributing_guide=?, code_of_conduct=?, chatroom=?, open_issues=?""".stripMargin
-          .filterNot(_ == '\n')
-    }
-    it("selectAllTopics") {
-      val q = selectAllTopics()
-      check(q)
-      q.sql shouldBe s"""SELECT topics FROM github_info where topics != ''"""
-    }
-  }
-
+class GithubInfoTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
+  it("check insert")(check(GithubInfoTable.insert))
+  it("check insertOrUpdate")(check(GithubInfoTable.insertOrUpdate))
+  it("check selectAllTopics")(check(GithubInfoTable.selectAllTopics))
 }

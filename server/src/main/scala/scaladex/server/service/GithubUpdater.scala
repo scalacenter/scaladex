@@ -35,24 +35,23 @@ class GithubUpdater(db: SchedulerDatabase, githubService: GithubService)(implici
 
   def updateDbAndLog(
       repo: Project.Reference,
-      response: GithubResponse[GithubInfo],
+      response: GithubResponse[(Project.Reference, GithubInfo)],
       now: Instant
   ): Future[Unit] =
     response match {
-      case GithubResponse.Ok(info) =>
-        val githubStatus = GithubStatus.Ok(now)
-        db.updateGithubInfoAndStatus(repo, info, githubStatus)
+      case GithubResponse.Ok((_, info)) =>
+        val status = GithubStatus.Ok(now)
+        db.updateGithubInfoAndStatus(repo, info, status)
 
-      case GithubResponse.MovedPermanently(info) =>
-        val githubStatus =
-          GithubStatus.Moved(now, Project.Reference(info.organization, info.repository))
-        logger.info(s"$repo moved to $githubStatus")
-        db.createMovedProject(repo, info, githubStatus)
+      case GithubResponse.MovedPermanently((destination, info)) =>
+        val status = GithubStatus.Moved(now, destination)
+        logger.info(s"$repo moved to $status")
+        db.moveProject(repo, info, status)
 
       case GithubResponse.Failed(code, reason) =>
-        val githubStatus =
+        val status =
           if (code == 404) GithubStatus.NotFound(now) else GithubStatus.Failed(now, code, reason)
-        logger.info(s"Failed to download github info for $repo because of $githubStatus}")
-        db.updateGithubStatus(repo, githubStatus)
+        logger.info(s"Failed to download github info for $repo because of $status")
+        db.updateGithubStatus(repo, status)
     }
 }

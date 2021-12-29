@@ -2,7 +2,6 @@ package scaladex.core.model
 
 import java.time.Instant
 
-import scaladex.core.model.Project._
 import scaladex.core.model.search.GithubInfoDocument
 
 /**
@@ -29,7 +28,6 @@ import scaladex.core.model.search.GithubInfoDocument
  * @param filteredBeginnerIssues list of beginner-friendly issues that were filtered by contributing search
  */
 case class GithubInfo(
-    projectRef: Project.Reference,
     homepage: Option[Url],
     description: Option[String],
     logo: Option[Url],
@@ -47,8 +45,6 @@ case class GithubInfo(
     chatroom: Option[Url],
     beginnerIssues: List[GithubIssue] // right now it's all issues, not only beginners issues
 ) {
-  val organization: Organization = projectRef.organization
-  val repository: Repository = projectRef.repository
   val contributorCount: Int = contributors.size
 
   def toDocument: GithubInfoDocument =
@@ -68,8 +64,7 @@ case class GithubInfo(
 }
 
 object GithubInfo {
-  def default(reference: Project.Reference): GithubInfo = GithubInfo(
-    reference,
+  val empty: GithubInfo = GithubInfo(
     readme = None,
     homepage = None,
     description = None,
