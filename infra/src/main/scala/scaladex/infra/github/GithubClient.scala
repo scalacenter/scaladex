@@ -115,7 +115,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
   }
 
   def getReadme(ref: Project.Reference): Future[Option[String]] = {
-    val request = HttpRequest(uri = s"${mainGithubUrl(ref)}/readme")
+    val request = HttpRequest(uri = s"${repoUrl(ref)}/readme")
       .addCredentials(credentials)
       .addHeader(acceptHtmlVersion)
 
@@ -128,7 +128,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
   }
 
   def getCommunityProfile(ref: Project.Reference): Future[Option[GithubModel.CommunityProfile]] = {
-    val request = HttpRequest(uri = s"${mainGithubUrl(ref)}/community/profile")
+    val request = HttpRequest(uri = s"${repoUrl(ref)}/community/profile")
       .addCredentials(credentials)
       .addHeader(RawHeader("Accept", "application/vnd.github.black-panther-preview+json"))
     get[GithubModel.CommunityProfile](request)
@@ -137,15 +137,15 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
   }
 
   def getContributors(ref: Project.Reference): Future[List[Contributor]] = {
-    def url(page: Int = 1) = HttpRequest(uri = s"${mainGithubUrl(ref)}/contributors?${perPage()}&${inPage(page)}")
+    def request(page: Int) =
+      HttpRequest(uri = s"${repoUrl(ref)}/contributors?${perPage()}&page=$page")
+        .addHeader(acceptJson)
+        .addCredentials(credentials)
 
-    def getContributionPage(page: Int): Future[List[Contributor]] = {
-      val request = url(page).addHeader(acceptJson).addCredentials(credentials)
-      get[List[Contributor]](request)
-    }
+    def getContributionPage(page: Int): Future[List[Contributor]] =
+      get[List[Contributor]](request(page))
 
-    val firstPage = url().addHeader(acceptJson).addCredentials(credentials)
-    getRaw(firstPage).flatMap {
+    getRaw(request(page = 1)).flatMap {
       case (headers, entity) =>
         val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
         lastPage match {
@@ -153,7 +153,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
             for {
               page1 <- Unmarshal(entity).to[List[Contributor]]
               nextPages <- (2 to lastPage).mapSync(getContributionPage).map(_.flatten)
-            } yield page1 ++ nextPages.toList
+            } yield page1 ++ nextPages
 
           case _ => Unmarshal(entity).to[List[Contributor]]
         }
@@ -161,7 +161,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
   }
 
   def getRepository(ref: Project.Reference): Future[GithubResponse[GithubModel.Repository]] = {
-    val request = HttpRequest(uri = s"${mainGithubUrl(ref)}").addHeader(acceptJson).addCredentials(credentials)
+    val request = HttpRequest(uri = s"${repoUrl(ref)}").addHeader(acceptJson).addCredentials(credentials)
     process(request).flatMap {
       case GithubResponse.Ok((_, entity)) =>
         Unmarshal(entity).to[GithubModel.Repository].map(GithubResponse.Ok(_))
@@ -172,14 +172,15 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
   }
 
   def getOpenIssues(ref: Project.Reference): Future[Seq[GithubModel.OpenIssue]] = {
-    def url(page: Int = 1) = HttpRequest(uri = s"${mainGithubUrl(ref)}/issues?${perPage()}&page=$page")
+    def request(page: Int) =
+      HttpRequest(uri = s"${repoUrl(ref)}/issues?${perPage()}&page=$page")
+        .addHeader(acceptJson)
+        .addCredentials(credentials)
 
-    def getOpenIssuePage(page: Int): Future[Seq[GithubModel.OpenIssue]] = {
-      val request = url(page).addHeader(acceptJson).addCredentials(credentials)
-      get[Seq[Option[GithubModel.OpenIssue]]](request).map(_.flatten)
-    }
+    def getOpenIssuePage(page: Int): Future[Seq[GithubModel.OpenIssue]] =
+      get[Seq[Option[GithubModel.OpenIssue]]](request(page)).map(_.flatten)
 
-    getRaw(url(1)).failWithTry.flatMap {
+    getRaw(request(page = 1)).failWithTry.flatMap {
       case Success((headers, entity)) =>
         val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
         lastPage match {
@@ -349,7 +350,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       method = HttpMethods.POST,
       uri = Uri("https://api.github.com/graphql"),
       entity = HttpEntity(ContentTypes.`application/json`, json.toString()),
-      headers = List(Authorization(OAuth2BearerToken(token.decode)))
+      headers = List(Authorization(credentials))
     )
   }
 
@@ -382,11 +383,8 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
         Unmarshal(entity).to[String].map(errorMessage => GithubResponse.Failed(code.intValue, errorMessage))
     }
 
-  private def mainGithubUrl(ref: Project.Reference): String =
+  private def repoUrl(ref: Project.Reference): String =
     s"https://api.github.com/repos/$ref"
-
-  private def inPage(page: Int = 1): String =
-    s"page=$page"
 
   private def perPage(value: Int = 100) = s"per_page=$value"
 }
