@@ -12,10 +12,8 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import doobie._
 import doobie.hikari.HikariTransactor
-import doobie.implicits._
 import doobie.util.Read
 import doobie.util.Write
-import doobie.util.fragment.Fragment
 import io.circe._
 import org.flywaydb.core.Flyway
 import scaladex.core.model.Artifact
@@ -53,6 +51,7 @@ object DoobieUtils {
       be <- Blocker[IO] // our blocking EC
     } yield Transactor.fromDataSource[IO](datasource, ce, be)
   }
+
   private def getHikariDataSource(conf: DatabaseConfig): HikariDataSource = {
     val config: HikariConfig = new HikariConfig()
     conf match {
@@ -70,12 +69,13 @@ object DoobieUtils {
 
   def insertOrUpdateRequest[T: Write](
       table: String,
-      fields: Seq[String],
+      insertFields: Seq[String],
       onConflictFields: Seq[String],
-      action: String = "NOTHING"
+      updateFields: Seq[String] = Seq.empty
   ): Update[T] = {
-    val insert = insertRequest(table, fields).sql
+    val insert = insertRequest(table, insertFields).sql
     val onConflictFieldsStr = onConflictFields.mkString(",")
+    val action = if (updateFields.nonEmpty) updateFields.mkString(" UPDATE SET ", " = ?, ", " = ?") else "NOTHING"
     Update(s"$insert ON CONFLICT ($onConflictFieldsStr) DO $action")
   }
 
@@ -102,46 +102,20 @@ object DoobieUtils {
     Query(s"SELECT $fieldsStr FROM $table WHERE $keysStr")
   }
 
-  object Fragments {
-    val empty: Fragment = fr0""
-    val space: Fragment = fr0" "
-
-    def buildInsert(
-        table: Fragment,
-        fields: Fragment,
-        values: Fragment
-    ): Fragment =
-      fr"INSERT INTO" ++ table ++ fr0" (" ++ fields ++ fr0") VALUES (" ++ values ++ fr0")"
-
-    def buildInsertOrUpdate(
-        table: Fragment,
-        fields: Fragment,
-        values: Fragment,
-        onConflictFields: Fragment,
-        action: Fragment
-    ): Fragment =
-      buildInsert(table, fields, values) ++
-        fr" ON CONFLICT" ++ fr0"(" ++ onConflictFields ++ fr")" ++ fr"DO" ++ action
-
-    def buildUpdate(
-        table: Fragment,
-        fields: Fragment,
-        where: Fragment
-    ): Fragment =
-      fr"UPDATE" ++ table ++ fr" SET" ++ fields ++ space ++ where
-
-    def buildSelect(table: Fragment, fields: Fragment): Fragment =
-      fr"SELECT" ++ fields ++ fr" FROM" ++ table
-
-    def buildSelect(
-        table: Fragment,
-        fields: Fragment,
-        conditions: Fragment
-    ): Fragment =
-      buildSelect(table, fields) ++ space ++ conditions
-
-    def whereRef(ref: Project.Reference): Fragment =
-      fr0"WHERE organization=${ref.organization} AND repository=${ref.repository}"
+  def selectRequest[A: Read](
+      table: String,
+      fields: String,
+      where: Option[String] = None,
+      groupBy: Seq[String] = Seq.empty,
+      orderBy: Option[String] = None,
+      limit: Option[Long] = None
+  ): Query0[A] = {
+    val sql = s"SELECT $fields FROM $table" +
+      where.map(p => s" WHERE $p").getOrElse("") +
+      (if (groupBy.nonEmpty) groupBy.mkString(" GROUP BY ", ", ", "") else "") +
+      orderBy.map(o => s" ORDER BY $o").getOrElse("") +
+      limit.map(l => s" LIMIT $l").getOrElse("")
+    Query0(sql)
   }
 
   object Mappings {
@@ -170,8 +144,8 @@ object DoobieUtils {
       Meta[String].timap(fromJson[List[License]](_).get.toSet)(toJson(_))
     implicit val resolverMeta: Meta[Resolver] =
       Meta[String].timap(Resolver.from(_).get)(_.name)
-
     implicit val instantMeta: doobie.Meta[Instant] = doobie.postgres.implicits.JavaTimeInstantMeta
+
     implicit val projectReferenceRead: doobie.Read[Project.Reference] =
       Read[(Organization, Repository)].map { case (org, repo) => Project.Reference(org, repo) }
     implicit val projectReferenceWrite: doobie.Write[Project.Reference] =

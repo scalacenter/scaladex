@@ -20,10 +20,10 @@ class InMemoryDatabase extends SchedulerDatabase {
   private val releases = mutable.Map[Project.Reference, Seq[Artifact]]()
   private val dependencies = mutable.Seq[ArtifactDependency]()
 
-  override def createMovedProject(
+  override def moveProject(
       ref: Project.Reference,
       githubInfo: GithubInfo,
-      githubStatus: GithubStatus.Moved
+      status: GithubStatus.Moved
   ): Future[Unit] = ???
 
   override def insertRelease(

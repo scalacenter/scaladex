@@ -212,19 +212,17 @@ class SqlRepoTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
       )
     }
     it("should createMovedProject") {
-      val newRef = Project.Reference.from("scala", "fix")
-      val newGithubInfo =
-        Scalafix.githubInfo.copy(projectRef = newRef, stars = Some(10000))
-      val moved = GithubStatus.Moved(now, newRef)
+      val destination = Project.Reference.from("scala", "fix")
+      val moved = GithubStatus.Moved(now, destination)
       for {
         _ <- db.insertRelease(Scalafix.artifact, Seq.empty, now)
         _ <- db.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, GithubStatus.Ok(now))
-        _ <- db.createMovedProject(Scalafix.reference, newGithubInfo, moved)
-        newProject <- db.findProject(newRef)
+        _ <- db.moveProject(Scalafix.reference, Scalafix.githubInfo, moved)
+        newProject <- db.findProject(destination)
         oldProject <- db.findProject(Scalafix.reference)
       } yield {
         oldProject.get.githubStatus shouldBe moved
-        newProject.get.reference shouldBe newRef
+        newProject.get.reference shouldBe destination
         newProject.get.githubStatus shouldBe GithubStatus.Ok(now)
       }
     }

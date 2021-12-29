@@ -46,8 +46,7 @@ object Values {
       isNonStandardLib = false
     )
     val githubInfo: GithubInfo =
-      GithubInfo
-        .default(reference)
+      GithubInfo.empty
         .copy(
           stars = Some(643),
           forks = Some(148),
@@ -96,7 +95,7 @@ object Values {
         target = artifact.mavenReference,
         "compile"
       )
-    val githubInfo: GithubInfo = GithubInfo.default(reference)
+    val githubInfo: GithubInfo = GithubInfo.empty
   }
 
   object Cats {
@@ -105,8 +104,7 @@ object Values {
       GithubIssue(1, "Issue about foo", Url("https://github.com/typelevel/cats/pull/1"))
     val issueAboutBar: GithubIssue =
       GithubIssue(2, "Issue about bar", Url("https://github.com/typelevel/cats/pull/2"))
-    val githubInfo: GithubInfo = GithubInfo
-      .default(reference)
+    val githubInfo: GithubInfo = GithubInfo.empty
       .copy(
         stars = Some(4337),
         forks = Some(1081),

@@ -10,7 +10,6 @@ import scala.util.Success
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import doobie.implicits._
-import scaladex.core.model
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.GithubInfo
@@ -57,84 +56,74 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
     run(ProjectTable.selectReferenceAndStatus.to[Seq]).map(_.toMap)
 
   override def getAllProjects(): Future[Seq[Project]] =
-    run(ProjectTable.selectProjects.to[Seq])
+    run(ProjectTable.selectProject.to[Seq])
 
   override def updateReleases(releases: Seq[Artifact], newRef: Project.Reference): Future[Int] = {
     val mavenReferences = releases.map(r => newRef -> r.mavenReference)
     run(ArtifactTable.updateProjectRef.updateMany(mavenReferences))
   }
 
-  override def updateGithubStatus(p: Project.Reference, githubStatus: GithubStatus): Future[Unit] =
-    run(ProjectTable.updateGithubStatus.run(githubStatus, p)).map(_ => ())
+  override def updateGithubStatus(ref: Project.Reference, githubStatus: GithubStatus): Future[Unit] =
+    run(ProjectTable.updateGithubStatus.run(githubStatus, ref)).map(_ => ())
 
   override def updateGithubInfoAndStatus(
-      p: Project.Reference,
+      ref: Project.Reference,
       githubInfo: GithubInfo,
       githubStatus: GithubStatus
   ): Future[Unit] =
     for {
-      _ <- updateGithubStatus(p, githubStatus)
-      _ <- run(GithubInfoTable.insertOrUpdate(githubInfo))
+      _ <- updateGithubStatus(ref, githubStatus)
+      _ <- run(GithubInfoTable.insertOrUpdate.run((ref, githubInfo, githubInfo)))
     } yield ()
 
-  override def createMovedProject(
-      oldRef: Project.Reference,
-      info: GithubInfo,
-      githubStatus: GithubStatus.Moved
+  override def moveProject(
+      ref: Project.Reference,
+      githubInfo: GithubInfo,
+      status: GithubStatus.Moved
   ): Future[Unit] =
     for {
-      oldProject <- findProject(oldRef)
-      _ <- updateGithubStatus(oldRef, githubStatus)
-      newProject = model.Project(
-        info.organization,
-        info.repository,
-        creationDate = oldProject.flatMap(_.creationDate), // todo:  from github
-        GithubStatus.Ok(githubStatus.updateDate),
-        Some(info),
-        oldProject.map(_.settings).getOrElse(Project.Settings.default)
-      )
-      _ <- run(ProjectTable.insertIfNotExists.run((newProject.reference, newProject.githubStatus)))
-      _ <- updateProjectSettings(newProject.reference, newProject.settings)
-      _ <- newProject.githubInfo
-        .map(githubInfo => run(GithubInfoTable.insertOrUpdate(githubInfo)))
-        .getOrElse(Future.successful(()))
+      oldProject <- findProject(ref)
+      _ <- updateGithubStatus(ref, status)
+      _ <- run(ProjectTable.insertIfNotExists.run((status.destination, GithubStatus.Ok(status.updateDate))))
+      _ <- updateProjectSettings(status.destination, oldProject.map(_.settings).getOrElse(Project.Settings.default))
+      _ <- run(GithubInfoTable.insertOrUpdate.run(status.destination, githubInfo, githubInfo))
     } yield ()
 
   override def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit] =
-    run(ProjectSettingsTable.insertOrUpdate(ref)(settings))
+    run(ProjectSettingsTable.insertOrUpdate.run((ref, settings, settings))).map(_ => ())
 
   override def findProject(projectRef: Project.Reference): Future[Option[Project]] =
-    run(ProjectTable.selectOne(projectRef).option)
+    run(ProjectTable.selectByReference.option(projectRef))
 
   override def findReleases(projectRef: Project.Reference): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifacts(projectRef).to[List])
+    run(ArtifactTable.selectArtifactByProject.to[List](projectRef))
 
   override def findReleases(
       projectRef: Project.Reference,
       artifactName: Artifact.Name
   ): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifacts(projectRef, artifactName).to[List])
+    run(ArtifactTable.selectArtifactByProjectAndName.to[List]((projectRef, artifactName)))
 
   override def countProjects(): Future[Long] =
     run(ProjectTable.countProjects.unique)
 
   override def countArtifacts(): Future[Long] =
-    run(ArtifactTable.indexedArtifacts().unique)
+    run(ArtifactTable.count.unique)
 
   override def countDependencies(): Future[Long] =
-    run(ArtifactDependencyTable.indexedDependencies().unique)
+    run(ArtifactDependencyTable.count.unique)
 
   override def findDirectDependencies(release: Artifact): Future[List[ArtifactDependency.Direct]] =
-    run(ArtifactDependencyTable.selectDirectDependencies(release).to[List])
+    run(ArtifactDependencyTable.selectDirectDependency.to[List](release.mavenReference))
 
   override def findReverseDependencies(release: Artifact): Future[List[ArtifactDependency.Reverse]] =
-    run(ArtifactDependencyTable.selectReverseDependencies(release).to[List])
+    run(ArtifactDependencyTable.selectReverseDependency.to[List](release.mavenReference))
 
   override def getAllTopics(): Future[List[String]] =
-    run(GithubInfoTable.selectAllTopics().to[List]).map(_.flatten)
+    run(GithubInfoTable.selectAllTopics.to[List]).map(_.flatten)
 
   override def getAllPlatforms(): Future[Map[Project.Reference, Set[Platform]]] =
-    run(ArtifactTable.selectPlatform().to[List])
+    run(ArtifactTable.selectPlatform.to[List])
       .map(_.groupMap {
         case (org, repo, _) =>
           Project.Reference(org, repo)
@@ -144,19 +133,19 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
     run(ProjectTable.selectLatestProjects(limit).to[Seq])
 
   def countGithubInfo(): Future[Long] =
-    run(GithubInfoTable.indexedGithubInfo().unique)
+    run(GithubInfoTable.count.unique)
 
   def countProjectSettings(): Future[Long] =
-    run(ProjectSettingsTable.count().unique)
+    run(ProjectSettingsTable.count.unique)
 
   override def computeProjectDependencies(): Future[Seq[ProjectDependency]] =
-    run(ArtifactDependencyTable.getAllProjectDependencies().to[List])
+    run(ArtifactDependencyTable.selectProjectDependency.to[List])
 
   override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] =
-    run(ProjectDependenciesTable.insertMany(projectDependencies))
+    run(ProjectDependenciesTable.insertOrUpdate.updateMany(projectDependencies))
 
   override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] =
-    run(ProjectDependenciesTable.countInverseDependencies(projectRef))
+    run(ProjectDependenciesTable.countInverseDependencies.unique(projectRef))
 
   override def getMostDependentUponProject(max: Int): Future[List[(Project, Long)]] =
     for {
@@ -172,10 +161,10 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
     } yield res.flatten
 
   override def computeAllProjectsCreationDate(): Future[Seq[(Instant, Project.Reference)]] =
-    run(ArtifactTable.findOldestArtifactsPerProjectReference().to[List])
+    run(ArtifactTable.selectOldestByProject.to[List])
 
   override def updateProjectCreationDate(ref: Project.Reference, creationDate: Instant): Future[Unit] =
-    run(ProjectTable.updateCreated.run((creationDate, ref))).map(_ => ())
+    run(ProjectTable.updateCreationDate.run((creationDate, ref))).map(_ => ())
 
   // to use only when inserting one element or updating one element
   // when expecting a row to be modified

@@ -76,43 +76,40 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       })(Keep.left)
       .run()
 
-  override def getProjectInfo(ref: Project.Reference): Future[GithubResponse[GithubInfo]] =
+  override def getProjectInfo(ref: Project.Reference): Future[GithubResponse[(Project.Reference, GithubInfo)]] =
     getRepository(ref).flatMap {
       case GithubResponse.Failed(code, reason) => Future.successful(GithubResponse.Failed(code, reason))
-      case GithubResponse.Ok(res) =>
-        update(res).map(GithubResponse.Ok.apply)
-      case GithubResponse.MovedPermanently(res) =>
-        update(res).map(GithubResponse.MovedPermanently.apply)
+      case GithubResponse.Ok(repo) =>
+        getRepoInfo(repo).map(info => GithubResponse.Ok(repo.ref -> info))
+      case GithubResponse.MovedPermanently(repo) =>
+        getRepoInfo(repo).map(info => GithubResponse.MovedPermanently(repo.ref -> info))
     }
 
-  private def update(repoInfo: GithubModel.Repository): Future[GithubInfo] = {
-    val ref = repoInfo.projectRef
+  private def getRepoInfo(repo: GithubModel.Repository): Future[GithubInfo] =
     for {
-      readme <- getReadme(ref)
-      communityProfile <- getCommunityProfile(ref)
-      contributors <- getContributors(ref)
-      openIssues <- getOpenIssues(ref)
-      chatroom <- getGitterChatRoom(ref)
+      readme <- getReadme(repo.ref)
+      communityProfile <- getCommunityProfile(repo.ref)
+      contributors <- getContributors(repo.ref)
+      openIssues <- getOpenIssues(repo.ref)
+      chatroom <- getGitterChatRoom(repo.ref)
     } yield GithubInfo(
-      projectRef = ref,
-      homepage = repoInfo.homepage.map(Url),
-      description = repoInfo.description,
-      logo = Option(repoInfo.avatartUrl).map(Url),
-      stars = Option(repoInfo.stargazers_count),
-      forks = Option(repoInfo.forks),
-      watchers = Option(repoInfo.subscribers_count),
-      issues = Option(repoInfo.open_issues),
-      creationDate = repoInfo.creationDate,
+      homepage = repo.homepage.map(Url),
+      description = repo.description,
+      logo = Option(repo.avatartUrl).map(Url),
+      stars = Option(repo.stargazers_count),
+      forks = Option(repo.forks),
+      watchers = Option(repo.subscribers_count),
+      issues = Option(repo.open_issues),
+      creationDate = repo.creationDate,
       readme = readme,
       contributors = contributors.map(_.toGithubContributor),
       commits = Some(contributors.foldLeft(0)(_ + _.contributions)),
-      topics = repoInfo.topics.toSet,
+      topics = repo.topics.toSet,
       contributingGuide = communityProfile.flatMap(_.contributingFile).map(Url),
       codeOfConduct = communityProfile.flatMap(_.codeOfConductFile).map(Url),
       chatroom = chatroom.map(Url),
       beginnerIssues = openIssues.map(_.toGithubIssue).toList
     )
-  }
 
   def getReadme(ref: Project.Reference): Future[Option[String]] = {
     val request = HttpRequest(uri = s"${repoUrl(ref)}/readme")
@@ -375,9 +372,8 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
         entity.discardBytes()
         val newRequest = HttpRequest(uri = headers.find(_.is("location")).get.value()).withHeaders(request.headers)
         process(newRequest).map {
-          case GithubResponse.Ok(res)                    => GithubResponse.MovedPermanently(res)
-          case GithubResponse.Failed(code, errorMessage) => GithubResponse.Failed(code, errorMessage)
-          case GithubResponse.MovedPermanently(res)      => GithubResponse.MovedPermanently(res)
+          case GithubResponse.Ok(res) => GithubResponse.MovedPermanently(res)
+          case other                  => other
         }
       case _ @HttpResponse(code, _, entity, _) =>
         implicit val unmarshaller = Unmarshaller.byteStringUnmarshaller

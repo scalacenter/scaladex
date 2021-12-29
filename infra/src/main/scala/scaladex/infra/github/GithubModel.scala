@@ -38,7 +38,7 @@ object GithubModel {
   ) {
 
     def creationDate: Option[Instant] = createdAt.flatMap(parseToInstant)
-    def projectRef: Project.Reference = Project.Reference.from(owner, name)
+    def ref: Project.Reference = Project.Reference.from(owner, name)
   }
 
   implicit val repositoryDecoder: Decoder[Repository] = new Decoder[Repository] {

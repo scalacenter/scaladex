@@ -15,15 +15,11 @@ trait SchedulerDatabase extends WebDatabase {
   def getAllProjectStatuses(): Future[Map[Project.Reference, GithubStatus]]
   def updateReleases(release: Seq[Artifact], newRef: Project.Reference): Future[Int]
   def updateGithubInfoAndStatus(
-      p: Project.Reference,
+      ref: Project.Reference,
       githubInfo: GithubInfo,
       githubStatus: GithubStatus
   ): Future[Unit]
-  def createMovedProject(
-      ref: Project.Reference,
-      githubInfo: GithubInfo,
-      githubStatus: GithubStatus.Moved
-  ): Future[Unit]
+  def moveProject(ref: Project.Reference, githubInfo: GithubInfo, status: GithubStatus.Moved): Future[Unit]
   def updateGithubStatus(ref: Project.Reference, githubStatus: GithubStatus): Future[Unit]
   def computeProjectDependencies(): Future[Seq[ProjectDependency]]
   def computeAllProjectsCreationDate(): Future[Seq[(Instant, Project.Reference)]]
