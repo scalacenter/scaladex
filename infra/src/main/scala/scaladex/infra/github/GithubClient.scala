@@ -142,19 +142,21 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     def getContributionPage(page: Int): Future[List[Contributor]] =
       get[List[Contributor]](request(page))
 
-    getRaw(request(page = 1)).flatMap {
-      case (headers, entity) =>
-        val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
-        lastPage match {
-          case Some(lastPage) if lastPage > 1 =>
-            for {
-              page1 <- Unmarshal(entity).to[List[Contributor]]
-              nextPages <- (2 to lastPage).mapSync(getContributionPage).map(_.flatten)
-            } yield page1 ++ nextPages
+    getRaw(request(page = 1))
+      .flatMap {
+        case (headers, entity) =>
+          val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
+          lastPage match {
+            case Some(lastPage) if lastPage > 1 =>
+              for {
+                page1 <- Unmarshal(entity).to[List[Contributor]]
+                nextPages <- (2 to lastPage).mapSync(getContributionPage).map(_.flatten)
+              } yield page1 ++ nextPages
 
-          case _ => Unmarshal(entity).to[List[Contributor]]
-        }
-    }
+            case _ => Unmarshal(entity).to[List[Contributor]]
+          }
+      }
+      .fallbackTo(Future.successful(List.empty))
   }
 
   def getRepository(ref: Project.Reference): Future[GithubResponse[GithubModel.Repository]] = {
@@ -177,22 +179,21 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     def getOpenIssuePage(page: Int): Future[Seq[GithubModel.OpenIssue]] =
       get[Seq[Option[GithubModel.OpenIssue]]](request(page)).map(_.flatten)
 
-    getRaw(request(page = 1)).failWithTry.flatMap {
-      case Success((headers, entity)) =>
-        val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
-        lastPage match {
-          case Some(lastPage) if lastPage > 1 =>
-            for {
-              page1 <- Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]]
-              nextPages <- (2 to lastPage).mapSync(getOpenIssuePage).map(_.flatten)
-            } yield page1.flatten ++ nextPages
+    getRaw(request(page = 1))
+      .flatMap {
+        case (headers, entity) =>
+          val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
+          lastPage match {
+            case Some(lastPage) if lastPage > 1 =>
+              for {
+                page1 <- Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]]
+                nextPages <- (2 to lastPage).mapSync(getOpenIssuePage).map(_.flatten)
+              } yield page1.flatten ++ nextPages
 
-          case _ => Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]].map(_.flatten)
-        }
-      case Failure(exception) =>
-        // the issue feature can be disabled
-        Future.successful(Seq.empty)
-    }
+            case _ => Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]].map(_.flatten)
+          }
+      }
+      .fallbackTo(Future.successful(Seq.empty))
   }
 
   def getGitterChatRoom(ref: Project.Reference): Future[Option[String]] = {
