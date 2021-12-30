@@ -108,7 +108,7 @@ class Deployment(
     val sentryDsn = getSentryDsn
 
     val scriptContent =
-      s"""|#!/usr/bin/env bash
+      s"""|#!/usr/bin/env -S bash -l
           |
           |whoami
           |kill `cat SERVER-PID`
@@ -173,7 +173,7 @@ class Deployment(
     val sentryDsn = getSentryDsn
 
     val scriptContent =
-      s"""|#!/usr/bin/env bash
+      s"""|#!/usr/bin/env -S bash -l
           |
           |if [ ! -f DATA-PID ]; then
           |  whoami
