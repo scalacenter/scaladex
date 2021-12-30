@@ -54,6 +54,18 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
       yield response should matchPattern { case GithubResponse.MovedPermanently(_) => () }
   }
 
+  it("should return empty contributor list") {
+    val reference = Project.Reference.from("intive", "domofon")
+    for (contributors <- client.getContributors(reference))
+      yield contributors shouldBe empty
+  }
+
+  it("should return empty issue list") {
+    val reference = Project.Reference.from("scala", "scala")
+    for (issues <- client.getOpenIssues(reference))
+      yield issues shouldBe empty
+  }
+
   it("getUserInfo") {
     for (userInfo <- client.getUserInfo())
       yield succeed
