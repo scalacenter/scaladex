@@ -1,9 +1,10 @@
 @import scaladex.core.model.search.SearchParams
 @import scaladex.core.model.UserState
 @import scaladex.core.model.HeadMeta
+@import scaladex.core.model.Env
 
 @(
-  production: Boolean,
+  env: Env,
   title: String, showSearch: Boolean, user: Option[UserState],
   params: SearchParams = SearchParams(), you: Boolean = false,
   extraMeta: Seq[HeadMeta] = Seq.empty,
@@ -125,7 +126,7 @@
     </footer>
     <!-- Coding End -->
 
-    @if(production) {
+    @if(env.isProd || env.isDev) {
         <script src="/assets/webclient-opt.js"></script>
     } else {
         <script src="/assets/webclient-fastopt.js"></script>
@@ -138,8 +139,10 @@
     <script src="/assets/lib/bootstrap-switch/js/bootstrap-switch.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/js/emojify.js"></script>
 
-    @if(production) {
+    @if(env.isProd) {
       <script defer data-domain="index.scala-lang.org" src="https://plausible.scala-lang.org/js/script.js"></script>
+    } else if (env.isDev) {
+      <script defer data-domain="index-dev.scala-lang.org" src="https://plausible.scala-lang.org/js/script.js"></script>
     }
 
     <script>

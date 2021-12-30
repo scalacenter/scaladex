@@ -12,7 +12,6 @@ import cats.effect.IO
 import cats.effect.ContextShift
 
 import scala.concurrent.ExecutionContext
-import com.typesafe.config.ConfigFactory
 import scaladex.core.model.Project
 import scaladex.core.model.search.SearchParams
 import scaladex.infra.elasticsearch.ESRepo
@@ -34,15 +33,15 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     searchEngine.waitUntilReady()
 
     implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-    val transactor = DoobieUtils.transactor(config.dbConf)
+    val transactor = DoobieUtils.transactor(config.database)
     transactor
       .use { xa =>
-        val db = new SqlRepo(config.dbConf, xa)
+        val db = new SqlRepo(config.database, xa)
         val searchSync = new SearchSynchronizer(db, searchEngine)
 
         // Will use GITHUB_TOKEN configured in github secret
-        val githubConfig: Option[GithubConfig] = GithubConfig.from(ConfigFactory.load())
-        val github = new GithubClient(githubConfig.get.token)
+        val githubConfig: GithubConfig = GithubConfig.load()
+        val github = new GithubClient(githubConfig.token.get)
         val githubSync = new GithubUpdater(db, github)
         IO.fromFuture(IO {
           for {

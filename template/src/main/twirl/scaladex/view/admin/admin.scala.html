@@ -1,12 +1,12 @@
 @import scaladex.view.SchedulerStatus
 @import scaladex.view.html._
 @import scaladex.core.model.UserState
-
+@import scaladex.core.model.Env
 @import scala.concurrent.duration.FiniteDuration
 @import java.time.Instant
-@(production: Boolean, user: UserState, schedulers: Seq[SchedulerStatus])
 
-@main(production, title = "Admin page", showSearch = false, Some(user)) {
+@(env: Env, user: UserState, schedulers: Seq[SchedulerStatus])
+@main(env, title = "Admin page", showSearch = false, Some(user)) {
     <main class="admin">
         <div class="container">
             <h2>Scheduler Status</h2>

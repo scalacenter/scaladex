@@ -47,29 +47,29 @@ jobs:
           cd scaladex
           sbtn server/universal:packageBin
         shell: bash
-  # integration:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout Scaladex
-  #       uses: actions/checkout@v2
-  #       with:
-  #         path: scaladex
-  #     - name: Checkout small index
-  #       uses: actions/checkout@v2
-  #       with:
-  #         repository: scalacenter/scaladex-small-index
-  #         path: scaladex-small-index
-  #     - name: Checkout Scaladex contrib
-  #       uses: actions/checkout@v2
-  #       with:
-  #         repository: scalacenter/scaladex-contrib
-  #         path: scaladex-contrib
-  #     - uses: coursier/setup-action@v1
-  #       with:
-  #         jvm: "adopt:1.8"
-  #     - uses: coursier/cache-action@v5
-  #     - name: Integration tests
-  #       working-directory: scaladex
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       run: sbtn 'IntegrationTest / test'
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Scaladex
+        uses: actions/checkout@v2
+        with:
+          path: scaladex
+      - name: Checkout small index
+        uses: actions/checkout@v2
+        with:
+          repository: scalacenter/scaladex-small-index
+          path: scaladex-small-index
+      - name: Checkout Scaladex contrib
+        uses: actions/checkout@v2
+        with:
+          repository: scalacenter/scaladex-contrib
+          path: scaladex-contrib
+      - uses: coursier/setup-action@v1
+        with:
+          jvm: "adopt:1.8"
+      - uses: coursier/cache-action@v5
+      - name: Integration tests
+        working-directory: scaladex
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: sbtn 'infra / IntegrationTest / test'

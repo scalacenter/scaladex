@@ -21,7 +21,6 @@ import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.CombineFuncti
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.FieldValueFactorFunctionModifier
 import com.sksamuel.elastic4s.requests.searches.sort.Sort
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
-import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import io.circe._
 import scaladex.core.model.BinaryVersion
@@ -262,16 +261,12 @@ class ESRepo(esClient: ElasticClient, index: String)(implicit ec: ExecutionConte
 object ESRepo extends LazyLogging {
   import ElasticDsl._
 
-  private lazy val config = ConfigFactory.load().getConfig("elasticsearch")
-  private lazy val indexName = config.getString("index")
-  private lazy val port = config.getInt("port")
+  def open(config: ElasticsearchConfig)(implicit ec: ExecutionContext): ESRepo = {
+    logger.info(s"Using elasticsearch index: ${config.index}")
 
-  def open()(implicit ec: ExecutionContext): ESRepo = {
-    logger.info(s"Using elasticsearch index: $indexName")
-
-    val props = ElasticProperties(s"http://localhost:$port")
+    val props = ElasticProperties(s"http://localhost:${config.port}")
     val esClient = ElasticClient(JavaClient(props))
-    new ESRepo(esClient, indexName)
+    new ESRepo(esClient, config.index)
   }
 
   private def gitHubStarScoring(query: Query): Query = {

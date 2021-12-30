@@ -9,8 +9,6 @@ import scala.concurrent.duration.FiniteDuration
 
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import scaladex.core.model.search.Pagination
 import scaladex.core.model.search.SearchParams
 
@@ -112,10 +110,6 @@ package object html {
       (prev, (minToShow to maxToShow).toList, next)
     }
   }
-
-  val config: Config =
-    ConfigFactory.load().getConfig("server")
-  val production: Boolean = config.getBoolean("production")
 
   def unescapeBackground(in: String): String =
     play.twirl.api.HtmlFormat

@@ -12,6 +12,7 @@ import akka.http.scaladsl.server._
 import cats.effect.ContextShift
 import cats.effect.IO
 import org.slf4j.LoggerFactory
+import scaladex.core.model.Env
 import scaladex.core.service.WebDatabase
 import scaladex.data.util.PidLock
 import scaladex.infra.elasticsearch.ESRepo
@@ -29,7 +30,7 @@ object Server {
   val config: ServerConfig = ServerConfig.load()
 
   def main(args: Array[String]): Unit = {
-    if (config.api.env.isDevOrProd) {
+    if (config.env.isDev || config.env.isProd) {
       PidLock.create("SERVER")
     }
     implicit val system: ActorSystem = ActorSystem("scaladex")
@@ -38,33 +39,33 @@ object Server {
 
     // the ESRepo will not be closed until the end of the process,
     // because of the sbtResolver mode
-    val searchEngine = ESRepo.open()
+    val searchEngine = ESRepo.open(config.elasticsearch)
 
     val resources =
       for {
-        webPool <- DoobieUtils.transactor(config.dbConf)
-        schedulerPool <- DoobieUtils.transactor(config.dbConf)
+        webPool <- DoobieUtils.transactor(config.database)
+        schedulerPool <- DoobieUtils.transactor(config.database)
       } yield (webPool, schedulerPool)
 
     resources
       .use {
         case (webPool, schedulerPool) =>
-          val webDb = new SqlRepo(config.dbConf, webPool)
-          val schedulerDb = new SqlRepo(config.dbConf, schedulerPool)
-          val githubService = config.github.map(conf => new GithubClient(conf.token))
+          val webDb = new SqlRepo(config.database, webPool)
+          val schedulerDb = new SqlRepo(config.database, schedulerPool)
+          val githubService = config.github.token.map(new GithubClient(_))
           val schedulerService = new SchedulerService(schedulerDb, searchEngine, githubService)
           for {
             _ <- init(webDb, schedulerService, searchEngine)
-            routes = configureRoutes(config.production, searchEngine, webDb, schedulerService)
+            routes = configureRoutes(config.env, searchEngine, webDb, schedulerService)
             _ <- IO(
               Http()
-                .bindAndHandle(routes, config.api.endpoint, config.api.port)
+                .bindAndHandle(routes, config.endpoint, config.port)
                 .andThen {
                   case Failure(exception) =>
                     log.error("Unable to start the server", exception)
                     System.exit(1)
                   case Success(binding) =>
-                    log.info(s"Server started at http://${config.api.endpoint}:${config.api.port}")
+                    log.info(s"Server started at http://${config.endpoint}:${config.port}")
                     sys.addShutdownHook {
                       log.info("Stopping server")
                       binding.terminate(hardDeadline = 10.seconds)
@@ -92,7 +93,7 @@ object Server {
     } yield ()
   }
   private def configureRoutes(
-      production: Boolean,
+      env: Env,
       esRepo: ESRepo,
       webDb: WebDatabase,
       schedulerService: SchedulerService
@@ -103,7 +104,7 @@ object Server {
     val paths = config.dataPaths
     val githubAuth = new GithubAuth()
     val session = new GithubUserSession(config.session)
-    val searchPages = new SearchPages(production, esRepo, session)
+    val searchPages = new SearchPages(env, esRepo, session)
 
     val localStorage = new LocalStorageRepo(paths)
     val programmaticRoutes = concat(
@@ -114,11 +115,11 @@ object Server {
       new Oauth2(config.oAuth2, githubAuth, session).routes
     )
     val userFacingRoutes = concat(
-      new FrontPage(production, webDb, session).routes,
-      new AdminPages(production, schedulerService, session).routes,
+      new FrontPage(env, webDb, session).routes,
+      new AdminPages(env, schedulerService, session).routes,
       redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
         concat(
-          new ProjectPages(config.production, webDb, localStorage, session, paths, config.api.env).routes,
+          new ProjectPages(env, webDb, localStorage, session, paths).routes,
           searchPages.routes
         )
       }

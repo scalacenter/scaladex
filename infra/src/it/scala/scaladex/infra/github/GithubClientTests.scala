@@ -1,7 +1,6 @@
 package scaladex.infra.github
 
 import akka.actor.ActorSystem
-import com.typesafe.config.ConfigFactory
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.Project
@@ -12,12 +11,12 @@ import scaladex.core.test.Values._
 
 class GithubClientTests extends AsyncFunSpec with Matchers {
   implicit val system: ActorSystem = ActorSystem("github-client-tests")
-  val config: Option[GithubConfig] = GithubConfig.from(ConfigFactory.load())
+  val config: GithubConfig = GithubConfig.load()
 
   val isCI = System.getenv("CI") != null
 
   // you need to configure locally a token
-  val client = new GithubClient(config.get.token)
+  val client = new GithubClient(config.token.get)
 
   it("getProjectInfo") {
     for (response <- client.getProjectInfo(Scalafix.reference))

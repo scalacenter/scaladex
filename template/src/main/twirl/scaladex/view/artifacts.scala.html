@@ -1,7 +1,7 @@
-@import scaladex.core.model.{Artifact, Platform, Project, SemanticVersion, UserState}
+@import scaladex.core.model.{Artifact, Platform, Project, SemanticVersion, UserState, Env}
 
 @(
-  production: Boolean,
+  env: Env,
   project: Project,
   user: Option[UserState],
   targetTypesWithVersion: Map[Platform.PlatformType, Seq[String]],
@@ -9,7 +9,7 @@
 )
 @allScalaVersions= @{targetTypesWithVersion.values.flatten}
 
-@main(production, title = project.repository.toString, showSearch = true, user) {
+@main(env, title = project.repository.toString, showSearch = true, user) {
   <main class="artifacts">
     <div class="row">
       <div class="col-md-12">

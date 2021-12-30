@@ -29,12 +29,11 @@ import scaladex.server.TwirlSupport._
 import scaladex.view
 
 class ProjectPages(
-    production: Boolean,
+    env: Env,
     db: WebDatabase,
     localStorage: LocalStorageApi,
     session: GithubUserSession,
-    paths: DataPaths,
-    env: Env
+    paths: DataPaths
 )(implicit executionContext: ExecutionContext)
     extends LazyLogging {
   import session.implicits._
@@ -48,10 +47,10 @@ class ProjectPages(
       releases <- db.findReleases(projectRef)
     } yield projectOpt
       .map { p =>
-        val page = view.project.html.editproject(production, p, releases, Some(userInfo))
+        val page = view.project.html.editproject(env, p, releases, Some(userInfo))
         (StatusCodes.OK, page)
       }
-      .getOrElse((StatusCodes.NotFound, view.html.notfound(production, Some(userInfo))))
+      .getOrElse((StatusCodes.NotFound, view.html.notfound(env, Some(userInfo))))
 
   private def filterVersions(
       p: Project,
@@ -97,7 +96,6 @@ class ProjectPages(
         } yield (
           StatusCodes.OK,
           view.project.html.project(
-            production,
             env,
             project,
             artifactNames,
@@ -113,7 +111,7 @@ class ProjectPages(
           )
         )
       case None =>
-        Future.successful((StatusCodes.NotFound, view.html.notfound(production, user)))
+        Future.successful((StatusCodes.NotFound, view.html.notfound(env, user)))
     }
   }
 
@@ -207,7 +205,7 @@ class ProjectPages(
                   ) =>
                 complete(
                   view.html.artifacts(
-                    production,
+                    env,
                     project,
                     user,
                     targetTypesWithScalaVersion,
@@ -215,7 +213,7 @@ class ProjectPages(
                   )
                 )
               case Failure(e) =>
-                complete(StatusCodes.NotFound, view.html.notfound(production, user))
+                complete(StatusCodes.NotFound, view.html.notfound(env, user))
 
             }
           }
@@ -234,7 +232,7 @@ class ProjectPages(
                   complete(
                     (
                       StatusCodes.Forbidden,
-                      view.html.forbidden(production, maybeUser)
+                      view.html.forbidden(env, maybeUser)
                     )
                   )
               }
@@ -265,11 +263,11 @@ class ProjectPages(
                         s"/$organization/$repository/${artifact.artifactName}/${artifact.version}/$targetParam",
                         StatusCodes.TemporaryRedirect
                       )
-                    }.getOrElse(complete(StatusCodes.NotFound, view.html.notfound(production, session.getUser(userId)))))
+                    }.getOrElse(complete(StatusCodes.NotFound, view.html.notfound(env, session.getUser(userId)))))
                   releaseFut
                 case None =>
                   Future.successful(
-                    complete(StatusCodes.NotFound, view.html.notfound(production, session.getUser(userId)))
+                    complete(StatusCodes.NotFound, view.html.notfound(env, session.getUser(userId)))
                   )
               }
 
@@ -294,7 +292,7 @@ class ProjectPages(
               onComplete(res) {
                 case Success((code, some)) => complete(code, some)
                 case Failure(e) =>
-                  complete(StatusCodes.NotFound, view.html.notfound(production, user))
+                  complete(StatusCodes.NotFound, view.html.notfound(env, user))
               }
             }
           )
@@ -316,7 +314,7 @@ class ProjectPages(
               onComplete(res) {
                 case Success((code, some)) => complete(code, some)
                 case Failure(e) =>
-                  complete(StatusCodes.NotFound, view.html.notfound(production, user))
+                  complete(StatusCodes.NotFound, view.html.notfound(env, user))
               }
             }
           }

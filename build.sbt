@@ -118,8 +118,8 @@ lazy val infra = project
       val postgresPort = (Compile / startPostgres).value
       Seq(
         "-Xmx4g",
-        s"-Ddatabase.port=$postgresPort",
-        s"-Delasticsearch.port=$elasticsearchPort"
+        s"-Dscaladex.database.port=$postgresPort",
+        s"-Dscaladex.elasticsearch.port=$elasticsearchPort"
       )
     },
     inConfig(Test)(
@@ -129,10 +129,10 @@ lazy val infra = project
       val postgresPort = (Test / startPostgres).value
       val elasticsearchPort = startElasticsearch.value
       Seq(
-        s"-Ddatabase.port=$postgresPort",
-        s"-Ddatabase.name=scaladex-test",
-        s"-Delasticsearch.index=scaladex-test",
-        s"-Delasticsearch.port=$elasticsearchPort"
+        s"-Dscaladex.database.port=$postgresPort",
+        s"-Dscaladex.database.name=scaladex-test",
+        s"-Dscaladex.elasticsearch.index=scaladex-test",
+        s"-Dscaladex.elasticsearch.port=$elasticsearchPort"
       )
     },
     Test / fork := true,

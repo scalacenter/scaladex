@@ -6,9 +6,10 @@
 @import scaladex.core.model.UserState
 @import scaladex.core.model.BinaryVersion
 @import scaladex.core.model.Platform
+@import scaladex.core.model.Env
 
 @(
-  production: Boolean,
+  env: Env,
   params: SearchParams,
   uri: Uri,
   pagination: Pagination,
@@ -21,7 +22,7 @@
   scalaJsVersions: Seq[(BinaryVersion, Long)],
   scalaNativeVersions: Seq[(BinaryVersion, Long)],
   sbtVersions: Seq[(BinaryVersion, Long)])
-@main(production, title = s"Search ${params.queryString}", showSearch = true, user, params, you) {
+@main(env, title = s"Search ${params.queryString}", showSearch = true, user, params, you) {
   <main id="container-search">
     <div class="container">
       @result(

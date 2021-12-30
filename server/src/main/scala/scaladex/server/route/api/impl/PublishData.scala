@@ -109,7 +109,7 @@ private[api] case class PublishData(
    */
   private def tmpPath(sha1: String): Path = {
     val tmpDir =
-      Files.createTempDirectory(Paths.get(Server.config.tempDirPath), sha1)
+      Files.createTempDirectory(Paths.get(Server.config.tempDir), sha1)
     Files.createTempFile(tmpDir, "", "")
   }
 }

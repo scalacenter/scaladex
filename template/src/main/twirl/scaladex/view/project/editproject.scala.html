@@ -4,11 +4,12 @@
 @import scaladex.core.model.UserState
 @import scaladex.core.model.Url
 @import scaladex.core.model.Project.DocumentationLink
+@import scaladex.core.model.Env
 
-@(production: Boolean, project: Project, releases: Seq[Artifact], user: Option[UserState])
+@(env: Env, project: Project, releases: Seq[Artifact], user: Option[UserState])
 
 @artifactNames = @{ releases.map(_.artifactName).distinct }
-@main(production, title = s"Edit ${project.repository}", showSearch = true, user) {
+@main(env, title = s"Edit ${project.repository}", showSearch = true, user) {
   <main id="container-project">
 
     <div class="container">

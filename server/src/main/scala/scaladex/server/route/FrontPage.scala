@@ -9,6 +9,7 @@ import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import play.twirl.api.HtmlFormat
 import scaladex.core.model.Artifact
+import scaladex.core.model.Env
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.UserState
@@ -18,7 +19,7 @@ import scaladex.server.TwirlSupport._
 import scaladex.view.html.frontpage
 
 class FrontPage(
-    production: Boolean,
+    env: Env,
     db: WebDatabase,
     session: GithubUserSession
 )(implicit ec: ExecutionContext) {
@@ -84,7 +85,7 @@ class FrontPage(
       )
 
       frontpage(
-        production,
+        env,
         topics,
         platformTypeWithCount,
         scalaFamilyWithCount,
