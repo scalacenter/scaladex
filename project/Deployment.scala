@@ -11,48 +11,26 @@ import scala.sys.process._
 
 object Deployment {
   def apply(data: Project, server: Project): Seq[Def.Setting[_]] = Seq(
-    deployServer := deployTask(
-      server,
-      prodUserName,
-      prodHostname,
-      prodPort
-    ).value,
+    deployServer := deployTask(server, prodUserName, prodHostname).value,
     deployIndex := indexTask(data, prodUserName, prodHostname).value,
-    deployDevServer := deployTask(
-      server,
-      devUserName,
-      devHostname,
-      devPort
-    ).value,
+    deployDevServer := deployTask(server, devUserName, devHostname).value,
     deployDevIndex := indexTask(data, devUserName, devHostname).value
   )
 
-  def deployTask(
-      server: Project,
-      userName: String,
-      hostname: String,
-      port: Int
-  ): Def.Initialize[Task[Unit]] = Def.task {
+  def deployTask(server: Project, userName: String, hostname: String): Def.Initialize[Task[Unit]] = Def.task {
     val serverZip = (server / Universal / packageBin).value.toPath
     val deployment = deploymentTask(userName, hostname).value
-    deployment.deploy(serverZip, port)
+    deployment.deploy(serverZip)
   }
 
-  def indexTask(
-      data: Project,
-      userName: String,
-      hostname: String
-  ): Def.Initialize[Task[Unit]] =
+  def indexTask(data: Project, userName: String, hostname: String): Def.Initialize[Task[Unit]] =
     Def.task {
       val dataZip = (data / Universal / packageBin).value.toPath
       val deployment = deploymentTask(userName, hostname).value
       deployment.index(dataZip)
     }
 
-  private def deploymentTask(
-      userName: String,
-      hostname: String
-  ): Def.Initialize[Task[Deployment]] =
+  private def deploymentTask(userName: String, hostname: String): Def.Initialize[Task[Deployment]] =
     Def.task {
       new Deployment(
         rootFolder = (ThisBuild / baseDirectory).value,
@@ -85,9 +63,6 @@ object Deployment {
 
   private val devHostname = "scalagesrv1.epfl.ch"
   private val prodHostname = "icvm0042.epfl.ch"
-
-  private val devPort = 8082
-  private val prodPort = 8080
 }
 
 class Deployment(
@@ -98,7 +73,7 @@ class Deployment(
     version: String
 ) {
 
-  def deploy(serverZip: Path, port: Int): Unit = {
+  def deploy(serverZip: Path): Unit = {
     logger.info("Generate server script")
 
     val serverScript = Files.createTempDirectory("server").resolve("server.sh")
@@ -125,13 +100,6 @@ class Deployment(
           |  -Dlogback.output-file=server.log \\
           |  -Dlogback.configurationFile=/home/$userName/scaladex-credentials/logback.xml \\
           |  -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
-          |  -Dsentry.dsn=$sentryDsn \\
-          |  -Dsentry.release=$version \\
-          |  -Dapp.port=$port \\
-          |  -Dapp.env=prod \\
-          |  -Ddata-paths.contrib=/home/$userName/scaladex-contrib \\
-          |  -Ddata-paths.index=/home/$userName/scaladex-index \\
-          |  -Ddata-paths.credentials=/home/$userName/scaladex-credentials \\
           |  &>/dev/null &
           |""".stripMargin
 
@@ -192,12 +160,7 @@ class Deployment(
           |    -Dlogback.output-file=data.log \\
           |    -Dlogback.configurationFile=/home/$userName/scaladex-credentials/logback.xml \\
           |    -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\
-          |    -Dsentry.dsn=$sentryDsn \\
-          |    -Dsentry.release=$version \\
           |    init \\
-          |   -Ddata-paths.contrib=/home/$userName/scaladex-contrib \\
-          |   -Ddata-paths.index=/home/$userName/scaladex-index \\
-          |   -Ddata-paths.credentials=/home/$userName/scaladex-credentials \\
           |    &>/dev/null &
           |fi
           |

@@ -1,7 +1,8 @@
 @import scaladex.core.model.UserState
+@import scaladex.core.model.Env
 
-@(production: Boolean, user: Option[UserState])
-@main(production, title = "Forbidden", showSearch = true, user) {
+@(env: Env, user: Option[UserState])
+@main(env, title = "Forbidden", showSearch = true, user) {
 <main>
   <h1>Forbidden</h1>
 </main>

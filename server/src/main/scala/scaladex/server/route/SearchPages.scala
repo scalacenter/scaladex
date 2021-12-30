@@ -7,6 +7,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
+import scaladex.core.model.Env
 import scaladex.core.model.UserState
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.SearchParams
@@ -15,7 +16,7 @@ import scaladex.server.GithubUserSession
 import scaladex.server.TwirlSupport._
 import scaladex.view.search.html.searchresult
 
-class SearchPages(production: Boolean, searchEngine: SearchEngine, session: GithubUserSession)(
+class SearchPages(env: Env, searchEngine: SearchEngine, session: GithubUserSession)(
     implicit ec: ExecutionContext
 ) {
   import session.implicits._
@@ -39,7 +40,7 @@ class SearchPages(production: Boolean, searchEngine: SearchEngine, session: Gith
         scalaNativeVersions <- scalaNativeVersionsF
         sbtVersions <- sbtVersionsF
       } yield searchresult(
-        production,
+        env,
         params,
         uri,
         pagination,

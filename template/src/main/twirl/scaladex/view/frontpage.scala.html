@@ -4,9 +4,10 @@
 @import scaladex.core.model.Artifact
 @import scaladex.view.html.main
 @import scaladex.core.model.UserState
+@import scaladex.core.model.Env
 
 @(
-  production: Boolean,
+  env: Env,
   topics: List[(String, Int)],
   platformTypes: Seq[(Platform.PlatformType, Int)],
   scalaVersions:Seq[(String, Int)],
@@ -23,7 +24,7 @@
   contributingProjects: Seq[Project]
 )
 
-@main(production, title = "Scaladex", showSearch = false, user) {
+@main(env, title = "Scaladex", showSearch = false, user) {
 <main id="container-home">
     <section class="content-search-home">
         <div class="container">

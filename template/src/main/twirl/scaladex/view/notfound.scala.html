@@ -1,7 +1,8 @@
 @import scaladex.core.model.UserState
+@import scaladex.core.model.Env
 
-@(production: Boolean, user: Option[UserState])
-@main(production, title = "Not found", showSearch = true, user) {
+@(env: Env, user: Option[UserState])
+@main(env, title = "Not found", showSearch = true, user) {
 <main class="container">
   <h1>Not found</h1>
 </main>

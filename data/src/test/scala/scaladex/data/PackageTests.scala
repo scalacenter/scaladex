@@ -1,8 +1,8 @@
 package scaladex.data
 
-import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.funspec.AnyFunSpec
 
-class PackageTests extends AsyncFunSpec {
+class PackageTests extends AnyFunSpec {
   private val empty = Map.empty[String, String]
 
   describe("innerJoin") {

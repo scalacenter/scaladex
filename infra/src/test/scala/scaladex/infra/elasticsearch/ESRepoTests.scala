@@ -18,7 +18,8 @@ class ESRepoTests extends AsyncFunSuite with Matchers with BeforeAndAfterAll {
   implicit override val executionContext: ExecutionContext =
     ExecutionContext.global
 
-  private val searchEngine = ESRepo.open()
+  val config: ElasticsearchConfig = ElasticsearchConfig.load()
+  val searchEngine: ESRepo = ESRepo.open(config)
 
   override protected def beforeAll(): Unit = {
     searchEngine.waitUntilReady()

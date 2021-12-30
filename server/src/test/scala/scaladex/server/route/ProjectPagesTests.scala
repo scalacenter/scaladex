@@ -27,12 +27,11 @@ class ProjectPagesTests() extends ControllerBaseSuite with BeforeAndAfterAll wit
     Await.result(insertPlayJson(), Duration.Inf)
 
   val projectPages = new ProjectPages(
-    false,
+    env = config.env,
     db = database,
     localStorage = localStorage,
     session = githubUserSession,
-    paths = dataPaths,
-    env = env
+    paths = dataPaths
   )
   val routes = projectPages.routes
 

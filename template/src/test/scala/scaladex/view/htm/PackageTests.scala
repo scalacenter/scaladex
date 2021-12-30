@@ -1,8 +1,8 @@
 package scaladex.view.html
 
-import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.funspec.AnyFunSpec
 
-class PackageTests extends AsyncFunSpec {
+class PackageTests extends AnyFunSpec {
   describe("pagination") {
     it("base case") {
       // *1*

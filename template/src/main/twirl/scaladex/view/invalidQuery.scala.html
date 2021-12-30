@@ -1,8 +1,9 @@
 @import scaladex.core.model.search.SearchParams
 @import scaladex.core.model.UserState
+@import scaladex.core.model.Env
 
-@(production: Boolean, user: Option[UserState], params: SearchParams)
-@main(production, title = "Invalid Query", showSearch = true, params = params, user = user) {
+@(env: Env, user: Option[UserState], params: SearchParams)
+@main(env, title = "Invalid Query", showSearch = true, params = params, user = user) {
 <main class="container">
   <h1>Not a valid query</h1>
   <pre>@params.queryString</pre>

@@ -13,8 +13,7 @@ import scaladex.server.GithubUserSession
 import scaladex.server.config.ServerConfig
 
 trait ControllerBaseSuite extends AnyFunSpec with Matchers with ScalatestRouteTest {
-  private val config = ServerConfig.load()
-  val env = config.api.env
+  val config: ServerConfig = ServerConfig.load()
   val githubUserSession = new GithubUserSession(config.session)
 
   val database: SchedulerDatabase = new InMemoryDatabase()

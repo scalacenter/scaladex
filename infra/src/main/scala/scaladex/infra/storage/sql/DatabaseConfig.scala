@@ -21,7 +21,7 @@ object DatabaseConfig {
   }
 
   def from(config: Config): Try[DatabaseConfig] =
-    from(config.getString("database.url"))
+    from(config.getString("scaladex.database.url"))
 
   private def from(url: String): Try[DatabaseConfig] = url match {
     case h2Regex(value) => Success(H2(value))

@@ -11,13 +11,13 @@
 @import scaladex.view.html.main
 
 @(
-  production: Boolean, env: Env, project: Project, artifacts: Seq[Artifact.Name], versions: Seq[SemanticVersion],
+  env: Env, project: Project, artifacts: Seq[Artifact.Name], versions: Seq[SemanticVersion],
   platforms: Seq[Platform], release: Artifact, user: Option[UserState],
   canEdit: Boolean, twitterCard: Option[TwitterSummaryCard], releaseCount: Int,
   directDependencies: Seq[ArtifactDependency.Direct], reverseDependency: Seq[ArtifactDependency.Reverse]
 )
 
-@main(production, title = project.repository.value, showSearch = true, user,
+@main(env, title = project.repository.value, showSearch = true, user,
       extraMeta = twitterCard.map(_.toHeadMeta).getOrElse(Nil)) {
   <main id="container-project">
     @headproject(project, artifacts, versions, platforms, release, canEdit)
