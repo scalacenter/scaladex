@@ -27,7 +27,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
   import system.dispatcher
 
   private val config = ServerConfig.load()
-  private val searchEngine = ESRepo.open()
+  private val searchEngine = ESRepo.open(config.elasticsearch)
 
   override def beforeAll(): Unit = {
     searchEngine.waitUntilReady()

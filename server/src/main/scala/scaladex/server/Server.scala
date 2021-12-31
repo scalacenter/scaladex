@@ -87,7 +87,9 @@ object Server {
       _ <- db.migrate
       _ = log.info("wait for ElasticSearch")
       _ <- IO(searchEngine.waitUntilReady())
-      _ <- IO.fromFuture(IO(searchEngine.reset()))
+      _ <-
+        if (config.elasticsearch.reset) IO.fromFuture(IO(searchEngine.reset()))
+        else IO.unit
       _ = log.info("starting the scheduler")
       _ <- IO(scheduler.startAll())
     } yield ()
