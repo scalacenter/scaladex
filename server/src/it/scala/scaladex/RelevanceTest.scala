@@ -16,11 +16,11 @@ import scaladex.core.model.Project
 import scaladex.core.model.search.SearchParams
 import scaladex.infra.elasticsearch.ElasticsearchEngine
 import scaladex.infra.github.{GithubClient, GithubConfig}
-import scaladex.infra.storage.sql.SqlRepo
 import scaladex.infra.util.DoobieUtils
 import scaladex.server.service.{GithubUpdater, SearchSynchronizer}
 import scaladex.core.model.Platform
 import scaladex.core.model.ScalaVersion
+import scaladex.infra.storage.sql.SqlDatabase
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 
@@ -36,16 +36,16 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     val transactor = DoobieUtils.transactor(config.database)
     transactor
       .use { xa =>
-        val db = new SqlRepo(config.database, xa)
-        val searchSync = new SearchSynchronizer(db, searchEngine)
+        val database = new SqlDatabase(config.database, xa)
+        val searchSync = new SearchSynchronizer(database, searchEngine)
 
         // Will use GITHUB_TOKEN configured in github secret
         val githubConfig: GithubConfig = GithubConfig.load()
         val github = new GithubClient(githubConfig.token.get)
-        val githubSync = new GithubUpdater(db, github)
+        val githubSync = new GithubUpdater(database, github)
         IO.fromFuture(IO {
           for {
-            _ <- Init.run(config.dataPaths, db)
+            _ <- Init.run(config.dataPaths, database)
             _ <- searchEngine.reset()
             _ <- githubSync.run()
             _ <- searchSync.run()

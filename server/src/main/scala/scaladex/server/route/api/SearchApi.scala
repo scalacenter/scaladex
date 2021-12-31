@@ -29,8 +29,8 @@ object SearchApi {
   implicit val formatProject: OFormat[Project] =
     Json.format[Project]
 
-  implicit val formatReleaseOptions: OFormat[ReleaseOptions] =
-    Json.format[ReleaseOptions]
+  implicit val formatArtifactOptions: OFormat[ArtifactOptions] =
+    Json.format[ArtifactOptions]
 
   case class Project(
       organization: String,
@@ -39,7 +39,7 @@ object SearchApi {
       artifacts: Seq[String] = Nil
   )
 
-  case class ReleaseOptions(
+  case class ArtifactOptions(
       artifacts: Seq[String],
       versions: Seq[String],
       groupId: String,
@@ -84,7 +84,7 @@ object SearchApi {
     }
 }
 
-class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUserSession)(
+class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: GithubUserSession)(
     implicit val executionContext: ExecutionContext
 ) extends PlayJsonSupport {
   import session.implicits._
@@ -192,7 +192,7 @@ class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUser
                     sbtVersion
                   )
                   complete {
-                    getReleaseOptions(reference, scalaTarget, artifact)
+                    getArtifactOptions(reference, scalaTarget, artifact)
                   }
               }
             }
@@ -212,11 +212,11 @@ class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUser
       }
     }
 
-  private def getReleaseOptions(
+  private def getArtifactOptions(
       projectRef: Project.Reference,
       scalaTarget: Option[Platform],
       artifact: Option[String]
-  ): Future[Option[SearchApi.ReleaseOptions]] = {
+  ): Future[Option[SearchApi.ArtifactOptions]] = {
     val selection = new ArtifactSelection(
       target = scalaTarget,
       artifactNames = artifact.map(Artifact.Name.apply),
@@ -224,16 +224,16 @@ class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUser
       selected = None
     )
     for {
-      projectOpt <- db.findProject(projectRef)
-      releases <- db.findReleases(projectRef)
+      projectOpt <- database.getProject(projectRef)
+      artifacts <- database.getArtifacts(projectRef)
     } yield for {
       project <- projectOpt
-      filteredArtifacts = selection.filterReleases(releases, project)
+      filteredArtifacts = selection.filterArtifacts(artifacts, project)
       selected <- filteredArtifacts.headOption
     } yield {
       val artifacts = filteredArtifacts.map(_.artifactName).distinct
       val versions = filteredArtifacts.map(_.version).distinct
-      SearchApi.ReleaseOptions(
+      SearchApi.ArtifactOptions(
         artifacts.map(_.value),
         versions.map(_.toString),
         selected.groupId.value,

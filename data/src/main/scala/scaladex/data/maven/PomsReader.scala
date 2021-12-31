@@ -32,7 +32,7 @@ object PomsReader {
 
   def loadAll(
       paths: DataPaths
-  ): Iterator[(ReleaseModel, LocalRepository, String)] = {
+  ): Iterator[(ArtifactModel, LocalRepository, String)] = {
 
     val ivysDescriptors = SbtPluginsData(paths.ivysData).iterator
     val centralPoms = PomsReader(MavenCentral, paths).iterator
@@ -101,7 +101,7 @@ private[maven] class PomsReader(
   // jdk.setProperty("scala.version", "2.11.7")
   // jdk.setProperty("scala.binary.version", "2.11")
 
-  def loadOne(path: Path): Try[(ReleaseModel, LocalPomRepository, String)] = {
+  def loadOne(path: Path): Try[(ArtifactModel, LocalPomRepository, String)] = {
     val sha1 = path.getFileName().toString.dropRight(".pom".length)
 
     Try {
@@ -116,14 +116,14 @@ private[maven] class PomsReader(
     }.map(pom => (PomConvert(pom), repository, sha1))
   }
 
-  def iterator: Iterator[(ReleaseModel, LocalPomRepository, String)] = {
+  def iterator: Iterator[(ArtifactModel, LocalPomRepository, String)] = {
     import scala.jdk.CollectionConverters._
 
     val stream = Files.newDirectoryStream(pomsPath).iterator
     Files.newDirectoryStream(pomsPath).iterator.asScala.flatMap(p => loadOne(p).toOption)
   }
 
-  def load(): List[Try[(ReleaseModel, LocalPomRepository, String)]] = {
+  def load(): List[Try[(ArtifactModel, LocalPomRepository, String)]] = {
     import scala.jdk.CollectionConverters._
 
     val s = Files.newDirectoryStream(pomsPath)

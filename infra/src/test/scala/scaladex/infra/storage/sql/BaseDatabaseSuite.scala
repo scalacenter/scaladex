@@ -13,7 +13,7 @@ import org.scalatest.Assertions
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Suite
 import scaladex.infra.storage.sql.DatabaseConfig
-import scaladex.infra.storage.sql.SqlRepo
+import scaladex.infra.storage.sql.SqlDatabase
 
 trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach {
   self: Assertions with Suite =>
@@ -21,7 +21,7 @@ trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach {
   private implicit val cs: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
-  private val dbConf: DatabaseConfig.PostgreSQL = DatabaseConfig
+  private val config: DatabaseConfig.PostgreSQL = DatabaseConfig
     .load()
     .get
     .asInstanceOf[DatabaseConfig.PostgreSQL]
@@ -29,21 +29,21 @@ trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach {
   override val transactor: Transactor.Aux[IO, Unit] =
     Transactor
       .fromDriverManager[IO](
-        dbConf.driver,
-        dbConf.url,
-        dbConf.user,
-        dbConf.pass.decode
+        config.driver,
+        config.url,
+        config.user,
+        config.pass.decode
       )
 
-  lazy val db = new SqlRepo(dbConf, transactor)
+  lazy val database = new SqlDatabase(config, transactor)
 
   override def beforeEach(): Unit =
     Await.result(cleanTables(), Duration.Inf)
 
   private def cleanTables(): Future[Unit] = {
     val reset = for {
-      _ <- db.dropTables
-      _ <- db.migrate
+      _ <- database.dropTables
+      _ <- database.migrate
     } yield ()
     reset.unsafeToFuture()
   }

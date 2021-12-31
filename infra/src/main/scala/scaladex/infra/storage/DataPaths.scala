@@ -41,7 +41,7 @@ scaladex-small-index or scaladex-index
 ├── live
 |   └── projects.json
 └── ivys
-    ├── data.json (all the information we need about ivy releases to index)
+    ├── data.json (all the information we need about ivy artifacts to index)
     ├── last-download (date of the last time we fetched information from bintray)
     └── subject (e.g. “sbt”)
         └── repo (e.g. “sbt-plugin-releases”)

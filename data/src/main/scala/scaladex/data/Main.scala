@@ -20,7 +20,7 @@ import scaladex.data.init.Init
 import scaladex.data.maven.DownloadParentPoms
 import scaladex.data.util.PidLock
 import scaladex.infra.storage.LocalPomRepository
-import scaladex.infra.storage.sql.SqlRepo
+import scaladex.infra.storage.sql.SqlDatabase
 import scaladex.infra.util.DoobieUtils
 
 /**
@@ -90,11 +90,11 @@ object Main extends LazyLogging {
       Step("init") { () =>
         implicit val cs = IO.contextShift(system.dispatcher)
         val transactor: Resource[IO, HikariTransactor[IO]] =
-          DoobieUtils.transactor(config.db)
+          DoobieUtils.transactor(config.database)
         transactor
           .use { xa =>
-            val db = new SqlRepo(config.db, xa)
-            IO.fromFuture(IO(Init.run(dataPaths, db)))
+            val database = new SqlDatabase(config.database, xa)
+            IO.fromFuture(IO(Init.run(dataPaths, database)))
           }
           .unsafeRunSync()
       }

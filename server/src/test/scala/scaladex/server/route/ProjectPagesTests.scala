@@ -17,7 +17,7 @@ class ProjectPagesTests() extends ControllerBaseSuite with BeforeAndAfterAll wit
     import Values.PlayJsonExtra._
     // implicit val ec = ExecutionContext.global
     for {
-      _ <- database.insertRelease(artifact, Seq.empty, Values.now)
+      _ <- database.insertArtifact(artifact, Seq.empty, Values.now)
       _ <- database.updateProjectCreationDate(reference, creationDate)
       _ <- database.updateGithubInfoAndStatus(reference, githubInfo, GithubStatus.Ok(Values.now))
     } yield ()
@@ -28,7 +28,7 @@ class ProjectPagesTests() extends ControllerBaseSuite with BeforeAndAfterAll wit
 
   val projectPages = new ProjectPages(
     env = config.env,
-    db = database,
+    database = database,
     localStorage = localStorage,
     session = githubUserSession,
     paths = dataPaths
@@ -41,7 +41,7 @@ class ProjectPagesTests() extends ControllerBaseSuite with BeforeAndAfterAll wit
         status shouldEqual StatusCodes.NotFound
       }
     }
-    it("should redirect with the correct release") {
+    it("should redirect to the correct artifact") {
       Get(s"/$reference") ~> routes ~> check {
         status shouldEqual StatusCodes.TemporaryRedirect
         headers.head

@@ -14,7 +14,7 @@ For each project:
 2. Add `sbt-pgp`, `sbt-release` and `sbt-sonatype` as a plugin to your project. Here is an example [plugins.sbt](https://github.com/pathikrit/better-files/blob/master/project/plugins.sbt)
 3. Here is an example [build.sbt](https://github.com/pathikrit/better-files/blob/master/build.sbt) that I use for multi-projects 
 
-For each release:
+For each artifact:
 
 0. `sbt release` (will prompt for passphrase)
 1. View artifact here: https://oss.sonatype.org/content/repositories/releases/

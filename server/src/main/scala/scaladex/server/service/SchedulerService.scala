@@ -12,16 +12,16 @@ import scaladex.core.util.ScalaExtensions._
 import scaladex.infra.github.GithubClient
 import scaladex.view.SchedulerStatus
 
-class SchedulerService(db: SchedulerDatabase, searchEngine: SearchEngine, githubClientOpt: Option[GithubClient])
+class SchedulerService(database: SchedulerDatabase, searchEngine: SearchEngine, githubClientOpt: Option[GithubClient])
     extends LazyLogging {
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
   private val schedulers = Seq(
     Scheduler("update-project-dependencies", updateProjectDependencies, 1.hour),
     Scheduler("update-project-creation-date", updateProjectCreationDate, 30.minutes),
-    new SearchSynchronizer(db, searchEngine),
-    new MoveReleasesSynchronizer(db)
-  ) ++ githubClientOpt.map(client => new GithubUpdater(db, client))
+    new SearchSynchronizer(database, searchEngine),
+    new MovedArtifactsSynchronizer(database)
+  ) ++ githubClientOpt.map(client => new GithubUpdater(database, client))
   private val schedulerMap = schedulers.map(s => s.name -> s).toMap
 
   def startAll(): Unit =
@@ -38,14 +38,14 @@ class SchedulerService(db: SchedulerDatabase, searchEngine: SearchEngine, github
 
   private def updateProjectDependencies(): Future[Unit] =
     for {
-      projectWithDependencies <- db
+      projectWithDependencies <- database
         .computeProjectDependencies()
         .mapFailure(e =>
           new Exception(
             s"not able to getAllProjectDependencies because of ${e.getMessage}"
           )
         )
-      _ <- db
+      _ <- database
         .insertProjectDependencies(projectWithDependencies)
         .mapFailure(e =>
           new Exception(
@@ -58,8 +58,8 @@ class SchedulerService(db: SchedulerDatabase, searchEngine: SearchEngine, github
   private def updateProjectCreationDate(): Future[Unit] = {
     // one request at time
     val future = for {
-      oldestReleases <- db.computeAllProjectsCreationDate()
-      _ <- oldestReleases.mapSync { case (creationDate, ref) => db.updateProjectCreationDate(ref, creationDate) }
+      oldestArtifacts <- database.computeAllProjectsCreationDates()
+      _ <- oldestArtifacts.mapSync { case (creationDate, ref) => database.updateProjectCreationDate(ref, creationDate) }
     } yield ()
     future.mapFailure(e => new Exception(s"not able to updateCreatedTimeIn all projects because of ${e.getMessage}"))
   }

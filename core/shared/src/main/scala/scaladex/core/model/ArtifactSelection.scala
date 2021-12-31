@@ -6,50 +6,50 @@ case class ArtifactSelection(
     version: Option[SemanticVersion],
     selected: Option[String]
 ) {
-  private def filterTarget(release: Artifact): Boolean =
-    target.forall(_ == release.platform)
+  private def filterTarget(artifact: Artifact): Boolean =
+    target.forall(_ == artifact.platform)
 
-  private def filterArtifact(release: Artifact): Boolean =
-    artifactNames.forall(_ == release.artifactName)
+  private def filterArtifact(artifact: Artifact): Boolean =
+    artifactNames.forall(_ == artifact.artifactName)
 
-  private def filterVersion(release: Artifact): Boolean =
-    version.forall(_ == release.version)
+  private def filterVersion(artifact: Artifact): Boolean =
+    version.forall(_ == artifact.version)
 
-  private def filterAll(release: Artifact): Boolean =
-    filterTarget(release) &&
-      filterArtifact(release) &&
-      filterVersion(release)
+  private def filterAll(artifact: Artifact): Boolean =
+    filterTarget(artifact) &&
+      filterArtifact(artifact) &&
+      filterVersion(artifact)
 
-  def filterReleases(
-      releases: Seq[Artifact],
+  def filterArtifacts(
+      artifacts: Seq[Artifact],
       project: Project
   ): Seq[Artifact] = {
     val filteredArtifacts =
       selected match {
         case Some(selected) =>
-          if (selected == "target") releases.filter(filterTarget)
+          if (selected == "target") artifacts.filter(filterTarget)
           else if (selected == "artifact")
-            releases.filter(filterArtifact)
+            artifacts.filter(filterArtifact)
           else if (selected == "version")
-            releases.filter(filterVersion)
-          else releases.filter(filterAll)
-        case None => releases.filter(filterAll)
+            artifacts.filter(filterVersion)
+          else artifacts.filter(filterAll)
+        case None => artifacts.filter(filterAll)
       }
 
-    filteredArtifacts.sortBy { release =>
+    filteredArtifacts.sortBy { artifact =>
       (
         // default artifact (ex: akka-actors is the default for akka/akka)
-        project.settings.defaultArtifact.contains(release.artifactName),
+        project.settings.defaultArtifact.contains(artifact.artifactName),
         // project repository (ex: shapeless)
-        project.repository.value == release.artifactName.value,
+        project.repository.value == artifact.artifactName.value,
         // alphabetically
-        release.artifactName,
+        artifact.artifactName,
         // stable version first
-        project.settings.defaultStableVersion && release.version.preRelease.isDefined,
+        project.settings.defaultStableVersion && artifact.version.preRelease.isDefined,
         // version
-        release.version,
+        artifact.version,
         // target
-        release.platform
+        artifact.platform
       )
     }(
       Ordering.Tuple6(

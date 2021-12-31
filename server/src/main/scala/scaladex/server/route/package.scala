@@ -157,8 +157,8 @@ package object route {
           Tuple1(settings)
       }
     )
-  def getSelectedRelease(
-      db: WebDatabase,
+  def getSelectedArtifact(
+      database: WebDatabase,
       org: Project.Organization,
       repo: Project.Repository,
       platform: Option[String],
@@ -166,7 +166,7 @@ package object route {
       version: Option[String],
       selected: Option[String]
   )(implicit ec: ExecutionContext): Future[Option[Artifact]] = {
-    val releaseSelection = ArtifactSelection.parse(
+    val artifactSelection = ArtifactSelection.parse(
       platform = platform,
       artifactName = artifact,
       version = version,
@@ -174,31 +174,31 @@ package object route {
     )
     val projectRef = Project.Reference(org, repo)
     for {
-      project <- db.findProject(projectRef)
-      releases <- db.findReleases(projectRef)
-      filteredReleases = project
-        .map(p => releaseSelection.filterReleases(releases, p))
+      project <- database.getProject(projectRef)
+      artifacts <- database.getArtifacts(projectRef)
+      filteredArtifacts = project
+        .map(p => artifactSelection.filterArtifacts(artifacts, p))
         .getOrElse(Nil)
-    } yield filteredReleases.headOption
+    } yield filteredArtifacts.headOption
   }
-  def getSelectedRelease(
-      db: WebDatabase,
+  def getSelectedArtifact(
+      database: WebDatabase,
       project: Project,
       platform: Option[String],
       artifact: Option[Artifact.Name],
       version: Option[String],
       selected: Option[String]
   )(implicit ec: ExecutionContext): Future[Option[Artifact]] = {
-    val releaseSelection = ArtifactSelection.parse(
+    val artifactSelection = ArtifactSelection.parse(
       platform = platform,
       artifactName = artifact,
       version = version,
       selected = selected
     )
     for {
-      releases <- db.findReleases(project.reference)
-      filteredReleases = releaseSelection.filterReleases(releases, project)
-    } yield filteredReleases.headOption
+      artifacts <- database.getArtifacts(project.reference)
+      filteredArtifacts = artifactSelection.filterArtifacts(artifacts, project)
+    } yield filteredArtifacts.headOption
   }
 
 }

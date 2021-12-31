@@ -10,17 +10,17 @@ import scaladex.core.model.Resolver
 import scaladex.core.model.SemanticVersion
 import scaladex.data.bintray._
 import scaladex.data.cleanup._
-import scaladex.data.maven.ReleaseModel
+import scaladex.data.maven.ArtifactModel
 import scaladex.infra.storage.DataPaths
 import scaladex.infra.storage.LocalRepository
 
-class ReleaseConverter(paths: DataPaths) extends BintrayProtocol with LazyLogging {
+class ArtifactConverter(paths: DataPaths) extends BintrayProtocol with LazyLogging {
   private val artifactMetaExtractor = new ArtifactMetaExtractor(paths)
   private val pomMetaExtractor = new PomMetaExtractor(paths)
   private val githubRepoExtractor = new GithubRepoExtractor(paths)
   private val licenseCleanup = new LicenseCleanup(paths)
 
-  def convert(pom: ReleaseModel, repo: LocalRepository, sha: String): Option[(Artifact, Seq[ArtifactDependency])] =
+  def convert(pom: ArtifactModel, repo: LocalRepository, sha: String): Option[(Artifact, Seq[ArtifactDependency])] =
     for {
       pomMeta <- pomMetaExtractor.extract(pom, None, repo, sha)
       repo <- githubRepoExtractor.extract(pom)
@@ -28,7 +28,7 @@ class ReleaseConverter(paths: DataPaths) extends BintrayProtocol with LazyLoggin
     } yield converted
 
   def convert(
-      pom: ReleaseModel,
+      pom: ArtifactModel,
       projectRef: Project.Reference,
       sha: String,
       creationDate: Option[Instant],
@@ -38,7 +38,7 @@ class ReleaseConverter(paths: DataPaths) extends BintrayProtocol with LazyLoggin
       version <- SemanticVersion.tryParse(pom.version)
       artifactMeta <- artifactMetaExtractor.extract(pom)
     } yield {
-      val release = Artifact(
+      val artifact = Artifact(
         Artifact.GroupId(pom.groupId),
         pom.artifactId,
         version,
@@ -58,6 +58,6 @@ class ReleaseConverter(paths: DataPaths) extends BintrayProtocol with LazyLoggin
           dep.scope.getOrElse("compile")
         )
       }.distinct
-      (release, dependencies)
+      (artifact, dependencies)
     }
 }

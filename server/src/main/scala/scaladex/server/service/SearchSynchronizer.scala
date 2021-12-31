@@ -12,12 +12,12 @@ import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions._
 
-class SearchSynchronizer(db: SchedulerDatabase, searchEngine: SearchEngine)(implicit ec: ExecutionContext)
+class SearchSynchronizer(database: SchedulerDatabase, searchEngine: SearchEngine)(implicit ec: ExecutionContext)
     extends Scheduler("sync-search", 30.minutes)
     with LazyLogging {
   override def run(): Future[Unit] =
     for {
-      allProjects <- db.getAllProjects()
+      allProjects <- database.getAllProjects()
       allProjectsAndStatus = allProjects.map(p => (p, p.githubStatus))
 
       // Create a map of project reference to their old references
@@ -45,9 +45,9 @@ class SearchSynchronizer(db: SchedulerDatabase, searchEngine: SearchEngine)(impl
 
   private def insertDocument(project: Project, formerReferences: Seq[Project.Reference]): Future[Unit] =
     for {
-      releases <- db.findReleases(project.reference)
-      inverseProjectDependencies <- db.countInverseProjectDependencies(project.reference)
-      document = ProjectDocument(project, releases, inverseProjectDependencies, formerReferences)
+      artifacts <- database.getArtifacts(project.reference)
+      inverseProjectDependencies <- database.countInverseProjectDependencies(project.reference)
+      document = ProjectDocument(project, artifacts, inverseProjectDependencies, formerReferences)
       _ <- searchEngine.insert(document)
       _ <- formerReferences.mapSync(searchEngine.delete)
     } yield ()

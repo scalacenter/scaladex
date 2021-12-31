@@ -27,7 +27,7 @@ object DatabaseConfig {
     case h2Regex(value) => Success(H2(value))
     case postgreSQLRegex(login, pass, url) =>
       Success(PostgreSQL(s"jdbc:postgresql://$url", login, Secret(pass)))
-    case _ => Failure(new Exception(s"Unknown db url: $url"))
+    case _ => Failure(new Exception(s"Unknown database url: $url"))
   }
 
   final case class H2(url: String) extends DatabaseConfig {

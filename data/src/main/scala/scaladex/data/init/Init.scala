@@ -9,46 +9,46 @@ import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Project
 import scaladex.core.util.ScalaExtensions._
 import scaladex.data.maven.PomsReader
-import scaladex.data.meta.ReleaseConverter
+import scaladex.data.meta.ArtifactConverter
 import scaladex.infra.storage.DataPaths
 import scaladex.infra.storage.local.LocalStorageRepo
-import scaladex.infra.storage.sql.SqlRepo
+import scaladex.infra.storage.sql.SqlDatabase
 
 class Init(
     paths: DataPaths,
-    db: SqlRepo
+    database: SqlDatabase
 )(implicit val system: ActorSystem)
     extends LazyLogging {
   import system.dispatcher
-  val converter = new ReleaseConverter(paths)
+  val converter = new ArtifactConverter(paths)
   val localStorage = new LocalStorageRepo(paths)
 
   def run(): Future[Unit] = {
     logger.info("Dropping tables")
     for {
-      _ <- db.dropTables.unsafeToFuture()
+      _ <- database.dropTables.unsafeToFuture()
       _ = logger.info("Creating tables")
-      _ <- db.migrate.unsafeToFuture()
-      _ = logger.info("Inserting all releases from local storage...")
-      _ <- insertAllReleases()
+      _ <- database.migrate.unsafeToFuture()
+      _ = logger.info("Inserting all artifacts from local storage...")
+      _ <- insertAllArtifacts()
       _ = logger.info("Inserting all data forms form local storage...")
       _ <- insertAllProjectSettings()
       _ = logger.info("Inserting all github infos form local storage...")
       // counting what have been inserted
-      projectCount <- db.countProjects()
-      settingsCount <- db.countProjectSettings()
-      releaseCount <- db.countArtifacts()
-      dependencyCount <- db.countDependencies()
+      projectCount <- database.countProjects()
+      settingsCount <- database.countProjectSettings()
+      artifactCount <- database.countArtifacts()
+      dependencyCount <- database.countDependencies()
 
     } yield {
       logger.info(s"$projectCount projects are inserted")
       logger.info(s"$settingsCount project settings are inserted")
-      logger.info(s"$releaseCount releases are inserted")
+      logger.info(s"$artifactCount artifacts are inserted")
       logger.info(s"$dependencyCount dependencies are inserted")
     }
   }
 
-  private def insertAllReleases(): Future[Unit] =
+  private def insertAllArtifacts(): Future[Unit] =
     PomsReader
       .loadAll(paths)
       .flatMap {
@@ -56,8 +56,8 @@ class Init(
           converter.convert(pom, localRepo, sha1)
       }
       .map {
-        case (release, dependencies) =>
-          db.insertRelease(release, dependencies, Instant.now)
+        case (artifact, dependencies) =>
+          database.insertArtifact(artifact, dependencies, Instant.now)
       }
       .sequence
       .map(_ => ())
@@ -67,10 +67,10 @@ class Init(
     def updateSettings(ref: Project.Reference): Future[Unit] =
       allSettings
         .get(ref)
-        .map(db.updateProjectSettings(ref, _))
+        .map(database.updateProjectSettings(ref, _))
         .getOrElse(Future.successful(()))
     for {
-      projectStatuses <- db.getAllProjectStatuses()
+      projectStatuses <- database.getAllProjectsStatuses()
       refToUpdate = projectStatuses.collect { case (ref, status) if !status.moved && !status.notFound => ref }
       _ <- refToUpdate.map(updateSettings).sequence
     } yield ()
@@ -78,8 +78,8 @@ class Init(
 }
 
 object Init {
-  def run(dataPaths: DataPaths, db: SqlRepo)(implicit sys: ActorSystem): Future[Unit] = {
-    val init = new Init(dataPaths, db)
+  def run(dataPaths: DataPaths, database: SqlDatabase)(implicit sys: ActorSystem): Future[Unit] = {
+    val init = new Init(dataPaths, database)
     init.run()
   }
 }

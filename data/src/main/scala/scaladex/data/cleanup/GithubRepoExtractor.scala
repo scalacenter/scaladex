@@ -45,7 +45,7 @@ class GithubRepoExtractor(paths: DataPaths) {
       val List(groupId, artifactIdRawRegex) = claim.pattern.split(" ").toList
       val artifactIdRegex =
         artifactIdRawRegex.replace("*", "(.*)").r
-      val matcher: maven.ReleaseModel => Boolean = pom => {
+      val matcher: maven.ArtifactModel => Boolean = pom => {
         def artifactMatches =
           artifactIdRawRegex == "*" ||
             matches(artifactIdRegex, pom.artifactId)
@@ -60,7 +60,7 @@ class GithubRepoExtractor(paths: DataPaths) {
       (matcher, Project.Reference.from(organization, repo))
     }
 
-  def extract(pom: maven.ReleaseModel): Option[Project.Reference] = {
+  def extract(pom: maven.ArtifactModel): Option[Project.Reference] = {
     val fromPoms = pom.scm match {
       case Some(scm) =>
         List(scm.connection, scm.developerConnection, scm.url).flatten

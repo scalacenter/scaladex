@@ -11,12 +11,12 @@ import scaladex.infra.storage.DataPaths
 
 class PublishActor(
     paths: DataPaths,
-    db: WebDatabase,
+    database: WebDatabase,
     implicit val system: ActorSystem
 ) extends Actor {
 
   private val publishProcess =
-    new impl.PublishProcess(paths, db)
+    new impl.PublishProcess(paths, database)
 
   def receive: PartialFunction[Any, Unit] = {
     case publishData: PublishData =>

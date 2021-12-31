@@ -30,7 +30,7 @@ import scaladex.view
 
 class ProjectPages(
     env: Env,
-    db: WebDatabase,
+    database: WebDatabase,
     localStorage: LocalStorageApi,
     session: GithubUserSession,
     paths: DataPaths
@@ -43,11 +43,11 @@ class ProjectPages(
       userInfo: UserState
   ): Future[(StatusCode, HtmlFormat.Appendable)] =
     for {
-      projectOpt <- db.findProject(projectRef)
-      releases <- db.findReleases(projectRef)
+      projectOpt <- database.getProject(projectRef)
+      artifacts <- database.getArtifacts(projectRef)
     } yield projectOpt
       .map { p =>
-        val page = view.project.html.editproject(env, p, releases, Some(userInfo))
+        val page = view.project.html.editproject(env, p, artifacts, Some(userInfo))
         (StatusCodes.OK, page)
       }
       .getOrElse((StatusCodes.NotFound, view.html.notfound(env, Some(userInfo))))
@@ -76,22 +76,21 @@ class ProjectPages(
     val projectRef =
       Project.Reference(organization, repository)
 
-    db.findProject(projectRef).flatMap {
+    database.getProject(projectRef).flatMap {
       case Some(project) =>
         for {
-          releases <- db.findReleases(projectRef)
-          // the selected Release
-          selectedRelease <- selection
-            .filterReleases(releases, project)
+          artifats <- database.getArtifacts(projectRef)
+          selectedArtifact <- selection
+            .filterArtifacts(artifats, project)
             .headOption
-            .toFuture(new Exception(s"no release found for $projectRef"))
-          directDependencies <- db.findDirectDependencies(selectedRelease)
-          reverseDependency <- db.findReverseDependencies(selectedRelease)
-          // compute stuff
-          allVersions = releases.map(_.version)
+            .toFuture(new Exception(s"no artifact found for $projectRef"))
+          directDependencies <- database.getDirectDependencies(selectedArtifact)
+          reverseDependency <- database.getReverseDependencies(selectedArtifact)
+
+          allVersions = artifats.map(_.version)
           filteredVersions = filterVersions(project, allVersions)
-          platforms = releases.map(_.platform).distinct.sorted.reverse
-          artifactNames = releases.map(_.artifactName).distinct.sortBy(_.value)
+          platforms = artifats.map(_.platform).distinct.sorted.reverse
+          artifactNames = artifats.map(_.artifactName).distinct.sortBy(_.value)
           twitterCard = project.twitterSummaryCard
         } yield (
           StatusCodes.OK,
@@ -101,11 +100,11 @@ class ProjectPages(
             artifactNames,
             filteredVersions,
             platforms,
-            selectedRelease,
+            selectedArtifact,
             user,
             canEdit = true,
             Some(twitterCard),
-            releases.size,
+            artifats.size,
             directDependencies,
             reverseDependency
           )
@@ -125,7 +124,7 @@ class ProjectPages(
                 val ref = Project.Reference(organization, repository)
                 val updated = for {
                   _ <- localStorage.saveProjectSettings(ref, form)
-                  updated <- db.updateProjectSettings(ref, form)
+                  updated <- database.updateProjectSettings(ref, form)
                 } yield updated
                 onComplete(updated) {
                   case Success(()) =>
@@ -152,36 +151,36 @@ class ProjectPages(
             val ref = Project.Reference(org, repo)
             val res =
               for {
-                projectOpt <- db.findProject(ref)
+                projectOpt <- database.getProject(ref)
                 project <- projectOpt.toFuture(
                   new Exception(s"project ${ref} not found")
                 )
-                releases <- db.findReleases(project.reference)
+                artifacts <- database.getArtifacts(project.reference)
                 // some computation
-                targetTypesWithScalaVersion = releases
+                targetTypesWithScalaVersion = artifacts
                   .groupBy(_.platform.platformType)
                   .map {
-                    case (targetType, releases) =>
+                    case (targetType, artifacts) =>
                       (
                         targetType,
-                        releases
+                        artifacts
                           .map(_.fullPlatformVersion)
                           .distinct
                           .sorted
                           .reverse
                       )
                   }
-                artifactsWithVersions = releases
+                artifactsWithVersions = artifacts
                   .groupBy(_.version)
                   .map {
-                    case (semanticVersion, releases) =>
+                    case (semanticVersion, artifacts) =>
                       (
                         semanticVersion,
-                        releases.groupBy(_.artifactName).map {
-                          case (artifactName, releases) =>
+                        artifacts.groupBy(_.artifactName).map {
+                          case (artifactName, artifacts) =>
                             (
                               artifactName,
-                              releases.map(r => (r, r.fullPlatformVersion))
+                              artifacts.map(r => (r, r.fullPlatformVersion))
                             )
                         }
                       )
@@ -245,13 +244,13 @@ class ProjectPages(
           optionalSession(refreshable, usingCookies)(userId =>
             parameters(("artifact".?, "version".?, "target".?, "selected".?)) { (artifact, version, target, selected) =>
               val projectRef = Project.Reference(organization, repository)
-              val fut: Future[StandardRoute] = db.findProject(projectRef).flatMap {
+              val fut: Future[StandardRoute] = database.getProject(projectRef).flatMap {
                 case Some(Project(_, _, _, GithubStatus.Moved(_, newProjectRef), _, _)) =>
                   Future.successful(redirect(Uri(s"/$newProjectRef"), StatusCodes.PermanentRedirect))
                 case Some(project) =>
-                  val releaseFut: Future[StandardRoute] =
-                    getSelectedRelease(
-                      db,
+                  val artifactRouteF: Future[StandardRoute] =
+                    getSelectedArtifact(
+                      database,
                       project,
                       platform = target,
                       artifact = artifact.map(Artifact.Name.apply),
@@ -264,7 +263,7 @@ class ProjectPages(
                         StatusCodes.TemporaryRedirect
                       )
                     }.getOrElse(complete(StatusCodes.NotFound, view.html.notfound(env, session.getUser(userId)))))
-                  releaseFut
+                  artifactRouteF
                 case None =>
                   Future.successful(
                     complete(StatusCodes.NotFound, view.html.notfound(env, session.getUser(userId)))

@@ -5,7 +5,7 @@
   project: Project,
   user: Option[UserState],
   targetTypesWithVersion: Map[Platform.PlatformType, Seq[String]],
-  semanticVersionWithReleases: Seq[(SemanticVersion, Map[Artifact.Name, Seq[(Artifact, String)]])]
+  semanticVersionWithArtifacts: Seq[(SemanticVersion, Map[Artifact.Name, Seq[(Artifact, String)]])]
 )
 @allScalaVersions= @{targetTypesWithVersion.values.flatten}
 
@@ -51,16 +51,16 @@
         </tr>
       </thead>
 
-      @semanticVersionWithReleases.map { case (semanticVersion, artifactWithReleases) =>
+      @semanticVersionWithArtifacts.map { case (semanticVersion, artifactsByName) =>
       <tbody class="version-line version-line-visible">
             <tr>
-              <td rowspan="@{artifactWithReleases.size + 1}" class="version">
+              <td rowspan="@{artifactsByName.size + 1}" class="version">
                 @semanticVersion
               </td>
             </tr>
-            @artifactWithReleases.map { case (artifactName, releasesWithScalaVersion) =>
-              @defining(releasesWithScalaVersion.map(_._2)) { scalaVersions =>
-              @defining(releasesWithScalaVersion.map(_._1)) { releases =>
+            @artifactsByName.map { case (artifactName, artifactsAndScalaVersion) =>
+              @defining(artifactsAndScalaVersion.map(_._2)) { scalaVersions =>
+              @defining(artifactsAndScalaVersion.map(_._1)) { artifacts =>
               @defining( targetTypesWithVersion.filter { case (targetType, sVersions) =>
                 sVersions.intersect(scalaVersions).nonEmpty }.keys){ targetTypes =>
                   <tr class="@({ if (targetTypes.isEmpty) { "" }
@@ -76,7 +76,7 @@
                     @allScalaVersions.map { version =>
                       <td class="target" title="@version">
                         @if(scalaVersions.contains(version)) {
-                          <a href="@releases.headOption.map(_.httpUrl).getOrElse("")" class="supported-target"></a>
+                          <a href="@artifacts.headOption.map(_.httpUrl).getOrElse("")" class="supported-target"></a>
                         }
                       </td>
                     }

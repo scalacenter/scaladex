@@ -7,7 +7,7 @@ import scaladex.core.model.Project._
 case class Project(
     organization: Organization,
     repository: Repository,
-    creationDate: Option[Instant], // date of the first known release
+    creationDate: Option[Instant], // date of the first known artifact
     githubStatus: GithubStatus,
     githubInfo: Option[GithubInfo],
     settings: Settings

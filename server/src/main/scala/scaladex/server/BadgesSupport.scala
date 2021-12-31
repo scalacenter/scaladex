@@ -11,12 +11,12 @@ import scaladex.core.model.SemanticVersion
 
 object BadgesSupport {
   def summaryOfLatestVersions(
-      allAvailableReleases: Seq[Artifact],
+      allAvailableArtifacts: Seq[Artifact],
       specificArtifact: Artifact.Name,
       specificTargetType: Platform.PlatformType
   ): String = {
     val summary = (for {
-      artifact <- allAvailableReleases if artifact.isValid
+      artifact <- allAvailableArtifacts if artifact.isValid
       version = artifact.version if artifact.artifactName == specificArtifact
       scalaTarget = artifact.platform if artifact.platform.platformType == specificTargetType
     } yield version -> scalaTarget)

@@ -14,10 +14,10 @@ import scaladex.core.service.GithubService
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions._
 
-class GithubUpdater(db: SchedulerDatabase, githubService: GithubService)(implicit ec: ExecutionContext)
+class GithubUpdater(database: SchedulerDatabase, githubService: GithubService)(implicit ec: ExecutionContext)
     extends Scheduler("github-updater", 1.hour) {
   override def run(): Future[Unit] =
-    db.getAllProjectStatuses().flatMap { projectStatuses =>
+    database.getAllProjectsStatuses().flatMap { projectStatuses =>
       val projectToUpdate =
         projectStatuses.collect { case (ref, status) if !status.moved && !status.notFound => ref }.toSeq
 
@@ -41,17 +41,17 @@ class GithubUpdater(db: SchedulerDatabase, githubService: GithubService)(implici
     response match {
       case GithubResponse.Ok((_, info)) =>
         val status = GithubStatus.Ok(now)
-        db.updateGithubInfoAndStatus(repo, info, status)
+        database.updateGithubInfoAndStatus(repo, info, status)
 
       case GithubResponse.MovedPermanently((destination, info)) =>
         val status = GithubStatus.Moved(now, destination)
         logger.info(s"$repo moved to $status")
-        db.moveProject(repo, info, status)
+        database.moveProject(repo, info, status)
 
       case GithubResponse.Failed(code, reason) =>
         val status =
           if (code == 404) GithubStatus.NotFound(now) else GithubStatus.Failed(now, code, reason)
         logger.info(s"Failed to download github info for $repo because of $status")
-        db.updateGithubStatus(repo, status)
+        database.updateGithubStatus(repo, status)
     }
 }

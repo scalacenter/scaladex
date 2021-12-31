@@ -2,7 +2,7 @@ package scaladex.data
 package maven
 
 private[maven] object PomConvert {
-  def apply(model: org.apache.maven.model.Model): ReleaseModel = {
+  def apply(model: org.apache.maven.model.Model): ArtifactModel = {
     import model._
     import scala.jdk.CollectionConverters._
     import scala.util.Try
@@ -30,7 +30,7 @@ private[maven] object PomConvert {
       )
     }
 
-    ReleaseModel(
+    ArtifactModel(
       getGroupId,
       getArtifactId,
       getVersion,

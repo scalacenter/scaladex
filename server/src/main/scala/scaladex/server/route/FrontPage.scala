@@ -20,7 +20,7 @@ import scaladex.view.html.frontpage
 
 class FrontPage(
     env: Env,
-    db: WebDatabase,
+    database: WebDatabase,
     session: GithubUserSession
 )(implicit ec: ExecutionContext) {
   import session.implicits._
@@ -30,10 +30,10 @@ class FrontPage(
   private def frontPage(
       userInfo: Option[UserState]
   ): Future[HtmlFormat.Appendable] = {
-    val topicsF = db.getAllTopics()
-    val allPlatformsF = db.getAllPlatforms()
-    val latestProjectsF = db.getLatestProjects(limitOfProjectShownInFrontPage)
-    val latestReleasesF = Future.successful(Seq.empty[Artifact]) // TODO get from DB
+    val topicsF = database.getAllTopics()
+    val allPlatformsF = database.getAllPlatforms()
+    val latestProjectsF = database.getLatestProjects(limitOfProjectShownInFrontPage)
+    val latestArtifactsF = Future.successful(Seq.empty[Artifact]) // TODO get from DB
     val contributingProjectsF = Future.successful(List.empty[Project]) // TODO get from DB
     for {
       topics <- topicsF.map(FrontPage.getTopTopics(_, 50))
@@ -57,15 +57,14 @@ class FrontPage(
           case p: Platform.SbtPlugin =>
             p.sbtV
         }
-      listOfProject <- db.getMostDependentUponProject(limitOfProjectShownInFrontPage)
-      mostDependedUpon = listOfProject
-        .sortBy(_._2)
-        .reverse
-        .map(_._1)
+      listOfProjects <- database.getMostDependedUponProjects(limitOfProjectShownInFrontPage)
+      mostDependedUpon = listOfProjects
+        .sortBy { case (_, dependents) => -dependents }
+        .map { case (project, _) => project }
       latestProjects <- latestProjectsF
-      latestReleases <- latestReleasesF
-      totalProjects <- db.countProjects()
-      totalReleases <- db.countArtifacts()
+      latestArtifacts <- latestArtifactsF
+      totalProjects <- database.countProjects()
+      totalArtifacts <- database.countArtifacts()
       contributingProjects <- contributingProjectsF
     } yield {
 
@@ -94,11 +93,11 @@ class FrontPage(
         sbtVersions,
         latestProjects,
         mostDependedUpon,
-        latestReleases,
+        latestArtifacts,
         userInfo,
         ecosystems,
         totalProjects,
-        totalReleases,
+        totalArtifacts,
         contributingProjects
       )
     }

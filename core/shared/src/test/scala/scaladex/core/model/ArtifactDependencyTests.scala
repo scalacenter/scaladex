@@ -6,8 +6,6 @@ import scaladex.core.model.Artifact._
 
 class ArtifactDependencyTests extends AnyFunSpec with Matchers {
   type Scope = String
-  val releaseRef: MavenReference =
-    MavenReference("org.typelevel", "cats-core_3", "2.6.1")
   describe("ordering") {
     it("should order correctly 1") {
       val ref1 = (MavenReference("org.specs2", "specs2-junit", "4.8.3"), "test")
@@ -48,7 +46,9 @@ class ArtifactDependencyTests extends AnyFunSpec with Matchers {
   ): Seq[ArtifactDependency.Direct] =
     refs.map {
       case (ref, scope) =>
-        ArtifactDependency.Direct(ArtifactDependency(releaseRef, ref, scope), None)
+        val mavenRef: MavenReference =
+          MavenReference("org.typelevel", "cats-core_3", "2.6.1")
+        ArtifactDependency.Direct(ArtifactDependency(mavenRef, ref, scope), None)
     }
 
 }

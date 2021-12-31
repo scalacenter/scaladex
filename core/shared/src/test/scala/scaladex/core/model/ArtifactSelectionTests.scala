@@ -6,7 +6,7 @@ import scaladex.core.model.Artifact._
 
 class ArtifactSelectionTests extends AsyncFunSpec with Matchers {
 
-  def emptyRelease(
+  def emptyArtifact(
       maven: MavenReference,
       reference: Project.Reference
   ): Artifact = {
@@ -31,91 +31,87 @@ class ArtifactSelectionTests extends AsyncFunSpec with Matchers {
   def prepare(
       projectRef: Project.Reference,
       groupdId: String,
-      releases: List[(String, String)]
+      artifacts: List[(String, String)]
   ): Seq[Artifact] =
-    releases
+    artifacts
       .map {
         case (artifactId, rawVersion) =>
-          emptyRelease(
+          emptyArtifact(
             MavenReference(groupdId, artifactId, rawVersion),
             projectRef
           )
       }
 
-  describe("Default Release") {
-    it("latest version pre release scala") {
+  it("latest version pre release scala") {
 
-      val projectRef = Project.Reference.from("typelevel", "cats")
-      val project = Project.default(projectRef)
-      val groupdId = "org.typelevel"
-      val releases = prepare(
+    val projectRef = Project.Reference.from("typelevel", "cats")
+    val project = Project.default(projectRef)
+    val groupdId = "org.typelevel"
+    val artifacts = prepare(
+      projectRef,
+      groupdId,
+      List(
+        ("cats-core_2.11", "0.6.0"),
+        ("cats-core_2.11", "0.6.0-M2"),
+        ("cats-core_2.11", "0.6.0-M1"),
+        ("cats-core_2.11", "0.5.0"),
+        ("cats-core_2.11", "0.4.1"),
+        ("cats-core_2.11", "0.4.0"),
+        ("cats-core_2.10", "0.6.0"),
+        ("cats-core_2.10", "0.6.0-M2"),
+        ("cats-core_2.10", "0.6.0-M1"),
+        ("cats-core_2.10", "0.5.0"),
+        ("cats-core_2.10", "0.4.1"),
+        ("cats-core_2.10", "0.4.0"),
+        ("cats-core_sjs0.6_2.11", "0.6.0"),
+        ("cats-core_sjs0.6_2.11", "0.6.0-M2"),
+        ("cats-core_sjs0.6_2.11", "0.6.0-M1"),
+        ("cats-core_sjs0.6_2.11", "0.5.0"),
+        ("cats-core_sjs0.6_2.11", "0.4.1"),
+        ("cats-core_sjs0.6_2.11", "0.4.0"),
+        ("cats-core_sjs0.6_2.10", "0.6.0"),
+        ("cats-core_sjs0.6_2.10", "0.6.0-M2"),
+        ("cats-core_sjs0.6_2.10", "0.6.0-M1"),
+        ("cats-core_sjs0.6_2.10", "0.5.0"),
+        ("cats-core_sjs0.6_2.10", "0.4.1"),
+        ("cats-core_sjs0.6_2.10", "0.4.0")
+      )
+    )
+
+    val result = ArtifactSelection.empty.filterArtifacts(artifacts, project)
+
+    result should contain theSameElementsAs artifacts
+  }
+
+  it("selected artifact") {
+    val projectRef = Project.Reference.from("akka", "akka")
+    val project = Project.default(projectRef)
+    val groupdId = "com.typesafe.akka"
+    val artifacts =
+      prepare(
         projectRef,
         groupdId,
         List(
-          ("cats-core_2.11", "0.6.0"),
-          ("cats-core_2.11", "0.6.0-M2"),
-          ("cats-core_2.11", "0.6.0-M1"),
-          ("cats-core_2.11", "0.5.0"),
-          ("cats-core_2.11", "0.4.1"),
-          ("cats-core_2.11", "0.4.0"),
-          ("cats-core_2.10", "0.6.0"),
-          ("cats-core_2.10", "0.6.0-M2"),
-          ("cats-core_2.10", "0.6.0-M1"),
-          ("cats-core_2.10", "0.5.0"),
-          ("cats-core_2.10", "0.4.1"),
-          ("cats-core_2.10", "0.4.0"),
-          ("cats-core_sjs0.6_2.11", "0.6.0"),
-          ("cats-core_sjs0.6_2.11", "0.6.0-M2"),
-          ("cats-core_sjs0.6_2.11", "0.6.0-M1"),
-          ("cats-core_sjs0.6_2.11", "0.5.0"),
-          ("cats-core_sjs0.6_2.11", "0.4.1"),
-          ("cats-core_sjs0.6_2.11", "0.4.0"),
-          ("cats-core_sjs0.6_2.10", "0.6.0"),
-          ("cats-core_sjs0.6_2.10", "0.6.0-M2"),
-          ("cats-core_sjs0.6_2.10", "0.6.0-M1"),
-          ("cats-core_sjs0.6_2.10", "0.5.0"),
-          ("cats-core_sjs0.6_2.10", "0.4.1"),
-          ("cats-core_sjs0.6_2.10", "0.4.0")
+          ("akka-distributed-data-experimental_2.11", "2.4.8"),
+          ("akka-actors_2.11", "2.4.8")
         )
       )
 
-      val result = ArtifactSelection.empty.filterReleases(releases, project)
+    val selection = ArtifactSelection(
+      artifactNames = Some(Artifact.Name("akka-distributed-data-experimental")),
+      target = None,
+      version = None,
+      selected = None
+    )
 
-      result should contain theSameElementsAs releases
-    }
-
-    it("selected artifact") {
-      val projectRef = Project.Reference.from("akka", "akka")
-      val project = Project.default(projectRef)
-      val groupdId = "com.typesafe.akka"
-      val releases =
-        prepare(
-          projectRef,
-          groupdId,
-          List(
-            ("akka-distributed-data-experimental_2.11", "2.4.8"),
-            ("akka-actors_2.11", "2.4.8")
-          )
-        )
-
-      val selection = ArtifactSelection(
-        artifactNames = Some(Artifact.Name("akka-distributed-data-experimental")),
-        target = None,
-        version = None,
-        selected = None
+    val result = selection.filterArtifacts(artifacts, project)
+    val expected = prepare(
+      projectRef,
+      groupdId,
+      List(
+        ("akka-distributed-data-experimental_2.11", "2.4.8")
       )
-
-      val result = selection.filterReleases(releases, project)
-      val expected = prepare(
-        projectRef,
-        groupdId,
-        List(
-          ("akka-distributed-data-experimental_2.11", "2.4.8")
-        )
-      )
-      println(result)
-
-      result should contain theSameElementsAs expected
-    }
+    )
+    result should contain theSameElementsAs expected
   }
 }

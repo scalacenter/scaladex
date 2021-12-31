@@ -18,20 +18,20 @@ import scaladex.core.service.WebDatabase
 import scaladex.data._
 import scaladex.data.cleanup.GithubRepoExtractor
 import scaladex.data.download.PlayWsDownloader
+import scaladex.data.maven.ArtifactModel
 import scaladex.data.maven.DownloadParentPoms
 import scaladex.data.maven.PomsReader
-import scaladex.data.maven.ReleaseModel
 import scaladex.infra.storage.DataPaths
 import scaladex.infra.storage.LocalPomRepository
 
-private[api] class PublishProcess(paths: DataPaths, db: WebDatabase)(
+private[api] class PublishProcess(paths: DataPaths, database: WebDatabase)(
     implicit val system: ActorSystem
 ) extends PlayWsDownloader {
 
   import system.dispatcher
   private val log = LoggerFactory.getLogger(getClass)
   private val indexingActor = system.actorOf(
-    Props(classOf[impl.IndexingActor], paths, db, system)
+    Props(classOf[impl.IndexingActor], paths, database, system)
   )
   private val githubExtractor = new GithubRepoExtractor(paths)
 
@@ -86,7 +86,7 @@ private[api] class PublishProcess(paths: DataPaths, db: WebDatabase)(
 
                   indexingActor ! UpdateIndex(repo, pom, data, repository)
 
-                  Future.successful((Created, "Published release"))
+                  Future.successful((Created, "Published artifact"))
                 } else {
                   log.warn(
                     s"User ${data.userState.info.login} attempted to publish to ${repo.toString}"
@@ -125,7 +125,7 @@ private[api] class PublishProcess(paths: DataPaths, db: WebDatabase)(
    * @param data the XML String data
    * @return
    */
-  private def getTmpPom(data: PublishData): List[Try[(ReleaseModel, LocalPomRepository, String)]] = {
+  private def getTmpPom(data: PublishData): List[Try[(ArtifactModel, LocalPomRepository, String)]] = {
     val path = data.tempPath.getParent
 
     val downloadParentPomsStep =

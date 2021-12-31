@@ -3,18 +3,18 @@ package scaladex.data.meta
 import java.time.Instant
 
 import scaladex.core.model.Resolver
-import scaladex.data.maven.ReleaseModel
+import scaladex.data.maven.ArtifactModel
 
 case class PomMeta(
-    releaseModel: ReleaseModel,
+    artifactModel: ArtifactModel,
     creationDate: Option[Instant],
     resolver: Option[Resolver]
 )
 
 object PomMeta {
-  def default(releaseModel: ReleaseModel): PomMeta =
+  def default(artifactModel: ArtifactModel): PomMeta =
     PomMeta(
-      releaseModel = releaseModel,
+      artifactModel = artifactModel,
       creationDate = None,
       resolver = None
     )

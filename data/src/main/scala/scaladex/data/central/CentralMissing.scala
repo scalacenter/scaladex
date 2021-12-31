@@ -197,12 +197,12 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
         }
         .toSet
 
-    val releasesDownloads = allGroups.toList.map(SearchRequest(_))
+    val artifactsDownloads = allGroups.toList.map(SearchRequest(_))
 
-    log.info(s"Updating ${releasesDownloads.size} organization")
+    log.info(s"Updating ${artifactsDownloads.size} organization")
 
     val missingArtifacts =
-      Source(releasesDownloads)
+      Source(artifactsDownloads)
         .map(ar => (toHttp(ar), ar))
         .via(mavenSearchConnectionPool)
         .mapAsync(8) {

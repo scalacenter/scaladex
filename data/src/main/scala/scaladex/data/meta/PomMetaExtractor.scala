@@ -10,7 +10,7 @@ import scaladex.core.model.Resolver
 import scaladex.data.Meta
 import scaladex.data.bintray.BintrayMeta
 import scaladex.data.bintray.SbtPluginsData
-import scaladex.data.maven.ReleaseModel
+import scaladex.data.maven.ArtifactModel
 import scaladex.infra.storage.DataPaths
 import scaladex.infra.storage.LocalPomRepository._
 import scaladex.infra.storage.LocalRepository
@@ -33,7 +33,7 @@ class PomMetaExtractor(
       .toMap // Note: This is inefficient because we already loaded the data earlier and discarded the creation time
 
   def extract(
-      pom: ReleaseModel,
+      pom: ArtifactModel,
       creationDate: Option[Instant],
       localRepository: LocalRepository,
       sha1: String
@@ -72,7 +72,7 @@ class PomMetaExtractor(
       }
     }
 
-  def all(pomsRepoSha: Iterable[(ReleaseModel, LocalRepository, String)]): Seq[PomMeta] =
+  def all(pomsRepoSha: Iterable[(ArtifactModel, LocalRepository, String)]): Seq[PomMeta] =
     pomsRepoSha.iterator
       .filter { case (pom, _, _) => pom.isPackagingOfInterest }
       .flatMap {
@@ -89,7 +89,7 @@ class PomMetaExtractor(
 
                     Some(
                       PomMeta(
-                        releaseModel = pom,
+                        artifactModel = pom,
                         creationDate = getCreationDate(metas.map(_.created)),
                         resolver = resolver
                       )
@@ -104,7 +104,7 @@ class PomMetaExtractor(
                 .get(sha1)
                 .map { metas =>
                   PomMeta(
-                    releaseModel = pom,
+                    artifactModel = pom,
                     creationDate = getCreationDate(metas.map(_.created)),
                     resolver = None
                   )
@@ -115,7 +115,7 @@ class PomMetaExtractor(
                 .get(sha1)
                 .map { metas =>
                   PomMeta(
-                    releaseModel = pom,
+                    artifactModel = pom,
                     creationDate = getCreationDate(metas.map(_.created)),
                     resolver = None
                   )
@@ -124,7 +124,7 @@ class PomMetaExtractor(
             case BintraySbtPlugins =>
               Some(
                 PomMeta(
-                  releaseModel = pom,
+                  artifactModel = pom,
                   creationDate = sbtPluginCreationDates.get(sha1),
                   resolver = None
                 )
