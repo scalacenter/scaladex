@@ -9,11 +9,8 @@ import scaladex.core.model.Project.DocumentationLink
 import scaladex.core.util.Parsers
 
 /**
- * Artifact release representation
- *
  * @param isNonStandardLib if not using artifactName_scalaVersion convention
  */
-
 case class Artifact(
     groupId: Artifact.GroupId,
     // artifactId is redundant with ArtifactName + platform

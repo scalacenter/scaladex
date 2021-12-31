@@ -14,7 +14,7 @@ For each project:
 
 See sbt-bintray [publishing documentation](https://github.com/sbt/sbt-bintray#publishing) for other available settings.
 
-For each release:
+For each artifact:
 
 0. `sbt publish`
 

@@ -17,7 +17,7 @@ import scaladex.core.service.SchedulerDatabase
 class InMemoryDatabase extends SchedulerDatabase {
 
   private val projects = mutable.Map[Project.Reference, Project]()
-  private val releases = mutable.Map[Project.Reference, Seq[Artifact]]()
+  private val artifacts = mutable.Map[Project.Reference, Seq[Artifact]]()
   private val dependencies = mutable.Seq[ArtifactDependency]()
 
   override def moveProject(
@@ -26,14 +26,14 @@ class InMemoryDatabase extends SchedulerDatabase {
       status: GithubStatus.Moved
   ): Future[Unit] = ???
 
-  override def insertRelease(
-      release: Artifact,
+  override def insertArtifact(
+      artifact: Artifact,
       dependencies: Seq[ArtifactDependency],
       now: Instant
   ): Future[Unit] = {
-    val ref = release.projectRef
+    val ref = artifact.projectRef
     if (!projects.contains(ref)) projects.addOne(ref -> Project.default(ref, now = now))
-    releases.addOne(ref -> (releases.getOrElse(ref, Seq.empty) :+ release))
+    artifacts.addOne(ref -> (artifacts.getOrElse(ref, Seq.empty) :+ artifact))
     dependencies.appendedAll(dependencies)
     Future.successful(())
   }
@@ -44,27 +44,27 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getProject(projectRef: Project.Reference): Future[Option[Project]] =
     Future.successful(projects.get(projectRef))
 
-  override def getReleases(projectRef: Project.Reference): Future[Seq[Artifact]] =
-    Future.successful(releases.getOrElse(projectRef, Nil))
+  override def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]] =
+    Future.successful(artifacts.getOrElse(projectRef, Nil))
 
-  override def getReleasesByName(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]] =
+  override def getArtifactsByName(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]] =
     Future.successful(
-      releases
+      artifacts
         .getOrElse(projectRef, Nil)
         .filter(_.artifactName == artifactName)
     )
 
-  override def getDirectDependencies(release: Artifact): Future[List[ArtifactDependency.Direct]] =
+  override def getDirectDependencies(artifact: Artifact): Future[List[ArtifactDependency.Direct]] =
     Future.successful(Nil)
 
-  override def getReverseDependencies(release: Artifact): Future[List[ArtifactDependency.Reverse]] =
+  override def getReverseDependencies(artifact: Artifact): Future[List[ArtifactDependency.Reverse]] =
     Future.successful(Nil)
 
   override def countProjects(): Future[Long] =
     Future.successful(projects.values.size)
 
   override def countArtifacts(): Future[Long] =
-    Future.successful(releases.values.flatten.size)
+    Future.successful(artifacts.values.flatten.size)
 
   override def getAllTopics(): Future[Seq[String]] = Future.successful(Nil)
 
@@ -103,5 +103,5 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] = ???
 
-  override def updateReleases(release: Seq[Artifact], newRef: Project.Reference): Future[Int] = ???
+  override def updataArtifacts(artifacts: Seq[Artifact], newRef: Project.Reference): Future[Int] = ???
 }

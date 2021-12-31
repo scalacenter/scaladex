@@ -13,46 +13,45 @@ import scaladex.infra.storage.LocalRepository.BintraySbtPlugins
 
 case class SbtPluginsData(ivysData: Path) extends BintrayProtocol {
 
-  /** @return Releases in the format expected by ProjectConvert */
-  def iterator: Iterator[(ReleaseModel, LocalRepository, String)] =
-    read().iterator.map(release => (release.releaseModel, BintraySbtPlugins, release.sha1))
+  def iterator: Iterator[(ArtifactModel, LocalRepository, String)] =
+    read().iterator.map(artifact => (artifact.artifactModel, BintraySbtPlugins, artifact.sha1))
 
-  def read(): List[SbtPluginReleaseModel] =
+  def read(): List[SbtPluginArtifactModel] =
     if (ivysData.toFile.exists())
       Parser
         .parseFromFile(ivysData.toFile)
         .get
-        .extract[List[SbtPluginReleaseModel]]
+        .extract[List[SbtPluginArtifactModel]]
     else Nil
 
   def update(
-      oldReleases: Seq[SbtPluginReleaseModel],
-      newReleases: Seq[SbtPluginReleaseModel]
+      oldArtifacts: Seq[SbtPluginArtifactModel],
+      newArtifacts: Seq[SbtPluginArtifactModel]
   ): Unit = {
-    // use sha1 to uniquely identify a release
-    val oldReleaseMap = oldReleases.map(r => r.sha1 -> r).toMap
-    val allReleaseMap = newReleases.foldLeft(oldReleaseMap) {
-      case (acc, release) =>
-        // replace an old release with the new release based on the sha1
-        acc + (release.sha1 -> release)
+    // use sha1 to uniquely identify a artifact
+    val oldArtifactsMap = oldArtifacts.map(r => r.sha1 -> r).toMap
+    val allArtifactsMap = newArtifacts.foldLeft(oldArtifactsMap) {
+      case (acc, artifact) =>
+        // replace an old artifact with the new artifact based on the sha1
+        acc + (artifact.sha1 -> artifact)
     }
-    val allReleases = allReleaseMap.values.toSeq
+    val allArtifacts = allArtifactsMap.values.toSeq
 
     Files.write(
       ivysData,
-      write[Seq[SbtPluginReleaseModel]](allReleases).getBytes
+      write[Seq[SbtPluginArtifactModel]](allArtifacts).getBytes
     )
   }
 
 }
 
-case class SbtPluginReleaseModel(
-    releaseModel: ReleaseModel,
+case class SbtPluginArtifactModel(
+    artifactModel: ArtifactModel,
     created: String,
     sha1: String
 )
 
-object SbtPluginReleaseModel {
+object SbtPluginArtifactModel {
   def apply(
       subject: String,
       repo: String,
@@ -65,8 +64,8 @@ object SbtPluginReleaseModel {
       ivyPath: String,
       sha1: String,
       descriptor: ModuleDescriptor
-  ): SbtPluginReleaseModel = {
-    val releaseModel = ReleaseModel(
+  ): SbtPluginArtifactModel = {
+    val artifactModel = ArtifactModel(
       groupId = organization,
       artifactId = artifact,
       version = version,
@@ -92,7 +91,7 @@ object SbtPluginReleaseModel {
     )
 
     val publicationDate = new DateTime(descriptor.getPublicationDate).toString
-    new SbtPluginReleaseModel(releaseModel, publicationDate, sha1)
+    new SbtPluginArtifactModel(artifactModel, publicationDate, sha1)
   }
 
 }

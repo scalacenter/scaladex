@@ -7,7 +7,7 @@ import scaladex.core.model.Platform
 import scaladex.core.model.ScalaLanguageVersion
 import scaladex.core.model.SemanticVersion
 import scaladex.data.cleanup._
-import scaladex.data.maven.ReleaseModel
+import scaladex.data.maven.ArtifactModel
 import scaladex.data.maven.SbtPluginTarget
 import scaladex.infra.storage.DataPaths
 
@@ -29,7 +29,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
    *
    * @return The artifact name (without suffix), the Scala target, whether this project is a usual Scala library or not
    */
-  def extract(pom: ReleaseModel): Option[ArtifactMeta] = {
+  def extract(pom: ArtifactModel): Option[ArtifactMeta] = {
     val nonStandardLookup =
       nonStandardLibs
         .find(lib =>

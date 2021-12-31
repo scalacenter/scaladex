@@ -22,6 +22,6 @@ class LicenseCleanup(paths: DataPaths) {
         xs.map((_, license))
     }
 
-  def apply(d: maven.ReleaseModel): Set[License] =
+  def apply(d: maven.ArtifactModel): Set[License] =
     d.licenses.map(l => variaNameToLicense.get(l.name)).flatten.toSet
 }

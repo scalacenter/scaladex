@@ -45,9 +45,9 @@ class SearchSynchronizer(database: SchedulerDatabase, searchEngine: SearchEngine
 
   private def insertDocument(project: Project, formerReferences: Seq[Project.Reference]): Future[Unit] =
     for {
-      releases <- database.getReleases(project.reference)
+      artifacts <- database.getArtifacts(project.reference)
       inverseProjectDependencies <- database.countInverseProjectDependencies(project.reference)
-      document = ProjectDocument(project, releases, inverseProjectDependencies, formerReferences)
+      document = ProjectDocument(project, artifacts, inverseProjectDependencies, formerReferences)
       _ <- searchEngine.insert(document)
       _ <- formerReferences.mapSync(searchEngine.delete)
     } yield ()

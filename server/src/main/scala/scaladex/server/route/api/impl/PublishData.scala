@@ -21,7 +21,7 @@ import scaladex.server.Server
 /**
  * Publish data model / Settings
  * @param path the file name send to scaladex
- * @param created the datime the release was published on the upstream repository
+ * @param created the datime the artifact was published on the upstream repository
  * @param data the file content
  * @param credentials the credentials (username & password)
  * @param downloadInfo flag for downloading info

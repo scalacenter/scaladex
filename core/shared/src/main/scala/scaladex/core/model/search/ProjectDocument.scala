@@ -33,16 +33,16 @@ final case class ProjectDocument(
 object ProjectDocument {
   def apply(
       project: Project,
-      releases: Seq[Artifact],
+      artifacts: Seq[Artifact],
       inverseProjectDependencies: Int,
       formerReferences: Seq[Project.Reference]
   ): ProjectDocument = {
     import project._
-    val platforms = releases.map(_.platform)
+    val platforms = artifacts.map(_.platform)
     ProjectDocument(
       organization,
       repository,
-      releases.map(_.artifactName).sorted.distinct,
+      artifacts.map(_.artifactName).sorted.distinct,
       hasCli,
       creationDate,
       updateDate = None,

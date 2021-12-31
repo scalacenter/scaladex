@@ -11,7 +11,7 @@ import scaladex.core.model.Artifact
 // the pom is defined using modello
 // https://codehaus-plexus.github.io/modello/
 // https://github.com/apache/maven/blob/master/maven-model/src/main/mdo/maven.mdo
-case class ReleaseModel(
+case class ArtifactModel(
     groupId: String,
     artifactId: String,
     version: String,
@@ -30,7 +30,7 @@ case class ReleaseModel(
     repositories: List[Repository] = Nil,
     organization: Option[Organization] = None,
     sbtPluginTarget: Option[SbtPluginTarget] =
-      None // Information on the target scala and sbt versions, in case this release describes an sbt plugin
+      None // Information on the target scala and sbt versions, in case this artifact is an sbt plugin
 ) {
   val mavenRef: Artifact.MavenReference =
     Artifact.MavenReference(groupId, artifactId, version)

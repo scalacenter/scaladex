@@ -44,10 +44,10 @@ class ProjectPages(
   ): Future[(StatusCode, HtmlFormat.Appendable)] =
     for {
       projectOpt <- database.getProject(projectRef)
-      releases <- database.getReleases(projectRef)
+      artifacts <- database.getArtifacts(projectRef)
     } yield projectOpt
       .map { p =>
-        val page = view.project.html.editproject(env, p, releases, Some(userInfo))
+        val page = view.project.html.editproject(env, p, artifacts, Some(userInfo))
         (StatusCodes.OK, page)
       }
       .getOrElse((StatusCodes.NotFound, view.html.notfound(env, Some(userInfo))))
@@ -79,19 +79,18 @@ class ProjectPages(
     database.getProject(projectRef).flatMap {
       case Some(project) =>
         for {
-          releases <- database.getReleases(projectRef)
-          // the selected Release
-          selectedRelease <- selection
-            .filterReleases(releases, project)
+          artifats <- database.getArtifacts(projectRef)
+          selectedArtifact <- selection
+            .filterArtifacts(artifats, project)
             .headOption
-            .toFuture(new Exception(s"no release found for $projectRef"))
-          directDependencies <- database.getDirectDependencies(selectedRelease)
-          reverseDependency <- database.getReverseDependencies(selectedRelease)
-          // compute stuff
-          allVersions = releases.map(_.version)
+            .toFuture(new Exception(s"no artifact found for $projectRef"))
+          directDependencies <- database.getDirectDependencies(selectedArtifact)
+          reverseDependency <- database.getReverseDependencies(selectedArtifact)
+
+          allVersions = artifats.map(_.version)
           filteredVersions = filterVersions(project, allVersions)
-          platforms = releases.map(_.platform).distinct.sorted.reverse
-          artifactNames = releases.map(_.artifactName).distinct.sortBy(_.value)
+          platforms = artifats.map(_.platform).distinct.sorted.reverse
+          artifactNames = artifats.map(_.artifactName).distinct.sortBy(_.value)
           twitterCard = project.twitterSummaryCard
         } yield (
           StatusCodes.OK,
@@ -101,11 +100,11 @@ class ProjectPages(
             artifactNames,
             filteredVersions,
             platforms,
-            selectedRelease,
+            selectedArtifact,
             user,
             canEdit = true,
             Some(twitterCard),
-            releases.size,
+            artifats.size,
             directDependencies,
             reverseDependency
           )
@@ -156,32 +155,32 @@ class ProjectPages(
                 project <- projectOpt.toFuture(
                   new Exception(s"project ${ref} not found")
                 )
-                releases <- database.getReleases(project.reference)
+                artifacts <- database.getArtifacts(project.reference)
                 // some computation
-                targetTypesWithScalaVersion = releases
+                targetTypesWithScalaVersion = artifacts
                   .groupBy(_.platform.platformType)
                   .map {
-                    case (targetType, releases) =>
+                    case (targetType, artifacts) =>
                       (
                         targetType,
-                        releases
+                        artifacts
                           .map(_.fullPlatformVersion)
                           .distinct
                           .sorted
                           .reverse
                       )
                   }
-                artifactsWithVersions = releases
+                artifactsWithVersions = artifacts
                   .groupBy(_.version)
                   .map {
-                    case (semanticVersion, releases) =>
+                    case (semanticVersion, artifacts) =>
                       (
                         semanticVersion,
-                        releases.groupBy(_.artifactName).map {
-                          case (artifactName, releases) =>
+                        artifacts.groupBy(_.artifactName).map {
+                          case (artifactName, artifacts) =>
                             (
                               artifactName,
-                              releases.map(r => (r, r.fullPlatformVersion))
+                              artifacts.map(r => (r, r.fullPlatformVersion))
                             )
                         }
                       )
@@ -249,8 +248,8 @@ class ProjectPages(
                 case Some(Project(_, _, _, GithubStatus.Moved(_, newProjectRef), _, _)) =>
                   Future.successful(redirect(Uri(s"/$newProjectRef"), StatusCodes.PermanentRedirect))
                 case Some(project) =>
-                  val releaseFut: Future[StandardRoute] =
-                    getSelectedRelease(
+                  val artifactRouteF: Future[StandardRoute] =
+                    getSelectedArtifact(
                       database,
                       project,
                       platform = target,
@@ -264,7 +263,7 @@ class ProjectPages(
                         StatusCodes.TemporaryRedirect
                       )
                     }.getOrElse(complete(StatusCodes.NotFound, view.html.notfound(env, session.getUser(userId)))))
-                  releaseFut
+                  artifactRouteF
                 case None =>
                   Future.successful(
                     complete(StatusCodes.NotFound, view.html.notfound(env, session.getUser(userId)))

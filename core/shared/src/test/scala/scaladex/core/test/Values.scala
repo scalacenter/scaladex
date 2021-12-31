@@ -148,7 +148,7 @@ object Values {
     val kernel_3: Artifact = getArtifact("cats-kernel", ScalaJvm.`3`)
     val laws_3: Artifact = getArtifact("cats-laws", ScalaJvm.`3`)
 
-    val allReleases: Seq[Artifact] =
+    val allArtifacts: Seq[Artifact] =
       Seq(`core_3:2.6.1`, `core_3:2.7.0`, core_sjs1_3, core_sjs06_213, core_native04_213, kernel_3, laws_3)
 
     val dependencies: Seq[ArtifactDependency] = Seq(
@@ -170,7 +170,7 @@ object Values {
     )
 
     val projectDocument: ProjectDocument =
-      ProjectDocument(project.copy(creationDate = Some(now.minus(10, ChronoUnit.MINUTES))), allReleases, 1, Seq.empty)
+      ProjectDocument(project.copy(creationDate = Some(now.minus(10, ChronoUnit.MINUTES))), allArtifacts, 1, Seq.empty)
   }
 
   object CatsEffect {

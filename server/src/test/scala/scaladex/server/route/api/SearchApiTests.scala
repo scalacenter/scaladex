@@ -36,16 +36,16 @@ class SearchApiTests extends ControllerBaseSuite with PlayJsonSupport {
     }
   }
 
-  def insertAllCatsRelease(): Future[Unit] =
-    Cats.allReleases.map(database.insertRelease(_, Seq.empty, now)).sequence.map(_ => ())
+  def insertAllCatsArtifacts(): Future[Unit] =
+    Cats.allArtifacts.map(database.insertArtifact(_, Seq.empty, now)).sequence.map(_ => ())
 
   describe("route") {
     it("should find project") {
       val searchApi = new SearchApi(searchEngine, database, githubUserSession)
-      Await.result(insertAllCatsRelease(), Duration.Inf)
+      Await.result(insertAllCatsArtifacts(), Duration.Inf)
 
       Get("/api/project?organization=typelevel&repository=cats") ~> searchApi.routes ~> check {
-        val result = responseAs[SearchApi.ReleaseOptions]
+        val result = responseAs[SearchApi.ArtifactOptions]
         (result.artifacts should contain).theSameElementsInOrderAs(Seq("cats-core", "cats-kernel", "cats-laws"))
         result.versions should contain theSameElementsAs Seq(`2.7.0`, `2.6.1`).map(_.toString)
         result.groupId shouldBe Cats.groupId.value

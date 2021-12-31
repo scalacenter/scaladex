@@ -33,23 +33,27 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   def migrate: IO[Unit] = IO(flyway.migrate())
   def dropTables: IO[Unit] = IO(flyway.clean())
 
-  override def insertRelease(release: Artifact, dependencies: Seq[ArtifactDependency], time: Instant): Future[Unit] = {
+  override def insertArtifact(
+      artifact: Artifact,
+      dependencies: Seq[ArtifactDependency],
+      time: Instant
+  ): Future[Unit] = {
     val unknownStatus = GithubStatus.Unknown(time)
-    val insertReleaseF = run(ProjectTable.insertIfNotExists.run((release.projectRef, unknownStatus)))
-      .flatMap(_ => strictRun(ArtifactTable.insert.run(release)))
+    val insertArtifactF = run(ProjectTable.insertIfNotExists.run((artifact.projectRef, unknownStatus)))
+      .flatMap(_ => strictRun(ArtifactTable.insert.run(artifact)))
       .failWithTry
       .map {
         case Failure(exception) =>
-          logger.warn(s"Failed to insert ${release.artifactId} because ${exception.getMessage}")
+          logger.warn(s"Failed to insert ${artifact.artifactId} because ${exception.getMessage}")
         case Success(value) => ()
       }
     val insertDepsF = run(ArtifactDependencyTable.insert.updateMany(dependencies)).failWithTry
       .map {
         case Failure(exception) =>
-          logger.warn(s"Failed to insert dependencies of ${release.artifactId} because ${exception.getMessage}")
+          logger.warn(s"Failed to insert dependencies of ${artifact.artifactId} because ${exception.getMessage}")
         case Success(value) => ()
       }
-    insertReleaseF.flatMap(_ => insertDepsF)
+    insertArtifactF.flatMap(_ => insertDepsF)
   }
 
   override def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]] =
@@ -58,8 +62,8 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   override def getAllProjects(): Future[Seq[Project]] =
     run(ProjectTable.selectProject.to[Seq])
 
-  override def updateReleases(releases: Seq[Artifact], newRef: Project.Reference): Future[Int] = {
-    val mavenReferences = releases.map(r => newRef -> r.mavenReference)
+  override def updataArtifacts(artifacts: Seq[Artifact], newRef: Project.Reference): Future[Int] = {
+    val mavenReferences = artifacts.map(r => newRef -> r.mavenReference)
     run(ArtifactTable.updateProjectRef.updateMany(mavenReferences))
   }
 
@@ -95,10 +99,10 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   override def getProject(projectRef: Project.Reference): Future[Option[Project]] =
     run(ProjectTable.selectByReference.option(projectRef))
 
-  override def getReleases(projectRef: Project.Reference): Future[Seq[Artifact]] =
+  override def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]] =
     run(ArtifactTable.selectArtifactByProject.to[List](projectRef))
 
-  override def getReleasesByName(
+  override def getArtifactsByName(
       projectRef: Project.Reference,
       artifactName: Artifact.Name
   ): Future[Seq[Artifact]] =
@@ -113,11 +117,11 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   def countDependencies(): Future[Long] =
     run(ArtifactDependencyTable.count.unique)
 
-  override def getDirectDependencies(release: Artifact): Future[List[ArtifactDependency.Direct]] =
-    run(ArtifactDependencyTable.selectDirectDependency.to[List](release.mavenReference))
+  override def getDirectDependencies(artifact: Artifact): Future[List[ArtifactDependency.Direct]] =
+    run(ArtifactDependencyTable.selectDirectDependency.to[List](artifact.mavenReference))
 
-  override def getReverseDependencies(release: Artifact): Future[List[ArtifactDependency.Reverse]] =
-    run(ArtifactDependencyTable.selectReverseDependency.to[List](release.mavenReference))
+  override def getReverseDependencies(artifact: Artifact): Future[List[ArtifactDependency.Reverse]] =
+    run(ArtifactDependencyTable.selectReverseDependency.to[List](artifact.mavenReference))
 
   override def getAllTopics(): Future[List[String]] =
     run(GithubInfoTable.selectAllTopics.to[List]).map(_.flatten)

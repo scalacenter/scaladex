@@ -107,12 +107,12 @@ class PublishApi(
         path("publish")(
           parameter("path")(path =>
             complete {
-              /* check if the release already exists - sbt will handle HTTP-Status codes
+              /* check if the artifact already exists - sbt will handle HTTP-Status codes
                * NotFound -> allowed to write
                * OK -> only allowed if isSnapshot := true
                */
               val alreadyPublished = false // TODO check from database
-              if (alreadyPublished) (OK, "release already exists")
+              if (alreadyPublished) (OK, "artifact already exists")
               else (NotFound, "ok to publish")
             }
           )

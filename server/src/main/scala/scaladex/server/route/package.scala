@@ -157,7 +157,7 @@ package object route {
           Tuple1(settings)
       }
     )
-  def getSelectedRelease(
+  def getSelectedArtifact(
       database: WebDatabase,
       org: Project.Organization,
       repo: Project.Repository,
@@ -166,7 +166,7 @@ package object route {
       version: Option[String],
       selected: Option[String]
   )(implicit ec: ExecutionContext): Future[Option[Artifact]] = {
-    val releaseSelection = ArtifactSelection.parse(
+    val artifactSelection = ArtifactSelection.parse(
       platform = platform,
       artifactName = artifact,
       version = version,
@@ -175,13 +175,13 @@ package object route {
     val projectRef = Project.Reference(org, repo)
     for {
       project <- database.getProject(projectRef)
-      releases <- database.getReleases(projectRef)
-      filteredReleases = project
-        .map(p => releaseSelection.filterReleases(releases, p))
+      artifacts <- database.getArtifacts(projectRef)
+      filteredArtifacts = project
+        .map(p => artifactSelection.filterArtifacts(artifacts, p))
         .getOrElse(Nil)
-    } yield filteredReleases.headOption
+    } yield filteredArtifacts.headOption
   }
-  def getSelectedRelease(
+  def getSelectedArtifact(
       database: WebDatabase,
       project: Project,
       platform: Option[String],
@@ -189,16 +189,16 @@ package object route {
       version: Option[String],
       selected: Option[String]
   )(implicit ec: ExecutionContext): Future[Option[Artifact]] = {
-    val releaseSelection = ArtifactSelection.parse(
+    val artifactSelection = ArtifactSelection.parse(
       platform = platform,
       artifactName = artifact,
       version = version,
       selected = selected
     )
     for {
-      releases <- database.getReleases(project.reference)
-      filteredReleases = releaseSelection.filterReleases(releases, project)
-    } yield filteredReleases.headOption
+      artifacts <- database.getArtifacts(project.reference)
+      filteredArtifacts = artifactSelection.filterArtifacts(artifacts, project)
+    } yield filteredArtifacts.headOption
   }
 
 }

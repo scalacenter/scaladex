@@ -8,18 +8,18 @@ import scaladex.core.model.GithubStatus
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions._
 
-class MoveReleasesSynchronizer(database: SchedulerDatabase)(implicit ec: ExecutionContext)
-    extends Scheduler("move-releases", 5.minutes) {
+class MovedArtifactsSynchronizer(database: SchedulerDatabase)(implicit ec: ExecutionContext)
+    extends Scheduler("move-artifacts", 5.minutes) {
   override def run(): Future[Unit] =
     for {
       projectStatuses <- database.getAllProjectsStatuses()
       moved = projectStatuses.collect { case (ref, GithubStatus.Moved(_, newRef)) => ref -> newRef }.toMap
       numberOfUpdated <- moved.map {
         case (oldRef, newRef) =>
-          database.getReleases(oldRef).flatMap(releases => database.updateReleases(releases, newRef))
+          database.getArtifacts(oldRef).flatMap(artifacts => database.updataArtifacts(artifacts, newRef))
       }.sequence
       _ = logger.info(
-        s"${numberOfUpdated.sum} releases have been updated with the new organization/new repository names"
+        s"${numberOfUpdated.sum} artifacts have been updated with the new organization/new repository names"
       )
     } yield ()
 

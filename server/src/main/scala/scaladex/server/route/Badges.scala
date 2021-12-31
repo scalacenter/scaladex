@@ -69,24 +69,24 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
   def latest(
       organization: Project.Organization,
       repository: Project.Repository,
-      artifact: Option[Artifact.Name]
+      artifactName: Option[Artifact.Name]
   ): RequestContext => Future[RouteResult] =
     parameter("target".?) { platform =>
       shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
-        val res = getSelectedRelease(
+        val res = getSelectedArtifact(
           database,
           organization,
           repository,
           platform,
-          artifact,
+          artifactName,
           version = None,
           selected = None
         )
         onSuccess(res) {
-          case Some(release) =>
+          case Some(artifact) =>
             shieldsSvg(
-              subject.orElse(artifact.map(_.value)).getOrElse(repository.value),
-              release.version.toString,
+              subject.orElse(artifactName.map(_.value)).getOrElse(repository.value),
+              artifact.version.toString,
               color,
               style,
               logo,
@@ -94,8 +94,8 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
             )
           case _ =>
             shieldsSvg(
-              subject.orElse(artifact.map(_.value)).getOrElse(repository.value),
-              "no published release",
+              subject.orElse(artifactName.map(_.value)).getOrElse(repository.value),
+              "no published artifact",
               color.orElse(Some("lightgrey")),
               style,
               logo,
@@ -117,16 +117,16 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
           targetTypeString
             .flatMap(Platform.PlatformType.ofName)
             .getOrElse(Platform.PlatformType.Jvm)
-        val res = database.getReleasesByName(
+        val res = database.getArtifactsByName(
           Project.Reference(organization, repository),
           artifact
         )
         onSuccess {
           res
-        } { allAvailableReleases =>
+        } { allAvailableArtifacts =>
           val notableScalaSupport: String =
             BadgesSupport.summaryOfLatestVersions(
-              allAvailableReleases,
+              allAvailableArtifacts,
               artifact,
               targetType
             )

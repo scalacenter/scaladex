@@ -20,7 +20,7 @@ class SchedulerService(database: SchedulerDatabase, searchEngine: SearchEngine, 
     Scheduler("update-project-dependencies", updateProjectDependencies, 1.hour),
     Scheduler("update-project-creation-date", updateProjectCreationDate, 30.minutes),
     new SearchSynchronizer(database, searchEngine),
-    new MoveReleasesSynchronizer(database)
+    new MovedArtifactsSynchronizer(database)
   ) ++ githubClientOpt.map(client => new GithubUpdater(database, client))
   private val schedulerMap = schedulers.map(s => s.name -> s).toMap
 
@@ -58,8 +58,8 @@ class SchedulerService(database: SchedulerDatabase, searchEngine: SearchEngine, 
   private def updateProjectCreationDate(): Future[Unit] = {
     // one request at time
     val future = for {
-      oldestReleases <- database.computeAllProjectsCreationDates()
-      _ <- oldestReleases.mapSync { case (creationDate, ref) => database.updateProjectCreationDate(ref, creationDate) }
+      oldestArtifacts <- database.computeAllProjectsCreationDates()
+      _ <- oldestArtifacts.mapSync { case (creationDate, ref) => database.updateProjectCreationDate(ref, creationDate) }
     } yield ()
     future.mapFailure(e => new Exception(s"not able to updateCreatedTimeIn all projects because of ${e.getMessage}"))
   }

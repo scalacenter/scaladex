@@ -2,7 +2,7 @@
 
 As a library author or maintainer, the visibility of your project on Scaladex is under your control.
 
-As soon as a release is pushed to Maven Central (Sonatype), Scaladex downloads the `pom.xml` from Maven Central and the repository metadata from Github. The following properties are taken into account by the search algorithm, with corresponding boost. The bigger is the boost, the more importance is attributed to the property.
+As soon as an artifact is pushed to Maven Central (Sonatype), Scaladex downloads the `pom.xml` from Maven Central and the repository metadata from Github. The following properties are taken into account by the search algorithm, with corresponding boost. The bigger is the boost, the more importance is attributed to the property.
  
 
 | property                              | boost |

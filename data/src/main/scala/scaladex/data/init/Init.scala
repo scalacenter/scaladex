@@ -9,7 +9,7 @@ import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Project
 import scaladex.core.util.ScalaExtensions._
 import scaladex.data.maven.PomsReader
-import scaladex.data.meta.ReleaseConverter
+import scaladex.data.meta.ArtifactConverter
 import scaladex.infra.storage.DataPaths
 import scaladex.infra.storage.local.LocalStorageRepo
 import scaladex.infra.storage.sql.SqlDatabase
@@ -20,7 +20,7 @@ class Init(
 )(implicit val system: ActorSystem)
     extends LazyLogging {
   import system.dispatcher
-  val converter = new ReleaseConverter(paths)
+  val converter = new ArtifactConverter(paths)
   val localStorage = new LocalStorageRepo(paths)
 
   def run(): Future[Unit] = {
@@ -29,26 +29,26 @@ class Init(
       _ <- database.dropTables.unsafeToFuture()
       _ = logger.info("Creating tables")
       _ <- database.migrate.unsafeToFuture()
-      _ = logger.info("Inserting all releases from local storage...")
-      _ <- insertAllReleases()
+      _ = logger.info("Inserting all artifacts from local storage...")
+      _ <- insertAllArtifacts()
       _ = logger.info("Inserting all data forms form local storage...")
       _ <- insertAllProjectSettings()
       _ = logger.info("Inserting all github infos form local storage...")
       // counting what have been inserted
       projectCount <- database.countProjects()
       settingsCount <- database.countProjectSettings()
-      releaseCount <- database.countArtifacts()
+      artifactCount <- database.countArtifacts()
       dependencyCount <- database.countDependencies()
 
     } yield {
       logger.info(s"$projectCount projects are inserted")
       logger.info(s"$settingsCount project settings are inserted")
-      logger.info(s"$releaseCount releases are inserted")
+      logger.info(s"$artifactCount artifacts are inserted")
       logger.info(s"$dependencyCount dependencies are inserted")
     }
   }
 
-  private def insertAllReleases(): Future[Unit] =
+  private def insertAllArtifacts(): Future[Unit] =
     PomsReader
       .loadAll(paths)
       .flatMap {
@@ -56,8 +56,8 @@ class Init(
           converter.convert(pom, localRepo, sha1)
       }
       .map {
-        case (release, dependencies) =>
-          database.insertRelease(release, dependencies, Instant.now)
+        case (artifact, dependencies) =>
+          database.insertArtifact(artifact, dependencies, Instant.now)
       }
       .sequence
       .map(_ => ())

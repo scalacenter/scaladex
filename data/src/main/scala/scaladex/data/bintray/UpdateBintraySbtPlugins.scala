@@ -34,7 +34,7 @@ class UpdateBintraySbtPlugins(
   private val baseRepo = "sbt-plugin-releases"
 
   /**
-   * Matches an ivy.xml file of an sbt-plugin release
+   * Matches an ivy.xml file of an sbt-plugin artifact
    * <organization>/<artifact>/scala_<version>/sbt_<version>/<version>/ivys/ivy.xml
    */
   private val sbtPluginPathRegex: Regex =
@@ -43,23 +43,23 @@ class UpdateBintraySbtPlugins(
   def update(): Future[Unit] = {
     val lastUpdate = parse(Files.readAllLines(lastDownloadPath).get(0))
 
-    val oldReleasesF = Future(sbtPluginRepo.read())
+    val oldArtifactsF = Future(sbtPluginRepo.read())
 
     // download all the new releases that are published or linked
     // to the sbt/sbt-plugin-releases repository
-    val newReleasesF = getNewReleases(lastUpdate)
+    val newArtifactsF = getNewArtifacts(lastUpdate)
 
     for {
-      oldReleases <- oldReleasesF
-      newReleases <- newReleasesF
+      oldArtifacts <- oldArtifactsF
+      newArtifacts <- newArtifactsF
     } yield {
-      sbtPluginRepo.update(oldReleases, newReleases)
+      sbtPluginRepo.update(oldArtifacts, newArtifacts)
       val now = format(OffsetDateTime.now(ZoneOffset.UTC))
       Files.write(lastDownloadPath, Seq(now).asJava)
     }
   }
 
-  private def getNewReleases(lastUpdate: OffsetDateTime): Future[Seq[SbtPluginReleaseModel]] =
+  private def getNewArtifacts(lastUpdate: OffsetDateTime): Future[Seq[SbtPluginArtifactModel]] =
     for {
       packageNames <- bintray.getAllPackages(baseSubject, baseRepo)
       allPackages <- Future.traverse(packageNames)(
@@ -89,7 +89,7 @@ class UpdateBintraySbtPlugins(
       repo: String,
       packages: Seq[BintrayPackage],
       lastUpdate: OffsetDateTime
-  ): Future[Seq[SbtPluginReleaseModel]] = {
+  ): Future[Seq[SbtPluginArtifactModel]] = {
     logger.info(s"updating ${packages.size} packages from $owner/$repo")
     val packageByName = packages.map(p => p.name -> p).toMap
     val createdAfter = format(lastUpdate)
@@ -115,7 +115,7 @@ class UpdateBintraySbtPlugins(
       repo: String,
       `package`: BintrayPackage,
       file: BintraySearch
-  ): Future[Option[SbtPluginReleaseModel]] =
+  ): Future[Option[SbtPluginArtifactModel]] =
     file.path match {
       case sbtPluginPathRegex(
             org,
@@ -133,7 +133,7 @@ class UpdateBintraySbtPlugins(
             )
 
             Some {
-              SbtPluginReleaseModel(
+              SbtPluginArtifactModel(
                 owner,
                 repo,
                 Option(`package`.vcs_url),
@@ -167,7 +167,7 @@ class UpdateBintraySbtPlugins(
 object UpdateBintraySbtPlugins {
 
   /**
-   * Update the Scaladex ivys directory about the sbt plugin releases that have been
+   * Update the Scaladex ivys directory about the sbt plugin artifacts that have been
    * published to the sbt/sbt-plugin-releases Bintray repository since last update.
    * Based on the Bintray `vcs_url` field of a package description,
    * update the github information of the corresponding projects.

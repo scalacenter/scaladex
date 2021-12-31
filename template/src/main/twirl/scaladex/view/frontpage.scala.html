@@ -16,11 +16,11 @@
   sbtVersions: Seq[(BinaryVersion, Int)],
   latestProjects: Seq[Project],
   mostDependedUpon: Seq[Project],
-  latestReleases: Seq[Artifact],
+  latestArtifacts: Seq[Artifact],
   user: Option[UserState],
   ecosystems: Map[String, String],
   totalProjects: Long,
-  totalReleases: Long,
+  totalArtifacts: Long,
   contributingProjects: Seq[Project]
 )
 
@@ -30,7 +30,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-8 col-md-offset-2">
-                    <h1>The Scala Library Index</h1> @searchinput(SearchParams(), false, Some(totalProjects), Some(totalReleases))
+                    <h1>The Scala Library Index</h1> @searchinput(SearchParams(), false, Some(totalProjects), Some(totalArtifacts))
                     <ul class="tag">
                         <li><strong>Topics:</strong></li>
                         @for((topic, count) <- topics) {
@@ -174,17 +174,17 @@
             <a class="btn btn-default" href="/search?q=*&sort=dependent">More ...</a>
         </div>
     </section>
-    <section class="recent-releases" id="recent-releases">
+    <section class="recent-artifacts" id="recent-artifacts">
         <div class="container">
-            <h2 class="text-center">Recent releases</h2>
+            <h2 class="text-center">Recent artifacts</h2>
             <div class="list-result box">
-                @for(release <- latestReleases){
+                @for(artifact <- latestArtifacts){
                 <div class="item-list">
-                    <a href="@release.httpUrl">
+                    <a href="@artifact.httpUrl">
                         <div class="row">
                             <div class="col-md-12">
-                                <h4>@release.artifactName</h4>
-                                <span class="pull-right">@release.version</span>
+                                <h4>@artifact.artifactName</h4>
+                                <span class="pull-right">@artifact.version</span>
                             </div>
                         </div>
                     </a>

@@ -22,14 +22,14 @@ Your library has to be published to one of those repositories.
 You can also watch [The Last 10 Percent by Stefan Zeiger](https://www.youtube.com/watch?v=RmEMUwfQoSc).
 
 Process:
-* Releases Sources
+* Sources of artifacts
   * Push from Maven Central (Sonatype):
     * We receive pushes from Maven Central that follow the scala artifactId convention.
       A common practice is to include the scala compiler version in the artifactId.
       The `.pom files` will contain `_2.10`, `_2.11`, `_2.12` or any further Scala Version.
   * Pull Bintray (once per day): 
-    * File Search: releases that follow the scala artifactId convention presented above.
-    * Non Standards: If you dont follow this convention add your releases to [non-standard.json]
+    * File Search: artifacts that follow the scala artifactId convention presented above.
+    * Non Standards: If you dont follow this convention add your artifacts to [non-standard.json]
     * Sbt Plugins: We index sbt plugins published to [sbt/sbt-plugin-releases] add your plugin to [claims.json]
 * We download pom and parent poms
 * We read them, 10% are invalid 
