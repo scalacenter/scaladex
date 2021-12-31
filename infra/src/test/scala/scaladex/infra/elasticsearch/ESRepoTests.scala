@@ -12,14 +12,14 @@ import scaladex.core.model.Project
 import scaladex.core.model.Scala3Version
 import scaladex.core.model.ScalaVersion
 import scaladex.core.model.search.SearchParams
-import scaladex.infra.elasticsearch.ESRepo
+import scaladex.infra.elasticsearch.ElasticsearchEngine
 
 class ESRepoTests extends AsyncFunSuite with Matchers with BeforeAndAfterAll {
   implicit override val executionContext: ExecutionContext =
     ExecutionContext.global
 
   val config: ElasticsearchConfig = ElasticsearchConfig.load()
-  val searchEngine: ESRepo = ESRepo.open(config)
+  val searchEngine: ElasticsearchEngine = ElasticsearchEngine.open(config)
 
   override protected def beforeAll(): Unit = {
     searchEngine.waitUntilReady()

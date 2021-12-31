@@ -38,12 +38,12 @@ import scaladex.infra.util.Codecs._
 /**
  * @param esClient TCP client of the elasticsearch server
  */
-class ESRepo(esClient: ElasticClient, index: String)(implicit ec: ExecutionContext)
+class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: ExecutionContext)
     extends SearchEngine
     with LazyLogging
     with Closeable {
 
-  import ESRepo._
+  import ElasticsearchEngine._
   import ElasticDsl._
 
   def waitUntilReady(): Unit = {
@@ -85,7 +85,7 @@ class ESRepo(esClient: ElasticClient, index: String)(implicit ec: ExecutionConte
     } yield ()
 
   private def create(): Future[Unit] = {
-    import DataMapping._
+    import ElasticsearchMapping._
     val createProject = createIndex(index)
       .analysis(
         Analysis(
@@ -258,15 +258,15 @@ class ESRepo(esClient: ElasticClient, index: String)(implicit ec: ExecutionConte
   }
 }
 
-object ESRepo extends LazyLogging {
+object ElasticsearchEngine extends LazyLogging {
   import ElasticDsl._
 
-  def open(config: ElasticsearchConfig)(implicit ec: ExecutionContext): ESRepo = {
+  def open(config: ElasticsearchConfig)(implicit ec: ExecutionContext): ElasticsearchEngine = {
     logger.info(s"Using elasticsearch index: ${config.index}")
 
     val props = ElasticProperties(s"http://localhost:${config.port}")
     val esClient = ElasticClient(JavaClient(props))
-    new ESRepo(esClient, config.index)
+    new ElasticsearchEngine(esClient, config.index)
   }
 
   private def gitHubStarScoring(query: Query): Query = {

@@ -14,7 +14,7 @@ import cats.effect.ContextShift
 import scala.concurrent.ExecutionContext
 import scaladex.core.model.Project
 import scaladex.core.model.search.SearchParams
-import scaladex.infra.elasticsearch.ESRepo
+import scaladex.infra.elasticsearch.ElasticsearchEngine
 import scaladex.infra.github.{GithubClient, GithubConfig}
 import scaladex.infra.storage.sql.SqlRepo
 import scaladex.infra.util.DoobieUtils
@@ -27,7 +27,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
   import system.dispatcher
 
   private val config = ServerConfig.load()
-  private val searchEngine = ESRepo.open(config.elasticsearch)
+  private val searchEngine = ElasticsearchEngine.open(config.elasticsearch)
 
   override def beforeAll(): Unit = {
     searchEngine.waitUntilReady()
