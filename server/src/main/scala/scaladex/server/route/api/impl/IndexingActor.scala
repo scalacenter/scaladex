@@ -19,7 +19,7 @@ import scaladex.infra.storage.LocalPomRepository
 
 class IndexingActor(
     paths: DataPaths,
-    db: WebDatabase,
+    database: WebDatabase,
     implicit val system: ActorSystem
 ) extends Actor {
   private val log = LoggerFactory.getLogger(getClass)
@@ -71,7 +71,7 @@ class IndexingActor(
       Some(data.created)
     )
     release
-      .map { case (release, deps) => db.insertRelease(release, deps, Instant.now) }
+      .map { case (release, deps) => database.insertRelease(release, deps, Instant.now) }
       .getOrElse(
         Future.successful(log.info(s"${pom.mavenRef.name} is not inserted"))
       )

@@ -16,7 +16,7 @@ import scaladex.core.model.Project
 import scaladex.core.service.WebDatabase
 import scaladex.server.BadgesSupport
 
-class Badges(db: WebDatabase)(implicit executionContext: ExecutionContext) {
+class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext) {
 
   private val shields = parameters(
     ("color".?, "style".?, "logo".?, "logoWidth".as[Int].?)
@@ -74,7 +74,7 @@ class Badges(db: WebDatabase)(implicit executionContext: ExecutionContext) {
     parameter("target".?) { platform =>
       shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
         val res = getSelectedRelease(
-          db,
+          database,
           organization,
           repository,
           platform,
@@ -117,7 +117,7 @@ class Badges(db: WebDatabase)(implicit executionContext: ExecutionContext) {
           targetTypeString
             .flatMap(Platform.PlatformType.ofName)
             .getOrElse(Platform.PlatformType.Jvm)
-        val res = db.findReleases(
+        val res = database.findReleases(
           Project.Reference(organization, repository),
           artifact
         )

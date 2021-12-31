@@ -18,7 +18,7 @@ import scaladex.data.util.PidLock
 import scaladex.infra.elasticsearch.ElasticsearchEngine
 import scaladex.infra.github.GithubClient
 import scaladex.infra.storage.local.LocalStorageRepo
-import scaladex.infra.storage.sql.SqlRepo
+import scaladex.infra.storage.sql.SqlDatabase
 import scaladex.infra.util.DoobieUtils
 import scaladex.server.config.ServerConfig
 import scaladex.server.route._
@@ -50,13 +50,13 @@ object Server {
     resources
       .use {
         case (webPool, schedulerPool) =>
-          val webDb = new SqlRepo(config.database, webPool)
-          val schedulerDb = new SqlRepo(config.database, schedulerPool)
+          val webDatabase = new SqlDatabase(config.database, webPool)
+          val schedulerDatabase = new SqlDatabase(config.database, schedulerPool)
           val githubService = config.github.token.map(new GithubClient(_))
-          val schedulerService = new SchedulerService(schedulerDb, searchEngine, githubService)
+          val schedulerService = new SchedulerService(schedulerDatabase, searchEngine, githubService)
           for {
-            _ <- init(webDb, schedulerService, searchEngine)
-            routes = configureRoutes(config.env, searchEngine, webDb, schedulerService)
+            _ <- init(webDatabase, schedulerService, searchEngine)
+            routes = configureRoutes(config.env, searchEngine, webDatabase, schedulerService)
             _ <- IO(
               Http()
                 .bindAndHandle(routes, config.endpoint, config.port)
@@ -79,25 +79,25 @@ object Server {
 
   }
 
-  private def init(db: SqlRepo, scheduler: SchedulerService, searchEngine: ElasticsearchEngine)(
+  private def init(database: SqlDatabase, scheduler: SchedulerService, searchEngine: ElasticsearchEngine)(
       implicit cs: ContextShift[IO]
   ): IO[Unit] = {
-    log.info("applying flyway migration to db")
+    log.info("Applying flyway migration to database")
     for {
-      _ <- db.migrate
-      _ = log.info("wait for ElasticSearch")
+      _ <- database.migrate
+      _ = log.info("Waiting for ElasticSearch to start")
       _ <- IO(searchEngine.waitUntilReady())
       _ <-
         if (config.elasticsearch.reset) IO.fromFuture(IO(searchEngine.reset()))
         else IO.unit
-      _ = log.info("starting the scheduler")
+      _ = log.info("Starting all schedulers")
       _ <- IO(scheduler.startAll())
     } yield ()
   }
   private def configureRoutes(
       env: Env,
       searchEngine: ElasticsearchEngine,
-      webDb: WebDatabase,
+      webDatabase: WebDatabase,
       schedulerService: SchedulerService
   )(
       implicit actor: ActorSystem
@@ -110,18 +110,18 @@ object Server {
 
     val localStorage = new LocalStorageRepo(paths)
     val programmaticRoutes = concat(
-      new PublishApi(paths, webDb, githubAuth).routes,
-      new SearchApi(searchEngine, webDb, session).routes,
+      new PublishApi(paths, webDatabase, githubAuth).routes,
+      new SearchApi(searchEngine, webDatabase, session).routes,
       Assets.routes,
-      new Badges(webDb).routes,
+      new Badges(webDatabase).routes,
       new Oauth2(config.oAuth2, githubAuth, session).routes
     )
     val userFacingRoutes = concat(
-      new FrontPage(env, webDb, session).routes,
+      new FrontPage(env, webDatabase, session).routes,
       new AdminPages(env, schedulerService, session).routes,
       redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
         concat(
-          new ProjectPages(env, webDb, localStorage, session, paths).routes,
+          new ProjectPages(env, webDatabase, localStorage, session, paths).routes,
           searchPages.routes
         )
       }

@@ -25,7 +25,7 @@ import scaladex.server.route._
 
 class PublishApi(
     paths: DataPaths,
-    db: WebDatabase,
+    database: WebDatabase,
     github: GithubAuth
 )(implicit system: ActorSystem) {
 
@@ -95,7 +95,7 @@ class PublishApi(
   implicit val timeout: Timeout = Timeout(40.seconds)
   private val actor =
     system.actorOf(
-      Props(classOf[impl.PublishActor], paths, db, system)
+      Props(classOf[impl.PublishActor], paths, database, system)
     )
 
   private val githubCredentialsCache =

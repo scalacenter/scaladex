@@ -28,7 +28,7 @@ class ProjectPagesTests() extends ControllerBaseSuite with BeforeAndAfterAll wit
 
   val projectPages = new ProjectPages(
     env = config.env,
-    db = database,
+    database = database,
     localStorage = localStorage,
     session = githubUserSession,
     paths = dataPaths

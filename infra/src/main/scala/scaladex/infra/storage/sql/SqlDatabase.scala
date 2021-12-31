@@ -27,7 +27,7 @@ import scaladex.infra.storage.sql.tables.ProjectSettingsTable
 import scaladex.infra.storage.sql.tables.ProjectTable
 import scaladex.infra.util.DoobieUtils
 
-class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
+class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
 
   private[sql] val flyway = DoobieUtils.flyway(conf)
   def migrate: IO[Unit] = IO(flyway.migrate())
@@ -183,6 +183,6 @@ class SqlRepo(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Scheduler
   private def run[A](v: doobie.ConnectionIO[A]): Future[A] =
     v.transact(xa).unsafeToFuture()
 }
-object SqlRepo {
+object SqlDatabase {
   val sizeOfInsertMany = 10000
 }

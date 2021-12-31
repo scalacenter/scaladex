@@ -158,7 +158,7 @@ package object route {
       }
     )
   def getSelectedRelease(
-      db: WebDatabase,
+      database: WebDatabase,
       org: Project.Organization,
       repo: Project.Repository,
       platform: Option[String],
@@ -174,15 +174,15 @@ package object route {
     )
     val projectRef = Project.Reference(org, repo)
     for {
-      project <- db.findProject(projectRef)
-      releases <- db.findReleases(projectRef)
+      project <- database.findProject(projectRef)
+      releases <- database.findReleases(projectRef)
       filteredReleases = project
         .map(p => releaseSelection.filterReleases(releases, p))
         .getOrElse(Nil)
     } yield filteredReleases.headOption
   }
   def getSelectedRelease(
-      db: WebDatabase,
+      database: WebDatabase,
       project: Project,
       platform: Option[String],
       artifact: Option[Artifact.Name],
@@ -196,7 +196,7 @@ package object route {
       selected = selected
     )
     for {
-      releases <- db.findReleases(project.reference)
+      releases <- database.findReleases(project.reference)
       filteredReleases = releaseSelection.filterReleases(releases, project)
     } yield filteredReleases.headOption
   }

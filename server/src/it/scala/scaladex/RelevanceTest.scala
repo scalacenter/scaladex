@@ -36,16 +36,16 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     val transactor = DoobieUtils.transactor(config.database)
     transactor
       .use { xa =>
-        val db = new SqlRepo(config.database, xa)
-        val searchSync = new SearchSynchronizer(db, searchEngine)
+        val database = new SqlRepo(config.database, xa)
+        val searchSync = new SearchSynchronizer(database, searchEngine)
 
         // Will use GITHUB_TOKEN configured in github secret
         val githubConfig: GithubConfig = GithubConfig.load()
         val github = new GithubClient(githubConfig.token.get)
-        val githubSync = new GithubUpdater(db, github)
+        val githubSync = new GithubUpdater(database, github)
         IO.fromFuture(IO {
           for {
-            _ <- Init.run(config.dataPaths, db)
+            _ <- Init.run(config.dataPaths, database)
             _ <- searchEngine.reset()
             _ <- githubSync.run()
             _ <- searchSync.run()

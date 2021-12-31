@@ -5,7 +5,7 @@ import scaladex.core.model.Env
 import scaladex.infra.storage.DataPaths
 import scaladex.infra.storage.sql.DatabaseConfig
 
-case class IndexConfig(env: Env, db: DatabaseConfig, dataPaths: DataPaths)
+case class IndexConfig(env: Env, database: DatabaseConfig, dataPaths: DataPaths)
 
 object IndexConfig {
 
@@ -17,7 +17,7 @@ object IndexConfig {
     val credentials = config.getString("scaladex.filesystem.credentials")
     IndexConfig(
       env = env,
-      db = DatabaseConfig.from(config).get,
+      database = DatabaseConfig.from(config).get,
       dataPaths = DataPaths.from(contrib, index, credentials, env)
     )
   }

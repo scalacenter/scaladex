@@ -84,7 +84,7 @@ object SearchApi {
     }
 }
 
-class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUserSession)(
+class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: GithubUserSession)(
     implicit val executionContext: ExecutionContext
 ) extends PlayJsonSupport {
   import session.implicits._
@@ -224,8 +224,8 @@ class SearchApi(searchEngine: SearchEngine, db: WebDatabase, session: GithubUser
       selected = None
     )
     for {
-      projectOpt <- db.findProject(projectRef)
-      releases <- db.findReleases(projectRef)
+      projectOpt <- database.findProject(projectRef)
+      releases <- database.findReleases(projectRef)
     } yield for {
       project <- projectOpt
       filteredArtifacts = selection.filterReleases(releases, project)

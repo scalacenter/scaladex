@@ -30,7 +30,7 @@ import scaladex.view
 
 class ProjectPages(
     env: Env,
-    db: WebDatabase,
+    database: WebDatabase,
     localStorage: LocalStorageApi,
     session: GithubUserSession,
     paths: DataPaths
@@ -43,8 +43,8 @@ class ProjectPages(
       userInfo: UserState
   ): Future[(StatusCode, HtmlFormat.Appendable)] =
     for {
-      projectOpt <- db.findProject(projectRef)
-      releases <- db.findReleases(projectRef)
+      projectOpt <- database.findProject(projectRef)
+      releases <- database.findReleases(projectRef)
     } yield projectOpt
       .map { p =>
         val page = view.project.html.editproject(env, p, releases, Some(userInfo))
@@ -76,17 +76,17 @@ class ProjectPages(
     val projectRef =
       Project.Reference(organization, repository)
 
-    db.findProject(projectRef).flatMap {
+    database.findProject(projectRef).flatMap {
       case Some(project) =>
         for {
-          releases <- db.findReleases(projectRef)
+          releases <- database.findReleases(projectRef)
           // the selected Release
           selectedRelease <- selection
             .filterReleases(releases, project)
             .headOption
             .toFuture(new Exception(s"no release found for $projectRef"))
-          directDependencies <- db.findDirectDependencies(selectedRelease)
-          reverseDependency <- db.findReverseDependencies(selectedRelease)
+          directDependencies <- database.findDirectDependencies(selectedRelease)
+          reverseDependency <- database.findReverseDependencies(selectedRelease)
           // compute stuff
           allVersions = releases.map(_.version)
           filteredVersions = filterVersions(project, allVersions)
@@ -125,7 +125,7 @@ class ProjectPages(
                 val ref = Project.Reference(organization, repository)
                 val updated = for {
                   _ <- localStorage.saveProjectSettings(ref, form)
-                  updated <- db.updateProjectSettings(ref, form)
+                  updated <- database.updateProjectSettings(ref, form)
                 } yield updated
                 onComplete(updated) {
                   case Success(()) =>
@@ -152,11 +152,11 @@ class ProjectPages(
             val ref = Project.Reference(org, repo)
             val res =
               for {
-                projectOpt <- db.findProject(ref)
+                projectOpt <- database.findProject(ref)
                 project <- projectOpt.toFuture(
                   new Exception(s"project ${ref} not found")
                 )
-                releases <- db.findReleases(project.reference)
+                releases <- database.findReleases(project.reference)
                 // some computation
                 targetTypesWithScalaVersion = releases
                   .groupBy(_.platform.platformType)
@@ -245,13 +245,13 @@ class ProjectPages(
           optionalSession(refreshable, usingCookies)(userId =>
             parameters(("artifact".?, "version".?, "target".?, "selected".?)) { (artifact, version, target, selected) =>
               val projectRef = Project.Reference(organization, repository)
-              val fut: Future[StandardRoute] = db.findProject(projectRef).flatMap {
+              val fut: Future[StandardRoute] = database.findProject(projectRef).flatMap {
                 case Some(Project(_, _, _, GithubStatus.Moved(_, newProjectRef), _, _)) =>
                   Future.successful(redirect(Uri(s"/$newProjectRef"), StatusCodes.PermanentRedirect))
                 case Some(project) =>
                   val releaseFut: Future[StandardRoute] =
                     getSelectedRelease(
-                      db,
+                      database,
                       project,
                       platform = target,
                       artifact = artifact.map(Artifact.Name.apply),
