@@ -80,8 +80,6 @@ class Deployment(
 
     val serverZipFileName = serverZip.getFileName
 
-    val sentryDsn = getSentryDsn
-
     val scriptContent =
       s"""|#!/usr/bin/env -S bash -l
           |
@@ -138,8 +136,6 @@ class Deployment(
         "index"
       ).map(cloneIfAbsent).mkString("\n")
 
-    val sentryDsn = getSentryDsn
-
     val scriptContent =
       s"""|#!/usr/bin/env -S bash -l
           |
@@ -186,23 +182,4 @@ class Deployment(
 
   private val executablePermissions =
     PosixFilePermissions.fromString("rwxr-xr-x")
-
-  private val getSentryDsn: String = {
-    val scaladexCredentials = "scaladex-credentials"
-
-    val secretFolder = rootFolder / ".." / scaladexCredentials
-
-    if (Files.exists(secretFolder.toPath)) {
-      Process("git pull origin master", secretFolder)
-    } else {
-      Process(
-        s"git clone git@github.com:scaladex/$scaladexCredentials.git $secretFolder"
-      )
-    }
-
-    val secretConfig = (secretFolder / "application.conf").toPath
-    val config = ConfigFactory.parseFile(secretConfig.toFile)
-    val scaladexConfig = config.getConfig("org.scala_lang.index")
-    scaladexConfig.getString("sentry.dsn")
-  }
 }
