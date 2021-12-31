@@ -14,7 +14,7 @@ import scaladex.core.model.ScalaVersion
 import scaladex.core.model.search.SearchParams
 import scaladex.infra.elasticsearch.ElasticsearchEngine
 
-class ESRepoTests extends AsyncFunSuite with Matchers with BeforeAndAfterAll {
+class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAndAfterAll {
   implicit override val executionContext: ExecutionContext =
     ExecutionContext.global
 
