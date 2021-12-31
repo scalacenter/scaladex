@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 import scaladex.core.model.Env
 import scaladex.core.service.WebDatabase
 import scaladex.data.util.PidLock
-import scaladex.infra.elasticsearch.ESRepo
+import scaladex.infra.elasticsearch.ElasticsearchEngine
 import scaladex.infra.github.GithubClient
 import scaladex.infra.storage.local.LocalStorageRepo
 import scaladex.infra.storage.sql.SqlRepo
@@ -39,7 +39,7 @@ object Server {
 
     // the ESRepo will not be closed until the end of the process,
     // because of the sbtResolver mode
-    val searchEngine = ESRepo.open(config.elasticsearch)
+    val searchEngine = ElasticsearchEngine.open(config.elasticsearch)
 
     val resources =
       for {
@@ -79,7 +79,7 @@ object Server {
 
   }
 
-  private def init(db: SqlRepo, scheduler: SchedulerService, searchEngine: ESRepo)(
+  private def init(db: SqlRepo, scheduler: SchedulerService, searchEngine: ElasticsearchEngine)(
       implicit cs: ContextShift[IO]
   ): IO[Unit] = {
     log.info("applying flyway migration to db")
@@ -87,14 +87,16 @@ object Server {
       _ <- db.migrate
       _ = log.info("wait for ElasticSearch")
       _ <- IO(searchEngine.waitUntilReady())
-      _ <- IO.fromFuture(IO(searchEngine.reset()))
+      _ <-
+        if (config.elasticsearch.reset) IO.fromFuture(IO(searchEngine.reset()))
+        else IO.unit
       _ = log.info("starting the scheduler")
       _ <- IO(scheduler.startAll())
     } yield ()
   }
   private def configureRoutes(
       env: Env,
-      esRepo: ESRepo,
+      searchEngine: ElasticsearchEngine,
       webDb: WebDatabase,
       schedulerService: SchedulerService
   )(
@@ -104,12 +106,12 @@ object Server {
     val paths = config.dataPaths
     val githubAuth = new GithubAuth()
     val session = new GithubUserSession(config.session)
-    val searchPages = new SearchPages(env, esRepo, session)
+    val searchPages = new SearchPages(env, searchEngine, session)
 
     val localStorage = new LocalStorageRepo(paths)
     val programmaticRoutes = concat(
       new PublishApi(paths, webDb, githubAuth).routes,
-      new SearchApi(esRepo, webDb, session).routes,
+      new SearchApi(searchEngine, webDb, session).routes,
       Assets.routes,
       new Badges(webDb).routes,
       new Oauth2(config.oAuth2, githubAuth, session).routes

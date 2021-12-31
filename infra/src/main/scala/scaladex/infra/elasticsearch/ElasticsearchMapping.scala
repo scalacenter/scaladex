@@ -4,7 +4,7 @@ import com.sksamuel.elastic4s.ElasticDsl
 import com.sksamuel.elastic4s.analysis._
 import com.sksamuel.elastic4s.requests.mappings.FieldDefinition
 
-object DataMapping extends ElasticDsl {
+object ElasticsearchMapping extends ElasticDsl {
   val urlStrip: CharFilter = PatternReplaceCharFilter(
     "url_strip",
     "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)",
