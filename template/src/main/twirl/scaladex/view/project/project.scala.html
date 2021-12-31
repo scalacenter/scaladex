@@ -12,15 +12,15 @@
 
 @(
   env: Env, project: Project, artifacts: Seq[Artifact.Name], versions: Seq[SemanticVersion],
-  platforms: Seq[Platform], release: Artifact, user: Option[UserState],
-  canEdit: Boolean, twitterCard: Option[TwitterSummaryCard], releaseCount: Int,
+  platforms: Seq[Platform], artifact: Artifact, user: Option[UserState],
+  canEdit: Boolean, twitterCard: Option[TwitterSummaryCard], artifactCount: Int,
   directDependencies: Seq[ArtifactDependency.Direct], reverseDependency: Seq[ArtifactDependency.Reverse]
 )
 
 @main(env, title = project.repository.value, showSearch = true, user,
       extraMeta = twitterCard.map(_.toHeadMeta).getOrElse(Nil)) {
   <main id="container-project">
-    @headproject(project, artifacts, versions, platforms, release, canEdit)
+    @headproject(project, artifacts, versions, platforms, artifact, canEdit)
     <div class="container">
       <div class="row">
         <div class="col-md-8">
@@ -33,16 +33,16 @@
         </div>
         <div class="col-md-4">
           <div class="sidebar-project">
-            @if(project.settings.artifactDeprecations.contains(release.artifactName)) {
+            @if(project.settings.artifactDeprecations.contains(artifact.artifactName)) {
             <div class="box">
               <h1>[DEPRECATED]</h1>
             </div>
             }
-            @documentation(release, project)
-            @badges(release, env)
-            @install(release, project.settings.cliArtifacts)
-            @scastie(release.scastieURL)
-            @project.githubInfo.map(gh => statistic(gh, project.reference, releaseCount, reverseDependency.size))
+            @documentation(artifact, project)
+            @badges(artifact, env)
+            @install(artifact, project.settings.cliArtifacts)
+            @scastie(artifact.scastieURL)
+            @project.githubInfo.map(gh => statistic(gh, project.reference, artifactCount, reverseDependency.size))
             @project.githubInfo.map { github =>
               @if(github.beginnerIssues.nonEmpty && github.chatroom.isDefined && github.contributingGuide.isDefined) {
                   <div class="box project-contributing-info">
@@ -55,9 +55,9 @@
               }
             }
             @project.githubInfo.map(gh => contributors(gh.contributors))
-            @license(release)
+            @license(artifact)
             @dependencies(project.reference, directDependencies)
-            @dependents(release, reverseDependency)
+            @dependents(artifact, reverseDependency)
           </div>
         </div>
       </div>

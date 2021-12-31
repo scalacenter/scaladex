@@ -1,7 +1,7 @@
 @import scaladex.core.model.search.SearchParams
 @import scaladex.core.model.search.SearchParams
 
-@(params: SearchParams = SearchParams(), you: Boolean = false, totalProjects: Option[Long], totalReleases: Option[Long])
+@(params: SearchParams = SearchParams(), you: Boolean = false, totalProjects: Option[Long], totalArtifacts: Option[Long])
 
 <div class="has-feedback">
     <form action="/search" action="GET">
@@ -13,7 +13,7 @@
           @if(params.contributingSearch){
             placeholder="Search beginner-friendly projects and issues"
           } else {
-            placeholder="Search @for(projects <- totalProjects; releases <- totalReleases) {within @projects projects and @releases releases}"
+            placeholder="Search @for(projects <- totalProjects; artifacts <- totalArtifacts) {within @projects projects and @artifacts artifacts}"
           }
           >
         @if(you){

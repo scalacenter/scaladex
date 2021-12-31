@@ -1,14 +1,14 @@
 @import scaladex.core.model.Project
 @import scaladex.core.model.Artifact
 
-@(release: Artifact, project: Project)
+@(artifact: Artifact, project: Project)
 <div class="documentation box">
   <h4>Documentation</h4>
   <ul>
-    @for(scaladoc <- release.scalaDocURL(project.settings.customScalaDoc)){
+    @for(scaladoc <- artifact.scalaDocURL(project.settings.customScalaDoc)){
       <li><a href="@scaladoc" rel="nofollow" target="_blank">Scaladoc</a></li>
     }
-    @for(Project.DocumentationLink(label, url) <- release.documentationURLs(project.settings.documentationLinks)){
+    @for(Project.DocumentationLink(label, url) <- artifact.documentationURLs(project.settings.documentationLinks)){
       <li>
         <a href="@url.toString()" target="_blank" rel="nofollow">
           @if(label == ""){ @url } else { @label }
