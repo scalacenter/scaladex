@@ -70,7 +70,7 @@ class Init(
         .map(database.updateProjectSettings(ref, _))
         .getOrElse(Future.successful(()))
     for {
-      projectStatuses <- database.getAllProjectStatuses()
+      projectStatuses <- database.getAllProjectsStatuses()
       refToUpdate = projectStatuses.collect { case (ref, status) if !status.moved && !status.notFound => ref }
       _ <- refToUpdate.map(updateSettings).sequence
     } yield ()

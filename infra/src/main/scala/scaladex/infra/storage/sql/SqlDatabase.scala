@@ -52,7 +52,7 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
     insertReleaseF.flatMap(_ => insertDepsF)
   }
 
-  override def getAllProjectStatuses(): Future[Map[Project.Reference, GithubStatus]] =
+  override def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]] =
     run(ProjectTable.selectReferenceAndStatus.to[Seq]).map(_.toMap)
 
   override def getAllProjects(): Future[Seq[Project]] =
@@ -82,7 +82,7 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
       status: GithubStatus.Moved
   ): Future[Unit] =
     for {
-      oldProject <- findProject(ref)
+      oldProject <- getProject(ref)
       _ <- updateGithubStatus(ref, status)
       _ <- run(ProjectTable.insertIfNotExists.run((status.destination, GithubStatus.Ok(status.updateDate))))
       _ <- updateProjectSettings(status.destination, oldProject.map(_.settings).getOrElse(Project.Settings.default))
@@ -92,13 +92,13 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   override def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit] =
     run(ProjectSettingsTable.insertOrUpdate.run((ref, settings, settings))).map(_ => ())
 
-  override def findProject(projectRef: Project.Reference): Future[Option[Project]] =
+  override def getProject(projectRef: Project.Reference): Future[Option[Project]] =
     run(ProjectTable.selectByReference.option(projectRef))
 
-  override def findReleases(projectRef: Project.Reference): Future[Seq[Artifact]] =
+  override def getReleases(projectRef: Project.Reference): Future[Seq[Artifact]] =
     run(ArtifactTable.selectArtifactByProject.to[List](projectRef))
 
-  override def findReleases(
+  override def getReleasesByName(
       projectRef: Project.Reference,
       artifactName: Artifact.Name
   ): Future[Seq[Artifact]] =
@@ -110,13 +110,13 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   override def countArtifacts(): Future[Long] =
     run(ArtifactTable.count.unique)
 
-  override def countDependencies(): Future[Long] =
+  def countDependencies(): Future[Long] =
     run(ArtifactDependencyTable.count.unique)
 
-  override def findDirectDependencies(release: Artifact): Future[List[ArtifactDependency.Direct]] =
+  override def getDirectDependencies(release: Artifact): Future[List[ArtifactDependency.Direct]] =
     run(ArtifactDependencyTable.selectDirectDependency.to[List](release.mavenReference))
 
-  override def findReverseDependencies(release: Artifact): Future[List[ArtifactDependency.Reverse]] =
+  override def getReverseDependencies(release: Artifact): Future[List[ArtifactDependency.Reverse]] =
     run(ArtifactDependencyTable.selectReverseDependency.to[List](release.mavenReference))
 
   override def getAllTopics(): Future[List[String]] =
@@ -147,7 +147,7 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] =
     run(ProjectDependenciesTable.countInverseDependencies.unique(projectRef))
 
-  override def getMostDependentUponProject(max: Int): Future[List[(Project, Long)]] =
+  override def getMostDependedUponProjects(max: Int): Future[List[(Project, Long)]] =
     for {
       resF <- run(
         ProjectDependenciesTable
@@ -156,11 +156,11 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
       )
       res <- resF.map {
         case (ref, count) =>
-          findProject(ref).map(projectOpt => projectOpt.map(_ -> count))
+          getProject(ref).map(projectOpt => projectOpt.map(_ -> count))
       }.sequence
     } yield res.flatten
 
-  override def computeAllProjectsCreationDate(): Future[Seq[(Instant, Project.Reference)]] =
+  override def computeAllProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]] =
     run(ArtifactTable.selectOldestByProject.to[List])
 
   override def updateProjectCreationDate(ref: Project.Reference, creationDate: Instant): Future[Unit] =

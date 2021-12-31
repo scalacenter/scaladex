@@ -57,11 +57,10 @@ class FrontPage(
           case p: Platform.SbtPlugin =>
             p.sbtV
         }
-      listOfProject <- database.getMostDependentUponProject(limitOfProjectShownInFrontPage)
-      mostDependedUpon = listOfProject
-        .sortBy(_._2)
-        .reverse
-        .map(_._1)
+      listOfProjects <- database.getMostDependedUponProjects(limitOfProjectShownInFrontPage)
+      mostDependedUpon = listOfProjects
+        .sortBy { case (_, dependents) => -dependents }
+        .map { case (project, _) => project }
       latestProjects <- latestProjectsF
       latestReleases <- latestReleasesF
       totalProjects <- database.countProjects()

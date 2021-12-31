@@ -17,7 +17,7 @@ import scaladex.core.util.ScalaExtensions._
 class GithubUpdater(database: SchedulerDatabase, githubService: GithubService)(implicit ec: ExecutionContext)
     extends Scheduler("github-updater", 1.hour) {
   override def run(): Future[Unit] =
-    database.getAllProjectStatuses().flatMap { projectStatuses =>
+    database.getAllProjectsStatuses().flatMap { projectStatuses =>
       val projectToUpdate =
         projectStatuses.collect { case (ref, status) if !status.moved && !status.notFound => ref }.toSeq
 

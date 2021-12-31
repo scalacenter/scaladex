@@ -224,8 +224,8 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
       selected = None
     )
     for {
-      projectOpt <- database.findProject(projectRef)
-      releases <- database.findReleases(projectRef)
+      projectOpt <- database.getProject(projectRef)
+      releases <- database.getReleases(projectRef)
     } yield for {
       project <- projectOpt
       filteredArtifacts = selection.filterReleases(releases, project)

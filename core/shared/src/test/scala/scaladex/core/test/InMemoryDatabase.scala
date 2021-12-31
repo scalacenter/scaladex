@@ -41,23 +41,23 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit] =
     Future.successful(())
 
-  override def findProject(projectRef: Project.Reference): Future[Option[Project]] =
+  override def getProject(projectRef: Project.Reference): Future[Option[Project]] =
     Future.successful(projects.get(projectRef))
 
-  override def findReleases(projectRef: Project.Reference): Future[Seq[Artifact]] =
+  override def getReleases(projectRef: Project.Reference): Future[Seq[Artifact]] =
     Future.successful(releases.getOrElse(projectRef, Nil))
 
-  def findReleases(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]] =
+  override def getReleasesByName(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]] =
     Future.successful(
       releases
         .getOrElse(projectRef, Nil)
         .filter(_.artifactName == artifactName)
     )
 
-  override def findDirectDependencies(release: Artifact): Future[List[ArtifactDependency.Direct]] =
+  override def getDirectDependencies(release: Artifact): Future[List[ArtifactDependency.Direct]] =
     Future.successful(Nil)
 
-  override def findReverseDependencies(release: Artifact): Future[List[ArtifactDependency.Reverse]] =
+  override def getReverseDependencies(release: Artifact): Future[List[ArtifactDependency.Reverse]] =
     Future.successful(Nil)
 
   override def countProjects(): Future[Long] =
@@ -65,9 +65,6 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   override def countArtifacts(): Future[Long] =
     Future.successful(releases.values.flatten.size)
-
-  override def countDependencies(): Future[Long] =
-    Future.successful(dependencies.size)
 
   override def getAllTopics(): Future[Seq[String]] = Future.successful(Nil)
 
@@ -77,10 +74,10 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getLatestProjects(limit: Int): Future[Seq[Project]] =
     Future.successful(Nil)
 
-  override def getMostDependentUponProject(max: Int): Future[List[(Project, Long)]] =
+  override def getMostDependedUponProjects(max: Int): Future[List[(Project, Long)]] =
     Future.successful(Nil)
 
-  override def getAllProjectStatuses(): Future[Map[Project.Reference, GithubStatus]] = ???
+  override def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]] = ???
 
   override def getAllProjects(): Future[Seq[Project]] = ???
 
@@ -97,7 +94,7 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   override def computeProjectDependencies(): Future[Seq[ProjectDependency]] = ???
 
-  override def computeAllProjectsCreationDate(): Future[Seq[(Instant, Project.Reference)]] = ???
+  override def computeAllProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]] = ???
 
   override def updateProjectCreationDate(ref: Project.Reference, creationDate: Instant): Future[Unit] =
     Future.successful(projects.update(ref, projects(ref).copy(creationDate = Some(creationDate))))

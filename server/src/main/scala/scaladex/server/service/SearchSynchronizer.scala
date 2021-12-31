@@ -45,7 +45,7 @@ class SearchSynchronizer(database: SchedulerDatabase, searchEngine: SearchEngine
 
   private def insertDocument(project: Project, formerReferences: Seq[Project.Reference]): Future[Unit] =
     for {
-      releases <- database.findReleases(project.reference)
+      releases <- database.getReleases(project.reference)
       inverseProjectDependencies <- database.countInverseProjectDependencies(project.reference)
       document = ProjectDocument(project, releases, inverseProjectDependencies, formerReferences)
       _ <- searchEngine.insert(document)

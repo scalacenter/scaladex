@@ -117,7 +117,7 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
           targetTypeString
             .flatMap(Platform.PlatformType.ofName)
             .getOrElse(Platform.PlatformType.Jvm)
-        val res = database.findReleases(
+        val res = database.getReleasesByName(
           Project.Reference(organization, repository),
           artifact
         )

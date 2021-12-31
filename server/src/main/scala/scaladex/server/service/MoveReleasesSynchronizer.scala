@@ -12,11 +12,11 @@ class MoveReleasesSynchronizer(database: SchedulerDatabase)(implicit ec: Executi
     extends Scheduler("move-releases", 5.minutes) {
   override def run(): Future[Unit] =
     for {
-      projectStatuses <- database.getAllProjectStatuses()
+      projectStatuses <- database.getAllProjectsStatuses()
       moved = projectStatuses.collect { case (ref, GithubStatus.Moved(_, newRef)) => ref -> newRef }.toMap
       numberOfUpdated <- moved.map {
         case (oldRef, newRef) =>
-          database.findReleases(oldRef).flatMap(releases => database.updateReleases(releases, newRef))
+          database.getReleases(oldRef).flatMap(releases => database.updateReleases(releases, newRef))
       }.sequence
       _ = logger.info(
         s"${numberOfUpdated.sum} releases have been updated with the new organization/new repository names"

@@ -174,8 +174,8 @@ package object route {
     )
     val projectRef = Project.Reference(org, repo)
     for {
-      project <- database.findProject(projectRef)
-      releases <- database.findReleases(projectRef)
+      project <- database.getProject(projectRef)
+      releases <- database.getReleases(projectRef)
       filteredReleases = project
         .map(p => releaseSelection.filterReleases(releases, p))
         .getOrElse(Nil)
@@ -196,7 +196,7 @@ package object route {
       selected = selected
     )
     for {
-      releases <- database.findReleases(project.reference)
+      releases <- database.getReleases(project.reference)
       filteredReleases = releaseSelection.filterReleases(releases, project)
     } yield filteredReleases.headOption
   }

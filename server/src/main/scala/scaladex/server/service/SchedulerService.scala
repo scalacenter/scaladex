@@ -58,7 +58,7 @@ class SchedulerService(database: SchedulerDatabase, searchEngine: SearchEngine, 
   private def updateProjectCreationDate(): Future[Unit] = {
     // one request at time
     val future = for {
-      oldestReleases <- database.computeAllProjectsCreationDate()
+      oldestReleases <- database.computeAllProjectsCreationDates()
       _ <- oldestReleases.mapSync { case (creationDate, ref) => database.updateProjectCreationDate(ref, creationDate) }
     } yield ()
     future.mapFailure(e => new Exception(s"not able to updateCreatedTimeIn all projects because of ${e.getMessage}"))

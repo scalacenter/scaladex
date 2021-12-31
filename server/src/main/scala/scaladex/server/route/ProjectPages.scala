@@ -43,8 +43,8 @@ class ProjectPages(
       userInfo: UserState
   ): Future[(StatusCode, HtmlFormat.Appendable)] =
     for {
-      projectOpt <- database.findProject(projectRef)
-      releases <- database.findReleases(projectRef)
+      projectOpt <- database.getProject(projectRef)
+      releases <- database.getReleases(projectRef)
     } yield projectOpt
       .map { p =>
         val page = view.project.html.editproject(env, p, releases, Some(userInfo))
@@ -76,17 +76,17 @@ class ProjectPages(
     val projectRef =
       Project.Reference(organization, repository)
 
-    database.findProject(projectRef).flatMap {
+    database.getProject(projectRef).flatMap {
       case Some(project) =>
         for {
-          releases <- database.findReleases(projectRef)
+          releases <- database.getReleases(projectRef)
           // the selected Release
           selectedRelease <- selection
             .filterReleases(releases, project)
             .headOption
             .toFuture(new Exception(s"no release found for $projectRef"))
-          directDependencies <- database.findDirectDependencies(selectedRelease)
-          reverseDependency <- database.findReverseDependencies(selectedRelease)
+          directDependencies <- database.getDirectDependencies(selectedRelease)
+          reverseDependency <- database.getReverseDependencies(selectedRelease)
           // compute stuff
           allVersions = releases.map(_.version)
           filteredVersions = filterVersions(project, allVersions)
@@ -152,11 +152,11 @@ class ProjectPages(
             val ref = Project.Reference(org, repo)
             val res =
               for {
-                projectOpt <- database.findProject(ref)
+                projectOpt <- database.getProject(ref)
                 project <- projectOpt.toFuture(
                   new Exception(s"project ${ref} not found")
                 )
-                releases <- database.findReleases(project.reference)
+                releases <- database.getReleases(project.reference)
                 // some computation
                 targetTypesWithScalaVersion = releases
                   .groupBy(_.platform.platformType)
@@ -245,7 +245,7 @@ class ProjectPages(
           optionalSession(refreshable, usingCookies)(userId =>
             parameters(("artifact".?, "version".?, "target".?, "selected".?)) { (artifact, version, target, selected) =>
               val projectRef = Project.Reference(organization, repository)
-              val fut: Future[StandardRoute] = database.findProject(projectRef).flatMap {
+              val fut: Future[StandardRoute] = database.getProject(projectRef).flatMap {
                 case Some(Project(_, _, _, GithubStatus.Moved(_, newProjectRef), _, _)) =>
                   Future.successful(redirect(Uri(s"/$newProjectRef"), StatusCodes.PermanentRedirect))
                 case Some(project) =>

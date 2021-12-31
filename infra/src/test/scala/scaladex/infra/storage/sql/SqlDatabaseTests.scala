@@ -25,8 +25,8 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
   it("insert release and its dependencies") {
     for {
       _ <- database.insertRelease(Cats.`core_3:2.6.1`, Cats.dependencies, now)
-      project <- database.findProject(Cats.reference)
-      releases <- database.findReleases(Cats.reference)
+      project <- database.getProject(Cats.reference)
+      releases <- database.getReleases(Cats.reference)
     } yield {
       project should not be empty
       releases should contain theSameElementsAs Seq(Cats.`core_3:2.6.1`)
@@ -37,7 +37,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     for {
       _ <- database.insertRelease(Cats.`core_3:2.6.1`, Cats.dependencies, now)
       _ <- database.insertRelease(PlayJsonExtra.artifact, Seq.empty, now)
-      projectStatuses <- database.getAllProjectStatuses()
+      projectStatuses <- database.getAllProjectsStatuses()
     } yield projectStatuses.keys should contain theSameElementsAs Seq(PlayJsonExtra.reference, Cats.reference)
   }
 
@@ -58,8 +58,8 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       _ <- database.insertRelease(Cats.`core_3:2.6.1`, Cats.dependencies, now)
       _ <- database.insertRelease(Cats.core_sjs1_3, Seq.empty, now)
       _ <- database.updateReleases(Seq(Cats.`core_3:2.6.1`, Cats.core_sjs1_3), newRef)
-      oldReleases <- database.findReleases(Cats.reference)
-      movedReleases <- database.findReleases(newRef)
+      oldReleases <- database.getReleases(Cats.reference)
+      movedReleases <- database.getReleases(newRef)
     } yield {
       oldReleases shouldBe empty
       movedReleases should contain theSameElementsAs Seq(
@@ -75,7 +75,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       _ <- database.insertRelease(Scalafix.artifact, Seq.empty, now)
       _ <- database.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, ok)
       _ <- database.updateGithubStatus(Scalafix.reference, failed)
-      scalafix <- database.findProject(Scalafix.reference)
+      scalafix <- database.getProject(Scalafix.reference)
     } yield scalafix.get.githubStatus shouldBe failed
   }
 
@@ -83,7 +83,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     for {
       _ <- database.insertRelease(Cats.`core_3:2.6.1`, Cats.dependencies, now)
       _ <- database.insertRelease(Cats.core_sjs1_3, Seq.empty, now)
-      artifacts <- database.findReleases(Cats.reference, Cats.`core_3:2.6.1`.artifactName)
+      artifacts <- database.getReleasesByName(Cats.reference, Cats.`core_3:2.6.1`.artifactName)
     } yield artifacts should contain theSameElementsAs Seq(Cats.`core_3:2.6.1`, Cats.core_sjs1_3)
   }
 
@@ -113,7 +113,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     for {
       _ <- database.insertRelease(Cats.`core_3:2.6.1`, Cats.dependencies, now)
       _ <- database.insertRelease(Cats.kernel_3, Seq.empty, now)
-      directDependencies <- database.findDirectDependencies(Cats.`core_3:2.6.1`)
+      directDependencies <- database.getDirectDependencies(Cats.`core_3:2.6.1`)
     } yield directDependencies.map(_.target) should contain theSameElementsAs List(Some(Cats.kernel_3), None, None)
   }
 
@@ -121,7 +121,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     for {
       _ <- database.insertRelease(Cats.`core_3:2.6.1`, Cats.dependencies, now)
       _ <- database.insertRelease(Cats.kernel_3, Seq.empty, now)
-      reverseDependencies <- database.findReverseDependencies(Cats.kernel_3)
+      reverseDependencies <- database.getReverseDependencies(Cats.kernel_3)
     } yield reverseDependencies.map(_.source) should contain theSameElementsAs List(Cats.`core_3:2.6.1`)
   }
 
@@ -181,7 +181,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       projectDependencies <- database.computeProjectDependencies()
       _ <- database.insertProjectDependencies(projectDependencies)
       catsInverseDependencies <- database.countInverseProjectDependencies(Cats.reference)
-      mostDependentProjects <- database.getMostDependentUponProject(10)
+      mostDependentProjects <- database.getMostDependedUponProjects(10)
     } yield {
       projectDependencies shouldBe Seq(
         ProjectDependency(Scalafix.reference, Cats.reference),
@@ -200,7 +200,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       _ <- database.insertRelease(Scalafix.artifact, Seq.empty, now)
       _ <- database.insertRelease(Cats.`core_3:2.6.1`, Seq.empty, now)
       _ <- database.insertRelease(PlayJsonExtra.artifact, Seq.empty, now)
-      creationDates <- database.computeAllProjectsCreationDate()
+      creationDates <- database.computeAllProjectsCreationDates()
       _ <- creationDates.mapSync { case (creationDate, ref) => database.updateProjectCreationDate(ref, creationDate) }
       latestProject <- database.getLatestProjects(2)
     } yield (latestProject.map(p => p.reference -> p.creationDate) should contain).theSameElementsInOrderAs(
@@ -217,8 +217,8 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       _ <- database.insertRelease(Scalafix.artifact, Seq.empty, now)
       _ <- database.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, GithubStatus.Ok(now))
       _ <- database.moveProject(Scalafix.reference, Scalafix.githubInfo, moved)
-      newProject <- database.findProject(destination)
-      oldProject <- database.findProject(Scalafix.reference)
+      newProject <- database.getProject(destination)
+      oldProject <- database.getProject(Scalafix.reference)
     } yield {
       oldProject.get.githubStatus shouldBe moved
       newProject.get.reference shouldBe destination
