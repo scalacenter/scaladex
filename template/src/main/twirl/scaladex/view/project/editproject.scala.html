@@ -6,9 +6,9 @@
 @import scaladex.core.model.Project.DocumentationLink
 @import scaladex.core.model.Env
 
-@(env: Env, project: Project, releases: Seq[Artifact], user: Option[UserState])
+@(env: Env, project: Project, artifacts: Seq[Artifact], user: Option[UserState])
 
-@artifactNames = @{ releases.map(_.artifactName).distinct }
+@artifactNames = @{ artifacts.map(_.artifactName).distinct }
 @main(env, title = s"Edit ${project.repository}", showSearch = true, user) {
   <main id="container-project">
 
@@ -117,13 +117,13 @@
               }
 
               <fieldset>
-                <legend>Default Release Selection</legend>
+                <legend>Default Artifact Selection</legend>
                 <div class="form-group">
                   <label for="defaultArtifact">Default Artifact</label>
                   <p>
                     When a project has lots of artifacts you can hint the index on what artifact to choose in the drop down.
                   See <a target="_blank" href="https://github.com/scalacenter/scaladex/blob/main/core/shared/src/main/scala/scaladex/core/model/ArtifactSelection.scala">
-                    DefaultRelease.scala
+                    ArtifactSelection.scala
                   </a> for more details.
                   </p>
                   <select
@@ -143,7 +143,7 @@
                 </div>
 
                 <div class="form-group">
-                  <p>If possible we do not use release candidate or milestones as the last version. For example, if the artifact has version 1.2.1 and version 2.0.0-RC1 by default we will use 1.2.1. If you would prefer to select 2.0.0-RC1 uncheck this box:</p>
+                  <p>If possible we do not use any release candidate or milestone as the default version. For example, if an artifact has version 1.2.1 and  2.0.0-RC1, we will use 1.2.1 as default. If you prefer to select 2.0.0-RC1 uncheck this box:</p>
                   <input type="checkbox" name="defaultStableVersion" @if(project.settings.defaultStableVersion){ checked } id="defaultStableVersion">
                   <label label-for="defaultStableVersion">Do not select pre-released versions</label>
 

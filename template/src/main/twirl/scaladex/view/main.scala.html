@@ -8,7 +8,7 @@
   title: String, showSearch: Boolean, user: Option[UserState],
   params: SearchParams = SearchParams(), you: Boolean = false,
   extraMeta: Seq[HeadMeta] = Seq.empty,
-  totalProjects: Option[Long] = None, totalReleases: Option[Long] = None
+  totalProjects: Option[Long] = None, totalArtifacts: Option[Long] = None
 )(content: Html)
 @btn = @{if(you) "btn-primary" else "btn-default"}
 <!DOCTYPE HTML>
@@ -65,7 +65,7 @@
                     </div>
                     <div class="col-md-7">
                         @if(showSearch) {
-                            @searchinput(params, you, totalProjects, totalReleases)
+                            @searchinput(params, you, totalProjects, totalArtifacts)
                         }
                     </div>
                     <div class="col-md-3">
