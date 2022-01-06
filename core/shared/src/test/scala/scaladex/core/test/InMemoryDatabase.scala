@@ -38,8 +38,10 @@ class InMemoryDatabase extends SchedulerDatabase {
     Future.successful(())
   }
 
-  override def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit] =
+  override def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit] = {
+    projects.update(ref, projects(ref).copy(settings = settings))
     Future.successful(())
+  }
 
   override def getProject(projectRef: Project.Reference): Future[Option[Project]] =
     Future.successful(projects.get(projectRef))
