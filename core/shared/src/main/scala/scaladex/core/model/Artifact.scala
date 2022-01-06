@@ -139,7 +139,7 @@ case class Artifact(
     (scaladocPattern, resolver) match {
       case (None, None) =>
         Some(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version")
-      case (None, Some(_)) => None
+      case (None, Some(_))    => None
       case (Some(pattern), _) => Some(evalLink(pattern))
     }
 

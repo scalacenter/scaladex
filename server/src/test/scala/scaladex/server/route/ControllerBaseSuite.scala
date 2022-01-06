@@ -1,6 +1,7 @@
 package scaladex.server.route
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
@@ -10,7 +11,6 @@ import scaladex.infra.storage.DataPaths
 import scaladex.infra.storage.local.LocalStorageRepo
 import scaladex.server.GithubUserSession
 import scaladex.server.config.ServerConfig
-import org.scalatest.funspec.AsyncFunSpec
 
 trait ControllerBaseSuite extends AsyncFunSpec with Matchers with ScalatestRouteTest {
   val config: ServerConfig = ServerConfig.load()

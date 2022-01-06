@@ -4,21 +4,20 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
+import akka.http.scaladsl.model.FormData
 import akka.http.scaladsl.model.StatusCodes
 import org.scalatest.BeforeAndAfterAll
 import scaladex.core.test.Values
-import akka.http.scaladsl.model.FormData
 
 class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterAll {
   import Values._
 
-  def insertPlayJson(): Future[Unit] = {
+  def insertPlayJson(): Future[Unit] =
     for {
       _ <- database.insertArtifact(PlayJsonExtra.artifact, Seq.empty, Values.now)
       _ <- database.updateProjectCreationDate(PlayJsonExtra.reference, PlayJsonExtra.creationDate)
       _ <- database.updateGithubInfoAndStatus(PlayJsonExtra.reference, PlayJsonExtra.githubInfo, ok)
     } yield ()
-  }
 
   override def beforeAll(): Unit =
     Await.result(insertPlayJson(), Duration.Inf)
@@ -57,7 +56,7 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterAll {
   }
 
   describe("POST edit/orga/repo") {
-    it ("should replace empty customScalaDoc with None")  {
+    it("should replace empty customScalaDoc with None") {
       val formData = FormData(
         "primaryTopic" -> "serialization",
         "beginnerIssuesLabel" -> "",
@@ -75,10 +74,10 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterAll {
       Post(s"/edit/${PlayJsonExtra.reference}", formData) ~> projectPages.routes ~> check {
         status shouldBe StatusCodes.SeeOther
         for (project <- database.getProject(PlayJsonExtra.reference))
-        yield {
-          val settings = project.get.settings
-          settings shouldBe PlayJsonExtra.settings
-        }
+          yield {
+            val settings = project.get.settings
+            settings shouldBe PlayJsonExtra.settings
+          }
       }
     }
   }

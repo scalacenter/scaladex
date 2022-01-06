@@ -143,7 +143,7 @@ class ProjectPages(
             )
           )
         }
-    },
+      },
       get {
         path("artifacts" / organizationM / repositoryM)((org, repo) =>
           optionalSession(refreshable, usingCookies) { userId =>
