@@ -96,6 +96,11 @@ object Values {
         "compile"
       )
     val githubInfo: GithubInfo = GithubInfo.empty
+    val settings: Project.Settings =
+      Project.Settings.default.copy(
+        defaultArtifact = Some(artifact.artifactName),
+        primaryTopic = Some("serialization")
+      )
   }
 
   object Cats {

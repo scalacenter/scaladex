@@ -37,7 +37,7 @@ case class Artifact(
 
   val mavenReference: Artifact.MavenReference = Artifact.MavenReference(groupId.value, artifactId, version.toString)
 
-  def artifactFullHttpUrl(env: Env): String =
+  def fullHttpUrl(env: Env): String =
     env match {
       case Env.Prod => s"https://index.scala-lang.org$artifactHttpPath"
       case Env.Dev =>
@@ -52,7 +52,7 @@ case class Artifact(
   }
 
   def badgeUrl(env: Env): String =
-    s"${artifactFullHttpUrl(env)}/latest-by-scala-version.svg" +
+    s"${fullHttpUrl(env)}/latest-by-scala-version.svg" +
       (platform match {
         case _: Platform.ScalaJvm => ""
         case _                    => s"?targetType=${platform.platformType}"
@@ -135,20 +135,12 @@ case class Artifact(
     ).flatten.mkString("\n")
   }
 
-  def scalaDocURL(customScalaDoc: Option[String]): Option[String] =
-    customScalaDoc match {
-      case None =>
-        if (resolver.isEmpty) {
-          /* no frame
-           * hosted on s3 at:
-           *https://static.javadoc.io/$groupId/$artifactId/$version/index.html#package
-           * HEAD to check 403 vs 200
-           */
-          Some(
-            s"https://www.javadoc.io/doc/$groupId/$artifactId/$version"
-          )
-        } else None
-      case Some(rawLink) => Some(evalLink(rawLink))
+  def scaladoc(scaladocPattern: Option[String]): Option[String] =
+    (scaladocPattern, resolver) match {
+      case (None, None) =>
+        Some(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version")
+      case (None, Some(_))    => None
+      case (Some(pattern), _) => Some(evalLink(pattern))
     }
 
   // todo: Add tests for this
@@ -176,10 +168,8 @@ case class Artifact(
       .mkString(tryBaseUrl + "?", "&", "")
   }
 
-  def documentationURLs(
-      documentationLinks: List[DocumentationLink]
-  ): List[DocumentationLink] =
-    documentationLinks.map { case DocumentationLink(label, url) => DocumentationLink(label, evalLink(url)) }
+  def documentationLinks(patterns: List[DocumentationLink]): List[DocumentationLink] =
+    patterns.map { case DocumentationLink(label, url) => DocumentationLink(label, evalLink(url)) }
 
   /**
    * Documentation link are often related to a release version
@@ -187,8 +177,8 @@ case class Artifact(
    * we want to substitute input such as
    * https://playframework.com/documentation/[major].[minor].x/Home
    */
-  private def evalLink(rawLink: String): String =
-    rawLink
+  private def evalLink(pattern: String): String =
+    pattern
       .replace("[groupId]", groupId.toString)
       .replace("[artifactId]", artifactId)
       .replace("[version]", version.toString)

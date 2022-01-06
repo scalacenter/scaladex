@@ -116,8 +116,8 @@ class ProjectPages(
 
   val routes: Route =
     concat(
-      post(
-        path("edit" / organizationM / repositoryM)((organization, repository) =>
+      post {
+        path("edit" / organizationM / repositoryM) { (organization, repository) =>
           optionalSession(refreshable, usingCookies)(_ =>
             pathEnd(
               editForm { form =>
@@ -133,7 +133,7 @@ class ProjectPages(
                       StatusCodes.SeeOther
                     )
                   case Failure(e) =>
-                    println(s"error sorry ${e.getMessage()}")
+                    logger.error(s"Cannot save settings of project $ref")
                     redirect(
                       Uri(s"/$organization/$repository"),
                       StatusCodes.SeeOther
@@ -142,8 +142,8 @@ class ProjectPages(
               }
             )
           )
-        )
-      ),
+        }
+      },
       get {
         path("artifacts" / organizationM / repositoryM)((org, repo) =>
           optionalSession(refreshable, usingCookies) { userId =>
@@ -318,6 +318,86 @@ class ProjectPages(
             }
           }
         )
+      }
+    )
+
+  // TODO remove all unused parameters
+  private val editForm: Directive1[Project.Settings] =
+    formFieldSeq.tflatMap(fields =>
+      formFields(
+        (
+          "contributorsWanted".as[Boolean] ? false,
+          "defaultArtifact".?,
+          "defaultStableVersion".as[Boolean] ? false,
+          "strictVersions".as[Boolean] ? false,
+          "deprecated".as[Boolean] ? false,
+          "artifactDeprecations".as[String].*,
+          "cliArtifacts".as[String].*,
+          "customScalaDoc".?,
+          "primaryTopic".?,
+          "beginnerIssuesLabel".?,
+          "beginnerIssues".?,
+          "selectedBeginnerIssues".as[String].*,
+          "chatroom".?,
+          "contributingGuide".?,
+          "codeOfConduct".?
+        )
+      ).tmap {
+        case (
+              contributorsWanted,
+              rawDefaultArtifact,
+              defaultStableVersion,
+              strictVersions,
+              deprecated,
+              rawArtifactDeprecations,
+              rawCliArtifacts,
+              rawCustomScalaDoc,
+              rawPrimaryTopic,
+              rawBeginnerIssuesLabel,
+              rawBeginnerIssues,
+              selectedBeginnerIssues,
+              rawChatroom,
+              rawContributingGuide,
+              rawCodeOfConduct
+            ) =>
+          val documentationLinks =
+            fields._1
+              .filter { case (key, _) => key.startsWith("documentationLinks") }
+              .groupBy {
+                case (key, _) =>
+                  key
+                    .drop("documentationLinks[".length)
+                    .takeWhile(_ != ']')
+              }
+              .values
+              .map {
+                case Vector((a, b), (_, d)) =>
+                  if (a.contains("label")) (b, d)
+                  else (d, b)
+              }
+              .flatMap {
+                case (label, link) =>
+                  Project.DocumentationLink.from(label, link)
+              }
+              .toList
+
+          def noneIfEmpty(value: String): Option[String] =
+            if (value.isEmpty) None else Some(value)
+
+          val settings: Project.Settings = Project.Settings(
+            defaultStableVersion,
+            rawDefaultArtifact.flatMap(noneIfEmpty).map(Artifact.Name.apply),
+            strictVersions,
+            rawCustomScalaDoc.flatMap(noneIfEmpty),
+            documentationLinks,
+            deprecated,
+            contributorsWanted,
+            rawArtifactDeprecations.map(Artifact.Name.apply).toSet,
+            rawCliArtifacts.map(Artifact.Name.apply).toSet,
+            rawPrimaryTopic.flatMap(noneIfEmpty),
+            rawBeginnerIssuesLabel.flatMap(noneIfEmpty)
+          )
+          Tuple1(settings)
       }
     )
 }
