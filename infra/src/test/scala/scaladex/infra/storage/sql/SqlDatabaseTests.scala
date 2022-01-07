@@ -205,7 +205,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
 
   it("should delete moved projects from project-dependency-table") {
     for {
-      _ <- database.insertProjectDependencies(Seq(ProjectDependency(Cats.reference, Scalafix.reference)))
+      _ <- database.insertProjectDependencies(Seq(ProjectDependency(Scalafix.reference, Cats.reference)))
       _ <- database.insertProjectDependencies(Seq(ProjectDependency(PlayJsonExtra.reference, Scalafix.reference)))
       _ <- database.insertArtifact(Scalafix.artifact, Seq.empty, now)
       _ <- database.moveProject(
@@ -214,7 +214,11 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
         GithubStatus.Moved(now, Project.Reference.from("scala", "fix"))
       )
       _ <- database.deleteMovedProjectFromProjectDependencyTable()
-      result <- database.getMostDependedUponProjects(1)
-    } yield result shouldBe Nil
+      scalafixInverseDeps <- database.countInverseProjectDependencies(Scalafix.reference)
+      catsInverseDeps <- database.countInverseProjectDependencies(Cats.reference)
+    } yield {
+      scalafixInverseDeps shouldBe 0
+      catsInverseDeps shouldBe 0
+    }
   }
 }
