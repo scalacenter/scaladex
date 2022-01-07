@@ -19,6 +19,7 @@ class SearchSynchronizer(database: SchedulerDatabase, searchEngine: SearchEngine
     for {
       allProjects <- database.getAllProjects()
       allProjectsAndStatus = allProjects.map(p => (p, p.githubStatus))
+      deprecatedProjects = allProjects.filter(_.settings.deprecated).map(_.reference).toSet
 
       // Create a map of project reference to their old references
       movedProjects = allProjectsAndStatus
@@ -27,10 +28,14 @@ class SearchSynchronizer(database: SchedulerDatabase, searchEngine: SearchEngine
             newRef -> p.reference
         }
         .groupMap { case (newRef, ref) => newRef } { case (newRef, ref) => ref }
-      projectsToDelete = allProjectsAndStatus.collect {
-        case (p, GithubStatus.NotFound(_) | GithubStatus.Failed(_, _, _)) => p.reference
-      }
-      projectsToSync = allProjectsAndStatus.collect { case (p, GithubStatus.Ok(_) | GithubStatus.Unknown(_)) => p }
+      projectsToDelete = deprecatedProjects ++
+        allProjectsAndStatus.collect {
+          case (p, GithubStatus.NotFound(_) | GithubStatus.Failed(_, _, _)) => p.reference
+        }
+      projectsToSync = allProjectsAndStatus
+        .collect {
+          case (p, GithubStatus.Ok(_) | GithubStatus.Unknown(_)) if !deprecatedProjects.contains(p.reference) => p
+        }
 
       _ = logger.info(s"${movedProjects.size} projects were moved")
       _ = logger.info(s"Deleting ${projectsToDelete.size} projects from search engine")

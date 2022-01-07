@@ -22,7 +22,6 @@ import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserState
 import scaladex.core.service.LocalStorageApi
 import scaladex.core.service.WebDatabase
-import scaladex.core.util.ScalaExtensions._
 import scaladex.infra.storage.DataPaths
 import scaladex.server.GithubUserSession
 import scaladex.server.TwirlSupport._
@@ -80,10 +79,10 @@ class ProjectPages(
       case Some(project) =>
         for {
           artifats <- database.getArtifacts(projectRef)
-          selectedArtifact <- selection
+          selectedArtifact = selection
             .filterArtifacts(artifats, project)
             .headOption
-            .toFuture(new Exception(s"no artifact found for $projectRef"))
+            .getOrElse(throw new Exception(s"no artifact found for $projectRef"))
           directDependencies <- database.getDirectDependencies(selectedArtifact)
           reverseDependency <- database.getReverseDependencies(selectedArtifact)
 
@@ -152,8 +151,8 @@ class ProjectPages(
             val res =
               for {
                 projectOpt <- database.getProject(ref)
-                project <- projectOpt.toFuture(
-                  new Exception(s"project ${ref} not found")
+                project = projectOpt.getOrElse(
+                  throw new Exception(s"project ${ref} not found")
                 )
                 artifacts <- database.getArtifacts(project.reference)
                 // some computation
