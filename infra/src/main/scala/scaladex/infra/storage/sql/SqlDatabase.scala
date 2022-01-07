@@ -151,6 +151,13 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] =
     run(ProjectDependenciesTable.countInverseDependencies.unique(projectRef))
 
+  override def deleteMovedProjectFromProjectDependencyTable(): Future[Unit] =
+    for {
+      moved <- run(ProjectTable.selectProjectByGithubStatus.to[List]("Moved"))
+      _ <- run(ProjectDependenciesTable.deleteSourceProject.updateMany(moved))
+      _ <- run(ProjectDependenciesTable.deleteTargetProject.updateMany(moved))
+    } yield ()
+
   override def getMostDependedUponProjects(max: Int): Future[List[(Project, Long)]] =
     for {
       resF <- run(
@@ -158,6 +165,7 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
           .getMostDependentUponProjects(max)
           .to[List]
       )
+      _ = println(s"ici $resF")
       res <- resF.map {
         case (ref, count) =>
           getProject(ref).map(projectOpt => projectOpt.map(_ -> count))

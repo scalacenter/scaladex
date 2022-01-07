@@ -10,4 +10,5 @@ class ProjectDependenciesTableTests extends AnyFunSpec with BaseDatabaseSuite wi
   it("check getMostDependentUponProjects") {
     check(ProjectDependenciesTable.getMostDependentUponProjects(1))
   }
+  it("check deleteSourceProject")(check(ProjectDependenciesTable.deleteSourceProject))
 }
