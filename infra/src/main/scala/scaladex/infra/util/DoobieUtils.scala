@@ -118,6 +118,11 @@ object DoobieUtils {
     Query0(sql)
   }
 
+  def deleteRequest[T: Write](table: String, where: Seq[String]): Update[T] = {
+    val whereK = where.map(k => s"$k=?").mkString(" AND ")
+    Update(s"DELETE FROM $table WHERE $whereK")
+  }
+
   object Mappings {
     implicit val contributorMeta: Meta[List[GithubContributor]] =
       Meta[String].timap(fromJson[List[GithubContributor]](_).get)(toJson(_))

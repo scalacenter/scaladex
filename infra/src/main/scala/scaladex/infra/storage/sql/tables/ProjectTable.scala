@@ -61,4 +61,7 @@ object ProjectTable {
 
   val selectProject: Query0[Project] =
     selectRequest(fullTable, allFields)
+
+  val selectProjectByGithubStatus: Query[String, Project.Reference] =
+    selectRequest(table, referenceFields, Seq("github_status"))
 }

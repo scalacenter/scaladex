@@ -29,4 +29,10 @@ object ProjectDependenciesTable {
       limit = Some(limit)
     )
   }
+  val deleteSourceProject: Update[Project.Reference] =
+    deleteRequest(table, sourceFields)
+
+  val deleteTargetProject: Update[Project.Reference] =
+    deleteRequest(table, targetFields)
+
 }

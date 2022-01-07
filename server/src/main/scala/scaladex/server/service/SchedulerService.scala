@@ -45,6 +45,8 @@ class SchedulerService(database: SchedulerDatabase, searchEngine: SearchEngine, 
             s"not able to getAllProjectDependencies because of ${e.getMessage}"
           )
         )
+      _ = println(s" I m here!")
+      _ <- database.deleteMovedProjectFromProjectDependencyTable()
       _ <- database
         .insertProjectDependencies(projectWithDependencies)
         .mapFailure(e =>
