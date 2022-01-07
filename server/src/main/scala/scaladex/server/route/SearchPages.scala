@@ -24,12 +24,12 @@ class SearchPages(env: Env, searchEngine: SearchEngine, session: GithubUserSessi
   private def search(params: SearchParams, user: Option[UserState], uri: String) =
     complete {
       val resultsF = searchEngine.find(params)
-      val topicsF = searchEngine.getTopics(params)
-      val platformTypesF = searchEngine.getPlatformTypes(params)
-      val scalaVersionsF = searchEngine.getScalaVersions(params)
-      val scalaJsVersionsF = searchEngine.getScalaJsVersions(params)
-      val scalaNativeVersionsF = searchEngine.getScalaNativeVersions(params)
-      val sbtVersionsF = searchEngine.getSbtVersions(params)
+      val topicsF = searchEngine.countByTopics(params, 50)
+      val platformTypesF = searchEngine.countByPlatformTypes(params, 10)
+      val scalaVersionsF = searchEngine.countByScalaVersions(params, 10)
+      val scalaJsVersionsF = searchEngine.countByScalaJsVersions(params, 10)
+      val scalaNativeVersionsF = searchEngine.countByScalaNativeVersions(params, 10)
+      val sbtVersionsF = searchEngine.countBySbtVersions(params, 10)
 
       for {
         Page(pagination, projects) <- resultsF

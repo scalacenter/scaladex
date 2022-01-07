@@ -14,7 +14,6 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubStatus
-import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.service.SchedulerDatabase
@@ -108,7 +107,7 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   ): Future[Seq[Artifact]] =
     run(ArtifactTable.selectArtifactByProjectAndName.to[List]((projectRef, artifactName)))
 
-  override def countProjects(): Future[Long] =
+  def countProjects(): Future[Long] =
     run(ProjectTable.countProjects.unique)
 
   override def countArtifacts(): Future[Long] =
@@ -122,19 +121,6 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
 
   override def getReverseDependencies(artifact: Artifact): Future[List[ArtifactDependency.Reverse]] =
     run(ArtifactDependencyTable.selectReverseDependency.to[List](artifact.mavenReference))
-
-  override def getAllTopics(): Future[List[String]] =
-    run(GithubInfoTable.selectAllTopics.to[List]).map(_.flatten)
-
-  override def getAllPlatforms(): Future[Map[Project.Reference, Set[Platform]]] =
-    run(ArtifactTable.selectPlatform.to[List])
-      .map(_.groupMap {
-        case (org, repo, _) =>
-          Project.Reference(org, repo)
-      }(_._3).view.mapValues(_.toSet).toMap)
-
-  override def getLatestProjects(limit: Int): Future[Seq[Project]] =
-    run(ProjectTable.selectLatestProjects(limit).to[Seq])
 
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.count.unique)
@@ -158,20 +144,6 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
       _ <- run(ProjectDependenciesTable.deleteTargetProject.updateMany(moved))
     } yield ()
 
-  override def getMostDependedUponProjects(max: Int): Future[List[(Project, Long)]] =
-    for {
-      resF <- run(
-        ProjectDependenciesTable
-          .getMostDependentUponProjects(max)
-          .to[List]
-      )
-      _ = println(s"ici $resF")
-      res <- resF.map {
-        case (ref, count) =>
-          getProject(ref).map(projectOpt => projectOpt.map(_ -> count))
-      }.sequence
-    } yield res.flatten
-
   override def computeAllProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]] =
     run(ArtifactTable.selectOldestByProject.to[List])
 
@@ -185,7 +157,7 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
       case `expectedRows` => ()
       case other =>
         throw new Exception(
-          s"Only $other rows were affected (expected: $expectedRows)"
+          s"$other rows were affected (expected: $expectedRows)"
         )
     }
 
@@ -194,7 +166,4 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
 
   private def run[A](v: doobie.ConnectionIO[A]): Future[A] =
     v.transact(xa).unsafeToFuture()
-}
-object SqlDatabase {
-  val sizeOfInsertMany = 10000
 }

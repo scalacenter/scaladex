@@ -4,10 +4,10 @@ import scaladex.core.model.GithubIssue
 import scaladex.core.model.Url
 
 case class GithubInfoDocument(
-    avatarUrl: Option[Url],
+    logo: Option[Url],
     description: Option[String],
     readme: Option[String],
-    beginnerIssues: List[GithubIssue],
+    openIssues: List[GithubIssue],
     topics: Seq[String],
     contributingGuide: Option[Url],
     chatroom: Option[Url],

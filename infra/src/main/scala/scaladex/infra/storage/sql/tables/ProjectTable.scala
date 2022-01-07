@@ -47,15 +47,6 @@ object ProjectTable {
   val selectByReference: Query[Project.Reference, Project] =
     selectRequest(fullTable, allFields, referenceFields.map(f => s"p.$f"))
 
-  def selectLatestProjects(limit: Long): Query0[Project] =
-    selectRequest(
-      fullTable,
-      allFields.mkString(", "),
-      where = Some(s"p.creation_date IS NOT NULL"),
-      orderBy = Some("p.creation_date DESC"),
-      limit = Some(limit)
-    )
-
   val selectReferenceAndStatus: Query0[(Project.Reference, GithubStatus)] =
     selectRequest(table, referenceFields ++ githubStatusFields)
 

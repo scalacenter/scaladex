@@ -76,7 +76,7 @@ object ElasticsearchMapping extends ElasticDsl {
       .fields(
         keywordField("keyword").normalizer("lowercase")
       ),
-    nestedField("githubInfo.beginnerIssues"),
+    nestedField("githubInfo.openIssues"),
     objectField("formerReferences").fields(
       textField("organization").analyzer("standard"),
       textField("repository").analyzer("standard")

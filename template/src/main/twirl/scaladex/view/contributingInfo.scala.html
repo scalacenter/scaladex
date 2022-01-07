@@ -5,10 +5,10 @@
   @for(github <- project.githubInfo) {
     @github.description.map(desc => <p class="description">@desc</p>)
     <ul>
-      @github.beginnerIssues.take(3).map(issue => <a href="@issue.url.target" target="_blank">@issue</a>)
+      @github.openIssues.take(3).map(issue => <a href="@issue.url.target" target="_blank">@issue</a>)
     </ul>
 
-    @if(3 < github.beginnerIssues.length) {
+    @if(3 < github.openIssues.length) {
       @for(label <- project.settings.beginnerIssuesLabel) {
           <a href="https://github.com/@{project.reference}/labels/@{label}"
           target="_blank">More Issues ...</a>

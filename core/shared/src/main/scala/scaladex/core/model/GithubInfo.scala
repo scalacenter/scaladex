@@ -22,10 +22,7 @@ import scaladex.core.model.search.GithubInfoDocument
  * @param contributingGuide CONTRIBUTING.md
  * @param codeOfConduct link to code of conduct
  * @param chatroom link to chatroom (ex: https://gitter.im/scalacenter/scaladex)
- * @param beginnerIssuesLabel label used to tag beginner-friendly issues
- * @param beginnerIssues list of beginner-friendly issues for the project
- * @param selectedBeginnerIssues list of beginner-friendly issues selected by maintainer which show in UI
- * @param filteredBeginnerIssues list of beginner-friendly issues that were filtered by contributing search
+ * @param openIssues list of all open issues for the project
  */
 case class GithubInfo(
     homepage: Option[Url],
@@ -43,16 +40,16 @@ case class GithubInfo(
     contributingGuide: Option[Url],
     codeOfConduct: Option[Url],
     chatroom: Option[Url],
-    beginnerIssues: List[GithubIssue] // right now it's all issues, not only beginners issues
+    openIssues: List[GithubIssue] // right now it's all issues, not only beginners issues
 ) {
   val contributorCount: Int = contributors.size
 
   def toDocument: GithubInfoDocument =
     GithubInfoDocument(
-      avatarUrl = logo,
+      logo = logo,
       description = description,
       readme = readme,
-      beginnerIssues = beginnerIssues,
+      openIssues = openIssues,
       topics = topics.toSeq,
       contributingGuide = contributingGuide,
       chatroom = chatroom,
@@ -80,6 +77,6 @@ object GithubInfo {
     contributingGuide = None,
     codeOfConduct = None,
     chatroom = None,
-    beginnerIssues = List()
+    openIssues = List()
   )
 }

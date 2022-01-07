@@ -117,7 +117,7 @@ object Server {
       new Oauth2(config.oAuth2, githubAuth, session).routes
     )
     val userFacingRoutes = concat(
-      new FrontPage(env, webDatabase, session).routes,
+      new FrontPage(env, webDatabase, searchEngine, session).routes,
       new AdminPages(env, schedulerService, session).routes,
       redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
         concat(

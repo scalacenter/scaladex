@@ -8,64 +8,43 @@ import akka.http.scaladsl.server.Route
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import play.twirl.api.HtmlFormat
-import scaladex.core.model.Artifact
 import scaladex.core.model.Env
-import scaladex.core.model.Platform
-import scaladex.core.model.Project
 import scaladex.core.model.UserState
+import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 import scaladex.server.GithubUserSession
 import scaladex.server.TwirlSupport._
 import scaladex.view.html.frontpage
 
-class FrontPage(
-    env: Env,
-    database: WebDatabase,
-    session: GithubUserSession
-)(implicit ec: ExecutionContext) {
+class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine, session: GithubUserSession)(
+    implicit ec: ExecutionContext
+) {
   import session.implicits._
 
-  val limitOfProjectShownInFrontPage = 12
+  val limitOfProjects = 12
 
-  private def frontPage(
-      userInfo: Option[UserState]
-  ): Future[HtmlFormat.Appendable] = {
-    val topicsF = database.getAllTopics()
-    val allPlatformsF = database.getAllPlatforms()
-    val latestProjectsF = database.getLatestProjects(limitOfProjectShownInFrontPage)
-    val latestArtifactsF = Future.successful(Seq.empty[Artifact]) // TODO get from DB
-    val contributingProjectsF = Future.successful(List.empty[Project]) // TODO get from DB
+  private def frontPage(userInfo: Option[UserState]): Future[HtmlFormat.Appendable] = {
+    val totalProjectsF = searchEngine.count()
+    val totalArtifactsF = database.countArtifacts()
+    val topicsF = searchEngine.countByTopics(50)
+    val platformsF = searchEngine.countByPlatformTypes(10)
+    val scalaFamiliesF = searchEngine.countByScalaVersions(10)
+    val scalaJsVersionsF = searchEngine.countByScalaJsVersions(10)
+    val scalaNativeVersionsF = searchEngine.countByScalaNativeVersions(10)
+    val sbtVersionsF = searchEngine.countBySbtVersison(10)
+    val mostDependedUponF = searchEngine.getMostDependedUpon(limitOfProjects)
+    val latestProjectsF = searchEngine.getLatest(limitOfProjects)
     for {
-      topics <- topicsF.map(FrontPage.getTopTopics(_, 50))
-      allPlatforms <- allPlatformsF
-      platformTypeWithCount = FrontPage.getPlatformTypeWithCount(allPlatforms)
-      scalaFamilyWithCount = FrontPage.getScalaLanguageVersionWithCount(
-        allPlatforms
-      )
-      scalaJsVersions = FrontPage
-        .getPlatformWithCount(allPlatforms) {
-          case p: Platform.ScalaJs =>
-            p.scalaJsV
-        }
-      scalaNativeVersions = FrontPage
-        .getPlatformWithCount(allPlatforms) {
-          case p: Platform.ScalaNative =>
-            p.scalaNativeV
-        }
-      sbtVersions = FrontPage
-        .getPlatformWithCount(allPlatforms) {
-          case p: Platform.SbtPlugin =>
-            p.sbtV
-        }
-      listOfProjects <- database.getMostDependedUponProjects(limitOfProjectShownInFrontPage)
-      mostDependedUpon = listOfProjects
-        .sortBy { case (_, dependents) => -dependents }
-        .map { case (project, _) => project }
+      totalProjects <- totalProjectsF
+      totalArtifacts <- totalArtifactsF
+      topics <- topicsF
+      platforms <- platformsF
+      scalaFamilies <- scalaFamiliesF
+      scalaJsVersions <- scalaJsVersionsF
+      scalaNativeVersions <- scalaNativeVersionsF
+      sbtVersions <- sbtVersionsF
+      mostDependedUpon <- mostDependedUponF
       latestProjects <- latestProjectsF
-      latestArtifacts <- latestArtifactsF
-      totalProjects <- database.countProjects()
-      totalArtifacts <- database.countArtifacts()
-      contributingProjects <- contributingProjectsF
     } yield {
 
       def query(label: String)(xs: String*): String =
@@ -86,19 +65,17 @@ class FrontPage(
       frontpage(
         env,
         topics,
-        platformTypeWithCount,
-        scalaFamilyWithCount,
+        platforms,
+        scalaFamilies,
         scalaJsVersions,
         scalaNativeVersions,
         sbtVersions,
         latestProjects,
         mostDependedUpon,
-        latestArtifacts,
         userInfo,
         ecosystems,
         totalProjects,
-        totalArtifacts,
-        contributingProjects
+        totalArtifacts
       )
     }
   }
@@ -107,43 +84,4 @@ class FrontPage(
     pathEndOrSingleSlash {
       optionalSession(refreshable, usingCookies)(userId => complete(frontPage(session.getUser(userId))))
     }
-}
-object FrontPage {
-  def getTopTopics(topics: Seq[String], size: Int): List[(String, Int)] =
-    topics
-      .map(_.toLowerCase)
-      .groupMapReduce(identity)(_ => 1)(_ + _)
-      .toList
-      .sortBy(-_._2)
-      .take(size)
-      .sortBy(_._1)
-
-  override def hashCode(): Int = super.hashCode()
-
-  def getPlatformTypeWithCount(
-      platforms: Map[Project.Reference, Set[Platform]]
-  ): List[(Platform.PlatformType, Int)] =
-    getPlatformWithCount(platforms) {
-      case platform: Platform =>
-        platform.platformType
-    }
-
-  def getScalaLanguageVersionWithCount(
-      platforms: Map[Project.Reference, Set[Platform]]
-  ): List[(String, Int)] =
-    getPlatformWithCount(platforms) {
-      case platform: Platform if platform.scalaVersion.isDefined =>
-        platform.scalaVersion.map(_.family).get
-    }
-
-  def getPlatformWithCount[A, B](
-      platforms: Map[Project.Reference, Set[A]]
-  )(
-      collect: PartialFunction[A, B]
-  )(implicit orderB: Ordering[(B, Int)]): List[(B, Int)] =
-    platforms.values
-      .flatMap(_.collect(collect))
-      .groupMapReduce(identity)(_ => 1)(_ + _)
-      .toList
-      .sorted
 }

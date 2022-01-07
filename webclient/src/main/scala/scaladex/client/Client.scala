@@ -137,10 +137,10 @@ object Client {
               }
               val selectEl = el.asInstanceOf[HTMLSelectElement]
               selectEl.innerHTML = options.mkString
-              Dom.getElementById("beginnerIssues").foreach { beginnerIssuesEl =>
-                val beginnerIssuesJson =
+              Dom.getElementById("openIssues").foreach { openIssuesEl =>
+                val openIssuesJson =
                   s"[${issues.map(getIssueJson).mkString(",")}]"
-                beginnerIssuesEl.asInput.value = beginnerIssuesJson
+                openIssuesEl.asInput.value = openIssuesJson
               }
 
               disableBeginnerIssues(false)
@@ -163,7 +163,7 @@ object Client {
         Dom.getElementById("selectedBeginnerIssues").foreach { el =>
           val selectEl = el.asInstanceOf[HTMLSelectElement]
           selectEl.innerHTML = ""
-          Dom.getElementById("beginnerIssues").foreach(beginnerIssuesEl => beginnerIssuesEl.asInput.value = "")
+          Dom.getElementById("openIssues").foreach(openIssuesEl => openIssuesEl.asInput.value = "")
           disableBeginnerIssues(true)
         }
       }

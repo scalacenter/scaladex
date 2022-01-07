@@ -5,7 +5,6 @@ import java.time.Instant
 import doobie._
 import doobie.util.update.Update
 import scaladex.core.model.Artifact
-import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.infra.util.DoobieUtils.Mappings._
 import scaladex.infra.util.DoobieUtils._
@@ -40,13 +39,6 @@ object ArtifactTable {
 
   val selectArtifactByProjectAndName: Query[(Project.Reference, Artifact.Name), Artifact] =
     selectRequest(table, Seq("*"), projectReferenceFields :+ "artifact_name")
-
-  val selectPlatform: Query0[(Project.Organization, Project.Repository, Platform)] =
-    selectRequest(
-      table,
-      "organization, repository, platform",
-      groupBy = Seq("organization", "repository", "platform")
-    )
 
   val selectOldestByProject: Query0[(Instant, Project.Reference)] =
     selectRequest(
