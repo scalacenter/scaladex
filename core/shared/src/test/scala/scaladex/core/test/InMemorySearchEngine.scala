@@ -13,6 +13,7 @@ import scaladex.core.model.search.SearchParams
 import scaladex.core.service.SearchEngine
 
 class InMemorySearchEngine extends SearchEngine {
+
   val allDocuments: mutable.Map[Project.Reference, ProjectDocument] = mutable.Map.empty
 
   override def insert(project: ProjectDocument): Future[Unit] = {
@@ -22,20 +23,38 @@ class InMemorySearchEngine extends SearchEngine {
 
   override def delete(reference: Project.Reference): Future[Unit] = ???
 
+  override def count(): Future[Long] = ???
+
+  override def countByPlatformTypes(limit: Int): Future[Seq[(Platform.PlatformType, Long)]] = ???
+
+  override def countByScalaVersions(limit: Int): Future[Seq[(String, Long)]] = ???
+
+  override def countByScalaJsVersions(limit: Int): Future[Seq[(BinaryVersion, Long)]] = ???
+
+  override def countByScalaNativeVersions(limit: Int): Future[Seq[(BinaryVersion, Long)]] = ???
+
+  override def countBySbtVersison(limit: Int): Future[Seq[(BinaryVersion, Long)]] = ???
+
+  override def countByTopics(limit: Int): Future[Seq[(String, Long)]] = ???
+
+  override def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]] = ???
+
+  override def getLatest(limit: Int): Future[Seq[ProjectDocument]] = ???
+
   override def find(params: SearchParams): Future[Page[ProjectHit]] = ???
 
-  override def autocomplete(params: SearchParams): Future[Seq[ProjectDocument]] = ???
+  override def autocomplete(params: SearchParams, limit: Int): Future[Seq[ProjectDocument]] = ???
 
-  override def getTopics(params: SearchParams): Future[Seq[(String, Long)]] = ???
+  override def countByTopics(params: SearchParams, limit: Int): Future[Seq[(String, Long)]] = ???
 
-  override def getPlatformTypes(params: SearchParams): Future[Seq[(Platform.PlatformType, Long)]] = ???
+  override def countByPlatformTypes(params: SearchParams, limit: Int): Future[Seq[(Platform.PlatformType, Long)]] = ???
 
-  override def getScalaVersions(params: SearchParams): Future[Seq[(String, Long)]] = ???
+  override def countByScalaVersions(params: SearchParams, limit: Int): Future[Seq[(String, Long)]] = ???
 
-  override def getScalaJsVersions(params: SearchParams): Future[Seq[(BinaryVersion, Long)]] = ???
+  override def countByScalaJsVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]] = ???
 
-  override def getScalaNativeVersions(params: SearchParams): Future[Seq[(BinaryVersion, Long)]] = ???
+  override def countByScalaNativeVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]] = ???
 
-  override def getSbtVersions(params: SearchParams): Future[Seq[(BinaryVersion, Long)]] = ???
+  override def countBySbtVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]] = ???
 
 }

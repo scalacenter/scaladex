@@ -131,7 +131,7 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
                   SearchApi.Project(
                     organization.value,
                     repository.value,
-                    githubInfo.flatMap(_.avatarUrl.map(_.target)),
+                    githubInfo.flatMap(_.logo.map(_.target)),
                     artifactNames.map(_.value)
                   )
                 }
@@ -244,7 +244,7 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
   }
 
   private def autocomplete(params: SearchParams) =
-    for (projects <- searchEngine.autocomplete(params))
+    for (projects <- searchEngine.autocomplete(params, 5))
       yield projects.map { project =>
         AutocompletionResponse(
           project.organization.value,

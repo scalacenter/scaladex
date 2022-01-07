@@ -44,7 +44,7 @@
             @scastie(artifact.scastieURL)
             @project.githubInfo.map(gh => statistic(gh, project.reference, artifactCount, reverseDependency.size))
             @project.githubInfo.map { github =>
-              @if(github.beginnerIssues.nonEmpty && github.chatroom.isDefined && github.contributingGuide.isDefined) {
+              @if(github.openIssues.nonEmpty && github.chatroom.isDefined && github.contributingGuide.isDefined) {
                   <div class="box project-contributing-info">
                     <h4>Contributing Info</h4>
                     <p>Beginner-friendly Issues:</p>

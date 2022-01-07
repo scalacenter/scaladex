@@ -7,8 +7,5 @@ import scaladex.infra.storage.sql.tables.ProjectDependenciesTable
 
 class ProjectDependenciesTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
   it("check insertOrUpdate")(check(ProjectDependenciesTable.insertOrUpdate))
-  it("check getMostDependentUponProjects") {
-    check(ProjectDependenciesTable.getMostDependentUponProjects(1))
-  }
   it("check deleteSourceProject")(check(ProjectDependenciesTable.deleteSourceProject))
 }

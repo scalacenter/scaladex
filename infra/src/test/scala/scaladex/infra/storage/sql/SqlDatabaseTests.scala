@@ -125,30 +125,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     } yield reverseDependencies.map(_.source) should contain theSameElementsAs List(Cats.`core_3:2.6.1`)
   }
 
-  it("should get all topics") {
-    for {
-      _ <- database.insertArtifact(Scalafix.artifact, Seq.empty, now)
-      _ <- database.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, GithubStatus.Ok(now))
-      res <- database.getAllTopics()
-    } yield res should contain theSameElementsAs Scalafix.githubInfo.topics
-  }
-
-  it("should get all platforms") {
-    for {
-      _ <- database.insertArtifact(Cats.`core_3:2.6.1`, Seq.empty, now)
-      _ <- database.insertArtifact(Cats.core_native04_213, Seq.empty, now)
-      _ <- database.insertArtifact(Cats.core_sjs1_3, Seq.empty, now)
-      _ <- database.insertArtifact(Cats.core_sjs06_213, Seq.empty, now)
-      res <- database.getAllPlatforms()
-    } yield res(Cats.reference) should contain theSameElementsAs Set(
-      Cats.`core_3:2.6.1`.platform,
-      Cats.core_native04_213.platform,
-      Cats.core_sjs1_3.platform,
-      Cats.core_sjs06_213.platform
-    )
-  }
-
-  it("should get most dependent project") {
+  it("should compute project dependencies") {
     val artifacts: Map[Artifact, Seq[ArtifactDependency]] = Map(
       Cats.`core_3:2.6.1` -> Seq(
         ArtifactDependency(
@@ -183,34 +160,32 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       projectDependencies <- database.computeProjectDependencies()
       _ <- database.insertProjectDependencies(projectDependencies)
       catsInverseDependencies <- database.countInverseProjectDependencies(Cats.reference)
-      mostDependentProjects <- database.getMostDependedUponProjects(10)
     } yield {
       projectDependencies shouldBe Seq(
         ProjectDependency(Scalafix.reference, Cats.reference),
         ProjectDependency(Cats.reference, Cats.reference),
         ProjectDependency(PlayJsonExtra.reference, Scalafix.reference)
       )
-      mostDependentProjects.map { case (project, deps) => (project.reference, deps) } shouldBe List(
-        Cats.reference -> 2,
-        Scalafix.reference -> 1
-      )
       catsInverseDependencies shouldBe 2
     }
   }
-  it("should update creation date and get latest project") {
+  it("should update creation date") {
     for {
       _ <- database.insertArtifact(Scalafix.artifact, Seq.empty, now)
       _ <- database.insertArtifact(Cats.`core_3:2.6.1`, Seq.empty, now)
       _ <- database.insertArtifact(PlayJsonExtra.artifact, Seq.empty, now)
       creationDates <- database.computeAllProjectsCreationDates()
       _ <- creationDates.mapSync { case (creationDate, ref) => database.updateProjectCreationDate(ref, creationDate) }
-      latestProject <- database.getLatestProjects(2)
-    } yield (latestProject.map(p => p.reference -> p.creationDate) should contain).theSameElementsInOrderAs(
-      Seq(
+      projects <- database.getAllProjects()
+    } yield {
+      val creationDates = projects.map(p => p.reference -> p.creationDate)
+      val expected = Seq(
         Cats.reference -> Cats.`core_3:2.6.1`.releaseDate,
-        Scalafix.reference -> Scalafix.artifact.releaseDate
+        Scalafix.reference -> Scalafix.artifact.releaseDate,
+        PlayJsonExtra.reference -> PlayJsonExtra.artifact.releaseDate
       )
-    )
+      creationDates should contain theSameElementsAs expected
+    }
   }
   it("should createMovedProject") {
     val destination = Project.Reference.from("scala", "fix")
@@ -230,7 +205,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
 
   it("should delete moved projects from project-dependency-table") {
     for {
-      _ <- database.insertProjectDependencies(Seq(ProjectDependency(Cats.reference, Scalafix.reference)))
+      _ <- database.insertProjectDependencies(Seq(ProjectDependency(Scalafix.reference, Cats.reference)))
       _ <- database.insertProjectDependencies(Seq(ProjectDependency(PlayJsonExtra.reference, Scalafix.reference)))
       _ <- database.insertArtifact(Scalafix.artifact, Seq.empty, now)
       _ <- database.moveProject(
@@ -239,7 +214,11 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
         GithubStatus.Moved(now, Project.Reference.from("scala", "fix"))
       )
       _ <- database.deleteMovedProjectFromProjectDependencyTable()
-      result <- database.getMostDependedUponProjects(1)
-    } yield result shouldBe Nil
+      scalafixInverseDeps <- database.countInverseProjectDependencies(Scalafix.reference)
+      catsInverseDeps <- database.countInverseProjectDependencies(Cats.reference)
+    } yield {
+      scalafixInverseDeps shouldBe 0
+      catsInverseDeps shouldBe 0
+    }
   }
 }

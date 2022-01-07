@@ -8,5 +8,4 @@ import scaladex.infra.storage.sql.tables.GithubInfoTable
 class GithubInfoTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
   it("check insert")(check(GithubInfoTable.insert))
   it("check insertOrUpdate")(check(GithubInfoTable.insertOrUpdate))
-  it("check selectAllTopics")(check(GithubInfoTable.selectAllTopics))
 }

@@ -6,14 +6,16 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import com.sksamuel.elastic4s.ElasticClient
-import com.sksamuel.elastic4s.ElasticDsl
+import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.ElasticProperties
+import com.sksamuel.elastic4s.Response
 import com.sksamuel.elastic4s.analysis.Analysis
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.requests.common.HealthStatus
 import com.sksamuel.elastic4s.requests.mappings.MappingDefinition
 import com.sksamuel.elastic4s.requests.searches.SearchHit
 import com.sksamuel.elastic4s.requests.searches.SearchRequest
+import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.requests.searches.aggs.responses.bucket.Terms
 import com.sksamuel.elastic4s.requests.searches.queries.NoopQuery
 import com.sksamuel.elastic4s.requests.searches.queries.Query
@@ -42,9 +44,6 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     extends SearchEngine
     with LazyLogging
     with Closeable {
-
-  import ElasticsearchEngine._
-  import ElasticDsl._
 
   def waitUntilReady(): Unit = {
     def blockUntil(explain: String)(predicate: () => Boolean): Unit = {
@@ -117,19 +116,62 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
   }
 
   def refresh(): Future[Unit] =
-    esClient
-      .execute(refreshIndex(index))
-      .map(_ => ())
+    esClient.execute(refreshIndex(index)).map(_ => ())
 
-  override def autocomplete(params: SearchParams): Future[Seq[ProjectDocument]] = {
+  override def count(): Future[Long] = {
+    val query = must(notDeprecatedQuery)
+    val request = search(index).query(query).size(0)
+    esClient.execute(request).map(_.result.totalHits)
+  }
+
+  override def countByTopics(limit: Int): Future[Seq[(String, Long)]] =
+    aggregations("githubInfo.topics.keyword", notDeprecatedQuery, limit)
+      .map(_.sortBy(_._1))
+
+  def countByPlatformTypes(limit: Int): Future[Seq[(Platform.PlatformType, Long)]] =
+    aggregations("platformTypes", notDeprecatedQuery, limit)
+      .map(
+        _.flatMap {
+          case (platformType, count) =>
+            Platform.PlatformType.ofName(platformType).map((_, count))
+        }
+      )
+      .map(_.sortBy(_._1))
+
+  def countByScalaVersions(limit: Int): Future[Seq[(String, Long)]] =
+    aggregations("scalaVersions", notDeprecatedQuery, limit)
+      .map(_.sortBy(_._1))
+
+  def countByScalaJsVersions(limit: Int): Future[Seq[(BinaryVersion, Long)]] =
+    versionAggregations("scalaJsVersions", notDeprecatedQuery, Platform.ScalaJs.isValid, limit)
+
+  def countByScalaNativeVersions(limit: Int): Future[Seq[(BinaryVersion, Long)]] =
+    versionAggregations("scalaNativeVersions", notDeprecatedQuery, Platform.ScalaNative.isValid, limit)
+  def countBySbtVersison(limit: Int): Future[Seq[(BinaryVersion, Long)]] =
+    versionAggregations("sbtVersions", notDeprecatedQuery, Platform.SbtPlugin.isValid, limit)
+
+  override def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]] = {
+    val request = search(index)
+      .query(notDeprecatedQuery)
+      .sortBy(sortQuery(Some("dependent")))
+      .limit(limit)
+    esClient.execute(request).map(extractDocuments)
+  }
+
+  override def getLatest(limit: Int): Future[Seq[ProjectDocument]] = {
+    val request = search(index)
+      .query(notDeprecatedQuery)
+      .sortBy(fieldSort("creationDate").desc())
+      .limit(limit)
+    esClient.execute(request).map(extractDocuments)
+  }
+
+  override def autocomplete(params: SearchParams, limit: Int): Future[Seq[ProjectDocument]] = {
     val request = search(index)
       .query(gitHubStarScoring(filteredSearchQuery(params)))
       .sortBy(sortQuery(params.sorting))
-      .limit(5)
-
-    esClient
-      .execute(request)
-      .map(response => response.result.hits.hits.toSeq.flatMap(toProjectDocument))
+      .limit(limit)
+    esClient.execute(request).map(extractDocuments)
   }
 
   override def find(params: SearchParams): Future[Page[ProjectHit]] = {
@@ -159,6 +201,9 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       }
   }
 
+  private def extractDocuments(response: Response[SearchResponse]): Seq[ProjectDocument] =
+    response.result.hits.hits.toSeq.flatMap(toProjectDocument)
+
   private def toProjectDocument(hit: SearchHit): Option[ProjectDocument] =
     parser.decode[RawProjectDocument](hit.sourceAsString) match {
       case Right(rawDocument) =>
@@ -172,13 +217,13 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     }
 
   private def toProjectHit(hit: SearchHit): Option[ProjectHit] = {
-    val beginnerIssueHits = getBeginnerIssueHits(hit)
-    toProjectDocument(hit).map(ProjectHit(_, beginnerIssueHits))
+    val openIssueHits = getOpenIssueHits(hit)
+    toProjectDocument(hit).map(ProjectHit(_, openIssueHits))
   }
 
-  private def getBeginnerIssueHits(hit: SearchHit): Seq[GithubIssue] =
+  private def getOpenIssueHits(hit: SearchHit): Seq[GithubIssue] =
     hit.innerHits
-      .get("beginnerIssues")
+      .get("openIssues")
       .filter(_.total.value > 0)
       .toSeq
       .flatMap(_.hits)
@@ -191,12 +236,12 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
         }
       }
 
-  override def getTopics(params: SearchParams): Future[Seq[(String, Long)]] =
-    stringAggregations("githubInfo.topics.keyword", filteredSearchQuery(params))
+  override def countByTopics(params: SearchParams, limit: Int): Future[Seq[(String, Long)]] =
+    aggregations("githubInfo.topics.keyword", filteredSearchQuery(params), limit)
       .map(addMissing(params.topics))
 
-  override def getPlatformTypes(params: SearchParams): Future[Seq[(Platform.PlatformType, Long)]] =
-    stringAggregations("platformTypes", filteredSearchQuery(params))
+  override def countByPlatformTypes(params: SearchParams, limit: Int): Future[Seq[(Platform.PlatformType, Long)]] =
+    aggregations("platformTypes", filteredSearchQuery(params), limit)
       .map(addMissing(params.targetTypes))
       .map(
         _.flatMap {
@@ -204,46 +249,43 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
             Platform.PlatformType.ofName(platformType).map((_, count))
         }
       )
+      .map(_.sortBy(_._1))
 
-  override def getScalaVersions(params: SearchParams): Future[Seq[(String, Long)]] =
-    aggregations("scalaVersions", filteredSearchQuery(params))
-      .map(_.toSeq)
+  override def countByScalaVersions(params: SearchParams, limit: Int): Future[Seq[(String, Long)]] =
+    aggregations("scalaVersions", filteredSearchQuery(params), limit)
       .map(addMissing(params.scalaVersions))
 
-  override def getScalaJsVersions(params: SearchParams): Future[Seq[(BinaryVersion, Long)]] =
-    versionAggregations("scalaJsVersions", params, Platform.ScalaJs.isValid)
+  override def countByScalaJsVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]] =
+    versionAggregations("scalaJsVersions", filteredSearchQuery(params), Platform.ScalaJs.isValid, limit)
       .map(addMissing(params.scalaJsVersions.flatMap(BinaryVersion.parse)))
 
-  override def getScalaNativeVersions(params: SearchParams): Future[Seq[(BinaryVersion, Long)]] =
-    versionAggregations("scalaNativeVersions", params, Platform.ScalaNative.isValid)
+  override def countByScalaNativeVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]] =
+    versionAggregations("scalaNativeVersions", filteredSearchQuery(params), Platform.ScalaNative.isValid, limit)
       .map(addMissing(params.scalaNativeVersions.flatMap(BinaryVersion.parse)))
 
-  override def getSbtVersions(params: SearchParams): Future[Seq[(BinaryVersion, Long)]] =
-    versionAggregations("sbtVersions", params, Platform.SbtPlugin.isValid)
+  override def countBySbtVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]] =
+    versionAggregations("sbtVersions", filteredSearchQuery(params), Platform.SbtPlugin.isValid, limit)
       .map(addMissing(params.sbtVersions.flatMap(BinaryVersion.parse)))
-
-  private def stringAggregations(field: String, query: Query): Future[List[(String, Long)]] =
-    aggregations(field, query).map(_.toList.sortBy(_._1).toList)
 
   private def versionAggregations(
       field: String,
-      params: SearchParams,
-      filterF: BinaryVersion => Boolean
-  ): Future[Seq[(BinaryVersion, Long)]] = {
-    val searchQuery = filteredSearchQuery(params)
-    aggregations(field, searchQuery)
+      query: Query,
+      predicate: BinaryVersion => Boolean,
+      limit: Int
+  ): Future[Seq[(BinaryVersion, Long)]] =
+    aggregations(field, query, limit)
       .map { versionAgg =>
         for {
           (version, count) <- versionAgg.toList
-          binaryVersion <- BinaryVersion.parse(version) if filterF(binaryVersion)
+          binaryVersion <- BinaryVersion.parse(version) if predicate(binaryVersion)
         } yield (binaryVersion, count)
       }
-  }
+      .map(_.sortBy(_._1))
 
-  private def aggregations(field: String, query: Query): Future[Map[String, Long]] = {
+  private def aggregations(field: String, query: Query, limit: Int): Future[Seq[(String, Long)]] = {
     val aggregationName = s"${field}_count"
 
-    val aggregation = termsAgg(aggregationName, field).size(50)
+    val aggregation = termsAgg(aggregationName, field).size(limit)
 
     val request = search(index)
       .query(query)
@@ -254,19 +296,6 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
         .result[Terms](aggregationName)
         .buckets
         .map(bucket => bucket.key -> bucket.docCount)
-        .toMap
-  }
-}
-
-object ElasticsearchEngine extends LazyLogging {
-  import ElasticDsl._
-
-  def open(config: ElasticsearchConfig)(implicit ec: ExecutionContext): ElasticsearchEngine = {
-    logger.info(s"Using elasticsearch index: ${config.index}")
-
-    val props = ElasticProperties(s"http://localhost:${config.port}")
-    val esClient = ElasticClient(JavaClient(props))
-    new ElasticsearchEngine(esClient, config.index)
   }
 
   private def gitHubStarScoring(query: Query): Query = {
@@ -352,9 +381,9 @@ object ElasticsearchEngine extends LazyLogging {
         val contributingQuery = {
           if (contributingSearch) {
             nestedQuery(
-              "githubInfo.beginnerIssues",
-              matchQuery("githubInfo.beginnerIssues.title", plainText)
-            ).inner(innerHits("beginnerIssues").size(7))
+              "githubInfo.openIssues",
+              matchQuery("githubInfo.openIssues.title", plainText)
+            ).inner(innerHits("openIssues").size(7))
               .boost(4)
           } else matchNoneQuery()
         }
@@ -448,8 +477,8 @@ object ElasticsearchEngine extends LazyLogging {
   private val contributingQuery = boolQuery().must(
     Seq(
       nestedQuery(
-        "githubInfo.beginnerIssues",
-        existsQuery("githubInfo.beginnerIssues")
+        "githubInfo.openIssues",
+        existsQuery("githubInfo.openIssues")
       ),
       existsQuery("githubInfo.contributingGuide"),
       existsQuery("githubInfo.chatroom")
@@ -493,4 +522,14 @@ object ElasticsearchEngine extends LazyLogging {
 
   private def optionalQuery[P](param: Option[P])(query: P => Query): Query =
     param.map(query).getOrElse(matchAllQuery())
+}
+
+object ElasticsearchEngine extends LazyLogging {
+  def open(config: ElasticsearchConfig)(implicit ec: ExecutionContext): ElasticsearchEngine = {
+    logger.info(s"Using elasticsearch index: ${config.index}")
+
+    val props = ElasticProperties(s"http://localhost:${config.port}")
+    val esClient = ElasticClient(JavaClient(props))
+    new ElasticsearchEngine(esClient, config.index)
+  }
 }

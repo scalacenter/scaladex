@@ -9,7 +9,6 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubStatus
-import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.service.SchedulerDatabase
@@ -62,22 +61,8 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getReverseDependencies(artifact: Artifact): Future[List[ArtifactDependency.Reverse]] =
     Future.successful(Nil)
 
-  override def countProjects(): Future[Long] =
-    Future.successful(projects.values.size)
-
   override def countArtifacts(): Future[Long] =
     Future.successful(artifacts.values.flatten.size)
-
-  override def getAllTopics(): Future[Seq[String]] = Future.successful(Nil)
-
-  override def getAllPlatforms(): Future[Map[Project.Reference, Set[Platform]]] =
-    Future.successful(Map.empty)
-
-  override def getLatestProjects(limit: Int): Future[Seq[Project]] =
-    Future.successful(Nil)
-
-  override def getMostDependedUponProjects(max: Int): Future[List[(Project, Long)]] =
-    Future.successful(Nil)
 
   override def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]] = ???
 

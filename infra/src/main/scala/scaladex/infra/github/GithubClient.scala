@@ -108,7 +108,7 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
       contributingGuide = communityProfile.flatMap(_.contributingFile).map(Url),
       codeOfConduct = communityProfile.flatMap(_.codeOfConductFile).map(Url),
       chatroom = chatroom.map(Url),
-      beginnerIssues = openIssues.map(_.toGithubIssue).toList
+      openIssues = openIssues.map(_.toGithubIssue).toList
     )
 
   def getReadme(ref: Project.Reference): Future[Option[String]] = {

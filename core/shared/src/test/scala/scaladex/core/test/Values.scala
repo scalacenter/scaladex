@@ -115,7 +115,7 @@ object Values {
         forks = Some(1081),
         contributingGuide = Some(Url("https://github.com/typelevel/cats/blob/main/CONTRIBUTING.md")),
         chatroom = Some(Url("https://gitter.im/typelevel/cats")),
-        beginnerIssues = List(issueAboutFoo, issueAboutBar)
+        openIssues = List(issueAboutFoo, issueAboutBar)
       )
     val project: Project = Project.default(
       reference,

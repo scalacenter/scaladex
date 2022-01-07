@@ -14,14 +14,14 @@
             <div class="contributing-result">
               <div class="content-project-header">
                 <a href="/@project.organization/@project.repository">
-                  @githubUserAvatar(project.githubInfo.flatMap(_.avatarUrl))
+                  @githubUserAvatar(project.githubInfo.flatMap(_.logo))
                   <h4>@project.organization/@project.repository</h4>
               </div>
               @searchContributingInfo(hit, params)
             </div>
           } else {
             <div>
-              @githubUserAvatar(project.githubInfo.flatMap(_.avatarUrl))
+              @githubUserAvatar(project.githubInfo.flatMap(_.logo))
               <h4>@project.reference</h4>
 
               @for(github <- project.githubInfo) {

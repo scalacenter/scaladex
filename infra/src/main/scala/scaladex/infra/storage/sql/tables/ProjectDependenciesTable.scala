@@ -19,16 +19,6 @@ object ProjectDependenciesTable {
   val countInverseDependencies: Query[Project.Reference, Int] =
     selectRequest(table, Seq("COUNT(*)"), targetFields)
 
-  def getMostDependentUponProjects(limit: Long): Query0[(Project.Reference, Long)] = {
-    val total = s"COUNT(DISTINCT(${sourceFields.mkString(", ")})) AS total"
-    selectRequest(
-      table,
-      (targetFields :+ total).mkString(", "),
-      groupBy = targetFields,
-      orderBy = Some("total DESC"),
-      limit = Some(limit)
-    )
-  }
   val deleteSourceProject: Update[Project.Reference] =
     deleteRequest(table, sourceFields)
 
