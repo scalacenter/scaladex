@@ -119,17 +119,17 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     esClient.execute(refreshIndex(index)).map(_ => ())
 
   override def count(): Future[Long] = {
-    val query = must(notDeprecatedQuery)
+    val query = must(matchAllQuery())
     val request = search(index).query(query).size(0)
     esClient.execute(request).map(_.result.totalHits)
   }
 
   override def countByTopics(limit: Int): Future[Seq[(String, Long)]] =
-    aggregations("githubInfo.topics.keyword", notDeprecatedQuery, limit)
+    aggregations("githubInfo.topics.keyword", matchAllQuery(), limit)
       .map(_.sortBy(_._1))
 
   def countByPlatformTypes(limit: Int): Future[Seq[(Platform.PlatformType, Long)]] =
-    aggregations("platformTypes", notDeprecatedQuery, limit)
+    aggregations("platformTypes", matchAllQuery(), limit)
       .map(
         _.flatMap {
           case (platformType, count) =>
@@ -139,20 +139,21 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       .map(_.sortBy(_._1))
 
   def countByScalaVersions(limit: Int): Future[Seq[(String, Long)]] =
-    aggregations("scalaVersions", notDeprecatedQuery, limit)
+    aggregations("scalaVersions", matchAllQuery(), limit)
       .map(_.sortBy(_._1))
 
   def countByScalaJsVersions(limit: Int): Future[Seq[(BinaryVersion, Long)]] =
-    versionAggregations("scalaJsVersions", notDeprecatedQuery, Platform.ScalaJs.isValid, limit)
+    versionAggregations("scalaJsVersions", matchAllQuery(), Platform.ScalaJs.isValid, limit)
 
   def countByScalaNativeVersions(limit: Int): Future[Seq[(BinaryVersion, Long)]] =
-    versionAggregations("scalaNativeVersions", notDeprecatedQuery, Platform.ScalaNative.isValid, limit)
+    versionAggregations("scalaNativeVersions", matchAllQuery(), Platform.ScalaNative.isValid, limit)
+
   def countBySbtVersison(limit: Int): Future[Seq[(BinaryVersion, Long)]] =
-    versionAggregations("sbtVersions", notDeprecatedQuery, Platform.SbtPlugin.isValid, limit)
+    versionAggregations("sbtVersions", matchAllQuery(), Platform.SbtPlugin.isValid, limit)
 
   override def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]] = {
     val request = search(index)
-      .query(notDeprecatedQuery)
+      .query(matchAllQuery())
       .sortBy(sortQuery(Some("dependent")))
       .limit(limit)
     esClient.execute(request).map(extractDocuments)
@@ -160,7 +161,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
 
   override def getLatest(limit: Int): Future[Seq[ProjectDocument]] = {
     val request = search(index)
-      .query(notDeprecatedQuery)
+      .query(matchAllQuery())
       .sortBy(fieldSort("creationDate").desc())
       .limit(limit)
     esClient.execute(request).map(extractDocuments)
@@ -310,7 +311,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
 
   private def filteredSearchQuery(params: SearchParams): Query =
     must(
-      notDeprecatedQuery,
+      matchAllQuery(),
       repositoriesQuery(params.userRepos.toSeq),
       optionalQuery(params.cli, cliQuery),
       topicsQuery(params.topics),
@@ -341,9 +342,6 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
         logger.warn(s"Unknown sort criteria: $unknown")
         scoreSort().order(SortOrder.Desc)
     }
-
-  private val notDeprecatedQuery: Query =
-    not(termQuery("deprecated", true))
 
   private def searchQuery(
       queryString: String,

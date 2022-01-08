@@ -9,17 +9,7 @@ import scala.util.Try
 import scala.util.control.NonFatal
 
 object ScalaExtensions {
-  implicit class OptionExtension[A](val in: Option[A]) extends AnyVal {
-    def toFuture(e: => Throwable): Future[A] = in match {
-      case Some(v) => Future.successful(v)
-      case None    => Future.failed(e)
-    }
-    def toTry(e: => Throwable): Try[A] = in match {
-      case Some(v) => Success(v)
-      case None    => Failure(e)
-    }
-  }
-  implicit class TraversableOnceFutureExtension[A, CC[X] <: IterableOnce[X], To](val in: CC[Future[A]]) extends AnyVal {
+  implicit class IterableOnceFutureExtension[A, CC[X] <: IterableOnce[X], To](val in: CC[Future[A]]) extends AnyVal {
     def sequence(implicit bf: BuildFrom[CC[Future[A]], A, To], executor: ExecutionContext): Future[To] =
       Future.sequence(in)
   }
@@ -32,13 +22,15 @@ object ScalaExtensions {
       in.map(Success(_)).recover { case NonFatal(e) => Failure(e) }
   }
 
-  implicit class SeqExtension[A](val seq: Seq[A]) extends AnyVal {
-    def mapSync[B](f: A => Future[B])(implicit ec: ExecutionContext): Future[Seq[B]] =
-      seq.foldLeft(Future.successful(Seq.empty[B])) { (acc, a) =>
-        for {
-          bs <- acc
-          b <- f(a)
-        } yield bs :+ b
-      }
+  implicit class IterableOnceExtension[A, CC[X] <: IterableOnce[X]](val in: CC[A]) extends AnyVal {
+    def mapSync[B](f: A => Future[B])(implicit ec: ExecutionContext, bf: BuildFrom[CC[A], B, CC[B]]): Future[CC[B]] =
+      in.iterator
+        .foldLeft(Future.successful(bf.newBuilder(in))) { (builderF, a) =>
+          for {
+            builder <- builderF
+            b <- f(a)
+          } yield builder.addOne(b)
+        }
+        .map(_.result())
   }
 }

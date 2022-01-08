@@ -27,7 +27,6 @@ import scaladex.core.model.Project
 import scaladex.core.model.Project._
 import scaladex.core.model.Resolver
 import scaladex.core.model.SemanticVersion
-import scaladex.core.util.ScalaExtensions._
 import scaladex.infra.storage.sql.DatabaseConfig
 import scaladex.infra.util.Codecs._
 
@@ -142,8 +141,7 @@ object DoobieUtils {
       Meta[String].timap { x =>
         Platform
           .parse(x)
-          .toTry(new Exception(s"Failed to parse $x as Platform"))
-          .get
+          .getOrElse(throw new Exception(s"Failed to parse $x as Platform"))
       }(_.encode)
     implicit val licensesMeta: Meta[Set[License]] =
       Meta[String].timap(fromJson[List[License]](_).get.toSet)(toJson(_))
