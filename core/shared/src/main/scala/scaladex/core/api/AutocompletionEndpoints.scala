@@ -1,6 +1,9 @@
 package scaladex.core.api
 
 import endpoints4s.algebra
+import scaladex.core.model.Project
+import scaladex.core.model.UserState
+import scaladex.core.model.search.SearchParams
 
 case class AutocompletionRequest(
     query: String,
@@ -12,7 +15,24 @@ case class AutocompletionRequest(
     scalaNativeVersions: Seq[String],
     sbtVersions: Seq[String],
     contributingSearch: Boolean
-)
+) {
+  def searchParams(user: Option[UserState]): SearchParams = {
+    val userRepos = if (you) user.map(_.repos).getOrElse(Set.empty) else Set.empty[Project.Reference]
+    SearchParams(
+      queryString = query,
+      page = 1,
+      sorting = None,
+      userRepos = userRepos,
+      topics = topics,
+      targetTypes = targetTypes,
+      scalaVersions = scalaVersions,
+      scalaJsVersions = scalaJsVersions,
+      scalaNativeVersions = scalaNativeVersions,
+      sbtVersions = sbtVersions,
+      contributingSearch = contributingSearch
+    )
+  }
+}
 
 case class AutocompletionResponse(
     organization: String,
@@ -55,10 +75,10 @@ trait AutocompletionEndpoints extends algebra.Endpoints with algebra.JsonEntitie
   ).xmap((AutocompletionRequest.apply _).tupled)(Function.unlift(AutocompletionRequest.unapply))
 
   // Autocomplete endpoint definition
-  val autocomplete: Endpoint[WithSession[AutocompletionRequest], List[AutocompletionResponse]] =
+  val autocomplete: Endpoint[WithSession[AutocompletionRequest], Seq[AutocompletionResponse]] =
     endpoint(
       withOptionalSession(get(path / "api" / "autocomplete" /? searchRequestQuery)),
-      ok(jsonResponse[List[AutocompletionResponse]])
+      ok(jsonResponse[Seq[AutocompletionResponse]])
     )
 
 }

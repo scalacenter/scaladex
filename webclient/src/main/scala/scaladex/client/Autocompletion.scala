@@ -16,7 +16,7 @@ import scalatags.JsDom.all._
 class Autocompletion(implicit ec: ExecutionContext) {
   case class CompletionSelection(
       selected: Option[Int],
-      choices: List[AutocompletionResponse]
+      choices: Seq[AutocompletionResponse]
   )
 
   object CompletionSelection {
@@ -80,7 +80,7 @@ class Autocompletion(implicit ec: ExecutionContext) {
     Dom.getResultList.fold(())(_.innerHTML = "")
   }
 
-  private def update(projects: List[AutocompletionResponse], query: String): Unit =
+  private def update(projects: Seq[AutocompletionResponse], query: String): Unit =
     if (Dom.getSearchQuery.contains(query)) {
       cleanResults()
       completionSelection = CompletionSelection(None, projects)

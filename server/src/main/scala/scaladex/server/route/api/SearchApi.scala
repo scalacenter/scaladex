@@ -202,9 +202,9 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
       }
     } ~ cors() {
       AutocompletionApi.autocomplete.implementedByAsync {
-        case AutocompletionApi.WithSession(searchRequest, maybeUserId) =>
-          val maybeUser = session.getUser(maybeUserId)
-          autocomplete(SearchParams.ofAutocompleteRequest(searchRequest, maybeUser)).map(_.toList)
+        case AutocompletionApi.WithSession(request, userId) =>
+          val user = session.getUser(userId)
+          autocomplete(request.searchParams(user))
       }
     }
 
