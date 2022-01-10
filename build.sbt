@@ -172,8 +172,10 @@ lazy val server = project
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it",
       "com.typesafe.akka" %% "akka-testkit" % V.akkaVersion % "test,it",
       "com.typesafe.akka" %% "akka-slf4j" % V.akkaVersion,
+      "com.typesafe.akka" %% "akka-serialization-jackson" % V.akkaVersion,
+      "com.typesafe.akka" %% "akka-actor-typed" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-stream-testkit" % V.akkaVersion % Test,
-      "com.typesafe.akka" %% "akka-http-testkit" % "10.2.6" % Test,
+      "com.typesafe.akka" %% "akka-http-testkit" % V.akkaHttpVersion % Test,
       "ch.megard" %% "akka-http-cors" % "0.4.3",
       "com.softwaremill.akka-http-session" %% "core" % "0.5.11",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
@@ -225,6 +227,9 @@ lazy val data = project
       "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0",
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTimeVersion,
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
+      "com.typesafe.akka" %% "akka-actor-typed" % V.akkaVersion,
+      "com.typesafe.akka" %% "akka-serialization-jackson" % V.akkaVersion,
+      "com.typesafe.akka" %% "akka-slf4j" % V.akkaVersion,
       "me.tongfei" % "progressbar" % "0.5.5",
       "org.apache.maven" % "maven-model-builder" % "3.3.9",
       "org.jsoup" % "jsoup" % "1.10.1",
@@ -243,8 +248,8 @@ lazy val data = project
 lazy val V = new {
   val doobieVersion = "0.13.4"
   val playJsonVersion = "2.9.0"
-  val akkaVersion = "2.6.5"
-  val akkaHttpVersion = "10.1.12"
+  val akkaVersion = "2.6.15"
+  val akkaHttpVersion = "10.2.6"
   val elastic4sVersion = "7.10.2"
   val log4jVersion = "2.17.0"
   val nscalaTimeVersion = "2.24.0"

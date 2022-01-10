@@ -59,7 +59,8 @@ object Server {
             routes = configureRoutes(config.env, searchEngine, webDatabase, schedulerService)
             _ <- IO(
               Http()
-                .bindAndHandle(routes, config.endpoint, config.port)
+                .newServerAt(config.endpoint, config.port)
+                .bindFlow(routes)
                 .andThen {
                   case Failure(exception) =>
                     log.error("Unable to start the server", exception)

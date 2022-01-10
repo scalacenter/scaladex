@@ -18,9 +18,8 @@ import scaladex.server.BadgesSupport
 
 class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext) {
 
-  private val shields = parameters(
-    ("color".?, "style".?, "logo".?, "logoWidth".as[Int].?)
-  )
+  private val shields =
+    parameters("color".?, "style".?, "logo".?, "logoWidth".as[Int].?)
 
   private val shieldsOptionalSubject = shields & parameters("subject".?)
   private val shieldsSubject = shields & parameters("subject")

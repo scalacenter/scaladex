@@ -121,13 +121,11 @@ class PublishApi(
       put(
         path("publish")(
           parameters(
-            (
-              "path",
-              "created".as(instantUnmarshaller) ? Instant.now(),
-              "readme".as[Boolean] ? true,
-              "contributors".as[Boolean] ? true,
-              "info".as[Boolean] ? true
-            )
+            "path",
+            "created".as(instantUnmarshaller) ? Instant.now(),
+            "readme".as[Boolean] ? true,
+            "contributors".as[Boolean] ? true,
+            "info".as[Boolean] ? true
           )((path, created, readme, contributors, info) =>
             entity(as[String])(data =>
               extractCredentials(credentials =>
