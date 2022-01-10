@@ -150,7 +150,8 @@ lazy val webclient = project
     scalacOptionsSettings,
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "scalatags" % "0.8.6",
-      "be.doeraene" %%% "scalajs-jquery" % "1.0.0"
+      "be.doeraene" %%% "scalajs-jquery" % "1.0.0",
+      "org.endpoints4s" %%% "xhr-client" % "3.1.0"
     )
   )
   .enablePlugins(ScalaJSPlugin)
@@ -179,6 +180,7 @@ lazy val server = project
       "ch.megard" %% "akka-http-cors" % "0.4.3",
       "com.softwaremill.akka-http-session" %% "core" % "0.5.11",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
+      "org.endpoints4s" %% "akka-http-server" % "5.1.0",
       "org.webjars" % "bootstrap-sass" % "3.4.1",
       "org.webjars" % "bootstrap-switch" % "3.3.2",
       "org.webjars" % "bootstrap-select" % "1.13.18",
@@ -206,6 +208,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
       "com.lihaoyi" %%% "fastparse" % "2.3.0",
       "io.github.cquiroz" %%% "scala-java-time" % "2.2.2",
       "com.typesafe.play" %%% "play-json" % V.playJsonVersion,
+      "org.endpoints4s" %%% "algebra" % "1.5.0",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test
     ) ++ Seq(
       "io.circe" %%% "circe-core",

@@ -26,7 +26,7 @@ package object html {
     def appendQuery(k: String, on: Boolean): Uri =
       if (on) uri.appendQuery(k -> "✓")
       else uri
-    def appendQuery(k: String, vs: List[String]): Uri =
+    def appendQuery(k: String, vs: Seq[String]): Uri =
       vs.foldLeft(uri) {
         case (acc, v) =>
           acc.appendQuery(k -> v)

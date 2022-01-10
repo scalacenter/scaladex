@@ -4,12 +4,12 @@ import org.scalajs.dom.Node
 import org.scalajs.dom.document
 import org.scalajs.dom.raw.Element
 import org.scalajs.dom.raw.HTMLInputElement
-import scaladex.core.api.SearchRequest
+import scaladex.core.api.AutocompletionRequest
 
 object Dom {
-  def getSearchRequest: Option[SearchRequest] =
+  def getSearchRequest: Option[AutocompletionRequest] =
     for (query <- getSearchQuery)
-      yield SearchRequest(
+      yield AutocompletionRequest(
         query = query,
         you = getElementById("you")
           .map(_.asInput.value)
