@@ -150,7 +150,8 @@ lazy val webclient = project
     scalacOptionsSettings,
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "scalatags" % "0.8.6",
-      "be.doeraene" %%% "scalajs-jquery" % "1.0.0"
+      "be.doeraene" %%% "scalajs-jquery" % "1.0.0",
+      "org.endpoints4s" %%% "xhr-client" % "3.1.0"
     )
   )
   .enablePlugins(ScalaJSPlugin)
@@ -172,11 +173,14 @@ lazy val server = project
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it",
       "com.typesafe.akka" %% "akka-testkit" % V.akkaVersion % "test,it",
       "com.typesafe.akka" %% "akka-slf4j" % V.akkaVersion,
+      "com.typesafe.akka" %% "akka-serialization-jackson" % V.akkaVersion,
+      "com.typesafe.akka" %% "akka-actor-typed" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-stream-testkit" % V.akkaVersion % Test,
-      "com.typesafe.akka" %% "akka-http-testkit" % "10.2.6" % Test,
+      "com.typesafe.akka" %% "akka-http-testkit" % V.akkaHttpVersion % Test,
       "ch.megard" %% "akka-http-cors" % "0.4.3",
       "com.softwaremill.akka-http-session" %% "core" % "0.5.11",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
+      "org.endpoints4s" %% "akka-http-server" % "5.1.0",
       "org.webjars" % "bootstrap-sass" % "3.4.1",
       "org.webjars" % "bootstrap-switch" % "3.3.2",
       "org.webjars" % "bootstrap-select" % "1.13.18",
@@ -204,6 +208,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
       "com.lihaoyi" %%% "fastparse" % "2.3.0",
       "io.github.cquiroz" %%% "scala-java-time" % "2.2.2",
       "com.typesafe.play" %%% "play-json" % V.playJsonVersion,
+      "org.endpoints4s" %%% "algebra" % "1.5.0",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test
     ) ++ Seq(
       "io.circe" %%% "circe-core",
@@ -225,6 +230,9 @@ lazy val data = project
       "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0",
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTimeVersion,
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
+      "com.typesafe.akka" %% "akka-actor-typed" % V.akkaVersion,
+      "com.typesafe.akka" %% "akka-serialization-jackson" % V.akkaVersion,
+      "com.typesafe.akka" %% "akka-slf4j" % V.akkaVersion,
       "me.tongfei" % "progressbar" % "0.5.5",
       "org.apache.maven" % "maven-model-builder" % "3.3.9",
       "org.jsoup" % "jsoup" % "1.10.1",
@@ -243,8 +251,8 @@ lazy val data = project
 lazy val V = new {
   val doobieVersion = "0.13.4"
   val playJsonVersion = "2.9.0"
-  val akkaVersion = "2.6.5"
-  val akkaHttpVersion = "10.1.12"
+  val akkaVersion = "2.6.15"
+  val akkaHttpVersion = "10.2.6"
   val elastic4sVersion = "7.10.2"
   val log4jVersion = "2.17.0"
   val nscalaTimeVersion = "2.24.0"

@@ -25,7 +25,7 @@ class Oauth2(config: OAuth2Config, githubAuth: GithubAuth, session: GithubUserSe
     get(
       concat(
         path("login")(
-          optionalHeaderValueByType[Referer](())(referer =>
+          optionalHeaderValueByType(Referer)(referer =>
             redirect(
               Uri("https://github.com/login/oauth/authorize").withQuery(
                 Query(
@@ -39,7 +39,7 @@ class Oauth2(config: OAuth2Config, githubAuth: GithubAuth, session: GithubUserSe
           )
         ),
         path("logout")(
-          headerValueByType[Referer](()) { referer =>
+          headerValueByType(Referer) { referer =>
             requiredSession(refreshable, usingCookies) { _ =>
               invalidateSession(refreshable, usingCookies) { ctx =>
                 ctx.complete(
@@ -59,7 +59,7 @@ class Oauth2(config: OAuth2Config, githubAuth: GithubAuth, session: GithubUserSe
               complete("OK")
             ),
             pathEnd(
-              parameters(("code", "state".?)) { (code, state) =>
+              parameters("code", "state".?) { (code, state) =>
                 val userStateQuery = githubAuth.getUserStateWithOauth2(
                   config.clientId,
                   config.clientSecret,

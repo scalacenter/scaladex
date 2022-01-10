@@ -241,7 +241,7 @@ class ProjectPages(
       get {
         path(organizationM / repositoryM)((organization, repository) =>
           optionalSession(refreshable, usingCookies)(userId =>
-            parameters(("artifact".?, "version".?, "target".?, "selected".?)) { (artifact, version, target, selected) =>
+            parameters("artifact".?, "version".?, "target".?, "selected".?) { (artifact, version, target, selected) =>
               val projectRef = Project.Reference(organization, repository)
               val fut: Future[StandardRoute] = database.getProject(projectRef).flatMap {
                 case Some(Project(_, _, _, GithubStatus.Moved(_, newProjectRef), _, _)) =>
@@ -324,22 +324,20 @@ class ProjectPages(
   private val editForm: Directive1[Project.Settings] =
     formFieldSeq.tflatMap(fields =>
       formFields(
-        (
-          "contributorsWanted".as[Boolean] ? false,
-          "defaultArtifact".?,
-          "defaultStableVersion".as[Boolean] ? false,
-          "strictVersions".as[Boolean] ? false,
-          "deprecated".as[Boolean] ? false,
-          "artifactDeprecations".as[String].*,
-          "cliArtifacts".as[String].*,
-          "customScalaDoc".?,
-          "primaryTopic".?,
-          "beginnerIssuesLabel".?,
-          "selectedBeginnerIssues".as[String].*,
-          "chatroom".?,
-          "contributingGuide".?,
-          "codeOfConduct".?
-        )
+        "contributorsWanted".as[Boolean] ? false,
+        "defaultArtifact".?,
+        "defaultStableVersion".as[Boolean] ? false,
+        "strictVersions".as[Boolean] ? false,
+        "deprecated".as[Boolean] ? false,
+        "artifactDeprecations".as[String].*,
+        "cliArtifacts".as[String].*,
+        "customScalaDoc".?,
+        "primaryTopic".?,
+        "beginnerIssuesLabel".?,
+        "selectedBeginnerIssues".as[String].*,
+        "chatroom".?,
+        "contributingGuide".?,
+        "codeOfConduct".?
       ).tmap {
         case (
               contributorsWanted,

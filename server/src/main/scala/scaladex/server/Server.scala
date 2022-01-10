@@ -59,7 +59,8 @@ object Server {
             routes = configureRoutes(config.env, searchEngine, webDatabase, schedulerService)
             _ <- IO(
               Http()
-                .bindAndHandle(routes, config.endpoint, config.port)
+                .newServerAt(config.endpoint, config.port)
+                .bindFlow(routes)
                 .andThen {
                   case Failure(exception) =>
                     log.error("Unable to start the server", exception)
@@ -114,7 +115,8 @@ object Server {
       new SearchApi(searchEngine, webDatabase, session).routes,
       Assets.routes,
       new Badges(webDatabase).routes,
-      new Oauth2(config.oAuth2, githubAuth, session).routes
+      new Oauth2(config.oAuth2, githubAuth, session).routes,
+      DocumentationRoutes.routes
     )
     val userFacingRoutes = concat(
       new FrontPage(env, webDatabase, searchEngine, session).routes,

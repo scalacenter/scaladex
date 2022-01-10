@@ -36,19 +36,17 @@ package object route {
 
   def searchParams(user: Option[UserState]): Directive1[SearchParams] =
     parameters(
-      (
-        "q" ? "*",
-        "page".as[Int] ? 1,
-        "sort".?,
-        "topics".as[String].*,
-        "targetTypes".as[String].*,
-        "scalaVersions".as[String].*,
-        "scalaJsVersions".as[String].*,
-        "scalaNativeVersions".as[String].*,
-        "sbtVersions".as[String].*,
-        "you".?,
-        "contributingSearch".as[Boolean] ? false
-      )
+      "q" ? "*",
+      "page".as[Int] ? 1,
+      "sort".?,
+      "topics".as[String].*,
+      "targetTypes".as[String].*,
+      "scalaVersions".as[String].*,
+      "scalaJsVersions".as[String].*,
+      "scalaNativeVersions".as[String].*,
+      "sbtVersions".as[String].*,
+      "you".?,
+      "contributingSearch".as[Boolean] ? false
     ).tmap {
       case (
             q,

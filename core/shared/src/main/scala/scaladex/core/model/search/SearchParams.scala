@@ -11,11 +11,11 @@ case class SearchParams(
     total: Int = 20,
     targetFiltering: Option[Platform] = None,
     cli: Boolean = false,
-    topics: List[String] = Nil,
-    targetTypes: List[String] = Nil,
-    scalaVersions: List[String] = Nil,
-    scalaJsVersions: List[String] = Nil,
-    scalaNativeVersions: List[String] = Nil,
-    sbtVersions: List[String] = Nil,
+    topics: Seq[String] = Nil,
+    targetTypes: Seq[String] = Nil,
+    scalaVersions: Seq[String] = Nil,
+    scalaJsVersions: Seq[String] = Nil,
+    scalaNativeVersions: Seq[String] = Nil,
+    sbtVersions: Seq[String] = Nil,
     contributingSearch: Boolean = false
 )

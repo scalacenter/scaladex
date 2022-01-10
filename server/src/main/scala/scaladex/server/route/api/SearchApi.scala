@@ -1,16 +1,23 @@
 package scaladex.server.route.api
 
+import java.util.UUID
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import akka.http.scaladsl.model.StatusCodes._
+import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.server.Directive
+import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import com.softwaremill.session.SessionDirectives.optionalSession
 import com.softwaremill.session.SessionOptions.refreshable
 import com.softwaremill.session.SessionOptions.usingCookies
+import endpoints4s.akkahttp.server
 import play.api.libs.json._
+import scaladex.core.api.AutocompletionEndpoints
 import scaladex.core.api.AutocompletionResponse
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactSelection
@@ -23,7 +30,6 @@ import scaladex.core.model.search.SearchParams
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 import scaladex.server.GithubUserSession
-import scaladex.server.route._
 
 object SearchApi {
   implicit val formatProject: OFormat[Project] =
@@ -95,17 +101,15 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
         path("search") {
           get {
             parameters(
-              (
-                "q",
-                "target",
-                "scalaVersion",
-                "page".as[Int].?,
-                "total".as[Int].?,
-                "scalaJsVersion".?,
-                "scalaNativeVersion".?,
-                "sbtVersion".?,
-                "cli".as[Boolean] ? false
-              )
+              "q",
+              "target",
+              "scalaVersion",
+              "page".as[Int].?,
+              "total".as[Int].?,
+              "scalaJsVersion".?,
+              "scalaNativeVersion".?,
+              "sbtVersion".?,
+              "cli".as[Boolean] ? false
             ) {
               (
                   q,
@@ -161,16 +165,14 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
           path("project") {
             get {
               parameters(
-                (
-                  "organization",
-                  "repository",
-                  "artifact".?,
-                  "target".?,
-                  "scalaVersion".?,
-                  "scalaJsVersion".?,
-                  "scalaNativeVersion".?,
-                  "sbtVersion".?
-                )
+                "organization",
+                "repository",
+                "artifact".?,
+                "target".?,
+                "scalaVersion".?,
+                "scalaJsVersion".?,
+                "scalaNativeVersion".?,
+                "sbtVersion".?
               ) {
                 (
                     organization,
@@ -196,19 +198,13 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
                   }
               }
             }
-          } ~
-          get {
-            path("autocomplete") {
-              optionalSession(refreshable, usingCookies) { userId =>
-                val user = session.getUser(userId)
-                searchParams(user) { params =>
-                  complete {
-                    autocomplete(params)
-                  }
-                }
-              }
-            }
           }
+      }
+    } ~ cors() {
+      AutocompletionApi.autocomplete.implementedByAsync {
+        case AutocompletionApi.WithSession(request, userId) =>
+          val user = session.getUser(userId)
+          autocomplete(request.searchParams(user))
       }
     }
 
@@ -252,4 +248,19 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
           project.githubInfo.flatMap(_.description).getOrElse("")
         )
       }
+
+  object AutocompletionApi extends AutocompletionEndpoints with server.Endpoints with server.JsonEntitiesFromSchemas {
+    // On the server-side, the session is made of a user id
+    case class WithSession[A](data: A, maybeUserId: Option[UUID])
+    def withOptionalSession[A](request: Request[A]): Request[WithSession[A]] =
+      new Request[WithSession[A]] {
+        val directive: Directive1[WithSession[A]] = Directive[Tuple1[WithSession[A]]] { k =>
+          optionalSession(refreshable, usingCookies) { maybeUserId =>
+            request.directive(a => k(Tuple1(WithSession(a, maybeUserId))))
+          }
+        }
+        def uri(session: WithSession[A]): Uri = request.uri(session.data)
+      }
+  }
+
 }
