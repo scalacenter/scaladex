@@ -63,14 +63,32 @@ trait AutocompletionEndpoints extends algebra.Endpoints with algebra.JsonEntitie
 
   // Definition of the autocompletion query format
   val searchRequestQuery: QueryString[AutocompletionRequest] = (
-    qs[String]("q") &
-      qs[Option[String]]("you").xmap[Boolean](_.contains("✓"))(Option.when(_)("✓")) &
-      qs[Seq[String]]("topics") &
-      qs[Seq[String]]("targetTypes") &
-      qs[Seq[String]]("scalaVersions") &
-      qs[Seq[String]]("scalaJsVersions") &
-      qs[Seq[String]]("scalaNativeVersions") &
-      qs[Seq[String]]("sbtVersions") &
+    qs[String]("q", docs = Some("Main query (e.g., 'json', 'testing', etc.)")) &
+      qs[Option[String]]("you", docs = Some("Used internally by Scaladex web user interface"))
+        .xmap[Boolean](_.contains("✓"))(Option.when(_)("✓")) &
+      qs[Seq[String]]("topics", docs = Some("Filter the results matching the given topics only")) &
+      qs[Seq[String]](
+        "targetTypes",
+        docs =
+          Some("Filter the results matching the given target types only (e.g., 'jvm', 'js', 'native', 'sbt', 'java')")
+      ) &
+      qs[Seq[String]](
+        "scalaVersions",
+        docs =
+          Some("Filter the results matching the given Scala versions only (e.g., 'scala3', '2.13', '2.12', '2.11')")
+      ) &
+      qs[Seq[String]](
+        "scalaJsVersions",
+        docs = Some("Filter the results matching the given Scala.js versions only (e.g., '1.x', '0.6')")
+      ) &
+      qs[Seq[String]](
+        "scalaNativeVersions",
+        docs = Some("Filter the results matching the given Scala Native versions only (e.g., '0.4', '0.3')")
+      ) &
+      qs[Seq[String]](
+        "sbtVersions",
+        docs = Some("Filter the results matching the given sbt versions only (e.g., '1.0', '0.13')")
+      ) &
       qs[Option[Boolean]]("contributingSearch").xmap(_.getOrElse(false))(Option.when(_)(true))
   ).xmap((AutocompletionRequest.apply _).tupled)(Function.unlift(AutocompletionRequest.unapply))
 

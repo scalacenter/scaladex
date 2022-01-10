@@ -115,7 +115,8 @@ object Server {
       new SearchApi(searchEngine, webDatabase, session).routes,
       Assets.routes,
       new Badges(webDatabase).routes,
-      new Oauth2(config.oAuth2, githubAuth, session).routes
+      new Oauth2(config.oAuth2, githubAuth, session).routes,
+      DocumentationRoutes.routes
     )
     val userFacingRoutes = concat(
       new FrontPage(env, webDatabase, searchEngine, session).routes,
