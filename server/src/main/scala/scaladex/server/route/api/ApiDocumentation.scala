@@ -4,11 +4,16 @@ import endpoints4s.openapi
 import endpoints4s.openapi.model.Info
 import endpoints4s.openapi.model.OpenApi
 import scaladex.core.api.AutocompletionEndpoints
+import scaladex.core.api.ProjectsEndpoints
 
 /**
  * Documentation of the public HTTP API of Scaladex
  */
-object ApiDocumentation extends AutocompletionEndpoints with openapi.Endpoints with openapi.JsonEntitiesFromSchemas {
+object ApiDocumentation
+  extends AutocompletionEndpoints
+    with ProjectsEndpoints
+    with openapi.Endpoints
+    with openapi.JsonEntitiesFromSchemas {
 
   val api: OpenApi = openApi(
     Info(
@@ -16,7 +21,8 @@ object ApiDocumentation extends AutocompletionEndpoints with openapi.Endpoints w
       version = "0.1.0"
     )
   )(
-    autocomplete
+    autocomplete,
+    scaladocLocation
   )
 
   // We don’t document the session

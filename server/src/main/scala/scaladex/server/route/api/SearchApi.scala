@@ -15,10 +15,14 @@ import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import com.softwaremill.session.SessionDirectives.optionalSession
 import com.softwaremill.session.SessionOptions.refreshable
 import com.softwaremill.session.SessionOptions.usingCookies
+import endpoints4s.Invalid
 import endpoints4s.akkahttp.server
 import play.api.libs.json._
 import scaladex.core.api.AutocompletionEndpoints
 import scaladex.core.api.AutocompletionResponse
+import scaladex.core.api.ProjectsEndpoints
+import scaladex.core.api.ScaladocLocationRequest
+import scaladex.core.api.ScaladocLocationResponse
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactSelection
 import scaladex.core.model.BinaryVersion
@@ -201,11 +205,12 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
           }
       }
     } ~ cors() {
-      AutocompletionApi.autocomplete.implementedByAsync {
-        case AutocompletionApi.WithSession(request, userId) =>
+      Api.autocomplete.implementedByAsync {
+        case Api.WithSession(request, userId) =>
           val user = session.getUser(userId)
           autocomplete(request.searchParams(user))
-      }
+      } ~
+      Api.scaladocLocation.implementedByAsync(getArtifactScaladocLocation)
     }
 
   private def getArtifactOptions(
@@ -239,6 +244,10 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
     }
   }
 
+  private def getArtifactScaladocLocation(
+    request: ScaladocLocationRequest
+  ): Future[Either[Invalid, ScaladocLocationResponse]] = ???
+
   private def autocomplete(params: SearchParams) =
     for (projects <- searchEngine.autocomplete(params, 5))
       yield projects.map { project =>
@@ -249,7 +258,11 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
         )
       }
 
-  object AutocompletionApi extends AutocompletionEndpoints with server.Endpoints with server.JsonEntitiesFromSchemas {
+  object Api
+    extends AutocompletionEndpoints
+      with ProjectsEndpoints
+      with server.Endpoints
+      with server.JsonEntitiesFromSchemas {
     // On the server-side, the session is made of a user id
     case class WithSession[A](data: A, maybeUserId: Option[UUID])
     def withOptionalSession[A](request: Request[A]): Request[WithSession[A]] =
