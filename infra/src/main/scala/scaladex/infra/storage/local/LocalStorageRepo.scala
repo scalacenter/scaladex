@@ -2,6 +2,7 @@ package scaladex.infra.storage.local
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.nio.file.Path
 import java.util.concurrent.Executors
 
 import scala.concurrent.ExecutionContext
@@ -11,11 +12,12 @@ import scala.util.Try
 import io.circe._
 import io.circe.syntax._
 import scaladex.core.model.Project
+import scaladex.core.model.data.LocalPomRepository
 import scaladex.core.service.LocalStorageApi
 import scaladex.infra.storage.DataPaths
 import scaladex.infra.util.Codecs._
 
-class LocalStorageRepo(dataPaths: DataPaths) extends LocalStorageApi {
+class LocalStorageRepo(dataPaths: DataPaths, tempDir: Path) extends LocalStorageApi {
   import LocalStorageRepo._
   private val singleThreadedContext = // TODO: Use a lock instead
     ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
@@ -44,6 +46,20 @@ class LocalStorageRepo(dataPaths: DataPaths) extends LocalStorageApi {
       dataPaths.liveProjects,
       Printer.noSpaces.print(settings.asJson).getBytes(StandardCharsets.UTF_8)
     )
+  }
+
+  override def createTempFile(content: String, prefix: String, suffix: String): Path =
+    Files.createTempFile(tempDir, prefix, suffix)
+
+  override def deleteTempFile(path: Path): Unit = {
+    assert(path.startsWith(tempDir))
+    Files.delete(path)
+  }
+
+  override def savePom(data: String, sha1: String, repository: LocalPomRepository): Unit = {
+    val destination = dataPaths.poms(repository).resolve(s"$sha1.pom")
+    if (Files.exists(destination)) Files.delete(destination)
+    Files.write(destination, data.getBytes(StandardCharsets.UTF_8))
   }
 }
 

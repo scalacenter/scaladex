@@ -25,11 +25,11 @@ import play.api.libs.ws.WSClient
 import play.api.libs.ws.WSRequest
 import play.api.libs.ws.WSResponse
 import play.api.libs.ws.ahc.AhcCurlRequestLogger
+import scaladex.core.model.data.LocalPomRepository
 import scaladex.core.util.Ordering.Descending
 import scaladex.data.cleanup.NonStandardLib
 import scaladex.data.download.PlayWsDownloader
 import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.LocalPomRepository
 
 class BintrayListPoms private (paths: DataPaths, bintrayClient: BintrayClient)(
     implicit val system: ActorSystem

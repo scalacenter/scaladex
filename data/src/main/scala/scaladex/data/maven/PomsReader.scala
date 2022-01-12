@@ -19,15 +19,15 @@ import org.apache.maven.model.building.FileModelSource
 import org.apache.maven.model.building.ModelSource2
 import org.apache.maven.model.io.DefaultModelReader
 import org.apache.maven.model.resolution.ModelResolver
+import scaladex.core.model.data.LocalPomRepository
+import scaladex.core.model.data.LocalPomRepository.Bintray
+import scaladex.core.model.data.LocalPomRepository.MavenCentral
+import scaladex.core.model.data.LocalPomRepository.UserProvided
+import scaladex.core.model.data.LocalRepository
 import scaladex.core.service.PomResolver
 import scaladex.data.bintray.SbtPluginsData
 import scaladex.infra.CoursierResolver
 import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.LocalPomRepository
-import scaladex.infra.storage.LocalPomRepository.Bintray
-import scaladex.infra.storage.LocalPomRepository.MavenCentral
-import scaladex.infra.storage.LocalPomRepository.UserProvided
-import scaladex.infra.storage.LocalRepository
 
 case class MissingParentPom(dep: String) extends Exception
 

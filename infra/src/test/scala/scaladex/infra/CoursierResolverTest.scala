@@ -8,8 +8,8 @@ import scala.concurrent.Future
 
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
+import scaladex.core.model.data.LocalPomRepository
 import scaladex.core.util.ScalaExtensions._
-import scaladex.infra.storage.LocalPomRepository
 
 class CoursierResolverTests extends AsyncFunSpec with Matchers {
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global

@@ -8,17 +8,17 @@ import scala.concurrent.ExecutionContext
 
 import org.json4s.native.Serialization.write
 import scaladex.core.model.Project
+import scaladex.core.model.data.LocalPomRepository
 import scaladex.data.bintray.BintrayMeta
 import scaladex.data.bintray.BintrayProtocol
 import scaladex.data.bintray.BintraySearch
 import scaladex.data.cleanup.GithubRepoExtractor
 import scaladex.data.maven.PomsReader
 import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.LocalPomRepository
 import scaladex.infra.storage.local.LocalStorageRepo
 
 object SubIndex extends BintrayProtocol {
-  def generate(source: DataPaths, destination: DataPaths)(implicit ec: ExecutionContext): Unit = {
+  def generate(source: DataPaths, destination: DataPaths, temp: Path)(implicit ec: ExecutionContext): Unit = {
     def splitRepo(in: String): Project.Reference = {
       val List(owner, repo) = in.split('/').toList
       Project.Reference.from(owner, repo)
@@ -104,8 +104,8 @@ object SubIndex extends BintrayProtocol {
 
     println("== Copy LiveData ==")
 
-    val destinationStorage = new LocalStorageRepo(destination)
-    val sourceStorage = new LocalStorageRepo(source)
+    val destinationStorage = new LocalStorageRepo(destination, temp)
+    val sourceStorage = new LocalStorageRepo(source, temp)
     // live
     destinationStorage.saveAllProjectSettings(
       sourceStorage

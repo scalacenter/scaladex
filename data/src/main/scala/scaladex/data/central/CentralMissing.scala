@@ -26,10 +26,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import scaladex.core.model.Platform
 import scaladex.core.model.Sha1
+import scaladex.core.model.data.LocalPomRepository
 import scaladex.data.maven.PomsReader
 import scaladex.data.meta.ArtifactMetaExtractor
 import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.LocalPomRepository
 
 object CentralMissing {
   // q = g:"com.47deg" AND a:"sbt-microsites"

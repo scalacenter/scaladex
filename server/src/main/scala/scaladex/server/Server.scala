@@ -17,6 +17,7 @@ import scaladex.core.service.WebDatabase
 import scaladex.data.util.PidLock
 import scaladex.infra.elasticsearch.ElasticsearchEngine
 import scaladex.infra.github.GithubClient
+import scaladex.infra.storage.DataPaths
 import scaladex.infra.storage.local.LocalStorageRepo
 import scaladex.infra.storage.sql.SqlDatabase
 import scaladex.infra.util.DoobieUtils
@@ -104,14 +105,15 @@ object Server {
       implicit actor: ActorSystem
   ): Route = {
     import actor.dispatcher
-    val paths = config.dataPaths
+    val paths = DataPaths.from(config.filesystem, config.env)
+    val localStorage = new LocalStorageRepo(paths, config.filesystem.temp)
+
     val githubAuth = new GithubAuth()
     val session = new GithubUserSession(config.session)
-    val searchPages = new SearchPages(env, searchEngine, session)
 
-    val localStorage = new LocalStorageRepo(paths)
+    val searchPages = new SearchPages(env, searchEngine, session)
     val programmaticRoutes = concat(
-      new PublishApi(paths, webDatabase, githubAuth).routes,
+      new PublishApi(paths, webDatabase, localStorage, githubAuth).routes,
       new SearchApi(searchEngine, webDatabase, session).routes,
       Assets.routes,
       new Badges(webDatabase).routes,

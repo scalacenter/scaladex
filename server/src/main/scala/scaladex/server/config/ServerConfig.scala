@@ -4,9 +4,9 @@ import com.softwaremill.session.SessionConfig
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import scaladex.core.model.Env
+import scaladex.infra.config.FilesystemConfig
 import scaladex.infra.elasticsearch.ElasticsearchConfig
 import scaladex.infra.github.GithubConfig
-import scaladex.infra.storage.DataPaths
 import scaladex.infra.storage.sql.DatabaseConfig
 
 case class ServerConfig(
@@ -17,8 +17,7 @@ case class ServerConfig(
     oAuth2: OAuth2Config,
     database: DatabaseConfig,
     elasticsearch: ElasticsearchConfig,
-    tempDir: String,
-    dataPaths: DataPaths,
+    filesystem: FilesystemConfig,
     github: GithubConfig
 )
 
@@ -36,13 +35,9 @@ object ServerConfig {
     val elasticsearch = ElasticsearchConfig.from(config)
     val tempDir = config.getString("scaladex.filesystem.temp")
 
-    val contrib = config.getString("scaladex.filesystem.contrib")
-    val index = config.getString("scaladex.filesystem.index")
-    val credentials = config.getString("scaladex.filesystem.credentials")
-    val dataPaths = DataPaths.from(contrib, index, credentials, env)
-
+    val filesystem = FilesystemConfig.from(config)
     val github = GithubConfig.from(config)
 
-    ServerConfig(env, session, endpoint, port, oauth2, database, elasticsearch, tempDir, dataPaths, github)
+    ServerConfig(env, session, endpoint, port, oauth2, database, elasticsearch, filesystem, github)
   }
 }

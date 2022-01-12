@@ -7,21 +7,21 @@ import scala.concurrent.Future
 import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Project
+import scaladex.core.service.LocalStorageApi
 import scaladex.core.util.ScalaExtensions._
 import scaladex.data.maven.PomsReader
 import scaladex.data.meta.ArtifactConverter
 import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.local.LocalStorageRepo
 import scaladex.infra.storage.sql.SqlDatabase
 
 class Init(
     paths: DataPaths,
-    database: SqlDatabase
+    database: SqlDatabase,
+    localStorage: LocalStorageApi
 )(implicit val system: ActorSystem)
     extends LazyLogging {
   import system.dispatcher
   val converter = new ArtifactConverter(paths)
-  val localStorage = new LocalStorageRepo(paths)
 
   def run(): Future[Unit] = {
     logger.info("Dropping tables")
@@ -78,8 +78,10 @@ class Init(
 }
 
 object Init {
-  def run(dataPaths: DataPaths, database: SqlDatabase)(implicit sys: ActorSystem): Future[Unit] = {
-    val init = new Init(dataPaths, database)
+  def run(dataPaths: DataPaths, database: SqlDatabase, localStorage: LocalStorageApi)(
+      implicit sys: ActorSystem
+  ): Future[Unit] = {
+    val init = new Init(dataPaths, database, localStorage)
     init.run()
   }
 }

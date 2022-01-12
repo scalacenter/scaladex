@@ -18,6 +18,6 @@ trait ControllerBaseSuite extends AsyncFunSpec with Matchers with ScalatestRoute
 
   val database: SchedulerDatabase = new InMemoryDatabase()
   val searchEngine: SearchEngine = new InMemorySearchEngine()
-  val dataPaths: DataPaths = config.dataPaths
-  val localStorage = new LocalStorageRepo(dataPaths)
+  val dataPaths: DataPaths = DataPaths.from(config.filesystem, config.env)
+  val localStorage = new LocalStorageRepo(dataPaths, config.filesystem.temp)
 }

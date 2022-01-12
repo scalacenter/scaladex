@@ -6,6 +6,9 @@ import java.nio.file.Paths
 
 import org.slf4j.LoggerFactory
 import scaladex.core.model.Env
+import scaladex.core.model.data.LocalPomRepository
+import scaladex.core.model.data.LocalPomRepository._
+import scaladex.infra.config.FilesystemConfig
 
 /*
 The contrib folder is read-only from the point of view of Scaladex. We receive PR, we merge them.
@@ -54,47 +57,27 @@ scaladex-contrib
 scaladex-credentials (optionnal)
 └── search-credential
  */
-
-sealed trait LocalRepository extends Product with Serializable
-
-object LocalRepository {
-  final case object BintraySbtPlugins extends LocalRepository
-}
-
-sealed trait LocalPomRepository extends LocalRepository
-object LocalPomRepository {
-  final case object Bintray extends LocalPomRepository
-  final case object MavenCentral extends LocalPomRepository
-  final case object UserProvided extends LocalPomRepository
-}
-
 object DataPaths {
 
   private val base = build.info.BuildInfo.baseDirectory.toPath.getParent
   base.resolve(Paths.get("scaladex-credentials"))
 
   def from(
-      contrib: String,
-      index: String,
-      credentials: String,
+      config: FilesystemConfig,
       env: Env
   ): DataPaths = {
-    val contribPath = Paths.get(contrib)
-    val indexPath = Paths.get(index)
-    val credentialsPath = Paths.get(credentials)
+    import config._
     val (contribDataPath, indexDataPath, credentialsDataPath) =
       if (env.isLocal) {
-
         val defaultContrib =
-          if (contribPath.isAbsolute) contribPath else base.resolve(contribPath)
+          if (contrib.isAbsolute) contrib else base.resolve(contrib)
         val defaultIndex =
-          if (indexPath.isAbsolute) indexPath else base.resolve(indexPath)
+          if (index.isAbsolute) index else base.resolve(index)
         val defaultCredentials =
-          if (credentialsPath.isAbsolute) credentialsPath
-          else base.resolve(credentialsPath)
+          if (credentials.isAbsolute) credentials else base.resolve(credentials)
         (defaultContrib, defaultIndex, defaultCredentials)
       } else {
-        (contribPath, indexPath, credentialsPath)
+        (contrib, index, credentials)
       }
     DataPaths(
       contribDataPath,
@@ -186,8 +169,6 @@ case class DataPaths(
   val ivysLastDownload: Path = ivys.resolve("last-download")
 
   val ivysData: Path = ivys.resolve("data.json")
-
-  import LocalPomRepository._
 
   def poms(repository: LocalPomRepository): Path =
     repository match {

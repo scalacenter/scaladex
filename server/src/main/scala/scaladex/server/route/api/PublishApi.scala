@@ -4,34 +4,38 @@ import java.time.Instant
 import java.util.Base64
 
 import scala.collection.mutable.{Map => MMap}
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import akka.actor.ActorSystem
-import akka.actor.Props
 import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives._
-import akka.util.Timeout
 import org.slf4j.LoggerFactory
 import scaladex.core.model.Artifact
 import scaladex.core.model.UserState
+import scaladex.core.service.LocalStorageApi
 import scaladex.core.service.WebDatabase
+import scaladex.data.cleanup.GithubRepoExtractor
+import scaladex.data.meta.ArtifactConverter
 import scaladex.infra.storage.DataPaths
 import scaladex.server.GithubAuth
 import scaladex.server.route._
+import scaladex.server.service.PublishProcess
 
 class PublishApi(
     paths: DataPaths,
     database: WebDatabase,
+    filesystem: LocalStorageApi,
     github: GithubAuth
-)(implicit system: ActorSystem) {
+)(implicit ec: ExecutionContext) {
 
   private val log = LoggerFactory.getLogger(getClass)
 
-  import system.dispatcher
+  private val githubRepoExtractor = new GithubRepoExtractor(paths)
+  private val artifactConverter = new ArtifactConverter(paths)
+  private val publishProcess = new PublishProcess(filesystem, githubRepoExtractor, artifactConverter, database)
 
   /*
    * verifying a login to github
@@ -89,15 +93,6 @@ class PublishApi(
     Artifact.MavenReference(groupId, artifactId, version)
   }
 
-  import akka.pattern.ask
-
-  import scala.concurrent.duration._
-  implicit val timeout: Timeout = Timeout(40.seconds)
-  private val actor =
-    system.actorOf(
-      Props(classOf[impl.PublishActor], paths, database, system)
-    )
-
   private val githubCredentialsCache =
     MMap.empty[String, (String, UserState)]
 
@@ -126,7 +121,7 @@ class PublishApi(
             "readme".as[Boolean] ? true,
             "contributors".as[Boolean] ? true,
             "info".as[Boolean] ? true
-          )((path, created, readme, contributors, info) =>
+          )((path, created, _, _, _) =>
             entity(as[String])(data =>
               extractCredentials(credentials =>
                 authenticateBasicAsync(
@@ -134,26 +129,11 @@ class PublishApi(
                   githubAuthenticator(credentials)
                 ) {
                   case (_, userState) =>
-                    val publishData = impl.PublishData(
-                      path,
-                      created,
-                      data,
-                      userState,
-                      info,
-                      contributors,
-                      readme
-                    )
+                    log.info(s"Received publish command: $created - $path")
 
-                    log.info(
-                      s"Received publish command: ${publishData.created} - ${publishData.path}"
-                    )
-                    log.debug(publishData.data)
-
-                    complete(
-                      (actor ? publishData)
-                        .mapTo[(StatusCode, String)]
-                        .map(s => s)
-                    )
+                    complete {
+                      publishProcess.publishPom(path, data, created, userState)
+                    }
                 }
               )
             )

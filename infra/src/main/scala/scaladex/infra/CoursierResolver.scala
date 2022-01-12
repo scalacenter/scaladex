@@ -16,11 +16,9 @@ import coursier.Repository
 import coursier.cache.Cache
 import coursier.core.Type
 import coursier.error.ResolutionError
+import scaladex.core.model.data.LocalPomRepository
+import scaladex.core.model.data.LocalPomRepository._
 import scaladex.core.service.PomResolver
-import scaladex.infra.storage.LocalPomRepository
-import scaladex.infra.storage.LocalPomRepository.Bintray
-import scaladex.infra.storage.LocalPomRepository.MavenCentral
-import scaladex.infra.storage.LocalPomRepository.UserProvided
 
 class CoursierResolver(repositories: Seq[Repository])(implicit val ec: ExecutionContext)
     extends PomResolver
