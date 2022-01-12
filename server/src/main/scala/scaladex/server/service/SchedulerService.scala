@@ -42,16 +42,15 @@ class SchedulerService(database: SchedulerDatabase, searchEngine: SearchEngine, 
         .computeProjectDependencies()
         .mapFailure(e =>
           new Exception(
-            s"not able to getAllProjectDependencies because of ${e.getMessage}"
+            s"Failed to compute project dependencies because of ${e.getMessage}"
           )
         )
-      _ = println(s" I m here!")
-      _ <- database.deleteMovedProjectFromProjectDependencyTable()
+      _ <- database.deleteDependenciesOfMovedProject()
       _ <- database
         .insertProjectDependencies(projectWithDependencies)
         .mapFailure(e =>
           new Exception(
-            s"not able to insertProjectDependencies because of ${e.getMessage}"
+            s"Failed to insert project dependencies because of ${e.getMessage}"
           )
         )
 

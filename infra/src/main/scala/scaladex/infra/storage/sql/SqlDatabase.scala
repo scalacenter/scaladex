@@ -137,11 +137,11 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] =
     run(ProjectDependenciesTable.countInverseDependencies.unique(projectRef))
 
-  override def deleteMovedProjectFromProjectDependencyTable(): Future[Unit] =
+  override def deleteDependenciesOfMovedProject(): Future[Unit] =
     for {
       moved <- run(ProjectTable.selectProjectByGithubStatus.to[List]("Moved"))
-      _ <- run(ProjectDependenciesTable.deleteSourceProject.updateMany(moved))
-      _ <- run(ProjectDependenciesTable.deleteTargetProject.updateMany(moved))
+      _ <- run(ProjectDependenciesTable.deleteBySource.updateMany(moved))
+      _ <- run(ProjectDependenciesTable.deleteByTarget.updateMany(moved))
     } yield ()
 
   override def computeAllProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]] =

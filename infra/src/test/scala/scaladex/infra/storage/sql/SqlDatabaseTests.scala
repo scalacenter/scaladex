@@ -213,7 +213,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
         Scalafix.githubInfo,
         GithubStatus.Moved(now, Project.Reference.from("scala", "fix"))
       )
-      _ <- database.deleteMovedProjectFromProjectDependencyTable()
+      _ <- database.deleteDependenciesOfMovedProject()
       scalafixInverseDeps <- database.countInverseProjectDependencies(Scalafix.reference)
       catsInverseDeps <- database.countInverseProjectDependencies(Cats.reference)
     } yield {
