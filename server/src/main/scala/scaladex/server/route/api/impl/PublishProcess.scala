@@ -15,7 +15,6 @@ import akka.http.scaladsl.model.StatusCode
 import akka.http.scaladsl.model.StatusCodes._
 import org.slf4j.LoggerFactory
 import scaladex.core.service.WebDatabase
-import scaladex.data._
 import scaladex.data.cleanup.GithubRepoExtractor
 import scaladex.data.download.PlayWsDownloader
 import scaladex.data.maven.ArtifactModel
@@ -73,12 +72,6 @@ private[api] class PublishProcess(paths: DataPaths, database: WebDatabase)(
                     if (data.userState.hasPublishingAuthority)
                       LocalPomRepository.MavenCentral
                     else LocalPomRepository.UserProvided
-
-                  Meta.append(
-                    paths,
-                    Meta(data.hash, data.path, data.datetimeCreated.toString),
-                    repository
-                  )
 
                   log.info(
                     s"Saved ${pom.groupId}:${pom.artifactId}:${pom.version}"
