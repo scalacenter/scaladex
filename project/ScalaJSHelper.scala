@@ -7,35 +7,25 @@ object ScalaJSHelper {
     watchSources ++= (client / watchSources).value,
     // Pick fastOpt when developing and fullOpt when publishing
     Compile / resourceGenerators += Def.task {
-      val (js, map) = andSourceMap((client / Compile / fastOptJS).value.data)
+      val js = (client / Compile / fastOptJS).value.data
+      val sourceMap = getSourceMap(js)
       IO.copy(
         Seq(
           js -> (Compile / resourceManaged).value / js.getName,
-          map -> (Compile / resourceManaged).value / map.getName
+          sourceMap -> (Compile / resourceManaged).value / sourceMap.getName
         )
       ).toSeq
     }.taskValue,
-    Compile / packageBin / mappings := {
-      val mappingExcludingNonOptimized =
-        (Compile / packageBin / mappings).value.filterNot {
-          case (f, r) =>
-            f.getName.endsWith("-fastopt.js") ||
-              f.getName.endsWith("js.map")
-        }
-
-      val optimized = {
-        val (js, map) =
-          andSourceMap((client / Compile / fullOptJS).value.data)
-        Seq(
-          js -> js.getName,
-          map -> map.getName
-        )
-      }
-
-      mappingExcludingNonOptimized ++ optimized
+    Compile / packageBin / mappings ++= {
+      val optJs = (client / Compile / fullOptJS).value.data
+      val sourceMap = getSourceMap(optJs)
+      Seq(
+        optJs -> optJs.getName,
+        sourceMap -> sourceMap.getName
+      )
     }
   )
 
-  private def andSourceMap(aFile: java.io.File) =
-    aFile -> file(aFile.getAbsolutePath + ".map")
+  private def getSourceMap(jsFile: java.io.File): File =
+    file(jsFile.getAbsolutePath + ".map")
 }
