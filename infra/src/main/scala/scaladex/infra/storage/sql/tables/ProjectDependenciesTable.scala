@@ -19,10 +19,10 @@ object ProjectDependenciesTable {
   val countInverseDependencies: Query[Project.Reference, Int] =
     selectRequest(table, Seq("COUNT(*)"), targetFields)
 
-  val deleteSourceProject: Update[Project.Reference] =
+  val deleteBySource: Update[Project.Reference] =
     deleteRequest(table, sourceFields)
 
-  val deleteTargetProject: Update[Project.Reference] =
+  val deleteByTarget: Update[Project.Reference] =
     deleteRequest(table, targetFields)
 
 }

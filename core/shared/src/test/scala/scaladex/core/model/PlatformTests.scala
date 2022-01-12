@@ -54,9 +54,8 @@ class PlatformTests extends AsyncFunSpec with Matchers with OptionValues with Ta
     PlatformType.ofName("Js").value shouldBe PlatformType.Js
     PlatformType.ofName("Jvm").value shouldBe PlatformType.Jvm
   }
-  it("Should encode and parse a ScalaTarget") {
-    val st = ScalaJs(ScalaVersion.`2.10`, MinorBinary(0, 6))
-    println(s"st.encode = ${st.encode}")
-    assert(parse(st.encode).get == st)
+  it("Should encode and parse a Scala.js platform") {
+    val platform = ScalaJs(ScalaVersion.`2.10`, MinorBinary(0, 6))
+    assert(parse(platform.encode).get == platform)
   }
 }
