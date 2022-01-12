@@ -151,9 +151,6 @@ case class DataPaths(
   private val bintrayPom = pomsFolder.resolve("bintray")
   assert2(Files.isDirectory(bintrayPom))
 
-  private val bintrayParentPom = bintrayPom.resolve("parent")
-  assert2(Files.isDirectory(bintrayParentPom))
-
   private val bintrayPomSha = bintrayPom.resolve("sha")
   assert2(Files.isDirectory(bintrayPomSha))
 
@@ -165,9 +162,6 @@ case class DataPaths(
   private val mavenCentralPom = pomsFolder.resolve("maven-central")
   assert2(Files.isDirectory(mavenCentralPom))
 
-  private val mavenCentralParentPom = mavenCentralPom.resolve("parent")
-  assert2(Files.isDirectory(mavenCentralParentPom))
-
   private val mavenCentralPomSha = mavenCentralPom.resolve("sha")
   assert2(Files.isDirectory(mavenCentralPomSha))
 
@@ -178,9 +172,6 @@ case class DataPaths(
 
   private val usersPom = pomsFolder.resolve("users")
   assert2(Files.isDirectory(usersPom))
-
-  private val usersParentPom = usersPom.resolve("parent")
-  assert2(Files.isDirectory(usersParentPom))
 
   private val usersPomSha = usersPom.resolve("sha")
   assert2(Files.isDirectory(usersPomSha))
@@ -203,13 +194,6 @@ case class DataPaths(
       case Bintray      => bintrayPomSha
       case MavenCentral => mavenCentralPomSha
       case UserProvided => usersPomSha
-    }
-
-  def parentPoms(repository: LocalPomRepository): Path =
-    repository match {
-      case Bintray      => bintrayParentPom
-      case MavenCentral => mavenCentralParentPom
-      case UserProvided => usersParentPom
     }
 
   def meta(repository: LocalPomRepository): Path =

@@ -3,6 +3,7 @@ package scaladex.data
 import java.nio.file.Path
 import java.time.Instant
 
+import scala.concurrent.ExecutionContext
 import scala.sys.process.Process
 
 import akka.actor.ActorSystem
@@ -17,7 +18,6 @@ import scaladex.data.central.CentralMissing
 import scaladex.data.cleanup.GithubRepoExtractor
 import scaladex.data.cleanup.NonStandardLib
 import scaladex.data.init.Init
-import scaladex.data.maven.DownloadParentPoms
 import scaladex.data.util.PidLock
 import scaladex.infra.storage.LocalPomRepository
 import scaladex.infra.storage.sql.SqlDatabase
@@ -60,6 +60,7 @@ object Main extends LazyLogging {
     val bintray: LocalPomRepository = LocalPomRepository.Bintray
 
     implicit val system: ActorSystem = ActorSystem()
+    implicit val ec: ExecutionContext = system.dispatcher
 
     val dataPaths = config.dataPaths
 
@@ -73,8 +74,6 @@ object Main extends LazyLogging {
       },
       // Download POMs from Bintray
       Step("download")(() => new BintrayDownloadPoms(dataPaths).run()),
-      // Download parent POMs
-      Step("parent")(() => new DownloadParentPoms(bintray, dataPaths).run()),
       // Download ivy.xml descriptors of sbt-plugins from Bintray
       // and Github information of the corresponding projects
       Step("sbt")(() => UpdateBintraySbtPlugins.run(dataPaths)),

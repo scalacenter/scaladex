@@ -18,7 +18,6 @@ import scaladex.core.service.WebDatabase
 import scaladex.data.cleanup.GithubRepoExtractor
 import scaladex.data.download.PlayWsDownloader
 import scaladex.data.maven.ArtifactModel
-import scaladex.data.maven.DownloadParentPoms
 import scaladex.data.maven.PomsReader
 import scaladex.infra.storage.DataPaths
 import scaladex.infra.storage.LocalPomRepository
@@ -121,11 +120,7 @@ private[api] class PublishProcess(paths: DataPaths, database: WebDatabase)(
   private def getTmpPom(data: PublishData): List[Try[(ArtifactModel, LocalPomRepository, String)]] = {
     val path = data.tempPath.getParent
 
-    val downloadParentPomsStep =
-      new DownloadParentPoms(LocalPomRepository.MavenCentral, paths, Some(path))
-
-    downloadParentPomsStep.run()
-
-    PomsReader.tmp(paths, path).load()
+    val repository = if (data.userState.isSonatype) LocalPomRepository.MavenCentral else LocalPomRepository.UserProvided
+    PomsReader(repository, paths).load()
   }
 }

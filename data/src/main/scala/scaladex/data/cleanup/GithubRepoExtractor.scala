@@ -4,6 +4,7 @@ package cleanup
 import java.nio.charset.StandardCharsets
 import java.nio.file._
 
+import scala.concurrent.ExecutionContext
 import scala.io.Source
 import scala.util.Using
 import scala.util.matching.Regex
@@ -90,7 +91,7 @@ class GithubRepoExtractor(paths: DataPaths) {
   }
 
   // script to generate contrib/claims.json
-  def updateClaims(): Unit = {
+  def updateClaims()(implicit ec: ExecutionContext): Unit = {
     val poms =
       PomsReader.loadAll(paths).map { case (pom, _, _) => pom }
 

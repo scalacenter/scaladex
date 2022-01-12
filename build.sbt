@@ -97,6 +97,7 @@ lazy val infra = project
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-circe" % "1.33.0",
+      "io.get-coursier" %% "coursier" % "2.0.16",
       "org.tpolecat" %% "doobie-scalatest" % V.doobieVersion % Test,
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it"
     ) ++ Seq(

@@ -6,10 +6,22 @@ import java.nio.file._
 import java.util.Properties
 
 import scala.collection.parallel.CollectionConverters._
+import scala.concurrent.ExecutionContext
 import scala.util.Try
 
+import org.apache.maven.model
+import org.apache.maven.model.Parent
+import org.apache.maven.model.building.DefaultModelBuilderFactory
+import org.apache.maven.model.building.DefaultModelBuildingRequest
+import org.apache.maven.model.building.DefaultModelProcessor
+import org.apache.maven.model.building.FileModelSource
+import org.apache.maven.model.building.ModelSource2
+import org.apache.maven.model.io.DefaultModelReader
+import org.apache.maven.model.resolution.ModelResolver
 import org.slf4j.LoggerFactory
+import scaladex.core.service.PomResolver
 import scaladex.data.bintray.SbtPluginsData
+import scaladex.infra.CoursierResolver
 import scaladex.infra.storage.DataPaths
 import scaladex.infra.storage.LocalPomRepository
 import scaladex.infra.storage.LocalPomRepository.Bintray
@@ -17,7 +29,7 @@ import scaladex.infra.storage.LocalPomRepository.MavenCentral
 import scaladex.infra.storage.LocalPomRepository.UserProvided
 import scaladex.infra.storage.LocalRepository
 
-case class MissingParentPom(dep: maven.Dependency) extends Exception
+case class MissingParentPom(dep: String) extends Exception
 
 object PomsReader {
   def path(dep: maven.Dependency): String = {
@@ -32,7 +44,7 @@ object PomsReader {
 
   def loadAll(
       paths: DataPaths
-  ): Iterator[(ArtifactModel, LocalRepository, String)] = {
+  )(implicit ec: ExecutionContext): Iterator[(ArtifactModel, LocalRepository, String)] = {
 
     val ivysDescriptors = SbtPluginsData(paths.ivysData).iterator
     val centralPoms = PomsReader(MavenCentral, paths).iterator
@@ -41,58 +53,46 @@ object PomsReader {
     centralPoms ++ bintrayPoms ++ userPoms ++ ivysDescriptors
   }
 
-  def apply(repository: LocalPomRepository, paths: DataPaths): PomsReader =
+  def apply(repository: LocalPomRepository, paths: DataPaths)(implicit ec: ExecutionContext): PomsReader =
     new PomsReader(
       paths.poms(repository),
-      paths.parentPoms(repository),
-      repository
+      repository,
+      CoursierResolver(repository)
     )
 
-  def tmp(paths: DataPaths, path: Path): PomsReader =
-    new PomsReader(
-      path,
-      paths.parentPoms(LocalPomRepository.MavenCentral),
-      LocalPomRepository.UserProvided
-    )
 }
 
 private[maven] class PomsReader(
     pomsPath: Path,
-    parentPomsPath: Path,
-    repository: LocalPomRepository
+    repository: LocalPomRepository,
+    resolver: PomResolver
 ) {
 
   private val log = LoggerFactory.getLogger(getClass)
-
-  import org.apache.maven.model._
-  import resolution._
-  import io._
-  import building._
 
   private val builder = (new DefaultModelBuilderFactory).newInstance
   private val processor = new DefaultModelProcessor
   processor.setModelReader(new DefaultModelReader)
 
-  private val resolver = new ModelResolver {
-    def addRepository(repo: Repository, replace: Boolean): Unit = ()
-    def addRepository(repo: Repository): Unit = ()
-    def newCopy(): resolution.ModelResolver = throw new Exception("copy")
-    def resolveModel(parent: Parent): ModelSource2 =
+  private val modelResolver = new ModelResolver {
+    override def addRepository(repo: model.Repository, replace: Boolean): Unit = ()
+    override def addRepository(repo: model.Repository): Unit = ()
+    override def newCopy(): ModelResolver = throw new Exception("copy")
+    override def resolveModel(parent: Parent): ModelSource2 =
       resolveModel(parent.getGroupId, parent.getArtifactId, parent.getVersion)
-    def resolveModel(
+    override def resolveModel(
         groupId: String,
         artifactId: String,
         version: String
     ): ModelSource2 = {
-      val dep = maven.Dependency(groupId, artifactId, version)
-      val target = parentPomsPath.resolve(PomsReader.path(dep))
+      val pom = resolver
+        .resolve(groupId, artifactId, version)
+        .getOrElse {
+          log.error(s"Missing parent pom: $groupId:$artifactId:$version")
+          throw new MissingParentPom(s"$groupId:$artifactId:$version")
+        }
 
-      if (Files.exists(target)) {
-        new FileModelSource(target.toFile)
-      } else {
-        log.error(s"Missing parent pom of $groupId:$artifactId:$version")
-        throw new MissingParentPom(dep)
-      }
+      new FileModelSource(pom.toFile)
     }
   }
 
@@ -105,9 +105,8 @@ private[maven] class PomsReader(
     val sha1 = path.getFileName().toString.dropRight(".pom".length)
 
     Try {
-      val request = new DefaultModelBuildingRequest
-      request
-        .setModelResolver(resolver)
+      val request = (new DefaultModelBuildingRequest)
+        .setModelResolver(modelResolver)
         .setSystemProperties(jdk)
         .setPomFile(path.toFile)
 

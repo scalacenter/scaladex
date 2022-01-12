@@ -4,6 +4,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 
+import scala.concurrent.ExecutionContext
+
 import org.json4s.native.Serialization.write
 import scaladex.core.model.Project
 import scaladex.data.bintray.BintrayMeta
@@ -16,7 +18,7 @@ import scaladex.infra.storage.LocalPomRepository
 import scaladex.infra.storage.local.LocalStorageRepo
 
 object SubIndex extends BintrayProtocol {
-  def generate(source: DataPaths, destination: DataPaths): Unit = {
+  def generate(source: DataPaths, destination: DataPaths)(implicit ec: ExecutionContext): Unit = {
     def splitRepo(in: String): Project.Reference = {
       val List(owner, repo) = in.split('/').toList
       Project.Reference.from(owner, repo)
@@ -66,20 +68,6 @@ object SubIndex extends BintrayProtocol {
             copyFile(shaPath(source), shaPath(destination))
           case _ => () // does not copy ivy sbt plugins
         }
-    }
-
-    println("== Copy Parent Poms ==")
-
-    // copy all parent poms
-    List(
-      LocalPomRepository.Bintray,
-      LocalPomRepository.MavenCentral,
-      LocalPomRepository.UserProvided
-    ).foreach { pomRepo =>
-      def parentShaPath(paths: DataPaths): Path =
-        paths.parentPoms(pomRepo)
-
-      copyDir(parentShaPath(source), parentShaPath(destination))
     }
 
     def shasFor(forRepo: LocalPomRepository): Set[String] =
