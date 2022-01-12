@@ -5,10 +5,11 @@ import java.io.File
 import java.nio.file._
 import java.util.Properties
 
-import scala.collection.parallel.CollectionConverters._
 import scala.concurrent.ExecutionContext
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.maven.model
 import org.apache.maven.model.Parent
 import org.apache.maven.model.building.DefaultModelBuilderFactory
@@ -18,7 +19,6 @@ import org.apache.maven.model.building.FileModelSource
 import org.apache.maven.model.building.ModelSource2
 import org.apache.maven.model.io.DefaultModelReader
 import org.apache.maven.model.resolution.ModelResolver
-import org.slf4j.LoggerFactory
 import scaladex.core.service.PomResolver
 import scaladex.data.bintray.SbtPluginsData
 import scaladex.infra.CoursierResolver
@@ -42,34 +42,34 @@ object PomsReader {
     ).mkString(File.separator)
   }
 
-  def loadAll(
-      paths: DataPaths
-  )(implicit ec: ExecutionContext): Iterator[(ArtifactModel, LocalRepository, String)] = {
-
+  def loadAll(paths: DataPaths)(implicit ec: ExecutionContext): Iterator[(ArtifactModel, LocalRepository, String)] = {
     val ivysDescriptors = SbtPluginsData(paths.ivysData).iterator
-    val centralPoms = PomsReader(MavenCentral, paths).iterator
-    val bintrayPoms = PomsReader(Bintray, paths).iterator
-    val userPoms = PomsReader(UserProvided, paths).iterator
+    val centralPoms = loadAll(MavenCentral, paths)
+    val bintrayPoms = loadAll(Bintray, paths)
+    val userPoms = loadAll(UserProvided, paths)
     centralPoms ++ bintrayPoms ++ userPoms ++ ivysDescriptors
   }
 
-  def apply(repository: LocalPomRepository, paths: DataPaths)(implicit ec: ExecutionContext): PomsReader =
-    new PomsReader(
-      paths.poms(repository),
-      repository,
-      CoursierResolver(repository)
-    )
+  def loadAll(repository: LocalPomRepository, paths: DataPaths)(
+      implicit ec: ExecutionContext
+  ): Iterator[(ArtifactModel, LocalPomRepository, String)] = {
+    val resolver = CoursierResolver(repository)
+    val reader = new PomsReader(repository, resolver)
+    val pomDirectory = paths.poms(repository)
+    reader.loadAll(pomDirectory)
+  }
 
+  def loadOne(repository: LocalPomRepository, pom: Path)(implicit ec: ExecutionContext): Try[ArtifactModel] = {
+    val resolver = CoursierResolver(repository)
+    val reader = new PomsReader(repository, resolver)
+    reader.loadOne(pom).map(_._1)
+  }
 }
 
 private[maven] class PomsReader(
-    pomsPath: Path,
     repository: LocalPomRepository,
     resolver: PomResolver
-) {
-
-  private val log = LoggerFactory.getLogger(getClass)
-
+) extends LazyLogging {
   private val builder = (new DefaultModelBuilderFactory).newInstance
   private val processor = new DefaultModelProcessor
   processor.setModelReader(new DefaultModelReader)
@@ -88,7 +88,7 @@ private[maven] class PomsReader(
       val pom = resolver
         .resolve(groupId, artifactId, version)
         .getOrElse {
-          log.error(s"Missing parent pom: $groupId:$artifactId:$version")
+          logger.error(s"Missing parent pom: $groupId:$artifactId:$version")
           throw new MissingParentPom(s"$groupId:$artifactId:$version")
         }
 
@@ -96,12 +96,11 @@ private[maven] class PomsReader(
     }
   }
 
+  // TODO: Try to remove
   private val jdk = new Properties
   jdk.setProperty("java.version", "1.8") // << ???
-  // jdk.setProperty("scala.version", "2.11.7")
-  // jdk.setProperty("scala.binary.version", "2.11")
 
-  def loadOne(path: Path): Try[(ArtifactModel, LocalPomRepository, String)] = {
+  def loadOne(path: Path): Try[(ArtifactModel, String)] = {
     val sha1 = path.getFileName().toString.dropRight(".pom".length)
 
     Try {
@@ -111,38 +110,13 @@ private[maven] class PomsReader(
         .setPomFile(path.toFile)
 
       builder.build(request).getEffectiveModel
-
-    }.map(pom => (PomConvert(pom), repository, sha1))
+    }.map(pom => (PomConvert(pom), sha1))
   }
 
-  def iterator: Iterator[(ArtifactModel, LocalPomRepository, String)] = {
-    import scala.jdk.CollectionConverters._
-
-    val stream = Files.newDirectoryStream(pomsPath).iterator
-    Files.newDirectoryStream(pomsPath).iterator.asScala.flatMap(p => loadOne(p).toOption)
-  }
-
-  def load(): List[Try[(ArtifactModel, LocalPomRepository, String)]] = {
-    import scala.jdk.CollectionConverters._
-
-    val s = Files.newDirectoryStream(pomsPath)
-    val rawPoms = s.asScala.toList
-
-    val progress =
-      ProgressBar(s"Reading $repository's POMs", rawPoms.size, log)
-    progress.start()
-
-    val poms = rawPoms.par.map { p =>
-      progress.synchronized {
-        progress.step()
-      }
-
-      loadOne(p)
-
-    }.toList
-    progress.stop()
-    s.close()
-
-    poms
+  def loadAll(directory: Path): Iterator[(ArtifactModel, LocalPomRepository, String)] = {
+    val stream = Files.newDirectoryStream(directory).iterator
+    stream.asScala
+      .flatMap(p => loadOne(p).toOption)
+      .map { case (model, sha1) => (model, repository, sha1) }
   }
 }

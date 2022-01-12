@@ -183,17 +183,14 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
   def run(): Unit = {
     val metaExtractor = new ArtifactMetaExtractor(paths)
     val allGroups: Set[String] =
-      PomsReader(LocalPomRepository.MavenCentral, paths)
-        .load()
+      PomsReader
+        .loadAll(LocalPomRepository.MavenCentral, paths)
         .flatMap {
-          case Success((pom, _, _)) =>
+          case (pom, _, _) =>
             metaExtractor
               .extract(pom)
-              .filter { meta =>
-                meta.platform != Platform.Java //
-              }
+              .filter(meta => meta.platform != Platform.Java)
               .map(_ => pom.groupId)
-          case _ => None
         }
         .toSet
 

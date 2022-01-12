@@ -53,7 +53,7 @@ private[api] class PublishProcess(paths: DataPaths, database: WebDatabase)(
         data.writeTemp()
       }.flatMap { _ =>
         getTmpPom(data) match {
-          case List(Success((pom, _, _))) =>
+          case Success(pom) =>
             githubExtractor.extract(pom) match {
               case None =>
                 log.warn("POM saved without Github information")
@@ -92,16 +92,13 @@ private[api] class PublishProcess(paths: DataPaths, database: WebDatabase)(
                   )
                 }
             }
-          case List(Failure(e)) =>
+          case Failure(e) =>
             log.error("Invalid POM " + e)
             val sw = new StringWriter()
             val pw = new PrintWriter(sw)
             e.printStackTrace(pw)
 
             Future.successful((BadRequest, "Invalid pom: " + sw.toString()))
-          case _ =>
-            log.error("Unable to write POM data")
-            Future.successful((BadRequest, "Impossible ?"))
         }
       }
     } else {
@@ -117,10 +114,8 @@ private[api] class PublishProcess(paths: DataPaths, database: WebDatabase)(
    * @param data the XML String data
    * @return
    */
-  private def getTmpPom(data: PublishData): List[Try[(ArtifactModel, LocalPomRepository, String)]] = {
-    val path = data.tempPath.getParent
-
+  private def getTmpPom(data: PublishData): Try[ArtifactModel] = {
     val repository = if (data.userState.isSonatype) LocalPomRepository.MavenCentral else LocalPomRepository.UserProvided
-    PomsReader(repository, paths).load()
+    PomsReader.loadOne(repository, data.tempPath)
   }
 }
