@@ -22,7 +22,7 @@ import scaladex.server.service.PublishProcess
 
 class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
   val publishProcess: PublishProcess = PublishProcess(dataPaths, localStorage, database)
-  val publishApi = new PublishApi(dataPaths, database, localStorage, githubAuth)
+  val publishApi = new PublishApi(githubAuth, publishProcess)
 
   val sonatype: BasicHttpCredentials = BasicHttpCredentials("token", MockGithubAuth.Sonatype.token)
   val admin: BasicHttpCredentials = BasicHttpCredentials("token", MockGithubAuth.Admin.token)

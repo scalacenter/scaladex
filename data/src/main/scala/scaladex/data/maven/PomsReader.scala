@@ -5,7 +5,8 @@ import java.io.File
 import java.nio.file._
 import java.util.Properties
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.Await
+import scala.concurrent.duration._
 import scala.jdk.CollectionConverters._
 import scala.util.Try
 
@@ -26,7 +27,6 @@ import scaladex.core.model.data.LocalPomRepository.UserProvided
 import scaladex.core.model.data.LocalRepository
 import scaladex.core.service.PomResolver
 import scaladex.data.bintray.SbtPluginsData
-import scaladex.infra.CoursierResolver
 import scaladex.infra.storage.DataPaths
 
 case class MissingParentPom(dep: String) extends Exception
@@ -41,35 +41,9 @@ object PomsReader {
       artifactId + "-" + version + ".pom"
     ).mkString(File.separator)
   }
-
-  def loadAll(paths: DataPaths)(implicit ec: ExecutionContext): Iterator[(ArtifactModel, LocalRepository, String)] = {
-    val ivysDescriptors = SbtPluginsData(paths.ivysData).iterator
-    val centralPoms = loadAll(MavenCentral, paths)
-    val bintrayPoms = loadAll(Bintray, paths)
-    val userPoms = loadAll(UserProvided, paths)
-    centralPoms ++ bintrayPoms ++ userPoms ++ ivysDescriptors
-  }
-
-  def loadAll(repository: LocalPomRepository, paths: DataPaths)(
-      implicit ec: ExecutionContext
-  ): Iterator[(ArtifactModel, LocalPomRepository, String)] = {
-    val resolver = CoursierResolver(repository)
-    val reader = new PomsReader(repository, resolver)
-    val pomDirectory = paths.poms(repository)
-    reader.loadAll(pomDirectory)
-  }
-
-  def loadOne(repository: LocalPomRepository, pom: Path)(implicit ec: ExecutionContext): Try[ArtifactModel] = {
-    val resolver = CoursierResolver(repository)
-    val reader = new PomsReader(repository, resolver)
-    reader.loadOne(pom).map(_._1)
-  }
 }
 
-private[maven] class PomsReader(
-    repository: LocalPomRepository,
-    resolver: PomResolver
-) extends LazyLogging {
+class PomsReader(resolver: PomResolver) extends LazyLogging {
   private val builder = (new DefaultModelBuilderFactory).newInstance
   private val processor = new DefaultModelProcessor
   processor.setModelReader(new DefaultModelReader)
@@ -85,8 +59,12 @@ private[maven] class PomsReader(
         artifactId: String,
         version: String
     ): ModelSource2 = {
-      val pom = resolver
-        .resolve(groupId, artifactId, version)
+      val future = resolver.resolve(groupId, artifactId, version)
+      // await result from coursier
+      // could block if we are short on threads
+      // unblock after 3 seconds
+      val pom = Await
+        .result(future, 3.seconds)
         .getOrElse {
           logger.error(s"Missing parent pom: $groupId:$artifactId:$version")
           throw new MissingParentPom(s"$groupId:$artifactId:$version")
@@ -100,6 +78,28 @@ private[maven] class PomsReader(
   private val jdk = new Properties
   jdk.setProperty("java.version", "1.8") // << ???
 
+  def loadAll(paths: DataPaths): Iterator[(ArtifactModel, LocalRepository, String)] = {
+    val ivysDescriptors = SbtPluginsData(paths.ivysData).iterator
+    loadAll(paths, MavenCentral) ++
+      loadAll(paths, Bintray) ++
+      loadAll(paths, UserProvided) ++
+      ivysDescriptors
+  }
+
+  private def loadAll(
+      paths: DataPaths,
+      repository: LocalPomRepository
+  ): Iterator[(ArtifactModel, LocalRepository, String)] =
+    loadAll(paths.poms(repository))
+      .map { case (model, sha1) => (model, repository, sha1) }
+
+  def loadAll(directory: Path): Iterator[(ArtifactModel, String)] =
+    Files
+      .newDirectoryStream(directory)
+      .iterator
+      .asScala
+      .flatMap(p => loadOne(p).toOption)
+
   def loadOne(path: Path): Try[(ArtifactModel, String)] = {
     val sha1 = path.getFileName().toString.dropRight(".pom".length)
 
@@ -111,12 +111,5 @@ private[maven] class PomsReader(
 
       builder.build(request).getEffectiveModel
     }.map(pom => (PomConvert(pom), sha1))
-  }
-
-  def loadAll(directory: Path): Iterator[(ArtifactModel, LocalPomRepository, String)] = {
-    val stream = Files.newDirectoryStream(directory).iterator
-    stream.asScala
-      .flatMap(p => loadOne(p).toOption)
-      .map { case (model, sha1) => (model, repository, sha1) }
   }
 }

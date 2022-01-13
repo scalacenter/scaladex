@@ -26,8 +26,7 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterAll {
     env = config.env,
     database = database,
     localStorage = localStorage,
-    session = githubUserSession,
-    paths = dataPaths
+    session = githubUserSession
   )
 
   describe("GET organization/repository") {

@@ -13,6 +13,8 @@ import akka.http.scaladsl.server._
 import cats.effect.ContextShift
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
+import doobie.util.ExecutionContexts
+import scaladex.core.service.LocalStorageApi
 import scaladex.core.service.WebDatabase
 import scaladex.data.util.PidLock
 import scaladex.infra.elasticsearch.ElasticsearchEngine
@@ -24,6 +26,7 @@ import scaladex.infra.util.DoobieUtils
 import scaladex.server.config.ServerConfig
 import scaladex.server.route._
 import scaladex.server.route.api._
+import scaladex.server.service.PublishProcess
 import scaladex.server.service.SchedulerService
 
 object Server extends LazyLogging {
@@ -49,18 +52,22 @@ object Server extends LazyLogging {
         for {
           webPool <- DoobieUtils.transactor(config.database)
           schedulerPool <- DoobieUtils.transactor(config.database)
-        } yield (webPool, schedulerPool)
+          publishPool <- ExecutionContexts.fixedThreadPool[IO](8)
+        } yield (webPool, schedulerPool, publishPool)
 
       resources
         .use {
-          case (webPool, schedulerPool) =>
+          case (webPool, schedulerPool, publishPool) =>
             val webDatabase = new SqlDatabase(config.database, webPool)
             val schedulerDatabase = new SqlDatabase(config.database, schedulerPool)
             val githubService = config.github.token.map(new GithubClient(_))
             val schedulerService = new SchedulerService(schedulerDatabase, searchEngine, githubService)
+            val paths = DataPaths.from(config.filesystem, config.env)
+            val filesystem = new LocalStorageRepo(paths, config.filesystem.temp)
+            val publishProcess = PublishProcess(paths, filesystem, webDatabase)(publishPool)
             for {
               _ <- init(webDatabase, schedulerService, searchEngine, config.elasticsearch.reset)
-              routes = configureRoutes(config, searchEngine, webDatabase, schedulerService)
+              routes = configureRoutes(config, searchEngine, webDatabase, schedulerService, filesystem, publishProcess)
               _ <- IO(
                 Http()
                   .newServerAt(config.endpoint, config.port)
@@ -111,20 +118,20 @@ object Server extends LazyLogging {
       config: ServerConfig,
       searchEngine: ElasticsearchEngine,
       webDatabase: WebDatabase,
-      schedulerService: SchedulerService
+      schedulerService: SchedulerService,
+      filesystem: LocalStorageApi,
+      publishProcess: PublishProcess
   )(
       implicit actor: ActorSystem
   ): Route = {
     import actor.dispatcher
-    val paths = DataPaths.from(config.filesystem, config.env)
-    val localStorage = new LocalStorageRepo(paths, config.filesystem.temp)
 
     val githubAuth = new GithubAuthImpl()
     val session = new GithubUserSession(config.session)
 
     val searchPages = new SearchPages(config.env, searchEngine, session)
     val programmaticRoutes = concat(
-      new PublishApi(paths, webDatabase, localStorage, githubAuth).routes,
+      new PublishApi(githubAuth, publishProcess).routes,
       new SearchApi(searchEngine, webDatabase, session).routes,
       Assets.routes,
       new Badges(webDatabase).routes,
@@ -136,7 +143,7 @@ object Server extends LazyLogging {
       new AdminPages(config.env, schedulerService, session).routes,
       redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
         concat(
-          new ProjectPages(config.env, webDatabase, localStorage, session, paths).routes,
+          new ProjectPages(config.env, webDatabase, filesystem, session).routes,
           searchPages.routes
         )
       }

@@ -7,31 +7,25 @@ import scala.collection.mutable.{Map => MMap}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives._
-import org.slf4j.LoggerFactory
+import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Artifact
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubAuth
-import scaladex.core.service.LocalStorageApi
-import scaladex.core.service.WebDatabase
-import scaladex.infra.storage.DataPaths
 import scaladex.server.route._
 import scaladex.server.service.PublishProcess
+import scaladex.server.service.PublishResult
 
 class PublishApi(
-    paths: DataPaths,
-    database: WebDatabase,
-    filesystem: LocalStorageApi,
-    github: GithubAuth
-)(implicit ec: ExecutionContext) {
-
-  private val log = LoggerFactory.getLogger(getClass)
-
-  private val publishProcess = PublishProcess(paths, filesystem, database)
+    github: GithubAuth,
+    publishProcess: PublishProcess
+)(implicit ec: ExecutionContext)
+    extends LazyLogging {
 
   /*
    * verifying a login to github
@@ -125,11 +119,18 @@ class PublishApi(
                   githubAuthenticator(credentials)
                 ) {
                   case (_, userState) =>
-                    log.info(s"Received publish command: $created - $path")
+                    logger.info(s"Received publish command: $created - $path")
+                    val result = publishProcess.publishPom(path, data, created, userState)
 
-                    complete {
-                      publishProcess.publishPom(path, data, created, userState)
-                    }
+                    complete(
+                      result.map {
+                        case PublishResult.InvalidPom   => (StatusCodes.BadRequest, "pom is invalid")
+                        case PublishResult.NoGithubRepo => (StatusCodes.NoContent, "github repository not found")
+                        case PublishResult.Success      => (StatusCodes.Created, "pom published successfully")
+                        case PublishResult.Forbidden(login, repo) =>
+                          (StatusCodes.Forbidden, s"$login cannot publish ro $repo")
+                      }
+                    )
                 }
               )
             )

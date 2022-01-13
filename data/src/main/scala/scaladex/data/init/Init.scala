@@ -11,6 +11,7 @@ import scaladex.core.service.LocalStorageApi
 import scaladex.core.util.ScalaExtensions._
 import scaladex.data.maven.PomsReader
 import scaladex.data.meta.ArtifactConverter
+import scaladex.infra.CoursierResolver
 import scaladex.infra.storage.DataPaths
 import scaladex.infra.storage.sql.SqlDatabase
 
@@ -48,8 +49,9 @@ class Init(
     }
   }
 
-  private def insertAllArtifacts(): Future[Unit] =
-    PomsReader
+  private def insertAllArtifacts(): Future[Unit] = {
+    val pomsReader = new PomsReader(new CoursierResolver)
+    pomsReader
       .loadAll(paths)
       .flatMap {
         case (pom, localRepo, sha1) =>
@@ -61,6 +63,7 @@ class Init(
       }
       .sequence
       .map(_ => ())
+  }
 
   private def insertAllProjectSettings(): Future[Unit] = {
     val allSettings = localStorage.getAllProjectSettings()

@@ -14,6 +14,7 @@ import scaladex.data.bintray.BintrayProtocol
 import scaladex.data.bintray.BintraySearch
 import scaladex.data.cleanup.GithubRepoExtractor
 import scaladex.data.maven.PomsReader
+import scaladex.infra.CoursierResolver
 import scaladex.infra.storage.DataPaths
 import scaladex.infra.storage.local.LocalStorageRepo
 
@@ -32,8 +33,9 @@ object SubIndex extends BintrayProtocol {
 
     val githubRepoExtractor = new GithubRepoExtractor(source)
 
+    val pomsReader = new PomsReader(new CoursierResolver)
     val pomData =
-      PomsReader
+      pomsReader
         .loadAll(source)
         .flatMap {
           case (pom, repo, sha) =>
