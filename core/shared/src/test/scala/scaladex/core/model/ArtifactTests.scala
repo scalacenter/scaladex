@@ -85,7 +85,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
         ).sbtInstall
 
       val expected =
-        """addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.2.2")"""
+        """addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.8.1")"""
 
       assert(expected == obtained)
     }
