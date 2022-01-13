@@ -78,7 +78,7 @@ object Platform extends Parsers {
     override def platformVersion: Option[BinaryVersion] = Some(sbtV)
     override def platformType: PlatformType = PlatformType.Sbt
     override def render: String = s"sbt $sbtV ($scalaV)"
-    override def encode: String = s"_${scalaV}_${sbtV}"
+    override def encode: String = s"_${scalaV}_${sbtV.encode}"
     override def isValid: Boolean =
       scalaV.isValid && SbtPlugin.isValid(sbtV)
   }
@@ -107,7 +107,7 @@ object Platform extends Parsers {
     override def scalaVersion: Option[ScalaLanguageVersion] = Some(scalaV)
     override def platformVersion: Option[BinaryVersion] = Some(scalaNativeV)
     override def render: String = s"scala-native $scalaNativeV ($scalaV)"
-    override def encode: String = s"_native${scalaNativeV}_${scalaV}"
+    override def encode: String = s"_native${scalaNativeV.encode}_${scalaV.encode}"
     override def platformType: PlatformType = PlatformType.Native
     override def isValid: Boolean =
       scalaV.isValid && ScalaNative.isValid(scalaNativeV)
@@ -128,7 +128,7 @@ object Platform extends Parsers {
 
     override def platformVersion: Option[BinaryVersion] = Some(scalaJsV)
     override def render: String = s"scala-js $scalaJsV ($scalaV)"
-    override def encode: String = s"_sjs${scalaJsV}_$scalaV"
+    override def encode: String = s"_sjs${scalaJsV.encode}_${scalaV.encode}"
     override def platformType: PlatformType = PlatformType.Js
     override def isValid: Boolean =
       scalaV.isValid && ScalaJs.isValid(scalaJsV)
@@ -150,7 +150,7 @@ object Platform extends Parsers {
     override def platformVersion: Option[BinaryVersion] = None
     override def render: String = scalaV.render
     override def platformType: PlatformType = PlatformType.Jvm
-    override def encode: String = s"_${scalaV}"
+    override def encode: String = s"_${scalaV.encode}"
     override def isValid: Boolean = scalaVersion.exists(_.isValid)
   }
 
