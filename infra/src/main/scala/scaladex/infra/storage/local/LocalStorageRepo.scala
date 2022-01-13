@@ -14,10 +14,11 @@ import io.circe.syntax._
 import scaladex.core.model.Project
 import scaladex.core.model.data.LocalPomRepository
 import scaladex.core.service.LocalStorageApi
+import scaladex.infra.config.FilesystemConfig
 import scaladex.infra.storage.DataPaths
 import scaladex.infra.util.Codecs._
 
-class LocalStorageRepo(dataPaths: DataPaths, tempDir: Path) extends LocalStorageApi {
+class LocalStorageRepo(dataPaths: DataPaths, projectSettings: Path, temp: Path) extends LocalStorageApi {
   import LocalStorageRepo._
   private val singleThreadedContext = // TODO: Use a lock instead
     ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
@@ -30,31 +31,25 @@ class LocalStorageRepo(dataPaths: DataPaths, tempDir: Path) extends LocalStorage
 
   override def getAllProjectSettings(): Map[Project.Reference, Project.Settings] = {
     val fileContent = Files
-      .readAllLines(dataPaths.liveProjects)
+      .readAllLines(projectSettings)
       .toArray
       .mkString("")
     parser.decode[Map[Project.Reference, Project.Settings]](fileContent).toTry.get
   }
 
-  override def saveAllProjectSettings(settings: Map[Project.Reference, Project.Settings]): Unit = {
-    val liveDir = dataPaths.liveProjects.getParent
-    if (!Files.isDirectory(liveDir)) {
-      Files.createDirectory(liveDir)
-    }
-
+  override def saveAllProjectSettings(settings: Map[Project.Reference, Project.Settings]): Unit =
     Files.write(
-      dataPaths.liveProjects,
+      projectSettings,
       Printer.noSpaces.print(settings.asJson).getBytes(StandardCharsets.UTF_8)
     )
-  }
 
   override def createTempFile(content: String, prefix: String, suffix: String): Path = {
-    val tempFile = Files.createTempFile(tempDir, prefix, suffix)
+    val tempFile = Files.createTempFile(temp, prefix, suffix)
     Files.write(tempFile, content.getBytes(StandardCharsets.UTF_8))
   }
 
   override def deleteTempFile(path: Path): Unit = {
-    assert(path.startsWith(tempDir))
+    assert(path.startsWith(temp))
     Files.delete(path)
   }
 
@@ -66,6 +61,30 @@ class LocalStorageRepo(dataPaths: DataPaths, tempDir: Path) extends LocalStorage
 }
 
 object LocalStorageRepo {
+  def apply(dataPaths: DataPaths, config: FilesystemConfig): LocalStorageRepo = {
+    checkDir(config.index)
+    checkDir(config.temp)
+    val liveDir = initDir(config.index, "live")
+    val projectSettings = initFile(liveDir, "projects.json")
+    new LocalStorageRepo(dataPaths, projectSettings, config.temp)
+  }
+
+  private def checkDir(directory: Path) =
+    if (Files.notExists(directory)) Files.createDirectory(directory)
+    else assert(Files.isDirectory(directory), s"$directory is not a directory")
+
+  private def initDir(parent: Path, name: String): Path = {
+    val directory = parent.resolve(name)
+    checkDir(directory)
+    directory
+  }
+
+  private def initFile(directory: Path, name: String): Path = {
+    val file = directory.resolve(name)
+    if (!Files.exists(file)) Files.createFile(file)
+    file
+  }
+
   implicit val decoder: Decoder[Map[Project.Reference, Project.Settings]] =
     Decoder[Map[String, Json]].emap { map =>
       map.foldLeft[Either[String, Map[Project.Reference, Project.Settings]]](Right(Map.empty)) {

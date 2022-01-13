@@ -106,9 +106,12 @@ object SubIndex extends BintrayProtocol {
 
     println("== Copy LiveData ==")
 
-    val destinationStorage = new LocalStorageRepo(destination, temp)
-    val sourceStorage = new LocalStorageRepo(source, temp)
-    // live
+    val destinationProjectSettings = destination.index.resolve("live/projects.json")
+    val sourceProjectSettings = source.index.resolve("live/project.json")
+
+    val destinationStorage = new LocalStorageRepo(destination, destinationProjectSettings, temp)
+    val sourceStorage = new LocalStorageRepo(source, sourceProjectSettings, temp)
+
     destinationStorage.saveAllProjectSettings(
       sourceStorage
         .getAllProjectSettings()

@@ -64,8 +64,8 @@ object Main extends LazyLogging {
     implicit val system: ActorSystem = ActorSystem()
     implicit val ec: ExecutionContext = system.dispatcher
 
-    val dataPaths = DataPaths.from(config.filesystem, config.env)
-    val localStorage = new LocalStorageRepo(dataPaths, config.filesystem.temp)
+    val dataPaths = DataPaths.from(config.filesystem)
+    val localStorage = LocalStorageRepo(dataPaths, config.filesystem)
 
     val steps = List(
       // List POMs of Bintray

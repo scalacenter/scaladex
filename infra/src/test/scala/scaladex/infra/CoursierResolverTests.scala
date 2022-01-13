@@ -19,7 +19,6 @@ class CoursierResolverTests extends AsyncFunSpec with Matchers {
       all <- Seq.fill(10)(resolver.resolve("org.apache.parquet", "parquet", "1.12.2")).sequence
     } yield {
       all.flatten.size shouldBe 10
-      all.flatten.toSet.size shouldBe 1
     }
   }
 }

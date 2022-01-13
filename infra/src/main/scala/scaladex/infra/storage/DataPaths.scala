@@ -5,7 +5,6 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 import org.slf4j.LoggerFactory
-import scaladex.core.model.Env
 import scaladex.core.model.data.LocalPomRepository
 import scaladex.core.model.data.LocalPomRepository._
 import scaladex.infra.config.FilesystemConfig
@@ -40,7 +39,7 @@ scaladex-small-index or scaladex-index
 │   ├── moved.json
 │   ├── org/repo
 │   ├── ...
-│   └── org/repo
+│   └── org/repo
 ├── live
 |   └── projects.json
 └── ivys
@@ -62,37 +61,11 @@ object DataPaths {
   private val base = build.info.BuildInfo.baseDirectory.toPath.getParent
   base.resolve(Paths.get("scaladex-credentials"))
 
-  def from(
-      config: FilesystemConfig,
-      env: Env
-  ): DataPaths = {
-    val (contribDataPath, indexDataPath, credentialsDataPath) =
-      if (env.isLocal) {
-        val defaultContrib =
-          if (config.contrib.isAbsolute) config.contrib else base.resolve(config.contrib)
-        val defaultIndex =
-          if (config.index.isAbsolute) config.index else base.resolve(config.index)
-        val defaultCredentials =
-          if (config.credentials.isAbsolute) config.credentials else base.resolve(config.credentials)
-        (defaultContrib, defaultIndex, defaultCredentials)
-      } else {
-        (config.contrib, config.index, config.credentials)
-      }
-    DataPaths(
-      contribDataPath,
-      indexDataPath,
-      credentialsDataPath,
-      validate = true
-    )
-  }
+  def from(config: FilesystemConfig): DataPaths =
+    DataPaths(config.contrib, config.index, config.credentials, validate = true)
 }
 
-case class DataPaths(
-    contrib: Path,
-    index: Path,
-    credentials: Path,
-    validate: Boolean
-) {
+case class DataPaths(contrib: Path, index: Path, credentials: Path, validate: Boolean) {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -116,13 +89,6 @@ case class DataPaths(
 
   val nonStandard: Path = contrib.resolve("non-standard.json")
   assert2(Files.exists(nonStandard))
-
-  // === live ===
-  private val live = index.resolve("live")
-  assert2(Files.isDirectory(live))
-
-  val liveProjects: Path = live.resolve("projects.json")
-  assert2(Files.exists(liveProjects))
 
   // === poms ===
   private val pomsFolder = index.resolve("poms")

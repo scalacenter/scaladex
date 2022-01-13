@@ -6,10 +6,10 @@ import scala.concurrent.duration.Duration
 
 import akka.http.scaladsl.model.FormData
 import akka.http.scaladsl.model.StatusCodes
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.BeforeAndAfterEach
 import scaladex.core.test.Values
 
-class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterAll {
+class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach {
   import Values._
 
   def insertPlayJson(): Future[Unit] =
@@ -19,7 +19,7 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterAll {
       _ <- database.updateGithubInfoAndStatus(PlayJsonExtra.reference, PlayJsonExtra.githubInfo, ok)
     } yield ()
 
-  override def beforeAll(): Unit =
+  override def beforeEach(): Unit =
     Await.result(insertPlayJson(), Duration.Inf)
 
   val projectPages = new ProjectPages(

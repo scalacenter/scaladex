@@ -39,8 +39,8 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     transactor
       .use { xa =>
         val database = new SqlDatabase(config.database, xa)
-        val dataPaths = DataPaths.from(config.filesystem, config.env)
-        val filesystem = new LocalStorageRepo(dataPaths, config.filesystem.temp)
+        val dataPaths = DataPaths.from(config.filesystem)
+        val filesystem = LocalStorageRepo(dataPaths, config.filesystem)
         val searchSync = new SearchSynchronizer(database, searchEngine)
 
         // Will use GITHUB_TOKEN configured in github secret

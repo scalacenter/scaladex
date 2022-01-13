@@ -130,7 +130,7 @@ class ProjectPages(
                       StatusCodes.SeeOther
                     )
                   case Failure(e) =>
-                    logger.error(s"Cannot save settings of project $ref")
+                    logger.error(s"Cannot save settings of project $ref", e)
                     redirect(
                       Uri(s"/$organization/$repository"),
                       StatusCodes.SeeOther

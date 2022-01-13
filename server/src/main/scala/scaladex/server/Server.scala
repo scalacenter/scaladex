@@ -62,8 +62,8 @@ object Server extends LazyLogging {
             val schedulerDatabase = new SqlDatabase(config.database, schedulerPool)
             val githubService = config.github.token.map(new GithubClient(_))
             val schedulerService = new SchedulerService(schedulerDatabase, searchEngine, githubService)
-            val paths = DataPaths.from(config.filesystem, config.env)
-            val filesystem = new LocalStorageRepo(paths, config.filesystem.temp)
+            val paths = DataPaths.from(config.filesystem)
+            val filesystem = LocalStorageRepo(paths, config.filesystem)
             val publishProcess = PublishProcess(paths, filesystem, webDatabase)(publishPool)
             for {
               _ <- init(webDatabase, schedulerService, searchEngine, config.elasticsearch.reset)

@@ -52,18 +52,6 @@ lazy val scalacOptionsSettings = Def.settings(
   )
 )
 
-lazy val runSettings = Def.settings(
-  Compile / javaOptions ++= {
-    val base = (ThisBuild / baseDirectory).value
-    val devCredentials = base / "../scaladex-dev-credentials/application.conf"
-    if (devCredentials.exists) Seq(s"-Dconfig.file=$devCredentials")
-    else Seq()
-  },
-  Compile / run / fork := true,
-  reStart / javaOptions := (Compile / run / javaOptions).value,
-  addCommandAlias("start", "reStart")
-)
-
 lazy val scaladex = project
   .in(file("."))
   .aggregate(webclient, data, core.jvm, core.js, infra, server, template)
@@ -114,11 +102,21 @@ lazy val infra = project
     inConfig(Compile)(
       Postgres.settings(defaultPort = 5432, database = "scaladex")
     ),
+    javaOptions ++= {
+      val base = (ThisBuild / baseDirectory).value
+      val index = base / "../scaladex-small-index/"
+      val credentials = base / "../scaladex-credentials"
+      val contrib = base / "../scaladex-contrib"
+      Seq(
+        s"-Dscaladex.filesystem.credentials=$credentials",
+        s"-Dscaladex.filesystem.index=$index",
+        s"-Dscaladex.filesystem.contrib=$contrib"
+      )
+    },
     Compile / run / javaOptions ++= {
       val elasticsearchPort = startElasticsearch.value
       val postgresPort = (Compile / startPostgres).value
       Seq(
-        "-Xmx4g",
         s"-Dscaladex.database.port=$postgresPort",
         s"-Dscaladex.elasticsearch.port=$elasticsearchPort"
       )
@@ -127,8 +125,8 @@ lazy val infra = project
       Postgres.settings(defaultPort = 5432, database = "scaladex-test")
     ),
     Test / javaOptions ++= {
-      val postgresPort = (Test / startPostgres).value
       val elasticsearchPort = startElasticsearch.value
+      val postgresPort = (Test / startPostgres).value
       Seq(
         s"-Dscaladex.database.port=$postgresPort",
         s"-Dscaladex.database.name=scaladex-test",
@@ -163,7 +161,6 @@ lazy val server = project
   .settings(
     scalacOptionsSettings,
     loggingSettings,
-    runSettings,
     ammoniteSettings,
     packageScalaJS(webclient),
     javaOptions ++= Seq(
@@ -193,9 +190,10 @@ lazy val server = project
     Compile / resourceGenerators += Def.task(
       Seq((Assets / WebKeys.assets).value)
     ),
+    fork := true,
     Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value,
+    Test / javaOptions ++= (infra / javaOptions).value,
     Defaults.itSettings,
-    IntegrationTest / fork := true,
     IntegrationTest / javaOptions ++= (infra / Compile / run / javaOptions).value
   )
   .dependsOn(template, data, infra, core.jvm % "compile->compile;test->test")
@@ -224,7 +222,6 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
 lazy val data = project
   .settings(
     scalacOptionsSettings,
-    runSettings,
     ammoniteSettings,
     loggingSettings,
     libraryDependencies ++= Seq(
@@ -244,7 +241,8 @@ lazy val data = project
       "org.json4s" %% "json4s-native" % "3.5.5",
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     ),
-    Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value
+    Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value,
+    Test / javaOptions ++= (infra / javaOptions).value
   )
   .enablePlugins(JavaAppPackaging)
   .dependsOn(core.jvm % "compile->compile;test->test", infra)

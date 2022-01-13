@@ -1,8 +1,5 @@
 package scaladex.server.route
 
-import java.nio.file.Files
-import java.nio.file.Path
-
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -22,7 +19,6 @@ trait ControllerBaseSuite extends AsyncFunSpec with Matchers with ScalatestRoute
 
   val database: InMemoryDatabase = new InMemoryDatabase()
   val searchEngine: SearchEngine = new InMemorySearchEngine()
-  val dataPaths: DataPaths = DataPaths.from(config.filesystem, config.env)
-  val tempDir: Path = Files.createTempDirectory("scaladex-tests")
-  val localStorage = new LocalStorageRepo(dataPaths, tempDir)
+  val dataPaths: DataPaths = DataPaths.from(config.filesystem)
+  val localStorage: LocalStorageRepo = LocalStorageRepo(dataPaths, config.filesystem)
 }
