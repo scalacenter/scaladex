@@ -1,6 +1,8 @@
 package scaladex.infra
 
 import java.nio.file.Paths
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContextExecutor
@@ -12,7 +14,10 @@ import scaladex.core.model.data.LocalPomRepository
 import scaladex.core.util.ScalaExtensions._
 
 class CoursierResolverTests extends AsyncFunSpec with Matchers {
-  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
+  // need x + 1 threads where x is the number of concurrent downloads
+  val fixedThreadPool: ExecutorService =
+    Executors.newFixedThreadPool(11)
+  implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(fixedThreadPool)
 
   it("should resolve parent pom from maven central") {
     val resolver = CoursierResolver(LocalPomRepository.MavenCentral)
