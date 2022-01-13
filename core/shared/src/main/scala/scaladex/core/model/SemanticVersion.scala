@@ -80,10 +80,12 @@ object SemanticVersion extends Parsers {
   private def FullParser[_: P]: P[SemanticVersion] = Start ~ Parser ~ End
 
   def tryParse(version: String): Option[SemanticVersion] =
-    try fastparse.parse(version, x => FullParser(x)) match {
-      case Parsed.Success(v, _) => Some(v)
-      case _                    => None
-    } catch {
+    try
+      fastparse.parse(version, x => FullParser(x)) match {
+        case Parsed.Success(v, _) => Some(v)
+        case _                    => None
+      }
+    catch {
       case NonFatal(_) => None
     }
 }
