@@ -8,7 +8,7 @@ inThisBuild(
     semanticdbVersion := scalafixSemanticdb.revision,
     scalafixScalaBinaryVersion := "2.13",
     scalafixDependencies ++= List(
-      "com.github.liancheng" %% "organize-imports" % "0.4.4"
+      "com.github.liancheng" %% "organize-imports" % "0.6.0"
     ),
     organization := "ch.epfl.scala",
     version := s"0.2.0+${githash()}"
