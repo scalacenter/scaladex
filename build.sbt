@@ -96,7 +96,7 @@ lazy val infra = project
       "org.flywaydb" % "flyway-core" % "7.11.0", // for database migration
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
-      "de.heikoseeberger" %% "akka-http-circe" % "1.33.0",
+      "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
       "org.tpolecat" %% "doobie-scalatest" % V.doobieVersion % Test,
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it"
     ) ++ Seq(
