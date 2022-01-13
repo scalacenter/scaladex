@@ -66,18 +66,17 @@ object DataPaths {
       config: FilesystemConfig,
       env: Env
   ): DataPaths = {
-    import config._
     val (contribDataPath, indexDataPath, credentialsDataPath) =
       if (env.isLocal) {
         val defaultContrib =
-          if (contrib.isAbsolute) contrib else base.resolve(contrib)
+          if (config.contrib.isAbsolute) config.contrib else base.resolve(config.contrib)
         val defaultIndex =
-          if (index.isAbsolute) index else base.resolve(index)
+          if (config.index.isAbsolute) config.index else base.resolve(config.index)
         val defaultCredentials =
-          if (credentials.isAbsolute) credentials else base.resolve(credentials)
+          if (config.credentials.isAbsolute) config.credentials else base.resolve(config.credentials)
         (defaultContrib, defaultIndex, defaultCredentials)
       } else {
-        (contrib, index, credentials)
+        (config.contrib, config.index, config.credentials)
       }
     DataPaths(
       contribDataPath,
