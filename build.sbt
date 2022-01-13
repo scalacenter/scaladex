@@ -17,7 +17,7 @@ inThisBuild(
 
 lazy val loggingSettings =
   libraryDependencies ++= Seq(
-    "ch.qos.logback" % "logback-classic" % "1.1.7",
+    "ch.qos.logback" % "logback-classic" % "1.1.11",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
   )
 
