@@ -180,7 +180,7 @@ lazy val server = project
       "ch.megard" %% "akka-http-cors" % "0.4.3",
       "com.softwaremill.akka-http-session" %% "core" % "0.5.11",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
-      "org.endpoints4s" %% "akka-http-server" % "5.1.0",
+      "org.endpoints4s" %% "akka-http-server" % "6.0.0",
       "org.webjars" % "bootstrap-sass" % "3.4.1",
       "org.webjars" % "bootstrap-switch" % "3.3.2",
       "org.webjars" % "bootstrap-select" % "1.13.18",
