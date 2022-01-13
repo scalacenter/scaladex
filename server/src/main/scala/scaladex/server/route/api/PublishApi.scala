@@ -15,12 +15,10 @@ import akka.http.scaladsl.server.directives._
 import org.slf4j.LoggerFactory
 import scaladex.core.model.Artifact
 import scaladex.core.model.UserState
+import scaladex.core.service.GithubAuth
 import scaladex.core.service.LocalStorageApi
 import scaladex.core.service.WebDatabase
-import scaladex.data.cleanup.GithubRepoExtractor
-import scaladex.data.meta.ArtifactConverter
 import scaladex.infra.storage.DataPaths
-import scaladex.server.GithubAuth
 import scaladex.server.route._
 import scaladex.server.service.PublishProcess
 
@@ -33,9 +31,7 @@ class PublishApi(
 
   private val log = LoggerFactory.getLogger(getClass)
 
-  private val githubRepoExtractor = new GithubRepoExtractor(paths)
-  private val artifactConverter = new ArtifactConverter(paths)
-  private val publishProcess = new PublishProcess(filesystem, githubRepoExtractor, artifactConverter, database)
+  private val publishProcess = PublishProcess(paths, filesystem, database)
 
   /*
    * verifying a login to github

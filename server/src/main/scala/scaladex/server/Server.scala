@@ -108,7 +108,7 @@ object Server {
     val paths = DataPaths.from(config.filesystem, config.env)
     val localStorage = new LocalStorageRepo(paths, config.filesystem.temp)
 
-    val githubAuth = new GithubAuth()
+    val githubAuth = new GithubAuthImpl()
     val session = new GithubUserSession(config.session)
 
     val searchPages = new SearchPages(env, searchEngine, session)

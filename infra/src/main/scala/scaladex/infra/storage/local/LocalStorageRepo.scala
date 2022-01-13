@@ -48,8 +48,10 @@ class LocalStorageRepo(dataPaths: DataPaths, tempDir: Path) extends LocalStorage
     )
   }
 
-  override def createTempFile(content: String, prefix: String, suffix: String): Path =
-    Files.createTempFile(tempDir, prefix, suffix)
+  override def createTempFile(content: String, prefix: String, suffix: String): Path = {
+    val tempFile = Files.createTempFile(tempDir, prefix, suffix)
+    Files.write(tempFile, content.getBytes(StandardCharsets.UTF_8))
+  }
 
   override def deleteTempFile(path: Path): Unit = {
     assert(path.startsWith(tempDir))

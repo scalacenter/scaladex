@@ -9,6 +9,7 @@ import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubIssue
 import scaladex.core.model.GithubStatus
+import scaladex.core.model.License
 import scaladex.core.model.Platform
 import scaladex.core.model.Platform._
 import scaladex.core.model.Project
@@ -123,11 +124,13 @@ object Values {
       now = now
     )
     val groupId: GroupId = GroupId("org.typelevel")
+    val license: License = License("MIT License", "MIT", Some("https://spdx.org/licenses/MIT.html"))
 
     private def getArtifact(
         name: String,
         platform: Platform,
-        version: SemanticVersion = `2.6.1`
+        version: SemanticVersion,
+        description: Option[String] = None
     ): Artifact = {
       val artifactId = ArtifactId(Name(name), platform)
       Artifact(
@@ -137,21 +140,23 @@ object Values {
         artifactName = artifactId.name,
         platform = platform,
         projectRef = reference,
-        description = None,
+        description = description,
         releaseDate = Some(Instant.ofEpochMilli(1620911032000L)),
         resolver = None,
-        licenses = Set(),
+        licenses = Set(license),
         isNonStandardLib = false
       )
     }
 
-    val `core_3:2.6.1`: Artifact = getArtifact("cats-core", ScalaJvm.`3`)
-    val `core_3:2.7.0`: Artifact = getArtifact("cats-core", ScalaJvm.`3`, `2.7.0`)
-    val core_sjs1_3: Artifact = getArtifact("cats-core", ScalaJs.`1_3`)
-    val core_sjs06_213: Artifact = getArtifact("cats-core", ScalaJs.`0.6_2.13`)
-    val core_native04_213: Artifact = getArtifact("cats-core", ScalaNative.`0.4_2.13`)
-    val kernel_3: Artifact = getArtifact("cats-kernel", ScalaJvm.`3`)
-    val laws_3: Artifact = getArtifact("cats-laws", ScalaJvm.`3`)
+    val `core_3:2.6.1`: Artifact = getArtifact("cats-core", ScalaJvm.`3`, `2.6.1`, description = Some("Cats core"))
+    val `core_3:2.7.0`: Artifact = getArtifact("cats-core", ScalaJvm.`3`, `2.7.0`, description = Some("Cats core"))
+    val core_sjs1_3: Artifact = getArtifact("cats-core", ScalaJs.`1_3`, `2.6.1`, description = Some("Cats core"))
+    val core_sjs06_213: Artifact =
+      getArtifact("cats-core", ScalaJs.`0.6_2.13`, `2.6.1`, description = Some("Cats core"))
+    val core_native04_213: Artifact =
+      getArtifact("cats-core", ScalaNative.`0.4_2.13`, `2.6.1`, description = Some("Cats core"))
+    val kernel_3: Artifact = getArtifact("cats-kernel", ScalaJvm.`3`, `2.6.1`)
+    val laws_3: Artifact = getArtifact("cats-laws", ScalaJvm.`3`, `2.6.1`)
 
     val allArtifacts: Seq[Artifact] =
       Seq(`core_3:2.6.1`, `core_3:2.7.0`, core_sjs1_3, core_sjs06_213, core_native04_213, kernel_3, laws_3)

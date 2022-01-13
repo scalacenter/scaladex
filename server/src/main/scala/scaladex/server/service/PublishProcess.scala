@@ -19,6 +19,7 @@ import scaladex.data.cleanup.GithubRepoExtractor
 import scaladex.data.maven.ArtifactModel
 import scaladex.data.maven.PomsReader
 import scaladex.data.meta.ArtifactConverter
+import scaladex.infra.storage.DataPaths
 
 class PublishProcess(
     filesystem: LocalStorageApi,
@@ -82,4 +83,14 @@ class PublishProcess(
     }
 
   private def isPom(path: String): Boolean = path.matches(""".*\.pom""")
+}
+
+object PublishProcess {
+  def apply(paths: DataPaths, filesystem: LocalStorageApi, database: WebDatabase)(
+      implicit ec: ExecutionContext
+  ): PublishProcess = {
+    val githubExtractor = new GithubRepoExtractor(paths)
+    val converter = new ArtifactConverter(paths)
+    new PublishProcess(filesystem, githubExtractor, converter, database)
+  }
 }
