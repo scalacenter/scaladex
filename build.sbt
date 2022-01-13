@@ -235,7 +235,7 @@ lazy val data = project
       "com.typesafe.akka" %% "akka-slf4j" % V.akkaVersion,
       "me.tongfei" % "progressbar" % "0.5.5",
       "org.apache.maven" % "maven-model-builder" % "3.3.9",
-      "org.jsoup" % "jsoup" % "1.10.1",
+      "org.jsoup" % "jsoup" % "1.10.3",
       "com.typesafe.play" %% "play-ahc-ws" % "2.8.2",
       "org.apache.ivy" % "ivy" % "2.4.0",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
