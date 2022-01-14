@@ -3,24 +3,29 @@ package scaladex.core.model
 import scaladex.core.util.Parsers
 
 sealed trait BinaryVersion extends Ordered[BinaryVersion] {
+  def encode: String
   override def compare(that: BinaryVersion): Int =
     BinaryVersion.ordering.compare(this, that)
 }
 
 final case class MajorBinary(major: Int) extends BinaryVersion {
+  override def encode: String = major.toString
   override def toString: String = s"$major.x"
 }
 
 final case class MinorBinary(major: Int, minor: Int) extends BinaryVersion {
+  override def encode: String = toString
   override def toString: String = s"$major.$minor"
 }
 
 final case class PatchBinary(major: Int, minor: Int, patch: Int) extends BinaryVersion {
+  override def encode: String = toString
   override def toString: String = s"$major.$minor.$patch"
 }
 
 final case class PreReleaseBinary(major: Int, minor: Int, patch: Option[Int], preRelease: PreRelease)
     extends BinaryVersion {
+  override def encode: String = toString
   override def toString: String = {
     val patchPart = patch.map(p => s".$p").getOrElse("")
     s"$major.$minor$patchPart-$preRelease"

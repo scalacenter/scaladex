@@ -10,6 +10,7 @@ import scaladex.core.util.Parsers
  */
 sealed trait ScalaLanguageVersion {
   val version: BinaryVersion
+  def encode: String = version.encode
 
   /**
    * When indexing, all dotty versions are regrouped under the 'dotty' keyword.
