@@ -8,11 +8,11 @@ import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
 import scaladex.core.model.Resolver
 import scaladex.core.model.SemanticVersion
+import scaladex.core.model.data.LocalRepository
 import scaladex.data.bintray._
 import scaladex.data.cleanup._
 import scaladex.data.maven.ArtifactModel
 import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.LocalRepository
 
 class ArtifactConverter(paths: DataPaths) extends BintrayProtocol with LazyLogging {
   private val artifactMetaExtractor = new ArtifactMetaExtractor(paths)
@@ -24,13 +24,12 @@ class ArtifactConverter(paths: DataPaths) extends BintrayProtocol with LazyLoggi
     for {
       pomMeta <- pomMetaExtractor.extract(pom, None, repo, sha)
       repo <- githubRepoExtractor.extract(pom)
-      converted <- convert(pom, repo, sha, pomMeta.creationDate, pomMeta.resolver)
+      converted <- convert(pom, repo, pomMeta.creationDate, pomMeta.resolver)
     } yield converted
 
   def convert(
       pom: ArtifactModel,
       projectRef: Project.Reference,
-      sha: String,
       creationDate: Option[Instant],
       resolver: Option[Resolver] = None
   ): Option[(Artifact, Seq[ArtifactDependency])] =

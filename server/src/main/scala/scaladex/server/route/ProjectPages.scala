@@ -22,7 +22,6 @@ import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserState
 import scaladex.core.service.LocalStorageApi
 import scaladex.core.service.WebDatabase
-import scaladex.infra.storage.DataPaths
 import scaladex.server.GithubUserSession
 import scaladex.server.TwirlSupport._
 import scaladex.view
@@ -31,8 +30,7 @@ class ProjectPages(
     env: Env,
     database: WebDatabase,
     localStorage: LocalStorageApi,
-    session: GithubUserSession,
-    paths: DataPaths
+    session: GithubUserSession
 )(implicit executionContext: ExecutionContext)
     extends LazyLogging {
   import session.implicits._
@@ -132,7 +130,7 @@ class ProjectPages(
                       StatusCodes.SeeOther
                     )
                   case Failure(e) =>
-                    logger.error(s"Cannot save settings of project $ref")
+                    logger.error(s"Cannot save settings of project $ref", e)
                     redirect(
                       Uri(s"/$organization/$repository"),
                       StatusCodes.SeeOther
