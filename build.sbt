@@ -204,7 +204,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
   .settings(
     scalacOptionsSettings,
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "fastparse" % "2.3.0",
+      "com.lihaoyi" %%% "fastparse" % "2.3.3",
       "io.github.cquiroz" %%% "scala-java-time" % "2.2.2",
       "com.typesafe.play" %%% "play-json" % V.playJsonVersion,
       "org.endpoints4s" %%% "algebra" % "1.5.0",
