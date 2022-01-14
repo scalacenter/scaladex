@@ -35,7 +35,7 @@ class BintrayClient private (
     with Closeable {
   import BintrayClient._
 
-  val bintrayCredentials: Map[String, String] = {
+  val bintrayCredentials: Map[String, String] =
     // from bintray-sbt convention
     // cat ~/.bintray/.credentials
     // host = api.bintray.com
@@ -57,7 +57,6 @@ class BintrayClient private (
       source.close()
       info
     } else Map[String, String]()
-  }
 
   val bintrayBase: String = "https://bintray.com"
 
