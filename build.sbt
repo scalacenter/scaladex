@@ -225,7 +225,7 @@ lazy val data = project
     ammoniteSettings,
     loggingSettings,
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-parallel-collections" % "0.2.0",
+      "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTimeVersion,
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-actor-typed" % V.akkaVersion,
