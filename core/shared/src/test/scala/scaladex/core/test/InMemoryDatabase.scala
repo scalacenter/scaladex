@@ -17,7 +17,13 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   private val projects = mutable.Map[Project.Reference, Project]()
   private val artifacts = mutable.Map[Project.Reference, Seq[Artifact]]()
-  private val dependencies = mutable.Seq[ArtifactDependency]()
+  private val dependencies = mutable.Buffer[ArtifactDependency]()
+
+  def reset(): Unit = {
+    projects.clear()
+    artifacts.clear()
+    dependencies.clear()
+  }
 
   override def moveProject(
       ref: Project.Reference,
