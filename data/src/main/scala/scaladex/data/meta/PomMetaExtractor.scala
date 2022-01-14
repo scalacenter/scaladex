@@ -7,14 +7,14 @@ import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.BintrayResolver
 import scaladex.core.model.JCenter
 import scaladex.core.model.Resolver
+import scaladex.core.model.data.LocalPomRepository._
+import scaladex.core.model.data.LocalRepository
+import scaladex.core.model.data.LocalRepository._
 import scaladex.data.Meta
 import scaladex.data.bintray.BintrayMeta
 import scaladex.data.bintray.SbtPluginsData
 import scaladex.data.maven.ArtifactModel
 import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.LocalPomRepository._
-import scaladex.infra.storage.LocalRepository
-import scaladex.infra.storage.LocalRepository._
 
 class PomMetaExtractor(
     paths: DataPaths
