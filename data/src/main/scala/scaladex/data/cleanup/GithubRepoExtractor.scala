@@ -4,6 +4,7 @@ package cleanup
 import java.nio.charset.StandardCharsets
 import java.nio.file._
 
+import scala.concurrent.ExecutionContext
 import scala.io.Source
 import scala.util.Using
 import scala.util.matching.Regex
@@ -19,6 +20,7 @@ import org.json4s.native.Serialization.read
 import org.json4s.native.Serialization.writePretty
 import scaladex.core.model.Project
 import scaladex.data.maven.PomsReader
+import scaladex.infra.CoursierResolver
 import scaladex.infra.storage.DataPaths
 
 class GithubRepoExtractor(paths: DataPaths) {
@@ -90,9 +92,10 @@ class GithubRepoExtractor(paths: DataPaths) {
   }
 
   // script to generate contrib/claims.json
-  def updateClaims(): Unit = {
+  def updateClaims()(implicit ec: ExecutionContext): Unit = {
+    val pomsReader = new PomsReader(new CoursierResolver)
     val poms =
-      PomsReader.loadAll(paths).map { case (pom, _, _) => pom }
+      pomsReader.loadAll(paths).map { case (pom, _, _) => pom }
 
     val notClaimed = poms
       .filter(pom => extract(pom).isEmpty)

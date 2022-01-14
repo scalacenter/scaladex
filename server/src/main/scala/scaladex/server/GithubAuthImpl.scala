@@ -10,6 +10,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import scaladex.core.model.UserState
+import scaladex.core.service.GithubAuth
 import scaladex.core.util.ScalaExtensions._
 import scaladex.core.util.Secret
 import scaladex.infra.github.GithubClient
@@ -20,7 +21,7 @@ object Response {
   }
 }
 //todo: remove Json4sSupport
-class GithubAuth()(implicit sys: ActorSystem) extends Json4sSupport {
+class GithubAuthImpl()(implicit sys: ActorSystem) extends GithubAuth with Json4sSupport {
   import sys.dispatcher
 
   def getUserStateWithToken(token: String): Future[UserState] = getUserState(Secret(token))
