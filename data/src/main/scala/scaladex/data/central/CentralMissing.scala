@@ -26,10 +26,11 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import scaladex.core.model.Platform
 import scaladex.core.model.Sha1
+import scaladex.core.model.data.LocalPomRepository
 import scaladex.data.maven.PomsReader
 import scaladex.data.meta.ArtifactMetaExtractor
+import scaladex.infra.CoursierResolver
 import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.LocalPomRepository
 
 object CentralMissing {
   // q = g:"com.47deg" AND a:"sbt-microsites"
@@ -182,18 +183,16 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
   // data/run central /home/gui/scaladex/scaladex-contrib /home/gui/scaladex/scaladex-index /home/gui/scaladex/scaladex-credentials
   def run(): Unit = {
     val metaExtractor = new ArtifactMetaExtractor(paths)
+    val pomsReader = new PomsReader(new CoursierResolver)
     val allGroups: Set[String] =
-      PomsReader(LocalPomRepository.MavenCentral, paths)
-        .load()
+      pomsReader
+        .loadAll(paths.poms(LocalPomRepository.MavenCentral))
         .flatMap {
-          case Success((pom, _, _)) =>
+          case (pom, _) =>
             metaExtractor
               .extract(pom)
-              .filter { meta =>
-                meta.platform != Platform.Java //
-              }
+              .filter(meta => meta.platform != Platform.Java)
               .map(_ => pom.groupId)
-          case _ => None
         }
         .toSet
 

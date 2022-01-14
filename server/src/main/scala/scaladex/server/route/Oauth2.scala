@@ -12,11 +12,11 @@ import com.softwaremill.session.CsrfDirectives._
 import com.softwaremill.session.CsrfOptions._
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
-import scaladex.server.GithubAuth
+import scaladex.core.service
 import scaladex.server.GithubUserSession
 import scaladex.server.config.OAuth2Config
 
-class Oauth2(config: OAuth2Config, githubAuth: GithubAuth, session: GithubUserSession)(
+class Oauth2(config: OAuth2Config, githubAuth: service.GithubAuth, session: GithubUserSession)(
     implicit ec: ExecutionContext
 ) {
   import session.implicits._
