@@ -10,9 +10,9 @@ import org.slf4j.LoggerFactory
 import play.api.libs.ws.WSClient
 import play.api.libs.ws.WSRequest
 import play.api.libs.ws.WSResponse
+import scaladex.core.model.data.LocalPomRepository
 import scaladex.data.download.PlayWsDownloader
 import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.LocalPomRepository
 
 class BintrayDownloadPoms(paths: DataPaths)(implicit val system: ActorSystem) extends PlayWsDownloader {
 
