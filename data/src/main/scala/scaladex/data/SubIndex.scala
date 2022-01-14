@@ -4,19 +4,22 @@ import java.nio.charset.StandardCharsets
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 
+import scala.concurrent.ExecutionContext
+
 import org.json4s.native.Serialization.write
 import scaladex.core.model.Project
+import scaladex.core.model.data.LocalPomRepository
 import scaladex.data.bintray.BintrayMeta
 import scaladex.data.bintray.BintrayProtocol
 import scaladex.data.bintray.BintraySearch
 import scaladex.data.cleanup.GithubRepoExtractor
 import scaladex.data.maven.PomsReader
+import scaladex.infra.CoursierResolver
 import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.LocalPomRepository
 import scaladex.infra.storage.local.LocalStorageRepo
 
 object SubIndex extends BintrayProtocol {
-  def generate(source: DataPaths, destination: DataPaths): Unit = {
+  def generate(source: DataPaths, destination: DataPaths, temp: Path)(implicit ec: ExecutionContext): Unit = {
     def splitRepo(in: String): Project.Reference = {
       val List(owner, repo) = in.split('/').toList
       Project.Reference.from(owner, repo)
@@ -30,8 +33,9 @@ object SubIndex extends BintrayProtocol {
 
     val githubRepoExtractor = new GithubRepoExtractor(source)
 
+    val pomsReader = new PomsReader(new CoursierResolver)
     val pomData =
-      PomsReader
+      pomsReader
         .loadAll(source)
         .flatMap {
           case (pom, repo, sha) =>
@@ -68,20 +72,6 @@ object SubIndex extends BintrayProtocol {
         }
     }
 
-    println("== Copy Parent Poms ==")
-
-    // copy all parent poms
-    List(
-      LocalPomRepository.Bintray,
-      LocalPomRepository.MavenCentral,
-      LocalPomRepository.UserProvided
-    ).foreach { pomRepo =>
-      def parentShaPath(paths: DataPaths): Path =
-        paths.parentPoms(pomRepo)
-
-      copyDir(parentShaPath(source), parentShaPath(destination))
-    }
-
     def shasFor(forRepo: LocalPomRepository): Set[String] =
       pomData
         .filter { case (_, repo, _, _) => repo == forRepo }
@@ -116,9 +106,12 @@ object SubIndex extends BintrayProtocol {
 
     println("== Copy LiveData ==")
 
-    val destinationStorage = new LocalStorageRepo(destination)
-    val sourceStorage = new LocalStorageRepo(source)
-    // live
+    val destinationProjectSettings = destination.index.resolve("live/projects.json")
+    val sourceProjectSettings = source.index.resolve("live/project.json")
+
+    val destinationStorage = new LocalStorageRepo(destination, destinationProjectSettings, temp)
+    val sourceStorage = new LocalStorageRepo(source, sourceProjectSettings, temp)
+
     destinationStorage.saveAllProjectSettings(
       sourceStorage
         .getAllProjectSettings()

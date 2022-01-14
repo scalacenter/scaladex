@@ -7,9 +7,9 @@ import com.github.nscala_time.time.Imports._
 import org.json4s._
 import org.json4s.native.Serialization.{write => swrite}
 import org.typelevel.jawn.support.json4s.Parser
+import scaladex.core.model.data.LocalPomRepository
 import scaladex.core.util.Ordering.Descending
 import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.LocalPomRepository
 
 case class Meta(
     sha1: String,

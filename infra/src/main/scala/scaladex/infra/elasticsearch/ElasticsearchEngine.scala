@@ -361,7 +361,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       luceneQuery(filters)
     )
 
-    val plainTextQuery = {
+    val plainTextQuery =
       if (plainText.isEmpty || plainText == "*") matchAllQuery()
       else {
         val multiMatch = multiMatchQuery(plainText)
@@ -376,7 +376,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
 
         val readmeMatch = matchQuery("githubInfo.readme", plainText).boost(0.5)
 
-        val contributingQuery = {
+        val contributingQuery =
           if (contributingSearch) {
             nestedQuery(
               "githubInfo.openIssues",
@@ -384,7 +384,6 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
             ).inner(innerHits("openIssues").size(7))
               .boost(4)
           } else matchNoneQuery()
-        }
 
         val autocompleteQuery = plainText
           .split(" ")
@@ -410,7 +409,6 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
           contributingQuery
         )
       }
-    }
 
     must(filterQuery, plainTextQuery)
   }
