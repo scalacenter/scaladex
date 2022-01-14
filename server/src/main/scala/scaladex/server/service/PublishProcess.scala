@@ -54,7 +54,10 @@ class PublishProcess(
           }
       future.onComplete(_ => filesystem.deleteTempFile(tempFile))
       future
-    } else Future.successful(PublishResult.InvalidPom)
+    } else {
+      logger.warn(s"Received invalid pom from ${userState.info.login}: $path")
+      Future.successful(PublishResult.InvalidPom)
+    }
 
   private def publishPom(
       pom: ArtifactModel,
@@ -66,6 +69,7 @@ class PublishProcess(
     val repository =
       if (userState.hasPublishingAuthority) LocalPomRepository.MavenCentral
       else LocalPomRepository.UserProvided
+    val pomRef = s"${pom.groupId}:${pom.artifactId}:${pom.version}"
     githubExtractor.extract(pom) match {
       case None =>
         // TODO: save artifact with no github information
@@ -74,13 +78,15 @@ class PublishProcess(
         if (userState.hasPublishingAuthority || userState.repos.contains(repo)) {
           converter.convert(pom, repo, Some(creationDate)) match {
             case Some((artifact, deps)) =>
-              logger.info(s"Saving ${pom.groupId}:${pom.artifactId}:${pom.version}")
               filesystem.savePom(data, sha1, repository)
               database
                 .insertArtifact(artifact, deps, Instant.now)
-                .map(_ => PublishResult.Success)
+                .map { _ =>
+                  logger.info(s"Published $pomRef")
+                  PublishResult.Success
+                }
             case None =>
-              logger.warn(s"Cannot convert ${pom.groupId}:${pom.artifactId}:${pom.version} to valid Scala artifact.")
+              logger.warn(s"Cannot convert $pomRef to valid Scala artifact.")
               Future.successful(PublishResult.InvalidPom)
           }
         } else {

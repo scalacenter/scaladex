@@ -17,8 +17,6 @@ class CoursierResolverTests extends AsyncFunSpec with Matchers {
   it("should resolve same pom 10 times concurrently") {
     for {
       all <- Seq.fill(10)(resolver.resolve("org.apache.parquet", "parquet", "1.12.2")).sequence
-    } yield {
-      all.flatten.size shouldBe 10
-    }
+    } yield all.flatten.size shouldBe 10
   }
 }
