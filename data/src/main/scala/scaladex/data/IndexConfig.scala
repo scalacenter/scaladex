@@ -2,10 +2,10 @@ package scaladex.data
 
 import com.typesafe.config.ConfigFactory
 import scaladex.core.model.Env
-import scaladex.infra.storage.DataPaths
+import scaladex.infra.config.FilesystemConfig
 import scaladex.infra.storage.sql.DatabaseConfig
 
-case class IndexConfig(env: Env, database: DatabaseConfig, dataPaths: DataPaths)
+case class IndexConfig(env: Env, database: DatabaseConfig, filesystem: FilesystemConfig)
 
 object IndexConfig {
 
@@ -18,7 +18,7 @@ object IndexConfig {
     IndexConfig(
       env = env,
       database = DatabaseConfig.from(config).get,
-      dataPaths = DataPaths.from(contrib, index, credentials, env)
+      filesystem = FilesystemConfig.from(config)
     )
   }
 

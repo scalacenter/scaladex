@@ -3,12 +3,14 @@ package scaladex.data
 import java.nio.file.Path
 import java.time.Instant
 
+import scala.concurrent.ExecutionContext
 import scala.sys.process.Process
 
 import akka.actor.ActorSystem
 import cats.effect._
 import com.typesafe.scalalogging.LazyLogging
 import doobie.hikari._
+import scaladex.core.model.data.LocalPomRepository
 import scaladex.core.util.TimerUtils
 import scaladex.data.bintray.BintrayDownloadPoms
 import scaladex.data.bintray.BintrayListPoms
@@ -17,9 +19,9 @@ import scaladex.data.central.CentralMissing
 import scaladex.data.cleanup.GithubRepoExtractor
 import scaladex.data.cleanup.NonStandardLib
 import scaladex.data.init.Init
-import scaladex.data.maven.DownloadParentPoms
 import scaladex.data.util.PidLock
-import scaladex.infra.storage.LocalPomRepository
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.local.LocalStorageRepo
 import scaladex.infra.storage.sql.SqlDatabase
 import scaladex.infra.util.DoobieUtils
 
@@ -60,8 +62,10 @@ object Main extends LazyLogging {
     val bintray: LocalPomRepository = LocalPomRepository.Bintray
 
     implicit val system: ActorSystem = ActorSystem()
+    implicit val ec: ExecutionContext = system.dispatcher
 
-    val dataPaths = config.dataPaths
+    val dataPaths = DataPaths.from(config.filesystem)
+    val localStorage = LocalStorageRepo(dataPaths, config.filesystem)
 
     val steps = List(
       // List POMs of Bintray
@@ -73,8 +77,6 @@ object Main extends LazyLogging {
       },
       // Download POMs from Bintray
       Step("download")(() => new BintrayDownloadPoms(dataPaths).run()),
-      // Download parent POMs
-      Step("parent")(() => new DownloadParentPoms(bintray, dataPaths).run()),
       // Download ivy.xml descriptors of sbt-plugins from Bintray
       // and Github information of the corresponding projects
       Step("sbt")(() => UpdateBintraySbtPlugins.run(dataPaths)),
@@ -94,7 +96,7 @@ object Main extends LazyLogging {
         transactor
           .use { xa =>
             val database = new SqlDatabase(config.database, xa)
-            IO.fromFuture(IO(Init.run(dataPaths, database)))
+            IO.fromFuture(IO(Init.run(dataPaths, database, localStorage)))
           }
           .unsafeRunSync()
       }
@@ -108,7 +110,8 @@ object Main extends LazyLogging {
     def subIndex(): Unit =
       SubIndex.generate(
         source = dataPaths.fullIndex,
-        destination = dataPaths.subIndex
+        destination = dataPaths.subIndex,
+        config.filesystem.temp
       )
 
     val stepsToRun =

@@ -21,6 +21,8 @@ import scaladex.server.service.{GithubUpdater, SearchSynchronizer}
 import scaladex.core.model.Platform
 import scaladex.core.model.ScalaVersion
 import scaladex.infra.storage.sql.SqlDatabase
+import scaladex.infra.storage.DataPaths
+import scaladex.infra.storage.local.LocalStorageRepo
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 
@@ -37,6 +39,8 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     transactor
       .use { xa =>
         val database = new SqlDatabase(config.database, xa)
+        val dataPaths = DataPaths.from(config.filesystem)
+        val filesystem = LocalStorageRepo(dataPaths, config.filesystem)
         val searchSync = new SearchSynchronizer(database, searchEngine)
 
         // Will use GITHUB_TOKEN configured in github secret
@@ -45,7 +49,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
         val githubSync = new GithubUpdater(database, github)
         IO.fromFuture(IO {
           for {
-            _ <- Init.run(config.dataPaths, database)
+            _ <- Init.run(dataPaths, database, filesystem)
             _ <- searchEngine.reset()
             _ <- githubSync.run()
             _ <- searchSync.run()
