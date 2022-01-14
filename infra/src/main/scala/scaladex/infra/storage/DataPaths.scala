@@ -5,7 +5,9 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 import org.slf4j.LoggerFactory
-import scaladex.core.model.Env
+import scaladex.core.model.data.LocalPomRepository
+import scaladex.core.model.data.LocalPomRepository._
+import scaladex.infra.config.FilesystemConfig
 
 /*
 The contrib folder is read-only from the point of view of Scaladex. We receive PR, we merge them.
@@ -37,7 +39,7 @@ scaladex-small-index or scaladex-index
 │   ├── moved.json
 │   ├── org/repo
 │   ├── ...
-│   └── org/repo
+│   └── org/repo
 ├── live
 |   └── projects.json
 └── ivys
@@ -54,63 +56,16 @@ scaladex-contrib
 scaladex-credentials (optionnal)
 └── search-credential
  */
-
-sealed trait LocalRepository extends Product with Serializable
-
-object LocalRepository {
-  final case object BintraySbtPlugins extends LocalRepository
-}
-
-sealed trait LocalPomRepository extends LocalRepository
-object LocalPomRepository {
-  final case object Bintray extends LocalPomRepository
-  final case object MavenCentral extends LocalPomRepository
-  final case object UserProvided extends LocalPomRepository
-}
-
 object DataPaths {
 
   private val base = build.info.BuildInfo.baseDirectory.toPath.getParent
   base.resolve(Paths.get("scaladex-credentials"))
 
-  def from(
-      contrib: String,
-      index: String,
-      credentials: String,
-      env: Env
-  ): DataPaths = {
-    val contribPath = Paths.get(contrib)
-    val indexPath = Paths.get(index)
-    val credentialsPath = Paths.get(credentials)
-    val (contribDataPath, indexDataPath, credentialsDataPath) =
-      if (env.isLocal) {
-
-        val defaultContrib =
-          if (contribPath.isAbsolute) contribPath else base.resolve(contribPath)
-        val defaultIndex =
-          if (indexPath.isAbsolute) indexPath else base.resolve(indexPath)
-        val defaultCredentials =
-          if (credentialsPath.isAbsolute) credentialsPath
-          else base.resolve(credentialsPath)
-        (defaultContrib, defaultIndex, defaultCredentials)
-      } else {
-        (contribPath, indexPath, credentialsPath)
-      }
-    DataPaths(
-      contribDataPath,
-      indexDataPath,
-      credentialsDataPath,
-      validate = true
-    )
-  }
+  def from(config: FilesystemConfig): DataPaths =
+    DataPaths(config.contrib, config.index, config.credentials, validate = true)
 }
 
-case class DataPaths(
-    contrib: Path,
-    index: Path,
-    credentials: Path,
-    validate: Boolean
-) {
+case class DataPaths(contrib: Path, index: Path, credentials: Path, validate: Boolean) {
 
   private val log = LoggerFactory.getLogger(getClass)
 
@@ -135,13 +90,6 @@ case class DataPaths(
   val nonStandard: Path = contrib.resolve("non-standard.json")
   assert2(Files.exists(nonStandard))
 
-  // === live ===
-  private val live = index.resolve("live")
-  assert2(Files.isDirectory(live))
-
-  val liveProjects: Path = live.resolve("projects.json")
-  assert2(Files.exists(liveProjects))
-
   // === poms ===
   private val pomsFolder = index.resolve("poms")
   assert2(Files.isDirectory(pomsFolder))
@@ -150,9 +98,6 @@ case class DataPaths(
 
   private val bintrayPom = pomsFolder.resolve("bintray")
   assert2(Files.isDirectory(bintrayPom))
-
-  private val bintrayParentPom = bintrayPom.resolve("parent")
-  assert2(Files.isDirectory(bintrayParentPom))
 
   private val bintrayPomSha = bintrayPom.resolve("sha")
   assert2(Files.isDirectory(bintrayPomSha))
@@ -165,9 +110,6 @@ case class DataPaths(
   private val mavenCentralPom = pomsFolder.resolve("maven-central")
   assert2(Files.isDirectory(mavenCentralPom))
 
-  private val mavenCentralParentPom = mavenCentralPom.resolve("parent")
-  assert2(Files.isDirectory(mavenCentralParentPom))
-
   private val mavenCentralPomSha = mavenCentralPom.resolve("sha")
   assert2(Files.isDirectory(mavenCentralPomSha))
 
@@ -178,9 +120,6 @@ case class DataPaths(
 
   private val usersPom = pomsFolder.resolve("users")
   assert2(Files.isDirectory(usersPom))
-
-  private val usersParentPom = usersPom.resolve("parent")
-  assert2(Files.isDirectory(usersParentPom))
 
   private val usersPomSha = usersPom.resolve("sha")
   assert2(Files.isDirectory(usersPomSha))
@@ -196,20 +135,11 @@ case class DataPaths(
 
   val ivysData: Path = ivys.resolve("data.json")
 
-  import LocalPomRepository._
-
   def poms(repository: LocalPomRepository): Path =
     repository match {
       case Bintray      => bintrayPomSha
       case MavenCentral => mavenCentralPomSha
       case UserProvided => usersPomSha
-    }
-
-  def parentPoms(repository: LocalPomRepository): Path =
-    repository match {
-      case Bintray      => bintrayParentPom
-      case MavenCentral => mavenCentralParentPom
-      case UserProvided => usersParentPom
     }
 
   def meta(repository: LocalPomRepository): Path =

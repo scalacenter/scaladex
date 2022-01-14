@@ -6,9 +6,9 @@ import java.nio.file.Path
 import com.github.nscala_time.time.Imports._
 import org.json4s._
 import org.typelevel.jawn.support.json4s.Parser
+import scaladex.core.model.data.LocalPomRepository
 import scaladex.core.util.Ordering.Descending
 import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.LocalPomRepository
 
 object BintrayMeta extends BintrayProtocol {
 

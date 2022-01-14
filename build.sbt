@@ -17,15 +17,15 @@ inThisBuild(
 
 lazy val loggingSettings =
   libraryDependencies ++= Seq(
-    "ch.qos.logback" % "logback-classic" % "1.1.7",
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
+    "ch.qos.logback" % "logback-classic" % "1.1.11",
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
   )
 
 val amm = inputKey[Unit]("Start Ammonite REPL")
 lazy val ammoniteSettings = Def.settings(
   amm := (Test / run).evaluated,
   amm / aggregate := false,
-  libraryDependencies += ("com.lihaoyi" % "ammonite" % "2.3.8-65-0f0d597f" % Test).cross(CrossVersion.full),
+  libraryDependencies += ("com.lihaoyi" % "ammonite" % "2.3.8-125-f6bb1cf9" % Test).cross(CrossVersion.full),
   Test / sourceGenerators += Def.task {
     val file = (Test / sourceManaged).value / "amm.scala"
     IO.write(
@@ -52,18 +52,6 @@ lazy val scalacOptionsSettings = Def.settings(
   )
 )
 
-lazy val runSettings = Def.settings(
-  Compile / javaOptions ++= {
-    val base = (ThisBuild / baseDirectory).value
-    val devCredentials = base / "../scaladex-dev-credentials/application.conf"
-    if (devCredentials.exists) Seq(s"-Dconfig.file=$devCredentials")
-    else Seq()
-  },
-  Compile / run / fork := true,
-  reStart / javaOptions := (Compile / run / javaOptions).value,
-  addCommandAlias("start", "reStart")
-)
-
 lazy val scaladex = project
   .in(file("."))
   .aggregate(webclient, data, core.jvm, core.js, infra, server, template)
@@ -75,7 +63,7 @@ lazy val template = project
     scalacOptions -= "-Xfatal-warnings",
     libraryDependencies ++= Seq(
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTimeVersion,
-      "com.typesafe" % "config" % "1.4.0",
+      "com.typesafe" % "config" % "1.4.1",
       "com.typesafe.akka" %% "akka-http-core" % V.akkaHttpVersion,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
@@ -91,12 +79,13 @@ lazy val infra = project
     loggingSettings,
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4sVersion,
-      "org.json4s" %% "json4s-native" % "3.6.9",
+      "org.json4s" %% "json4s-native" % "3.6.12",
       "org.typelevel" %% "jawn-json4s" % "1.0.3",
-      "org.flywaydb" % "flyway-core" % "7.11.0", // for database migration
+      "org.flywaydb" % "flyway-core" % "7.11.4", // for database migration
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-circe" % "1.33.0",
+      "io.get-coursier" %% "coursier" % "2.0.16",
       "org.tpolecat" %% "doobie-scalatest" % V.doobieVersion % Test,
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it"
     ) ++ Seq(
@@ -113,11 +102,21 @@ lazy val infra = project
     inConfig(Compile)(
       Postgres.settings(defaultPort = 5432, database = "scaladex")
     ),
+    javaOptions ++= {
+      val base = (ThisBuild / baseDirectory).value
+      val index = base / "../scaladex-small-index/"
+      val credentials = base / "../scaladex-credentials"
+      val contrib = base / "../scaladex-contrib"
+      Seq(
+        s"-Dscaladex.filesystem.credentials=$credentials",
+        s"-Dscaladex.filesystem.index=$index",
+        s"-Dscaladex.filesystem.contrib=$contrib"
+      )
+    },
     Compile / run / javaOptions ++= {
       val elasticsearchPort = startElasticsearch.value
       val postgresPort = (Compile / startPostgres).value
       Seq(
-        "-Xmx4g",
         s"-Dscaladex.database.port=$postgresPort",
         s"-Dscaladex.elasticsearch.port=$elasticsearchPort"
       )
@@ -126,8 +125,8 @@ lazy val infra = project
       Postgres.settings(defaultPort = 5432, database = "scaladex-test")
     ),
     Test / javaOptions ++= {
-      val postgresPort = (Test / startPostgres).value
       val elasticsearchPort = startElasticsearch.value
+      val postgresPort = (Test / startPostgres).value
       Seq(
         s"-Dscaladex.database.port=$postgresPort",
         s"-Dscaladex.database.name=scaladex-test",
@@ -162,7 +161,6 @@ lazy val server = project
   .settings(
     scalacOptionsSettings,
     loggingSettings,
-    runSettings,
     ammoniteSettings,
     packageScalaJS(webclient),
     javaOptions ++= Seq(
@@ -177,7 +175,7 @@ lazy val server = project
       "com.typesafe.akka" %% "akka-actor-typed" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-stream-testkit" % V.akkaVersion % Test,
       "com.typesafe.akka" %% "akka-http-testkit" % V.akkaHttpVersion % Test,
-      "ch.megard" %% "akka-http-cors" % "0.4.3",
+      "ch.megard" %% "akka-http-cors" % "1.1.2",
       "com.softwaremill.akka-http-session" %% "core" % "0.5.11",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "org.endpoints4s" %% "akka-http-server" % "5.1.0",
@@ -192,9 +190,10 @@ lazy val server = project
     Compile / resourceGenerators += Def.task(
       Seq((Assets / WebKeys.assets).value)
     ),
+    fork := true,
     Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value,
+    Test / javaOptions ++= (infra / javaOptions).value,
     Defaults.itSettings,
-    IntegrationTest / fork := true,
     IntegrationTest / javaOptions ++= (infra / Compile / run / javaOptions).value
   )
   .dependsOn(template, data, infra, core.jvm % "compile->compile;test->test")
@@ -205,10 +204,10 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
   .settings(
     scalacOptionsSettings,
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "fastparse" % "2.3.0",
-      "io.github.cquiroz" %%% "scala-java-time" % "2.2.2",
+      "com.lihaoyi" %%% "fastparse" % "2.3.3",
+      "io.github.cquiroz" %%% "scala-java-time" % "2.3.0",
       "com.typesafe.play" %%% "play-json" % V.playJsonVersion,
-      "org.endpoints4s" %%% "algebra" % "1.5.0",
+      "org.endpoints4s" %%% "algebra" % "1.6.0",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test
     ) ++ Seq(
       "io.circe" %%% "circe-core",
@@ -223,7 +222,6 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
 lazy val data = project
   .settings(
     scalacOptionsSettings,
-    runSettings,
     ammoniteSettings,
     loggingSettings,
     libraryDependencies ++= Seq(
@@ -237,13 +235,14 @@ lazy val data = project
       "org.apache.maven" % "maven-model-builder" % "3.3.9",
       "org.jsoup" % "jsoup" % "1.10.1",
       "com.typesafe.play" %% "play-ahc-ws" % "2.8.2",
-      "org.apache.ivy" % "ivy" % "2.4.0",
+      "org.apache.ivy" % "ivy" % "2.5.0",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-json4s" % "1.29.1",
       "org.json4s" %% "json4s-native" % "3.5.5",
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     ),
-    Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value
+    Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value,
+    Test / javaOptions ++= (infra / javaOptions).value
   )
   .enablePlugins(JavaAppPackaging)
   .dependsOn(core.jvm % "compile->compile;test->test", infra)
@@ -252,10 +251,10 @@ lazy val V = new {
   val doobieVersion = "0.13.4"
   val playJsonVersion = "2.9.0"
   val akkaVersion = "2.6.15"
-  val akkaHttpVersion = "10.2.6"
-  val elastic4sVersion = "7.10.2"
+  val akkaHttpVersion = "10.2.7"
+  val elastic4sVersion = "7.10.9"
   val log4jVersion = "2.17.0"
-  val nscalaTimeVersion = "2.24.0"
-  val scalatest = "3.2.9"
+  val nscalaTimeVersion = "2.30.0"
+  val scalatest = "3.2.10"
   val circeVersion = "0.14.1"
 }

@@ -7,9 +7,9 @@ import org.apache.ivy.core.module.descriptor.ModuleDescriptor
 import org.joda.time.DateTime
 import org.json4s.native.Serialization.write
 import org.typelevel.jawn.support.json4s.Parser
+import scaladex.core.model.data.LocalRepository
+import scaladex.core.model.data.LocalRepository.BintraySbtPlugins
 import scaladex.data.maven._
-import scaladex.infra.storage.LocalRepository
-import scaladex.infra.storage.LocalRepository.BintraySbtPlugins
 
 case class SbtPluginsData(ivysData: Path) extends BintrayProtocol {
 
