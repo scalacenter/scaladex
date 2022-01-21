@@ -213,11 +213,8 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
       "io.circe" %%% "circe-core",
       "io.circe" %%% "circe-generic",
       "io.circe" %%% "circe-parser"
-    ).map(_ % V.circeVersion),
-    buildInfoPackage := "build.info",
-    buildInfoKeys := Seq[BuildInfoKey](ThisBuild / baseDirectory)
+    ).map(_ % V.circeVersion)
   )
-  .enablePlugins(BuildInfoPlugin)
 
 lazy val data = project
   .settings(
@@ -241,6 +238,7 @@ lazy val data = project
       "org.json4s" %% "json4s-native" % "3.5.5",
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     ),
+    run / fork := true,
     Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value,
     Test / javaOptions ++= (infra / javaOptions).value
   )
