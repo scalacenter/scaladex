@@ -1,14 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-    <!-- encoders are assigned the type
-         ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
-    <encoder>
-      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-    </encoder>
-  </appender>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%X{akkaTimestamp} %-5level[%thread] %logger{0} - %msg%n</pattern>
+        </encoder>
+    </appender>
 
-  <root level="info">
-    <appender-ref ref="STDOUT" />
-  </root>
+    <logger name="akka" level="INFO" />
+    <logger name="com.sksamuel" level="INFO" />
+    <logger name="org.elasticsearch" level="INFO" />
+    <logger name="org.flywaydb" level="INFO"/>
+<!--   TODO: implement authentication instead of silencing the log https://github.com/scalacenter/scaladex/issues/755-->
+    <logger name="org.elasticsearch.client.RestClient" level="ERROR"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
 </configuration>
