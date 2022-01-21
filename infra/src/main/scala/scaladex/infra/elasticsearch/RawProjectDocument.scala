@@ -8,6 +8,7 @@ import io.circe.Printer
 import io.circe.generic.semiauto
 import scaladex.core.model.Artifact
 import scaladex.core.model.BinaryVersion
+import scaladex.core.model.Category
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.search.GithubInfoDocument
@@ -28,7 +29,7 @@ case class RawProjectDocument(
     scalaNativeVersions: Seq[String],
     sbtVersions: Seq[String],
     inverseProjectDependencies: Int,
-    primaryTopic: Option[String],
+    category: Option[String],
     formerReferences: Seq[Project.Reference],
     githubInfo: Option[GithubInfoDocument]
 ) {
@@ -45,7 +46,7 @@ case class RawProjectDocument(
     scalaNativeVersions.flatMap(BinaryVersion.parse).filter(Platform.ScalaNative.isValid).sorted,
     sbtVersions.flatMap(BinaryVersion.parse).filter(Platform.SbtPlugin.isValid).sorted,
     inverseProjectDependencies,
-    primaryTopic,
+    category.flatMap(Category.byLabel.get),
     formerReferences,
     githubInfo
   )
@@ -72,7 +73,7 @@ object RawProjectDocument {
       scalaNativeVersions.map(_.toString),
       sbtVersions.map(_.toString),
       inverseProjectDependencies,
-      primaryTopic,
+      category.map(_.label),
       formerReferences,
       githubInfo
     )

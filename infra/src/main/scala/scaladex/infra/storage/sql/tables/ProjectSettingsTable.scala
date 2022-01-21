@@ -1,8 +1,7 @@
 package scaladex.infra.storage.sql.tables
 
-import doobie.util.Read
+import doobie._
 import scaladex.core.model.Project
-import scaladex.core.model.Project._
 import scaladex.infra.util.DoobieUtils.Mappings._
 import scaladex.infra.util.DoobieUtils._
 
@@ -20,16 +19,13 @@ object ProjectSettingsTable {
     "contributors_wanted",
     "artifact_deprecations",
     "cli_artifacts",
-    "primary_topic",
+    "category",
     "beginner_issues_label"
   )
 
-  val insertOrUpdate: doobie.Update[(Project.Reference, Project.Settings, Project.Settings)] =
+  val insertOrUpdate: Update[(Project.Reference, Project.Settings, Project.Settings)] =
     insertOrUpdateRequest(table, referenceFields ++ settingsFields, referenceFields, settingsFields)
 
-  val count: doobie.Query0[Long] =
+  val count: Query0[Long] =
     selectRequest(table, Seq("COUNT(*)"))
-
-  val settingsRead: Read[Project.Settings] =
-    Read[(Organization, Repository, Project.Settings)].map { case (_, _, settings) => settings }
 }

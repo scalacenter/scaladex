@@ -41,15 +41,13 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     } yield projectStatuses.keys should contain theSameElementsAs Seq(PlayJsonExtra.reference, Cats.reference)
   }
 
-  it("should get all projects statuses") {
+  it("should update project settings") {
     for {
-      _ <- database.insertArtifact(Cats.`core_3:2.6.1`, Cats.dependencies, now)
-      _ <- database.updateGithubInfoAndStatus(Cats.reference, Cats.githubInfo, ok)
       _ <- database.insertArtifact(Scalafix.artifact, Seq.empty, now)
       _ <- database.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, ok)
       _ <- database.updateProjectSettings(Scalafix.reference, Scalafix.settings)
-      allProjects <- database.getAllProjects()
-    } yield allProjects should contain theSameElementsAs Seq(Cats.project, Scalafix.project)
+      scalafix <- database.getProject(Scalafix.reference)
+    } yield scalafix.get shouldBe Scalafix.project
   }
 
   it("should update artifacts") {

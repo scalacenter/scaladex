@@ -15,6 +15,7 @@ import com.typesafe.scalalogging.LazyLogging
 import play.twirl.api.HtmlFormat
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactSelection
+import scaladex.core.model.Category
 import scaladex.core.model.Env
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
@@ -330,7 +331,7 @@ class ProjectPages(
         "artifactDeprecations".as[String].*,
         "cliArtifacts".as[String].*,
         "customScalaDoc".?,
-        "primaryTopic".?,
+        "category".?,
         "beginnerIssuesLabel".?,
         "selectedBeginnerIssues".as[String].*,
         "chatroom".?,
@@ -346,7 +347,7 @@ class ProjectPages(
               rawArtifactDeprecations,
               rawCliArtifacts,
               rawCustomScalaDoc,
-              rawPrimaryTopic,
+              rawCategory,
               rawBeginnerIssuesLabel,
               selectedBeginnerIssues,
               rawChatroom,
@@ -387,7 +388,7 @@ class ProjectPages(
             contributorsWanted,
             rawArtifactDeprecations.map(Artifact.Name.apply).toSet,
             rawCliArtifacts.map(Artifact.Name.apply).toSet,
-            rawPrimaryTopic.flatMap(noneIfEmpty),
+            rawCategory.flatMap(Category.byLabel.get),
             rawBeginnerIssuesLabel.flatMap(noneIfEmpty)
           )
           Tuple1(settings)

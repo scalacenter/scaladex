@@ -57,10 +57,6 @@ scaladex-credentials (optionnal)
 └── search-credential
  */
 object DataPaths {
-
-  private val base = build.info.BuildInfo.baseDirectory.toPath.getParent
-  base.resolve(Paths.get("scaladex-credentials"))
-
   def from(config: FilesystemConfig): DataPaths =
     DataPaths(config.contrib, config.index, config.credentials, validate = true)
 }
@@ -154,12 +150,12 @@ case class DataPaths(contrib: Path, index: Path, credentials: Path, validate: Bo
   val movedGithub: Path = github.resolve("moved.json")
 
   def fullIndex: DataPaths = {
-    val index = DataPaths.base.resolve(Paths.get("scaladex-index"))
-    copy(index = index, validate = false)
+    val fullIndex = index.getParent.resolve(Paths.get("scaladex-index"))
+    copy(index = fullIndex, validate = false)
   }
 
   def subIndex: DataPaths = {
-    val index = DataPaths.base.resolve(Paths.get("scaladex-small-index"))
-    copy(index = index, validate = false)
+    val subIndex = index.getParent.resolve(Paths.get("scaladex-small-index"))
+    copy(index = subIndex, validate = false)
   }
 }

@@ -4,6 +4,7 @@ import java.time.Instant
 
 import scaladex.core.model.Artifact
 import scaladex.core.model.BinaryVersion
+import scaladex.core.model.Category
 import scaladex.core.model.Platform
 import scaladex.core.model.Platform._
 import scaladex.core.model.Project
@@ -22,7 +23,7 @@ final case class ProjectDocument(
     scalaNativeVersions: Seq[BinaryVersion],
     sbtVersions: Seq[BinaryVersion],
     inverseProjectDependencies: Int,
-    primaryTopic: Option[String],
+    category: Option[Category],
     formerReferences: Seq[Project.Reference],
     githubInfo: Option[GithubInfoDocument]
 ) {
@@ -52,7 +53,7 @@ object ProjectDocument {
       platforms.collect { case ScalaNative(_, scalaNativeV) => scalaNativeV }.sorted.distinct,
       platforms.collect { case SbtPlugin(_, sbtV) => sbtV }.sorted.distinct,
       inverseProjectDependencies,
-      settings.primaryTopic,
+      settings.category,
       formerReferences,
       project.githubInfo.map(_.toDocument)
     )

@@ -7,9 +7,10 @@ import scaladex.infra.storage.sql.tables.ProjectTable
 
 class ProjectTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
   it("check insertIfNotExists")(check(ProjectTable.insertIfNotExists))
+  it("check updateCreationDate")(check(ProjectTable.updateCreationDate))
   it("check updateGithubStatus")(check(ProjectTable.updateGithubStatus))
-  it("check selectProjects")(check(ProjectTable.selectProject))
+  it("check selectByReferecnce")(check(ProjectTable.selectByReference))
   it("check selectReferenceAndStatus")(check(ProjectTable.selectReferenceAndStatus))
-  it("check updateCreated")(check(ProjectTable.updateCreationDate))
+  it("check selectProject")(check(ProjectTable.selectProject))
   it("check selectProjectByGithubStatus")(check(ProjectTable.selectProjectByGithubStatus))
 }

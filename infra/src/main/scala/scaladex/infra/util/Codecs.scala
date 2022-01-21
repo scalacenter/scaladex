@@ -5,6 +5,7 @@ import java.time.Instant
 import io.circe._
 import io.circe.generic.semiauto.deriveCodec
 import scaladex.core.model.Artifact
+import scaladex.core.model.Category
 import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubIssue
 import scaladex.core.model.License
@@ -35,6 +36,7 @@ object Codecs {
   implicit val artifactName: Codec[Artifact.Name] = fromString(_.value, Artifact.Name.apply)
   implicit val instant: Codec[Instant] = fromLong[Instant](_.toEpochMilli, Instant.ofEpochMilli)
   implicit val githubInfoDocumentCodec: Codec[GithubInfoDocument] = deriveCodec
+  implicit val categoryCodec: Codec[Category] = fromString(_.label, Category.byLabel)
   implicit val settings: Codec[Project.Settings] = deriveCodec
 
   private def fromLong[A](encode: A => Long, decode: Long => A): Codec[A] =

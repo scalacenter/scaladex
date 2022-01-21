@@ -6,6 +6,7 @@ import java.time.temporal.ChronoUnit
 import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact._
 import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.Category
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubIssue
 import scaladex.core.model.GithubStatus
@@ -63,7 +64,7 @@ object Values {
       contributorsWanted = false,
       artifactDeprecations = Set(),
       cliArtifacts = Set(),
-      primaryTopic = Some("Scala3"),
+      category = Some(Category.LintingAndRefactoring),
       beginnerIssuesLabel = None
     )
     val project: Project =
@@ -100,7 +101,7 @@ object Values {
     val settings: Project.Settings =
       Project.Settings.default.copy(
         defaultArtifact = Some(artifact.artifactName),
-        primaryTopic = Some("serialization")
+        category = Some(Category.Json)
       )
   }
 
