@@ -26,7 +26,8 @@ object ArtifactTable {
       "is_non_standard_Lib"
     )
 
-  val insert: Update[Artifact] = insertRequest(table, fields)
+  val insertIfNotExist: Update[Artifact] =
+    insertOrUpdateRequest(table, fields, mavenReferenceFields)
 
   val count: Query0[Long] =
     selectRequest(table, "COUNT(*)")

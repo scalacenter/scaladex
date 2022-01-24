@@ -4,8 +4,6 @@ import java.time.Instant
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
 
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
@@ -17,7 +15,6 @@ import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.service.SchedulerDatabase
-import scaladex.core.util.ScalaExtensions._
 import scaladex.infra.storage.sql.tables.ArtifactDependencyTable
 import scaladex.infra.storage.sql.tables.ArtifactTable
 import scaladex.infra.storage.sql.tables.GithubInfoTable
@@ -39,20 +36,9 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   ): Future[Unit] = {
     val unknownStatus = GithubStatus.Unknown(time)
     val insertArtifactF = run(ProjectTable.insertIfNotExists.run((artifact.projectRef, unknownStatus)))
-      .flatMap(_ => strictRun(ArtifactTable.insert.run(artifact)))
-      .failWithTry
-      .map {
-        case Failure(exception) =>
-          logger.warn(s"Failed to insert ${artifact.artifactId} because ${exception.getMessage}")
-        case Success(value) => ()
-      }
-    val insertDepsF = run(ArtifactDependencyTable.insert.updateMany(dependencies)).failWithTry
-      .map {
-        case Failure(exception) =>
-          logger.warn(s"Failed to insert dependencies of ${artifact.artifactId} because ${exception.getMessage}")
-        case Success(value) => ()
-      }
-    insertArtifactF.flatMap(_ => insertDepsF)
+      .flatMap(_ => run(ArtifactTable.insertIfNotExist.run(artifact)))
+    val insertDepsF = run(ArtifactDependencyTable.insertIfNotExist.updateMany(dependencies))
+    insertArtifactF.flatMap(_ => insertDepsF).map(_ => ())
   }
 
   override def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]] =
@@ -149,17 +135,6 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
 
   override def updateProjectCreationDate(ref: Project.Reference, creationDate: Instant): Future[Unit] =
     run(ProjectTable.updateCreationDate.run((creationDate, ref))).map(_ => ())
-
-  // to use only when inserting one element or updating one element
-  // when expecting a row to be modified
-  private def strictRun(update: doobie.ConnectionIO[Int], expectedRows: Int = 1): Future[Unit] =
-    update.transact(xa).unsafeToFuture().map {
-      case `expectedRows` => ()
-      case other =>
-        throw new Exception(
-          s"$other rows were affected (expected: $expectedRows)"
-        )
-    }
 
   private def run(update: doobie.Update0): Future[Unit] =
     update.run.transact(xa).unsafeToFuture().map(_ => ())
