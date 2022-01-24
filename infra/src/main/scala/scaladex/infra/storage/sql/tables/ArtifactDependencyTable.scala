@@ -39,7 +39,8 @@ object ArtifactDependencyTable {
     fields.map("d." + _) ++
       ArtifactTable.fields.map("a." + _)
 
-  val insert: Update[ArtifactDependency] = insertRequest(table, fields)
+  val insertIfNotExist: Update[ArtifactDependency] =
+    insertOrUpdateRequest(table, fields, fields)
 
   val count: doobie.Query0[Long] =
     selectRequest(table, Seq("COUNT(*)"))
