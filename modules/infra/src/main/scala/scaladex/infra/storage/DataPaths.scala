@@ -59,16 +59,15 @@ scaladex-credentials (optionnal)
  */
 object DataPaths {
   def from(config: FilesystemConfig): DataPaths =
-    DataPaths(config.contrib, config.index, config.credentials, validate = true)
+    DataPaths(config.contrib, config.index, validate = true)
 }
 
-case class DataPaths(contrib: Path, index: Path, credentials: Path, validate: Boolean) {
+case class DataPaths(contrib: Path, index: Path, validate: Boolean) {
 
   private val log = LoggerFactory.getLogger(getClass)
 
   log.info(s"contrib folder: $contrib")
   log.info(s"index folder: $index")
-  log.info(s"credentials folder: $credentials")
 
   assert2(Files.isDirectory(contrib))
   assert2(Files.isDirectory(index))

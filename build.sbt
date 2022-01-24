@@ -172,6 +172,7 @@ lazy val server = project
       "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044"
     ),
     libraryDependencies ++= Seq(
+      "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
       "com.typesafe.play" %%% "play-json" % V.playJsonVersion,
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it",
       "com.typesafe.akka" %% "akka-testkit" % V.akkaVersion % "test,it",
@@ -228,16 +229,13 @@ lazy val data = project
     ammoniteSettings,
     loggingSettings,
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTimeVersion,
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-actor-typed" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-serialization-jackson" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-slf4j" % V.akkaVersion,
-      "me.tongfei" % "progressbar" % "0.5.5",
       "org.apache.maven" % "maven-model-builder" % "3.3.9",
       "org.jsoup" % "jsoup" % "1.10.1",
-      "com.typesafe.play" %% "play-ahc-ws" % "2.8.2",
       "org.apache.ivy" % "ivy" % "2.5.0",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-json4s" % "1.29.1",

@@ -12,12 +12,8 @@ import com.typesafe.scalalogging.LazyLogging
 import doobie.hikari._
 import scaladex.core.model.data.LocalPomRepository
 import scaladex.core.util.TimerUtils
-import scaladex.data.bintray.BintrayDownloadPoms
-import scaladex.data.bintray.BintrayListPoms
-import scaladex.data.bintray.UpdateBintraySbtPlugins
 import scaladex.data.central.CentralMissing
 import scaladex.data.cleanup.GithubRepoExtractor
-import scaladex.data.cleanup.NonStandardLib
 import scaladex.data.init.Init
 import scaladex.data.util.PidLock
 import scaladex.infra.storage.DataPaths
@@ -68,18 +64,6 @@ object Main extends LazyLogging {
     val localStorage = LocalStorageRepo(dataPaths, config.filesystem)
 
     val steps = List(
-      // List POMs of Bintray
-      Step("list") { () =>
-        // TODO: should be located in a config file
-        val versions = List("2.13", "2.12", "2.11", "2.10")
-
-        BintrayListPoms.run(dataPaths, versions, NonStandardLib.load(dataPaths))
-      },
-      // Download POMs from Bintray
-      Step("download")(() => new BintrayDownloadPoms(dataPaths).run()),
-      // Download ivy.xml descriptors of sbt-plugins from Bintray
-      // and Github information of the corresponding projects
-      Step("sbt")(() => UpdateBintraySbtPlugins.run(dataPaths)),
       // Find missing artifacts in maven-central
       Step("central")(() => new CentralMissing(dataPaths).run()),
       // Download additional information about projects from Github
