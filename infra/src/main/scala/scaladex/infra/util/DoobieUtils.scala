@@ -12,11 +12,10 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import doobie._
 import doobie.hikari.HikariTransactor
-import doobie.util.Read
-import doobie.util.Write
 import io.circe._
 import org.flywaydb.core.Flyway
 import scaladex.core.model.Artifact
+import scaladex.core.model.Category
 import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubIssue
@@ -147,11 +146,13 @@ object DoobieUtils {
       Meta[String].timap(fromJson[List[License]](_).get.toSet)(toJson(_))
     implicit val resolverMeta: Meta[Resolver] =
       Meta[String].timap(Resolver.from(_).get)(_.name)
-    implicit val instantMeta: doobie.Meta[Instant] = doobie.postgres.implicits.JavaTimeInstantMeta
+    implicit val instantMeta: Meta[Instant] = doobie.postgres.implicits.JavaTimeInstantMeta
 
-    implicit val projectReferenceRead: doobie.Read[Project.Reference] =
+    implicit val categoryMeta: Meta[Category] = Meta[String].timap(Category.byLabel)(_.label)
+
+    implicit val projectReferenceRead: Read[Project.Reference] =
       Read[(Organization, Repository)].map { case (org, repo) => Project.Reference(org, repo) }
-    implicit val projectReferenceWrite: doobie.Write[Project.Reference] =
+    implicit val projectReferenceWrite: Write[Project.Reference] =
       Write[(String, String)].contramap(p => (p.organization.value, p.repository.value))
 
     implicit val githubStatusRead: Read[GithubStatus] =

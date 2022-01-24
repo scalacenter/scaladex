@@ -73,7 +73,7 @@ object Project {
       contributorsWanted: Boolean,
       artifactDeprecations: Set[Artifact.Name],
       cliArtifacts: Set[Artifact.Name],
-      primaryTopic: Option[String],
+      category: Option[Category],
       beginnerIssuesLabel: Option[String]
   )
 
@@ -103,7 +103,7 @@ object Project {
       contributorsWanted = false,
       artifactDeprecations = Set(),
       cliArtifacts = Set(),
-      primaryTopic = None,
+      category = None,
       beginnerIssuesLabel = None
     )
   }

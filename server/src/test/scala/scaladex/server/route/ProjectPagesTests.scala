@@ -57,7 +57,7 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach {
   describe("POST edit/orga/repo") {
     it("should replace empty customScalaDoc with None") {
       val formData = FormData(
-        "primaryTopic" -> "serialization",
+        "category" -> "json",
         "beginnerIssuesLabel" -> "",
         "chatroom" -> "",
         "contributingGuide" -> "",
