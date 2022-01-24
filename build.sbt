@@ -108,11 +108,9 @@ lazy val infra = project
     ),
     javaOptions ++= {
       val base = (ThisBuild / baseDirectory).value
-      val index = base / "../scaladex-small-index/"
-      val credentials = base / "../scaladex-credentials"
-      val contrib = base / "../scaladex-contrib"
+      val index = base / "small-index"
+      val contrib = base / "contrib"
       Seq(
-        s"-Dscaladex.filesystem.credentials=$credentials",
         s"-Dscaladex.filesystem.index=$index",
         s"-Dscaladex.filesystem.contrib=$contrib"
       )

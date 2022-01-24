@@ -1,16 +1,16 @@
 ## General Overview
 
-Scaladex is composed of four repositories: one source repository `scaladex`, two persistence repositories, `scaladex-contrib` and `scaladex-index`, and one configuration repository `scaladex-credentials`.
+## Repositories
 
-For development, you should prefer using `scaladex-small-index` that is a small subset of the original `scaladex-index` repository.
+Scaladex is composed of four repositories:
+- `scaladex`: The main repository, it contains the source files.
+- `scala-credentials`: The configuration repository, it is private in the scalacenter organization because it contains some secret tokens.
+- `scaladex-contrib`: Some resource files that can be contributed to by the community: the `claims.json` and the `non-standard.json` files and others.
+- `scaladex-small-index` and `scaladex-index`: Some data repositories that can be used to initialize a Scaladex instance from scratch.
 
-```
-scaladex
-├── scaladex
-├── scaladex-contrib
-├── scaladex-credentials
-└── scaladex-index (or scaladex-small-index)
-```
+For development, you should only need to clone `scaladex`:
+- `scaladex-credentials` and `scaladex-index` are only used in the remote `dev` and `prod` environments.
+- `scaladex-contrib` and `scaladex-small-index` are submodules of `scaladex`.
 
 ## Requirements
 
