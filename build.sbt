@@ -62,6 +62,7 @@ lazy val scaladex = project
   .settings(Deployment(data, server))
 
 lazy val template = project
+  .in(file("modules/template"))
   .settings(
     scalacOptionsSettings,
     scalacOptions -= "-Xfatal-warnings",
@@ -76,7 +77,7 @@ lazy val template = project
   .enablePlugins(SbtTwirl)
 
 lazy val infra = project
-  .in(file("infra"))
+  .in(file("modules/infra"))
   .configs(IntegrationTest)
   .settings(
     scalacOptionsSettings,
@@ -147,6 +148,7 @@ lazy val infra = project
   .dependsOn(core.jvm % "compile->compile;test->test;it->test")
 
 lazy val webclient = project
+  .in(file("modules/wbeclient"))
   .settings(
     scalacOptionsSettings,
     libraryDependencies ++= Seq(
@@ -159,6 +161,7 @@ lazy val webclient = project
   .dependsOn(core.js)
 
 lazy val server = project
+  .in(file("modules/server"))
   .configs(IntegrationTest)
   .settings(
     scalacOptionsSettings,
@@ -202,7 +205,7 @@ lazy val server = project
   .enablePlugins(SbtSassify, JavaServerAppPackaging)
 
 lazy val core = crossProject(JSPlatform, JVMPlatform)
-  .in(file("core"))
+  .in(file("modules/core"))
   .settings(
     scalacOptionsSettings,
     libraryDependencies ++= Seq(
@@ -219,6 +222,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
   )
 
 lazy val data = project
+  .in(file("modules/data"))
   .settings(
     scalacOptionsSettings,
     ammoniteSettings,

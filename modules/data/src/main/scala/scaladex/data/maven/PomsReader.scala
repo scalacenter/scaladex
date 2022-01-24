@@ -66,7 +66,7 @@ class PomsReader(resolver: PomResolver) extends LazyLogging {
       val pom = Await
         .result(future, 3.seconds)
         .getOrElse {
-          logger.error(s"Missing parent pom: $groupId:$artifactId:$version")
+          logger.warn(s"Missing parent pom: $groupId:$artifactId:$version")
           throw new MissingParentPom(s"$groupId:$artifactId:$version")
         }
 
