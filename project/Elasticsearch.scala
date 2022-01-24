@@ -71,12 +71,14 @@ object Elasticsearch extends AutoPlugin {
       .parse("docker.elastic.co/elasticsearch/elasticsearch")
       .withTag("7.16.1")
     val container = new ElasticsearchContainer(image)
-    container.withEnv("discovery.type", "single-node")
-    container.addFileSystemBind(
-      dataFolder.toString,
-      "/usr/share/elasticsearch/data",
-      BindMode.READ_WRITE
-    )
+    container
+      .withEnv("discovery.type", "single-node")
+      .withEnv("ES_JAVA_OPTS", "-Xms512m -Xmx512m")
+      .addFileSystemBind(
+        dataFolder.toString,
+        "/usr/share/elasticsearch/data",
+        BindMode.READ_WRITE
+      )
     container.start()
     container.getFirstMappedPort()
   }
