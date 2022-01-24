@@ -1,172 +1,122 @@
-## General Overview
-
 ## Repositories
 
 Scaladex is composed of four repositories:
 - `scaladex`: The main repository, it contains the source files.
 - `scala-credentials`: The configuration repository, it is private in the scalacenter organization because it contains some secret tokens.
-- `scaladex-contrib`: Some resource files that can be contributed to by the community: the `claims.json` and the `non-standard.json` files and others.
+- `scaladex-contrib`: Some resource files that can be contributed to by the community: the `claims.json`, the `non-standard.json` files and others.
 - `scaladex-small-index` and `scaladex-index`: Some data repositories that can be used to initialize a Scaladex instance from scratch.
 
-For development, you should only need to clone `scaladex`:
-- `scaladex-credentials` and `scaladex-index` are only used in the remote `dev` and `prod` environments.
+For development you only need to clone `scaladex`:
+- `scaladex-credentials` and `scaladex-index` are only used in the remote `staging` and `prod` environments.
 - `scaladex-contrib` and `scaladex-small-index` are submodules of `scaladex`.
 
 ## Requirements
 
+### Tools
+
+You will need the following tools installed:
+
+* git
 * Java 1.8
 * the [sbt](https://www.scala-sbt.org/) build tool
+* a Scala code editor:
+  * [VSCode](https://code.visualstudio.com/) with [Metals](https://scalameta.org/metals/)
+  * [IntelliJ Idea](https://www.jetbrains.com/idea/) with the Scala plugin
+* docker
 
-## How to run Scaladex locally
+If you cannot install docker, alternatively you can run [PostgreSQL](https://www.postgresql.org/) on port 5432 and [Elasticsearch](https://www.elastic.co/fr/elasticsearch/) on port 9200.
 
-First clone the scaladex repositories and then run sbt.
+### Github token
 
-```bash
-mkdir scaladex
-cd scaladex
+So that Scaladex can collect information about Scala projects from Github you need to configure a GITHUB_TOKEN environment variable.
 
-git clone git@github.com:scalacenter/scaladex.git
-git clone git@github.com:scalacenter/scaladex-small-index.git
-git clone git@github.com:scalacenter/scaladex-contrib.git
+Go to https://github.com/settings/tokens and generate a new token with the `repo` and `admin:org` scopes.
 
-# Optional: If you have access
-git clone git@github.com:scalacenter/scaladex-credentials.git
-
-cd scaladex
-sbt
+Add this new token to your environment profile. For instance in Linux, you can the add following lines to the `~/.profile` file:
+```
+export GITHUB_TOKEN=<your token>
 ```
 
-Into the sbt shell:
+## Setting up
 
-* Populate the database (only once):
-
+1. Clone the repository and initialize the submodules:
+```shell
+$ git clone git@github.com:scalacenter/scaladex.git
+$ git submodule update --init
 ```
-data/reStart init
+2. Start the sbt shell in the terminal, compile and run the tests:
+```shell
+$ sbt
+sbt:scaladex> compile
+sbt:scaladex> test
 ```
-
- * Start the Scaladex server:
-
+3. To check your Github token you can run the integration tests of the `infra` module.
+```shell
+sbt:scaladex> infra / IntegrationTest / test
 ```
-~server/reStart
+4. Import the project in your code editor.
+
+## Run Scaladex locally
+
+1. Before running Scaladex for the first time you need to populate the database:
 ```
- 
-Then, open `localhost:8080` in your browser.
+sbt:scaladex> data/run init
+```
+It reads the pom files and other data from the `small-index/` folder and add the corresponding artifacts and projects into the database.
+2. Then you can start the server with:
+```
+sbt:scaladex> server/run
+```
+3. Finally you can open the website in your browser at `localhost:8080`.
 
-## Scalafmt
+The server will start fetching information from Github progressively, you will see them appear after some time.
 
-Make sure to run `bin/scalafmt` to format your code.
+The database and elasticsearch indexes are persisted locally.
+After you stop and start the server again, the github information will still be there.
 
-You can install a pre-commit hook with `bin/hooks.sh`.
+## Organization of the code
 
-## Standalone Elasticsearch Server
-
-If you have a standalone elasticsearch server running on port 9200, scaladex will automatically use it.
-Otherwise it will try to create an elasticsearch container.
-There is currently no way to use a different port for elasticsearch.
+The build contains 6 modules (there are all under the `modules/` directory):
+- `core`: 
+it contains the core data classes and service interfaces of Scaladex.
+It is cross-compiled into JVM bytecode for the `server` and Javascript for the `webclient`.
+- `data`:
+Some useful operations to update the Scaladex data.
+Only the `init` operation is still used, the other operations are progressively translated to scheduled jobs in the `server` module.
+- `infra`:
+It contains the implementations of all the services, using PostgreSQL for the database, Elasticsearch for the search engine and akka-http for the third-party APIs (Github, Maven Central...).
+- `server`:
+The Scaladex server, written with Endpoint4s and akka-http.
+- `template`:
+The HTML templates of the pages that are generated by the server.
+- `webclient`:
+The script compiled to Javascript and executed by the users' browser.
 
 ## Architecture
 
-```
-+-----------------------+                                          +-----------------------+
-|                       |                                          |                       |
-|     Bintray           +----------------------------------------> |  [scaladex-index.git] |
-|                       |                                          |                       |
-+-----------------------+                                          +-----------------------+
+Scaladex receives POM files from Maven Central, it parses them, find the Github URL of the project and stores the information in the `artifacts` and `projects` table of the database.
 
-                                                                             ^
-                                                        write edit           |
-                                                  +--------------------------+
-                                                  |
-                                                  |
-+-----------------------+                         |
-|                       |                 +-------+-------+            +-------------------+
-|       Sonatype        |   upload poms   |               |  search    |                   |
-|                       +---------------> |   Scaladex    +--------->  |   Elasticsearch   |
-|  +-----------------+  |                 |      Web      |            |                   |
-|  |                 |  |  edit projects  |               |            +-------------------+
-|  | Scala Developer +------------------> +-------+-------+
-|  |                 |  |                         |
-|  +-------------+---+  |                         | read claims   +------------------------+
-|                |      |                         +------------>  |                        |
-+-----------------------+                                         | [scaladex-contrib.git] |
-                 |                 claims projects                |                        |
-                 +--------------------------------------------->  +------------------------+
+In the Scaladex terminology, an artifact is the POM file of a Scala artifact and a project is the Github repository of a Scala project.
+An artifact must be associated to a single project.
+A project can have many artifacts.
 
--- asciiflow.com
-```
+Locally, we do not receive any POM files, instead we use the `data / run init` to populate the database with some initial artifacts and projects.
 
-As shown in the above diagram, Scaladex uses two Git repositories 
-([scaladex-contrib.git](https://github.com/scalacenter/scaladex-contrib) and [scaladex-index.git](https://github.com/scalacenter/scaladex-index)) as persistence mechanisms, 
-and ElasticSearch to power the full-text search.
+While running, the server executes some scheduled jobs periodically to update the information of the projects and to synchronize the search engine:
+Here are some examples of scheduled jobs:
+- Github updater: Update information about the projects form Github.
+- Project dependencies updater: Compute the dependencies of a project from the dependencies of its artifacts.
+- Search synchronizer: Update the content of the Elasticsearch index.
+Check out the [SchedulerService] class to have a complete list of all the scheduled jobs.
 
-The `contrib.git` repository is read-only for the Scaladex application
-(users can write on it, on Github).
+The main and search pages are computed with information coming from Elasticsearch.
+The project and artifact pages contain data from the SQL database.
 
-Data of the `[scaladex-index.git]` repository are written *only* by Scaladex.
-This repository contains the POMs and project information added by users.
+## Scalafix and Scalafmt
 
-## Bintray Data Pipeline
+Before pushing your changes you must run `bin/scalafmt` and `sbt scalafixAll` to format your code and organize all imports.
 
-If you want to update the data:
-
-The entry point is at [data/Main.scala](/data/src/main/scala/scaladex/data/Main.scala)
-
-### List Poms
-
-This step searches on Bintray for artifact containing `_2.10`, `_2.11`, `_2.12`, ...
-Bintray contains jcenter, it's a mirror of maven central.
-
-You will need a premium Bintray account.
-
-```
-set javaOptions in reStart ++= Seq(
-  "-DBINTRAY_USER=XXXXXXX", 
-  "-DBINTRAY_PASSWORD=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-)
-
-data/reStart list
-```
-
-### Download ivy.xml of SBT plugins from Bintray
-
-This step also requires a premium Bintray.
-
-```
-data/reStart sbt
-```
-
-### Download Poms
-
-This steps download poms and parent poms from Bintray
-
-```
-data/reStart download
-data/reStart parent
-```
-
-### GitHub
-
-This step downloads GitHub metadata and content.
-
-You need to create a token on your github account: https://github.com/settings/tokens/new
-
-Then fill the following file `../scaladex-dev-credentials/application.conf` with:
-
-```
-org.scala_lang.index {
-  data {
-    github = ["XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"]
-  }
-}
-```
-
-And run
-
-```
-data/reStart github
-```
-
-## How to deploy
+## How to deploy (admins only)
 
 There are two deployment environments, a staging and a production one.
 
@@ -183,12 +133,9 @@ To deploy the application to the server (index.scala-lang.org) you will need to 
 
 These people have access:
 
-* [@MasseGuillaume](https://github.com/MasseGuillaume)
-* [@heathermiller](https://github.com/heathermiller)
 * [@julienrf](https://github.com/julienrf)
-* [@jvican](https://github.com/jvican)
-* [@olafurpg](https://github.com/olafurpg)
 * [@adpi2](https://github.com/adpi2)
+* [@mlachkar](https://github.com/mlachkar)
 
 ### Staging Deployment
 
@@ -254,11 +201,3 @@ curl --data-binary "@test_2.11-1.1.5.pom" \
 --user token:c61e65b80662c064abe923a407b936894b29fb55 \
 "https://index.scala-lang.org/publish?created=1478668532&readme=true&info=true&contributors=true&path=/org/example/test_2.11/1.2.3/test_2.11-1.2.3.pom"
 ~~~
-
-github test user:
-
-user: foobarbuz 
-pass: tLA4FN9O5jmPSnl/LDkSb0cYgJDe8HHdOMkY2yZO4m0=
-api:  c61e65b80662c064abe923a407b936894b29fb55
-repo: git@github.com:foobarbuz/example.git
-
