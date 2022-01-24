@@ -15,11 +15,15 @@ inThisBuild(
   )
 )
 
-lazy val loggingSettings =
+lazy val loggingSettings = Seq(
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.2.10",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
-  )
+  ),
+  // Drop and replace commons-logging with slf4j
+  libraryDependencies += "org.slf4j" % "jcl-over-slf4j" % "1.7.33",
+  excludeDependencies += ExclusionRule("commons-logging", "commons-logging")
+)
 
 val amm = inputKey[Unit]("Start Ammonite REPL")
 lazy val ammoniteSettings = Def.settings(
