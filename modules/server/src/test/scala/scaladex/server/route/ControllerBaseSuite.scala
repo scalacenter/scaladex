@@ -1,5 +1,8 @@
 package scaladex.server.route
 
+import java.nio.file.Files
+import java.nio.file.Path
+
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
@@ -13,7 +16,12 @@ import scaladex.server.GithubUserSession
 import scaladex.server.config.ServerConfig
 
 trait ControllerBaseSuite extends AsyncFunSpec with Matchers with ScalatestRouteTest {
-  val config: ServerConfig = ServerConfig.load()
+  val index: Path = Files.createTempDirectory("scaladex-index")
+  val config: ServerConfig = {
+    val realConfig = ServerConfig.load()
+    realConfig.copy(filesystem = realConfig.filesystem.copy(index = index))
+  }
+
   val githubUserSession = new GithubUserSession(config.session)
   val githubAuth = MockGithubAuth
 

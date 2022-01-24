@@ -1,5 +1,6 @@
 package scaladex.infra.storage
 
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -69,59 +70,32 @@ case class DataPaths(contrib: Path, index: Path, credentials: Path, validate: Bo
   log.info(s"index folder: $index")
   log.info(s"credentials folder: $credentials")
 
-  def assert2(cond: Boolean): Unit =
-    if (validate) {
-      assert(cond)
-    }
-
   assert2(Files.isDirectory(contrib))
   assert2(Files.isDirectory(index))
 
-  val claims: Path = contrib.resolve("claims.json")
-  assert2(Files.exists(claims))
-
-  val licensesByName: Path = contrib.resolve("licenses-by-name.json")
-  assert2(Files.exists(licensesByName))
-
-  val nonStandard: Path = contrib.resolve("non-standard.json")
-  assert2(Files.exists(nonStandard))
+  val claims: Path = initJsonFile(contrib, "claims.json")
+  val licensesByName: Path = initJsonFile(contrib, "licenses-by-name.json")
+  val nonStandard: Path = initJsonFile(contrib, "non-standard.json")
 
   // === poms ===
-  private val pomsFolder = index.resolve("poms")
-  assert2(Files.isDirectory(pomsFolder))
+  private val pomsFolder = initDirectory(index, "poms")
 
   // Bintray
-
-  private val bintrayPom = pomsFolder.resolve("bintray")
-  assert2(Files.isDirectory(bintrayPom))
-
-  private val bintrayPomSha = bintrayPom.resolve("sha")
-  assert2(Files.isDirectory(bintrayPomSha))
-
-  private val bintrayMeta = bintrayPom.resolve("meta.json")
-  assert2(Files.exists(bintrayMeta))
+  private val bintrayPom = initDirectory(pomsFolder, "bintray")
+  private val bintrayPomSha = initDirectory(bintrayPom, "sha")
+  private val bintrayMeta = initFile(bintrayPom, "meta.json")
 
   // MavenCentral
 
-  private val mavenCentralPom = pomsFolder.resolve("maven-central")
-  assert2(Files.isDirectory(mavenCentralPom))
-
-  private val mavenCentralPomSha = mavenCentralPom.resolve("sha")
-  assert2(Files.isDirectory(mavenCentralPomSha))
-
-  private val mavenCentralMeta = mavenCentralPom.resolve("meta.json")
-  assert2(Files.exists(mavenCentralMeta))
+  private val mavenCentralPom = initDirectory(pomsFolder, "maven-central")
+  private val mavenCentralPomSha = initDirectory(mavenCentralPom, "sha")
+  private val mavenCentralMeta = initFile(mavenCentralPom, "meta.json")
 
   // Users
 
-  private val usersPom = pomsFolder.resolve("users")
-  assert2(Files.isDirectory(usersPom))
-
-  private val usersPomSha = usersPom.resolve("sha")
-  assert2(Files.isDirectory(usersPomSha))
-
-  private val usersMeta = usersPom.resolve("meta.json")
-  assert2(Files.exists(usersMeta))
+  private val usersPom = initDirectory(pomsFolder, "users")
+  private val usersPomSha = initDirectory(usersPom, "sha")
+  private val usersMeta = initFile(usersPom, "meta.json")
 
   // === ivys ===
 
@@ -157,5 +131,29 @@ case class DataPaths(contrib: Path, index: Path, credentials: Path, validate: Bo
   def subIndex: DataPaths = {
     val subIndex = index.getParent.resolve(Paths.get("scaladex-small-index"))
     copy(index = subIndex, validate = false)
+  }
+
+  private def assert2(cond: Boolean): Unit =
+    if (validate) assert(cond)
+
+  private def initFile(parent: Path, name: String): Path = {
+    val file = parent.resolve(name)
+    if (!Files.exists(file)) Files.createFile(file)
+    file
+  }
+
+  private def initJsonFile(parent: Path, name: String): Path = {
+    val file = parent.resolve(name)
+    if (!Files.exists(file)) {
+      Files.createFile(file)
+      Files.write(file, "{}".getBytes(StandardCharsets.UTF_8))
+    }
+    file
+  }
+
+  private def initDirectory(parent: Path, name: String): Path = {
+    val dir = parent.resolve(name)
+    if (!Files.exists(dir)) Files.createDirectory(dir)
+    dir
   }
 }

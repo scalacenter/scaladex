@@ -65,7 +65,7 @@ object LocalStorageRepo {
     checkDir(config.index)
     checkDir(config.temp)
     val liveDir = initDir(config.index, "live")
-    val projectSettings = initFile(liveDir, "projects.json")
+    val projectSettings = initJsonFile(liveDir, "projects.json")
     new LocalStorageRepo(dataPaths, projectSettings, config.temp)
   }
 
@@ -79,9 +79,12 @@ object LocalStorageRepo {
     directory
   }
 
-  private def initFile(directory: Path, name: String): Path = {
+  private def initJsonFile(directory: Path, name: String): Path = {
     val file = directory.resolve(name)
-    if (!Files.exists(file)) Files.createFile(file)
+    if (!Files.exists(file)) {
+      Files.createFile(file)
+      Files.write(file, "{}".getBytes(StandardCharsets.UTF_8))
+    }
     file
   }
 

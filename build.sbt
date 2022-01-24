@@ -148,7 +148,7 @@ lazy val infra = project
   .dependsOn(core.jvm % "compile->compile;test->test;it->test")
 
 lazy val webclient = project
-  .in(file("modules/wbeclient"))
+  .in(file("modules/webclient"))
   .settings(
     scalacOptionsSettings,
     libraryDependencies ++= Seq(
