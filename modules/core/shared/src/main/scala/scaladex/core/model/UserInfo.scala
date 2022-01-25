@@ -20,9 +20,10 @@ case class UserInfo(
 case class UserState(
     repos: Set[Project.Reference],
     orgs: Set[Project.Organization],
-    info: UserInfo
+    info: UserInfo,
+    env: Env
 ) {
-  def isAdmin: Boolean = orgs.contains(Project.Organization("scalacenter"))
+  def isAdmin: Boolean = orgs.contains(Project.Organization("scalacenter")) || env.isLocal
   def canEdit(githubRepo: Project.Reference): Boolean =
     isAdmin || repos.contains(githubRepo)
   def isSonatype: Boolean =
