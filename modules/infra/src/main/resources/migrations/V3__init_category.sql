@@ -59,7 +59,7 @@ UPDATE project_settings SET category = 'distributed-messaging-systems-and-micros
     ('line', 'armeria'), -- rpc
     ('twitter', 'finagle'), -- rpc
     ('trex-paxos', 'trex'),
-    ('akka-js', 'akka-js'),
+    ('akka-js', 'akka.js'),
     ('twitter', 'finatra'),
     ('tumblr', 'colossus')
     -- ('stephenmcd', 'curiodb'),
@@ -114,15 +114,15 @@ UPDATE project_settings SET category = 'data-sources-and-connectors'
     VALUES ('indix', 'schemer'),
     ('delta-io', 'delta'),
     ('googleclouddataproc', 'spark-bigquery-connector'),
-    ('skullxbones', 'akka-persistence-mongo'),
+    ('scullxbones', 'akka-persistence-mongo'),
     ('monix', 'monix-connect'),
     ('delta-io', 'connectors'),
     ('datastax', 'spark-cassandra-connector'),
     ('akka', 'alpakka'),
     ('akka', 'alpakka-kafka'),
-    ('mongodb', 'mongodb-spark'),
+    ('mongodb', 'mongo-spark'),
     ('memsql', 'singlestore-spark-connector'),
-    ('redislab', 'spark-redis'),
+    ('redislabs', 'spark-redis'),
     ('couchbase', 'couchbase-spark-connector'),
     ('microsoft', 'sql-spark-connector'),
     ('springml', 'spark-sftp'),
@@ -152,7 +152,7 @@ UPDATE project_settings SET category = 'command-line-parsing'
   WHERE (organization, repository) IN (
     VALUES ('scopt', 'scopt'),
     ('bkirwi', 'decline'),
-    ('deanwampler', 'command-line-argument'),
+    ('deanwampler', 'command-line-arguments'),
     ('alexarchambault', 'case-app'),
     ('backuity', 'clist'),
     ('bmc', 'argot'),
@@ -173,12 +173,12 @@ UPDATE project_settings SET category = 'configuration-and-environment'
     ('47degrees', 'case-classy'),
     ('zalando', 'grafter'), -- dependency injection
     ('carueda', 'tscfg'),
-    ('carlpulley', 'valdated-config'),
+    ('carlpulley', 'validated-config'),
     ('scalameta', 'metaconfig'),
     ('lambdista', 'config'),
     ('kovszilard', 'easy-config'),
     ('travisbrown', 'dhallj'),
-    ('carpulley', 'validated-config')
+    ('carlpulley', 'validated-config')
   );
 
 UPDATE project_settings SET category = 'logging'
@@ -206,11 +206,11 @@ UPDATE project_settings SET category = 'performance-and-monitoring'
     ('banzaicloud', 'spark-metrics'),
     ('kamon-io', 'kamon'),
     ('zio', 'zio-metrics'),
-    ('lucacanal', 'sparkmeasure'),
+    ('lucacanali', 'sparkmeasure'),
     ('rustedbones', 'akka-http-metrics'),
     ('levkhomich', 'akka-tracing'),
     ('xitrum-framework', 'glokka'),
-    ('fiadleil', 'prometheus_client_scala'),
+    ('fiadliel', 'prometheus_client_scala'),
     ('scalacenter', 'scalac-profiling'),
     ('sbt', 'sbt-jmh'),
     ('newrelic', 'newrelic-java-agent'),
@@ -229,7 +229,6 @@ UPDATE project_settings SET category = 'testing'
     ('paulbutcher', 'scalamock'),
     ('scalaprops', 'scalaprops'),
     ('scalatest', 'scalatest'),
-    ('xitrum-framework', 'scalive'),
     ('etorreborre', 'specs2'),
     ('disneystreaming', 'weaver-test'),
     ('com-lihaoyi', 'utest'),
@@ -264,7 +263,7 @@ UPDATE project_settings SET category = 'databases'
     ('longevityframework', 'longevity'),
     ('kostaskougios', 'mapperdao'),
     ('outworkers', 'morpheus'),
-    ('neotypes', 'neotypes'),
+    ('irevive', 'neotypes'),
     ('outworkers', 'phantom'),
     ('zio', 'zio-quill'),
     ('reactivecouchbase', 'reactivecouchbase-rs-core'),
@@ -287,7 +286,7 @@ UPDATE project_settings SET category = 'databases'
     ('tminglei', 'slick-pg'),
     ('squeryl', 'squeryl'),
     ('scalamolecule', 'molecule'),
-    ('zio', 'zio-redis'),
+    -- ('zio', 'zio-redis'),
     ('tpolecat', 'skunk'),
     ('netflix', 'atlas'),
     ('flyway', 'flyway'),
@@ -299,7 +298,7 @@ UPDATE project_settings SET category = 'indexing-and-searching'
   WHERE (organization, repository) IN (
     VALUES ('sksamuel', 'elastic4s'),
     ('outr', 'lucene4s'),
-    ('elastic', 'ealsticsearch-hadoop'),
+    ('elastic', 'elasticsearch-hadoop'),
     ('bizreach', 'elastic-scala-httpclient'),
     ('alexklibisz', 'elastiknn'),
     ('phymbert', 'spark-search'),
@@ -325,7 +324,7 @@ UPDATE project_settings SET category = 'dates-and-time'
 UPDATE project_settings SET category = 'geometry-and-geopositionning'
   WHERE (organization, repository) IN (
     VALUES ('locationtech', 'geotrellis'),
-    ('lcationtech-labs', 'geopyspark'),
+    ('locationtech-labs', 'geopyspark'),
     ('simplexspatial', 'osm4scala'),
     ('plokhotnyuk', 'rtree2d'),
     ('locationtech', 'sfcurve'),
@@ -341,7 +340,7 @@ UPDATE project_settings SET category = 'geometry-and-geopositionning'
 
 UPDATE project_settings SET category = 'units-of-measurement'
   WHERE (organization, repository) IN (
-    VALUES ('karol', 'units'),
+    VALUES ('karols', 'units'),
     ('typelevel', 'squants'),
     ('erikerlandson', 'coulomb'),
     ('nestorpersist', 'units'),
@@ -358,10 +357,10 @@ UPDATE project_settings SET category = 'deployment-and-cloud'
     ('zio', 'zio-aws'),
     ('laserdisc-io', 'fs2-aws'),
     ('dwhjames', 'aws-wrap'),
-    ('seratch', 'awsscala'),
+    ('seratch', 'awscala'),
     ('bizreach', 'aws-s3-scala'),
     ('zio', 'zio-sqs'),
-    ('charwork', 'sbt-aws'),
+    ('chatwork', 'sbt-aws'),
     ('lightbend', 'sbt-google-cloud-storage'),
     ('heroku', 'sbt-heroku'),
     ('vaslabs', 'sbt-kubeyml'),
@@ -384,7 +383,7 @@ UPDATE project_settings SET category = 'deployment-and-cloud'
 
 UPDATE project_settings SET category = 'packaging-and-publishing'
   WHERE (organization, repository) IN (
-    VALUES ('sbt', 'sbt-native-package'), -- containerization
+    VALUES ('sbt', 'sbt-native-packager'), -- containerization
     ('xerial', 'sbt-pack'),
     ('sbt', 'sbt-onejar'),
     ('sbt', 'sbt-bintray'),
@@ -411,7 +410,7 @@ UPDATE project_settings SET category = 'library-dependency-management'
     ('sbt', 'sbt-dependency-graph'),
     ('sbt', 'librarymanagement'),
     ('albuch', 'sbt-dependency-check'),
-    ('aiyando', 'sbt-dependency-updates'),
+    ('aiyanbo', 'sbt-dependency-updates'),
     ('rtimush', 'sbt-updates')
   );
 
@@ -431,7 +430,7 @@ UPDATE project_settings SET category = 'version-management'
     ('gitbucket', 'gitbucket'),
     ('sbt', 'sbt-git'),
     ('sbt', 'sbt-groll'),
-    ('rallyhealth', 'sbt-git-versionning'),
+    ('rallyhealth', 'sbt-git-versioning'),
     ('randomcoder', 'sbt-git-hooks')
   );
 
@@ -441,7 +440,7 @@ UPDATE project_settings SET category = 'virtualization-and-containerization'
     ('vonnagy', 'service-container'),
     ('aloiscochard', 'sindi'),
     ('j5ik2o', 'docker-controller-scala'),
-    ('marcusloonberg', 'sbt-docker'),
+    ('marcuslonnberg', 'sbt-docker'),
     ('tapad', 'sbt-docker-compose'),
     ('ehsanyou', 'sbt-docker-compose'),
     ('nokia', 'mesos-scala-api'),
@@ -495,7 +494,7 @@ UPDATE project_settings SET category = 'printing-and-debugging'
     ('adamw', 'scala-macro-debug'),
     ('scalacenter', 'scala-debug-adapter'),
     ('com-lihaoyi', 'sourcecode'),
-    ('virtus', 'pretty-stacktraces'),
+    ('virtuslab', 'pretty-stacktraces'),
     ('com-lihaoyi', 'pprint')
     -- ('johnreedlol', 'pos'),
   );
@@ -531,6 +530,7 @@ UPDATE project_settings SET category = 'scripting-and-repls'
     ('woshilaiceshide', 'scala-web-repl'),
     ('masseguillaume', 'scalakata2'),
     ('dbdahl', 'rscala')
+    -- ('xitrum-framework', 'scalive')
     -- ('marconilanna', 'replesent')
   );
 
@@ -640,7 +640,7 @@ UPDATE project_settings SET category = 'logic-programming-and-type-constraints'
     ('epfl-lara', 'stainless'),
     ('uuverifiers', 'ostrich'),
     ('sciss', 'poirot'),
-    ('ilotore', 'iron'),
+    ('iltotore', 'iron'),
     ('fthomas', 'refined'),
     ('epfl-lara', 'inox'),
     ('vivri', 'adjective')
@@ -668,7 +668,7 @@ UPDATE project_settings SET category = 'dependency-injection'
     VALUES ('softwaremill', 'macwire'),
     ('scaldi', 'scaldi'),
     ('scalalandio', 'pulp'),
-    ('giita', 'refuel'),
+    ('giiita', 'refuel'),
     ('codingwell', 'scala-guice'),
     ('dickwall', 'subcut'),
     ('yakivy', 'jam')
@@ -726,10 +726,10 @@ UPDATE project_settings SET category = 'economy-finance-and-cryptocurrencies'
     ('openquant', 'yahoofinancescala'),
     ('quantarray', 'skylark'),
     ('snowplow', 'scala-forex'),
-    ('lambista', 'money'),
+    ('lambdista', 'money'),
     ('taintech', 'bittrex-scala-client'),
     ('bitcoin-s', 'bitcoin-s'),
-    ('snesso', 'scala-stellar-sdk'),
+    ('synesso', 'scala-stellar-sdk'),
     ('scalabm', 'auctions')
   );
 
@@ -753,12 +753,12 @@ UPDATE project_settings SET category = 'probability-statistics-and-machine-learn
     ('h2oai', 'sparkling-water'),
     ('amplab', 'keystone'),
     ('apache', 'flink-ml'),
-    ('thoughworksinc', 'deeplearning.scala'),
+    ('thoughtworksinc', 'deeplearning.scala'),
     ('eclipse', 'deeplearning4j'),
     ('cloudml', 'zen'),
-    ('ciren', 'clib'),
+    ('ciren', 'cilib'),
     ('botkop', 'scorch'),
-    ('deeplearing4j', 'scalnet'),
+    ('deeplearning4j', 'scalnet'),
     ('deeplearning4j', 'deeplearning4j'),
     ('deeplearning4j', 'arbiter'),
     ('clustering4ever', 'clustering4ever'),
@@ -766,7 +766,7 @@ UPDATE project_settings SET category = 'probability-statistics-and-machine-learn
     ('emergentorder', 'onnx-scala'),
     ('mrdimosthenis', 'synapses'),
     ('neysofu', 'tyche'),
-    ('stripe-archive', 'bushfire')
+    ('stripe-archive', 'brushfire')
     -- ('p2t2', 'figaro'),
     -- ('anskarl', 'lomrf'),
     -- ('deeplearning4j', 'nd4s')
@@ -899,7 +899,7 @@ UPDATE project_settings SET category = 'json'
     ('playframework', 'play-json'),
     ('fomkin', 'pushka'),
     ('battermann', 'sbt-json'),
-    ('scala-jsonapi', 'scala-jsonapi'),
+    ('qvantel', 'scala-jsonapi'),
     ('gzoller', 'scalajack'),
     ('spray', 'spray-json'),
     ('ngs-doo', 'dsl-json'),
@@ -916,7 +916,7 @@ UPDATE project_settings SET category = 'json'
 UPDATE project_settings SET category = 'markdown'
   WHERE (organization, repository) IN (
     VALUES ('planet42', 'laika'),
-    ('tristanjuricek', 'pamflet'),
+    ('foundweekends', 'pamflet'),
     ('esamson', 'remder'),
     ('scalatra', 'scalamd'),
     ('noelwelsh', 'mads')
@@ -924,9 +924,9 @@ UPDATE project_settings SET category = 'markdown'
 
 UPDATE project_settings SET category = 'pdf'
   WHERE (organization, repository) IN (
-    VALUES ('allenai', 'pdffigures'),
+    VALUES ('allenai', 'pdffigures2'),
     ('allenai', 'science-parse'),
-    ('hhandoko', 'play-scala-pdf'),
+    ('hhandoko', 'play2-scala-pdf'),
     ('cloudify', 'spdf'),
     ('growinscala', 'flipper'),
     ('overview', 'pdfocr'),
@@ -936,8 +936,8 @@ UPDATE project_settings SET category = 'pdf'
 
 UPDATE project_settings SET category = 'serialization'
   WHERE (organization, repository) IN (
-    VALUES ('malcolmgreaves', 'avro-codegen'),
-    ('sksamuel', 'avro4s'),
+    VALUES ('sksamuel', 'avro4s'),
+    -- ('malcolmgreaves', 'avro-codegen'),
     ('twitter', 'chill'),
     ('msgpack', 'msgpack-scala'),
     ('scalapb', 'scalapb'),
@@ -1003,14 +1003,14 @@ UPDATE project_settings SET category = 'xml-html-and-dom'
     VALUES ('scala', 'scala-xml'),
     ('eed3si9n', 'scalaxb'),
     ('com-lihaoyi', 'scalatags'),
-    ('dylemna', 'xml-spac'),
+    ('dylemma', 'xml-spac'),
     ('note', 'xml-lens'),
     ('scalawilliam', 'xs4s'),
     ('chris-twiner', 'scalesxml'),
     ('sparsetech', 'pine'),
     ('lucidsoftware', 'xtract'),
     ('geirolz', 'advxml'),
-    ('devreeze', 'yaidom'),
+    ('dvreeze', 'yaidom'),
     ('ohze', 'scala-soap'),
     ('andyglow', 'scala-xml-diff'),
     ('ruippeixotog', 'scala-scraper'),
@@ -1019,14 +1019,14 @@ UPDATE project_settings SET category = 'xml-html-and-dom'
     ('raquo', 'scala-dom-types'),
     ('intenthq', 'gander'),
     ('scala-js', 'scala-js-dom'),
-    ('rasuo', 'scala-dom-builder')
+    ('raquo', 'scala-dom-builder')
   );
 
 -- Web Development
 
 UPDATE project_settings SET category = 'asset-management-and-bundlers'
   WHERE (organization, repository) IN (
-    VALUES ('mmozutani', 'sbt-play-gulp'),
+    VALUES ('mmizutani', 'sbt-play-gulp'),
     ('sbt', 'sbt-gzip'),
     ('karasiq', 'sbt-scalajs-bundler'),
     ('givesocialmovement', 'sbt-webpack'),
@@ -1047,20 +1047,20 @@ UPDATE project_settings SET category = 'authentication-and-permissions'
   WHERE (organization, repository) IN (
     VALUES ('softwaremill', 'akka-http-session'),
     ('ticofab', 'aws-request-signer'),
-    ('zalando-stups', 'oauth2-mock-play'),
+    -- ('zalando-stups', 'oauth2-mock-play'),
     ('guardian', 'play-googleauth'),
     ('pac4j', 'play-pac4j'),
     ('t2v', 'play2-auth'),
     ('nulab', 'scala-oauth2-provider'),
     ('jaliss', 'securesocial'),
-    ('mohiva', 'play-silhouete'),
+    ('mohiva', 'play-silhouette'),
     ('joscha', 'play-authenticate'),
     ('profunktor', 'http4s-jwt-auth'),
     ('kovacshuni', 'koauth'),
     ('guardian', 'pan-domain-authentication'),
     ('pac4j', 'vertx-pac4j'),
     ('innfactory', 'akka-jwt'),
-    ('guarduan', 'play-googleauth')
+    ('guardian', 'play-googleauth')
   ); 
 
 UPDATE project_settings SET category = 'forms-and-validation'
@@ -1074,7 +1074,7 @@ UPDATE project_settings SET category = 'forms-and-validation'
     ('bean-validation-scala', 'bean-validation-scala'),
     ('davegurnell', 'checklist'),
     ('eclipsesource', 'play-json-schema-validator'),
-    ('typelevel', 'literrally'),
+    ('typelevel', 'literally'),
     ('rewards-network', 'combos'),
     ('tminglei', 'form-binder'),
     ('yakivy', 'dupin')
@@ -1112,7 +1112,6 @@ UPDATE project_settings SET category = 'http-servers-and-clients'
     ('lomigmegard', 'akka-http-cors'),
     ('com-lihaoyi', 'cask'),
     ('unfiltered', 'unfiltered'),
-    ('endpoint4s', 'endpoint4s'),
     ('ollls', 'zio-tls-http'),
     ('http4s', 'blaze'),
     ('pepegar', 'hammock'),
@@ -1124,7 +1123,7 @@ UPDATE project_settings SET category = 'http-servers-and-clients'
     ('buildo', 'wiro'),
     ('jducoeur', 'jquery-facade'),
     ('sjrd', 'scala-js-jquery'),
-    ('udashframework', 'scala-js-query'),
+    ('udashframework', 'scala-js-jquery'),
     ('timeoutdigital', 'docless'),
     ('swagger-api', 'swagger-core'),
     ('iheartradio', 'play-swagger'),
@@ -1143,7 +1142,7 @@ UPDATE project_settings SET category = 'http-servers-and-clients'
     ('skinny-framework', 'skinny-framework'),
     ('xitrum-framework', 'xitrum'),
     ('yakivy', 'poppet'),
-    ('softwaremill', 'bootzooka'),
+    -- ('softwaremill', 'bootzooka'),
     ('earldouglas', 'xsbt-web-plugin')
     -- ('allawala', 'service-chassis')
     -- ('dvarelap', 'peregrine'),
@@ -1161,7 +1160,7 @@ UPDATE project_settings SET category = 'internationalization'
     ('ant8e', 'sbt-i18n'),
     ('makkarpov', 'scalingua'),
     ('taig', 'babel'),
-    ('fbaierl', 'scalais-i18n-cx')
+    ('fbaierl', 'scalajs-i18n-cx')
   );
 
 UPDATE project_settings SET category = 'static-sites-and-documentation'
@@ -1198,8 +1197,8 @@ UPDATE project_settings SET category = 'third-party-apis'
 
 UPDATE project_settings SET category = 'urls-and-routing'
   WHERE (organization, repository) IN (
-    VALUES ('lemonlabsucj', 'scala-uri'),
-    ('sherpa', 'url-dsl'),
+    VALUES ('lemonlabsuck', 'scala-uri'),
+    ('sherpal', 'url-dsl'),
     ('olafurpg', 'tiny-router'),
     ('voltir', 'route.rx'),
     ('hmrc', 'url-builder'),
@@ -1220,7 +1219,7 @@ UPDATE project_settings SET category = 'web-frontend'
     ('chandu0101', 'scalajs-react-components'),
     ('chandu0101', 'scalajs-react-native'),
     ('aappddeevv', 'scalajs-reaction'),
-    ('playlabs', 'scalajs-react-bridge'),
+    ('payalabs', 'scalajs-react-bridge'),
     ('dispalt', 'sbt-reactjs'),
     ('japgolly', 'scalacss'),
     ('kinoplan', 'scalajs-react-material-ui'),
