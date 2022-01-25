@@ -17,8 +17,6 @@ This project is funded by the <a title="Scala Center" href="https://scala.epfl.c
 Scaladex receives poms automatically from Maven Central (Sonatype) based on the binary version of the artifact ID.
 Some valid Scala binary versions are `_2.13`, `_3`, `_sjs1_3`, `_native0.6_2.13`, `_2.12_1.0`.
 
-You can also watch [The Last 10 Percent by Stefan Zeiger](https://www.youtube.com/watch?v=RmEMUwfQoSc).
-
 Scaladex associates a new artifact to a project by looking at the `scm` (Source Code Management) attribute in the pom file.
 At the moment Scaladex only supports Github repositories.
 
@@ -34,6 +32,8 @@ Check out how to publish to Maven Central with sbt or Mill:
 - [Publish with sbt](https://www.scala-sbt.org/1.x/docs/Publishing.html)
 - [Automated publish with sbt](https://github.com/sbt/sbt-ci-release)
 - [Publish with Mill](https://com-lihaoyi.github.io/mill/mill/Intro_to_Mill.html#_deploying_your_code)
+
+You can also watch [The Last 10 Percent by Stefan Zeiger](https://www.youtube.com/watch?v=RmEMUwfQoSc).
 
 #### What is the binary version of your artifacts?
 
