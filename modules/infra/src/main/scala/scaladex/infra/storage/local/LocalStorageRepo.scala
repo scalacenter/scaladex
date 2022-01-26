@@ -7,10 +7,15 @@ import java.util.concurrent.Executors
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters._
 import scala.util.Try
+import scala.util.Using
 
+import com.typesafe.scalalogging.LazyLogging
 import io.circe._
 import io.circe.syntax._
+import scaladex.core.model.Artifact
+import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
 import scaladex.core.model.data.LocalPomRepository
 import scaladex.core.service.LocalStorageApi
@@ -18,7 +23,9 @@ import scaladex.infra.config.FilesystemConfig
 import scaladex.infra.storage.DataPaths
 import scaladex.infra.util.Codecs._
 
-class LocalStorageRepo(dataPaths: DataPaths, projectSettings: Path, temp: Path) extends LocalStorageApi {
+class LocalStorageRepo(dataPaths: DataPaths, projects: Path, projectSettings: Path, temp: Path)
+    extends LocalStorageApi
+    with LazyLogging {
   import LocalStorageRepo._
   private val singleThreadedContext = // TODO: Use a lock instead
     ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
@@ -58,6 +65,63 @@ class LocalStorageRepo(dataPaths: DataPaths, projectSettings: Path, temp: Path) 
     if (Files.exists(destination)) Files.delete(destination)
     Files.write(destination, data.getBytes(StandardCharsets.UTF_8))
   }
+
+  def clearProjects(): Unit =
+    Using.resource(Files.walk(projects))(_.iterator.asScala.foreach(Files.delete))
+
+  def saveProject(project: Project, artifacts: Seq[Artifact], dependencies: Seq[ArtifactDependency]): Unit = {
+    val orgaDir = LocalStorageRepo.initDir(projects, project.reference.organization.value)
+    val repoDir = LocalStorageRepo.initDir(orgaDir, project.reference.repository.value)
+
+    val projectFile = LocalStorageRepo.initFile(repoDir, "project.json")
+    val artifactsFile = LocalStorageRepo.initFile(repoDir, "artifacts.json")
+    val dependenciesFile = LocalStorageRepo.initFile(repoDir, "dependencies.json")
+
+    writeJson(projectFile, project)
+    writeJson(artifactsFile, artifacts)
+    writeJson(dependenciesFile, dependencies)
+  }
+
+  def getAllProjects(): Iterator[(Project, Seq[Artifact], Seq[ArtifactDependency])] =
+    for {
+      orgaDir <- Files.list(projects).iterator.asScala
+      if Files.isDirectory(orgaDir)
+      repoDir <- Files.list(orgaDir).iterator.asScala
+      if Files.isDirectory(repoDir)
+      (project, artifacts, dependencies) <- tryGetProject(repoDir)
+    } yield (project, artifacts, dependencies)
+
+  private def tryGetProject(repoDir: Path): Option[(Project, Seq[Artifact], Seq[ArtifactDependency])] = {
+    val projectFile = repoDir.resolve("project.json")
+    val artifactsFile = repoDir.resolve("artifacts.json")
+    val dependenciesFile = repoDir.resolve("dependencies.json")
+    if (!Files.exists(projectFile) || !Files.exists(artifactsFile) || !Files.exists(dependenciesFile)) {
+      logger.warn(s"Missing files for project in $repoDir")
+      None
+    } else {
+      val tryParse = for {
+        project <- readJson[Project](projectFile)
+        artifacts <- readJson[Seq[Artifact]](artifactsFile)
+        dependencies <- readJson[Seq[ArtifactDependency]](dependenciesFile)
+      } yield (project, artifacts, dependencies)
+      tryParse match {
+        case Left(error) =>
+          logger.warn(s"Failed to load project from $repoDir because of $error")
+          None
+        case Right(result) => Some(result)
+      }
+    }
+  }
+
+  private def writeJson[T: Encoder](file: Path, value: T): Unit = {
+    val bytes = Printer.spaces2.print(value.asJson).getBytes(StandardCharsets.UTF_8)
+    Files.write(file, bytes)
+  }
+
+  private def readJson[T: Decoder](file: Path): Either[Error, T] = {
+    val content = Files.readAllLines(file, StandardCharsets.UTF_8).asScala.mkString
+    parser.decode[T](content)
+  }
 }
 
 object LocalStorageRepo {
@@ -66,7 +130,8 @@ object LocalStorageRepo {
     checkDir(config.temp)
     val liveDir = initDir(config.index, "live")
     val projectSettings = initJsonFile(liveDir, "projects.json")
-    new LocalStorageRepo(dataPaths, projectSettings, config.temp)
+    val projects = initDir(config.index, "projects")
+    new LocalStorageRepo(dataPaths, projects, projectSettings, config.temp)
   }
 
   private def checkDir(directory: Path) =
@@ -84,6 +149,14 @@ object LocalStorageRepo {
     if (!Files.exists(file)) {
       Files.createFile(file)
       Files.write(file, "{}".getBytes(StandardCharsets.UTF_8))
+    }
+    file
+  }
+
+  private def initFile(directory: Path, name: String): Path = {
+    val file = directory.resolve(name)
+    if (!Files.exists(file)) {
+      Files.createFile(file)
     }
     file
   }

@@ -4,6 +4,7 @@ import doobie._
 import doobie.util.update.Update
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.infra.util.DoobieUtils.Mappings._
 import scaladex.infra.util.DoobieUtils._
@@ -62,10 +63,17 @@ object ArtifactDependencyTable {
       targetFields.map(f => s"d.$f")
     )
 
-  val selectProjectDependency: Query0[ProjectDependency] =
+  val computeProjectDependency: Query0[ProjectDependency] =
     selectRequest(
       fullJoin,
       "DISTINCT d.organization, d.repository, t.organization, t.repository",
       groupBy = Seq("d.organization", "d.repository", "t.organization", "t.repository")
+    )
+
+  val selectDependencyFromProject: Query[Project.Reference, ArtifactDependency] =
+    selectRequest(
+      tableWithSourceArtifact,
+      fields,
+      Seq("a.organization", "a.repository")
     )
 }

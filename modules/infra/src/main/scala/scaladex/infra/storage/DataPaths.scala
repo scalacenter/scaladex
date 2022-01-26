@@ -59,18 +59,18 @@ scaladex-credentials (optionnal)
  */
 object DataPaths {
   def from(config: FilesystemConfig): DataPaths =
-    DataPaths(config.contrib, config.index, validate = true)
+    DataPaths(config.contrib, config.index)
 }
 
-case class DataPaths(contrib: Path, index: Path, validate: Boolean) {
+case class DataPaths(contrib: Path, index: Path) {
 
   private val log = LoggerFactory.getLogger(getClass)
 
   log.info(s"contrib folder: $contrib")
   log.info(s"index folder: $index")
 
-  assert2(Files.isDirectory(contrib))
-  assert2(Files.isDirectory(index))
+  assert(Files.isDirectory(contrib))
+  assert(Files.isDirectory(index))
 
   val claims: Path = initJsonFile(contrib, "claims.json")
   val licensesByName: Path = initJsonFile(contrib, "licenses-by-name.json")
@@ -124,16 +124,13 @@ case class DataPaths(contrib: Path, index: Path, validate: Boolean) {
 
   def fullIndex: DataPaths = {
     val fullIndex = index.getParent.resolve(Paths.get("scaladex-index"))
-    copy(index = fullIndex, validate = false)
+    copy(index = fullIndex)
   }
 
   def subIndex: DataPaths = {
     val subIndex = index.getParent.resolve(Paths.get("scaladex-small-index"))
-    copy(index = subIndex, validate = false)
+    copy(index = subIndex)
   }
-
-  private def assert2(cond: Boolean): Unit =
-    if (validate) assert(cond)
 
   private def initFile(parent: Path, name: String): Path = {
     val file = parent.resolve(name)

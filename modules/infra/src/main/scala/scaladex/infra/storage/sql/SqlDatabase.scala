@@ -35,11 +35,36 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
       time: Instant
   ): Future[Unit] = {
     val unknownStatus = GithubStatus.Unknown(time)
-    val insertArtifactF = run(ProjectTable.insertIfNotExists.run((artifact.projectRef, unknownStatus)))
+    val insertArtifactF = insertProjectRef(artifact.projectRef, unknownStatus)
       .flatMap(_ => run(ArtifactTable.insertIfNotExist.run(artifact)))
-    val insertDepsF = run(ArtifactDependencyTable.insertIfNotExist.updateMany(dependencies))
+    val insertDepsF = insertDependencies(dependencies)
     insertArtifactF.flatMap(_ => insertDepsF).map(_ => ())
   }
+
+  def insertProject(project: Project): Future[Unit] =
+    for {
+      updated <- insertProjectRef(project.reference, project.githubStatus)
+      _ <-
+        if (updated) {
+          project.githubInfo
+            .map(updateGithubInfoAndStatus(project.reference, _, project.githubStatus))
+            .getOrElse(Future.successful(()))
+            .flatMap(_ => updateProjectSettings(project.reference, project.settings))
+        } else {
+          logger.warn(s"${project.reference} already inserted")
+          Future.successful(())
+        }
+    } yield ()
+
+  def insertArtifacts(artifacts: Seq[Artifact]): Future[Unit] =
+    run(ArtifactTable.insertIfNotExist.updateMany(artifacts)).map(_ => ())
+
+  def insertDependencies(dependencies: Seq[ArtifactDependency]): Future[Unit] =
+    run(ArtifactDependencyTable.insertIfNotExist.updateMany(dependencies)).map(_ => ())
+
+  // return true if inserted, false if it already existed
+  private def insertProjectRef(ref: Project.Reference, status: GithubStatus): Future[Boolean] =
+    run(ProjectTable.insertIfNotExists.run((ref, status))).map(x => x >= 1)
 
   override def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]] =
     run(ProjectTable.selectReferenceAndStatus.to[Seq]).map(_.toMap)
@@ -87,6 +112,9 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   override def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]] =
     run(ArtifactTable.selectArtifactByProject.to[List](projectRef))
 
+  def getDependencies(projectRef: Project.Reference): Future[Seq[ArtifactDependency]] =
+    run(ArtifactDependencyTable.selectDependencyFromProject.to[List](projectRef))
+
   override def getArtifactsByName(
       projectRef: Project.Reference,
       artifactName: Artifact.Name
@@ -115,7 +143,7 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
     run(ProjectSettingsTable.count.unique)
 
   override def computeProjectDependencies(): Future[Seq[ProjectDependency]] =
-    run(ArtifactDependencyTable.selectProjectDependency.to[List])
+    run(ArtifactDependencyTable.computeProjectDependency.to[List])
 
   override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] =
     run(ProjectDependenciesTable.insertOrUpdate.updateMany(projectDependencies))
