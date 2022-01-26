@@ -1,22 +1,21 @@
 package scaladex.data.init
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
+import scaladex.core.service.Storage
 import scaladex.core.util.ScalaExtensions._
-import scaladex.infra.storage.local.LocalStorageRepo
-import scaladex.infra.storage.sql.SqlDatabase
+import scaladex.infra.SqlDatabase
 
 class Init(
     database: SqlDatabase,
-    localStorage: LocalStorageRepo
-)(implicit val system: ActorSystem)
+    localStorage: Storage
+)(implicit val ec: ExecutionContext)
     extends LazyLogging {
-  import system.dispatcher
 
   def run(): Future[Unit] = {
     logger.info("Dropping tables")
@@ -25,7 +24,7 @@ class Init(
       _ = logger.info("Creating tables")
       _ <- database.migrate.unsafeToFuture()
       _ = logger.info("Inserting all projects from local storage...")
-      projectIterator = localStorage.getAllProjects()
+      projectIterator = localStorage.loadAllProjects()
       _ <- projectIterator.mapSync {
         case (project, artifacts, dependencies) => insertProject(project, artifacts, dependencies)
       }
@@ -57,8 +56,8 @@ class Init(
 }
 
 object Init {
-  def run(database: SqlDatabase, localStorage: LocalStorageRepo)(
-      implicit sys: ActorSystem
+  def run(database: SqlDatabase, localStorage: Storage)(
+      implicit ex: ExecutionContext
   ): Future[Unit] = {
     val init = new Init(database, localStorage)
     init.run()

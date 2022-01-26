@@ -1,10 +1,6 @@
 package scaladex.data
 package cleanup
 
-import java.nio.charset.StandardCharsets
-import java.nio.file._
-
-import scala.concurrent.ExecutionContext
 import scala.io.Source
 import scala.util.Using
 import scala.util.matching.Regex
@@ -17,11 +13,8 @@ import org.json4s.JsonAST.JField
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonAST.JString
 import org.json4s.native.Serialization.read
-import org.json4s.native.Serialization.writePretty
 import scaladex.core.model.Project
-import scaladex.data.maven.PomsReader
-import scaladex.infra.CoursierResolver
-import scaladex.infra.storage.DataPaths
+import scaladex.infra.DataPaths
 
 class GithubRepoExtractor(paths: DataPaths) {
   object ClaimSerializer extends CustomSerializer[Claims](_ => (serialize, deserialize))
@@ -89,27 +82,6 @@ class GithubRepoExtractor(paths: DataPaths) {
           fixInterpolationIssue(repo.value)
         )
     }
-  }
-
-  // script to generate contrib/claims.json
-  def updateClaims()(implicit ec: ExecutionContext): Unit = {
-    val pomsReader = new PomsReader(new CoursierResolver)
-    val poms =
-      pomsReader.loadAll(paths).map { case (pom, _, _) => pom }
-
-    val notClaimed = poms
-      .filter(pom => extract(pom).isEmpty)
-      .map(pom => s"${pom.groupId} ${pom.artifactId}")
-      .toSeq
-      .distinct
-      .map(Claim(_, void))
-    val out = writePretty(Claims(notClaimed ++ claims))
-      .replace("\":\"", "\": \"") // make json breath
-
-    Files.delete(paths.claims)
-    Files.write(paths.claims, out.getBytes(StandardCharsets.UTF_8))
-
-    ()
   }
 
   private def serialize: PartialFunction[JValue, Claims] = {

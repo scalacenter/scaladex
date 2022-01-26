@@ -2,8 +2,8 @@ package scaladex.data
 
 import com.typesafe.config.ConfigFactory
 import scaladex.core.model.Env
+import scaladex.infra.config.DatabaseConfig
 import scaladex.infra.config.FilesystemConfig
-import scaladex.infra.storage.sql.DatabaseConfig
 
 case class IndexConfig(env: Env, database: DatabaseConfig, filesystem: FilesystemConfig)
 

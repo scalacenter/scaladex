@@ -21,7 +21,7 @@ import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserState
-import scaladex.core.service.LocalStorageApi
+import scaladex.core.service.Storage
 import scaladex.core.service.WebDatabase
 import scaladex.server.GithubUserSession
 import scaladex.server.TwirlSupport._
@@ -30,7 +30,7 @@ import scaladex.view
 class ProjectPages(
     env: Env,
     database: WebDatabase,
-    localStorage: LocalStorageApi,
+    localStorage: Storage,
     session: GithubUserSession
 )(implicit executionContext: ExecutionContext)
     extends LazyLogging {
@@ -120,11 +120,8 @@ class ProjectPages(
             pathEnd(
               editForm { form =>
                 val ref = Project.Reference(organization, repository)
-                val updated = for {
-                  _ <- localStorage.saveProjectSettings(ref, form)
-                  updated <- database.updateProjectSettings(ref, form)
-                } yield updated
-                onComplete(updated) {
+                val updateF = database.updateProjectSettings(ref, form)
+                onComplete(updateF) {
                   case Success(()) =>
                     redirect(
                       Uri(s"/$organization/$repository"),

@@ -14,7 +14,7 @@ import scaladex.core.model.UserState
 import scaladex.core.service.GithubAuth
 import scaladex.core.util.ScalaExtensions._
 import scaladex.core.util.Secret
-import scaladex.infra.github.GithubClient
+import scaladex.infra.GithubClient
 
 object Response {
   case class AccessToken(access_token: String) {

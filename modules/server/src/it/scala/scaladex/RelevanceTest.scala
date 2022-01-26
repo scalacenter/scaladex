@@ -14,14 +14,14 @@ import cats.effect.ContextShift
 import scala.concurrent.ExecutionContext
 import scaladex.core.model.Project
 import scaladex.core.model.search.SearchParams
-import scaladex.infra.elasticsearch.ElasticsearchEngine
-import scaladex.infra.util.DoobieUtils
+import scaladex.infra.ElasticsearchEngine
+import scaladex.infra.sql.DoobieUtils
 import scaladex.server.service.SearchSynchronizer
 import scaladex.core.model.Platform
 import scaladex.core.model.ScalaVersion
-import scaladex.infra.storage.sql.SqlDatabase
-import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.local.LocalStorageRepo
+import scaladex.infra.SqlDatabase
+import scaladex.infra.DataPaths
+import scaladex.infra.FilesystemStorage
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 
@@ -39,7 +39,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
       .use { xa =>
         val database = new SqlDatabase(config.database, xa)
         val dataPaths = DataPaths.from(config.filesystem)
-        val filesystem = LocalStorageRepo(dataPaths, config.filesystem)
+        val filesystem = FilesystemStorage(config.filesystem)
         val searchSync = new SearchSynchronizer(database, searchEngine)
 
         IO.fromFuture(IO {

@@ -13,13 +13,12 @@ import doobie.hikari._
 import scaladex.core.util.ScalaExtensions._
 import scaladex.core.util.TimerUtils
 import scaladex.data.central.CentralMissing
-import scaladex.data.cleanup.GithubRepoExtractor
 import scaladex.data.init.Init
 import scaladex.data.util.PidLock
-import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.local.LocalStorageRepo
-import scaladex.infra.storage.sql.SqlDatabase
-import scaladex.infra.util.DoobieUtils
+import scaladex.infra.DataPaths
+import scaladex.infra.FilesystemStorage
+import scaladex.infra.SqlDatabase
+import scaladex.infra.sql.DoobieUtils
 
 /**
  * This application manages indexed POMs.
@@ -55,7 +54,7 @@ object Main extends LazyLogging {
     implicit val ec: ExecutionContext = system.dispatcher
 
     val dataPaths = DataPaths.from(config.filesystem)
-    val localStorage = LocalStorageRepo(dataPaths, config.filesystem)
+    val localStorage = FilesystemStorage(config.filesystem)
 
     def usingDatabase(f: SqlDatabase => Future[Unit]): Unit = {
       implicit val cs = IO.contextShift(system.dispatcher)
@@ -72,13 +71,8 @@ object Main extends LazyLogging {
     def init(): Unit =
       usingDatabase(database => Init.run(database, localStorage))
 
-    def updateClaims(): Unit = {
-      val githubRepoExtractor = new GithubRepoExtractor(dataPaths)
-      githubRepoExtractor.updateClaims()
-    }
-
     def subIndex(): Unit = {
-      val subFilesystem = LocalStorageRepo(dataPaths.subIndex, config.filesystem)
+      val subFilesystem = FilesystemStorage(config.filesystem)
       usingDatabase(database => SubIndex.run(subFilesystem, database))
     }
 
@@ -88,7 +82,6 @@ object Main extends LazyLogging {
       // Populate the database with poms and data from an index repo:
       // scaladex-small-index or scaladex-index
       "init" -> { () => init() },
-      "updateClaims" -> { () => updateClaims() },
       "subIndex" -> { () => subIndex() }
     )
 

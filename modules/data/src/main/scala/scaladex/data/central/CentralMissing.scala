@@ -1,9 +1,6 @@
 package scaladex.data
 package central
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-
 import scala.collection.immutable.Seq
 import scala.concurrent.Await
 import scala.concurrent.Future
@@ -24,13 +21,10 @@ import org.joda.time.DateTime
 import org.json4s._
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import scaladex.core.model.Platform
-import scaladex.core.model.Sha1
-import scaladex.core.model.data.LocalPomRepository
 import scaladex.data.maven.PomsReader
 import scaladex.data.meta.ArtifactMetaExtractor
 import scaladex.infra.CoursierResolver
-import scaladex.infra.storage.DataPaths
+import scaladex.infra.DataPaths
 
 object CentralMissing {
   // q = g:"com.47deg" AND a:"sbt-microsites"
@@ -162,39 +156,14 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
     DownloadRequest(groupId, artifactId, version, created)
   }
 
-  def savePomsAndMeta(pom: PomContent): Unit = {
-    val sha1 = Sha1(pom.content)
-    val repository = LocalPomRepository.MavenCentral
-
-    val meta = Meta(sha1, pom.artifact.path, pom.artifact.created)
-
-    // write meta
-    Meta.append(
-      paths,
-      meta,
-      repository
-    )
-
-    // write pom
-    val pomPath = paths.poms(repository).resolve(s"$sha1.pom")
-    Files.write(pomPath, pom.content.getBytes(StandardCharsets.UTF_8))
-  }
+  def savePomsAndMeta(pom: PomContent): Unit =
+    ???
 
   // data/run central /home/gui/scaladex/scaladex-contrib /home/gui/scaladex/scaladex-index /home/gui/scaladex/scaladex-credentials
   def run(): Unit = {
     val metaExtractor = new ArtifactMetaExtractor(paths)
     val pomsReader = new PomsReader(new CoursierResolver)
-    val allGroups: Set[String] =
-      pomsReader
-        .loadAll(paths.poms(LocalPomRepository.MavenCentral))
-        .flatMap {
-          case (pom, _) =>
-            metaExtractor
-              .extract(pom)
-              .filter(meta => meta.platform != Platform.Java)
-              .map(_ => pom.groupId)
-        }
-        .toSet
+    val allGroups: Set[String] = ???
 
     val artifactsDownloads = allGroups.toList.map(SearchRequest(_))
 

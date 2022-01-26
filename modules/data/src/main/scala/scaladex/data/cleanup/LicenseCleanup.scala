@@ -4,7 +4,7 @@ import org.json4s._
 import org.json4s.native.Serialization.read
 import scaladex.core.model.License
 import scaladex.data._
-import scaladex.infra.storage.DataPaths
+import scaladex.infra.DataPaths
 
 class LicenseCleanup(paths: DataPaths) {
   implicit private val formats: DefaultFormats.type = DefaultFormats

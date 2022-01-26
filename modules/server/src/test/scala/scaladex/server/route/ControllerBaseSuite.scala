@@ -10,8 +10,8 @@ import scaladex.core.service.SearchEngine
 import scaladex.core.test.InMemoryDatabase
 import scaladex.core.test.InMemorySearchEngine
 import scaladex.core.test.MockGithubAuth
-import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.local.LocalStorageRepo
+import scaladex.infra.DataPaths
+import scaladex.infra.FilesystemStorage
 import scaladex.server.GithubUserSession
 import scaladex.server.config.ServerConfig
 
@@ -28,5 +28,5 @@ trait ControllerBaseSuite extends AsyncFunSpec with Matchers with ScalatestRoute
   val database: InMemoryDatabase = new InMemoryDatabase()
   val searchEngine: SearchEngine = new InMemorySearchEngine()
   val dataPaths: DataPaths = DataPaths.from(config.filesystem)
-  val localStorage: LocalStorageRepo = LocalStorageRepo(dataPaths, config.filesystem)
+  val localStorage: FilesystemStorage = FilesystemStorage(config.filesystem)
 }
