@@ -25,7 +25,7 @@ class Init(
       _ <- database.migrate.unsafeToFuture()
       _ = logger.info("Inserting all projects from local storage...")
       projectIterator = localStorage.loadAllProjects()
-      _ <- projectIterator.mapSync {
+      _ <- projectIterator.foreachSync {
         case (project, artifacts, dependencies) => insertProject(project, artifacts, dependencies)
       }
       // counting what have been inserted

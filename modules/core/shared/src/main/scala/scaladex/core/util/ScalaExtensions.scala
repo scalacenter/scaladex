@@ -23,6 +23,9 @@ object ScalaExtensions {
       in.map(Success(_)).recover { case NonFatal(e) => Failure(e) }
   }
 
+  /**
+    *  Warning: it is not lazy on lazy collections
+    */
   implicit class IterableOnceExtension[A, CC[X] <: IterableOnce[X]](val in: CC[A]) extends AnyVal {
     def mapSync[B](f: A => Future[B])(implicit ec: ExecutionContext, bf: BuildFrom[CC[A], B, CC[B]]): Future[CC[B]] =
       in.iterator
@@ -33,6 +36,12 @@ object ScalaExtensions {
           } yield builder.addOne(b)
         }
         .map(_.result())
+  }
+
+  implicit class IteratorExtension[A](iterator: Iterator[A]) {
+    def foreachSync(f: A => Future[Unit])(implicit ec: ExecutionContext): Future[Unit] =
+      if (iterator.hasNext) f(iterator.next()).flatMap(_ => iterator.foreachSync(f))
+      else Future.successful(())
   }
 
   implicit class FiniteDurationExtension(duration: FiniteDuration) {
