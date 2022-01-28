@@ -34,5 +34,5 @@ class GithubUserSession(sessionConfig: SessionConfig) {
     uuid
   }
 
-  def getUser(id: Option[UUID]): Option[UserState] = id.flatMap(users.get)
+  def getUser(id: UUID): Option[UserState] = users.get(id)
 }

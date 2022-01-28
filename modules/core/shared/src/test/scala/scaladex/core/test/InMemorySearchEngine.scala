@@ -4,6 +4,7 @@ import scala.collection.mutable
 import scala.concurrent.Future
 
 import scaladex.core.model.BinaryVersion
+import scaladex.core.model.Category
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.search.Page
@@ -56,5 +57,7 @@ class InMemorySearchEngine extends SearchEngine {
   override def countByScalaNativeVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]] = ???
 
   override def countBySbtVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]] = ???
+
+  override def getByCategory(category: Category, limit: Int): Future[Seq[ProjectDocument]] = ???
 
 }
