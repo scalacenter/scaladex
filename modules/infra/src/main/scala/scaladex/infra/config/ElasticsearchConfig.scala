@@ -1,4 +1,4 @@
-package scaladex.infra.elasticsearch
+package scaladex.infra.config
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory

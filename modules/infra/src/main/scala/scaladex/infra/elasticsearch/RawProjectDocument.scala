@@ -53,7 +53,7 @@ case class RawProjectDocument(
 }
 
 object RawProjectDocument {
-  import scaladex.infra.util.Codecs._
+  import scaladex.infra.Codecs._
   import io.circe.syntax._
   implicit val codec: Codec[RawProjectDocument] = semiauto.deriveCodec
   implicit val indexable: Indexable[RawProjectDocument] = rawDocument => Printer.noSpaces.print(rawDocument.asJson)

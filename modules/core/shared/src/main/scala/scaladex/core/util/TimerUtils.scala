@@ -6,13 +6,12 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.duration.MILLISECONDS
 
 object TimerUtils {
-  def timeAndLog[A](task: => A)(log: FiniteDuration => Unit): A = {
+  def measure[A](task: => A): (A, FiniteDuration) = {
     val start = Instant.now()
     val result = task
 
     val duration = toFiniteDuration(start, Instant.now())
-    log(duration)
-    result
+    (result, duration)
   }
 
   def toFiniteDuration(start: Instant, end: Instant): FiniteDuration =

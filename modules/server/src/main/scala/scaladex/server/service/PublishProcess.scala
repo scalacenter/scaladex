@@ -10,14 +10,14 @@ import scaladex.core.model.Project
 import scaladex.core.model.Sha1
 import scaladex.core.model.UserState
 import scaladex.core.model.data.LocalPomRepository
-import scaladex.core.service.LocalStorageApi
+import scaladex.core.service.Storage
 import scaladex.core.service.WebDatabase
 import scaladex.data.cleanup.GithubRepoExtractor
 import scaladex.data.maven.ArtifactModel
 import scaladex.data.maven.PomsReader
 import scaladex.data.meta.ArtifactConverter
 import scaladex.infra.CoursierResolver
-import scaladex.infra.storage.DataPaths
+import scaladex.infra.DataPaths
 
 sealed trait PublishResult
 object PublishResult {
@@ -28,7 +28,7 @@ object PublishResult {
 }
 
 class PublishProcess(
-    filesystem: LocalStorageApi,
+    filesystem: Storage,
     githubExtractor: GithubRepoExtractor,
     converter: ArtifactConverter,
     database: WebDatabase,
@@ -76,9 +76,8 @@ class PublishProcess(
         Future.successful(PublishResult.NoGithubRepo)
       case Some(repo) =>
         if (userState.hasPublishingAuthority || userState.repos.contains(repo)) {
-          converter.convert(pom, repo, Some(creationDate)) match {
+          converter.convert(pom, repo, creationDate) match {
             case Some((artifact, deps)) =>
-              filesystem.savePom(data, sha1, repository)
               database
                 .insertArtifact(artifact, deps, Instant.now)
                 .map { _ =>
@@ -100,7 +99,7 @@ class PublishProcess(
 }
 
 object PublishProcess {
-  def apply(paths: DataPaths, filesystem: LocalStorageApi, database: WebDatabase)(
+  def apply(paths: DataPaths, filesystem: Storage, database: WebDatabase)(
       implicit ec: ExecutionContext
   ): PublishProcess = {
     val githubExtractor = new GithubRepoExtractor(paths)

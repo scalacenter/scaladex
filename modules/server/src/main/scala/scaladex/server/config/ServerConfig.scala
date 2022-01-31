@@ -4,10 +4,10 @@ import com.softwaremill.session.SessionConfig
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import scaladex.core.model.Env
+import scaladex.infra.config.DatabaseConfig
+import scaladex.infra.config.ElasticsearchConfig
 import scaladex.infra.config.FilesystemConfig
-import scaladex.infra.elasticsearch.ElasticsearchConfig
-import scaladex.infra.github.GithubConfig
-import scaladex.infra.storage.sql.DatabaseConfig
+import scaladex.infra.config.GithubConfig
 
 case class ServerConfig(
     env: Env,

@@ -7,7 +7,6 @@ import java.util.Properties
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 import com.typesafe.scalalogging.LazyLogging
@@ -20,14 +19,7 @@ import org.apache.maven.model.building.FileModelSource
 import org.apache.maven.model.building.ModelSource2
 import org.apache.maven.model.io.DefaultModelReader
 import org.apache.maven.model.resolution.ModelResolver
-import scaladex.core.model.data.LocalPomRepository
-import scaladex.core.model.data.LocalPomRepository.Bintray
-import scaladex.core.model.data.LocalPomRepository.MavenCentral
-import scaladex.core.model.data.LocalPomRepository.UserProvided
-import scaladex.core.model.data.LocalRepository
 import scaladex.core.service.PomResolver
-import scaladex.data.bintray.SbtPluginsData
-import scaladex.infra.storage.DataPaths
 
 case class MissingParentPom(dep: String) extends Exception
 
@@ -77,28 +69,6 @@ class PomsReader(resolver: PomResolver) extends LazyLogging {
   // TODO: Try to remove
   private val jdk = new Properties
   jdk.setProperty("java.version", "1.8") // << ???
-
-  def loadAll(paths: DataPaths): Iterator[(ArtifactModel, LocalRepository, String)] = {
-    val ivysDescriptors = SbtPluginsData(paths.ivysData).iterator
-    loadAll(paths, MavenCentral) ++
-      loadAll(paths, Bintray) ++
-      loadAll(paths, UserProvided) ++
-      ivysDescriptors
-  }
-
-  private def loadAll(
-      paths: DataPaths,
-      repository: LocalPomRepository
-  ): Iterator[(ArtifactModel, LocalRepository, String)] =
-    loadAll(paths.poms(repository))
-      .map { case (model, sha1) => (model, repository, sha1) }
-
-  def loadAll(directory: Path): Iterator[(ArtifactModel, String)] =
-    Files
-      .newDirectoryStream(directory)
-      .iterator
-      .asScala
-      .flatMap(p => loadOne(p).toOption)
 
   def loadOne(path: Path): Try[(ArtifactModel, String)] = {
     val sha1 = path.getFileName().toString.dropRight(".pom".length)

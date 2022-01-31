@@ -14,15 +14,15 @@ import cats.effect.ContextShift
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import doobie.util.ExecutionContexts
-import scaladex.core.service.LocalStorageApi
+import scaladex.core.service.Storage
 import scaladex.core.service.WebDatabase
 import scaladex.data.util.PidLock
-import scaladex.infra.elasticsearch.ElasticsearchEngine
-import scaladex.infra.github.GithubClient
-import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.local.LocalStorageRepo
-import scaladex.infra.storage.sql.SqlDatabase
-import scaladex.infra.util.DoobieUtils
+import scaladex.infra.DataPaths
+import scaladex.infra.ElasticsearchEngine
+import scaladex.infra.FilesystemStorage
+import scaladex.infra.GithubClient
+import scaladex.infra.SqlDatabase
+import scaladex.infra.sql.DoobieUtils
 import scaladex.server.config.ServerConfig
 import scaladex.server.route._
 import scaladex.server.route.api._
@@ -63,7 +63,7 @@ object Server extends LazyLogging {
             val githubService = config.github.token.map(new GithubClient(_))
             val schedulerService = new SchedulerService(schedulerDatabase, searchEngine, githubService)
             val paths = DataPaths.from(config.filesystem)
-            val filesystem = LocalStorageRepo(paths, config.filesystem)
+            val filesystem = FilesystemStorage(config.filesystem)
             val publishProcess = PublishProcess(paths, filesystem, webDatabase)(publishPool)
             for {
               _ <- init(webDatabase, schedulerService, searchEngine, config.elasticsearch.reset)
@@ -119,7 +119,7 @@ object Server extends LazyLogging {
       searchEngine: ElasticsearchEngine,
       webDatabase: WebDatabase,
       schedulerService: SchedulerService,
-      filesystem: LocalStorageApi,
+      filesystem: Storage,
       publishProcess: PublishProcess
   )(
       implicit actor: ActorSystem

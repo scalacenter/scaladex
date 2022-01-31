@@ -5,8 +5,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-import scala.concurrent.duration.FiniteDuration
-
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
 import scaladex.core.model.search.Pagination
@@ -132,14 +130,4 @@ package object html {
     .withLocale(Locale.ENGLISH)
 
   def formatInstant(i: Instant): String = df.format(i)
-
-  def prettyPrint(d: FiniteDuration): String =
-    d match {
-      case d if d.toSeconds == 0 => s"${d.toMillis.toString} milliseconds"
-      case d if d.toMinutes == 0 => s"${d.toSeconds.toString} seconds"
-      case d if d.toHours == 0   => s"${d.toMinutes.toString} minutes"
-      case d if d.toDays == 0    => s"${d.toHours.toString} hours"
-      case d if d.toDays != 0    => s"${d.toDays.toString} days"
-      case _                     => d.toString()
-    }
 }

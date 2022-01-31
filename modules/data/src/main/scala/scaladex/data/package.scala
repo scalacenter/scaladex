@@ -1,8 +1,5 @@
 package scaladex
 
-import java.nio.file.Files
-import java.nio.file.Path
-
 package object data {
 
   def innerJoin[K, A, B, Z](m1: Map[K, A], m2: Map[K, B])(
@@ -35,7 +32,4 @@ package object data {
       (km1 -- km2).map(k => k -> da(m1(k))).toMap ++ // missing in m2
       (km1.intersect(km2)).map(k => k -> f(m1(k), m2(k))) // in m1 and m2
   }
-
-  def slurp(path: Path): String =
-    Files.readAllLines(path).toArray.mkString("\n")
 }

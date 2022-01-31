@@ -1,25 +1,24 @@
 package scaladex.data
 
 import java.nio.file.Path
-import java.time.Instant
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.sys.process.Process
 
 import akka.actor.ActorSystem
 import cats.effect._
 import com.typesafe.scalalogging.LazyLogging
 import doobie.hikari._
-import scaladex.core.model.data.LocalPomRepository
+import scaladex.core.util.ScalaExtensions._
 import scaladex.core.util.TimerUtils
 import scaladex.data.central.CentralMissing
-import scaladex.data.cleanup.GithubRepoExtractor
 import scaladex.data.init.Init
 import scaladex.data.util.PidLock
-import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.local.LocalStorageRepo
-import scaladex.infra.storage.sql.SqlDatabase
-import scaladex.infra.util.DoobieUtils
+import scaladex.infra.DataPaths
+import scaladex.infra.FilesystemStorage
+import scaladex.infra.SqlDatabase
+import scaladex.infra.sql.DoobieUtils
 
 /**
  * This application manages indexed POMs.
@@ -40,11 +39,7 @@ object Main extends LazyLogging {
    *  - download data from Bintray and update the ElasticSearch index
    *  - commit the new state of the 'index' repository
    *
-   * @param args 4 arguments:
-   *              - Name of a step to execute (or “all” to execute all the steps)
-   *              - Path of the 'contrib' Git repository
-   *              - Path of the 'index' Git repository
-   *              - Path of the 'credentials' Git repository
+   * @param args: "central" or "init"
    */
   def run(args: Array[String]): Unit = {
     val config = IndexConfig.load()
@@ -55,111 +50,74 @@ object Main extends LazyLogging {
 
     logger.info("input: " + args.toList.toString)
 
-    val bintray: LocalPomRepository = LocalPomRepository.Bintray
-
     implicit val system: ActorSystem = ActorSystem()
     implicit val ec: ExecutionContext = system.dispatcher
 
     val dataPaths = DataPaths.from(config.filesystem)
-    val localStorage = LocalStorageRepo(dataPaths, config.filesystem)
+    val localStorage = FilesystemStorage(config.filesystem)
 
-    val steps = List(
+    def usingDatabase(f: SqlDatabase => Future[Unit]): Unit = {
+      implicit val cs = IO.contextShift(system.dispatcher)
+      val transactor: Resource[IO, HikariTransactor[IO]] =
+        DoobieUtils.transactor(config.database)
+      transactor
+        .use { xa =>
+          val database = new SqlDatabase(config.database, xa)
+          IO.fromFuture(IO(f(database)))
+        }
+        .unsafeRunSync()
+    }
+
+    def init(): Unit =
+      usingDatabase(database => Init.run(database, localStorage))
+
+    def subIndex(): Unit = {
+      val subFilesystem = FilesystemStorage(config.filesystem)
+      usingDatabase(database => SubIndex.run(subFilesystem, database))
+    }
+
+    val steps = Map(
       // Find missing artifacts in maven-central
-      Step("central")(() => new CentralMissing(dataPaths).run()),
-      // Download additional information about projects from Github
-      // This step is not viable anymore because of the Github rate limit
-      // which is to low to update all the projects.
-      // As an alternative, the sbt steps handles the Github updates of its own projects
-      // The IndexingActor does it as well for the projects that are pushed by Maven.
-      Step("github")(() => ()), // todo: maybe
-      // Re-create the ElasticSearch index
-      Step("init") { () =>
-        implicit val cs = IO.contextShift(system.dispatcher)
-        val transactor: Resource[IO, HikariTransactor[IO]] =
-          DoobieUtils.transactor(config.database)
-        transactor
-          .use { xa =>
-            val database = new SqlDatabase(config.database, xa)
-            IO.fromFuture(IO(Init.run(dataPaths, database, localStorage)))
-          }
-          .unsafeRunSync()
-      }
+      "central" -> { () => new CentralMissing(dataPaths).run() },
+      // Populate the database with poms and data from an index repo:
+      // scaladex-small-index or scaladex-index
+      "init" -> { () => init() },
+      "subIndex" -> { () => subIndex() }
     )
 
-    def updateClaims(): Unit = {
-      val githubRepoExtractor = new GithubRepoExtractor(dataPaths)
-      githubRepoExtractor.updateClaims()
-    }
-
-    def subIndex(): Unit =
-      SubIndex.generate(
-        source = dataPaths.fullIndex,
-        destination = dataPaths.subIndex,
-        config.filesystem.temp
+    val name = args.headOption
+      .getOrElse(
+        sys.error(s"No step to execute. Available steps are: ${steps.keys.mkString(", ")}.")
       )
 
-    val stepsToRun =
-      args.headOption match {
-        case Some("all") => steps
-        case Some("updateClaims") =>
-          List(Step("updateClaims")(() => updateClaims()))
-        case Some("subIndex") =>
-          List(Step("subIndex")(() => subIndex()))
-        case Some(name) =>
-          steps
-            .find(_.name == name)
-            .fold(
-              sys.error(
-                s"Unknown step: $name. Available steps are: ${steps.map(_.name).mkString(" ")}."
-              )
-            )(List(_))
-        case None =>
-          sys.error(
-            s"No step to execute. Available steps are: ${steps.map(_.name).mkString(" ")}."
-          )
-      }
+    val run = steps.getOrElse(
+      name,
+      sys.error(s"Unknown step: $name. Available steps are: ${steps.keys.mkString(", ")}.")
+    )
 
     if (config.env.isDevOrProd) {
-      inPath(dataPaths.contrib) { sh =>
-        logger.info("Pulling the latest data from the 'contrib' repository")
-        sh.exec("git", "checkout", "master")
-        sh.exec("git", "remote", "update")
-        sh.exec("git", "pull", "origin", "master")
-      }
+      val shell = new Shell(dataPaths.contrib)
+      logger.info("Pulling the latest data from the 'contrib' repository")
+      shell.exec("git", "checkout", "master")
+      shell.exec("git", "remote", "update")
+      shell.exec("git", "pull", "origin", "master")
     }
 
-    logger.info("Executing steps")
-    stepsToRun.foreach(_.run())
-
+    logger.info(s"Executing $name")
+    val (_, duration) = TimerUtils.measure(run())
+    logger.info(s"$name done in ${duration.prettyPrint}")
     system.terminate()
-    ()
   }
+}
 
-  class Step(val name: String)(effect: () => Unit) {
-    def run(): Unit = {
-      val start = Instant.now()
-      logger.info(s"Starting $name at ${start}")
-      effect()
-      val duration = TimerUtils.toFiniteDuration(start, Instant.now())
-      logger.info(s"$name done in ${duration.toMinutes} minutes")
-    }
-  }
-
-  object Step {
-    def apply(name: String)(effect: () => Unit): Step = new Step(name)(effect)
-  }
-
-  def inPath(path: Path)(f: Sh => Unit): Unit = f(new Sh(path))
-
-  class Sh(path: Path) {
-    def exec(args: String*): Unit = {
-      val process = Process(args, path.toFile)
-      val status = process.!
-      if (status == 0) ()
-      else
-        sys.error(
-          s"Command '${args.mkString(" ")}' exited with status $status"
-        )
-    }
+class Shell(path: Path) {
+  def exec(args: String*): Unit = {
+    val process = Process(args, path.toFile)
+    val status = process.!
+    if (status == 0) ()
+    else
+      sys.error(
+        s"Command '${args.mkString(" ")}' exited with status $status"
+      )
   }
 }

@@ -14,15 +14,14 @@ import cats.effect.ContextShift
 import scala.concurrent.ExecutionContext
 import scaladex.core.model.Project
 import scaladex.core.model.search.SearchParams
-import scaladex.infra.elasticsearch.ElasticsearchEngine
-import scaladex.infra.github.{GithubClient, GithubConfig}
-import scaladex.infra.util.DoobieUtils
-import scaladex.server.service.{GithubUpdater, SearchSynchronizer}
+import scaladex.infra.ElasticsearchEngine
+import scaladex.infra.sql.DoobieUtils
+import scaladex.server.service.SearchSynchronizer
 import scaladex.core.model.Platform
 import scaladex.core.model.ScalaVersion
-import scaladex.infra.storage.sql.SqlDatabase
-import scaladex.infra.storage.DataPaths
-import scaladex.infra.storage.local.LocalStorageRepo
+import scaladex.infra.SqlDatabase
+import scaladex.infra.DataPaths
+import scaladex.infra.FilesystemStorage
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 
@@ -40,18 +39,13 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
       .use { xa =>
         val database = new SqlDatabase(config.database, xa)
         val dataPaths = DataPaths.from(config.filesystem)
-        val filesystem = LocalStorageRepo(dataPaths, config.filesystem)
+        val filesystem = FilesystemStorage(config.filesystem)
         val searchSync = new SearchSynchronizer(database, searchEngine)
 
-        // Will use GITHUB_TOKEN configured in github secret
-        val githubConfig: GithubConfig = GithubConfig.load()
-        val github = new GithubClient(githubConfig.token.get)
-        val githubSync = new GithubUpdater(database, github)
         IO.fromFuture(IO {
           for {
-            _ <- Init.run(dataPaths, database, filesystem)
+            _ <- Init.run(database, filesystem)
             _ <- searchEngine.reset()
-            _ <- githubSync.run()
             _ <- searchSync.run()
             _ <- searchEngine.refresh()
           } yield ()
@@ -82,14 +76,9 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     top("scalafix", List("scalacenter" -> "scalafix"))
   }
 
-  // fails
-  // missing:
-  //   lift/framework
-  //   playframework/play-json
-  //   lihaoyi/upickle-pprint
-  //   argonaut-io/argonaut
   test("top json") {
-    val tops =
+    top(
+      "json",
       List(
         "spray" -> "spray-json",
         "json4s" -> "json4s",
@@ -97,28 +86,33 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
         "argonaut-io" -> "argonaut",
         "circe" -> "circe",
         "json4s" -> "json4s",
-        "spray" -> "spray-json"
+        "spray" -> "spray-json",
+        "com-lihaoyi" -> "upickle"
       )
-
-    top("json", tops)
+    )
   }
 
   test("top database") {
-    val tops =
+    top(
+      "database",
       List(
         "slick" -> "slick",
         "tpolecat" -> "doobie",
-        "getquill" -> "quill",
+        "zio" -> "zio-quill",
         "playframework" -> "anorm"
       )
-
-    top("database", tops)
+    )
   }
 
   test("java targetTypes") {
-    exactly(
+    top(
       SearchParams(targetTypes = List("java")),
-      List(("typesafehub", "config"))
+      List(
+        "lightbend" -> "config",
+        "neo4j" -> "neo4j",
+        "flyway" -> "flyway",
+        "gatling" -> "gatling"
+      )
     )
   }
 
@@ -126,7 +120,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     top(
       SearchParams(targetTypes = List("js")),
       List(
-        ("scala-js", "scala-js")
+        "scala-js" -> "scala-js"
       )
     )
   }
@@ -137,7 +131,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     top(
       SearchParams(targetFiltering = Some(scalaJs)),
       List(
-        ("scala-js", "scala-js")
+        "scala-js" -> "scala-js"
       )
     )
   }
@@ -158,8 +152,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
       List(
         ("scalaz", "scalaz"),
         ("scopt", "scopt"),
-        ("scala-native", "scala-native"),
-        ("scalaprops", "scalaprops")
+        ("scala-native", "scala-native")
       )
     )
   }
@@ -173,8 +166,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
       List(
         ("scalaz", "scalaz"),
         ("scopt", "scopt"),
-        ("scala-native", "scala-native"),
-        ("scalaprops", "scalaprops")
+        ("scala-native", "scala-native")
       )
     )
   }

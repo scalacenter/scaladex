@@ -4,6 +4,7 @@
 @import scaladex.core.model.Env
 @import scala.concurrent.duration.FiniteDuration
 @import java.time.Instant
+@import scaladex.core.util.ScalaExtensions._
 
 @(env: Env, user: UserState, schedulers: Seq[SchedulerStatus])
 @main(env, title = "Admin page", showSearch = false, Some(user)) {
@@ -29,7 +30,7 @@
                             <td>@scheduler.status<br/>
                                 at @formatInstant(scheduler.when)</td>
                             <td>@scheduler.lastRunAt.map(formatInstant).getOrElse("No run before")</td>
-                            <td>@scheduler.durationOfLastRun.map(prettyPrint).getOrElse("No run before")</td>
+                            <td>@scheduler.durationOfLastRun.map(_.prettyPrint).getOrElse("No run before")</td>
                             <td>
                             @scheduler match {
                                 case SchedulerStatus.Started(_, _, true, Some(triggeredWhen), durationOfLastRun: Option[FiniteDuration]) => {

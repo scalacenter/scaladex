@@ -2,36 +2,22 @@ package scaladex.data.meta
 
 import java.time.Instant
 
-import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
-import scaladex.core.model.Resolver
 import scaladex.core.model.SemanticVersion
-import scaladex.core.model.data.LocalRepository
-import scaladex.data.bintray._
 import scaladex.data.cleanup._
 import scaladex.data.maven.ArtifactModel
-import scaladex.infra.storage.DataPaths
+import scaladex.infra.DataPaths
 
-class ArtifactConverter(paths: DataPaths) extends BintrayProtocol with LazyLogging {
+class ArtifactConverter(paths: DataPaths) {
   private val artifactMetaExtractor = new ArtifactMetaExtractor(paths)
-  private val pomMetaExtractor = new PomMetaExtractor(paths)
-  private val githubRepoExtractor = new GithubRepoExtractor(paths)
   private val licenseCleanup = new LicenseCleanup(paths)
-
-  def convert(pom: ArtifactModel, repo: LocalRepository, sha: String): Option[(Artifact, Seq[ArtifactDependency])] =
-    for {
-      pomMeta <- pomMetaExtractor.extract(pom, None, repo, sha)
-      repo <- githubRepoExtractor.extract(pom)
-      converted <- convert(pom, repo, pomMeta.creationDate, pomMeta.resolver)
-    } yield converted
 
   def convert(
       pom: ArtifactModel,
       projectRef: Project.Reference,
-      creationDate: Option[Instant],
-      resolver: Option[Resolver] = None
+      creationDate: Instant
   ): Option[(Artifact, Seq[ArtifactDependency])] =
     for {
       version <- SemanticVersion.tryParse(pom.version)
@@ -45,8 +31,8 @@ class ArtifactConverter(paths: DataPaths) extends BintrayProtocol with LazyLoggi
         artifactMeta.platform,
         projectRef,
         pom.description,
-        creationDate,
-        resolver,
+        Some(creationDate),
+        None,
         licenseCleanup(pom),
         artifactMeta.isNonStandard
       )

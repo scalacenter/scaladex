@@ -9,7 +9,7 @@ import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions._
-import scaladex.infra.github.GithubClient
+import scaladex.infra.GithubClient
 import scaladex.view.SchedulerStatus
 
 class SchedulerService(database: SchedulerDatabase, searchEngine: SearchEngine, githubClientOpt: Option[GithubClient])

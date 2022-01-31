@@ -45,4 +45,4 @@ jobs:
       - name: Integration tests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: sbtn 'infra / IntegrationTest / test'
+        run: sbtn 'IntegrationTest / test'

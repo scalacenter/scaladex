@@ -9,7 +9,7 @@ import scaladex.core.model.SemanticVersion
 import scaladex.data.cleanup._
 import scaladex.data.maven.ArtifactModel
 import scaladex.data.maven.SbtPluginTarget
-import scaladex.infra.storage.DataPaths
+import scaladex.infra.DataPaths
 
 case class ArtifactMeta(
     artifactName: String,

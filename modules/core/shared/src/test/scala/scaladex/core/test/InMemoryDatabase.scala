@@ -43,6 +43,12 @@ class InMemoryDatabase extends SchedulerDatabase {
     Future.successful(())
   }
 
+  override def insertProject(project: Project): Future[Unit] = ???
+
+  override def insertArtifacts(artifacts: Seq[Artifact]): Future[Unit] = ???
+
+  override def insertDependencies(dependencies: Seq[ArtifactDependency]): Future[Unit] = ???
+
   override def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit] = {
     projects.update(ref, projects(ref).copy(settings = settings))
     Future.successful(())
@@ -53,6 +59,8 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   override def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]] =
     Future.successful(artifacts.getOrElse(projectRef, Nil))
+
+  override def getDependencies(projectRef: Project.Reference): Future[Seq[ArtifactDependency]] = ???
 
   override def getArtifactsByName(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]] =
     Future.successful(

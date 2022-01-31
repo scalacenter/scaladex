@@ -1,10 +1,10 @@
 package scaladex.infra.elasticsearch
 
-import com.sksamuel.elastic4s.ElasticDsl
+import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.analysis._
 import com.sksamuel.elastic4s.requests.mappings.FieldDefinition
 
-object ElasticsearchMapping extends ElasticDsl {
+object ElasticsearchMapping {
   val urlStrip: CharFilter = PatternReplaceCharFilter(
     "url_strip",
     "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)",
