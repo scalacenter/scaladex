@@ -11,15 +11,10 @@ object Dom {
     for (query <- getSearchQuery)
       yield AutocompletionRequest(
         query = query,
-        you = getElementById("you")
-          .map(_.asInput.value)
-          .contains("✓"),
+        you = getElementById("you").map(_.asInput.value).contains("✓"),
         topics = getSearchFilter("topics"),
-        targetTypes = getSearchFilter("targetTypes"),
-        scalaVersions = getSearchFilter("scalaVersions"),
-        scalaJsVersions = getSearchFilter("scalaJsVersions"),
-        scalaNativeVersions = getSearchFilter("scalaNativeVersions"),
-        sbtVersions = getSearchFilter("sbtVersions"),
+        languages = getSearchFilter("languages"),
+        platforms = getSearchFilter("platforms"),
         contributingSearch = getElementById("contributing-search")
           .map(_.asInput.value)
           .contains("true")

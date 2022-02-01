@@ -1,13 +1,13 @@
 package scaladex.core.model
 
 case class ArtifactSelection(
-    target: Option[Platform],
+    binaryVersion: Option[BinaryVersion],
     artifactNames: Option[Artifact.Name],
     version: Option[SemanticVersion],
     selected: Option[String]
 ) {
-  private def filterTarget(artifact: Artifact): Boolean =
-    target.forall(_ == artifact.platform)
+  private def filterBinaryVersion(artifact: Artifact): Boolean =
+    binaryVersion.forall(_ == artifact.binaryVersion)
 
   private def filterArtifact(artifact: Artifact): Boolean =
     artifactNames.forall(_ == artifact.artifactName)
@@ -16,7 +16,7 @@ case class ArtifactSelection(
     version.forall(_ == artifact.version)
 
   private def filterAll(artifact: Artifact): Boolean =
-    filterTarget(artifact) &&
+    filterBinaryVersion(artifact) &&
       filterArtifact(artifact) &&
       filterVersion(artifact)
 
@@ -27,7 +27,7 @@ case class ArtifactSelection(
     val filteredArtifacts =
       selected match {
         case Some(selected) =>
-          if (selected == "target") artifacts.filter(filterTarget)
+          if (selected == "binaryVersion") artifacts.filter(filterBinaryVersion)
           else if (selected == "artifact")
             artifacts.filter(filterArtifact)
           else if (selected == "version")
@@ -46,10 +46,8 @@ case class ArtifactSelection(
         artifact.artifactName,
         // stable version first
         project.settings.defaultStableVersion && artifact.version.preRelease.isDefined,
-        // version
         artifact.version,
-        // target
-        artifact.platform
+        artifact.binaryVersion
       )
     }(
       Ordering.Tuple6(
@@ -58,7 +56,7 @@ case class ArtifactSelection(
         Ordering[Artifact.Name].reverse,
         Ordering[Boolean].reverse,
         Ordering[SemanticVersion],
-        Ordering[Platform]
+        Ordering[BinaryVersion]
       )
     ).reverse
   }
@@ -66,15 +64,15 @@ case class ArtifactSelection(
 
 object ArtifactSelection {
   def parse(
-      platform: Option[String],
+      binaryVersion: Option[String],
       artifactName: Option[Artifact.Name],
       version: Option[String],
       selected: Option[String]
   ): ArtifactSelection =
     new ArtifactSelection(
-      platform.flatMap(Platform.parse),
+      binaryVersion.flatMap(BinaryVersion.fromLabel),
       artifactName,
-      version.flatMap(SemanticVersion.tryParse),
+      version.flatMap(SemanticVersion.parse),
       selected
     )
   def empty = new ArtifactSelection(None, None, None, None)

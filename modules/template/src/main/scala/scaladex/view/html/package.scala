@@ -50,11 +50,8 @@ package object html {
     val newUri = uri
       .appendQuery("sort", params.sorting)
       .appendQuery("topics", params.topics)
-      .appendQuery("targetTypes", params.targetTypes)
-      .appendQuery("scalaVersions", params.scalaVersions)
-      .appendQuery("scalaJsVersions", params.scalaJsVersions)
-      .appendQuery("scalaNativeVersions", params.scalaNativeVersions)
-      .appendQuery("sbtVersions", params.sbtVersions)
+      .appendQuery("languages", params.languages)
+      .appendQuery("patforms", params.platforms)
       .appendQuery("you", you)
       .appendQuery("q" -> params.queryString)
       .appendQuery("page" -> page.toString)

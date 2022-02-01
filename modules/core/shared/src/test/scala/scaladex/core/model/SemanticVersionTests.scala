@@ -2,118 +2,40 @@ package scaladex.core.model
 
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.util.Ordering.Descending
+import org.scalatest.prop.TableDrivenPropertyChecks
 
-class SemanticVersionTests extends AsyncFunSpec with Matchers {
-  describe("semantic versionning") {
-    it("has an ordering") {
-      def order(versions: List[String]): List[SemanticVersion] =
-        versions
-          .flatMap(v => SemanticVersion.tryParse(v))
-          .sorted(Descending[SemanticVersion])
+class SemanticVersionTests extends AsyncFunSpec with Matchers with TableDrivenPropertyChecks {
+  it("should parse any binary version") {
+    val inputs = Table(
+      ("input", "output"),
+      ("1", MajorVersion(1)),
+      ("2.12", MinorVersion(2, 12)),
+      ("0.6", MinorVersion(0, 6)),
+      ("2.13.0", PatchVersion(2, 13, 0)),
+      ("0.4.0", PatchVersion(0, 4, 0)),
+      ("0.4.0-M2", PreReleaseVersion(0, 4, 0, Milestone(2))),
+      ("0.23.0-RC1", PreReleaseVersion(0, 23, 0, ReleaseCandidate(1))),
+      ("3.0.0-M1", PreReleaseVersion(3, 0, 0, Milestone(1))),
+      ("1.1-M1", SemanticVersion(1, Some(1), preRelease = Some(Milestone(1)))),
+      ("1.2.3.4", SemanticVersion(1, Some(2), Some(3), Some(4))),
+      ("1.1.1-xyz", SemanticVersion(1, Some(1), Some(1), preRelease = Some(OtherPreRelease("xyz")))),
+      ("1.1.1+some.meta~data", SemanticVersion(1, Some(1), Some(1), metadata = Some("some.meta~data")))
+    )
 
-      val versions = List(
-        "1.0.1",
-        "1.0.1-M1",
-        "1.0.1-M2",
-        "1.0.1-RC2",
-        "1.1.1",
-        "1.0.1-BLABLA",
-        "1.0.1-RC1"
-      )
+    forAll(inputs)((input, output) => SemanticVersion.parse(input) should contain(output))
+  }
 
-      assert(
-        order(versions) == List(
-          SemanticVersion(1, 1, 1),
-          SemanticVersion(1, 0, 1),
-          SemanticVersion(1, Some(0), Some(1), None, Some(ReleaseCandidate(2))),
-          SemanticVersion(1, Some(0), Some(1), None, Some(ReleaseCandidate(1))),
-          SemanticVersion(1, Some(0), Some(1), None, Some(Milestone(2))),
-          SemanticVersion(1, Some(0), Some(1), None, Some(Milestone(1))),
-          SemanticVersion(
-            1,
-            Some(0),
-            Some(1),
-            None,
-            Some(OtherPreRelease("BLABLA"))
-          )
-        )
-      )
-    }
+  it("should be ordered") {
+    val inputs = Table[SemanticVersion, SemanticVersion](
+      ("lower", "higher"),
+      (MajorVersion(1), MajorVersion(2)),
+      (MinorVersion(1, 1), MajorVersion(1)),
+      (MajorVersion(1), MinorVersion(2, 1)),
+      (SemanticVersion(1, Some(2), preRelease = Some(Milestone(1))), MinorVersion(1, 2)),
+      (PreReleaseVersion(1, 2, 0, Milestone(1)), MinorVersion(1, 2)),
+      (MajorVersion(1), SemanticVersion(2, Some(0), preRelease = Some(Milestone(1))))
+    )
 
-    describe("parsing") {
-      // relaxed semantic version
-      it("major") {
-        SemanticVersion.tryParse("1") should contain(SemanticVersion(1))
-      }
-
-      // relaxed semantic version
-      it("major.minor") {
-        SemanticVersion.tryParse("1.2") should contain(SemanticVersion(1, 2))
-      }
-
-      it("major.minor.patch") {
-        SemanticVersion.tryParse("1.2.3") should contain(
-          SemanticVersion(1, 2, 3)
-        )
-      }
-
-      // relaxed semantic version
-      it("major.minor.patch.patch2") {
-        SemanticVersion.tryParse("1.2.3.4") should contain(
-          SemanticVersion(1, 2, 3, 4)
-        )
-      }
-
-      it("major.minor.patch-rc") {
-        SemanticVersion.tryParse("1.2.3-RC5") should contain(
-          SemanticVersion(1, 2, 3, ReleaseCandidate(5))
-        )
-
-      }
-
-      it("major.minor.patch-m") {
-        SemanticVersion.tryParse("1.2.3-M6") should contain(
-          SemanticVersion(1, 2, 3, Milestone(6))
-        )
-      }
-
-      it("major.minor.patch-xyz") {
-        SemanticVersion.tryParse("1.1.1-xyz") should contain(
-          SemanticVersion(
-            1,
-            Some(1),
-            Some(1),
-            None,
-            Some(OtherPreRelease("xyz"))
-          )
-        )
-      }
-
-      it("major.minor.patch+meta") {
-        SemanticVersion.tryParse("1.1.1+some.meta~data") should contain(
-          SemanticVersion(
-            major = 1,
-            minor = Some(1),
-            patch = Some(1),
-            metadata = Some("some.meta~data")
-          )
-        )
-      }
-
-      it("git commit") {
-        SemanticVersion.tryParse(
-          "13e7afa9c1817d45b2989e545b2e9ead21d00cef"
-        ) shouldBe empty
-        SemanticVersion.tryParse(
-          "6988989374b307bc6a57f9a3d218fead6c4c634f"
-        ) shouldBe empty
-      }
-
-      // relaxed semantic version
-      it("v sufix") {
-        SemanticVersion.tryParse("v1") should contain(SemanticVersion(1))
-      }
-    }
+    forAll(inputs)((lower, higher) => lower shouldBe <(higher))
   }
 }

@@ -22,9 +22,14 @@ import scaladex.core.api.AutocompletionResponse
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactSelection
 import scaladex.core.model.BinaryVersion
-import scaladex.core.model.Platform
+import scaladex.core.model.Java
+import scaladex.core.model.Jvm
 import scaladex.core.model.Project
-import scaladex.core.model.ScalaVersion
+import scaladex.core.model.SbtPlugin
+import scaladex.core.model.Scala
+import scaladex.core.model.ScalaJs
+import scaladex.core.model.ScalaNative
+import scaladex.core.model.SemanticVersion
 import scaladex.core.model.search.ProjectHit
 import scaladex.core.model.search.SearchParams
 import scaladex.core.service.SearchEngine
@@ -52,42 +57,40 @@ object SearchApi {
       artifactId: String,
       version: String
   )
-  private[api] def parseScalaTarget(
+  private[api] def parseBinaryVersion(
       targetType: Option[String],
       scalaVersion: Option[String],
       scalaJsVersion: Option[String],
       scalaNativeVersion: Option[String],
       sbtVersion: Option[String]
-  ): Option[Platform] =
-    (
-      targetType,
-      scalaVersion.flatMap(ScalaVersion.parse),
-      scalaJsVersion.flatMap(BinaryVersion.parse),
-      scalaNativeVersion.flatMap(BinaryVersion.parse),
-      sbtVersion.flatMap(BinaryVersion.parse)
-    ) match {
+  ): Option[BinaryVersion] = {
+    val binaryVersion = (targetType, scalaVersion, scalaJsVersion, scalaNativeVersion, sbtVersion) match {
+      case (Some("JVM"), Some(sv), _, _, _) =>
+        SemanticVersion.parse(sv).map(sv => BinaryVersion(Jvm, Scala(sv)))
 
-      case (Some("JVM"), Some(scalaVersion), _, _, _) =>
-        Some(Platform.ScalaJvm(scalaVersion))
+      case (Some("JS"), Some(sv), Some(jsv), _, _) =>
+        for {
+          sv <- SemanticVersion.parse(sv)
+          jsv <- SemanticVersion.parse(jsv)
+        } yield BinaryVersion(ScalaJs(jsv), Scala(sv))
 
-      case (Some("JS"), Some(scalaVersion), Some(scalaJsVersion), _, _) =>
-        Some(Platform.ScalaJs(scalaVersion, scalaJsVersion))
+      case (Some("NATIVE"), Some(sv), _, Some(snv), _) =>
+        for {
+          sv <- SemanticVersion.parse(sv)
+          snv <- SemanticVersion.parse(snv)
+        } yield BinaryVersion(ScalaNative(snv), Scala(sv))
 
-      case (
-            Some("NATIVE"),
-            Some(scalaVersion),
-            _,
-            Some(scalaNativeVersion),
-            _
-          ) =>
-        Some(Platform.ScalaNative(scalaVersion, scalaNativeVersion))
+      case (Some("SBT"), Some(sv), _, _, Some(sbtv)) =>
+        for {
+          sv <- SemanticVersion.parse(sv)
+          sbtv <- SemanticVersion.parse(sbtv)
+        } yield BinaryVersion(SbtPlugin(sbtv), Scala(sv))
 
-      case (Some("SBT"), Some(scalaVersion), _, _, Some(sbtVersion)) =>
-        Some(Platform.SbtPlugin(scalaVersion, sbtVersion))
-
-      case (Some("Java"), None, None, None, None) => Some(Platform.Java)
-      case _                                      => None
+      case (Some("JVM"), None, None, None, None) => Some(BinaryVersion(Jvm, Java))
+      case _                                     => None
     }
+    binaryVersion.filter(_.isValid)
+  }
 }
 
 class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: GithubUserSession)(
@@ -103,62 +106,51 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
             parameters(
               "q",
               "target",
-              "scalaVersion",
+              "scalaVersion".?,
               "page".as[Int].?,
               "total".as[Int].?,
               "scalaJsVersion".?,
               "scalaNativeVersion".?,
               "sbtVersion".?,
               "cli".as[Boolean] ? false
-            ) {
-              (
-                  q,
-                  targetType,
-                  scalaVersion,
-                  page,
-                  total,
-                  scalaJsVersion,
-                  scalaNativeVersion,
-                  sbtVersion,
-                  cli
-              ) =>
-                val platform = SearchApi.parseScalaTarget(
-                  Some(targetType),
-                  Some(scalaVersion),
-                  scalaJsVersion,
-                  scalaNativeVersion,
-                  sbtVersion
+            ) { (q, targetType, scalaVersion, page, total, scalaJsVersion, scalaNativeVersion, sbtVersion, cli) =>
+              val binaryVersion = SearchApi.parseBinaryVersion(
+                Some(targetType),
+                scalaVersion,
+                scalaJsVersion,
+                scalaNativeVersion,
+                sbtVersion
+              )
+
+              def convert(project: ProjectHit): SearchApi.Project = {
+                import project.document._
+                SearchApi.Project(
+                  organization.value,
+                  repository.value,
+                  githubInfo.flatMap(_.logo.map(_.target)),
+                  artifactNames.map(_.value)
                 )
+              }
 
-                def convert(project: ProjectHit): SearchApi.Project = {
-                  import project.document._
-                  SearchApi.Project(
-                    organization.value,
-                    repository.value,
-                    githubInfo.flatMap(_.logo.map(_.target)),
-                    artifactNames.map(_.value)
+              binaryVersion match {
+                case Some(_) =>
+                  val searchParams = SearchParams(
+                    queryString = q,
+                    binaryVersion = binaryVersion,
+                    cli = cli,
+                    page = page.getOrElse(0),
+                    total = total.getOrElse(10)
                   )
-                }
+                  val result = searchEngine
+                    .find(searchParams)
+                    .map(page => page.items.map(p => convert(p)))
+                  complete(OK, result)
 
-                platform match {
-                  case Some(_) =>
-                    val searchParams = SearchParams(
-                      queryString = q,
-                      targetFiltering = platform,
-                      cli = cli,
-                      page = page.getOrElse(0),
-                      total = total.getOrElse(10)
-                    )
-                    val result = searchEngine
-                      .find(searchParams)
-                      .map(page => page.items.map(p => convert(p)))
-                    complete(OK, result)
-
-                  case None =>
-                    val errorMessage =
-                      s"something is wrong: $platform $scalaVersion $scalaJsVersion $scalaNativeVersion $sbtVersion"
-                    complete(BadRequest, errorMessage)
-                }
+                case None =>
+                  val errorMessage =
+                    s"something is wrong: $targetType $scalaVersion $scalaJsVersion $scalaNativeVersion $sbtVersion"
+                  complete(BadRequest, errorMessage)
+              }
             }
           }
         } ~
@@ -186,7 +178,7 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
                 ) =>
                   val reference =
                     Project.Reference.from(organization, repository)
-                  val scalaTarget = SearchApi.parseScalaTarget(
+                  val binaryVersion = SearchApi.parseBinaryVersion(
                     targetType,
                     scalaVersion,
                     scalaJsVersion,
@@ -194,7 +186,7 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
                     sbtVersion
                   )
                   complete {
-                    getArtifactOptions(reference, scalaTarget, artifact)
+                    getArtifactOptions(reference, binaryVersion, artifact)
                   }
               }
             }
@@ -210,11 +202,11 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
 
   private def getArtifactOptions(
       projectRef: Project.Reference,
-      scalaTarget: Option[Platform],
+      binaryVersion: Option[BinaryVersion],
       artifact: Option[String]
   ): Future[Option[SearchApi.ArtifactOptions]] = {
     val selection = new ArtifactSelection(
-      target = scalaTarget,
+      binaryVersion = binaryVersion,
       artifactNames = artifact.map(Artifact.Name.apply),
       version = None,
       selected = None

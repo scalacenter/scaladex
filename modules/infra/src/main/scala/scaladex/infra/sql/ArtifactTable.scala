@@ -16,7 +16,7 @@ object ArtifactTable {
   val projectReferenceFields: Seq[String] = Seq("organization", "repository")
 
   private[sql] val fields = mavenReferenceFields ++
-    Seq("artifact_name", "platform") ++
+    Seq("artifact_name", "binary_version") ++
     projectReferenceFields ++
     Seq(
       "description",

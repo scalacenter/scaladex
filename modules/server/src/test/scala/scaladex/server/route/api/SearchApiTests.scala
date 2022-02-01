@@ -4,8 +4,9 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
-import scaladex.core.model.Platform
-import scaladex.core.model.ScalaVersion
+import scaladex.core.model.BinaryVersion
+import scaladex.core.model.Jvm
+import scaladex.core.model.Scala
 import scaladex.core.test.Values
 import scaladex.core.util.ScalaExtensions._
 import scaladex.server.route.ControllerBaseSuite
@@ -13,28 +14,21 @@ import scaladex.server.route.ControllerBaseSuite
 class SearchApiTests extends ControllerBaseSuite with PlayJsonSupport {
   import Values._
 
-  describe("parseScalaTarget") {
+  describe("parseBinaryVersion") {
     it("should not recognize 3.x.y") {
       val res =
-        SearchApi.parseScalaTarget(Some("JVM"), Some("3.0.1"), None, None, None)
+        SearchApi.parseBinaryVersion(Some("JVM"), Some("3.0.1"), None, None, None)
       assert(res.isEmpty)
     }
 
     it("should not recognize scala3") {
-      val res = SearchApi.parseScalaTarget(
-        Some("JVM"),
-        Some("scala3"),
-        None,
-        None,
-        None
-      )
+      val res = SearchApi.parseBinaryVersion(Some("JVM"), Some("scala3"), None, None, None)
       assert(res.isEmpty)
     }
 
     it("should recognize JVM/3") {
-      val res =
-        SearchApi.parseScalaTarget(Some("JVM"), Some("3"), None, None, None)
-      assert(res == Some(Platform.ScalaJvm(ScalaVersion.`3`)))
+      val res = SearchApi.parseBinaryVersion(Some("JVM"), Some("3"), None, None, None)
+      assert(res == Some(BinaryVersion(Jvm, Scala.`3`)))
     }
   }
 

@@ -15,13 +15,13 @@ import doobie.hikari.HikariTransactor
 import io.circe._
 import org.flywaydb.core.Flyway
 import scaladex.core.model.Artifact
+import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
 import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubIssue
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.License
-import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.Project._
 import scaladex.core.model.Resolver
@@ -135,12 +135,12 @@ object DoobieUtils {
     implicit val artifactNamesMeta: Meta[Set[Artifact.Name]] =
       Meta[String].timap(_.split(",").filter(_.nonEmpty).map(Artifact.Name.apply).toSet)(_.mkString(","))
     implicit val semanticVersionMeta: Meta[SemanticVersion] =
-      Meta[String].timap(SemanticVersion.tryParse(_).get)(_.toString)
-    implicit val platformMeta: Meta[Platform] =
+      Meta[String].timap(SemanticVersion.parse(_).get)(_.toString)
+    implicit val binaryVersionMeta: Meta[BinaryVersion] =
       Meta[String].timap { x =>
-        Platform
+        BinaryVersion
           .parse(x)
-          .getOrElse(throw new Exception(s"Failed to parse $x as Platform"))
+          .getOrElse(throw new Exception(s"Failed to parse $x as BinaryVersion"))
       }(_.encode)
     implicit val licensesMeta: Meta[Set[License]] =
       Meta[String].timap(fromJson[List[License]](_).get.toSet)(toJson(_))

@@ -3,8 +3,10 @@ package scaladex.data.meta
 import org.slf4j.LoggerFactory
 import scaladex.core.model.Artifact
 import scaladex.core.model.BinaryVersion
-import scaladex.core.model.Platform
-import scaladex.core.model.ScalaVersion
+import scaladex.core.model.Java
+import scaladex.core.model.Jvm
+import scaladex.core.model.SbtPlugin
+import scaladex.core.model.Scala
 import scaladex.core.model.SemanticVersion
 import scaladex.data.cleanup._
 import scaladex.data.maven.ArtifactModel
@@ -13,7 +15,7 @@ import scaladex.infra.DataPaths
 
 case class ArtifactMeta(
     artifactName: String,
-    platform: Platform,
+    binaryVersion: BinaryVersion,
     isNonStandard: Boolean
 )
 
@@ -46,10 +48,10 @@ class ArtifactMetaExtractor(paths: DataPaths) {
           // For example: akka-actors_2.12
           case None =>
             Artifact.ArtifactId.parse(pom.artifactId).map {
-              case Artifact.ArtifactId(artifactName, platform) =>
+              case Artifact.ArtifactId(artifactName, binaryVersion) =>
                 ArtifactMeta(
                   artifactName = artifactName.value,
-                  platform = platform,
+                  binaryVersion = binaryVersion,
                   isNonStandard = false
                 )
             }
@@ -57,14 +59,14 @@ class ArtifactMetaExtractor(paths: DataPaths) {
           // Or it can be an sbt-plugin published as a maven style. In such a case the Scala target
           // is not suffixed to the artifact name but can be found in the model’s `sbtPluginTarget` member.
           case Some(SbtPluginTarget(rawScalaVersion, rawSbtVersion)) =>
-            ScalaVersion
+            SemanticVersion
               .parse(rawScalaVersion)
-              .zip(BinaryVersion.parse(rawSbtVersion)) match {
+              .zip(SemanticVersion.parse(rawSbtVersion)) match {
               case Some((scalaVersion, sbtVersion)) =>
                 Some(
                   ArtifactMeta(
                     artifactName = pom.artifactId,
-                    platform = Platform.SbtPlugin(scalaVersion, sbtVersion),
+                    binaryVersion = BinaryVersion(SbtPlugin(sbtVersion), Scala(scalaVersion)),
                     isNonStandard = false
                   )
                 )
@@ -83,13 +85,12 @@ class ArtifactMetaExtractor(paths: DataPaths) {
             dep.groupId == "org.scala-lang" &&
             (dep.artifactId == "scala-library" || dep.artifactId == "scala3-library_3")
           }
-          version <- SemanticVersion.tryParse(dep.version)
-          target <- Platform.ScalaJvm.fromFullVersion(version)
+          version <- SemanticVersion.parse(dep.version)
         } yield
         // we assume binary compatibility
         ArtifactMeta(
           artifactName = pom.artifactId,
-          platform = target,
+          binaryVersion = BinaryVersion(Jvm, Scala.fromFullVersion(version)),
           isNonStandard = true
         )
       // For example: typesafe config
@@ -97,23 +98,21 @@ class ArtifactMetaExtractor(paths: DataPaths) {
         Some(
           ArtifactMeta(
             artifactName = pom.artifactId,
-            platform = Platform.Java,
+            binaryVersion = BinaryVersion(Jvm, Java),
             isNonStandard = true
           )
         )
 
       // For example: scala-compiler
       case Some(ScalaTargetFromVersion) =>
-        for {
-          version <- SemanticVersion.tryParse(pom.version)
-          platform <- Platform.ScalaJvm.fromFullVersion(version)
-        } yield ArtifactMeta(
-          artifactName = pom.artifactId,
-          platform = platform,
-          isNonStandard = true
-        )
+        for (version <- SemanticVersion.parse(pom.version))
+          yield ArtifactMeta(
+            artifactName = pom.artifactId,
+            binaryVersion = BinaryVersion(Jvm, Scala.fromFullVersion(version)),
+            isNonStandard = true
+          )
     }
-    // we need to filter Platform that are not valid
-    artifactMetaOption.filter(_.platform.isValid)
+    // we need to filter out binary versions that are not valid
+    artifactMetaOption.filter(_.binaryVersion.isValid)
   }
 }

@@ -7,9 +7,12 @@ import scala.concurrent.duration.Duration
 import org.scalatest._
 import org.scalatest.funsuite.AsyncFunSuite
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model.Platform
+import scaladex.core.model.BinaryVersion
+import scaladex.core.model.Jvm
 import scaladex.core.model.Project
-import scaladex.core.model.ScalaVersion
+import scaladex.core.model.Scala
+import scaladex.core.model.ScalaJs
+import scaladex.core.model.ScalaNative
 import scaladex.core.model.search.SearchParams
 import scaladex.infra.config.ElasticsearchConfig
 
@@ -41,7 +44,7 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
   test("search for cats_3") {
     val params = SearchParams(
       queryString = "cats",
-      targetFiltering = Some(Platform.ScalaJvm(ScalaVersion.`3`))
+      binaryVersion = Some(BinaryVersion(Jvm, Scala.`3`))
     )
     searchEngine.find(params).map { page =>
       page.items.map(_.document) should contain theSameElementsAs List(Cats.projectDocument)
@@ -89,44 +92,29 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
     } yield (topics should contain).theSameElementsInOrderAs(expected)
   }
 
-  test("count by platform types") {
-    val expected =
-      Seq(Platform.PlatformType.Native -> 1L, Platform.PlatformType.Js -> 1L, Platform.PlatformType.Jvm -> 2L)
-    for {
-      _ <- searchEngine.insert(Cats.projectDocument)
-      _ <- searchEngine.refresh()
-      platformTypes <- searchEngine.countByPlatformTypes(10)
-    } yield (platformTypes should contain).theSameElementsInOrderAs(expected)
-  }
-
-  test("count by Scala versions") {
-    val expected = Seq(ScalaVersion.`2.13` -> 1L, ScalaVersion.`3` -> 1L)
+  test("count by languages") {
+    val expected = Seq(Scala.`3` -> 1L, Scala.`2.13` -> 1L)
     val params = SearchParams(queryString = "cats")
     for {
       _ <- searchEngine.insert(Cats.projectDocument)
       _ <- searchEngine.refresh()
-      scalaVersions <- searchEngine.countByScalaVersions(params, 3)
-    } yield (scalaVersions should contain).theSameElementsInOrderAs(expected)
+      languages <- searchEngine.countByLanguages(params, 3)
+    } yield (languages should contain).theSameElementsInOrderAs(expected)
   }
 
-  test("count by Scala.js versions") {
-    val expected = Seq(Platform.ScalaJs.`0.6` -> 1L, Platform.ScalaJs.`1.x` -> 1L)
+  test("count by platforms") {
+    val expected = Seq(
+      Jvm -> 1L,
+      ScalaJs.`1.x` -> 1L,
+      ScalaJs.`0.6` -> 1L,
+      ScalaNative.`0.4` -> 1L
+    )
     val params = SearchParams(queryString = "cats")
     for {
       _ <- searchEngine.insert(Cats.projectDocument)
       _ <- searchEngine.refresh()
-      scalaJsVersions <- searchEngine.countByScalaJsVersions(params, 3)
+      scalaJsVersions <- searchEngine.countByPlatforms(params, 8)
     } yield (scalaJsVersions should contain).theSameElementsInOrderAs(expected)
-  }
-
-  test("count by Scala Native versions") {
-    val expected = Seq(Platform.ScalaNative.`0.4` -> 1L)
-    val params = SearchParams(queryString = "cats")
-    for {
-      _ <- searchEngine.insert(Cats.projectDocument)
-      _ <- searchEngine.refresh()
-      scalaNativeVersions <- searchEngine.countByScalaNativeVersions(params, 3)
-    } yield (scalaNativeVersions should contain).theSameElementsInOrderAs(expected)
   }
 
   test("remove missing document should not fail") {

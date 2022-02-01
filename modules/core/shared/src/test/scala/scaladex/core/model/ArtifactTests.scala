@@ -12,9 +12,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
           groupId = "org.scalamacros",
           artifactId = "paradise_2.12.3",
           version = "2.1.1",
-          platform = Platform.ScalaJvm(
-            ScalaVersion(PatchBinary(2, 12, 3))
-          ),
+          binaryVersion = BinaryVersion(Jvm, Scala(PatchVersion(2, 12, 3))),
           artifactName = Some(Name("paradise"))
         ).sbtInstall
 
@@ -30,9 +28,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
           groupId = "org.scalaz",
           artifactId = "scalaz-core_2.13.0-M1",
           version = "7.2.14",
-          platform = Platform.ScalaJvm(
-            ScalaVersion(PreReleaseBinary(2, 13, Some(0), Milestone(1)))
-          ),
+          binaryVersion = BinaryVersion(Jvm, Scala(PreReleaseVersion(2, 13, 0, Milestone(1)))),
           artifactName = Some(Name("scalaz-core"))
         ).sbtInstall
 
@@ -48,7 +44,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
           groupId = "org.typelevel",
           artifactId = "circe_cats-core_3.0.0-M1",
           version = "2.3.0-M2",
-          platform = Platform.ScalaJvm(ScalaVersion.`3`),
+          binaryVersion = BinaryVersion(Jvm, Scala.`3`),
           artifactName = Some(Name("circe_cats-core"))
         ).sbtInstall
 
@@ -64,7 +60,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
           groupId = "org.scala-js",
           artifactId = "scalajs-dom_sjs0.6_2.12",
           version = "0.9.3",
-          platform = Platform.ScalaJs(ScalaVersion.`2.12`, Platform.ScalaJs.`0.6`)
+          binaryVersion = BinaryVersion(ScalaJs.`0.6`, Scala.`2.12`)
         ).sbtInstall
 
       val expected =
@@ -79,7 +75,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
           groupId = "com.typesafe.sbt",
           artifactId = "sbt-native-packager_2.10_0.13",
           version = "1.2.2",
-          platform = Platform.SbtPlugin(ScalaVersion.`2.10`, Platform.SbtPlugin.`0.13`)
+          binaryVersion = BinaryVersion(SbtPlugin.`0.13`, Scala.`2.10`)
         ).sbtInstall
 
       val expected =
@@ -94,9 +90,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
           groupId = "underscoreio",
           artifactId = "doodle_2.11",
           version = "0.8.2",
-          platform = Platform.ScalaJvm(
-            ScalaVersion.`2.11`
-          ),
+          binaryVersion = BinaryVersion(Jvm, Scala.`2.11`),
           resolver = Some(BintrayResolver("noelwelsh", "maven"))
         ).sbtInstall
 
@@ -108,18 +102,8 @@ class ArtifactTests extends AnyFunSpec with Matchers {
     }
 
     it("Java") {
-      val obtained =
-        createArtifact(
-          groupId = "com.typesafe",
-          artifactId = "config",
-          version = "1.3.1",
-          platform = Platform.Java
-        ).sbtInstall
-
-      val expected =
-        """libraryDependencies += "com.typesafe" %% "config" % "1.3.1""""
-
-      assert(expected == obtained)
+      val artifact = createArtifact("com.typesafe", "config", "1.3.1", BinaryVersion(Jvm, Java))
+      artifact.sbtInstall shouldBe """libraryDependencies += "com.typesafe" % "config" % "1.3.1""""
     }
   }
   describe("millInstall") {
@@ -129,9 +113,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
           groupId = "org.http4s",
           version = "0.18.12",
           artifactId = "http4s-core_2.12",
-          platform = Platform.ScalaJvm(
-            ScalaVersion(PatchBinary(2, 12, 3))
-          )
+          binaryVersion = BinaryVersion(Jvm, Scala(PatchVersion(2, 12, 3)))
         ).millInstall
 
       val expected =
@@ -146,9 +128,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
           groupId = "underscoreio",
           artifactId = "doodle_2.11",
           version = "0.8.2",
-          platform = Platform.ScalaJvm(
-            ScalaVersion.`2.11`
-          ),
+          binaryVersion = BinaryVersion(Jvm, Scala.`2.11`),
           resolver = Some(BintrayResolver("noelwelsh", "maven"))
         ).millInstall
 
@@ -163,7 +143,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       groupId: String,
       artifactId: String,
       version: String,
-      platform: Platform,
+      binaryVersion: BinaryVersion,
       artifactName: Option[Artifact.Name] = None,
       resolver: Option[Resolver] = None
   ) = {
@@ -171,13 +151,13 @@ class ArtifactTests extends AnyFunSpec with Matchers {
     // be parsed or not, we just want to test methods in artifacts like sbtInstall
     // in fact those tests don't make sense, since it's not supposed to happen except if an Artifact is created without parsing.
     val artifactIdResult =
-      artifactName.map(name => ArtifactId(name, platform)).orElse(Artifact.ArtifactId.parse(artifactId)).get
+      artifactName.map(name => ArtifactId(name, binaryVersion)).orElse(Artifact.ArtifactId.parse(artifactId)).get
     Artifact(
       groupId = GroupId(groupId),
       artifactId = artifactId,
-      version = SemanticVersion.tryParse(version).get,
+      version = SemanticVersion.parse(version).get,
       artifactName = artifactIdResult.name,
-      platform = artifactIdResult.platform,
+      binaryVersion = artifactIdResult.binaryVersion,
       projectRef = Project.Reference.from("", ""),
       description = None,
       releaseDate = None,

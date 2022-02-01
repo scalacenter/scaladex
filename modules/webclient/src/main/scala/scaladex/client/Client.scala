@@ -222,9 +222,9 @@ object Client {
         .map(_.value)
         .toSet
 
-    val selectedTargetTypes = valuesOfCheckedInputsWithName("targetType")
-    val selectedTargets = valuesOfCheckedInputsWithName("target")
-    val allRequiredClasses = selectedTargetTypes ++ selectedTargets
+    val selectedPlatforms = valuesOfCheckedInputsWithName("platform")
+    val selectedBinaryVersions = valuesOfCheckedInputsWithName("binary-version")
+    val allRequiredClasses = selectedPlatforms ++ selectedBinaryVersions
 
     jQuery(".artifact-line").each { (_, elem) =>
       val supported = allRequiredClasses.forall(elem.classList.contains(_))

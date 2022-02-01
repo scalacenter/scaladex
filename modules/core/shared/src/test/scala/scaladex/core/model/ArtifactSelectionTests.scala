@@ -12,13 +12,13 @@ class ArtifactSelectionTests extends AsyncFunSpec with Matchers {
   ): Artifact = {
     val artifactId =
       ArtifactId.parse(maven.artifactId).getOrElse(throw new Exception(s"cannot parse ${maven.artifactId}"))
-    val version = SemanticVersion.tryParse(maven.version).get
+    val version = SemanticVersion.parse(maven.version).get
     Artifact(
       GroupId(maven.groupId),
       artifactId.value,
       version,
       artifactId.name,
-      artifactId.platform,
+      artifactId.binaryVersion,
       reference,
       None,
       None,
@@ -99,7 +99,7 @@ class ArtifactSelectionTests extends AsyncFunSpec with Matchers {
 
     val selection = ArtifactSelection(
       artifactNames = Some(Artifact.Name("akka-distributed-data-experimental")),
-      target = None,
+      binaryVersion = None,
       version = None,
       selected = None
     )

@@ -8,7 +8,7 @@ class ArtifactIdTests extends AsyncFunSpec with Matchers {
   describe("parsing artifacts") {
     it("parses scalajs") {
       val artifactId = "cats-core_sjs0.6_2.11"
-      val expected = ArtifactId(Name("cats-core"), Platform.ScalaJs(ScalaVersion.`2.11`, Platform.ScalaJs.`0.6`))
+      val expected = ArtifactId(Name("cats-core"), BinaryVersion(ScalaJs.`0.6`, Scala.`2.11`))
       val result = ArtifactId.parse(artifactId)
       result should contain(expected)
       result.get.value shouldBe artifactId
@@ -17,7 +17,7 @@ class ArtifactIdTests extends AsyncFunSpec with Matchers {
 
     it("parses scala-native") {
       val artifactId = "cats-core_native0.4_2.11"
-      val expected = ArtifactId(Name("cats-core"), Platform.ScalaNative(ScalaVersion.`2.11`, MinorBinary(0, 4)))
+      val expected = ArtifactId(Name("cats-core"), BinaryVersion(ScalaNative.`0.4`, Scala.`2.11`))
       val result = ArtifactId.parse(artifactId)
       result should contain(expected)
       result.get.value shouldBe artifactId
@@ -25,10 +25,7 @@ class ArtifactIdTests extends AsyncFunSpec with Matchers {
 
     it("parses scala3 versions") {
       val artifactId = "circe_cats-core_3"
-      val expected = ArtifactId(
-        Name("circe_cats-core"),
-        Platform.ScalaJvm(ScalaVersion.`3`)
-      )
+      val expected = ArtifactId(Name("circe_cats-core"), BinaryVersion(Jvm, Scala.`3`))
       val result = ArtifactId.parse(artifactId)
       result should contain(expected)
       result.get.value shouldBe artifactId
@@ -36,10 +33,7 @@ class ArtifactIdTests extends AsyncFunSpec with Matchers {
 
     it("parses scala3 compiler") {
       val artifactId = "scala3-compiler_3"
-      val expected = ArtifactId(
-        Name("scala3-compiler"),
-        Platform.ScalaJvm(ScalaVersion.`3`)
-      )
+      val expected = ArtifactId(Name("scala3-compiler"), BinaryVersion(Jvm, Scala.`3`))
       val result = ArtifactId.parse(artifactId)
       result should contain(expected)
       result.get.value shouldBe artifactId
@@ -48,7 +42,7 @@ class ArtifactIdTests extends AsyncFunSpec with Matchers {
     it("parses sbt") {
       val artifactId = "sbt-microsites_2.12_1.0"
       val expected =
-        ArtifactId(Name("sbt-microsites"), Platform.SbtPlugin(ScalaVersion.`2.12`, Platform.SbtPlugin.`1.0`))
+        ArtifactId(Name("sbt-microsites"), BinaryVersion(SbtPlugin.`1.0`, Scala.`2.12`))
       val result = ArtifactId.parse(artifactId)
       result should contain(expected)
       result.get.value shouldBe artifactId
@@ -56,7 +50,7 @@ class ArtifactIdTests extends AsyncFunSpec with Matchers {
 
     it("parse Java Artifact") {
       val artifactId = "sparrow"
-      val expected = ArtifactId(Name("sparrow"), Platform.Java)
+      val expected = ArtifactId(Name("sparrow"), BinaryVersion(Jvm, Java))
       val result = ArtifactId.parse(artifactId)
       result should contain(expected)
       result.get.value shouldBe artifactId
@@ -72,7 +66,7 @@ class ArtifactIdTests extends AsyncFunSpec with Matchers {
 
     it("handles special case") {
       val artifactId = "banana_jvm_2.11"
-      val expected = ArtifactId(Name("banana_jvm"), Platform.ScalaJvm(ScalaVersion.`2.11`))
+      val expected = ArtifactId(Name("banana_jvm"), BinaryVersion(Jvm, Scala.`2.11`))
       val result = ArtifactId.parse(artifactId)
       result should contain(expected)
       result.get.value shouldBe artifactId

@@ -20,7 +20,7 @@ class ArtifactConverter(paths: DataPaths) {
       creationDate: Instant
   ): Option[(Artifact, Seq[ArtifactDependency])] =
     for {
-      version <- SemanticVersion.tryParse(pom.version)
+      version <- SemanticVersion.parse(pom.version)
       artifactMeta <- artifactMetaExtractor.extract(pom)
     } yield {
       val artifact = Artifact(
@@ -28,7 +28,7 @@ class ArtifactConverter(paths: DataPaths) {
         pom.artifactId,
         version,
         Artifact.Name(artifactMeta.artifactName),
-        artifactMeta.platform,
+        artifactMeta.binaryVersion,
         projectRef,
         pom.description,
         Some(creationDate),

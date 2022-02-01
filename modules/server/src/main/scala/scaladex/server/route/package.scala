@@ -21,14 +21,10 @@ import scaladex.core.service.WebDatabase
 
 package object route {
 
-  val organizationM: PathMatcher1[Project.Organization] =
-    Segment.map(Project.Organization.apply)
-  val repositoryM: PathMatcher1[Project.Repository] =
-    Segment.map(Project.Repository.apply)
-  val artifactM: PathMatcher1[Artifact.Name] =
-    Segment.map(Artifact.Name.apply)
-  val versionM: PathMatcher1[SemanticVersion] =
-    Segment.flatMap(SemanticVersion.tryParse)
+  val organizationM: PathMatcher1[Project.Organization] = Segment.map(Project.Organization.apply)
+  val repositoryM: PathMatcher1[Project.Repository] = Segment.map(Project.Repository.apply)
+  val artifactM: PathMatcher1[Artifact.Name] = Segment.map(Artifact.Name.apply)
+  val versionM: PathMatcher1[SemanticVersion] = Segment.flatMap(SemanticVersion.parse)
 
   val instantUnmarshaller: Unmarshaller[String, Instant] =
     // dataRaw is in seconds
@@ -40,41 +36,21 @@ package object route {
       "page".as[Int] ? 1,
       "sort".?,
       "topics".as[String].*,
-      "targetTypes".as[String].*,
-      "scalaVersions".as[String].*,
-      "scalaJsVersions".as[String].*,
-      "scalaNativeVersions".as[String].*,
-      "sbtVersions".as[String].*,
+      "languages".as[String].*,
+      "platforms".as[String].*,
       "you".?,
       "contributingSearch".as[Boolean] ? false
     ).tmap {
-      case (
-            q,
-            page,
-            sort,
-            topics,
-            targetTypes,
-            scalaVersions,
-            scalaJsVersions,
-            scalaNativeVersions,
-            sbtVersions,
-            you,
-            contributingSearch
-          ) =>
-        val userRepos = you
-          .flatMap(_ => user.map(_.repos))
-          .getOrElse(Set())
+      case (q, page, sort, topics, languages, platforms, you, contributingSearch) =>
+        val userRepos = you.flatMap(_ => user.map(_.repos)).getOrElse(Set())
         search.SearchParams(
           q,
           page,
           sort,
           userRepos,
-          topics = topics.toList,
-          targetTypes = targetTypes.toList,
-          scalaVersions = scalaVersions.toList,
-          scalaJsVersions = scalaJsVersions.toList,
-          scalaNativeVersions = scalaNativeVersions.toList,
-          sbtVersions = sbtVersions.toList,
+          topics = topics.toSeq,
+          languages = languages.toSeq,
+          platforms = platforms.toSeq,
           contributingSearch = contributingSearch
         )
     }
@@ -83,13 +59,13 @@ package object route {
       database: WebDatabase,
       org: Project.Organization,
       repo: Project.Repository,
-      platform: Option[String],
+      binaryVersion: Option[String],
       artifact: Option[Artifact.Name],
       version: Option[String],
       selected: Option[String]
   )(implicit ec: ExecutionContext): Future[Option[Artifact]] = {
     val artifactSelection = ArtifactSelection.parse(
-      platform = platform,
+      binaryVersion = binaryVersion,
       artifactName = artifact,
       version = version,
       selected = selected
@@ -106,13 +82,13 @@ package object route {
   def getSelectedArtifact(
       database: WebDatabase,
       project: Project,
-      platform: Option[String],
+      binaryVersion: Option[String],
       artifact: Option[Artifact.Name],
       version: Option[String],
       selected: Option[String]
   )(implicit ec: ExecutionContext): Future[Option[Artifact]] = {
     val artifactSelection = ArtifactSelection.parse(
-      platform = platform,
+      binaryVersion = binaryVersion,
       artifactName = artifact,
       version = version,
       selected = selected

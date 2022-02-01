@@ -3,11 +3,10 @@ package scaladex.core.test
 import scala.collection.mutable
 import scala.concurrent.Future
 
-import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
+import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
-import scaladex.core.model.ScalaVersion
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.ProjectDocument
 import scaladex.core.model.search.ProjectHit
@@ -27,15 +26,9 @@ class InMemorySearchEngine extends SearchEngine {
 
   override def count(): Future[Long] = ???
 
-  override def countByPlatformTypes(limit: Int): Future[Seq[(Platform.PlatformType, Long)]] = ???
+  override def countByLanguages(limit: Int): Future[Seq[(Language, Long)]] = ???
 
-  override def countByScalaVersions(limit: Int): Future[Seq[(ScalaVersion, Long)]] = ???
-
-  override def countByScalaJsVersions(limit: Int): Future[Seq[(BinaryVersion, Long)]] = ???
-
-  override def countByScalaNativeVersions(limit: Int): Future[Seq[(BinaryVersion, Long)]] = ???
-
-  override def countBySbtVersison(limit: Int): Future[Seq[(BinaryVersion, Long)]] = ???
+  override def countByPlatforms(limit: Int): Future[Seq[(Platform, Long)]] = ???
 
   override def countByTopics(limit: Int): Future[Seq[(String, Long)]] = ???
 
@@ -49,15 +42,9 @@ class InMemorySearchEngine extends SearchEngine {
 
   override def countByTopics(params: SearchParams, limit: Int): Future[Seq[(String, Long)]] = ???
 
-  override def countByPlatformTypes(params: SearchParams, limit: Int): Future[Seq[(Platform.PlatformType, Long)]] = ???
+  override def countByLanguages(params: SearchParams, limit: Int): Future[Seq[(Language, Long)]] = ???
 
-  override def countByScalaVersions(params: SearchParams, limit: Int): Future[Seq[(ScalaVersion, Long)]] = ???
-
-  override def countByScalaJsVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]] = ???
-
-  override def countByScalaNativeVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]] = ???
-
-  override def countBySbtVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]] = ???
+  override def countByPlatforms(params: SearchParams, limit: Int): Future[Seq[(Platform, Long)]] = ???
 
   override def getByCategory(category: Category, limit: Int): Future[Seq[ProjectDocument]] = ???
 

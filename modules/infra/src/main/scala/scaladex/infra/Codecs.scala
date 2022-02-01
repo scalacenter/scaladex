@@ -6,13 +6,13 @@ import io.circe._
 import io.circe.generic.semiauto.deriveCodec
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
 import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubIssue
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.License
-import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.Resolver
 import scaladex.core.model.SemanticVersion
@@ -48,8 +48,8 @@ object Codecs {
   implicit val projectCodec: Codec[Project] = deriveCodec
 
   implicit val groupIdCodec: Codec[Artifact.GroupId] = fromString(_.value, Artifact.GroupId.apply)
-  implicit val semanticVersionCodec: Codec[SemanticVersion] = fromString(_.toString, SemanticVersion.tryParse(_).get)
-  implicit val platformCodec: Codec[Platform] = fromString(_.encode, Platform.parse(_).get)
+  implicit val semanticVersionCodec: Codec[SemanticVersion] = fromString(_.toString, SemanticVersion.parse(_).get)
+  implicit val binaryVersionCodec: Codec[BinaryVersion] = fromString(_.encode, BinaryVersion.parse(_).get)
   implicit val resolverCodec: Codec[Resolver] = deriveCodec
   implicit val licenseCodec: Codec[License] = deriveCodec
   implicit val artifactCodec: Codec[Artifact] = deriveCodec

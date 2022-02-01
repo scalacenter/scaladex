@@ -15,7 +15,7 @@ This project is funded by the <a title="Scala Center" href="https://scala.epfl.c
 ## How it works
 
 Scaladex receives poms automatically from Maven Central (Sonatype) based on the binary version of the artifact ID.
-Some valid Scala binary versions are `_2.13`, `_3`, `_sjs1_3`, `_native0.6_2.13`, `_2.12_1.0`.
+Some valid Scala binary versions are `_2.13`, `_3`, `_sjs1_3`, `_native0.4_2.13`, `_2.12_1.0`.
 
 Scaladex associates a new artifact to a project by looking at the `scm` (Source Code Management) attribute in the pom file.
 At the moment Scaladex only supports Github repositories.

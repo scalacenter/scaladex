@@ -11,10 +11,15 @@ import akka.http.scaladsl.server.RequestContext
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.RouteResult
 import scaladex.core.model.Artifact
+import scaladex.core.model.Jvm
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
+import scaladex.core.model.SbtPlugin
+import scaladex.core.model.Scala
+import scaladex.core.model.ScalaJs
+import scaladex.core.model.ScalaNative
+import scaladex.core.model.SemanticVersion
 import scaladex.core.service.WebDatabase
-import scaladex.server.BadgesSupport
 
 class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext) {
 
@@ -23,6 +28,19 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
 
   private val shieldsOptionalSubject = shields & parameters("subject".?)
   private val shieldsSubject = shields & parameters("subject")
+
+  val route: Route =
+    get {
+      concat(
+        path(organizationM / repositoryM / "latest.svg")((org, repo) => latest(org, repo, None)),
+        path(organizationM / repositoryM / artifactM / "latest.svg") { (org, repo, artifact) =>
+          latest(org, repo, Some(artifact))
+        },
+        path(
+          organizationM / repositoryM / artifactM / "latest-by-scala-version.svg"
+        )((org, repo, artifact) => latestByScalaVersion(Project.Reference(org, repo), artifact))
+      )
+    }
 
   private def shieldsSvg(
       rawSubject: String,
@@ -70,13 +88,13 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
       repository: Project.Repository,
       artifactName: Option[Artifact.Name]
   ): RequestContext => Future[RouteResult] =
-    parameter("target".?) { platform =>
+    parameter("target".?) { binaryVersion =>
       shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
         val res = getSelectedArtifact(
           database,
           organization,
           repository,
-          platform,
+          binaryVersion,
           artifactName,
           version = None,
           selected = None
@@ -106,52 +124,66 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
     }
 
   def latestByScalaVersion(
-      organization: Project.Organization,
-      repository: Project.Repository,
-      artifact: Artifact.Name
+      reference: Project.Reference,
+      artifactName: Artifact.Name
   ): RequestContext => Future[RouteResult] =
-    parameter("targetType".?) { targetTypeString =>
+    // targetType paramater is kept for forward compatibility
+    // in case targetType is defined we choose the most recent corresponding platform
+    parameters("targetType".?, "platform".?) { (targetTypeParam, platformParam) =>
       shields { (color, style, logo, logoWidth) =>
-        val targetType =
-          targetTypeString
-            .flatMap(Platform.PlatformType.ofName)
-            .getOrElse(Platform.PlatformType.Jvm)
-        val res = database.getArtifactsByName(
-          Project.Reference(organization, repository),
-          artifact
-        )
-        onSuccess {
-          res
-        } { allAvailableArtifacts =>
-          val notableScalaSupport: String =
-            BadgesSupport.summaryOfLatestVersions(
-              allAvailableArtifacts,
-              artifact,
-              targetType
-            )
+        val artifactsF = database.getArtifactsByName(reference, artifactName)
+        onSuccess(artifactsF) { artifacts =>
+          val availablePlatforms = artifacts.map(_.binaryVersion.platform).distinct
+          val platform = platformParam
+            .flatMap(Platform.fromLabel)
+            .orElse {
+              targetTypeParam.map(_.toUpperCase).flatMap {
+                case "JVM" => Some(Jvm)
+                case "JS" =>
+                  val jsPlatforms =
+                    availablePlatforms.collect { case p: ScalaJs => p }
+                  Option.when(jsPlatforms.nonEmpty)(jsPlatforms.max[Platform])
+                case "NATIVE" =>
+                  val nativePlatforms =
+                    availablePlatforms.collect { case v: ScalaNative => v }
+                  Option.when(nativePlatforms.nonEmpty)(nativePlatforms.max[Platform])
+                case "SBT" =>
+                  val sbtPlatforms =
+                    availablePlatforms.collect { case v: SbtPlugin => v }
+                  Option.when(sbtPlatforms.nonEmpty)(sbtPlatforms.max[Platform])
+                case _ => None
+              }
+            }
+            .getOrElse(availablePlatforms.max)
 
-          shieldsSvg(
-            artifact.value,
-            notableScalaSupport,
-            color,
-            style,
-            logo,
-            logoWidth
-          )
+          val platformArtifacts = artifacts.filter(_.binaryVersion.platform == platform)
+          val summary = Badges.summaryOfLatestVersions(platformArtifacts)
+
+          shieldsSvg(s"$artifactName - $platform", summary, color, style, logo, logoWidth)
         }
       }
     }
+}
 
-  val routes: Route =
-    get {
-      concat(
-        path(organizationM / repositoryM / "latest.svg")((org, repo) => latest(org, repo, None)),
-        path(organizationM / repositoryM / artifactM / "latest.svg") { (org, repo, artifact) =>
-          latest(org, repo, Some(artifact))
-        },
-        path(
-          organizationM / repositoryM / artifactM / "latest-by-scala-version.svg"
-        )((org, repo, artifact) => latestByScalaVersion(org, repo, artifact))
-      )
-    }
+object Badges {
+  private def summaryOfLatestVersions(artifacts: Seq[Artifact]): String = {
+    val versionsByScalaVersions = artifacts
+      .groupMap(_.binaryVersion.language)(_.version)
+      .collect { case (Scala(v), platform) => Scala(v) -> platform }
+    summaryOfLatestVersions(versionsByScalaVersions)
+  }
+
+  private[route] def summaryOfLatestVersions(versionsByScalaVersions: Map[Scala, Seq[SemanticVersion]]): String =
+    versionsByScalaVersions.view
+      .mapValues(_.max)
+      .groupMap { case (_, latestVersion) => latestVersion } { case (scalaVersion, _) => scalaVersion }
+      .toSeq
+      .sortBy(_._1)(SemanticVersion.ordering.reverse)
+      .map {
+        case (latestVersion, scalaVersions) =>
+          val scalaVersionsStr =
+            scalaVersions.map(_.version).toSeq.sorted(SemanticVersion.ordering.reverse).mkString(", ")
+          s"$latestVersion (Scala $scalaVersionsStr)"
+      }
+      .mkString(", ")
 }

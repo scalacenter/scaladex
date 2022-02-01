@@ -1,14 +1,13 @@
-@import scaladex.core.model.{Artifact, Platform, Project, SemanticVersion, UserState, Env}
+@import scaladex.core.model.{Artifact, BinaryVersion, Platform, Project, SemanticVersion, UserState, Env}
 
 @(
   env: Env,
   project: Project,
   user: Option[UserState],
-  targetTypesWithVersion: Map[Platform.PlatformType, Seq[String]],
-  semanticVersionWithArtifacts: Seq[(SemanticVersion, Map[Artifact.Name, Seq[(Artifact, String)]])]
+  binaryVersionsByPlatforms: Seq[(Platform, Seq[BinaryVersion])],
+  artifactsByVersions: Seq[(SemanticVersion, Seq[(Artifact.Name, Seq[Artifact])])]
 )
-@allScalaVersions= @{targetTypesWithVersion.values.flatten}
-
+@allBinaryVersions = @{binaryVersionsByPlatforms.flatMap(_._2)}
 @main(env, title = project.repository.toString, showSearch = true, user) {
   <main class="artifacts">
     <div class="row">
@@ -28,65 +27,55 @@
           <th rowspan="2" class="version">Versions</th>
           <th rowspan="2" class="artifact">Artifacts</th>
 
-          @targetTypesWithVersion.map { case (targetType, versions) =>
-            <th colspan="@{versions.size}">
+          @binaryVersionsByPlatforms.map { case (platform, binaryVersions) =>
+            <th colspan="@{binaryVersions.size}">
               <label>
-                <input type="checkbox" name="targetType" value="supported-target-type_@targetType"
+                <input type="checkbox" name="platform" value="@platform.label"
                        onclick="ScaladexClient.updateVisibleArtifactsInGrid()">
-                @targetType
+                @platform
               </label>
             </th>
           }
         </tr>
         <tr>
-          @allScalaVersions.map { version =>
-            <th class="target">
+          @allBinaryVersions.map { binaryVersion =>
+            <th class="binaryVersion">
               <label>
-                <input type="checkbox" name="target" value="supported-scala-version_@version"
+                <input type="checkbox" name="binary-version" value="@binaryVersion.label"
                        onclick="ScaladexClient.updateVisibleArtifactsInGrid()">
-                @version
+                @binaryVersion.language.label
               </label>
             </th>
           }
         </tr>
       </thead>
 
-      @semanticVersionWithArtifacts.map { case (semanticVersion, artifactsByName) =>
-      <tbody class="version-line version-line-visible">
+      @artifactsByVersions.map { case (version, artifactsByNames) =>
+        <tbody class="version-line version-line-visible">
             <tr>
-              <td rowspan="@{artifactsByName.size + 1}" class="version">
-                @semanticVersion
+              <td rowspan="@{artifactsByNames.size + 1}" class="version">
+                @version
               </td>
             </tr>
-            @artifactsByName.map { case (artifactName, artifactsAndScalaVersion) =>
-              @defining(artifactsAndScalaVersion.map(_._2)) { scalaVersions =>
-              @defining(artifactsAndScalaVersion.map(_._1)) { artifacts =>
-              @defining( targetTypesWithVersion.filter { case (targetType, sVersions) =>
-                sVersions.intersect(scalaVersions).nonEmpty }.keys){ targetTypes =>
-                  <tr class="@({ if (targetTypes.isEmpty) { "" }
-                  else {
-                    ("artifact-line artifact-line-visible") +
-                      targetTypes.toList.distinct.map(" supported-target-type_" + _).mkString(" ") +
-                      scalaVersions.map(" supported-scala-version_" + _).mkString(" ")
-                  }
-                     })">
-                    <td class="artifact">
-                      @artifactName
+            @artifactsByNames.map { case (artifactName, artifacts) =>
+              @defining(artifacts.map(a => a.binaryVersion -> a).toMap) { binaryVersionToArtifact =>
+                <tr class="artifact-line artifact-line-visible @({
+                  binaryVersionToArtifact.keySet.map(_.platform.label).mkString(" ") + " " +
+                  binaryVersionToArtifact.keySet.map(_.label).mkString(" ")
+                  })">
+                  <td class="artifact">@artifactName</td>
+                  @allBinaryVersions.map { binaryVersion =>
+                    <td class="binary-version" title="@version">
+                      @if(binaryVersionToArtifact.contains(binaryVersion)) {
+                        <a href="@binaryVersionToArtifact(binaryVersion).httpUrl" class="supported"></a>
+                      }
                     </td>
-                    @allScalaVersions.map { version =>
-                      <td class="target" title="@version">
-                        @if(scalaVersions.contains(version)) {
-                          <a href="@artifacts.headOption.map(_.httpUrl).getOrElse("")" class="supported-target"></a>
-                        }
-                      </td>
-                    }
                   }
-                </tr>
-              }
+              </tr>
             }
           }
         </tbody>
-        }
+      }
     </table>
 
       </div>
