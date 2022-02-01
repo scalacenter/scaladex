@@ -1,12 +1,11 @@
 package scaladex.server
 
 import scala.collection.immutable.SortedMap
-import scala.collection.immutable.SortedSet
 
 import scaladex.core.model.Artifact
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Platform
-import scaladex.core.model.ScalaLanguageVersion
+import scaladex.core.model.ScalaVersion
 import scaladex.core.model.SemanticVersion
 
 object BadgesSupport {
@@ -82,17 +81,14 @@ object BadgesSupport {
      * @return the pertinent (for this summary strategy) version of the supplied ScalaTarget
      */
     def versionFor(t: T): V
-    def removeSuperfluousVersionsFrom(versions: Set[V]): Set[V]
 
     def notableSupportByArtifactVersion(
         scalaTargetsByArtifactVersion: Map[SemanticVersion, Set[T]]
     ): Map[SemanticVersion, Set[V]] = {
       val keyVersionsByArtifactVersion: Map[SemanticVersion, Set[V]] =
         scalaTargetsByArtifactVersion.view.mapValues(_.map(versionFor)).toMap
-      val interestingVersions: Set[V] = {
-        val allVersions = keyVersionsByArtifactVersion.values.flatten.toSet
-        removeSuperfluousVersionsFrom(allVersions)
-      }
+      val interestingVersions: Set[V] =
+        keyVersionsByArtifactVersion.values.flatten.toSet
 
       val latestArtifactForKeyVersion: Map[V, SemanticVersion] = (for {
         (artifactVersion, keyVersions) <- keyVersionsByArtifactVersion.toSeq
@@ -134,30 +130,24 @@ object BadgesSupport {
    * will secondarily summarise the PlatformEditions that are supported
    * for all those Scala LanguageVersions.
    */
-  object SummariseLanguageVersions extends SummaryStrategy[Platform, ScalaLanguageVersion] {
-    override def versionFor(t: Platform): ScalaLanguageVersion =
+  object SummariseLanguageVersions extends SummaryStrategy[Platform, ScalaVersion] {
+    override def versionFor(t: Platform): ScalaVersion =
       t.scalaVersion.get // todo change
-
-    // we're only interested in the latest version of a binary family
-    override def removeSuperfluousVersionsFrom(versions: Set[ScalaLanguageVersion]): Set[ScalaLanguageVersion] =
-      versions.groupBy(_.family).values.map(_.max).toSet
 
     override def summarise(
         platforms: Set[Platform],
-        interestingKeyVersions: Set[ScalaLanguageVersion],
+        interestingKeyVersions: Set[ScalaVersion],
         platformType: Platform.PlatformType
     ): String = {
-      val scalaTargetsByLanguageVersion: Map[ScalaLanguageVersion, Set[Platform]] =
+      val scalaTargetsByLanguageVersion: Map[ScalaVersion, Set[Platform]] =
         platforms
           .groupBy(_.scalaVersion.get)
           .view
           .filterKeys(interestingKeyVersions)
           .toMap
 
-      val languageVersions: SortedSet[ScalaLanguageVersion] =
-        SortedSet.from(scalaTargetsByLanguageVersion.keySet)(
-          ScalaLanguageVersion.ordering.reverse
-        )
+      val languageVersions: Seq[ScalaVersion] =
+        scalaTargetsByLanguageVersion.keys.toSeq.sorted(ScalaVersion.ordering.reverse)
 
       val platformEditionsSupportedForAllLanguageVersions: Set[BinaryVersion] =
         scalaTargetsByLanguageVersion.values
@@ -172,7 +162,7 @@ object BadgesSupport {
           )
         )
 
-      s"Scala ${languageVersions.mkString(", ")}${targetsSummary.mkString}"
+      s"Scala ${languageVersions.map(_.encode).mkString(", ")}${targetsSummary.mkString}"
     }
   }
 
@@ -184,15 +174,11 @@ object BadgesSupport {
    */
   object SummarisePlatformEditions extends SummaryStrategy[Platform, BinaryVersion] {
     override def versionFor(t: Platform): BinaryVersion = t.platformVersion.get
-    override def removeSuperfluousVersionsFrom(versions: Set[BinaryVersion]): Set[BinaryVersion] = versions
     override def summarise(
         scalaTargets: Set[Platform],
         interestingKeyVersions: Set[BinaryVersion],
         platformType: Platform.PlatformType
     ): String =
-      summarisePlatformTargets(
-        "sbt",
-        interestingKeyVersions
-      )
+      summarisePlatformTargets("sbt", interestingKeyVersions)
   }
 }

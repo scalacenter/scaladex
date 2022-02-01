@@ -30,6 +30,7 @@ import scaladex.core.model.Category
 import scaladex.core.model.GithubIssue
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
+import scaladex.core.model.ScalaVersion
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.Pagination
 import scaladex.core.model.search.ProjectDocument
@@ -141,9 +142,8 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       )
       .map(_.sortBy(_._1))
 
-  def countByScalaVersions(limit: Int): Future[Seq[(String, Long)]] =
-    aggregations("scalaVersions", matchAllQuery(), limit)
-      .map(_.sortBy(_._1))
+  def countByScalaVersions(limit: Int): Future[Seq[(ScalaVersion, Long)]] =
+    scalaVersionAggregation("scalaVersions", matchAllQuery(), limit)
 
   def countByScalaJsVersions(limit: Int): Future[Seq[(BinaryVersion, Long)]] =
     versionAggregations("scalaJsVersions", matchAllQuery(), Platform.ScalaJs.isValid, limit)
@@ -255,9 +255,9 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       )
       .map(_.sortBy(_._1))
 
-  override def countByScalaVersions(params: SearchParams, limit: Int): Future[Seq[(String, Long)]] =
-    aggregations("scalaVersions", filteredSearchQuery(params), limit)
-      .map(addMissing(params.scalaVersions))
+  override def countByScalaVersions(params: SearchParams, limit: Int): Future[Seq[(ScalaVersion, Long)]] =
+    scalaVersionAggregation("scalaVersions", filteredSearchQuery(params), limit)
+      .map(addMissing(params.scalaVersions.flatMap(ScalaVersion.parse)))
 
   override def countByScalaJsVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]] =
     versionAggregations("scalaJsVersions", filteredSearchQuery(params), Platform.ScalaJs.isValid, limit)
@@ -281,6 +281,20 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       .execute(request)
       .map(_.result.hits.hits.toSeq.flatMap(toProjectDocument))
   }
+
+  private def scalaVersionAggregation(
+      field: String,
+      query: Query,
+      limit: Int
+  ): Future[Seq[(ScalaVersion, Long)]] =
+    aggregations(field, query, limit)
+      .map { versionAgg =>
+        for {
+          (version, count) <- versionAgg.toList
+          binaryVersion <- ScalaVersion.parse(version)
+        } yield (binaryVersion, count)
+      }
+      .map(_.sortBy(_._1))
 
   private def versionAggregations(
       field: String,
@@ -463,20 +477,20 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
   private def targetQuery(target: Platform): Query =
     target match {
       case jvm: Platform.ScalaJvm =>
-        termQuery("scalaVersions", jvm.scalaV.family)
+        termQuery("scalaVersions", jvm.scalaV.encode)
       case Platform.ScalaJs(scalaVersion, jsVersion) =>
         must(
-          termQuery("scalaVersions", scalaVersion.family),
+          termQuery("scalaVersions", scalaVersion.encode),
           termQuery("scalaJsVersions", jsVersion.toString)
         )
       case Platform.ScalaNative(scalaVersion, nativeVersion) =>
         must(
-          termQuery("scalaVersions", scalaVersion.family),
+          termQuery("scalaVersions", scalaVersion.encode),
           termQuery("scalaNativeVersions", nativeVersion.toString)
         )
       case Platform.SbtPlugin(scalaVersion, sbtVersion) =>
         must(
-          termQuery("scalaVersions", scalaVersion.family),
+          termQuery("scalaVersions", scalaVersion.encode),
           termQuery("sbtVersions", sbtVersion.toString)
         )
       case Platform.Java =>

@@ -66,7 +66,7 @@ case class Artifact(
         s"""libraryDependencies += "$groupId" % "$artifactName" % "$version""""
       case Platform.ScalaJs(_, _) | Platform.ScalaNative(_, _) =>
         s"""libraryDependencies += "$groupId" %%% "$artifactName" % "$version""""
-      case Platform.ScalaJvm(ScalaVersion(_: PatchBinary)) | Platform.ScalaJvm(Scala3Version(_: PatchBinary)) =>
+      case Platform.ScalaJvm(ScalaVersion(_: PatchBinary)) =>
         s"""libraryDependencies += "$groupId" % "$artifactName" % "$version" cross CrossVersion.full"""
       case _ =>
         s"""libraryDependencies += "$groupId" %% "$artifactName" % "$version""""

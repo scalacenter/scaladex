@@ -7,6 +7,7 @@ import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
+import scaladex.core.model.ScalaVersion
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.ProjectDocument
 import scaladex.core.model.search.ProjectHit
@@ -28,7 +29,7 @@ class InMemorySearchEngine extends SearchEngine {
 
   override def countByPlatformTypes(limit: Int): Future[Seq[(Platform.PlatformType, Long)]] = ???
 
-  override def countByScalaVersions(limit: Int): Future[Seq[(String, Long)]] = ???
+  override def countByScalaVersions(limit: Int): Future[Seq[(ScalaVersion, Long)]] = ???
 
   override def countByScalaJsVersions(limit: Int): Future[Seq[(BinaryVersion, Long)]] = ???
 
@@ -50,7 +51,7 @@ class InMemorySearchEngine extends SearchEngine {
 
   override def countByPlatformTypes(params: SearchParams, limit: Int): Future[Seq[(Platform.PlatformType, Long)]] = ???
 
-  override def countByScalaVersions(params: SearchParams, limit: Int): Future[Seq[(String, Long)]] = ???
+  override def countByScalaVersions(params: SearchParams, limit: Int): Future[Seq[(ScalaVersion, Long)]] = ???
 
   override def countByScalaJsVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]] = ???
 

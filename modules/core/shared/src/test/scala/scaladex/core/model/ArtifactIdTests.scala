@@ -24,10 +24,10 @@ class ArtifactIdTests extends AsyncFunSpec with Matchers {
     }
 
     it("parses scala3 versions") {
-      val artifactId = "circe_cats-core_3.0.0-RC3"
+      val artifactId = "circe_cats-core_3"
       val expected = ArtifactId(
         Name("circe_cats-core"),
-        Platform.ScalaJvm(Scala3Version(PreReleaseBinary(3, 0, Some(0), ReleaseCandidate(3))))
+        Platform.ScalaJvm(ScalaVersion.`3`)
       )
       val result = ArtifactId.parse(artifactId)
       result should contain(expected)
@@ -35,12 +35,10 @@ class ArtifactIdTests extends AsyncFunSpec with Matchers {
     }
 
     it("parses scala3 compiler") {
-      val artifactId = "scala3-compiler_3.0.0-RC1"
+      val artifactId = "scala3-compiler_3"
       val expected = ArtifactId(
         Name("scala3-compiler"),
-        Platform.ScalaJvm(
-          Scala3Version(PreReleaseBinary(3, 0, Some(0), ReleaseCandidate(1)))
-        )
+        Platform.ScalaJvm(ScalaVersion.`3`)
       )
       val result = ArtifactId.parse(artifactId)
       result should contain(expected)

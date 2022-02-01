@@ -24,7 +24,7 @@ import scaladex.core.model.ArtifactSelection
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
-import scaladex.core.model.ScalaLanguageVersion
+import scaladex.core.model.ScalaVersion
 import scaladex.core.model.search.ProjectHit
 import scaladex.core.model.search.SearchParams
 import scaladex.core.service.SearchEngine
@@ -61,7 +61,7 @@ object SearchApi {
   ): Option[Platform] =
     (
       targetType,
-      scalaVersion.flatMap(ScalaLanguageVersion.tryParse),
+      scalaVersion.flatMap(ScalaVersion.parse),
       scalaJsVersion.flatMap(BinaryVersion.parse),
       scalaNativeVersion.flatMap(BinaryVersion.parse),
       sbtVersion.flatMap(BinaryVersion.parse)

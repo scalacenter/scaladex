@@ -9,7 +9,6 @@ import org.scalatest.funsuite.AsyncFunSuite
 import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
-import scaladex.core.model.Scala3Version
 import scaladex.core.model.ScalaVersion
 import scaladex.core.model.search.SearchParams
 import scaladex.infra.config.ElasticsearchConfig
@@ -42,7 +41,7 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
   test("search for cats_3") {
     val params = SearchParams(
       queryString = "cats",
-      targetFiltering = Some(Platform.ScalaJvm(Scala3Version.`3`))
+      targetFiltering = Some(Platform.ScalaJvm(ScalaVersion.`3`))
     )
     searchEngine.find(params).map { page =>
       page.items.map(_.document) should contain theSameElementsAs List(Cats.projectDocument)
@@ -101,7 +100,7 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
   }
 
   test("count by Scala versions") {
-    val expected = Seq(ScalaVersion.`2.13`.family -> 1L, Scala3Version.`3`.family -> 1L)
+    val expected = Seq(ScalaVersion.`2.13` -> 1L, ScalaVersion.`3` -> 1L)
     val params = SearchParams(queryString = "cats")
     for {
       _ <- searchEngine.insert(Cats.projectDocument)

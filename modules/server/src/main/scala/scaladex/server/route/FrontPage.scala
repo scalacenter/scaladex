@@ -23,7 +23,7 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
     val totalArtifactsF = database.countArtifacts()
     val topicsF = searchEngine.countByTopics(50)
     val platformsF = searchEngine.countByPlatformTypes(10)
-    val scalaFamiliesF = searchEngine.countByScalaVersions(10)
+    val scalaVersionsF = searchEngine.countByScalaVersions(10)
     val scalaJsVersionsF = searchEngine.countByScalaJsVersions(10)
     val scalaNativeVersionsF = searchEngine.countByScalaNativeVersions(10)
     val sbtVersionsF = searchEngine.countBySbtVersison(10)
@@ -34,7 +34,7 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
       totalArtifacts <- totalArtifactsF
       topics <- topicsF
       platforms <- platformsF
-      scalaFamilies <- scalaFamiliesF
+      scalaVersions <- scalaVersionsF
       scalaJsVersions <- scalaJsVersionsF
       scalaNativeVersions <- scalaNativeVersionsF
       sbtVersions <- sbtVersionsF
@@ -61,7 +61,7 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
         env,
         topics,
         platforms,
-        scalaFamilies,
+        scalaVersions,
         scalaJsVersions,
         scalaNativeVersions,
         sbtVersions,

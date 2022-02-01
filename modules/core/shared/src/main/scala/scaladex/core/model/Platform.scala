@@ -7,7 +7,7 @@ import scaladex.core.util.Parsers
 sealed trait Platform extends Ordered[Platform] with Product with Serializable {
   import Platform._
 
-  def scalaVersion: Option[ScalaLanguageVersion]
+  def scalaVersion: Option[ScalaVersion]
   def platformVersion: Option[BinaryVersion]
   def render: String
   def encode: String
@@ -15,12 +15,11 @@ sealed trait Platform extends Ordered[Platform] with Product with Serializable {
   def isValid: Boolean
   def showVersion: String =
     this match {
-      case ScalaJvm(version)           => version.toString
-      case ScalaJs(version, jsVersion) => s"${jsVersion}_$version"
-      case ScalaNative(version, nativeVersion) =>
-        s"${nativeVersion}_$version"
-      case SbtPlugin(version, sbtVersion) => s"${sbtVersion}_$version"
-      case Java                           => "Java"
+      case ScalaJvm(version)                   => version.toString
+      case ScalaJs(version, jsVersion)         => s"${jsVersion}_$version"
+      case ScalaNative(version, nativeVersion) => s"${nativeVersion}_$version"
+      case SbtPlugin(version, sbtVersion)      => s"${sbtVersion}_$version"
+      case Java                                => "Java"
     }
   override def compare(that: Platform): Int =
     ordering.compare(this, that)
@@ -68,17 +67,14 @@ object Platform extends Parsers {
 
   // Scala > Js > Native > Sbt > Java
   implicit val ordering: Ordering[Platform] =
-    Ordering.by[
-      Platform,
-      (PlatformType, Option[BinaryVersion], Option[ScalaLanguageVersion])
-    ](platform => (platform.platformType, platform.platformVersion, platform.scalaVersion))
+    Ordering.by(platform => (platform.platformType, platform.platformVersion, platform.scalaVersion))
 
-  case class SbtPlugin(scalaV: ScalaLanguageVersion, sbtV: BinaryVersion) extends Platform {
-    override def scalaVersion: Option[ScalaLanguageVersion] = Some(scalaV)
+  case class SbtPlugin(scalaV: ScalaVersion, sbtV: BinaryVersion) extends Platform {
+    override def scalaVersion: Option[ScalaVersion] = Some(scalaV)
     override def platformVersion: Option[BinaryVersion] = Some(sbtV)
     override def platformType: PlatformType = PlatformType.Sbt
     override def render: String = s"sbt $sbtV ($scalaV)"
-    override def encode: String = s"_${scalaV}_${sbtV.encode}"
+    override def encode: String = s"_${scalaV.encode}_${sbtV.encode}"
     override def isValid: Boolean =
       scalaV.isValid && SbtPlugin.isValid(sbtV)
   }
@@ -92,7 +88,7 @@ object Platform extends Parsers {
   }
 
   case object Java extends Platform {
-    override def scalaVersion: Option[ScalaLanguageVersion] = None
+    override def scalaVersion: Option[ScalaVersion] = None
     override def platformVersion: Option[BinaryVersion] = None
     override def render: String = "Java"
     override def encode: String = ""
@@ -101,10 +97,10 @@ object Platform extends Parsers {
   }
 
   case class ScalaNative(
-      scalaV: ScalaLanguageVersion,
+      scalaV: ScalaVersion,
       scalaNativeV: BinaryVersion
   ) extends Platform {
-    override def scalaVersion: Option[ScalaLanguageVersion] = Some(scalaV)
+    override def scalaVersion: Option[ScalaVersion] = Some(scalaV)
     override def platformVersion: Option[BinaryVersion] = Some(scalaNativeV)
     override def render: String = s"scala-native $scalaNativeV ($scalaV)"
     override def encode: String = s"_native${scalaNativeV.encode}_${scalaV.encode}"
@@ -123,8 +119,8 @@ object Platform extends Parsers {
       stableBinaryVersions.contains(version)
   }
 
-  case class ScalaJs(scalaV: ScalaLanguageVersion, scalaJsV: BinaryVersion) extends Platform {
-    override def scalaVersion: Option[ScalaLanguageVersion] = Some(scalaV)
+  case class ScalaJs(scalaV: ScalaVersion, scalaJsV: BinaryVersion) extends Platform {
+    override def scalaVersion: Option[ScalaVersion] = Some(scalaV)
 
     override def platformVersion: Option[BinaryVersion] = Some(scalaJsV)
     override def render: String = s"scala-js $scalaJsV ($scalaV)"
@@ -138,15 +134,15 @@ object Platform extends Parsers {
     val `0.6`: BinaryVersion = MinorBinary(0, 6)
     val `1.x`: BinaryVersion = MajorBinary(1)
     val `0.6_2.13`: ScalaJs = ScalaJs(ScalaVersion.`2.13`, `0.6`)
-    val `1_3`: ScalaJs = ScalaJs(Scala3Version.`3`, `1.x`)
+    val `1_3`: ScalaJs = ScalaJs(ScalaVersion.`3`, `1.x`)
 
     private val stableBinaryVersions: Set[BinaryVersion] = Set(`0.6`, `1.x`)
     def isValid(version: BinaryVersion): Boolean =
       stableBinaryVersions.contains(version)
   }
 
-  case class ScalaJvm(scalaV: ScalaLanguageVersion) extends Platform {
-    override def scalaVersion: Option[ScalaLanguageVersion] = Some(scalaV)
+  case class ScalaJvm(scalaV: ScalaVersion) extends Platform {
+    override def scalaVersion: Option[ScalaVersion] = Some(scalaV)
     override def platformVersion: Option[BinaryVersion] = None
     override def render: String = scalaV.render
     override def platformType: PlatformType = PlatformType.Jvm
@@ -155,7 +151,7 @@ object Platform extends Parsers {
   }
 
   object ScalaJvm {
-    val `3`: ScalaJvm = ScalaJvm(Scala3Version.`3`)
+    val `3`: ScalaJvm = ScalaJvm(ScalaVersion.`3`)
     val `2.13` = ScalaJvm(ScalaVersion.`2.13`)
 
     def fromFullVersion(fullVersion: SemanticVersion): Option[ScalaJvm] = {
@@ -168,12 +164,8 @@ object Platform extends Parsers {
       }
 
       binaryVersion
-        .collect {
-          case version if ScalaVersion.isValid(version) => ScalaVersion(version)
-          case version if Scala3Version.isValid(version) =>
-            Scala3Version(version)
-        }
-        .map(ScalaJvm(_))
+        .filter(ScalaVersion.isValid)
+        .map(v => ScalaJvm(ScalaVersion(v)))
     }
   }
 
@@ -188,17 +180,12 @@ object Platform extends Parsers {
   def Parser[_: P]: P[Platform] =
     IntermediateParser
       .map {
-        case ("_sjs", Some(jsV), Some(scalaV)) =>
-          ScalaLanguageVersion.from(scalaV).map(sv => ScalaJs(sv, jsV))
-        case ("_native", Some(nativeV), Some(scalaV)) =>
-          ScalaLanguageVersion.from(scalaV).map(sv => ScalaNative(sv, nativeV))
-        case ("_", Some(scalaV), Some(sbtV)) =>
-          ScalaLanguageVersion.from(scalaV).map(sv => SbtPlugin(sv, sbtV))
-        case ("_", Some(scalaV), None) =>
-          ScalaLanguageVersion.from(scalaV).map(sv => ScalaJvm(sv))
-        case ("", None, None) =>
-          Some(Java)
-        case _ => None
+        case ("_sjs", Some(jsV), Some(scalaV))        => ScalaVersion.from(scalaV).map(sv => ScalaJs(sv, jsV))
+        case ("_native", Some(nativeV), Some(scalaV)) => ScalaVersion.from(scalaV).map(sv => ScalaNative(sv, nativeV))
+        case ("_", Some(scalaV), Some(sbtV))          => ScalaVersion.from(scalaV).map(sv => SbtPlugin(sv, sbtV))
+        case ("_", Some(scalaV), None)                => ScalaVersion.from(scalaV).map(sv => ScalaJvm(sv))
+        case ("", None, None)                         => Some(Java)
+        case _                                        => None
       }
       .filter(_.isDefined)
       .map(_.get)

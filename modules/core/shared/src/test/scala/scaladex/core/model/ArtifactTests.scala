@@ -48,9 +48,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
           groupId = "org.typelevel",
           artifactId = "circe_cats-core_3.0.0-M1",
           version = "2.3.0-M2",
-          platform = Platform.ScalaJvm(
-            Scala3Version(PreReleaseBinary(3, 0, Some(0), Milestone(1)))
-          ),
+          platform = Platform.ScalaJvm(ScalaVersion.`3`),
           artifactName = Some(Name("circe_cats-core"))
         ).sbtInstall
 

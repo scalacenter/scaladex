@@ -43,7 +43,7 @@ class PlatformTests extends AsyncFunSpec with Matchers with OptionValues with Ta
     val cases = Table(
       ("input", "target"),
       ("_2.12", ScalaJvm(ScalaVersion.`2.12`)),
-      ("_3", ScalaJvm(Scala3Version.`3`)),
+      ("_3", ScalaJvm(ScalaVersion.`3`)),
       ("_sjs0.6_2.12", ScalaJs(ScalaVersion.`2.12`, MinorBinary(0, 6)))
     )
 

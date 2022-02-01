@@ -9,7 +9,6 @@ import scaladex.server.BadgesSupport.SummarisePlatformEditions
 
 class BadgesSupportTest extends AsyncFunSpec with Matchers {
   import scaladex.core.model.ScalaVersion._
-  import scaladex.core.model.Scala3Version._
   import Platform._
   import scaladex.core.test.Values._
 
@@ -55,13 +54,11 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
         `7.0.0` -> Set(
           ScalaJvm(`2.12`),
           ScalaJvm(`2.13`),
-          ScalaJvm(`3.0.0-RC3`)
+          ScalaJvm(`3`)
         )
       ),
       PlatformType.Jvm
-    ) should include(
-      "Scala 3.0.0-RC3, 2.13, 2.12"
-    )
+    ) should include("Scala 3, 2.13, 2.12")
   }
 
   it(
@@ -106,32 +103,19 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
   }
 
   it(
-    "should, for brevity, only mention the *latest* Scala language versions available for any given Scala binary version family"
-  ) {
-    SummariseLanguageVersions.summarise(
-      Map(
-        `7.0.0` -> Set(ScalaJvm(`2.13`), ScalaJvm(`3.0.0-M3`)),
-        `7.1.0` -> Set(ScalaJvm(`2.13`), ScalaJvm(`3.0.0-RC2`)),
-        `7.2.0` -> Set(ScalaJvm(`2.13`), ScalaJvm(`3.0.0-RC3`))
-      ),
-      PlatformType.Jvm
-    ) shouldBe "7.2.0 (Scala 3.0.0-RC3, 2.13)"
-  }
-
-  it(
     "should list the Scala platform editions that support all cited versions of the Scala language"
   ) {
     SummariseLanguageVersions.summarise(
       Map(
         `7.1.0` -> Set(
-          ScalaNative(`3.0.0-M3`, ScalaNative.`0.3`),
+          ScalaNative(`3`, ScalaNative.`0.3`),
           ScalaNative.`0.3_2.13`,
-          ScalaNative(`3.0.0-M3`, ScalaNative.`0.4`),
+          ScalaNative(`3`, ScalaNative.`0.4`),
           ScalaNative.`0.4_2.13`
         )
       ),
       PlatformType.Native
-    ) shouldBe "7.1.0 (Scala 3.0.0-M3, 2.13 - Native 0.4, 0.3)"
+    ) shouldBe "7.1.0 (Scala 3, 2.13 - Native 0.4, 0.3)"
   }
   it(
     "should list the union of Scala platform editions that support all cited versions"
@@ -139,13 +123,13 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
     SummariseLanguageVersions.summarise(
       Map(
         `7.1.0` -> Set(
-          ScalaNative(`3.0.0-M3`, ScalaNative.`0.3`),
-          ScalaNative(`3.0.0-M3`, ScalaNative.`0.4`),
+          ScalaNative(`3`, ScalaNative.`0.3`),
+          ScalaNative(`3`, ScalaNative.`0.4`),
           ScalaNative.`0.4_2.13`
         )
       ),
       PlatformType.Native
-    ) shouldBe "7.1.0 (Scala 3.0.0-M3, 2.13 - Native 0.4)"
+    ) shouldBe "7.1.0 (Scala 3, 2.13 - Native 0.4)"
   }
 
   it(
@@ -155,11 +139,11 @@ class BadgesSupportTest extends AsyncFunSpec with Matchers {
       Map(
         `7.1.0` -> Set(
           ScalaNative.`0.3_2.13`,
-          ScalaNative(`3.0.0-M3`, ScalaNative.`0.4`)
+          ScalaNative(`3`, ScalaNative.`0.4`)
         )
       ),
       PlatformType.Native
-    ) shouldBe "7.1.0 (Scala 3.0.0-M3, 2.13)"
+    ) shouldBe "7.1.0 (Scala 3, 2.13)"
   }
 
   it(

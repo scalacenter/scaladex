@@ -8,6 +8,7 @@ import scaladex.core.model.Category
 import scaladex.core.model.Platform
 import scaladex.core.model.Platform._
 import scaladex.core.model.Project
+import scaladex.core.model.ScalaVersion
 
 // Project document indexed by the search engine
 final case class ProjectDocument(
@@ -18,7 +19,7 @@ final case class ProjectDocument(
     creationDate: Option[Instant],
     updateDate: Option[Instant],
     platformTypes: Seq[Platform.PlatformType],
-    scalaVersions: Seq[String], // scala version families TODO move to BinaryVersion
+    scalaVersions: Seq[ScalaVersion],
     scalaJsVersions: Seq[BinaryVersion],
     scalaNativeVersions: Seq[BinaryVersion],
     sbtVersions: Seq[BinaryVersion],
@@ -48,7 +49,7 @@ object ProjectDocument {
       creationDate,
       updateDate = None,
       platforms.map(_.platformType).sorted.distinct,
-      platforms.flatMap(_.scalaVersion).map(_.family).sorted.distinct,
+      platforms.flatMap(_.scalaVersion).sorted.distinct,
       platforms.collect { case ScalaJs(_, scalaJsV) => scalaJsV }.sorted.distinct,
       platforms.collect { case ScalaNative(_, scalaNativeV) => scalaNativeV }.sorted.distinct,
       platforms.collect { case SbtPlugin(_, sbtV) => sbtV }.sorted.distinct,

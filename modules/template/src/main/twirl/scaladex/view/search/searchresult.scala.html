@@ -7,6 +7,7 @@
 @import scaladex.core.model.BinaryVersion
 @import scaladex.core.model.Platform
 @import scaladex.core.model.Env
+@import scaladex.core.model.ScalaVersion
 
 @(
   env: Env,
@@ -18,7 +19,7 @@
   you: Boolean,
   topics: Seq[(String, Long)],
   targetTypes: Seq[(Platform.PlatformType, Long)],
-  scalaVersions: Seq[(String, Long)],
+  scalaVersions: Seq[(ScalaVersion, Long)],
   scalaJsVersions: Seq[(BinaryVersion, Long)],
   scalaNativeVersions: Seq[(BinaryVersion, Long)],
   sbtVersions: Seq[(BinaryVersion, Long)])

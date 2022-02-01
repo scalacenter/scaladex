@@ -6,12 +6,13 @@
 @import scaladex.view.html.main
 @import scaladex.core.model.UserState
 @import scaladex.core.model.Env
+@import scaladex.core.model.ScalaVersion
 
 @(
   env: Env,
   topics: Seq[(String, Long)],
   platformTypes: Seq[(Platform.PlatformType, Long)],
-  scalaVersions:Seq[(String, Long)],
+  scalaVersions:Seq[(ScalaVersion, Long)],
   scalaJsVersions: Seq[(BinaryVersion, Long)],
   scalaNativeVersions: Seq[(BinaryVersion, Long)],
   sbtVersions: Seq[(BinaryVersion, Long)],
@@ -48,7 +49,7 @@
                         <li><strong>Scala Versions:</strong></li>
                         @scalaVersions.map { case (scalaVersion, count) =>
                             <li>
-                                <a href="/search?q=*&scalaVersions=@scalaVersion">@scalaVersion (@count)</a>
+                                <a href="/search?q=*&scalaVersions=@scalaVersion.encode">@scalaVersion (@count)</a>
                             </li>
                         }
                     </ul>

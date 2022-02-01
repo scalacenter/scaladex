@@ -6,6 +6,7 @@ import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
+import scaladex.core.model.ScalaVersion
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.ProjectDocument
 import scaladex.core.model.search.ProjectHit
@@ -20,7 +21,7 @@ trait SearchEngine {
   def count(): Future[Long]
   def countByTopics(limit: Int): Future[Seq[(String, Long)]]
   def countByPlatformTypes(limit: Int): Future[Seq[(Platform.PlatformType, Long)]]
-  def countByScalaVersions(limit: Int): Future[Seq[(String, Long)]]
+  def countByScalaVersions(limit: Int): Future[Seq[(ScalaVersion, Long)]]
   def countByScalaJsVersions(limit: Int): Future[Seq[(BinaryVersion, Long)]]
   def countByScalaNativeVersions(limit: Int): Future[Seq[(BinaryVersion, Long)]]
   def countBySbtVersison(limit: Int): Future[Seq[(BinaryVersion, Long)]]
@@ -32,7 +33,7 @@ trait SearchEngine {
   def autocomplete(params: SearchParams, limit: Int): Future[Seq[ProjectDocument]]
   def countByTopics(params: SearchParams, limit: Int): Future[Seq[(String, Long)]]
   def countByPlatformTypes(params: SearchParams, limit: Int): Future[Seq[(Platform.PlatformType, Long)]]
-  def countByScalaVersions(params: SearchParams, limit: Int): Future[Seq[(String, Long)]]
+  def countByScalaVersions(params: SearchParams, limit: Int): Future[Seq[(ScalaVersion, Long)]]
   def countByScalaJsVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]]
   def countByScalaNativeVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]]
   def countBySbtVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]]

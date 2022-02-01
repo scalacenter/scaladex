@@ -3,11 +3,12 @@
 @import scaladex.core.model.search.Pagination
 @import scaladex.core.model.Platform
 @import scaladex.core.model.BinaryVersion
+@import scaladex.core.model.ScalaVersion
 
 @(params: SearchParams,
   topics: Seq[(String, Long)],
   platformTypes: Seq[(Platform.PlatformType, Long)],
-  scalaVersions: Seq[(String, Long)],
+  scalaVersions: Seq[(ScalaVersion, Long)],
   scalaJsVersions: Seq[(BinaryVersion, Long)],
   scalaNativeVersions: Seq[(BinaryVersion, Long)],
   sbtVersions: Seq[(BinaryVersion, Long)],
@@ -43,8 +44,8 @@
         @for((scalaVersion, count) <- scalaVersions) {
           <li>
             <label>
-              <input type="checkbox" @if(params.scalaVersions.contains(scalaVersion)) { checked }
-                     name="scalaVersions" value="@scalaVersion" onclick="this.form.submit()">
+              <input type="checkbox" @if(params.scalaVersions.contains(scalaVersion.encode)) { checked }
+                     name="scalaVersions" value="@scalaVersion.encode" onclick="this.form.submit()">
               @scalaVersion (@count)
             </label>
           </li>

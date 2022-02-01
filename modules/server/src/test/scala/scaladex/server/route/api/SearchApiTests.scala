@@ -4,6 +4,8 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
+import scaladex.core.model.Platform
+import scaladex.core.model.ScalaVersion
 import scaladex.core.test.Values
 import scaladex.core.util.ScalaExtensions._
 import scaladex.server.route.ControllerBaseSuite
@@ -32,7 +34,7 @@ class SearchApiTests extends ControllerBaseSuite with PlayJsonSupport {
     it("should recognize JVM/3") {
       val res =
         SearchApi.parseScalaTarget(Some("JVM"), Some("3"), None, None, None)
-      assert(res.flatMap(_.scalaVersion.map(_.render)) == Some("scala 3"))
+      assert(res == Some(Platform.ScalaJvm(ScalaVersion.`3`)))
     }
   }
 

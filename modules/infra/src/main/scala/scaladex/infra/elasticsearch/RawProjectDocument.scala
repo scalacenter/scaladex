@@ -11,6 +11,7 @@ import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
+import scaladex.core.model.ScalaVersion
 import scaladex.core.model.search.GithubInfoDocument
 import scaladex.core.model.search.ProjectDocument
 
@@ -41,7 +42,7 @@ case class RawProjectDocument(
     creationDate,
     updateDate,
     platformTypes.flatMap(Platform.PlatformType.ofName).sorted,
-    scalaVersions,
+    scalaVersions.flatMap(ScalaVersion.parse).sorted,
     scalaJsVersions.flatMap(BinaryVersion.parse).filter(Platform.ScalaJs.isValid).sorted,
     scalaNativeVersions.flatMap(BinaryVersion.parse).filter(Platform.ScalaNative.isValid).sorted,
     sbtVersions.flatMap(BinaryVersion.parse).filter(Platform.SbtPlugin.isValid).sorted,
@@ -68,7 +69,7 @@ object RawProjectDocument {
       creationDate,
       updateDate,
       platformTypes.map(_.name),
-      scalaVersions,
+      scalaVersions.map(_.encode),
       scalaJsVersions.map(_.toString),
       scalaNativeVersions.map(_.toString),
       sbtVersions.map(_.toString),

@@ -4,7 +4,7 @@ import org.slf4j.LoggerFactory
 import scaladex.core.model.Artifact
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Platform
-import scaladex.core.model.ScalaLanguageVersion
+import scaladex.core.model.ScalaVersion
 import scaladex.core.model.SemanticVersion
 import scaladex.data.cleanup._
 import scaladex.data.maven.ArtifactModel
@@ -57,11 +57,9 @@ class ArtifactMetaExtractor(paths: DataPaths) {
           // Or it can be an sbt-plugin published as a maven style. In such a case the Scala target
           // is not suffixed to the artifact name but can be found in the model’s `sbtPluginTarget` member.
           case Some(SbtPluginTarget(rawScalaVersion, rawSbtVersion)) =>
-            ScalaLanguageVersion
-              .tryParse(rawScalaVersion)
-              .zip(
-                BinaryVersion.parse(rawSbtVersion)
-              ) match {
+            ScalaVersion
+              .parse(rawScalaVersion)
+              .zip(BinaryVersion.parse(rawSbtVersion)) match {
               case Some((scalaVersion, sbtVersion)) =>
                 Some(
                   ArtifactMeta(
