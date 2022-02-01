@@ -152,7 +152,7 @@ lazy val webclient = project
   .settings(
     scalacOptionsSettings,
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "scalatags" % "0.8.6",
+      "com.lihaoyi" %%% "scalatags" % "0.11.1",
       "be.doeraene" %%% "scalajs-jquery" % "1.0.0",
       "org.endpoints4s" %%% "xhr-client" % "3.1.0"
     )
