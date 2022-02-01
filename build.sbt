@@ -84,7 +84,7 @@ lazy val infra = project
     loggingSettings,
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4sVersion,
-      "org.json4s" %% "json4s-native" % "3.6.12",
+      "org.json4s" %% "json4s-native" % "4.0.4",
       "org.typelevel" %% "jawn-json4s" % "1.0.3",
       "org.flywaydb" % "flyway-core" % "7.15.0", // for database migration
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
