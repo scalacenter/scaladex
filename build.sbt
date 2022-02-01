@@ -21,7 +21,7 @@ lazy val loggingSettings = Seq(
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
   ),
   // Drop and replace commons-logging with slf4j
-  libraryDependencies += "org.slf4j" % "jcl-over-slf4j" % "1.7.33",
+  libraryDependencies += "org.slf4j" % "jcl-over-slf4j" % "1.7.35",
   excludeDependencies += ExclusionRule("commons-logging", "commons-logging")
 )
 
