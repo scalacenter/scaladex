@@ -186,7 +186,7 @@ lazy val server = project
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "org.endpoints4s" %% "akka-http-server" % "5.1.0",
       "org.webjars" % "bootstrap-sass" % "3.4.1",
-      "org.webjars" % "bootstrap-switch" % "3.3.2",
+      "org.webjars" % "bootstrap-switch" % "3.3.4",
       "org.webjars" % "bootstrap-select" % "1.13.18",
       "org.webjars.bower" % "font-awesome" % "4.7.0",
       "org.webjars" % "jquery" % "3.6.0",
