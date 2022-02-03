@@ -17,6 +17,7 @@
                         <tr>
                             <th scope="col">Name</th>
                             <th scope="col">Status</th>
+                            <th scope="col">Frequency</th>
                             <th scope="col">Last run at</th>
                             <th scope="col">Duration of Last run</th>
                             <th scope="col">Progress</th>
@@ -29,11 +30,12 @@
                             <th scope="row">@scheduler.name</th>
                             <td>@scheduler.status<br/>
                                 at @formatInstant(scheduler.when)</td>
+                            <th scope="row">@scheduler.frequency</th>
                             <td>@scheduler.lastRunAt.map(formatInstant).getOrElse("No run before")</td>
                             <td>@scheduler.durationOfLastRun.map(_.prettyPrint).getOrElse("No run before")</td>
                             <td>
                             @scheduler match {
-                                case SchedulerStatus.Started(_, _, true, Some(triggeredWhen), durationOfLastRun: Option[FiniteDuration]) => {
+                                case SchedulerStatus.Started(_, _, _, true, Some(triggeredWhen), durationOfLastRun: Option[FiniteDuration]) => {
                                     @progressbar(triggeredWhen, Instant.now(), durationOfLastRun)
                                 }
                                 case s: SchedulerStatus.Started => { Waiting }

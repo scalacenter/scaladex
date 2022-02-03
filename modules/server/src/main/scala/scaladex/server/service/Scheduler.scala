@@ -20,7 +20,7 @@ abstract class Scheduler(val name: String, frequency: FiniteDuration)(implicit e
   private var cancellable = Option.empty[Cancellable]
   private val system: ActorSystem = ActorSystem(name)
   private val scheduler: actor.Scheduler = system.scheduler
-  private var _status: SchedulerStatus = SchedulerStatus.Created(name, Instant.now)
+  private var _status: SchedulerStatus = SchedulerStatus.Created(name, frequency, Instant.now)
 
   def run(): Future[Unit]
   def status: SchedulerStatus = _status
@@ -30,7 +30,7 @@ abstract class Scheduler(val name: String, frequency: FiniteDuration)(implicit e
       case s: SchedulerStatus.Started => ()
       case _ =>
         val can = scheduler.scheduleWithFixedDelay(0.minute, frequency) {
-          _status = SchedulerStatus.Started(name, Instant.now, running = false, None, None)
+          _status = SchedulerStatus.Started(name, Instant.now, frequency, running = false, None, None)
           new Runnable {
             def run() = {
               val triggeredWhen = Instant.now
@@ -56,7 +56,7 @@ abstract class Scheduler(val name: String, frequency: FiniteDuration)(implicit e
     status match {
       case _: SchedulerStatus.Started =>
         cancellable.map(_.cancel())
-        _status = SchedulerStatus.Stopped(name, Instant.now)
+        _status = SchedulerStatus.Stopped(name, frequency, Instant.now)
         cancellable = None
       case _ => ()
     }
