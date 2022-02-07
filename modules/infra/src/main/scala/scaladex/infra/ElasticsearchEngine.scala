@@ -26,6 +26,7 @@ import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import com.typesafe.scalalogging.LazyLogging
 import io.circe._
 import scaladex.core.model.BinaryVersion
+import scaladex.core.model.Category
 import scaladex.core.model.GithubIssue
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
@@ -270,6 +271,17 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     versionAggregations("sbtVersions", filteredSearchQuery(params), Platform.SbtPlugin.isValid, limit)
       .map(addMissing(params.sbtVersions.flatMap(BinaryVersion.parse)))
 
+  override def getByCategory(category: Category, limit: Int): Future[Seq[ProjectDocument]] = {
+    val query = must(termQuery("category.keyword", category.label))
+    val request = search(index)
+      .query(gitHubStarScoring(query))
+      .sortBy(scoreSort().order(SortOrder.Desc))
+      .size(limit)
+    esClient
+      .execute(request)
+      .map(_.result.hits.hits.toSeq.flatMap(toProjectDocument))
+  }
+
   private def versionAggregations(
       field: String,
       query: Query,
@@ -313,7 +325,6 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
 
   private def filteredSearchQuery(params: SearchParams): Query =
     must(
-      matchAllQuery(),
       repositoriesQuery(params.userRepos.toSeq),
       optionalQuery(params.cli, cliQuery),
       topicsQuery(params.topics),

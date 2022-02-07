@@ -5,23 +5,18 @@ import scala.concurrent.Future
 
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import com.softwaremill.session.SessionDirectives._
-import com.softwaremill.session.SessionOptions._
 import play.twirl.api.HtmlFormat
 import scaladex.core.model.Env
 import scaladex.core.model.UserState
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
-import scaladex.server.GithubUserSession
 import scaladex.server.TwirlSupport._
 import scaladex.view.html.frontpage
 
-class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine, session: GithubUserSession)(
-    implicit ec: ExecutionContext
-) {
-  import session.implicits._
-
+class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(implicit ec: ExecutionContext) {
   val limitOfProjects = 12
+
+  def route(userState: Option[UserState]): Route = pathSingleSlash(complete(frontPage(userState)))
 
   private def frontPage(userInfo: Option[UserState]): Future[HtmlFormat.Appendable] = {
     val totalProjectsF = searchEngine.count()
@@ -79,9 +74,4 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine, ses
       )
     }
   }
-
-  val routes: Route =
-    pathEndOrSingleSlash {
-      optionalSession(refreshable, usingCookies)(userId => complete(frontPage(session.getUser(userId))))
-    }
 }

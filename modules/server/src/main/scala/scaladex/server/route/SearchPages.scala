@@ -5,21 +5,31 @@ import scala.concurrent.ExecutionContext
 import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
-import com.softwaremill.session.SessionDirectives._
-import com.softwaremill.session.SessionOptions._
 import scaladex.core.model.Env
 import scaladex.core.model.UserState
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.SearchParams
 import scaladex.core.service.SearchEngine
-import scaladex.server.GithubUserSession
 import scaladex.server.TwirlSupport._
 import scaladex.view.search.html.searchresult
 
-class SearchPages(env: Env, searchEngine: SearchEngine, session: GithubUserSession)(
+class SearchPages(env: Env, searchEngine: SearchEngine)(
     implicit ec: ExecutionContext
 ) {
-  import session.implicits._
+  def route(user: Option[UserState]): Route =
+    get(
+      concat(
+        path("search")(
+          searchParams(user)(params => search(params, user, "search"))
+        ),
+        path(Segment)(organization =>
+          searchParams(user) { params =>
+            val paramsWithOrg = params.copy(queryString = s"${params.queryString} AND organization:$organization")
+            search(paramsWithOrg, user, s"organization/$organization")
+          }
+        )
+      )
+    )
 
   private def search(params: SearchParams, user: Option[UserState], uri: String) =
     complete {
@@ -55,32 +65,4 @@ class SearchPages(env: Env, searchEngine: SearchEngine, session: GithubUserSessi
         sbtVersions
       )
     }
-
-  private val searchPath = "search"
-
-  val routes: Route =
-    get(
-      concat(
-        path(searchPath)(
-          optionalSession(refreshable, usingCookies) { userId =>
-            val user = session.getUser(userId)
-            searchParams(user)(params => search(params, user, searchPath))
-          }
-        ),
-        path(Segment)(organization =>
-          optionalSession(refreshable, usingCookies) { userId =>
-            val user = session.getUser(userId)
-            searchParams(user)(params =>
-              search(
-                params.copy(
-                  queryString = s"${params.queryString} AND organization:$organization"
-                ),
-                user,
-                organization
-              )
-            )
-          }
-        )
-      )
-    )
 }

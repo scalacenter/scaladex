@@ -12,6 +12,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import cats.effect.ContextShift
 import cats.effect.IO
+import com.softwaremill.session.SessionDirectives._
+import com.softwaremill.session.SessionOptions._
 import com.typesafe.scalalogging.LazyLogging
 import doobie.util.ExecutionContexts
 import scaladex.core.service.Storage
@@ -129,7 +131,12 @@ object Server extends LazyLogging {
     val githubAuth = new GithubAuthImpl(config.env)
     val session = new GithubUserSession(config.session)
 
-    val searchPages = new SearchPages(config.env, searchEngine, session)
+    val searchPages = new SearchPages(config.env, searchEngine)
+    val frontPage = new FrontPage(config.env, webDatabase, searchEngine)
+    val adminPages = new AdminPage(config.env, schedulerService)
+    val projectPages = new ProjectPages(config.env, webDatabase, filesystem)
+    val explorePages = new ExplorePages(config.env, searchEngine)
+
     val programmaticRoutes = concat(
       new PublishApi(githubAuth, publishProcess).routes,
       new SearchApi(searchEngine, webDatabase, session).routes,
@@ -138,16 +145,15 @@ object Server extends LazyLogging {
       new Oauth2(config.oAuth2, githubAuth, session).routes,
       DocumentationRoutes.routes
     )
-    val userFacingRoutes = concat(
-      new FrontPage(config.env, webDatabase, searchEngine, session).routes,
-      new AdminPages(config.env, schedulerService, session).routes,
-      redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
-        concat(
-          new ProjectPages(config.env, webDatabase, filesystem, session).routes,
-          searchPages.routes
-        )
+    import session.implicits._
+    val userFacingRoute: Route =
+      optionalSession(refreshable, usingCookies) { userId =>
+        val user = userId.flatMap(session.getUser)
+        frontPage.route(user) ~ adminPages.route(user) ~ explorePages.route(user) ~
+          redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
+            projectPages.route(user) ~ searchPages.route(user)
+          }
       }
-    )
     val exceptionHandler = ExceptionHandler {
       case ex: Exception =>
         import java.io.{PrintWriter, StringWriter}
@@ -165,8 +171,6 @@ object Server extends LazyLogging {
           out
         )
     }
-    handleExceptions(exceptionHandler) {
-      concat(programmaticRoutes, userFacingRoutes)
-    }
+    handleExceptions(exceptionHandler)(programmaticRoutes ~ userFacingRoute)
   }
 }

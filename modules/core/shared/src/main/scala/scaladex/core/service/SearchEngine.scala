@@ -3,6 +3,7 @@ package scaladex.core.service
 import scala.concurrent.Future
 
 import scaladex.core.model.BinaryVersion
+import scaladex.core.model.Category
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.search.Page
@@ -35,4 +36,7 @@ trait SearchEngine {
   def countByScalaJsVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]]
   def countByScalaNativeVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]]
   def countBySbtVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]]
+
+  // Explore page
+  def getByCategory(category: Category, limit: Int): Future[Seq[ProjectDocument]]
 }

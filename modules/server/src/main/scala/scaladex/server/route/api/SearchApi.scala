@@ -203,7 +203,7 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
     } ~ cors() {
       AutocompletionApi.autocomplete.implementedByAsync {
         case AutocompletionApi.WithSession(request, userId) =>
-          val user = session.getUser(userId)
+          val user = userId.flatMap(session.getUser)
           autocomplete(request.searchParams(user))
       }
     }

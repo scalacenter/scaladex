@@ -1,44 +1,6 @@
 package scaladex.core.api
 
 import endpoints4s.algebra
-import scaladex.core.model.Project
-import scaladex.core.model.UserState
-import scaladex.core.model.search.SearchParams
-
-case class AutocompletionRequest(
-    query: String,
-    you: Boolean,
-    topics: Seq[String],
-    targetTypes: Seq[String],
-    scalaVersions: Seq[String],
-    scalaJsVersions: Seq[String],
-    scalaNativeVersions: Seq[String],
-    sbtVersions: Seq[String],
-    contributingSearch: Boolean
-) {
-  def searchParams(user: Option[UserState]): SearchParams = {
-    val userRepos = if (you) user.map(_.repos).getOrElse(Set.empty) else Set.empty[Project.Reference]
-    SearchParams(
-      queryString = query,
-      page = 1,
-      sorting = None,
-      userRepos = userRepos,
-      topics = topics,
-      targetTypes = targetTypes,
-      scalaVersions = scalaVersions,
-      scalaJsVersions = scalaJsVersions,
-      scalaNativeVersions = scalaNativeVersions,
-      sbtVersions = sbtVersions,
-      contributingSearch = contributingSearch
-    )
-  }
-}
-
-case class AutocompletionResponse(
-    organization: String,
-    repository: String,
-    description: String
-)
 
 // Autocompletion endpoints are implemented by the server and invoked by the web client.
 // There definition is shared here, for consistency.
@@ -51,7 +13,7 @@ trait AutocompletionEndpoints extends algebra.Endpoints with algebra.JsonEntitie
   type WithSession[A]
 
   // JSON schema of the autocompletion response entity
-  implicit val autocompletionResponseSchema: JsonSchema[AutocompletionResponse] =
+  implicit val response: JsonSchema[AutocompletionResponse] =
     field[String]("organization")
       .zip(field[String]("repository"))
       .zip(field[String]("description"))

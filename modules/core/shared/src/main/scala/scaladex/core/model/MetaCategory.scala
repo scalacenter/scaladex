@@ -17,36 +17,31 @@ sealed trait MetaCategory {
 object MetaCategory {
   def all: Seq[MetaCategory] = Seq(
     AsynchronousConcurrentAndDistributedProgramming,
-    AudioImagesAndVideo,
     BigData,
+    ComputerScience,
     ConfigurationLoggingTestingAndMonitoring,
     DatabasesIndexingAndSearching,
-    TimePositionsAndUnitsOfMeasurement,
     DeploymentVirtualizationAndCloud,
     DevelopmentTooling,
-    GeneralComputerScience,
+    ImagesAudioAndVideo,
     MathematicsFinanceDataScienceAndBioinformatics,
     MobileDesktopAndGameDevelopment,
     OperatingSystemsAndHardware,
     TextFormatAndCompression,
+    TimePositionsAndUnitsOfMeasurement,
     WebDevelopment
   )
 
+  val byLabel: Map[String, MetaCategory] = all.map(meta => meta.label -> meta).toMap
+
   case object AsynchronousConcurrentAndDistributedProgramming extends MetaCategory {
-    override val title: String = "Asynchronous, Concurrent and Distributed Programming."
+    override val title: String = "Asynchronous, Concurrent and Distributed Programming"
 
     override val categories: Seq[Category] = Seq(
       Category.AsynchronousAndReactiveProgramming,
       Category.DistributedComputing,
       Category.DistributedMessagingSystemsAndMicroservices,
       Category.Schedulers
-    )
-  }
-  case object AudioImagesAndVideo extends MetaCategory {
-    override val title: String = "Audio, Images and Video"
-    override val categories: Seq[Category] = Seq(
-      Category.AudioAndMusic,
-      Category.VideoAndImageProcessing
     )
   }
   case object BigData extends MetaCategory {
@@ -57,6 +52,24 @@ object MetaCategory {
       Category.DistributedComputing
     )
   }
+
+  case object ComputerScience extends MetaCategory {
+    override val title: String = "Computer Science"
+    override val categories: Seq[Category] = Seq(
+      Category.AlgorithmsAndDataStructures,
+      Category.Caching,
+      Category.Compilers,
+      Category.CodeGeneration,
+      Category.DependencyInjection,
+      Category.FunctionnalProgrammingAndCategoryTheory,
+      Category.LogicProgrammingAndTypeConstraints,
+      Category.MiscellaneousUtils,
+      Category.Parsing,
+      Category.ScalaLanguageExtensions,
+      Category.ProgrammingLanguageInterfaces
+    )
+  }
+
   case object ConfigurationLoggingTestingAndMonitoring extends MetaCategory {
     override val title: String = "Configuration, Logging, Testing and Monitoring"
     override val categories: Seq[Category] = Seq(
@@ -72,14 +85,6 @@ object MetaCategory {
     override val categories: Seq[Category] = Seq(
       Category.Databases,
       Category.IndexingAndSearching
-    )
-  }
-  case object TimePositionsAndUnitsOfMeasurement extends MetaCategory {
-    override val title: String = "Dates, Time, Positions and Units of Measurement"
-    override val categories: Seq[Category] = Seq(
-      Category.DatesAndTime,
-      Category.GeometryAndGeopositionning,
-      Category.UnitsOfMeasurement
     )
   }
   case object DeploymentVirtualizationAndCloud extends MetaCategory {
@@ -107,22 +112,14 @@ object MetaCategory {
       Category.MiscellaneousTools
     )
   }
-  case object GeneralComputerScience extends MetaCategory {
-    override val title: String = "General Computer Science"
+  case object ImagesAudioAndVideo extends MetaCategory {
+    override val title: String = "Images, Audio and Video"
     override val categories: Seq[Category] = Seq(
-      Category.AlgorithmsAndDataStructures,
-      Category.Caching,
-      Category.Compilers,
-      Category.CodeGeneration,
-      Category.DependencyInjection,
-      Category.FunctionnalProgrammingAndCategoryTheory,
-      Category.LogicProgrammingAndTypeConstraints,
-      Category.MiscellaneousUtils,
-      Category.Parsing,
-      Category.ScalaLanguageExtensions,
-      Category.ProgrammingLanguageInterfaces
+      Category.AudioAndMusic,
+      Category.VideoAndImageProcessing
     )
   }
+
   case object MathematicsFinanceDataScienceAndBioinformatics extends MetaCategory {
     override val title: String = "Mathetmatics, Finance, Data Science and Bioinformatics"
     override val categories: Seq[Category] = Seq(
@@ -161,6 +158,14 @@ object MetaCategory {
       Category.TextManipulation,
       Category.OtherDocumentFormats,
       Category.Yaml
+    )
+  }
+  case object TimePositionsAndUnitsOfMeasurement extends MetaCategory {
+    override val title: String = "Time, Positions and Units of Measurement"
+    override val categories: Seq[Category] = Seq(
+      Category.DatesAndTime,
+      Category.GeometryAndGeopositionning,
+      Category.UnitsOfMeasurement
     )
   }
   case object WebDevelopment extends MetaCategory {
