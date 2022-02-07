@@ -9,6 +9,7 @@ sealed trait SchedulerStatus {
   val when: Instant
   val lastRunAt: Option[Instant]
   val durationOfLastRun: Option[FiniteDuration]
+  val frequency: FiniteDuration
 
   val status: String = this match {
     case _: SchedulerStatus.Created => "Created"
@@ -25,18 +26,19 @@ sealed trait SchedulerStatus {
   }
 }
 object SchedulerStatus {
-  case class Created(name: String, when: Instant) extends SchedulerStatus {
+  case class Created(name: String, frequency: FiniteDuration, when: Instant) extends SchedulerStatus {
     val lastRunAt: Option[Instant] = None
     val durationOfLastRun: Option[FiniteDuration] = None
   }
   case class Started(
       name: String,
       when: Instant,
+      frequency: FiniteDuration,
       running: Boolean,
       lastRunAt: Option[Instant],
       durationOfLastRun: Option[FiniteDuration]
   ) extends SchedulerStatus
-  case class Stopped(name: String, when: Instant) extends SchedulerStatus {
+  case class Stopped(name: String, frequency: FiniteDuration, when: Instant) extends SchedulerStatus {
     val lastRunAt: Option[Instant] = None
     val durationOfLastRun: Option[FiniteDuration] = None
   }
