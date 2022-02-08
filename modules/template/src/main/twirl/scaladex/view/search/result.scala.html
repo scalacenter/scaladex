@@ -6,7 +6,7 @@
 @import scaladex.core.model.search.ProjectHit
 @import scaladex.core.model.Platform
 @import scaladex.core.model.UserState
-@import scaladex.core.model.BinaryVersion
+@import scaladex.core.model.Language
 
 @(params: SearchParams,
   uri: Uri,
@@ -15,12 +15,9 @@
   user: Option[UserState],
   you: Boolean,
   topics: Seq[(String, Long)],
-  platformTypes: Seq[(Platform.PlatformType, Long)],
-  scalaVersions: Seq[(String, Long)],
-  scalaJsVersions: Seq[(BinaryVersion, Long)],
-  scalaNativeVersions: Seq[(BinaryVersion, Long)],
-  sbtVersions: Seq[(BinaryVersion, Long)])
-
+  languages: Seq[(Language, Long)],
+  platforms: Seq[(Platform, Long)]
+)
 @if(params.contributingSearch){
   <h2 class="text-center">Contributing Search</h2>
   <div class="row">
@@ -44,17 +41,7 @@
 </div>
 <div class="row">
   <div class="col-md-3">
-    @filter(
-      params,
-      topics,
-      platformTypes,
-      scalaVersions,
-      scalaJsVersions,
-      scalaNativeVersions,
-      sbtVersions,
-      pagination,
-      you
-    )
+    @filter(params, topics, languages, platforms, pagination, you)
   </div>      
   <div class="col-md-9">
     @resultList(projects, params)

@@ -30,26 +30,14 @@ trait AutocompletionEndpoints extends algebra.Endpoints with algebra.JsonEntitie
         .xmap[Boolean](_.contains("✓"))(Option.when(_)("✓")) &
       qs[Seq[String]]("topics", docs = Some("Filter the results matching the given topics only")) &
       qs[Seq[String]](
-        "targetTypes",
-        docs =
-          Some("Filter the results matching the given target types only (e.g., 'jvm', 'js', 'native', 'sbt', 'java')")
+        "languages",
+        docs = Some(
+          "Filter the results matching the given language versions only (e.g., '3', '2.13', '2.12', '2.11', 'java')"
+        )
       ) &
       qs[Seq[String]](
-        "scalaVersions",
-        docs =
-          Some("Filter the results matching the given Scala versions only (e.g., 'scala3', '2.13', '2.12', '2.11')")
-      ) &
-      qs[Seq[String]](
-        "scalaJsVersions",
-        docs = Some("Filter the results matching the given Scala.js versions only (e.g., '1.x', '0.6')")
-      ) &
-      qs[Seq[String]](
-        "scalaNativeVersions",
-        docs = Some("Filter the results matching the given Scala Native versions only (e.g., '0.4', '0.3')")
-      ) &
-      qs[Seq[String]](
-        "sbtVersions",
-        docs = Some("Filter the results matching the given sbt versions only (e.g., '1.0', '0.13')")
+        "platforms",
+        docs = Some("Filter the results matching the given platforms only (e.g., 'jvm', 'sjs1', 'native0.4', 'sbt1.0')")
       ) &
       qs[Option[Boolean]]("contributingSearch").xmap(_.getOrElse(false))(Option.when(_)(true))
   ).xmap((AutocompletionRequest.apply _).tupled)(Function.unlift(AutocompletionRequest.unapply))

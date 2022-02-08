@@ -2,8 +2,8 @@ package scaladex.core.service
 
 import scala.concurrent.Future
 
-import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
+import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.search.Page
@@ -19,11 +19,8 @@ trait SearchEngine {
   // Front page
   def count(): Future[Long]
   def countByTopics(limit: Int): Future[Seq[(String, Long)]]
-  def countByPlatformTypes(limit: Int): Future[Seq[(Platform.PlatformType, Long)]]
-  def countByScalaVersions(limit: Int): Future[Seq[(String, Long)]]
-  def countByScalaJsVersions(limit: Int): Future[Seq[(BinaryVersion, Long)]]
-  def countByScalaNativeVersions(limit: Int): Future[Seq[(BinaryVersion, Long)]]
-  def countBySbtVersison(limit: Int): Future[Seq[(BinaryVersion, Long)]]
+  def countByLanguages(limit: Int): Future[Seq[(Language, Long)]]
+  def countByPlatforms(limit: Int): Future[Seq[(Platform, Long)]]
   def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]]
   def getLatest(limit: Int): Future[Seq[ProjectDocument]]
 
@@ -31,11 +28,8 @@ trait SearchEngine {
   def find(params: SearchParams): Future[Page[ProjectHit]]
   def autocomplete(params: SearchParams, limit: Int): Future[Seq[ProjectDocument]]
   def countByTopics(params: SearchParams, limit: Int): Future[Seq[(String, Long)]]
-  def countByPlatformTypes(params: SearchParams, limit: Int): Future[Seq[(Platform.PlatformType, Long)]]
-  def countByScalaVersions(params: SearchParams, limit: Int): Future[Seq[(String, Long)]]
-  def countByScalaJsVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]]
-  def countByScalaNativeVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]]
-  def countBySbtVersions(params: SearchParams, limit: Int): Future[Seq[(BinaryVersion, Long)]]
+  def countByLanguages(params: SearchParams, limit: Int): Future[Seq[(Language, Long)]]
+  def countByPlatforms(params: SearchParams, limit: Int): Future[Seq[(Platform, Long)]]
 
   // Explore page
   def getByCategory(category: Category, limit: Int): Future[Seq[ProjectDocument]]

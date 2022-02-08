@@ -36,7 +36,7 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach {
       Get(s"/${PlayJsonExtra.reference}") ~> route ~> check {
         status shouldEqual StatusCodes.TemporaryRedirect
         headers.head
-          .value() shouldBe "/xuwei-k/play-json-extra/play-json-extra/0.1.1-play2.3-M1/?target=_2.11"
+          .value() shouldBe "/xuwei-k/play-json-extra/play-json-extra/0.1.1-play2.3-M1/?binaryVersion=_2.11"
       }
     }
     it("should return StatusCodes.OK for org/repo/artifact") {

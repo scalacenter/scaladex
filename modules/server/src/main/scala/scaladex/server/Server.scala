@@ -141,7 +141,7 @@ object Server extends LazyLogging {
       new PublishApi(githubAuth, publishProcess).routes,
       new SearchApi(searchEngine, webDatabase, session).routes,
       Assets.routes,
-      new Badges(webDatabase).routes,
+      new Badges(webDatabase).route,
       new Oauth2(config.oAuth2, githubAuth, session).routes,
       DocumentationRoutes.routes
     )

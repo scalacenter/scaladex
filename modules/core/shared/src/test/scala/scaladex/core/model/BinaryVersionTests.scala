@@ -1,46 +1,56 @@
 package scaladex.core.model
 
-import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.OptionValues
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import scaladex.core
 
-class BinaryVersionTests extends AsyncFunSpec with Matchers with TableDrivenPropertyChecks {
-  it("should parse any binary version") {
-    val inputs = Table(
-      ("input", "output"),
-      ("1", MajorBinary(1)),
-      ("1.x", MajorBinary(1)),
-      ("2.12", MinorBinary(2, 12)),
-      ("0.6", MinorBinary(0, 6)),
-      ("2.13.0", PatchBinary(2, 13, 0)),
-      ("0.4.0", PatchBinary(0, 4, 0)),
-      ("0.4.0-M2", PreReleaseBinary(0, 4, Some(0), Milestone(2))),
-      (
-        "0.23.0-RC1",
-        PreReleaseBinary(0, 23, Some(0), ReleaseCandidate(1))
-      ),
-      ("3.0.0-M1", core.model.PreReleaseBinary(3, 0, Some(0), Milestone(1))),
-      ("1.1-M1", core.model.PreReleaseBinary(1, 1, None, Milestone(1)))
+class BinaryVersionTests extends AnyFunSpec with Matchers with OptionValues with TableDrivenPropertyChecks {
+  it("should be ordered") {
+    val `0.6.7` = PatchVersion(0, 6, 7)
+    val `0.6.18` = PatchVersion(0, 6, 18)
+    val `0.3.0` = PatchVersion(0, 3, 0)
+
+    val obtained = List(
+      BinaryVersion(ScalaJs(`0.6.7`), Scala.`2.10`),
+      BinaryVersion(ScalaJs(`0.6.18`), Scala.`2.12`),
+      BinaryVersion(ScalaJs(`0.6.7`), Scala.`2.11`),
+      BinaryVersion(ScalaJs(`0.6.18`), Scala.`2.11`),
+      BinaryVersion(ScalaJs(`0.6.18`), Scala.`2.10`),
+      BinaryVersion(ScalaNative(`0.3.0`), Scala.`2.11`),
+      BinaryVersion(Jvm, Scala.`2.12`),
+      BinaryVersion(Jvm, Scala.`2.11`),
+      BinaryVersion(Jvm, Scala.`2.10`)
+    ).sorted
+
+    val expected = List(
+      BinaryVersion(ScalaNative(`0.3.0`), Scala.`2.11`),
+      BinaryVersion(ScalaJs(`0.6.7`), Scala.`2.10`),
+      BinaryVersion(ScalaJs(`0.6.7`), Scala.`2.11`),
+      BinaryVersion(ScalaJs(`0.6.18`), Scala.`2.10`),
+      BinaryVersion(ScalaJs(`0.6.18`), Scala.`2.11`),
+      BinaryVersion(ScalaJs(`0.6.18`), Scala.`2.12`),
+      BinaryVersion(Jvm, Scala.`2.10`),
+      BinaryVersion(Jvm, Scala.`2.11`),
+      BinaryVersion(Jvm, Scala.`2.12`)
     )
 
-    forAll(inputs)((input, output) => BinaryVersion.parse(input) should contain(output))
+    assert(obtained == expected)
   }
 
-  it("should be ordered") {
-    val inputs = Table[BinaryVersion, BinaryVersion](
-      ("lower", "higher"),
-      (MajorBinary(1), MajorBinary(2)),
-      (MinorBinary(1, 1), MajorBinary(1)),
-      (MajorBinary(1), MinorBinary(2, 1)),
-      (core.model.PreReleaseBinary(1, 2, None, Milestone(1)), MinorBinary(1, 2)),
-      (
-        PreReleaseBinary(1, 2, Some(0), Milestone(1)),
-        MinorBinary(1, 2)
-      ),
-      (MajorBinary(1), core.model.PreReleaseBinary(2, 0, None, Milestone(1)))
+  it("should parse any binary version") {
+    val cases = Table(
+      ("input", "target"),
+      ("_2.12", BinaryVersion(Jvm, Scala.`2.12`)),
+      ("_3", BinaryVersion(Jvm, Scala.`3`)),
+      ("_sjs0.6_2.12", BinaryVersion(ScalaJs.`0.6`, Scala.`2.12`))
     )
 
-    forAll(inputs)((lower, higher) => lower shouldBe <(higher))
+    forAll(cases)((input, expected) => BinaryVersion.parse(input) should contain(expected))
+  }
+
+  it("Should encode and parse a Scala.js binary version") {
+    val binaryVersion = BinaryVersion(ScalaJs.`0.6`, Scala.`2.10`)
+    assert(BinaryVersion.parse(binaryVersion.encode).get == binaryVersion)
   }
 }

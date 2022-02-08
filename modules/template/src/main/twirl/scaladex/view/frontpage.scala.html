@@ -1,20 +1,20 @@
-@import scaladex.core.model.BinaryVersion
 @import scaladex.core.model.search.ProjectDocument
 @import scaladex.core.model.search.SearchParams
-@import scaladex.core.model.Platform
-@import scaladex.core.model.Artifact
+@import scaladex.core.model.ScalaJs
+@import scaladex.core.model.ScalaNative
+@import scaladex.core.model.SbtPlugin
 @import scaladex.view.html.main
 @import scaladex.core.model.UserState
 @import scaladex.core.model.Env
+@import scaladex.core.model.Scala
 
 @(
   env: Env,
   topics: Seq[(String, Long)],
-  platformTypes: Seq[(Platform.PlatformType, Long)],
-  scalaVersions:Seq[(String, Long)],
-  scalaJsVersions: Seq[(BinaryVersion, Long)],
-  scalaNativeVersions: Seq[(BinaryVersion, Long)],
-  sbtVersions: Seq[(BinaryVersion, Long)],
+  scalaVersions:Seq[(Scala, Long)],
+  scalaJsVersions: Seq[(ScalaJs, Long)],
+  scalaNativeVersions: Seq[(ScalaNative, Long)],
+  sbtVersions: Seq[(SbtPlugin, Long)],
   latestProjects: Seq[ProjectDocument],
   mostDependedUpon: Seq[ProjectDocument],
   user: Option[UserState],
@@ -37,18 +37,10 @@
                         }
                     </ul>
                     <ul class="tag">
-                        <li><strong>Platforms:</strong></li>
-                        @platformTypes.map { case (platformType, count) =>
-                            <li>
-                                <a href="/search?q=*&targetTypes=@platformType.name">@platformType.label (@count)</a>
-                            </li>
-                        }
-                    </ul>
-                    <ul class="tag">
                         <li><strong>Scala Versions:</strong></li>
                         @scalaVersions.map { case (scalaVersion, count) =>
                             <li>
-                                <a href="/search?q=*&scalaVersions=@scalaVersion">@scalaVersion (@count)</a>
+                                <a href="/search?q=*&languages=@scalaVersion.label">@scalaVersion.version (@count)</a>
                             </li>
                         }
                     </ul>
@@ -56,7 +48,7 @@
                         <li><strong>Sbt Versions:</strong></li>
                         @for((sbtVersion, count) <- sbtVersions) {
                             <li>
-                                <a href="/search?q=*&sbtVersions=@sbtVersion">@sbtVersion (@count)</a>
+                                <a href="/search?q=*&platforms=@sbtVersion.label">@sbtVersion.version (@count)</a>
                             </li>
                         }
                     </ul>
@@ -64,8 +56,8 @@
                         <li><strong>Scala.js Versions:</strong></li>
                         @for((scalaJsVersion, count) <- scalaJsVersions) {
                             <li>
-                                <a href="/search?q=*&scalaJsVersions=@scalaJsVersion">@scalaJsVersion (@count)</a>
-                            </li>
+                                <a href="/search?q=*&platforms=@scalaJsVersion.label">@scalaJsVersion.version (@count)</a>
+                            </li>*
                         }
                     </ul>
                     <ul class="tag">
@@ -73,7 +65,7 @@
                             <li><strong>Scala-Native Versions:</strong></li>
                             @for((scalaNativeVersion, count) <- scalaNativeVersions) {
                                 <li>
-                                    <a href="/search?q=*&scalaNativeVersions=@scalaNativeVersion">@scalaNativeVersion (@count)</a>
+                                    <a href="/search?q=*&platforms=@scalaNativeVersion.label">@scalaNativeVersion.version (@count)</a>
                                 </li>
                             }
                         }

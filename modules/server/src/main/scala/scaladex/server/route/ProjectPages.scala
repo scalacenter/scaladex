@@ -13,9 +13,11 @@ import com.typesafe.scalalogging.LazyLogging
 import play.twirl.api.HtmlFormat
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactSelection
+import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
 import scaladex.core.model.Env
 import scaladex.core.model.GithubStatus
+import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserState
@@ -59,47 +61,26 @@ class ProjectPages(env: Env, database: WebDatabase, localStorage: Storage)(
               projectOpt <- database.getProject(ref)
               project = projectOpt.getOrElse(throw new Exception(s"project ${ref} not found"))
               artifacts <- database.getArtifacts(project.reference)
-              // some computation
-              targetTypesWithScalaVersion = artifacts
-                .groupBy(_.platform.platformType)
-                .map {
-                  case (targetType, artifacts) =>
-                    (
-                      targetType,
-                      artifacts
-                        .map(_.fullPlatformVersion)
-                        .distinct
-                        .sorted
-                        .reverse
-                    )
-                }
-              artifactsWithVersions = artifacts
-                .groupBy(_.version)
-                .map {
-                  case (semanticVersion, artifacts) =>
-                    (
-                      semanticVersion,
-                      artifacts.groupBy(_.artifactName).map {
-                        case (artifactName, artifacts) =>
-                          (
-                            artifactName,
-                            artifacts.map(r => (r, r.fullPlatformVersion))
-                          )
-                      }
-                    )
-                }
-                .toSeq
-                .sortBy(_._1)
-                .reverse
-            } yield (
-              project,
-              targetTypesWithScalaVersion,
-              artifactsWithVersions
-            )
+            } yield (project, artifacts)
 
           onComplete(res) {
-            case Success((project, targetTypesWithScalaVersion, artifactsWithVersions)) =>
-              complete(view.html.artifacts(env, project, user, targetTypesWithScalaVersion, artifactsWithVersions))
+            case Success((project, artifacts)) =>
+              val binaryVersionByPlatforms = artifacts
+                .map(_.binaryVersion)
+                .distinct
+                .groupBy(_.platform)
+                .view
+                .mapValues(_.sorted(BinaryVersion.ordering.reverse))
+                .toSeq
+                .sortBy(_._1)(Platform.ordering.reverse)
+
+              val artifactsByVersions = artifacts
+                .groupBy(_.version)
+                .map { case (version, artifacts) => (version, artifacts.groupBy(_.artifactName).toSeq.sortBy(_._1)) }
+                .toSeq
+                .sortBy(_._1)(SemanticVersion.ordering.reverse)
+
+              complete(view.html.artifacts(env, project, user, binaryVersionByPlatforms, artifactsByVersions))
             case Failure(e) =>
               complete(StatusCodes.NotFound, view.html.notfound(env, user))
           }
@@ -118,44 +99,45 @@ class ProjectPages(env: Env, database: WebDatabase, localStorage: Storage)(
       },
       get {
         path(organizationM / repositoryM)((organization, repository) =>
-          parameters("artifact".?, "version".?, "target".?, "selected".?) { (artifact, version, target, selected) =>
-            val projectRef = Project.Reference(organization, repository)
-            val fut: Future[StandardRoute] = database.getProject(projectRef).flatMap {
-              case Some(Project(_, _, _, GithubStatus.Moved(_, newProjectRef), _, _)) =>
-                Future.successful(redirect(Uri(s"/$newProjectRef"), StatusCodes.PermanentRedirect))
-              case Some(project) =>
-                val artifactRouteF: Future[StandardRoute] =
-                  getSelectedArtifact(
-                    database,
-                    project,
-                    platform = target,
-                    artifact = artifact.map(Artifact.Name.apply),
-                    version = version,
-                    selected = selected
-                  ).map(_.map { artifact =>
-                    val targetParam = s"?target=${artifact.platform.encode}"
-                    redirect(
-                      s"/$organization/$repository/${artifact.artifactName}/${artifact.version}/$targetParam",
-                      StatusCodes.TemporaryRedirect
-                    )
-                  }.getOrElse(complete(StatusCodes.NotFound, view.html.notfound(env, user))))
-                artifactRouteF
-              case None =>
-                Future.successful(
-                  complete(StatusCodes.NotFound, view.html.notfound(env, user))
-                )
-            }
-            onSuccess(fut)(identity)
+          parameters("artifact".?, "version".?, "binaryVersion".?, "selected".?) {
+            (artifact, version, binaryVersion, selected) =>
+              val projectRef = Project.Reference(organization, repository)
+              val fut: Future[StandardRoute] = database.getProject(projectRef).flatMap {
+                case Some(Project(_, _, _, GithubStatus.Moved(_, newProjectRef), _, _)) =>
+                  Future.successful(redirect(Uri(s"/$newProjectRef"), StatusCodes.PermanentRedirect))
+                case Some(project) =>
+                  val artifactRouteF: Future[StandardRoute] =
+                    getSelectedArtifact(
+                      database,
+                      project,
+                      binaryVersion = binaryVersion,
+                      artifact = artifact.map(Artifact.Name.apply),
+                      version = version,
+                      selected = selected
+                    ).map(_.map { artifact =>
+                      val binaryVersionParam = s"?binaryVersion=${artifact.binaryVersion.label}"
+                      redirect(
+                        s"/$organization/$repository/${artifact.artifactName}/${artifact.version}/$binaryVersionParam",
+                        StatusCodes.TemporaryRedirect
+                      )
+                    }.getOrElse(complete(StatusCodes.NotFound, view.html.notfound(env, user))))
+                  artifactRouteF
+                case None =>
+                  Future.successful(
+                    complete(StatusCodes.NotFound, view.html.notfound(env, user))
+                  )
+              }
+              onSuccess(fut)(identity)
           }
         )
       },
       get {
         path(organizationM / repositoryM / artifactM)((organization, repository, artifact) =>
-          parameter("target".?) { target =>
+          parameter("binaryVersion".?) { binaryVersion =>
             val res = getProjectPage(
               organization,
               repository,
-              target,
+              binaryVersion,
               artifact,
               None,
               user
@@ -170,8 +152,8 @@ class ProjectPages(env: Env, database: WebDatabase, localStorage: Storage)(
       },
       get {
         path(organizationM / repositoryM / artifactM / versionM)((organization, repository, artifact, version) =>
-          parameter("target".?) { target =>
-            val res = getProjectPage(organization, repository, target, artifact, Some(version), user)
+          parameter("binaryVersion".?) { binaryVersion =>
+            val res = getProjectPage(organization, repository, binaryVersion, artifact, Some(version), user)
             onComplete(res) {
               case Success((code, some)) => complete(code, some)
               case Failure(e) =>
@@ -200,13 +182,13 @@ class ProjectPages(env: Env, database: WebDatabase, localStorage: Storage)(
   private def getProjectPage(
       organization: Project.Organization,
       repository: Project.Repository,
-      target: Option[String],
+      binaryVersion: Option[String],
       artifact: Artifact.Name,
       version: Option[SemanticVersion],
       user: Option[UserState]
   ): Future[(StatusCode, HtmlFormat.Appendable)] = {
     val selection = ArtifactSelection.parse(
-      platform = target,
+      binaryVersion = binaryVersion,
       artifactName = Some(artifact),
       version = version.map(_.toString),
       selected = None
@@ -224,20 +206,18 @@ class ProjectPages(env: Env, database: WebDatabase, localStorage: Storage)(
             .getOrElse(throw new Exception(s"no artifact found for $projectRef"))
           directDependencies <- database.getDirectDependencies(selectedArtifact)
           reverseDependency <- database.getReverseDependencies(selectedArtifact)
-
-          allVersions = artifats.map(_.version)
-          filteredVersions = filterVersions(project, allVersions)
-          platforms = artifats.map(_.platform).distinct.sorted.reverse
-          artifactNames = artifats.map(_.artifactName).distinct.sortBy(_.value)
-          twitterCard = project.twitterSummaryCard
-        } yield (
-          StatusCodes.OK,
-          view.project.html.project(
+        } yield {
+          val allVersions = artifats.map(_.version)
+          val filteredVersions = filterVersions(project, allVersions)
+          val binaryVersions = artifats.map(_.binaryVersion).distinct.sorted.reverse
+          val artifactNames = artifats.map(_.artifactName).distinct.sortBy(_.value)
+          val twitterCard = project.twitterSummaryCard
+          val html = view.project.html.project(
             env,
             project,
             artifactNames,
             filteredVersions,
-            platforms,
+            binaryVersions,
             selectedArtifact,
             user,
             canEdit = true,
@@ -246,7 +226,8 @@ class ProjectPages(env: Env, database: WebDatabase, localStorage: Storage)(
             directDependencies,
             reverseDependency
           )
-        )
+          (StatusCodes.OK, html)
+        }
       case None =>
         Future.successful((StatusCodes.NotFound, view.html.notfound(env, user)))
     }

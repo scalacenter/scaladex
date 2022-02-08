@@ -5,8 +5,9 @@ import java.time.Instant
 import fastparse.P
 import fastparse.Start
 import fastparse._
+import scaladex.core.model.PatchVersion
 import scaladex.core.model.Project.DocumentationLink
-import scaladex.core.util.Parsers
+import scaladex.core.util.Parsers._
 
 /**
  * @param isNonStandardLib if not using artifactName_scalaVersion convention
@@ -20,7 +21,7 @@ case class Artifact(
     artifactId: String,
     version: SemanticVersion,
     artifactName: Artifact.Name,
-    platform: Platform,
+    binaryVersion: BinaryVersion,
     projectRef: Project.Reference,
     description: Option[String],
     releaseDate: Option[Instant],
@@ -29,9 +30,7 @@ case class Artifact(
     isNonStandardLib: Boolean
 ) {
 
-  def fullPlatformVersion: String = platform.showVersion
-
-  def isValid: Boolean = platform.isValid
+  def isValid: Boolean = binaryVersion.isValid
 
   private def artifactHttpPath: String = s"/${projectRef.organization}/${projectRef.repository}/$artifactName"
 
@@ -47,29 +46,30 @@ case class Artifact(
     }
 
   def httpUrl: String = {
-    val targetQuery = s"?target=${platform.encode}"
-    s"$artifactHttpPath/$version$targetQuery"
+    val binaryVersionQuery = s"?binaryVersion=${binaryVersion.encode}"
+    s"$artifactHttpPath/$version$binaryVersionQuery"
   }
 
   def badgeUrl(env: Env): String =
-    s"${fullHttpUrl(env)}/latest-by-scala-version.svg" +
-      (platform match {
-        case _: Platform.ScalaJvm => ""
-        case _                    => s"?targetType=${platform.platformType}"
-      })
+    s"${fullHttpUrl(env)}/latest-by-scala-version.svg?platform=${binaryVersion.platform.label}"
 
   def sbtInstall: String = {
-    val install = platform match {
-      case Platform.SbtPlugin(_, _) =>
+    val install = binaryVersion.platform match {
+      case SbtPlugin(_) =>
         s"""addSbtPlugin("$groupId" % "$artifactName" % "$version")"""
       case _ if isNonStandardLib =>
         s"""libraryDependencies += "$groupId" % "$artifactName" % "$version""""
-      case Platform.ScalaJs(_, _) | Platform.ScalaNative(_, _) =>
+      case ScalaJs(_) | ScalaNative(_) =>
         s"""libraryDependencies += "$groupId" %%% "$artifactName" % "$version""""
-      case Platform.ScalaJvm(ScalaVersion(_: PatchBinary)) | Platform.ScalaJvm(Scala3Version(_: PatchBinary)) =>
-        s"""libraryDependencies += "$groupId" % "$artifactName" % "$version" cross CrossVersion.full"""
-      case _ =>
-        s"""libraryDependencies += "$groupId" %% "$artifactName" % "$version""""
+      case Jvm =>
+        binaryVersion.language match {
+          case Java =>
+            s"""libraryDependencies += "$groupId" % "$artifactName" % "$version""""
+          case Scala(PatchVersion(_, _, _)) =>
+            s"""libraryDependencies += "$groupId" % "$artifactName" % "$version" cross CrossVersion.full"""
+          case _ =>
+            s"""libraryDependencies += "$groupId" %% "$artifactName" % "$version""""
+        }
     }
 
     List(
@@ -157,13 +157,24 @@ case class Artifact(
 
       latest.getOrElse(version, version)
     }
-    List(
-      "g" -> groupId,
+
+    val targetParam = binaryVersion.platform match {
+      case ScalaJs(_) => Some("t" -> "JS")
+      case _          => None
+    }
+
+    val scalaVersionParam = binaryVersion.language match {
+      case Scala(v) => Some("sv" -> v.toString)
+      case _        => None
+    }
+
+    val params: List[(String, String)] = List(
+      "g" -> groupId.value,
       "a" -> artifactName.value,
-      "v" -> version,
-      "t" -> platform.platformType.toString.toUpperCase,
-      "sv" -> latestFor(platform.scalaVersion.toString)
-    )
+      "v" -> version.toString
+    ) ++ targetParam ++ scalaVersionParam
+
+    params
       .map { case (k, v) => s"$k=$v" }
       .mkString(tryBaseUrl + "?", "&", "")
   }
@@ -199,21 +210,21 @@ object Artifact {
   case class GroupId(value: String) extends AnyVal {
     override def toString: String = value
   }
-  case class ArtifactId(name: Name, platform: Platform) {
-    def value: String = s"${name}${platform.encode}"
+  case class ArtifactId(name: Name, binaryVersion: BinaryVersion) {
+    def value: String = s"${name}${binaryVersion.encode}"
   }
 
-  object ArtifactId extends Parsers {
+  object ArtifactId {
     import fastparse.NoWhitespace._
 
     private def FullParser[_: P] = {
       Start ~
-        (Alpha | Digit | "-" | "." | (!(Platform.IntermediateParser ~ End) ~ "_")).rep.! ~ // must end with scala target
-        Platform.Parser ~
+        (Alpha | Digit | "-" | "." | (!(BinaryVersion.IntermediateParser ~ End) ~ "_")).rep.! ~ // must end with scala target
+        BinaryVersion.Parser ~
         End
     }.map {
-      case (name, target) =>
-        ArtifactId(Name(name), target)
+      case (name, binaryVersion) =>
+        ArtifactId(Name(name), binaryVersion)
     }
 
     def parse(artifactId: String): Option[ArtifactId] =

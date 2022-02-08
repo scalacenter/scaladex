@@ -31,9 +31,9 @@
               }
               @if(project.scalaVersions.nonEmpty){
                 <div>
-                  Scala (JVM):
-                  @for(v <- project.scalaVersions) {
-                    <span class="targets">@v</span>
+                  Scala Versions:
+                  @for(scalaVersion <- project.scalaVersions) {
+                    <span class="targets">@scalaVersion.version</span>
                   }
                 </div>
               }
@@ -42,7 +42,7 @@
                 <div>
                   Sbt:
                   @for(v <- project.sbtVersions) {
-                    <span class="targets">@v</span>
+                    <span class="targets">@v.version</span>
                   }
                 </div>
               }
@@ -51,7 +51,7 @@
                 <div>
                   Scala.js:
                   @for(v <- project.scalaJsVersions) {
-                    <span class="targets">@v</span>
+                    <span class="targets">@v.version</span>
                   }
                 </div>
               }
@@ -60,7 +60,7 @@
                 <div>
                   Scala Native:
                   @for(v <- project.scalaNativeVersions) {
-                    <span class="targets">@v</span>
+                    <span class="targets">@v.version</span>
                   }
                 </div>
               }

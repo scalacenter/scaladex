@@ -7,6 +7,10 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import play.twirl.api.HtmlFormat
 import scaladex.core.model.Env
+import scaladex.core.model.SbtPlugin
+import scaladex.core.model.Scala
+import scaladex.core.model.ScalaJs
+import scaladex.core.model.ScalaNative
 import scaladex.core.model.UserState
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
@@ -22,22 +26,16 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
     val totalProjectsF = searchEngine.count()
     val totalArtifactsF = database.countArtifacts()
     val topicsF = searchEngine.countByTopics(50)
-    val platformsF = searchEngine.countByPlatformTypes(10)
-    val scalaFamiliesF = searchEngine.countByScalaVersions(10)
-    val scalaJsVersionsF = searchEngine.countByScalaJsVersions(10)
-    val scalaNativeVersionsF = searchEngine.countByScalaNativeVersions(10)
-    val sbtVersionsF = searchEngine.countBySbtVersison(10)
+    val languagesF = searchEngine.countByLanguages(10)
+    val platformsF = searchEngine.countByPlatforms(12)
     val mostDependedUponF = searchEngine.getMostDependedUpon(limitOfProjects)
     val latestProjectsF = searchEngine.getLatest(limitOfProjects)
     for {
       totalProjects <- totalProjectsF
       totalArtifacts <- totalArtifactsF
       topics <- topicsF
-      platforms <- platformsF
-      scalaFamilies <- scalaFamiliesF
-      scalaJsVersions <- scalaJsVersionsF
-      scalaNativeVersions <- scalaNativeVersionsF
-      sbtVersions <- sbtVersionsF
+      platforms <- platformsF.map(_.sorted)
+      languages <- languagesF.map(_.sorted)
       mostDependedUpon <- mostDependedUponF
       latestProjects <- latestProjectsF
     } yield {
@@ -52,16 +50,20 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
           "akka-persistence",
           "akka-streams"
         ),
-        "Scala.js" -> "search?targets=scala.js_0.6",
+        "Scala.js" -> "search?binaryVersions=sjs1",
         "Spark" -> query("topics")("spark"),
         "Typelevel" -> "typelevel"
       )
 
+      val scalaVersions = languages.collect { case (v: Scala, c) => (v, c) }
+      val scalaJsVersions = platforms.collect { case (v: ScalaJs, c) => (v, c) }
+      val scalaNativeVersions = platforms.collect { case (v: ScalaNative, c) => (v, c) }
+      val sbtVersions = platforms.collect { case (v: SbtPlugin, c) => (v, c) }
+
       frontpage(
         env,
         topics,
-        platforms,
-        scalaFamilies,
+        scalaVersions,
         scalaJsVersions,
         scalaNativeVersions,
         sbtVersions,

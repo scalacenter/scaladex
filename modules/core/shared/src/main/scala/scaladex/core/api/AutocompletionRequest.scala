@@ -8,11 +8,8 @@ case class AutocompletionRequest(
     query: String,
     you: Boolean,
     topics: Seq[String],
-    targetTypes: Seq[String],
-    scalaVersions: Seq[String],
-    scalaJsVersions: Seq[String],
-    scalaNativeVersions: Seq[String],
-    sbtVersions: Seq[String],
+    languages: Seq[String],
+    platforms: Seq[String],
     contributingSearch: Boolean
 ) {
   def searchParams(user: Option[UserState]): SearchParams = {
@@ -23,11 +20,8 @@ case class AutocompletionRequest(
       sorting = None,
       userRepos = userRepos,
       topics = topics,
-      targetTypes = targetTypes,
-      scalaVersions = scalaVersions,
-      scalaJsVersions = scalaJsVersions,
-      scalaNativeVersions = scalaNativeVersions,
-      sbtVersions = sbtVersions,
+      languages = languages,
+      platforms = platforms,
       contributingSearch = contributingSearch
     )
   }

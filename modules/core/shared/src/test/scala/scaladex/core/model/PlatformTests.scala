@@ -1,61 +1,18 @@
-package scaladex.core.model
+package scaladex.core
 
-import org.scalatest.OptionValues
-import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.TableDrivenPropertyChecks
-import scaladex.core.model.Platform._
+import scaladex.core.model.Jvm
+import scaladex.core.model.Platform
+import scaladex.core.model.SbtPlugin
+import scaladex.core.model.ScalaJs
+import scaladex.core.model.ScalaNative
 
-class PlatformTests extends AsyncFunSpec with Matchers with OptionValues with TableDrivenPropertyChecks {
-  it("should be ordered") {
-    val js067 = PatchBinary(0, 6, 7)
-    val js0618 = PatchBinary(0, 6, 18)
-    val nat03 = PatchBinary(0, 3, 0)
-
-    val obtained = List(
-      ScalaJs(ScalaVersion.`2.10`, js067),
-      ScalaJs(ScalaVersion.`2.12`, js0618),
-      ScalaJs(ScalaVersion.`2.11`, js067),
-      ScalaJs(ScalaVersion.`2.11`, js0618),
-      ScalaJs(ScalaVersion.`2.10`, js0618),
-      ScalaNative(ScalaVersion.`2.11`, nat03),
-      ScalaJvm(ScalaVersion.`2.12`),
-      ScalaJvm(ScalaVersion.`2.11`),
-      ScalaJvm(ScalaVersion.`2.10`)
-    ).sorted(ordering)
-
-    val expected = List(
-      ScalaNative(ScalaVersion.`2.11`, nat03),
-      ScalaJs(ScalaVersion.`2.10`, js067),
-      ScalaJs(ScalaVersion.`2.11`, js067),
-      ScalaJs(ScalaVersion.`2.10`, js0618),
-      ScalaJs(ScalaVersion.`2.11`, js0618),
-      ScalaJs(ScalaVersion.`2.12`, js0618),
-      ScalaJvm(ScalaVersion.`2.10`),
-      ScalaJvm(ScalaVersion.`2.11`),
-      ScalaJvm(ScalaVersion.`2.12`)
-    )
-
-    assert(obtained == expected)
-  }
-
-  it("should parse any scala target") {
-    val cases = Table(
-      ("input", "target"),
-      ("_2.12", ScalaJvm(ScalaVersion.`2.12`)),
-      ("_3", ScalaJvm(Scala3Version.`3`)),
-      ("_sjs0.6_2.12", ScalaJs(ScalaVersion.`2.12`, MinorBinary(0, 6)))
-    )
-
-    forAll(cases)((input, target) => parse(input) should contain(target))
-  }
-
-  it("should parse a string to yield a ScalaTargetType") {
-    PlatformType.ofName("Js").value shouldBe PlatformType.Js
-    PlatformType.ofName("Jvm").value shouldBe PlatformType.Jvm
-  }
-  it("Should encode and parse a Scala.js platform") {
-    val platform = ScalaJs(ScalaVersion.`2.10`, MinorBinary(0, 6))
-    assert(parse(platform.encode).get == platform)
+class PlatformTests extends AnyFunSpec with Matchers {
+  it("should yield a Platform from its label") {
+    Platform.fromLabel("sjs1").get shouldBe ScalaJs.`1.x`
+    Platform.fromLabel("jvm").get shouldBe Jvm
+    Platform.fromLabel("native0.4").get shouldBe ScalaNative.`0.4`
+    Platform.fromLabel("sbt1.0").get shouldBe SbtPlugin.`1.0`
   }
 }

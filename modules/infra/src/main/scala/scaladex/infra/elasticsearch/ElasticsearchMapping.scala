@@ -55,17 +55,10 @@ object ElasticsearchMapping {
       ),
     keywordField("artifactNames").normalizer("lowercase"),
     dateField("creationDate"),
-    dateField("updateDate"),
-    keywordField("platformTypes"),
-    keywordField("scalaVersions"),
-    keywordField("scalaJsVersions"),
-    keywordField("scalaNativeVersions"),
-    keywordField("sbtVersions"),
-    textField("primaryTopic")
-      .analyzer("english")
-      .fields(
-        keywordField("keyword").normalizer("lowercase")
-      ),
+    keywordField("languages"),
+    keywordField("platforms"),
+    intField("inverseProjectDependencies"),
+    keywordField("category"),
     textField("githubInfo.description").analyzer("english"),
     textField("githubInfo.readme").analyzer("english_readme"),
     intField("githubInfo.forks"),

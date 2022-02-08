@@ -3,11 +3,14 @@ package scaladex.core.model.search
 import java.time.Instant
 
 import scaladex.core.model.Artifact
-import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
+import scaladex.core.model.Language
 import scaladex.core.model.Platform
-import scaladex.core.model.Platform._
 import scaladex.core.model.Project
+import scaladex.core.model.SbtPlugin
+import scaladex.core.model.Scala
+import scaladex.core.model.ScalaJs
+import scaladex.core.model.ScalaNative
 
 // Project document indexed by the search engine
 final case class ProjectDocument(
@@ -17,11 +20,8 @@ final case class ProjectDocument(
     hasCli: Boolean,
     creationDate: Option[Instant],
     updateDate: Option[Instant],
-    platformTypes: Seq[Platform.PlatformType],
-    scalaVersions: Seq[String], // scala version families TODO move to BinaryVersion
-    scalaJsVersions: Seq[BinaryVersion],
-    scalaNativeVersions: Seq[BinaryVersion],
-    sbtVersions: Seq[BinaryVersion],
+    languages: Seq[Language],
+    platforms: Seq[Platform],
     inverseProjectDependencies: Int,
     category: Option[Category],
     formerReferences: Seq[Project.Reference],
@@ -29,6 +29,10 @@ final case class ProjectDocument(
 ) {
   def reference: Project.Reference = Project.Reference(organization, repository)
   def id: String = reference.toString
+  def scalaVersions: Seq[Scala] = languages.collect { case v: Scala => v }
+  def scalaJsVersions: Seq[ScalaJs] = platforms.collect { case v: ScalaJs => v }
+  def scalaNativeVersions: Seq[ScalaNative] = platforms.collect { case v: ScalaNative => v }
+  def sbtVersions: Seq[SbtPlugin] = platforms.collect { case v: SbtPlugin => v }
 }
 
 object ProjectDocument {
@@ -39,7 +43,7 @@ object ProjectDocument {
       formerReferences: Seq[Project.Reference]
   ): ProjectDocument = {
     import project._
-    val platforms = artifacts.map(_.platform)
+    val binaryVersions = artifacts.map(_.binaryVersion)
     ProjectDocument(
       organization,
       repository,
@@ -47,11 +51,8 @@ object ProjectDocument {
       hasCli,
       creationDate,
       updateDate = None,
-      platforms.map(_.platformType).sorted.distinct,
-      platforms.flatMap(_.scalaVersion).map(_.family).sorted.distinct,
-      platforms.collect { case ScalaJs(_, scalaJsV) => scalaJsV }.sorted.distinct,
-      platforms.collect { case ScalaNative(_, scalaNativeV) => scalaNativeV }.sorted.distinct,
-      platforms.collect { case SbtPlugin(_, sbtV) => sbtV }.sorted.distinct,
+      artifacts.map(_.binaryVersion.language).distinct.sorted,
+      artifacts.map(_.binaryVersion.platform).distinct.sorted,
       inverseProjectDependencies,
       settings.category,
       formerReferences,

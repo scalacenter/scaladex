@@ -2,18 +2,16 @@
 @import scaladex.core.model.search.SearchParams
 @import scaladex.core.model.search.Pagination
 @import scaladex.core.model.Platform
-@import scaladex.core.model.BinaryVersion
+@import scaladex.core.model.Language
 
-@(params: SearchParams,
+@(
+  params: SearchParams,
   topics: Seq[(String, Long)],
-  platformTypes: Seq[(Platform.PlatformType, Long)],
-  scalaVersions: Seq[(String, Long)],
-  scalaJsVersions: Seq[(BinaryVersion, Long)],
-  scalaNativeVersions: Seq[(BinaryVersion, Long)],
-  sbtVersions: Seq[(BinaryVersion, Long)],
+  languages: Seq[(Language, Long)],
+  platforms: Seq[(Platform, Long)],
   pagination: Pagination,
-  you: Boolean)
-
+  you: Boolean
+)
 <div class="filters">
   <form action="/search" action="GET">
     @if(params.contributingSearch) {
@@ -23,78 +21,39 @@
       <a class="btn btn-primary" href="/search?q=&contributingSearch=true">Contributing Search</a>
     }
     <h3>Filters</h3>
-    <fieldset>
-      <legend>Target</legend>
-      <ul>
-      @for((platformType, count) <- platformTypes) {
-        <li>
-          <label>
-            <input type="checkbox" @if(params.targetTypes.contains(platformType.name)) { checked }
-                   name="targetTypes" value="@platformType.name" onclick="this.form.submit()">
-                   
-            @platformType.label (@count)
-          </label>
-        </li>
-      }
-      </ul>
-      @if(!scalaVersions.isEmpty) {
-        Scala
+    @if(!languages.isEmpty) {
+      <fieldset>
+        <legend>Languages</legend>
         <ul>
-        @for((scalaVersion, count) <- scalaVersions) {
+        @for((language, count) <- languages) {
           <li>
             <label>
-              <input type="checkbox" @if(params.scalaVersions.contains(scalaVersion)) { checked }
-                     name="scalaVersions" value="@scalaVersion" onclick="this.form.submit()">
-              @scalaVersion (@count)
+              <input type="checkbox" @if(params.languages.contains(language.label)) { checked }
+                      name="languages" value="@language.label" onclick="this.form.submit()">
+              @language (@count)
             </label>
           </li>
         }
         </ul>
-      }
-
-      @if(!sbtVersions.isEmpty) {
-        Sbt
+      </fieldset>
+    }
+    
+    @if(!platforms.isEmpty) {
+      <fieldset>
+        <legend>Platforms</legend>
         <ul>
-        @for((sbtVersion, count) <- sbtVersions) {
+        @for((platform, count) <- platforms) {
           <li>
             <label>
-              <input type="checkbox" @if(params.sbtVersions.contains(sbtVersion.toString)) { checked }
-                     name="sbtVersions" value="@sbtVersion" onclick="this.form.submit()">
-              @sbtVersion (@count)
+              <input type="checkbox" @if(params.platforms.contains(platform.label)) { checked }
+                      name="platforms" value="@platform.label" onclick="this.form.submit()">
+              @platform (@count)
             </label>
           </li>
         }
         </ul>
-      }
-      @if(!scalaJsVersions.isEmpty) {
-        Scala.js
-        <ul>
-        @for((scalaJsVersion, count) <- scalaJsVersions) {
-          <li>
-            <label>
-              <input type="checkbox" @if(params.scalaJsVersions.contains(scalaJsVersion.toString)) { checked }
-                     name="scalaJsVersions" value="@scalaJsVersion" onclick="this.form.submit()">
-              @scalaJsVersion (@count)
-            </label>
-          </li>
-        }
-        </ul>
-      }
-      @if(!scalaNativeVersions.isEmpty) {
-        Scala-Native
-        <ul>
-        @for((scalaNativeVersion, count) <- scalaNativeVersions) {
-          <li>
-            <label>
-              <input type="checkbox" @if(params.scalaNativeVersions.contains(scalaNativeVersion.toString)) { checked }
-                     name="scalaNativeVersions" value="@scalaNativeVersion" onclick="this.form.submit()">
-              @scalaNativeVersion (@count)
-            </label>
-          </li>
-        }
-        </ul>
-      }
-    </fieldset>
+      </fieldset>
+    }
     <fieldset>
       <legend>Topics</legend>
       <ul>

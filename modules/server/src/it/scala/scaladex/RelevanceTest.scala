@@ -17,11 +17,13 @@ import scaladex.core.model.search.SearchParams
 import scaladex.infra.ElasticsearchEngine
 import scaladex.infra.sql.DoobieUtils
 import scaladex.server.service.SearchSynchronizer
-import scaladex.core.model.Platform
-import scaladex.core.model.ScalaVersion
+import scaladex.core.model.Scala
 import scaladex.infra.SqlDatabase
 import scaladex.infra.DataPaths
 import scaladex.infra.FilesystemStorage
+import scaladex.core.model.BinaryVersion
+import scaladex.core.model.ScalaJs
+import scaladex.core.model.ScalaNative
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 
@@ -104,51 +106,39 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     )
   }
 
-  test("java targetTypes") {
-    top(
-      SearchParams(targetTypes = List("java")),
-      List(
-        "lightbend" -> "config",
-        "neo4j" -> "neo4j",
-        "flyway" -> "flyway",
-        "gatling" -> "gatling"
-      )
-    )
-  }
-
   test("Scala.js targetTypes") {
     top(
-      SearchParams(targetTypes = List("js")),
+      SearchParams(platforms = List("sjs1")),
       List(
         "scala-js" -> "scala-js"
       )
     )
   }
 
-  test("Scala.js targetFiltering") {
-    val scalaJs = Platform.ScalaJs(ScalaVersion.`2.12`, Platform.ScalaJs.`0.6`)
+  test("filter _sjs0.6_2.12") {
+    val scalaJs = BinaryVersion(ScalaJs.`0.6`, Scala.`2.12`)
 
     top(
-      SearchParams(targetFiltering = Some(scalaJs)),
+      SearchParams(binaryVersion = Some(scalaJs)),
       List(
         "scala-js" -> "scala-js"
       )
     )
   }
 
-  test("Scala.js targetFiltering (2)") {
-    val scalaJs = Platform.ScalaJs(ScalaVersion.`2.12`, Platform.ScalaJs.`0.6`)
+  test("filter _sjs0.6_2.12 (2)") {
+    val scalaJs = BinaryVersion(ScalaJs.`0.6`, Scala.`2.12`)
 
     compare(
-      SearchParams(targetFiltering = Some(scalaJs)),
+      SearchParams(binaryVersion = Some(scalaJs)),
       List(),
       (_, obtained) => assert(obtained.nonEmpty)
     )
   }
 
-  test("Scala Native targetTypes") {
+  test("filter Scala Native 0.4 platform") {
     top(
-      SearchParams(targetTypes = List("native")),
+      SearchParams(platforms = List("native0.4")),
       List(
         ("scalaz", "scalaz"),
         ("scopt", "scopt"),
@@ -157,12 +147,12 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     )
   }
 
-  test("Scala Native targetFiltering") {
+  test("filter _native0.3_2.11") {
     val scalaNative =
-      Platform.ScalaNative(ScalaVersion.`2.11`, Platform.ScalaNative.`0.3`)
+      BinaryVersion(ScalaNative.`0.3`, Scala.`2.11`)
 
     top(
-      SearchParams(targetFiltering = Some(scalaNative)),
+      SearchParams(binaryVersion = Some(scalaNative)),
       List(
         ("scalaz", "scalaz"),
         ("scopt", "scopt"),
