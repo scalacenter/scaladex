@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 
 class SemanticVersionTests extends AsyncFunSpec with Matchers with TableDrivenPropertyChecks {
-  it("should parse any binary version") {
+  it("should parse any version") {
     val inputs = Table(
       ("input", "output"),
       ("1", MajorVersion(1)),
@@ -37,5 +37,16 @@ class SemanticVersionTests extends AsyncFunSpec with Matchers with TableDrivenPr
     )
 
     forAll(inputs)((lower, higher) => lower shouldBe <(higher))
+  }
+
+  it("should encode and decode any version") {
+    val inputs = Table[SemanticVersion](
+      "semanticVersion",
+      MajorVersion(2345),
+      MinorVersion(1, 3),
+      SemanticVersion(1, Some(2), Some(3), Some(4))
+    )
+
+    forAll(inputs)(v => SemanticVersion.parse(v.encode).get shouldBe v)
   }
 }
