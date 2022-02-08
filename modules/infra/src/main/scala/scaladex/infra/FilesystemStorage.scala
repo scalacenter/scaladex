@@ -30,7 +30,11 @@ class FilesystemStorage(projects: Path, temp: Path) extends Storage with LazyLog
   }
 
   override def clearProjects(): Unit =
-    Using.resource(Files.walk(projects))(_.iterator.asScala.foreach(Files.delete))
+    Using.resource(Files.walk(projects)) { stream =>
+      stream.iterator.asScala
+        .filter(_ != projects)
+        .foreach(Files.delete)
+    }
 
   override def saveProject(project: Project, artifacts: Seq[Artifact], dependencies: Seq[ArtifactDependency]): Unit = {
     val orgaDir = FilesystemStorage.initDir(projects, project.reference.organization.value)

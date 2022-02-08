@@ -72,8 +72,10 @@ object Main extends LazyLogging {
       usingDatabase(database => Init.run(database, localStorage))
 
     def subIndex(): Unit = {
-      val subFilesystem = FilesystemStorage(config.filesystem)
-      usingDatabase(database => SubIndex.run(subFilesystem, database))
+      val subIndex = config.filesystem.index.getParent.resolve("scaladex-small-index")
+      val subFilesystem = config.filesystem.copy(index = subIndex)
+      val storage = FilesystemStorage(subFilesystem)
+      usingDatabase(database => SubIndex.run(storage, database))
     }
 
     val steps = Map(
