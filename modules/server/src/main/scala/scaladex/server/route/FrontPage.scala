@@ -34,8 +34,8 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
       totalProjects <- totalProjectsF
       totalArtifacts <- totalArtifactsF
       topics <- topicsF
-      platforms <- platformsF
-      languages <- languagesF
+      platforms <- platformsF.map(_.sorted)
+      languages <- languagesF.map(_.sorted)
       mostDependedUpon <- mostDependedUponF
       latestProjects <- latestProjectsF
     } yield {
