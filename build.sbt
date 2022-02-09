@@ -89,7 +89,7 @@ lazy val infra = project
       "org.flywaydb" % "flyway-core" % "8.4.3", // for database migration
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
-      "de.heikoseeberger" %% "akka-http-circe" % "1.33.0",
+      "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
       "io.get-coursier" %% "coursier" % "2.0.16",
       "org.tpolecat" %% "doobie-scalatest" % V.doobieVersion % Test,
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it"
@@ -255,7 +255,6 @@ lazy val V = new {
   val akkaVersion = "2.6.15"
   val akkaHttpVersion = "10.2.7"
   val elastic4sVersion = "7.10.9"
-  val log4jVersion = "2.17.0"
   val nscalaTimeVersion = "2.30.0"
   val scalatest = "3.2.11"
   val circeVersion = "0.14.1"
