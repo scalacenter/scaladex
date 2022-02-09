@@ -25,7 +25,7 @@
     border: 1px solid $gray-light;
   }
 
-  .menu {
+  nav {
     h2 {
       margin-bottom: 24px;
     }
@@ -37,6 +37,10 @@
       font-family: $headings-font-family;
       margin-bottom: 10px;
       font-size: 14px;
+
+      &.active {
+        color: $brand-primary;
+      }
     }
     a {
       color: inherit;
@@ -53,7 +57,7 @@
       overflow: visible;
     }
 
-    .menu {
+    nav {
       display: none;
     }
   }

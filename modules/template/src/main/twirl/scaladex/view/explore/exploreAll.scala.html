@@ -44,7 +44,7 @@
           </div>
         </form>
         
-        <div class="menu">
+        <nav>
           <h2>Categories:</h2>
           <ul>
             @for((metaCategory, _) <- metaCategories) { 
@@ -54,7 +54,7 @@
             }
           </ul>
         </div>
-      </div>
+      </nav>
       <div class="col-lg-9 col-md-8 col-sm-12">
         @for((metaCategory, categories) <- metaCategories) {
           <section class="meta-category" id="@metaCategory.label">
