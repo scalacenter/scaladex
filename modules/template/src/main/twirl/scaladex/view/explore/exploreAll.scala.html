@@ -4,24 +4,56 @@
 @import scaladex.core.model.UserState
 @import scaladex.core.model.MetaCategory
 @import scaladex.core.model.search.ProjectDocument
+@import scaladex.core.model.Scala
+@import scaladex.core.model.Platform
 
 @(
   env: Env,
   metaCategories: Seq[(MetaCategory, Seq[(Category, Seq[ProjectDocument])])],
+  scalaVersions: Seq[Scala],
+  platforms: Seq[Platform],
+  selectedScalaVersions: Seq[Scala],
+  selectedPlatforms: Seq[Platform],
   user: Option[UserState]
 )
 @main(env, title = "Scaladex", showSearch = true, user) {
   <main id="container-explore">
     <div class="container">
       <div class="col-lg-3 col-md-4 sidebar">
-        <h2>Categories:</h2>
-        <ul>
-          @for((metaCategory, _) <- metaCategories) { 
-            <li>
-              <a href="#@metaCategory.label"> @metaCategory.title </a>
-            </li>
-          }
-        </ul>
+        <form action="/explore" action="GET">
+          <div class="filter">
+            <label for="select-platform"><h2>Platform:</h2></label>
+            <select id="select-platform" name="platforms" class="selectpicker" multiple data-max-options="1" onchange="this.form.submit()">
+              @for(platform <- platforms) {
+                <option value="@platform.label" @if(selectedPlatforms.contains(platform)){selected}>
+                  @platform
+                </option>
+              }
+            </select>
+          </div>
+          
+          <div class="filter">
+            <label for="select-language"><h2>Scala Version:</h2></label>
+            <select id="select-language" name="languages" class="selectpicker" multiple data-max-options="1" onchange="this.form.submit()">
+              @for(scalaVersion <- scalaVersions) {
+                <option value="@scalaVersion.label" @if(selectedScalaVersions.contains(scalaVersion)){selected}>
+                  @scalaVersion
+                </option>
+              }
+            </select>
+          </div>
+        </form>
+        
+        <div class="menu">
+          <h2>Categories:</h2>
+          <ul>
+            @for((metaCategory, _) <- metaCategories) { 
+              <li>
+                <a href="#@metaCategory.label"> @metaCategory.title </a>
+              </li>
+            }
+          </ul>
+        </div>
       </div>
       <div class="col-lg-9 col-md-8 col-sm-12">
         @for((metaCategory, categories) <- metaCategories) {

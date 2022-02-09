@@ -26,8 +26,8 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
     val totalProjectsF = searchEngine.count()
     val totalArtifactsF = database.countArtifacts()
     val topicsF = searchEngine.countByTopics(50)
-    val languagesF = searchEngine.countByLanguages(10)
-    val platformsF = searchEngine.countByPlatforms(12)
+    val languagesF = searchEngine.countByLanguages()
+    val platformsF = searchEngine.countByPlatforms()
     val mostDependedUponF = searchEngine.getMostDependedUpon(limitOfProjects)
     val latestProjectsF = searchEngine.getLatest(limitOfProjects)
     for {

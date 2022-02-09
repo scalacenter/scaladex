@@ -8,7 +8,10 @@ import akka.http.scaladsl.server.Route
 import play.twirl.api.HtmlFormat
 import scaladex.core.model.Category
 import scaladex.core.model.Env
+import scaladex.core.model.Language
 import scaladex.core.model.MetaCategory
+import scaladex.core.model.Platform
+import scaladex.core.model.Scala
 import scaladex.core.model.UserState
 import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions._
@@ -20,20 +23,35 @@ class ExplorePages(env: Env, searchEngine: SearchEngine)(implicit ec: ExecutionC
   def route(user: Option[UserState]): Route =
     get {
       path("explore") {
-        complete(exploreAllPage(user))
+        parameters("languages".repeated, "platforms".repeated) { (languageParams, platformParams) =>
+          val scalaVersions = languageParams.flatMap(Language.fromLabel).collect { case v: Scala => v }.toSeq
+          val platforms = platformParams.flatMap(Platform.fromLabel).toSeq
+          complete(exploreAllPage(user, scalaVersions, platforms))
+        }
       }
     }
 
-  private def exploreAllPage(user: Option[UserState]): Future[HtmlFormat.Appendable] =
+  private def exploreAllPage(
+      user: Option[UserState],
+      selectedScalaVersions: Seq[Scala],
+      selectedplatforms: Seq[Platform]
+  ): Future[HtmlFormat.Appendable] = {
+    val allByCategoriesF = Category.all
+      .map(c => searchEngine.getByCategory(c, selectedScalaVersions, selectedplatforms, 4).map(c -> _))
+      .sequence
+    val allLanguagesF = searchEngine.getAllLanguages()
+    val allPlatformsF = searchEngine.getAllPlatforms()
     for {
-      allCategories <- Category.all
-        .map(c => searchEngine.getByCategory(c, 4).map(c -> _))
-        .sequence
+      allByCategories <- allByCategoriesF
+      allLanguages <- allLanguagesF
+      allPlatforms <- allPlatformsF
     } yield {
-      val categories = allCategories.filter { case (_, projects) => projects.nonEmpty }.toMap
-      val metaCategories = MetaCategory.all
-        .map(m => m -> m.categories.flatMap(c => categories.get(c).map(c -> _)))
+      val byCategories = allByCategories.filter { case (_, projects) => projects.nonEmpty }.toMap
+      val byMetaCategories = MetaCategory.all
+        .map(m => m -> m.categories.flatMap(c => byCategories.get(c).map(c -> _)))
         .filter { case (_, categories) => categories.nonEmpty }
-      exploreAll(env, metaCategories, user)
+      val allScalaVersions = allLanguages.collect { case v: Scala => v }
+      exploreAll(env, byMetaCategories, allScalaVersions, allPlatforms, selectedScalaVersions, selectedplatforms, user)
     }
+  }
 }
