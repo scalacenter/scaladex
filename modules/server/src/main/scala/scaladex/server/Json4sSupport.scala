@@ -16,8 +16,6 @@ package scaladex.server
  * limitations under the License.
  */
 
-import java.lang.reflect.InvocationTargetException
-
 import akka.http.scaladsl.marshalling.Marshaller
 import akka.http.scaladsl.marshalling.ToEntityMarshaller
 import akka.http.scaladsl.model.MediaTypes.`application/json`
@@ -48,11 +46,7 @@ trait Json4sSupport {
       .mapWithCharset { (data, charset) =>
         try serialization.read(data.decodeString(charset.nioCharset.name))
         catch {
-          case MappingException(
-                "unknown error",
-                ite: InvocationTargetException
-              ) =>
-            throw ite.getCause
+          case error: Throwable => throw new Exception(s"failed decoding data because ${error.getCause}")
         }
       }
 
