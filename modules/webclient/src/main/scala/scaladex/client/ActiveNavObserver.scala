@@ -13,7 +13,7 @@ import scaladex.dom.IntersectionObserver
 object ActiveNavObserver {
   private val observer: IntersectionObserver = IntersectionObserver { entry =>
     val id = entry.target.getAttribute("id")
-    val navLink = document.querySelector(s"""nav li a[href="#$id"""").asInstanceOf[Link]
+    val navLink = document.querySelector(s"""nav li a[href="#$id"]""").asInstanceOf[Link]
     val navLI = navLink.parentElement.asInstanceOf[LI]
 
     if (entry.intersectionRatio > 0) navLI.classList.add("active")
