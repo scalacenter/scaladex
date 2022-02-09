@@ -27,10 +27,10 @@ final case class BinaryVersion(platform: Platform, language: Language) {
 object BinaryVersion {
   implicit val ordering: Ordering[BinaryVersion] = Ordering.by(v => (v.platform, v.language))
 
-  def IntermediateParser[_: P]: P[(String, Option[SemanticVersion], Option[SemanticVersion])] =
+  def IntermediateParser[A: P]: P[(String, Option[SemanticVersion], Option[SemanticVersion])] =
     ("_sjs" | "_native" | "_" | "").! ~ (SemanticVersion.Parser.?) ~ ("_" ~ SemanticVersion.Parser).?
 
-  def Parser[_: P]: P[BinaryVersion] =
+  def Parser[A: P]: P[BinaryVersion] =
     IntermediateParser
       .map {
         case ("_sjs", Some(jsV), Some(scalaV))        => Some(BinaryVersion(ScalaJs(jsV), Scala(scalaV)))
@@ -44,7 +44,7 @@ object BinaryVersion {
       .map(_.get)
       .filter(_.isValid)
 
-  def FullParser[_: P]: P[BinaryVersion] =
+  def FullParser[A: P]: P[BinaryVersion] =
     Parser ~ End
 
   def parse(input: String): Option[BinaryVersion] = Parsers.tryParse(input, x => FullParser(x))

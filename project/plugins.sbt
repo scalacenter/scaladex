@@ -4,7 +4,7 @@ addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.5.1")
 addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.7")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.8.0")
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.1.0")
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.30")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.34")
 
 libraryDependencies ++= Seq(
   "org.testcontainers" % "postgresql" % "1.16.3",

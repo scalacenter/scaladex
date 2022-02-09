@@ -4,12 +4,12 @@ trait Parsers {
 
   import fastparse._
 
-  def Alpha[_: P]: P[String] =
+  def Alpha[A: P]: P[String] =
     CharPred(c => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')).!
 
-  def Digit[_: P]: P[String] = CharIn("0123456789").!
+  def Digit[A: P]: P[String] = CharIn("0123456789").!
 
-  def Number[_: P]: P[Int] = {
+  def Number[A: P]: P[Int] = {
     import NoWhitespace._
     Digit.rep(1).!.map(_.toInt)
   }
