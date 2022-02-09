@@ -97,23 +97,23 @@ object SemanticVersion {
       )
   }
 
-  private def MajorP[_: P] = Number
+  private def MajorP[A: P]: P[Int] = Number
 
   // http://semver.org/#spec-item-10
-  private def MetaDataP[_: P] = "+" ~ AnyChar.rep.!
+  private def MetaDataP[A: P] = "+" ~ AnyChar.rep.!
 
-  private def MinorP[_: P] = ("." ~ Number).? // not really valid SemVer
-  private def PatchP[_: P] = ("." ~ Number).? // not really valid SemVer
-  private def Patch2P[_: P] = ("." ~ Number).? // not really valid SemVer
+  private def MinorP[A: P] = ("." ~ Number).? // not really valid SemVer
+  private def PatchP[A: P] = ("." ~ Number).? // not really valid SemVer
+  private def Patch2P[A: P] = ("." ~ Number).? // not really valid SemVer
 
-  def Parser[_: P]: P[SemanticVersion] =
+  def Parser[A: P]: P[SemanticVersion] =
     ("v".? ~ MajorP ~ MinorP ~ PatchP ~ Patch2P ~ ("-" ~ PreRelease.Parser).? ~ MetaDataP.?)
       .map {
         case (major, minor, patch, patch2, preRelease, metadata) =>
           SemanticVersion(major, minor, patch, patch2, preRelease, metadata)
       }
 
-  private def FullParser[_: P]: P[SemanticVersion] = Start ~ Parser ~ End
+  private def FullParser[A: P]: P[SemanticVersion] = Start ~ Parser ~ End
 
   def parse(version: String): Option[SemanticVersion] =
     fastparse.parse(version, x => FullParser(x)) match {

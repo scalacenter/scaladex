@@ -9,16 +9,16 @@ object ScmInfoParser extends Parsers {
   import fastparse.NoWhitespace._
 
   // More info in Rfc3986
-  private def Unreserved[_: P] =
+  private def Unreserved[A: P] =
     P(Alpha | Digit | "-".! | ".".! | "_".! | "~".!).!
-  private def Segment[_: P] = P(Unreserved | SubDelims | ":" | "@").!
-  private def SubDelims[_: P] = CharIn("!$&'()*+,;=").!
+  private def Segment[A: P] = P(Unreserved | SubDelims | ":" | "@").!
+  private def SubDelims[A: P] = CharIn("!$&'()*+,;=").!
 
   private def removeDotGit(v: String) =
     if (v.endsWith(".git")) v.dropRight(".git".length)
     else v
 
-  private def ScmUrl[_: P] = P(
+  private def ScmUrl[A: P] = P(
     "scm:".? ~ "git:".? ~ ("git@" | "https://" | "git://" | "//") ~
       "github.com" ~ (":" | "/") ~ Segment
         .rep(1)

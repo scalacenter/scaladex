@@ -31,7 +31,7 @@ object PreRelease extends Parsers {
   import fastparse._
 
   // http://semver.org/#spec-item-9
-  def Parser[_: P]: P[PreRelease] =
+  def Parser[A: P]: P[PreRelease] =
     (("M" | "m") ~ &(Digit) ~ Number).map(n => Milestone(n)) |
       (("R" | "r") ~ ("C" | "c") ~ &(Digit) ~ Number)
         .map(n => ReleaseCandidate(n)) |

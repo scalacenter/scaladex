@@ -217,7 +217,7 @@ object Artifact {
   object ArtifactId {
     import fastparse.NoWhitespace._
 
-    private def FullParser[_: P] = {
+    private def FullParser[A: P] = {
       Start ~
         (Alpha | Digit | "-" | "." | (!(BinaryVersion.IntermediateParser ~ End) ~ "_")).rep.! ~ // must end with scala target
         BinaryVersion.Parser ~
