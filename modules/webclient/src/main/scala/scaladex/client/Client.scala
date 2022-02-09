@@ -210,6 +210,8 @@ object Client {
     emojify.run(document.body)
 
     CopyToClipboard.addCopyListenersOnClass("btn-copy")
+
+    ActiveNavObserver.start()
   }
 
   @JSExport
