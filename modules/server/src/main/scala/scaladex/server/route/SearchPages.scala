@@ -35,8 +35,8 @@ class SearchPages(env: Env, searchEngine: SearchEngine)(
     complete {
       val resultsF = searchEngine.find(params)
       val topicsF = searchEngine.countByTopics(params, 50)
-      val platformsF = searchEngine.countByPlatforms(params, 12)
-      val languagesF = searchEngine.countByLanguages(params, 10)
+      val platformsF = searchEngine.countByPlatforms(params)
+      val languagesF = searchEngine.countByLanguages(params)
 
       for {
         Page(pagination, projects) <- resultsF

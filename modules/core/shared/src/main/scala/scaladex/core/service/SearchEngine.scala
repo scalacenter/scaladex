@@ -19,8 +19,8 @@ trait SearchEngine {
   // Front page
   def count(): Future[Long]
   def countByTopics(limit: Int): Future[Seq[(String, Long)]]
-  def countByLanguages(limit: Int): Future[Seq[(Language, Long)]]
-  def countByPlatforms(limit: Int): Future[Seq[(Platform, Long)]]
+  def countByLanguages(): Future[Seq[(Language, Long)]]
+  def countByPlatforms(): Future[Seq[(Platform, Long)]]
   def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]]
   def getLatest(limit: Int): Future[Seq[ProjectDocument]]
 
@@ -28,9 +28,16 @@ trait SearchEngine {
   def find(params: SearchParams): Future[Page[ProjectHit]]
   def autocomplete(params: SearchParams, limit: Int): Future[Seq[ProjectDocument]]
   def countByTopics(params: SearchParams, limit: Int): Future[Seq[(String, Long)]]
-  def countByLanguages(params: SearchParams, limit: Int): Future[Seq[(Language, Long)]]
-  def countByPlatforms(params: SearchParams, limit: Int): Future[Seq[(Platform, Long)]]
+  def countByLanguages(params: SearchParams): Future[Seq[(Language, Long)]]
+  def countByPlatforms(params: SearchParams): Future[Seq[(Platform, Long)]]
 
   // Explore page
-  def getByCategory(category: Category, limit: Int): Future[Seq[ProjectDocument]]
+  def getAllLanguages(): Future[Seq[Language]]
+  def getAllPlatforms(): Future[Seq[Platform]]
+  def getByCategory(
+      category: Category,
+      languages: Seq[Language],
+      platforms: Seq[Platform],
+      limit: Int
+  ): Future[Seq[ProjectDocument]]
 }

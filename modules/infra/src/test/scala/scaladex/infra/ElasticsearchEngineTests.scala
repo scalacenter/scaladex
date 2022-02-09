@@ -98,7 +98,7 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
     for {
       _ <- searchEngine.insert(Cats.projectDocument)
       _ <- searchEngine.refresh()
-      languages <- searchEngine.countByLanguages(params, 3)
+      languages <- searchEngine.countByLanguages(params)
     } yield (languages should contain).theSameElementsInOrderAs(expected)
   }
 
@@ -113,7 +113,7 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
     for {
       _ <- searchEngine.insert(Cats.projectDocument)
       _ <- searchEngine.refresh()
-      scalaJsVersions <- searchEngine.countByPlatforms(params, 8)
+      scalaJsVersions <- searchEngine.countByPlatforms(params)
     } yield (scalaJsVersions should contain).theSameElementsInOrderAs(expected)
   }
 

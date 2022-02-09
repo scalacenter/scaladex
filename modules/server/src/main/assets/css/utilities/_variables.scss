@@ -19,6 +19,7 @@ $gray-lighter: rgb(237, 241, 241);
 
 $text-color: $gray;
 $body-bg: $gray-lighter;
+
 //Typography
 //------------------------------------------------------------------------------
 
@@ -78,9 +79,10 @@ $pre-color: $gray;
 $width-default: 140px;
 
 
-// font awesome
+// fonts
 //------------------------------------------------------------------------------
-$fa-font-path: "/assets/lib/font-awesome/fonts"; /* no slash at the end it's added by font-awesome */
+$fa-font-path: "/assets/lib/font-awesome/fonts"; // no slash at the end it's added by font-awesome
+$icon-font-path: "/assets/lib/bootstrap-sass/fonts/bootstrap/";
 
 // Animations
 //------------------------------------------------

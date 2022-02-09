@@ -26,9 +26,9 @@ class InMemorySearchEngine extends SearchEngine {
 
   override def count(): Future[Long] = ???
 
-  override def countByLanguages(limit: Int): Future[Seq[(Language, Long)]] = ???
+  override def countByLanguages(): Future[Seq[(Language, Long)]] = ???
 
-  override def countByPlatforms(limit: Int): Future[Seq[(Platform, Long)]] = ???
+  override def countByPlatforms(): Future[Seq[(Platform, Long)]] = ???
 
   override def countByTopics(limit: Int): Future[Seq[(String, Long)]] = ???
 
@@ -42,10 +42,19 @@ class InMemorySearchEngine extends SearchEngine {
 
   override def countByTopics(params: SearchParams, limit: Int): Future[Seq[(String, Long)]] = ???
 
-  override def countByLanguages(params: SearchParams, limit: Int): Future[Seq[(Language, Long)]] = ???
+  override def countByLanguages(params: SearchParams): Future[Seq[(Language, Long)]] = ???
 
-  override def countByPlatforms(params: SearchParams, limit: Int): Future[Seq[(Platform, Long)]] = ???
+  override def countByPlatforms(params: SearchParams): Future[Seq[(Platform, Long)]] = ???
 
-  override def getByCategory(category: Category, limit: Int): Future[Seq[ProjectDocument]] = ???
+  override def getAllLanguages(): Future[Seq[Language]] = ???
+
+  override def getAllPlatforms(): Future[Seq[Platform]] = ???
+
+  override def getByCategory(
+      category: Category,
+      languages: Seq[Language],
+      platforms: Seq[Platform],
+      limit: Int
+  ): Future[Seq[ProjectDocument]] = ???
 
 }

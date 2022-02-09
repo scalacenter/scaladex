@@ -48,6 +48,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     extends SearchEngine
     with LazyLogging
     with Closeable {
+  private val maxLanguagesOrPlatforms = 20
 
   def waitUntilReady(): Unit = {
     def blockUntil(explain: String)(predicate: () => Boolean): Unit = {
@@ -128,14 +129,14 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
   }
 
   override def countByTopics(limit: Int): Future[Seq[(String, Long)]] =
-    aggregations("githubInfo.topics.keyword", matchAllQuery(), limit)
+    countAllUnique("githubInfo.topics.keyword", matchAllQuery(), limit)
       .map(_.sortBy(_._1))
 
-  def countByLanguages(limit: Int): Future[Seq[(Language, Long)]] =
-    languageAggregation(matchAllQuery(), limit)
+  def countByLanguages(): Future[Seq[(Language, Long)]] =
+    languageAggregation(matchAllQuery())
 
-  def countByPlatforms(limit: Int): Future[Seq[(Platform, Long)]] =
-    platformAggregations(matchAllQuery(), limit)
+  def countByPlatforms(): Future[Seq[(Platform, Long)]] =
+    platformAggregations(matchAllQuery())
 
   override def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]] = {
     val request = search(index)
@@ -224,19 +225,35 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       }
 
   override def countByTopics(params: SearchParams, limit: Int): Future[Seq[(String, Long)]] =
-    aggregations("githubInfo.topics.keyword", filteredSearchQuery(params), limit)
+    countAllUnique("githubInfo.topics.keyword", filteredSearchQuery(params), limit)
       .map(addMissing(params.topics))
 
-  override def countByLanguages(params: SearchParams, limit: Int): Future[Seq[(Language, Long)]] =
-    languageAggregation(filteredSearchQuery(params), limit)
+  override def countByLanguages(params: SearchParams): Future[Seq[(Language, Long)]] =
+    languageAggregation(filteredSearchQuery(params))
       .map(addMissing(params.languages.flatMap(Language.fromLabel)))
 
-  override def countByPlatforms(params: SearchParams, limit: Int): Future[Seq[(Platform, Long)]] =
-    platformAggregations(filteredSearchQuery(params), limit)
+  override def countByPlatforms(params: SearchParams): Future[Seq[(Platform, Long)]] =
+    platformAggregations(filteredSearchQuery(params))
       .map(addMissing(params.platforms.flatMap(Platform.fromLabel)))
 
-  override def getByCategory(category: Category, limit: Int): Future[Seq[ProjectDocument]] = {
-    val query = must(termQuery("category", category.label))
+  def getAllLanguages(): Future[Seq[Language]] =
+    for (languages <- getAllUnique("languages", matchAllQuery(), maxLanguagesOrPlatforms))
+      yield languages.flatMap(Language.fromLabel).sorted(Language.ordering.reverse)
+
+  def getAllPlatforms(): Future[Seq[Platform]] =
+    for (platforms <- getAllUnique("platforms", matchAllQuery(), maxLanguagesOrPlatforms))
+      yield platforms.flatMap(Platform.fromLabel).sorted(Platform.ordering.reverse)
+
+  override def getByCategory(
+      category: Category,
+      languages: Seq[Language],
+      platforms: Seq[Platform],
+      limit: Int
+  ): Future[Seq[ProjectDocument]] = {
+    val query = must(
+      termQuery("category", category.label),
+      binaryVersionQuery(languages.map(_.label), platforms.map(_.label))
+    )
     val request = search(index)
       .query(gitHubStarScoring(query))
       .sortBy(scoreSort().order(SortOrder.Desc))
@@ -246,8 +263,8 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       .map(_.result.hits.hits.toSeq.flatMap(toProjectDocument))
   }
 
-  private def languageAggregation(query: Query, limit: Int): Future[Seq[(Language, Long)]] =
-    aggregations("languages", query, limit)
+  private def languageAggregation(query: Query): Future[Seq[(Language, Long)]] =
+    countAllUnique("languages", query, maxLanguagesOrPlatforms)
       .map { versionAgg =>
         for {
           (version, count) <- versionAgg.toList
@@ -256,8 +273,8 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       }
       .map(_.sortBy(_._1)(Language.ordering.reverse))
 
-  private def platformAggregations(query: Query, limit: Int): Future[Seq[(Platform, Long)]] =
-    aggregations("platforms", query, limit)
+  private def platformAggregations(query: Query): Future[Seq[(Platform, Long)]] =
+    countAllUnique("platforms", query, maxLanguagesOrPlatforms)
       .map { versionAgg =>
         for {
           (version, count) <- versionAgg.toList
@@ -266,20 +283,20 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       }
       .map(_.sortBy(_._1)(Platform.ordering.reverse))
 
-  private def aggregations(field: String, query: Query, limit: Int): Future[Seq[(String, Long)]] = {
-    val aggregationName = s"${field}_count"
+  private def countAllUnique(field: String, query: Query, limit: Int): Future[Seq[(String, Long)]] =
+    aggregation(field, query, limit).map(_.buckets.map(b => b.key -> b.docCount))
 
-    val aggregation = termsAgg(aggregationName, field).size(limit)
+  private def getAllUnique(field: String, query: Query, limit: Int): Future[Seq[String]] =
+    aggregation(field, query, limit).map(_.buckets.map(_.key))
 
-    val request = search(index)
-      .query(query)
-      .aggregations(aggregation)
+  private def aggregation(field: String, query: Query, limit: Int): Future[Terms] = {
+    val aggName = s"${field}_count"
+    val aggregation = termsAgg(aggName, field).size(limit)
 
+    val request = search(index).query(query).aggregations(aggregation)
     for (response <- esClient.execute(request))
       yield response.result.aggregations
-        .result[Terms](aggregationName)
-        .buckets
-        .map(bucket => bucket.key -> bucket.docCount)
+        .result[Terms](aggName)
   }
 
   private def gitHubStarScoring(query: Query): Query = {
