@@ -68,7 +68,7 @@ lazy val template = project
     scalacOptions -= "-Xfatal-warnings",
     libraryDependencies ++= Seq(
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTimeVersion,
-      "com.typesafe" % "config" % "1.4.1",
+      "com.typesafe" % "config" % "1.4.2",
       "com.typesafe.akka" %% "akka-http-core" % V.akkaHttpVersion,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
@@ -253,7 +253,7 @@ lazy val V = new {
   val doobieVersion = "0.13.4"
   val playJsonVersion = "2.9.0"
   val akkaVersion = "2.6.15"
-  val akkaHttpVersion = "10.2.7"
+  val akkaHttpVersion = "10.2.8"
   val elastic4sVersion = "7.10.9"
   val nscalaTimeVersion = "2.30.0"
   val scalatest = "3.2.11"
