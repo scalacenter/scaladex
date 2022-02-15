@@ -1,0 +1,41 @@
+@import scaladex.core.model.search.SearchParams
+
+@(params: SearchParams = SearchParams(), you: Boolean = false, totalProjects: Option[Long], totalArtifacts: Option[Long])
+
+<div class="has-feedback">
+    <form action="/search" action="GET">
+        <input autocomplete="off" autofocus
+          @if(!params.queryString.isEmpty){
+            value = "@params.queryString"
+          }
+          name="q" id="search" type="text" class="form-control"
+          @if(params.contributingSearch){
+            placeholder="Search beginner-friendly projects and issues"
+          } else {
+            placeholder="Search @for(projects <- totalProjects; artifacts <- totalArtifacts) {within @projects projects and @artifacts artifacts}"
+          }
+          >
+        @if(you){
+          <input type="hidden" name="you" id="you" value="✓">
+        }
+        @for(topic <- params.topics){
+          <input type="hidden" name="topics" value="@topic">
+        }
+
+        @for(language <- params.languages){
+          <input type="hidden" name="languages" value="@language">
+        }
+
+        @for(platform <- params.platforms){
+          <input type="hidden" name="platforms" value="@platform">
+        }
+
+        @if(params.contributingSearch) {
+          <input type="hidden" name="contributingSearch" id="contributing-search" value="true">
+        }
+    </form>
+    <span class="form-control-feedback"><i class="fa fa-search"></i></span>
+    <div class="autocomplete">
+        <ul id="list-result"></ul>
+    </div>
+</div>

@@ -1,0 +1,144 @@
+@import scaladex.core.model.search.ProjectDocument
+@import scaladex.core.model.search.SearchParams
+@import scaladex.core.model.ScalaJs
+@import scaladex.core.model.ScalaNative
+@import scaladex.core.model.SbtPlugin
+@import scaladex.view.html.main
+@import scaladex.core.model.UserState
+@import scaladex.core.model.Env
+@import scaladex.core.model.Scala
+
+@(
+  env: Env,
+  topics: Seq[(String, Long)],
+  scalaVersions:Seq[(Scala, Long)],
+  scalaJsVersions: Seq[(ScalaJs, Long)],
+  scalaNativeVersions: Seq[(ScalaNative, Long)],
+  sbtVersions: Seq[(SbtPlugin, Long)],
+  latestProjects: Seq[ProjectDocument],
+  mostDependedUpon: Seq[ProjectDocument],
+  user: Option[UserState],
+  ecosystems: Map[String, String],
+  totalProjects: Long,
+  totalArtifacts: Long
+)
+
+@main(env, title = "Scaladex", showSearch = false, user) {
+<main id="container-home">
+    <section class="content-search-home">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-8 col-md-offset-2">
+                    <h1>The Scala Library Index</h1> @searchinput(SearchParams(), false, Some(totalProjects), Some(totalArtifacts))
+                    <ul class="tag">
+                        <li><strong>Topics:</strong></li>
+                        @for((topic, count) <- topics) {
+                            <li><a href="/search?q=*&topics=@topic">@topic (@count)</a></li>
+                        }
+                    </ul>
+                    <ul class="tag">
+                        <li><strong>Scala Versions:</strong></li>
+                        @scalaVersions.map { case (scalaVersion, count) =>
+                            <li>
+                                <a href="/search?q=*&languages=@scalaVersion.label">@scalaVersion.version (@count)</a>
+                            </li>
+                        }
+                    </ul>
+                    <ul class="tag">
+                        <li><strong>Sbt Versions:</strong></li>
+                        @for((sbtVersion, count) <- sbtVersions) {
+                            <li>
+                                <a href="/search?q=*&platforms=@sbtVersion.label">@sbtVersion.version (@count)</a>
+                            </li>
+                        }
+                    </ul>
+                    <ul class="tag">
+                        <li><strong>Scala.js Versions:</strong></li>
+                        @for((scalaJsVersion, count) <- scalaJsVersions) {
+                            <li>
+                                <a href="/search?q=*&platforms=@scalaJsVersion.label">@scalaJsVersion.version (@count)</a>
+                            </li>*
+                        }
+                    </ul>
+                    <ul class="tag">
+                        @if(scalaNativeVersions.nonEmpty) {
+                            <li><strong>Scala-Native Versions:</strong></li>
+                            @for((scalaNativeVersion, count) <- scalaNativeVersions) {
+                                <li>
+                                    <a href="/search?q=*&platforms=@scalaNativeVersion.label">@scalaNativeVersion.version (@count)</a>
+                                </li>
+                            }
+                        }
+                    </ul>
+                    <ul class="tag">
+                        <li><strong>Ecosystems:</strong></li>
+                        @for((name, url) <- ecosystems) {
+                            <li><a href="/@url">@name</a></li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="recent-projects" id="recent-projects">
+        <div class="container">
+            <h2 class="text-center">Recent projects</h2>
+            <div class="row">
+                @for(project <- latestProjects){
+                    <div class="col-md-4 col-sm-6">
+                        <a href="/@project.organization/@project.repository">
+                            <div class="content-project box">
+                                <div class="content-project-header">
+                                    @githubUserAvatar(project.githubInfo.flatMap(_.logo))
+                                    <h4>@project.organization/@project.repository</h4>
+                                </div>
+                                <div class="content-project-body">
+                                    @for(github <- project.githubInfo) {
+                                      @for(description <- github.description) {
+                                        <p class="description emojify">@description</p>
+                                      }
+                                    }
+                                    @for(created <- project.creationDate) {
+                                        @{formatInstant(created)}
+                                    }
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                }
+            </div>
+            <a class="btn btn-default" href="/search?q=*&sort=created">More ...</a>
+        </div>
+    </section>
+        <section class="recent-projects" id="most-depended-upon-projects">
+        <div class="container">
+            <h2 class="text-center">Most depended-upon Projects</h2>
+            <div class="row">
+                @for(project <- mostDependedUpon){
+                    <div class="col-md-4 col-sm-6">
+                        <a href="/@project.organization/@project.repository">
+                            <div class="content-project box">
+                                <div class="content-project-header">
+                                    @githubUserAvatar(project.githubInfo.flatMap(_.logo))
+                                    <h4>@project.organization/@project.repository</h4>
+                                </div>
+                                <div class="content-project-body">
+                                    @for(github <- project.githubInfo) {
+                                      @for(description <- github.description) {
+                                        <p class="description">@description</p>
+                                      }
+                                    }
+                                    @for(created <- project.creationDate) {
+                                        @{formatInstant(created)}
+                                    }
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                }
+            </div>
+            <a class="btn btn-default" href="/search?q=*&sort=dependent">More ...</a>
+        </div>
+    </section>
+</main>
+}
