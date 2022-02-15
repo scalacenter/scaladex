@@ -1,0 +1,125 @@
+// -----------------------------------------------------------------------------
+// This file contains all styles related to the 'explore' page.
+// -----------------------------------------------------------------------------
+
+#container-explore {
+  .sidebar {
+    max-height: calc(100vh - 20px);
+    overflow: auto;
+    background: white;
+    padding: 20px;
+    position: -webkit-sticky;
+    position: sticky;
+    margin-top: 40px;
+    top: 10px;
+    h2 {
+      font-size: 20px;
+    }
+  }
+
+  .filter {
+    display: inline-block;
+  }
+
+  .btn {
+    border: 1px solid $gray-light;
+  }
+
+  nav {
+    h2 {
+      margin-bottom: 24px;
+    }
+    ul {
+      padding-left: 20px;
+      list-style-type: none;
+    }
+    li {
+      font-family: $headings-font-family;
+      margin-bottom: 10px;
+      font-size: 14px;
+
+      &.active {
+        color: $brand-primary;
+      }
+    }
+    a {
+      color: inherit;
+      text-decoration: none;
+      &:hover, &:focus {
+        color: $brand-primary;
+      }
+    }
+  }
+
+  @media (max-width: 992px) {
+    .sidebar {
+      position: static;
+      overflow: visible;
+    }
+
+    nav {
+      display: none;
+    }
+  }
+
+  .meta-category {
+    background: white;
+    margin: 40px 0;
+    padding: 30px 20px;
+    h2 {
+      text-align: center;
+      text-transform: uppercase;
+      color: $brand-primary;
+      margin-bottom: ($line-height-computed * 1.5);
+    }
+    &>.row {
+      font-size: 0;
+    }
+    .category {
+      float: none;
+      display: inline-block;
+      vertical-align: top;
+      padding: 0 30px;
+      font-size: 16px;
+      h3 {
+        font-size: 22px;
+        color: $brand-secondary;
+        margin-top: 40px;
+      }
+      ol {
+        padding: 0;
+        list-style-type: none;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
+        &:hover, &:focus {
+          color: $brand-primary;
+          h4 {
+            color: $brand-primary;
+          }
+        }
+      }
+    }
+    .project {
+      padding: 10px;
+      img {
+        width: 28px;
+        height: auto;
+        margin-right: 15px;
+      }
+      h4 {
+          margin: 0;
+          font-size: 16px;
+          display: inline;
+      }
+      p {
+        margin: 0;
+      }
+    }
+    .stats {
+      vertical-align: middle;
+      float: right;
+    }
+  }
+}

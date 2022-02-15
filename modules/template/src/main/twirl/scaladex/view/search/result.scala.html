@@ -1,0 +1,50 @@
+@import akka.http.scaladsl.model.Uri
+@import scaladex.view.html._
+
+@import scaladex.core.model.search.Pagination
+@import scaladex.core.model.search.SearchParams
+@import scaladex.core.model.search.ProjectHit
+@import scaladex.core.model.Platform
+@import scaladex.core.model.UserState
+@import scaladex.core.model.Language
+
+@(params: SearchParams,
+  uri: Uri,
+  pagination: Pagination,
+  projects: Seq[ProjectHit],
+  user: Option[UserState],
+  you: Boolean,
+  topics: Seq[(String, Long)],
+  languages: Seq[(Language, Long)],
+  platforms: Seq[(Platform, Long)]
+)
+@if(params.contributingSearch){
+  <h2 class="text-center">Contributing Search</h2>
+  <div class="row">
+    <h4 class="text-center">All the projects below have beginner-friendly issues which are great places to start contributing</h4>
+  </div>
+}
+
+<div class="row">
+  <div class="col-md-2">
+    <div class="result-count">
+      @if(pagination.current == 1) {
+        @pagination.itemCount results
+      } else {
+        Page @pagination.current of @pagination.itemCount results
+      }
+    </div>
+  </div>
+  <div class="col-md-10">
+    @sorting(params, pagination, you)
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-3">
+    @filter(params, topics, languages, platforms, pagination, you)
+  </div>      
+  <div class="col-md-9">
+    @resultList(projects, params)
+    @paginate(pagination, paginationUri(params, uri, pagination, you))
+  </div>
+</div>

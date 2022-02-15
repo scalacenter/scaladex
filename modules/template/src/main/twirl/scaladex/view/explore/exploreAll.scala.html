@@ -1,0 +1,97 @@
+@import scaladex.view.html._
+@import scaladex.core.model.Category
+@import scaladex.core.model.Env
+@import scaladex.core.model.UserState
+@import scaladex.core.model.MetaCategory
+@import scaladex.core.model.search.ProjectDocument
+@import scaladex.core.model.Scala
+@import scaladex.core.model.Platform
+
+@(
+  env: Env,
+  metaCategories: Seq[(MetaCategory, Seq[(Category, Seq[ProjectDocument])])],
+  scalaVersions: Seq[Scala],
+  platforms: Seq[Platform],
+  selectedScalaVersions: Seq[Scala],
+  selectedPlatforms: Seq[Platform],
+  user: Option[UserState]
+)
+@main(env, title = "Scaladex", showSearch = true, user) {
+  <main id="container-explore">
+    <div class="container">
+      <div class="col-lg-3 col-md-4 sidebar">
+        <form action="/explore" action="GET">
+          <div class="filter">
+            <label for="select-platform"><h2>Platform:</h2></label>
+            <select id="select-platform" name="platforms" class="selectpicker" multiple data-max-options="1" onchange="this.form.submit()">
+              @for(platform <- platforms) {
+                <option value="@platform.label" @if(selectedPlatforms.contains(platform)){selected}>
+                  @platform
+                </option>
+              }
+            </select>
+          </div>
+          
+          <div class="filter">
+            <label for="select-language"><h2>Scala Version:</h2></label>
+            <select id="select-language" name="languages" class="selectpicker" multiple data-max-options="1" onchange="this.form.submit()">
+              @for(scalaVersion <- scalaVersions) {
+                <option value="@scalaVersion.label" @if(selectedScalaVersions.contains(scalaVersion)){selected}>
+                  @scalaVersion
+                </option>
+              }
+            </select>
+          </div>
+        </form>
+        
+        <nav>
+          <h2>Categories:</h2>
+          <ul>
+            @for((metaCategory, _) <- metaCategories) { 
+              <li>
+                <a href="#@metaCategory.label"> @metaCategory.title </a>
+              </li>
+            }
+          </ul>
+        </div>
+      </nav>
+      <div class="col-lg-9 col-md-8 col-sm-12">
+        @for((metaCategory, categories) <- metaCategories) {
+          <section class="meta-category" id="@metaCategory.label">
+            <h2>@metaCategory.title</h2>
+            <div class="row">
+              @for((category, projects) <- categories) {
+                <section class="category col-lg-6 col-md-12">
+                  <h3>@category.title</h3>
+                  <ol>
+                    @for(project <- projects) {
+                      <li>
+                        <a href="/@project.reference">
+                          <div class="project">
+                            @githubUserAvatar(project.githubInfo.flatMap(_.logo))
+                            @for(github <- project.githubInfo) {
+                              <span class="stats">
+                                @github.stars <i class="fa fa-star"></i>
+                              </span>
+                            }
+                            <h4> @project.organization / @project.repository </h4>
+                            @for(github <- project.githubInfo) {
+                              
+                              @for(description <- github.description) {
+                                <p class="description emojify">@description</p>
+                              }
+                            }
+                          </div>
+                        </a>
+                      </li>
+                    }
+                  </ol>
+                </section>
+              }
+            </div>
+          </section>
+        }
+      </div>
+    </div>
+  </main>
+}
