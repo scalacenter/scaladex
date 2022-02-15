@@ -68,7 +68,7 @@ lazy val template = project
     scalacOptions -= "-Xfatal-warnings",
     libraryDependencies ++= Seq(
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTimeVersion,
-      "com.typesafe" % "config" % "1.4.1",
+      "com.typesafe" % "config" % "1.4.2",
       "com.typesafe.akka" %% "akka-http-core" % V.akkaHttpVersion,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
