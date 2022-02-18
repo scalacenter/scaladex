@@ -48,7 +48,7 @@ package object html {
   ): Int => Uri = page => {
 
     val newUri = uri
-      .appendQuery("sort", params.sorting)
+      .appendQuery("sort" -> params.sorting.label)
       .appendQuery("topics", params.topics)
       .appendQuery("languages", params.languages)
       .appendQuery("patforms", params.platforms)

@@ -31,10 +31,12 @@ import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.search.Page
+import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.Pagination
 import scaladex.core.model.search.ProjectDocument
 import scaladex.core.model.search.ProjectHit
 import scaladex.core.model.search.SearchParams
+import scaladex.core.model.search.Sorting
 import scaladex.core.service.SearchEngine
 import scaladex.infra.Codecs._
 import scaladex.infra.config.ElasticsearchConfig
@@ -48,6 +50,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     extends SearchEngine
     with LazyLogging
     with Closeable {
+
   private val maxLanguagesOrPlatforms = 20
 
   def waitUntilReady(): Unit = {
@@ -141,7 +144,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
   override def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]] = {
     val request = search(index)
       .query(matchAllQuery())
-      .sortBy(sortQuery(Some("dependent")))
+      .sortBy(sortQuery(Sorting.Dependent))
       .limit(limit)
     esClient.execute(request).map(extractDocuments)
   }
@@ -166,13 +169,13 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     val request = search(index)
       .query(gitHubStarScoring(filteredSearchQuery(params)))
       .sortBy(sortQuery(params.sorting))
-    findPage(request, params.page, params.total)
+    findPage(request, params.page)
       .map(_.flatMap(toProjectHit))
   }
 
-  private def findPage(request: SearchRequest, page: Int, total: Int): Future[Page[SearchHit]] = {
-    val clamp = if (page <= 0) 1 else page
-    val pagedRequest = request.from(total * (clamp - 1)).size(total)
+  private def findPage(request: SearchRequest, page: PageParams): Future[Page[SearchHit]] = {
+    val clamp = if (page.page <= 0) 1 else page.page
+    val pagedRequest = request.from(page.size * (clamp - 1)).size(page.size)
     esClient
       .execute(pagedRequest)
       .map { response =>
@@ -180,7 +183,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
           Pagination(
             current = clamp,
             pageCount = Math
-              .ceil(response.result.totalHits / total.toDouble)
+              .ceil(response.result.totalHits / page.size.toDouble)
               .toInt,
             itemCount = response.result.totalHits
           ),
@@ -248,19 +251,19 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       category: Category,
       languages: Seq[Language],
       platforms: Seq[Platform],
-      limit: Int
-  ): Future[Seq[ProjectDocument]] = {
+      sorting: Sorting,
+      page: PageParams
+  ): Future[Page[ProjectDocument]] = {
     val query = must(
       termQuery("category", category.label),
       binaryVersionQuery(languages.map(_.label), platforms.map(_.label))
     )
     val request = search(index)
       .query(gitHubStarScoring(query))
-      .sortBy(scoreSort().order(SortOrder.Desc))
-      .size(limit)
-    esClient
-      .execute(request)
-      .map(_.result.hits.hits.toSeq.flatMap(toProjectDocument))
+      .sortBy(sortQuery(sorting))
+
+    findPage(request, page)
+      .map(p => p.flatMap(toProjectDocument))
   }
 
   private def languageAggregation(query: Query): Future[Seq[(Language, Long)]] =
@@ -320,20 +323,16 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       searchQuery(params.queryString, params.contributingSearch)
     )
 
-  private def sortQuery(sorting: Option[String]): Sort =
+  private def sortQuery(sorting: Sorting): Sort =
     sorting match {
-      case Some(criteria @ ("stars" | "forks")) =>
-        fieldSort(s"githubInfo.$criteria").missing("0").order(SortOrder.Desc)
-      case Some("contributors") =>
+      case Sorting.Stars | Sorting.Forks =>
+        fieldSort(s"githubInfo.${sorting.label}").missing("0").order(SortOrder.Desc)
+      case Sorting.Contributors =>
         fieldSort(s"githubInfo.contributorCount").missing("0").order(SortOrder.Desc)
-      case Some(criteria @ "dependent") =>
+      case Sorting.Dependent =>
         fieldSort("inverseProjectDependencies").missing("0").order(SortOrder.Desc)
-      case None | Some("relevant") => scoreSort().order(SortOrder.Desc)
-      case Some("created")         => fieldSort("creationDate").desc()
-      case Some("updated")         => fieldSort("updateDate").desc()
-      case Some(unknown) =>
-        logger.warn(s"Unknown sort criteria: $unknown")
-        scoreSort().order(SortOrder.Desc)
+      case Sorting.Relevance => scoreSort().order(SortOrder.Desc)
+      case Sorting.Created   => fieldSort("creationDate").desc()
     }
 
   private def searchQuery(

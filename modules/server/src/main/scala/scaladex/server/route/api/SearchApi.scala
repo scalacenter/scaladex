@@ -35,6 +35,7 @@ import scaladex.core.model.search.SearchParams
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 import scaladex.server.GithubUserSession
+import scaladex.core.model.search.PageParams
 
 object SearchApi {
   implicit val formatProject: OFormat[Project] =
@@ -107,8 +108,8 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
               "q",
               "target",
               "scalaVersion".?,
-              "page".as[Int].?,
-              "total".as[Int].?,
+              "page".as[Int].withDefault(1),
+              "total".as[Int].withDefault(20),
               "scalaJsVersion".?,
               "scalaNativeVersion".?,
               "sbtVersion".?,
@@ -138,8 +139,7 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
                     queryString = q,
                     binaryVersion = binaryVersion,
                     cli = cli,
-                    page = page.getOrElse(0),
-                    total = total.getOrElse(10)
+                    page = PageParams(page, total)
                   )
                   val result = searchEngine
                     .find(searchParams)

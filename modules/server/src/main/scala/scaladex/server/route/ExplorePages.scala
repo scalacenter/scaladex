@@ -17,6 +17,8 @@ import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions._
 import scaladex.server.TwirlSupport._
 import scaladex.view.explore.html.exploreAll
+import scaladex.core.model.search.Sorting
+import scaladex.core.model.search.PageParams
 
 class ExplorePages(env: Env, searchEngine: SearchEngine)(implicit ec: ExecutionContext) {
 
@@ -37,7 +39,11 @@ class ExplorePages(env: Env, searchEngine: SearchEngine)(implicit ec: ExecutionC
       selectedplatforms: Seq[Platform]
   ): Future[HtmlFormat.Appendable] = {
     val allByCategoriesF = Category.all
-      .map(c => searchEngine.getByCategory(c, selectedScalaVersions, selectedplatforms, 4).map(c -> _))
+      .map(c =>
+        searchEngine
+          .getByCategory(c, selectedScalaVersions, selectedplatforms, Sorting.Stars, PageParams(1, 4))
+          .map(p => c -> p.items)
+      )
       .sequence
     val allLanguagesF = searchEngine.getAllLanguages()
     val allPlatformsF = searchEngine.getAllPlatforms()
@@ -51,7 +57,7 @@ class ExplorePages(env: Env, searchEngine: SearchEngine)(implicit ec: ExecutionC
         .map(m => m -> m.categories.flatMap(c => byCategories.get(c).map(c -> _)))
         .filter { case (_, categories) => categories.nonEmpty }
       val allScalaVersions = allLanguages.collect { case v: Scala => v }
-      exploreAll(env, byMetaCategories, allScalaVersions, allPlatforms, selectedScalaVersions, selectedplatforms, user)
+      exploreAll(env, user, byMetaCategories, allScalaVersions, allPlatforms, selectedScalaVersions, selectedplatforms)
     }
   }
 }

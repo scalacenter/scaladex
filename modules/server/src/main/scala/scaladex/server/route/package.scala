@@ -15,7 +15,8 @@ import scaladex.core.model.ArtifactSelection
 import scaladex.core.model.Project
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserState
-import scaladex.core.model.search
+import scaladex.core.model.search.Sorting
+import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.SearchParams
 import scaladex.core.service.WebDatabase
 
@@ -41,12 +42,13 @@ package object route {
       "you".?,
       "contributingSearch".as[Boolean] ? false
     ).tmap {
-      case (q, page, sort, topics, languages, platforms, you, contributingSearch) =>
+      case (q, page, sortParam, topics, languages, platforms, you, contributingSearch) =>
         val userRepos = you.flatMap(_ => user.map(_.repos)).getOrElse(Set())
-        search.SearchParams(
+        val sorting = sortParam.flatMap(Sorting.byLabel.get).getOrElse(Sorting.Relevance)
+        SearchParams(
           q,
-          page,
-          sort,
+          PageParams(page, 20),
+          sorting,
           userRepos,
           topics = topics.toSeq,
           languages = languages.toSeq,

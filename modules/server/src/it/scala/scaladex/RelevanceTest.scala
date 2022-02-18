@@ -24,6 +24,7 @@ import scaladex.infra.FilesystemStorage
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.ScalaJs
 import scaladex.core.model.ScalaNative
+import scaladex.core.model.search.PageParams
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 
@@ -190,7 +191,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     )
 
   private def top(query: String, tops: List[(String, String)]): Future[Assertion] = {
-    val params = SearchParams(queryString = query, total = 12)
+    val params = SearchParams(queryString = query, PageParams(1, 12))
     top(params, tops)
   }
 

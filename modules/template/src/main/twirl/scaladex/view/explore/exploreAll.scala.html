@@ -9,12 +9,12 @@
 
 @(
   env: Env,
+  user: Option[UserState],
   metaCategories: Seq[(MetaCategory, Seq[(Category, Seq[ProjectDocument])])],
   scalaVersions: Seq[Scala],
   platforms: Seq[Platform],
   selectedScalaVersions: Seq[Scala],
-  selectedPlatforms: Seq[Platform],
-  user: Option[UserState]
+  selectedPlatforms: Seq[Platform]
 )
 @main(env, title = "Scaladex", showSearch = true, user) {
   <main id="container-explore">

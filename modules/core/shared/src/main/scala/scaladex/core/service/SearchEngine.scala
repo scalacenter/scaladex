@@ -7,9 +7,11 @@ import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.search.Page
+import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.ProjectDocument
 import scaladex.core.model.search.ProjectHit
 import scaladex.core.model.search.SearchParams
+import scaladex.core.model.search.Sorting
 
 trait SearchEngine {
   // Synchronizer
@@ -38,6 +40,7 @@ trait SearchEngine {
       category: Category,
       languages: Seq[Language],
       platforms: Seq[Platform],
-      limit: Int
-  ): Future[Seq[ProjectDocument]]
+      sorting: Sorting,
+      page: PageParams
+  ): Future[Page[ProjectDocument]]
 }

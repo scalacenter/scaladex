@@ -14,6 +14,7 @@ import scaladex.core.model.Scala
 import scaladex.core.model.ScalaJs
 import scaladex.core.model.ScalaNative
 import scaladex.core.model.search.SearchParams
+import scaladex.core.model.search.Sorting
 import scaladex.infra.config.ElasticsearchConfig
 
 class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAndAfterAll {
@@ -59,11 +60,11 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
       _ <- searchEngine.insert(Cats.projectDocument)
       _ <- searchEngine.insert(Scalafix.projectDocument)
       _ <- searchEngine.refresh()
-      byDependent <- searchEngine.find(params.copy(sorting = Some("dependent")))
-      byCreated <- searchEngine.find(params.copy(sorting = Some("created")))
-      byStars <- searchEngine.find(params.copy(sorting = Some("stars")))
-      byForks <- searchEngine.find(params.copy(sorting = Some("forks")))
-      byContributors <- searchEngine.find(params.copy(sorting = Some("contributors")))
+      byDependent <- searchEngine.find(params.copy(sorting = Sorting.Dependent))
+      byCreated <- searchEngine.find(params.copy(sorting = Sorting.Created))
+      byStars <- searchEngine.find(params.copy(sorting = Sorting.Stars))
+      byForks <- searchEngine.find(params.copy(sorting = Sorting.Forks))
+      byContributors <- searchEngine.find(params.copy(sorting = Sorting.Contributors))
     } yield {
       byDependent.items.map(_.document) should contain theSameElementsInOrderAs catsFirst
       byCreated.items.map(_.document) should contain theSameElementsInOrderAs scalafixFirst // todo fix

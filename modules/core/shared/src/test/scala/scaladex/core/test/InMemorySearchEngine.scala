@@ -8,9 +8,11 @@ import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.search.Page
+import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.ProjectDocument
 import scaladex.core.model.search.ProjectHit
 import scaladex.core.model.search.SearchParams
+import scaladex.core.model.search.Sorting
 import scaladex.core.service.SearchEngine
 
 class InMemorySearchEngine extends SearchEngine {
@@ -54,7 +56,8 @@ class InMemorySearchEngine extends SearchEngine {
       category: Category,
       languages: Seq[Language],
       platforms: Seq[Platform],
-      limit: Int
-  ): Future[Seq[ProjectDocument]] = ???
+      sorting: Sorting,
+      page: PageParams
+  ): Future[Page[ProjectDocument]] = ???
 
 }
