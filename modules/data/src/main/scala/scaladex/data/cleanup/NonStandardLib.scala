@@ -3,8 +3,11 @@ package cleanup
 
 import java.nio.file._
 
+import scala.io.Source
+import scala.util.Using
+
+import io.circe.parser._
 import org.json4s._
-import org.typelevel.jawn.support.json4s.Parser
 import scaladex.infra.DataPaths
 
 /**
@@ -55,10 +58,9 @@ object NonStandardLib {
    */
   def load(paths: DataPaths): List[NonStandardLib] = {
     val filePath = paths.nonStandard
-
     if (Files.exists(filePath)) {
-      val nonStandard =
-        Parser.parseFromFile(filePath.toFile).get.extract[Map[String, String]]
+      val input = Using.resource(Source.fromFile(filePath.toFile))(_.mkString)
+      val nonStandard = decode[Map[String, String]](input).getOrElse(Map())
 
       nonStandard.map {
         case (artifact, rawLookup) =>
