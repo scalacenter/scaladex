@@ -209,9 +209,11 @@ object Artifact {
 
   case class GroupId(value: String) extends AnyVal {
     override def toString: String = value
+    def mavenUrl: String = value.replace('.', '/')
   }
   case class ArtifactId(name: Name, binaryVersion: BinaryVersion) {
     def value: String = s"${name}${binaryVersion.encode}"
+    def isScala: Boolean = binaryVersion.language.isScala
   }
 
   object ArtifactId {
@@ -234,6 +236,8 @@ object Artifact {
   case class MavenReference(groupId: String, artifactId: String, version: String) {
 
     def name: String = s"$groupId/$artifactId"
+
+    override def toString(): String = s"$groupId:$artifactId:$version"
 
     /**
      * url to maven page with related information to this reference

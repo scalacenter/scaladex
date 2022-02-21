@@ -16,7 +16,7 @@ class MovedArtifactsSynchronizer(database: SchedulerDatabase)(implicit ec: Execu
       moved = projectStatuses.collect { case (ref, GithubStatus.Moved(_, newRef)) => ref -> newRef }.toMap
       numberOfUpdated <- moved.map {
         case (oldRef, newRef) =>
-          database.getArtifacts(oldRef).flatMap(artifacts => database.updataArtifacts(artifacts, newRef))
+          database.getArtifacts(oldRef).flatMap(artifacts => database.updateArtifacts(artifacts, newRef))
       }.sequence
       _ = logger.info(
         s"${numberOfUpdated.sum} artifacts have been updated with the new organization/new repository names"

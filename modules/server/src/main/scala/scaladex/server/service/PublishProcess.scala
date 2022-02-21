@@ -9,7 +9,6 @@ import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Project
 import scaladex.core.model.Sha1
 import scaladex.core.model.UserState
-import scaladex.core.model.data.LocalPomRepository
 import scaladex.core.service.Storage
 import scaladex.core.service.WebDatabase
 import scaladex.data.cleanup.GithubRepoExtractor
@@ -39,43 +38,35 @@ class PublishProcess(
       path: String,
       data: String,
       creationDate: Instant,
-      userState: UserState
-  ): Future[PublishResult] =
-    if (isPom(path)) {
-      logger.info(s"Publishing POM $path")
-      val sha1 = Sha1(data)
-      val tempFile = filesystem.createTempFile(data, sha1, ".pom")
-      val future =
-        Future(pomsReader.loadOne(tempFile).get)
-          .flatMap { case (pom, _) => publishPom(pom, data, sha1, creationDate, userState) }
-          .recover { cause =>
-            logger.error("Invalid POM", cause)
-            PublishResult.InvalidPom
-          }
-      future.onComplete(_ => filesystem.deleteTempFile(tempFile))
-      future
-    } else {
-      logger.warn(s"Received invalid pom from ${userState.info.login}: $path")
-      Future.successful(PublishResult.InvalidPom)
-    }
+      userState: Option[UserState]
+  ): Future[PublishResult] = {
+    logger.info(s"Publishing POM $path")
+    val sha1 = Sha1(data)
+    val tempFile = filesystem.createTempFile(data, sha1, ".pom")
+    val future =
+      Future(pomsReader.loadOne(tempFile).get)
+        .flatMap { case (pom, _) => publishPom(pom, creationDate, userState) }
+        .recover { cause =>
+          logger.error(s"Invalid POM $path", cause)
+          PublishResult.InvalidPom
+        }
+    future.onComplete(_ => filesystem.deleteTempFile(tempFile))
+    future
+  }
 
   private def publishPom(
       pom: ArtifactModel,
-      data: String,
-      sha1: String,
       creationDate: Instant,
-      userState: UserState
+      userState: Option[UserState]
   ): Future[PublishResult] = {
-    val repository =
-      if (userState.hasPublishingAuthority) LocalPomRepository.MavenCentral
-      else LocalPomRepository.UserProvided
     val pomRef = s"${pom.groupId}:${pom.artifactId}:${pom.version}"
     githubExtractor.extract(pom) match {
       case None =>
         // TODO: save artifact with no github information
         Future.successful(PublishResult.NoGithubRepo)
       case Some(repo) =>
-        if (userState.hasPublishingAuthority || userState.repos.contains(repo)) {
+        // userState can be empty when the request of publish is done through the scheduler
+        if (userState.isEmpty || userState.get.hasPublishingAuthority || userState.get.repos.contains(repo)) {
           converter.convert(pom, repo, creationDate) match {
             case Some((artifact, deps)) =>
               database
@@ -89,13 +80,12 @@ class PublishProcess(
               Future.successful(PublishResult.InvalidPom)
           }
         } else {
-          logger.warn(s"User ${userState.info.login} attempted to publish to $repo")
-          Future.successful(PublishResult.Forbidden(userState.info.login, repo))
+          logger.warn(s"User ${userState.get.info.login} attempted to publish to $repo")
+          Future.successful(PublishResult.Forbidden(userState.get.info.login, repo))
         }
     }
   }
 
-  private def isPom(path: String): Boolean = path.matches(""".*\.pom""")
 }
 
 object PublishProcess {

@@ -4,8 +4,6 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
-import scala.util.Failure
-import scala.util.Success
 import scala.util.Try
 
 import akka.actor.ActorSystem
@@ -25,12 +23,7 @@ import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.http.scaladsl.unmarshalling.Unmarshaller
-import akka.stream.OverflowStrategy
-import akka.stream.QueueOfferResult
-import akka.stream.scaladsl.Keep
-import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.Source
-import akka.stream.scaladsl.SourceQueueWithComplete
+import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
@@ -45,13 +38,20 @@ import scaladex.core.util.ScalaExtensions._
 import scaladex.core.util.Secret
 import scaladex.infra.github.GithubModel
 
-class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubService with LazyLogging {
+class GithubClient(token: Secret)(implicit val system: ActorSystem)
+    extends CommonAkkaHttpClient
+    with GithubService
+    with LazyLogging {
   private val credentials: OAuth2BearerToken = OAuth2BearerToken(token.decode)
   private val acceptJson = RawHeader("Accept", "application/vnd.github.v3+json")
   private val acceptHtmlVersion = RawHeader("Accept", "application/vnd.github.VERSION.html")
 
   private implicit val ec: ExecutionContextExecutor = system.dispatcher
-  private val poolClientFlow =
+  lazy val poolClientFlow: Flow[
+    (HttpRequest, Promise[HttpResponse]),
+    (Try[HttpResponse], Promise[HttpResponse]),
+    Http.HostConnectionPool
+  ] =
     Http()
       .cachedHostConnectionPoolHttps[Promise[HttpResponse]](
         "api.github.com",
@@ -65,16 +65,6 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
         elements = 5000,
         per = 1.hour
       )
-
-  val queue: SourceQueueWithComplete[(HttpRequest, Promise[HttpResponse])] =
-    Source
-      .queue[(HttpRequest, Promise[HttpResponse])](100, OverflowStrategy.dropNew)
-      .via(poolClientFlow)
-      .toMat(Sink.foreach {
-        case (Success(resp), p) => p.success(resp)
-        case (Failure(e), p)    => p.failure(e)
-      })(Keep.left)
-      .run()
 
   override def getProjectInfo(ref: Project.Reference): Future[GithubResponse[(Project.Reference, GithubInfo)]] =
     getRepository(ref).flatMap {
@@ -327,19 +317,6 @@ class GithubClient(token: Secret)(implicit system: ActorSystem) extends GithubSe
     pattern
       .findFirstMatchIn(links)
       .flatMap(mtch => Try(mtch.group(1).toInt).toOption)
-  }
-
-  private def queueRequest(request: HttpRequest): Future[HttpResponse] = {
-    val responsePromise = Promise[HttpResponse]()
-    queue.offer(request -> responsePromise).flatMap {
-      case QueueOfferResult.Enqueued    => responsePromise.future
-      case QueueOfferResult.Dropped     => Future.failed(new RuntimeException("Queue overflowed. Try again later."))
-      case QueueOfferResult.Failure(ex) => Future.failed(ex)
-      case QueueOfferResult.QueueClosed =>
-        Future.failed(
-          new RuntimeException("Queue was closed (pool shut down) while running the request. Try again later.")
-        )
-    }
   }
 
   private def graphqlRequest(query: String): HttpRequest = {

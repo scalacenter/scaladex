@@ -40,10 +40,12 @@ class PomsReader(resolver: PomResolver) extends LazyLogging {
   private val processor = new DefaultModelProcessor
   processor.setModelReader(new DefaultModelReader)
 
-  private val modelResolver = new ModelResolver {
+  private val modelResolver = new ScaladexModelResolver
+
+  class ScaladexModelResolver extends ModelResolver {
     override def addRepository(repo: model.Repository, replace: Boolean): Unit = ()
     override def addRepository(repo: model.Repository): Unit = ()
-    override def newCopy(): ModelResolver = throw new Exception("copy")
+    override def newCopy(): ModelResolver = new ScaladexModelResolver
     override def resolveModel(parent: Parent): ModelSource2 =
       resolveModel(parent.getGroupId, parent.getArtifactId, parent.getVersion)
     override def resolveModel(

@@ -41,6 +41,12 @@ object ArtifactTable {
   val selectArtifactByProjectAndName: Query[(Project.Reference, Artifact.Name), Artifact] =
     selectRequest(table, Seq("*"), projectReferenceFields :+ "artifact_name")
 
+  val selectGroupIds: Query0[Artifact.GroupId] =
+    selectRequest(table, "DISTINCT group_id")
+
+  val selectMavenReference: Query0[Artifact.MavenReference] =
+    selectRequest(table, """DISTINCT group_id, artifact_id, "version"""")
+
   val selectOldestByProject: Query0[(Instant, Project.Reference)] =
     selectRequest(
       table,

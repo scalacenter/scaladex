@@ -55,7 +55,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     for {
       _ <- database.insertArtifact(Cats.`core_3:2.6.1`, Cats.dependencies, now)
       _ <- database.insertArtifact(Cats.core_sjs1_3, Seq.empty, now)
-      _ <- database.updataArtifacts(Seq(Cats.`core_3:2.6.1`, Cats.core_sjs1_3), newRef)
+      _ <- database.updateArtifacts(Seq(Cats.`core_3:2.6.1`, Cats.core_sjs1_3), newRef)
       oldArtifacts <- database.getArtifacts(Cats.reference)
       newArtifacts <- database.getArtifacts(newRef)
     } yield {
