@@ -30,12 +30,12 @@ import scaladex.core.model.Scala
 import scaladex.core.model.ScalaJs
 import scaladex.core.model.ScalaNative
 import scaladex.core.model.SemanticVersion
-import scaladex.core.model.search.ProjectHit
+import scaladex.core.model.search.PageParams
+import scaladex.core.model.search.ProjectDocument
 import scaladex.core.model.search.SearchParams
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 import scaladex.server.GithubUserSession
-import scaladex.core.model.search.PageParams
 
 object SearchApi {
   implicit val formatProject: OFormat[Project] =
@@ -122,27 +122,21 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
                 scalaNativeVersion,
                 sbtVersion
               )
+              val pageParams = PageParams(page, total)
 
-              def convert(project: ProjectHit): SearchApi.Project = {
-                import project.document._
+              def convert(project: ProjectDocument): SearchApi.Project = {
                 SearchApi.Project(
-                  organization.value,
-                  repository.value,
-                  githubInfo.flatMap(_.logo.map(_.target)),
-                  artifactNames.map(_.value)
+                  project.organization.value,
+                  project.repository.value,
+                  project.githubInfo.flatMap(_.logo.map(_.target)),
+                  project.artifactNames.map(_.value)
                 )
               }
 
               binaryVersion match {
                 case Some(_) =>
-                  val searchParams = SearchParams(
-                    queryString = q,
-                    binaryVersion = binaryVersion,
-                    cli = cli,
-                    page = PageParams(page, total)
-                  )
                   val result = searchEngine
-                    .find(searchParams)
+                    .find(q, binaryVersion, cli, pageParams)
                     .map(page => page.items.map(p => convert(p)))
                   complete(OK, result)
 

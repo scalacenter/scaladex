@@ -29,9 +29,9 @@
   <div class="col-md-2">
     <div class="result-count">
       @if(pagination.current == 1) {
-        @pagination.itemCount results
+        @pagination.pageSize results
       } else {
-        Page @pagination.current of @pagination.itemCount results
+        Page @pagination.current of @pagination.pageSize results
       }
     </div>
   </div>

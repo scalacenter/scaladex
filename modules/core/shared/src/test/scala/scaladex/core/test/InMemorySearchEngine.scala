@@ -3,6 +3,7 @@ package scaladex.core.test
 import scala.collection.mutable
 import scala.concurrent.Future
 
+import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
@@ -37,6 +38,8 @@ class InMemorySearchEngine extends SearchEngine {
   override def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]] = ???
 
   override def getLatest(limit: Int): Future[Seq[ProjectDocument]] = ???
+
+  override def find(query: String, binaryVersion: Option[BinaryVersion], cli: Boolean, page: PageParams): Future[Page[ProjectDocument]] = ???  
 
   override def find(params: SearchParams): Future[Page[ProjectHit]] = ???
 

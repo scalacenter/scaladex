@@ -2,6 +2,7 @@ package scaladex.core.service
 
 import scala.concurrent.Future
 
+import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
@@ -25,6 +26,9 @@ trait SearchEngine {
   def countByPlatforms(): Future[Seq[(Platform, Long)]]
   def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]]
   def getLatest(limit: Int): Future[Seq[ProjectDocument]]
+
+  // Old Search API
+  def find(query: String, binaryVersion: Option[BinaryVersion], cli: Boolean, page: PageParams): Future[Page[ProjectDocument]]
 
   // Search Page
   def find(params: SearchParams): Future[Page[ProjectHit]]

@@ -13,6 +13,7 @@ import scaladex.core.model.Project
 import scaladex.core.model.Scala
 import scaladex.core.model.ScalaJs
 import scaladex.core.model.ScalaNative
+import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.SearchParams
 import scaladex.core.model.search.Sorting
 import scaladex.infra.config.ElasticsearchConfig
@@ -43,13 +44,10 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
   }
 
   test("search for cats_3") {
-    val params = SearchParams(
-      queryString = "cats",
-      binaryVersion = Some(BinaryVersion(Jvm, Scala.`3`))
-    )
-    searchEngine.find(params).map { page =>
-      page.items.map(_.document) should contain theSameElementsAs List(Cats.projectDocument)
-    }
+    val binaryVersion = BinaryVersion(Jvm, Scala.`3`)
+    val pageParams = PageParams(1, 10)
+    for (page <- searchEngine.find("cats", Some(binaryVersion), false, pageParams))
+    yield page.items should contain theSameElementsAs List(Cats.projectDocument)
   }
 
   test("sort by dependent, created, stars, forks, and contributors") {

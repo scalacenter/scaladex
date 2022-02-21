@@ -15,9 +15,9 @@ import scaladex.core.model.ArtifactSelection
 import scaladex.core.model.Project
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserState
-import scaladex.core.model.search.Sorting
 import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.SearchParams
+import scaladex.core.model.search.Sorting
 import scaladex.core.service.WebDatabase
 
 package object route {

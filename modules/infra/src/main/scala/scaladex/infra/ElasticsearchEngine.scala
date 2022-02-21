@@ -165,6 +165,14 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     esClient.execute(request).map(extractDocuments)
   }
 
+  override def find(query: String, binaryVersion: Option[BinaryVersion], cli: Boolean, page: PageParams): Future[Page[ProjectDocument]] = {
+    val query = must(
+      optionalQuery(cli, cliQuery),
+      optionalQuery(binaryVersion)(binaryVersionQuery)
+    )
+    val request = search(index).query(gitHubStarScoring(query)).sortBy(sortQuery(Sorting.Relevance))
+    findPage(request, page).map(_.flatMap(toProjectDocument))
+  }
   override def find(params: SearchParams): Future[Page[ProjectHit]] = {
     val request = search(index)
       .query(gitHubStarScoring(filteredSearchQuery(params)))
@@ -185,7 +193,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
             pageCount = Math
               .ceil(response.result.totalHits / page.size.toDouble)
               .toInt,
-            itemCount = response.result.totalHits
+            pageSize = response.result.totalHits
           ),
           response.result.hits.hits.toSeq
         )
@@ -315,10 +323,10 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
   private def filteredSearchQuery(params: SearchParams): Query =
     must(
       repositoriesQuery(params.userRepos.toSeq),
-      optionalQuery(params.cli, cliQuery),
+      // optionalQuery(params.cli, cliQuery),
       topicsQuery(params.topics),
       binaryVersionQuery(params.languages, params.platforms),
-      optionalQuery(params.binaryVersion)(binaryVersionQuery),
+      // optionalQuery(params.binaryVersion)(binaryVersionQuery),
       optionalQuery(params.contributingSearch, contributingQuery),
       searchQuery(params.queryString, params.contributingSearch)
     )

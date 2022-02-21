@@ -13,12 +13,12 @@ import scaladex.core.model.MetaCategory
 import scaladex.core.model.Platform
 import scaladex.core.model.Scala
 import scaladex.core.model.UserState
+import scaladex.core.model.search.PageParams
+import scaladex.core.model.search.Sorting
 import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions._
 import scaladex.server.TwirlSupport._
 import scaladex.view.explore.html.exploreAll
-import scaladex.core.model.search.Sorting
-import scaladex.core.model.search.PageParams
 
 class ExplorePages(env: Env, searchEngine: SearchEngine)(implicit ec: ExecutionContext) {
 
