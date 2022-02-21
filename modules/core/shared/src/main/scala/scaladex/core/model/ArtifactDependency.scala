@@ -24,7 +24,7 @@ object ArtifactDependency {
     }
 
     def name: String = target match {
-      case Some(artifact) => artifact.projectRef.toString
+      case Some(artifact) => s"${artifact.projectRef.organization}/${artifact.artifactName}"
       case None =>
         s"${artifactDep.target.groupId}/${artifactDep.target.artifactId}"
     }
