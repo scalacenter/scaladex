@@ -10,7 +10,7 @@
 @(env: Env, project: Project, artifacts: Seq[Artifact], user: Option[UserState])
 
 @artifactNames = @{ artifacts.map(_.artifactName).distinct }
-@main(env, title = s"Edit ${project.repository}", showSearch = true, user) {
+@main(env, title = s"Edit ${project.repository}", user) {
   <main id="container-project">
 
     <div class="container">

@@ -17,7 +17,7 @@
   directDependencies: Seq[ArtifactDependency.Direct], reverseDependency: Seq[ArtifactDependency.Reverse]
 )
 
-@main(env, title = project.repository.value, showSearch = true, user,
+@main(env, title = project.repository.value, user,
       extraMeta = twitterCard.map(_.toHeadMeta).getOrElse(Nil)) {
   <main id="container-project">
     @headproject(project, artifacts, versions, binaryVersions, artifact, canEdit)

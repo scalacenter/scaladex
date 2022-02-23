@@ -198,7 +198,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
             pageCount = Math
               .ceil(response.result.totalHits / page.size.toDouble)
               .toInt,
-            pageSize = response.result.totalHits
+            totalSize = response.result.totalHits
           ),
           response.result.hits.hits.toSeq
         )

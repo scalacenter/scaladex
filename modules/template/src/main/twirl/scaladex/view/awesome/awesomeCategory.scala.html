@@ -18,7 +18,7 @@
   platforms: Seq[(Platform, Int)],
   params: AwesomeParams
 )
-@main(env, title = category.title, showSearch = true, user) {
+@main(env, title = category.title, user) {
   <main id="container-awesome-category">
     <div class="awesome-header">
       <div class="container">
@@ -43,9 +43,9 @@
           <div class="col-md-3">
             <div class="result-count">
               @if(projects.pagination.current == 1) {
-                @projects.pagination.pageSize results
+                @projects.pagination.totalSize results
               } else {
-                Page @projects.pagination.current of @projects.pagination.pageSize results
+                Page @projects.pagination.current of @projects.pagination.totalSize results
               }
             </div>
           </div>

@@ -14,7 +14,13 @@
       font-size: 36px;
       font-family: "Caveat";
       color: white;
+      
+      &:hover, &:focus {
+        opacity: 0.75;
+        text-decoration: none;
+      }
     }
+    
   }
 }
 

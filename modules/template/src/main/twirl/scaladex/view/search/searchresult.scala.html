@@ -20,7 +20,7 @@
   languages: Seq[(Language, Int)],
   platforms: Seq[(Platform, Int)]
 )
-@main(env, title = s"Search ${params.queryString}", showSearch = true, user, params, you) {
+@main(env, title = s"Search ${params.queryString}", user, params = params, you = you) {
   <main id="container-search">
     <div class="container">
       @result(params, uri, pagination, projects, user, you, topics, languages, platforms)
