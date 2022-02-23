@@ -12,11 +12,12 @@ sealed trait MetaCategory {
 
   val title: String
   val categories: Seq[Category]
+  val seeAlsoCategories: Seq[Category] = Seq.empty
 }
 
 object MetaCategory {
   def all: Seq[MetaCategory] = Seq(
-    AsynchronousConcurrentAndDistributedProgramming,
+    AsynchronousAndConcurrentProgramming,
     BigData,
     ComputerScience,
     ConfigurationLoggingTestingAndMonitoring,
@@ -34,14 +35,16 @@ object MetaCategory {
 
   val byLabel: Map[String, MetaCategory] = all.map(meta => meta.label -> meta).toMap
 
-  case object AsynchronousConcurrentAndDistributedProgramming extends MetaCategory {
+  case object AsynchronousAndConcurrentProgramming extends MetaCategory {
     override val title: String = "Asynchronous, Concurrent and Distributed Programming"
 
     override val categories: Seq[Category] = Seq(
       Category.AsynchronousAndReactiveProgramming,
-      Category.DistributedComputing,
       Category.DistributedMessagingSystemsAndMicroservices,
       Category.Schedulers
+    )
+    override val seeAlsoCategories: Seq[Category] = Seq(
+      Category.DistributedComputing
     )
   }
   case object BigData extends MetaCategory {
@@ -51,6 +54,12 @@ object MetaCategory {
       Category.DataVizualization,
       Category.DistributedComputing
     )
+
+    override val seeAlsoCategories: Seq[Category] = Seq(
+      Category.Databases,
+      Category.IndexingAndSearching,
+      Category.ProbabilityStatisticsAndMachineLearning
+    )
   }
 
   case object ComputerScience extends MetaCategory {
@@ -58,15 +67,15 @@ object MetaCategory {
     override val categories: Seq[Category] = Seq(
       Category.AlgorithmsAndDataStructures,
       Category.Caching,
-      Category.Compilers,
       Category.CodeGeneration,
+      Category.Compilers,
       Category.DependencyInjection,
       Category.FunctionnalProgrammingAndCategoryTheory,
       Category.LogicProgrammingAndTypeConstraints,
       Category.MiscellaneousUtils,
       Category.Parsing,
-      Category.ScalaLanguageExtensions,
-      Category.ProgrammingLanguageInterfaces
+      Category.ProgrammingLanguageInterfaces,
+      Category.ScalaLanguageExtensions
     )
   }
 
@@ -91,11 +100,15 @@ object MetaCategory {
     override val title: String = "Deployment, Virtualization and Cloud"
     override val categories: Seq[Category] = Seq(
       Category.DeploymentAndCloud,
-      Category.PackagingAndPublishing,
-      Category.LibraryDependencyManagement,
       Category.Serverless,
       Category.VersionManagement,
       Category.VirtualizationAndContainerization
+    )
+
+    override val seeAlsoCategories: Seq[Category] = Seq(
+      Category.ConfigurationAndEnvironment,
+      Category.PackagingAndPublishing,
+      Category.Yaml
     )
   }
   case object DevelopmentTooling extends MetaCategory {
@@ -103,13 +116,19 @@ object MetaCategory {
     override val categories: Seq[Category] = Seq(
       Category.BuildTools,
       Category.CodeAnalysis,
-      Category.LintingAndRefactoring,
-      Category.PrintingAndDebugging,
       Category.CodeEditorsAndNotebooks,
       Category.CodeFormatting,
+      Category.LibraryDependencyManagement,
+      Category.LintingAndRefactoring,
+      Category.MiscellaneousTools,
+      Category.PackagingAndPublishing,
+      Category.PrintingAndDebugging,
       Category.ScriptingAndRepls,
-      Category.StaticSitesAndDocumentation,
-      Category.MiscellaneousTools
+      Category.StaticSitesAndDocumentation
+    )
+
+    override val seeAlsoCategories: Seq[Category] = Seq(
+      Category.Testing
     )
   }
   case object ImagesAudioAndVideo extends MetaCategory {
@@ -117,6 +136,9 @@ object MetaCategory {
     override val categories: Seq[Category] = Seq(
       Category.AudioAndMusic,
       Category.VideoAndImageProcessing
+    )
+    override val seeAlsoCategories: Seq[Category] = Seq(
+      Category.GraphicalInterfacesAndGameDevelopment
     )
   }
 
@@ -126,24 +148,33 @@ object MetaCategory {
       Category.Bioinformatics,
       Category.CryptographyAndHashing,
       Category.EconomyFinanceAndCryptocurrencies,
-      Category.ProbabilityStatisticsAndMachineLearning,
       Category.NaturalLanguageProcessing,
-      Category.NumericalAndSymbolicComputing
+      Category.NumericalAndSymbolicComputing,
+      Category.ProbabilityStatisticsAndMachineLearning
+    )
+
+    override val seeAlsoCategories: Seq[Category] = Seq(
+      Category.GeometryAndGeopositionning,
+      Category.UnitsOfMeasurement
     )
   }
   case object MobileDesktopAndGameDevelopment extends MetaCategory {
     override val title: String = "Mobile, Desktop and Game Development"
     override val categories: Seq[Category] = Seq(
-      Category.Mobile,
-      Category.GraphicalInterfacesAndGameDevelopment
+      Category.GraphicalInterfacesAndGameDevelopment,
+      Category.Mobile
     )
   }
   case object OperatingSystemsAndHardware extends MetaCategory {
     override val title: String = "Operating System, Hardware and Robotics"
     override val categories: Seq[Category] = Seq(
-      Category.HardwareAndEmulators,
       Category.FileSystemsAndProcesses,
+      Category.HardwareAndEmulators,
       Category.Network
+    )
+
+    override val seeAlsoCategories: Seq[Category] = Seq(
+      Category.Mobile
     )
   }
   case object TextFormatAndCompression extends MetaCategory {
@@ -153,11 +184,15 @@ object MetaCategory {
       Category.Csv,
       Category.Json,
       Category.Markdown,
+      Category.OtherDocumentFormats,
       Category.Pdf,
       Category.Serialization,
       Category.TextManipulation,
-      Category.OtherDocumentFormats,
       Category.Yaml
+    )
+
+    override val seeAlsoCategories: Seq[Category] = Seq(
+      Category.XmlHtmlAndDom
     )
   }
   case object TimePositionsAndUnitsOfMeasurement extends MetaCategory {
@@ -183,6 +218,10 @@ object MetaCategory {
       Category.UrlsAndRouting,
       Category.WebFrontend,
       Category.XmlHtmlAndDom
+    )
+
+    override val seeAlsoCategories: Seq[Category] = Seq(
+      Category.Json
     )
   }
 }
