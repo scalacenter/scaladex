@@ -10,16 +10,16 @@
 
 @(
   env: Env,
-  topics: Seq[(String, Long)],
-  scalaVersions:Seq[(Scala, Long)],
-  scalaJsVersions: Seq[(ScalaJs, Long)],
-  scalaNativeVersions: Seq[(ScalaNative, Long)],
-  sbtVersions: Seq[(SbtPlugin, Long)],
+  topics: Seq[(String, Int)],
+  scalaVersions:Seq[(Scala, Int)],
+  scalaJsVersions: Seq[(ScalaJs, Int)],
+  scalaNativeVersions: Seq[(ScalaNative, Int)],
+  sbtVersions: Seq[(SbtPlugin, Int)],
   latestProjects: Seq[ProjectDocument],
   mostDependedUpon: Seq[ProjectDocument],
   user: Option[UserState],
   ecosystems: Map[String, String],
-  totalProjects: Long,
+  totalProjects: Int,
   totalArtifacts: Long
 )
 

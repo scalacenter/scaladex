@@ -1,0 +1,31 @@
+@import scaladex.core.model.search.SearchParams
+@import scaladex.core.model.search.Sorting
+@import scaladex.core.model.Platform
+@import scaladex.core.model.Language
+@import scaladex.core.model.Category
+@import scaladex.core.model.search.ExploreParams
+
+@(
+  category: Category,
+  params: ExploreParams
+)
+<div class="order-by">
+  <form action="/explore/@category.label" action="GET">
+    @for(language <- params.languages){
+      <input type="hidden" name="languages" value="@language.label">
+    }
+
+    @for(platform <- params.platforms){
+      <input type="hidden" name="platforms" value="@platform.label">
+    }
+
+    <div class="btn-group" role="group" aria-label="sorting">
+      @for(sorting <- Sorting.all.filter(_ != Sorting.Relevance)) {
+        <button name="sort" value="@sorting.label" type="submit" 
+          class="btn btn-default @if(params.sorting == sorting) { active }">
+          @sorting.title
+        </button>
+      }
+    </div>
+  </form>
+</div>

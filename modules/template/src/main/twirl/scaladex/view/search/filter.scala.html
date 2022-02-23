@@ -1,15 +1,12 @@
-
 @import scaladex.core.model.search.SearchParams
-@import scaladex.core.model.search.Pagination
 @import scaladex.core.model.Platform
 @import scaladex.core.model.Language
 
 @(
   params: SearchParams,
-  topics: Seq[(String, Long)],
-  languages: Seq[(Language, Long)],
-  platforms: Seq[(Platform, Long)],
-  pagination: Pagination,
+  topics: Seq[(String, Int)],
+  languages: Seq[(Language, Int)],
+  platforms: Seq[(Platform, Int)],
   you: Boolean
 )
 <div class="filters">
@@ -65,7 +62,6 @@
     </fieldset>
 
     <input type="hidden" name="q" value="@params.queryString">
-    <input type="hidden" name="page" value="@pagination.current">
     @if(you){
       <input type="hidden" name="you" value="">
     }

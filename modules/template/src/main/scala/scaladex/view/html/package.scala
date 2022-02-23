@@ -7,6 +7,8 @@ import java.util.Locale
 
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
+import scaladex.core.model.Category
+import scaladex.core.model.search.ExploreParams
 import scaladex.core.model.search.Pagination
 import scaladex.core.model.search.SearchParams
 
@@ -45,13 +47,13 @@ package object html {
       uri: Uri,
       pagination: Pagination,
       you: Boolean
-  ): Int => Uri = page => {
+  )(page: Int): Uri = {
 
     val newUri = uri
       .appendQuery("sort" -> params.sorting.label)
       .appendQuery("topics", params.topics)
       .appendQuery("languages", params.languages)
-      .appendQuery("patforms", params.platforms)
+      .appendQuery("platforms", params.platforms)
       .appendQuery("you", you)
       .appendQuery("q" -> params.queryString)
       .appendQuery("page" -> page.toString)
@@ -63,6 +65,19 @@ package object html {
     else newUri
 
   }
+
+  def paginationUri(category: Category, params: ExploreParams, pagination: Pagination)(page: Int): Uri =
+    Uri(s"/explore/${category.label}")
+      .appendQuery("sort" -> params.sorting.label)
+      .appendQuery("languages", params.languages.map(_.label))
+      .appendQuery("platforms", params.platforms.map(_.label))
+      .appendQuery("page" -> page.toString)
+
+  def exploreCategoryUri(category: Category, params: ExploreParams): Uri =
+    Uri(s"/explore/${category.label}")
+      .appendQuery("sort" -> params.sorting.label)
+      .appendQuery("languages", params.languages.map(_.label))
+      .appendQuery("platforms", params.platforms.map(_.label))
 
   // https://www.reddit.com/r/scala/comments/4n73zz/scala_puzzle_gooooooogle_pagination/d41jor5
   def paginationRender(

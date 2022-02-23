@@ -8,11 +8,11 @@ sealed trait Sorting {
 object Sorting {
   implicit val ordering: Ordering[Sorting] = Ordering.by {
     case Relevance    => 1
-    case Dependent    => 2
+    case Stars        => 2
     case Created      => 3
-    case Stars        => 4
-    case Forks        => 5
-    case Contributors => 6
+    case Forks        => 4
+    case Contributors => 5
+    case Dependent    => 6
   }
 
   val all: Seq[Sorting] = Seq(Stars, Forks, Contributors, Dependent, Relevance, Created).sorted

@@ -1,9 +1,7 @@
-@import scaladex.core.model.search.Pagination
 @import scaladex.core.model.search.SearchParams
 @import scaladex.core.model.search.Sorting
 
 @(params: SearchParams,
-  pagination: Pagination, 
   you: Boolean)
 <div class="order-by">
   <form action="/search" action="GET">
@@ -11,7 +9,6 @@
     @if(you){
       <input type="hidden" name="you" value="">
     }
-    <input type="hidden" name="page" value="@pagination.current">
 
     @for(topic <- params.topics){
       <input type="hidden" name="topics" value="@topic">

@@ -124,14 +124,13 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
               )
               val pageParams = PageParams(page, total)
 
-              def convert(project: ProjectDocument): SearchApi.Project = {
+              def convert(project: ProjectDocument): SearchApi.Project =
                 SearchApi.Project(
                   project.organization.value,
                   project.repository.value,
                   project.githubInfo.flatMap(_.logo.map(_.target)),
                   project.artifactNames.map(_.value)
                 )
-              }
 
               binaryVersion match {
                 case Some(_) =>

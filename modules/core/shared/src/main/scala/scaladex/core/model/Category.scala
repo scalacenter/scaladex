@@ -81,8 +81,12 @@ object Category {
 
   case object Bioinformatics extends Category
   case object CryptographyAndHashing extends Category
-  case object EconomyFinanceAndCryptocurrencies extends Category
-  case object ProbabilityStatisticsAndMachineLearning extends Category
+  case object EconomyFinanceAndCryptocurrencies extends Category {
+    override val title: String = "Economy, Finance and Cryptocurrencies"
+  }
+  case object ProbabilityStatisticsAndMachineLearning extends Category {
+    override val title: String = "Probability, Statistics and Machine Learning"
+  }
   case object NaturalLanguageProcessing extends Category
   case object NumericalAndSymbolicComputing extends Category
 

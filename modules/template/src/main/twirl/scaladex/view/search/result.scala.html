@@ -1,6 +1,5 @@
 @import akka.http.scaladsl.model.Uri
 @import scaladex.view.html._
-
 @import scaladex.core.model.search.Pagination
 @import scaladex.core.model.search.SearchParams
 @import scaladex.core.model.search.ProjectHit
@@ -14,9 +13,9 @@
   projects: Seq[ProjectHit],
   user: Option[UserState],
   you: Boolean,
-  topics: Seq[(String, Long)],
-  languages: Seq[(Language, Long)],
-  platforms: Seq[(Platform, Long)]
+  topics: Seq[(String, Int)],
+  languages: Seq[(Language, Int)],
+  platforms: Seq[(Platform, Int)]
 )
 @if(params.contributingSearch){
   <h2 class="text-center">Contributing Search</h2>
@@ -36,12 +35,12 @@
     </div>
   </div>
   <div class="col-md-10">
-    @sorting(params, pagination, you)
+    @sorting(params, you)
   </div>
 </div>
 <div class="row">
   <div class="col-md-3">
-    @filter(params, topics, languages, platforms, pagination, you)
+    @filter(params, topics, languages, platforms, you)
   </div>      
   <div class="col-md-9">
     @resultList(projects, params)

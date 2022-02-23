@@ -4,7 +4,6 @@ import scaladex.core.model.Project
 
 case class SearchParams(
     queryString: String = "",
-    page: PageParams = PageParams(1, 20),
     sorting: Sorting = Sorting.Relevance,
     userRepos: Set[Project.Reference] = Set(),
     topics: Seq[String] = Nil,

@@ -16,9 +16,9 @@
   projects: Seq[ProjectHit],
   user: Option[UserState],
   you: Boolean,
-  topics: Seq[(String, Long)],
-  languages: Seq[(Language, Long)],
-  platforms: Seq[(Platform, Long)]
+  topics: Seq[(String, Int)],
+  languages: Seq[(Language, Int)],
+  platforms: Seq[(Platform, Int)]
 )
 @main(env, title = s"Search ${params.queryString}", showSearch = true, user, params, you) {
   <main id="container-search">

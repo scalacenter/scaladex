@@ -17,13 +17,9 @@ import scaladex.core.model.search.SearchParams
 import scaladex.infra.ElasticsearchEngine
 import scaladex.infra.sql.DoobieUtils
 import scaladex.server.service.SearchSynchronizer
-import scaladex.core.model.Scala
 import scaladex.infra.SqlDatabase
 import scaladex.infra.DataPaths
 import scaladex.infra.FilesystemStorage
-import scaladex.core.model.BinaryVersion
-import scaladex.core.model.ScalaJs
-import scaladex.core.model.ScalaNative
 import scaladex.core.model.search.PageParams
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
@@ -117,23 +113,11 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
   }
 
   test("filter _sjs0.6_2.12") {
-    val scalaJs = BinaryVersion(ScalaJs.`0.6`, Scala.`2.12`)
-
     top(
-      SearchParams(binaryVersion = Some(scalaJs)),
+      SearchParams(languages = Seq("2.12"), platforms = Seq("sjs0.6")),
       List(
         "scala-js" -> "scala-js"
       )
-    )
-  }
-
-  test("filter _sjs0.6_2.12 (2)") {
-    val scalaJs = BinaryVersion(ScalaJs.`0.6`, Scala.`2.12`)
-
-    compare(
-      SearchParams(binaryVersion = Some(scalaJs)),
-      List(),
-      (_, obtained) => assert(obtained.nonEmpty)
     )
   }
 
@@ -149,11 +133,8 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
   }
 
   test("filter _native0.3_2.11") {
-    val scalaNative =
-      BinaryVersion(ScalaNative.`0.3`, Scala.`2.11`)
-
     top(
-      SearchParams(binaryVersion = Some(scalaNative)),
+      SearchParams(languages = Seq("2.11"), platforms = Seq("native0.3")),
       List(
         ("scalaz", "scalaz"),
         ("scopt", "scopt"),
@@ -164,7 +145,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
 
   private def first(query: String)(org: String, repo: String): Future[Assertion] = {
     val params = SearchParams(queryString = query)
-    searchEngine.find(params).map { page =>
+    searchEngine.find(params, PageParams(1, 20)).map { page =>
       assert {
         page.items.headOption
           .map(_.document.reference)
@@ -191,7 +172,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     )
 
   private def top(query: String, tops: List[(String, String)]): Future[Assertion] = {
-    val params = SearchParams(queryString = query, PageParams(1, 12))
+    val params = SearchParams(queryString = query)
     top(params, tops)
   }
 
@@ -203,13 +184,12 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
           Seq[Project.Reference]
       ) => Assertion
   ): Future[Assertion] = {
-
     val expectedRefs = expected.map {
       case (org, repo) =>
         Project.Reference.from(org, repo)
     }
 
-    searchEngine.find(params).map { page =>
+    searchEngine.find(params, PageParams(1, 20)).map { page =>
       val obtainedRefs = page.items.map(_.document.reference)
       assertFun(expectedRefs, obtainedRefs)
     }

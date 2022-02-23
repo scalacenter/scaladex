@@ -6,26 +6,31 @@
 @import scaladex.core.model.search.ProjectDocument
 @import scaladex.core.model.Scala
 @import scaladex.core.model.Platform
+@import scaladex.core.model.search.ExploreParams
 
 @(
   env: Env,
   user: Option[UserState],
   metaCategories: Seq[(MetaCategory, Seq[(Category, Seq[ProjectDocument])])],
-  scalaVersions: Seq[Scala],
+  languages: Seq[Scala],
   platforms: Seq[Platform],
-  selectedScalaVersions: Seq[Scala],
-  selectedPlatforms: Seq[Platform]
+  params: ExploreParams
 )
 @main(env, title = "Scaladex", showSearch = true, user) {
-  <main id="container-explore">
-    <div class="container">
+  <main id="container-explore-all">
+    <div class="explore-header">
+      <div class="container">
+        <h1><a href="/explore">Awesome Scala</a></h1>
+      </div>
+    </div>
+    <div class="container explore-content">
       <div class="col-lg-3 col-md-4 sidebar">
         <form action="/explore" action="GET">
           <div class="filter">
-            <label for="select-platform"><h2>Platform:</h2></label>
+            <label for="select-platform"><h3>Platform:</h3></label>
             <select id="select-platform" name="platforms" class="selectpicker" multiple data-max-options="1" onchange="this.form.submit()">
               @for(platform <- platforms) {
-                <option value="@platform.label" @if(selectedPlatforms.contains(platform)){selected}>
+                <option value="@platform.label" @if(params.platforms.contains(platform)){selected}>
                   @platform
                 </option>
               }
@@ -33,11 +38,11 @@
           </div>
           
           <div class="filter">
-            <label for="select-language"><h2>Scala Version:</h2></label>
+            <label for="select-language"><h3>Scala Version:</h3></label>
             <select id="select-language" name="languages" class="selectpicker" multiple data-max-options="1" onchange="this.form.submit()">
-              @for(scalaVersion <- scalaVersions) {
-                <option value="@scalaVersion.label" @if(selectedScalaVersions.contains(scalaVersion)){selected}>
-                  @scalaVersion
+              @for(language <- languages) {
+                <option value="@language.label" @if(params.languages.contains(language)){selected}>
+                  @language
                 </option>
               }
             </select>
@@ -45,7 +50,7 @@
         </form>
         
         <nav>
-          <h2>Categories:</h2>
+          <h3>Categories:</h3>
           <ul>
             @for((metaCategory, _) <- metaCategories) { 
               <li>
@@ -62,7 +67,9 @@
             <div class="row">
               @for((category, projects) <- categories) {
                 <section class="category col-lg-6 col-md-12">
-                  <h3>@category.title</h3>
+                  <h3>
+                    <a href="@exploreCategoryUri(category, params)">@category.title</a>
+                  </h3>
                   <ol>
                     @for(project <- projects) {
                       <li>
@@ -86,6 +93,9 @@
                       </li>
                     }
                   </ol>
+                  <div class="see-more">
+                    <a href="@exploreCategoryUri(category, params)">See More</a>
+                  </div>
                 </section>
               }
             </div>

@@ -30,6 +30,7 @@ import scaladex.core.model.GithubIssue
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
+import scaladex.core.model.search.ExploreParams
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.Pagination
@@ -125,20 +126,20 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
   def refresh(): Future[Unit] =
     esClient.execute(refreshIndex(index)).map(_ => ())
 
-  override def count(): Future[Long] = {
+  override def count(): Future[Int] = {
     val query = must(matchAllQuery())
     val request = search(index).query(query).size(0)
-    esClient.execute(request).map(_.result.totalHits)
+    esClient.execute(request).map(_.result.totalHits.toInt)
   }
 
-  override def countByTopics(limit: Int): Future[Seq[(String, Long)]] =
+  override def countByTopics(limit: Int): Future[Seq[(String, Int)]] =
     countAllUnique("githubInfo.topics.keyword", matchAllQuery(), limit)
       .map(_.sortBy(_._1))
 
-  def countByLanguages(): Future[Seq[(Language, Long)]] =
+  def countByLanguages(): Future[Seq[(Language, Int)]] =
     languageAggregation(matchAllQuery())
 
-  def countByPlatforms(): Future[Seq[(Platform, Long)]] =
+  def countByPlatforms(): Future[Seq[(Platform, Int)]] =
     platformAggregations(matchAllQuery())
 
   override def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]] = {
@@ -165,7 +166,12 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     esClient.execute(request).map(extractDocuments)
   }
 
-  override def find(query: String, binaryVersion: Option[BinaryVersion], cli: Boolean, page: PageParams): Future[Page[ProjectDocument]] = {
+  override def find(
+      query: String,
+      binaryVersion: Option[BinaryVersion],
+      cli: Boolean,
+      page: PageParams
+  ): Future[Page[ProjectDocument]] = {
     val query = must(
       optionalQuery(cli, cliQuery),
       optionalQuery(binaryVersion)(binaryVersionQuery)
@@ -173,12 +179,11 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     val request = search(index).query(gitHubStarScoring(query)).sortBy(sortQuery(Sorting.Relevance))
     findPage(request, page).map(_.flatMap(toProjectDocument))
   }
-  override def find(params: SearchParams): Future[Page[ProjectHit]] = {
+  override def find(params: SearchParams, page: PageParams): Future[Page[ProjectHit]] = {
     val request = search(index)
       .query(gitHubStarScoring(filteredSearchQuery(params)))
       .sortBy(sortQuery(params.sorting))
-    findPage(request, params.page)
-      .map(_.flatMap(toProjectHit))
+    findPage(request, page).map(_.flatMap(toProjectHit))
   }
 
   private def findPage(request: SearchRequest, page: PageParams): Future[Page[SearchHit]] = {
@@ -235,46 +240,42 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
         }
       }
 
-  override def countByTopics(params: SearchParams, limit: Int): Future[Seq[(String, Long)]] =
+  override def countByTopics(params: SearchParams, limit: Int): Future[Seq[(String, Int)]] =
     countAllUnique("githubInfo.topics.keyword", filteredSearchQuery(params), limit)
       .map(addMissing(params.topics))
 
-  override def countByLanguages(params: SearchParams): Future[Seq[(Language, Long)]] =
+  override def countByLanguages(params: SearchParams): Future[Seq[(Language, Int)]] =
     languageAggregation(filteredSearchQuery(params))
       .map(addMissing(params.languages.flatMap(Language.fromLabel)))
 
-  override def countByPlatforms(params: SearchParams): Future[Seq[(Platform, Long)]] =
+  override def countByPlatforms(params: SearchParams): Future[Seq[(Platform, Int)]] =
     platformAggregations(filteredSearchQuery(params))
       .map(addMissing(params.platforms.flatMap(Platform.fromLabel)))
 
-  def getAllLanguages(): Future[Seq[Language]] =
-    for (languages <- getAllUnique("languages", matchAllQuery(), maxLanguagesOrPlatforms))
-      yield languages.flatMap(Language.fromLabel).sorted(Language.ordering.reverse)
-
-  def getAllPlatforms(): Future[Seq[Platform]] =
-    for (platforms <- getAllUnique("platforms", matchAllQuery(), maxLanguagesOrPlatforms))
-      yield platforms.flatMap(Platform.fromLabel).sorted(Platform.ordering.reverse)
-
-  override def getByCategory(
+  override def find(
       category: Category,
-      languages: Seq[Language],
-      platforms: Seq[Platform],
-      sorting: Sorting,
+      params: ExploreParams,
       page: PageParams
   ): Future[Page[ProjectDocument]] = {
     val query = must(
       termQuery("category", category.label),
-      binaryVersionQuery(languages.map(_.label), platforms.map(_.label))
+      binaryVersionQuery(params.languages.map(_.label), params.platforms.map(_.label))
     )
     val request = search(index)
       .query(gitHubStarScoring(query))
-      .sortBy(sortQuery(sorting))
+      .sortBy(sortQuery(params.sorting))
 
     findPage(request, page)
       .map(p => p.flatMap(toProjectDocument))
   }
 
-  private def languageAggregation(query: Query): Future[Seq[(Language, Long)]] =
+  def countByLanguages(category: Category, params: ExploreParams): Future[Seq[(Language, Int)]] =
+    languageAggregation(exploreQuery(category, params)).map(addMissing(params.languages))
+
+  def countByPlatforms(category: Category, params: ExploreParams): Future[Seq[(Platform, Int)]] =
+    platformAggregations(exploreQuery(category, params)).map(addMissing(params.platforms))
+
+  private def languageAggregation(query: Query): Future[Seq[(Language, Int)]] =
     countAllUnique("languages", query, maxLanguagesOrPlatforms)
       .map { versionAgg =>
         for {
@@ -284,7 +285,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       }
       .map(_.sortBy(_._1)(Language.ordering.reverse))
 
-  private def platformAggregations(query: Query): Future[Seq[(Platform, Long)]] =
+  private def platformAggregations(query: Query): Future[Seq[(Platform, Int)]] =
     countAllUnique("platforms", query, maxLanguagesOrPlatforms)
       .map { versionAgg =>
         for {
@@ -294,11 +295,8 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       }
       .map(_.sortBy(_._1)(Platform.ordering.reverse))
 
-  private def countAllUnique(field: String, query: Query, limit: Int): Future[Seq[(String, Long)]] =
-    aggregation(field, query, limit).map(_.buckets.map(b => b.key -> b.docCount))
-
-  private def getAllUnique(field: String, query: Query, limit: Int): Future[Seq[String]] =
-    aggregation(field, query, limit).map(_.buckets.map(_.key))
+  private def countAllUnique(field: String, query: Query, limit: Int): Future[Seq[(String, Int)]] =
+    aggregation(field, query, limit).map(_.buckets.map(b => b.key -> b.docCount.toInt))
 
   private def aggregation(field: String, query: Query, limit: Int): Future[Terms] = {
     val aggName = s"${field}_count"
@@ -320,13 +318,17 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       .boostMode(CombineFunction.Multiply)
   }
 
+  private def exploreQuery(category: Category, params: ExploreParams): Query =
+    must(
+      termQuery("category", category.label),
+      binaryVersionQuery(params.languages.map(_.label), params.platforms.map(_.label))
+    )
+
   private def filteredSearchQuery(params: SearchParams): Query =
     must(
       repositoriesQuery(params.userRepos.toSeq),
-      // optionalQuery(params.cli, cliQuery),
       topicsQuery(params.topics),
       binaryVersionQuery(params.languages, params.platforms),
-      // optionalQuery(params.binaryVersion)(binaryVersionQuery),
       optionalQuery(params.contributingSearch, contributingQuery),
       searchQuery(params.queryString, params.contributingSearch)
     )
@@ -478,9 +480,9 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
         regex.replaceAllIn(query, s"$$1$replacement:")
     }
 
-  private def addMissing[T: Ordering](required: Seq[T])(result: Seq[(T, Long)]): Seq[(T, Long)] = {
+  private def addMissing[T: Ordering](required: Seq[T])(result: Seq[(T, Int)]): Seq[(T, Int)] = {
     val missingLabels = required.toSet -- result.map(_._1)
-    val toAdd = missingLabels.map(label => (label, 0L))
+    val toAdd = missingLabels.map(label => (label, 0))
     (result ++ toAdd).sortBy(_._1)(implicitly[Ordering[T]].reverse)
   }
 

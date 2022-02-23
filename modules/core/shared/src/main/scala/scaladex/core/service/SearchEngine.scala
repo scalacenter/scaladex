@@ -7,12 +7,12 @@ import scaladex.core.model.Category
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
+import scaladex.core.model.search.ExploreParams
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.ProjectDocument
 import scaladex.core.model.search.ProjectHit
 import scaladex.core.model.search.SearchParams
-import scaladex.core.model.search.Sorting
 
 trait SearchEngine {
   // Synchronizer
@@ -20,31 +20,30 @@ trait SearchEngine {
   def delete(reference: Project.Reference): Future[Unit]
 
   // Front page
-  def count(): Future[Long]
-  def countByTopics(limit: Int): Future[Seq[(String, Long)]]
-  def countByLanguages(): Future[Seq[(Language, Long)]]
-  def countByPlatforms(): Future[Seq[(Platform, Long)]]
+  def count(): Future[Int]
+  def countByTopics(limit: Int): Future[Seq[(String, Int)]]
+  def countByLanguages(): Future[Seq[(Language, Int)]]
+  def countByPlatforms(): Future[Seq[(Platform, Int)]]
   def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]]
   def getLatest(limit: Int): Future[Seq[ProjectDocument]]
 
   // Old Search API
-  def find(query: String, binaryVersion: Option[BinaryVersion], cli: Boolean, page: PageParams): Future[Page[ProjectDocument]]
-
-  // Search Page
-  def find(params: SearchParams): Future[Page[ProjectHit]]
-  def autocomplete(params: SearchParams, limit: Int): Future[Seq[ProjectDocument]]
-  def countByTopics(params: SearchParams, limit: Int): Future[Seq[(String, Long)]]
-  def countByLanguages(params: SearchParams): Future[Seq[(Language, Long)]]
-  def countByPlatforms(params: SearchParams): Future[Seq[(Platform, Long)]]
-
-  // Explore page
-  def getAllLanguages(): Future[Seq[Language]]
-  def getAllPlatforms(): Future[Seq[Platform]]
-  def getByCategory(
-      category: Category,
-      languages: Seq[Language],
-      platforms: Seq[Platform],
-      sorting: Sorting,
+  def find(
+      query: String,
+      binaryVersion: Option[BinaryVersion],
+      cli: Boolean,
       page: PageParams
   ): Future[Page[ProjectDocument]]
+
+  // Search Page
+  def find(params: SearchParams, page: PageParams): Future[Page[ProjectHit]]
+  def autocomplete(params: SearchParams, limit: Int): Future[Seq[ProjectDocument]]
+  def countByTopics(params: SearchParams, limit: Int): Future[Seq[(String, Int)]]
+  def countByLanguages(params: SearchParams): Future[Seq[(Language, Int)]]
+  def countByPlatforms(params: SearchParams): Future[Seq[(Platform, Int)]]
+
+  // Explore page
+  def find(category: Category, params: ExploreParams, page: PageParams): Future[Page[ProjectDocument]]
+  def countByLanguages(category: Category, params: ExploreParams): Future[Seq[(Language, Int)]]
+  def countByPlatforms(category: Category, params: ExploreParams): Future[Seq[(Platform, Int)]]
 }

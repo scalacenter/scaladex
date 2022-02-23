@@ -2,7 +2,27 @@
 // This file contains all styles related to the 'explore' page.
 // -----------------------------------------------------------------------------
 
-#container-explore {
+.explore-header {
+  background: url("/assets/img/head-project-background.png") no-repeat center top #0D343C;
+  min-height: 150px;
+  padding: 20px 0;
+
+  h1 {
+    padding-left: 20px;
+    margin: 0;
+    a  {
+      font-size: 36px;
+      font-family: "Caveat";
+      color: white;
+    }
+  }
+}
+
+#container-explore-all {
+  .explore-content {
+    margin-top: -100px
+  }
+
   .sidebar {
     max-height: calc(100vh - 20px);
     overflow: auto;
@@ -12,7 +32,7 @@
     position: sticky;
     margin-top: 40px;
     top: 10px;
-    h2 {
+    h3 {
       font-size: 20px;
     }
   }
@@ -26,7 +46,7 @@
   }
 
   nav {
-    h2 {
+    h3 {
       margin-bottom: 24px;
     }
     ul {
@@ -82,8 +102,10 @@
       padding: 0 30px;
       font-size: 16px;
       h3 {
-        font-size: 22px;
-        color: $brand-secondary;
+        a {
+          font-size: 22px;
+          color: $brand-secondary;
+        }
         margin-top: 40px;
       }
       ol {
@@ -99,6 +121,10 @@
             color: $brand-primary;
           }
         }
+      }
+      .see-more {
+        float: right;
+        padding-right: 20px;
       }
     }
     .project {
@@ -120,6 +146,132 @@
     .stats {
       vertical-align: middle;
       float: right;
+    }
+  }
+}
+
+#container-explore-category {
+  .explore-header {
+    h2 {
+      padding-left: 20px;
+      margin-top: 10px;
+      font-size: 33px;
+    }
+    .dropdown {
+      float: right;
+    }
+    .dropdown-toggle {
+      background: rgba(255,255,255,0.1);
+      font-size: 18px;
+      color: white;
+    }
+    .bs-placeholder {
+      color: rgba(255,255,255,0.5);
+    }
+    
+  }
+  background: $gray-lighter;
+  padding-bottom: 40px;
+  @media screen and (min-width: $screen-md-min) {
+      padding-bottom: 80px;
+  }
+  .topbar {
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+  .sidebar {
+    padding: 20px;
+  }
+  .result-count {
+    padding-top: 10px;
+  }
+  .order-by {
+    margin-top: 20px;
+    span {
+      margin-right: 8px;
+    }
+
+    .btn-primary {
+      @include button-variant($btn-primary-color,
+              rgba($gray-darker, 0.7),
+              $btn-primary-border);
+    }
+    @media screen and (min-width: $screen-md-min) {
+      float: right;
+      margin-top: 0;
+    }
+  }
+
+  .filters {
+    padding-left: 0;
+
+    li {
+      display: block;
+
+      input {
+        margin-right: 12px;
+      }
+    }
+  }
+
+  .list-result {
+    .item-list {
+      display: block;
+
+      padding: 15px 0;
+      margin: 0;
+      border-bottom: 1px solid rgba($gray-dark, 0.12);
+
+      .targets,
+      .homepage,
+      .description {
+          margin-bottom: 0;
+          display: inline-block;
+      }
+      .targets {
+          padding-left: 16px;
+      }
+      h4 {
+        padding-left: 44px;
+        margin-bottom: 7px;
+        margin-top: 0;
+        a {
+            color: $gray-darker;
+        }
+      }
+      img {
+        float: left;
+        width: 28px;
+        height: auto;
+      }
+      .stats {
+        padding-left: 22px;
+        margin-top: 12px;
+        span {
+          margin-left: 20px;
+          a {
+            &:hover,
+            &:focus {
+                text-decoration: none;
+            }
+          }
+        }
+        .item-filter-tag {
+          color: $gray-light;
+          font-style: italic;
+          font-weight: 300;
+        }
+        @media screen and (min-width: $screen-md-min) {
+          text-align: right;
+        }
+      }
+      a {
+        color: $gray;
+        &:hover,
+        &:focus {
+            color: $brand-primary;
+        }
+      }
     }
   }
 }
