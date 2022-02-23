@@ -8,7 +8,7 @@ import java.util.Locale
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
 import scaladex.core.model.Category
-import scaladex.core.model.search.ExploreParams
+import scaladex.core.model.search.AwesomeParams
 import scaladex.core.model.search.Pagination
 import scaladex.core.model.search.SearchParams
 
@@ -66,15 +66,15 @@ package object html {
 
   }
 
-  def paginationUri(category: Category, params: ExploreParams, pagination: Pagination)(page: Int): Uri =
-    Uri(s"/explore/${category.label}")
+  def paginationUri(category: Category, params: AwesomeParams, pagination: Pagination)(page: Int): Uri =
+    Uri(s"/awesome/${category.label}")
       .appendQuery("sort" -> params.sorting.label)
       .appendQuery("languages", params.languages.map(_.label))
       .appendQuery("platforms", params.platforms.map(_.label))
       .appendQuery("page" -> page.toString)
 
-  def exploreCategoryUri(category: Category, params: ExploreParams): Uri =
-    Uri(s"/explore/${category.label}")
+  def awesomeCategoryUri(category: Category, params: AwesomeParams): Uri =
+    Uri(s"/awesome/${category.label}")
       .appendQuery("sort" -> params.sorting.label)
       .appendQuery("languages", params.languages.map(_.label))
       .appendQuery("platforms", params.platforms.map(_.label))

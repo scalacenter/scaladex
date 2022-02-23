@@ -3,16 +3,16 @@
 @import scaladex.core.model.Platform
 @import scaladex.core.model.Language
 @import scaladex.core.model.Category
-@import scaladex.core.model.search.ExploreParams
+@import scaladex.core.model.search.AwesomeParams
 
 @(
   category: Category, 
   languages: Seq[(Language, Int)],
   platforms: Seq[(Platform, Int)],
-  params: ExploreParams
+  params: AwesomeParams
 )
 <div class="filters">
-  <form action="/explore/@category.label" action="GET">
+  <form action="/awesome/@category.label" action="GET">
     <input type="hidden" name="sort" value="@params.sorting.label">
     <h3>Filters</h3>
     <fieldset>

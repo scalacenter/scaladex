@@ -8,7 +8,7 @@ import scaladex.core.model.Category
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
-import scaladex.core.model.search.ExploreParams
+import scaladex.core.model.search.AwesomeParams
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.ProjectDocument
@@ -56,9 +56,9 @@ class InMemorySearchEngine extends SearchEngine {
 
   override def countByPlatforms(params: SearchParams): Future[Seq[(Platform, Int)]] = ???
 
-  override def find(category: Category, params: ExploreParams, page: PageParams): Future[Page[ProjectDocument]] = ???
+  override def find(category: Category, params: AwesomeParams, page: PageParams): Future[Page[ProjectDocument]] = ???
 
-  override def countByLanguages(category: Category, params: ExploreParams): Future[Seq[(Language, Int)]] = ???
+  override def countByLanguages(category: Category, params: AwesomeParams): Future[Seq[(Language, Int)]] = ???
 
-  override def countByPlatforms(category: Category, params: ExploreParams): Future[Seq[(Platform, Int)]] = ???
+  override def countByPlatforms(category: Category, params: AwesomeParams): Future[Seq[(Platform, Int)]] = ???
 }

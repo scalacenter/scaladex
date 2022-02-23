@@ -135,7 +135,7 @@ object Server extends LazyLogging {
     val frontPage = new FrontPage(config.env, webDatabase, searchEngine)
     val adminPages = new AdminPage(config.env, schedulerService)
     val projectPages = new ProjectPages(config.env, webDatabase, filesystem)
-    val explorePages = new ExplorePages(config.env, searchEngine)
+    val awesomePages = new AwesomePages(config.env, searchEngine)
 
     val programmaticRoutes = concat(
       new PublishApi(githubAuth, publishProcess).routes,
@@ -149,7 +149,7 @@ object Server extends LazyLogging {
     val userFacingRoute: Route =
       optionalSession(refreshable, usingCookies) { userId =>
         val user = userId.flatMap(session.getUser)
-        frontPage.route(user) ~ adminPages.route(user) ~ explorePages.route(user) ~
+        frontPage.route(user) ~ adminPages.route(user) ~ awesomePages.route(user) ~
           redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
             projectPages.route(user) ~ searchPages.route(user)
           }

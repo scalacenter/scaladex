@@ -7,7 +7,7 @@ import scaladex.core.model.Category
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
-import scaladex.core.model.search.ExploreParams
+import scaladex.core.model.search.AwesomeParams
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.ProjectDocument
@@ -42,8 +42,8 @@ trait SearchEngine {
   def countByLanguages(params: SearchParams): Future[Seq[(Language, Int)]]
   def countByPlatforms(params: SearchParams): Future[Seq[(Platform, Int)]]
 
-  // Explore page
-  def find(category: Category, params: ExploreParams, page: PageParams): Future[Page[ProjectDocument]]
-  def countByLanguages(category: Category, params: ExploreParams): Future[Seq[(Language, Int)]]
-  def countByPlatforms(category: Category, params: ExploreParams): Future[Seq[(Platform, Int)]]
+  // Awesome pages
+  def find(category: Category, params: AwesomeParams, page: PageParams): Future[Page[ProjectDocument]]
+  def countByLanguages(category: Category, params: AwesomeParams): Future[Seq[(Language, Int)]]
+  def countByPlatforms(category: Category, params: AwesomeParams): Future[Seq[(Platform, Int)]]
 }

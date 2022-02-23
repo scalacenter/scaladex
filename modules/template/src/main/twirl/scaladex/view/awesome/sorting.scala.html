@@ -3,14 +3,14 @@
 @import scaladex.core.model.Platform
 @import scaladex.core.model.Language
 @import scaladex.core.model.Category
-@import scaladex.core.model.search.ExploreParams
+@import scaladex.core.model.search.AwesomeParams
 
 @(
   category: Category,
-  params: ExploreParams
+  params: AwesomeParams
 )
 <div class="order-by">
-  <form action="/explore/@category.label" action="GET">
+  <form action="/awesome/@category.label" action="GET">
     @for(language <- params.languages){
       <input type="hidden" name="languages" value="@language.label">
     }

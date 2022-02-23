@@ -30,7 +30,7 @@ import scaladex.core.model.GithubIssue
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
-import scaladex.core.model.search.ExploreParams
+import scaladex.core.model.search.AwesomeParams
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.Pagination
@@ -254,7 +254,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
 
   override def find(
       category: Category,
-      params: ExploreParams,
+      params: AwesomeParams,
       page: PageParams
   ): Future[Page[ProjectDocument]] = {
     val query = must(
@@ -269,11 +269,11 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       .map(p => p.flatMap(toProjectDocument))
   }
 
-  def countByLanguages(category: Category, params: ExploreParams): Future[Seq[(Language, Int)]] =
-    languageAggregation(exploreQuery(category, params)).map(addMissing(params.languages))
+  def countByLanguages(category: Category, params: AwesomeParams): Future[Seq[(Language, Int)]] =
+    languageAggregation(awesomeQuery(category, params)).map(addMissing(params.languages))
 
-  def countByPlatforms(category: Category, params: ExploreParams): Future[Seq[(Platform, Int)]] =
-    platformAggregations(exploreQuery(category, params)).map(addMissing(params.platforms))
+  def countByPlatforms(category: Category, params: AwesomeParams): Future[Seq[(Platform, Int)]] =
+    platformAggregations(awesomeQuery(category, params)).map(addMissing(params.platforms))
 
   private def languageAggregation(query: Query): Future[Seq[(Language, Int)]] =
     countAllUnique("languages", query, maxLanguagesOrPlatforms)
@@ -318,7 +318,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       .boostMode(CombineFunction.Multiply)
   }
 
-  private def exploreQuery(category: Category, params: ExploreParams): Query =
+  private def awesomeQuery(category: Category, params: AwesomeParams): Query =
     must(
       termQuery("category", category.label),
       binaryVersionQuery(params.languages.map(_.label), params.platforms.map(_.label))
