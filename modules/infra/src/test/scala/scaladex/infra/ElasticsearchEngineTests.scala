@@ -13,7 +13,9 @@ import scaladex.core.model.Project
 import scaladex.core.model.Scala
 import scaladex.core.model.ScalaJs
 import scaladex.core.model.ScalaNative
+import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.SearchParams
+import scaladex.core.model.search.Sorting
 import scaladex.infra.config.ElasticsearchConfig
 
 class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAndAfterAll {
@@ -22,6 +24,7 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
 
   val config: ElasticsearchConfig = ElasticsearchConfig.load()
   val searchEngine: ElasticsearchEngine = ElasticsearchEngine.open(config)
+  val page: PageParams = PageParams(1, 20)
 
   override protected def beforeAll(): Unit = {
     searchEngine.waitUntilReady()
@@ -37,18 +40,15 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
     for {
       _ <- searchEngine.insert(Cats.projectDocument)
       _ <- searchEngine.refresh()
-      page <- searchEngine.find(SearchParams(queryString = "cats"))
+      page <- searchEngine.find(SearchParams(queryString = "cats"), page)
     } yield page.items.map(_.document) should contain theSameElementsAs List(Cats.projectDocument)
   }
 
   test("search for cats_3") {
-    val params = SearchParams(
-      queryString = "cats",
-      binaryVersion = Some(BinaryVersion(Jvm, Scala.`3`))
-    )
-    searchEngine.find(params).map { page =>
-      page.items.map(_.document) should contain theSameElementsAs List(Cats.projectDocument)
-    }
+    val binaryVersion = BinaryVersion(Jvm, Scala.`3`)
+    val pageParams = PageParams(1, 10)
+    for (page <- searchEngine.find("cats", Some(binaryVersion), false, pageParams))
+      yield page.items should contain theSameElementsAs List(Cats.projectDocument)
   }
 
   test("sort by dependent, created, stars, forks, and contributors") {
@@ -59,11 +59,11 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
       _ <- searchEngine.insert(Cats.projectDocument)
       _ <- searchEngine.insert(Scalafix.projectDocument)
       _ <- searchEngine.refresh()
-      byDependent <- searchEngine.find(params.copy(sorting = Some("dependent")))
-      byCreated <- searchEngine.find(params.copy(sorting = Some("created")))
-      byStars <- searchEngine.find(params.copy(sorting = Some("stars")))
-      byForks <- searchEngine.find(params.copy(sorting = Some("forks")))
-      byContributors <- searchEngine.find(params.copy(sorting = Some("contributors")))
+      byDependent <- searchEngine.find(params.copy(sorting = Sorting.Dependent), page)
+      byCreated <- searchEngine.find(params.copy(sorting = Sorting.Created), page)
+      byStars <- searchEngine.find(params.copy(sorting = Sorting.Stars), page)
+      byForks <- searchEngine.find(params.copy(sorting = Sorting.Forks), page)
+      byContributors <- searchEngine.find(params.copy(sorting = Sorting.Contributors), page)
     } yield {
       byDependent.items.map(_.document) should contain theSameElementsInOrderAs catsFirst
       byCreated.items.map(_.document) should contain theSameElementsInOrderAs scalafixFirst // todo fix
@@ -79,7 +79,7 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
     for {
       _ <- searchEngine.insert(Cats.projectDocument)
       _ <- searchEngine.refresh()
-      hits <- searchEngine.find(params)
+      hits <- searchEngine.find(params, page)
     } yield hits.items.flatMap(_.beginnerIssueHits) should contain theSameElementsAs expected
   }
 
@@ -128,8 +128,8 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
     for {
       _ <- searchEngine.insert(cats)
       _ <- searchEngine.refresh()
-      byFormerOrga <- searchEngine.find(SearchParams("kindlevel"))
-      byFormerRepo <- searchEngine.find(SearchParams("dogs"))
+      byFormerOrga <- searchEngine.find(SearchParams("kindlevel"), page)
+      byFormerRepo <- searchEngine.find(SearchParams("dogs"), page)
     } yield {
       byFormerOrga.items.map(_.document) should contain theSameElementsAs Seq(cats)
       byFormerRepo.items.map(_.document) should contain theSameElementsAs Seq(cats)

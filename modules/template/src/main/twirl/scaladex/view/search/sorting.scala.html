@@ -1,8 +1,7 @@
-@import scaladex.core.model.search.Pagination
 @import scaladex.core.model.search.SearchParams
+@import scaladex.core.model.search.Sorting
 
 @(params: SearchParams,
-  pagination: Pagination, 
   you: Boolean)
 <div class="order-by">
   <form action="/search" action="GET">
@@ -10,7 +9,6 @@
     @if(you){
       <input type="hidden" name="you" value="">
     }
-    <input type="hidden" name="page" value="@pagination.current">
 
     @for(topic <- params.topics){
       <input type="hidden" name="topics" value="@topic">
@@ -30,35 +28,12 @@
 
     <h3>Sorting</h3>
     <div class="btn-group" role="group" aria-label="sorting">
-      <button name="sort" value="relevant" type="submit" 
-        class="btn btn-default @if(params.sorting.contains("relevant") || params.sorting.isEmpty) { active }">
-        Relevant
-      </button>
-      <button name="sort" value="dependent" type="submit" 
-        class="btn btn-default @if(params.sorting.contains("dependent")) { active }">
-        Dependent
-      </button>
-      <button name="sort" value="created" type="submit" 
-        class="btn btn-default @if(params.sorting.contains("created")) { active }">
-        Created
-      </button>
-      <!-- TODO compute updatedAt along with createdAt in update-projects scheduler -->
-      <!-- <button name="sort" value="updated" type="submit" 
-        class="btn btn-default @if(params.sorting.contains("updated")) { active }">
-        Updated
-      </button> -->
-      <button name="sort" value="stars" type="submit" 
-        class="btn btn-default @if(params.sorting.contains("stars")) { active }">
-        Stars
-      </button>
-      <button name="sort" value="forks" type="submit" 
-        class="btn btn-default @if(params.sorting.contains("forks")) { active }">
-        Forks
-      </button>
-      <button name="sort" value="contributors" type="submit"
-        class="btn btn-default @if(params.sorting.contains("contributors")) { active }">
-        Contributors
-      </button>
+      @for(sorting <- Sorting.all) {
+        <button name="sort" value="@sorting.label" type="submit" 
+          class="btn btn-default @if(params.sorting == sorting) { active }">
+          @sorting.title
+        </button>
+      }
     </div>
   </form>
 </div>

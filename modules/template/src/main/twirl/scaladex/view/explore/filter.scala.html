@@ -1,0 +1,47 @@
+
+@import scaladex.core.model.search.SearchParams
+@import scaladex.core.model.Platform
+@import scaladex.core.model.Language
+@import scaladex.core.model.Category
+@import scaladex.core.model.search.ExploreParams
+
+@(
+  category: Category, 
+  languages: Seq[(Language, Int)],
+  platforms: Seq[(Platform, Int)],
+  params: ExploreParams
+)
+<div class="filters">
+  <form action="/explore/@category.label" action="GET">
+    <input type="hidden" name="sort" value="@params.sorting.label">
+    <h3>Filters</h3>
+    <fieldset>
+      <legend>Languages</legend>
+      <ul>
+      @for((language, count) <- languages) {
+        <li>
+          <label>
+            <input type="checkbox" @if(params.languages.contains(language)) { checked }
+                    name="languages" value="@language.label" onclick="this.form.submit()">
+            @language (@count)
+          </label>
+        </li>
+      }
+      </ul>
+    </fieldset>
+    <fieldset>
+      <legend>Platforms</legend>
+      <ul>
+      @for((platform, count) <- platforms) {
+        <li>
+          <label>
+            <input type="checkbox" @if(params.platforms.contains(platform)) { checked }
+                    name="platforms" value="@platform.label" onclick="this.form.submit()">
+            @platform (@count)
+          </label>
+        </li>
+      }
+      </ul>
+    </fieldset>
+  </form>
+</div>

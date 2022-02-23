@@ -14,9 +14,7 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactSelection
 import scaladex.core.model.Project
 import scaladex.core.model.SemanticVersion
-import scaladex.core.model.UserState
-import scaladex.core.model.search
-import scaladex.core.model.search.SearchParams
+import scaladex.core.model.search.PageParams
 import scaladex.core.service.WebDatabase
 
 package object route {
@@ -30,30 +28,8 @@ package object route {
     // dataRaw is in seconds
     Unmarshaller.strict[String, Instant](dateRaw => Instant.ofEpochSecond(dateRaw.toLong))
 
-  def searchParams(user: Option[UserState]): Directive1[SearchParams] =
-    parameters(
-      "q" ? "*",
-      "page".as[Int] ? 1,
-      "sort".?,
-      "topics".as[String].*,
-      "languages".as[String].*,
-      "platforms".as[String].*,
-      "you".?,
-      "contributingSearch".as[Boolean] ? false
-    ).tmap {
-      case (q, page, sort, topics, languages, platforms, you, contributingSearch) =>
-        val userRepos = you.flatMap(_ => user.map(_.repos)).getOrElse(Set())
-        search.SearchParams(
-          q,
-          page,
-          sort,
-          userRepos,
-          topics = topics.toSeq,
-          languages = languages.toSeq,
-          platforms = platforms.toSeq,
-          contributingSearch = contributingSearch
-        )
-    }
+  def paging(size: Int): Directive1[PageParams] =
+    parameter("page".as[Int].withDefault(1)).map(PageParams(_, size))
 
   def getSelectedArtifact(
       database: WebDatabase,

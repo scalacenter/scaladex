@@ -1,0 +1,96 @@
+@import scaladex.view.html._
+@import scaladex.core.model.search.ProjectDocument
+
+@(projects: Seq[ProjectDocument])
+<ol class="list-result box">
+  @for(project <- projects){
+  <li class="item-list">
+    <a href="/@project.organization/@project.repository">
+      <div class="row">
+        <div class="col-md-8">
+          <div>
+            @githubUserAvatar(project.githubInfo.flatMap(_.logo))
+            <h4>@project.reference</h4>
+
+            @for(github <- project.githubInfo) {
+              @for(description <- github.description) {
+                <p class="description emojify">@description</p>
+              }
+            }
+            @if(project.scalaVersions.nonEmpty){
+              <div>
+                Scala Versions:
+                @for(scalaVersion <- project.scalaVersions) {
+                  <span class="targets">@scalaVersion.version</span>
+                }
+              </div>
+            }
+
+            @if(project.sbtVersions.nonEmpty){
+              <div>
+                Sbt:
+                @for(v <- project.sbtVersions) {
+                  <span class="targets">@v.version</span>
+                }
+              </div>
+            }
+
+            @if(project.scalaJsVersions.nonEmpty){
+              <div>
+                Scala.js:
+                @for(v <- project.scalaJsVersions) {
+                  <span class="targets">@v.version</span>
+                }
+              </div>
+            }
+
+            @if(project.scalaNativeVersions.nonEmpty){
+              <div>
+                Scala Native:
+                @for(v <- project.scalaNativeVersions) {
+                  <span class="targets">@v.version</span>
+                }
+              </div>
+            }
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stats">
+            <div>
+            @for(github <- project.githubInfo) {
+              @if(github.topics.nonEmpty) {
+                @for(topic <- github.topics) {
+                  <span class="item-filter-tag">
+                    <a href="/search?topics=@topic">
+                      @topic
+                    </a>
+                  </span>
+                }
+              }
+            }
+            </div>
+
+            <div>
+            @for(github <- project.githubInfo) {
+              @for(stars <- github.stars) {
+                <span>
+                  <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">@stars <i class="fa fa-star"></i></a>
+                </span>
+              }
+              @for(forks <- github.forks) {
+                <span>
+                  <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">@forks <i class="fa fa-code-fork"></i></a>
+                </span>
+              }
+              <span>
+                <a data-toggle="tooltip" data-placement="bottom" title="Contributors" href="#">@github.contributorCount <i class="fa fa-users"></i></a>
+              </span>
+            }
+            </div>
+          </div>
+        </div>
+      </div>
+    </a>
+  </li>
+  }
+</ol>

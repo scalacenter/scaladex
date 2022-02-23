@@ -1,0 +1,68 @@
+@import scaladex.view.html._
+@import scaladex.core.model.UserState
+@import scaladex.core.model.Platform
+@import scaladex.core.model.Env
+@import scaladex.core.model.Scala
+@import scaladex.core.model.Category
+@import scaladex.core.model.MetaCategory
+@import scaladex.core.model.search.ProjectDocument
+@import scaladex.core.model.search.ExploreParams
+@import scaladex.core.model.search.Page
+
+@(
+  env: Env,
+  user: Option[UserState],
+  category: Category,
+  projects: Page[ProjectDocument],
+  scalaVersions: Seq[(Scala, Int)],
+  platforms: Seq[(Platform, Int)],
+  params: ExploreParams
+)
+@main(env, title = category.title, showSearch = true, user) {
+  <main id="container-explore-category">
+    <div class="explore-header">
+      <div class="container">
+        <h1><a href="/explore">Awesome Scala</a></h1>
+        <h2><a href="/explore/@category.label">@category.title</a></h2>
+        <select id="select-category" class="selectpicker" multiple  title="Other Categories"
+            data-max-options="1" data-live-search="true" data-dropdown-align-right="auto"
+            onchange="window.location=this.value">
+          @for(meta <- MetaCategory.all) {
+            <optgroup label="@meta.title">
+              @for(c <- meta.categories) {
+                <option value="@exploreCategoryUri(c, params)"> @c.title </option>
+              }
+            </optgroup>
+          }
+        </select>
+      </div>
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-9 col-md-offset-3 topbar">
+          <div class="col-md-3">
+            <div class="result-count">
+              @if(projects.pagination.current == 1) {
+                @projects.pagination.pageSize results
+              } else {
+                Page @projects.pagination.current of @projects.pagination.pageSize results
+              }
+            </div>
+          </div>
+          <div class="col-md-9">
+            @sorting(category, params)
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-3 sidebar">
+          @filter(category, scalaVersions, platforms, params)
+        </div>      
+        <div class="col-md-9">
+          @resultList(projects.items)
+          @paginate(projects.pagination, paginationUri(category, params, projects.pagination))
+        </div>
+      </div>
+    </div>
+  </main>
+}
