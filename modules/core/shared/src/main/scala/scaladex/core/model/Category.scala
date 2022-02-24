@@ -21,6 +21,7 @@ sealed trait Category {
 }
 
 object Category {
+  implicit val ordering: Ordering[Category] = Ordering.by(_.label)
   val all: Seq[Category] = MetaCategory.all.flatMap(_.categories).distinct
   val byLabel: Map[String, Category] = all.map(category => category.label -> category).toMap
 

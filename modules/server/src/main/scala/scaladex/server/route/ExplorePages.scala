@@ -65,13 +65,13 @@ class ExplorePages(env: Env, searchEngine: SearchEngine)(implicit ec: ExecutionC
       languagesCount <- languagesCountF
       platformsCount <- platformsCountF
     } yield {
-      val byCategories = allByCategories.filter { case (_, projects) => projects.nonEmpty }.toMap
-      val byMetaCategories = MetaCategory.all
-        .map(m => m -> m.categories.flatMap(c => byCategories.get(c).map(c -> _)))
+      val projectsByCategory = allByCategories.filter { case (_, projects) => projects.nonEmpty }.toMap
+      val categoriesByMetaCategory = MetaCategory.all
+        .map(m => m -> m.categories.filter(projectsByCategory.contains))
         .filter { case (_, categories) => categories.nonEmpty }
       val scalaVersions = languagesCount.collect { case (v: Scala, _) => v }
       val platforms = platformsCount.map { case (p, _) => p }
-      html.exploreAll(env, user, byMetaCategories, scalaVersions, platforms, params)
+      html.exploreAll(env, user, categoriesByMetaCategory, projectsByCategory, scalaVersions, platforms, params)
     }
   }
 

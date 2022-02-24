@@ -11,7 +11,8 @@
 @(
   env: Env,
   user: Option[UserState],
-  metaCategories: Seq[(MetaCategory, Seq[(Category, Seq[ProjectDocument])])],
+  categoriesByMetaCategory: Seq[(MetaCategory, Seq[Category])],
+  projectsByCategory: Map[Category, Seq[ProjectDocument]],
   languages: Seq[Scala],
   platforms: Seq[Platform],
   params: ExploreParams
@@ -52,26 +53,26 @@
         <nav>
           <h3>Categories:</h3>
           <ul>
-            @for((metaCategory, _) <- metaCategories) { 
+            @for((meta, _) <- categoriesByMetaCategory) { 
               <li>
-                <a href="#@metaCategory.label"> @metaCategory.title </a>
+                <a href="#@meta.label"> @meta.title </a>
               </li>
             }
           </ul>
         </div>
       </nav>
       <div class="col-lg-9 col-md-8 col-sm-12">
-        @for((metaCategory, categories) <- metaCategories) {
-          <section class="meta-category" id="@metaCategory.label">
-            <h2>@metaCategory.title</h2>
+        @for((meta, categories) <- categoriesByMetaCategory) {
+          <section class="meta-category" id="@meta.label">
+            <h2>@meta.title</h2>
             <div class="row">
-              @for((category, projects) <- categories) {
-                <section class="category col-lg-6 col-md-12">
+              @for(category <- categories) {
+                <section class="category col-lg-6 col-md-12" id="@category.label">
                   <h3>
                     <a href="@exploreCategoryUri(category, params)">@category.title</a>
                   </h3>
                   <ol>
-                    @for(project <- projects) {
+                    @for(project <- projectsByCategory(category)) {
                       <li>
                         <a href="/@project.reference">
                           <div class="project">
@@ -97,6 +98,18 @@
                     <a href="@exploreCategoryUri(category, params)">See More</a>
                   </div>
                 </section>
+              }
+              @defining(meta.seeAlsoCategories.filter(projectsByCategory.contains(_))) { seeAlsoCategories =>
+                @if(seeAlsoCategories.nonEmpty) {
+                  <div class="see-also col-lg-6 col-md-12">
+                    <h3>See also:</h3>
+                    <ul>
+                      @for(category <- seeAlsoCategories) {
+                        <li><a href="#@category.label">@category.title</a></li>
+                      }
+                    </ul>
+                  </div>
+                }
               }
             </div>
           </section>

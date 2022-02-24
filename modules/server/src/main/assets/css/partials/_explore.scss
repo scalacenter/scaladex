@@ -95,22 +95,15 @@
     &>.row {
       font-size: 0;
     }
-    .category {
+    .category, .see-also {
       float: none;
       display: inline-block;
       vertical-align: top;
       padding: 0 30px;
       font-size: 16px;
       h3 {
-        a {
-          font-size: 22px;
-          color: $brand-secondary;
-        }
+        color: $brand-secondary;
         margin-top: 40px;
-      }
-      ol {
-        padding: 0;
-        list-style-type: none;
       }
       a {
         color: inherit;
@@ -122,9 +115,28 @@
           }
         }
       }
+    }
+    .category {
+      h3 {
+        a {
+          font-size: 22px;
+          color: $brand-secondary;
+        }
+      }
+      ol {
+        padding: 0;
+        list-style-type: none;
+      }
       .see-more {
         float: right;
         padding-right: 20px;
+      }
+    }
+    .see-also {
+      li {
+        font-size: 18px;
+        font-family: "Roboto Slab", serif;
+        color: $brand-secondary;
       }
     }
     .project {
