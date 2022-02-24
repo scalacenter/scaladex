@@ -8,7 +8,7 @@
   artifactsByVersions: Seq[(SemanticVersion, Seq[(Artifact.Name, Seq[Artifact])])]
 )
 @allBinaryVersions = @{binaryVersionsByPlatforms.flatMap(_._2)}
-@main(env, title = project.repository.toString, showSearch = true, user) {
+@main(env, title = project.repository.toString, user, showSearch = true) {
   <main class="artifacts">
     <div class="row">
       <div class="col-md-12">

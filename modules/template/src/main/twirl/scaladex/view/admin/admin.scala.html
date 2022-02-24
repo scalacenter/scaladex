@@ -7,7 +7,7 @@
 @import scaladex.core.util.ScalaExtensions._
 
 @(env: Env, user: UserState, schedulers: Seq[SchedulerStatus])
-@main(env, title = "Admin page", showSearch = false, Some(user)) {
+@main(env, title = "Admin page", Some(user)) {
     <main class="admin">
         <div class="container">
             <h2>Scheduler Status</h2>

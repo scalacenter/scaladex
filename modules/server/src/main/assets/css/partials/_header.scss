@@ -61,16 +61,32 @@
             }
         }
 
+        .awesome {
+          font-family: Caveat;
+          font-size: 21px;
+          padding: 3px 10px;
+        }
+
+        .btn-default {
+          background-color: #224951;
+          color: white;
+          &:hover, &:focus {
+            opacity: 0.75;
+            text-decoration: none;
+          }
+        }
+
         .btn {
-            i {
-                margin-right: 8px;
-            }
-            display: block;
-            width: 100%;
-            @media screen and (min-width: $screen-md-min) {
-                display: inline-block;
-                width: auto;
-            }
+          margin-left: 16px;
+          min-height: 39px;
+          i {
+              margin-right: 8px;
+          }
+          display: inline-block;
+          width: auto;
+          &:hover, &:focus {
+            opacity: 0.75;
+          }
         }
         .has-feedback {}
         .you {

@@ -6,7 +6,7 @@
 @import scaladex.core.model.search.ProjectDocument
 @import scaladex.core.model.Scala
 @import scaladex.core.model.Platform
-@import scaladex.core.model.search.ExploreParams
+@import scaladex.core.model.search.AwesomeParams
 
 @(
   env: Env,
@@ -15,18 +15,18 @@
   projectsByCategory: Map[Category, Seq[ProjectDocument]],
   languages: Seq[Scala],
   platforms: Seq[Platform],
-  params: ExploreParams
+  params: AwesomeParams
 )
-@main(env, title = "Scaladex", showSearch = true, user) {
-  <main id="container-explore-all">
-    <div class="explore-header">
+@main(env, title = "Awesome Scala", user) {
+  <main id="container-awesome-all">
+    <div class="awesome-header">
       <div class="container">
-        <h1><a href="/explore">Awesome Scala</a></h1>
+        <h1><a href="/awesome">Awesome Scala</a></h1>
       </div>
     </div>
-    <div class="container explore-content">
+    <div class="container awesome-content">
       <div class="col-lg-3 col-md-4 sidebar">
-        <form action="/explore" action="GET">
+        <form action="/awesome" action="GET">
           <div class="filter">
             <label for="select-platform"><h3>Platform:</h3></label>
             <select id="select-platform" name="platforms" class="selectpicker" multiple data-max-options="1" onchange="this.form.submit()">
@@ -69,7 +69,7 @@
               @for(category <- categories) {
                 <section class="category col-lg-6 col-md-12" id="@category.label">
                   <h3>
-                    <a href="@exploreCategoryUri(category, params)">@category.title</a>
+                    <a href="@awesomeCategoryUri(category, params)">@category.title</a>
                   </h3>
                   <ol>
                     @for(project <- projectsByCategory(category)) {
@@ -95,7 +95,7 @@
                     }
                   </ol>
                   <div class="see-more">
-                    <a href="@exploreCategoryUri(category, params)">See More</a>
+                    <a href="@awesomeCategoryUri(category, params)">See More</a>
                   </div>
                 </section>
               }

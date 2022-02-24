@@ -6,7 +6,7 @@
 @import scaladex.core.model.Category
 @import scaladex.core.model.MetaCategory
 @import scaladex.core.model.search.ProjectDocument
-@import scaladex.core.model.search.ExploreParams
+@import scaladex.core.model.search.AwesomeParams
 @import scaladex.core.model.search.Page
 
 @(
@@ -16,21 +16,21 @@
   projects: Page[ProjectDocument],
   scalaVersions: Seq[(Scala, Int)],
   platforms: Seq[(Platform, Int)],
-  params: ExploreParams
+  params: AwesomeParams
 )
-@main(env, title = category.title, showSearch = true, user) {
-  <main id="container-explore-category">
-    <div class="explore-header">
+@main(env, title = category.title, user) {
+  <main id="container-awesome-category">
+    <div class="awesome-header">
       <div class="container">
-        <h1><a href="/explore">Awesome Scala</a></h1>
-        <h2><a href="/explore/@category.label">@category.title</a></h2>
+        <h1><a href="/awesome">Awesome Scala</a></h1>
+        <h2><a href="/awesome/@category.label">@category.title</a></h2>
         <select id="select-category" class="selectpicker" multiple  title="Other Categories"
             data-max-options="1" data-live-search="true" data-dropdown-align-right="auto"
             onchange="window.location=this.value">
           @for(meta <- MetaCategory.all) {
             <optgroup label="@meta.title">
               @for(c <- meta.categories) {
-                <option value="@exploreCategoryUri(c, params)"> @c.title </option>
+                <option value="@awesomeCategoryUri(c, params)"> @c.title </option>
               }
             </optgroup>
           }
@@ -43,9 +43,9 @@
           <div class="col-md-3">
             <div class="result-count">
               @if(projects.pagination.current == 1) {
-                @projects.pagination.pageSize results
+                @projects.pagination.totalSize results
               } else {
-                Page @projects.pagination.current of @projects.pagination.pageSize results
+                Page @projects.pagination.current of @projects.pagination.totalSize results
               }
             </div>
           </div>

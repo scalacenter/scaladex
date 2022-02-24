@@ -4,7 +4,7 @@ package scaladex.core.model.search
  * Pagination info
  *
  * @param current   page
- * @param pageCount number of pages at all
- * @param pageSize number of results at all
+ * @param pageCount number of pages
+ * @param totalSize total number of results
  */
-case class Pagination(current: Int, pageCount: Int, pageSize: Long)
+case class Pagination(current: Int, pageCount: Int, totalSize: Long)
