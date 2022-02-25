@@ -30,11 +30,11 @@ class SearchSynchronizer(database: SchedulerDatabase, searchEngine: SearchEngine
         .groupMap { case (newRef, ref) => newRef } { case (newRef, ref) => ref }
       projectsToDelete = deprecatedProjects ++
         allProjectsAndStatus.collect {
-          case (p, GithubStatus.NotFound(_) | GithubStatus.Failed(_, _, _)) => p.reference
+          case (p, GithubStatus.NotFound(_)) => p.reference
         }
       projectsToSync = allProjectsAndStatus
         .collect {
-          case (p, GithubStatus.Ok(_) | GithubStatus.Unknown(_)) if !deprecatedProjects.contains(p.reference) => p
+          case (p, GithubStatus.Ok(_) | GithubStatus.Unknown(_) | GithubStatus.Failed(_, _, _)) if !deprecatedProjects.contains(p.reference) => p
         }
 
       _ = logger.info(s"${movedProjects.size} projects were moved")
