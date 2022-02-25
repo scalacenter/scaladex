@@ -220,7 +220,7 @@ class ProjectPages(env: Env, database: WebDatabase, localStorage: Storage)(
             binaryVersions,
             selectedArtifact,
             user,
-            canEdit = true,
+            showEditButton = user.exists(_.canEdit(projectRef)), // show only when your are admin on the project
             Some(twitterCard),
             artifats.size,
             directDependencies,
