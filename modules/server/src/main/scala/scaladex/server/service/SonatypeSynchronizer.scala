@@ -22,7 +22,8 @@ class SonatypeSynchronizer(
     for {
       groupIds <- database.getAllGroupIds()
       mavenReferenceFromDatabase <- database.getAllMavenReferences()
-      result <- groupIds.mapSync(g => findAndIndexMissingArtifacts(g, mavenReferenceFromDatabase))
+      // we sort just to estimate through the logs the percentage of progress
+      result <- groupIds.sortBy(_.value).mapSync(g => findAndIndexMissingArtifacts(g, mavenReferenceFromDatabase))
       _ = logger.info(s"${result.size} poms have been successfully indexed")
     } yield ()
 
