@@ -6,6 +6,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 
 import com.typesafe.scalalogging.LazyLogging
+import scaladex.core.model.Env
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions._
@@ -14,6 +15,7 @@ import scaladex.infra.SonatypeClient
 import scaladex.view.SchedulerStatus
 
 class SchedulerService(
+    env: Env,
     database: SchedulerDatabase,
     searchEngine: SearchEngine,
     githubClientOpt: Option[GithubClient],
@@ -26,9 +28,11 @@ class SchedulerService(
     Scheduler("update-project-dependencies", updateProjectDependencies, 1.hour),
     Scheduler("update-project-creation-date", updateProjectCreationDate, 30.minutes),
     new SearchSynchronizer(database, searchEngine),
-    new MovedArtifactsSynchronizer(database),
-    new SonatypeSynchronizer(database, sonatypeClient, publishProcess)
-  ) ++ githubClientOpt.map(client => new GithubUpdater(database, client))
+    new MovedArtifactsSynchronizer(database)
+  ) ++
+    (if (!env.isLocal) Seq(new SonatypeSynchronizer(database, sonatypeClient, publishProcess))
+     else Seq()) ++ githubClientOpt.map(client => new GithubUpdater(database, client))
+
   private val schedulerMap = schedulers.map(s => s.name -> s).toMap
 
   def startAll(): Unit =

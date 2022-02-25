@@ -69,7 +69,14 @@ object Server extends LazyLogging {
             val publishProcess = PublishProcess(paths, filesystem, webDatabase)(publishPool)
             val sonatypeClient = new SonatypeClient()
             val schedulerService =
-              new SchedulerService(schedulerDatabase, searchEngine, githubService, sonatypeClient, publishProcess)
+              new SchedulerService(
+                config.env,
+                schedulerDatabase,
+                searchEngine,
+                githubService,
+                sonatypeClient,
+                publishProcess
+              )
 
             for {
               _ <- init(webDatabase, schedulerService, searchEngine, config.elasticsearch.reset)
