@@ -9,10 +9,11 @@
 @import scaladex.core.model.TwitterSummaryCard
 @import scaladex.core.model.ArtifactDependency
 @import scaladex.view.html.main
+@import scaladex.core.model.Platform
 
 @(
   env: Env, project: Project, artifacts: Seq[Artifact.Name], versions: Seq[SemanticVersion],
-  binaryVersions: Seq[BinaryVersion], artifact: Artifact, user: Option[UserState],
+  binaryVersions: Seq[BinaryVersion], platforms: Seq[Platform], artifact: Artifact, user: Option[UserState],
   showEditButton: Boolean, twitterCard: Option[TwitterSummaryCard], artifactCount: Int,
   directDependencies: Seq[ArtifactDependency.Direct], reverseDependency: Seq[ArtifactDependency.Reverse]
 )
@@ -39,7 +40,7 @@
             </div>
             }
             @documentation(artifact, project)
-            @badges(artifact, env)
+            @badges(artifact, platforms, env)
             @install(artifact, project.settings.cliArtifacts)
             @scastie(artifact.scastieURL)
             @project.githubInfo.map(gh => statistic(gh, project.reference, artifactCount, reverseDependency.size))

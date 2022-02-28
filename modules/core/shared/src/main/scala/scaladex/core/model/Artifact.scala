@@ -50,8 +50,11 @@ case class Artifact(
     s"$artifactHttpPath/$version$binaryVersionQuery"
   }
 
-  def badgeUrl(env: Env): String =
-    s"${fullHttpUrl(env)}/latest-by-scala-version.svg?platform=${binaryVersion.platform.label}"
+  def badgeUrl(env: Env, platform: Option[Platform] = None): String =
+    s"${fullHttpUrl(env)}/latest-by-scala-version.svg?platform=${platform.map(_.label).getOrElse(binaryVersion.platform.label)}"
+
+  def latestBadgeUrl(env: Env): String =
+    s"${fullHttpUrl(env)}/latest.svg"
 
   def sbtInstall: String = {
     val install = binaryVersion.platform match {
