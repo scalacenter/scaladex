@@ -21,14 +21,17 @@ import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserState
+import scaladex.core.service.SearchEngine
 import scaladex.core.service.Storage
 import scaladex.core.service.WebDatabase
 import scaladex.server.TwirlSupport._
+import scaladex.server.service.SearchSynchronizer
 import scaladex.view
 
-class ProjectPages(env: Env, database: WebDatabase, localStorage: Storage)(
+class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine, localStorage: Storage)(
     implicit executionContext: ExecutionContext
 ) extends LazyLogging {
+  private val searchSynchronizer = new SearchSynchronizer(database, searchEngine)
 
   def route(user: Option[UserState]): Route =
     concat(
@@ -36,7 +39,10 @@ class ProjectPages(env: Env, database: WebDatabase, localStorage: Storage)(
         path("edit" / organizationM / repositoryM) { (organization, repository) =>
           editForm { form =>
             val ref = Project.Reference(organization, repository)
-            val updateF = database.updateProjectSettings(ref, form)
+            val updateF = for {
+              _ <- database.updateProjectSettings(ref, form)
+              _ <- searchSynchronizer.syncProject(ref)
+            } yield ()
             onComplete(updateF) {
               case Success(()) =>
                 redirect(

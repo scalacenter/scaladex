@@ -13,9 +13,10 @@ object ProjectTable {
   private val table: String = "projects"
 
   private val referenceFields = Seq("organization", "repository")
+  private val newReferenceFields = Seq("new_organization", "new_repository")
   private val creationDateFields = Seq("creation_date")
   private val githubStatusFields =
-    Seq("github_status", "github_update_date", "new_organization", "new_repository", "error_code", "error_message")
+    Seq("github_status", "github_update_date") ++ newReferenceFields ++ Seq("error_code", "error_message")
 
   private val fields: Seq[String] = referenceFields ++ creationDateFields ++ githubStatusFields
 
@@ -46,6 +47,9 @@ object ProjectTable {
 
   val selectByReference: Query[Project.Reference, Project] =
     selectRequest(fullTable, allFields, referenceFields.map(f => s"p.$f"))
+
+  val selectByNewReference: Query[Project.Reference, Project.Reference] =
+    selectRequest(table, referenceFields, newReferenceFields)
 
   val selectReferenceAndStatus: Query0[(Project.Reference, GithubStatus)] =
     selectRequest(table, referenceFields ++ githubStatusFields)

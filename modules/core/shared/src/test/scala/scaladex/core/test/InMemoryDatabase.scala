@@ -14,7 +14,6 @@ import scaladex.core.model.ProjectDependency
 import scaladex.core.service.SchedulerDatabase
 
 class InMemoryDatabase extends SchedulerDatabase {
-
   private val projects = mutable.Map[Project.Reference, Project]()
   private val artifacts = mutable.Map[Project.Reference, Seq[Artifact]]()
   private val dependencies = mutable.Buffer[ArtifactDependency]()
@@ -62,6 +61,14 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   override def getDependencies(projectRef: Project.Reference): Future[Seq[ArtifactDependency]] = ???
 
+  override def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]] = {
+    val result = projects.view
+      .mapValues(_.githubStatus)
+      .collect { case (ref, GithubStatus.Moved(_, `projectRef`)) => ref }
+      .toSeq
+    Future.successful(result)
+  }
+
   override def getArtifactsByName(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]] =
     Future.successful(
       artifacts
@@ -102,7 +109,9 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] = ???
 
-  override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] = ???
+  override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] =
+    // not really implemented
+    Future.successful(0)
 
   override def updateArtifacts(artifacts: Seq[Artifact], newRef: Project.Reference): Future[Int] = ???
   override def deleteDependenciesOfMovedProject(): scala.concurrent.Future[Unit] = ???

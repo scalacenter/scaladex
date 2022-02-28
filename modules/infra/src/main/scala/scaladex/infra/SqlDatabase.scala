@@ -111,16 +111,19 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
     run(ProjectTable.selectByReference.option(projectRef))
 
   override def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifactByProject.to[List](projectRef))
+    run(ArtifactTable.selectArtifactByProject.to[Seq](projectRef))
 
   override def getDependencies(projectRef: Project.Reference): Future[Seq[ArtifactDependency]] =
-    run(ArtifactDependencyTable.selectDependencyFromProject.to[List](projectRef))
+    run(ArtifactDependencyTable.selectDependencyFromProject.to[Seq](projectRef))
+
+  override def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]] =
+    run(ProjectTable.selectByNewReference.to[Seq](projectRef))
 
   override def getArtifactsByName(
       projectRef: Project.Reference,
       artifactName: Artifact.Name
   ): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifactByProjectAndName.to[List]((projectRef, artifactName)))
+    run(ArtifactTable.selectArtifactByProjectAndName.to[Seq]((projectRef, artifactName)))
 
   def countProjects(): Future[Long] =
     run(ProjectTable.countProjects.unique)
@@ -131,11 +134,11 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   def countDependencies(): Future[Long] =
     run(ArtifactDependencyTable.count.unique)
 
-  override def getDirectDependencies(artifact: Artifact): Future[List[ArtifactDependency.Direct]] =
-    run(ArtifactDependencyTable.selectDirectDependency.to[List](artifact.mavenReference))
+  override def getDirectDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Direct]] =
+    run(ArtifactDependencyTable.selectDirectDependency.to[Seq](artifact.mavenReference))
 
-  override def getReverseDependencies(artifact: Artifact): Future[List[ArtifactDependency.Reverse]] =
-    run(ArtifactDependencyTable.selectReverseDependency.to[List](artifact.mavenReference))
+  override def getReverseDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Reverse]] =
+    run(ArtifactDependencyTable.selectReverseDependency.to[Seq](artifact.mavenReference))
 
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.count.unique)
@@ -144,7 +147,7 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
     run(ProjectSettingsTable.count.unique)
 
   override def computeProjectDependencies(): Future[Seq[ProjectDependency]] =
-    run(ArtifactDependencyTable.computeProjectDependency.to[List])
+    run(ArtifactDependencyTable.computeProjectDependency.to[Seq])
 
   override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] =
     run(ProjectDependenciesTable.insertOrUpdate.updateMany(projectDependencies))
@@ -154,13 +157,13 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
 
   override def deleteDependenciesOfMovedProject(): Future[Unit] =
     for {
-      moved <- run(ProjectTable.selectProjectByGithubStatus.to[List]("Moved"))
+      moved <- run(ProjectTable.selectProjectByGithubStatus.to[Seq]("Moved"))
       _ <- run(ProjectDependenciesTable.deleteBySource.updateMany(moved))
       _ <- run(ProjectDependenciesTable.deleteByTarget.updateMany(moved))
     } yield ()
 
   override def computeAllProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]] =
-    run(ArtifactTable.selectOldestByProject.to[List])
+    run(ArtifactTable.selectOldestByProject.to[Seq])
 
   override def updateProjectCreationDate(ref: Project.Reference, creationDate: Instant): Future[Unit] =
     run(ProjectTable.updateCreationDate.run((creationDate, ref))).map(_ => ())
