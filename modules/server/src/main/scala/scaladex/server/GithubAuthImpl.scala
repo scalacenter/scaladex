@@ -43,12 +43,15 @@ class GithubAuthImpl(env: Env)(implicit sys: ActorSystem) extends GithubAuth wit
     val permissions = Seq("WRITE", "MAINTAIN", "ADMIN")
     for {
       user <- githubClient.getUserInfo()
-      organizationsTry <- githubClient.getUserOrganizations(user.login).failWithTry
-      reposUnderOrgsTry <- githubClient.getUserOrganizationRepositories(user.login, permissions).failWithTry
-      reposTry <- githubClient.getUserRepositories(user.login, permissions).failWithTry
-      orgs = organizationsTry.getOrElse(Set())
-      repos = reposUnderOrgsTry.getOrElse(Nil) ++ reposTry.getOrElse(Nil)
-    } yield UserState(repos.toSet, orgs, user, env)
+      orgas <- githubClient.getUserOrganizations(user.login).recover { case _ => Seq.empty }
+      orgasRepos <- orgas
+        .map { org =>
+          githubClient.getOrganizationRepositories(user.login, org, permissions).recover { case _ => Seq.empty }
+        }
+        .sequence
+        .map(_.flatten)
+      userRepos <- githubClient.getUserRepositories(user.login, permissions).recover { case _ => Seq.empty }
+    } yield UserState(orgasRepos.toSet ++ userRepos, orgas.toSet, user, env)
   }
   private def getTokenWithOauth2(
       clientId: String,

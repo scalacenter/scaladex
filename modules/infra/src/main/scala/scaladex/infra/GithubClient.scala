@@ -37,6 +37,7 @@ import scaladex.core.service.GithubService
 import scaladex.core.util.ScalaExtensions._
 import scaladex.core.util.Secret
 import scaladex.infra.github.GithubModel
+import scaladex.infra.github.GithubModel._
 
 class GithubClient(token: Secret)(implicit val system: ActorSystem)
     extends CommonAkkaHttpClient
@@ -199,49 +200,65 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
     }
   }
 
-  def getUserOrganizationRepositories(
-      login: String,
+  def getUserOrganizations(user: String): Future[Seq[Project.Organization]] =
+    getAllRecursively(getUserOrganizationsPage(user))
+
+  def getUserRepositories(user: String, filterPermissions: Seq[String]): Future[Seq[Project.Reference]] =
+    for (repos <- getAllRecursively(getUserRepositoriesPage(user)))
+      yield {
+        val filtered =
+          if (filterPermissions.isEmpty) repos
+          else repos.filter(repo => filterPermissions.contains(repo.viewerPermission))
+        filtered.map(repo => Project.Reference.from(repo.nameWithOwner))
+      }
+
+  def getOrganizationRepositories(
+      user: String,
+      organization: Project.Organization,
       filterPermissions: Seq[String]
-  ): Future[Seq[Project.Reference]] = {
+  ): Future[Seq[Project.Reference]] =
+    for (repos <- getAllRecursively(getOrganizationProjectsPage(user, organization)))
+      yield {
+        val filtered =
+          if (filterPermissions.isEmpty) repos
+          else repos.filter(repo => filterPermissions.contains(repo.viewerPermission))
+        filtered.map(repo => Project.Reference.from(repo.nameWithOwner))
+      }
+
+  private def getUserOrganizationsPage(
+      user: String
+  )(cursor: Option[String]): Future[GraphQLPage[Project.Organization]] = {
+    val after = cursor.map(c => s"""after: "$c"""").getOrElse("")
     val query =
-      s"""|query {
-          |  user(login: "$login") {
-          |    organizations(first: 100) {
+      s"""|query { 
+          |  user(login: "$user") {
+          |    organizations(first: 100, $after) {
           |      pageInfo {
           |        endCursor
           |        hasNextPage
           |      }
           |      nodes {
-          |        repositories(first: 100, affiliations: [COLLABORATOR, ORGANIZATION_MEMBER, OWNER]) {
-          |          pageInfo {
-          |            endCursor
-          |            hasNextPage
-          |          }
-          |          nodes {
-          |            nameWithOwner
-          |            viewerPermission
-          |          }
-          |        }
+          |				 login
           |      }
           |    }
           |  }
-          |}""".stripMargin
-
+          }""".stripMargin
     val request = graphqlRequest(query)
-    val githubRepoPage1 = get[List[GithubModel.RepoWithPermissionPage]](request)
-    if (filterPermissions.isEmpty) githubRepoPage1.map(_.flatMap(_.toGithubRepos))
-    else
-      githubRepoPage1.map(_.flatMap(_.toGithubReposWithPermission).collect {
-        case (repo, permission) if filterPermissions.contains(permission) => repo
-      })
+    get[GraphQLPage[Project.Organization]](request)(
+      graphqlPageDecoder("data", "user", "organizations") { d =>
+        d.downField("login").as[String].map(Project.Organization.apply)
+      }
+    )
   }
-  def getUserRepositories(login: String, filterPermissions: Seq[String]): Future[Seq[Project.Reference]] = {
-    def query(endcursorOpt: Option[String]) = {
-      val after = endcursorOpt.map(endcursor => s"""after: "$endcursor"""").getOrElse("")
+
+  private def getUserRepositoriesPage(
+      login: String
+  )(cursor: Option[String]): Future[GraphQLPage[RepoWithPermission]] = {
+    val after = cursor.map(c => s"""after: "$c"""").getOrElse("")
+    val query =
       s"""|query {
           |  user(login: "$login") {
           |    repositories(first: 100, $after) {
-          |
           |      pageInfo {
           |        endCursor
           |        hasNextPage
@@ -253,31 +270,46 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
           |    }
           |  }
           |}
-          |
           |""".stripMargin
-    }
+    val request = graphqlRequest(query)
+    get[GraphQLPage[RepoWithPermission]](request)(graphqlPageDecoder("data", "user", "repositories"))
+  }
 
-    val request = graphqlRequest(query(None))
-    val page1 = get[GithubModel.RepoWithPermissionPage](request)(GithubModel.decoderForUserRepo)
-    def getPageRecursively(
-        pageFut: Future[GithubModel.RepoWithPermissionPage]
-    )(previous: Future[Seq[GithubModel.RepoWithPermissionPage]]): Future[Seq[GithubModel.RepoWithPermissionPage]] =
-      pageFut.flatMap { page =>
-        if (!page.hasNextPage) previous.map(page +: _)
-        else {
-          val nextPage = get[GithubModel.RepoWithPermissionPage](graphqlRequest(query(Some(page.endCursor))))(
-            GithubModel.decoderForUserRepo
-          )
-          getPageRecursively(nextPage)(previous.map(page +: _))
-        }
-      }
-    val pages = getPageRecursively(page1)(Future.successful(Nil))
+  private def getOrganizationProjectsPage(user: String, organization: Project.Organization)(
+      cursor: Option[String]
+  ): Future[GraphQLPage[RepoWithPermission]] = {
+    val after = cursor.map(c => s"""after: "$c"""").getOrElse("")
+    val query =
+      s"""|query {
+          |  user(login: "$user") {
+          |    organization(login: "$organization") {
+          |      repositories(first: 100, $after) {
+          |        pageInfo {
+          |          endCursor
+          |          hasNextPage
+          |        }
+          |        nodes {
+          |          nameWithOwner
+          |          viewerPermission
+          |        }
+          |      }
+          |    }
+          |  }
+          |}
+          |""".stripMargin
+    val request = graphqlRequest(query)
+    get[GraphQLPage[RepoWithPermission]](request)(graphqlPageDecoder("data", "user", "organization", "repositories"))
+  }
 
-    if (filterPermissions.isEmpty) pages.map(_.flatMap(_.toGithubRepos))
-    else
-      pages.map(_.flatMap(_.toGithubReposWithPermission).collect {
-        case (repo, permission) if filterPermissions.contains(permission) => repo
-      })
+  private def getAllRecursively[T](f: Option[String] => Future[GraphQLPage[T]]): Future[Seq[T]] = {
+    def recurse(cursor: Option[String], acc: Seq[T]): Future[Seq[T]] =
+      for {
+        currentPage <- f(cursor)
+        all <-
+          if (currentPage.hasNextPage) recurse(Some(currentPage.endCursor), acc ++ currentPage.nodes)
+          else Future.successful(acc ++ currentPage.nodes)
+      } yield all
+    recurse(None, Nil)
   }
 
   def getUserInfo(): Future[UserInfo] = {
@@ -293,23 +325,6 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
     val userInfo = get[GithubModel.UserInfo](request)
 
     userInfo.map(_.toCoreUserInfo(token))
-  }
-
-  // only the first 100 orgs
-  def getUserOrganizations(login: String): Future[Set[Project.Organization]] = {
-    val query =
-      s"""|query {
-          |  user(login: "$login") {
-          |    organizations(first: 100) {
-          |      nodes {
-          |        login
-          |      }
-          |    }
-          |  }
-          |}""".stripMargin
-    val request = graphqlRequest(query)
-    val organizations = get[Seq[GithubModel.Organization]](request)
-    organizations.map(_.map(_.toCoreOrganization).toSet)
   }
 
   private def extractLastPage(links: String): Option[Int] = {
