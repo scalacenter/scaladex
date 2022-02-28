@@ -30,8 +30,8 @@ class SchedulerService(
     new SearchSynchronizer(database, searchEngine),
     new MovedArtifactsSynchronizer(database)
   ) ++
-    (if (!env.isLocal) Seq(new SonatypeSynchronizer(database, sonatypeClient, publishProcess))
-     else Seq()) ++ githubClientOpt.map(client => new GithubUpdater(database, client))
+    Option.when(!env.isLocal)(new SonatypeSynchronizer(database, sonatypeClient, publishProcess)) ++
+    githubClientOpt.map(client => new GithubUpdater(database, client))
 
   private val schedulerMap = schedulers.map(s => s.name -> s).toMap
 

@@ -53,13 +53,10 @@ class SonatypeClient()(implicit val system: ActorSystem)
     for {
       responseFuture <- queueRequest(request)
       page <- responseFuture.entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String)
-      artifactIds = JsoupUtils.listDirectories(uri, page)
-      artifactIdsParsed = artifactIds.flatMap(Artifact.ArtifactId.parse)
     } yield {
       val artifactIds = JsoupUtils.listDirectories(uri, page)
       artifactIds.flatMap(Artifact.ArtifactId.parse)
     }
-
   }
 
   def getAllVersions(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[SemanticVersion]] = {
