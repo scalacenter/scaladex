@@ -23,6 +23,7 @@ import scaladex.infra.DataPaths
 import scaladex.infra.ElasticsearchEngine
 import scaladex.infra.FilesystemStorage
 import scaladex.infra.GithubClient
+import scaladex.infra.SonatypeClient
 import scaladex.infra.SqlDatabase
 import scaladex.infra.sql.DoobieUtils
 import scaladex.server.config.ServerConfig
@@ -63,10 +64,20 @@ object Server extends LazyLogging {
             val webDatabase = new SqlDatabase(config.database, webPool)
             val schedulerDatabase = new SqlDatabase(config.database, schedulerPool)
             val githubService = config.github.token.map(new GithubClient(_))
-            val schedulerService = new SchedulerService(schedulerDatabase, searchEngine, githubService)
             val paths = DataPaths.from(config.filesystem)
             val filesystem = FilesystemStorage(config.filesystem)
             val publishProcess = PublishProcess(paths, filesystem, webDatabase)(publishPool)
+            val sonatypeClient = new SonatypeClient()
+            val schedulerService =
+              new SchedulerService(
+                config.env,
+                schedulerDatabase,
+                searchEngine,
+                githubService,
+                sonatypeClient,
+                publishProcess
+              )
+
             for {
               _ <- init(webDatabase, schedulerService, searchEngine, config.elasticsearch.reset)
               routes = configureRoutes(config, searchEngine, webDatabase, schedulerService, filesystem, publishProcess)

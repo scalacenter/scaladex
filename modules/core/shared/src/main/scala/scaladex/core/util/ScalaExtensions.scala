@@ -15,6 +15,20 @@ object ScalaExtensions {
       Future.sequence(in)
   }
 
+  implicit class TryExtension[A](val in: Try[A]) extends AnyVal {
+    def toFuture: Future[A] = in match {
+      case Failure(exception) => Future.failed(exception)
+      case Success(value)     => Future.successful(value)
+    }
+  }
+
+  implicit class OptionExtension[A](val in: Option[A]) extends AnyVal {
+    def toFuture: Future[A] = in match {
+      case None        => Future.failed(new NoSuchElementException("None.get"))
+      case Some(value) => Future.successful(value)
+    }
+  }
+
   implicit class FutureExtension[A](val in: Future[A]) extends AnyVal {
     def mapFailure(f: Throwable => Throwable)(implicit ec: ExecutionContext): Future[A] =
       in.recoverWith { case NonFatal(e) => Future.failed(f(e)) }
@@ -24,8 +38,8 @@ object ScalaExtensions {
   }
 
   /**
-    *  Warning: it is not lazy on lazy collections
-    */
+   * Warning: it is not lazy on lazy collections
+   */
   implicit class IterableOnceExtension[A, CC[X] <: IterableOnce[X]](val in: CC[A]) extends AnyVal {
     def mapSync[B](f: A => Future[B])(implicit ec: ExecutionContext, bf: BuildFrom[CC[A], B, CC[B]]): Future[CC[B]] =
       in.iterator

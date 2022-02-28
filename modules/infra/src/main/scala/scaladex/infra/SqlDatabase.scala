@@ -73,7 +73,7 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   override def getAllProjects(): Future[Seq[Project]] =
     run(ProjectTable.selectProject.to[Seq])
 
-  override def updataArtifacts(artifacts: Seq[Artifact], newRef: Project.Reference): Future[Int] = {
+  override def updateArtifacts(artifacts: Seq[Artifact], newRef: Project.Reference): Future[Int] = {
     val mavenReferences = artifacts.map(r => newRef -> r.mavenReference)
     run(ArtifactTable.updateProjectRef.updateMany(mavenReferences))
   }
@@ -165,8 +165,11 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   override def updateProjectCreationDate(ref: Project.Reference, creationDate: Instant): Future[Unit] =
     run(ProjectTable.updateCreationDate.run((creationDate, ref))).map(_ => ())
 
-  private def run(update: doobie.Update0): Future[Unit] =
-    update.run.transact(xa).unsafeToFuture().map(_ => ())
+  override def getAllGroupIds(): Future[Seq[Artifact.GroupId]] =
+    run(ArtifactTable.selectGroupIds.to[Seq])
+
+  override def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]] =
+    run(ArtifactTable.selectMavenReference.to[List])
 
   private def run[A](v: doobie.ConnectionIO[A]): Future[A] =
     v.transact(xa).unsafeToFuture()

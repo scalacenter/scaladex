@@ -104,6 +104,8 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] = ???
 
-  override def updataArtifacts(artifacts: Seq[Artifact], newRef: Project.Reference): Future[Int] = ???
+  override def updateArtifacts(artifacts: Seq[Artifact], newRef: Project.Reference): Future[Int] = ???
   override def deleteDependenciesOfMovedProject(): scala.concurrent.Future[Unit] = ???
+  override def getAllGroupIds(): Future[Seq[Artifact.GroupId]] = ???
+  override def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]] = ???
 }

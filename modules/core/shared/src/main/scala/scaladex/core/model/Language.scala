@@ -3,6 +3,14 @@ package scaladex.core.model
 sealed trait Language {
   def label: String
   def isValid: Boolean
+  def isJava: Boolean = this match {
+    case Java => true
+    case _    => false
+  }
+  def isScala: Boolean = this match {
+    case Scala(_) => true
+    case _        => false
+  }
 }
 
 object Language {

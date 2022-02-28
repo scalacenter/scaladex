@@ -120,7 +120,7 @@ class PublishApi(
                 ) {
                   case (_, userState) =>
                     logger.info(s"Received publish command: $created - $path")
-                    val result = publishProcess.publishPom(path, data, created, userState)
+                    val result = publishProcess.publishPom(path, data, created, Some(userState))
 
                     complete(
                       result.map {
