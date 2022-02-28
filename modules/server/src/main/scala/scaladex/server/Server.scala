@@ -145,7 +145,7 @@ object Server extends LazyLogging {
     val searchPages = new SearchPages(config.env, searchEngine)
     val frontPage = new FrontPage(config.env, webDatabase, searchEngine)
     val adminPages = new AdminPage(config.env, schedulerService)
-    val projectPages = new ProjectPages(config.env, webDatabase, filesystem)
+    val projectPages = new ProjectPages(config.env, webDatabase, searchEngine, filesystem)
     val awesomePages = new AwesomePages(config.env, searchEngine)
 
     val programmaticRoutes = concat(

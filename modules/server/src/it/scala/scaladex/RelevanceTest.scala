@@ -45,7 +45,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
           for {
             _ <- Init.run(database, filesystem)
             _ <- searchEngine.reset()
-            _ <- searchSync.run()
+            _ <- searchSync.syncAll()
             _ <- searchEngine.refresh()
           } yield ()
         })

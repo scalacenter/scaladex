@@ -2,20 +2,18 @@ package scaladex.server.service
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.model.search.ProjectDocument
-import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
+import scaladex.core.service.WebDatabase
 import scaladex.core.util.ScalaExtensions._
 
-class SearchSynchronizer(database: SchedulerDatabase, searchEngine: SearchEngine)(implicit ec: ExecutionContext)
-    extends Scheduler("sync-search", 30.minutes)
-    with LazyLogging {
-  override def run(): Future[Unit] =
+class SearchSynchronizer(database: WebDatabase, searchEngine: SearchEngine)(implicit ec: ExecutionContext)
+    extends LazyLogging {
+  def syncAll(): Future[Unit] =
     for {
       allProjects <- database.getAllProjects()
       allProjectsAndStatus = allProjects.map(p => (p, p.githubStatus))
@@ -45,6 +43,18 @@ class SearchSynchronizer(database: SchedulerDatabase, searchEngine: SearchEngine
       _ <- projectsToSync.mapSync { project =>
         val formerReferences = movedProjects.getOrElse(project.reference, Seq.empty)
         insertDocument(project, formerReferences)
+      }
+    } yield ()
+
+  def syncProject(ref: Project.Reference): Future[Unit] =
+    for {
+      projectOpt <- database.getProject(ref)
+      formerReferences <- database.getFormerReferences(ref)
+      _ <- projectOpt match {
+        case Some(project) => insertDocument(project, formerReferences)
+        case None =>
+          logger.error(s"Cannot update update project document of $ref because: project not found")
+          Future.successful(())
       }
     } yield ()
 

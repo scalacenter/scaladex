@@ -23,11 +23,12 @@ class SchedulerService(
     publishProcess: PublishProcess
 ) extends LazyLogging {
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
+  val searchSynchronizer = new SearchSynchronizer(database, searchEngine)
 
   private val schedulers = Seq(
     Scheduler("update-project-dependencies", updateProjectDependencies, 1.hour),
     Scheduler("update-project-creation-date", updateProjectCreationDate, 30.minutes),
-    new SearchSynchronizer(database, searchEngine),
+    Scheduler("sync-search", searchSynchronizer.syncAll, 30.minutes),
     new MovedArtifactsSynchronizer(database)
   ) ++
     Option.when(!env.isLocal)(new SonatypeSynchronizer(database, sonatypeClient, publishProcess)) ++
