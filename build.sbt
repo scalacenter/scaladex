@@ -21,7 +21,7 @@ lazy val loggingSettings = Seq(
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
   ),
   // Drop and replace commons-logging with slf4j
-  libraryDependencies += "org.slf4j" % "jcl-over-slf4j" % "1.7.35",
+  libraryDependencies += "org.slf4j" % "jcl-over-slf4j" % "1.7.36",
   excludeDependencies += ExclusionRule("commons-logging", "commons-logging")
 )
 
@@ -85,7 +85,7 @@ lazy val infra = project
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4sVersion,
       "org.json4s" %% "json4s-native" % V.json4s,
-      "org.flywaydb" % "flyway-core" % "8.4.3", // for database migration
+      "org.flywaydb" % "flyway-core" % "8.4.4", // for database migration
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
