@@ -95,7 +95,7 @@ object Client {
 
   private def getIssueJson(issue: Issue): String =
     s"""{ "number":${issue.number}, "title":"${issue.title
-      .replace("\"", "\\\"")}", "url":{"target":"${issue.html_url}"} }"""
+        .replace("\"", "\\\"")}", "url":{"target":"${issue.html_url}"} }"""
 
   private def getIssuesListener(token: Option[String])(event: dom.Event): Unit =
     getIssues(token)
@@ -132,8 +132,8 @@ object Client {
             Dom.getElementById("selectedBeginnerIssues").foreach { el =>
               val options = issues.map { issue =>
                 s"""<option value='${getIssueJson(
-                  issue
-                )}' title="#${issue.number}"> #${issue.number} - ${issue.title}</option>"""
+                    issue
+                  )}' title="#${issue.number}"> #${issue.number} - ${issue.title}</option>"""
               }
               val selectEl = el.asInstanceOf[HTMLSelectElement]
               selectEl.innerHTML = options.mkString
