@@ -10,7 +10,11 @@ import scaladex.core.model.UserInfo
 trait GithubService {
   def getProjectInfo(ref: Project.Reference): Future[GithubResponse[(Project.Reference, GithubInfo)]]
   def getUserInfo(): Future[UserInfo]
-  def getUserOrganizations(login: String): Future[Set[Project.Organization]]
-  def getUserOrganizationRepositories(login: String, filterPermissions: Seq[String]): Future[Seq[Project.Reference]]
+  def getUserOrganizations(login: String): Future[Seq[Project.Organization]]
   def getUserRepositories(login: String, filterPermissions: Seq[String]): Future[Seq[Project.Reference]]
+  def getOrganizationRepositories(
+      user: String,
+      organization: Project.Organization,
+      filterPermissions: Seq[String]
+  ): Future[Seq[Project.Reference]]
 }
