@@ -205,18 +205,24 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine, 
     database.getProject(projectRef).flatMap {
       case Some(project) =>
         for {
-          artifats <- database.getArtifacts(projectRef)
+          artifacts <- database.getArtifacts(projectRef)
           selectedArtifact = selection
-            .filterArtifacts(artifats, project)
+            .filterArtifacts(artifacts, project)
             .headOption
             .getOrElse(throw new Exception(s"no artifact found for $projectRef"))
           directDependencies <- database.getDirectDependencies(selectedArtifact)
           reverseDependency <- database.getReverseDependencies(selectedArtifact)
         } yield {
-          val allVersions = artifats.map(_.version)
+          val allVersions = artifacts.map(_.version)
           val filteredVersions = filterVersions(project, allVersions)
-          val binaryVersions = artifats.map(_.binaryVersion).distinct.sorted.reverse
-          val artifactNames = artifats.map(_.artifactName).distinct.sortBy(_.value)
+          val binaryVersions = artifacts.map(_.binaryVersion).distinct.sorted.reverse
+          val platformsForBadges = artifacts
+            .filter(_.artifactName == selectedArtifact.artifactName)
+            .map(_.binaryVersion.platform)
+            .distinct
+            .sorted
+            .reverse
+          val artifactNames = artifacts.map(_.artifactName).distinct.sortBy(_.value)
           val twitterCard = project.twitterSummaryCard
           val html = view.project.html.project(
             env,
@@ -224,11 +230,12 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine, 
             artifactNames,
             filteredVersions,
             binaryVersions,
+            platformsForBadges,
             selectedArtifact,
             user,
             showEditButton = user.exists(_.canEdit(projectRef)), // show only when your are admin on the project
             Some(twitterCard),
-            artifats.size,
+            artifacts.size,
             directDependencies,
             reverseDependency
           )

@@ -27,7 +27,6 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
     parameters("color".?, "style".?, "logo".?, "logoWidth".as[Int].?)
 
   private val shieldsOptionalSubject = shields & parameters("subject".?)
-  private val shieldsSubject = shields & parameters("subject")
 
   val route: Route =
     get {
