@@ -2,6 +2,10 @@
 // This file contains all styles related to the 'awesome' page.
 // -----------------------------------------------------------------------------
 
+.awesome {
+  font-family: Caveat;
+}
+
 .awesome-header {
   background: url("/assets/img/head-project-background.png") no-repeat center top #0D343C;
   min-height: 150px;
@@ -12,7 +16,6 @@
     margin: 0;
     a  {
       font-size: 36px;
-      font-family: "Caveat";
       color: white;
       
       &:hover, &:focus {
@@ -20,13 +23,30 @@
         text-decoration: none;
       }
     }
-    
+  }
+
+  .how-to {
+    .awesome {
+      font-size: 35px;
+    }
+
+    .btn-default {
+      margin-right: 20px;
+      background-color: rgba(255, 255, 255, 0.1);
+      font-size: 18px;
+      color: rgba(255,255,255,0.7);
+      float: right;
+    }
+
+    .badge {
+      background-color: $brand-primary;
+    }
   }
 }
 
 #container-awesome-all {
   .awesome-content {
-    margin-top: -100px
+    margin-top: -40px
   }
 
   .sidebar {
@@ -36,19 +56,17 @@
     padding: 20px;
     position: -webkit-sticky;
     position: sticky;
-    margin-top: 40px;
     top: 10px;
     h3 {
       font-size: 20px;
+    }
+    .btn {
+      border: 1px solid $gray-light;
     }
   }
 
   .filter {
     display: inline-block;
-  }
-
-  .btn {
-    border: 1px solid $gray-light;
   }
 
   nav {
@@ -90,7 +108,7 @@
 
   .meta-category {
     background: white;
-    margin: 40px 0;
+    margin-bottom: 40px;
     padding: 30px 20px;
     h2 {
       text-align: center;
@@ -141,7 +159,7 @@
     .see-also {
       li {
         font-size: 18px;
-        font-family: "Roboto Slab", serif;
+        font-family: $font-family-serif;
         color: $brand-secondary;
       }
     }
@@ -186,7 +204,6 @@
     .bs-placeholder {
       color: rgba(255,255,255,0.5);
     }
-    
   }
   background: $gray-lighter;
   padding-bottom: 40px;
