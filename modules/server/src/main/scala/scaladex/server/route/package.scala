@@ -50,10 +50,9 @@ package object route {
     for {
       project <- database.getProject(projectRef)
       artifacts <- database.getArtifacts(projectRef)
-      filteredArtifacts = project
-        .map(p => artifactSelection.filterArtifacts(artifacts, p))
-        .getOrElse(Nil)
-    } yield filteredArtifacts.headOption
+      defaultArtifact = project
+        .flatMap(p => artifactSelection.defaultArtifact(artifacts, p))
+    } yield defaultArtifact
   }
   def getSelectedArtifact(
       database: WebDatabase,
@@ -71,8 +70,8 @@ package object route {
     )
     for {
       artifacts <- database.getArtifacts(project.reference)
-      filteredArtifacts = artifactSelection.filterArtifacts(artifacts, project)
-    } yield filteredArtifacts.headOption
+      defaultArtifact = artifactSelection.defaultArtifact(artifacts, project)
+    } yield defaultArtifact
   }
 
 }

@@ -172,7 +172,7 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
     run(ArtifactTable.selectGroupIds.to[Seq])
 
   override def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]] =
-    run(ArtifactTable.selectMavenReference.to[List])
+    run(ArtifactTable.selectMavenReference.to[Seq])
 
   private def run[A](v: doobie.ConnectionIO[A]): Future[A] =
     v.transact(xa).unsafeToFuture()

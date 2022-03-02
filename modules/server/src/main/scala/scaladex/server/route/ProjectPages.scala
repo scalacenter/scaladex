@@ -1,5 +1,7 @@
 package scaladex.server.route
 
+import scala.collection.SeqView
+import scala.collection.SortedSet
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
@@ -181,9 +183,12 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine, 
       }
       .getOrElse((StatusCodes.NotFound, view.html.notfound(env, Some(user))))
 
-  private def filterVersions(p: Project, allVersions: Seq[SemanticVersion]): Seq[SemanticVersion] =
-    (if (p.settings.strictVersions) allVersions.filter(_.isSemantic)
-     else allVersions).distinct.sorted.reverse
+  private def filterVersions(p: Project, allVersions: SeqView[SemanticVersion]): SortedSet[SemanticVersion] = {
+    val filtered =
+      if (p.settings.strictVersions) allVersions.view.filter(_.isSemantic)
+      else allVersions.view
+    SortedSet.from(filtered)(SemanticVersion.ordering.reverse)
+  }
 
   private def getProjectPage(
       organization: Project.Organization,
@@ -207,30 +212,26 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine, 
         for {
           artifacts <- database.getArtifacts(projectRef)
           selectedArtifact = selection
-            .filterArtifacts(artifacts, project)
-            .headOption
+            .defaultArtifact(artifacts, project)
             .getOrElse(throw new Exception(s"no artifact found for $projectRef"))
           directDependencies <- database.getDirectDependencies(selectedArtifact)
           reverseDependency <- database.getReverseDependencies(selectedArtifact)
         } yield {
-          val allVersions = artifacts.map(_.version)
+          val allVersions = artifacts.view.map(_.version)
           val filteredVersions = filterVersions(project, allVersions)
-          val binaryVersions = artifacts.map(_.binaryVersion).distinct.sorted.reverse
-          val platformsForBadges = artifacts
+          val binaryVersions = artifacts.view.map(_.binaryVersion)
+          val platformsForBadges = artifacts.view
             .filter(_.artifactName == selectedArtifact.artifactName)
             .map(_.binaryVersion.platform)
-            .distinct
-            .sorted
-            .reverse
-          val artifactNames = artifacts.map(_.artifactName).distinct.sortBy(_.value)
+          val artifactNames = artifacts.view.map(_.artifactName)
           val twitterCard = project.twitterSummaryCard
           val html = view.project.html.project(
             env,
             project,
-            artifactNames,
+            SortedSet.from(artifactNames)(Artifact.Name.ordering),
             filteredVersions,
-            binaryVersions,
-            platformsForBadges,
+            SortedSet.from(binaryVersions)(BinaryVersion.ordering.reverse),
+            SortedSet.from(platformsForBadges)(Platform.ordering.reverse),
             selectedArtifact,
             user,
             showEditButton = user.exists(_.canEdit(projectRef)), // show only when your are admin on the project

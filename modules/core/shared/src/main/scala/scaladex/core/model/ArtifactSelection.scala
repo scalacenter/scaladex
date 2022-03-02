@@ -1,5 +1,7 @@
 package scaladex.core.model
 
+
+
 case class ArtifactSelection(
     binaryVersion: Option[BinaryVersion],
     artifactNames: Option[Artifact.Name],
@@ -19,6 +21,48 @@ case class ArtifactSelection(
     filterBinaryVersion(artifact) &&
       filterArtifact(artifact) &&
       filterVersion(artifact)
+
+  def defaultArtifact(
+      artifacts: Seq[Artifact],
+      project: Project
+  ): Option[Artifact] = {
+    val artifactView = artifacts.view
+    val filteredArtifacts =
+      selected match {
+        case Some(selected) =>
+          if (selected == "binaryVersion") artifactView.filter(filterBinaryVersion)
+          else if (selected == "artifact")
+            artifactView.filter(filterArtifact)
+          else if (selected == "version")
+            artifactView.filter(filterVersion)
+          else artifactView.filter(filterAll)
+        case None => artifactView.filter(filterAll)
+      }
+
+    filteredArtifacts.maxByOption { artifact =>
+      (
+        // default artifact (ex: akka-actors is the default for akka/akka)
+        project.settings.defaultArtifact.contains(artifact.artifactName),
+        // project repository (ex: shapeless)
+        project.repository.value == artifact.artifactName.value,
+        // alphabetically
+        artifact.artifactName,
+        // stable version first
+        project.settings.defaultStableVersion && artifact.version.preRelease.isDefined,
+        artifact.version,
+        artifact.binaryVersion
+      )
+    }(
+      Ordering.Tuple6(
+        Ordering[Boolean],
+        Ordering[Boolean],
+        Ordering[Artifact.Name].reverse,
+        Ordering[Boolean].reverse,
+        Ordering[SemanticVersion],
+        Ordering[BinaryVersion]
+      )
+    )
+  }
 
   def filterArtifacts(
       artifacts: Seq[Artifact],
@@ -50,16 +94,19 @@ case class ArtifactSelection(
         artifact.binaryVersion
       )
     }(
-      Ordering.Tuple6(
-        Ordering[Boolean],
-        Ordering[Boolean],
-        Ordering[Artifact.Name].reverse,
-        Ordering[Boolean].reverse,
-        Ordering[SemanticVersion],
-        Ordering[BinaryVersion]
-      )
-    ).reverse
+      Ordering
+        .Tuple6(
+          Ordering[Boolean],
+          Ordering[Boolean],
+          Ordering[Artifact.Name].reverse,
+          Ordering[Boolean].reverse,
+          Ordering[SemanticVersion],
+          Ordering[BinaryVersion]
+        )
+        .reverse
+    )
   }
+
 }
 
 object ArtifactSelection {
@@ -75,5 +122,6 @@ object ArtifactSelection {
       version.flatMap(SemanticVersion.parse),
       selected
     )
+
   def empty = new ArtifactSelection(None, None, None, None)
 }

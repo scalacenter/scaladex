@@ -2,7 +2,9 @@
 @import scaladex.core.model.Env
 @import scaladex.core.model.Platform
 
-@(artifact: Artifact, platforms: Seq[Platform], env: Env)
+@import scala.collection.SortedSet
+
+@(artifact: Artifact, platforms: SortedSet[Platform], env: Env)
 <div class="box badge-showcase">
   <h4>Badges</h4>
   <div>
@@ -18,7 +20,7 @@
   <div id="badge-markdown" class="overlay">
     <div class="popup">
       <a class="close" href="#">&times;</a>
-      @platforms.map { platform =>
+      @platforms.iterator.map { platform =>
         <h2>@platform badge</h2>
         <div class="content">
           <img src="@artifact.badgeUrl(env, Some(platform))" />

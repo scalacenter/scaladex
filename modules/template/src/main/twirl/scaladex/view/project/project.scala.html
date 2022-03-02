@@ -11,9 +11,10 @@
 @import scaladex.view.html.main
 @import scaladex.core.model.Platform
 
+@import scala.collection.SortedSet
 @(
-  env: Env, project: Project, artifacts: Seq[Artifact.Name], versions: Seq[SemanticVersion],
-  binaryVersions: Seq[BinaryVersion], platforms: Seq[Platform], artifact: Artifact, user: Option[UserState],
+  env: Env, project: Project, artifacts: SortedSet[Artifact.Name], versions: SortedSet[SemanticVersion],
+  binaryVersions: SortedSet[BinaryVersion], platforms: SortedSet[Platform], artifact: Artifact, user: Option[UserState],
   showEditButton: Boolean, twitterCard: Option[TwitterSummaryCard], artifactCount: Int,
   directDependencies: Seq[ArtifactDependency.Direct], reverseDependency: Seq[ArtifactDependency.Reverse]
 )
