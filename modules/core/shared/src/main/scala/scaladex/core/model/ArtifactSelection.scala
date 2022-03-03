@@ -1,7 +1,5 @@
 package scaladex.core.model
 
-
-
 case class ArtifactSelection(
     binaryVersion: Option[BinaryVersion],
     artifactNames: Option[Artifact.Name],
