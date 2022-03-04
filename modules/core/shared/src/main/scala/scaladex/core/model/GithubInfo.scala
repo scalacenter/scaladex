@@ -41,7 +41,7 @@ case class GithubInfo(
     codeOfConduct: Option[Url],
     chatroom: Option[Url],
     openIssues: List[GithubIssue], // right now it's all issues, not only beginners issues
-    scalaPercentage: Option[Int],
+    scalaPercentage: Option[Int]
 ) {
   val contributorCount: Int = contributors.size
 
@@ -57,8 +57,8 @@ case class GithubInfo(
       codeOfConduct = codeOfConduct,
       stars = stars,
       forks = forks,
-      contributorCount = contributorCount
-      // TODO: add a scalaPercentage field once I get data from GitHub.
+      contributorCount = contributorCount,
+      scalaPercentage = scalaPercentage
     )
 }
 

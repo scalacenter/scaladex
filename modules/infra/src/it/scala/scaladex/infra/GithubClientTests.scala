@@ -65,8 +65,18 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
   }
 
   it("getUserInfo") {
-    for (userInfo <- client.getUserInfo())
+    for (_ <- client.getUserInfo())
       yield succeed
+  }
+
+  it("getPercentageOfLanguage should return 0, given a repo with none of the target language") {
+    for (percentOfLanguage <- client.getPercentageOfLanguage(Scalafix.reference, "Racket"))
+      yield percentOfLanguage shouldBe 0
+  }
+
+  it("should return a non-zero value, given a repo which contains the target language") {
+    for (percentOfLanguage <- client.getPercentageOfLanguage(Scalafix.reference, "Scala"))
+      yield percentOfLanguage > 0 shouldBe true
   }
 
   if (!isCI) {
