@@ -190,15 +190,14 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
   }
 
   def getPercentageOfLanguage(ref: Project.Reference, language: String): Future[Int] = {
+    def toPercentage(portion: Int, total: Int): Int =
+      ((portion.toFloat / total) * 100).toInt
     val request =
       HttpRequest(uri = s"${repoUrl(ref)}/languages").addHeader(acceptJson).addCredentials(credentials)
-    for {
-      response <- get[Map[String, Int]](request)
-      languages = response.transform((_, numBytes) => numBytes.toFloat)
-      maybeNumBytesLang <- Future(languages.get(language))
-      totalNumBytes = languages.values.sum
-      if languages.nonEmpty
-    } yield maybeNumBytesLang.fold(0)(numBytesLang => ((numBytesLang / totalNumBytes) * 100).toInt)
+    get[Map[String, Int]](request).map { response =>
+      val totalNumBytes = response.values.sum
+      response.get(language).fold(0)(toPercentage(_, totalNumBytes))
+    }
   }
 
   def getGitterChatRoom(ref: Project.Reference): Future[Option[String]] = {
