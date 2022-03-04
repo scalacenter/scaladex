@@ -25,7 +25,8 @@ object GithubInfoTable {
     "contributing_guide",
     "code_of_conduct",
     "chatroom",
-    "open_issues"
+    "open_issues",
+    "scala_percentage"
   )
 
   val insert: Update[(Project.Reference, GithubInfo)] =

@@ -83,6 +83,7 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
       contributors <- getContributors(repo.ref)
       openIssues <- getOpenIssues(repo.ref)
       chatroom <- getGitterChatRoom(repo.ref)
+      scalaPercentage <- getPercentageOfLanguage(repo.ref, language = "Scala")
     } yield GithubInfo(
       homepage = repo.homepage.map(Url),
       description = repo.description,
@@ -99,7 +100,8 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
       contributingGuide = communityProfile.flatMap(_.contributingFile).map(Url),
       codeOfConduct = communityProfile.flatMap(_.codeOfConductFile).map(Url),
       chatroom = chatroom.map(Url),
-      openIssues = openIssues.map(_.toGithubIssue).toList
+      openIssues = openIssues.map(_.toGithubIssue).toList,
+      scalaPercentage = Option(scalaPercentage)
     )
 
   def getReadme(ref: Project.Reference): Future[Option[String]] = {
@@ -185,6 +187,17 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
           }
       }
       .fallbackTo(Future.successful(Seq.empty))
+  }
+
+  def getPercentageOfLanguage(ref: Project.Reference, language: String): Future[Int] = {
+    def toPercentage(portion: Int, total: Int): Int =
+      ((portion.toFloat / total) * 100).toInt
+    val request =
+      HttpRequest(uri = s"${repoUrl(ref)}/languages").addHeader(acceptJson).addCredentials(credentials)
+    get[Map[String, Int]](request).map { response =>
+      val totalNumBytes = response.values.sum
+      response.get(language).fold(0)(toPercentage(_, totalNumBytes))
+    }
   }
 
   def getGitterChatRoom(ref: Project.Reference): Future[Option[String]] = {

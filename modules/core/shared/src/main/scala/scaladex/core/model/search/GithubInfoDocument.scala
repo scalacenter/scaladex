@@ -14,5 +14,6 @@ case class GithubInfoDocument(
     codeOfConduct: Option[Url],
     stars: Option[Int],
     forks: Option[Int],
-    contributorCount: Int
+    contributorCount: Int,
+    scalaPercentage: Option[Int]
 )

@@ -16,13 +16,13 @@ import scaladex.core.model.search.GithubInfoDocument
  * @param watchers number of subscribers to this repo
  * @param issues number of open issues for this repo
  * @param contributors list of contributor profiles
- * @param contributorCount how many contributors there are, used to sort search results by number of contributors
  * @param commits number of commits, calculated by contributors
  * @param topics topics associated with the project
  * @param contributingGuide CONTRIBUTING.md
  * @param codeOfConduct link to code of conduct
  * @param chatroom link to chatroom (ex: https://gitter.im/scalacenter/scaladex)
  * @param openIssues list of all open issues for the project
+ * @param scalaPercentage the proportion of Scala code for this repo
  */
 case class GithubInfo(
     homepage: Option[Url],
@@ -40,7 +40,8 @@ case class GithubInfo(
     contributingGuide: Option[Url],
     codeOfConduct: Option[Url],
     chatroom: Option[Url],
-    openIssues: List[GithubIssue] // right now it's all issues, not only beginners issues
+    openIssues: List[GithubIssue], // right now it's all issues, not only beginners issues
+    scalaPercentage: Option[Int]
 ) {
   val contributorCount: Int = contributors.size
 
@@ -56,7 +57,8 @@ case class GithubInfo(
       codeOfConduct = codeOfConduct,
       stars = stars,
       forks = forks,
-      contributorCount = contributorCount
+      contributorCount = contributorCount,
+      scalaPercentage = scalaPercentage
     )
 }
 
@@ -77,6 +79,7 @@ object GithubInfo {
     contributingGuide = None,
     codeOfConduct = None,
     chatroom = None,
-    openIssues = List()
+    openIssues = List(),
+    scalaPercentage = None
   )
 }
