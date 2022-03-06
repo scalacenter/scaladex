@@ -1,8 +1,10 @@
 package scaladex.infra
 
 import java.io.Closeable
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+
 import com.sksamuel.elastic4s.ElasticClient
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.ElasticProperties
@@ -17,7 +19,7 @@ import com.sksamuel.elastic4s.requests.searches.SearchRequest
 import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.requests.searches.aggs.responses.bucket.Terms
 import com.sksamuel.elastic4s.requests.searches.queries.Query
-import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.{CombineFunction, FieldValueFactorFunctionModifier}
+import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.CombineFunction
 import com.sksamuel.elastic4s.requests.searches.sort.Sort
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import com.typesafe.scalalogging.LazyLogging
