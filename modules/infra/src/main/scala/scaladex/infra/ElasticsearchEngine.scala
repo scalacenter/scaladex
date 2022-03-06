@@ -1,10 +1,8 @@
 package scaladex.infra
 
 import java.io.Closeable
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
 import com.sksamuel.elastic4s.ElasticClient
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.ElasticProperties
@@ -13,13 +11,13 @@ import com.sksamuel.elastic4s.analysis.Analysis
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.requests.common.HealthStatus
 import com.sksamuel.elastic4s.requests.mappings.MappingDefinition
+import com.sksamuel.elastic4s.requests.script.Script
 import com.sksamuel.elastic4s.requests.searches.SearchHit
 import com.sksamuel.elastic4s.requests.searches.SearchRequest
 import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.requests.searches.aggs.responses.bucket.Terms
 import com.sksamuel.elastic4s.requests.searches.queries.Query
-import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.CombineFunction
-import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.FieldValueFactorFunctionModifier
+import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.{CombineFunction, FieldValueFactorFunctionModifier}
 import com.sksamuel.elastic4s.requests.searches.sort.Sort
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import com.typesafe.scalalogging.LazyLogging
@@ -49,6 +47,7 @@ import scaladex.infra.elasticsearch.RawProjectDocument
  */
 class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: ExecutionContext)
     extends SearchEngine
+    with QueryDocumentFormat
     with LazyLogging
     with Closeable {
 
@@ -309,9 +308,15 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
   }
 
   private def gitHubStarScoring(query: Query): Query = {
-    val scorer = fieldFactorScore("githubInfo.stars")
-      .missing(0)
-      .modifier(FieldValueFactorFunctionModifier.LN2P)
+    // TODO: decide on default values for the fields below.
+    // TODO: update any tests.
+    val githubStarField = fieldAccess("githubInfo.stars", default = "0")
+    val scalaPercentageField = fieldAccess("githubInfo.scalaPercentage", default = "0")
+    val scorer = scriptScore(
+      Script(
+        script = s"Math.log(($githubStarField) * ($scalaPercentageField))"
+      )
+    )
     functionScoreQuery()
       .query(query)
       .functions(scorer)
