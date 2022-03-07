@@ -78,9 +78,9 @@ class ArtifactSelectionTests extends AsyncFunSpec with Matchers {
       )
     )
 
-    val result = ArtifactSelection.empty.filterArtifacts(artifacts, project)
+    val result = ArtifactSelection.empty.defaultArtifact(artifacts, project)
 
-    result should contain theSameElementsAs artifacts
+    result should contain(artifacts.head)
   }
 
   it("selected artifact") {
@@ -104,7 +104,7 @@ class ArtifactSelectionTests extends AsyncFunSpec with Matchers {
       selected = None
     )
 
-    val result = selection.filterArtifacts(artifacts, project)
+    val result = selection.defaultArtifact(artifacts, project)
     val expected = prepare(
       projectRef,
       groupdId,
@@ -112,6 +112,6 @@ class ArtifactSelectionTests extends AsyncFunSpec with Matchers {
         ("akka-distributed-data-experimental_2.11", "2.4.8")
       )
     )
-    result should contain theSameElementsAs expected
+    result should contain(expected.head)
   }
 }

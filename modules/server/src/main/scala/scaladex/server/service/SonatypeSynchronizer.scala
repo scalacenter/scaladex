@@ -32,8 +32,7 @@ class SonatypeSynchronizer(
       artifactIds <- sonatypeService.getAllArtifactIds(groupId)
       scalaArtifactIds = artifactIds.filter(artifact => artifact.isScala && artifact.binaryVersion.isValid)
       result <- scalaArtifactIds
-        .map(id => findAndIndexMissingArtifacts(groupId, id, mavenReferenceFromDatabase.toSet))
-        .sequence
+        .mapSync(id => findAndIndexMissingArtifacts(groupId, id, mavenReferenceFromDatabase.toSet))
     } yield result.sum
 
   private def findAndIndexMissingArtifacts(
