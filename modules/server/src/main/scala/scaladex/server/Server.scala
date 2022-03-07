@@ -119,10 +119,7 @@ object Server extends LazyLogging {
     for {
       _ <- database.migrate
       _ = logger.info("Waiting for ElasticSearch to start")
-      _ <- IO(searchEngine.waitUntilReady())
-      _ <-
-        if (resetElastic) IO.fromFuture(IO(searchEngine.reset()))
-        else IO.unit
+      _ <- IO.fromFuture(IO(searchEngine.init(resetElastic)))
       _ = logger.info("Starting all schedulers")
       _ <- IO(scheduler.startAll())
     } yield ()
