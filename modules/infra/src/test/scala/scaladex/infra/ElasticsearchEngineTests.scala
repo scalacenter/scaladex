@@ -26,10 +26,8 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
   val searchEngine: ElasticsearchEngine = ElasticsearchEngine.open(config)
   val page: PageParams = PageParams(1, 20)
 
-  override protected def beforeAll(): Unit = {
-    searchEngine.waitUntilReady()
-    Await.result(searchEngine.reset(), Duration.Inf)
-  }
+  override protected def beforeAll(): Unit =
+    Await.result(searchEngine.init(true), Duration.Inf)
 
   override protected def afterAll(): Unit =
     searchEngine.close()
