@@ -8,12 +8,16 @@
 
 .awesome-header {
   background: url("/assets/img/head-project-background.png") no-repeat center top #0D343C;
-  min-height: 150px;
+  min-height: 160px;
   padding: 20px 0;
 
+  .container {
+    padding-left: 35px;
+  }
+
   h1 {
-    padding-left: 20px;
-    margin: 0;
+    margin-top: 0;
+    margin-bottom: 12px;
     a  {
       font-size: 36px;
       color: white;
@@ -25,9 +29,18 @@
     }
   }
 
+  p {
+    font-size: 20px;
+    color: white;
+  }
+
   .how-to {
     .awesome {
       font-size: 35px;
+    }
+
+    p {
+      color: $text-color;
     }
 
     .btn-default {
@@ -189,7 +202,6 @@
 #container-awesome-category {
   .awesome-header {
     h2 {
-      padding-left: 20px;
       margin-top: 10px;
       font-size: 33px;
     }
