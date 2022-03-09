@@ -8,7 +8,6 @@
 
 .awesome-header {
   background: url("/assets/img/head-project-background.png") no-repeat center top #0D343C;
-  min-height: 160px;
   padding: 20px 0;
 
   .container {
@@ -45,6 +44,7 @@
 
     .btn-default {
       margin-right: 20px;
+      margin-bottom: 12px;
       background-color: rgba(255, 255, 255, 0.1);
       font-size: 18px;
       color: rgba(255,255,255,0.7);
@@ -58,6 +58,10 @@
 }
 
 #container-awesome-all {
+  .awesome-header {
+    padding-bottom: 50px;
+  }
+
   .awesome-content {
     margin-top: -40px
   }
@@ -67,6 +71,9 @@
     overflow: auto;
     background: white;
     padding: 20px;
+    @media screen and (max-width: $screen-md-min) {
+      margin: 0 15px 20px 15px;
+    }  
     position: -webkit-sticky;
     position: sticky;
     top: 10px;
