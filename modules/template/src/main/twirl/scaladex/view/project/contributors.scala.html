@@ -1,6 +1,6 @@
 @import scaladex.core.model.GithubContributor
 
-@(contributors: List[GithubContributor])
+@(contributors: Seq[GithubContributor])
 @if(contributors.nonEmpty) {
   <div class="collaborators box">
     <h4>Contributors</h4>

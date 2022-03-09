@@ -7,7 +7,7 @@ case class GithubInfoDocument(
     logo: Option[Url],
     description: Option[String],
     readme: Option[String],
-    openIssues: List[GithubIssue],
+    openIssues: Seq[GithubIssue],
     topics: Seq[String],
     contributingGuide: Option[Url],
     chatroom: Option[Url],
