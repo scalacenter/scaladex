@@ -25,8 +25,8 @@
               </a>
             }
             @if(canEdit){
-              <a href="/edit/@project.reference.organization/@project.reference.repository" class="btn btn-primary">
-                Edit
+              <a href="/edit/@project.reference.organization/@project.reference.repository" class="hover-edit">
+                <i class="fa-solid fa-pen-to-square"></i>
               </a>
             }
             @if(project.settings.deprecated){

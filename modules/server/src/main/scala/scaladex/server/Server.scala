@@ -143,6 +143,7 @@ object Server extends LazyLogging {
     val frontPage = new FrontPage(config.env, webDatabase, searchEngine)
     val adminPages = new AdminPage(config.env, schedulerService)
     val projectPages = new ProjectPages(config.env, webDatabase, searchEngine, filesystem)
+    val projectPages2 = new ProjectPages2(config.env, webDatabase, searchEngine)
     val awesomePages = new AwesomePages(config.env, searchEngine)
 
     val programmaticRoutes = concat(
@@ -159,7 +160,7 @@ object Server extends LazyLogging {
         val user = userId.flatMap(session.getUser)
         frontPage.route(user) ~ adminPages.route(user) ~ awesomePages.route(user) ~
           redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
-            projectPages.route(user) ~ searchPages.route(user)
+            projectPages.route(user) ~ projectPages2.route(user) ~ searchPages.route(user)
           }
       }
     val exceptionHandler = ExceptionHandler {
