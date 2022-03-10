@@ -6,6 +6,7 @@ import java.time.temporal.ChronoUnit
 import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact._
 import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
 import scaladex.core.model.GithubContributor
@@ -110,7 +111,7 @@ object Values {
       ArtifactDependency(
         source = Cats.`core_3:2.6.1`.mavenReference,
         target = artifact.mavenReference,
-        "compile"
+        Scope("compile")
       )
     val githubInfo: GithubInfo = GithubInfo.empty
     val settings: Project.Settings =
@@ -184,9 +185,9 @@ object Values {
       ArtifactDependency(
         source = `core_3:2.6.1`.mavenReference,
         target = kernel_3.mavenReference,
-        "compile"
+        Scope("compile")
       ),
-      ArtifactDependency(source = `core_3:2.6.1`.mavenReference, target = laws_3.mavenReference, "compile"),
+      ArtifactDependency(source = `core_3:2.6.1`.mavenReference, target = laws_3.mavenReference, Scope("compile")),
       ArtifactDependency(
         source = `core_3:2.6.1`.mavenReference,
         target = MavenReference(
@@ -194,7 +195,7 @@ object Values {
           "ztmp-scala-automation_2.10",
           "1.9"
         ), // dependency with a corresponding getArtifact
-        "compile"
+        Scope("compile")
       )
     )
 
@@ -210,7 +211,7 @@ object Values {
         "3.2.3"
       ),
       target = Cats.`core_3:2.6.1`.mavenReference,
-      "compile"
+      Scope("compile")
     )
 
     val testDependency: ArtifactDependency = ArtifactDependency(
@@ -220,7 +221,7 @@ object Values {
         "3.2.3"
       ),
       target = MavenReference("typelevel", "scalacheck_3", "1.15.4"),
-      "test"
+      Scope("test")
     )
   }
 

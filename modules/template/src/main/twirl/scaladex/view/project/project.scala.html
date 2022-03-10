@@ -6,26 +6,28 @@
 @import scaladex.core.model.SemanticVersion
 @import scaladex.core.model.BinaryVersion
 @import scaladex.core.model.TwitterSummaryCard
-@import scaladex.core.model.ArtifactDependency
 @import scaladex.view.html.main
 @import scaladex.core.model.Platform
-
 @import scala.collection.SortedSet
+@import scaladex.core.model.ProjectDependency
+@import scaladex.core.model.Release
+@import scaladex.core.model.ReleaseDependency
+@import scaladex.core.model.ArtifactDependency.Scope
+
 @(
   env: Env, project: Project, artifacts: SortedSet[Artifact.Name], versions: SortedSet[SemanticVersion],
-  binaryVersions: SortedSet[BinaryVersion], platforms: SortedSet[Platform], artifact: Artifact, user: Option[UserState],
-  showEditButton: Boolean, twitterCard: Option[TwitterSummaryCard], artifactCount: Int,
-  directDependencies: Seq[ArtifactDependency.Direct], reverseDependency: Seq[ArtifactDependency.Reverse]
+  binaryVersions: SortedSet[BinaryVersion], platforms: SortedSet[Platform], artifact: Artifact, user: Option[UserState], twitterCard: Option[TwitterSummaryCard], artifactCount: Int,
+  directDependencies: Map[(Project.Reference, Scope), Seq[ReleaseDependency.Result]],
+        reverseDependency: Map[(Project.Reference, Scope), Seq[ReleaseDependency.Result]], lastVersion: SemanticVersion
 )
-
 @main(env, title = project.repository.value, user,
       extraMeta = twitterCard.map(_.toHeadMeta).getOrElse(Nil)) {
   <main id="container-project">
-    @headproject(project, artifacts, versions, binaryVersions, artifact, showEditButton)
+    @headproject(env, user, project, versions.size, "Project", lastVersion)
     <div class="container">
       <div class="row">
         <div class="col-md-8">
-          <div class="content-project box" id="README" 
+          <div class="content-project box project-main" id="README"
             data-organization="@project.reference.organization"
             data-repository="@project.reference.repository">
 
@@ -39,11 +41,11 @@
               <h1>[DEPRECATED]</h1>
             </div>
             }
+            @project.githubInfo.map(gh => statistic(gh, project.reference, artifactCount, reverseDependency.size))
             @documentation(artifact, project)
             @badges(artifact, platforms, env)
             @install(artifact, project.settings.cliArtifacts)
             @scastie(artifact.scastieURL)
-            @project.githubInfo.map(gh => statistic(gh, project.reference, artifactCount, reverseDependency.size))
             @project.githubInfo.map { github =>
               @if(github.openIssues.nonEmpty && github.chatroom.isDefined && github.contributingGuide.isDefined) {
                   <div class="box project-contributing-info">
@@ -55,10 +57,10 @@
                   </div>
               }
             }
-            @project.githubInfo.map(gh => contributors(gh.contributors))
+            @project.githubInfo.map(gh => contributors(project, gh.contributors))
             @license(artifact)
-            @dependencies(project.reference, directDependencies)
-            @dependents(artifact, reverseDependency)
+            @releaseDependencies(reverseDependency, "Dependent", lastVersion)
+            @releaseDependencies(directDependencies, "Dependency", lastVersion)
           </div>
         </div>
       </div>

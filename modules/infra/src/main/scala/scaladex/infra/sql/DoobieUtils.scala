@@ -16,6 +16,7 @@ import doobie.hikari.HikariTransactor
 import io.circe._
 import org.flywaydb.core.Flyway
 import scaladex.core.model.Artifact
+import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
 import scaladex.core.model.GithubContributor
@@ -171,6 +172,8 @@ object DoobieUtils {
           .fromLabel(x)
           .getOrElse(throw new Exception(s"Failed to parse $x as Language"))
       }(_.label)
+    implicit val scopeMeta: Meta[ArtifactDependency.Scope] =
+      Meta[String].timap(ArtifactDependency.Scope.apply)(_.value)
     implicit val licensesMeta: Meta[Set[License]] =
       Meta[String].timap(fromJson[Seq[License]](_).get.toSet)(toJson(_))
     implicit val resolverMeta: Meta[Resolver] =

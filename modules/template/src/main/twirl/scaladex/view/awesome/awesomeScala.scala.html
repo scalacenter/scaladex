@@ -81,7 +81,7 @@
                             @githubUserAvatar(project.githubInfo.flatMap(_.logo))
                             @for(github <- project.githubInfo) {
                               <span class="stats">
-                                @github.stars <i class="fa fa-star"></i>
+                                @github.stars <i class="fa-solid fa-star"></i>
                               </span>
                             }
                             <h4> @project.organization / @project.repository </h4>

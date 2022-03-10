@@ -9,7 +9,7 @@ package scaladex.core.model
 case class ArtifactDependency(
     source: Artifact.MavenReference,
     target: Artifact.MavenReference,
-    scope: String
+    scope: ArtifactDependency.Scope
 )
 
 object ArtifactDependency {
@@ -36,7 +36,7 @@ object ArtifactDependency {
   }
   object Direct {
     implicit val order: Ordering[Direct] =
-      Ordering.by(d => ordering(d.artifactDep, d.name))
+      Ordering.by(d => (d.artifactDep.scope, d.name))
   }
 
   final case class Reverse(
@@ -49,7 +49,7 @@ object ArtifactDependency {
 
   object Reverse {
     implicit val order: Ordering[Reverse] =
-      Ordering.by(d => ordering(d.dependency, d.name))
+      Ordering.by(d => (d.dependency.scope, d.name))
     def sample(deps: Seq[Reverse], sampleSize: Int): Seq[Reverse] =
       deps
         .groupBy(r => (r.source.projectRef, r.source.artifactId))
@@ -61,18 +61,21 @@ object ArtifactDependency {
         .take(sampleSize)
   }
 
-  private def ordering(
-      dependency: ArtifactDependency,
-      name: String
-  ): (Int, String) =
-    (
-      dependency.scope match {
-        case "compile"  => 0
-        case "provided" => 1
-        case "runtime"  => 2
-        case "test"     => 3
-        case _          => 4
-      },
-      name
-    )
+  // current values in the database: optional, macro, runtime, compile, provided, test
+  case class Scope(value: String) extends AnyVal with Ordered[Scope] {
+    override def toString: String = value
+    override def compare(that: Scope): Int =
+      Scope.ordering.compare(this, that)
+  }
+  object Scope {
+    implicit val ordering: Ordering[Scope] = Ordering.by {
+      case Scope("compile")  => 0
+      case Scope("provided") => 1
+      case Scope("runtime")  => 2
+      case Scope("test")     => 3
+      case _                 => 4
+    }
+
+    val compile: Scope = Scope("compile")
+  }
 }

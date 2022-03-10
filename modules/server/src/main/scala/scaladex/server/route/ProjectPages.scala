@@ -1,6 +1,4 @@
 package scaladex.server.route
-
-import scala.collection.SeqView
 import scala.collection.SortedSet
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -13,16 +11,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import com.typesafe.scalalogging.LazyLogging
 import play.twirl.api.HtmlFormat
-import scaladex.core.model.Artifact
-import scaladex.core.model.ArtifactSelection
-import scaladex.core.model.BinaryVersion
-import scaladex.core.model.Category
-import scaladex.core.model.Env
-import scaladex.core.model.GithubStatus
-import scaladex.core.model.Platform
-import scaladex.core.model.Project
-import scaladex.core.model.SemanticVersion
-import scaladex.core.model.UserState
+import scaladex.core.model.ArtifactDependency.Scope
+import scaladex.core.model._
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 import scaladex.server.TwirlSupport._
@@ -56,38 +46,6 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
                   StatusCodes.SeeOther
                 ) // maybe we can print that it wasn't saved
             }
-          }
-        }
-      },
-      get {
-        path("artifacts" / projectM) { projectRef =>
-          val res =
-            for {
-              projectOpt <- database.getProject(projectRef)
-              project = projectOpt.getOrElse(throw new Exception(s"project $projectRef not found"))
-              artifacts <- database.getArtifacts(projectRef)
-            } yield (project, artifacts)
-
-          onComplete(res) {
-            case Success((project, artifacts)) =>
-              val binaryVersionByPlatforms = artifacts
-                .map(_.binaryVersion)
-                .distinct
-                .groupBy(_.platform)
-                .view
-                .mapValues(_.sorted(BinaryVersion.ordering.reverse))
-                .toSeq
-                .sortBy(_._1)(Platform.ordering.reverse)
-
-              val artifactsByVersions = artifacts
-                .groupBy(_.version)
-                .map { case (version, artifacts) => (version, artifacts.groupBy(_.artifactName).toSeq.sortBy(_._1)) }
-                .toSeq
-                .sortBy(_._1)(SemanticVersion.ordering.reverse)
-
-              complete(view.html.artifacts(env, project, user, binaryVersionByPlatforms, artifactsByVersions))
-            case Failure(_) =>
-              complete(StatusCodes.NotFound, view.html.notfound(env, user))
           }
         }
       },
@@ -166,23 +124,21 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
       }
     )
 
-  private def getEditPage(ref: Project.Reference, user: UserState): Future[(StatusCode, HtmlFormat.Appendable)] =
+  private def getEditPage(
+      ref: Project.Reference,
+      user: UserState
+  ): Future[(StatusCode, HtmlFormat.Appendable)] =
     for {
       projectOpt <- database.getProject(ref)
       artifacts <- database.getArtifacts(ref)
+      numberOfVersions <- database.countVersions(ref)
+      lastVersion <- database.getLastVersion(ref)
     } yield projectOpt
       .map { p =>
-        val page = view.project.html.editproject(env, p, artifacts, Some(user))
+        val page = view.project.html.editproject(env, p, artifacts, user, numberOfVersions, lastVersion)
         (StatusCodes.OK, page)
       }
       .getOrElse((StatusCodes.NotFound, view.html.notfound(env, Some(user))))
-
-  private def filterVersions(p: Project, allVersions: SeqView[SemanticVersion]): SortedSet[SemanticVersion] = {
-    val filtered =
-      if (p.settings.strictVersions) allVersions.view.filter(_.isSemantic)
-      else allVersions.view
-    SortedSet.from(filtered)(SemanticVersion.ordering.reverse)
-  }
 
   private def getProjectPage(
       projectRef: Project.Reference,
@@ -204,11 +160,11 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           selectedArtifact = selection
             .defaultArtifact(artifacts, project)
             .getOrElse(throw new Exception(s"no artifact found for $projectRef"))
-          directDependencies <- database.getDirectDependencies(selectedArtifact)
-          reverseDependency <- database.getReverseDependencies(selectedArtifact)
+          lastVersion <- database.getLastVersion(projectRef)
+          directReleaseDependencies <- database.getDirectReleaseDependencies(projectRef, lastVersion)
+          reverseReleaseDependencies <- database.getReverseReleaseDependencies(projectRef, lastVersion)
         } yield {
           val allVersions = artifacts.view.map(_.version)
-          val filteredVersions = filterVersions(project, allVersions)
           val binaryVersions = artifacts.view.map(_.binaryVersion)
           val platformsForBadges = artifacts.view
             .filter(_.artifactName == selectedArtifact.artifactName)
@@ -219,16 +175,16 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
             env,
             project,
             SortedSet.from(artifactNames)(Artifact.Name.ordering),
-            filteredVersions,
+            SortedSet.from(allVersions)(SemanticVersion.ordering.reverse),
             SortedSet.from(binaryVersions)(BinaryVersion.ordering.reverse),
             SortedSet.from(platformsForBadges)(Platform.ordering.reverse),
             selectedArtifact,
             user,
-            showEditButton = user.exists(_.canEdit(projectRef, env)), // show only when your are admin on the project
             Some(twitterCard),
             artifacts.size,
-            directDependencies,
-            reverseDependency
+            directReleaseDependencies.groupBy(d => (d.ref, d.scope)),
+            keepLastVersion(reverseReleaseDependencies),
+            lastVersion
           )
           (StatusCodes.OK, html)
         }
@@ -236,6 +192,13 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         Future.successful((StatusCodes.NotFound, view.html.notfound(env, user)))
     }
   }
+
+  def keepLastVersion(
+      reverse: Seq[ReleaseDependency.Result]
+  ): Map[(Project.Reference, Scope), Seq[ReleaseDependency.Result]] =
+    reverse.groupBy(d => (d.ref, d.scope)).map {
+      case (key, releaseDependencies) => key -> releaseDependencies.maxByOption(_.releaseDate).toSeq
+    }
 
   // TODO remove all unused parameters
   private val editForm: Directive1[Project.Settings] =

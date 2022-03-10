@@ -10,6 +10,7 @@ import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Jvm
 import scaladex.core.model.Project
@@ -138,14 +139,14 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
         ArtifactDependency(
           source = Cats.`core_3:2.6.1`.mavenReference,
           target = Artifact.MavenReference("fake", "fake_3", "version"),
-          scope = "compile"
+          scope = Scope.compile
         )
       ), // first case: a dependency to an external artifact
       Cats.kernel_3 -> Seq(
         ArtifactDependency(
           source = Cats.kernel_3.mavenReference,
           target = Cats.`core_3:2.6.1`.mavenReference,
-          "compile"
+          Scope.compile
         )
       ), // depends on it self
       Scalafix.artifact -> Cats.dependencies.map(
@@ -156,7 +157,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
         ArtifactDependency(
           source = PlayJsonExtra.artifact.mavenReference,
           target = Scalafix.artifact.mavenReference,
-          "compile"
+          Scope.compile
         )
       )
     )

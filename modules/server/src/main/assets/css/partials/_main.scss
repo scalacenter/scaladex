@@ -55,6 +55,18 @@ main {
   }
 }
 
+.list-inline {
+  > li {
+    font-size: 18px;
+    padding: 3px;
+  }
+
+  .label-default {
+    background-color: $gray-light;
+    font-weight: 500;
+  }
+}
+
 // Common Pop-up
 .overlay {
   position: fixed;
@@ -305,7 +317,7 @@ main {
           color: $brand-primary;
         }
       }
-      td { padding-left: 20px; }
+      td {padding-left: 20px;}
     }
   }
 }
@@ -356,6 +368,7 @@ main {
     .dropdown-menu {
       border: none;
     }
+
     @media screen and (min-width: $screen-md-min) {
       float: right;
       margin-top: 0;
@@ -442,8 +455,8 @@ main {
         display: block;
         padding-bottom: 10px;
       }
-      td { padding-left: 80px; }
-      p { padding-bottom: 20px; }
+      td {padding-left: 80px;}
+      p {padding-bottom: 20px;}
     }
   }
 }
@@ -458,7 +471,6 @@ main {
     margin-top: 0;
   }
   @media screen and (min-width: $screen-md-min) {
-    padding-top: 20;
     padding-bottom: 80px;
     .content-project {
       margin-bottom: 0;
@@ -470,6 +482,7 @@ main {
     ul {
       li {
         margin-bottom: 8px;
+        padding-right: 0;
         display: block;
         a {
           color: $gray;
@@ -489,6 +502,11 @@ main {
   }
 
   .content-project {
+    margin-bottom: 0;
+    margin-top: -40px;
+  }
+
+  .content-main {
     .markdown-body {
       .anchor {
         display: inline-block;
@@ -512,12 +530,7 @@ main {
         }
       }
     }
-    margin-bottom: 0;
-    margin-top: 20px;
-    @media screen and (min-width: $screen-md-min) {
-      margin-bottom: 30px;
-      margin-top: -80px;
-    }
+
     h3 {
       margin-top: ($line-height-computed / 1.7);
       margin-bottom: $line-height-computed;
@@ -526,11 +539,12 @@ main {
       margin: 0 0 $line-height-computed;
     }
   }
+
   .sidebar-project {
     margin-top: 20px;
     @media screen and (min-width: $screen-md-min) {
       margin-bottom: 30px;
-      margin-top: -80px;
+      margin-top: -40px;
     }
     .box,
     .install {
@@ -573,8 +587,6 @@ main {
           &:disabled {
             background-color: transparent;
           }
-
-
         }
 
         pre {
@@ -609,7 +621,7 @@ main {
           text-decoration: underline;
         }
       }
-      td { padding-left: 30px; }
+      td {padding-left: 30px;}
     }
   }
   .collaborators {
@@ -626,13 +638,25 @@ main {
         }
       }
     }
+    .more-collaborators {
+      padding-top: 15px;
+    }
   }
   .edit-project {
     h1 {
       margin-top: 0;
       margin-bottom: 40px;
     }
-    margin-top: 20px;
+    .btn-default {
+      background: $gray-lighter;
+      margin-left: 10px;
+      &:focus,
+      &:hover {
+        background: $gray-light;
+        color: $gray-lighter;
+      }
+
+    }
     fieldset fieldset legend {
       font-size: 16px;
     }
@@ -640,21 +664,30 @@ main {
       background-color: #002b37;
     }
   }
-
   .tab-content {
     position: relative;
   }
+
   .tab-pane {
     height: 85px;
   }
 }
+.deprecated-project {
+  background-color: #FFF8C5;
+  font-size: 22px;
+  text-align: center;
+  color: $gray-darker;
+}
 
 .head-project {
   padding: 20px 0;
-  min-height: 290px;
   background: url('/assets/img/head-project-background.png') no-repeat center top #0D343C;
   color: #fff;
-  .bootstrap-select >  {
+  .head-last-version {
+    display: inline;
+    color: $gray-lighter;
+  }
+  .bootstrap-select > {
     .dropdown-toggle {
       width: auto;
       min-width: 140px;
@@ -663,19 +696,39 @@ main {
     }
   }
   .info-project {
-    margin-bottom: 100px;
+    margin-bottom: 60px;
 
     h1 {
+      display: inline-block;
       margin-top: 0;
+      margin-bottom: 12px;
       color: $brand-primary;
     }
+
+    .btn-link {
+      margin-left: 10px;
+      margin-top: 0;
+      margin-bottom: 12px;
+      background: #3985aaba;
+      color: aliceblue;
+      border-radius: 32px;
+      padding: 3px 10px;
+    }
+
     .contributors-tag {
-      width: 140px;
-      margin-left: 20px;
-      height: auto;
-      display: inline-block;
+      margin-left: 0;
       img {
         height: 25px;
+        margin-bottom: 12px;
+      }
+    }
+    @media screen and (min-width: $screen-md-min) {
+      .contributors-tag {
+        margin-left: 20px;
+      }
+      .btn-link {
+        float: right;
+        margin-top: 8px;
       }
     }
     i {
@@ -699,66 +752,87 @@ main {
       }
     }
   }
-  .artifact-project {
-    margin-top: 10px;
-    i.fa {
-      margin-right: 8px;
+
+  .project-nav-bar {
+    margin-bottom: 20px;
+    margin-top: 0px;
+    font-size: 18px;
+
+    .nav-tabs > li > a {
+      color: $gray-lighter;
     }
 
-    .dropdown-menu {
-      border: none;
-      background-color: rgba($gray-lighter, 0.7);
-      padding: 0;
-    }
-
-    a.btn {
-      display: block;
-      margin: 5px;
-      width: 140px;
-    }
-
-    form {
-      .btn-primary {
-        @include button-variant(
-                $btn-primary-color,
-                rgba(255, 255, 255, 0.1),
-                $btn-primary-border
-        );
-      }
-      display: block;
-      margin: 5px;
+    .nav-tabs > li.active > a,
+    .nav-tabs > li.active > a:hover,
+    .nav-tabs > li.active > a:focus {
+      color: $brand-primary;
     }
   }
-}
-
-.badge-showcase {
-  padding-bottom: 0;
-  .badge-image {
-    overflow: auto;
-    padding-bottom: 40px;
-  }
-  .text-right {
-    position: absolute;
-    right: 45px;
-  }
-}
-
-.documentation-link {
-  ul {
-    padding-left: 0;
-  }
-  li {
-    display: block;
-  }
-}
-
-html, body {
-  height: 100%;
 }
 
 .artifacts {
-  margin: 20px;
+  .artifacts-filter {
+    margin-top: -10px;
+    margin-bottom: 50px;
+  }
+  .artifact-version {
+    font-size: 30px;
+    color: $brand-secondary;
+  }
+  .artifact-center {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .artifact-row {
+    display: -webkit-flex;
+  }
+  .fa-solid {
+    margin-left: 5px;
+  }
+  .scala-version {
+    padding-left: 15px;
+  }
+  .artifact-content {
+    h5 {
+      display: inline;
+    }
+  }
+  .filter-option-inner-inner {
+    color: white;
+  }
+  .filter {
+    display: inline;
+    margin-right: 15px;
+  }
+  .dropdown {
+    width: 200px !important;
+  }
+  .list-inline {
+    margin-top: 5px;
+    margin-left: 0;
+    .label {
+      font-size: 85%;
+      font-weight: 500;
+    }
+  }
+  .filter-artifact-result {
+    float: right;
+    font-size: 16px;
+  }
+}
+.artifact {
+  .artifact-title {
+    padding-bottom: 0.3em;
+    font-size: 2.25em;
+    line-height: 1.2;
+    border-bottom: 1px solid #eee;
+  }
+}
 
+
+.project-artifact {
   table {
     margin-top: 25px;
   }
@@ -798,7 +872,44 @@ html, body {
   }
 }
 
-.white { color: #fff; }
+.badge-showcase {
+  padding-bottom: 0;
+
+  .badge-image {
+    overflow: auto;
+    padding-bottom: 40px;
+  }
+
+  .text-right {
+    position: absolute;
+    right: 45px;
+  }
+}
+
+.float-right {
+  float: right;
+}
+.display-block {
+  display: block !important;
+}
+
+.documentation-link {
+  ul {
+    padding-left: 0;
+  }
+
+  li {
+    display: block;
+  }
+}
+
+html, body {
+  height: 100%;
+}
+
+.white {
+  color: #fff;
+}
 
 #admin-content {
     .table>thead>tr>th,

@@ -20,7 +20,9 @@ import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.model.ReleaseDependency
+import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserState
+import scaladex.core.model.web.ArtifactsPageParams
 import scaladex.core.service.SchedulerDatabase
 import scaladex.infra.sql.ArtifactDependencyTable
 import scaladex.infra.sql.ArtifactTable
@@ -174,6 +176,20 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getReverseDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Reverse]] =
     run(ArtifactDependencyTable.selectReverseDependency.to[Seq](artifact.mavenReference))
 
+  override def getUniqueArtifacts(ref: Project.Reference): Future[Seq[(Artifact.Name, Platform, Language)]] =
+    run(
+      ArtifactTable.selectUniqueArtifacts
+        .to[Seq](ref)
+        .map(_.map { case (name, platform, language, _) => (name, platform, language) })
+    )
+
+  override def getArtifacts(
+      ref: Project.Reference,
+      artifactName: Artifact.Name,
+      version: SemanticVersion
+  ): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactBy.to[Seq](ref, artifactName, version))
+
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.count.unique)
 
@@ -194,6 +210,18 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] =
     run(ProjectDependenciesTable.countInverseDependencies.unique(projectRef))
+
+  override def getReverseReleaseDependencies(
+      ref: Project.Reference,
+      version: SemanticVersion
+  ): Future[Seq[ReleaseDependency.Result]] =
+    run(ReleaseDependenciesTable.getReverseDependencies.to[Seq]((ref, version)))
+
+  override def getDirectReleaseDependencies(
+      ref: Project.Reference,
+      version: SemanticVersion
+  ): Future[Seq[ReleaseDependency.Result]] =
+    run(ReleaseDependenciesTable.getDirectDependencies.to[Seq]((ref, version)))
 
   override def deleteDependenciesOfMovedProject(): Future[Unit] =
     for {
@@ -225,6 +253,23 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   override def deleteSession(userId: UUID): Future[Unit] =
     run(UserSessionsTable.deleteByUserId.run(userId).map(_ => ()))
+
+  override def getArtifacts(
+      projectRef: Project.Reference,
+      default: Artifact.Name,
+      params: ArtifactsPageParams
+  ): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactByParams(projectRef, default, params).to[Seq])
+
+  override def countVersions(ref: Project.Reference): Future[Long] =
+    run(ArtifactTable.countVersionsByProjct.unique(ref))
+
+  override def getLastVersion(ref: Project.Reference): Future[SemanticVersion] =
+    for {
+      versionOpt <- run(ArtifactTable.findLastSemanticVersionNotPrerelease.to[Seq](ref))
+      version <-
+        if (versionOpt.isEmpty) run(ArtifactTable.findLastVersion.unique(ref)) else Future.successful(versionOpt.head)
+    } yield version
 
   def moveProject(
       ref: Project.Reference,

@@ -66,6 +66,7 @@ class SonatypeSynchronizer(
       case PublishResult.Success => true
       case _                     => false
     }
+
 }
 
 object SonatypeSynchronizer {

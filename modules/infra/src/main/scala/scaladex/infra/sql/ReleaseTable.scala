@@ -1,5 +1,4 @@
 package scaladex.infra.sql
-
 import doobie.util.update.Update
 import scaladex.core.model.Release
 import scaladex.infra.sql.DoobieUtils.Mappings._

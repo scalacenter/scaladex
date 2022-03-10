@@ -16,10 +16,13 @@ import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.model.ReleaseDependency
+import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserState
+import scaladex.core.model.web.ArtifactsPageParams
 import scaladex.core.service.SchedulerDatabase
 
 class InMemoryDatabase extends SchedulerDatabase {
+
   private val projects = mutable.Map[Project.Reference, Project]()
   private val artifacts = mutable.Map[Project.Reference, Seq[Artifact]]()
   private val dependencies = mutable.Buffer[ArtifactDependency]()
@@ -155,4 +158,28 @@ class InMemoryDatabase extends SchedulerDatabase {
         )
       case _ => Future.successful(())
     }
+
+  override def getUniqueArtifacts(ref: Project.Reference): Future[Seq[(Artifact.Name, Platform, Language)]] =
+    ???
+
+  override def getArtifacts(
+      projectRef: Project.Reference,
+      default: Artifact.Name,
+      params: ArtifactsPageParams
+  ): Future[Seq[Artifact]] = ???
+  override def getDirectReleaseDependencies(
+      ref: Project.Reference,
+      version: SemanticVersion
+  ): Future[Seq[ReleaseDependency.Result]] = ???
+  override def getReverseReleaseDependencies(
+      ref: Project.Reference,
+      version: SemanticVersion
+  ): Future[Seq[ReleaseDependency.Result]] = ???
+  override def countVersions(ref: Project.Reference): Future[Long] = ???
+  override def getLastVersion(ref: Project.Reference): Future[SemanticVersion] = ???
+  override def getArtifacts(
+      ref: Project.Reference,
+      artifactName: Artifact.Name,
+      version: SemanticVersion
+  ): Future[Seq[Artifact]] = ???
 }

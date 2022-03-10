@@ -1,0 +1,77 @@
+@import scaladex.core.model.{Artifact, BinaryVersion, Project, SemanticVersion, UserState, Env}
+@import scaladex.view.html.main
+@import scaladex.view.html._
+@import scaladex.core.model.web.ArtifactsPageParams
+@import scala.collection.immutable.SortedMap
+@import scaladex.core.model.Language
+@import scaladex.core.util.ScalaExtensions._
+@import scaladex.core.model.Platform
+@import scaladex.core.util.TimerUtils
+
+@import java.time.Instant
+@(
+        env: Env,
+        project: Project,
+        user: Option[UserState],
+        defaultArtifact: Artifact.Name,
+        artifactNames: Seq[Artifact.Name],
+        allBinaryVersions: Seq[BinaryVersion],
+        artifactByVersions: SortedMap[(Instant, SemanticVersion), Seq[Artifact]],
+        params: ArtifactsPageParams,
+        lastProjectVersion: SemanticVersion,
+        numberOfVersions: Long
+)
+
+@main(env, title = project.repository.toString, user) {
+  <main id="container-project">
+    @headproject(env, user, project, numberOfVersions, "Artifacts", lastProjectVersion)
+    <div class="container">
+      <div class="content-project artifacts box" data-organization="@project.reference.organization"
+      data-repository="@project.reference.repository">
+        <div class="artifacts-filter">
+          @filterArtifacts(project.reference, defaultArtifact, allBinaryVersions, artifactNames, params, artifactByVersions.size)
+        </div>
+        @if(artifactByVersions.isEmpty) {
+          <div>We can't find any release that matches all you criteria</div>
+        } else {
+        <div>
+          @artifactByVersions.map { case ((releaseDate, semanticVersion), artifacts) =>
+          <div class="panel panel-default">
+            <div class="artifact-row panel-body">
+              <a class="artifact-version artifact-center col-sm-2" href="/@project.reference/artifacts/@defaultArtifact/@semanticVersion">@semanticVersion</a>
+              <div class="artifact-content col-sm-8">
+                @for((platform, binaryVersions) <- artifacts.map(_.binaryVersion).groupBy(_.platform)) {
+                  <h5>@platform:</h5>
+                  @binaryVersions.map(_.language).distinct.sorted.map { scalaV =>
+                    @displayLanguage(platform, scalaV)
+                  }
+                  <br>
+                }
+              </div>
+              <div class="col-sm-2">
+                <a class="float-right" data-toggle="tooltip" data-placement="top" title="@formatInstant(releaseDate)">
+                    @TimerUtils.toFiniteDuration(releaseDate, Instant.now()).prettyPrint
+                    ago<i class="fa-solid fa-calendar-days"></i>
+                </a>
+                <br>
+                @artifacts.head.licenses.map { license =>
+                  <a class="float-right" href="@license.url.getOrElse("#")">@license.shortName<i class="fa-solid fa-scale-balanced"></i></a>
+                }
+          </div>
+          </div>
+          </div>
+          }
+        }
+        </div>
+      </div>
+    </div>
+  </main>
+}
+
+@displayLanguage(platform: Platform, language: Language) = {
+  @if(params.binaryVersions.contains(BinaryVersion(platform, language))) {
+    <span class="scala-version"><b>@language.label</b></span>
+  } else {
+    <span class="scala-version">@language.label</span>
+  }
+}

@@ -1,0 +1,54 @@
+@import scaladex.core.model._
+@import scaladex.view.html.main
+@import scaladex.core.model.web.ArtifactPageParams
+@(
+        env: Env,
+        user: Option[UserState],
+        project: Project,
+        artifactName: Artifact.Name,
+        currentBinaryVersion: BinaryVersion,
+        artifacts: Map[BinaryVersion, Seq[Artifact]],
+        artifactVersion: SemanticVersion,
+        params: ArtifactPageParams,
+        numberOfVersions: Long,
+        lastProjectVersion: SemanticVersion
+)
+@currentArtifact = @{artifacts(currentBinaryVersion).head}
+
+@main(env, title = project.repository.toString, user) {
+  <main id="container-project">
+    @headproject(env, user, project, numberOfVersions, "Artifacts", lastProjectVersion)
+    <div class="container">
+      <div class="col-md-8">
+        <div class="content-project artifact box" data-organization="@project.reference.organization"
+        data-repository="@project.reference.repository">
+          <div class="artifact-title">@artifactName @artifactVersion
+            <div class="float-right">
+              <form>
+                <select id="select-platform" name="binary-version" class="display-block selectpicker"
+                data-style="btn-primary" onchange="this.form.submit()">
+                @for((platform, binaryVersions) <- artifacts.keys.groupBy(_.platform)) {
+                  <optgroup label="@{platform.label}">
+                  @for(binaryVersion <- binaryVersions) {
+                    <option value="@binaryVersion.label"
+                    @if(params.binaryVersion.contains(binaryVersion) || currentBinaryVersion == binaryVersion) {selected}>
+                    @binaryVersion.language.label
+                    </option>
+                  }
+                  </optgroup>
+                }
+                </select>
+              </form>
+            </div>
+
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="sidebar-project">
+          @documentation(currentArtifact, project)
+        </div>
+      </div>
+    </div>
+  </main>
+}

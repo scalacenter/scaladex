@@ -9,6 +9,8 @@ import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.Release
+import scaladex.core.model.SemanticVersion
+import scaladex.core.model.web.ArtifactsPageParams
 import scaladex.infra.sql.DoobieUtils.Mappings._
 import scaladex.infra.sql.DoobieUtils._
 
@@ -47,6 +49,9 @@ object ArtifactTable {
   val count: Query0[Long] =
     selectRequest(table, "COUNT(*)")
 
+  val countVersionsByProjct: Query[Project.Reference, Long] =
+    selectRequest(table, Seq("Count(DISTINCT version)"), projectReferenceFields)
+
   val updateProjectRef: Update[(Project.Reference, Artifact.MavenReference)] =
     updateRequest(table, projectReferenceFields, mavenReferenceFields)
 
@@ -76,6 +81,47 @@ object ArtifactTable {
     )
   }
 
+  val selectUniqueArtifacts: Query[Project.Reference, (Artifact.Name, Platform, Language, Instant)] =
+    selectRequest1(
+      table,
+      "artifact_name, platform, language_version, MAX(release_date)",
+      where = Some("organization=? AND repository=?"),
+      groupBy = Seq("artifact_name", "platform", "language_version")
+    )
+
+  val selectArtifactBy: Query[(Project.Reference, Artifact.Name, SemanticVersion), Artifact] =
+    selectRequest1(
+      table,
+      fields.mkString(", "),
+      where = Some("organization=? AND repository=? AND artifact_name=? AND version=?")
+    )
+
+  def selectArtifactByParams(
+      ref: Project.Reference,
+      default: Artifact.Name,
+      params: ArtifactsPageParams
+  ): Query0[Artifact] = {
+    def valuePlatform(p: Platform) = s"platform='${p.label}'"
+    def valueLanguage(l: Language) = s"language_version='${l.label}'"
+    def valueArtifactName(an: Option[Artifact.Name]) = s"artifact_name='${an.getOrElse(default)}'"
+    val where =
+      if (params.binaryVersions.isEmpty) "true"
+      else {
+        params.binaryVersions
+          .map(bv => s"(${valuePlatform(bv.platform)} AND ${valueLanguage(bv.language)})")
+          .mkString(" OR ")
+      }
+    val isSemantic = if (params.showNonSemanticVersion) s"true" else "is_semantic='true'"
+    val whereProjectRefAndArtifactName =
+      s"organization='${ref.organization}' AND repository='${ref.repository}' AND ${valueArtifactName(params.artifactName)}"
+    val releases =
+      s"SELECT DISTINCT organization, repository, artifact_name, version FROM $table WHERE $whereProjectRefAndArtifactName AND ($where) AND ($isSemantic)"
+    val artifactFields = fields.map(f => s"a.$f").mkString(", ")
+    Query0(s"""SELECT $artifactFields FROM ($releases) r INNER JOIN $table a ON
+              | r.version = a.version AND r.organization = a.organization AND
+              | r.repository = a.repository AND r.artifact_name = a.artifact_name""".stripMargin)
+  }
+
   val selectArtifactByProjectAndName: Query[(Project.Reference, Artifact.Name), Artifact] =
     selectRequest(table, fields, projectReferenceFields :+ "artifact_name")
 
@@ -87,6 +133,9 @@ object ArtifactTable {
 
   val selectMavenReference: Query0[Artifact.MavenReference] =
     selectRequest(table, """DISTINCT group_id, artifact_id, "version"""")
+
+  val selectMavenReferenceWithNoReleaseDate: Query0[Artifact.MavenReference] =
+    selectRequest(table, """group_id, artifact_id, "version"""", where = Some("release_date is NULL"))
 
   val selectOldestByProject: Query0[(Instant, Project.Reference)] =
     selectRequest(
@@ -103,4 +152,21 @@ object ArtifactTable {
       groupBy = Seq("organization", "repository ", "platform ", "language_version", "version")
     )
 
+  val findLastSemanticVersionNotPrerelease: Query[Project.Reference, SemanticVersion] =
+    selectRequest1(
+      table,
+      "version",
+      where = Some("organization=? AND repository=? AND is_semantic='true' and is_prerelease='false'"),
+      orderBy = Some("release_date desc"),
+      limit = Some(1.toLong)
+    )
+
+  val findLastVersion: Query[Project.Reference, SemanticVersion] =
+    selectRequest1(
+      table,
+      "version",
+      where = Some("organization=? AND repository=?"),
+      orderBy = Some("release_date desc"),
+      limit = Some(1.toLong)
+    )
 }

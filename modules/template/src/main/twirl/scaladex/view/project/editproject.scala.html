@@ -6,21 +6,23 @@
 @import scaladex.core.model.Url
 @import scaladex.core.model.Project.DocumentationLink
 @import scaladex.core.model.Env
+@import scaladex.core.model.SemanticVersion
 
-@(env: Env, project: Project, artifacts: Seq[Artifact], user: Option[UserState])
+@(env: Env, project: Project, artifacts: Seq[Artifact], user: UserState, numberOfVersions: Long, lastProjectVersion: SemanticVersion)
 
 @artifactNames = @{ artifacts.map(_.artifactName).distinct }
-@main(env, title = s"Edit ${project.repository}", user) {
+@main(env, title = s"Edit ${project.repository}", Some(user)) {
   <main id="container-project">
-
+    @headproject(env, Some(user), project, numberOfVersions, "Settings", lastProjectVersion)
     <div class="container">
       <div class="row">
         <div class="col-md-12">
-          <div class="edit-project box">
+          <div class="edit-project box content-project">
+            <a class="btn btn-default pull-right" href="/@project.organization/@project.repository">Cancel</a>
+            <button type="submit" form="project-settings" class="btn btn-primary pull-right">Update</button>
 
             <h1>Edit project</h1>
-
-            <form action="/edit/@project.organization/@project.repository" method="POST">
+            <form action="/edit/@project.organization/@project.repository" method="POST" id="project-settings">
               <div class="form-group">
                 <input type="checkbox" name="contributorsWanted" @if(project.settings.contributorsWanted){ checked }> 
                 <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">
@@ -219,9 +221,9 @@
                 </fieldset>
               </fieldset>
 
-              <button type="submit" class="btn btn-primary">Update</button>
-              <a class="btn btn-default" href="/@project.organization/@project.repository">Cancel</a>
             </form>
+            <button type="submit" form="project-settings" class="btn btn-primary">Update</button>
+            <a class="btn btn-default" href="/@project.organization/@project.repository">Cancel</a>
           </div>
         </div>
       </div>

@@ -16,6 +16,8 @@ case class Project(
   val reference: Reference = Reference(organization, repository)
   def hasCli: Boolean = settings.cliArtifacts.nonEmpty
 
+  def githubLink: String = s"https://github.com/$reference"
+
   /**
    * This is used in twitter to render the card of a scaladex project link.
    */

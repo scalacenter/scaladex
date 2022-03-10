@@ -8,9 +8,11 @@ import java.util.Locale
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
 import scaladex.core.model.Category
+import scaladex.core.model.Project
 import scaladex.core.model.search.AwesomeParams
 import scaladex.core.model.search.Pagination
 import scaladex.core.model.search.SearchParams
+import scaladex.core.model.web.ArtifactsPageParams
 
 package object html {
 
@@ -27,6 +29,11 @@ package object html {
       if (on) uri.appendQuery(k -> "✓")
       else uri
     def appendQuery(k: String, vs: Seq[String]): Uri =
+      vs.foldLeft(uri) {
+        case (acc, v) =>
+          acc.appendQuery(k -> v)
+      }
+    def appendQuery(k: String, vs: Set[String]): Uri =
       vs.foldLeft(uri) {
         case (acc, v) =>
           acc.appendQuery(k -> v)
@@ -78,6 +85,12 @@ package object html {
       .appendQuery("sort" -> params.sorting.label)
       .appendQuery("languages", params.languages.map(_.label))
       .appendQuery("platforms", params.platforms.map(_.label))
+
+  def artifactFilterUri(ref: Project.Reference, params: ArtifactsPageParams): Uri =
+    Uri(s"/$ref/artifacts")
+      .appendQuery("binary-versions", params.binaryVersions.map(_.label))
+      .appendQuery("artifact-names", params.artifactName.map(_.toString))
+      .appendQuery(("isSemantic", params.showNonSemanticVersion.toString))
 
   // https://www.reddit.com/r/scala/comments/4n73zz/scala_puzzle_gooooooogle_pagination/d41jor5
   def paginationRender(
@@ -143,4 +156,5 @@ package object html {
 
   def formatInstant(i: Instant): String = df.format(i)
   def formatInstant(i: Option[Instant]): String = i.map(df.format).getOrElse("_")
+
 }

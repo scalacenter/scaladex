@@ -4,7 +4,7 @@
 
 @(ref: Project.Reference, allDeps: Seq[ArtifactDependency.Direct])
 @internalDeps = @{allDeps.filter(_.isInternal(ref)).sorted}
-@remainingDeps =   @{allDeps.filterNot(_.isInternal(ref)).sorted}
+@remainingDeps =  @{allDeps.filterNot(_.isInternal(ref)).sorted}
 <div class="dependencies box">
   <h4>@Formats.plural(remainingDeps.size, "dependency", "dependencies")</h4>
   @dependencyBlock(remainingDeps)

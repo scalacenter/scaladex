@@ -1,0 +1,73 @@
+@import scaladex.view.html._
+@import scaladex.core.model.BinaryVersion
+@import scaladex.core.model.web.ArtifactsPageParams
+@import scaladex.core.model.Project
+@import scaladex.core.model.Artifact
+@import scaladex.view.Formats
+
+
+@(ref: Project.Reference, default: Artifact.Name, binaryVersions: Seq[BinaryVersion],
+        artifactNames: Seq[Artifact.Name], params: ArtifactsPageParams, numberOfResult: Int)
+
+<form action="#" action="GET">
+    <div class="filter">
+        <select id="select-language" name="artifact-name" class="selectpicker"
+        title="Artifact names" data-style="btn-primary" onchange="this.form.submit()">
+            @for(artifactName <- artifactNames) {
+                <option value="@artifactName"
+                @if(params.artifactName.isEmpty && artifactName == default || params.artifactName.contains(artifactName)) {selected}>
+                @artifactName
+                </option>
+            }
+        </select>
+    </div>
+
+    <div class="filter">
+        <select id="select-platform" name="binary-versions" class="selectpicker"
+        multiple data-style="btn-primary" title= "Binary Version" multiple data-actions-box="true" data-selected-text-format="static"
+        onchange="this.form.submit()">
+            @for((platform, binaryVersions) <- binaryVersions.groupBy(_.platform)) {
+                <optgroup label="@{platform.label}">
+                @for(binaryVersion <- binaryVersions) {
+                    <option value="@binaryVersion.label"
+                    @if(params.binaryVersions.contains(binaryVersion)) {selected}>
+                    @binaryVersion.language.label
+                    </option>
+                }
+                </optgroup>
+            }
+        </select>
+    </div>
+
+    <div class="filter">
+        <label class="btn btn-default">
+            <input type="checkbox"  @if(params.showNonSemanticVersion) { checked }
+                name="show-non-semantic-versions" value="true" onclick="this.form.submit()">
+            Show non semantic versions
+        </label>
+    </div>
+    <div class="filter">
+    @if(params.binaryVersions.nonEmpty || params.artifactName.nonEmpty) {
+        <a href="@artifactFilterUri(ref, ArtifactsPageParams.default)" class="label label-warning clear-all">
+            <i class="fa-solid fa-xmark"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Clear all filters</a>
+    }
+    </div>
+    <div class="options-checked">
+        <ul class="list-inline">
+            @for(binaryVersion <- params.binaryVersions) {
+                <li>
+                    <a href="@artifactFilterUri(ref, params.remove(binaryVersion))" class="label label-default">
+                        <i class="fa-solid fa-xmark"></i>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        @binaryVersion</a>
+                </li>
+            }
+            @if(params.showNonSemanticVersion) {
+                <a class="label label-info" href="@artifactFilterUri(ref, params.set(showNonSemanticVersions = false))">
+                    <i class="fa-solid fa-xmark"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;show non semantic versions</a>
+                </a>
+            }
+        </ul>
+    </div>
+</form>
+<div class="filter-artifact-result"><b>@numberOfResult</b> @Formats.wordPlural(numberOfResult, "version") found for <b>@default</b></div>

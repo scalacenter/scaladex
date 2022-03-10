@@ -87,16 +87,16 @@
             @for(github <- project.githubInfo) {
               @for(stars <- github.stars) {
                 <span>
-                  <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">@stars <i class="fa fa-star"></i></a>
+                  <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">@stars <i class="fa-solid fa-star"></i></a>
                 </span>
               }
               @for(forks <- github.forks) {
                 <span>
-                  <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">@forks <i class="fa fa-code-fork"></i></a>
+                  <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">@forks <i class="fa-solid fa-code-branch"></i></a>
                 </span>
               }
               <span>
-                <a data-toggle="tooltip" data-placement="bottom" title="Contributors" href="#">@github.contributorCount <i class="fa fa-users"></i></a>
+                <a data-toggle="tooltip" data-placement="bottom" title="Contributors" href="#">@github.contributorCount <i class="fa-solid fa-users"></i></a>
               </span>
             }
             </div>
