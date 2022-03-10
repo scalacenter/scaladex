@@ -2,10 +2,11 @@ package scaladex.infra
 
 import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 import org.scalatest._
-import org.scalatest.funsuite.AsyncFunSuite
+import org.scalatest.freespec.AsyncFreeSpec
 import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Jvm
@@ -14,17 +15,28 @@ import scaladex.core.model.Scala
 import scaladex.core.model.ScalaJs
 import scaladex.core.model.ScalaNative
 import scaladex.core.model.search.PageParams
+import scaladex.core.model.search.ProjectDocument
 import scaladex.core.model.search.SearchParams
 import scaladex.core.model.search.Sorting
+import scaladex.core.test.Values._
+import scaladex.core.util.ScalaExtensions._
 import scaladex.infra.config.ElasticsearchConfig
 
-class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAndAfterAll {
+class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAndAfterAll {
   implicit override val executionContext: ExecutionContext =
     ExecutionContext.global
 
   val config: ElasticsearchConfig = ElasticsearchConfig.load()
   val searchEngine: ElasticsearchEngine = ElasticsearchEngine.open(config)
-  val page: PageParams = PageParams(1, 20)
+  val pageParams: PageParams = PageParams(1, 20)
+
+  val projects: Seq[ProjectDocument] = Seq(Cats.projectDocument, Scalafix.projectDocument)
+
+  private def insertAllProjects(): Future[Unit] =
+    for {
+      _ <- projects.map(searchEngine.insert).sequence
+      _ <- searchEngine.refresh()
+    } yield ()
 
   override protected def beforeAll(): Unit =
     Await.result(searchEngine.init(true), Duration.Inf)
@@ -32,36 +44,24 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
   override protected def afterAll(): Unit =
     searchEngine.close()
 
-  import scaladex.core.test.Values._
-
-  test("match for cats with scala3") {
+  "match for cats with scala3" in {
     for {
-      _ <- searchEngine.insert(Cats.projectDocument)
-      _ <- searchEngine.refresh()
-      page <- searchEngine.find(SearchParams(queryString = "cats"), page)
+      _ <- insertAllProjects()
+      page <- searchEngine.find(SearchParams(queryString = "cats"), pageParams)
     } yield page.items.map(_.document) should contain theSameElementsAs List(Cats.projectDocument)
   }
 
-  test("search for cats_3") {
-    val binaryVersion = BinaryVersion(Jvm, Scala.`3`)
-    val pageParams = PageParams(1, 10)
-    for (page <- searchEngine.find("cats", Some(binaryVersion), false, pageParams))
-      yield page.items should contain theSameElementsAs List(Cats.projectDocument)
-  }
-
-  test("sort by dependent, created, stars, forks, and contributors") {
+  "sort by dependent, created, stars, forks, and contributors" in {
     val params = SearchParams(queryString = "*")
     val catsFirst = Seq(Cats.projectDocument, Scalafix.projectDocument)
     val scalafixFirst = Seq(Scalafix.projectDocument, Cats.projectDocument)
     for {
-      _ <- searchEngine.insert(Cats.projectDocument)
-      _ <- searchEngine.insert(Scalafix.projectDocument)
-      _ <- searchEngine.refresh()
-      byDependent <- searchEngine.find(params.copy(sorting = Sorting.Dependent), page)
-      byCreated <- searchEngine.find(params.copy(sorting = Sorting.Created), page)
-      byStars <- searchEngine.find(params.copy(sorting = Sorting.Stars), page)
-      byForks <- searchEngine.find(params.copy(sorting = Sorting.Forks), page)
-      byContributors <- searchEngine.find(params.copy(sorting = Sorting.Contributors), page)
+      _ <- insertAllProjects()
+      byDependent <- searchEngine.find(params.copy(sorting = Sorting.Dependent), pageParams)
+      byCreated <- searchEngine.find(params.copy(sorting = Sorting.Created), pageParams)
+      byStars <- searchEngine.find(params.copy(sorting = Sorting.Stars), pageParams)
+      byForks <- searchEngine.find(params.copy(sorting = Sorting.Forks), pageParams)
+      byContributors <- searchEngine.find(params.copy(sorting = Sorting.Contributors), pageParams)
     } yield {
       byDependent.items.map(_.document) should contain theSameElementsInOrderAs catsFirst
       byCreated.items.map(_.document) should contain theSameElementsInOrderAs scalafixFirst // todo fix
@@ -71,36 +71,33 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
     }
   }
 
-  test("contributing search") {
+  "contributing search" in {
     val expected = Seq(Cats.issueAboutFoo)
     val params = SearchParams("foo", contributingSearch = true)
     for {
-      _ <- searchEngine.insert(Cats.projectDocument)
-      _ <- searchEngine.refresh()
-      hits <- searchEngine.find(params, page)
+      _ <- insertAllProjects()
+      hits <- searchEngine.find(params, pageParams)
     } yield hits.items.flatMap(_.beginnerIssueHits) should contain theSameElementsAs expected
   }
 
-  test("count by topics") {
+  "count by topics" in {
     val expected = Scalafix.githubInfo.topics.toSeq.sorted.map(_ -> 1L)
     for {
-      _ <- searchEngine.insert(Scalafix.projectDocument)
-      _ <- searchEngine.refresh()
+      _ <- insertAllProjects()
       topics <- searchEngine.countByTopics(10)
     } yield (topics should contain).theSameElementsInOrderAs(expected)
   }
 
-  test("count by languages") {
+  "count by languages" in {
     val expected = Seq(Scala.`3` -> 1L, Scala.`2.13` -> 1L)
     val params = SearchParams(queryString = "cats")
     for {
-      _ <- searchEngine.insert(Cats.projectDocument)
-      _ <- searchEngine.refresh()
+      _ <- insertAllProjects()
       languages <- searchEngine.countByLanguages(params)
     } yield (languages should contain).theSameElementsInOrderAs(expected)
   }
 
-  test("count by platforms") {
+  "count by platforms" in {
     val expected = Seq(
       Jvm -> 1L,
       ScalaJs.`1.x` -> 1L,
@@ -109,28 +106,45 @@ class ElasticsearchEngineTests extends AsyncFunSuite with Matchers with BeforeAn
     )
     val params = SearchParams(queryString = "cats")
     for {
-      _ <- searchEngine.insert(Cats.projectDocument)
-      _ <- searchEngine.refresh()
+      _ <- insertAllProjects()
       scalaJsVersions <- searchEngine.countByPlatforms(params)
     } yield (scalaJsVersions should contain).theSameElementsInOrderAs(expected)
   }
 
-  test("remove missing document should not fail") {
+  "remove missing document should not fail" in {
     for {
       _ <- searchEngine.delete(Cats.reference)
     } yield succeed
   }
 
-  test("should find project by former reference") {
+  "should find project by former reference" in {
     val cats = Cats.projectDocument.copy(formerReferences = Seq(Project.Reference.from("kindlevel", "dogs")))
     for {
       _ <- searchEngine.insert(cats)
       _ <- searchEngine.refresh()
-      byFormerOrga <- searchEngine.find(SearchParams("kindlevel"), page)
-      byFormerRepo <- searchEngine.find(SearchParams("dogs"), page)
+      byFormerOrga <- searchEngine.find(SearchParams("kindlevel"), pageParams)
+      byFormerRepo <- searchEngine.find(SearchParams("dogs"), pageParams)
     } yield {
       byFormerOrga.items.map(_.document) should contain theSameElementsAs Seq(cats)
       byFormerRepo.items.map(_.document) should contain theSameElementsAs Seq(cats)
     }
   }
+
+  "old search api" - {
+    "search for 'cats'" in {
+      for {
+        _ <- insertAllProjects()
+        page <- searchEngine.find("cats", None, false, pageParams)
+      } yield page.items should contain only Cats.projectDocument
+    }
+
+    "search for Scala 3 projects" in {
+      val binaryVersion = BinaryVersion(Jvm, Scala.`3`)
+      for {
+        _ <- insertAllProjects()
+        page <- searchEngine.find("*", Some(binaryVersion), false, pageParams)
+      } yield page.items should contain only Cats.projectDocument
+    }
+  }
+
 }

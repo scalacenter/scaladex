@@ -34,13 +34,13 @@ case class GithubInfo(
     issues: Option[Int],
     creationDate: Option[Instant],
     readme: Option[String],
-    contributors: List[GithubContributor],
+    contributors: Seq[GithubContributor],
     commits: Option[Int],
     topics: Set[String],
     contributingGuide: Option[Url],
     codeOfConduct: Option[Url],
     chatroom: Option[Url],
-    openIssues: List[GithubIssue], // right now it's all issues, not only beginners issues
+    openIssues: Seq[GithubIssue], // right now it's all issues, not only beginners issues
     scalaPercentage: Option[Int]
 ) {
   val contributorCount: Int = contributors.size
@@ -73,13 +73,13 @@ object GithubInfo {
     watchers = None,
     issues = None,
     creationDate = None,
-    contributors = List(),
+    contributors = Seq(),
     commits = None,
     topics = Set(),
     contributingGuide = None,
     codeOfConduct = None,
     chatroom = None,
-    openIssues = List(),
+    openIssues = Seq(),
     scalaPercentage = None
   )
 }

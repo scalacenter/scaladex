@@ -8,6 +8,7 @@ import scaladex.core.model.Artifact._
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
+import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubIssue
 import scaladex.core.model.GithubStatus
@@ -61,7 +62,8 @@ object Values {
         .copy(
           stars = Some(643),
           forks = Some(148),
-          topics = Set("refactoring", "dotty", "linter", "metaprogramming", "scalafix", "sbt", "rewrite", "scala")
+          topics = Set("refactoring", "dotty", "linter", "metaprogramming", "scalafix", "sbt", "rewrite", "scala"),
+          contributors = Seq(contributor("olafurpg"), contributor("scala-steward"))
         )
     val settings: Settings = Settings(
       defaultStableVersion = false,
@@ -126,7 +128,8 @@ object Values {
         forks = Some(1081),
         contributingGuide = Some(Url("https://github.com/typelevel/cats/blob/main/CONTRIBUTING.md")),
         chatroom = Some(Url("https://gitter.im/typelevel/cats")),
-        openIssues = List(issueAboutFoo, issueAboutBar)
+        openIssues = List(issueAboutFoo, issueAboutBar),
+        contributors = Seq(contributor("travisbrown"), contributor("ceedub"), contributor("kailuowang"))
       )
     val project: Project = Project.default(
       reference,
@@ -214,5 +217,8 @@ object Values {
       "test"
     )
   }
+
+  private def contributor(login: String): GithubContributor =
+    GithubContributor(login, "", Url(""), 1)
 
 }

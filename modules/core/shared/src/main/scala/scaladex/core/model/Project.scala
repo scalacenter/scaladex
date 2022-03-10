@@ -68,7 +68,7 @@ object Project {
       defaultArtifact: Option[Artifact.Name],
       strictVersions: Boolean,
       customScalaDoc: Option[String],
-      documentationLinks: List[DocumentationLink],
+      documentationLinks: Seq[DocumentationLink],
       deprecated: Boolean,
       contributorsWanted: Boolean,
       artifactDeprecations: Set[Artifact.Name],

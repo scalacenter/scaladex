@@ -159,14 +159,15 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
   }
 
   override def find(
-      query: String,
+      queryString: String,
       binaryVersion: Option[BinaryVersion],
       cli: Boolean,
       page: PageParams
   ): Future[Page[ProjectDocument]] = {
     val query = must(
       optionalQuery(cli, cliQuery),
-      optionalQuery(binaryVersion)(binaryVersionQuery)
+      optionalQuery(binaryVersion)(binaryVersionQuery),
+      searchQuery(queryString, false)
     )
     val request = search(index).query(gitHubStarScoring(query)).sortBy(sortQuery(Sorting.Relevance))
     findPage(request, page).map(_.flatMap(toProjectDocument))
