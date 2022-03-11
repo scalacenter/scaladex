@@ -29,8 +29,10 @@ import scaladex.infra.sql.DoobieUtils
 import scaladex.server.config.ServerConfig
 import scaladex.server.route._
 import scaladex.server.route.api._
+import scaladex.server.service.AdminTaskService
 import scaladex.server.service.PublishProcess
 import scaladex.server.service.SchedulerService
+import scaladex.server.service.SonatypeSynchronizer
 
 object Server extends LazyLogging {
 
@@ -68,19 +70,28 @@ object Server extends LazyLogging {
             val filesystem = FilesystemStorage(config.filesystem)
             val publishProcess = PublishProcess(paths, filesystem, webDatabase)(publishPool)
             val sonatypeClient = new SonatypeClient()
+            val sonatypeSynchronizer = new SonatypeSynchronizer(schedulerDatabase, sonatypeClient, publishProcess)
+            val adminTaskService = new AdminTaskService(sonatypeSynchronizer)
             val schedulerService =
               new SchedulerService(
                 config.env,
                 schedulerDatabase,
                 searchEngine,
                 githubService,
-                sonatypeClient,
-                publishProcess
+                sonatypeSynchronizer
               )
 
             for {
               _ <- init(webDatabase, schedulerService, searchEngine, config.elasticsearch.reset)
-              routes = configureRoutes(config, searchEngine, webDatabase, schedulerService, filesystem, publishProcess)
+              routes = configureRoutes(
+                config,
+                searchEngine,
+                webDatabase,
+                schedulerService,
+                adminTaskService,
+                filesystem,
+                publishProcess
+              )
               _ <- IO(
                 Http()
                   .newServerAt(config.endpoint, config.port)
@@ -129,6 +140,7 @@ object Server extends LazyLogging {
       searchEngine: ElasticsearchEngine,
       webDatabase: WebDatabase,
       schedulerService: SchedulerService,
+      adminTaskService: AdminTaskService,
       filesystem: Storage,
       publishProcess: PublishProcess
   )(
@@ -141,7 +153,7 @@ object Server extends LazyLogging {
 
     val searchPages = new SearchPages(config.env, searchEngine)
     val frontPage = new FrontPage(config.env, webDatabase, searchEngine)
-    val adminPages = new AdminPage(config.env, schedulerService)
+    val adminPages = new AdminPage(config.env, schedulerService, adminTaskService)
     val projectPages = new ProjectPages(config.env, webDatabase, searchEngine, filesystem)
     val awesomePages = new AwesomePages(config.env, searchEngine)
 

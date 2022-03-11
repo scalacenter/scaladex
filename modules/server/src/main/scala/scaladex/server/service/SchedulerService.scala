@@ -11,7 +11,6 @@ import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions._
 import scaladex.infra.GithubClient
-import scaladex.infra.SonatypeClient
 import scaladex.view.SchedulerStatus
 
 class SchedulerService(
@@ -19,8 +18,7 @@ class SchedulerService(
     database: SchedulerDatabase,
     searchEngine: SearchEngine,
     githubClientOpt: Option[GithubClient],
-    sonatypeClient: SonatypeClient,
-    publishProcess: PublishProcess
+    sonatypeSynchronizer: SonatypeSynchronizer
 ) extends LazyLogging {
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   val searchSynchronizer = new SearchSynchronizer(database, searchEngine)
@@ -31,7 +29,7 @@ class SchedulerService(
     Scheduler("sync-search", searchSynchronizer.syncAll, 30.minutes),
     new MovedArtifactsSynchronizer(database)
   ) ++
-    Option.when(!env.isLocal)(new SonatypeSynchronizer(database, sonatypeClient, publishProcess)) ++
+    Option.when(!env.isLocal)(Scheduler("sync-sonatype", sonatypeSynchronizer.syncAll, 24.hours)) ++
     githubClientOpt.map(client => new GithubUpdater(database, client))
 
   private val schedulerMap = schedulers.map(s => s.name -> s).toMap
