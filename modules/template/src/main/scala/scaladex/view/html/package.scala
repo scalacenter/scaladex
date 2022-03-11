@@ -142,4 +142,5 @@ package object html {
     .withLocale(Locale.ENGLISH)
 
   def formatInstant(i: Instant): String = df.format(i)
+  def formatInstant(i: Option[Instant]): String = i.map(df.format).getOrElse("_")
 }

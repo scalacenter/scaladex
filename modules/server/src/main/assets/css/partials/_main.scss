@@ -802,3 +802,14 @@ html, body {
 }
 
 .white { color: #fff; }
+
+#admin-content {
+    .table>thead>tr>th,
+    .table>thead>tr>td,
+    .table>tbody>tr>th,
+    .table>tbody>tr>td,
+    .table>tfoot>tr>th,
+    .table>tfoot>tr>td {
+        vertical-align: middle;
+    }
+}
