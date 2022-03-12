@@ -55,42 +55,33 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
 
   private val maxLanguagesOrPlatforms = 20
 
-  def waitUntilReady(): Unit = {
-    def blockUntil(explain: String)(predicate: () => Boolean): Unit = {
-      var backoff = 0
-      var done = false
-      while (backoff <= 128 && !done) {
-        if (backoff > 0) Thread.sleep(200L * backoff)
-        backoff = backoff + 1
-        done = predicate()
-      }
-      require(done, s"Failed waiting on: $explain")
-    }
+  private def waitUntilReady(): Future[Unit] = Future {
+    var backoff = 0
+    var done = false
+    while (backoff <= 128 && !done) {
+      if (backoff > 0) Thread.sleep(200L * backoff)
+      backoff = backoff + 1
 
-    blockUntil("Expected cluster to have yellow status") { () =>
       val waitForYellowStatus =
         clusterHealth().waitForStatus(HealthStatus.Yellow)
+      // TODO: rewrite without await
       val response = esClient.execute(waitForYellowStatus).await
-      response.isSuccess
+      done = response.isSuccess
     }
+    require(done, s"Failed waiting on: Expected cluster to have yellow status")
   }
 
   def close(): Unit = esClient.close()
 
-  def reset(): Future[Unit] =
+  def init(reset: Boolean): Future[Unit] =
     for {
-      _ <- delete()
-      _ = logger.info(s"Creating index $index.")
-      _ <- create()
-    } yield logger.info(s"Index $index created")
-
-  private def delete(): Future[Unit] =
-    for {
-      response <- esClient.execute(indexExists(index))
-      exist = response.result.isExists
+      _ <- waitUntilReady()
+      indexExists <- esClient.execute(indexExists(index)).map(_.result.isExists)
       _ <-
-        if (exist) esClient.execute(deleteIndex(index))
-        else Future.successful(())
+        if (!indexExists) create()
+        else if (reset)
+          esClient.execute(deleteIndex(index)).flatMap(_ => create())
+        else Future.unit
     } yield ()
 
   private def create(): Future[Unit] = {
@@ -105,6 +96,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       )
       .mapping(MappingDefinition(projectFields))
 
+    logger.info(s"Creating index $index.")
     esClient
       .execute(createProject)
       .map { resp =>
@@ -168,14 +160,15 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
   }
 
   override def find(
-      query: String,
+      queryString: String,
       binaryVersion: Option[BinaryVersion],
       cli: Boolean,
       page: PageParams
   ): Future[Page[ProjectDocument]] = {
     val query = must(
       optionalQuery(cli, cliQuery),
-      optionalQuery(binaryVersion)(binaryVersionQuery)
+      optionalQuery(binaryVersion)(binaryVersionQuery),
+      searchQuery(queryString, false)
     )
     val request = search(index).query(gitHubStarScoring(query)).sortBy(sortQuery(Sorting.Relevance))
     findPage(request, page).map(_.flatMap(toProjectDocument))

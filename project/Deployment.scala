@@ -95,6 +95,12 @@ class Deployment(
           |
           |nohup /home/$userName/server/current/bin/server \\
           |  -J-Xmx4g \\
+          |  -Dcom.sun.management.jmxremote=true \\
+          |  -Dcom.sun.management.jmxremote.ssl=false \\
+          |  -Dcom.sun.management.jmxremote.authenticate=false \\
+          |  -Dcom.sun.management.jmxremote.port=9999 \\
+          |  -Djava.rmi.server.hostname=localhost \\
+          |  -Dcom.sun.management.jmxremote.rmi.port=9998 \\
           |  -Dlogback.output-file=server.log \\
           |  -Dlogback.configurationFile=/home/$userName/scaladex-credentials/logback.xml \\
           |  -Dconfig.file=/home/$userName/scaladex-credentials/application.conf \\

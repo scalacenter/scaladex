@@ -122,12 +122,12 @@ object DoobieUtils {
   }
 
   object Mappings {
-    implicit val contributorMeta: Meta[List[GithubContributor]] =
-      Meta[String].timap(fromJson[List[GithubContributor]](_).get)(toJson(_))
-    implicit val githubIssuesMeta: Meta[List[GithubIssue]] =
-      Meta[String].timap(fromJson[List[GithubIssue]](_).get)(toJson(_))
-    implicit val documentationLinksMeta: Meta[List[Project.DocumentationLink]] =
-      Meta[String].timap(fromJson[List[Project.DocumentationLink]](_).get)(toJson(_))
+    implicit val contributorMeta: Meta[Seq[GithubContributor]] =
+      Meta[String].timap(fromJson[Seq[GithubContributor]](_).get)(toJson(_))
+    implicit val githubIssuesMeta: Meta[Seq[GithubIssue]] =
+      Meta[String].timap(fromJson[Seq[GithubIssue]](_).get)(toJson(_))
+    implicit val documentationLinksMeta: Meta[Seq[Project.DocumentationLink]] =
+      Meta[String].timap(fromJson[Seq[Project.DocumentationLink]](_).get)(toJson(_))
     implicit val topicsMeta: Meta[Set[String]] =
       Meta[String].timap(_.split(",").filter(_.nonEmpty).toSet)(
         _.mkString(",")
@@ -143,7 +143,7 @@ object DoobieUtils {
           .getOrElse(throw new Exception(s"Failed to parse $x as BinaryVersion"))
       }(_.encode)
     implicit val licensesMeta: Meta[Set[License]] =
-      Meta[String].timap(fromJson[List[License]](_).get.toSet)(toJson(_))
+      Meta[String].timap(fromJson[Seq[License]](_).get.toSet)(toJson(_))
     implicit val resolverMeta: Meta[Resolver] =
       Meta[String].timap(Resolver.from(_).get)(_.name)
     implicit val instantMeta: Meta[Instant] = doobie.postgres.implicits.JavaTimeInstantMeta

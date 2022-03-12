@@ -3,9 +3,10 @@
 @import scaladex.core.model.Artifact
 @import scaladex.core.model.SemanticVersion
 @import scaladex.core.model.BinaryVersion
+@import scala.collection.SortedSet
 
-@(project: Project, artifacts: Seq[Artifact.Name], versions: Seq[SemanticVersion],
-        binaryVersions: Seq[BinaryVersion], artifact: Artifact, canEdit: Boolean)
+@(project: Project, artifacts: SortedSet[Artifact.Name], versions: SortedSet[SemanticVersion],
+        binaryVersions: SortedSet[BinaryVersion], artifact: Artifact, canEdit: Boolean)
 
 <div class="head-project">
   <div class="container">
@@ -83,7 +84,7 @@
                 data-live-search="true"
                 class="selectpicker" data-style="btn-primary">
 
-              @for(binaryVersion <- binaryVersions){
+              @for(binaryVersion <- binaryVersions.iterator){
                 <option value="@binaryVersion.label"
                         @if(artifact.binaryVersion == binaryVersion){ selected }>
                   @binaryVersion
@@ -106,7 +107,7 @@
               onchange="this.form.submit()"
               data-live-search="true"
               class="selectpicker artifact-name" data-style="btn-primary">
-            @for(artifactName <- artifacts.filterNot(project.settings.artifactDeprecations.contains)) {
+            @for(artifactName <- artifacts.diff(project.settings.artifactDeprecations).iterator) {
               <option value="@artifactName" @if(artifactName == artifact.artifactName){ selected }>
                 @artifactName
               </option>
@@ -129,7 +130,7 @@
               data-live-search="true"
               class="selectpicker" data-style="btn-primary">
 
-            @for(version <- versions){
+            @for(version <- versions.iterator){
               <option value="@version" @if(version == artifact.version){ selected }>
                 @version
               </option>

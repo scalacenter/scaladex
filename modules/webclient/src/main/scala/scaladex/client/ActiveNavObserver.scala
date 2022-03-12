@@ -1,8 +1,10 @@
 package scaladex.client
 
+import scala.scalajs.js.timers
+
 import org.scalajs.dom.document
+import org.scalajs.dom.ext._
 import org.scalajs.dom.html.Element
-import org.scalajs.dom.html.LI
 import org.scalajs.dom.html.Link
 import scaladex.dom.IntersectionObserver
 
@@ -11,18 +13,34 @@ import scaladex.dom.IntersectionObserver
   * list items in nav.
   */
 object ActiveNavObserver {
-  private val observer: IntersectionObserver = IntersectionObserver { entry =>
-    val id = entry.target.getAttribute("id")
-    val navLink = document.querySelector(s"""nav li a[href="#$id"]""").asInstanceOf[Link]
-    val navLI = navLink.parentElement.asInstanceOf[LI]
+  def start(): Unit = {
+    val sectionsAndNavItem =
+      document
+        .querySelectorAll("section[id]")
+        .toSeq
+        .collect { case e: Element => e }
+        .flatMap { section =>
+          val id = section.getAttribute("id")
+          val link = document.querySelector(s"""nav li a[href="#$id"]""").asInstanceOf[Link]
+          Option(link).map(l => section -> l.parentElement)
+        }
 
-    if (entry.intersectionRatio > 0) navLI.classList.add("active")
-    else navLI.classList.remove("active")
+    var debounceUpdate: timers.SetTimeoutHandle = null
+    val observer = IntersectionObserver { _ =>
+      timers.clearTimeout(debounceUpdate)
+      // ignore the observed entry and update all sections instead
+      debounceUpdate = timers.setTimeout(150) {
+        for ((section, navItem) <- sectionsAndNavItem)
+          if (isInViewport(section)) navItem.classList.add("active")
+          else navItem.classList.remove("active")
+      }
+    }
+
+    for ((section, _) <- sectionsAndNavItem) observer.observe(section)
   }
 
-  def start(): Unit = {
-    val sections = document.querySelectorAll("section[id]")
-    for (i <- 0 until sections.length)
-      observer.observe(sections.item(i).asInstanceOf[Element])
+  private def isInViewport(element: Element): Boolean = {
+    val rect = element.getBoundingClientRect()
+    rect.top < document.documentElement.clientHeight && rect.bottom > 0
   }
 }

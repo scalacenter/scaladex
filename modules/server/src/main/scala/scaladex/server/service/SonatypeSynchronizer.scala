@@ -2,9 +2,9 @@ package scaladex.server.service
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration.DurationInt
 
 import com.typesafe.scalalogging.LazyLogging
+import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact._
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SonatypeService
@@ -15,25 +15,32 @@ class SonatypeSynchronizer(
     sonatypeService: SonatypeService,
     publishProcess: PublishProcess
 )(implicit ec: ExecutionContext)
-    extends Scheduler("sync-sonatype", 24.hours)
-    with LazyLogging {
+    extends LazyLogging {
   import SonatypeSynchronizer._
-  override def run(): Future[Unit] =
+
+  def syncAll(): Future[Unit] =
     for {
       groupIds <- database.getAllGroupIds()
-      mavenReferenceFromDatabase <- database.getAllMavenReferences()
       // we sort just to estimate through the logs the percentage of progress
-      result <- groupIds.sortBy(_.value).mapSync(g => findAndIndexMissingArtifacts(g, mavenReferenceFromDatabase))
+      result <- groupIds.sortBy(_.value).mapSync(g => findAndIndexMissingArtifacts(g, None))
       _ = logger.info(s"${result.size} poms have been successfully indexed")
     } yield ()
 
-  def findAndIndexMissingArtifacts(groupId: GroupId, mavenReferenceFromDatabase: Seq[MavenReference]): Future[Int] =
+  def syncOne(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): Future[Unit] =
     for {
+      result <- findAndIndexMissingArtifacts(groupId, artifactNameOpt)
+      _ = logger.info(s"${result} poms have been successfully indexed")
+    } yield ()
+
+  def findAndIndexMissingArtifacts(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): Future[Int] =
+    for {
+      mavenReferenceFromDatabase <- database.getAllMavenReferences()
       artifactIds <- sonatypeService.getAllArtifactIds(groupId)
-      scalaArtifactIds = artifactIds.filter(artifact => artifact.isScala && artifact.binaryVersion.isValid)
+      scalaArtifactIds = artifactIds.filter(artifact =>
+        artifactNameOpt.forall(_ == artifact.name) && artifact.isScala && artifact.binaryVersion.isValid
+      )
       result <- scalaArtifactIds
-        .map(id => findAndIndexMissingArtifacts(groupId, id, mavenReferenceFromDatabase.toSet))
-        .sequence
+        .mapSync(id => findAndIndexMissingArtifacts(groupId, id, mavenReferenceFromDatabase.toSet))
     } yield result.sum
 
   private def findAndIndexMissingArtifacts(
@@ -59,7 +66,6 @@ class SonatypeSynchronizer(
       case PublishResult.Success => true
       case _                     => false
     }
-
 }
 
 object SonatypeSynchronizer {

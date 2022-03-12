@@ -34,7 +34,7 @@ You will need the following tools installed:
 
 If you cannot install docker, alternatively you can run [PostgreSQL](https://www.postgresql.org/) on port 5432 and [Elasticsearch](https://www.elastic.co/fr/elasticsearch/) on port 9200.
 
-### Github token
+### Github token (optional)
 
 So that Scaladex can collect information about Scala projects from Github you need to configure a GITHUB_TOKEN environment variable.
 
@@ -50,6 +50,7 @@ export GITHUB_TOKEN=<your token>
 1. Clone the repository and initialize the submodules:
 ```shell
 $ git clone git@github.com:scalacenter/scaladex.git
+$ cd scaladex
 $ git submodule update --init
 ```
 2. Start the sbt shell in the terminal, compile and run the tests:
@@ -70,7 +71,7 @@ sbt:scaladex> infra / IntegrationTest / test
 ```
 sbt:scaladex> data/run init
 ```
-It reads the pom files and other data from the `small-index/` folder and add the corresponding artifacts and projects into the database.
+It reads the json files from the `small-index/` folder and populate the databese with artifacts and projects.
 
 2. Then you can start the server with:
 ```
@@ -78,10 +79,7 @@ sbt:scaladex> server/run
 ```
 3. Finally you can open the website in your browser at `localhost:8080`.
 
-The server will start fetching information from Github progressively, you will see them appear after some time.
-
-The database and elasticsearch indexes are persisted locally.
-After you stop and start the server again, the github information will still be there.
+The database and elasticsearch indexes are persisted locally so that you do not need to run `data/run init` each time you restart your computer.
 
 ## Organization of the code
 

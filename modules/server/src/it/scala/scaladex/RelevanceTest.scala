@@ -30,8 +30,6 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
   private val searchEngine = ElasticsearchEngine.open(config.elasticsearch)
 
   override def beforeAll(): Unit = {
-    searchEngine.waitUntilReady()
-
     implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     val transactor = DoobieUtils.transactor(config.database)
     transactor
@@ -44,7 +42,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
         IO.fromFuture(IO {
           for {
             _ <- Init.run(database, filesystem)
-            _ <- searchEngine.reset()
+            _ <- searchEngine.init(true)
             _ <- searchSync.syncAll()
             _ <- searchEngine.refresh()
           } yield ()

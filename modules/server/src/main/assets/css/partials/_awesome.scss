@@ -8,12 +8,15 @@
 
 .awesome-header {
   background: url("/assets/img/head-project-background.png") no-repeat center top #0D343C;
-  min-height: 150px;
   padding: 20px 0;
 
+  .container {
+    padding-left: 35px;
+  }
+
   h1 {
-    padding-left: 20px;
-    margin: 0;
+    margin-top: 0;
+    margin-bottom: 12px;
     a  {
       font-size: 36px;
       color: white;
@@ -25,13 +28,23 @@
     }
   }
 
+  p {
+    font-size: 20px;
+    color: white;
+  }
+
   .how-to {
     .awesome {
       font-size: 35px;
     }
 
+    p {
+      color: $text-color;
+    }
+
     .btn-default {
       margin-right: 20px;
+      margin-bottom: 12px;
       background-color: rgba(255, 255, 255, 0.1);
       font-size: 18px;
       color: rgba(255,255,255,0.7);
@@ -45,6 +58,10 @@
 }
 
 #container-awesome-all {
+  .awesome-header {
+    padding-bottom: 50px;
+  }
+
   .awesome-content {
     margin-top: -40px
   }
@@ -54,6 +71,9 @@
     overflow: auto;
     background: white;
     padding: 20px;
+    @media screen and (max-width: $screen-md-min) {
+      margin: 0 15px 20px 15px;
+    }  
     position: -webkit-sticky;
     position: sticky;
     top: 10px;
@@ -189,7 +209,6 @@
 #container-awesome-category {
   .awesome-header {
     h2 {
-      padding-left: 20px;
       margin-top: 10px;
       font-size: 33px;
     }

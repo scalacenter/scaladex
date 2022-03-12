@@ -6,9 +6,11 @@
 @import java.time.Instant
 @import scaladex.core.util.ScalaExtensions._
 
-@(env: Env, user: UserState, schedulers: Seq[SchedulerStatus])
+@import scaladex.view.AdminTaskStatus
+
+@(env: Env, user: UserState, schedulers: Seq[SchedulerStatus], adminTaskStatus: Seq[AdminTaskStatus])
 @main(env, title = "Admin page", Some(user)) {
-    <main class="admin">
+    <main id="admin-content">
         <div class="container">
             <h2>Scheduler Status</h2>
             <div class="row">
@@ -59,6 +61,72 @@
                     </tbody>
                 </table>
             </div>
+            <h2>Admin tasks</h2>
+            <div class="row">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Admin task</th>
+                            <th scope="col">Form</th>
+                            <th scope="col" style="text-align: right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="row">Index artifacts</th>
+                            <form action="/admin/index" method="POST">
+                                <td>
+                                    <div class="row">
+                                        <div class="col-lg-6">
+                                            <div class="input-group">
+                                                <span class="input-group-addon" id="group-id">GroupID</span>
+                                                <input type="text" class="form-control" name="group-id" placeholder="Ex: ch.epfl.scala" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="input-group">
+                                                <span class="input-group-addon" id="group-id">Artifact Name (optional)</span>
+                                                <input type="text" class="form-control" name="artifact-name" placeholder="Ex: scalafix-core">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="text-align: right"><button type="submit" class="btn btn-primary">Submit</button></td>
+                            </form>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <h2>Admin tasks Status</h2>
+            <div class="row">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Admin task Name</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">created by</th>
+                            <th scope="col">Created</th>
+                            <th scope="col">Started</th>
+                            <th scope="col">Succeeded</th>
+                            <th scope="col">Failed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @adminTaskStatus.map { task =>
+
+                            <tr>
+                                <th scope="row">@task.name</th>
+                                <td>@task.status</td>
+                                <td>@task.createdBy</td>
+                                <td>@formatInstant(task.created)</td>
+                                <td>@formatInstant(task.startedTime)</td>
+                                <td>@formatInstant(task.succeededTime)</td>
+                                <td>@task.failedTimeWithErrorMessage.map{ case (time, error) =>
+                                    s"failed because $error at ${formatInstant(time)}"}.getOrElse("_")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
         </div>
     </main>
 }

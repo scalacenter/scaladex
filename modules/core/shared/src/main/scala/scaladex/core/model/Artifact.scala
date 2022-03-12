@@ -182,7 +182,7 @@ case class Artifact(
       .mkString(tryBaseUrl + "?", "&", "")
   }
 
-  def documentationLinks(patterns: List[DocumentationLink]): List[DocumentationLink] =
+  def documentationLinks(patterns: Seq[DocumentationLink]): Seq[DocumentationLink] =
     patterns.map { case DocumentationLink(label, url) => DocumentationLink(label, evalLink(url)) }
 
   /**
