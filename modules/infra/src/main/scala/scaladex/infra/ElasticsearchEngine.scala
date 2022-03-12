@@ -305,8 +305,8 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
   private def gitHubStarScoring(query: Query): Query = {
     // TODO: decide on default values for the fields below.
     // TODO: update any tests.
-    val githubStarField = fieldAccess("githubInfo.stars", default = "0")
-    val scalaPercentageField = fieldAccess("githubInfo.scalaPercentage", default = "0")
+    val githubStarField = fieldAccess("githubInfo.stars", default = "1")
+    val scalaPercentageField = fieldAccess("githubInfo.scalaPercentage", default = "1")
     val scorer = scriptScore(
       Script(
         script = s"Math.log(($githubStarField) * ($scalaPercentageField))"

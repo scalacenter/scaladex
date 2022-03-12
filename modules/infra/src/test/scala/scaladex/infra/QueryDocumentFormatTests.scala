@@ -19,7 +19,7 @@ class QueryDocumentFormatTests extends AnyFunSpec with Matchers {
     it("should evaluate to a field access that checks for nullability, and provides a default value") {
       val field = "githubInfo.stars"
       val accessExpr = queryFormatter.fieldAccess(field, default = "0")
-      accessExpr shouldBe "doc['githubInfo.stars'].value != null ? doc['githubInfo.stars'].value : 0"
+      accessExpr shouldBe "(doc['githubInfo.stars'].size() != 0 && doc['githubInfo.stars'].value != 0) ? doc['githubInfo.stars'].value : 0"
     }
   }
 }

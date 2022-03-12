@@ -6,5 +6,5 @@ trait QueryDocumentFormat {
     s"doc['$name'].value"
 
   def fieldAccess(name: String, default: String): String =
-    s"doc['$name'].value != null ? doc['$name'].value : $default"
+    s"(doc['$name'].size() != 0 && doc['$name'].value != 0) ? doc['$name'].value : $default"
 }
