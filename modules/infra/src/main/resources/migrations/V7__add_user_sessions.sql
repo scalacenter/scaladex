@@ -1,4 +1,4 @@
-CREATE TYPE ENV AS ('local', 'dev', 'prod')
+CREATE TYPE ENV AS ENUM ('local', 'dev', 'prod');
 
 CREATE TABLE user_sessions(
     user_id VARCHAR NOT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE user_sessions(
     env ENV NOT NULL,
     FOREIGN KEY (login) REFERENCES user_info(login),
     PRIMARY KEY (user_id)
-)
+);
 
 CREATE TABLE user_info(
     login         VARCHAR(39) NOT NULL,
@@ -16,4 +16,4 @@ CREATE TABLE user_info(
     avatar_url    VARCHAR NOT NULL,
     secret        VARCHAR NOT NULL,
     PRIMARY KEY (login)
-)
+);
