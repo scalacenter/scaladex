@@ -14,6 +14,7 @@ import scaladex.core.model.Project
 import scaladex.core.model.Scala
 import scaladex.core.model.ScalaJs
 import scaladex.core.model.ScalaNative
+import scaladex.core.model.search.GithubInfoDocument
 import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.ProjectDocument
 import scaladex.core.model.search.SearchParams
@@ -22,7 +23,7 @@ import scaladex.core.test.Values._
 import scaladex.core.util.ScalaExtensions._
 import scaladex.infra.config.ElasticsearchConfig
 
-class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAndAfterAll {
+class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAndAfterAll with BeforeAndAfterEach {
   implicit override val executionContext: ExecutionContext =
     ExecutionContext.global
 
@@ -32,13 +33,13 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
 
   val projects: Seq[ProjectDocument] = Seq(Cats.projectDocument, Scalafix.projectDocument)
 
-  private def insertAllProjects(): Future[Unit] =
+  private def insertAll(projects: Seq[ProjectDocument]): Future[Unit] =
     for {
       _ <- projects.map(searchEngine.insert).sequence
       _ <- searchEngine.refresh()
     } yield ()
 
-  override protected def beforeAll(): Unit =
+  override protected def beforeEach(): Unit =
     Await.result(searchEngine.init(true), Duration.Inf)
 
   override protected def afterAll(): Unit =
@@ -46,7 +47,7 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
 
   "match for cats with scala3" in {
     for {
-      _ <- insertAllProjects()
+      _ <- insertAll(projects)
       page <- searchEngine.find(SearchParams(queryString = "cats"), pageParams)
     } yield page.items.map(_.document) should contain theSameElementsAs List(Cats.projectDocument)
   }
@@ -56,7 +57,7 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
     val catsFirst = Seq(Cats.projectDocument, Scalafix.projectDocument)
     val scalafixFirst = Seq(Scalafix.projectDocument, Cats.projectDocument)
     for {
-      _ <- insertAllProjects()
+      _ <- insertAll(projects)
       byDependent <- searchEngine.find(params.copy(sorting = Sorting.Dependent), pageParams)
       byCreated <- searchEngine.find(params.copy(sorting = Sorting.Created), pageParams)
       byStars <- searchEngine.find(params.copy(sorting = Sorting.Stars), pageParams)
@@ -71,11 +72,22 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
     }
   }
 
+  "use percentage of Scala in scoring function" in {
+    val params = SearchParams(queryString = "*")
+    val p1 = projectDocument("org/p1", 800, 60)
+    val p2 = projectDocument("org/p2", 1000, 50)
+    val p3 = projectDocument("org/p3", 1500, 10)
+    for {
+      _ <- insertAll(Seq(p1, p2, p3))
+      page <- searchEngine.find(params, pageParams)
+    } yield page.items.map(_.document) should contain theSameElementsInOrderAs Seq(p2, p1, p3)
+  }
+
   "contributing search" in {
     val expected = Seq(Cats.issueAboutFoo)
     val params = SearchParams("foo", contributingSearch = true)
     for {
-      _ <- insertAllProjects()
+      _ <- insertAll(projects)
       hits <- searchEngine.find(params, pageParams)
     } yield hits.items.flatMap(_.beginnerIssueHits) should contain theSameElementsAs expected
   }
@@ -83,7 +95,7 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
   "count by topics" in {
     val expected = Scalafix.githubInfo.topics.toSeq.sorted.map(_ -> 1L)
     for {
-      _ <- insertAllProjects()
+      _ <- insertAll(projects)
       topics <- searchEngine.countByTopics(10)
     } yield (topics should contain).theSameElementsInOrderAs(expected)
   }
@@ -92,7 +104,7 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
     val expected = Seq(Scala.`3` -> 1L, Scala.`2.13` -> 1L)
     val params = SearchParams(queryString = "cats")
     for {
-      _ <- insertAllProjects()
+      _ <- insertAll(projects)
       languages <- searchEngine.countByLanguages(params)
     } yield (languages should contain).theSameElementsInOrderAs(expected)
   }
@@ -106,7 +118,7 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
     )
     val params = SearchParams(queryString = "cats")
     for {
-      _ <- insertAllProjects()
+      _ <- insertAll(projects)
       scalaJsVersions <- searchEngine.countByPlatforms(params)
     } yield (scalaJsVersions should contain).theSameElementsInOrderAs(expected)
   }
@@ -133,7 +145,7 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
   "old search api" - {
     "search for 'cats'" in {
       for {
-        _ <- insertAllProjects()
+        _ <- insertAll(projects)
         page <- searchEngine.find("cats", None, false, pageParams)
       } yield page.items should contain only Cats.projectDocument
     }
@@ -141,10 +153,15 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
     "search for Scala 3 projects" in {
       val binaryVersion = BinaryVersion(Jvm, Scala.`3`)
       for {
-        _ <- insertAllProjects()
+        _ <- insertAll(projects)
         page <- searchEngine.find("*", Some(binaryVersion), false, pageParams)
       } yield page.items should contain only Cats.projectDocument
     }
+  }
+
+  private def projectDocument(ref: String, stars: Int, scalaPercentage: Int): ProjectDocument = {
+    val githubInfo = GithubInfoDocument.default.copy(stars = Some(stars), scalaPercentage = Some(scalaPercentage))
+    ProjectDocument.default(Project.Reference.from(ref)).copy(githubInfo = Some(githubInfo))
   }
 
 }
