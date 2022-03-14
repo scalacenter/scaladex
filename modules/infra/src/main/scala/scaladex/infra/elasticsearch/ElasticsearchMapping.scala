@@ -63,6 +63,7 @@ object ElasticsearchMapping {
     textField("githubInfo.readme").analyzer("english_readme"),
     intField("githubInfo.forks"),
     intField("githubInfo.stars"),
+    intField("githubInfo.scalaPercentage"),
     intField("githubInfo.contributorCount"),
     textField("githubInfo.topics")
       .analyzer("standard")
