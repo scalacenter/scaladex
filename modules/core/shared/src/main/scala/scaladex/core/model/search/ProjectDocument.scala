@@ -36,6 +36,22 @@ final case class ProjectDocument(
 }
 
 object ProjectDocument {
+  def default(reference: Project.Reference): ProjectDocument =
+    ProjectDocument(
+      reference.organization,
+      reference.repository,
+      Seq.empty,
+      false,
+      None,
+      None,
+      Seq.empty,
+      Seq.empty,
+      0,
+      None,
+      Seq.empty,
+      None
+    )
+
   def apply(
       project: Project,
       artifacts: Seq[Artifact],

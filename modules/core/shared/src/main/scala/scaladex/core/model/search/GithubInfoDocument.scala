@@ -17,3 +17,8 @@ case class GithubInfoDocument(
     contributorCount: Int,
     scalaPercentage: Option[Int]
 )
+
+object GithubInfoDocument {
+  def default: GithubInfoDocument =
+    GithubInfoDocument(None, None, None, Seq.empty, Seq.empty, None, None, None, None, None, 0, None)
+}
