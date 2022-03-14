@@ -20,15 +20,14 @@ case class UserInfo(
 case class UserState(
     repos: Set[Project.Reference],
     orgs: Set[Project.Organization],
-    info: UserInfo,
-    env: Env
+    info: UserInfo
 ) {
-  def isAdmin: Boolean = orgs.contains(Project.Organization("scalacenter")) || env.isLocal
-  def canEdit(githubRepo: Project.Reference): Boolean =
-    isAdmin || repos.contains(githubRepo)
+  def isAdmin(env: Env): Boolean = orgs.contains(Project.Organization("scalacenter")) || env.isLocal
+  def canEdit(githubRepo: Project.Reference, env: Env): Boolean =
+    isAdmin(env) || repos.contains(githubRepo)
   def isSonatype: Boolean =
     orgs.contains(
       Project.Organization("sonatype")
     ) || info.login == "central-ossrh"
-  def hasPublishingAuthority: Boolean = isAdmin || isSonatype
+  def hasPublishingAuthority(env: Env): Boolean = isAdmin(env) || isSonatype
 }

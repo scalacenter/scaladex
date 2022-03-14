@@ -14,6 +14,7 @@ import coursier.Organization
 import coursier.core.Type
 import org.scalatest.BeforeAndAfterEach
 import scaladex.core.model.Artifact
+import scaladex.core.model.Env
 import scaladex.core.test.MockGithubAuth
 import scaladex.core.test.Values._
 import scaladex.server.route.ControllerBaseSuite
@@ -21,7 +22,7 @@ import scaladex.server.route.api.PublishApi
 import scaladex.server.service.PublishProcess
 
 class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
-  val publishProcess: PublishProcess = PublishProcess(dataPaths, localStorage, database)
+  val publishProcess: PublishProcess = PublishProcess(dataPaths, localStorage, database, Env.Dev)
   val publishApi = new PublishApi(githubAuth, publishProcess)
 
   val sonatype: BasicHttpCredentials = BasicHttpCredentials("token", MockGithubAuth.Sonatype.token)
@@ -72,7 +73,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
     }
   }
 
-  it("user should not publish artifcat of project it does not own") {
+  it("user should not publish artifact of project it does not own") {
     val pomFile = downloadPom(Scalafix.artifact)
     val creationDate = Scalafix.artifact.releaseDate.get.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)

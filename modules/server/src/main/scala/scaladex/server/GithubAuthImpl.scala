@@ -51,7 +51,7 @@ class GithubAuthImpl(env: Env)(implicit sys: ActorSystem) extends GithubAuth wit
         .sequence
         .map(_.flatten)
       userRepos <- githubClient.getUserRepositories(user.login, permissions).recover { case _ => Seq.empty }
-    } yield UserState(orgasRepos.toSet ++ userRepos, orgas.toSet, user, env)
+    } yield UserState(orgasRepos.toSet ++ userRepos, orgas.toSet, user)
   }
   private def getTokenWithOauth2(
       clientId: String,
