@@ -304,10 +304,10 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
 
   private def gitHubStarScoring(query: Query): Query = {
     val githubStarField = fieldAccess("githubInfo.stars", default = "1")
-    val scalaPercentageField = fieldAccess("githubInfo.scalaPercentage", default = "1")
+    val scalaPercentageField = fieldAccess("githubInfo.scalaPercentage", default = "100")
     val scorer = scriptScore(
       Script(
-        script = s"Math.log(($githubStarField) * ($scalaPercentageField))"
+        script = s"Math.log($githubStarField * $scalaPercentageField)"
       )
     )
     functionScoreQuery()
