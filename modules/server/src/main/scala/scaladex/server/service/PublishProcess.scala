@@ -1,10 +1,15 @@
 package scaladex.server.service
 
 import java.time.Instant
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+
 import com.typesafe.scalalogging.LazyLogging
-import scaladex.core.model.{Env, Project, Sha1, UserState}
+import scaladex.core.model.Env
+import scaladex.core.model.Project
+import scaladex.core.model.Sha1
+import scaladex.core.model.UserState
 import scaladex.core.service.Storage
 import scaladex.core.service.WebDatabase
 import scaladex.data.cleanup.GithubRepoExtractor
