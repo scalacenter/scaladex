@@ -82,7 +82,7 @@
                           </button>
                           <ul class="dropdown-menu" aria-labelledby="userLogging">
                               <li><a href="/search?q=@params.queryString@if(!you){&you=✓}">My projects</a></li>
-                              @if(u.isAdmin) {
+                              @if(u.isAdmin(env)) {
                                   <li><a href="/admin">Admin</a></li>
                               } else ()
                               <li role="separator" class="divider"></li>

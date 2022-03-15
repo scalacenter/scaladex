@@ -21,7 +21,7 @@ class AdminPage(env: Env, schedulerSrv: SchedulerService, adminTaskService: Admi
   def route(user: Option[UserState]): Route =
     pathPrefix("admin") {
       user match {
-        case Some(user) if user.isAdmin =>
+        case Some(user) if user.isAdmin(env) =>
           get {
             pathEnd {
               val schedulers = schedulerSrv.getSchedulers()

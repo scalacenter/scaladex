@@ -1,14 +1,10 @@
 package scaladex.server.service
 
 import java.time.Instant
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
 import com.typesafe.scalalogging.LazyLogging
-import scaladex.core.model.Project
-import scaladex.core.model.Sha1
-import scaladex.core.model.UserState
+import scaladex.core.model.{Env, Project, Sha1, UserState}
 import scaladex.core.service.Storage
 import scaladex.core.service.WebDatabase
 import scaladex.data.cleanup.GithubRepoExtractor
@@ -31,7 +27,8 @@ class PublishProcess(
     githubExtractor: GithubRepoExtractor,
     converter: ArtifactConverter,
     database: WebDatabase,
-    pomsReader: PomsReader
+    pomsReader: PomsReader,
+    env: Env
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
   def publishPom(
@@ -66,7 +63,7 @@ class PublishProcess(
         Future.successful(PublishResult.NoGithubRepo)
       case Some(repo) =>
         // userState can be empty when the request of publish is done through the scheduler
-        if (userState.isEmpty || userState.get.hasPublishingAuthority || userState.get.repos.contains(repo)) {
+        if (userState.isEmpty || userState.get.hasPublishingAuthority(env) || userState.get.repos.contains(repo)) {
           converter.convert(pom, repo, creationDate) match {
             case Some((artifact, deps)) =>
               database
@@ -89,12 +86,12 @@ class PublishProcess(
 }
 
 object PublishProcess {
-  def apply(paths: DataPaths, filesystem: Storage, database: WebDatabase)(
+  def apply(paths: DataPaths, filesystem: Storage, database: WebDatabase, env: Env)(
       implicit ec: ExecutionContext
   ): PublishProcess = {
     val githubExtractor = new GithubRepoExtractor(paths)
     val converter = new ArtifactConverter(paths)
     val pomsReader = new PomsReader(new CoursierResolver)
-    new PublishProcess(filesystem, githubExtractor, converter, database, pomsReader)
+    new PublishProcess(filesystem, githubExtractor, converter, database, pomsReader, env)
   }
 }

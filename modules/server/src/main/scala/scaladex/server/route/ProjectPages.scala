@@ -98,7 +98,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine, 
         path("edit" / organizationM / repositoryM) { (organization, repository) =>
           val projectRef = Project.Reference(organization, repository)
           user match {
-            case Some(userState) if userState.canEdit(projectRef) =>
+            case Some(userState) if userState.canEdit(projectRef, env) =>
               complete(getEditPage(projectRef, userState))
             case maybeUser =>
               complete((StatusCodes.Forbidden, view.html.forbidden(env, maybeUser)))
@@ -234,7 +234,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine, 
             SortedSet.from(platformsForBadges)(Platform.ordering.reverse),
             selectedArtifact,
             user,
-            showEditButton = user.exists(_.canEdit(projectRef)), // show only when your are admin on the project
+            showEditButton = user.exists(_.canEdit(projectRef, env)), // show only when your are admin on the project
             Some(twitterCard),
             artifacts.size,
             directDependencies,
