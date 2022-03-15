@@ -1,6 +1,5 @@
 package scaladex.core.model
 
-import scaladex.core.model.Project
 import scaladex.core.util.Secret
 
 /**
