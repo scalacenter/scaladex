@@ -21,7 +21,7 @@ sealed trait SchedulerStatus {
     case _                                       => false
   }
   def isStarted(): Boolean = this match {
-    case s: SchedulerStatus.Started => true
+    case _: SchedulerStatus.Started => true
     case _                          => false
   }
 }

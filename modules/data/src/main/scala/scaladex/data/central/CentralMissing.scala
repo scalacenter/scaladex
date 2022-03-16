@@ -59,7 +59,7 @@ object CentralMissing {
 }
 
 object TimestampSerializer
-    extends CustomSerializer[DateTime](format =>
+    extends CustomSerializer[DateTime](_ =>
       (
         {
           case JInt(timestamp) =>
@@ -161,8 +161,8 @@ class CentralMissing(paths: DataPaths)(implicit val system: ActorSystem) {
 
   // data/run central /home/gui/scaladex/scaladex-contrib /home/gui/scaladex/scaladex-index /home/gui/scaladex/scaladex-credentials
   def run(): Unit = {
-    val metaExtractor = new ArtifactMetaExtractor(paths)
-    val pomsReader = new PomsReader(new CoursierResolver)
+    new ArtifactMetaExtractor(paths)
+    new PomsReader(new CoursierResolver)
     val allGroups: Set[String] = ???
 
     val artifactsDownloads = allGroups.toList.map(SearchRequest(_))

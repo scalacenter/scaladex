@@ -109,15 +109,6 @@ object FilesystemStorage {
     directory
   }
 
-  private def initJsonFile(directory: Path, name: String): Path = {
-    val file = directory.resolve(name)
-    if (!Files.exists(file)) {
-      Files.createFile(file)
-      Files.write(file, "{}".getBytes(StandardCharsets.UTF_8))
-    }
-    file
-  }
-
   private def initFile(directory: Path, name: String): Path = {
     val file = directory.resolve(name)
     if (!Files.exists(file)) {

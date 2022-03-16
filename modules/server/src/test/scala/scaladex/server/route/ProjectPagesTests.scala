@@ -23,7 +23,7 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach {
   override def beforeEach(): Unit =
     Await.result(insertPlayJson(), Duration.Inf)
 
-  val projectPages = new ProjectPages(config.env, database, searchEngine, localStorage)
+  val projectPages = new ProjectPages(config.env, database, searchEngine)
   val route: Route = projectPages.route(None)
 
   describe("GET organization/repository") {

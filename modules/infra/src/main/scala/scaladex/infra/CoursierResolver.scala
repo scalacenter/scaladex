@@ -19,7 +19,7 @@ import coursier.error.ResolutionError
 import scaladex.core.service.PomResolver
 
 class CoursierResolver()(implicit val ec: ExecutionContext) extends PomResolver with LazyLogging {
-  private val cache = Cache.default
+  Cache.default
   private val repositories = Seq(
     Repositories.central,
     Repositories.jcenter,

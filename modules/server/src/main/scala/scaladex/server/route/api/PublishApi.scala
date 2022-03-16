@@ -14,7 +14,6 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.directives._
 import com.typesafe.scalalogging.LazyLogging
-import scaladex.core.model.Artifact
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubAuth
 import scaladex.server.route._
@@ -36,7 +35,7 @@ class PublishApi(
       credentialsHeader: Option[HttpCredentials]
   ): Credentials => Future[Option[(String, UserState)]] = {
 
-    case Credentials.Provided(username) =>
+    case Credentials.Provided(_) =>
       credentialsHeader match {
         case Some(cred) =>
           val upw = new String(
@@ -70,18 +69,6 @@ class PublishApi(
    * @param path the real publishing path
    * @return MavenReference
    */
-  private def mavenPathExtractor(path: String): Artifact.MavenReference = {
-
-    val segments = path.split("/").toList
-    val size = segments.size
-    val takeFrom = if (segments.head.isEmpty) 1 else 0
-
-    val artifactId = segments(size - 3)
-    val version = segments(size - 2)
-    val groupId = segments.slice(takeFrom, size - 3).mkString(".")
-
-    Artifact.MavenReference(groupId, artifactId, version)
-  }
 
   private val githubCredentialsCache =
     MMap.empty[String, (String, UserState)]
@@ -90,7 +77,7 @@ class PublishApi(
     concat(
       get(
         path("publish")(
-          parameter("path")(path =>
+          parameter("path")(_ =>
             complete {
               /* check if the artifact already exists - sbt will handle HTTP-Status codes
                * NotFound -> allowed to write

@@ -228,7 +228,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       .flatMap { hit =>
         parser.decode[GithubIssue](hit.sourceAsString) match {
           case Right(issue) => Some(issue)
-          case Left(error) =>
+          case Left(_) =>
             logger.warn("cannot parse beginner issue: ")
             None
         }

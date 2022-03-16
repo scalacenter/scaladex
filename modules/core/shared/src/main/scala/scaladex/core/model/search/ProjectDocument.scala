@@ -59,7 +59,7 @@ object ProjectDocument {
       formerReferences: Seq[Project.Reference]
   ): ProjectDocument = {
     import project._
-    val binaryVersions = artifacts.map(_.binaryVersion)
+    artifacts.map(_.binaryVersion)
     ProjectDocument(
       organization,
       repository,
