@@ -46,7 +46,7 @@ class AwesomePages(env: Env, searchEngine: SearchEngine)(implicit ec: ExecutionC
       case (languageParams, platformParams, sortParam) =>
         val scalaVersions = languageParams.flatMap(Language.fromLabel).collect { case v: Scala => v }.toSeq
         val platforms = platformParams.flatMap(Platform.fromLabel).toSeq
-        val sorting = sortParam.flatMap(Sorting.byLabel.get).getOrElse(Sorting.Stars)
+        val sorting = sortParam.flatMap(Sorting.byLabel.get).getOrElse(Sorting.Relevance)
         Tuple1(AwesomeParams(scalaVersions, platforms, sorting))
     }
 
