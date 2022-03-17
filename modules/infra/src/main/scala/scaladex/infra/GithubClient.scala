@@ -381,7 +381,6 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
           case other                  => other
         }
       case _ @HttpResponse(code, _, entity, _) =>
-//        implicit val unmarshaller = Unmarshaller.byteStringUnmarshaller
         Unmarshal(entity).to[String].map(errorMessage => GithubResponse.Failed(code.intValue, errorMessage))
     }
   }

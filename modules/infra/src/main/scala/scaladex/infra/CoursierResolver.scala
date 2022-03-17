@@ -13,13 +13,11 @@ import coursier.Module
 import coursier.ModuleName
 import coursier.Organization
 import coursier.Repositories
-import coursier.cache.Cache
 import coursier.core.Type
 import coursier.error.ResolutionError
 import scaladex.core.service.PomResolver
 
 class CoursierResolver()(implicit val ec: ExecutionContext) extends PomResolver with LazyLogging {
-  Cache.default
   private val repositories = Seq(
     Repositories.central,
     Repositories.jcenter,

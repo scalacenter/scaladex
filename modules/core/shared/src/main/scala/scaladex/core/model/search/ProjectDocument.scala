@@ -59,7 +59,6 @@ object ProjectDocument {
       formerReferences: Seq[Project.Reference]
   ): ProjectDocument = {
     import project._
-    artifacts.map(_.binaryVersion)
     ProjectDocument(
       organization,
       repository,
