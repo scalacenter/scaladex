@@ -18,7 +18,6 @@ import scaladex.infra.ElasticsearchEngine
 import scaladex.infra.sql.DoobieUtils
 import scaladex.server.service.SearchSynchronizer
 import scaladex.infra.SqlDatabase
-import scaladex.infra.DataPaths
 import scaladex.infra.FilesystemStorage
 import scaladex.core.model.search.PageParams
 
@@ -35,7 +34,6 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     transactor
       .use { xa =>
         val database = new SqlDatabase(config.database, xa)
-        val dataPaths = DataPaths.from(config.filesystem)
         val filesystem = FilesystemStorage(config.filesystem)
         val searchSync = new SearchSynchronizer(database, searchEngine)
 
@@ -151,13 +149,6 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
       }
     }
   }
-
-  private def exactly(params: SearchParams, tops: List[(String, String)]): Future[Assertion] =
-    compare(
-      params,
-      tops,
-      (expected, obtained) => assert(expected == obtained)
-    )
 
   private def top(params: SearchParams, tops: List[(String, String)]): Future[Assertion] =
     compare(

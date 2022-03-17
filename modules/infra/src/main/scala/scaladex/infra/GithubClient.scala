@@ -22,7 +22,6 @@ import akka.http.scaladsl.model.headers.OAuth2BearerToken
 import akka.http.scaladsl.model.headers.RawHeader
 import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.http.scaladsl.unmarshalling.Unmarshaller
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import com.typesafe.scalalogging.LazyLogging
@@ -372,9 +371,9 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
   private def process(request: HttpRequest): Future[GithubResponse[(Seq[HttpHeader], ResponseEntity)]] = {
     assert(request.headers.contains(Authorization(credentials)))
     queueRequest(request).flatMap {
-      case r @ HttpResponse(StatusCodes.OK, headers, entity, _) =>
+      case HttpResponse(StatusCodes.OK, headers, entity, _) =>
         Future.successful(GithubResponse.Ok((headers, entity)))
-      case r @ HttpResponse(StatusCodes.MovedPermanently, headers, entity, _) =>
+      case HttpResponse(StatusCodes.MovedPermanently, headers, entity, _) =>
         entity.discardBytes()
         val newRequest = HttpRequest(uri = headers.find(_.is("location")).get.value()).withHeaders(request.headers)
         process(newRequest).map {
@@ -382,7 +381,6 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
           case other                  => other
         }
       case _ @HttpResponse(code, _, entity, _) =>
-        implicit val unmarshaller = Unmarshaller.byteStringUnmarshaller
         Unmarshal(entity).to[String].map(errorMessage => GithubResponse.Failed(code.intValue, errorMessage))
     }
   }

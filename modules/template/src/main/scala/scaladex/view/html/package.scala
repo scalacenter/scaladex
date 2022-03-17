@@ -103,8 +103,8 @@ package object html {
         if (max < toShow) (min, max)
         else {
           (left, right) match {
-            case (l, r) if l < min => (min, min + toShow - 1)
-            case (l, r) if r > max => (max - toShow + 1, max)
+            case (l, _) if l < min => (min, min + toShow - 1)
+            case (_, r) if r > max => (max - toShow + 1, max)
             case (l, r)            => (l, r - 1 + toShow % 2)
           }
         }

@@ -24,13 +24,12 @@ import scaladex.core.model.Project
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserState
 import scaladex.core.service.SearchEngine
-import scaladex.core.service.Storage
 import scaladex.core.service.WebDatabase
 import scaladex.server.TwirlSupport._
 import scaladex.server.service.SearchSynchronizer
 import scaladex.view
 
-class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine, localStorage: Storage)(
+class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
     implicit executionContext: ExecutionContext
 ) extends LazyLogging {
   private val searchSynchronizer = new SearchSynchronizer(database, searchEngine)
@@ -89,7 +88,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine, 
                 .sortBy(_._1)(SemanticVersion.ordering.reverse)
 
               complete(view.html.artifacts(env, project, user, binaryVersionByPlatforms, artifactsByVersions))
-            case Failure(e) =>
+            case Failure(_) =>
               complete(StatusCodes.NotFound, view.html.notfound(env, user))
           }
         }
@@ -152,7 +151,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine, 
             )
             onComplete(res) {
               case Success((code, some)) => complete(code, some)
-              case Failure(e) =>
+              case Failure(_) =>
                 complete(StatusCodes.NotFound, view.html.notfound(env, user))
             }
           }
@@ -164,7 +163,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine, 
             val res = getProjectPage(organization, repository, binaryVersion, artifact, Some(version), user)
             onComplete(res) {
               case Success((code, some)) => complete(code, some)
-              case Failure(e) =>
+              case Failure(_) =>
                 complete(StatusCodes.NotFound, view.html.notfound(env, user))
             }
           }
@@ -277,10 +276,10 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine, 
               rawCustomScalaDoc,
               rawCategory,
               rawBeginnerIssuesLabel,
-              selectedBeginnerIssues,
-              rawChatroom,
-              rawContributingGuide,
-              rawCodeOfConduct
+              _,
+              _,
+              _,
+              _
             ) =>
           val documentationLinks =
             fields._1

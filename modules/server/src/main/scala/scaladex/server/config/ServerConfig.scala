@@ -33,7 +33,6 @@ object ServerConfig {
     val oauth2 = OAuth2Config.from(config)
     val database = DatabaseConfig.from(config).get
     val elasticsearch = ElasticsearchConfig.from(config)
-    val tempDir = config.getString("scaladex.filesystem.temp")
 
     val filesystem = FilesystemConfig.from(config)
     val github = GithubConfig.from(config)

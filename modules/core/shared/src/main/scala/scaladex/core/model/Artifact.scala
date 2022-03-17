@@ -150,17 +150,6 @@ case class Artifact(
   def scastieURL: String = {
     val tryBaseUrl = "https://scastie.scala-lang.org/try"
 
-    def latestFor(version: String): String = {
-      val latest =
-        Map(
-          "2.10" -> "2.10.7",
-          "2.11" -> "2.11.12",
-          "2.12" -> "2.12.6"
-        )
-
-      latest.getOrElse(version, version)
-    }
-
     val targetParam = binaryVersion.platform match {
       case ScalaJs(_) => Some("t" -> "JS")
       case _          => None

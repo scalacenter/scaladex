@@ -25,7 +25,7 @@ class SearchSynchronizer(database: WebDatabase, searchEngine: SearchEngine)(impl
           case (p, GithubStatus.Moved(_, newRef)) =>
             newRef -> p.reference
         }
-        .groupMap { case (newRef, ref) => newRef } { case (newRef, ref) => ref }
+        .groupMap { case (newRef, _) => newRef } { case (_, ref) => ref }
       projectsToDelete = deprecatedProjects ++
         allProjectsAndStatus.collect { case (p, GithubStatus.NotFound(_)) => p.reference }
       projectsToSync = allProjectsAndStatus

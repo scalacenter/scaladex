@@ -52,7 +52,7 @@ lazy val scalacOptionsSettings = Def.settings(
     "-feature",
     "-unchecked",
     "-Xfatal-warnings",
-    "-Wunused:imports"
+    "-Wunused"
   )
 )
 
@@ -150,6 +150,8 @@ lazy val webclient = project
   .in(file("modules/webclient"))
   .settings(
     scalacOptionsSettings,
+    scalacOptions -= "-Wunused", // don't report unused params
+    scalacOptions += "-Wunused:imports",
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "scalatags" % "0.8.6",
       "be.doeraene" %%% "scalajs-jquery" % "1.0.0",
