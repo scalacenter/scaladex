@@ -14,6 +14,7 @@ import scaladex.core.model.Language
 import scaladex.core.model.MetaCategory
 import scaladex.core.model.Platform
 import scaladex.core.model.Scala
+import scaladex.core.model.Stack
 import scaladex.core.model.UserState
 import scaladex.core.model.search.AwesomeParams
 import scaladex.core.model.search.PageParams
@@ -41,13 +42,15 @@ class AwesomePages(env: Env, searchEngine: SearchEngine)(implicit ec: ExecutionC
     parameters(
       "languages".repeated,
       "platforms".repeated,
+      "stacks".repeated,
       "sort".?
     ).tmap {
-      case (languageParams, platformParams, sortParam) =>
+      case (languageParams, platformParams, stacksParams, sortParam) =>
         val scalaVersions = languageParams.flatMap(Language.fromLabel).collect { case v: Scala => v }.toSeq
         val platforms = platformParams.flatMap(Platform.fromLabel).toSeq
+        val stacks = stacksParams.flatMap(Stack.byLabel.get).toSeq
         val sorting = sortParam.flatMap(Sorting.byLabel.get).getOrElse(Sorting.Relevance)
-        Tuple1(AwesomeParams(scalaVersions, platforms, sorting))
+        Tuple1(AwesomeParams(scalaVersions, platforms, stacks, sorting))
     }
 
   private def awesomeScala(user: Option[UserState], params: AwesomeParams): Future[Html] = {

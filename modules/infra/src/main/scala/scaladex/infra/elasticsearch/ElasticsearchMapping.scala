@@ -57,6 +57,7 @@ object ElasticsearchMapping {
     dateField("creationDate"),
     keywordField("languages"),
     keywordField("platforms"),
+    keywordField("projectDependencies"),
     intField("inverseProjectDependencies"),
     keywordField("category"),
     textField("githubInfo.description").analyzer("english"),
@@ -71,9 +72,6 @@ object ElasticsearchMapping {
         keywordField("keyword").normalizer("lowercase")
       ),
     nestedField("githubInfo.openIssues"),
-    objectField("formerReferences").fields(
-      textField("organization").analyzer("standard"),
-      textField("repository").analyzer("standard")
-    )
+    textField("formerReferences").analyzer("standard")
   )
 }

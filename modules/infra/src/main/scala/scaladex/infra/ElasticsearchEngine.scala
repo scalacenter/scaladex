@@ -30,6 +30,7 @@ import scaladex.core.model.GithubIssue
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
+import scaladex.core.model.Stack
 import scaladex.core.model.search.AwesomeParams
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.PageParams
@@ -251,10 +252,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       params: AwesomeParams,
       page: PageParams
   ): Future[Page[ProjectDocument]] = {
-    val query = must(
-      termQuery("category", category.label),
-      binaryVersionQuery(params.languages.map(_.label), params.platforms.map(_.label))
-    )
+    val query = awesomeQuery(category, params)
     val request = search(index)
       .query(gitHubStarScoring(query))
       .sortBy(sortQuery(params.sorting))
@@ -319,7 +317,8 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
   private def awesomeQuery(category: Category, params: AwesomeParams): Query =
     must(
       termQuery("category", category.label),
-      binaryVersionQuery(params.languages.map(_.label), params.platforms.map(_.label))
+      binaryVersionQuery(params.languages.map(_.label), params.platforms.map(_.label)),
+      must(params.stacks.map(stackQuery))
     )
 
   private def filteredSearchQuery(params: SearchParams): Query =
@@ -368,8 +367,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
           .field("repository", 6)
           .field("primaryTopic", 5)
           .field("organization", 5)
-          .field("formerReferences.repository", 5)
-          .field("formerReferences.organization", 4)
+          .field("formerReferences", 4)
           .field("githubInfo.description", 4)
           .field("githubInfo.topics", 4)
           .field("artifactNames", 2)
@@ -393,8 +391,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
               prefixQuery("repository", prefix).boost(6),
               prefixQuery("primaryTopic", prefix).boost(5),
               prefixQuery("organization", prefix).boost(5),
-              prefixQuery("formerReferences.repository", prefix).boost(5),
-              prefixQuery("formerReferences.organization", prefix).boost(4),
+              prefixQuery("formerReferences", prefix).boost(4),
               prefixQuery("githubInfo.description", prefix).boost(4),
               prefixQuery("githubInfo.topics", prefix).boost(4),
               prefixQuery("artifactNames", prefix).boost(2)
@@ -421,9 +418,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
 
   private val cliQuery = termQuery("hasCli", true)
 
-  private def repositoriesQuery(
-      repositories: Seq[Project.Reference]
-  ): Query =
+  private def repositoriesQuery(repositories: Seq[Project.Reference]): Query =
     should(repositories.map(repositoryQuery))
 
   private def repositoryQuery(repo: Project.Reference): Query =
@@ -434,6 +429,12 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
 
   private def binaryVersionQuery(languages: Seq[String], platforms: Seq[String]): Query =
     must(languages.map(termQuery("languages", _)) ++ platforms.map(termQuery("platforms", _)))
+
+  private def stackQuery(stack: Stack): Query =
+    should(stack.projects.map(repositoryQuery) ++ stack.projects.map(projectDependencyQuery))
+
+  private def projectDependencyQuery(dependency: Project.Reference): Query =
+    termQuery("projectDependencies", dependency.toString())
 
   private def binaryVersionQuery(binaryVersion: BinaryVersion): Query =
     must(

@@ -152,6 +152,9 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] =
     run(ProjectDependenciesTable.insertOrUpdate.updateMany(projectDependencies))
 
+  override def getProjectDependencies(projectRef: Project.Reference): Future[Seq[Project.Reference]] =
+    run(ProjectDependenciesTable.selectByReference.to[Seq](projectRef))
+
   override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] =
     run(ProjectDependenciesTable.countInverseDependencies.unique(projectRef))
 
