@@ -1,6 +1,7 @@
 package scaladex.core.test
 
 import java.time.Instant
+import java.util.UUID
 
 import scala.collection.mutable
 import scala.concurrent.Future
@@ -11,6 +12,7 @@ import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
+import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
 
 class InMemoryDatabase extends SchedulerDatabase {
@@ -112,6 +114,10 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] =
     // not really implemented
     Future.successful(0)
+
+  override def insertSession(userId: UUID, userState: UserState): Future[Unit] = ???
+
+  override def getSession(userId: UUID): Future[Option[UserState]] = ???
 
   override def updateArtifacts(artifacts: Seq[Artifact], newRef: Project.Reference): Future[Int] = ???
   override def deleteDependenciesOfMovedProject(): scala.concurrent.Future[Unit] = ???

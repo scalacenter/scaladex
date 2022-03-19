@@ -1,6 +1,7 @@
 package scaladex.infra
 
 import java.time.Instant
+import java.util.UUID
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -14,6 +15,7 @@ import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
+import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
 import scaladex.infra.config.DatabaseConfig
 import scaladex.infra.sql.ArtifactDependencyTable
@@ -139,6 +141,10 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
 
   override def getReverseDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Reverse]] =
     run(ArtifactDependencyTable.selectReverseDependency.to[Seq](artifact.mavenReference))
+
+  override def insertSession(userId: UUID, userState: UserState): Future[Unit] = ???
+
+  override def getSession(userId: UUID): Future[Option[UserState]] = ???
 
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.count.unique)
