@@ -8,8 +8,9 @@ import scala.util.Try
 import com.softwaremill.session._
 import org.slf4j.LoggerFactory
 import scaladex.core.model.UserState
+import scaladex.core.service.WebDatabase
 
-class GithubUserSession(sessionConfig: SessionConfig) {
+class GithubUserSession(sessionConfig: SessionConfig, database: WebDatabase) {
   private val logger = LoggerFactory.getLogger(getClass)
 
   object implicits {
