@@ -25,6 +25,7 @@ import scaladex.infra.sql.GithubInfoTable
 import scaladex.infra.sql.ProjectDependenciesTable
 import scaladex.infra.sql.ProjectSettingsTable
 import scaladex.infra.sql.ProjectTable
+import scaladex.infra.sql.UserSessionsTable
 
 class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
 
@@ -142,9 +143,11 @@ class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends Sched
   override def getReverseDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Reverse]] =
     run(ArtifactDependencyTable.selectReverseDependency.to[Seq](artifact.mavenReference))
 
-  override def insertSession(userId: UUID, userState: UserState): Future[Unit] = ???
+  override def insertSession(userId: UUID, userState: UserState): Future[Unit] =
+    run(UserSessionsTable.insertOrUpdate.run((userId, userState)).map(_ => ()))
 
-  override def getSession(userId: UUID): Future[Option[UserState]] = ???
+  override def getSession(userId: UUID): Future[Option[UserState]] =
+    run(UserSessionsTable.selectUserSessionById.to[Seq](userId).map(_.headOption))
 
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.count.unique)

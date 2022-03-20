@@ -2,10 +2,12 @@ package scaladex.infra.sql
 
 import java.util.UUID
 
+import doobie._
 import doobie.util.update.Update
 import scaladex.core.model.UserState
 import scaladex.infra.sql.DoobieUtils.Mappings._
 import scaladex.infra.sql.DoobieUtils.insertOrUpdateRequest
+import scaladex.infra.sql.DoobieUtils.selectRequest
 
 object UserSessionsTable {
 
@@ -18,4 +20,7 @@ object UserSessionsTable {
 
   val insertOrUpdate: Update[(UUID, UserState)] =
     insertOrUpdateRequest(table, allFields, allFields)
+
+  val selectUserSessionById: Query[UUID, UserState] =
+    selectRequest(table, Seq("*"), allFields)
 }
