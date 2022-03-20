@@ -27,7 +27,7 @@ abstract class Scheduler(val name: String, frequency: FiniteDuration)(implicit e
 
   def start(): Unit =
     status match {
-      case s: SchedulerStatus.Started => ()
+      case _: SchedulerStatus.Started => ()
       case _ =>
         val can = scheduler.scheduleWithFixedDelay(0.minute, frequency) {
           _status = SchedulerStatus.Started(name, Instant.now, frequency, running = false, None, None)

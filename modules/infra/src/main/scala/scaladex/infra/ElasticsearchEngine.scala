@@ -49,9 +49,9 @@ import scaladex.infra.elasticsearch.RawProjectDocument
  */
 class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: ExecutionContext)
     extends SearchEngine
-    with QueryDocumentFormat
     with LazyLogging
     with Closeable {
+  import ElasticsearchEngine._
 
   private val maxLanguagesOrPlatforms = 20
 
@@ -228,7 +228,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       .flatMap { hit =>
         parser.decode[GithubIssue](hit.sourceAsString) match {
           case Right(issue) => Some(issue)
-          case Left(error) =>
+          case Left(_) =>
             logger.warn("cannot parse beginner issue: ")
             None
         }
@@ -307,7 +307,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     val scalaPercentageField = fieldAccess("githubInfo.scalaPercentage", default = "100")
     val scorer = scriptScore(
       Script(
-        script = s"Math.log($githubStarField * $scalaPercentageField)"
+        script = s"Math.log($githubStarField * $scalaPercentageField + 1)"
       )
     )
     functionScoreQuery()
@@ -499,4 +499,10 @@ object ElasticsearchEngine extends LazyLogging {
     val esClient = ElasticClient(JavaClient(props))
     new ElasticsearchEngine(esClient, config.index)
   }
+
+  def fieldAccess(name: String): String =
+    s"doc['$name'].value"
+
+  def fieldAccess(name: String, default: String): String =
+    s"(doc['$name'].size() != 0 ? doc['$name'].value : $default)"
 }

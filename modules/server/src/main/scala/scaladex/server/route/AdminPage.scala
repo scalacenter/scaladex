@@ -1,7 +1,4 @@
 package scaladex.server.route
-
-import scala.concurrent.ExecutionContext
-
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.server.Directives._
@@ -14,9 +11,7 @@ import scaladex.server.service.AdminTaskService
 import scaladex.server.service.SchedulerService
 import scaladex.view
 
-class AdminPage(env: Env, schedulerSrv: SchedulerService, adminTaskService: AdminTaskService)(
-    implicit ec: ExecutionContext
-) {
+class AdminPage(env: Env, schedulerSrv: SchedulerService, adminTaskService: AdminTaskService) {
 
   def route(user: Option[UserState]): Route =
     pathPrefix("admin") {
