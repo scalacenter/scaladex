@@ -52,7 +52,7 @@ lazy val scalacOptionsSettings = Def.settings(
     "-feature",
     "-unchecked",
     "-Xfatal-warnings",
-    "-Wunused:imports"
+    "-Wunused"
   )
 )
 
@@ -85,7 +85,7 @@ lazy val infra = project
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4sVersion,
       "org.json4s" %% "json4s-native" % V.json4s,
-      "org.flywaydb" % "flyway-core" % "8.4.4", // for database migration
+      "org.flywaydb" % "flyway-core" % "8.5.3", // for database migration
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
@@ -150,6 +150,8 @@ lazy val webclient = project
   .in(file("modules/webclient"))
   .settings(
     scalacOptionsSettings,
+    scalacOptions -= "-Wunused", // don't report unused params
+    scalacOptions += "-Wunused:imports",
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "scalatags" % "0.8.6",
       "be.doeraene" %%% "scalajs-jquery" % "1.0.0",

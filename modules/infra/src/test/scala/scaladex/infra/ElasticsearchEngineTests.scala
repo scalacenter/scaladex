@@ -159,6 +159,18 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
     }
   }
 
+  "should evaluate to field access syntax of the given field" in {
+    val field = "githubInfo.stars"
+    val accessExpr = ElasticsearchEngine.fieldAccess(field)
+    accessExpr shouldBe "doc['githubInfo.stars'].value"
+  }
+
+  "should evaluate to a field access that checks for nullability, and provides a default value" in {
+    val field = "githubInfo.stars"
+    val accessExpr = ElasticsearchEngine.fieldAccess(field, default = "0")
+    accessExpr shouldBe "(doc['githubInfo.stars'].size() != 0 ? doc['githubInfo.stars'].value : 0)"
+  }
+
   private def projectDocument(ref: String, stars: Int, scalaPercentage: Int): ProjectDocument = {
     val githubInfo = GithubInfoDocument.default.copy(stars = Some(stars), scalaPercentage = Some(scalaPercentage))
     ProjectDocument.default(Project.Reference.from(ref)).copy(githubInfo = Some(githubInfo))

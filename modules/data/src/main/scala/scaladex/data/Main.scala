@@ -12,7 +12,6 @@ import com.typesafe.scalalogging.LazyLogging
 import doobie.hikari._
 import scaladex.core.util.ScalaExtensions._
 import scaladex.core.util.TimerUtils
-import scaladex.data.central.CentralMissing
 import scaladex.data.init.Init
 import scaladex.data.util.PidLock
 import scaladex.infra.DataPaths
@@ -79,8 +78,6 @@ object Main extends LazyLogging {
     }
 
     val steps = Map(
-      // Find missing artifacts in maven-central
-      "central" -> { () => new CentralMissing(dataPaths).run() },
       // Populate the database with poms and data from an index repo:
       // scaladex-small-index or scaladex-index
       "init" -> { () => init() },

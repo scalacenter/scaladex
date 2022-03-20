@@ -16,7 +16,6 @@ import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import com.typesafe.scalalogging.LazyLogging
 import doobie.util.ExecutionContexts
-import scaladex.core.service.Storage
 import scaladex.core.service.WebDatabase
 import scaladex.data.util.PidLock
 import scaladex.infra.DataPaths
@@ -89,7 +88,6 @@ object Server extends LazyLogging {
                 webDatabase,
                 schedulerService,
                 adminTaskService,
-                filesystem,
                 publishProcess
               )
               _ <- IO(
@@ -141,20 +139,19 @@ object Server extends LazyLogging {
       webDatabase: WebDatabase,
       schedulerService: SchedulerService,
       adminTaskService: AdminTaskService,
-      filesystem: Storage,
       publishProcess: PublishProcess
   )(
       implicit actor: ActorSystem
   ): Route = {
     import actor.dispatcher
 
-    val githubAuth = new GithubAuthImpl(config.env)
+    val githubAuth = new GithubAuthImpl()
     val session = new GithubUserSession(config.session, webDatabase)
 
     val searchPages = new SearchPages(config.env, searchEngine)
     val frontPage = new FrontPage(config.env, webDatabase, searchEngine)
     val adminPages = new AdminPage(config.env, schedulerService, adminTaskService)
-    val projectPages = new ProjectPages(config.env, webDatabase, searchEngine, filesystem)
+    val projectPages = new ProjectPages(config.env, webDatabase, searchEngine)
     val awesomePages = new AwesomePages(config.env, searchEngine)
 
     val programmaticRoutes = concat(
