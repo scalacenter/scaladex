@@ -164,9 +164,10 @@ object Server extends LazyLogging {
     )
     import session.implicits._
     val userFacingRoute: Route =
-      optionalSession(refreshable, usingCookies) { userId =>
-        // TODO: fix this
-        val user = userId.flatMap(session.getUser)
+      optionalSession(refreshable, usingCookies) { _ =>
+        // TODO: fix this, stubbed out for now to enable compilation.
+        // val user = userId.flatMap(session.getUser)
+        val user = None
         frontPage.route(user) ~ adminPages.route(user) ~ awesomePages.route(user) ~
           redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
             projectPages.route(user) ~ searchPages.route(user)

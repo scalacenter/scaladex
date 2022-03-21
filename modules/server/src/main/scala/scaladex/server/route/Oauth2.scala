@@ -1,6 +1,9 @@
 package scaladex.server.route
 
+import java.util.UUID
+
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 import akka.http.scaladsl.model.StatusCodes.TemporaryRedirect
 import akka.http.scaladsl.model.Uri.Query
@@ -60,18 +63,13 @@ class Oauth2(config: OAuth2Config, githubAuth: service.GithubAuth, session: Gith
             ),
             pathEnd(
               parameters("code", "state".?) { (code, state) =>
-                val userStateQuery = githubAuth.getUserStateWithOauth2(
-                  config.clientId,
-                  config.clientSecret,
-                  code,
-                  config.redirectUri
-                )
+                val futureUserId = loadUserState(code)
 
-                onSuccess(userStateQuery) { userState =>
+                onSuccess(futureUserId) { userId =>
                   setSession(
                     refreshable,
                     usingCookies,
-                    session.addUser(userState)
+                    userId
                   )(
                     setNewCsrfToken(checkHeader) { ctx =>
                       ctx.complete(
@@ -91,4 +89,9 @@ class Oauth2(config: OAuth2Config, githubAuth: service.GithubAuth, session: Gith
         )
       )
     )
+
+  def loadUserState(sessionCode: String): Future[UUID] =
+    githubAuth
+      .getUserStateWithOauth2(config.clientId, config.clientSecret, sessionCode, config.redirectUri)
+      .flatMap(session.addUser)
 }

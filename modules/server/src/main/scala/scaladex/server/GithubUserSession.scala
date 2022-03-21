@@ -1,14 +1,15 @@
 package scaladex.server
 
 import java.util.UUID
-import scala.collection.parallel.mutable.ParTrieMap
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.Try
+
 import com.softwaremill.session._
 import org.slf4j.LoggerFactory
 import scaladex.core.model.UserState
 import scaladex.core.service.WebDatabase
-
-import scala.concurrent.{ExecutionContext, Future}
 
 class GithubUserSession(sessionConfig: SessionConfig, database: WebDatabase)(implicit ec: ExecutionContext) {
   private val logger = LoggerFactory.getLogger(getClass)
@@ -26,8 +27,6 @@ class GithubUserSession(sessionConfig: SessionConfig, database: WebDatabase)(imp
         if (msg.startsWith("Looking up token for selector")) () // borring
         else logger.info(msg)
   }
-
-  private val users = ParTrieMap[UUID, UserState]()
 
   def addUser(userState: UserState): Future[UUID] = {
     val uuid = UUID.randomUUID
