@@ -21,28 +21,30 @@ import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubIssue
 import scaladex.core.model.GithubStatus
+import scaladex.core.model.Language
 import scaladex.core.model.License
+import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.Project._
 import scaladex.core.model.Resolver
 import scaladex.core.model.SemanticVersion
 import scaladex.infra.Codecs._
-import scaladex.infra.config.DatabaseConfig
+import scaladex.infra.config.PostgreSQLConfig
 
 object DoobieUtils {
 
   private implicit val cs: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
-  def flyway(conf: DatabaseConfig): Flyway = {
+  def flyway(conf: PostgreSQLConfig): Flyway = {
     val datasource = getHikariDataSource(conf)
     Flyway
       .configure()
       .dataSource(datasource)
-      .locations("classpath:migrations")
+      .locations("migrations", "scaladex/infra/migrations")
       .load()
   }
 
-  def transactor(conf: DatabaseConfig): Resource[IO, HikariTransactor[IO]] = {
+  def transactor(conf: PostgreSQLConfig): Resource[IO, HikariTransactor[IO]] = {
     val datasource = getHikariDataSource(conf)
     for {
       ce <- ExecutionContexts.fixedThreadPool[IO](32) // our connect EC
@@ -50,18 +52,12 @@ object DoobieUtils {
     } yield Transactor.fromDataSource[IO](datasource, ce, be)
   }
 
-  private def getHikariDataSource(conf: DatabaseConfig): HikariDataSource = {
+  private def getHikariDataSource(conf: PostgreSQLConfig): HikariDataSource = {
     val config: HikariConfig = new HikariConfig()
-    conf match {
-      case c: DatabaseConfig.H2 =>
-        config.setDriverClassName(c.driver)
-        config.setJdbcUrl(c.url)
-      case c: DatabaseConfig.PostgreSQL =>
-        config.setDriverClassName(c.driver)
-        config.setJdbcUrl(c.url)
-        config.setUsername(c.user)
-        config.setPassword(c.pass.decode)
-    }
+    config.setDriverClassName(conf.driver)
+    config.setJdbcUrl(conf.url)
+    config.setUsername(conf.user)
+    config.setPassword(conf.pass.decode)
     new HikariDataSource(config)
   }
 
@@ -142,6 +138,18 @@ object DoobieUtils {
           .parse(x)
           .getOrElse(throw new Exception(s"Failed to parse $x as BinaryVersion"))
       }(_.encode)
+    implicit val platformMeta: Meta[Platform] =
+      Meta[String].timap { x =>
+        Platform
+          .fromLabel(x)
+          .getOrElse(throw new Exception(s"Failed to parse $x as Platform"))
+      }(_.label)
+    implicit val languageVersionMeta: Meta[Language] =
+      Meta[String].timap { x =>
+        Language
+          .fromLabel(x)
+          .getOrElse(throw new Exception(s"Failed to parse $x as Language"))
+      }(_.label)
     implicit val licensesMeta: Meta[Set[License]] =
       Meta[String].timap(fromJson[Seq[License]](_).get.toSet)(toJson(_))
     implicit val resolverMeta: Meta[Resolver] =
@@ -193,6 +201,8 @@ object DoobieUtils {
               settings = settings.getOrElse(Project.Settings.default)
             )
         }
+
+//    implicit val
 
     private def toJson[A](v: A)(implicit e: Encoder[A]): String =
       e.apply(v).noSpaces

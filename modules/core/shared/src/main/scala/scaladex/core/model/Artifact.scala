@@ -21,14 +21,16 @@ case class Artifact(
     artifactId: String,
     version: SemanticVersion,
     artifactName: Artifact.Name,
-    binaryVersion: BinaryVersion,
     projectRef: Project.Reference,
     description: Option[String],
     releaseDate: Option[Instant],
     resolver: Option[Resolver],
     licenses: Set[License],
-    isNonStandardLib: Boolean
+    isNonStandardLib: Boolean,
+    platform: Platform,
+    language: Language
 ) {
+  val binaryVersion: BinaryVersion = BinaryVersion(platform, language)
 
   def isValid: Boolean = binaryVersion.isValid
 

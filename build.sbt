@@ -51,7 +51,7 @@ lazy val scalacOptionsSettings = Def.settings(
     "UTF-8",
     "-feature",
     "-unchecked",
-    "-Xfatal-warnings",
+//    "-Xfatal-warnings",
     "-Wunused"
   )
 )

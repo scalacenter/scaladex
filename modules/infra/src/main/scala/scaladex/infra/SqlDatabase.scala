@@ -15,7 +15,7 @@ import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.service.SchedulerDatabase
-import scaladex.infra.config.DatabaseConfig
+import scaladex.infra.config.PostgreSQLConfig
 import scaladex.infra.sql.ArtifactDependencyTable
 import scaladex.infra.sql.ArtifactTable
 import scaladex.infra.sql.DoobieUtils
@@ -24,7 +24,7 @@ import scaladex.infra.sql.ProjectDependenciesTable
 import scaladex.infra.sql.ProjectSettingsTable
 import scaladex.infra.sql.ProjectTable
 
-class SqlDatabase(conf: DatabaseConfig, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
+class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
 
   private val flyway = DoobieUtils.flyway(conf)
   def migrate: IO[Unit] = IO(flyway.migrate())
