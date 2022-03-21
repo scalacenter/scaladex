@@ -4,10 +4,10 @@ import com.softwaremill.session.SessionConfig
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import scaladex.core.model.Env
-import scaladex.infra.config.DatabaseConfig
 import scaladex.infra.config.ElasticsearchConfig
 import scaladex.infra.config.FilesystemConfig
 import scaladex.infra.config.GithubConfig
+import scaladex.infra.config.PostgreSQLConfig
 
 case class ServerConfig(
     env: Env,
@@ -15,7 +15,7 @@ case class ServerConfig(
     endpoint: String,
     port: Int,
     oAuth2: OAuth2Config,
-    database: DatabaseConfig,
+    database: PostgreSQLConfig,
     elasticsearch: ElasticsearchConfig,
     filesystem: FilesystemConfig,
     github: GithubConfig
@@ -31,7 +31,7 @@ object ServerConfig {
     val endpoint = config.getString("scaladex.server.endpoint")
     val port = config.getInt("scaladex.server.port")
     val oauth2 = OAuth2Config.from(config)
-    val database = DatabaseConfig.from(config).get
+    val database = PostgreSQLConfig.from(config).get
     val elasticsearch = ElasticsearchConfig.from(config)
 
     val filesystem = FilesystemConfig.from(config)

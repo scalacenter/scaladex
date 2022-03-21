@@ -16,14 +16,16 @@ object ArtifactTable {
   val projectReferenceFields: Seq[String] = Seq("organization", "repository")
 
   private[sql] val fields = mavenReferenceFields ++
-    Seq("artifact_name", "binary_version") ++
+    Seq("artifact_name") ++
     projectReferenceFields ++
     Seq(
       "description",
       "release_date",
       "resolver",
       "licenses",
-      "is_non_standard_Lib"
+      "is_non_standard_Lib",
+      "platform",
+      "language_version"
     )
 
   val insertIfNotExist: Update[Artifact] =

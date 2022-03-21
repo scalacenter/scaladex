@@ -28,13 +28,14 @@ class ArtifactConverter(paths: DataPaths) {
         pom.artifactId,
         version,
         Artifact.Name(artifactMeta.artifactName),
-        artifactMeta.binaryVersion,
         projectRef,
         pom.description,
         Some(creationDate),
         None,
         licenseCleanup(pom),
-        artifactMeta.isNonStandard
+        artifactMeta.isNonStandard,
+        artifactMeta.binaryVersion.platform,
+        artifactMeta.binaryVersion.language
       )
       val dependencies = pom.dependencies.map { dep =>
         ArtifactDependency(

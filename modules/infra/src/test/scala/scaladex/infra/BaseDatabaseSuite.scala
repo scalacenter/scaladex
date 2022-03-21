@@ -13,7 +13,7 @@ import org.scalatest.Assertions
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Suite
 import scaladex.infra.SqlDatabase
-import scaladex.infra.config.DatabaseConfig
+import scaladex.infra.config.PostgreSQLConfig
 
 trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach {
   self: Assertions with Suite =>
@@ -21,10 +21,10 @@ trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach {
   private implicit val cs: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
-  private val config: DatabaseConfig.PostgreSQL = DatabaseConfig
+  private val config: PostgreSQLConfig = PostgreSQLConfig
     .load()
     .get
-    .asInstanceOf[DatabaseConfig.PostgreSQL]
+    .asInstanceOf[PostgreSQLConfig]
 
   override val transactor: Transactor.Aux[IO, Unit] =
     Transactor
