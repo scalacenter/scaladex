@@ -94,11 +94,11 @@ object GithubModel {
   case class Contributor(
       login: String,
       avatar_url: String,
-      url: String,
+      html_url: String,
       contributions: Int
   ) {
     def toGithubContributor: GithubContributor =
-      GithubContributor(login, avatar_url, Url(url), contributions)
+      GithubContributor(login, avatar_url, Url(html_url), contributions)
 
   }
 

@@ -39,8 +39,11 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
       }
   }
   it("getContributors") {
-    for (contributors <- client.getContributors(Scalafix.reference))
-      yield contributors should not be empty
+    for (contributors <- client.getContributors(Cats.reference))
+      yield {
+        contributors should not be empty
+        contributors.head.html_url should startWith("https://github.com/")
+      }
   }
   it("getOpenIssues") {
     for (openIssues <- client.getOpenIssues(Scalafix.reference))
@@ -98,5 +101,4 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
         yield orgs should not be empty
     }
   }
-
 }
