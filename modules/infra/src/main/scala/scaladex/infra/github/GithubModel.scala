@@ -113,9 +113,9 @@ object GithubModel {
   implicit val communityProfileDecoder: Decoder[CommunityProfile] = new Decoder[CommunityProfile] {
     final def apply(c: HCursor): Decoder.Result[CommunityProfile] =
       for {
-        contributingFile <- c.downField("files").downField("contributing.html_url").as[Option[String]]
-        codeOfConductFile <- c.downField("files").downField("code_of_conduct.html_url").as[Option[String]]
-        licenceFile <- c.downField("files").downField("license.html_url").as[Option[String]]
+        contributingFile <- c.downField("files").downField("contributing").downField("html_url").as[Option[String]]
+        codeOfConductFile <- c.downField("files").downField("code_of_conduct").downField("html_url").as[Option[String]]
+        licenceFile <- c.downField("files").downField("license").downField("html_url").as[Option[String]]
       } yield CommunityProfile(contributingFile, codeOfConductFile, licenceFile)
   }
 
