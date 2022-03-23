@@ -30,8 +30,13 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
       yield readme shouldBe defined
   }
   it("getCommunity") {
-    for (communityProfile <- client.getCommunityProfile(Scalafix.reference))
-      yield communityProfile shouldBe defined
+    for (communityProfile <- client.getCommunityProfile(Cats.reference))
+      yield {
+        communityProfile shouldBe defined
+        communityProfile.flatMap(_.licenceFile) shouldBe defined
+        communityProfile.flatMap(_.codeOfConductFile) shouldBe defined
+        communityProfile.flatMap(_.contributingFile) shouldBe defined
+      }
   }
   it("getContributors") {
     for (contributors <- client.getContributors(Scalafix.reference))
