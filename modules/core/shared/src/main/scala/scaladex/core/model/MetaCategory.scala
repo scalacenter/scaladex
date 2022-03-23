@@ -143,7 +143,7 @@ object MetaCategory {
   }
 
   case object MathematicsFinanceDataScienceAndBioinformatics extends MetaCategory {
-    override val title: String = "Mathetmatics, Finance, Data Science and Bioinformatics"
+    override val title: String = "Mathematics, Finance, Data Science and Bioinformatics"
     override val categories: Seq[Category] = Seq(
       Category.Bioinformatics,
       Category.CryptographyAndHashing,
