@@ -4,15 +4,14 @@ import endpoints4s.algebra
 
 // Autocompletion endpoints are implemented by the server and invoked by the web client.
 // There definition is shared here, for consistency.
-trait AutocompletionEndpoints extends algebra.Endpoints with algebra.JsonEntitiesFromSchemas {
+trait SearchEndpoints extends algebra.Endpoints with algebra.JsonEntitiesFromSchemas {
 
   /** Enrich a request with session information */
-  def withOptionalSession[A](request: Request[A]): Request[WithSession[A]]
+  def withOptionalSession(request: Request[AutocompletionParams]): Request[WithSession]
 
   /** A type `A` enriched with session information (unknown yet, defined by the web client and server) */
-  type WithSession[A]
+  type WithSession
 
-  // JSON schema of the autocompletion response entity
   implicit val response: JsonSchema[AutocompletionResponse] =
     field[String]("organization")
       .zip(field[String]("repository"))
@@ -24,7 +23,7 @@ trait AutocompletionEndpoints extends algebra.Endpoints with algebra.JsonEntitie
       }
 
   // Definition of the autocompletion query format
-  val searchRequestQuery: QueryString[AutocompletionRequest] = (
+  val params: QueryString[AutocompletionParams] = (
     qs[String]("q", docs = Some("Main query (e.g., 'json', 'testing', etc.)")) &
       qs[Option[String]]("you", docs = Some("Used internally by Scaladex web user interface"))
         .xmap[Boolean](_.contains("✓"))(Option.when(_)("✓")) &
@@ -40,12 +39,12 @@ trait AutocompletionEndpoints extends algebra.Endpoints with algebra.JsonEntitie
         docs = Some("Filter the results matching the given platforms only (e.g., 'jvm', 'sjs1', 'native0.4', 'sbt1.0')")
       ) &
       qs[Option[Boolean]]("contributingSearch").xmap(_.getOrElse(false))(Option.when(_)(true))
-  ).xmap((AutocompletionRequest.apply _).tupled)(Function.unlift(AutocompletionRequest.unapply))
+  ).xmap((AutocompletionParams.apply _).tupled)(Function.unlift(AutocompletionParams.unapply))
 
   // Autocomplete endpoint definition
-  val autocomplete: Endpoint[WithSession[AutocompletionRequest], Seq[AutocompletionResponse]] =
+  val autocomplete: Endpoint[WithSession, Seq[AutocompletionResponse]] =
     endpoint(
-      withOptionalSession(get(path / "api" / "autocomplete" /? searchRequestQuery)),
+      withOptionalSession(get(path / "api" / "autocomplete" /? params)),
       ok(jsonResponse[Seq[AutocompletionResponse]])
     )
 

@@ -5,7 +5,7 @@ import scaladex.core.model.UserState
 import scaladex.core.model.search.SearchParams
 import scaladex.core.model.search.Sorting
 
-case class AutocompletionRequest(
+case class AutocompletionParams(
     query: String,
     you: Boolean,
     topics: Seq[String],
@@ -13,7 +13,7 @@ case class AutocompletionRequest(
     platforms: Seq[String],
     contributingSearch: Boolean
 ) {
-  def searchParams(user: Option[UserState]): SearchParams = {
+  def withUser(user: Option[UserState]): SearchParams = {
     val userRepos = if (you) user.map(_.repos).getOrElse(Set.empty) else Set.empty[Project.Reference]
     SearchParams(
       queryString = query,
