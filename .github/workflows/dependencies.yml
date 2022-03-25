@@ -1,0 +1,20 @@
+name: Dependency Graph
+on:
+  push:
+    branches:
+      - main
+jobs:
+  submit:
+    name: Submit
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: coursier/setup-action@v1.2.0-M3
+        with:
+          apps: sbt
+          jvm: 'adopt:1.8'
+      - run: sbt submitGithubDependencyGraph
