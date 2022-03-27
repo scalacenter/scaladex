@@ -21,5 +21,5 @@ object UserSessionsTable {
     insertOrUpdateRequest(table, allFields, allFields)
 
   val selectUserSessionById: Query[UUID, UserState] =
-    selectRequest(table, allFields, Seq("user_id"))
+    selectRequest(table, userStateFields ++ userInfoFields, Seq("user_id"))
 }
