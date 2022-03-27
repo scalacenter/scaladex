@@ -11,6 +11,7 @@ import akka.http.scaladsl.server.Directive
 import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import cats.implicits.toTraverseOps
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import com.softwaremill.session.SessionDirectives.optionalSession
 import com.softwaremill.session.SessionOptions.refreshable
@@ -188,8 +189,8 @@ class SearchApi(searchEngine: SearchEngine, database: WebDatabase, session: Gith
     } ~ cors() {
       AutocompletionApi.autocomplete.implementedByAsync {
         case AutocompletionApi.WithSession(request, userId) =>
-          val user = userId.flatMap(session.getUser)
-          autocomplete(request.searchParams(user))
+          val futureMaybeUserState = userId.traverse(session.getUser).map(_.flatten)
+          futureMaybeUserState.flatMap(maybeUserState => autocomplete(request.searchParams(maybeUserState)))
       }
     }
 

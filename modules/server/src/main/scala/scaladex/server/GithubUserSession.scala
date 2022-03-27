@@ -2,7 +2,6 @@ package scaladex.server
 
 import java.util.UUID
 
-import scala.collection.parallel.mutable.ParTrieMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Try
@@ -29,12 +28,11 @@ class GithubUserSession(sessionConfig: SessionConfig, database: WebDatabase)(imp
         else logger.info(msg)
   }
 
-  private val users = ParTrieMap[UUID, UserState]()
-
   def addUser(userState: UserState): Future[UUID] = {
     val userId = UUID.randomUUID
     database.insertSession(userId, userState).map(_ => userId)
   }
 
-  def getUser(id: UUID): Option[UserState] = users.get(id)
+  def getUser(id: UUID): Future[Option[UserState]] =
+    database.getSession(id)
 }
