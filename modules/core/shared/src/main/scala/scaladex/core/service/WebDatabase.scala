@@ -1,12 +1,14 @@
 package scaladex.core.service
 
 import java.time.Instant
+import java.util.UUID
 
 import scala.concurrent.Future
 
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
+import scaladex.core.model.UserState
 
 trait WebDatabase {
   def insertArtifact(artifact: Artifact, dependencies: Seq[ArtifactDependency], time: Instant): Future[Unit]
@@ -20,4 +22,6 @@ trait WebDatabase {
   def getDirectDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Direct]]
   def getReverseDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Reverse]]
   def countArtifacts(): Future[Long]
+  def insertSession(userId: UUID, userState: UserState): Future[Unit]
+  def getSession(userId: UUID): Future[Option[UserState]]
 }
