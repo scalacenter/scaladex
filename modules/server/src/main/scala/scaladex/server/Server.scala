@@ -158,7 +158,8 @@ object Server extends LazyLogging {
 
     val programmaticRoutes = concat(
       new PublishApi(githubAuth, publishProcess).routes,
-      new SearchApi(searchEngine, webDatabase, session).routes,
+      new SearchApi(searchEngine, session).routes,
+      new OldSearchApi(searchEngine, webDatabase).routes,
       Assets.routes,
       new Badges(webDatabase).route,
       new Oauth2(config.oAuth2, githubAuth, session).routes,

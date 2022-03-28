@@ -4,12 +4,12 @@ import org.scalajs.dom.Node
 import org.scalajs.dom.document
 import org.scalajs.dom.raw.Element
 import org.scalajs.dom.raw.HTMLInputElement
-import scaladex.core.api.AutocompletionRequest
+import scaladex.core.api.AutocompletionParams
 
 object Dom {
-  def getSearchRequest: Option[AutocompletionRequest] =
+  def getSearchRequest: Option[AutocompletionParams] =
     for (query <- getSearchQuery)
-      yield AutocompletionRequest(
+      yield AutocompletionParams(
         query = query,
         you = getElementById("you").map(_.asInput.value).contains("✓"),
         topics = getSearchFilter("topics"),
