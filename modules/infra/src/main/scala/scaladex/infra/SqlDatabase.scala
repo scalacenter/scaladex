@@ -131,6 +131,9 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
   ): Future[Seq[Artifact]] =
     run(ArtifactTable.selectArtifactByProjectAndName.to[Seq]((projectRef, artifactName)))
 
+  override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] =
+    run(ArtifactTable.selectByMavenReference.option(mavenRef))
+
   def countProjects(): Future[Long] =
     run(ProjectTable.countProjects.unique)
 

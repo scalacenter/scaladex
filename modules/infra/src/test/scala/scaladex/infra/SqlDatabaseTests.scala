@@ -208,9 +208,9 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
 
   it("should delete moved projects from project-dependency-table") {
     for {
+      _ <- database.insertArtifact(Scalafix.artifact, Seq.empty, now)
       _ <- database.insertProjectDependencies(Seq(ProjectDependency(Scalafix.reference, Cats.reference)))
       _ <- database.insertProjectDependencies(Seq(ProjectDependency(PlayJsonExtra.reference, Scalafix.reference)))
-      _ <- database.insertArtifact(Scalafix.artifact, Seq.empty, now)
       _ <- database.moveProject(
         Scalafix.reference,
         Scalafix.githubInfo,
@@ -233,5 +233,12 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       _ <- database.insertSession(userId, userState)
       obtained <- database.getSession(userId)
     } yield obtained shouldBe Some(userState)
+  }
+  
+  it("should return artifact from maven reference") {
+    for {
+      _ <- database.insertArtifact(Cats.`core_3:2.6.1`, Seq.empty, now)
+      catsCore <- database.getArtifactByMavenReference(Cats.`core_3:2.6.1`.mavenReference)
+    } yield catsCore should contain(Cats.`core_3:2.6.1`)
   }
 }

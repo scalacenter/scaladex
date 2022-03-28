@@ -14,4 +14,5 @@ class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers
   it("check selectMavenReference")(check(ArtifactTable.selectMavenReference))
   it("check selectMavenReferenceWithNoReleaseDate")(check(ArtifactTable.selectMavenReferenceWithNoReleaseDate))
   it("check updateReleaseDate")(check(ArtifactTable.updateReleaseDate))
+  it("check selectByMavenReference")(check(ArtifactTable.selectByMavenReference))
 }
