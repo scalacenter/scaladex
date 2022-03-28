@@ -6,6 +6,7 @@
 @import scaladex.core.model.search.ProjectDocument
 @import scaladex.core.model.Scala
 @import scaladex.core.model.Platform
+@import scaladex.core.model.Stack
 @import scaladex.core.model.search.AwesomeParams
 
 @(
@@ -46,6 +47,17 @@
               @for(language <- languages) {
                 <option value="@language.label" @if(params.languages.contains(language)){selected}>
                   @language
+                </option>
+              }
+            </select>
+          </div>
+
+          <div class="filter">
+            <label for="select-stack"><h3>Stack:</h3></label>
+            <select id="select-stack" name="stacks" class="selectpicker" multiple data-max-options="1" onchange="this.form.submit()">
+              @for(stack <- Stack.all) {
+                <option value="@stack.label" @if(params.stacks.contains(stack)){selected}>
+                  @stack
                 </option>
               }
             </select>

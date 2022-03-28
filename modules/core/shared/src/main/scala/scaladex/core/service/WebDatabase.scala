@@ -14,6 +14,7 @@ trait WebDatabase {
   def getAllProjects(): Future[Seq[Project]]
   def getProject(projectRef: Project.Reference): Future[Option[Project]]
   def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]]
+  def getProjectDependencies(projectRef: Project.Reference): Future[Seq[Project.Reference]]
   def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int]
   def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]]
   def getArtifactsByName(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]]

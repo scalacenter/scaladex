@@ -22,6 +22,7 @@ final case class ProjectDocument(
     updateDate: Option[Instant],
     languages: Seq[Language],
     platforms: Seq[Platform],
+    projectDependencies: Seq[Project.Reference],
     inverseProjectDependencies: Int,
     category: Option[Category],
     formerReferences: Seq[Project.Reference],
@@ -46,6 +47,7 @@ object ProjectDocument {
       None,
       Seq.empty,
       Seq.empty,
+      Seq.empty,
       0,
       None,
       Seq.empty,
@@ -55,6 +57,7 @@ object ProjectDocument {
   def apply(
       project: Project,
       artifacts: Seq[Artifact],
+      projectDependencies: Seq[Project.Reference],
       inverseProjectDependencies: Int,
       formerReferences: Seq[Project.Reference]
   ): ProjectDocument = {
@@ -68,6 +71,7 @@ object ProjectDocument {
       updateDate = None,
       artifacts.map(_.binaryVersion.language).distinct.sorted,
       artifacts.map(_.binaryVersion.platform).distinct.sorted,
+      projectDependencies,
       inverseProjectDependencies,
       settings.category,
       formerReferences,

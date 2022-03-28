@@ -83,7 +83,13 @@ object Values {
       Project.default(reference, None, Some(githubInfo), Some(settings), now = now)
 
     val projectDocument: ProjectDocument =
-      ProjectDocument(project.copy(creationDate = Some(now.minus(1, ChronoUnit.MINUTES))), Seq(artifact), 0, Seq.empty)
+      ProjectDocument(
+        project.copy(creationDate = Some(now.minus(1, ChronoUnit.MINUTES))),
+        Seq(artifact),
+        Seq.empty,
+        0,
+        Seq.empty
+      )
   }
 
   object PlayJsonExtra {
@@ -196,7 +202,13 @@ object Values {
     )
 
     val projectDocument: ProjectDocument =
-      ProjectDocument(project.copy(creationDate = Some(now.minus(10, ChronoUnit.MINUTES))), allArtifacts, 1, Seq.empty)
+      ProjectDocument(
+        project.copy(creationDate = Some(now.minus(10, ChronoUnit.MINUTES))),
+        allArtifacts,
+        Seq.empty,
+        1,
+        Seq.empty
+      )
   }
 
   object CatsEffect {
