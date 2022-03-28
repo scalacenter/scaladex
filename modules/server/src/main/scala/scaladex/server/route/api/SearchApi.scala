@@ -1,8 +1,5 @@
 package scaladex.server.route.api
-
-import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.Duration
 
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.server.Directive
@@ -51,7 +48,7 @@ class SearchApi(searchEngine: SearchEngine, session: GithubUserSession)(
           val futureRoute = futureMaybeUser.map { maybeUser =>
             request.directive(request => f(Tuple1(request.withUser(maybeUser))))
           }
-          Await.result(futureRoute, Duration.Inf)
+          context => futureRoute.flatMap(_.apply(context))
         }
       }
       def uri(params: SearchParams): Uri = request.uri(params.toAutocomplete)

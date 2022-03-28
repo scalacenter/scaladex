@@ -1,6 +1,4 @@
 package scaladex.server
-
-import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
@@ -167,15 +165,15 @@ object Server extends LazyLogging {
     )
     import session.implicits._
     val userFacingRoute =
-      optionalSession(refreshable, usingCookies) { userId =>
-        val futureMaybeUser = userId.traverse(session.getUser).map(_.flatten)
+      optionalSession(refreshable, usingCookies) { maybeUserId =>
+        val futureMaybeUser = maybeUserId.traverse(session.getUser).map(_.flatten)
         val futureRoute = futureMaybeUser.map { maybeUser =>
           frontPage.route(maybeUser) ~ adminPages.route(maybeUser) ~ awesomePages.route(maybeUser) ~
             redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
               projectPages.route(maybeUser) ~ searchPages.route(maybeUser)
             }
         }
-        Await.result(futureRoute, Duration.Inf)
+        context => futureRoute.flatMap(_.apply(context))
       }
     val exceptionHandler = ExceptionHandler {
       case ex: Exception =>
