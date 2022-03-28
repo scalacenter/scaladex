@@ -153,21 +153,28 @@ object Server extends LazyLogging {
     val adminPages = new AdminPage(config.env, schedulerService, adminTaskService)
     val projectPages = new ProjectPages(config.env, webDatabase, searchEngine)
     val awesomePages = new AwesomePages(config.env, searchEngine)
+    val publishApi = new PublishApi(githubAuth, publishProcess)
+    val searchApi = new SearchApi(searchEngine)
+    val oldSearchApi = new OldSearchApi(searchEngine, webDatabase)
+    val badges = new Badges(webDatabase)
+    val oauth2 = new Oauth2(config.oAuth2, githubAuth, session)
 
-    val programmaticRoutes = concat(
-      new PublishApi(githubAuth, publishProcess).routes,
-      new SearchApi(searchEngine, session).routes,
-      new OldSearchApi(searchEngine, webDatabase).routes,
-      Assets.routes,
-      new Badges(webDatabase).route,
-      new Oauth2(config.oAuth2, githubAuth, session).routes,
-      DocumentationRoutes.routes
-    )
     import session.implicits._
-    val userFacingRoute: Route =
+    val route: Route =
       optionalSession(refreshable, usingCookies) { userId =>
         val user = userId.flatMap(session.getUser)
-        frontPage.route(user) ~ adminPages.route(user) ~ awesomePages.route(user) ~
+
+        val apiRoute = concat(
+          publishApi.routes,
+          searchApi.route(user),
+          oldSearchApi.routes,
+          Assets.routes,
+          badges.route,
+          oauth2.routes,
+          DocumentationRoutes.routes
+        )
+
+        apiRoute ~ frontPage.route(user) ~ adminPages.route(user) ~ awesomePages.route(user) ~
           redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
             projectPages.route(user) ~ searchPages.route(user)
           }
@@ -189,6 +196,6 @@ object Server extends LazyLogging {
           out
         )
     }
-    handleExceptions(exceptionHandler)(programmaticRoutes ~ userFacingRoute)
+    handleExceptions(exceptionHandler)(route)
   }
 }
