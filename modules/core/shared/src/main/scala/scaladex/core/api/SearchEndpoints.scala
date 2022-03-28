@@ -6,12 +6,6 @@ import endpoints4s.algebra
 // There definition is shared here, for consistency.
 trait SearchEndpoints extends algebra.Endpoints with algebra.JsonEntitiesFromSchemas {
 
-  /** Enrich a request with session information */
-  def withOptionalSession(request: Request[AutocompletionParams]): Request[WithSession]
-
-  /** A type `A` enriched with session information (unknown yet, defined by the web client and server) */
-  type WithSession
-
   implicit val response: JsonSchema[AutocompletionResponse] =
     field[String]("organization")
       .zip(field[String]("repository"))
@@ -42,9 +36,9 @@ trait SearchEndpoints extends algebra.Endpoints with algebra.JsonEntitiesFromSch
   ).xmap((AutocompletionParams.apply _).tupled)(Function.unlift(AutocompletionParams.unapply))
 
   // Autocomplete endpoint definition
-  val autocomplete: Endpoint[WithSession, Seq[AutocompletionResponse]] =
+  val autocomplete: Endpoint[AutocompletionParams, Seq[AutocompletionResponse]] =
     endpoint(
-      withOptionalSession(get(path / "api" / "autocomplete" /? params)),
+      get(path / "api" / "autocomplete" /? params),
       ok(jsonResponse[Seq[AutocompletionResponse]])
     )
 

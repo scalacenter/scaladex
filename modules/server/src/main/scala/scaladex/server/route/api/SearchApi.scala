@@ -2,32 +2,25 @@ package scaladex.server.route.api
 
 import scala.concurrent.ExecutionContext
 
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.server.Directive
-import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Route
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
-import com.softwaremill.session.SessionDirectives._
-import com.softwaremill.session.SessionOptions._
 import endpoints4s.akkahttp.server
-import scaladex.core.api.AutocompletionParams
 import scaladex.core.api.AutocompletionResponse
 import scaladex.core.api.SearchEndpoints
-import scaladex.core.model.search.SearchParams
+import scaladex.core.model.UserState
 import scaladex.core.service.SearchEngine
-import scaladex.server.GithubUserSession
 
-class SearchApi(searchEngine: SearchEngine, session: GithubUserSession)(
+class SearchApi(searchEngine: SearchEngine)(
     implicit val executionContext: ExecutionContext
 ) extends SearchEndpoints
     with server.Endpoints
     with server.JsonEntitiesFromSchemas {
-  import session.implicits._
 
-  val routes: Route =
+  def route(user: Option[UserState]): Route =
     cors() {
       autocomplete.implementedByAsync { params =>
-        for (projects <- searchEngine.autocomplete(params, 5))
+        val searchParams = params.withUser(user)
+        for (projects <- searchEngine.autocomplete(searchParams, 5))
           yield projects.map { project =>
             AutocompletionResponse(
               project.organization.value,
@@ -36,18 +29,5 @@ class SearchApi(searchEngine: SearchEngine, session: GithubUserSession)(
             )
           }
       }
-    }
-
-  type WithSession = SearchParams
-
-  def withOptionalSession(request: Request[AutocompletionParams]): Request[SearchParams] =
-    new Request[SearchParams] {
-      val directive: Directive1[SearchParams] = Directive[Tuple1[SearchParams]] { f =>
-        optionalSession(refreshable, usingCookies) { userId =>
-          val user = userId.flatMap(session.getUser)
-          request.directive(request => f(Tuple1(request.withUser(user))))
-        }
-      }
-      def uri(params: SearchParams): Uri = request.uri(params.toAutocomplete)
     }
 }
