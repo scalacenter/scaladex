@@ -117,4 +117,7 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def deleteDependenciesOfMovedProject(): scala.concurrent.Future[Unit] = ???
   override def getAllGroupIds(): Future[Seq[Artifact.GroupId]] = ???
   override def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]] = ???
+
+  override def updateArtifactReleaseDate(reference: Artifact.MavenReference, releaseDate: Instant): Future[Int] = ???
+  override def getAllMavenReferencesWithNoReleaseDate(): Future[Seq[Artifact.MavenReference]] = ???
 }
