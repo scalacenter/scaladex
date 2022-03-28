@@ -1,6 +1,7 @@
 package scaladex.infra.sql
 
 import java.time.Instant
+import java.util.UUID
 
 import scala.concurrent.ExecutionContext
 import scala.util.Try
@@ -28,6 +29,9 @@ import scaladex.core.model.Project
 import scaladex.core.model.Project._
 import scaladex.core.model.Resolver
 import scaladex.core.model.SemanticVersion
+import scaladex.core.model.UserInfo
+import scaladex.core.model.UserState
+import scaladex.core.util.Secret
 import scaladex.infra.Codecs._
 import scaladex.infra.config.PostgreSQLConfig
 
@@ -156,6 +160,13 @@ object DoobieUtils {
       Meta[String].timap(Resolver.from(_).get)(_.name)
     implicit val instantMeta: Meta[Instant] = doobie.postgres.implicits.JavaTimeInstantMeta
 
+    implicit val secretMeta: Meta[Secret] = Meta[String].imap[Secret](Secret.apply)(_.decode)
+    implicit val uuidMeta: Meta[UUID] = Meta[String].imap[UUID](UUID.fromString)(_.toString)
+    implicit val projectReferenceMeta: Meta[Set[Project.Reference]] =
+      Meta[String].timap(_.split(",").filter(_.nonEmpty).map(Project.Reference.from).toSet)(_.mkString(","))
+    implicit val projectOrganizationMeta: Meta[Set[Project.Organization]] =
+      Meta[String].timap(_.split(",").filter(_.nonEmpty).map(Project.Organization.apply).toSet)(_.mkString(","))
+
     implicit val categoryMeta: Meta[Category] = Meta[String].timap(Category.byLabel)(_.label)
 
     implicit val projectReferenceRead: Read[Project.Reference] =
@@ -202,7 +213,22 @@ object DoobieUtils {
             )
         }
 
-//    implicit val
+    implicit val writeUserInfo: Write[UserInfo] =
+      Write[(String, Option[String], String, Secret)].contramap {
+        case UserInfo(login, name, avatarUrl, token) => (login, name, avatarUrl, token)
+      }
+    implicit val readUserInfo: Read[UserInfo] =
+      Read[(String, Option[String], String, Secret)].map {
+        case (login, name, avatarUrl, token) => UserInfo(login, name, avatarUrl, token)
+      }
+    implicit val writeUserState: Write[UserState] =
+      Write[(Set[Project.Reference], Set[Project.Organization], UserInfo)].contramap {
+        case UserState(repos, orgs, info) => (repos, orgs, info)
+      }
+    implicit val readUserState: Read[UserState] =
+      Read[(Set[Project.Reference], Set[Project.Organization], UserInfo)].map {
+        case (repos, orgs, info) => UserState(repos, orgs, info)
+      }
 
     private def toJson[A](v: A)(implicit e: Encoder[A]): String =
       e.apply(v).noSpaces
