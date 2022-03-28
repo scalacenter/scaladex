@@ -17,7 +17,7 @@ case class AutocompletionParams(
     val userRepos = if (you) user.map(_.repos).getOrElse(Set.empty) else Set.empty[Project.Reference]
     SearchParams(
       queryString = query,
-      sorting = Sorting.Relevance,
+      sorting = Sorting.Stars,
       userRepos = userRepos,
       topics = topics,
       languages = languages,

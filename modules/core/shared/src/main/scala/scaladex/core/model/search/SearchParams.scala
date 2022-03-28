@@ -5,7 +5,7 @@ import scaladex.core.model.Project
 
 case class SearchParams(
     queryString: String = "",
-    sorting: Sorting = Sorting.Relevance,
+    sorting: Sorting = Sorting.Stars,
     userRepos: Set[Project.Reference] = Set(),
     topics: Seq[String] = Nil,
     languages: Seq[String] = Nil,
