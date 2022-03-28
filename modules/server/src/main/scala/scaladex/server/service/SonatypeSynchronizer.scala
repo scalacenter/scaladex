@@ -32,7 +32,15 @@ class SonatypeSynchronizer(
       _ = logger.info(s"${result} poms have been successfully indexed")
     } yield ()
 
-  def findAndIndexMissingArtifacts(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): Future[Int] =
+  def updateReleaseDate(): Future[Unit] =
+    for {
+      artifactRefs <- database.getAllMavenReferencesWithNoReleaseDate()
+      _ = logger.info(s"missing release date in ${artifactRefs.size} artifacts")
+      done <- artifactRefs.mapSync(updateReleaseDate)
+      _ = logger.info(s"${done.sum} release dates have been updated")
+    } yield ()
+
+  private def findAndIndexMissingArtifacts(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): Future[Int] =
     for {
       mavenReferenceFromDatabase <- database.getAllMavenReferences()
       artifactIds <- sonatypeService.getAllArtifactIds(groupId)
@@ -66,6 +74,13 @@ class SonatypeSynchronizer(
       case PublishResult.Success => true
       case _                     => false
     }
+
+  private def updateReleaseDate(ref: MavenReference): Future[Int] =
+    for {
+      releaseDate <- sonatypeService.getReleaseDate(ref)
+      done <- releaseDate.map(database.updateArtifactReleaseDate(ref, _)).getOrElse(Future.successful(0))
+    } yield done
+
 }
 
 object SonatypeSynchronizer {

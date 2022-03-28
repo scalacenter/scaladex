@@ -22,6 +22,7 @@ import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Artifact
+import scaladex.core.model.Artifact.MavenReference
 import scaladex.core.model.SbtPlugin
 import scaladex.core.model.SemanticVersion
 import scaladex.core.service.SonatypeService
@@ -76,17 +77,17 @@ class SonatypeClient()(implicit val system: ActorSystem)
       }
   }
 
-  override def getPomFile(mavenReference: Artifact.MavenReference): Future[Option[(String, Instant)]] = {
-    val groupIdUrl: String = mavenReference.groupId.replace('.', '/')
+  override def getPomFile(mavenReference: Artifact.MavenReference): Future[Option[(String, Instant)]] =
     for {
-      artifactId <- Artifact.ArtifactId.parse(mavenReference.artifactId).toFuture
-      pomUrl = getPomUrl(artifactId, mavenReference.version)
-      uri = s"$sonatypeUri/${groupIdUrl}/${mavenReference.artifactId}/${mavenReference.version}/$pomUrl"
-      request = HttpRequest(uri = uri)
-      responseFuture <- queueRequest(request)
-      res <- getPomFileWithLastModifiedTime(responseFuture)
+      response <- getHttpResponse(mavenReference)
+      res <- getPomFileWithLastModifiedTime(response)
     } yield res
-  }
+
+  override def getReleaseDate(mavenReference: Artifact.MavenReference): Future[Option[Instant]] =
+    for {
+      response <- getHttpResponse(mavenReference)
+      releaseDate = getLastModifiedTime(response)
+    } yield releaseDate
 
   private def getPomFileWithLastModifiedTime(response: HttpResponse): Future[Option[(String, Instant)]] =
     response match {
@@ -98,6 +99,25 @@ class SonatypeClient()(implicit val system: ActorSystem)
           .map(header => page -> format(header.value))
       case _ => Future.successful(None)
     }
+
+  private def getLastModifiedTime(response: HttpResponse): Option[Instant] = {
+    // we discard en the entity because we only need the headers
+    response.discardEntityBytes()
+    response.headers
+      .find(_.is("last-modified"))
+      .map(header => format(header.value))
+  }
+
+  private def getHttpResponse(mavenReference: MavenReference): Future[HttpResponse] = {
+    val groupIdUrl: String = mavenReference.groupId.replace('.', '/')
+    for {
+      artifactId <- Artifact.ArtifactId.parse(mavenReference.artifactId).toFuture
+      pomUrl = getPomUrl(artifactId, mavenReference.version)
+      uri = s"$sonatypeUri/${groupIdUrl}/${mavenReference.artifactId}/${mavenReference.version}/$pomUrl"
+      request = HttpRequest(uri = uri)
+      response <- queueRequest(request)
+    } yield response
+  }
 
   // Wed, 04 Nov 2020 23:36:02 GMT
   private val df = DateTimeFormatter
