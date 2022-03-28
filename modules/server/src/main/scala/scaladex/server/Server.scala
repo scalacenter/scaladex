@@ -1,4 +1,5 @@
 package scaladex.server
+
 import scala.concurrent.duration._
 import scala.util.Failure
 import scala.util.Success
@@ -153,22 +154,28 @@ object Server extends LazyLogging {
     val adminPages = new AdminPage(config.env, schedulerService, adminTaskService)
     val projectPages = new ProjectPages(config.env, webDatabase, searchEngine)
     val awesomePages = new AwesomePages(config.env, searchEngine)
+    val publishApi = new PublishApi(githubAuth, publishProcess)
+    val searchApi = new SearchApi(searchEngine)
+    val oldSearchApi = new OldSearchApi(searchEngine, webDatabase)
+    val badges = new Badges(webDatabase)
+    val oauth2 = new Oauth2(config.oAuth2, githubAuth, session)
 
-    val programmaticRoutes = concat(
-      new PublishApi(githubAuth, publishProcess).routes,
-      new SearchApi(searchEngine, session).routes,
-      new OldSearchApi(searchEngine, webDatabase).routes,
-      Assets.routes,
-      new Badges(webDatabase).route,
-      new Oauth2(config.oAuth2, githubAuth, session).routes,
-      DocumentationRoutes.routes
-    )
     import session.implicits._
-    val userFacingRoute =
+    val route: Route =
       optionalSession(refreshable, usingCookies) { maybeUserId =>
         val futureMaybeUser = maybeUserId.traverse(session.getUser).map(_.flatten)
         val futureRoute = futureMaybeUser.map { maybeUser =>
-          frontPage.route(maybeUser) ~ adminPages.route(maybeUser) ~ awesomePages.route(maybeUser) ~
+          val apiRoute = concat(
+            publishApi.routes,
+            searchApi.route(maybeUser),
+            oldSearchApi.routes,
+            Assets.routes,
+            badges.route,
+            oauth2.routes,
+            DocumentationRoutes.routes
+          )
+
+          apiRoute ~ frontPage.route(maybeUser) ~ adminPages.route(maybeUser) ~ awesomePages.route(maybeUser) ~
             redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
               projectPages.route(maybeUser) ~ searchPages.route(maybeUser)
             }
@@ -192,6 +199,6 @@ object Server extends LazyLogging {
           out
         )
     }
-    handleExceptions(exceptionHandler)(programmaticRoutes ~ userFacingRoute)
+    handleExceptions(exceptionHandler)(route)
   }
 }
