@@ -1,0 +1,29 @@
+name: 🐛 Bug report
+description: Report a bug or a limitation to help us improve
+title: "[Bug] <title>"
+labels: [bug]
+body:
+- type: textarea
+  attributes:
+    label: Current behavior
+    description: A concise description of what you're experiencing, with a link or a screenshot.
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Expected Behavior
+    description: A concise description of what you expected to happen.
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Extra comments
+    description: Some hints on how to solve this bug, or some alternative solutions
+  validations:
+    required: false
+- type: textarea
+  attributes:
+    label: Search terms
+    description: A list of associated terms to help others discover this issue
+  validations:
+    required: false
