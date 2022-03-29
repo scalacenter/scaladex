@@ -146,7 +146,7 @@ object Server extends LazyLogging {
   ): Route = {
     import actor.dispatcher
 
-    val githubAuth = new GithubAuthImpl()
+    val githubAuth = new GithubAuthImpl(config.oAuth2.clientId, config.oAuth2.clientSecret, config.oAuth2.redirectUri)
     val session = new GithubUserSession(config.session, webDatabase)
 
     val searchPages = new SearchPages(config.env, searchEngine)
