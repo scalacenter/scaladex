@@ -20,6 +20,8 @@ import com.sksamuel.elastic4s.requests.searches.SearchResponse
 import com.sksamuel.elastic4s.requests.searches.aggs.responses.bucket.Terms
 import com.sksamuel.elastic4s.requests.searches.queries.Query
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.CombineFunction
+import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.FieldValueFactorFunctionModifier
+import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.ScoreFunction
 import com.sksamuel.elastic4s.requests.searches.sort.Sort
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import com.typesafe.scalalogging.LazyLogging
@@ -153,7 +155,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
 
   override def autocomplete(params: SearchParams, limit: Int): Future[Seq[ProjectDocument]] = {
     val request = search(index)
-      .query(gitHubStarScoring(filteredSearchQuery(params)))
+      .query(withScoring(filteredSearchQuery(params), params.sorting))
       .sortBy(sortQuery(params.sorting))
       .limit(limit)
     esClient.execute(request).map(extractDocuments)
@@ -170,12 +172,13 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       optionalQuery(binaryVersion)(binaryVersionQuery),
       searchQuery(queryString, false)
     )
-    val request = search(index).query(gitHubStarScoring(query)).sortBy(sortQuery(Sorting.Relevance))
+    val sorting = Sorting.Stars
+    val request = search(index).query(withScoring(query, sorting)).sortBy(sortQuery(sorting))
     findPage(request, page).map(_.flatMap(toProjectDocument))
   }
   override def find(params: SearchParams, page: PageParams): Future[Page[ProjectHit]] = {
     val request = search(index)
-      .query(gitHubStarScoring(filteredSearchQuery(params)))
+      .query(withScoring(filteredSearchQuery(params), params.sorting))
       .sortBy(sortQuery(params.sorting))
     findPage(request, page).map(_.flatMap(toProjectHit))
   }
@@ -256,7 +259,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       binaryVersionQuery(params.languages.map(_.label), params.platforms.map(_.label))
     )
     val request = search(index)
-      .query(gitHubStarScoring(query))
+      .query(withScoring(query, params.sorting))
       .sortBy(sortQuery(params.sorting))
 
     findPage(request, page)
@@ -302,18 +305,31 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
         .result[Terms](aggName)
   }
 
-  private def gitHubStarScoring(query: Query): Query = {
-    val githubStarField = fieldAccess("githubInfo.stars", default = "1")
+  private def withScoring(query: Query, sorting: Sorting): Query = {
+    val scorer = sorting match {
+      case Sorting.Stars        => Some(combinedWithPercentage("githubInfo.stars"))
+      case Sorting.Created      => None
+      case Sorting.Forks        => Some(combinedWithPercentage("githubInfo.forks"))
+      case Sorting.Contributors => Some(combinedWithPercentage("githubInfo.contributorCount"))
+      case Sorting.Dependent =>
+        Some(fieldFactorScore("inverseProjectDependencies").missing(0).modifier(FieldValueFactorFunctionModifier.LOG1P))
+    }
+
+    scorer match {
+      case Some(scorer) => functionScoreQuery().query(query).functions(scorer).boostMode(CombineFunction.Multiply)
+      case None         => query
+    }
+
+  }
+
+  private def combinedWithPercentage(sortingField: String): ScoreFunction = {
+    val sortingFieldAccess = fieldAccess(sortingField, default = "0")
     val scalaPercentageField = fieldAccess("githubInfo.scalaPercentage", default = "100")
-    val scorer = scriptScore(
+    scriptScore(
       Script(
-        script = s"Math.log($githubStarField * $scalaPercentageField + 1)"
+        script = s"Math.log($sortingFieldAccess * $scalaPercentageField + 1)"
       )
     )
-    functionScoreQuery()
-      .query(query)
-      .functions(scorer)
-      .boostMode(CombineFunction.Multiply)
   }
 
   private def awesomeQuery(category: Category, params: AwesomeParams): Query =
@@ -333,14 +349,8 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
 
   private def sortQuery(sorting: Sorting): Sort =
     sorting match {
-      case Sorting.Stars | Sorting.Forks =>
-        fieldSort(s"githubInfo.${sorting.label}").missing("0").order(SortOrder.Desc)
-      case Sorting.Contributors =>
-        fieldSort(s"githubInfo.contributorCount").missing("0").order(SortOrder.Desc)
-      case Sorting.Dependent =>
-        fieldSort("inverseProjectDependencies").missing("0").order(SortOrder.Desc)
-      case Sorting.Relevance => scoreSort().order(SortOrder.Desc)
-      case Sorting.Created   => fieldSort("creationDate").desc()
+      case Sorting.Created => fieldSort("creationDate").desc()
+      case _               => scoreSort().order(SortOrder.Desc)
     }
 
   private def searchQuery(

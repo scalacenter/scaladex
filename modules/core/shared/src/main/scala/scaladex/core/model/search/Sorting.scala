@@ -7,15 +7,14 @@ sealed trait Sorting {
 
 object Sorting {
   implicit val ordering: Ordering[Sorting] = Ordering.by {
-    case Relevance    => 1
-    case Stars        => 2
-    case Created      => 3
-    case Forks        => 4
-    case Contributors => 5
-    case Dependent    => 6
+    case Stars        => 1
+    case Created      => 2
+    case Forks        => 3
+    case Contributors => 4
+    case Dependent    => 5
   }
 
-  val all: Seq[Sorting] = Seq(Stars, Forks, Contributors, Dependent, Relevance, Created).sorted
+  val all: Seq[Sorting] = Seq(Stars, Forks, Contributors, Dependent, Created).sorted
   val byLabel: Map[String, Sorting] = all.map(sorting => sorting.label -> sorting).toMap
 
   object Stars extends Sorting {
@@ -36,11 +35,6 @@ object Sorting {
   object Dependent extends Sorting {
     val title: String = "Dependent"
     val label: String = "dependent"
-  }
-
-  object Relevance extends Sorting {
-    val title: String = "Relevance"
-    val label: String = "relevance"
   }
 
   object Created extends Sorting {

@@ -45,7 +45,7 @@ class SearchPages(env: Env, searchEngine: SearchEngine)(
     ).tmap {
       case (q, sortParam, topics, languages, platforms, you, contributingSearch) =>
         val userRepos = you.flatMap(_ => user.map(_.repos)).getOrElse(Set())
-        val sorting = sortParam.flatMap(Sorting.byLabel.get).getOrElse(Sorting.Relevance)
+        val sorting = sortParam.flatMap(Sorting.byLabel.get).getOrElse(Sorting.Stars)
         SearchParams(
           q,
           sorting,
