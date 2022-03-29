@@ -40,11 +40,6 @@ object MockGithubAuth extends GithubAuth {
   override def getUserStateWithToken(token: String): Future[UserState] =
     Future.successful(users(token))
 
-  override def getUserStateWithOauth2(
-      clientId: String,
-      clientSecret: String,
-      code: String,
-      redirectUri: String
-  ): Future[UserState] =
+  override def getUserStateWithOauth2(code: String): Future[UserState] =
     ???
 }

@@ -1,5 +1,6 @@
 package scaladex.infra
 
+import java.util.UUID
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -11,8 +12,12 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
+import scaladex.core.model.Project.Organization
 import scaladex.core.model.ProjectDependency
+import scaladex.core.model.UserInfo
+import scaladex.core.model.UserState
 import scaladex.core.util.ScalaExtensions._
+import scaladex.core.util.Secret
 
 class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
 
@@ -218,5 +223,15 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       scalafixInverseDeps shouldBe 0
       catsInverseDeps shouldBe 0
     }
+  }
+
+  it("should insert and get user session from id") {
+    val userId = UUID.randomUUID()
+    val userInfo = UserInfo("login", Some("name"), "", new Secret("token"))
+    val userState = new UserState(Set(Scalafix.reference), Set(Organization("scalacenter")), userInfo)
+    for {
+      _ <- database.insertSession(userId, userState)
+      obtained <- database.getSession(userId)
+    } yield obtained shouldBe Some(userState)
   }
 }

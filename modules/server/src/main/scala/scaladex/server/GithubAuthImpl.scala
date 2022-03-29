@@ -21,19 +21,16 @@ object Response {
   }
 }
 //todo: remove Json4sSupport
-class GithubAuthImpl()(implicit sys: ActorSystem) extends GithubAuth with Json4sSupport {
+class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri: String)(implicit sys: ActorSystem)
+    extends GithubAuth
+    with Json4sSupport {
   import sys.dispatcher
 
   def getUserStateWithToken(token: String): Future[UserState] = getUserState(Secret(token))
 
-  def getUserStateWithOauth2(
-      clientId: String,
-      clientSecret: String,
-      code: String,
-      redirectUri: String
-  ): Future[UserState] =
+  def getUserStateWithOauth2(code: String): Future[UserState] =
     for {
-      token <- getTokenWithOauth2(clientId, clientSecret, code, redirectUri)
+      token <- getTokenWithOauth2(code)
       userState <- getUserState(token)
     } yield userState
 
@@ -52,12 +49,7 @@ class GithubAuthImpl()(implicit sys: ActorSystem) extends GithubAuth with Json4s
       userRepos <- githubClient.getUserRepositories(user.login, permissions).recover { case _ => Seq.empty }
     } yield UserState(orgasRepos.toSet ++ userRepos, orgas.toSet, user)
   }
-  private def getTokenWithOauth2(
-      clientId: String,
-      clientSecret: String,
-      code: String,
-      redirectUri: String
-  ): Future[Secret] =
+  private def getTokenWithOauth2(code: String): Future[Secret] =
     Http()
       .singleRequest(
         HttpRequest(
