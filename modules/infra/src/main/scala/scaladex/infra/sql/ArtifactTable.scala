@@ -37,6 +37,9 @@ object ArtifactTable {
   val updateProjectRef: Update[(Project.Reference, Artifact.MavenReference)] =
     updateRequest(table, projectReferenceFields, mavenReferenceFields)
 
+  val updateReleaseDate: Update[(Instant, Artifact.MavenReference)] =
+    updateRequest(table, Seq("release_date"), mavenReferenceFields)
+
   val selectArtifactByProject: Query[Project.Reference, Artifact] =
     selectRequest(table, Seq("*"), projectReferenceFields)
 
@@ -48,6 +51,9 @@ object ArtifactTable {
 
   val selectMavenReference: Query0[Artifact.MavenReference] =
     selectRequest(table, """DISTINCT group_id, artifact_id, "version"""")
+
+  val selectMavenReferenceWithNoReleaseDate: Query0[Artifact.MavenReference] =
+    selectRequest(table, """group_id, artifact_id, "version"""", where = Some("release_date is NULL"))
 
   val selectOldestByProject: Query0[(Instant, Project.Reference)] =
     selectRequest(

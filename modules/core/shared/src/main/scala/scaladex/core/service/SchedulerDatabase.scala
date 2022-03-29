@@ -5,6 +5,7 @@ import java.time.Instant
 import scala.concurrent.Future
 
 import scaladex.core.model.Artifact
+import scaladex.core.model.Artifact.MavenReference
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubStatus
@@ -18,6 +19,7 @@ trait SchedulerDatabase extends WebDatabase {
   def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]]
   def getDependencies(projectRef: Project.Reference): Future[Seq[ArtifactDependency]]
   def updateArtifacts(artifacts: Seq[Artifact], newRef: Project.Reference): Future[Int]
+  def updateArtifactReleaseDate(reference: MavenReference, releaseDate: Instant): Future[Int]
   def updateGithubInfoAndStatus(ref: Project.Reference, githubInfo: GithubInfo, status: GithubStatus): Future[Unit]
   def moveProject(ref: Project.Reference, githubInfo: GithubInfo, status: GithubStatus.Moved): Future[Unit]
   def updateGithubStatus(ref: Project.Reference, githubStatus: GithubStatus): Future[Unit]
@@ -28,4 +30,5 @@ trait SchedulerDatabase extends WebDatabase {
   def deleteDependenciesOfMovedProject(): Future[Unit]
   def getAllGroupIds(): Future[Seq[Artifact.GroupId]]
   def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]]
+  def getAllMavenReferencesWithNoReleaseDate(): Future[Seq[Artifact.MavenReference]]
 }

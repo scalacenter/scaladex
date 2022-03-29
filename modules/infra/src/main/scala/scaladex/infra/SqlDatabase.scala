@@ -81,6 +81,9 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
     run(ArtifactTable.updateProjectRef.updateMany(mavenReferences))
   }
 
+  override def updateArtifactReleaseDate(reference: Artifact.MavenReference, releaseDate: Instant): Future[Int] =
+    run(ArtifactTable.updateReleaseDate.run((releaseDate, reference)))
+
   override def updateGithubStatus(ref: Project.Reference, githubStatus: GithubStatus): Future[Unit] =
     run(ProjectTable.updateGithubStatus.run(githubStatus, ref)).map(_ => ())
 
@@ -182,6 +185,9 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
 
   override def getSession(userId: UUID): Future[Option[UserState]] =
     run(UserSessionsTable.selectUserSessionById.to[Seq](userId)).map(_.headOption)
+
+  override def getAllMavenReferencesWithNoReleaseDate(): Future[Seq[Artifact.MavenReference]] =
+    run(ArtifactTable.selectMavenReferenceWithNoReleaseDate.to[Seq])
 
   private def run[A](v: doobie.ConnectionIO[A]): Future[A] =
     v.transact(xa).unsafeToFuture()

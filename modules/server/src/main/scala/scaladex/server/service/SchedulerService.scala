@@ -27,9 +27,10 @@ class SchedulerService(
     Scheduler("update-project-dependencies", updateProjectDependencies, 1.hour),
     Scheduler("update-project-creation-date", updateProjectCreationDate, 30.minutes),
     Scheduler("sync-search", searchSynchronizer.syncAll, 30.minutes),
-    new MovedArtifactsSynchronizer(database)
+    new MovedArtifactsSynchronizer(database),
+    Scheduler("sync-sonatype-release-dates", sonatypeSynchronizer.updateReleaseDate, 24.hours)
   ) ++
-    Option.when(!env.isLocal)(Scheduler("sync-sonatype", sonatypeSynchronizer.syncAll, 24.hours)) ++
+    Option.when(!env.isLocal)(Scheduler("sync-sonatype-missing-releases", sonatypeSynchronizer.syncAll, 24.hours)) ++
     githubClientOpt.map(client => new GithubUpdater(database, client))
 
   private val schedulerMap = schedulers.map(s => s.name -> s).toMap
