@@ -22,10 +22,10 @@ trait ControllerBaseSuite extends AsyncFunSpec with Matchers with ScalatestRoute
     realConfig.copy(filesystem = realConfig.filesystem.copy(index = index))
   }
 
-  val githubUserSession = new GithubUserSession(config.session)
   val githubAuth = MockGithubAuth
-
   val database: InMemoryDatabase = new InMemoryDatabase()
+  val githubUserSession = new GithubUserSession(config.session, database)
+
   val searchEngine: SearchEngine = new InMemorySearchEngine()
   val dataPaths: DataPaths = DataPaths.from(config.filesystem)
   val localStorage: FilesystemStorage = FilesystemStorage(config.filesystem)

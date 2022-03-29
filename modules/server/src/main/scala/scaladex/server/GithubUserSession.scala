@@ -2,14 +2,16 @@ package scaladex.server
 
 import java.util.UUID
 
-import scala.collection.parallel.mutable.ParTrieMap
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.Try
 
 import com.softwaremill.session._
 import org.slf4j.LoggerFactory
 import scaladex.core.model.UserState
+import scaladex.core.service.WebDatabase
 
-class GithubUserSession(sessionConfig: SessionConfig) {
+class GithubUserSession(sessionConfig: SessionConfig, database: WebDatabase)(implicit ec: ExecutionContext) {
   private val logger = LoggerFactory.getLogger(getClass)
 
   object implicits {
@@ -26,13 +28,11 @@ class GithubUserSession(sessionConfig: SessionConfig) {
         else logger.info(msg)
   }
 
-  private val users = ParTrieMap[UUID, UserState]()
-
-  def addUser(userState: UserState): UUID = {
-    val uuid = UUID.randomUUID
-    users += uuid -> userState
-    uuid
+  def addUser(userState: UserState): Future[UUID] = {
+    val userId = UUID.randomUUID
+    database.insertSession(userId, userState).map(_ => userId)
   }
 
-  def getUser(id: UUID): Option[UserState] = users.get(id)
+  def getUser(id: UUID): Future[Option[UserState]] =
+    database.getSession(id)
 }

@@ -12,6 +12,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import cats.effect.ContextShift
 import cats.effect.IO
+import cats.implicits.toTraverseOps
 import com.softwaremill.session.SessionDirectives._
 import com.softwaremill.session.SessionOptions._
 import com.typesafe.scalalogging.LazyLogging
@@ -146,7 +147,7 @@ object Server extends LazyLogging {
     import actor.dispatcher
 
     val githubAuth = new GithubAuthImpl()
-    val session = new GithubUserSession(config.session)
+    val session = new GithubUserSession(config.session, webDatabase)
 
     val searchPages = new SearchPages(config.env, searchEngine)
     val frontPage = new FrontPage(config.env, webDatabase, searchEngine)
@@ -161,23 +162,25 @@ object Server extends LazyLogging {
 
     import session.implicits._
     val route: Route =
-      optionalSession(refreshable, usingCookies) { userId =>
-        val user = userId.flatMap(session.getUser)
+      optionalSession(refreshable, usingCookies) { maybeUserId =>
+        val futureMaybeUser = maybeUserId.traverse(session.getUser).map(_.flatten)
+        val futureRoute = futureMaybeUser.map { maybeUser =>
+          val apiRoute = concat(
+            publishApi.routes,
+            searchApi.route(maybeUser),
+            oldSearchApi.routes,
+            Assets.routes,
+            badges.route,
+            oauth2.routes,
+            DocumentationRoutes.routes
+          )
 
-        val apiRoute = concat(
-          publishApi.routes,
-          searchApi.route(user),
-          oldSearchApi.routes,
-          Assets.routes,
-          badges.route,
-          oauth2.routes,
-          DocumentationRoutes.routes
-        )
-
-        apiRoute ~ frontPage.route(user) ~ adminPages.route(user) ~ awesomePages.route(user) ~
-          redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
-            projectPages.route(user) ~ searchPages.route(user)
-          }
+          apiRoute ~ frontPage.route(maybeUser) ~ adminPages.route(maybeUser) ~ awesomePages.route(maybeUser) ~
+            redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
+              projectPages.route(maybeUser) ~ searchPages.route(maybeUser)
+            }
+        }
+        context => futureRoute.flatMap(_.apply(context))
       }
     val exceptionHandler = ExceptionHandler {
       case ex: Exception =>

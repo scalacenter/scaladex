@@ -1,6 +1,7 @@
 package scaladex.infra
 
 import java.time.Instant
+import java.util.UUID
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -14,6 +15,7 @@ import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
+import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
 import scaladex.infra.config.PostgreSQLConfig
 import scaladex.infra.sql.ArtifactDependencyTable
@@ -23,6 +25,7 @@ import scaladex.infra.sql.GithubInfoTable
 import scaladex.infra.sql.ProjectDependenciesTable
 import scaladex.infra.sql.ProjectSettingsTable
 import scaladex.infra.sql.ProjectTable
+import scaladex.infra.sql.UserSessionsTable
 
 class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
 
@@ -176,6 +179,12 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
 
   override def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]] =
     run(ArtifactTable.selectMavenReference.to[Seq])
+
+  override def insertSession(userId: UUID, userState: UserState): Future[Unit] =
+    run(UserSessionsTable.insertOrUpdate.run((userId, userState)).map(_ => ()))
+
+  override def getSession(userId: UUID): Future[Option[UserState]] =
+    run(UserSessionsTable.selectUserSessionById.to[Seq](userId)).map(_.headOption)
 
   override def getAllMavenReferencesWithNoReleaseDate(): Future[Seq[Artifact.MavenReference]] =
     run(ArtifactTable.selectMavenReferenceWithNoReleaseDate.to[Seq])
