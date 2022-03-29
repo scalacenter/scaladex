@@ -37,23 +37,22 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
   def route(user: Option[UserState]): Route =
     concat(
       post {
-        path("edit" / organizationM / repositoryM) { (organization, repository) =>
+        path("edit" / projectM) { projectRef =>
           editForm { form =>
-            val ref = Project.Reference(organization, repository)
             val updateF = for {
-              _ <- database.updateProjectSettings(ref, form)
-              _ <- searchSynchronizer.syncProject(ref)
+              _ <- database.updateProjectSettings(projectRef, form)
+              _ <- searchSynchronizer.syncProject(projectRef)
             } yield ()
             onComplete(updateF) {
               case Success(()) =>
                 redirect(
-                  Uri(s"/$organization/$repository"),
+                  Uri(s"/$projectRef"),
                   StatusCodes.SeeOther
                 )
               case Failure(e) =>
-                logger.error(s"Cannot save settings of project $ref", e)
+                logger.error(s"Cannot save settings of project $projectRef", e)
                 redirect(
-                  Uri(s"/$organization/$repository"),
+                  Uri(s"/$projectRef"),
                   StatusCodes.SeeOther
                 ) // maybe we can print that it wasn't saved
             }
@@ -61,13 +60,12 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         }
       },
       get {
-        path("artifacts" / organizationM / repositoryM) { (org, repo) =>
-          val ref = Project.Reference(org, repo)
+        path("artifacts" / projectM) { projectRef =>
           val res =
             for {
-              projectOpt <- database.getProject(ref)
-              project = projectOpt.getOrElse(throw new Exception(s"project ${ref} not found"))
-              artifacts <- database.getArtifacts(project.reference)
+              projectOpt <- database.getProject(projectRef)
+              project = projectOpt.getOrElse(throw new Exception(s"project $projectRef not found"))
+              artifacts <- database.getArtifacts(projectRef)
             } yield (project, artifacts)
 
           onComplete(res) {
@@ -94,8 +92,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         }
       },
       get {
-        path("edit" / organizationM / repositoryM) { (organization, repository) =>
-          val projectRef = Project.Reference(organization, repository)
+        path("edit" / projectM) { projectRef =>
           user match {
             case Some(userState) if userState.canEdit(projectRef, env) =>
               complete(getEditPage(projectRef, userState))
@@ -105,10 +102,9 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         }
       },
       get {
-        path(organizationM / repositoryM)((organization, repository) =>
+        path(projectM)(projectRef =>
           parameters("artifact".?, "version".?, "binaryVersion".?, "selected".?) {
             (artifact, version, binaryVersion, selected) =>
-              val projectRef = Project.Reference(organization, repository)
               val fut: Future[StandardRoute] = database.getProject(projectRef).flatMap {
                 case Some(Project(_, _, _, GithubStatus.Moved(_, newProjectRef), _, _)) =>
                   Future.successful(redirect(Uri(s"/$newProjectRef"), StatusCodes.PermanentRedirect))
@@ -124,7 +120,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
                     ).map(_.map { artifact =>
                       val binaryVersionParam = s"?binaryVersion=${artifact.binaryVersion.label}"
                       redirect(
-                        s"/$organization/$repository/${artifact.artifactName}/${artifact.version}/$binaryVersionParam",
+                        s"/$projectRef/${artifact.artifactName}/${artifact.version}/$binaryVersionParam",
                         StatusCodes.TemporaryRedirect
                       )
                     }.getOrElse(complete(StatusCodes.NotFound, view.html.notfound(env, user))))
@@ -139,11 +135,10 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         )
       },
       get {
-        path(organizationM / repositoryM / artifactM)((organization, repository, artifact) =>
+        path(projectM / artifactM)((projectRef, artifact) =>
           parameter("binaryVersion".?) { binaryVersion =>
             val res = getProjectPage(
-              organization,
-              repository,
+              projectRef,
               binaryVersion,
               artifact,
               None,
@@ -158,9 +153,9 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         )
       },
       get {
-        path(organizationM / repositoryM / artifactM / versionM)((organization, repository, artifact, version) =>
+        path(projectM / artifactM / versionM)((projectRef, artifact, version) =>
           parameter("binaryVersion".?) { binaryVersion =>
-            val res = getProjectPage(organization, repository, binaryVersion, artifact, Some(version), user)
+            val res = getProjectPage(projectRef, binaryVersion, artifact, Some(version), user)
             onComplete(res) {
               case Success((code, some)) => complete(code, some)
               case Failure(_) =>
@@ -190,8 +185,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
   }
 
   private def getProjectPage(
-      organization: Project.Organization,
-      repository: Project.Repository,
+      projectRef: Project.Reference,
       binaryVersion: Option[String],
       artifact: Artifact.Name,
       version: Option[SemanticVersion],
@@ -203,9 +197,6 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
       version = version.map(_.toString),
       selected = None
     )
-    val projectRef =
-      Project.Reference(organization, repository)
-
     database.getProject(projectRef).flatMap {
       case Some(project) =>
         for {

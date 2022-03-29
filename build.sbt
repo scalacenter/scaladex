@@ -1,6 +1,8 @@
 import ScalaJSHelper._
 import Deployment.githash
 
+lazy val isCI: Boolean = System.getenv("CI") != null
+
 inThisBuild(
   List(
     scalaVersion := "2.13.8",
@@ -51,9 +53,8 @@ lazy val scalacOptionsSettings = Def.settings(
     "UTF-8",
     "-feature",
     "-unchecked",
-//    "-Xfatal-warnings",
     "-Wunused"
-  )
+  ) ++ { if (isCI) Some("-Xfatal-warnings") else None }
 )
 
 lazy val scaladex = project

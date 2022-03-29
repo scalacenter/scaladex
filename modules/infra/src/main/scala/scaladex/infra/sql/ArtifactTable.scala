@@ -46,6 +46,9 @@ object ArtifactTable {
   val selectArtifactByProjectAndName: Query[(Project.Reference, Artifact.Name), Artifact] =
     selectRequest(table, Seq("*"), projectReferenceFields :+ "artifact_name")
 
+  val selectByMavenReference: Query[Artifact.MavenReference, Artifact] =
+    selectRequest(table, fields, mavenReferenceFields)
+
   val selectGroupIds: Query0[Artifact.GroupId] =
     selectRequest(table, "DISTINCT group_id")
 

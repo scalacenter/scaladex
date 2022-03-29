@@ -78,6 +78,8 @@ class InMemoryDatabase extends SchedulerDatabase {
         .filter(_.artifactName == artifactName)
     )
 
+  override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] = ???
+
   override def getDirectDependencies(artifact: Artifact): Future[List[ArtifactDependency.Direct]] =
     Future.successful(Nil)
 
