@@ -176,7 +176,8 @@ object Server extends LazyLogging {
             DocumentationRoutes.routes
           )
 
-          apiRoute ~ frontPage.route(maybeUser) ~ adminPages.route(maybeUser) ~ awesomePages.route(maybeUser) ~ artifactPages.route(maybeUser) ~
+          apiRoute ~ frontPage.route(maybeUser) ~ adminPages.route(maybeUser) ~
+            awesomePages.route(maybeUser) ~ artifactPages.route(maybeUser) ~
             redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
               projectPages.route(maybeUser) ~ searchPages.route(maybeUser)
             }

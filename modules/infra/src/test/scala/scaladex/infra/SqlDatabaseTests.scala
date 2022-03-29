@@ -234,7 +234,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       obtained <- database.getSession(userId)
     } yield obtained shouldBe Some(userState)
   }
-  
+
   it("should return artifact from maven reference") {
     for {
       _ <- database.insertArtifact(Cats.`core_3:2.6.1`, Seq.empty, now)
