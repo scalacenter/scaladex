@@ -22,8 +22,9 @@ class UserSessionSynchronizer(database: SchedulerDatabase)(implicit ec: Executio
       sessions <- database.getAllSessions()
       sessionsWithClients = createClientsForEach(sessions)
       updatedMaybeUserInfos <- sessionsWithClients.traverse { case (userId, session) => getUserInfo(userId, session) }
-      sessionsToDeleteIds = expiredSessionIds(sessions, updatedMaybeUserInfos)
-      sessionsToUpdate = updatedSessions(sessions, updatedMaybeUserInfos)
+      updatedUserInfos = updatedMaybeUserInfos.flatten
+      sessionsToDeleteIds = expiredSessionIds(sessions, updatedUserInfos)
+      sessionsToUpdate = updatedSessions(sessions, updatedUserInfos)
       _ <- sessionsToUpdate.traverse { case (userId, userState) => database.insertSession(userId, userState) }
       _ <- sessionsToDeleteIds.traverse(database.deleteSession)
     } yield ()
@@ -43,19 +44,18 @@ class UserSessionSynchronizer(database: SchedulerDatabase)(implicit ec: Executio
 
   private def expiredSessionIds(
       storedSessions: Seq[(UUID, UserState)],
-      updatedMaybeUserInfos: Seq[Option[(UUID, UserInfo)]]
+      updatedUserInfos: Seq[(UUID, UserInfo)]
   ): Seq[UUID] = {
     val storedSessionIds = storedSessions.map { case (userId, _) => userId }
-    val successfullyUpdatedSessionIds = updatedMaybeUserInfos.collect { case Some((userId, _)) => userId }
+    val successfullyUpdatedSessionIds = updatedUserInfos.map { case (userId, _) => userId }
     storedSessionIds.filterNot(successfullyUpdatedSessionIds.contains)
   }
 
   private def updatedSessions(
       storedSessions: Seq[(UUID, UserState)],
-      updatedMaybeUserInfos: Seq[Option[(UUID, UserInfo)]]
+      updatedUserInfos: Seq[(UUID, UserInfo)]
   ): List[(UUID, UserState)] = {
     val storedSessionMap = storedSessions.toMap
-    val updatedUserInfos = updatedMaybeUserInfos.collect { case Some((userId, userInfo)) => (userId, userInfo) }
     updatedUserInfos
       .foldLeft(Map[UUID, Option[UserState]]()) { (acc, userInfos) =>
         userInfos match {
@@ -67,4 +67,9 @@ class UserSessionSynchronizer(database: SchedulerDatabase)(implicit ec: Executio
       .toList
       .collect { case (userId, Some(userState)) => (userId, userState) }
   }
+}
+
+object UserSessionSynchronizer {
+  def apply(database: SchedulerDatabase)(implicit ec: ExecutionContext, ac: ActorSystem): UserSessionSynchronizer =
+    new UserSessionSynchronizer(database)
 }

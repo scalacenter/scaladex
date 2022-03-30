@@ -1,5 +1,4 @@
 package scaladex.server.service
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
@@ -18,7 +17,8 @@ class SchedulerService(
     database: SchedulerDatabase,
     searchEngine: SearchEngine,
     githubClientOpt: Option[GithubClient],
-    sonatypeSynchronizer: SonatypeSynchronizer
+    sonatypeSynchronizer: SonatypeSynchronizer,
+    userSessionSynchronizer: UserSessionSynchronizer
 ) extends LazyLogging {
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   val searchSynchronizer = new SearchSynchronizer(database, searchEngine)
@@ -28,6 +28,7 @@ class SchedulerService(
     Scheduler("update-project-creation-date", updateProjectCreationDate, 30.minutes),
     Scheduler("sync-search", searchSynchronizer.syncAll, 30.minutes),
     new MovedArtifactsSynchronizer(database),
+    userSessionSynchronizer,
     Scheduler("sync-sonatype-release-dates", sonatypeSynchronizer.updateReleaseDate, 24.hours)
   ) ++
     Option.when(!env.isLocal)(Scheduler("sync-sonatype-missing-releases", sonatypeSynchronizer.syncAll, 24.hours)) ++
