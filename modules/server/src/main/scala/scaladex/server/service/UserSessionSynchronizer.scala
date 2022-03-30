@@ -54,18 +54,13 @@ class UserSessionSynchronizer(database: SchedulerDatabase)(implicit ec: Executio
   private def updatedSessions(
       storedSessions: Seq[(UUID, UserState)],
       updatedUserInfos: Seq[(UUID, UserInfo)]
-  ): List[(UUID, UserState)] = {
-    val storedSessionMap = storedSessions.toMap
-    updatedUserInfos
-      .foldLeft(Map[UUID, Option[UserState]]()) { (acc, userInfos) =>
-        userInfos match {
-          case (userId, updatedInfo) =>
-            val maybeUpdatedState = storedSessionMap.get(userId).map(_.copy(info = updatedInfo))
-            acc + (userId -> maybeUpdatedState)
-        }
+  ): Seq[(UUID, UserState)] = {
+    val updatedInfoMap = updatedUserInfos.toMap
+    storedSessions
+      .flatMap {
+        case (userId, userState) => updatedInfoMap.get(userId).map(updatedInfo => (userId, (userState, updatedInfo)))
       }
-      .toList
-      .collect { case (userId, Some(userState)) => (userId, userState) }
+      .map { case (userId, (userState, updatedInfo)) => (userId, userState.copy(info = updatedInfo)) }
   }
 }
 
