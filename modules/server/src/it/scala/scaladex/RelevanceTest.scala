@@ -20,6 +20,7 @@ import scaladex.server.service.SearchSynchronizer
 import scaladex.infra.SqlDatabase
 import scaladex.infra.FilesystemStorage
 import scaladex.core.model.search.PageParams
+import scaladex.server.service.ProjectDependenciesUpdater
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 
@@ -35,12 +36,15 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
       .use { xa =>
         val database = new SqlDatabase(config.database, xa)
         val filesystem = FilesystemStorage(config.filesystem)
+
         val searchSync = new SearchSynchronizer(database, searchEngine)
+        val projectDependenciesUpdater = new ProjectDependenciesUpdater(database)
 
         IO.fromFuture(IO {
           for {
             _ <- Init.run(database, filesystem)
             _ <- searchEngine.init(true)
+            _ <- projectDependenciesUpdater.updateAll()
             _ <- searchSync.syncAll()
             _ <- searchEngine.refresh()
           } yield ()
@@ -137,6 +141,23 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
         ("scala-native", "scala-native")
       )
     )
+  }
+
+  test("most-depended upon") {
+    for (mostDepended <- searchEngine.getMostDependedUpon(10)) yield {
+      val mostDependedRefs = mostDepended.map(_.reference).toSet
+      val expected = Seq(
+        "scala/scala",
+        "scalatest/scalatest",
+        "scala-js/scala-js",
+        "typelevel/scalacheck",
+        "lampepfl/dotty",
+        "typelevel/cats"
+      )
+        .map(Project.Reference.from)
+      val missing = expected.filter(ref => !mostDependedRefs.contains(ref))
+      assert(missing.isEmpty)
+    }
   }
 
   private def first(query: String)(org: String, repo: String): Future[Assertion] = {
