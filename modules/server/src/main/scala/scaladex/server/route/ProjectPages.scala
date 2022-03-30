@@ -120,7 +120,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
                     ).map(_.map { artifact =>
                       val binaryVersionParam = s"?binaryVersion=${artifact.binaryVersion.label}"
                       redirect(
-                        s"/$projectRef/${artifact.artifactName}/${artifact.version}/$binaryVersionParam",
+                        s"/$projectRef/${artifact.artifactName}/${artifact.version.encode}/$binaryVersionParam",
                         StatusCodes.TemporaryRedirect
                       )
                     }.getOrElse(complete(StatusCodes.NotFound, view.html.notfound(env, user))))
