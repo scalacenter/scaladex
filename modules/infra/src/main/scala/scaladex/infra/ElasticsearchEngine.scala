@@ -22,7 +22,6 @@ import com.sksamuel.elastic4s.requests.searches.queries.Query
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.CombineFunction
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.FieldValueFactorFunctionModifier
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.ScoreFunction
-import com.sksamuel.elastic4s.requests.searches.sort.Sort
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import com.typesafe.scalalogging.LazyLogging
 import io.circe._
@@ -138,26 +137,17 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     platformAggregations(matchAllQuery())
 
   override def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]] = {
-    val request = search(index)
-      .query(matchAllQuery())
-      .sortBy(sortQuery(Sorting.Dependent))
-      .limit(limit)
+    val request = searchRequest(matchAllQuery(), Sorting.Dependent).limit(limit)
     esClient.execute(request).map(extractDocuments)
   }
 
   override def getLatest(limit: Int): Future[Seq[ProjectDocument]] = {
-    val request = search(index)
-      .query(matchAllQuery())
-      .sortBy(fieldSort("creationDate").desc())
-      .limit(limit)
+    val request = searchRequest(matchAllQuery(), Sorting.Created).limit(limit)
     esClient.execute(request).map(extractDocuments)
   }
 
   override def autocomplete(params: SearchParams, limit: Int): Future[Seq[ProjectDocument]] = {
-    val request = search(index)
-      .query(withScoring(filteredSearchQuery(params), params.sorting))
-      .sortBy(sortQuery(params.sorting))
-      .limit(limit)
+    val request = searchRequest(filteredSearchQuery(params), params.sorting).limit(limit)
     esClient.execute(request).map(extractDocuments)
   }
 
@@ -172,14 +162,11 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       optionalQuery(binaryVersion)(binaryVersionQuery),
       searchQuery(queryString, false)
     )
-    val sorting = Sorting.Stars
-    val request = search(index).query(withScoring(query, sorting)).sortBy(sortQuery(sorting))
+    val request = searchRequest(query, Sorting.Stars)
     findPage(request, page).map(_.flatMap(toProjectDocument))
   }
   override def find(params: SearchParams, page: PageParams): Future[Page[ProjectHit]] = {
-    val request = search(index)
-      .query(withScoring(filteredSearchQuery(params), params.sorting))
-      .sortBy(sortQuery(params.sorting))
+    val request = searchRequest(filteredSearchQuery(params), params.sorting)
     findPage(request, page).map(_.flatMap(toProjectHit))
   }
 
@@ -200,6 +187,29 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
           response.result.hits.hits.toSeq
         )
       }
+  }
+
+  private def searchRequest(query: Query, sorting: Sorting): SearchRequest = {
+    val scorer = sorting match {
+      case Sorting.Stars        => Some(combinedWithPercentage("githubInfo.stars"))
+      case Sorting.Created      => None
+      case Sorting.Forks        => Some(combinedWithPercentage("githubInfo.forks"))
+      case Sorting.Contributors => Some(combinedWithPercentage("githubInfo.contributorCount"))
+      case Sorting.Dependent =>
+        Some(fieldFactorScore("inverseProjectDependencies").missing(0).modifier(FieldValueFactorFunctionModifier.LOG1P))
+    }
+
+    val scoringQuery = scorer match {
+      case Some(scorer) => functionScoreQuery().query(query).functions(scorer).boostMode(CombineFunction.Multiply)
+      case None         => query
+    }
+
+    val sortQuery = sorting match {
+      case Sorting.Created => fieldSort("creationDate").desc()
+      case _               => scoreSort().order(SortOrder.Desc)
+    }
+
+    search(index).query(scoringQuery).sortBy(sortQuery)
   }
 
   private def extractDocuments(response: Response[SearchResponse]): Seq[ProjectDocument] =
@@ -258,9 +268,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       termQuery("category", category.label),
       binaryVersionQuery(params.languages.map(_.label), params.platforms.map(_.label))
     )
-    val request = search(index)
-      .query(withScoring(query, params.sorting))
-      .sortBy(sortQuery(params.sorting))
+    val request = searchRequest(query, params.sorting)
 
     findPage(request, page)
       .map(p => p.flatMap(toProjectDocument))
@@ -305,23 +313,6 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
         .result[Terms](aggName)
   }
 
-  private def withScoring(query: Query, sorting: Sorting): Query = {
-    val scorer = sorting match {
-      case Sorting.Stars        => Some(combinedWithPercentage("githubInfo.stars"))
-      case Sorting.Created      => None
-      case Sorting.Forks        => Some(combinedWithPercentage("githubInfo.forks"))
-      case Sorting.Contributors => Some(combinedWithPercentage("githubInfo.contributorCount"))
-      case Sorting.Dependent =>
-        Some(fieldFactorScore("inverseProjectDependencies").missing(0).modifier(FieldValueFactorFunctionModifier.LOG1P))
-    }
-
-    scorer match {
-      case Some(scorer) => functionScoreQuery().query(query).functions(scorer).boostMode(CombineFunction.Multiply)
-      case None         => query
-    }
-
-  }
-
   private def combinedWithPercentage(sortingField: String): ScoreFunction = {
     val sortingFieldAccess = fieldAccess(sortingField, default = "0")
     val scalaPercentageField = fieldAccess("githubInfo.scalaPercentage", default = "100")
@@ -346,12 +337,6 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       optionalQuery(params.contributingSearch, contributingQuery),
       searchQuery(params.queryString, params.contributingSearch)
     )
-
-  private def sortQuery(sorting: Sorting): Sort =
-    sorting match {
-      case Sorting.Created => fieldSort("creationDate").desc()
-      case _               => scoreSort().order(SortOrder.Desc)
-    }
 
   private def searchQuery(
       queryString: String,
