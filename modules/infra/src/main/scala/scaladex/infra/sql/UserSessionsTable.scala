@@ -2,6 +2,7 @@ package scaladex.infra.sql
 
 import java.util.UUID
 
+import doobie.Query0
 import doobie.util.query.Query
 import doobie.util.update.Update
 import scaladex.core.model.UserState
@@ -22,4 +23,7 @@ object UserSessionsTable {
 
   val selectUserSessionById: Query[UUID, UserState] =
     selectRequest(table, userStateFields ++ userInfoFields, Seq("user_id"))
+
+  val selectAllUserSessions: Query0[UserState] =
+    selectRequest(table, userStateFields ++ userInfoFields)
 }
