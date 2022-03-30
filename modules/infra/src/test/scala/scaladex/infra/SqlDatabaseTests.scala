@@ -235,6 +235,25 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     } yield obtained shouldBe Some(userState)
   }
 
+  it("should find all user sessions") {
+    val firstUserId = UUID.randomUUID()
+    val secondUserId = UUID.randomUUID()
+    val firstUserInfo = UserInfo("first login", Some("first name"), "", Secret("firstToken"))
+    val secondUserInfo = UserInfo("second login", Some("second name"), "", Secret("secondToken"))
+    val firstUserState = UserState(Set(Scalafix.reference), Set(Organization("scalacenter")), firstUserInfo)
+    val secondUserState = UserState(Set(Cats.reference), Set(Organization("typelevel")), secondUserInfo)
+    for {
+      _ <- database.insertSession(firstUserId, firstUserState)
+      _ <- database.insertSession(secondUserId, secondUserState)
+      storedUserStates <- database.getAllSessions()
+    } yield {
+      val storedSecrets = storedUserStates.map(_.info.token.decode)
+      storedSecrets.size shouldBe 2
+      storedSecrets should contain("firstToken")
+      storedSecrets should contain("secondToken")
+    }
+  }
+
   it("should return artifact from maven reference") {
     for {
       _ <- database.insertArtifact(Cats.`core_3:2.6.1`, Seq.empty, now)
