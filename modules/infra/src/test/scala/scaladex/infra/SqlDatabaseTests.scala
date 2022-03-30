@@ -247,10 +247,9 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       _ <- database.insertSession(secondUserId, secondUserState)
       storedUserStates <- database.getAllSessions()
     } yield {
-      val storedSecrets = storedUserStates.map(_.info.token.decode)
-      storedSecrets.size shouldBe 2
-      storedSecrets should contain("firstToken")
-      storedSecrets should contain("secondToken")
+      val userStateMap = storedUserStates.toMap
+      userStateMap.get(firstUserId).map(_.info.token.decode) shouldBe Some("firstToken")
+      userStateMap.get(secondUserId).map(_.info.token.decode) shouldBe Some("secondToken")
     }
   }
 

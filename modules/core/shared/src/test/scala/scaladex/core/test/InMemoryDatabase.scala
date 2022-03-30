@@ -123,7 +123,7 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]] = ???
   override def insertSession(userId: UUID, userState: UserState): Future[Unit] = ???
   override def getSession(userId: UUID): Future[Option[UserState]] = ???
-  override def getAllSessions(): Future[Seq[UserState]] = ???
+  override def getAllSessions(): Future[Seq[(UUID, UserState)]] = ???
   override def updateArtifactReleaseDate(reference: Artifact.MavenReference, releaseDate: Instant): Future[Int] = ???
   override def getAllMavenReferencesWithNoReleaseDate(): Future[Seq[Artifact.MavenReference]] = ???
 }

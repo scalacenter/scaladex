@@ -25,5 +25,5 @@ trait WebDatabase {
   def countArtifacts(): Future[Long]
   def insertSession(userId: UUID, userState: UserState): Future[Unit]
   def getSession(userId: UUID): Future[Option[UserState]]
-  def getAllSessions(): Future[Seq[UserState]]
+  def getAllSessions(): Future[Seq[(UUID, UserState)]]
 }
