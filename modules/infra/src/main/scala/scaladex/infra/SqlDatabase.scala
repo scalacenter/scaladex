@@ -192,6 +192,9 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
   override def getAllSessions(): Future[Seq[(UUID, UserState)]] =
     run(UserSessionsTable.selectAllUserSessions.to[Seq])
 
+  override def deleteSession(userId: UUID): Future[Unit] =
+    run(UserSessionsTable.deleteByUserId.run(userId).map(_ => ()))
+
   override def getAllMavenReferencesWithNoReleaseDate(): Future[Seq[Artifact.MavenReference]] =
     run(ArtifactTable.selectMavenReferenceWithNoReleaseDate.to[Seq])
 

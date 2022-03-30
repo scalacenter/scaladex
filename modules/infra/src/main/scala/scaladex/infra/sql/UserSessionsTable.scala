@@ -25,4 +25,7 @@ object UserSessionsTable {
 
   val selectAllUserSessions: Query0[(UUID, UserState)] =
     selectRequest(table, fields = allFields.mkString(", "), groupBy = Seq(userId))
+
+  val deleteByUserId: Update[UUID] =
+    deleteRequest(table, Seq(userId))
 }

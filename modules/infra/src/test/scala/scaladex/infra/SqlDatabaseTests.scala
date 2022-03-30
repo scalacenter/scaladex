@@ -253,6 +253,21 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     }
   }
 
+  it("should delete by user id") {
+    val userId = UUID.randomUUID()
+    val userInfo = UserInfo("login", Some("name"), "", new Secret("token"))
+    val userState = UserState(Set(Scalafix.reference), Set(Organization("scalacenter")), userInfo)
+    for {
+      _ <- database.insertSession(userId, userState)
+      maybeUserStateBeforeDeletion <- database.getSession(userId)
+      _ <- database.deleteSession(userId)
+      maybeUserStateAfterDeletion <- database.getSession(userId)
+    } yield {
+      maybeUserStateBeforeDeletion shouldBe Some(userState)
+      maybeUserStateAfterDeletion shouldBe None
+    }
+  }
+
   it("should return artifact from maven reference") {
     for {
       _ <- database.insertArtifact(Cats.`core_3:2.6.1`, Seq.empty, now)
