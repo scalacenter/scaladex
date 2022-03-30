@@ -8,7 +8,6 @@ import scala.concurrent.duration.DurationInt
 
 import akka.actor.ActorSystem
 import cats.implicits.toTraverseOps
-import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubService
 import scaladex.core.service.SchedulerDatabase
@@ -17,51 +16,40 @@ import scaladex.infra.GithubClient
 class UserSessionSynchronizer(database: SchedulerDatabase)(implicit ec: ExecutionContext, ac: ActorSystem)
     extends Scheduler("user-session-synchronizer", 1.hour) {
 
+  type Session = (UUID, UserState)
+
   override def run(): Future[Unit] =
     for {
       sessions <- database.getAllSessions()
       sessionsWithClients = createClientsForEach(sessions)
-      updatedMaybeUserInfos <- sessionsWithClients.traverse { case (userId, session) => getUserInfo(userId, session) }
-      updatedUserInfos = updatedMaybeUserInfos.flatten
-      sessionsToDeleteIds = expiredSessionIds(sessions, updatedUserInfos)
-      sessionsToUpdate = updatedSessions(sessions, updatedUserInfos)
-      _ <- sessionsToUpdate.traverse { case (userId, userState) => database.insertSession(userId, userState) }
-      _ <- sessionsToDeleteIds.traverse(database.deleteSession)
+      updatedEitherUserSessions <- sessionsWithClients.traverse {
+        case (session, client) => updateUserSession(session, client)
+      }
+      expiredSessionIds = updatedEitherUserSessions.collect { case Left(expiredSessionId) => expiredSessionId }
+      updatedUserSessions = updatedEitherUserSessions.collect { case Right(sessions) => sessions }
+      _ <- updatedUserSessions.traverse { case (userId, userState) => database.insertSession(userId, userState) }
+      _ <- expiredSessionIds.traverse(database.deleteSession)
     } yield ()
 
-  private def createClientsForEach(sessions: Seq[(UUID, UserState)]): Seq[(UUID, GithubService)] =
-    sessions.map { case (userId, userState) => (userId, new GithubClient(userState.info.token)) }
+  private def createClientsForEach(sessions: Seq[Session]): Seq[(Session, GithubService)] =
+    sessions.map { case session @ (_, userState) => (session, new GithubClient(userState.info.token)) }
 
-  private def getUserInfo(userId: UUID, service: GithubService): Future[Option[(UUID, UserInfo)]] =
+  private def updateUserSession(session: Session, service: GithubService): Future[Either[UUID, Session]] =
     service
       .getUserInfo()
-      .map(userInfo => Option.apply((userId, userInfo)))
+      .map { updatedUserInfo =>
+        session match {
+          case (userId, staleUserState) => Right((userId, staleUserState.copy(info = updatedUserInfo)))
+        }
+      }
       .recoverWith {
         case _ =>
-          logger.info(s"Token for user with id: '$userId' is likely expired")
-          Future(None)
+          session match {
+            case (userId, _) =>
+              logger.info(s"Token for user with id: '$userId' is likely expired")
+              Future(Left(userId))
+          }
       }
-
-  private def expiredSessionIds(
-      storedSessions: Seq[(UUID, UserState)],
-      updatedUserInfos: Seq[(UUID, UserInfo)]
-  ): Seq[UUID] = {
-    val storedSessionIds = storedSessions.map { case (userId, _) => userId }
-    val successfullyUpdatedSessionIds = updatedUserInfos.map { case (userId, _) => userId }
-    storedSessionIds.filterNot(successfullyUpdatedSessionIds.contains)
-  }
-
-  private def updatedSessions(
-      storedSessions: Seq[(UUID, UserState)],
-      updatedUserInfos: Seq[(UUID, UserInfo)]
-  ): Seq[(UUID, UserState)] = {
-    val updatedInfoMap = updatedUserInfos.toMap
-    storedSessions
-      .flatMap {
-        case (userId, userState) => updatedInfoMap.get(userId).map(updatedInfo => (userId, (userState, updatedInfo)))
-      }
-      .map { case (userId, (userState, updatedInfo)) => (userId, userState.copy(info = updatedInfo)) }
-  }
 }
 
 object UserSessionSynchronizer {
