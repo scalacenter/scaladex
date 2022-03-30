@@ -2,43 +2,25 @@ package scaladex.infra.migrations
 
 import java.time.Instant
 
-import scala.concurrent.ExecutionContext
-
-import cats.effect.ContextShift
-import cats.effect.IO
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import doobie.Query0
 import doobie.implicits._
-import doobie.util.transactor.Transactor
 import doobie.util.update.Update
 import org.flywaydb.core.api.migration.BaseJavaMigration
 import org.flywaydb.core.api.migration.Context
 import scaladex.core.model.Artifact.MavenReference
 import scaladex.core.model._
-import scaladex.infra.config.PostgreSQLConfig
 import scaladex.infra.sql.DoobieUtils.Mappings._
 import scaladex.infra.sql.DoobieUtils.selectRequest
 import scaladex.infra.sql.DoobieUtils.updateRequest
 
-class V7_2__edit_platform_and_language extends BaseJavaMigration with LazyLogging {
-  import V7_2__edit_platform_and_language._
+class V7_2__edit_platform_and_language extends BaseJavaMigration with ScaladexBaseMigration with LazyLogging {
 
-  private implicit val cs: ContextShift[IO] =
-    IO.contextShift(ExecutionContext.global)
+  import V7_2__edit_platform_and_language._
 
   override def migrate(context: Context): Unit =
     try {
-      val config = PostgreSQLConfig.load().get
-      val xa =
-        Transactor
-          .fromDriverManager[IO](
-            config.driver,
-            config.url,
-            config.user,
-            config.pass.decode
-          )
-
       (for {
         oldArtifacts <- run(xa)(selectArtifact.to[Seq])
         groupedArtifacts = oldArtifacts.grouped(10000).toSeq
@@ -62,8 +44,6 @@ class V7_2__edit_platform_and_language extends BaseJavaMigration with LazyLoggin
   val updatePlatformAndLanguage: Update[(Platform, Language, MavenReference)] =
     updateRequest("artifacts", Seq("platform", "language_version"), Seq("group_id", "artifact_id", "version"))
 
-  private def run[A](xa: doobie.Transactor[IO])(v: doobie.ConnectionIO[A]): IO[A] =
-    v.transact(xa)
 }
 object V7_2__edit_platform_and_language {
   case class OldArtifact(

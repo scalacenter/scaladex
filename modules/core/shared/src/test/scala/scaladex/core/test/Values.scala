@@ -14,6 +14,7 @@ import scaladex.core.model.GithubIssue
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Jvm
 import scaladex.core.model.License
+import scaladex.core.model.MajorVersion
 import scaladex.core.model.PatchVersion
 import scaladex.core.model.Project
 import scaladex.core.model.Project.Settings
@@ -29,6 +30,7 @@ object Values {
   val ok: GithubStatus = GithubStatus.Ok(now)
 
   val `2.6.1` = PatchVersion(2, 6, 1)
+  val `4`: SemanticVersion = MajorVersion(4)
   val `2.7.0` = PatchVersion(2, 7, 0)
   val `7.0.0` = PatchVersion(7, 0, 0)
   val `7.1.0` = PatchVersion(7, 1, 0)
@@ -165,6 +167,7 @@ object Values {
     }
 
     val `core_3:2.6.1`: Artifact = getArtifact("cats-core", `_3`, `2.6.1`, description = Some("Cats core"))
+    val `core_3:4`: Artifact = getArtifact("cats-core", `_3`, `4`, description = Some("Cats core"))
     val `core_3:2.7.0`: Artifact = getArtifact("cats-core", `_3`, `2.7.0`, description = Some("Cats core"))
     val core_sjs1_3: Artifact = getArtifact("cats-core", `_sjs1_3`, `2.6.1`, description = Some("Cats core"))
     val core_sjs06_213: Artifact =
