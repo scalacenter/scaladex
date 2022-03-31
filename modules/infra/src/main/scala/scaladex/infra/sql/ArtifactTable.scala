@@ -40,8 +40,10 @@ object ArtifactTable {
   val updateReleaseDate: Update[(Instant, Artifact.MavenReference)] =
     updateRequest(table, Seq("release_date"), mavenReferenceFields)
 
-  val selectArtifactByProject: Query[Project.Reference, Artifact] =
-    selectRequest(table, Seq("*"), projectReferenceFields)
+  val selectArtifactByProject: Query[Project.Reference, Artifact] = {
+    val where = projectReferenceFields.map(f => s"$f=?").mkString(" AND ")
+    selectRequest1(table, "*", where = Some(where), orderBy = Some("release_date DESC"), limit = Some(10000))
+  }
 
   val selectArtifactByProjectAndName: Query[(Project.Reference, Artifact.Name), Artifact] =
     selectRequest(table, Seq("*"), projectReferenceFields :+ "artifact_name")

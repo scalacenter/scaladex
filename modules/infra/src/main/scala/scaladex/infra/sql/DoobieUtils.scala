@@ -116,6 +116,22 @@ object DoobieUtils {
     Query0(sql)
   }
 
+  def selectRequest1[A: Write, B: Read](
+      table: String,
+      fields: String,
+      where: Option[String] = None,
+      groupBy: Seq[String] = Seq.empty,
+      orderBy: Option[String] = None,
+      limit: Option[Long] = None
+  ): Query[A, B] = {
+    val sql = s"SELECT $fields FROM $table" +
+      where.map(p => s" WHERE $p").getOrElse("") +
+      (if (groupBy.nonEmpty) groupBy.mkString(" GROUP BY ", ", ", "") else "") +
+      orderBy.map(o => s" ORDER BY $o").getOrElse("") +
+      limit.map(l => s" LIMIT $l").getOrElse("")
+    Query(sql)
+  }
+
   def deleteRequest[T: Write](table: String, where: Seq[String]): Update[T] = {
     val whereK = where.map(k => s"$k=?").mkString(" AND ")
     Update(s"DELETE FROM $table WHERE $whereK")
