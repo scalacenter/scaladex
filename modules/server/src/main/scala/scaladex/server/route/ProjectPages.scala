@@ -34,6 +34,10 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
 ) extends LazyLogging {
   private val searchSynchronizer = new SearchSynchronizer(database, searchEngine)
 
+  // Unfortunately we have some performance issue with the page of that project because it contains many artifacts
+  // We are working on a fix, but for now we hide this project's artifacts
+  private val hiddenProjects = Seq("vigoo/zio-aws").map(Project.Reference.from)
+
   def route(user: Option[UserState]): Route =
     concat(
       post {
@@ -51,10 +55,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
                 )
               case Failure(e) =>
                 logger.error(s"Cannot save settings of project $projectRef", e)
-                redirect(
-                  Uri(s"/$projectRef"),
-                  StatusCodes.SeeOther
-                ) // maybe we can print that it wasn't saved
+                redirect(Uri(s"/$projectRef"), StatusCodes.SeeOther) // maybe we can print that it wasn't saved
             }
           }
         }
@@ -65,7 +66,9 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
             for {
               projectOpt <- database.getProject(projectRef)
               project = projectOpt.getOrElse(throw new Exception(s"project $projectRef not found"))
-              artifacts <- database.getArtifacts(projectRef)
+              artifacts <-
+                if (hiddenProjects.contains(projectRef)) Future(Seq.empty)
+                else database.getArtifacts(projectRef)
             } yield (project, artifacts)
 
           onComplete(res) {
@@ -105,11 +108,18 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         path(projectM)(projectRef =>
           parameters("artifact".?, "version".?, "binaryVersion".?, "selected".?) {
             (artifact, version, binaryVersion, selected) =>
-              val fut: Future[StandardRoute] = database.getProject(projectRef).flatMap {
-                case Some(Project(_, _, _, GithubStatus.Moved(_, newProjectRef), _, _)) =>
-                  Future.successful(redirect(Uri(s"/$newProjectRef"), StatusCodes.PermanentRedirect))
-                case Some(project) =>
-                  val artifactRouteF: Future[StandardRoute] =
+              if (hiddenProjects.contains(projectRef)) {
+                val res = getProjectPage(projectRef, None, None, None, user)
+                onComplete(res) {
+                  case Success((code, some)) => complete(code, some)
+                  case Failure(_) =>
+                    complete(StatusCodes.NotFound, view.html.notfound(env, user))
+                }
+              } else {
+                val fut: Future[StandardRoute] = database.getProject(projectRef).flatMap {
+                  case Some(Project(_, _, _, GithubStatus.Moved(_, newProjectRef), _, _)) =>
+                    Future.successful(redirect(Uri(s"/$newProjectRef"), StatusCodes.PermanentRedirect))
+                  case Some(project) =>
                     getSelectedArtifact(
                       database,
                       project,
@@ -124,13 +134,11 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
                         StatusCodes.TemporaryRedirect
                       )
                     }.getOrElse(complete(StatusCodes.NotFound, view.html.notfound(env, user))))
-                  artifactRouteF
-                case None =>
-                  Future.successful(
-                    complete(StatusCodes.NotFound, view.html.notfound(env, user))
-                  )
+                  case None =>
+                    Future.successful(complete(StatusCodes.NotFound, view.html.notfound(env, user)))
+                }
+                onSuccess(fut)(identity)
               }
-              onSuccess(fut)(identity)
           }
         )
       },
@@ -140,7 +148,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
             val res = getProjectPage(
               projectRef,
               binaryVersion,
-              artifact,
+              Some(artifact),
               None,
               user
             )
@@ -155,7 +163,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
       get {
         path(projectM / artifactM / versionM)((projectRef, artifact, version) =>
           parameter("binaryVersion".?) { binaryVersion =>
-            val res = getProjectPage(projectRef, binaryVersion, artifact, Some(version), user)
+            val res = getProjectPage(projectRef, binaryVersion, Some(artifact), Some(version), user)
             onComplete(res) {
               case Success((code, some)) => complete(code, some)
               case Failure(_) =>
@@ -187,31 +195,33 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
   private def getProjectPage(
       projectRef: Project.Reference,
       binaryVersion: Option[String],
-      artifact: Artifact.Name,
+      artifact: Option[Artifact.Name],
       version: Option[SemanticVersion],
       user: Option[UserState]
   ): Future[(StatusCode, HtmlFormat.Appendable)] = {
     val selection = ArtifactSelection.parse(
       binaryVersion = binaryVersion,
-      artifactName = Some(artifact),
+      artifactName = artifact,
       version = version.map(_.toString),
       selected = None
     )
     database.getProject(projectRef).flatMap {
       case Some(project) =>
         for {
-          artifacts <- database.getArtifacts(projectRef)
-          selectedArtifact = selection
-            .defaultArtifact(artifacts, project)
-            .getOrElse(throw new Exception(s"no artifact found for $projectRef"))
-          directDependencies <- database.getDirectDependencies(selectedArtifact)
-          reverseDependency <- database.getReverseDependencies(selectedArtifact)
+          artifacts <-
+            if (hiddenProjects.contains(projectRef)) Future.successful(Seq.empty)
+            else database.getArtifacts(projectRef)
+          artifactOpt = selection.defaultArtifact(artifacts, project)
+          directDependencies <-
+            artifactOpt.map(database.getDirectDependencies).getOrElse(Future.successful(Seq.empty))
+          reverseDependency <-
+            artifactOpt.map(database.getReverseDependencies).getOrElse(Future.successful(Seq.empty))
         } yield {
           val allVersions = artifacts.view.map(_.version)
           val filteredVersions = filterVersions(project, allVersions)
           val binaryVersions = artifacts.view.map(_.binaryVersion)
           val platformsForBadges = artifacts.view
-            .filter(_.artifactName == selectedArtifact.artifactName)
+            .filter(a => artifactOpt.map(_.artifactName).contains(a.artifactName))
             .map(_.binaryVersion.platform)
           val artifactNames = artifacts.view.map(_.artifactName)
           val twitterCard = project.twitterSummaryCard
@@ -222,7 +232,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
             filteredVersions,
             SortedSet.from(binaryVersions)(BinaryVersion.ordering.reverse),
             SortedSet.from(platformsForBadges)(Platform.ordering.reverse),
-            selectedArtifact,
+            artifactOpt,
             user,
             showEditButton = user.exists(_.canEdit(projectRef, env)), // show only when your are admin on the project
             Some(twitterCard),
@@ -312,4 +322,24 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           Tuple1(settings)
       }
     )
+
+  private def getSelectedArtifact(
+      database: WebDatabase,
+      project: Project,
+      binaryVersion: Option[String],
+      artifact: Option[Artifact.Name],
+      version: Option[String],
+      selected: Option[String]
+  ): Future[Option[Artifact]] = {
+    val artifactSelection = ArtifactSelection.parse(
+      binaryVersion = binaryVersion,
+      artifactName = artifact,
+      version = version,
+      selected = selected
+    )
+    for {
+      artifacts <- database.getArtifacts(project.reference)
+      defaultArtifact = artifactSelection.defaultArtifact(artifacts, project)
+    } yield defaultArtifact
+  }
 }
