@@ -9,7 +9,6 @@ import scala.concurrent.duration.DurationInt
 import akka.actor.ActorSystem
 import cats.implicits.toTraverseOps
 import scaladex.core.model.UserState
-import scaladex.core.service.GithubService
 import scaladex.core.service.SchedulerDatabase
 import scaladex.infra.GithubClient
 
