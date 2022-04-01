@@ -1,0 +1,1 @@
+ALTER TABLE artifacts ALTER COLUMN release_date SET NOT NULL;

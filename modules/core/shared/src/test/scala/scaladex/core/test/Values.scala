@@ -55,7 +55,7 @@ object Values {
       language = artifactId.binaryVersion.language,
       projectRef = reference,
       description = None,
-      releaseDate = Some(creationDate),
+      releaseDate = creationDate,
       resolver = None,
       licenses = Set(),
       isNonStandardLib = false
@@ -101,7 +101,7 @@ object Values {
       language = artifactId.binaryVersion.language,
       projectRef = reference,
       description = None,
-      releaseDate = Some(creationDate),
+      releaseDate = creationDate,
       resolver = None,
       licenses = Set(),
       isNonStandardLib = false
@@ -159,7 +159,7 @@ object Values {
         language = binaryVersion.language,
         projectRef = reference,
         description = description,
-        releaseDate = Some(Instant.ofEpochMilli(1620911032000L)),
+        releaseDate = Instant.ofEpochMilli(1620911032000L),
         resolver = None,
         licenses = Set(license),
         isNonStandardLib = false

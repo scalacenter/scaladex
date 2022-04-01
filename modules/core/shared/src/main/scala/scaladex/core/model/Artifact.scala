@@ -23,7 +23,7 @@ case class Artifact(
     artifactName: Artifact.Name,
     projectRef: Project.Reference,
     description: Option[String],
-    releaseDate: Option[Instant],
+    releaseDate: Instant,
     resolver: Option[Resolver],
     licenses: Set[License],
     isNonStandardLib: Boolean,

@@ -1,5 +1,7 @@
 package scaladex.core.model
 
+import java.time.Instant
+
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.Artifact._
@@ -20,7 +22,7 @@ class ArtifactSelectionTests extends AsyncFunSpec with Matchers {
       artifactId.name,
       reference,
       None,
-      None,
+      Instant.ofEpochMilli(1475505237265L),
       None,
       Set.empty,
       isNonStandardLib = false,
