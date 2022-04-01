@@ -21,35 +21,25 @@ class UserSessionSynchronizer(database: SchedulerDatabase)(implicit ec: Executio
   override def run(): Future[Unit] =
     for {
       sessions <- database.getAllSessions()
-      sessionsWithClients = createClientsForEach(sessions)
-      updatedEitherUserSessions <- sessionsWithClients.traverse {
-        case (session, client) => updateUserSession(session, client)
-      }
+      updatedEitherUserSessions <- sessions.traverse { case (session, client) => updateUserSession(session, client) }
       expiredSessionIds = updatedEitherUserSessions.collect { case Left(expiredSessionId) => expiredSessionId }
       updatedUserSessions = updatedEitherUserSessions.collect { case Right(sessions) => sessions }
       _ <- updatedUserSessions.traverse { case (userId, userState) => database.insertSession(userId, userState) }
       _ <- expiredSessionIds.traverse(database.deleteSession)
     } yield ()
 
-  private def createClientsForEach(sessions: Seq[Session]): Seq[(Session, GithubService)] =
-    sessions.map { case session @ (_, userState) => (session, new GithubClient(userState.info.token)) }
-
-  private def updateUserSession(session: Session, service: GithubService): Future[Either[UUID, Session]] =
-    service
-      .getUserInfo()
-      .map { updatedUserInfo =>
-        session match {
-          case (userId, staleUserState) => Right((userId, staleUserState.copy(info = updatedUserInfo)))
-        }
-      }
-      .recoverWith {
-        case _ =>
-          session match {
-            case (userId, _) =>
+  private def updateUserSession(session: Session): Future[Either[UUID, Session]] =
+    session match {
+      case (userId, staleUserState) =>
+        new GithubClient(staleUserState.info.token)
+          .getUserInfo()
+          .map(updatedUserInfo => Right((userId, staleUserState.copy(info = updatedUserInfo))))
+          .recoverWith {
+            case _ =>
               logger.info(s"Token for user with id: '$userId' is likely expired")
               Future(Left(userId))
           }
-      }
+    }
 }
 
 object UserSessionSynchronizer {
