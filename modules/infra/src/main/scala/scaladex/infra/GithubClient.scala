@@ -324,7 +324,7 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
     recurse(None, Nil)
   }
 
-  def getUserInfo(): Future[UserInfo] = {
+  def getUserInfo(): Future[GithubResponse[UserInfo]] = {
     val query =
       """|query {
          |  viewer {
@@ -334,9 +334,14 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
          |  }
          |}""".stripMargin
     val request = graphqlRequest(query)
-    val userInfo = get[GithubModel.UserInfo](request)
-
-    userInfo.map(_.toCoreUserInfo(token))
+    process(request).flatMap {
+      case GithubResponse.Ok((_, entity)) =>
+        Unmarshal(entity).to[GithubModel.UserInfo].map(res => GithubResponse.Ok(res.toCoreUserInfo(token)))
+      case GithubResponse.MovedPermanently((_, entity)) =>
+        Unmarshal(entity).to[GithubModel.UserInfo].map(res => GithubResponse.Ok(res.toCoreUserInfo(token)))
+      case GithubResponse.Failed(code, errorMessage) =>
+        Future.successful(GithubResponse.Failed(code, errorMessage))
+    }
   }
 
   private def extractLastPage(links: String): Option[Int] = {

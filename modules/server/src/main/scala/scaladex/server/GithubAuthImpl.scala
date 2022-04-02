@@ -9,8 +9,12 @@ import akka.http.scaladsl.model.Uri._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import com.typesafe.scalalogging.LazyLogging
+import scaladex.core.model.GithubResponse
+import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubAuth
+import scaladex.core.service.GithubService
 import scaladex.core.util.ScalaExtensions._
 import scaladex.core.util.Secret
 import scaladex.infra.GithubClient
@@ -23,7 +27,8 @@ object Response {
 //todo: remove Json4sSupport
 class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri: String)(implicit sys: ActorSystem)
     extends GithubAuth
-    with Json4sSupport {
+    with Json4sSupport
+    with LazyLogging {
   import sys.dispatcher
 
   def getUserStateWithToken(token: String): Future[UserState] = getUserState(Secret(token))
@@ -38,7 +43,7 @@ class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri: String
     val githubClient = new GithubClient(token)
     val permissions = Seq("WRITE", "MAINTAIN", "ADMIN")
     for {
-      user <- githubClient.getUserInfo()
+      user <- getUser(githubClient)
       orgas <- githubClient.getUserOrganizations(user.login).recover { case _ => Seq.empty }
       orgasRepos <- orgas
         .map { org =>
@@ -66,4 +71,13 @@ class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri: String
         )
       )
       .flatMap(response => Unmarshal(response).to[Response.AccessToken].map(_.token))
+
+  private def getUser(service: GithubService): Future[UserInfo] =
+    service.getUserInfo().flatMap {
+      case GithubResponse.Ok(res)               => Future.successful(res)
+      case GithubResponse.MovedPermanently(res) => Future.successful(res)
+      case GithubResponse.Failed(code, errorMessage) =>
+        logger.info(s"Request to GithubService#getUser failed with code: $code")
+        Future.failed(new Exception(errorMessage))
+    }
 }

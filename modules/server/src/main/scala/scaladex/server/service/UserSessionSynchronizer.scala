@@ -7,8 +7,12 @@ import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.model.StatusCodes
 import cats.implicits.toTraverseOps
+import scaladex.core.model.GithubResponse
+import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
+import scaladex.core.service.GithubService
 import scaladex.core.service.SchedulerDatabase
 import scaladex.infra.GithubClient
 
@@ -30,14 +34,24 @@ class UserSessionSynchronizer(database: SchedulerDatabase)(implicit ec: Executio
   private def updateUserSession(session: Session): Future[Either[UUID, Session]] =
     session match {
       case (userId, staleUserState) =>
-        new GithubClient(staleUserState.info.token)
-          .getUserInfo()
-          .map(updatedUserInfo => Right((userId, staleUserState.copy(info = updatedUserInfo))))
+        val service = new GithubClient(staleUserState.info.token)
+        getUserInfo(userId, service)
+          .map(_.map(updatedUserInfo => (userId, staleUserState.copy(info = updatedUserInfo))))
           .recoverWith {
-            case _ =>
-              logger.info(s"Token for user with id: '$userId' is likely expired")
-              Future(Left(userId))
+            case t =>
+              Future.failed(t)
           }
+    }
+
+  private def getUserInfo(userId: UUID, service: GithubService): Future[Either[UUID, UserInfo]] =
+    service.getUserInfo().flatMap {
+      case GithubResponse.Ok(res)               => Future.successful(Right(res))
+      case GithubResponse.MovedPermanently(res) => Future.successful(Right(res))
+      case GithubResponse.Failed(code, errorMessage) if code == StatusCodes.Unauthorized.intValue =>
+        logger.info(s"Token for user with id: '$userId' is likely expired, with error: $errorMessage")
+        Future.successful(Left(userId))
+      case _ =>
+        Future.failed(new Exception())
     }
 }
 
