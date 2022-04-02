@@ -1,5 +1,7 @@
 package scaladex.core.model
 
+import java.time.Instant
+
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.Artifact._
@@ -161,7 +163,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       language = artifactIdResult.binaryVersion.language,
       projectRef = Project.Reference.from("", ""),
       description = None,
-      releaseDate = None,
+      releaseDate = Instant.now(),
       resolver = resolver,
       licenses = Set(),
       isNonStandardLib = false

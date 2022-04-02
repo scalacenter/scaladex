@@ -181,7 +181,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       _ <- creationDates.mapSync { case (creationDate, ref) => database.updateProjectCreationDate(ref, creationDate) }
       projects <- database.getAllProjects()
     } yield {
-      val creationDates = projects.map(p => p.reference -> p.creationDate)
+      val creationDates = projects.map(p => p.reference -> p.creationDate.get)
       val expected = Seq(
         Cats.reference -> Cats.`core_3:2.6.1`.releaseDate,
         Scalafix.reference -> Scalafix.artifact.releaseDate,
