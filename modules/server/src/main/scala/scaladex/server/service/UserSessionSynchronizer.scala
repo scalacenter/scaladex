@@ -35,15 +35,19 @@ class UserSessionSynchronizer(database: SchedulerDatabase)(implicit ec: Executio
     session match {
       case (userId, staleUserState) =>
         val service = new GithubClient(staleUserState.info.token)
-        getUserInfo(userId, service)
-          .map(_.map(updatedUserInfo => (userId, staleUserState.copy(info = updatedUserInfo))))
-          .recoverWith {
-            case t =>
-              Future.failed(t)
-          }
+        getUserInfo(userId, staleUserState.info, service)
+          .map(_.map { updatedUserInfo =>
+            if (updatedUserInfo != staleUserState.info)
+              (userId, staleUserState.copy(info = updatedUserInfo))
+            else session
+          })
     }
 
-  private def getUserInfo(userId: UUID, service: GithubService): Future[Either[UUID, UserInfo]] =
+  private def getUserInfo(
+      userId: UUID,
+      staleUserInfo: UserInfo,
+      service: GithubService
+  ): Future[Either[UUID, UserInfo]] =
     service.getUserInfo().flatMap {
       case GithubResponse.Ok(res)               => Future.successful(Right(res))
       case GithubResponse.MovedPermanently(res) => Future.successful(Right(res))
@@ -51,7 +55,7 @@ class UserSessionSynchronizer(database: SchedulerDatabase)(implicit ec: Executio
         logger.info(s"Token for user with id: '$userId' is likely expired, with error: $errorMessage")
         Future.successful(Left(userId))
       case _ =>
-        Future.failed(new Exception())
+        Future.successful(Right(staleUserInfo))
     }
 }
 
