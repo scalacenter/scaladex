@@ -30,5 +30,4 @@ trait SchedulerDatabase extends WebDatabase {
   def deleteDependenciesOfMovedProject(): Future[Unit]
   def getAllGroupIds(): Future[Seq[Artifact.GroupId]]
   def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]]
-  def getAllMavenReferencesWithNoReleaseDate(): Future[Seq[Artifact.MavenReference]]
 }

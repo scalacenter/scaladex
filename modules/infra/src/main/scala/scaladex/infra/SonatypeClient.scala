@@ -82,12 +82,6 @@ class SonatypeClient()(implicit val system: ActorSystem)
       res <- responseOpt.map(getPomFileWithLastModifiedTime).getOrElse(Future.successful(None))
     } yield res
 
-  override def getReleaseDate(mavenReference: Artifact.MavenReference): Future[Option[Instant]] =
-    for {
-      responseOpt <- getHttpResponse(mavenReference)
-      releaseDate = responseOpt.flatMap(getLastModifiedTime)
-    } yield releaseDate
-
   private def getPomFileWithLastModifiedTime(response: HttpResponse): Future[Option[(String, Instant)]] =
     response match {
       case _ @HttpResponse(StatusCodes.OK, headers: Seq[model.HttpHeader], entity, _) =>
@@ -98,14 +92,6 @@ class SonatypeClient()(implicit val system: ActorSystem)
           .map(header => page -> format(header.value))
       case _ => Future.successful(None)
     }
-
-  private def getLastModifiedTime(response: HttpResponse): Option[Instant] = {
-    // we discard en the entity because we only need the headers
-    response.discardEntityBytes()
-    response.headers
-      .find(_.is("last-modified"))
-      .map(header => format(header.value))
-  }
 
   private def getHttpResponse(mavenReference: MavenReference): Future[Option[HttpResponse]] = {
     val groupIdUrl: String = mavenReference.groupId.replace('.', '/')

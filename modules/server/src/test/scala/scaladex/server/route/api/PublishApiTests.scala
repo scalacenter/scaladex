@@ -33,7 +33,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
 
   it("sonatype should publish any artifact") {
     val pomFile = downloadPom(Cats.`core_3:2.6.1`)
-    val creationDate = Cats.`core_3:2.6.1`.releaseDate.get.getEpochSecond
+    val creationDate = Cats.`core_3:2.6.1`.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
     val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity)
       .addCredentials(sonatype)
@@ -47,7 +47,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
 
   it("admin should publish any artifact") {
     val pomFile = downloadPom(Cats.`core_3:2.7.0`)
-    val creationDate = Cats.`core_3:2.7.0`.releaseDate.get.getEpochSecond
+    val creationDate = Cats.`core_3:2.7.0`.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
     val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity)
       .addCredentials(admin)
@@ -61,7 +61,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
 
   it("owner should publish artifact of its project") {
     val pomFile = downloadPom(Cats.core_sjs1_3)
-    val creationDate = Cats.core_sjs1_3.releaseDate.get.getEpochSecond
+    val creationDate = Cats.core_sjs1_3.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
     val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity)
       .addCredentials(typelevel)
@@ -75,7 +75,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
 
   it("user should not publish artifcat of project it does not own") {
     val pomFile = downloadPom(Scalafix.artifact)
-    val creationDate = Scalafix.artifact.releaseDate.get.getEpochSecond
+    val creationDate = Scalafix.artifact.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
     val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity)
       .addCredentials(typelevel)

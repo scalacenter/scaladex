@@ -12,5 +12,4 @@ trait SonatypeService {
   def getAllArtifactIds(groupId: Artifact.GroupId): Future[Seq[Artifact.ArtifactId]]
   def getAllVersions(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[SemanticVersion]]
   def getPomFile(mavenReference: MavenReference): Future[Option[(String, Instant)]]
-  def getReleaseDate(mavenReference: MavenReference): Future[Option[Instant]]
 }

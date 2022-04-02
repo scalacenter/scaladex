@@ -30,7 +30,7 @@ class ArtifactConverter(paths: DataPaths) {
         Artifact.Name(artifactMeta.artifactName),
         projectRef,
         pom.description,
-        Some(creationDate),
+        creationDate,
         None,
         licenseCleanup(pom),
         artifactMeta.isNonStandard,
