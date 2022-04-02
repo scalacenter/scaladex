@@ -11,9 +11,13 @@ import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.GithubStatus
+import scaladex.core.model.Jvm
 import scaladex.core.model.Project
 import scaladex.core.model.Project.Organization
 import scaladex.core.model.ProjectDependency
+import scaladex.core.model.Scala
+import scaladex.core.model.ScalaJs
+import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
 import scaladex.core.util.ScalaExtensions._
@@ -241,10 +245,60 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       catsCore <- database.getArtifactByMavenReference(Cats.`core_3:2.6.1`.mavenReference)
     } yield catsCore should contain(Cats.`core_3:2.6.1`)
   }
+
   it("should return artifact from maven reference if version is only major") {
     for {
       _ <- database.insertArtifact(Cats.`core_3:4`, Seq.empty, now)
       catsCore <- database.getArtifactByMavenReference(Cats.`core_3:4`.mavenReference)
     } yield catsCore should contain(Cats.`core_3:4`)
+  }
+
+  it("should return all artifacts given no language or platform") {
+    val testArtifacts = Seq(Scalafix.artifact, Cats.`core_3:4`, PlayJsonExtra.artifact)
+    for {
+      _ <- database.insertArtifacts(testArtifacts)
+      storedArtifacts <- database.getAllArtifacts(maybeLanguage = None, maybePlatform = None)
+    } yield storedArtifacts.forall(testArtifacts.contains) shouldBe true
+  }
+
+  it("should return no artifacts given a language that has no artifacts stored") {
+    for {
+      _ <- database.insertArtifact(Scalafix.artifact, Seq.empty, now) // Scalafix has Scala version 2.13
+      storedArtifacts <- database.getAllArtifacts(maybeLanguage = Some(Scala.`3`), maybePlatform = None)
+    } yield storedArtifacts.size shouldBe 0
+  }
+
+  it("should return no artifacts given a platform that has no artifacts stored") {
+    for {
+      _ <- database.insertArtifact(Scalafix.artifact, Seq.empty, now) // Scalafix is a JVM-platform artifact
+      storedArtifacts <- database.getAllArtifacts(maybeLanguage = None, maybePlatform = Some(ScalaJs.`1.x`))
+    } yield storedArtifacts.size shouldBe 0
+  }
+
+  it("should return artifacts that conform to the given language and platform") {
+    val testArtifacts = Seq(
+      Cats.`core_3:4`,
+      Scalafix.artifact.copy(version = SemanticVersion(3))
+    )
+    for {
+      _ <- database.insertArtifacts(testArtifacts)
+      storedArtifacts <- database.getAllArtifacts(maybeLanguage = Some(Scala.`3`), maybePlatform = Some(Jvm))
+    } yield storedArtifacts.forall(testArtifacts.contains) shouldBe true
+  }
+
+  it(
+    "should not return artifacts given both language and platform, and the database contains no artifacts that conform"
+  ) {
+    val testArtifacts = Seq(
+      Cats.`core_3:4`,
+      Scalafix.artifact.copy(version = SemanticVersion(3))
+    )
+    for {
+      _ <- database.insertArtifacts(testArtifacts)
+      storedArtifacts <- database.getAllArtifacts(
+        maybeLanguage = Some(Scala.`3`),
+        maybePlatform = Some(ScalaJs(SemanticVersion(3)))
+      )
+    } yield storedArtifacts.size shouldBe 0
   }
 }

@@ -5,6 +5,8 @@ import java.time.Instant
 import doobie._
 import doobie.util.update.Update
 import scaladex.core.model.Artifact
+import scaladex.core.model.Language
+import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.infra.sql.DoobieUtils.Mappings._
 import scaladex.infra.sql.DoobieUtils._
@@ -39,6 +41,18 @@ object ArtifactTable {
 
   val updateReleaseDate: Update[(Instant, Artifact.MavenReference)] =
     updateRequest(table, Seq("release_date"), mavenReferenceFields)
+
+  val selectAllArtifacts: Query0[Artifact] =
+    selectRequest(table, fields = fields)
+
+  val selectArtifactByLanguage: Query[Language, Artifact] =
+    selectRequest(table, fields, keys = Seq("language_version"))
+
+  val selectArtifactByPlatform: Query[Platform, Artifact] =
+    selectRequest(table, fields, keys = Seq("platform"))
+
+  val selectArtifactByLanguageAndPlatform: Query[(Language, Platform), Artifact] =
+    selectRequest(table, fields, keys = Seq("language_version", "platform"))
 
   val selectArtifactByProject: Query[Project.Reference, Artifact] = {
     val where = projectReferenceFields.map(f => s"$f=?").mkString(" AND ")
