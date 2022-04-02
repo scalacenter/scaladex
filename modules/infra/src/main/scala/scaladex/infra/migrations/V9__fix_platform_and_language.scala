@@ -21,7 +21,6 @@ class V9__fix_platform_and_language extends BaseJavaMigration with ScaladexBaseM
             case (artifact, id) => (id.binaryVersion.platform, id.binaryVersion.language, artifact.mavenReference)
           })
         }
-        _ = logger.info(s"Updated $numberOfArtifactsUpdated artifacts")
       } yield ())
         .unsafeRunSync()
 

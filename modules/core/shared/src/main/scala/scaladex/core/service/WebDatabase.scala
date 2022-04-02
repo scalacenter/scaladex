@@ -2,16 +2,11 @@ package scaladex.core.service
 
 import java.time.Instant
 import java.util.UUID
-
 import scala.concurrent.Future
-
-import scaladex.core.model.Artifact
-import scaladex.core.model.ArtifactDependency
-import scaladex.core.model.Project
-import scaladex.core.model.UserState
+import scaladex.core.model.{Artifact, ArtifactDependency, GithubInfo, GithubResponse, Project, UserState}
 
 trait WebDatabase {
-  def insertArtifact(artifact: Artifact, dependencies: Seq[ArtifactDependency], time: Instant): Future[Unit]
+  def insertArtifact(artifact: Artifact, dependencies: Seq[ArtifactDependency], time: Instant): Future[Boolean]
   def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit]
   def getAllProjects(): Future[Seq[Project]]
   def getProject(projectRef: Project.Reference): Future[Option[Project]]
@@ -25,4 +20,9 @@ trait WebDatabase {
   def countArtifacts(): Future[Long]
   def insertSession(userId: UUID, userState: UserState): Future[Unit]
   def getSession(userId: UUID): Future[Option[UserState]]
+  def updateGithubInfo(
+      repo: Project.Reference,
+      response: GithubResponse[(Project.Reference, GithubInfo)],
+      now: Instant
+  ): Future[Unit]
 }

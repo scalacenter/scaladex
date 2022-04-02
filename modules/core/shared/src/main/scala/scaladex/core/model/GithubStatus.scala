@@ -2,7 +2,7 @@ package scaladex.core.model
 
 import java.time.Instant
 
-sealed trait GithubStatus {
+sealed trait GithubStatus extends Ordered[GithubStatus] {
   val updateDate: Instant
 
   override def toString: String = this match {
@@ -24,6 +24,9 @@ sealed trait GithubStatus {
     case GithubStatus.NotFound(_) => true
     case _                        => false
   }
+  override def compare(that: GithubStatus): Int =
+    GithubStatus.ordering.compare(this, that)
+
 }
 object GithubStatus {
   case class Ok(updateDate: Instant) extends GithubStatus
@@ -31,4 +34,9 @@ object GithubStatus {
   case class Moved(updateDate: Instant, destination: Project.Reference) extends GithubStatus
   case class NotFound(updateDate: Instant) extends GithubStatus
   case class Failed(updateDate: Instant, errorCode: Int, errorMessage: String) extends GithubStatus
+
+  implicit val ordering: Ordering[GithubStatus] = Ordering.by {
+    case GithubStatus.Unknown(t)    => Instant.MIN
+    case githubStatus: GithubStatus => githubStatus.updateDate
+  }
 }

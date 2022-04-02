@@ -2,20 +2,21 @@ package scaladex.infra
 
 import java.time.Instant
 import java.util.UUID
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import doobie.implicits._
-import scaladex.core.model.Artifact
-import scaladex.core.model.ArtifactDependency
-import scaladex.core.model.GithubInfo
-import scaladex.core.model.GithubStatus
-import scaladex.core.model.Project
-import scaladex.core.model.ProjectDependency
-import scaladex.core.model.UserState
+import scaladex.core.model.{
+  Artifact,
+  ArtifactDependency,
+  GithubInfo,
+  GithubResponse,
+  GithubStatus,
+  Project,
+  ProjectDependency,
+  UserState
+}
 import scaladex.core.service.SchedulerDatabase
 import scaladex.infra.config.PostgreSQLConfig
 import scaladex.infra.sql.ArtifactDependencyTable
@@ -37,12 +38,13 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
       artifact: Artifact,
       dependencies: Seq[ArtifactDependency],
       time: Instant
-  ): Future[Unit] = {
+  ): Future[Boolean] = {
     val unknownStatus = GithubStatus.Unknown(time)
-    val insertArtifactF = insertProjectRef(artifact.projectRef, unknownStatus)
-      .flatMap(_ => run(ArtifactTable.insertIfNotExist.run(artifact)))
-    val insertDepsF = insertDependencies(dependencies)
-    insertArtifactF.flatMap(_ => insertDepsF).map(_ => ())
+    for {
+      isNewProject <- insertProjectRef(artifact.projectRef, unknownStatus)
+      _ <- run(ArtifactTable.insertIfNotExist.run(artifact))
+      _ <- insertDependencies(dependencies)
+    } yield isNewProject
   }
 
   override def insertProject(project: Project): Future[Unit] =
@@ -84,8 +86,27 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
   override def updateArtifactReleaseDate(reference: Artifact.MavenReference, releaseDate: Instant): Future[Int] =
     run(ArtifactTable.updateReleaseDate.run((releaseDate, reference)))
 
-  override def updateGithubStatus(ref: Project.Reference, githubStatus: GithubStatus): Future[Unit] =
-    run(ProjectTable.updateGithubStatus.run(githubStatus, ref)).map(_ => ())
+  override def updateGithubInfo(
+      repo: Project.Reference,
+      response: GithubResponse[(Project.Reference, GithubInfo)],
+      now: Instant
+  ): Future[Unit] =
+    response match {
+      case GithubResponse.Ok((_, info)) =>
+        val status = GithubStatus.Ok(now)
+        updateGithubInfoAndStatus(repo, info, status)
+
+      case GithubResponse.MovedPermanently((destination, info)) =>
+        val status = GithubStatus.Moved(now, destination)
+        logger.info(s"$repo moved to $status")
+        moveProject(repo, info, status)
+
+      case GithubResponse.Failed(code, reason) =>
+        val status =
+          if (code == 404) GithubStatus.NotFound(now) else GithubStatus.Failed(now, code, reason)
+        logger.info(s"Failed to download github info for $repo because of $status")
+        updateGithubStatus(repo, status)
+    }
 
   override def updateGithubInfoAndStatus(
       ref: Project.Reference,
@@ -95,19 +116,6 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
     for {
       _ <- updateGithubStatus(ref, githubStatus)
       _ <- run(GithubInfoTable.insertOrUpdate.run((ref, githubInfo, githubInfo)))
-    } yield ()
-
-  override def moveProject(
-      ref: Project.Reference,
-      githubInfo: GithubInfo,
-      status: GithubStatus.Moved
-  ): Future[Unit] =
-    for {
-      oldProject <- getProject(ref)
-      _ <- updateGithubStatus(ref, status)
-      _ <- run(ProjectTable.insertIfNotExists.run((status.destination, GithubStatus.Ok(status.updateDate))))
-      _ <- updateProjectSettings(status.destination, oldProject.map(_.settings).getOrElse(Project.Settings.default))
-      _ <- run(GithubInfoTable.insertOrUpdate.run(status.destination, githubInfo, githubInfo))
     } yield ()
 
   override def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit] =
@@ -188,6 +196,22 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
 
   override def getSession(userId: UUID): Future[Option[UserState]] =
     run(UserSessionsTable.selectUserSessionById.to[Seq](userId)).map(_.headOption)
+
+  def moveProject(
+      ref: Project.Reference,
+      githubInfo: GithubInfo,
+      status: GithubStatus.Moved
+  ): Future[Unit] =
+    for {
+      oldProject <- getProject(ref)
+      _ <- updateGithubStatus(ref, status)
+      _ <- run(ProjectTable.insertIfNotExists.run((status.destination, GithubStatus.Ok(status.updateDate))))
+      _ <- updateProjectSettings(status.destination, oldProject.map(_.settings).getOrElse(Project.Settings.default))
+      _ <- run(GithubInfoTable.insertOrUpdate.run(status.destination, githubInfo, githubInfo))
+    } yield ()
+
+  def updateGithubStatus(ref: Project.Reference, githubStatus: GithubStatus): Future[Unit] =
+    run(ProjectTable.updateGithubStatus.run(githubStatus, ref)).map(_ => ())
 
   private def run[A](v: doobie.ConnectionIO[A]): Future[A] =
     v.transact(xa).unsafeToFuture()
