@@ -16,7 +16,7 @@ class V9__fix_platform_and_language extends BaseJavaMigration with ScaladexBaseM
       (for {
         artifactToFix <- run(xa)(selectArtifact.to[Seq])
         artifactToFixWithIds = artifactToFix.flatMap(a => Artifact.ArtifactId.parse(a.artifactId).map(a -> _))
-        numberOfArtifactsUpdated <- run(xa) {
+        _ <- run(xa) {
           updatePlatformAndLanguage.updateMany(artifactToFixWithIds.map {
             case (artifact, id) => (id.binaryVersion.platform, id.binaryVersion.language, artifact.mavenReference)
           })

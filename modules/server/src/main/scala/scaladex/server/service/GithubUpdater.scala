@@ -6,9 +6,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
-import scaladex.core.model.GithubInfo
-import scaladex.core.model.GithubResponse
-import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.service.GithubService
 import scaladex.core.service.SchedulerDatabase

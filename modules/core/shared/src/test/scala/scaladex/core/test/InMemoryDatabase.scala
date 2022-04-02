@@ -2,18 +2,18 @@ package scaladex.core.test
 
 import java.time.Instant
 import java.util.UUID
+
 import scala.collection.mutable
 import scala.concurrent.Future
-import scaladex.core.model.{
-  Artifact,
-  ArtifactDependency,
-  GithubInfo,
-  GithubResponse,
-  GithubStatus,
-  Project,
-  ProjectDependency,
-  UserState
-}
+
+import scaladex.core.model.Artifact
+import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.GithubInfo
+import scaladex.core.model.GithubResponse
+import scaladex.core.model.GithubStatus
+import scaladex.core.model.Project
+import scaladex.core.model.ProjectDependency
+import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
 
 class InMemoryDatabase extends SchedulerDatabase {

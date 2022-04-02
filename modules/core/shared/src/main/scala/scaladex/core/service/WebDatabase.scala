@@ -2,10 +2,18 @@ package scaladex.core.service
 
 import java.time.Instant
 import java.util.UUID
+
 import scala.concurrent.Future
-import scaladex.core.model.{Artifact, ArtifactDependency, GithubInfo, GithubResponse, Project, UserState}
+
+import scaladex.core.model.Artifact
+import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.GithubInfo
+import scaladex.core.model.GithubResponse
+import scaladex.core.model.Project
+import scaladex.core.model.UserState
 
 trait WebDatabase {
+  // insertArtifact return a boolean. It's true if the a new project is inserted, false otherwise
   def insertArtifact(artifact: Artifact, dependencies: Seq[ArtifactDependency], time: Instant): Future[Boolean]
   def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit]
   def getAllProjects(): Future[Seq[Project]]

@@ -2,21 +2,21 @@ package scaladex.infra
 
 import java.time.Instant
 import java.util.UUID
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import doobie.implicits._
-import scaladex.core.model.{
-  Artifact,
-  ArtifactDependency,
-  GithubInfo,
-  GithubResponse,
-  GithubStatus,
-  Project,
-  ProjectDependency,
-  UserState
-}
+import scaladex.core.model.Artifact
+import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.GithubInfo
+import scaladex.core.model.GithubResponse
+import scaladex.core.model.GithubStatus
+import scaladex.core.model.Project
+import scaladex.core.model.ProjectDependency
+import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
 import scaladex.infra.config.PostgreSQLConfig
 import scaladex.infra.sql.ArtifactDependencyTable

@@ -36,7 +36,7 @@ object GithubStatus {
   case class Failed(updateDate: Instant, errorCode: Int, errorMessage: String) extends GithubStatus
 
   implicit val ordering: Ordering[GithubStatus] = Ordering.by {
-    case GithubStatus.Unknown(t)    => Instant.MIN
+    case GithubStatus.Unknown(_)    => Instant.MIN
     case githubStatus: GithubStatus => githubStatus.updateDate
   }
 }

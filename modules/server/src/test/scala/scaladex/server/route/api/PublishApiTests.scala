@@ -2,10 +2,13 @@ package scaladex.server.route.api
 
 import java.nio.file.Path
 
+import scala.concurrent.duration.DurationInt
+
 import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import akka.http.scaladsl.testkit.RouteTestTimeout
 import coursier.Dependency
 import coursier.Fetch
 import coursier.Module
@@ -32,6 +35,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
   override protected def beforeEach(): Unit = database.reset()
 
   it("sonatype should publish any artifact") {
+    implicit val customTimeout = RouteTestTimeout(2.seconds)
     val pomFile = downloadPom(Cats.`core_3:2.6.1`)
     val creationDate = Cats.`core_3:2.6.1`.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
