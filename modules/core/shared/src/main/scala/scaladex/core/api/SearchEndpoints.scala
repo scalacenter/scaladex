@@ -6,7 +6,7 @@ import endpoints4s.algebra
 // There definition is shared here, for consistency.
 trait SearchEndpoints extends algebra.Endpoints with algebra.JsonEntitiesFromSchemas {
 
-  implicit val response: JsonSchema[AutocompletionResponse] =
+  implicit val autocompletionResponse: JsonSchema[AutocompletionResponse] =
     field[String]("organization")
       .zip(field[String]("repository"))
       .zip(field[String]("description"))
@@ -17,7 +17,7 @@ trait SearchEndpoints extends algebra.Endpoints with algebra.JsonEntitiesFromSch
       }
 
   // Definition of the autocompletion query format
-  val params: QueryString[AutocompletionParams] = (
+  val autocompletionParams: QueryString[AutocompletionParams] = (
     qs[String]("q", docs = Some("Main query (e.g., 'json', 'testing', etc.)")) &
       qs[Option[String]]("you", docs = Some("Used internally by Scaladex web user interface"))
         .xmap[Boolean](_.contains("✓"))(Option.when(_)("✓")) &
@@ -38,7 +38,7 @@ trait SearchEndpoints extends algebra.Endpoints with algebra.JsonEntitiesFromSch
   // Autocomplete endpoint definition
   val autocomplete: Endpoint[AutocompletionParams, Seq[AutocompletionResponse]] =
     endpoint(
-      get(path / "api" / "autocomplete" /? params),
+      get(path / "api" / "autocomplete" /? autocompletionParams),
       ok(jsonResponse[Seq[AutocompletionResponse]])
     )
 

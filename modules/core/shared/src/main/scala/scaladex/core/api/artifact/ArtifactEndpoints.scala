@@ -5,14 +5,14 @@ import endpoints4s.algebra.JsonEntitiesFromSchemas
 
 trait ArtifactEndpoints extends Endpoints with JsonEntitiesFromSchemas {
 
-  implicit val response: JsonSchema[ArtifactResponse] =
+  implicit val artifactEndpointResponse: JsonSchema[ArtifactResponse] =
     field[String]("groupId")
       .zip(field[String]("artifactId"))
       .xmap[ArtifactResponse] { case (groupId, artifactId) => ArtifactResponse(groupId, artifactId) } {
         artifactResponse => (artifactResponse.groupId, artifactResponse.artifactId)
       }
 
-  val params: QueryString[ArtifactParams] = (qs[Option[String]](
+  val artifactEndpointParams: QueryString[ArtifactParams] = (qs[Option[String]](
     name = "language",
     docs = Some(
       "Filter the results matching the given language version only (e.g., '3', '2.13', '2.12', '2.11', 'java')"
@@ -25,7 +25,7 @@ trait ArtifactEndpoints extends Endpoints with JsonEntitiesFromSchemas {
   // Artifact endpoint definition
   val artifact: Endpoint[ArtifactParams, Seq[ArtifactResponse]] =
     endpoint(
-      get(path / "api" / "artifacts" /? params),
+      get(path / "api" / "artifacts" /? artifactEndpointParams),
       ok(jsonResponse[Seq[ArtifactResponse]])
     )
 }
