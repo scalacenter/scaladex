@@ -25,7 +25,7 @@ trait ArtifactEndpoints extends Endpoints with JsonEntitiesFromSchemas {
   // Artifact endpoint definition
   val artifact: Endpoint[ArtifactParams, Seq[ArtifactResponse]] =
     endpoint(
-      get(path / "api" / "artifact" /? params),
+      get(path / "api" / "artifacts" /? params),
       ok(jsonResponse[Seq[ArtifactResponse]])
     )
 }

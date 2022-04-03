@@ -42,7 +42,6 @@ class InMemoryDatabase extends SchedulerDatabase {
     val ref = artifact.projectRef
     if (!projects.contains(ref)) projects.addOne(ref -> Project.default(ref, now = now))
     artifacts.addOne(ref -> (artifacts.getOrElse(ref, Seq.empty) :+ artifact))
-    dependencies.appendedAll(dependencies)
     Future.successful(())
   }
 
@@ -85,7 +84,18 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getAllArtifacts(
       maybeLanguage: Option[Language],
       maybePlatform: Option[Platform]
-  ): Future[Seq[Artifact]] = ???
+  ): Future[Seq[Artifact]] = {
+    val constraint = (maybeLanguage, maybePlatform) match {
+      case (Some(language), Some(platform)) =>
+        (artifact: Artifact) => artifact.language == language && artifact.platform == platform
+      case (Some(language), _) =>
+        (artifact: Artifact) => artifact.language == language
+      case (_, Some(platform)) =>
+        (artifact: Artifact) => artifact.platform == platform
+      case _ => (_: Artifact) => true
+    }
+    Future.successful(artifacts.values.flatten.toSeq.filter(constraint))
+  }
 
   override def getDirectDependencies(artifact: Artifact): Future[List[ArtifactDependency.Direct]] =
     Future.successful(Nil)
