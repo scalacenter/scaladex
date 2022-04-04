@@ -3,7 +3,6 @@ package scaladex.server.route.api
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
-
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import cats.implicits.toTraverseOps
@@ -11,6 +10,7 @@ import org.scalatest.BeforeAndAfterEach
 import scaladex.core.api.artifact.ArtifactResponse
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
+import scaladex.core.model.search.{Page, Pagination}
 import scaladex.core.test.Values.Cats
 import scaladex.core.test.Values.now
 import scaladex.server.route.ControllerBaseSuite
@@ -29,11 +29,15 @@ class ArtifactApiTests extends ControllerBaseSuite with BeforeAndAfterEach with 
     it("should return all inserted artifacts, given no language or platform") {
       Get("/api/artifacts") ~> artifactRoute ~> check {
         status shouldBe StatusCodes.OK
-        val response = responseAs[Seq[ArtifactResponse]]
-        response.size shouldBe Cats.allArtifacts.size
-        Cats.allArtifacts.forall { storedArtifact =>
-          response.exists { case ArtifactResponse(_, artifactId) => storedArtifact.artifactId == artifactId }
-        } shouldBe true
+        val response = responseAs[Page[ArtifactResponse]]
+        response match {
+          case Page(Pagination(_, _, numStoredArtifacts), artifacts) =>
+            numStoredArtifacts shouldBe Cats.allArtifacts.size
+            artifacts.size shouldBe Cats.allArtifacts.size
+            Cats.allArtifacts.forall { storedArtifact =>
+              artifacts.exists { case ArtifactResponse(_, artifactId) => storedArtifact.artifactId == artifactId }
+            } shouldBe true
+        }
       }
     }
 
@@ -48,11 +52,14 @@ class ArtifactApiTests extends ControllerBaseSuite with BeforeAndAfterEach with 
         .fold(Seq[(String, String)]())(identity)
       Get("/api/artifacts?language=2.13") ~> artifactRoute ~> check {
         status shouldBe StatusCodes.OK
-        val response = responseAs[Seq[ArtifactResponse]]
-        response.size shouldBe 2
-        response.map {
-          case ArtifactResponse(groupId, artifactId) => (groupId, artifactId)
-        } should contain theSameElementsAs expectedResponse
+        val response = responseAs[Page[ArtifactResponse]]
+        response match {
+          case Page(_, artifacts) =>
+            artifacts.size shouldBe 2
+            artifacts.map {
+              case ArtifactResponse(groupId, artifactId) => (groupId, artifactId)
+            } should contain theSameElementsAs expectedResponse
+        }
       }
     }
 
@@ -67,12 +74,14 @@ class ArtifactApiTests extends ControllerBaseSuite with BeforeAndAfterEach with 
         .fold(Seq[(String, String)]())(identity)
       Get("/api/artifacts?platform=jvm") ~> artifactRoute ~> check {
         status shouldBe StatusCodes.OK
-        val response = responseAs[Seq[ArtifactResponse]]
-        response.size shouldBe 4
-        response.map {
-          case ArtifactResponse(groupId, artifactId) => (groupId, artifactId)
-        } should contain theSameElementsAs expectedResponse
-
+        val response = responseAs[Page[ArtifactResponse]]
+        response match {
+          case Page(_, artifacts) =>
+            artifacts.size shouldBe 4
+            artifacts.map {
+              case ArtifactResponse(groupId, artifactId) => (groupId, artifactId)
+            } should contain theSameElementsAs expectedResponse
+        }
       }
     }
 
@@ -81,21 +90,27 @@ class ArtifactApiTests extends ControllerBaseSuite with BeforeAndAfterEach with 
         Seq(("org.typelevel", "cats-core_sjs0.6_2.13"), ("org.typelevel", "cats-core_native0.4_2.13"))
       Get("/api/artifacts?language=2.13&platform=sjs") ~> artifactRoute ~> check {
         status shouldBe StatusCodes.OK
-        val response = responseAs[Seq[ArtifactResponse]]
-        response.size shouldBe 2
-        response.map {
-          case ArtifactResponse(groupId, artifactId) => (groupId, artifactId)
-        } should contain theSameElementsAs expectedResponse
+        val response = responseAs[Page[ArtifactResponse]]
+        response match {
+          case Page(_, artifacts) =>
+            artifacts.size shouldBe 2
+            artifacts.map {
+              case ArtifactResponse(groupId, artifactId) => (groupId, artifactId)
+            } should contain theSameElementsAs expectedResponse
+        }
       }
-
     }
 
     it("should not return artifacts if the database is empty") {
       database.reset()
       Get(s"/api/artifacts") ~> artifactRoute ~> check {
         status shouldBe StatusCodes.OK
-        val response = responseAs[Seq[ArtifactResponse]]
-        response.size shouldBe 0
+        val response = responseAs[Page[ArtifactResponse]]
+        response match {
+          case Page(Pagination(_, _, numStoredArtifacts), artifacts) =>
+            numStoredArtifacts shouldBe 0
+            artifacts.size shouldBe 0
+        }
       }
     }
   }

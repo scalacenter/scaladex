@@ -1,15 +1,24 @@
 package scaladex.core.api.artifact
 
 import endpoints4s.algebra.Endpoints
-import endpoints4s.algebra.JsonEntitiesFromSchemas
+import scaladex.core.api.PaginationSchema
+import scaladex.core.model.search.Page
+import scaladex.core.model.search.Pagination
 
-trait ArtifactEndpoints extends Endpoints with JsonEntitiesFromSchemas {
+trait ArtifactEndpoints extends Endpoints with PaginationSchema {
 
-  implicit val artifactEndpointResponse: JsonSchema[ArtifactResponse] =
+  implicit val artifactResponseSchema: JsonSchema[ArtifactResponse] =
     field[String]("groupId")
       .zip(field[String]("artifactId"))
       .xmap[ArtifactResponse] { case (groupId, artifactId) => ArtifactResponse(groupId, artifactId) } {
         artifactResponse => (artifactResponse.groupId, artifactResponse.artifactId)
+      }
+
+  implicit val artifactEndpointResponse: JsonSchema[Page[ArtifactResponse]] =
+    field[Pagination]("pagination")
+      .zip(field[Seq[ArtifactResponse]]("items"))
+      .xmap[Page[ArtifactResponse]] { case (pagination, artifacts) => Page(pagination, artifacts) } {
+        case Page(pagination, artifacts) => (pagination, artifacts)
       }
 
   val artifactEndpointParams: QueryString[ArtifactParams] = (qs[Option[String]](
@@ -23,9 +32,9 @@ trait ArtifactEndpoints extends Endpoints with JsonEntitiesFromSchemas {
   )).xmap((ArtifactParams.apply _).tupled)(Function.unlift(ArtifactParams.unapply))
 
   // Artifact endpoint definition
-  val artifact: Endpoint[ArtifactParams, Seq[ArtifactResponse]] =
+  val artifact: Endpoint[ArtifactParams, Page[ArtifactResponse]] =
     endpoint(
       get(path / "api" / "artifacts" /? artifactEndpointParams),
-      ok(jsonResponse[Seq[ArtifactResponse]])
+      ok(jsonResponse[Page[ArtifactResponse]])
     )
 }

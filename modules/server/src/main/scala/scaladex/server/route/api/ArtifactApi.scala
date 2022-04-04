@@ -1,7 +1,6 @@
 package scaladex.server.route.api
 
 import scala.concurrent.ExecutionContext
-
 import akka.http.scaladsl.server.Route
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
 import endpoints4s.akkahttp.server
@@ -12,6 +11,7 @@ import scaladex.core.api.artifact.ArtifactParams
 import scaladex.core.api.artifact.ArtifactResponse
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
+import scaladex.core.model.search.{Page, Pagination}
 import scaladex.core.service.WebDatabase
 
 class ArtifactApi(database: WebDatabase)(
@@ -27,7 +27,18 @@ class ArtifactApi(database: WebDatabase)(
           val maybeLanguage = maybeLanguageStr.flatMap(Language.fromLabel)
           val maybePlatform = maybePlatformStr.flatMap(Platform.fromLabel)
           for (artifacts <- database.getAllArtifacts(maybeLanguage, maybePlatform))
-            yield artifacts.map(artifact => ArtifactResponse(artifact.groupId.value, artifact.artifactId))
+            yield {
+              val distinctArtifacts =
+                artifacts.map(artifact => ArtifactResponse(artifact.groupId.value, artifact.artifactId)).distinct
+              Page(
+                pagination = Pagination(
+                  current = 0,
+                  pageCount = 0,
+                  totalSize = distinctArtifacts.size.toLong
+                ),
+                items = distinctArtifacts
+              )
+            }
       }
     }
 }
