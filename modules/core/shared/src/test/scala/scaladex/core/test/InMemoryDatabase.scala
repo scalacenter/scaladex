@@ -9,6 +9,7 @@ import scala.concurrent.Future
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.GithubInfo
+import scaladex.core.model.GithubResponse
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
@@ -26,22 +27,17 @@ class InMemoryDatabase extends SchedulerDatabase {
     dependencies.clear()
   }
 
-  override def moveProject(
-      ref: Project.Reference,
-      githubInfo: GithubInfo,
-      status: GithubStatus.Moved
-  ): Future[Unit] = ???
-
   override def insertArtifact(
       artifact: Artifact,
       dependencies: Seq[ArtifactDependency],
       now: Instant
-  ): Future[Unit] = {
+  ): Future[Boolean] = {
     val ref = artifact.projectRef
-    if (!projects.contains(ref)) projects.addOne(ref -> Project.default(ref, now = now))
+    val isNewProject = !projects.contains(ref)
+    if (isNewProject) projects.addOne(ref -> Project.default(ref, now = now))
     artifacts.addOne(ref -> (artifacts.getOrElse(ref, Seq.empty) :+ artifact))
     dependencies.appendedAll(dependencies)
-    Future.successful(())
+    Future.successful(isNewProject)
   }
 
   override def insertProject(project: Project): Future[Unit] = ???
@@ -93,17 +89,6 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   override def getAllProjects(): Future[Seq[Project]] = ???
 
-  override def updateGithubInfoAndStatus(
-      ref: Project.Reference,
-      githubInfo: GithubInfo,
-      githubStatus: GithubStatus
-  ): Future[Unit] =
-    Future.successful(
-      projects.update(ref, projects(ref).copy(githubInfo = Some(githubInfo), githubStatus = githubStatus))
-    )
-
-  override def updateGithubStatus(ref: Project.Reference, githubStatus: GithubStatus): Future[Unit] = ???
-
   override def computeProjectDependencies(): Future[Seq[ProjectDependency]] = ???
 
   override def computeAllProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]] = ???
@@ -124,4 +109,26 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def insertSession(userId: UUID, userState: UserState): Future[Unit] = ???
   override def getSession(userId: UUID): Future[Option[UserState]] = ???
   override def updateArtifactReleaseDate(reference: Artifact.MavenReference, releaseDate: Instant): Future[Int] = ???
+
+  override def updateGithubInfoAndStatus(
+      ref: Project.Reference,
+      githubInfo: GithubInfo,
+      githubStatus: GithubStatus
+  ): Future[Unit] =
+    Future.successful(
+      projects.update(ref, projects(ref).copy(githubInfo = Some(githubInfo), githubStatus = githubStatus))
+    )
+
+  override def updateGithubInfo(
+      repo: Project.Reference,
+      response: GithubResponse[(Project.Reference, GithubInfo)],
+      now: Instant
+  ): Future[Unit] =
+    response match {
+      case GithubResponse.Ok((repo, githubInfo)) =>
+        Future.successful(
+          projects.update(repo, projects(repo).copy(githubInfo = Some(githubInfo), githubStatus = GithubStatus.Ok(now)))
+        )
+      case _ => Future.successful(())
+    }
 }
