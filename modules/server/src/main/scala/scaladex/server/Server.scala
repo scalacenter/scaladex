@@ -53,18 +53,19 @@ object Server extends LazyLogging {
       // because of the sbtResolver mode
       val searchEngine = ElasticsearchEngine.open(config.elasticsearch)
 
-      val resources =
+      val resources = {
+        val datasource = DoobieUtils.getHikariDataSource(config.database)
         for {
-          webPool <- DoobieUtils.transactor(config.database)
-          schedulerPool <- DoobieUtils.transactor(config.database)
+          webPool <- DoobieUtils.transactor(datasource)
+          schedulerPool <- DoobieUtils.transactor(datasource)
           publishPool <- ExecutionContexts.fixedThreadPool[IO](8)
-        } yield (webPool, schedulerPool, publishPool)
-
+        } yield (webPool, schedulerPool, publishPool, datasource)
+      }
       resources
         .use {
-          case (webPool, schedulerPool, publishPool) =>
-            val webDatabase = new SqlDatabase(config.database, webPool)
-            val schedulerDatabase = new SqlDatabase(config.database, schedulerPool)
+          case (webPool, schedulerPool, publishPool, datasourceForFlyway) =>
+            val webDatabase = new SqlDatabase(datasourceForFlyway, webPool)
+            val schedulerDatabase = new SqlDatabase(datasourceForFlyway, schedulerPool)
             val githubService = config.github.token.map(new GithubClient(_))
             val paths = DataPaths.from(config.filesystem)
             val filesystem = FilesystemStorage(config.filesystem)

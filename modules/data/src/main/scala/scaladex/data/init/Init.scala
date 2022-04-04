@@ -1,5 +1,4 @@
 package scaladex.data.init
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 

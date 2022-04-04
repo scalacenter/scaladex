@@ -8,6 +8,7 @@ import scala.concurrent.Future
 
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
+import com.zaxxer.hikari.HikariDataSource
 import doobie.implicits._
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
@@ -19,7 +20,6 @@ import scaladex.core.model.ProjectDependency
 import scaladex.core.model.ReleaseDependency
 import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
-import scaladex.infra.config.PostgreSQLConfig
 import scaladex.infra.sql.ArtifactDependencyTable
 import scaladex.infra.sql.ArtifactTable
 import scaladex.infra.sql.DoobieUtils
@@ -31,9 +31,8 @@ import scaladex.infra.sql.ReleaseDependenciesTable
 import scaladex.infra.sql.ReleaseTable
 import scaladex.infra.sql.UserSessionsTable
 
-class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
-
-  private val flyway = DoobieUtils.flyway(conf)
+class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
+  private val flyway = DoobieUtils.flyway(datasource)
   def migrate: IO[Unit] = IO(flyway.migrate())
   def dropTables: IO[Unit] = IO(flyway.clean())
 
