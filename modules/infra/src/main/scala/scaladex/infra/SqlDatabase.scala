@@ -16,6 +16,7 @@ import scaladex.core.model.GithubResponse
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
+import scaladex.core.model.ReleaseDependency
 import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
 import scaladex.infra.config.PostgreSQLConfig
@@ -26,6 +27,8 @@ import scaladex.infra.sql.GithubInfoTable
 import scaladex.infra.sql.ProjectDependenciesTable
 import scaladex.infra.sql.ProjectSettingsTable
 import scaladex.infra.sql.ProjectTable
+import scaladex.infra.sql.ReleaseDependenciesTable
+import scaladex.infra.sql.ReleaseTable
 import scaladex.infra.sql.UserSessionsTable
 
 class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
@@ -43,6 +46,7 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
     for {
       isNewProject <- insertProjectRef(artifact.projectRef, unknownStatus)
       _ <- run(ArtifactTable.insertIfNotExist.run(artifact))
+      _ <- run(ReleaseTable.insertIfNotExists.run(artifact.release))
       _ <- insertDependencies(dependencies)
     } yield isNewProject
   }
@@ -166,8 +170,14 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
   override def computeProjectDependencies(): Future[Seq[ProjectDependency]] =
     run(ArtifactDependencyTable.computeProjectDependency.to[Seq])
 
+  override def computeReleaseDependencies(): Future[Seq[ReleaseDependency]] =
+    run(ArtifactDependencyTable.computeReleaseDependency.to[Seq])
+
   override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] =
     run(ProjectDependenciesTable.insertOrUpdate.updateMany(projectDependencies))
+
+  override def insertReleaseDependencies(releaseDependency: Seq[ReleaseDependency]): Future[Int] =
+    run(ReleaseDependenciesTable.insertIfNotExists.updateMany(releaseDependency))
 
   override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] =
     run(ProjectDependenciesTable.countInverseDependencies.unique(projectRef))

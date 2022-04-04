@@ -6,6 +6,7 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
+import scaladex.core.model.ReleaseDependency
 import scaladex.infra.sql.DoobieUtils.Mappings._
 import scaladex.infra.sql.DoobieUtils._
 
@@ -69,6 +70,16 @@ object ArtifactDependencyTable {
       "DISTINCT d.organization, d.repository, t.organization, t.repository",
       groupBy = Seq("d.organization", "d.repository", "t.organization", "t.repository")
     )
+
+  val computeReleaseDependency: Query0[ReleaseDependency] = {
+    val sourceReleaseFields = ReleaseTable.fields.map("d." + _)
+    val targetReleaseFields = ReleaseTable.fields.map("t." + _)
+    selectRequest(
+      fullJoin,
+      s"DISTINCT ${sourceReleaseFields.mkString(", ")}, ${targetReleaseFields.mkString(", ")}, d.scope",
+      groupBy = (sourceReleaseFields ++ targetReleaseFields) :+ "d.scope"
+    )
+  }
 
   val selectDependencyFromProject: Query[Project.Reference, ArtifactDependency] =
     selectRequest(

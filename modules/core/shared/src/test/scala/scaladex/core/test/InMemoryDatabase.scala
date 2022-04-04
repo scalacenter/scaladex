@@ -13,6 +13,7 @@ import scaladex.core.model.GithubResponse
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
+import scaladex.core.model.ReleaseDependency
 import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
 
@@ -90,6 +91,7 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getAllProjects(): Future[Seq[Project]] = ???
 
   override def computeProjectDependencies(): Future[Seq[ProjectDependency]] = ???
+  override def computeReleaseDependencies(): Future[Seq[ReleaseDependency]] = ???
 
   override def computeAllProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]] = ???
 
@@ -97,6 +99,8 @@ class InMemoryDatabase extends SchedulerDatabase {
     Future.successful(projects.update(ref, projects(ref).copy(creationDate = Some(creationDate))))
 
   override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] = ???
+
+  override def insertReleaseDependencies(releaseDependency: Seq[ReleaseDependency]): Future[Int] = ???
 
   override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] =
     // not really implemented
