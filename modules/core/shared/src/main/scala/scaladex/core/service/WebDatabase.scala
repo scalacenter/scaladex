@@ -7,11 +7,14 @@ import scala.concurrent.Future
 
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.GithubInfo
+import scaladex.core.model.GithubResponse
 import scaladex.core.model.Project
 import scaladex.core.model.UserState
 
 trait WebDatabase {
-  def insertArtifact(artifact: Artifact, dependencies: Seq[ArtifactDependency], time: Instant): Future[Unit]
+  // insertArtifact return a boolean. It's true if the a new project is inserted, false otherwise
+  def insertArtifact(artifact: Artifact, dependencies: Seq[ArtifactDependency], time: Instant): Future[Boolean]
   def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit]
   def getAllProjects(): Future[Seq[Project]]
   def getProject(projectRef: Project.Reference): Future[Option[Project]]
@@ -27,4 +30,9 @@ trait WebDatabase {
   def getSession(userId: UUID): Future[Option[UserState]]
   def getAllSessions(): Future[Seq[(UUID, UserState)]]
   def deleteSession(userId: UUID): Future[Unit]
+  def updateGithubInfo(
+      repo: Project.Reference,
+      response: GithubResponse[(Project.Reference, GithubInfo)],
+      now: Instant
+  ): Future[Unit]
 }

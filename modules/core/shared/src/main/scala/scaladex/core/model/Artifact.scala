@@ -23,7 +23,7 @@ case class Artifact(
     artifactName: Artifact.Name,
     projectRef: Project.Reference,
     description: Option[String],
-    releaseDate: Option[Instant],
+    releaseDate: Instant,
     resolver: Option[Resolver],
     licenses: Set[License],
     isNonStandardLib: Boolean,
@@ -36,7 +36,7 @@ case class Artifact(
 
   private def artifactHttpPath: String = s"/${projectRef.organization}/${projectRef.repository}/$artifactName"
 
-  val mavenReference: Artifact.MavenReference = Artifact.MavenReference(groupId.value, artifactId, version.toString)
+  val mavenReference: Artifact.MavenReference = Artifact.MavenReference(groupId.value, artifactId, version.encode)
 
   def fullHttpUrl(env: Env): String =
     env match {
@@ -215,7 +215,7 @@ object Artifact {
 
     private def FullParser[A: P] = {
       Start ~
-        (Alpha | Digit | "-" | "." | (!(BinaryVersion.IntermediateParser ~ End) ~ "_")).rep.! ~ // must end with scala target
+        (Alpha | Digit | "-" | "." | (!(BinaryVersion.IntermediateParserButNotInvalidSbt ~ End) ~ "_")).rep.! ~ // must end with scala target
         BinaryVersion.Parser ~
         End
     }.map {

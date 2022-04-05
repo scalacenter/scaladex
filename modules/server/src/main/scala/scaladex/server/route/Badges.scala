@@ -11,6 +11,7 @@ import akka.http.scaladsl.server.RequestContext
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.RouteResult
 import scaladex.core.model.Artifact
+import scaladex.core.model.ArtifactSelection
 import scaladex.core.model.Jvm
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
@@ -74,7 +75,7 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
       logoWidth.map(w => ("logoWidth", w.toString))
     ).flatten.map { case (k, v) => k + "=" + v }.mkString("?", "&", "")
 
-    respondWithHeader(`Cache-Control`(`no-cache`)) {
+    respondWithHeaders(`Cache-Control`(`no-cache`), ETag(status)) {
       redirect(
         s"https://img.shields.io/badge/$subject-$status-$color.svg$query",
         TemporaryRedirect
@@ -90,7 +91,6 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
     parameter("target".?) { binaryVersion =>
       shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
         val res = getSelectedArtifact(
-          database,
           organization,
           repository,
           binaryVersion,
@@ -162,6 +162,29 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
         }
       }
     }
+
+  private def getSelectedArtifact(
+      org: Project.Organization,
+      repo: Project.Repository,
+      binaryVersion: Option[String],
+      artifact: Option[Artifact.Name],
+      version: Option[String],
+      selected: Option[String]
+  ): Future[Option[Artifact]] = {
+    val artifactSelection = ArtifactSelection.parse(
+      binaryVersion = binaryVersion,
+      artifactName = artifact,
+      version = version,
+      selected = selected
+    )
+    val projectRef = Project.Reference(org, repo)
+    for {
+      project <- database.getProject(projectRef)
+      artifacts <- database.getArtifacts(projectRef)
+      defaultArtifact = project
+        .flatMap(p => artifactSelection.defaultArtifact(artifacts, p))
+    } yield defaultArtifact
+  }
 }
 
 object Badges {

@@ -181,7 +181,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       _ <- creationDates.mapSync { case (creationDate, ref) => database.updateProjectCreationDate(ref, creationDate) }
       projects <- database.getAllProjects()
     } yield {
-      val creationDates = projects.map(p => p.reference -> p.creationDate)
+      val creationDates = projects.map(p => p.reference -> p.creationDate.get)
       val expected = Seq(
         Cats.reference -> Cats.`core_3:2.6.1`.releaseDate,
         Scalafix.reference -> Scalafix.artifact.releaseDate,
@@ -228,7 +228,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
   it("should insert and get user session from id") {
     val userId = UUID.randomUUID()
     val userInfo = UserInfo("login", Some("name"), "", new Secret("token"))
-    val userState = new UserState(Set(Scalafix.reference), Set(Organization("scalacenter")), userInfo)
+    val userState = UserState(Set(Scalafix.reference), Set(Organization("scalacenter")), userInfo)
     for {
       _ <- database.insertSession(userId, userState)
       obtained <- database.getSession(userId)
@@ -273,5 +273,11 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       _ <- database.insertArtifact(Cats.`core_3:2.6.1`, Seq.empty, now)
       catsCore <- database.getArtifactByMavenReference(Cats.`core_3:2.6.1`.mavenReference)
     } yield catsCore should contain(Cats.`core_3:2.6.1`)
+  }
+  it("should return artifact from maven reference if version is only major") {
+    for {
+      _ <- database.insertArtifact(Cats.`core_3:4`, Seq.empty, now)
+      catsCore <- database.getArtifactByMavenReference(Cats.`core_3:4`.mavenReference)
+    } yield catsCore should contain(Cats.`core_3:4`)
   }
 }

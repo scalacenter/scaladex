@@ -120,7 +120,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
                     ).map(_.map { artifact =>
                       val binaryVersionParam = s"?binaryVersion=${artifact.binaryVersion.label}"
                       redirect(
-                        s"/$projectRef/${artifact.artifactName}/${artifact.version}/$binaryVersionParam",
+                        s"/$projectRef/${artifact.artifactName}/${artifact.version.encode}/$binaryVersionParam",
                         StatusCodes.TemporaryRedirect
                       )
                     }.getOrElse(complete(StatusCodes.NotFound, view.html.notfound(env, user))))
@@ -312,4 +312,24 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           Tuple1(settings)
       }
     )
+
+  private def getSelectedArtifact(
+      database: WebDatabase,
+      project: Project,
+      binaryVersion: Option[String],
+      artifact: Option[Artifact.Name],
+      version: Option[String],
+      selected: Option[String]
+  ): Future[Option[Artifact]] = {
+    val artifactSelection = ArtifactSelection.parse(
+      binaryVersion = binaryVersion,
+      artifactName = artifact,
+      version = version,
+      selected = selected
+    )
+    for {
+      artifacts <- database.getArtifacts(project.reference)
+      defaultArtifact = artifactSelection.defaultArtifact(artifacts, project)
+    } yield defaultArtifact
+  }
 }

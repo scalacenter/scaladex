@@ -27,6 +27,7 @@ import akka.util.ByteString
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
+import io.circe.Json
 import io.circe.syntax._
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubResponse
@@ -406,7 +407,9 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
           case other                  => other
         }
       case _ @HttpResponse(code, _, entity, _) =>
-        Unmarshal(entity).to[String].map(errorMessage => GithubResponse.Failed(code.intValue, errorMessage))
+        if (entity.contentType.mediaType.isApplication) { // we need to parse as json when the mediaType is application/json
+          Unmarshal(entity).to[Json].map(errorMessage => GithubResponse.Failed(code.intValue, errorMessage.toString()))
+        } else Unmarshal(entity).to[String].map(errorMessage => GithubResponse.Failed(code.intValue, errorMessage))
     }
   }
 

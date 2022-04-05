@@ -30,6 +30,12 @@ object BinaryVersion {
   def IntermediateParser[A: P]: P[(String, Option[SemanticVersion], Option[SemanticVersion])] =
     ("_sjs" | "_native" | "_" | "").! ~ (SemanticVersion.Parser.?) ~ ("_" ~ SemanticVersion.Parser).?
 
+  def IntermediateParserButNotInvalidSbt[A: P]: P[(String, Option[SemanticVersion], Option[SemanticVersion])] =
+    IntermediateParser.filter {
+      case ("_", Some(scalaV), Some(sbtV)) => BinaryVersion(SbtPlugin(sbtV), Scala(scalaV)).isValid
+      case _                               => true
+    }
+
   def Parser[A: P]: P[BinaryVersion] =
     IntermediateParser
       .map {

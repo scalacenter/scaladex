@@ -69,7 +69,7 @@ object Server extends LazyLogging {
             val githubService = config.github.token.map(new GithubClient(_))
             val paths = DataPaths.from(config.filesystem)
             val filesystem = FilesystemStorage(config.filesystem)
-            val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(publishPool)
+            val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(publishPool, system)
             val sonatypeClient = new SonatypeClient()
             val sonatypeSynchronizer = new SonatypeSynchronizer(schedulerDatabase, sonatypeClient, publishProcess)
             val userSessionSynchronizer = UserSessionSynchronizer(schedulerDatabase)

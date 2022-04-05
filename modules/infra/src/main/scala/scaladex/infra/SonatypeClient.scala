@@ -27,7 +27,6 @@ import scaladex.core.model.SbtPlugin
 import scaladex.core.model.SemanticVersion
 import scaladex.core.service.SonatypeService
 import scaladex.core.util.JsoupUtils
-import scaladex.core.util.ScalaExtensions._
 
 class SonatypeClient()(implicit val system: ActorSystem)
     extends CommonAkkaHttpClient
@@ -79,15 +78,9 @@ class SonatypeClient()(implicit val system: ActorSystem)
 
   override def getPomFile(mavenReference: Artifact.MavenReference): Future[Option[(String, Instant)]] =
     for {
-      response <- getHttpResponse(mavenReference)
-      res <- getPomFileWithLastModifiedTime(response)
+      responseOpt <- getHttpResponse(mavenReference)
+      res <- responseOpt.map(getPomFileWithLastModifiedTime).getOrElse(Future.successful(None))
     } yield res
-
-  override def getReleaseDate(mavenReference: Artifact.MavenReference): Future[Option[Instant]] =
-    for {
-      response <- getHttpResponse(mavenReference)
-      releaseDate = getLastModifiedTime(response)
-    } yield releaseDate
 
   private def getPomFileWithLastModifiedTime(response: HttpResponse): Future[Option[(String, Instant)]] =
     response match {
@@ -100,23 +93,20 @@ class SonatypeClient()(implicit val system: ActorSystem)
       case _ => Future.successful(None)
     }
 
-  private def getLastModifiedTime(response: HttpResponse): Option[Instant] = {
-    // we discard en the entity because we only need the headers
-    response.discardEntityBytes()
-    response.headers
-      .find(_.is("last-modified"))
-      .map(header => format(header.value))
-  }
-
-  private def getHttpResponse(mavenReference: MavenReference): Future[HttpResponse] = {
+  private def getHttpResponse(mavenReference: MavenReference): Future[Option[HttpResponse]] = {
     val groupIdUrl: String = mavenReference.groupId.replace('.', '/')
-    for {
-      artifactId <- Artifact.ArtifactId.parse(mavenReference.artifactId).toFuture
-      pomUrl = getPomUrl(artifactId, mavenReference.version)
-      uri = s"$sonatypeUri/${groupIdUrl}/${mavenReference.artifactId}/${mavenReference.version}/$pomUrl"
-      request = HttpRequest(uri = uri)
-      response <- queueRequest(request)
-    } yield response
+    Artifact.ArtifactId
+      .parse(mavenReference.artifactId)
+      .map { artifactId =>
+        val pomUrl = getPomUrl(artifactId, mavenReference.version)
+        val uri = s"$sonatypeUri/${groupIdUrl}/${mavenReference.artifactId}/${mavenReference.version}/$pomUrl"
+        val request = HttpRequest(uri = uri)
+        queueRequest(request).map(Option.apply)
+      }
+      .getOrElse {
+        logger.info(s"not able to parse ${mavenReference.artifactId} as ArtifactId")
+        Future.successful(None)
+      }
   }
 
   // Wed, 04 Nov 2020 23:36:02 GMT

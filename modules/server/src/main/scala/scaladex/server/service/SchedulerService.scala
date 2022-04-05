@@ -22,14 +22,15 @@ class SchedulerService(
 ) extends LazyLogging {
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   val searchSynchronizer = new SearchSynchronizer(database, searchEngine)
+  val projectDependenciesUpdater = new ProjectDependenciesUpdater(database)
 
   private val schedulers = Seq(
-    Scheduler("update-project-dependencies", updateProjectDependencies, 1.hour),
+    Scheduler("update-project-dependencies", projectDependenciesUpdater.updateAll, 1.hour),
     Scheduler("update-project-creation-date", updateProjectCreationDate, 30.minutes),
     Scheduler("sync-search", searchSynchronizer.syncAll, 30.minutes),
     new MovedArtifactsSynchronizer(database),
     userSessionSynchronizer,
-    Scheduler("sync-sonatype-release-dates", sonatypeSynchronizer.updateReleaseDate, 24.hours)
+    new MovedArtifactsSynchronizer(database)
   ) ++
     Option.when(!env.isLocal)(Scheduler("sync-sonatype-missing-releases", sonatypeSynchronizer.syncAll, 24.hours)) ++
     githubClientOpt.map(client => new GithubUpdater(database, client))
@@ -47,26 +48,6 @@ class SchedulerService(
 
   def getSchedulers(): Seq[SchedulerStatus] =
     schedulerMap.values.toSeq.map(_.status)
-
-  private def updateProjectDependencies(): Future[Unit] =
-    for {
-      projectWithDependencies <- database
-        .computeProjectDependencies()
-        .mapFailure(e =>
-          new Exception(
-            s"Failed to compute project dependencies because of ${e.getMessage}"
-          )
-        )
-      _ <- database.deleteDependenciesOfMovedProject()
-      _ <- database
-        .insertProjectDependencies(projectWithDependencies)
-        .mapFailure(e =>
-          new Exception(
-            s"Failed to insert project dependencies because of ${e.getMessage}"
-          )
-        )
-
-    } yield ()
 
   private def updateProjectCreationDate(): Future[Unit] = {
     // one request at time

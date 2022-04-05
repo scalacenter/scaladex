@@ -2,10 +2,13 @@ package scaladex.server.route.api
 
 import java.nio.file.Path
 
+import scala.concurrent.duration.DurationInt
+
 import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
+import akka.http.scaladsl.testkit.RouteTestTimeout
 import coursier.Dependency
 import coursier.Fetch
 import coursier.Module
@@ -32,8 +35,9 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
   override protected def beforeEach(): Unit = database.reset()
 
   it("sonatype should publish any artifact") {
+    implicit val customTimeout = RouteTestTimeout(2.seconds)
     val pomFile = downloadPom(Cats.`core_3:2.6.1`)
-    val creationDate = Cats.`core_3:2.6.1`.releaseDate.get.getEpochSecond
+    val creationDate = Cats.`core_3:2.6.1`.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
     val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity)
       .addCredentials(sonatype)
@@ -47,7 +51,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
 
   it("admin should publish any artifact") {
     val pomFile = downloadPom(Cats.`core_3:2.7.0`)
-    val creationDate = Cats.`core_3:2.7.0`.releaseDate.get.getEpochSecond
+    val creationDate = Cats.`core_3:2.7.0`.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
     val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity)
       .addCredentials(admin)
@@ -61,7 +65,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
 
   it("owner should publish artifact of its project") {
     val pomFile = downloadPom(Cats.core_sjs1_3)
-    val creationDate = Cats.core_sjs1_3.releaseDate.get.getEpochSecond
+    val creationDate = Cats.core_sjs1_3.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
     val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity)
       .addCredentials(typelevel)
@@ -75,7 +79,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
 
   it("user should not publish artifcat of project it does not own") {
     val pomFile = downloadPom(Scalafix.artifact)
-    val creationDate = Scalafix.artifact.releaseDate.get.getEpochSecond
+    val creationDate = Scalafix.artifact.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
     val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity)
       .addCredentials(typelevel)
