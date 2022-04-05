@@ -7,7 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions._
 
-class ProjectDependenciesUpdater(database: SchedulerDatabase)(implicit ec: ExecutionContext) extends LazyLogging {
+class DependencyUpdater(database: SchedulerDatabase)(implicit ec: ExecutionContext) extends LazyLogging {
 
   def updateAll(): Future[Unit] =
     for {

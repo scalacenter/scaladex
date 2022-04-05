@@ -54,12 +54,13 @@ object Server extends LazyLogging {
       val searchEngine = ElasticsearchEngine.open(config.elasticsearch)
 
       val resources = {
-        val datasource = DoobieUtils.getHikariDataSource(config.database)
+        val datasourceWeb = DoobieUtils.getHikariDataSource(config.database)
+        val datasourceScheduler = DoobieUtils.getHikariDataSource(config.database)
         for {
-          webPool <- DoobieUtils.transactor(datasource)
-          schedulerPool <- DoobieUtils.transactor(datasource)
+          webPool <- DoobieUtils.transactor(datasourceWeb)
+          schedulerPool <- DoobieUtils.transactor(datasourceScheduler)
           publishPool <- ExecutionContexts.fixedThreadPool[IO](8)
-        } yield (webPool, schedulerPool, publishPool, datasource)
+        } yield (webPool, schedulerPool, publishPool, datasourceWeb)
       }
       resources
         .use {

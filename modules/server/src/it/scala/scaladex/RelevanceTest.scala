@@ -14,11 +14,11 @@ import cats.effect.ContextShift
 import scala.concurrent.ExecutionContext
 import scaladex.core.model.Project
 import scaladex.core.model.search.SearchParams
-import scaladex.infra.{ElasticsearchEngine, FilesystemStorage, FlywayMigration, SqlDatabase}
+import scaladex.infra.{ElasticsearchEngine, FilesystemStorage, SqlDatabase}
 import scaladex.infra.sql.DoobieUtils
 import scaladex.server.service.SearchSynchronizer
 import scaladex.core.model.search.PageParams
-import scaladex.server.service.ProjectDependenciesUpdater
+import scaladex.server.service.DependencyUpdater
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 
@@ -31,18 +31,17 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     val datasource = DoobieUtils.getHikariDataSource(config.database)
     val transactor = DoobieUtils.transactor(datasource)
-    val flyway = FlywayMigration(datasource)
     transactor
       .use { xa =>
-        val database = new SqlDatabase(xa)
+        val database = new SqlDatabase(datasource, xa)
         val filesystem = FilesystemStorage(config.filesystem)
 
         val searchSync = new SearchSynchronizer(database, searchEngine)
-        val projectDependenciesUpdater = new ProjectDependenciesUpdater(database)
+        val projectDependenciesUpdater = new DependencyUpdater(database)
 
         IO.fromFuture(IO {
           for {
-            _ <- Init.run(database, filesystem, flyway)
+            _ <- Init.run(database, filesystem)
             _ <- searchEngine.init(true)
             _ <- projectDependenciesUpdater.updateAll()
             _ <- searchSync.syncAll()

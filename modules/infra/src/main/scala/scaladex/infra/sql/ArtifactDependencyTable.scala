@@ -67,17 +67,17 @@ object ArtifactDependencyTable {
   val computeProjectDependency: Query0[ProjectDependency] =
     selectRequest(
       fullJoin,
-      "DISTINCT d.organization, d.repository, t.organization, t.repository",
+      "d.organization, d.repository, t.organization, t.repository",
       groupBy = Seq("d.organization", "d.repository", "t.organization", "t.repository")
     )
 
   val computeReleaseDependency: Query0[ReleaseDependency] = {
-    val sourceReleaseFields = ReleaseTable.fields.map("d." + _)
-    val targetReleaseFields = ReleaseTable.fields.map("t." + _)
+    val sourceReleaseFields = ReleaseTable.primaryKeys.map("d." + _)
+    val targetReleaseFields = ReleaseTable.primaryKeys.map("t." + _)
     selectRequest(
       fullJoin,
-      s"DISTINCT ${sourceReleaseFields.mkString(", ")}, ${targetReleaseFields.mkString(", ")}, d.scope",
-      groupBy = (sourceReleaseFields ++ targetReleaseFields) :+ "d.scope"
+      s"${sourceReleaseFields.mkString(", ")}, MIN(d.release_date), ${targetReleaseFields.mkString(", ")}, MIN(t.release_date), d.scope",
+      groupBy = (sourceReleaseFields ++ targetReleaseFields) ++ Seq("d.scope")
     )
   }
 

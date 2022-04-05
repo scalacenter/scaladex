@@ -7,7 +7,7 @@ import scaladex.infra.sql.DoobieUtils.insertOrUpdateRequest
 
 object ReleaseTable {
   private val table: String = "releases"
-  private val primaryKeys: Seq[String] =
+  val primaryKeys: Seq[String] =
     Seq(
       "organization",
       "repository",
@@ -15,7 +15,7 @@ object ReleaseTable {
       "language_version",
       "version"
     )
-  val fields: Seq[String] =
+  private val fields: Seq[String] =
     primaryKeys ++ Seq(
       "release_date"
     )

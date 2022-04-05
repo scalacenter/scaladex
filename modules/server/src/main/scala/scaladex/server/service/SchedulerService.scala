@@ -22,7 +22,7 @@ class SchedulerService(
 ) extends LazyLogging {
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   val searchSynchronizer = new SearchSynchronizer(database, searchEngine)
-  val projectDependenciesUpdater = new ProjectDependenciesUpdater(database)
+  val projectDependenciesUpdater = new DependencyUpdater(database)
 
   private val schedulers = Seq(
     Scheduler("update-dependency-tables", projectDependenciesUpdater.updateAll, 1.hour),
