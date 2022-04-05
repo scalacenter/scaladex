@@ -72,8 +72,8 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
       yield issues shouldBe empty
   }
 
-  it("getUserInfo") {
-    for (_ <- client.getUserInfo())
+  it("getUserState") {
+    for (_ <- client.getUserState())
       yield succeed
   }
 

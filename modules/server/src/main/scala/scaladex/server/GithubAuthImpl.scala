@@ -11,11 +11,8 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.GithubResponse
-import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubAuth
-import scaladex.core.service.GithubService
-import scaladex.core.util.ScalaExtensions._
 import scaladex.core.util.Secret
 import scaladex.infra.GithubClient
 
@@ -41,19 +38,15 @@ class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri: String
 
   private def getUserState(token: Secret): Future[UserState] = {
     val githubClient = new GithubClient(token)
-    val permissions = Seq("WRITE", "MAINTAIN", "ADMIN")
-    for {
-      user <- getUser(githubClient)
-      orgas <- githubClient.getUserOrganizations(user.login).recover { case _ => Seq.empty }
-      orgasRepos <- orgas
-        .map { org =>
-          githubClient.getOrganizationRepositories(user.login, org, permissions).recover { case _ => Seq.empty }
-        }
-        .sequence
-        .map(_.flatten)
-      userRepos <- githubClient.getUserRepositories(user.login, permissions).recover { case _ => Seq.empty }
-    } yield UserState(orgasRepos.toSet ++ userRepos, orgas.toSet, user)
+    githubClient.getUserState().flatMap {
+      case GithubResponse.Ok(res)               => Future.successful(res)
+      case GithubResponse.MovedPermanently(res) => Future.successful(res)
+      case GithubResponse.Failed(errorCode, errorMessage) =>
+        val message = s"Call to GithubClient#getUserState failed with code: $errorCode, message: $errorMessage"
+        Future.failed(new Exception(message))
+    }
   }
+
   private def getTokenWithOauth2(code: String): Future[Secret] =
     Http()
       .singleRequest(
@@ -71,13 +64,4 @@ class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri: String
         )
       )
       .flatMap(response => Unmarshal(response).to[Response.AccessToken].map(_.token))
-
-  private def getUser(service: GithubService): Future[UserInfo] =
-    service.getUserInfo().flatMap {
-      case GithubResponse.Ok(res)               => Future.successful(res)
-      case GithubResponse.MovedPermanently(res) => Future.successful(res)
-      case GithubResponse.Failed(code, errorMessage) =>
-        logger.info(s"Request to GithubService#getUser failed with code: $code")
-        Future.failed(new Exception(errorMessage))
-    }
 }
