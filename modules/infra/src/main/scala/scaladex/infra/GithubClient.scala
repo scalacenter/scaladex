@@ -24,6 +24,7 @@ import akka.http.scaladsl.settings.ConnectionPoolSettings
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.Json
@@ -33,6 +34,7 @@ import scaladex.core.model.GithubResponse
 import scaladex.core.model.Project
 import scaladex.core.model.Url
 import scaladex.core.model.UserInfo
+import scaladex.core.model.UserState
 import scaladex.core.service.GithubService
 import scaladex.core.util.ScalaExtensions._
 import scaladex.core.util.Secret
@@ -325,7 +327,25 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
     recurse(None, Nil)
   }
 
-  def getUserInfo(): Future[UserInfo] = {
+  override def getUserState(): Future[GithubResponse[UserState]] =
+    getUserInfo().flatMap {
+      case GithubResponse.Ok(info)               => getUserState(info).map(GithubResponse.Ok.apply)
+      case GithubResponse.MovedPermanently(info) => getUserState(info).map(GithubResponse.MovedPermanently.apply)
+      case failed: GithubResponse.Failed         => Future.successful(failed)
+    }
+
+  private def getUserState(userInfo: UserInfo): Future[UserState] = {
+    val permissions = Seq("WRITE", "MAINTAIN", "ADMIN")
+    for {
+      organizations <- getUserOrganizations(userInfo.login)
+      organizationRepos <- organizations.flatTraverse { org =>
+        getOrganizationRepositories(userInfo.login, org, permissions)
+      }
+      userRepos <- getUserRepositories(userInfo.login, permissions)
+    } yield UserState(repos = organizationRepos.toSet ++ userRepos, orgs = organizations.toSet, info = userInfo)
+  }
+
+  def getUserInfo(): Future[GithubResponse[UserInfo]] = {
     val query =
       """|query {
          |  viewer {
@@ -335,9 +355,14 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
          |  }
          |}""".stripMargin
     val request = graphqlRequest(query)
-    val userInfo = get[GithubModel.UserInfo](request)
-
-    userInfo.map(_.toCoreUserInfo(token))
+    process(request).flatMap {
+      case GithubResponse.Ok((_, entity)) =>
+        Unmarshal(entity).to[GithubModel.UserInfo].map(res => GithubResponse.Ok(res.toCoreUserInfo(token)))
+      case GithubResponse.MovedPermanently((_, entity)) =>
+        Unmarshal(entity).to[GithubModel.UserInfo].map(res => GithubResponse.Ok(res.toCoreUserInfo(token)))
+      case GithubResponse.Failed(code, errorMessage) =>
+        Future.successful(GithubResponse.Failed(code, errorMessage))
+    }
   }
 
   private def extractLastPage(links: String): Option[Int] = {

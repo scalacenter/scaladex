@@ -197,6 +197,12 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
   override def getSession(userId: UUID): Future[Option[UserState]] =
     run(UserSessionsTable.selectUserSessionById.to[Seq](userId)).map(_.headOption)
 
+  override def getAllSessions(): Future[Seq[(UUID, UserState)]] =
+    run(UserSessionsTable.selectAllUserSessions.to[Seq])
+
+  override def deleteSession(userId: UUID): Future[Unit] =
+    run(UserSessionsTable.deleteByUserId.run(userId).map(_ => ()))
+
   def moveProject(
       ref: Project.Reference,
       githubInfo: GithubInfo,

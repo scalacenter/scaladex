@@ -28,6 +28,8 @@ trait WebDatabase {
   def countArtifacts(): Future[Long]
   def insertSession(userId: UUID, userState: UserState): Future[Unit]
   def getSession(userId: UUID): Future[Option[UserState]]
+  def getAllSessions(): Future[Seq[(UUID, UserState)]]
+  def deleteSession(userId: UUID): Future[Unit]
   def updateGithubInfo(
       repo: Project.Reference,
       response: GithubResponse[(Project.Reference, GithubInfo)],

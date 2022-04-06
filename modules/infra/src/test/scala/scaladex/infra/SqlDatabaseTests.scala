@@ -235,6 +235,39 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     } yield obtained shouldBe Some(userState)
   }
 
+  it("should find all user sessions") {
+    val firstUserId = UUID.randomUUID()
+    val secondUserId = UUID.randomUUID()
+    val firstUserInfo = UserInfo("first login", Some("first name"), "", Secret("firstToken"))
+    val secondUserInfo = UserInfo("second login", Some("second name"), "", Secret("secondToken"))
+    val firstUserState = UserState(Set(Scalafix.reference), Set(Organization("scalacenter")), firstUserInfo)
+    val secondUserState = UserState(Set(Cats.reference), Set(Organization("typelevel")), secondUserInfo)
+    for {
+      _ <- database.insertSession(firstUserId, firstUserState)
+      _ <- database.insertSession(secondUserId, secondUserState)
+      storedUserStates <- database.getAllSessions()
+    } yield {
+      val userStateMap = storedUserStates.toMap
+      userStateMap.get(firstUserId).map(_.info.token.decode) shouldBe Some("firstToken")
+      userStateMap.get(secondUserId).map(_.info.token.decode) shouldBe Some("secondToken")
+    }
+  }
+
+  it("should delete by user id") {
+    val userId = UUID.randomUUID()
+    val userInfo = UserInfo("login", Some("name"), "", new Secret("token"))
+    val userState = UserState(Set(Scalafix.reference), Set(Organization("scalacenter")), userInfo)
+    for {
+      _ <- database.insertSession(userId, userState)
+      maybeUserStateBeforeDeletion <- database.getSession(userId)
+      _ <- database.deleteSession(userId)
+      maybeUserStateAfterDeletion <- database.getSession(userId)
+    } yield {
+      maybeUserStateBeforeDeletion shouldBe Some(userState)
+      maybeUserStateAfterDeletion shouldBe None
+    }
+  }
+
   it("should return artifact from maven reference") {
     for {
       _ <- database.insertArtifact(Cats.`core_3:2.6.1`, Seq.empty, now)
