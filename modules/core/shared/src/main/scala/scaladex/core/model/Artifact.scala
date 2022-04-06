@@ -38,6 +38,9 @@ case class Artifact(
 
   val mavenReference: Artifact.MavenReference = Artifact.MavenReference(groupId.value, artifactId, version.encode)
 
+  def release: Release =
+    Release(projectRef.organization, projectRef.repository, platform, language, version, releaseDate)
+
   def fullHttpUrl(env: Env): String =
     env match {
       case Env.Prod => s"https://index.scala-lang.org$artifactHttpPath"

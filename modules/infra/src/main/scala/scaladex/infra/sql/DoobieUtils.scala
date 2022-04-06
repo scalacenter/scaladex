@@ -39,24 +39,25 @@ object DoobieUtils {
 
   private implicit val cs: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
+
   def flyway(conf: PostgreSQLConfig): Flyway = {
     val datasource = getHikariDataSource(conf)
+    flyway(datasource)
+  }
+  def flyway(datasource: HikariDataSource): Flyway =
     Flyway
       .configure()
       .dataSource(datasource)
       .locations("migrations", "scaladex/infra/migrations")
       .load()
-  }
 
-  def transactor(conf: PostgreSQLConfig): Resource[IO, HikariTransactor[IO]] = {
-    val datasource = getHikariDataSource(conf)
+  def transactor(datasource: HikariDataSource): Resource[IO, HikariTransactor[IO]] =
     for {
       ce <- ExecutionContexts.fixedThreadPool[IO](32) // our connect EC
       be <- Blocker[IO] // our blocking EC
     } yield Transactor.fromDataSource[IO](datasource, ce, be)
-  }
 
-  private def getHikariDataSource(conf: PostgreSQLConfig): HikariDataSource = {
+  def getHikariDataSource(conf: PostgreSQLConfig): HikariDataSource = {
     val config: HikariConfig = new HikariConfig()
     config.setDriverClassName(conf.driver)
     config.setJdbcUrl(conf.url)
