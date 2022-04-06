@@ -1,17 +1,17 @@
 package scaladex.server.route.api
 
 import scala.concurrent.ExecutionContext
+
 import akka.http.scaladsl.server.Route
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
 import endpoints4s.akkahttp.server
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
 import scaladex.core.api.artifact.ArtifactEndpoints
 import scaladex.core.api.artifact.ArtifactParams
 import scaladex.core.api.artifact.ArtifactResponse
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
-import scaladex.core.model.search.{Page, Pagination}
+import scaladex.core.model.search.Page
+import scaladex.core.model.search.Pagination
 import scaladex.core.service.WebDatabase
 
 class ArtifactApi(database: WebDatabase)(
@@ -44,9 +44,6 @@ class ArtifactApi(database: WebDatabase)(
 }
 
 object ArtifactApi {
-
-  implicit val formatArtifactResponse: OFormat[ArtifactResponse] =
-    Json.format[ArtifactResponse]
 
   def apply(database: WebDatabase)(implicit ec: ExecutionContext): ArtifactApi =
     new ArtifactApi(database)

@@ -28,7 +28,7 @@ trait ArtifactEndpoints extends Endpoints with PaginationSchema {
     )
   ) & qs[Option[String]](
     name = "platform",
-    docs = Some("Filter the results matching the given platforms only (e.g., 'jvm', 'sjs1', 'native0.4', 'sbt1.0')")
+    docs = Some("Filter the results matching the given platform only (e.g., 'jvm', 'sjs1', 'native0.4', 'sbt1.0')")
   )).xmap((ArtifactParams.apply _).tupled)(Function.unlift(ArtifactParams.unapply))
 
   // Artifact endpoint definition

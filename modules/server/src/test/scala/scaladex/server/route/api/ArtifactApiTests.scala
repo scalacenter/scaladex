@@ -6,6 +6,7 @@ import scala.concurrent.duration.Duration
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import cats.implicits.toTraverseOps
+import endpoints4s.ujson.codecs.schemas.JsonSchema
 import org.scalatest.BeforeAndAfterEach
 import scaladex.core.api.artifact.ArtifactResponse
 import scaladex.core.model.Language
@@ -14,6 +15,7 @@ import scaladex.core.model.search.{Page, Pagination}
 import scaladex.core.test.Values.Cats
 import scaladex.core.test.Values.now
 import scaladex.server.route.ControllerBaseSuite
+import scaladex.server.route.api.ApiDocumentation.ujsonSchemas.field
 import scaladex.server.route.api.ArtifactApi._
 
 class ArtifactApiTests extends ControllerBaseSuite with BeforeAndAfterEach with PlayJsonSupport {
