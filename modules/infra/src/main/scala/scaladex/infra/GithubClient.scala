@@ -345,7 +345,7 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
     } yield UserState(repos = organizationRepos.toSet ++ userRepos, orgs = organizations.toSet, info = userInfo)
   }
 
-  private def getUserInfo(): Future[GithubResponse[UserInfo]] = {
+  def getUserInfo(): Future[GithubResponse[UserInfo]] = {
     val query =
       """|query {
          |  viewer {

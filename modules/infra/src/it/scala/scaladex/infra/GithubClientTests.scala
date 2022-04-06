@@ -72,9 +72,9 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
       yield issues shouldBe empty
   }
 
-  it("getUserState") {
-    for (_ <- client.getUserState())
-      yield succeed
+  it("getUserInfo") {
+    for (response <- client.getUserInfo())
+      yield response should matchPattern { case GithubResponse.Ok(_) => () }
   }
 
   it("getPercentageOfLanguage should return 0, given a repo with none of the target language") {
