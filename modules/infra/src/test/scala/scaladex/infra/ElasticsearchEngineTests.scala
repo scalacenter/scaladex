@@ -64,11 +64,11 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
       byForks <- searchEngine.find(params.copy(sorting = Sorting.Forks), pageParams)
       byContributors <- searchEngine.find(params.copy(sorting = Sorting.Contributors), pageParams)
     } yield {
-      byDependent.items.map(_.document) should contain theSameElementsInOrderAs catsFirst
-      byCreated.items.map(_.document) should contain theSameElementsInOrderAs scalafixFirst // todo fix
-      byStars.items.map(_.document) should contain theSameElementsInOrderAs catsFirst
-      byForks.items.map(_.document) should contain theSameElementsInOrderAs catsFirst
-      byContributors.items.map(_.document) should contain theSameElementsInOrderAs catsFirst
+      (byDependent.items.map(_.document) should contain).theSameElementsInOrderAs(catsFirst)
+      (byCreated.items.map(_.document) should contain).theSameElementsInOrderAs(scalafixFirst) // todo fix
+      (byStars.items.map(_.document) should contain).theSameElementsInOrderAs(catsFirst)
+      (byForks.items.map(_.document) should contain).theSameElementsInOrderAs(catsFirst)
+      (byContributors.items.map(_.document) should contain).theSameElementsInOrderAs(catsFirst)
     }
   }
 
@@ -80,7 +80,7 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
     for {
       _ <- insertAll(Seq(p1, p2, p3))
       page <- searchEngine.find(params, pageParams)
-    } yield page.items.map(_.document) should contain theSameElementsInOrderAs Seq(p2, p1, p3)
+    } yield (page.items.map(_.document) should contain).theSameElementsInOrderAs(Seq(p2, p1, p3))
   }
 
   "contributing search" in {
