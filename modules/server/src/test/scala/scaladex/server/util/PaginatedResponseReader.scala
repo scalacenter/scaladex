@@ -5,7 +5,7 @@ import play.api.libs.json.Reads
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.Pagination
 
-object PageReadProvider {
+trait PaginatedResponseReader {
 
   implicit def pageItemsJson[A](implicit items: Reads[A]): Reads[Seq[A]] = Reads.seq(items)
   implicit val paginationJson: Reads[Pagination] = Json.reads[Pagination]

@@ -19,9 +19,13 @@ import scaladex.core.model.search.Pagination
 import scaladex.core.test.Values.Cats
 import scaladex.core.test.Values.now
 import scaladex.server.route.ControllerBaseSuite
-import scaladex.server.util.PageReadProvider._
+import scaladex.server.util.PaginatedResponseReader
 
-class ArtifactApiTests extends ControllerBaseSuite with BeforeAndAfterEach with PlayJsonSupport {
+class ArtifactApiTests
+    extends ControllerBaseSuite
+    with BeforeAndAfterEach
+    with PlayJsonSupport
+    with PaginatedResponseReader {
 
   val artifactRoute: Route = ArtifactApi(database).routes
   implicit val jsonResponseReader: Reads[ArtifactResponse] = Json.reads[ArtifactResponse]
