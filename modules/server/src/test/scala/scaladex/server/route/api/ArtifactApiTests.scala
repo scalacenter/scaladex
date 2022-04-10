@@ -3,24 +3,28 @@ package scaladex.server.route.api
 import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
+
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import cats.implicits.toTraverseOps
-import endpoints4s.ujson.codecs.schemas.JsonSchema
 import org.scalatest.BeforeAndAfterEach
+import play.api.libs.json.Json
+import play.api.libs.json.Reads
 import scaladex.core.api.artifact.ArtifactResponse
+import scaladex.core.model.Artifact
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
-import scaladex.core.model.search.{Page, Pagination}
+import scaladex.core.model.search.Page
+import scaladex.core.model.search.Pagination
 import scaladex.core.test.Values.Cats
 import scaladex.core.test.Values.now
 import scaladex.server.route.ControllerBaseSuite
-import scaladex.server.route.api.ApiDocumentation.ujsonSchemas.field
-import scaladex.server.route.api.ArtifactApi._
+import scaladex.server.util.PageReadProvider._
 
 class ArtifactApiTests extends ControllerBaseSuite with BeforeAndAfterEach with PlayJsonSupport {
 
   val artifactRoute: Route = ArtifactApi(database).routes
+  implicit val jsonResponseReader: Reads[ArtifactResponse] = Json.reads[ArtifactResponse]
 
   override protected def beforeAll(): Unit = Await.result(insertAllCatsArtifacts(), Duration.Inf)
 
@@ -34,9 +38,12 @@ class ArtifactApiTests extends ControllerBaseSuite with BeforeAndAfterEach with 
         val response = responseAs[Page[ArtifactResponse]]
         response match {
           case Page(Pagination(_, _, numStoredArtifacts), artifacts) =>
-            numStoredArtifacts shouldBe Cats.allArtifacts.size
-            artifacts.size shouldBe Cats.allArtifacts.size
-            Cats.allArtifacts.forall { storedArtifact =>
+            val distinctArtifacts = Cats.allArtifacts.distinctBy { artifact: Artifact =>
+              (artifact.groupId.value, artifact.artifactId)
+            }
+            numStoredArtifacts shouldBe distinctArtifacts.size
+            artifacts.size shouldBe distinctArtifacts.size
+            distinctArtifacts.forall { storedArtifact =>
               artifacts.exists { case ArtifactResponse(_, artifactId) => storedArtifact.artifactId == artifactId }
             } shouldBe true
         }
@@ -66,10 +73,13 @@ class ArtifactApiTests extends ControllerBaseSuite with BeforeAndAfterEach with 
     }
 
     it("should be able to query artifacts by their platform") {
-      val expectedResponse = Platform
+      val expectedResponseArtifacts = Platform
         .fromLabel("jvm")
         .map { targetPlatform =>
-          Cats.allArtifacts.collect {
+          val distinctArtifacts = Cats.allArtifacts.distinctBy { artifact: Artifact =>
+            (artifact.groupId.value, artifact.artifactId)
+          }
+          distinctArtifacts.collect {
             case artifact if artifact.platform == targetPlatform => (artifact.groupId.value, artifact.artifactId)
           }
         }
@@ -79,10 +89,10 @@ class ArtifactApiTests extends ControllerBaseSuite with BeforeAndAfterEach with 
         val response = responseAs[Page[ArtifactResponse]]
         response match {
           case Page(_, artifacts) =>
-            artifacts.size shouldBe 4
+            artifacts.size shouldBe expectedResponseArtifacts.size
             artifacts.map {
               case ArtifactResponse(groupId, artifactId) => (groupId, artifactId)
-            } should contain theSameElementsAs expectedResponse
+            } should contain theSameElementsAs expectedResponseArtifacts
         }
       }
     }

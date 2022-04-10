@@ -39,6 +39,7 @@ class InMemoryDatabase extends SchedulerDatabase {
     val isNewProject = !projects.contains(ref)
     if (isNewProject) projects.addOne(ref -> Project.default(ref, now = now))
     artifacts.addOne(ref -> (artifacts.getOrElse(ref, Seq.empty) :+ artifact))
+    dependencies.appendedAll(dependencies)
     Future.successful(isNewProject)
   }
 
