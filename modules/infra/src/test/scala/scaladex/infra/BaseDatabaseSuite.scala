@@ -7,13 +7,14 @@ import scala.concurrent.duration.Duration
 
 import cats.effect.ContextShift
 import cats.effect.IO
+import com.zaxxer.hikari.HikariDataSource
 import doobie.scalatest.IOChecker
 import doobie.util.transactor.Transactor
 import org.scalatest.Assertions
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Suite
-import scaladex.infra.SqlDatabase
 import scaladex.infra.config.PostgreSQLConfig
+import scaladex.infra.sql.DoobieUtils
 
 trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach {
   self: Assertions with Suite =>
@@ -24,7 +25,6 @@ trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach {
   private val config: PostgreSQLConfig = PostgreSQLConfig
     .load()
     .get
-    .asInstanceOf[PostgreSQLConfig]
 
   override val transactor: Transactor.Aux[IO, Unit] =
     Transactor
@@ -35,7 +35,7 @@ trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach {
         config.pass.decode
       )
 
-  lazy val database = new SqlDatabase(config, transactor)
+  lazy val database = new SqlDatabase(BaseDatabaseSuite.datasource, transactor)
 
   override def beforeEach(): Unit =
     Await.result(cleanTables(), Duration.Inf)
@@ -47,4 +47,11 @@ trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach {
     } yield ()
     reset.unsafeToFuture()
   }
+}
+object BaseDatabaseSuite {
+  private val config: PostgreSQLConfig = PostgreSQLConfig
+    .load()
+    .get
+
+  val datasource: HikariDataSource = DoobieUtils.getHikariDataSource(config)
 }

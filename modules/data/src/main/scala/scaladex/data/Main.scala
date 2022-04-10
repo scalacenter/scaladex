@@ -54,14 +54,15 @@ object Main extends LazyLogging {
 
     val dataPaths = DataPaths.from(config.filesystem)
     val localStorage = FilesystemStorage(config.filesystem)
+    val datasource = DoobieUtils.getHikariDataSource(config.database)
 
     def usingDatabase(f: SqlDatabase => Future[Unit]): Unit = {
       implicit val cs = IO.contextShift(system.dispatcher)
       val transactor: Resource[IO, HikariTransactor[IO]] =
-        DoobieUtils.transactor(config.database)
+        DoobieUtils.transactor(datasource)
       transactor
         .use { xa =>
-          val database = new SqlDatabase(config.database, xa)
+          val database = new SqlDatabase(datasource, xa)
           IO.fromFuture(IO(f(database)))
         }
         .unsafeRunSync()

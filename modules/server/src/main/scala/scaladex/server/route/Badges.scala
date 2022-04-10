@@ -75,7 +75,7 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
       logoWidth.map(w => ("logoWidth", w.toString))
     ).flatten.map { case (k, v) => k + "=" + v }.mkString("?", "&", "")
 
-    respondWithHeader(`Cache-Control`(`no-cache`)) {
+    respondWithHeaders(`Cache-Control`(`no-cache`), ETag(status)) {
       redirect(
         s"https://img.shields.io/badge/$subject-$status-$color.svg$query",
         TemporaryRedirect

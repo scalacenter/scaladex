@@ -18,7 +18,11 @@ import scaladex.core.model.Project
 import scaladex.core.model.Resolver
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.Url
+import scaladex.core.model.UserInfo
+import scaladex.core.model.UserState
 import scaladex.core.model.search.GithubInfoDocument
+import scaladex.core.util.Secret
+import scaladex.infra.github.GithubModel
 
 object Codecs {
   implicit val organization: Codec[Project.Organization] = fromString(_.value, Project.Organization.apply)
@@ -58,6 +62,11 @@ object Codecs {
 
   implicit val mavenRefCodec: Codec[Artifact.MavenReference] = deriveCodec
   implicit val dependenciesCodec: Codec[ArtifactDependency] = deriveCodec
+
+  implicit val userStateCodec: Codec[UserState] = deriveCodec
+  implicit val userInfoCodec: Codec[GithubModel.UserInfo] = deriveCodec
+  implicit val coreUserInfoCodec: Codec[UserInfo] = deriveCodec
+  implicit val secretCodec: Codec[Secret] = fromString(_.decode, Secret.apply)
 
   private def fromLong[A](encode: A => Long, decode: Long => A): Codec[A] =
     Codec.from(Decoder[Long].map(decode), Encoder[Long].contramap(encode))

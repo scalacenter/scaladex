@@ -8,6 +8,7 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
+import scaladex.core.model.Release
 import scaladex.infra.sql.DoobieUtils.Mappings._
 import scaladex.infra.sql.DoobieUtils._
 
@@ -77,6 +78,13 @@ object ArtifactTable {
       "MIN(release_date) as oldest_artifact, organization, repository",
       where = Some("release_date IS NOT NULL"),
       groupBy = projectReferenceFields
+    )
+
+  val getReleasesFromArtifacts: Query0[Release] =
+    selectRequest(
+      table,
+      "organization, repository, platform , language_version , version , MIN(release_date) as release_date",
+      groupBy = Seq("organization", "repository ", "platform ", "language_version", "version")
     )
 
 }

@@ -24,12 +24,10 @@ class V7_2__edit_platform_and_language extends BaseJavaMigration with ScaladexBa
       (for {
         oldArtifacts <- run(xa)(selectArtifact.to[Seq])
         groupedArtifacts = oldArtifacts.grouped(10000).toSeq
-        numberOfArtifactsUpdated <- groupedArtifacts
+        _ <- groupedArtifacts
           .map(artifacts => run(xa)(updatePlatformAndLanguage.updateMany(artifacts.map(_.update))))
           .sequence
-        _ = logger.info(s"Updated ${numberOfArtifactsUpdated.sum} artifacts")
         _ <- run(xa)(sql"ALTER TABLE artifacts DROP COLUMN binary_version".update.run)
-        _ = logger.info(s"column binary_version deleted")
       } yield ())
         .unsafeRunSync()
 

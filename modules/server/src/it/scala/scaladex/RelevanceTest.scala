@@ -14,13 +14,11 @@ import cats.effect.ContextShift
 import scala.concurrent.ExecutionContext
 import scaladex.core.model.Project
 import scaladex.core.model.search.SearchParams
-import scaladex.infra.ElasticsearchEngine
+import scaladex.infra.{ElasticsearchEngine, FilesystemStorage, SqlDatabase}
 import scaladex.infra.sql.DoobieUtils
 import scaladex.server.service.SearchSynchronizer
-import scaladex.infra.SqlDatabase
-import scaladex.infra.FilesystemStorage
 import scaladex.core.model.search.PageParams
-import scaladex.server.service.ProjectDependenciesUpdater
+import scaladex.server.service.DependencyUpdater
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 
@@ -31,14 +29,15 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
 
   override def beforeAll(): Unit = {
     implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
-    val transactor = DoobieUtils.transactor(config.database)
+    val datasource = DoobieUtils.getHikariDataSource(config.database)
+    val transactor = DoobieUtils.transactor(datasource)
     transactor
       .use { xa =>
-        val database = new SqlDatabase(config.database, xa)
+        val database = new SqlDatabase(datasource, xa)
         val filesystem = FilesystemStorage(config.filesystem)
 
         val searchSync = new SearchSynchronizer(database, searchEngine)
-        val projectDependenciesUpdater = new ProjectDependenciesUpdater(database)
+        val projectDependenciesUpdater = new DependencyUpdater(database)
 
         IO.fromFuture(IO {
           for {

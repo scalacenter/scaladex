@@ -33,6 +33,7 @@ import scaladex.server.service.AdminTaskService
 import scaladex.server.service.PublishProcess
 import scaladex.server.service.SchedulerService
 import scaladex.server.service.SonatypeSynchronizer
+import scaladex.server.service.UserSessionSynchronizer
 
 object Server extends LazyLogging {
 
@@ -53,24 +54,27 @@ object Server extends LazyLogging {
       // because of the sbtResolver mode
       val searchEngine = ElasticsearchEngine.open(config.elasticsearch)
 
-      val resources =
+      val resources = {
+        val datasourceWeb = DoobieUtils.getHikariDataSource(config.database)
+        val datasourceScheduler = DoobieUtils.getHikariDataSource(config.database)
         for {
-          webPool <- DoobieUtils.transactor(config.database)
-          schedulerPool <- DoobieUtils.transactor(config.database)
+          webPool <- DoobieUtils.transactor(datasourceWeb)
+          schedulerPool <- DoobieUtils.transactor(datasourceScheduler)
           publishPool <- ExecutionContexts.fixedThreadPool[IO](8)
-        } yield (webPool, schedulerPool, publishPool)
-
+        } yield (webPool, schedulerPool, publishPool, datasourceWeb)
+      }
       resources
         .use {
-          case (webPool, schedulerPool, publishPool) =>
-            val webDatabase = new SqlDatabase(config.database, webPool)
-            val schedulerDatabase = new SqlDatabase(config.database, schedulerPool)
+          case (webPool, schedulerPool, publishPool, datasourceForFlyway) =>
+            val webDatabase = new SqlDatabase(datasourceForFlyway, webPool)
+            val schedulerDatabase = new SqlDatabase(datasourceForFlyway, schedulerPool)
             val githubService = config.github.token.map(new GithubClient(_))
             val paths = DataPaths.from(config.filesystem)
             val filesystem = FilesystemStorage(config.filesystem)
-            val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(publishPool)
+            val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(publishPool, system)
             val sonatypeClient = new SonatypeClient()
             val sonatypeSynchronizer = new SonatypeSynchronizer(schedulerDatabase, sonatypeClient, publishProcess)
+            val userSessionSynchronizer = UserSessionSynchronizer(schedulerDatabase)
             val adminTaskService = new AdminTaskService(sonatypeSynchronizer)
             val schedulerService =
               new SchedulerService(
@@ -78,7 +82,8 @@ object Server extends LazyLogging {
                 schedulerDatabase,
                 searchEngine,
                 githubService,
-                sonatypeSynchronizer
+                sonatypeSynchronizer,
+                userSessionSynchronizer
               )
 
             for {
