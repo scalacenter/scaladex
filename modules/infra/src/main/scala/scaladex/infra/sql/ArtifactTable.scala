@@ -160,4 +160,12 @@ object ArtifactTable {
       groupBy = Seq("group_id", "artifact_id")
     )
   }
+
+  val selectProjectsUntil: Query[Instant, (Project.Reference, Language)] =
+    selectRequest1[Instant, (Project.Reference, Language)](
+      table,
+      Seq("organization", "repository", "language_version"),
+      where = Seq("release_date < ?"),
+      groupBy = Seq("organization", "repository", "language_version")
+    )
 }

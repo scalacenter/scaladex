@@ -12,15 +12,15 @@ import scaladex.core.model.Project
 import scaladex.core.model.Project.Settings
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubClient
-import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions._
+import scaladex.infra.SqlDatabase
 import scaladex.view.Job
 import scaladex.view.Task
 
 class AdminService(
     env: Env,
-    database: SchedulerDatabase,
+    database: SqlDatabase,
     searchEngine: SearchEngine,
     githubClientOpt: Option[GithubClient],
     sonatypeSynchronizer: SonatypeService
@@ -39,7 +39,8 @@ class AdminService(
       new JobScheduler(Job.projectDependencies, projectDependenciesUpdater.updateAll),
       new JobScheduler(Job.projectCreationDates, updateProjectCreationDate),
       new JobScheduler(Job.moveArtifacts, artifactsService.moveAll),
-      new JobScheduler(Job.userSessions, userSessionService.updateAll)
+      new JobScheduler(Job.userSessions, userSessionService.updateAll),
+      new JobScheduler(Job.metrics, (new Metrics(database)).run)
     ) ++
       githubClientOpt.map { client =>
         val githubUpdater = new GithubUpdater(database, client)

@@ -44,6 +44,11 @@ object Job {
     "Find missing artifacts in Maven Central of the known group IDs.",
     24.hours
   )
+  val metrics: Job = Job(
+    "metrics",
+    "Print regular metrics into the logs",
+    24.hours
+  )
 
   case class Status(state: State, results: Seq[Result], progress: Option[Progress]) {
     def isStarted: Boolean = state.isInstanceOf[Started]
