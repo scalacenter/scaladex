@@ -33,7 +33,6 @@ import scaladex.server.service.AdminTaskService
 import scaladex.server.service.PublishProcess
 import scaladex.server.service.SchedulerService
 import scaladex.server.service.SonatypeSynchronizer
-import scaladex.server.service.UserSessionSynchronizer
 
 object Server extends LazyLogging {
 
@@ -74,7 +73,6 @@ object Server extends LazyLogging {
             val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(publishPool, system)
             val sonatypeClient = new SonatypeClient()
             val sonatypeSynchronizer = new SonatypeSynchronizer(schedulerDatabase, sonatypeClient, publishProcess)
-            val userSessionSynchronizer = UserSessionSynchronizer(schedulerDatabase)
             val adminTaskService = new AdminTaskService(sonatypeSynchronizer)
             val schedulerService =
               new SchedulerService(
@@ -82,8 +80,7 @@ object Server extends LazyLogging {
                 schedulerDatabase,
                 searchEngine,
                 githubService,
-                sonatypeSynchronizer,
-                userSessionSynchronizer
+                sonatypeSynchronizer
               )
 
             for {

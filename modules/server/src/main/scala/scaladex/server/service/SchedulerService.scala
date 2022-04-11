@@ -4,6 +4,7 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
+import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Env
 import scaladex.core.service.SchedulerDatabase
@@ -17,12 +18,13 @@ class SchedulerService(
     database: SchedulerDatabase,
     searchEngine: SearchEngine,
     githubClientOpt: Option[GithubClient],
-    sonatypeSynchronizer: SonatypeSynchronizer,
-    userSessionSynchronizer: UserSessionSynchronizer
-) extends LazyLogging {
+    sonatypeSynchronizer: SonatypeSynchronizer
+)(implicit actorSystem: ActorSystem)
+    extends LazyLogging {
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   val searchSynchronizer = new SearchSynchronizer(database, searchEngine)
   val projectDependenciesUpdater = new DependencyUpdater(database)
+  val userSessionSynchronizer = new UserSessionSynchronizer(database)
 
   private val schedulers = Seq(
     Scheduler("update-dependency-tables", projectDependenciesUpdater.updateAll, 1.hour),
