@@ -8,10 +8,10 @@ import scala.concurrent.duration.DurationInt
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.StatusCodes
-import cats.implicits.toTraverseOps
 import scaladex.core.model.GithubResponse
 import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
+import scaladex.core.util.ScalaExtensions._
 import scaladex.infra.GithubClient
 
 class UserSessionSynchronizer(database: SchedulerDatabase)(implicit ec: ExecutionContext, ac: ActorSystem)
@@ -20,7 +20,7 @@ class UserSessionSynchronizer(database: SchedulerDatabase)(implicit ec: Executio
   type Session = (UUID, UserState)
 
   override def run(): Future[Unit] =
-    database.getAllSessions().flatMap(_.traverse(updateUserSession).map(_ => ()))
+    database.getAllSessions().flatMap(_.mapSync(updateUserSession).map(_ => ()))
 
   private def updateUserSession(session: Session): Future[Unit] =
     session match {
