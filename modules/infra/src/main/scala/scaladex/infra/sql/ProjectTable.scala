@@ -44,6 +44,9 @@ object ProjectTable {
 
   val countProjects: Query0[Long] =
     selectRequest(table, Seq("count(*)"))
+  
+  val countProjectsUntil: Query[Instant, Long] =
+    selectRequest1(table, "count(*)", where = Some("creation_date < ? AND github_status!='Moved' AND github_status!='NotFound'"))
 
   val selectByReference: Query[Project.Reference, Project] =
     selectRequest(fullTable, allFields, referenceFields.map(f => s"p.$f"))

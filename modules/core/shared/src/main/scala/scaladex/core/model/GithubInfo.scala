@@ -41,7 +41,8 @@ case class GithubInfo(
     codeOfConduct: Option[Url],
     chatroom: Option[Url],
     openIssues: Seq[GithubIssue], // right now it's all issues, not only beginners issues
-    scalaPercentage: Option[Int]
+    scalaPercentage: Option[Int],
+    scalaLines: Option[Int]
 ) {
   val contributorCount: Int = contributors.size
 
@@ -80,6 +81,7 @@ object GithubInfo {
     codeOfConduct = None,
     chatroom = None,
     openIssues = Seq(),
-    scalaPercentage = None
+    scalaPercentage = None,
+    scalaLines = None
   )
 }

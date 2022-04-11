@@ -11,10 +11,11 @@ import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions._
 import scaladex.infra.GithubClient
 import scaladex.view.SchedulerStatus
+import scaladex.infra.SqlDatabase
 
 class SchedulerService(
     env: Env,
-    database: SchedulerDatabase,
+    database: SqlDatabase,
     searchEngine: SearchEngine,
     githubClientOpt: Option[GithubClient],
     sonatypeSynchronizer: SonatypeSynchronizer,
@@ -30,7 +31,8 @@ class SchedulerService(
     Scheduler("sync-search", searchSynchronizer.syncAll, 30.minutes),
     new MovedArtifactsSynchronizer(database),
     userSessionSynchronizer,
-    new MovedArtifactsSynchronizer(database)
+    new MovedArtifactsSynchronizer(database),
+    Scheduler("metrics", (new Metrics(database)).run, 1.hour),
   ) ++
     Option.when(!env.isLocal)(Scheduler("sync-sonatype-missing-releases", sonatypeSynchronizer.syncAll, 24.hours)) ++
     githubClientOpt.map(client => new GithubUpdater(database, client))
