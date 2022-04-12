@@ -8,7 +8,6 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.Route
 import cats.implicits.toTraverseOps
 import org.scalatest.BeforeAndAfterEach
-import play.api.libs.json.Json
 import play.api.libs.json.Reads
 import scaladex.core.api.artifact.ArtifactResponse
 import scaladex.core.model.Artifact
@@ -18,17 +17,18 @@ import scaladex.core.model.search.Page
 import scaladex.core.model.search.Pagination
 import scaladex.core.test.Values.Cats
 import scaladex.core.test.Values.now
+import scaladex.core.util.PlayJsonCodecs
 import scaladex.server.route.ControllerBaseSuite
-import scaladex.server.util.PaginatedResponseReader
 
 class ArtifactApiTests
     extends ControllerBaseSuite
     with BeforeAndAfterEach
-    with PlayJsonSupport
-    with PaginatedResponseReader {
+    with PlayJsonSupport {
 
   val artifactRoute: Route = ArtifactApi(database).routes
-  implicit val jsonResponseReader: Reads[ArtifactResponse] = Json.reads[ArtifactResponse]
+
+  implicit val jsonPaginationReader: Reads[Pagination] = PlayJsonCodecs.paginationSchema.reads
+  implicit def jsonPageReader: Reads[Page[ArtifactResponse]] = PlayJsonCodecs.artifactEndpointResponse.reads
 
   override protected def beforeAll(): Unit = Await.result(insertAllCatsArtifacts(), Duration.Inf)
 
