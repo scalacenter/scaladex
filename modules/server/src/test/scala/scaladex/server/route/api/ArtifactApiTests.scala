@@ -17,15 +17,15 @@ import scaladex.core.model.search.Page
 import scaladex.core.model.search.Pagination
 import scaladex.core.test.Values.Cats
 import scaladex.core.test.Values.now
-import scaladex.core.util.PlayJsonCodecs
 import scaladex.server.route.ControllerBaseSuite
+import scaladex.server.util.PlayJsonCodecs
 
 class ArtifactApiTests extends ControllerBaseSuite with BeforeAndAfterEach with PlayJsonSupport {
 
   val artifactRoute: Route = ArtifactApi(database).routes
 
   implicit val jsonPaginationReader: Reads[Pagination] = PlayJsonCodecs.paginationSchema.reads
-  implicit def jsonPageReader: Reads[Page[ArtifactResponse]] = PlayJsonCodecs.artifactEndpointResponse.reads
+  implicit def jsonPageReader: Reads[Page[ArtifactResponse]] = PlayJsonCodecs.pageSchema[ArtifactResponse].reads
 
   override protected def beforeAll(): Unit = Await.result(insertAllCatsArtifacts(), Duration.Inf)
 

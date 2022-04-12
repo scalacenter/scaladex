@@ -1,4 +1,4 @@
-package scaladex.core.util
+package scaladex.server.util
 
 import scaladex.core.api.PaginationSchema
 import scaladex.core.api.artifact.ArtifactEndpointSchema

@@ -34,8 +34,8 @@ class ArtifactApi(database: WebDatabase)(
               // See: https://github.com/scalacenter/scaladex/pull/992#discussion_r841500215
               Page(
                 pagination = Pagination(
-                  current = 0,
-                  pageCount = 0,
+                  current = 1,
+                  pageCount = 1,
                   totalSize = distinctArtifacts.size.toLong
                 ),
                 items = distinctArtifacts
