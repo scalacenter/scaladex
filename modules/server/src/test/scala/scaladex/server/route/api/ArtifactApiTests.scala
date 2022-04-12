@@ -20,10 +20,7 @@ import scaladex.core.test.Values.now
 import scaladex.core.util.PlayJsonCodecs
 import scaladex.server.route.ControllerBaseSuite
 
-class ArtifactApiTests
-    extends ControllerBaseSuite
-    with BeforeAndAfterEach
-    with PlayJsonSupport {
+class ArtifactApiTests extends ControllerBaseSuite with BeforeAndAfterEach with PlayJsonSupport {
 
   val artifactRoute: Route = ArtifactApi(database).routes
 

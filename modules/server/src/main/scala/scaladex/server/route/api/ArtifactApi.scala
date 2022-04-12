@@ -30,6 +30,8 @@ class ArtifactApi(database: WebDatabase)(
             yield {
               val distinctArtifacts =
                 artifacts.map(artifact => ArtifactResponse(artifact.groupId.value, artifact.artifactId)).distinct
+              // TODO: The values below are placeholders, will need to populate them w. real data.
+              // See: https://github.com/scalacenter/scaladex/pull/992#discussion_r841500215
               Page(
                 pagination = Pagination(
                   current = 0,
