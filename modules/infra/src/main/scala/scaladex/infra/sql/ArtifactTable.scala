@@ -18,6 +18,8 @@ object ArtifactTable {
   val mavenReferenceFields: Seq[String] = Seq("group_id", "artifact_id", "version")
   val projectReferenceFields: Seq[String] = Seq("organization", "repository")
 
+  // Don't use `select *...` but `select fields`
+  // the table have more fields than in Artifact instance
   private[sql] val fields = mavenReferenceFields ++
     Seq("artifact_name") ++
     projectReferenceFields ++
@@ -30,9 +32,17 @@ object ArtifactTable {
       "platform",
       "language_version"
     )
+  // these field are usually excluded when we read artifacts from the artifacts table.
+  val versionFields: Seq[String] = Seq("is_semantic", "is_prerelease")
 
-  val insertIfNotExist: Update[Artifact] =
-    insertOrUpdateRequest(table, fields, mavenReferenceFields)
+  def insertIfNotExist(artifact: Artifact): ConnectionIO[Int] =
+    insertIfNotExist.run((artifact, artifact.version.isSemantic, artifact.version.isPreRelease))
+
+  def insertIfNotExist(artifacts: Seq[Artifact]): ConnectionIO[Int] =
+    insertIfNotExist.updateMany(artifacts.map(a => (a, a.version.isSemantic, a.version.isPreRelease)))
+
+  private[sql] val insertIfNotExist: Update[(Artifact, Boolean, Boolean)] =
+    insertOrUpdateRequest(table, fields ++ versionFields, mavenReferenceFields)
 
   val count: Query0[Long] =
     selectRequest(table, "COUNT(*)")
@@ -57,11 +67,17 @@ object ArtifactTable {
 
   val selectArtifactByProject: Query[Project.Reference, Artifact] = {
     val where = projectReferenceFields.map(f => s"$f=?").mkString(" AND ")
-    selectRequest1(table, "*", where = Some(where), orderBy = Some("release_date DESC"), limit = Some(10000))
+    selectRequest1(
+      table,
+      fields.mkString(", "),
+      where = Some(where),
+      orderBy = Some("release_date DESC"),
+      limit = Some(10000)
+    )
   }
 
   val selectArtifactByProjectAndName: Query[(Project.Reference, Artifact.Name), Artifact] =
-    selectRequest(table, Seq("*"), projectReferenceFields :+ "artifact_name")
+    selectRequest(table, fields, projectReferenceFields :+ "artifact_name")
 
   val selectByMavenReference: Query[Artifact.MavenReference, Artifact] =
     selectRequest(table, fields, mavenReferenceFields)

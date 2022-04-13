@@ -46,7 +46,7 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
     val unknownStatus = GithubStatus.Unknown(time)
     for {
       isNewProject <- insertProjectRef(artifact.projectRef, unknownStatus)
-      _ <- run(ArtifactTable.insertIfNotExist.run(artifact))
+      _ <- run(ArtifactTable.insertIfNotExist(artifact))
       _ <- run(ReleaseTable.insertIfNotExists.run(artifact.release))
       _ <- insertDependencies(dependencies)
     } yield isNewProject
@@ -68,7 +68,7 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
     } yield ()
 
   override def insertArtifacts(artifacts: Seq[Artifact]): Future[Unit] =
-    run(ArtifactTable.insertIfNotExist.updateMany(artifacts)).map(_ => ())
+    run(ArtifactTable.insertIfNotExist(artifacts)).map(_ => ())
 
   override def insertDependencies(dependencies: Seq[ArtifactDependency]): Future[Unit] =
     run(ArtifactDependencyTable.insertIfNotExist.updateMany(dependencies)).map(_ => ())
