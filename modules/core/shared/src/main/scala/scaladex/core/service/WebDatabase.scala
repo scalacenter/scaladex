@@ -9,6 +9,8 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubResponse
+import scaladex.core.model.Language
+import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.UserState
 
@@ -23,6 +25,7 @@ trait WebDatabase {
   def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]]
   def getArtifactsByName(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]]
   def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]]
+  def getAllArtifacts(maybeLanguage: Option[Language], maybePlatform: Option[Platform]): Future[Seq[Artifact]]
   def getDirectDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Direct]]
   def getReverseDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Reverse]]
   def countArtifacts(): Future[Long]

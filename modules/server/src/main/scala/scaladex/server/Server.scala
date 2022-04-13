@@ -159,6 +159,7 @@ object Server extends LazyLogging {
     val awesomePages = new AwesomePages(config.env, searchEngine)
     val publishApi = new PublishApi(githubAuth, publishProcess)
     val searchApi = new SearchApi(searchEngine)
+    val artifactApi = ArtifactApi(webDatabase)
     val oldSearchApi = new OldSearchApi(searchEngine, webDatabase)
     val badges = new Badges(webDatabase)
     val oauth2 = new Oauth2(config.oAuth2, githubAuth, session)
@@ -171,6 +172,7 @@ object Server extends LazyLogging {
           val apiRoute = concat(
             publishApi.routes,
             searchApi.route(maybeUser),
+            artifactApi.routes,
             oldSearchApi.routes,
             Assets.routes,
             badges.route,

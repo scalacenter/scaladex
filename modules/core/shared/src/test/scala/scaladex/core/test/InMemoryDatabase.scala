@@ -11,6 +11,8 @@ import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubResponse
 import scaladex.core.model.GithubStatus
+import scaladex.core.model.Language
+import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.model.ReleaseDependency
@@ -76,6 +78,22 @@ class InMemoryDatabase extends SchedulerDatabase {
     )
 
   override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] = ???
+
+  override def getAllArtifacts(
+      maybeLanguage: Option[Language],
+      maybePlatform: Option[Platform]
+  ): Future[Seq[Artifact]] = {
+    val constraint = (maybeLanguage, maybePlatform) match {
+      case (Some(language), Some(platform)) =>
+        (artifact: Artifact) => artifact.language == language && artifact.platform == platform
+      case (Some(language), _) =>
+        (artifact: Artifact) => artifact.language == language
+      case (_, Some(platform)) =>
+        (artifact: Artifact) => artifact.platform == platform
+      case _ => (_: Artifact) => true
+    }
+    Future.successful(artifacts.values.flatten.toSeq.filter(constraint))
+  }
 
   override def getDirectDependencies(artifact: Artifact): Future[List[ArtifactDependency.Direct]] =
     Future.successful(Nil)

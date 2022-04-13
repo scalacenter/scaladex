@@ -15,6 +15,8 @@ import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubResponse
 import scaladex.core.model.GithubStatus
+import scaladex.core.model.Language
+import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.model.ReleaseDependency
@@ -144,6 +146,18 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] =
     run(ArtifactTable.selectByMavenReference.option(mavenRef))
+
+  override def getAllArtifacts(
+      maybeLanguage: Option[Language],
+      maybePlatform: Option[Platform]
+  ): Future[Seq[Artifact]] =
+    (maybeLanguage, maybePlatform) match {
+      case (Some(language), Some(platform)) =>
+        run(ArtifactTable.selectArtifactByLanguageAndPlatform.to[Seq](language, platform))
+      case (Some(language), _) => run(ArtifactTable.selectArtifactByLanguage.to[Seq](language))
+      case (_, Some(platform)) => run(ArtifactTable.selectArtifactByPlatform.to[Seq](platform))
+      case _                   => run(ArtifactTable.selectAllArtifacts.to[Seq])
+    }
 
   def countProjects(): Future[Long] =
     run(ProjectTable.countProjects.unique)
