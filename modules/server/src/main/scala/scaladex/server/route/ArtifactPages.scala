@@ -123,7 +123,7 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
                 projectOpt <- database.getProject(ref)
                 project = projectOpt.getOrElse(throw new Exception(s"project ${ref} not found"))
                 artifacts <- database.getArtifacts(ref, artifactName, artifactVersion).map(_.groupBy(_.binaryVersion))
-                currentVersion = params.binaryVersion.getOrElse(artifacts.keys.toSeq.sorted.head)
+                currentVersion = params.binaryVersion.getOrElse(artifacts.keys.toSeq.max(BinaryVersion.ordering))
                 numberOfVersions <- database.countVersions(ref)
                 lastVersion <- database.getLastVersion(ref)
               } yield view.project.html

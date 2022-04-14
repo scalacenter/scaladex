@@ -22,17 +22,17 @@
       <div class="col-md-8">
         <div class="content-project artifact box" data-organization="@project.reference.organization"
         data-repository="@project.reference.repository">
-          <div class="artifact-title">@artifactName @artifactVersion
+          <div class="artifact-head">
             <div class="float-right">
               <form>
-                <select id="select-platform" name="binary-version" class="display-block selectpicker"
+                <select id="select-platform" name="binary-version" class="selectpicker"
                 data-style="btn-primary" onchange="this.form.submit()">
                 @for((platform, binaryVersions) <- artifacts.keys.groupBy(_.platform)) {
                   <optgroup label="@{platform.label}">
                   @for(binaryVersion <- binaryVersions) {
                     <option value="@binaryVersion.label"
                     @if(params.binaryVersion.contains(binaryVersion) || currentBinaryVersion == binaryVersion) {selected}>
-                    @binaryVersion.language.label
+                    @binaryVersion.toString
                     </option>
                   }
                   </optgroup>
@@ -40,7 +40,13 @@
                 </select>
               </form>
             </div>
-
+            <div class="artifact-name">@artifactName</div>
+            <div class="artifact-version">@artifactVersion</div>
+          </div>
+          <div class="artifact-information">
+            <div class="col-sm-2">Group-id:</div> <div class="col=sm-10>"> @currentArtifact.groupId</div>
+            <div class="col-sm-2">Artifact-id:</div> <div class="col=sm-10>"> @currentArtifact.artifactId</div>
+            <div class="col-sm-2">Version</div> <div class="col=sm-10>"> @currentArtifact.version</div>
           </div>
         </div>
       </div>
@@ -49,6 +55,10 @@
           @documentation(currentArtifact, project)
         </div>
       </div>
+      <div class="col-md-8">
+        @install(currentArtifact, project.settings.cliArtifacts)
+      </div>
+
     </div>
   </main>
 }

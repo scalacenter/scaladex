@@ -502,7 +502,7 @@ main {
   }
 
   .content-project {
-    margin-bottom: 0;
+    margin-bottom: 10px;
     margin-top: -40px;
   }
 
@@ -546,8 +546,15 @@ main {
       margin-bottom: 30px;
       margin-top: -40px;
     }
-    .box,
     .install {
+      padding: 10px; // smaller padding for install box in project page
+      .tab-pane {
+        pre {
+          font-size: 12px;
+        }
+      }
+    }
+    .box {
       margin-bottom: 30px;
     }
     ul {
@@ -560,39 +567,6 @@ main {
     h4 {
       margin-top: 0;
       margin-bottom: ($line-height-computed / 1.5);
-    }
-    .install {
-      .btn-copy {
-        position: absolute;
-        top: 50px;
-        right: 6px;
-      }
-      .nav-tabs > li:not(.active) > a {
-        color: white;
-      }
-      .tab-pane {
-        background: #fff;
-        padding: 7px;
-        overflow: auto;
-        a {
-          display: block;
-          margin-bottom: 10px;
-        }
-        pre {
-          overflow: visible;
-          padding: 0;
-          resize: none;
-          font-size: ($font-size-small - 2);
-          font-family: $font-family-monospace;
-          &:disabled {
-            background-color: transparent;
-          }
-        }
-
-        pre {
-          background: #fff;
-        }
-      }
     }
     .dependencies,
     .dependents {
@@ -664,19 +638,48 @@ main {
       background-color: #002b37;
     }
   }
-  .tab-content {
-    position: relative;
-  }
-
-  .tab-pane {
-    height: 85px;
-  }
 }
 .deprecated-project {
   background-color: #FFF8C5;
   font-size: 22px;
   text-align: center;
   color: $gray-darker;
+}
+
+.install {
+  .nav-tabs>li>a {
+    background: white;
+  }
+  .nav-tabs>li.active>a {
+    background: $gray-lighter;
+  }
+
+  .btn-copy {
+    float: right;
+  }
+
+  .tab-pane {
+    background: $gray-lighter;
+    padding: 7px;
+    overflow: auto;
+    a {
+      display: block;
+      margin-bottom: 10px;
+    }
+    pre {
+      background: transparent;
+      overflow: visible;
+      padding: 0;
+      margin-top: 5px;
+      margin-bottom: 5px;
+      resize: none;
+      font-size: 14px;
+      font-family: $font-family-monospace;
+      &:disabled {
+        background-color: transparent;
+      }
+    }
+  }
 }
 
 .head-project {
@@ -823,11 +826,21 @@ main {
   }
 }
 .artifact {
-  .artifact-title {
+  margin-bottom: 10px;
+  .artifact-head {
     padding-bottom: 0.3em;
+    border-bottom: 1px solid #eee;
+  }
+  .artifact-name {
     font-size: 2.25em;
     line-height: 1.2;
-    border-bottom: 1px solid #eee;
+  }
+  .artifact-version {
+    font-size: 1.40em;
+    color: $brand-secondary;
+  }
+  .artifact-information{
+    margin-top: 20px;
   }
 }
 
@@ -888,9 +901,6 @@ main {
 
 .float-right {
   float: right;
-}
-.display-block {
-  display: block !important;
 }
 
 .documentation-link {

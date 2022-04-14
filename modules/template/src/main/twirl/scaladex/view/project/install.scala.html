@@ -1,8 +1,8 @@
 @import scaladex.core.model.Artifact
 
 @(artifact: Artifact, cliArtifacts: Set[Artifact.Name])
-<div class="install">
-  <ul class="nav nav-tabs" role="tablist">
+<div class="install box">
+  <ul class="nav nav-tabs nav-justified" role="tablist">
     <li role="presentation" class="active">
       <a href="#sbt" aria-controls="sbt" role="tab" data-toggle="tab">Sbt</a>
     </li>
@@ -12,7 +12,7 @@
     @if(cliArtifacts.contains(artifact.artifactName)) {
       <li role="presentation">
         <a href="#coursier" aria-controls="coursier" role="tab" data-toggle="tab">Cour</a>
-      </li>    
+      </li>
     }
 
     <li role="presentation">
