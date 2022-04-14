@@ -87,6 +87,17 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
       yield percentOfLanguage > 0 shouldBe true
   }
 
+  it("getCommitActivity") {
+    for (commitActivities <- client.getCommitActivity(Scalafix.reference))
+      yield commitActivities should not be empty
+  }
+
+  it("should return empty commit activity list") {
+    val reference = Project.Reference.from("intive", "domofon")
+    for (commitActivities <- client.getCommitActivity(reference))
+      yield commitActivities shouldBe empty
+  }
+
   if (!isCI) {
     it("getOrganizationRepositories") {
       for (repos <- client.getOrganizationRepositories("atry", Project.Organization("scala"), Nil))

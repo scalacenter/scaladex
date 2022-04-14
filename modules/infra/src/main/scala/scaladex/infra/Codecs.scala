@@ -7,6 +7,7 @@ import io.circe.generic.semiauto.deriveCodec
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Category
+import scaladex.core.model.GithubCommitActivity
 import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubIssue
@@ -34,6 +35,7 @@ object Codecs {
   implicit val urlCodec: Codec[Url] = fromString(_.target, Url)
   implicit val contributor: Codec[GithubContributor] = deriveCodec
   implicit val githubIssue: Codec[GithubIssue] = deriveCodec
+  implicit val githubCommitActivity: Codec[GithubCommitActivity] = deriveCodec
   implicit val documentation: Codec[Project.DocumentationLink] =
     Codec.from(
       Decoder[Map[String, String]].emap { map =>
