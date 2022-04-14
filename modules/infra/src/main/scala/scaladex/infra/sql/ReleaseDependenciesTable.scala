@@ -54,15 +54,13 @@ object ReleaseDependenciesTable {
          |FROM release_dependencies rd
          |JOIN (
          |	SELECT a1.organization, a1.repository, MAX(a1.version) AS version
-         |	FROM artifacts as a1
+         |	FROM releases as a1
          |	JOIN (
          |		SELECT organization, repository, MAX(release_date) AS release_date
-         |		FROM artifacts
-         |		WHERE NOT is_prerelease
+         |		FROM releases
          |		GROUP BY organization, repository
          |	) AS a2
          |	ON a1.organization=a2.organization AND a1.repository=a2.repository AND a1.release_date=a2.release_date
-         |	WHERE NOT is_prerelease
          |	GROUP BY a1.organization, a1.repository
          |) AS r
          |ON source_organization=organization AND source_repository=repository AND source_version=version
