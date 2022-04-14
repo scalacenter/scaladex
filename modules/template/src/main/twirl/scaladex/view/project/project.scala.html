@@ -1,4 +1,4 @@
-@import scaladex.view.html.contributingInfo
+@import scaladex.view.project.html.contributingInfo
 @import scaladex.core.model.Project
 @import scaladex.core.model.Artifact
 @import scaladex.core.model.Env
@@ -48,13 +48,7 @@
             @scastie(artifact.scastieURL)
             @project.githubInfo.map { github =>
               @if(github.openIssues.nonEmpty && github.chatroom.isDefined && github.contributingGuide.isDefined) {
-                  <div class="box project-contributing-info">
-                    <h4>Contributing Info</h4>
-                    <p>Beginner-friendly Issues:</p>
-                    <div>
-                      @contributingInfo(project)
-                    </div>
-                  </div>
+                @contributingInfo(project)
               }
             }
             @project.githubInfo.map(gh => contributors(project, gh.contributors))
