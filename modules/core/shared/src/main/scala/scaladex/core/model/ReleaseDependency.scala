@@ -1,7 +1,5 @@
 package scaladex.core.model
 
-import java.time.Instant
-
 import scaladex.core.model.ArtifactDependency.Scope
 
 case class ReleaseDependency(
@@ -10,5 +8,6 @@ case class ReleaseDependency(
     scope: Scope
 )
 object ReleaseDependency {
-  case class Result(ref: Project.Reference, version: SemanticVersion, scope: Scope, releaseDate: Instant)
+  case class Direct(targetRef: Project.Reference, targetVersion: SemanticVersion, scope: Scope)
+  case class Reverse(sourceRef: Project.Reference, targetVersion: SemanticVersion, scope: Scope)
 }

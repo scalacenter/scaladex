@@ -10,7 +10,6 @@ import akka.http.scaladsl.model.Uri.Query
 import scaladex.core.model.Category
 import scaladex.core.model.Project
 import scaladex.core.model.search.AwesomeParams
-import scaladex.core.model.search.Pagination
 import scaladex.core.model.search.SearchParams
 import scaladex.core.model.web.ArtifactsPageParams
 
@@ -49,12 +48,7 @@ package object html {
     if (in.startsWith("https://") || in.startsWith("http://")) in
     else "http://" + in
 
-  def paginationUri(
-      params: SearchParams,
-      uri: Uri,
-      pagination: Pagination,
-      you: Boolean
-  )(page: Int): Uri = {
+  def paginationUri(params: SearchParams, uri: Uri, you: Boolean)(page: Int): Uri = {
 
     val newUri = uri
       .appendQuery("sort" -> params.sorting.label)
@@ -73,7 +67,7 @@ package object html {
 
   }
 
-  def paginationUri(category: Category, params: AwesomeParams, pagination: Pagination)(page: Int): Uri =
+  def paginationUri(category: Category, params: AwesomeParams)(page: Int): Uri =
     Uri(s"/awesome/${category.label}")
       .appendQuery("sort" -> params.sorting.label)
       .appendQuery("languages", params.languages.map(_.label))
@@ -93,11 +87,7 @@ package object html {
       .appendQuery(("isSemantic", params.showNonSemanticVersion.toString))
 
   // https://www.reddit.com/r/scala/comments/4n73zz/scala_puzzle_gooooooogle_pagination/d41jor5
-  def paginationRender(
-      selected: Int,
-      max: Int,
-      toShow: Int = 10
-  ): (Option[Int], List[Int], Option[Int]) = {
+  def paginationRender(selected: Int, max: Int, toShow: Int = 10): (Option[Int], List[Int], Option[Int]) = {
     val min = 1
 
     if (selected == max && max == 1) (None, List(1), None)

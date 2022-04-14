@@ -11,7 +11,6 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import com.typesafe.scalalogging.LazyLogging
 import play.twirl.api.HtmlFormat
-import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model._
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
@@ -161,29 +160,41 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
             .defaultArtifact(artifacts, project)
             .getOrElse(throw new Exception(s"no artifact found for $projectRef"))
           lastVersion <- database.getLastVersion(projectRef)
-          directReleaseDependencies <- database.getDirectReleaseDependencies(projectRef, lastVersion)
-          reverseReleaseDependencies <- database.getReverseReleaseDependencies(projectRef, lastVersion)
+          directDependencies <- database.getDirectReleaseDependencies(projectRef, lastVersion)
+          reverseDependencies <- database.getReverseReleaseDependencies(projectRef)
         } yield {
           val allVersions = artifacts.view.map(_.version)
-          val binaryVersions = artifacts.view.map(_.binaryVersion)
           val platformsForBadges = artifacts.view
             .filter(_.artifactName == selectedArtifact.artifactName)
             .map(_.binaryVersion.platform)
-          val artifactNames = artifacts.view.map(_.artifactName)
           val twitterCard = project.twitterSummaryCard
+          val groupedDirectDependencies = directDependencies
+            .groupBy(_.targetRef)
+            .view
+            .mapValues { deps =>
+              val scope = deps.map(_.scope).min
+              val versions = deps.map(_.targetVersion).distinct
+              (scope, versions)
+            }
+          val groupedReverseDependencies = reverseDependencies
+            .groupBy(_.sourceRef)
+            .view
+            .mapValues { deps =>
+              val scope = deps.map(_.scope).min
+              val version = deps.map(_.targetVersion).max
+              (scope, version)
+            }
           val html = view.project.html.project(
             env,
             project,
-            SortedSet.from(artifactNames)(Artifact.Name.ordering),
             SortedSet.from(allVersions)(SemanticVersion.ordering.reverse),
-            SortedSet.from(binaryVersions)(BinaryVersion.ordering.reverse),
             SortedSet.from(platformsForBadges)(Platform.ordering.reverse),
             selectedArtifact,
             user,
             Some(twitterCard),
             artifacts.size,
-            directReleaseDependencies.groupBy(d => (d.ref, d.scope)),
-            keepLastVersion(reverseReleaseDependencies),
+            groupedDirectDependencies.toMap,
+            groupedReverseDependencies.toMap,
             lastVersion
           )
           (StatusCodes.OK, html)
@@ -192,13 +203,6 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         Future.successful((StatusCodes.NotFound, view.html.notfound(env, user)))
     }
   }
-
-  def keepLastVersion(
-      reverse: Seq[ReleaseDependency.Result]
-  ): Map[(Project.Reference, Scope), Seq[ReleaseDependency.Result]] =
-    reverse.groupBy(d => (d.ref, d.scope)).map {
-      case (key, releaseDependencies) => key -> releaseDependencies.maxByOption(_.releaseDate).toSeq
-    }
 
   // TODO remove all unused parameters
   private val editForm: Directive1[Project.Settings] =

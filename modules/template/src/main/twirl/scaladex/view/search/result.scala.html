@@ -4,14 +4,12 @@
 @import scaladex.core.model.search.SearchParams
 @import scaladex.core.model.search.ProjectHit
 @import scaladex.core.model.Platform
-@import scaladex.core.model.UserState
 @import scaladex.core.model.Language
 
 @(params: SearchParams,
   uri: Uri,
   pagination: Pagination,
   projects: Seq[ProjectHit],
-  user: Option[UserState],
   you: Boolean,
   topics: Seq[(String, Int)],
   languages: Seq[(Language, Int)],
@@ -44,6 +42,6 @@
   </div>      
   <div class="col-md-9">
     @resultList(projects, params)
-    @paginate(pagination, paginationUri(params, uri, pagination, you))
+    @paginate(pagination, paginationUri(params, uri, you))
   </div>
 </div>

@@ -170,11 +170,8 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getDirectReleaseDependencies(
       ref: Project.Reference,
       version: SemanticVersion
-  ): Future[Seq[ReleaseDependency.Result]] = ???
-  override def getReverseReleaseDependencies(
-      ref: Project.Reference,
-      version: SemanticVersion
-  ): Future[Seq[ReleaseDependency.Result]] = ???
+  ): Future[Seq[ReleaseDependency.Direct]] = ???
+  override def getReverseReleaseDependencies(ref: Project.Reference): Future[Seq[ReleaseDependency.Reverse]] = ???
   override def countVersions(ref: Project.Reference): Future[Long] = ???
   override def getLastVersion(ref: Project.Reference): Future[SemanticVersion] = ???
   override def getArtifacts(

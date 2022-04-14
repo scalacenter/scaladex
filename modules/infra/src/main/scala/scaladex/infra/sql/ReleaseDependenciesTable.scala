@@ -38,19 +38,35 @@ object ReleaseDependenciesTable {
   val insertIfNotExists: Update[ReleaseDependency] =
     insertOrUpdateRequest(table, fields, primaryKeys)
 
-  val getDirectDependencies: Query[(Project.Reference, SemanticVersion), ReleaseDependency.Result] =
-    selectRequest1(
+  val getDirectDependencies: Query[(Project.Reference, SemanticVersion), ReleaseDependency.Direct] =
+    selectRequest1[(Project.Reference, SemanticVersion, Project.Reference), ReleaseDependency.Direct](
       table,
-      s"target_organization, target_repository, target_version, $scope, MIN(source_release_date)",
-      where = Some("source_organization=? AND source_repository=? AND source_version=?"),
+      s"target_organization, target_repository, target_version, $scope",
+      where = Some(
+        "source_organization=? AND source_repository=? AND source_version=? AND NOT target_organization=? AND NOT target_repository=?"
+      ),
       groupBy = Seq("target_organization", "target_repository", "target_version", scope)
-    )
+    ).contramap { case (ref, v) => (ref, v, ref) }
 
-  val getReverseDependencies: Query[(Project.Reference, SemanticVersion), ReleaseDependency.Result] =
-    selectRequest1(
-      table,
-      s"source_organization, source_repository, source_version, $scope, MIN(source_release_date)",
-      where = Some("target_organization=? AND target_repository=? AND target_version=?"),
-      groupBy = Seq("source_organization", "source_repository", "source_version", scope)
-    )
+  val getReverseDependencies: Query[Project.Reference, ReleaseDependency.Reverse] =
+    Query[(Project.Reference, Project.Reference), ReleaseDependency.Reverse](
+      """|SELECT DISTINCT organization, repository, target_version, scope
+         |FROM release_dependencies rd
+         |JOIN (
+         |	SELECT a1.organization, a1.repository, MAX(a1.version) AS version
+         |	FROM artifacts as a1
+         |	JOIN (
+         |		SELECT organization, repository, MAX(release_date) AS release_date
+         |		FROM artifacts
+         |		WHERE NOT is_prerelease
+         |		GROUP BY organization, repository
+         |	) AS a2
+         |	ON a1.organization=a2.organization AND a1.repository=a2.repository AND a1.release_date=a2.release_date
+         |	WHERE NOT is_prerelease
+         |	GROUP BY a1.organization, a1.repository
+         |) AS r
+         |ON source_organization=organization AND source_repository=repository AND source_version=version
+         |WHERE target_organization=? AND target_repository=? AND NOT source_organization=? AND NOT source_repository=?
+         |""".stripMargin
+    ).contramap(ref => (ref, ref))
 }

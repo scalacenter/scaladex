@@ -211,17 +211,14 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] =
     run(ProjectDependenciesTable.countInverseDependencies.unique(projectRef))
 
-  override def getReverseReleaseDependencies(
-      ref: Project.Reference,
-      version: SemanticVersion
-  ): Future[Seq[ReleaseDependency.Result]] =
-    run(ReleaseDependenciesTable.getReverseDependencies.to[Seq]((ref, version)))
-
   override def getDirectReleaseDependencies(
       ref: Project.Reference,
       version: SemanticVersion
-  ): Future[Seq[ReleaseDependency.Result]] =
+  ): Future[Seq[ReleaseDependency.Direct]] =
     run(ReleaseDependenciesTable.getDirectDependencies.to[Seq]((ref, version)))
+
+  override def getReverseReleaseDependencies(ref: Project.Reference): Future[Seq[ReleaseDependency.Reverse]] =
+    run(ReleaseDependenciesTable.getReverseDependencies.to[Seq](ref))
 
   override def deleteDependenciesOfMovedProject(): Future[Unit] =
     for {

@@ -40,11 +40,8 @@ trait WebDatabase {
   def getDirectReleaseDependencies(
       ref: Project.Reference,
       version: SemanticVersion
-  ): Future[Seq[ReleaseDependency.Result]]
-  def getReverseReleaseDependencies(
-      ref: Project.Reference,
-      version: SemanticVersion
-  ): Future[Seq[ReleaseDependency.Result]]
+  ): Future[Seq[ReleaseDependency.Direct]]
+  def getReverseReleaseDependencies(ref: Project.Reference): Future[Seq[ReleaseDependency.Reverse]]
   def countArtifacts(): Future[Long]
   def insertSession(userId: UUID, userState: UserState): Future[Unit]
   def getSession(userId: UUID): Future[Option[UserState]]
