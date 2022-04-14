@@ -36,6 +36,7 @@ import scaladex.core.model.UserState
 import scaladex.core.util.Secret
 import scaladex.infra.Codecs._
 import scaladex.infra.config.PostgreSQLConfig
+import scaladex.core.model.GithubCommitActivity
 
 object DoobieUtils {
 
@@ -147,6 +148,8 @@ object DoobieUtils {
       Meta[String].timap(fromJson[Seq[GithubIssue]](_).get)(toJson(_))
     implicit val documentationPattern: Meta[Seq[DocumentationPattern]] =
       Meta[String].timap(fromJson[Seq[DocumentationPattern]](_).get)(toJson(_))
+    implicit val githubCommitActivityMeta: Meta[Seq[GithubCommitActivity]] =
+      Meta[String].timap(fromJson[Seq[GithubCommitActivity]](_).get)(toJson(_))
     implicit val topicsMeta: Meta[Set[String]] =
       Meta[String].timap(_.split(",").filter(_.nonEmpty).toSet)(
         _.mkString(",")

@@ -29,6 +29,7 @@ import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.Json
 import io.circe.syntax._
+import scaladex.core.model.GithubCommitActivity
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubResponse
 import scaladex.core.model.Project
@@ -86,6 +87,7 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
       openIssues <- getOpenIssues(repo.ref)
       chatroom <- getGitterChatRoom(repo.ref)
       scalaPercentage <- getPercentageOfLanguage(repo.ref, language = "Scala")
+      commitActivity <- getCommitActivity(repo.ref)
     } yield GithubInfo(
       homepage = repo.homepage.map(Url),
       description = repo.description,
@@ -103,7 +105,8 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
       codeOfConduct = communityProfile.flatMap(_.codeOfConductFile).map(Url),
       chatroom = chatroom.map(Url),
       openIssues = openIssues.map(_.toGithubIssue).toList,
-      scalaPercentage = Option(scalaPercentage)
+      scalaPercentage = Option(scalaPercentage),
+      commitActivity = commitActivity
     )
 
   def getReadme(ref: Project.Reference): Future[Option[String]] = {
@@ -200,6 +203,12 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
       val totalNumBytes = response.values.sum
       response.get(language).fold(0)(toPercentage(_, totalNumBytes))
     }
+  }
+
+  def getCommitActivity(ref: Project.Reference): Future[Seq[GithubCommitActivity]] = {
+    val request =
+      HttpRequest(uri = s"${repoUrl(ref)}/stats/commit_activity").addHeader(acceptJson).addCredentials(credentials)
+    get[Seq[GithubCommitActivity]](request).fallbackTo(Future.successful(Seq.empty))
   }
 
   def getGitterChatRoom(ref: Project.Reference): Future[Option[String]] = {
