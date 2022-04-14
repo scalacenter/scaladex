@@ -10,6 +10,7 @@ class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers
   it("check selectArtifactByLanguage")(check(ArtifactTable.selectArtifactByLanguage))
   it("check selectArtifactByPlatform")(check(ArtifactTable.selectArtifactByPlatform))
   it("check selectArtifactByLanguageAndPlatform")(check(ArtifactTable.selectArtifactByLanguageAndPlatform))
+  it("check selectArtifactByGroupIdAndArtifactId")(check(ArtifactTable.selectArtifactByGroupIdAndArtifactId))
   it("check selectArtifactByProject")(check(ArtifactTable.selectArtifactByProject))
   it("check selectArtifactByProjectAndName")(check(ArtifactTable.selectArtifactByProjectAndName))
   it("check findOldestArtifactsPerProjectReference")(check(ArtifactTable.selectOldestByProject))

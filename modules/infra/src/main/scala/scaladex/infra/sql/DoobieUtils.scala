@@ -153,6 +153,8 @@ object DoobieUtils {
       Meta[String].timap(_.split(",").filter(_.nonEmpty).map(Artifact.Name.apply).toSet)(_.mkString(","))
     implicit val semanticVersionMeta: Meta[SemanticVersion] =
       Meta[String].timap(SemanticVersion.parse(_).get)(_.encode)
+    implicit val artifactIdMeta: Meta[Artifact.ArtifactId] =
+      Meta[String].timap(Artifact.ArtifactId.parse(_).get)(_.value)
     implicit val binaryVersionMeta: Meta[BinaryVersion] =
       Meta[String].timap { x =>
         BinaryVersion

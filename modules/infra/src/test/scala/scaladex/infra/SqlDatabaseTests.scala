@@ -334,4 +334,32 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       )
     } yield storedArtifacts.size shouldBe 0
   }
+
+  it("should not return any artifacts when the database is empty, given a group id and artifact id") {
+    val testArtifact = Cats.`core_3:4`
+    val testArtifactId = Artifact.ArtifactId
+      .parse(testArtifact.artifactId)
+      .getOrElse(fail("Parsing an artifact id should not have failed"))
+    for {
+      maybeRetrievedArtifact <- database.getArtifact(testArtifact.groupId, testArtifactId)
+      storedArtifacts <- database.getAllArtifacts(None, None)
+    } yield {
+      maybeRetrievedArtifact shouldBe None
+      storedArtifacts.size shouldBe 0
+    }
+  }
+
+  it("should return an artifact, given a group id an artifact id of a stored artifact") {
+    val testArtifact = Cats.`core_3:4`
+    val testArtifactId = Artifact.ArtifactId
+      .parse(testArtifact.artifactId)
+      .getOrElse(fail("Parsing an artifact id should not have failed"))
+    for {
+      isStoredSuccessfully <- database.insertArtifact(testArtifact, dependencies = Cats.dependencies, now)
+      maybeRetrievedArtifact <- database.getArtifact(testArtifact.groupId, testArtifactId)
+    } yield {
+      isStoredSuccessfully shouldBe true
+      maybeRetrievedArtifact shouldBe Some(testArtifact)
+    }
+  }
 }

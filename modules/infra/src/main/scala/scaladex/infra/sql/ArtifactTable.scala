@@ -65,6 +65,9 @@ object ArtifactTable {
   val selectArtifactByLanguageAndPlatform: Query[(Language, Platform), Artifact] =
     selectRequest(table, fields, keys = Seq("language_version", "platform"))
 
+  val selectArtifactByGroupIdAndArtifactId: Query[(Artifact.GroupId, Artifact.ArtifactId), Artifact] =
+    selectRequest(table, fields, Seq("group_id", "artifact_id"))
+
   val selectArtifactByProject: Query[Project.Reference, Artifact] = {
     val where = projectReferenceFields.map(f => s"$f=?").mkString(" AND ")
     selectRequest1(
