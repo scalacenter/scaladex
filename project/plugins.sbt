@@ -4,7 +4,7 @@ addSbtPlugin("io.github.irundaia" % "sbt-sassify" % "1.5.2")
 addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.9")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.9.0")
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.2.0")
-addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.9.34")
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.10.0")
 
 // this is experimental
 addSbtPlugin("ch.epfl.scala" % "sbt-github-dependency-graph" % "0.1.0-M4")
