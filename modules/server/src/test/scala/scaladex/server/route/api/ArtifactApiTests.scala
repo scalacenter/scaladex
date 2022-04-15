@@ -126,6 +126,23 @@ class ArtifactApiTests extends ControllerBaseSuite with BeforeAndAfterEach with 
       }
     }
 
+    it("should not return any artifacts given a valid group id and an artifact id that does not parse") {
+      val malformedArtifactId = "badArtifactId"
+      Get(s"/api/artifacts/org.apache.spark/$malformedArtifactId") ~> artifactRoute ~> check {
+        status shouldBe StatusCodes.OK
+        val response = responseAs[Page[ArtifactMetadataResponse]]
+        response shouldBe Page.empty[ArtifactMetadataResponse]
+      }
+    }
+
+    it("should not return any artifacts given an invalid group id and a valid artifact id") {
+      Get("/api/artifacts/ca.ubc.cs/cats-core_3") ~> artifactRoute ~> check {
+        status shouldBe StatusCodes.OK
+        val response = responseAs[Page[ArtifactMetadataResponse]]
+        response shouldBe Page.empty[ArtifactMetadataResponse]
+      }
+    }
+
     it("should return artifacts with the given group id and artifact id") {
       Get("/api/artifacts/org.typelevel/cats-core_3") ~> artifactRoute ~> check {
         status shouldBe StatusCodes.OK
