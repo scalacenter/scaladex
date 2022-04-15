@@ -1,13 +1,18 @@
 package scaladex.server.route.api
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
 import endpoints4s.akkahttp.server
 import scaladex.core.api.artifact.ArtifactEndpoints
+import scaladex.core.api.artifact.ArtifactMetadataParams
+import scaladex.core.api.artifact.ArtifactMetadataResponse
 import scaladex.core.api.artifact.ArtifactParams
 import scaladex.core.api.artifact.ArtifactResponse
+import scaladex.core.model.Artifact
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.search.Page
@@ -41,6 +46,26 @@ class ArtifactApi(database: WebDatabase)(
                 items = distinctArtifacts
               )
             }
+      } ~ artifactMetadata.implementedByAsync {
+        case ArtifactMetadataParams(groupId, artifactId) =>
+          val parsedGroupId = Artifact.GroupId(groupId)
+          Artifact.ArtifactId.parse(artifactId).fold(Future.successful(Page.empty[ArtifactMetadataResponse])) {
+            parsedArtifactId =>
+              val futureArtifacts = database.getArtifacts(parsedGroupId, parsedArtifactId)
+              val futureResponses = futureArtifacts.map(_.map(Artifact.toMetadataResponse))
+              futureResponses.map { resp =>
+                // TODO: The values below are placeholders, will need to populate them w. real data.
+                // See: https://github.com/scalacenter/scaladex/pull/992#discussion_r841500215
+                Page(
+                  pagination = Pagination(
+                    current = 1,
+                    pageCount = 1,
+                    totalSize = resp.size
+                  ),
+                  items = resp
+                )
+              }
+          }
       }
     }
 }

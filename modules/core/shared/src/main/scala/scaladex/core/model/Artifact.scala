@@ -5,6 +5,7 @@ import java.time.Instant
 import fastparse.P
 import fastparse.Start
 import fastparse._
+import scaladex.core.api.artifact.ArtifactMetadataResponse
 import scaladex.core.model.PatchVersion
 import scaladex.core.model.Project.DocumentationLink
 import scaladex.core.util.Parsers._
@@ -243,4 +244,12 @@ object Artifact {
       s"http://search.maven.org/#artifactdetails|$groupId|$artifactId|$version|jar"
   }
 
+  def toMetadataResponse(artifact: Artifact): ArtifactMetadataResponse =
+    ArtifactMetadataResponse(
+      version = artifact.version.toString,
+      projectReference = Some(artifact.projectRef.toString),
+      releaseDate = artifact.releaseDate.toString,
+      language = artifact.language.toString,
+      platform = artifact.platform.toString
+    )
 }

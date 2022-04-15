@@ -341,12 +341,8 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       .parse(testArtifact.artifactId)
       .getOrElse(fail("Parsing an artifact id should not have failed"))
     for {
-      maybeRetrievedArtifact <- database.getArtifact(testArtifact.groupId, testArtifactId)
-      storedArtifacts <- database.getAllArtifacts(None, None)
-    } yield {
-      maybeRetrievedArtifact shouldBe None
-      storedArtifacts.size shouldBe 0
-    }
+      retrievedArtifacts <- database.getArtifacts(testArtifact.groupId, testArtifactId)
+    } yield retrievedArtifacts.size shouldBe 0
   }
 
   it("should return an artifact, given a group id an artifact id of a stored artifact") {
@@ -356,10 +352,26 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       .getOrElse(fail("Parsing an artifact id should not have failed"))
     for {
       isStoredSuccessfully <- database.insertArtifact(testArtifact, dependencies = Cats.dependencies, now)
-      maybeRetrievedArtifact <- database.getArtifact(testArtifact.groupId, testArtifactId)
+      retrievedArtifacts <- database.getArtifacts(testArtifact.groupId, testArtifactId)
     } yield {
       isStoredSuccessfully shouldBe true
-      maybeRetrievedArtifact shouldBe Some(testArtifact)
+      retrievedArtifacts.size shouldBe 1
+      retrievedArtifacts.headOption shouldBe Some(testArtifact)
+    }
+  }
+
+  it("should return all versions of an artifact given a group id and an artifact id") {
+    val testArtifacts = Seq(Cats.`core_3:4`, Cats.`core_3:2.7.0`)
+    val groupId = Artifact.GroupId("org.typelevel")
+    val artifactId = Artifact.ArtifactId
+      .parse("cats-core_3")
+      .getOrElse(fail("Parsing an artifact id should not have failed"))
+    for {
+      _ <- database.insertArtifacts(testArtifacts)
+      retrievedArtifacts <- database.getArtifacts(groupId, artifactId)
+    } yield {
+      retrievedArtifacts.size shouldBe 2
+      retrievedArtifacts should contain theSameElementsAs testArtifacts
     }
   }
 }

@@ -22,7 +22,7 @@ trait WebDatabase {
   def getProject(projectRef: Project.Reference): Future[Option[Project]]
   def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]]
   def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int]
-  def getArtifact(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Option[Artifact]]
+  def getArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]]
   def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]]
   def getArtifactsByName(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]]
   def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]]

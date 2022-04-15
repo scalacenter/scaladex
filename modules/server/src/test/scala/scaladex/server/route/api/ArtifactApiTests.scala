@@ -9,6 +9,7 @@ import akka.http.scaladsl.server.Route
 import cats.implicits.toTraverseOps
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.Reads
+import scaladex.core.api.artifact.ArtifactMetadataResponse
 import scaladex.core.api.artifact.ArtifactResponse
 import scaladex.core.model.Artifact
 import scaladex.core.model.Language
@@ -25,7 +26,10 @@ class ArtifactApiTests extends ControllerBaseSuite with BeforeAndAfterEach with 
   val artifactRoute: Route = ArtifactApi(database).routes
 
   implicit val jsonPaginationReader: Reads[Pagination] = PlayJsonCodecs.paginationSchema.reads
-  implicit def jsonPageReader: Reads[Page[ArtifactResponse]] = PlayJsonCodecs.pageSchema[ArtifactResponse].reads
+  implicit def jsonArtifactResponsePageReader: Reads[Page[ArtifactResponse]] =
+    PlayJsonCodecs.pageSchema[ArtifactResponse].reads
+  implicit def jsonArtifactMetadataResponsePageReader: Reads[Page[ArtifactMetadataResponse]] =
+    PlayJsonCodecs.pageSchema[ArtifactMetadataResponse].reads
 
   override protected def beforeAll(): Unit = Await.result(insertAllCatsArtifacts(), Duration.Inf)
 
@@ -114,16 +118,33 @@ class ArtifactApiTests extends ControllerBaseSuite with BeforeAndAfterEach with 
       }
     }
 
+    it("should not return any artifacts given a group id and artifact id for an artifact not stored") {
+      Get("/api/artifacts/ca.ubc.cs/test-package_3") ~> artifactRoute ~> check {
+        status shouldBe StatusCodes.OK
+        val response = responseAs[Page[ArtifactMetadataResponse]]
+        response shouldBe Page.empty[ArtifactMetadataResponse]
+      }
+    }
+
+    it("should return artifacts with the given group id and artifact id") {
+      Get("/api/artifacts/org.typelevel/cats-core_3") ~> artifactRoute ~> check {
+        status shouldBe StatusCodes.OK
+        val response = responseAs[Page[ArtifactMetadataResponse]]
+        val expectedArtifactMetadata = Seq(Cats.`core_3:2.6.1`, Cats.`core_3:2.7.0`).map(Artifact.toMetadataResponse)
+        response match {
+          case Page(_, artifacts) =>
+            artifacts.size shouldBe 2
+            artifacts should contain theSameElementsAs expectedArtifactMetadata
+        }
+      }
+    }
+
     it("should not return artifacts if the database is empty") {
       database.reset()
       Get(s"/api/artifacts") ~> artifactRoute ~> check {
         status shouldBe StatusCodes.OK
         val response = responseAs[Page[ArtifactResponse]]
-        response match {
-          case Page(Pagination(_, _, numStoredArtifacts), artifacts) =>
-            numStoredArtifacts shouldBe 0
-            artifacts.size shouldBe 0
-        }
+        response shouldBe Page.empty[ArtifactResponse]
       }
     }
   }

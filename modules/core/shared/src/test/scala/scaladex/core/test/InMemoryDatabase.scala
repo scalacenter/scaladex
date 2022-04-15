@@ -57,11 +57,11 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getProject(projectRef: Project.Reference): Future[Option[Project]] =
     Future.successful(projects.get(projectRef))
 
-  override def getArtifact(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Option[Artifact]] =
+  override def getArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]] =
     Future.successful {
-      artifacts.values.flatten.find { artifact: Artifact =>
+      artifacts.values.flatten.filter { artifact: Artifact =>
         artifact.groupId == groupId && artifact.artifactId == artifactId.value
-      }
+      }.toSeq
     }
 
   override def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]] =
