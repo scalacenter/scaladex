@@ -778,18 +778,21 @@ main {
     margin-top: -10px;
     margin-bottom: 50px;
   }
+  .center {
+    @media (min-width: $screen-md-min) {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  }
   .artifact-version {
     font-size: 30px;
     color: $brand-secondary;
   }
-  .artifact-center {
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .artifact-row {
-    display: -webkit-flex;
+  .artifact-info {
+    @media (min-width: 600px) {
+      float: right;
+    }
   }
   .fa-solid {
     margin-left: 5px;

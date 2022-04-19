@@ -44,27 +44,31 @@
           @artifactByVersions.map { case ((releaseDate, semanticVersion), artifacts) =>
           <div class="panel panel-default">
             <div class="artifact-row panel-body">
-              <a class="artifact-version artifact-center col-sm-2" href="/@project.reference/artifacts/@artifactName/@semanticVersion">@semanticVersion</a>
-              <div class="artifact-content col-sm-8">
-                @for((platform, binaryVersions) <- artifacts.map(_.binaryVersion).groupBy(_.platform)) {
-                  <h5>@platform:</h5>
-                  @binaryVersions.map(_.language).distinct.sorted.map { scalaV =>
-                    @displayLanguage(platform, scalaV)
-                  }
-                  <br>
-                }
+              <div class="center col-md-3">
+                <a class="artifact-version " href="/@project.reference/artifacts/@artifactName/@semanticVersion">@semanticVersion</a>
               </div>
-              <div class="col-sm-2">
-                <a class="float-right" data-toggle="tooltip" data-placement="top" title="@formatInstant(releaseDate)">
+              <div class="col-md-9">
+                <div class="artifact-info">
+                  <a data-toggle="tooltip" data-placement="top" title="@formatInstant(releaseDate)">
                     @TimerUtils.toFiniteDuration(releaseDate, Instant.now()).prettyPrint
                     ago<i class="fa-solid fa-calendar-days"></i>
-                </a>
-                <br>
-                @artifacts.head.licenses.map { license =>
-                  <a class="float-right" href="@license.url.getOrElse("#")">@license.shortName<i class="fa-solid fa-scale-balanced"></i></a>
-                }
-          </div>
-          </div>
+                  </a>
+                  <br>
+                  @artifacts.head.licenses.map { license =>
+                    <a href="@license.url.getOrElse("#")">@license.shortName<i class="fa-solid fa-scale-balanced"></i></a>
+                  }
+                </div>
+                <div class="artifact-content">
+                  @for((platform, binaryVersions) <- artifacts.map(_.binaryVersion).groupBy(_.platform)) {
+                    <h5>@platform:</h5>
+                    @for(language <- binaryVersions.map(_.language).distinct.sorted) { 
+                      <span class="scala-version">@language.label</span>
+                    }
+                    <br>
+                  }
+                </div>
+              </div>
+            </div>
           </div>
           }
         }
@@ -72,14 +76,6 @@
       </div>
     </div>
   </main>
-}
-
-@displayLanguage(platform: Platform, language: Language) = {
-  @if(params.binaryVersions.contains(BinaryVersion(platform, language))) {
-    <span class="scala-version"><b>@language.label</b></span>
-  } else {
-    <span class="scala-version">@language.label</span>
-  }
 }
 
 @filters() = {
