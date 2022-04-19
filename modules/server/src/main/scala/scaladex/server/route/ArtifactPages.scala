@@ -2,7 +2,6 @@ package scaladex.server.route
 
 import java.time.Instant
 
-import scala.collection.MapView
 import scala.collection.immutable.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.util.Failure
@@ -88,14 +87,16 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
                   .distinct
                   .sorted(BinaryVersion.ordering.reverse)
 
-                val artifactPerVersion = artifacts.groupBy(_.version).map {
-                  case (version, artifacts) => (artifacts.map(_.releaseDate).min, version) -> artifacts
-                }
-                val filteredArtifacts = filter(artifactPerVersion, params)
-                val artifactsWithVersions =
-                  SortedMap.from(filteredArtifacts)(
-                    Ordering.Tuple2(Ordering[Instant].reverse, Ordering[SemanticVersion].reverse)
-                  )
+                val artifactsByVersion =
+                  artifacts
+                    .groupBy(_.version)
+                    .filter {
+                      case (_, artifacts) =>
+                        params.binaryVersions.forall(binaryVersion =>
+                          artifacts.exists(_.binaryVersion == binaryVersion)
+                        )
+                    }
+                    .map { case (version, artifacts) => (artifacts.map(_.releaseDate).min, version) -> artifacts }
                 view.project.html.artifacts(
                   env,
                   project,
@@ -103,7 +104,9 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
                   artifactName,
                   artifactNames,
                   binaryVersions,
-                  artifactsWithVersions,
+                  SortedMap.from(artifactsByVersion)(
+                    Ordering.Tuple2(Ordering[Instant].reverse, Ordering[SemanticVersion].reverse)
+                  ),
                   params,
                   lastVersion,
                   numberOfVersions
@@ -220,22 +223,6 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
         ArtifactPageParams(binaryVersionsParsed)
     }
 
-  private def filter(
-      artifacts: Map[(Instant, SemanticVersion), Seq[Artifact]],
-      params: ArtifactsPageParams
-  ): MapView[(Instant, SemanticVersion), Seq[Artifact]] =
-    params.binaryVersions match {
-      case Nil => artifacts.view
-      case binaryVersions =>
-        val filters = binaryVersions.map(b => (artifact: Artifact) => artifact.binaryVersion == b)
-        val toKeep = artifacts
-          .map {
-            case ((version, releaseDate), artifacts) => (version, releaseDate) -> filters.forall(artifacts.exists)
-          }
-          .collect { case (toKeep, true) => toKeep }
-          .toSet
-        artifacts.view.filterKeys(toKeep)
-    }
 }
 
 object ArtifactPages {
