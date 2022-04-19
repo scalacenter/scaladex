@@ -59,7 +59,7 @@ object Codecs {
   implicit val resolverCodec: Codec[Resolver] = deriveCodec
   implicit val licenseCodec: Codec[License] = deriveCodec
   implicit val artifactCodec: Codec[Artifact] = deriveCodec
-  implicit val scopeCoded: Codec[ArtifactDependency.Scope] = fromString(_.value, ArtifactDependency.Scope.apply)
+  implicit val scopeCodec: Codec[ArtifactDependency.Scope] = fromString(_.value, ArtifactDependency.Scope.apply)
 
   implicit val mavenRefCodec: Codec[Artifact.MavenReference] = deriveCodec
   implicit val dependenciesCodec: Codec[ArtifactDependency] = deriveCodec

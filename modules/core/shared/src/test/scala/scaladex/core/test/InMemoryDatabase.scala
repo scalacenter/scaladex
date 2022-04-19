@@ -80,6 +80,10 @@ class InMemoryDatabase extends SchedulerDatabase {
         .filter(_.artifactName == artifactName)
     )
 
+  override def getArtifactsByVersion(ref: Project.Reference, version: SemanticVersion): Future[Seq[Artifact]] = ???
+
+  override def getArtifactNames(ref: Project.Reference): Future[Seq[Artifact.Name]] = ???
+
   override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] = ???
 
   override def getAllArtifacts(
@@ -158,9 +162,6 @@ class InMemoryDatabase extends SchedulerDatabase {
         )
       case _ => Future.successful(())
     }
-
-  override def getUniqueArtifacts(ref: Project.Reference): Future[Seq[(Artifact.Name, Platform, Language)]] =
-    ???
 
   override def getArtifacts(
       projectRef: Project.Reference,

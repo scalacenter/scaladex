@@ -38,6 +38,7 @@ object Values {
   val `7.2.0` = PatchVersion(7, 2, 0)
   val `7.3.0` = PatchVersion(7, 3, 0)
 
+  val `_2.13`: BinaryVersion = BinaryVersion(Jvm, Scala.`2.13`)
   val `_3`: BinaryVersion = BinaryVersion(Jvm, Scala.`3`)
   val `_sjs1_3`: BinaryVersion = BinaryVersion(ScalaJs.`1.x`, Scala.`3`)
   val `_sjs0.6_2.13` = BinaryVersion(ScalaJs.`0.6`, Scala.`2.13`)
@@ -168,6 +169,7 @@ object Values {
     }
 
     val `core_3:2.6.1`: Artifact = getArtifact("cats-core", `_3`, `2.6.1`, description = Some("Cats core"))
+    val `core_2.13:2.6.1`: Artifact = getArtifact("cats-core", `_2.13`, `2.6.1`, description = Some("Cats core"))
     val `core_3:4`: Artifact = getArtifact("cats-core", `_3`, `4`, description = Some("Cats core"))
     val `core_3:2.7.0`: Artifact = getArtifact("cats-core", `_3`, `2.7.0`, description = Some("Cats core"))
     val core_sjs1_3: Artifact = getArtifact("cats-core", `_sjs1_3`, `2.6.1`, description = Some("Cats core"))

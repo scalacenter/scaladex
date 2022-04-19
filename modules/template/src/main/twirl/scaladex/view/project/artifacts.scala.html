@@ -13,7 +13,7 @@
         env: Env,
         project: Project,
         user: Option[UserState],
-        defaultArtifact: Artifact.Name,
+        artifactName: Artifact.Name,
         artifactNames: Seq[Artifact.Name],
         allBinaryVersions: Seq[BinaryVersion],
         artifactByVersions: SortedMap[(Instant, SemanticVersion), Seq[Artifact]],
@@ -29,7 +29,7 @@
       <div class="content-project artifacts box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">
         <div class="artifacts-filter">
-          @filterArtifacts(project.reference, defaultArtifact, allBinaryVersions, artifactNames, params, artifactByVersions.size)
+          @filterArtifacts(project.reference, artifactName, allBinaryVersions, artifactNames, params, artifactByVersions.size)
         </div>
         @if(artifactByVersions.isEmpty) {
           <div>We can't find any release that matches all you criteria</div>
@@ -38,7 +38,7 @@
           @artifactByVersions.map { case ((releaseDate, semanticVersion), artifacts) =>
           <div class="panel panel-default">
             <div class="artifact-row panel-body">
-              <a class="artifact-version artifact-center col-sm-2" href="/@project.reference/artifacts/@defaultArtifact/@semanticVersion">@semanticVersion</a>
+              <a class="artifact-version artifact-center col-sm-2" href="/@project.reference/artifacts/@artifactName/@semanticVersion">@semanticVersion</a>
               <div class="artifact-content col-sm-8">
                 @for((platform, binaryVersions) <- artifacts.map(_.binaryVersion).groupBy(_.platform)) {
                   <h5>@platform:</h5>

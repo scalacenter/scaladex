@@ -6,17 +6,17 @@
 @import scaladex.view.Formats
 
 
-@(ref: Project.Reference, default: Artifact.Name, binaryVersions: Seq[BinaryVersion],
+@(ref: Project.Reference, artifactName: Artifact.Name, binaryVersions: Seq[BinaryVersion],
         artifactNames: Seq[Artifact.Name], params: ArtifactsPageParams, numberOfResult: Int)
 
 <form action="#" action="GET">
     <div class="filter">
         <select id="select-language" name="artifact-name" class="selectpicker"
-        title="Artifact names" data-style="btn-primary" onchange="this.form.submit()">
-            @for(artifactName <- artifactNames) {
-                <option value="@artifactName"
-                @if(params.artifactName.isEmpty && artifactName == default || params.artifactName.contains(artifactName)) {selected}>
-                @artifactName
+        title="Artifact names" data-style="btn-primary" onchange="window.location=this.value">
+            @for(name <- artifactNames) {
+                <option value="@artifactFilterUri(ref, name, params)"
+                @if(name == artifactName) {selected}>
+                @name
                 </option>
             }
         </select>
@@ -47,8 +47,8 @@
         </label>
     </div>
     <div class="filter">
-    @if(params.binaryVersions.nonEmpty || params.artifactName.nonEmpty) {
-        <a href="@artifactFilterUri(ref, ArtifactsPageParams.default)" class="label label-warning clear-all">
+    @if(params.binaryVersions.nonEmpty) {
+        <a href="@artifactFilterUri(ref, artifactName, ArtifactsPageParams.default)" class="label label-warning clear-all">
             <i class="fa-solid fa-xmark"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Clear all filters</a>
     }
     </div>
@@ -56,18 +56,18 @@
         <ul class="list-inline">
             @for(binaryVersion <- params.binaryVersions) {
                 <li>
-                    <a href="@artifactFilterUri(ref, params.remove(binaryVersion))" class="label label-default">
+                    <a href="@artifactFilterUri(ref, artifactName, params.remove(binaryVersion))" class="label label-default">
                         <i class="fa-solid fa-xmark"></i>
                             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                         @binaryVersion</a>
                 </li>
             }
             @if(params.showNonSemanticVersion) {
-                <a class="label label-info" href="@artifactFilterUri(ref, params.set(showNonSemanticVersions = false))">
+                <a class="label label-info" href="@artifactFilterUri(ref, artifactName, params.set(showNonSemanticVersions = false))">
                     <i class="fa-solid fa-xmark"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;show non semantic versions</a>
                 </a>
             }
         </ul>
     </div>
 </form>
-<div class="filter-artifact-result"><b>@numberOfResult</b> @Formats.wordPlural(numberOfResult, "version") found for <b>@default</b></div>
+<div class="filter-artifact-result"><b>@numberOfResult</b> @Formats.wordPlural(numberOfResult, "version") found for <b>@artifactName</b></div>

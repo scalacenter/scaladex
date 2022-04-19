@@ -92,7 +92,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         )
       },
       get {
-        path(projectM / artifactM)((projectRef, artifact) =>
+        path(projectM / artifactNameM)((projectRef, artifact) =>
           parameter("binaryVersion".?) { binaryVersion =>
             val res = getProjectPage(
               projectRef,
@@ -110,7 +110,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         )
       },
       get {
-        path(projectM / artifactM / versionM)((projectRef, artifact, version) =>
+        path(projectM / artifactNameM / versionM)((projectRef, artifact, version) =>
           parameter("binaryVersion".?) { binaryVersion =>
             val res = getProjectPage(projectRef, binaryVersion, artifact, Some(version), user)
             onComplete(res) {

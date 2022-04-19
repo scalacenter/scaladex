@@ -33,11 +33,11 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
     get {
       concat(
         path(organizationM / repositoryM / "latest.svg")((org, repo) => latest(org, repo, None)),
-        path(organizationM / repositoryM / artifactM / "latest.svg") { (org, repo, artifact) =>
+        path(organizationM / repositoryM / artifactNameM / "latest.svg") { (org, repo, artifact) =>
           latest(org, repo, Some(artifact))
         },
         path(
-          organizationM / repositoryM / artifactM / "latest-by-scala-version.svg"
+          organizationM / repositoryM / artifactNameM / "latest-by-scala-version.svg"
         )((org, repo, artifact) => latestByScalaVersion(Project.Reference(org, repo), artifact))
       )
     }

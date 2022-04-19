@@ -25,7 +25,6 @@ import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Env
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
-import scaladex.core.model.Project
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserState
 import scaladex.core.model.web.ArtifactPageParams
@@ -56,29 +55,34 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
       },
       get {
         path(projectM / "artifacts") { ref =>
+          val defaultArtifact = for {
+            projectOpt <- database.getProject(ref)
+            project = projectOpt.getOrElse(throw new Exception(s"project $ref not found"))
+            lastVersion <- database.getLastVersion(ref)
+            artifacts <- database.getArtifactsByVersion(ref, lastVersion)
+          } yield project.settings.defaultArtifact.getOrElse(ArtifactPages.getDefault(artifacts))
+
+          onComplete(defaultArtifact) {
+            case Success(defaultArtifact) =>
+              redirect(s"/$ref/artifacts/$defaultArtifact", StatusCodes.TemporaryRedirect)
+            case Failure(cause) =>
+              logger.warn(s"failure when accessing $ref/artifacts", cause)
+              complete(StatusCodes.NotFound, view.html.notfound(env, user))
+          }
+        }
+      },
+      get {
+        path(projectM / "artifacts" / artifactNameM) { (ref, artifactName) =>
           artifactsParams { params =>
             val res =
               for {
                 projectOpt <- database.getProject(ref)
-                project = projectOpt.getOrElse(throw new Exception(s"project ${ref} not found"))
-                uniqueArtifacts <- database.getUniqueArtifacts(ref)
-                defaultArtifactName = params.artifactName.getOrElse(
-                  project.settings.defaultArtifact.getOrElse(ArtifactPages.getDefaultArtifact(uniqueArtifacts))
-                )
-                artifacts <- database.getArtifacts(project.reference, defaultArtifactName, params)
+                project = projectOpt.getOrElse(throw new Exception(s"project $ref not found"))
+                artifactNames <- database.getArtifactNames(ref) // TODO only artifact names
+                artifacts <- database.getArtifacts(ref, artifactName, params)
                 numberOfVersions <- database.countVersions(ref)
                 lastVersion <- database.getLastVersion(ref)
-              } yield (
-                project,
-                artifacts,
-                defaultArtifactName,
-                uniqueArtifacts.map(_._1),
-                numberOfVersions,
-                lastVersion
-              )
-
-            onComplete(res) {
-              case Success((project, artifacts, defaultArtifactName, artifactNames, numberOfVersions, lastVersion)) =>
+              } yield {
                 val binaryVersions = artifacts
                   .map(_.binaryVersion)
                   .distinct
@@ -89,33 +93,34 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
                 }
                 val filteredArtifacts = filter(artifactPerVersion, params)
                 val artifactsWithVersions =
-                  SortedMap.from(
-                    filteredArtifacts
-                  )(Ordering.Tuple2(Ordering[Instant].reverse, Ordering[SemanticVersion].reverse))
-                complete(
-                  view.project.html
-                    .artifacts(
-                      env,
-                      project,
-                      user,
-                      defaultArtifactName,
-                      artifactNames.distinct,
-                      binaryVersions,
-                      artifactsWithVersions,
-                      params,
-                      lastVersion,
-                      numberOfVersions
-                    )
+                  SortedMap.from(filteredArtifacts)(
+                    Ordering.Tuple2(Ordering[Instant].reverse, Ordering[SemanticVersion].reverse)
+                  )
+                view.project.html.artifacts(
+                  env,
+                  project,
+                  user,
+                  artifactName,
+                  artifactNames,
+                  binaryVersions,
+                  artifactsWithVersions,
+                  params,
+                  lastVersion,
+                  numberOfVersions
                 )
+              }
+
+            onComplete(res) {
+              case Success(html) => complete(html)
               case Failure(e) =>
-                logger.warn(s"failure when accessing ${ref}/artifacts", e)
+                logger.warn(s"failure when accessing $ref/artifacts/$artifactName", e)
                 complete(StatusCodes.NotFound, view.html.notfound(env, user))
             }
           }
         }
       },
       get {
-        path(projectM / "artifacts" / artifactM / versionM) { (ref, artifactName, artifactVersion) =>
+        path(projectM / "artifacts" / artifactNameM / versionM) { (ref, artifactName, artifactVersion) =>
           artifactParams { params =>
             val res =
               for {
@@ -198,13 +203,11 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
   private val artifactsParams: Directive1[ArtifactsPageParams] =
     parameters(
       "binary-versions".repeated,
-      "artifact-name".?,
       "show-non-semantic-versions".as[Boolean].withDefault(false)
     ).tmap {
-      case (binaryVersions, artifactNameOpt, isSemantic) =>
+      case (binaryVersions, isSemantic) =>
         val binaryVersionsParsed = binaryVersions.flatMap(BinaryVersion.parse)
-        val artifactName = artifactNameOpt.map(Artifact.Name(_))
-        Tuple1(ArtifactsPageParams(binaryVersionsParsed.toSeq, artifactName, isSemantic))
+        Tuple1(ArtifactsPageParams(binaryVersionsParsed.toSeq, isSemantic))
     }
 
   private val artifactParams: Directive1[ArtifactPageParams] =
@@ -233,22 +236,10 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
 
 }
 object ArtifactPages {
-  def getDefaultArtifact(artifacts: Seq[(Artifact.Name, Platform, Language)]): Artifact.Name = {
-    val res = artifacts.maxBy {
-      case (name, platform, language) =>
-        (
-          platform,
-          language,
-          name
-        )
-    }(
-      Ordering.Tuple3(
-        Ordering[Platform],
-        Ordering[Language],
-        Ordering[Artifact.Name].reverse
+  def getDefault(artifacts: Seq[Artifact]): Artifact =
+    artifacts
+      .maxBy(a => (a.platform, a.language, a.artifactName))(
+        Ordering.Tuple3(Ordering[Platform], Ordering[Language], Ordering[Artifact.Name].reverse)
       )
-    )
-    res._1
-  }
 
 }

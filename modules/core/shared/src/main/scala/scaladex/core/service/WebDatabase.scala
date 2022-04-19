@@ -33,8 +33,10 @@ trait WebDatabase {
   ): Future[Seq[Artifact]]
   def getArtifacts(ref: Project.Reference, artifactName: Artifact.Name, version: SemanticVersion): Future[Seq[Artifact]]
   def getArtifactsByName(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]]
+  def getArtifactsByVersion(ref: Project.Reference, version: SemanticVersion): Future[Seq[Artifact]]
   def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]]
   def getAllArtifacts(maybeLanguage: Option[Language], maybePlatform: Option[Platform]): Future[Seq[Artifact]]
+  def getArtifactNames(ref: Project.Reference): Future[Seq[Artifact.Name]]
   def getDirectDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Direct]]
   def getReverseDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Reverse]]
   def getDirectReleaseDependencies(
@@ -54,5 +56,4 @@ trait WebDatabase {
   ): Future[Unit]
   def countVersions(ref: Project.Reference): Future[Long]
   def getLastVersion(ref: Project.Reference): Future[SemanticVersion]
-  def getUniqueArtifacts(ref: Project.Reference): Future[Seq[(Artifact.Name, Platform, Language)]]
 }

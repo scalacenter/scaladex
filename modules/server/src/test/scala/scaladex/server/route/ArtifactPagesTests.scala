@@ -1,28 +1,19 @@
 package scaladex.server.route
 
 import org.scalatest.funspec.AnyFunSpec
-import scaladex.core.model.Artifact.Name
-import scaladex.core.model._
+import org.scalatest.matchers.should.Matchers
+import scaladex.core.test.Values.Cats._
 
-class ArtifactPagesTests extends AnyFunSpec {
-  describe("ArtifactPages") {
-    it("should find the default artifact 1") {
-      val artifact1 = (Name("sbt-scalafix"), SbtPlugin.`1.0`, Scala.`2.12`)
-      val artifact2 = (Name("scalafix-core"), Jvm, Scala.`2.12`)
-      val res = ArtifactPages.getDefaultArtifact(Seq(artifact1, artifact2))
-      assert(res == artifact2._1)
+class ArtifactPagesTests extends AnyFunSpec with Matchers {
+  describe("getDefault") {
+    it("should prefer JVM") {
+      ArtifactPages.getDefault(Seq(kernel_3, core_sjs1_3)) shouldBe kernel_3
     }
-    it("should find the default artifact 2") {
-      val artifact1 = (Name("scalafix-core"), Jvm, Scala.`2.13`)
-      val artifact2 = (Name("scalafix-core"), Jvm, Scala.`2.12`)
-      val res = ArtifactPages.getDefaultArtifact(Seq(artifact1, artifact2))
-      assert(res == artifact1._1)
+    it("should prefer higher Scala version") {
+      ArtifactPages.getDefault(Seq(`core_2.13:2.6.1`, kernel_3)) shouldBe kernel_3
     }
-    it("should find the default artifact 3") {
-      val artifact1 = (Name("scalafix-core"), Jvm, Scala.`2.13`)
-      val artifact2 = (Name("scalafix"), Jvm, Scala.`2.13`)
-      val res = ArtifactPages.getDefaultArtifact(Seq(artifact1, artifact2))
-      assert(res == artifact2._1)
+    it("should use alphabetical order") {
+      ArtifactPages.getDefault(Seq(`core_3:2.6.1`, kernel_3)) shouldBe `core_3:2.6.1`
     }
   }
 

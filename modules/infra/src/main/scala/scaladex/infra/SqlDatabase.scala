@@ -36,6 +36,7 @@ import scaladex.infra.sql.ReleaseTable
 import scaladex.infra.sql.UserSessionsTable
 
 class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
+
   private val flyway = DoobieUtils.flyway(datasource)
   def migrate: IO[Unit] = IO(flyway.migrate())
   def dropTables: IO[Unit] = IO(flyway.clean())
@@ -140,11 +141,14 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]] =
     run(ProjectTable.selectByNewReference.to[Seq](projectRef))
 
-  override def getArtifactsByName(
-      projectRef: Project.Reference,
-      artifactName: Artifact.Name
-  ): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifactByProjectAndName.to[Seq]((projectRef, artifactName)))
+  override def getArtifactsByName(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactByProjectAndName.to[Seq]((ref, artifactName)))
+
+  override def getArtifactsByVersion(ref: Project.Reference, version: SemanticVersion): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactByProjectAndVersion.to[Seq](ref, version))
+
+  override def getArtifactNames(ref: Project.Reference): Future[Seq[Artifact.Name]] =
+    run(ArtifactTable.selectArtifactName.to[Seq](ref))
 
   override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] =
     run(ArtifactTable.selectByMavenReference.option(mavenRef))
@@ -175,13 +179,6 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   override def getReverseDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Reverse]] =
     run(ArtifactDependencyTable.selectReverseDependency.to[Seq](artifact.mavenReference))
-
-  override def getUniqueArtifacts(ref: Project.Reference): Future[Seq[(Artifact.Name, Platform, Language)]] =
-    run(
-      ArtifactTable.selectUniqueArtifacts
-        .to[Seq](ref)
-        .map(_.map { case (name, platform, language, _) => (name, platform, language) })
-    )
 
   override def getArtifacts(
       ref: Project.Reference,
