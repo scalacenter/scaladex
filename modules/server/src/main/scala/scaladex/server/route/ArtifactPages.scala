@@ -55,9 +55,8 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
         }
       },
       get {
-        path(organizationM / repositoryM / "artifacts") { (org, repo) =>
+        path(projectM / "artifacts") { ref =>
           artifactsParams { params =>
-            val ref = Project.Reference(org, repo)
             val res =
               for {
                 projectOpt <- database.getProject(ref)

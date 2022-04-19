@@ -154,6 +154,8 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
     )
     database.getProject(projectRef).flatMap {
       case Some(project) =>
+        // start it first because it can be long (~1 second)
+        val reverseDependenciesF = database.getReverseReleaseDependencies(projectRef)
         for {
           artifacts <- database.getArtifacts(projectRef)
           selectedArtifact = selection
@@ -161,7 +163,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
             .getOrElse(throw new Exception(s"no artifact found for $projectRef"))
           lastVersion <- database.getLastVersion(projectRef)
           directDependencies <- database.getDirectReleaseDependencies(projectRef, lastVersion)
-          reverseDependencies <- database.getReverseReleaseDependencies(projectRef)
+          reverseDependencies <- reverseDependenciesF
         } yield {
           val allVersions = artifacts.view.map(_.version)
           val platformsForBadges = artifacts.view

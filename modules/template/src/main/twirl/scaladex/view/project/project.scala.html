@@ -80,13 +80,13 @@
   <div class="dependencies box">
     <h4>@Formats.plural(dependencies.size, "Dependent")</h4>
     <ul>
-      @for((ref, (scope, version)) <- dependencies.take(20).toSeq.sortBy { case (ref, _) => ref }){
+      @for((ref, (scope, version)) <- dependencies.take(100).toSeq.sortBy { case (ref, _) => ref }){
         <li>
           <a href="/@ref">@ref @scopeSpan(scope)</a> (on @version)
         </li>
       }
-      @if(dependencies.size > 20) {
-        <p>and @{dependencies.size - 20} more</p>
+      @if(dependencies.size > 100) {
+        <p>and @{dependencies.size - 100} more</p>
       }
     </ul>
   </div>
