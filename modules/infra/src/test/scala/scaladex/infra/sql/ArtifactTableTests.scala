@@ -2,13 +2,7 @@ package scaladex.infra.sql
 
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model.Artifact
-import scaladex.core.model.BinaryVersion
-import scaladex.core.model.Jvm
-import scaladex.core.model.Project
-import scaladex.core.model.Scala
-import scaladex.core.model.ScalaNative
-import scaladex.core.model.web.ArtifactsPageParams
+import scaladex.core.test.Values._
 import scaladex.infra.BaseDatabaseSuite
 
 class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
@@ -30,14 +24,9 @@ class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers
   it("check getReleasesFromArtifacts")(check(ArtifactTable.getReleasesFromArtifacts))
   it("check countVersions")(check(ArtifactTable.countVersionsByProjct))
   it("check selectArtifactByParams") {
-    val artifactName = Artifact.Name("scalafix-core")
-    val projectRef = Project.Reference.from("scalacenter", "scalafix")
-    val params1 = ArtifactsPageParams(Nil, true)
-    check(ArtifactTable.selectArtifactByParams(projectRef, artifactName, params1))
-    val bv1 = BinaryVersion(ScalaNative.`0.4`, Scala.`2.12`)
-    val bv2 = BinaryVersion(Jvm, Scala.`3`)
-    val params2 = ArtifactsPageParams(Seq(bv1, bv2), false)
-    check(ArtifactTable.selectArtifactByParams(projectRef, artifactName, params2))
+    check(ArtifactTable.selectArtifactByParams(Seq.empty, false))
+    check(ArtifactTable.selectArtifactByParams(Seq.empty, true))
+    check(ArtifactTable.selectArtifactByParams(Seq(`_sjs0.6_2.13`), false))
   }
   it("check selectMavenReferenceWithNoReleaseDate")(check(ArtifactTable.selectMavenReferenceWithNoReleaseDate))
   it("check findLastVersion")(check(ArtifactTable.findLastSemanticVersionNotPrerelease))

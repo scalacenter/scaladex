@@ -4,12 +4,12 @@ import scaladex.core.model.BinaryVersion
 
 case class ArtifactsPageParams(
     binaryVersions: Seq[BinaryVersion],
-    showNonSemanticVersion: Boolean
+    preReleases: Boolean
 ) {
-  def remove(b: BinaryVersion): ArtifactsPageParams = this.copy(binaryVersions = binaryVersions.filterNot(_ == b))
-  def set(showNonSemanticVersions: Boolean): ArtifactsPageParams =
-    this.copy(showNonSemanticVersion = showNonSemanticVersions)
+  def remove(b: BinaryVersion): ArtifactsPageParams = copy(binaryVersions = binaryVersions.filterNot(_ == b))
+  def withPreReleases(preReleases: Boolean): ArtifactsPageParams = copy(preReleases = preReleases)
 }
+
 object ArtifactsPageParams {
-  def default: ArtifactsPageParams = ArtifactsPageParams(Nil, false)
+  def empty: ArtifactsPageParams = ArtifactsPageParams(Seq.empty, false)
 }

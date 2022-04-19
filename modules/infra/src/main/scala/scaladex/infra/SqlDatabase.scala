@@ -250,10 +250,14 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   override def getArtifacts(
       projectRef: Project.Reference,
-      default: Artifact.Name,
+      artifactName: Artifact.Name,
       params: ArtifactsPageParams
   ): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifactByParams(projectRef, default, params).to[Seq])
+    run(
+      ArtifactTable
+        .selectArtifactByParams(params.binaryVersions, params.preReleases)
+        .to[Seq](projectRef, artifactName)
+    )
 
   override def countVersions(ref: Project.Reference): Future[Long] =
     run(ArtifactTable.countVersionsByProjct.unique(ref))

@@ -805,22 +805,18 @@ main {
   .filter-option-inner-inner {
     color: white;
   }
-  .filter {
-    display: inline;
-    margin-right: 15px;
-  }
   .dropdown {
-    width: 200px !important;
+    margin-right: 15px;
   }
   .list-inline {
     margin-top: 5px;
     margin-left: 0;
     .label {
-      font-size: 85%;
+      font-size: 14px;
       font-weight: 500;
     }
   }
-  .filter-artifact-result {
+  .result-count {
     float: right;
     font-size: 16px;
   }

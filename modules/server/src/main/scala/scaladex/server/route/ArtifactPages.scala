@@ -203,11 +203,14 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
   private val artifactsParams: Directive1[ArtifactsPageParams] =
     parameters(
       "binary-versions".repeated,
-      "show-non-semantic-versions".as[Boolean].withDefault(false)
+      "pre-releases".as[Boolean].withDefault(false)
     ).tmap {
-      case (binaryVersions, isSemantic) =>
-        val binaryVersionsParsed = binaryVersions.flatMap(BinaryVersion.parse)
-        Tuple1(ArtifactsPageParams(binaryVersionsParsed.toSeq, isSemantic))
+      case (rawbinaryVersions, preReleases) =>
+        val binaryVersions = rawbinaryVersions
+          .flatMap(BinaryVersion.parse)
+          .toSeq
+          .sorted(Ordering[BinaryVersion].reverse)
+        Tuple1(ArtifactsPageParams(binaryVersions, preReleases))
     }
 
   private val artifactParams: Directive1[ArtifactPageParams] =
@@ -233,8 +236,8 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
           .toSet
         artifacts.view.filterKeys(toKeep)
     }
-
 }
+
 object ArtifactPages {
   def getDefault(artifacts: Seq[Artifact]): Artifact =
     artifacts

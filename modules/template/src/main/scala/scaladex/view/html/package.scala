@@ -84,7 +84,7 @@ package object html {
   def artifactFilterUri(ref: Project.Reference, artifactName: Artifact.Name, params: ArtifactsPageParams): Uri =
     Uri(s"/$ref/artifacts/$artifactName")
       .appendQuery("binary-versions", params.binaryVersions.map(_.label))
-      .appendQuery(("show-non-semantic-versions", params.showNonSemanticVersion.toString))
+      .appendQuery(("pre-releases", params.preReleases.toString))
 
   // https://www.reddit.com/r/scala/comments/4n73zz/scala_puzzle_gooooooogle_pagination/d41jor5
   def paginationRender(selected: Int, max: Int, toShow: Int = 10): (Option[Int], List[Int], Option[Int]) = {

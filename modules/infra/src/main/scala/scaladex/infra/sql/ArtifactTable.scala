@@ -5,12 +5,12 @@ import java.time.Instant
 import doobie._
 import doobie.util.update.Update
 import scaladex.core.model.Artifact
+import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.Release
 import scaladex.core.model.SemanticVersion
-import scaladex.core.model.web.ArtifactsPageParams
 import scaladex.infra.sql.DoobieUtils.Mappings._
 import scaladex.infra.sql.DoobieUtils._
 
@@ -89,28 +89,27 @@ object ArtifactTable {
     )
 
   def selectArtifactByParams(
-      ref: Project.Reference,
-      artifactName: Artifact.Name,
-      params: ArtifactsPageParams
-  ): Query0[Artifact] = {
-    def valuePlatform(p: Platform) = s"platform='${p.label}'"
-    def valueLanguage(l: Language) = s"language_version='${l.label}'"
-    val where =
-      if (params.binaryVersions.isEmpty) "true"
-      else {
-        params.binaryVersions
-          .map(bv => s"(${valuePlatform(bv.platform)} AND ${valueLanguage(bv.language)})")
-          .mkString(" OR ")
-      }
-    val isSemantic = if (params.showNonSemanticVersion) s"true" else "is_semantic='true'"
-    val whereProjectRefAndArtifactName =
-      s"organization='${ref.organization}' AND repository='${ref.repository}' AND artifact_name='$artifactName'"
+      binaryVersions: Seq[BinaryVersion],
+      preReleases: Boolean
+  ): Query[(Project.Reference, Artifact.Name), Artifact] = {
+    val binaryVersionFilter =
+      if (binaryVersions.isEmpty) "true"
+      else
+        binaryVersions
+          .map(bv => s"(platform='${bv.platform.label}' AND language_version='${bv.language.label}')")
+          .mkString("(", " OR ", ")")
+    val preReleaseFilter = if (preReleases) s"true" else "is_prerelease=false"
     val releases =
-      s"SELECT DISTINCT organization, repository, artifact_name, version FROM $table WHERE $whereProjectRefAndArtifactName AND ($where) AND ($isSemantic)"
+      s"""|SELECT organization, repository, artifact_name, version
+          |FROM $table WHERE
+          |organization=? AND repository=? AND artifact_name=? AND $binaryVersionFilter AND $preReleaseFilter
+          |""".stripMargin
     val artifactFields = fields.map(f => s"a.$f").mkString(", ")
-    Query0(s"""SELECT $artifactFields FROM ($releases) r INNER JOIN $table a ON
-              | r.version = a.version AND r.organization = a.organization AND
-              | r.repository = a.repository AND r.artifact_name = a.artifact_name""".stripMargin)
+    Query[(Project.Reference, Artifact.Name), Artifact](
+      s"""|SELECT $artifactFields FROM ($releases) r INNER JOIN $table a ON
+          | r.version = a.version AND r.organization = a.organization AND
+          | r.repository = a.repository AND r.artifact_name = a.artifact_name""".stripMargin
+    )
   }
 
   val selectArtifactByProjectAndName: Query[(Project.Reference, Artifact.Name), Artifact] =
