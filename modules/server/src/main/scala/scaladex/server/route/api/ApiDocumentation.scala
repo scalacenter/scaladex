@@ -20,5 +20,5 @@ object ApiDocumentation
       title = "Scaladex API",
       version = "0.1.0"
     )
-  )(autocomplete, artifact)
+  )(autocomplete, artifact, artifactMetadata)
 }

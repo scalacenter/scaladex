@@ -334,4 +334,44 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       )
     } yield storedArtifacts.size shouldBe 0
   }
+
+  it("should not return any artifacts when the database is empty, given a group id and artifact id") {
+    val testArtifact = Cats.`core_3:4`
+    val testArtifactId = Artifact.ArtifactId
+      .parse(testArtifact.artifactId)
+      .getOrElse(fail("Parsing an artifact id should not have failed"))
+    for {
+      retrievedArtifacts <- database.getArtifacts(testArtifact.groupId, testArtifactId)
+    } yield retrievedArtifacts.size shouldBe 0
+  }
+
+  it("should return an artifact, given a group id an artifact id of a stored artifact") {
+    val testArtifact = Cats.`core_3:4`
+    val testArtifactId = Artifact.ArtifactId
+      .parse(testArtifact.artifactId)
+      .getOrElse(fail("Parsing an artifact id should not have failed"))
+    for {
+      isStoredSuccessfully <- database.insertArtifact(testArtifact, dependencies = Cats.dependencies, now)
+      retrievedArtifacts <- database.getArtifacts(testArtifact.groupId, testArtifactId)
+    } yield {
+      isStoredSuccessfully shouldBe true
+      retrievedArtifacts.size shouldBe 1
+      retrievedArtifacts.headOption shouldBe Some(testArtifact)
+    }
+  }
+
+  it("should return all versions of an artifact given a group id and an artifact id") {
+    val testArtifacts = Seq(Cats.`core_3:4`, Cats.`core_3:2.7.0`)
+    val groupId = Artifact.GroupId("org.typelevel")
+    val artifactId = Artifact.ArtifactId
+      .parse("cats-core_3")
+      .getOrElse(fail("Parsing an artifact id should not have failed"))
+    for {
+      _ <- database.insertArtifacts(testArtifacts)
+      retrievedArtifacts <- database.getArtifacts(groupId, artifactId)
+    } yield {
+      retrievedArtifacts.size shouldBe 2
+      retrievedArtifacts should contain theSameElementsAs testArtifacts
+    }
+  }
 }

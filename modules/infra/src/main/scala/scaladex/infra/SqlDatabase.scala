@@ -129,6 +129,9 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getProject(projectRef: Project.Reference): Future[Option[Project]] =
     run(ProjectTable.selectByReference.option(projectRef))
 
+  override def getArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactByGroupIdAndArtifactId.to[Seq](groupId, artifactId))
+
   override def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]] =
     run(ArtifactTable.selectArtifactByProject.to[Seq](projectRef))
 
