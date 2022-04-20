@@ -82,12 +82,14 @@
         <li>
           <div class="row">
             <div class="col-xs-7"><a href="@dep.url">@dep.name</a></div>
-            <div class="col-xs-3">@dep.version</div>
-            <div class="col-xs-2">
-              @if(dep.artifactDep.scope.value != "compile") {
+            @if(dep.artifactDep.scope.value != "compile") {
+              <div class="col-xs-3">@dep.version</div>
+              <div class="col-xs-2">
                 <span class="label label-primary">@dep.artifactDep.scope</span>
-              }
-            </div>
+              </div>
+            } else {
+              <div class="col-xs-5">@dep.version</div>
+            }
           </div>
         </li>
       }
@@ -105,12 +107,14 @@
         <li>
           <div class="row">
             <div class="col-xs-7"><a href="@dep.url">@dep.name</a></div>
-            <div class="col-xs-3">@dep.version</div>
-            <div class="col-xs-2">
-              @if(dep.dependency.scope.value != "compile") {
+            @if(dep.dependency.scope.value != "compile") {
+              <div class="col-xs-3">@dep.version</div>
+              <div class="col-xs-2">
                 <span class="label label-primary">@dep.dependency.scope</span>
-              }
-            </div>
+              </div>
+            } else {
+              <div class="col-xs-5">@dep.version</div>
+            }
           </div>
         </li>
       }
