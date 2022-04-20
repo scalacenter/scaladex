@@ -466,10 +466,13 @@ main {
 #container-project {
   background: $gray-lighter;
   padding: 0 0 40px 0;
-  .content-project,
-  .sidebar-project {
-    margin-top: 0;
+
+  .content-project {
+    border-top-left-radius: 0;
+    margin-bottom: 10px;
+    margin-top: -40px;
   }
+
   @media screen and (min-width: $screen-md-min) {
     padding-bottom: 80px;
     .content-project {
@@ -499,11 +502,6 @@ main {
     a {
       color: inherit;
     }
-  }
-
-  .content-project {
-    margin-bottom: 10px;
-    margin-top: -40px;
   }
 
   .content-main {
