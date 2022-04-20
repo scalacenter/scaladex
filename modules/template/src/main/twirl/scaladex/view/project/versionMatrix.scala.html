@@ -17,72 +17,68 @@
   <main id="container-project">
     @headproject(env, user, project, numberOfVersions, "Version Matrix", lastProjectVersion)
     <div class="container">
-      <div class="row">
-        <div class="col-md-12">
-          <div class="content-project project-artifact box" data-organization="@project.reference.organization"
-          data-repository="@project.reference.repository">
-            <table>
-              <thead>
-                <tr>
-                  <th rowspan="2" class="version">Versions</th>
-                  <th rowspan="2" class="artifact">Artifacts</th>
+      <div class="content-project version-matrix box" data-organization="@project.reference.organization"
+      data-repository="@project.reference.repository">
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2" class="version">Versions</th>
+              <th rowspan="2" class="artifact">Artifacts</th>
 
-                  @binaryVersionsByPlatforms.map { case (platform, binaryVersions) =>
-                  <th colspan="@{
-                    binaryVersions.size
-                  }">
-                    <label>
-                      <input type="checkbox" name="platform" value="@platform.label"
-                      onclick="ScaladexClient.updateVisibleArtifactsInGrid()">
-                      @platform
-                  </label>
-                  </th>
-                  }
-                </tr>
-                <tr>
-                @allBinaryVersions.map { binaryVersion =>
-                  <th class="binaryVersion">
-                    <label>
-                      <input type="checkbox" name="binary-version" value="@binaryVersion.label"
-                      onclick="ScaladexClient.updateVisibleArtifactsInGrid()">
-                      @binaryVersion.language.label
-                    </label>
-                  </th>
-                }
-                </tr>
-              </thead>
-
-              @artifactsByVersions.map { case (version, artifactsByNames) =>
-              <tbody class="version-line version-line-visible">
-                <tr>
-                  <td rowspan="@{
-                    artifactsByNames.size + 1
-                  }" class="version">
-                  @version
-                  </td>
-                </tr>
-                @artifactsByNames.map { case (artifactName, artifacts) =>
-                  @defining(artifacts.map(a => a.binaryVersion -> a).toMap) { binaryVersionToArtifact =>
-                    <tr class="artifact-line artifact-line-visible @({
-                      binaryVersionToArtifact.keySet.map(_.platform.label).mkString(" ") + " " +
-                              binaryVersionToArtifact.keySet.map(_.label).mkString(" ")
-                    })">
-                      <td class="artifact">@artifactName</td>
-                      @allBinaryVersions.map { binaryVersion =>
-                        <td class="binary-version" title="@version">
-                        @if(binaryVersionToArtifact.contains(binaryVersion)) {
-                          <a href="@binaryVersionToArtifact(binaryVersion).httpUrl" class="supported"></a>
-                        }
-                        </td>
-                      }
-                    </tr>
-                  }
-                }
-              </tbody>
+              @binaryVersionsByPlatforms.map { case (platform, binaryVersions) =>
+              <th colspan="@{
+                binaryVersions.size
+              }">
+                <label>
+                  <input type="checkbox" name="platform" value="@platform.label"
+                  onclick="ScaladexClient.updateVisibleArtifactsInGrid()">
+                  @platform
+              </label>
+              </th>
               }
-            </table>
-          </div>
-        </div>
+            </tr>
+            <tr>
+            @allBinaryVersions.map { binaryVersion =>
+              <th class="binaryVersion">
+                <label>
+                  <input type="checkbox" name="binary-version" value="@binaryVersion.label"
+                  onclick="ScaladexClient.updateVisibleArtifactsInGrid()">
+                  @binaryVersion.language.label
+                </label>
+              </th>
+            }
+            </tr>
+          </thead>
+
+          @artifactsByVersions.map { case (version, artifactsByNames) =>
+          <tbody class="version-line version-line-visible">
+            <tr>
+              <td rowspan="@{
+                artifactsByNames.size + 1
+              }" class="version">
+              @version
+              </td>
+            </tr>
+            @artifactsByNames.map { case (artifactName, artifacts) =>
+              @defining(artifacts.map(a => a.binaryVersion -> a).toMap) { binaryVersionToArtifact =>
+                <tr class="artifact-line artifact-line-visible @({
+                  binaryVersionToArtifact.keySet.map(_.platform.label).mkString(" ") + " " +
+                          binaryVersionToArtifact.keySet.map(_.label).mkString(" ")
+                })">
+                  <td class="artifact">@artifactName</td>
+                  @allBinaryVersions.map { binaryVersion =>
+                    <td class="binary-version" title="@version">
+                    @if(binaryVersionToArtifact.contains(binaryVersion)) {
+                      <a href="@binaryVersionToArtifact(binaryVersion).httpUrl" class="supported"></a>
+                    }
+                    </td>
+                  }
+                </tr>
+              }
+            }
+          </tbody>
+          }
+        </table>
       </div>
     </div>
   </main>

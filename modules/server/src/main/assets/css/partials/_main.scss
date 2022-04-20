@@ -531,12 +531,56 @@ main {
     }
   }
 
+  .box {
+    margin-bottom: 30px;
+  }
+  
+  ul {
+    padding: 0;
+    margin: 0;
+    li {
+      list-style: none;
+    }
+  }
+
+  .dependencies,
+  .dependents {
+    overflow: hidden;
+    span {
+      i {
+        font-size: 14px;
+      }
+    }
+    .label {
+      font-size: 10px;
+      padding: 2px 5px;
+      top: -2px;
+      position: relative;
+      margin-left: 5px;
+    }
+  }
+  
+  .project-contributing-info {
+    a {
+      display: block;
+      padding-bottom: 10px;
+      color: $gray;
+      &:hover,
+      &:focus {
+        color: $brand-primary;
+        text-decoration: underline;
+      }
+    }
+    td {padding-left: 30px;}
+  }
+
   .sidebar-project {
     margin-top: 20px;
     @media screen and (min-width: $screen-md-min) {
       margin-bottom: 30px;
       margin-top: -40px;
     }
+
     .install {
       padding: 10px; // smaller padding for install box in project page
       .tab-pane {
@@ -545,50 +589,13 @@ main {
         }
       }
     }
-    .box {
-      margin-bottom: 30px;
-    }
-    ul {
-      padding: 0;
-      margin: 0;
-      li {
-        list-style: none;
-      }
-    }
+   
     h4 {
       margin-top: 0;
       margin-bottom: ($line-height-computed / 1.5);
     }
-    .dependencies,
-    .dependents {
-      overflow: hidden;
-      span {
-        i {
-          font-size: 14px;
-        }
-      }
-      .label {
-        font-size: 10px;
-        padding: 2px 5px;
-        top: -2px;
-        position: relative;
-        margin-left: 5px;
-      }
-    }
-    .project-contributing-info {
-      a {
-        display: block;
-        padding-bottom: 10px;
-        color: $gray;
-        &:hover,
-        &:focus {
-          color: $brand-primary;
-          text-decoration: underline;
-        }
-      }
-      td {padding-left: 30px;}
-    }
   }
+
   .collaborators {
     ul {
       li {
@@ -607,6 +614,7 @@ main {
       padding-top: 15px;
     }
   }
+
   .edit-project {
     h1 {
       margin-top: 0;
@@ -823,21 +831,21 @@ main {
     padding-bottom: 0.3em;
     border-bottom: 1px solid #eee;
   }
-  .artifact-name {
-    font-size: 2.25em;
-    line-height: 1.2;
+  h3 {
+    margin-top: 0;
+    font-size: 2em;
   }
   .artifact-version {
     font-size: 1.40em;
     color: $brand-secondary;
   }
-  .artifact-information{
+  .artifact-info{
     margin-top: 20px;
   }
 }
 
 
-.project-artifact {
+.version-matrix {
   table {
     margin-top: 25px;
   }

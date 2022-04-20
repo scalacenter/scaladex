@@ -19,11 +19,10 @@
   <main id="container-project">
     @headproject(env, user, project, numberOfVersions, "Artifacts", lastProjectVersion)
     <div class="container">
-      <div class="col-md-8">
-        <div class="content-project artifact box" data-organization="@project.reference.organization"
-        data-repository="@project.reference.repository">
-          <div class="artifact-head">
-            <div class="row">
+      <div class="col-md-7">
+        <div class="content-project">
+          <div class="artifact box" data-organization="@project.reference.organization" data-repository="@project.reference.repository">
+            <div class="artifact-head">
               <div class="float-right">
                 <form>
                   <select name="binary-version" class="selectpicker"
@@ -41,26 +40,31 @@
                   </select>
                 </form>
               </div>
-              <div class="artifact-name">@artifactName</div>
+              <h3>@artifactName</h3>
+              <div class="artifact-version">@artifactVersion</div>
             </div>
-            <div class="artifact-version">@artifactVersion</div>
+            <div class="artifact-info">
+              <div class="row">
+                <div class="col-xs-4">Group ID:</div>
+                <div class="col-xs-8">@currentArtifact.groupId</div>
+              </div>
+              <div class="row">
+                <div class="col-xs-4">Artifact ID:</div>
+                <div class="col-xs-8">@currentArtifact.artifactId</div>
+              </div>
+              <div class="row">
+                <div class="col-xs-4">Version:</div>
+                <div class="col-xs-8">@currentArtifact.version</div>
+              </div>
+            </div>
           </div>
-          <div class="row artifact-information">
-            <div class="col-xs-5">Group-id:</div> <div class="col-xs-7">@currentArtifact.groupId</div>
-            <div class="col-xs-5">Artifact-id:</div> <div class="col-xs-7">@currentArtifact.artifactId</div>
-            <div class="col-xs-5">Version:</div> <div class="col-xs-7">@currentArtifact.version</div>
-          </div>
+          @install(currentArtifact, project.settings.cliArtifacts)
         </div>
       </div>
-      <div class="col-md-4">
-        <div class="sidebar-project">
-          @documentation(currentArtifact, project)
-          @dependencies(currentArtifact.projectRef, directDeps)
-          @dependents(currentArtifact, reverseDeps)
-        </div>
-      </div>
-      <div class="col-md-8">
-        @install(currentArtifact, project.settings.cliArtifacts)
+      <div class="col-md-5 sidebar-project">
+        @documentation(currentArtifact, project)
+        @dependencies(currentArtifact.projectRef, directDeps)
+        @dependents(currentArtifact, reverseDeps)
       </div>
     </div>
   </main>
