@@ -5,7 +5,6 @@ import java.time.Instant
 import scala.collection.immutable.SortedMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.util.Failure
 import scala.util.Success
 
 import akka.http.scaladsl.model.StatusCodes
@@ -49,20 +48,23 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
       },
       get {
         path(projectM / "artifacts") { ref =>
-          val defaultArtifact = for {
-            projectOpt <- database.getProject(ref)
-            project = projectOpt.getOrElse(throw new Exception(s"project $ref not found"))
-            lastVersion <- database.getLastVersion(ref)
-            artifacts <- database.getArtifactsByVersion(ref, lastVersion)
-          } yield project.settings.defaultArtifact.getOrElse(ArtifactPages.getDefault(artifacts))
-
-          onComplete(defaultArtifact) {
-            case Success(defaultArtifact) =>
-              redirect(s"/$ref/artifacts/$defaultArtifact", StatusCodes.TemporaryRedirect)
-            case Failure(cause) =>
-              logger.warn(s"failure when accessing $ref/artifacts", cause)
-              complete(StatusCodes.NotFound, view.html.notfound(env, user))
-          }
+          val future =
+            database.getProject(ref).flatMap {
+              case Some(project) =>
+                for {
+                  lastVersion <- database.getLastVersion(ref)
+                  artifacts <- database.getArtifactsByVersion(ref, lastVersion)
+                } yield {
+                  val defaultArtifactName = project.settings.defaultArtifact
+                    .flatMap(name => artifacts.find(_.artifactName == name))
+                    .getOrElse(ArtifactPages.getDefault(artifacts))
+                    .artifactName
+                  redirect(s"/$ref/artifacts/$defaultArtifactName", StatusCodes.TemporaryRedirect)
+                }
+              case None =>
+                Future.successful(complete(StatusCodes.NotFound, view.html.notfound(env, user)))
+            }
+          onSuccess(future)(identity)
         }
       },
       get {
