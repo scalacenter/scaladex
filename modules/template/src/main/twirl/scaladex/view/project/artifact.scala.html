@@ -1,6 +1,7 @@
 @import scaladex.core.model._
 @import scaladex.view.html.main
 @import scaladex.core.model.web.ArtifactPageParams
+@import scaladex.view.Formats
 @(
         env: Env,
         user: Option[UserState],
@@ -63,9 +64,49 @@
       </div>
       <div class="col-md-5 sidebar-project">
         @documentation(currentArtifact, project)
-        @dependencies(currentArtifact.projectRef, directDeps)
-        @dependents(currentArtifact, reverseDeps)
+        @dependencies
+        @dependents
       </div>
     </div>
   </main>
+}
+
+@dependencies = {
+  <div class="dependencies box">
+    <h4>@Formats.plural(directDeps.size, "Dependency")</h4>
+    <hr>
+    <ul>
+      @for(dep <- directDeps.sorted){
+        <li>
+          <div class="row">
+            <div class="col-xs-7"><a href="@dep.url">@dep.name</a></div>
+            <div class="col-xs-3">@dep.version</div>
+            <div class="col-xs-2"><span class="label label-primary">@dep.artifactDep.scope</span></div>
+          </div>
+        </li>
+      }
+      </ul>
+  </div>
+}
+
+@sample = @{ArtifactDependency.Reverse.sample(reverseDeps, 100)}
+@dependents = {
+  <div class="dependents box" id="dependents">
+    <h4>@Formats.plural(reverseDeps.size, "Dependent")</h4>
+    <hr>
+    <ul>
+      @for(dep <- sample){
+        <li>
+          <div class="row">
+            <div class="col-xs-7"><a href="@dep.url">@dep.name</a></div>
+            <div class="col-xs-3">@dep.version</div>
+            <div class="col-xs-2"><span class="label label-primary">@dep.dependency.scope</span></div>
+          </div>
+        </li>
+      }
+      @if(reverseDeps.size > 100) {
+        <p>and @{reverseDeps.size - 100} more</p>
+      }
+    </ul>
+  </div>
 }

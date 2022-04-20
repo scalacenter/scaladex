@@ -45,6 +45,7 @@ object ArtifactDependency {
   ) {
     def url: String = source.httpUrl
     def name: String = s"${source.projectRef.organization}/${source.artifactName}"
+    def version: SemanticVersion = source.version
   }
 
   object Reverse {
