@@ -123,6 +123,9 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
                 for {
                   artifacts <- database.getArtifacts(ref, artifactName, artifactVersion).map(_.groupBy(_.binaryVersion))
                   currentVersion = params.binaryVersion.getOrElse(artifacts.keys.toSeq.max(BinaryVersion.ordering))
+                  currentArtifact = artifacts(currentVersion).head
+                  directDeps <- database.getDirectDependencies(currentArtifact)
+                  reverseDeps <- database.getReverseDependencies(currentArtifact)
                   numberOfVersions <- database.countVersions(ref)
                   lastVersion <- database.getLastVersion(ref)
                 } yield {
@@ -132,10 +135,12 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
                       user,
                       project,
                       artifactName,
-                      currentVersion,
+                      currentArtifact,
                       artifacts,
                       artifactVersion,
                       params,
+                      directDeps,
+                      reverseDeps,
                       numberOfVersions,
                       lastVersion
                     )
