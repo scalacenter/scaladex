@@ -1,0 +1,1 @@
+ALTER TABLE artifacts ALTER COLUMN repository DROP NOT NULL;
