@@ -4,8 +4,6 @@
 @import scaladex.core.model.UserState
 @import scaladex.core.model.SemanticVersion
 @import scaladex.view.html.main
-@import scaladex.core.model.Platform
-@import scala.collection.SortedSet
 @import scaladex.core.model.ArtifactDependency
 @import scaladex.view.Formats
 
@@ -16,7 +14,6 @@
   versionCount: Long,
   lastVersion: SemanticVersion,
   artifact: Artifact,
-  platforms: SortedSet[Platform],
   directDependencies: Map[Project.Reference, (ArtifactDependency.Scope, Seq[SemanticVersion])],
   reverseDependency: Map[Project.Reference, (ArtifactDependency.Scope, SemanticVersion)],
 )
@@ -42,7 +39,6 @@
             }
             @project.githubInfo.map(gh => statistic(gh, project.reference, reverseDependency.size))
             @documentation(artifact, project)
-            @badges(artifact, platforms, env)
             @install(artifact, project.settings.cliArtifacts)
             @scastie(artifact.scastieURL)
             @project.githubInfo.map { github =>

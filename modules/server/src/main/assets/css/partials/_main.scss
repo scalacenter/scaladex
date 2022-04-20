@@ -14,10 +14,6 @@ main {
   flex: 1;
 }
 
-.copyable-incantation {
-  user-select: all;
-}
-
 .banner {
   background: #0c353c;
   text-align: center;
@@ -871,7 +867,6 @@ main {
   .supported {
     color: green;
     text-align: center;
-    vertical-align: middle;
     display: block;
 
     &:before {
@@ -881,17 +876,13 @@ main {
   }
 }
 
-.badge-showcase {
-  padding-bottom: 0;
-
-  .badge-image {
-    overflow: auto;
-    padding-bottom: 40px;
+.project-badges {
+  .badge-section {
+    overflow: hidden;
   }
 
-  .text-right {
-    position: absolute;
-    right: 45px;
+  img {
+    margin-bottom: 24px;
   }
 }
 

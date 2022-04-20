@@ -25,6 +25,9 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
 
   def route(user: Option[UserState]): Route =
     concat(
+      get {
+        path(projectM)(ref => onSuccess(getProjectPage(ref, user))(identity))
+      },
       post {
         path(projectM / "settings") { projectRef =>
           editForm { form =>
@@ -46,13 +49,13 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           user match {
             case Some(userState) if userState.canEdit(projectRef, env) =>
               complete(getEditPage(projectRef, userState))
-            case maybeUser =>
-              complete((StatusCodes.Forbidden, view.html.forbidden(env, maybeUser)))
+            case _ =>
+              complete((StatusCodes.Forbidden, view.html.forbidden(env, user)))
           }
         }
       },
       get {
-        path(projectM)(ref => onSuccess(getProjectPage(ref, user))(identity))
+        path(projectM / "badges")(ref => onSuccess(getBadges(ref, user))(identity))
       },
       get {
         // redirect to new artifacts page
@@ -107,7 +110,6 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           versionCount <- database.countVersions(ref)
           directDependencies <- database.getDirectReleaseDependencies(ref, lastVersion)
           reverseDependencies <- reverseDependenciesF
-          platforms <- database.getArtifactPlatforms(ref, defaultArtifact.artifactName)
         } yield {
           val groupedDirectDependencies = directDependencies
             .groupBy(_.targetRef)
@@ -132,7 +134,6 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
             versionCount,
             lastVersion,
             defaultArtifact,
-            SortedSet.from(platforms)(Platform.ordering.reverse),
             groupedDirectDependencies.toMap,
             groupedReverseDependencies.toMap
           )
@@ -143,6 +144,35 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         Future.successful(complete(StatusCodes.NotFound, view.html.notfound(env, user)))
     }
   }
+
+  private def getBadges(ref: Project.Reference, user: Option[UserState]): Future[StandardRoute] =
+    database.getProject(ref).flatMap {
+      case Some(project) =>
+        for {
+          lastVersion <- database.getLastVersion(ref)
+          artifacts <- database.getArtifactsByVersion(ref, lastVersion)
+          defaultArtifact =
+            project.settings.defaultArtifact
+              .flatMap(name => artifacts.find(_.artifactName == name))
+              .getOrElse(ArtifactPages.getDefault(artifacts))
+          versionCount <- database.countVersions(ref)
+          platforms <- database.getArtifactPlatforms(ref, defaultArtifact.artifactName)
+        } yield {
+          val html = view.project.html.badges(
+            env,
+            user,
+            project,
+            versionCount,
+            lastVersion,
+            defaultArtifact,
+            SortedSet.from(platforms)(Platform.ordering.reverse)
+          )
+          complete(StatusCodes.OK, html)
+        }
+
+      case None =>
+        Future.successful(complete(StatusCodes.NotFound, view.html.notfound(env, user)))
+    }
 
   // TODO remove all unused parameters
   private val editForm: Directive1[Project.Settings] =

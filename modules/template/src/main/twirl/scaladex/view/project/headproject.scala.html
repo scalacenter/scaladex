@@ -66,6 +66,7 @@
             <li role="artifacts" class="@isActive("Artifacts")"><a href="/@project.reference/artifacts">@plural(numberOfVersions, "Version")</a></li>
             <li role="version-matrix" class="@isActive("Version Matrix")"><a href="/@project.reference/version-matrix">Version Matrix</a></li>
             @if(canEdit) {
+              <li role="badges" class="@isActive("Badges")"><a href="/@project.reference/badges">Badges</a></li>
               <li role="settings" class="@isActive("Settings")">
                 <a data-toggle="tooltip" data-placement="bottom" title="edit project's settings" href="/@project.reference/settings">
                   <i class="fa-solid fa-gear"></i>
