@@ -94,9 +94,7 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
           organization,
           repository,
           binaryVersion,
-          artifactName,
-          version = None,
-          selected = None
+          artifactName
         )
         onSuccess(res) {
           case Some(artifact) =>
@@ -167,15 +165,11 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
       org: Project.Organization,
       repo: Project.Repository,
       binaryVersion: Option[String],
-      artifact: Option[Artifact.Name],
-      version: Option[String],
-      selected: Option[String]
+      artifact: Option[Artifact.Name]
   ): Future[Option[Artifact]] = {
     val artifactSelection = ArtifactSelection.parse(
       binaryVersion = binaryVersion,
-      artifactName = artifact,
-      version = version,
-      selected = selected
+      artifactName = artifact
     )
     val projectRef = Project.Reference(org, repo)
     for {

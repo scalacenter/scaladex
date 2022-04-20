@@ -127,6 +127,9 @@ object ArtifactTable {
   val selectArtifactName: Query[Project.Reference, Artifact.Name] =
     selectRequest(table, Seq("DISTINCT artifact_name"), projectReferenceFields)
 
+  val selectPlatformByArtifactName: Query[(Project.Reference, Artifact.Name), Platform] =
+    selectRequest(table, Seq("DISTINCT platform"), projectReferenceFields :+ "artifact_name")
+
   val selectMavenReference: Query0[Artifact.MavenReference] =
     selectRequest(table, """DISTINCT group_id, artifact_id, "version"""")
 

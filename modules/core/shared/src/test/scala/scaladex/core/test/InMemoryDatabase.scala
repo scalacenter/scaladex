@@ -63,6 +63,15 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]] =
     Future.successful(artifacts.getOrElse(projectRef, Nil))
 
+  override def getArtifactPlatforms(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Platform]] =
+    Future.successful {
+      artifacts
+        .getOrElse(ref, Seq.empty)
+        .filter(_.artifactName == artifactName)
+        .map(_.platform)
+        .distinct
+    }
+
   override def getDependencies(projectRef: Project.Reference): Future[Seq[ArtifactDependency]] = ???
 
   override def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]] = {
@@ -80,9 +89,14 @@ class InMemoryDatabase extends SchedulerDatabase {
         .filter(_.artifactName == artifactName)
     )
 
-  override def getArtifactsByVersion(ref: Project.Reference, version: SemanticVersion): Future[Seq[Artifact]] = ???
+  override def getArtifactsByVersion(ref: Project.Reference, version: SemanticVersion): Future[Seq[Artifact]] =
+    Future.successful {
+      artifacts.getOrElse(ref, Seq.empty).filter(_.version == version)
+    }
 
-  override def getArtifactNames(ref: Project.Reference): Future[Seq[Artifact.Name]] = ???
+  override def getArtifactNames(ref: Project.Reference): Future[Seq[Artifact.Name]] = Future.successful(
+    artifacts.getOrElse(ref, Nil).map(_.artifactName).distinct
+  )
 
   override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] = ???
 
@@ -164,20 +178,31 @@ class InMemoryDatabase extends SchedulerDatabase {
     }
 
   override def getArtifacts(
-      projectRef: Project.Reference,
-      default: Artifact.Name,
+      ref: Project.Reference,
+      artifactName: Artifact.Name,
       params: ArtifactsPageParams
-  ): Future[Seq[Artifact]] = ???
+  ): Future[Seq[Artifact]] =
+    // does not filter with params
+    Future.successful(artifacts.getOrElse(ref, Seq.empty).filter(_.artifactName == artifactName))
   override def getDirectReleaseDependencies(
       ref: Project.Reference,
       version: SemanticVersion
-  ): Future[Seq[ReleaseDependency.Direct]] = ???
-  override def getReverseReleaseDependencies(ref: Project.Reference): Future[Seq[ReleaseDependency.Reverse]] = ???
-  override def countVersions(ref: Project.Reference): Future[Long] = ???
-  override def getLastVersion(ref: Project.Reference): Future[SemanticVersion] = ???
+  ): Future[Seq[ReleaseDependency.Direct]] = Future.successful(Seq.empty)
+  override def getReverseReleaseDependencies(ref: Project.Reference): Future[Seq[ReleaseDependency.Reverse]] =
+    Future.successful(Seq.empty)
+  override def countVersions(ref: Project.Reference): Future[Long] =
+    Future.successful {
+      artifacts.getOrElse(ref, Seq.empty).map(_.version).distinct.size
+    }
+  override def getLastVersion(ref: Project.Reference): Future[SemanticVersion] = Future.successful {
+    artifacts.getOrElse(ref, Seq.empty).head.version
+  }
   override def getArtifacts(
       ref: Project.Reference,
       artifactName: Artifact.Name,
       version: SemanticVersion
-  ): Future[Seq[Artifact]] = ???
+  ): Future[Seq[Artifact]] =
+    Future.successful {
+      artifacts.getOrElse(ref, Seq.empty).filter(a => a.artifactName == artifactName && a.version == version)
+    }
 }

@@ -27,8 +27,8 @@ trait WebDatabase {
   def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int]
   def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]]
   def getArtifacts(
-      projectRef: Project.Reference,
-      default: Artifact.Name,
+      ref: Project.Reference,
+      artifactName: Artifact.Name,
       params: ArtifactsPageParams
   ): Future[Seq[Artifact]]
   def getArtifacts(ref: Project.Reference, artifactName: Artifact.Name, version: SemanticVersion): Future[Seq[Artifact]]
@@ -37,6 +37,7 @@ trait WebDatabase {
   def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]]
   def getAllArtifacts(maybeLanguage: Option[Language], maybePlatform: Option[Platform]): Future[Seq[Artifact]]
   def getArtifactNames(ref: Project.Reference): Future[Seq[Artifact.Name]]
+  def getArtifactPlatforms(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Platform]]
   def getDirectDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Direct]]
   def getReverseDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Reverse]]
   def getDirectReleaseDependencies(

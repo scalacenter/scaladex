@@ -4,6 +4,7 @@ import java.time.Instant
 
 import scala.collection.immutable.SortedMap
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
@@ -11,12 +12,6 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directive1
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Directives.complete
-import akka.http.scaladsl.server.Directives.concat
-import akka.http.scaladsl.server.Directives.get
-import akka.http.scaladsl.server.Directives.onComplete
-import akka.http.scaladsl.server.Directives.parameters
-import akka.http.scaladsl.server.Directives.path
 import akka.http.scaladsl.server.Route
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Artifact
@@ -73,132 +68,125 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
       get {
         path(projectM / "artifacts" / artifactNameM) { (ref, artifactName) =>
           artifactsParams { params =>
-            val res =
-              for {
-                projectOpt <- database.getProject(ref)
-                project = projectOpt.getOrElse(throw new Exception(s"project $ref not found"))
-                artifactNames <- database.getArtifactNames(ref) // TODO only artifact names
-                artifacts <- database.getArtifacts(ref, artifactName, params)
-                numberOfVersions <- database.countVersions(ref)
-                lastVersion <- database.getLastVersion(ref)
-              } yield {
-                val binaryVersions = artifacts
-                  .map(_.binaryVersion)
-                  .distinct
-                  .sorted(BinaryVersion.ordering.reverse)
+            val future = database.getProject(ref).flatMap {
+              case Some(project) =>
+                for {
+                  artifactNames <- database.getArtifactNames(ref)
+                  artifacts <- database.getArtifacts(ref, artifactName, params)
+                  numberOfVersions <- database.countVersions(ref)
+                  lastVersion <- database.getLastVersion(ref)
+                } yield {
+                  val binaryVersions = artifacts
+                    .map(_.binaryVersion)
+                    .distinct
+                    .sorted(BinaryVersion.ordering.reverse)
 
-                val artifactsByVersion =
-                  artifacts
-                    .groupBy(_.version)
-                    .filter {
-                      case (_, artifacts) =>
-                        params.binaryVersions.forall(binaryVersion =>
-                          artifacts.exists(_.binaryVersion == binaryVersion)
-                        )
-                    }
-                    .map { case (version, artifacts) => (artifacts.map(_.releaseDate).min, version) -> artifacts }
-                view.project.html.artifacts(
-                  env,
-                  project,
-                  user,
-                  artifactName,
-                  artifactNames,
-                  binaryVersions,
-                  SortedMap.from(artifactsByVersion)(
-                    Ordering.Tuple2(Ordering[Instant].reverse, Ordering[SemanticVersion].reverse)
-                  ),
-                  params,
-                  lastVersion,
-                  numberOfVersions
-                )
-              }
-
-            onComplete(res) {
-              case Success(html) => complete(html)
-              case Failure(e) =>
-                logger.warn(s"failure when accessing $ref/artifacts/$artifactName", e)
-                complete(StatusCodes.NotFound, view.html.notfound(env, user))
+                  val artifactsByVersion =
+                    artifacts
+                      .groupBy(_.version)
+                      .filter {
+                        case (_, artifacts) =>
+                          params.binaryVersions
+                            .forall(binaryVersion => artifacts.exists(_.binaryVersion == binaryVersion))
+                      }
+                      .map { case (version, artifacts) => (artifacts.map(_.releaseDate).min, version) -> artifacts }
+                  val html = view.project.html.artifacts(
+                    env,
+                    project,
+                    user,
+                    artifactName,
+                    artifactNames,
+                    binaryVersions,
+                    SortedMap.from(artifactsByVersion)(
+                      Ordering.Tuple2(Ordering[Instant].reverse, Ordering[SemanticVersion].reverse)
+                    ),
+                    params,
+                    lastVersion,
+                    numberOfVersions
+                  )
+                  complete(html)
+                }
+              case None =>
+                Future.successful(complete(StatusCodes.NotFound, view.html.notfound(env, user)))
             }
+            onSuccess(future)(identity)
           }
         }
       },
       get {
         path(projectM / "artifacts" / artifactNameM / versionM) { (ref, artifactName, artifactVersion) =>
           artifactParams { params =>
-            val res =
-              for {
-                projectOpt <- database.getProject(ref)
-                project = projectOpt.getOrElse(throw new Exception(s"project ${ref} not found"))
-                artifacts <- database.getArtifacts(ref, artifactName, artifactVersion).map(_.groupBy(_.binaryVersion))
-                currentVersion = params.binaryVersion.getOrElse(artifacts.keys.toSeq.max(BinaryVersion.ordering))
-                numberOfVersions <- database.countVersions(ref)
-                lastVersion <- database.getLastVersion(ref)
-              } yield view.project.html
-                .artifact(
-                  env,
-                  user,
-                  project,
-                  artifactName,
-                  currentVersion,
-                  artifacts,
-                  artifactVersion,
-                  params,
-                  numberOfVersions,
-                  lastVersion
-                )
-
-            onComplete(res) {
-              case Success(html) =>
-                complete(html)
-              case Failure(_) =>
-                complete(StatusCodes.NotFound, view.html.notfound(env, user))
+            val future = database.getProject(ref).flatMap {
+              case Some(project) =>
+                for {
+                  artifacts <- database.getArtifacts(ref, artifactName, artifactVersion).map(_.groupBy(_.binaryVersion))
+                  currentVersion = params.binaryVersion.getOrElse(artifacts.keys.toSeq.max(BinaryVersion.ordering))
+                  numberOfVersions <- database.countVersions(ref)
+                  lastVersion <- database.getLastVersion(ref)
+                } yield {
+                  val html = view.project.html
+                    .artifact(
+                      env,
+                      user,
+                      project,
+                      artifactName,
+                      currentVersion,
+                      artifacts,
+                      artifactVersion,
+                      params,
+                      numberOfVersions,
+                      lastVersion
+                    )
+                  complete(html)
+                }
+              case None =>
+                Future.successful(complete(StatusCodes.NotFound, view.html.notfound(env, user)))
             }
+            onSuccess(future)(identity)
           }
         }
       },
       get {
         path(projectM / "version-matrix") { ref =>
-          val res =
-            for {
-              projectOpt <- database.getProject(ref)
-              project = projectOpt.getOrElse(throw new Exception(s"project ${ref} not found"))
-              artifacts <- database.getArtifacts(project.reference)
-              numberOfVersions <- database.countVersions(ref)
-              lastProjectVersion <- database.getLastVersion(ref)
-            } yield (project, artifacts, numberOfVersions, lastProjectVersion)
+          val future = database.getProject(ref).flatMap {
+            case Some(project) =>
+              for {
+                artifacts <- database.getArtifacts(project.reference)
+                numberOfVersions <- database.countVersions(ref)
+                lastProjectVersion <- database.getLastVersion(ref)
+              } yield {
+                val binaryVersionByPlatforms = artifacts
+                  .map(_.binaryVersion)
+                  .distinct
+                  .groupBy(_.platform)
+                  .view
+                  .mapValues(_.sorted(BinaryVersion.ordering.reverse))
+                  .toSeq
+                  .sortBy(_._1)(Platform.ordering.reverse)
 
-          onComplete(res) {
-            case Success((project, artifacts, numberOfVersions, lastProjectVersion)) =>
-              val binaryVersionByPlatforms = artifacts
-                .map(_.binaryVersion)
-                .distinct
-                .groupBy(_.platform)
-                .view
-                .mapValues(_.sorted(BinaryVersion.ordering.reverse))
-                .toSeq
-                .sortBy(_._1)(Platform.ordering.reverse)
+                val artifactsByVersions = artifacts
+                  .groupBy(_.version)
+                  .map { case (version, artifacts) => (version, artifacts.groupBy(_.artifactName).toSeq.sortBy(_._1)) }
+                  .toSeq
+                  .sortBy(_._1)(SemanticVersion.ordering.reverse)
 
-              val artifactsByVersions = artifacts
-                .groupBy(_.version)
-                .map { case (version, artifacts) => (version, artifacts.groupBy(_.artifactName).toSeq.sortBy(_._1)) }
-                .toSeq
-                .sortBy(_._1)(SemanticVersion.ordering.reverse)
-
-              complete(
-                view.project.html
-                  .versionMatrix(
-                    env,
-                    project,
-                    user,
-                    binaryVersionByPlatforms,
-                    artifactsByVersions,
-                    numberOfVersions,
-                    lastProjectVersion
-                  )
-              )
-            case Failure(_) =>
-              complete(StatusCodes.NotFound, view.html.notfound(env, user))
+                complete(
+                  view.project.html
+                    .versionMatrix(
+                      env,
+                      project,
+                      user,
+                      binaryVersionByPlatforms,
+                      artifactsByVersions,
+                      numberOfVersions,
+                      lastProjectVersion
+                    )
+                )
+              }
+            case None =>
+              Future.successful(complete(StatusCodes.NotFound, view.html.notfound(env, user)))
           }
+          onSuccess(future)(identity)
         }
       }
     )

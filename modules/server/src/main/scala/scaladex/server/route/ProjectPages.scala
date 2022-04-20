@@ -26,30 +26,23 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
   def route(user: Option[UserState]): Route =
     concat(
       post {
-        path("edit" / projectM) { projectRef =>
+        path(projectM / "settings") { projectRef =>
           editForm { form =>
             val updateF = for {
               _ <- database.updateProjectSettings(projectRef, form)
               _ <- searchSynchronizer.syncProject(projectRef)
             } yield ()
             onComplete(updateF) {
-              case Success(()) =>
-                redirect(
-                  Uri(s"/$projectRef"),
-                  StatusCodes.SeeOther
-                )
+              case Success(()) => redirect(Uri(s"/$projectRef"), StatusCodes.SeeOther)
               case Failure(e) =>
                 logger.error(s"Cannot save settings of project $projectRef", e)
-                redirect(
-                  Uri(s"/$projectRef"),
-                  StatusCodes.SeeOther
-                ) // maybe we can print that it wasn't saved
+                redirect(Uri(s"/$projectRef"), StatusCodes.SeeOther) // maybe we can print that it wasn't saved
             }
           }
         }
       },
       get {
-        path("edit" / projectM) { projectRef =>
+        path(projectM / "settings") { projectRef =>
           user match {
             case Some(userState) if userState.canEdit(projectRef, env) =>
               complete(getEditPage(projectRef, userState))
@@ -59,65 +52,23 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         }
       },
       get {
-        path(projectM)(projectRef =>
-          parameters("artifact".?, "version".?, "binaryVersion".?, "selected".?) {
-            (artifact, version, binaryVersion, selected) =>
-              val fut: Future[StandardRoute] = database.getProject(projectRef).flatMap {
-                case Some(Project(_, _, _, GithubStatus.Moved(_, newProjectRef), _, _)) =>
-                  Future.successful(redirect(Uri(s"/$newProjectRef"), StatusCodes.PermanentRedirect))
-                case Some(project) =>
-                  val artifactRouteF: Future[StandardRoute] =
-                    getSelectedArtifact(
-                      database,
-                      project,
-                      binaryVersion = binaryVersion,
-                      artifact = artifact.map(Artifact.Name.apply),
-                      version = version,
-                      selected = selected
-                    ).map(_.map { artifact =>
-                      val binaryVersionParam = s"?binaryVersion=${artifact.binaryVersion.label}"
-                      redirect(
-                        s"/$projectRef/${artifact.artifactName}/${artifact.version.encode}/$binaryVersionParam",
-                        StatusCodes.TemporaryRedirect
-                      )
-                    }.getOrElse(complete(StatusCodes.NotFound, view.html.notfound(env, user))))
-                  artifactRouteF
-                case None =>
-                  Future.successful(
-                    complete(StatusCodes.NotFound, view.html.notfound(env, user))
-                  )
-              }
-              onSuccess(fut)(identity)
+        path(projectM)(ref => onSuccess(getProjectPage(ref, user))(identity))
+      },
+      get {
+        // redirect to new artifacts page
+        path(projectM / artifactNameM)((projectRef, artifactName) =>
+          parameter("binaryVersion".?) { binaryVersion =>
+            val filter = binaryVersion.map(bv => s"?binary-versions=$bv").getOrElse("")
+            redirect(s"/$projectRef/artifacts/$artifactName$filter", StatusCodes.PermanentRedirect)
           }
         )
       },
       get {
-        path(projectM / artifactNameM)((projectRef, artifact) =>
+        // redirect to new artifact page
+        path(projectM / artifactNameM / versionM)((projectRef, artifactName, version) =>
           parameter("binaryVersion".?) { binaryVersion =>
-            val res = getProjectPage(
-              projectRef,
-              binaryVersion,
-              artifact,
-              None,
-              user
-            )
-            onComplete(res) {
-              case Success((code, some)) => complete(code, some)
-              case Failure(_) =>
-                complete(StatusCodes.NotFound, view.html.notfound(env, user))
-            }
-          }
-        )
-      },
-      get {
-        path(projectM / artifactNameM / versionM)((projectRef, artifact, version) =>
-          parameter("binaryVersion".?) { binaryVersion =>
-            val res = getProjectPage(projectRef, binaryVersion, artifact, Some(version), user)
-            onComplete(res) {
-              case Success((code, some)) => complete(code, some)
-              case Failure(_) =>
-                complete(StatusCodes.NotFound, view.html.notfound(env, user))
-            }
+            val filter = binaryVersion.map(bv => s"binary-version=$bv").getOrElse("")
+            redirect(s"/$projectRef/artifacts/$artifactName/$version?$filter", StatusCodes.PermanentRedirect)
           }
         )
       }
@@ -140,36 +91,24 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
       .getOrElse((StatusCodes.NotFound, view.html.notfound(env, Some(user))))
 
   private def getProjectPage(
-      projectRef: Project.Reference,
-      binaryVersion: Option[String],
-      artifact: Artifact.Name,
-      version: Option[SemanticVersion],
+      ref: Project.Reference,
       user: Option[UserState]
-  ): Future[(StatusCode, HtmlFormat.Appendable)] = {
-    val selection = ArtifactSelection.parse(
-      binaryVersion = binaryVersion,
-      artifactName = Some(artifact),
-      version = version.map(_.toString),
-      selected = None
-    )
-    database.getProject(projectRef).flatMap {
+  ): Future[StandardRoute] = {
+    val reverseDependenciesF = database.getReverseReleaseDependencies(ref)
+    database.getProject(ref).flatMap {
       case Some(project) =>
-        // start it first because it can be long (~1 second)
-        val reverseDependenciesF = database.getReverseReleaseDependencies(projectRef)
         for {
-          artifacts <- database.getArtifacts(projectRef)
-          selectedArtifact = selection
-            .defaultArtifact(artifacts, project)
-            .getOrElse(throw new Exception(s"no artifact found for $projectRef"))
-          lastVersion <- database.getLastVersion(projectRef)
-          directDependencies <- database.getDirectReleaseDependencies(projectRef, lastVersion)
+          lastVersion <- database.getLastVersion(ref)
+          artifacts <- database.getArtifactsByVersion(ref, lastVersion)
+          defaultArtifact =
+            project.settings.defaultArtifact
+              .flatMap(name => artifacts.find(_.artifactName == name))
+              .getOrElse(ArtifactPages.getDefault(artifacts))
+          versionCount <- database.countVersions(ref)
+          directDependencies <- database.getDirectReleaseDependencies(ref, lastVersion)
           reverseDependencies <- reverseDependenciesF
+          platforms <- database.getArtifactPlatforms(ref, defaultArtifact.artifactName)
         } yield {
-          val allVersions = artifacts.view.map(_.version)
-          val platformsForBadges = artifacts.view
-            .filter(_.artifactName == selectedArtifact.artifactName)
-            .map(_.binaryVersion.platform)
-          val twitterCard = project.twitterSummaryCard
           val groupedDirectDependencies = directDependencies
             .groupBy(_.targetRef)
             .view
@@ -188,21 +127,20 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
             }
           val html = view.project.html.project(
             env,
-            project,
-            SortedSet.from(allVersions)(SemanticVersion.ordering.reverse),
-            SortedSet.from(platformsForBadges)(Platform.ordering.reverse),
-            selectedArtifact,
             user,
-            Some(twitterCard),
-            artifacts.size,
+            project,
+            versionCount,
+            lastVersion,
+            defaultArtifact,
+            SortedSet.from(platforms)(Platform.ordering.reverse),
             groupedDirectDependencies.toMap,
-            groupedReverseDependencies.toMap,
-            lastVersion
+            groupedReverseDependencies.toMap
           )
-          (StatusCodes.OK, html)
+          complete(StatusCodes.OK, html)
         }
+
       case None =>
-        Future.successful((StatusCodes.NotFound, view.html.notfound(env, user)))
+        Future.successful(complete(StatusCodes.NotFound, view.html.notfound(env, user)))
     }
   }
 
@@ -281,24 +219,4 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           Tuple1(settings)
       }
     )
-
-  private def getSelectedArtifact(
-      database: WebDatabase,
-      project: Project,
-      binaryVersion: Option[String],
-      artifact: Option[Artifact.Name],
-      version: Option[String],
-      selected: Option[String]
-  ): Future[Option[Artifact]] = {
-    val artifactSelection = ArtifactSelection.parse(
-      binaryVersion = binaryVersion,
-      artifactName = artifact,
-      version = version,
-      selected = selected
-    )
-    for {
-      artifacts <- database.getArtifacts(project.reference)
-      defaultArtifact = artifactSelection.defaultArtifact(artifacts, project)
-    } yield defaultArtifact
-  }
 }

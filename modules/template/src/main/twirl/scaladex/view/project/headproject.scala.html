@@ -67,8 +67,10 @@
             <li role="version-matrix" class="@isActive("Version Matrix")"><a href="/@project.reference/version-matrix">Version Matrix</a></li>
             @if(canEdit) {
               <li role="settings" class="@isActive("Settings")">
-                <a data-toggle="tooltip" data-placement="bottom" title="edit project's settings" href="/edit/@project.reference"><i class="fa-solid fa-gear"></i>
-                  Settings</a>
+                <a data-toggle="tooltip" data-placement="bottom" title="edit project's settings" href="/@project.reference/settings">
+                  <i class="fa-solid fa-gear"></i>
+                  Settings
+                </a>
               </li>
             }
           </ul>

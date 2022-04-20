@@ -22,7 +22,7 @@
             <button type="submit" form="project-settings" class="btn btn-primary pull-right">Update</button>
 
             <h1>Edit project</h1>
-            <form action="/edit/@project.organization/@project.repository" method="POST" id="project-settings">
+            <form action="/@project.organization/@project.repository/settings" method="POST" id="project-settings">
               <div class="form-group">
                 <input type="checkbox" name="contributorsWanted" @if(project.settings.contributorsWanted){ checked }> 
                 <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">

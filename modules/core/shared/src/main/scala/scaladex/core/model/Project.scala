@@ -21,7 +21,7 @@ case class Project(
   /**
    * This is used in twitter to render the card of a scaladex project link.
    */
-  def twitterSummaryCard: TwitterSummaryCard = TwitterSummaryCard(
+  def twitterCard: TwitterSummaryCard = TwitterSummaryCard(
     "@scala_lang",
     repository.toString(),
     githubInfo.flatMap(_.description).getOrElse(""),

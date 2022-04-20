@@ -150,6 +150,9 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getArtifactNames(ref: Project.Reference): Future[Seq[Artifact.Name]] =
     run(ArtifactTable.selectArtifactName.to[Seq](ref))
 
+  override def getArtifactPlatforms(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Platform]] =
+    run(ArtifactTable.selectPlatformByArtifactName.to[Seq]((ref, artifactName)))
+
   override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] =
     run(ArtifactTable.selectByMavenReference.option(mavenRef))
 
@@ -249,14 +252,14 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
     run(UserSessionsTable.deleteByUserId.run(userId).map(_ => ()))
 
   override def getArtifacts(
-      projectRef: Project.Reference,
+      ref: Project.Reference,
       artifactName: Artifact.Name,
       params: ArtifactsPageParams
   ): Future[Seq[Artifact]] =
     run(
       ArtifactTable
         .selectArtifactByParams(params.binaryVersions, params.preReleases)
-        .to[Seq](projectRef, artifactName)
+        .to[Seq](ref, artifactName)
     )
 
   override def countVersions(ref: Project.Reference): Future[Long] =
