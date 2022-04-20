@@ -44,9 +44,9 @@
             <div class="artifact-version">@artifactVersion</div>
           </div>
           <div class="artifact-information">
-            <div class="col-sm-2">Group-id:</div> <div class="col=sm-10>"> @currentArtifact.groupId</div>
-            <div class="col-sm-2">Artifact-id:</div> <div class="col=sm-10>"> @currentArtifact.artifactId</div>
-            <div class="col-sm-2">Version</div> <div class="col=sm-10>"> @currentArtifact.version</div>
+            <div class="col-xs-5">Group-id:</div> <div class="col-xs-7">@currentArtifact.groupId</div>
+            <div class="col-xs-5">Artifact-id:</div> <div class="col-xs-7">@currentArtifact.artifactId</div>
+            <div class="col-xs-5">Version:</div> <div class="col-xs-7">@currentArtifact.version</div>
           </div>
         </div>
       </div>
@@ -58,7 +58,6 @@
       <div class="col-md-8">
         @install(currentArtifact, project.settings.cliArtifacts)
       </div>
-
     </div>
   </main>
 }
