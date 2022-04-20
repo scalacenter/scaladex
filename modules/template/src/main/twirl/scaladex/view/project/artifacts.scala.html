@@ -80,7 +80,7 @@
 
 @filters() = {
   <form action="#" action="GET">
-    <select class="selectpicker" title="Artifact names" data-style="btn-primary" onchange="window.location=this.value">
+    <select class="selectpicker" data-style="btn-primary" onchange="window.location=this.value">
       @for(name <- artifactNames) {
           <option value="@artifactFilterUri(project.reference, name, params)"
           @if(name == artifactName) {selected}>
@@ -90,10 +90,10 @@
     </select>
 
     <select class="selectpicker" name="binary-versions" 
-    title= "Scala Versions" multiple data-style="btn-primary" data-actions-box="true" data-selected-text-format="static"
+      title= "Scala Versions" multiple data-style="btn-primary" data-actions-box="true" data-selected-text-format="static"
       onchange="this.form.submit()">
       @for((platform, binaryVersions) <- allBinaryVersions.groupBy(_.platform)) {
-        <optgroup label="@{platform.label}">
+        <optgroup label="@platform.label">
           @for(binaryVersion <- binaryVersions) {
               <option value="@binaryVersion.label"
               @if(params.binaryVersions.contains(binaryVersion)) {selected}>
@@ -113,20 +113,24 @@
       @for(binaryVersion <- params.binaryVersions) {
         <li>
           <a href="@artifactFilterUri(project.reference, artifactName, params.remove(binaryVersion))" class="label label-default">
-              <i class="fa-solid fa-xmark"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;@binaryVersion</a>
+            <i class="fa-solid fa-xmark"></i>
+            @binaryVersion
+          </a>
         </li>
       }
       @if(params.preReleases) {
         <li>
           <a class="label label-info" href="@artifactFilterUri(project.reference, artifactName, params.withPreReleases(false))">
-            <i class="fa-solid fa-xmark"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;show pre-release versions</a>
+            <i class="fa-solid fa-xmark"></i>
+            Show pre-release versions
           </a>
         </li>
       }
       @if(params.binaryVersions.nonEmpty || params.preReleases) {
         <li>
           <a href="@artifactFilterUri(project.reference, artifactName, ArtifactsPageParams.empty)" class="label label-warning clear-all">
-            <i class="fa-solid fa-xmark"></i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Clear all filters
+            <i class="fa-solid fa-xmark"></i>
+            Clear all filters
           </a>
         </li>
       }
