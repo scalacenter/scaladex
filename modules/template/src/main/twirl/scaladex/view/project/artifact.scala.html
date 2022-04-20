@@ -23,27 +23,29 @@
         <div class="content-project artifact box" data-organization="@project.reference.organization"
         data-repository="@project.reference.repository">
           <div class="artifact-head">
-            <div class="float-right">
-              <form>
-                <select name="binary-version" class="selectpicker"
-                data-style="btn-primary" onchange="this.form.submit()">
-                @for((platform, binaryVersions) <- artifacts.keys.groupBy(_.platform)) {
-                  <optgroup label="@{platform.label}">
-                  @for(binaryVersion <- binaryVersions) {
-                    <option value="@binaryVersion.label"
-                    @if(params.binaryVersion.contains(binaryVersion) || currentBinaryVersion == binaryVersion) {selected}>
-                    @binaryVersion.toString
-                    </option>
+            <div class="row">
+              <div class="float-right">
+                <form>
+                  <select name="binary-version" class="selectpicker"
+                  data-style="btn-primary" onchange="this.form.submit()">
+                  @for((platform, binaryVersions) <- artifacts.keys.groupBy(_.platform)) {
+                    <optgroup label="@{platform.label}">
+                    @for(binaryVersion <- binaryVersions) {
+                      <option value="@binaryVersion.label"
+                      @if(params.binaryVersion.contains(binaryVersion) || currentBinaryVersion == binaryVersion) {selected}>
+                      @binaryVersion.toString
+                      </option>
+                    }
+                    </optgroup>
                   }
-                  </optgroup>
-                }
-                </select>
-              </form>
+                  </select>
+                </form>
+              </div>
+              <div class="artifact-name">@artifactName</div>
             </div>
-            <div class="artifact-name">@artifactName</div>
             <div class="artifact-version">@artifactVersion</div>
           </div>
-          <div class="artifact-information">
+          <div class="row artifact-information">
             <div class="col-xs-5">Group-id:</div> <div class="col-xs-7">@currentArtifact.groupId</div>
             <div class="col-xs-5">Artifact-id:</div> <div class="col-xs-7">@currentArtifact.artifactId</div>
             <div class="col-xs-5">Version:</div> <div class="col-xs-7">@currentArtifact.version</div>
