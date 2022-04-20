@@ -43,9 +43,9 @@
         <div>
           @artifactByVersions.map { case ((releaseDate, semanticVersion), artifacts) =>
           <div class="panel panel-default">
-            <div class="artifact-row panel-body">
-              <div class="center col-md-3">
-                <a class="artifact-version " href="/@project.reference/artifacts/@artifactName/@semanticVersion">@semanticVersion</a>
+            <div class="artifact-row panel-body center">
+              <div class="col-md-3 center">
+                <a class="artifact-version" href="/@project.reference/artifacts/@artifactName/@semanticVersion">@semanticVersion</a>
               </div>
               <div class="col-md-9">
                 <div class="artifact-info">
