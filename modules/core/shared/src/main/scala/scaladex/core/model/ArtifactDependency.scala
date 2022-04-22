@@ -17,11 +17,7 @@ object ArtifactDependency {
       artifactDep: ArtifactDependency,
       target: Option[Artifact]
   ) {
-    def url: String = target match {
-      case Some(dep) => dep.httpUrl
-      case None =>
-        s"http://search.maven.org/#artifactdetails|${artifactDep.target.groupId}|${artifactDep.target.artifactId}|${artifactDep.target.version}|jar"
-    }
+    def url: String = target.map(_.httpUrl).getOrElse(artifactDep.target.searchUrl)
 
     def name: String = target match {
       case Some(artifact) => s"${artifact.projectRef.organization}/${artifact.artifactName}"

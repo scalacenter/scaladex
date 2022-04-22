@@ -8,6 +8,7 @@ import java.util.Locale
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
 import scaladex.core.model.Artifact
+import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
 import scaladex.core.model.Project
 import scaladex.core.model.search.AwesomeParams
@@ -81,10 +82,14 @@ package object html {
       .appendQuery("languages", params.languages.map(_.label))
       .appendQuery("platforms", params.platforms.map(_.label))
 
-  def artifactFilterUri(ref: Project.Reference, artifactName: Artifact.Name, params: ArtifactsPageParams): Uri =
+  def artifactsUri(ref: Project.Reference, artifactName: Artifact.Name, params: ArtifactsPageParams): Uri =
     Uri(s"/$ref/artifacts/$artifactName")
       .appendQuery("binary-versions", params.binaryVersions.map(_.label))
       .appendQuery(("pre-releases", params.preReleases.toString))
+
+  def artifactsUri(ref: Project.Reference, artifactName: Artifact.Name, binaryVersion: Option[BinaryVersion]): Uri =
+    Uri(s"/$ref/artifacts/$artifactName")
+      .appendQuery("binary-versions", binaryVersion.map(_.label))
 
   // https://www.reddit.com/r/scala/comments/4n73zz/scala_puzzle_gooooooogle_pagination/d41jor5
   def paginationRender(selected: Int, max: Int, toShow: Int = 10): (Option[Int], List[Int], Option[Int]) = {

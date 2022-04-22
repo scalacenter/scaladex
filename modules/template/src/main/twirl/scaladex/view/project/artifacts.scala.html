@@ -82,7 +82,7 @@
   <form action="#" action="GET">
     <select class="selectpicker" data-style="btn-primary" onchange="window.location=this.value">
       @for(name <- artifactNames) {
-          <option value="@artifactFilterUri(project.reference, name, params)"
+          <option value="@artifactsUri(project.reference, name, params)"
           @if(name == artifactName) {selected}>
           @name
           </option>
@@ -112,7 +112,7 @@
     <ul class="list-inline">
       @for(binaryVersion <- params.binaryVersions) {
         <li>
-          <a href="@artifactFilterUri(project.reference, artifactName, params.remove(binaryVersion))" class="label label-default">
+          <a href="@artifactsUri(project.reference, artifactName, params.remove(binaryVersion))" class="label label-default">
             <i class="fa-solid fa-xmark"></i>
             @binaryVersion
           </a>
@@ -120,7 +120,7 @@
       }
       @if(params.preReleases) {
         <li>
-          <a class="label label-info" href="@artifactFilterUri(project.reference, artifactName, params.withPreReleases(false))">
+          <a class="label label-info" href="@artifactsUri(project.reference, artifactName, params.withPreReleases(false))">
             <i class="fa-solid fa-xmark"></i>
             Show pre-release versions
           </a>
@@ -128,7 +128,7 @@
       }
       @if(params.binaryVersions.nonEmpty || params.preReleases) {
         <li>
-          <a href="@artifactFilterUri(project.reference, artifactName, ArtifactsPageParams.empty)" class="label label-warning clear-all">
+          <a href="@artifactsUri(project.reference, artifactName, ArtifactsPageParams.empty)" class="label label-warning clear-all">
             <i class="fa-solid fa-xmark"></i>
             Clear all filters
           </a>

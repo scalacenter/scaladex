@@ -826,18 +826,22 @@ main {
   }
 }
 .artifact {
-  margin-bottom: 10px;
-  .artifact-head {
-    padding-bottom: 0.3em;
-    border-bottom: 1px solid #eee;
-  }
   h3 {
     margin-top: 0;
     font-size: 2em;
+    display: inline;
+    a {
+      color: inherit;
+      text-decoration: none;
+      &:hover, &:focus {
+        color: $brand-primary;
+      }
+    }
   }
   .artifact-version {
-    font-size: 1.40em;
+    font-size: 1.8em;
     color: $brand-secondary;
+    margin-left: 20px;
   }
   .artifact-info{
     margin-top: 20px;

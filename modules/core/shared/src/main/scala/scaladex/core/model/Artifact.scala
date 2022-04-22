@@ -1,6 +1,8 @@
 package scaladex.core.model
 
 import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 import fastparse.P
 import fastparse.Start
@@ -40,6 +42,8 @@ case class Artifact(
 
   def release: Release =
     Release(projectRef.organization, projectRef.repository, platform, language, version, releaseDate)
+
+  def releaseDateFormat: String = Artifact.dateFormatter.format(releaseDate)
 
   def fullHttpUrl(env: Env): String =
     env match {
@@ -197,6 +201,8 @@ case class Artifact(
 }
 
 object Artifact {
+  private val dateFormatter = DateTimeFormatter.ofPattern("MMM d, uuuu").withZone(ZoneOffset.UTC)
+
   case class Name(value: String) extends AnyVal {
     override def toString: String = value
   }
@@ -239,8 +245,11 @@ object Artifact {
     /**
      * url to maven page with related information to this reference
      */
-    def httpUrl: String =
-      s"http://search.maven.org/#artifactdetails|$groupId|$artifactId|$version|jar"
+    def searchUrl: String =
+      s"https://search.maven.org/#artifactdetails|$groupId|$artifactId|$version|jar"
+
+    def repoUrl: String =
+      s"https://repo1.maven.org/maven2/${groupId.replace('.', '/')}/$artifactId/$version/"
   }
 
 }
