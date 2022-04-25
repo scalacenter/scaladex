@@ -39,7 +39,6 @@
             }
             @project.githubInfo.map(gh => statistic(gh, project.reference, reverseDependency.size))
             @documentation(artifact, project)
-            @install(artifact, project.settings.cliArtifacts)
             @scastie(artifact.scastieURL)
             @project.githubInfo.map { github =>
               @if(github.openIssues.nonEmpty && github.chatroom.isDefined && github.contributingGuide.isDefined) {

@@ -5,18 +5,18 @@
 @import scaladex.view.html._
 
 @(
-        env: Env,
-        user: Option[UserState],
-        project: Project,
-        artifactName: Artifact.Name,
-        artifact: Artifact,
-        artifacts: Map[BinaryVersion, Seq[Artifact]],
-        artifactVersion: SemanticVersion,
-        params: ArtifactPageParams,
-        directDeps: Seq[ArtifactDependency.Direct],
-        reverseDeps: Seq[ArtifactDependency.Reverse],
-        numberOfVersions: Long,
-        lastProjectVersion: SemanticVersion
+    env: Env,
+    user: Option[UserState],
+    project: Project,
+    artifactName: Artifact.Name,
+    artifact: Artifact,
+    artifacts: Map[BinaryVersion, Seq[Artifact]],
+    artifactVersion: SemanticVersion,
+    params: ArtifactPageParams,
+    directDeps: Seq[ArtifactDependency.Direct],
+    reverseDeps: Seq[ArtifactDependency.Reverse],
+    numberOfVersions: Long,
+    lastProjectVersion: SemanticVersion
 )
 @main(env, title = project.repository.toString, user) {
   <main id="container-project">
@@ -43,8 +43,10 @@
                   </select>
                 </form>
               </div>
-              <h3><a href="@artifactsUri(project.reference, artifactName, params.binaryVersion)">@artifactName</a></h3>
-              <span class="artifact-version">@artifactVersion</span>
+              <h3>
+                <a href="@artifactsUri(project.reference, artifactName, params.binaryVersion)">@artifactName</a>
+                <span class="artifact-version">@artifactVersion</span>
+              </h3>
               <hr>
               @info("Group ID") { @artifact.groupId }
               @info("Artifact ID") { @artifact.artifactId }
@@ -59,13 +61,13 @@
                 @info("Files") { <a href="@artifact.mavenReference.repoUrl">View all</a> }
               }
             </div>
-            @install(artifact, project.settings.cliArtifacts)
+            @installBox(project.settings.cliArtifacts)
           </div>
         </div>
         <div class="col-md-5 sidebar-project">
           @documentation(artifact, project)
-          @dependencies
-          @dependents
+          @dependenciesBox
+          @dependentsBox
         </div>
       </div>
     </div>
@@ -79,7 +81,7 @@
   </div>
 }
 
-@dependencies = {
+@dependenciesBox = {
   <div class="dependencies box">
     <h4>@Formats.plural(directDeps.size, "Dependency")</h4>
     <hr>
@@ -104,7 +106,7 @@
 }
 
 @sample = @{ArtifactDependency.Reverse.sample(reverseDeps, 100)}
-@dependents = {
+@dependentsBox = {
   <div class="dependents box" id="dependents">
     <h4>@Formats.plural(reverseDeps.size, "Dependent")</h4>
     <hr>
@@ -128,5 +130,50 @@
         <p>and @{reverseDeps.size - 100} more</p>
       }
     </ul>
+  </div>
+}
+
+@installBox(cliArtifacts: Set[Artifact.Name]) = {
+  <div class="install">
+    <ul class="nav nav-tabs nav-justified">
+      @tabLink("sbt", "sbt", true)
+      @tabLink("mill", "Mill")
+      @if(cliArtifacts.contains(artifact.artifactName)) {
+        @tabLink("coursier", "Coursier")
+      }
+      @tabLink("ammonite", "Ammonite")
+      @tabLink("maven", "Maven")
+      @tabLink("gradle", "Gradle")
+    </ul>
+    <div class="box tab-content">
+      @tabPanel("sbt", artifact.sbtInstall, true) { }
+      @tabPanel("mill", artifact.millInstall) {
+        <a href="https://com-lihaoyi.github.io/mill">Mill build tool</a>
+      }
+      @if(cliArtifacts.contains(artifact.artifactName)) {
+        @tabPanel("coursier", s"cs launch ${artifact.groupId}:@{artifact.artifactId}:@{artifact.version}") {
+          <a href="https://get-coursier.io/docs/cli-overview">Coursier</a>
+        }
+      }
+      @tabPanel("ammonite", artifact.ammInstall) {
+        <a href="https://ammonite.io/#Ammonite-REPL">Ammonite REPL</a>
+      }
+      @tabPanel("maven", artifact.mavenInstall) { }
+      @tabPanel("gradle", artifact.gradleInstall) { }
+    </div>
+  </div>
+}
+
+@tabLink(ref: String, title: String, active: Boolean = false) = {
+  <li role="presentation" @if(active){ class="active" }>
+    <a href="#@ref" aria-controls="@ref" role="tab" data-toggle="tab">@title</a>
+  </li>
+}
+
+@tabPanel(ref: String, install: String, active: Boolean = false)(description: Html) = {
+  <div role="tabpanel" class="tab-pane @if(active){ active }" id="@ref">
+    <p>@description</p>
+    <pre id="copy-@ref" class="copyable-incantation">@install</pre>
+    <button class="btn btn-primary pull-right" data-clipboard-target="copy-@ref">Copy</button>
   </div>
 }

@@ -580,15 +580,6 @@ main {
       margin-bottom: 30px;
       margin-top: -40px;
     }
-
-    .install {
-      padding: 10px; // smaller padding for install box in project page
-      .tab-pane {
-        pre {
-          font-size: 12px;
-        }
-      }
-    }
    
     h4 {
       margin-top: 0;
@@ -647,36 +638,21 @@ main {
 
 .install {
   .nav-tabs>li>a {
+    background: transparent;
+  }
+  .nav-tabs>li.active {
     background: white;
   }
-  .nav-tabs>li.active>a {
-    background: $gray-lighter;
-  }
-
-  .btn-copy {
-    float: right;
+  .nav-tabs.nav-justified>.active>a {
+    border: none;
   }
 
   .tab-pane {
-    background: $gray-lighter;
-    padding: 7px;
-    overflow: auto;
-    a {
-      display: block;
-      margin-bottom: 10px;
-    }
+    overflow: hidden;
     pre {
-      background: transparent;
-      overflow: visible;
-      padding: 0;
-      margin-top: 5px;
-      margin-bottom: 5px;
-      resize: none;
+      overflow: auto;
       font-size: 14px;
       font-family: $font-family-monospace;
-      &:disabled {
-        background-color: transparent;
-      }
     }
   }
 }
@@ -686,7 +662,6 @@ main {
   background: url('/assets/img/head-project-background.png') no-repeat center top #0D343C;
   color: #fff;
   .head-last-version {
-    display: inline;
     color: $gray-lighter;
   }
   .bootstrap-select > {
@@ -786,6 +761,12 @@ main {
   .artifact-version {
     font-size: 30px;
     color: $brand-secondary;
+    &:active,
+    &:focus,
+    &:hover {
+      text-decoration: none;
+      color: $brand-primary;
+    }
   }
   .artifact-info {
     @media (min-width: 600px) {
@@ -830,6 +811,7 @@ main {
     margin-top: 0;
     font-size: 2em;
     display: inline;
+    color: $brand-secondary;
     a {
       color: inherit;
       text-decoration: none;
@@ -839,8 +821,6 @@ main {
     }
   }
   .artifact-version {
-    font-size: 1.8em;
-    color: $brand-secondary;
     margin-left: 20px;
   }
   .artifact-info{
