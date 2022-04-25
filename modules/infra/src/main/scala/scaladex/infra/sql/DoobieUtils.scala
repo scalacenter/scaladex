@@ -20,6 +20,7 @@ import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
 import scaladex.core.model.DocumentationPattern
+import scaladex.core.model.GithubCommitActivity
 import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubIssue
@@ -36,7 +37,6 @@ import scaladex.core.model.UserState
 import scaladex.core.util.Secret
 import scaladex.infra.Codecs._
 import scaladex.infra.config.PostgreSQLConfig
-import scaladex.core.model.GithubCommitActivity
 
 object DoobieUtils {
 

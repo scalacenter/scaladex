@@ -212,6 +212,9 @@ object Client {
     CopyToClipboard.addCopyListenersOnClass("btn-copy")
 
     ActiveNavObserver.start()
+
+    Sparkline.createCommitActivitySparkline()
+
   }
 
   @JSExport
@@ -257,4 +260,5 @@ object Client {
       }
     }
   }
+
 }

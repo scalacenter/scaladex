@@ -1,6 +1,7 @@
 package scaladex.core.model.search
 
-import scaladex.core.model.{GithubIssue, GithubCommitActivity}
+import scaladex.core.model.GithubCommitActivity
+import scaladex.core.model.GithubIssue
 import scaladex.core.model.Url
 
 case class GithubInfoDocument(
