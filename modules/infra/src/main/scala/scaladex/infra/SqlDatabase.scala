@@ -20,7 +20,9 @@ import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.model.ReleaseDependency
+import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserState
+import scaladex.core.model.web.ArtifactsPageParams
 import scaladex.core.service.SchedulerDatabase
 import scaladex.infra.sql.ArtifactDependencyTable
 import scaladex.infra.sql.ArtifactTable
@@ -34,6 +36,7 @@ import scaladex.infra.sql.ReleaseTable
 import scaladex.infra.sql.UserSessionsTable
 
 class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
+
   private val flyway = DoobieUtils.flyway(datasource)
   def migrate: IO[Unit] = IO(flyway.migrate())
   def dropTables: IO[Unit] = IO(flyway.clean())
@@ -141,11 +144,17 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]] =
     run(ProjectTable.selectByNewReference.to[Seq](projectRef))
 
-  override def getArtifactsByName(
-      projectRef: Project.Reference,
-      artifactName: Artifact.Name
-  ): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifactByProjectAndName.to[Seq]((projectRef, artifactName)))
+  override def getArtifactsByName(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactByProjectAndName.to[Seq]((ref, artifactName)))
+
+  override def getArtifactsByVersion(ref: Project.Reference, version: SemanticVersion): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactByProjectAndVersion.to[Seq](ref, version))
+
+  override def getArtifactNames(ref: Project.Reference): Future[Seq[Artifact.Name]] =
+    run(ArtifactTable.selectArtifactName.to[Seq](ref))
+
+  override def getArtifactPlatforms(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Platform]] =
+    run(ArtifactTable.selectPlatformByArtifactName.to[Seq]((ref, artifactName)))
 
   override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] =
     run(ArtifactTable.selectByMavenReference.option(mavenRef))
@@ -177,6 +186,13 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getReverseDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Reverse]] =
     run(ArtifactDependencyTable.selectReverseDependency.to[Seq](artifact.mavenReference))
 
+  override def getArtifacts(
+      ref: Project.Reference,
+      artifactName: Artifact.Name,
+      version: SemanticVersion
+  ): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactBy.to[Seq](ref, artifactName, version))
+
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.count.unique)
 
@@ -197,6 +213,15 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] =
     run(ProjectDependenciesTable.countInverseDependencies.unique(projectRef))
+
+  override def getDirectReleaseDependencies(
+      ref: Project.Reference,
+      version: SemanticVersion
+  ): Future[Seq[ReleaseDependency.Direct]] =
+    run(ReleaseDependenciesTable.getDirectDependencies.to[Seq]((ref, version)))
+
+  override def getReverseReleaseDependencies(ref: Project.Reference): Future[Seq[ReleaseDependency.Reverse]] =
+    run(ReleaseDependenciesTable.getReverseDependencies.to[Seq](ref))
 
   override def deleteDependenciesOfMovedProject(): Future[Unit] =
     for {
@@ -228,6 +253,27 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   override def deleteSession(userId: UUID): Future[Unit] =
     run(UserSessionsTable.deleteByUserId.run(userId).map(_ => ()))
+
+  override def getArtifacts(
+      ref: Project.Reference,
+      artifactName: Artifact.Name,
+      params: ArtifactsPageParams
+  ): Future[Seq[Artifact]] =
+    run(
+      ArtifactTable
+        .selectArtifactByParams(params.binaryVersions, params.preReleases)
+        .to[Seq](ref, artifactName)
+    )
+
+  override def countVersions(ref: Project.Reference): Future[Long] =
+    run(ArtifactTable.countVersionsByProjct.unique(ref))
+
+  override def getLastVersion(ref: Project.Reference): Future[SemanticVersion] =
+    for {
+      versionOpt <- run(ArtifactTable.findLastSemanticVersionNotPrerelease.to[Seq](ref))
+      version <-
+        if (versionOpt.isEmpty) run(ArtifactTable.findLastVersion.unique(ref)) else Future.successful(versionOpt.head)
+    } yield version
 
   def moveProject(
       ref: Project.Reference,

@@ -16,15 +16,29 @@ case class Project(
   val reference: Reference = Reference(organization, repository)
   def hasCli: Boolean = settings.cliArtifacts.nonEmpty
 
+  def githubLink: String = s"https://github.com/$reference"
+
   /**
    * This is used in twitter to render the card of a scaladex project link.
    */
-  def twitterSummaryCard: TwitterSummaryCard = TwitterSummaryCard(
+  def twitterCard: TwitterSummaryCard = TwitterSummaryCard(
     "@scala_lang",
     repository.toString(),
     githubInfo.flatMap(_.description).getOrElse(""),
     githubInfo.flatMap(_.logo)
   )
+
+  def scaladoc(artifact: Artifact): Option[DocumentationLink] =
+    settings.customScalaDoc
+      .map(DocumentationPattern("Scaladoc", _).eval(artifact))
+      .orElse(artifact.defaultScaladoc.map(DocumentationLink("Scaladoc", _)))
+
+  def globalDocumentation: Seq[DocumentationLink] =
+    settings.customScalaDoc.flatMap(DocumentationPattern("Scaladoc", _).eval).toSeq ++
+      settings.documentationLinks.flatMap(_.eval)
+
+  def artifactDocumentation(artifact: Artifact): Seq[DocumentationLink] =
+    scaladoc(artifact).toSeq ++ settings.documentationLinks.map(_.eval(artifact))
 }
 
 object Project {
@@ -68,7 +82,7 @@ object Project {
       defaultArtifact: Option[Artifact.Name],
       strictVersions: Boolean,
       customScalaDoc: Option[String],
-      documentationLinks: Seq[DocumentationLink],
+      documentationLinks: Seq[DocumentationPattern],
       deprecated: Boolean,
       contributorsWanted: Boolean,
       artifactDeprecations: Set[Artifact.Name],
@@ -106,12 +120,5 @@ object Project {
       category = None,
       beginnerIssuesLabel = None
     )
-  }
-  case class DocumentationLink(label: String, link: String)
-  object DocumentationLink {
-    def from(label: String, link: String): Option[DocumentationLink] =
-      if (label.isEmpty || link.isEmpty) None
-      else Some(DocumentationLink(label, link))
-
   }
 }

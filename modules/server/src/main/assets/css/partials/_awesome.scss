@@ -115,7 +115,7 @@
     }
   }
 
-  @media (max-width: 992px) {
+  @media (max-width: $screen-md-min) {
     .sidebar {
       position: static;
       overflow: visible;

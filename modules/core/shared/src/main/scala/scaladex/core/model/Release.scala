@@ -11,6 +11,4 @@ case class Release(
     language: Language,
     version: SemanticVersion,
     releaseDate: Instant
-) {
-  def ref: Project.Reference = Reference(organization, repository)
-}
+)

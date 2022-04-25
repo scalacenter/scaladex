@@ -16,10 +16,13 @@ import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.model.ReleaseDependency
+import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserState
+import scaladex.core.model.web.ArtifactsPageParams
 import scaladex.core.service.SchedulerDatabase
 
 class InMemoryDatabase extends SchedulerDatabase {
+
   private val projects = mutable.Map[Project.Reference, Project]()
   private val artifacts = mutable.Map[Project.Reference, Seq[Artifact]]()
   private val dependencies = mutable.Buffer[ArtifactDependency]()
@@ -67,6 +70,15 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]] =
     Future.successful(artifacts.getOrElse(projectRef, Nil))
 
+  override def getArtifactPlatforms(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Platform]] =
+    Future.successful {
+      artifacts
+        .getOrElse(ref, Seq.empty)
+        .filter(_.artifactName == artifactName)
+        .map(_.platform)
+        .distinct
+    }
+
   override def getDependencies(projectRef: Project.Reference): Future[Seq[ArtifactDependency]] = ???
 
   override def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]] = {
@@ -83,6 +95,15 @@ class InMemoryDatabase extends SchedulerDatabase {
         .getOrElse(projectRef, Nil)
         .filter(_.artifactName == artifactName)
     )
+
+  override def getArtifactsByVersion(ref: Project.Reference, version: SemanticVersion): Future[Seq[Artifact]] =
+    Future.successful {
+      artifacts.getOrElse(ref, Seq.empty).filter(_.version == version)
+    }
+
+  override def getArtifactNames(ref: Project.Reference): Future[Seq[Artifact.Name]] = Future.successful(
+    artifacts.getOrElse(ref, Nil).map(_.artifactName).distinct
+  )
 
   override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] = ???
 
@@ -161,5 +182,34 @@ class InMemoryDatabase extends SchedulerDatabase {
           projects.update(repo, projects(repo).copy(githubInfo = Some(githubInfo), githubStatus = GithubStatus.Ok(now)))
         )
       case _ => Future.successful(())
+    }
+
+  override def getArtifacts(
+      ref: Project.Reference,
+      artifactName: Artifact.Name,
+      params: ArtifactsPageParams
+  ): Future[Seq[Artifact]] =
+    // does not filter with params
+    Future.successful(artifacts.getOrElse(ref, Seq.empty).filter(_.artifactName == artifactName))
+  override def getDirectReleaseDependencies(
+      ref: Project.Reference,
+      version: SemanticVersion
+  ): Future[Seq[ReleaseDependency.Direct]] = Future.successful(Seq.empty)
+  override def getReverseReleaseDependencies(ref: Project.Reference): Future[Seq[ReleaseDependency.Reverse]] =
+    Future.successful(Seq.empty)
+  override def countVersions(ref: Project.Reference): Future[Long] =
+    Future.successful {
+      artifacts.getOrElse(ref, Seq.empty).map(_.version).distinct.size
+    }
+  override def getLastVersion(ref: Project.Reference): Future[SemanticVersion] = Future.successful {
+    artifacts.getOrElse(ref, Seq.empty).head.version
+  }
+  override def getArtifacts(
+      ref: Project.Reference,
+      artifactName: Artifact.Name,
+      version: SemanticVersion
+  ): Future[Seq[Artifact]] =
+    Future.successful {
+      artifacts.getOrElse(ref, Seq.empty).filter(a => a.artifactName == artifactName && a.version == version)
     }
 }

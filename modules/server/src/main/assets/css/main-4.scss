@@ -6,7 +6,7 @@
 // 2. Vendors
 @import
     'lib/bootstrap-sass/stylesheets/_bootstrap.scss',
-    'lib/font-awesome/scss/font-awesome.scss',
+    'lib/font-awesome/scss/fontawesome.scss',
     'lib/select2/src/scss/core.scss';
 
 // 3. Vendors Extensions
@@ -24,5 +24,5 @@
     'partials/main',
     'partials/footer',
     'partials/github',
-    'partials/artifacts',
-    'partials/awesome';
+    'partials/awesome',
+    'partials/project';

@@ -179,9 +179,7 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(
   ): Future[Option[OldSearchApi.ArtifactOptions]] = {
     val selection = new ArtifactSelection(
       binaryVersion = binaryVersion,
-      artifactNames = artifact.map(Artifact.Name.apply),
-      version = None,
-      selected = None
+      artifactNames = artifact.map(Artifact.Name.apply)
     )
     for {
       projectOpt <- database.getProject(projectRef)
