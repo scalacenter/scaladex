@@ -92,7 +92,7 @@
       title= "Scala Versions" multiple data-style="btn-primary" data-actions-box="true" data-selected-text-format="static"
       onchange="this.form.submit()">
       @for((platform, binaryVersions) <- allBinaryVersions.groupBy(_.platform)) {
-        <optgroup label="@platform.label">
+        <optgroup label="@platform">
           @for(binaryVersion <- binaryVersions.sortBy(_.language)(Language.ordering.reverse)) {
               <option value="@binaryVersion.label"
               @if(params.binaryVersions.contains(binaryVersion)) {selected}>
