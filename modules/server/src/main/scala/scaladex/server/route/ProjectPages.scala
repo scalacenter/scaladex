@@ -102,11 +102,6 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
       case Some(project) =>
         for {
           lastVersion <- database.getLastVersion(ref)
-          artifacts <- database.getArtifactsByVersion(ref, lastVersion)
-          defaultArtifact =
-            project.settings.defaultArtifact
-              .flatMap(name => artifacts.find(_.artifactName == name))
-              .getOrElse(ArtifactPages.getDefault(artifacts))
           versionCount <- database.countVersions(ref)
           directDependencies <- database.getDirectReleaseDependencies(ref, lastVersion)
           reverseDependencies <- reverseDependenciesF
@@ -133,7 +128,6 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
             project,
             versionCount,
             lastVersion,
-            defaultArtifact,
             groupedDirectDependencies.toMap,
             groupedReverseDependencies.toMap
           )
@@ -214,21 +208,12 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
               .filter { case (key, _) => key.startsWith("documentationLinks") }
               .groupBy {
                 case (key, _) =>
-                  key
-                    .drop("documentationLinks[".length)
-                    .takeWhile(_ != ']')
+                  key.drop("documentationLinks[".length).takeWhile(_ != ']')
               }
               .values
-              .map {
-                case Vector((a, b), (_, d)) =>
-                  if (a.contains("label")) (b, d)
-                  else (d, b)
-              }
-              .flatMap {
-                case (label, link) =>
-                  Project.DocumentationLink.from(label, link)
-              }
-              .toList
+              .map { case Seq((a, b), (_, d)) => if (a.contains("label")) (b, d) else (d, b) }
+              .flatMap { case (label, link) => DocumentationPattern.validated(label, link) }
+              .toSeq
 
           def noneIfEmpty(value: String): Option[String] =
             if (value.isEmpty) None else Some(value)

@@ -65,7 +65,7 @@
           </div>
         </div>
         <div class="col-md-5 sidebar-project">
-          @documentation(artifact, project)
+          @documentationBox
           @dependenciesBox
           @dependentsBox
         </div>
@@ -79,6 +79,20 @@
     <div class="col-xs-5 col-sm-3">@key:</div>
     <div class="col-xs-7 col-sm-9">@value</div>
   </div>
+}
+
+@documentationLinks = @{ project.artifactDocumentation(artifact) }
+@documentationBox = {
+  @if(documentationLinks.nonEmpty) {
+    <div class="documentation box">
+      <h4>Documentation</h4>
+      <ul>
+        @for(doc <- documentationLinks){
+          <li><a href="@doc.link" rel="nofollow">@doc.label</a></li>
+        }
+      </ul>
+    </div>
+  }
 }
 
 @dependenciesBox = {

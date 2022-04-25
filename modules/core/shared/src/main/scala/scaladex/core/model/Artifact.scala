@@ -8,7 +8,6 @@ import fastparse.P
 import fastparse.Start
 import fastparse._
 import scaladex.core.model.PatchVersion
-import scaladex.core.model.Project.DocumentationLink
 import scaladex.core.util.Parsers._
 
 /**
@@ -147,12 +146,10 @@ case class Artifact(
     ).flatten.mkString("\n")
   }
 
-  def scaladoc(scaladocPattern: Option[String]): Option[String] =
-    (scaladocPattern, resolver) match {
-      case (None, None) =>
-        Some(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version")
-      case (None, Some(_))    => None
-      case (Some(pattern), _) => Some(evalLink(pattern))
+  def defaultScaladoc: Option[String] =
+    resolver match {
+      case None => Some(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version")
+      case _    => None
     }
 
   // todo: Add tests for this
@@ -179,25 +176,6 @@ case class Artifact(
       .map { case (k, v) => s"$k=$v" }
       .mkString(tryBaseUrl + "?", "&", "")
   }
-
-  def documentationLinks(patterns: Seq[DocumentationLink]): Seq[DocumentationLink] =
-    patterns.map { case DocumentationLink(label, url) => DocumentationLink(label, evalLink(url)) }
-
-  /**
-   * Documentation link are often related to a release version
-   * for example: https://playframework.com/documentation/2.6.x/Home
-   * we want to substitute input such as
-   * https://playframework.com/documentation/[major].[minor].x/Home
-   */
-  private def evalLink(pattern: String): String =
-    pattern
-      .replace("[groupId]", groupId.toString)
-      .replace("[artifactId]", artifactId)
-      .replace("[version]", version.toString)
-      .replace("[major]", version.major.toString)
-      .replace("[minor]", version.minor.toString)
-      .replace("[name]", artifactName.value)
-
 }
 
 object Artifact {

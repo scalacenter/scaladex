@@ -19,6 +19,7 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
+import scaladex.core.model.DocumentationPattern
 import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubIssue
@@ -144,8 +145,8 @@ object DoobieUtils {
       Meta[String].timap(fromJson[Seq[GithubContributor]](_).get)(toJson(_))
     implicit val githubIssuesMeta: Meta[Seq[GithubIssue]] =
       Meta[String].timap(fromJson[Seq[GithubIssue]](_).get)(toJson(_))
-    implicit val documentationLinksMeta: Meta[Seq[Project.DocumentationLink]] =
-      Meta[String].timap(fromJson[Seq[Project.DocumentationLink]](_).get)(toJson(_))
+    implicit val documentationPattern: Meta[Seq[DocumentationPattern]] =
+      Meta[String].timap(fromJson[Seq[DocumentationPattern]](_).get)(toJson(_))
     implicit val topicsMeta: Meta[Set[String]] =
       Meta[String].timap(_.split(",").filter(_.nonEmpty).toSet)(
         _.mkString(",")

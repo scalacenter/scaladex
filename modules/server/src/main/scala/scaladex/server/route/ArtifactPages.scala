@@ -35,7 +35,7 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
           val scaladocUriF = for {
             artifact <- database.getArtifactByMavenReference(mavenRef).map(_.get)
             project <- database.getProject(artifact.projectRef)
-          } yield artifact.scaladoc(project.flatMap(_.settings.customScalaDoc)).map(Uri.apply)
+          } yield project.flatMap(_.scaladoc(artifact).map(doc => Uri(doc.link)))
 
           onComplete(scaladocUriF) {
             case Success(Some(scaladocUri)) =>

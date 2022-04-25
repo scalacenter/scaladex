@@ -3,9 +3,7 @@
 @import scaladex.view.html._
 @import scaladex.core.model.web.ArtifactsPageParams
 @import scala.collection.immutable.SortedMap
-@import scaladex.core.model.Language
 @import scaladex.core.util.ScalaExtensions._
-@import scaladex.core.model.Platform
 @import scaladex.core.util.TimerUtils
 @import scaladex.view.Formats
 
@@ -42,7 +40,7 @@
         } else {
         <div>
           @artifactByVersions.map { case ((releaseDate, semanticVersion), artifacts) =>
-          <div class="panel panel-default">
+          <div class="panel">
             <div class="artifact-row panel-body center">
               <div class="col-md-3 center">
                 <a class="artifact-version" href="/@project.reference/artifacts/@artifactName/@semanticVersion">@semanticVersion</a>
