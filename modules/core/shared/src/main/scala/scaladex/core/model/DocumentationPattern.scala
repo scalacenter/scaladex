@@ -1,11 +1,10 @@
 package scaladex.core.model
 
 final case class DocumentationPattern(label: String, pattern: String) {
-  def eval: Option[DocumentationLink] = {
+  def eval: Option[DocumentationLink] =
     if (DocumentationPattern.placeholders.exists(pattern.contains)) None
     else Some(DocumentationLink(label, pattern))
-  }
-  
+
   /**
    * Documentation link are often related to a release version
    * for example: https://playframework.com/documentation/2.6.x/Home

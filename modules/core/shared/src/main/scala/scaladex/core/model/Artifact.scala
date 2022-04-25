@@ -35,6 +35,15 @@ case class Artifact(
 
   def isValid: Boolean = binaryVersion.isValid
 
+  def groupIdAndName: String = {
+    val sep = binaryVersion match {
+      case BinaryVersion(Jvm, Java) | BinaryVersion(SbtPlugin(_), _) => ":"
+      case BinaryVersion(ScalaJs(_) | ScalaNative(_), _)             => ":::"
+      case _                                                         => "::"
+    }
+    s"$groupId$sep$artifactName"
+  }
+
   private def artifactHttpPath: String = s"/${projectRef.organization}/${projectRef.repository}/$artifactName"
 
   val mavenReference: Artifact.MavenReference = Artifact.MavenReference(groupId.value, artifactId, version.encode)

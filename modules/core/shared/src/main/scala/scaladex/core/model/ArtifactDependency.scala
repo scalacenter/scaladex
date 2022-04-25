@@ -19,10 +19,9 @@ object ArtifactDependency {
   ) {
     def url: String = target.map(_.httpUrl).getOrElse(artifactDep.target.searchUrl)
 
-    def name: String = target match {
-      case Some(artifact) => s"${artifact.projectRef.organization}/${artifact.artifactName}"
-      case None =>
-        s"${artifactDep.target.groupId}/${artifactDep.target.artifactId}"
+    def groupIdAndName: String = target match {
+      case Some(artifact) => artifact.groupIdAndName
+      case None           => s"${artifactDep.target.groupId}:${artifactDep.target.artifactId}"
     }
 
     val version: String = artifactDep.target.version
@@ -32,7 +31,7 @@ object ArtifactDependency {
   }
   object Direct {
     implicit val order: Ordering[Direct] =
-      Ordering.by(d => (d.artifactDep.scope, d.name))
+      Ordering.by(d => (d.artifactDep.scope, d.groupIdAndName))
   }
 
   final case class Reverse(
@@ -40,13 +39,13 @@ object ArtifactDependency {
       source: Artifact
   ) {
     def url: String = source.httpUrl
-    def name: String = s"${source.projectRef.organization}/${source.artifactName}"
+    def groupIdAndName: String = source.groupIdAndName
     def version: SemanticVersion = source.version
   }
 
   object Reverse {
     implicit val order: Ordering[Reverse] =
-      Ordering.by(d => (d.dependency.scope, d.name))
+      Ordering.by(d => (d.dependency.scope, d.groupIdAndName))
     def sample(deps: Seq[Reverse], sampleSize: Int): Seq[Reverse] =
       deps
         .groupBy(r => (r.source.projectRef, r.source.artifactId))

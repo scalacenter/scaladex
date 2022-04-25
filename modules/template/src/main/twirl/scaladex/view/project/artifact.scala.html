@@ -104,7 +104,7 @@
         <li>
           <div class="row">
             <div class="col-xs-9">
-              <a href="@dep.url">@dep.name</a>
+              <a href="@dep.url">@dep.groupIdAndName</a>
               @if(dep.artifactDep.scope.value != "compile") { 
                 <span class="label label-default">@dep.artifactDep.scope</span>
               }
@@ -127,7 +127,7 @@
         <li>
           <div class="row">
             <div class="col-xs-9">
-              <a href="@dep.url">@dep.name</a>
+              <a href="@dep.url">@dep.groupIdAndName</a>
               @if(dep.dependency.scope.value != "compile") {
                 <span class="label label-default">@dep.dependency.scope</span>
               }
