@@ -62,7 +62,8 @@
     <ul>
       @for((ref, (scope, versions)) <- dependencies.toSeq.sortBy { case (ref, _) => ref }){
         <li>
-          <a href="/@ref">@ref @scopeSpan(scope)</a> @versions.mkString(", ")
+          <div class="col-sm-8"><a href="/@ref">@ref</a> @scopeSpan(scope)</div>
+          <div class="col-sm-3">@versions.mkString(", ")</div>
         </li>
       }
     </ul>
@@ -70,19 +71,22 @@
 }
 
 @reverseDependenciesBox(dependencies: Map[Project.Reference, (ArtifactDependency.Scope, SemanticVersion)]) = {
-  <div class="dependencies box">
+  <section class="dependencies box" id="dependents">
     <h4>@Formats.plural(dependencies.size, "Dependent")</h4>
     <ul>
       @for((ref, (scope, version)) <- dependencies.take(100).toSeq.sortBy { case (ref, _) => ref }){
         <li>
-          <a href="/@ref">@ref @scopeSpan(scope)</a> (on @version)
+          <div class="row">
+            <div class="col-sm-8"><a href="/@ref">@ref</a> @scopeSpan(scope)</div>
+            <div class="col-sm-3">on @version</div>
+          </div>
         </li>
       }
       @if(dependencies.size > 100) {
         <p>and @{dependencies.size - 100} more</p>
       }
     </ul>
-  </div>
+  </section>
 }
 
 @scopeSpan(scope: ArtifactDependency.Scope) = {

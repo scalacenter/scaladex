@@ -58,7 +58,7 @@ main {
   }
 
   .label-default {
-    background-color: $gray-light;
+    background-color: rgba(125, 147, 154, 0.5);
     font-weight: 500;
   }
 }
@@ -584,6 +584,10 @@ main {
     h4 {
       margin-top: 0;
       margin-bottom: ($line-height-computed / 1.5);
+    }
+
+    .box {
+      padding: 20px;
     }
   }
 

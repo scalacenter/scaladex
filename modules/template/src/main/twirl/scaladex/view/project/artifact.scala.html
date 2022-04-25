@@ -89,15 +89,13 @@
       @for(dep <- directDeps.sorted){
         <li>
           <div class="row">
-            <div class="col-xs-7"><a href="@dep.url">@dep.name</a></div>
-            @if(dep.artifactDep.scope.value != "compile") {
-              <div class="col-xs-3">@dep.version</div>
-              <div class="col-xs-2">
-                <span class="label label-primary">@dep.artifactDep.scope</span>
-              </div>
-            } else {
-              <div class="col-xs-5">@dep.version</div>
-            }
+            <div class="col-xs-9">
+              <a href="@dep.url">@dep.name</a>
+              @if(dep.artifactDep.scope.value != "compile") { 
+                <span class="label label-default">@dep.artifactDep.scope</span>
+              }
+            </div>
+            <div class="col-xs-3">@dep.version</div>
           </div>
         </li>
       }
@@ -107,22 +105,20 @@
 
 @sample = @{ArtifactDependency.Reverse.sample(reverseDeps, 100)}
 @dependentsBox = {
-  <div class="dependents box" id="dependents">
+  <div class="dependents box">
     <h4>@Formats.plural(reverseDeps.size, "Dependent")</h4>
     <hr>
     <ul>
       @for(dep <- sample){
         <li>
           <div class="row">
-            <div class="col-xs-7"><a href="@dep.url">@dep.name</a></div>
-            @if(dep.dependency.scope.value != "compile") {
-              <div class="col-xs-3">@dep.version</div>
-              <div class="col-xs-2">
-                <span class="label label-primary">@dep.dependency.scope</span>
-              </div>
-            } else {
-              <div class="col-xs-5">@dep.version</div>
-            }
+            <div class="col-xs-9">
+              <a href="@dep.url">@dep.name</a>
+              @if(dep.dependency.scope.value != "compile") {
+                <span class="label label-default">@dep.dependency.scope</span>
+              }
+            </div>
+            <div class="col-xs-3">@dep.version</div>
           </div>
         </li>
       }
