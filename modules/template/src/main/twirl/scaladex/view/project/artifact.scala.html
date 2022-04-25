@@ -161,7 +161,7 @@
         <a href="https://com-lihaoyi.github.io/mill">Mill build tool</a>
       }
       @if(cliArtifacts.contains(artifact.artifactName)) {
-        @tabPanel("coursier", s"cs launch ${artifact.groupId}:@{artifact.artifactId}:@{artifact.version}") {
+        @tabPanel("coursier", artifact.csLaunch) {
           <a href="https://get-coursier.io/docs/cli-overview">Coursier</a>
         }
       }

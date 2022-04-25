@@ -155,6 +155,9 @@ case class Artifact(
     ).flatten.mkString("\n")
   }
 
+  def csLaunch: String =
+    s"cs launch $groupId:$artifactId:$version"
+
   def defaultScaladoc: Option[String] =
     resolver match {
       case None => Some(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version")
