@@ -1,0 +1,443 @@
+// Project page
+// -----------------------------------------------------------------------------
+#container-project {
+  background: $gray-lighter;
+  padding: 0 0 40px 0;
+
+  .content-project {
+    border-top-left-radius: 0;
+    margin-bottom: 10px;
+    margin-top: -40px;
+  }
+
+  @media screen and (min-width: $screen-md-min) {
+    padding-bottom: 80px;
+  }
+
+  .statistic {
+    margin-bottom: 30px;
+    ul {
+      li {
+        margin-bottom: 8px;
+        padding-right: 0;
+        display: block;
+        a {
+          color: $gray;
+          &:hover,
+          &:focus {
+            text-decoration: $link-hover-decoration;
+          }
+          i {
+            min-width: 25px;
+          }
+        }
+      }
+    }
+    a {
+      color: inherit;
+    }
+  }
+
+  .content-main {
+    .markdown-body {
+      .anchor {
+        display: inline-block;
+        padding-right: 2px;
+        margin-left: -18px;
+      }
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        &:hover {
+          .octicon-link {
+            visibility: visible;
+          }
+        }
+        .octicon-link {
+          vertical-align: middle;
+          visibility: hidden;
+        }
+      }
+    }
+
+    h3 {
+      margin-top: ($line-height-computed / 1.7);
+      margin-bottom: $line-height-computed;
+    }
+    p {
+      margin: 0 0 $line-height-computed;
+    }
+  }
+
+  .box {
+    margin-bottom: 30px;
+  }
+  
+  ul {
+    padding: 0;
+    margin: 0;
+    li {
+      list-style: none;
+    }
+  }
+
+  .dependencies,
+  .dependents {
+    overflow: hidden;
+    span {
+      i {
+        font-size: 14px;
+      }
+    }
+    .label {
+      font-size: 10px;
+      padding: 2px 5px;
+      top: -2px;
+      position: relative;
+      margin-left: 5px;
+    }
+  }
+  
+  .project-contributing-info {
+    a {
+      display: block;
+      padding-bottom: 10px;
+      color: $gray;
+      &:hover,
+      &:focus {
+        color: $brand-primary;
+        text-decoration: underline;
+      }
+    }
+    td {padding-left: 30px;}
+  }
+
+  .sidebar-project {
+    margin-top: 20px;
+    @media screen and (min-width: $screen-md-min) {
+      margin-bottom: 30px;
+      margin-top: -40px;
+    }
+   
+    h4 {
+      margin-top: 0;
+      margin-bottom: ($line-height-computed / 1.5);
+    }
+
+    .box {
+      padding: 20px;
+    }
+  }
+
+  .collaborators {
+    ul {
+      li {
+        margin: 0 6px 6px 0;
+        display: inline-block;
+        img {
+          @include border-top-radius($border-radius-base);
+          @include border-bottom-radius($border-radius-base);
+        }
+        &:last-child {
+          margin-right: 0;
+        }
+      }
+    }
+    .more-collaborators {
+      padding-top: 15px;
+    }
+  }
+
+  .edit-project {
+    h1 {
+      margin-top: 0;
+      margin-bottom: 40px;
+    }
+    .btn-default {
+      background: $gray-lighter;
+      margin-left: 10px;
+      &:focus,
+      &:hover {
+        background: $gray-light;
+        color: $gray-lighter;
+      }
+
+    }
+    fieldset fieldset legend {
+      font-size: 16px;
+    }
+    img[alt="Contributors Wanted"] {
+      background-color: #002b37;
+    }
+  }
+
+  .deprecated-project {
+    background-color: #FFF8C5;
+    font-size: 22px;
+    text-align: center;
+    color: $gray-darker;
+  }
+  
+  .install {
+    .nav-tabs>li>a {
+      background: transparent;
+    }
+    .nav-tabs>li.active {
+      background: white;
+    }
+    .nav-tabs.nav-justified>.active>a {
+      border: none;
+    }
+  
+    .tab-pane {
+      overflow: hidden;
+      pre {
+        overflow: auto;
+        font-size: 14px;
+        font-family: $font-family-monospace;
+      }
+    }
+  }
+  
+  .head-project {
+    padding: 20px 0;
+    background: url('/assets/img/head-project-background.png') no-repeat center top #0D343C;
+    color: #fff;
+    .head-last-version {
+      color: $gray-lighter;
+    }
+    .bootstrap-select > {
+      .dropdown-toggle {
+        width: auto;
+        min-width: 140px;
+        padding-right: 25px;
+        z-index: 1;
+      }
+    }
+    .info-project {
+      margin-bottom: 60px;
+  
+      h1 {
+        display: inline-block;
+        margin-top: 0;
+        margin-bottom: 12px;
+        color: $brand-primary;
+      }
+  
+      .btn-link {
+        margin-left: 10px;
+        margin-top: 0;
+        margin-bottom: 12px;
+        background: #3985aaba;
+        color: aliceblue;
+        border-radius: 32px;
+        padding: 3px 10px;
+      }
+  
+      .contributors-tag {
+        margin-left: 0;
+        img {
+          height: 25px;
+          margin-bottom: 12px;
+        }
+      }
+      @media screen and (min-width: $screen-md-min) {
+        .contributors-tag {
+          margin-left: 20px;
+        }
+        .btn-link {
+          float: right;
+          margin-top: 8px;
+        }
+      }
+      i {
+        margin-right: 6px;
+      }
+      p {
+        font-size: $font-size-large;
+        margin-top: 10px;
+      }
+      .description {
+        display: inline-block;
+      }
+      .project-links {
+        margin-bottom: 10px;
+        a {
+          font-size: large;
+          margin-right: 10px;
+        }
+        .btn {
+          padding: 6px 12px;
+        }
+      }
+    }
+  
+    .project-nav-bar {
+      margin-bottom: 20px;
+      margin-top: 0px;
+      font-size: 18px;
+  
+      .nav-tabs > li > a {
+        color: $gray-lighter;
+      }
+  
+      .nav-tabs > li.active > a {
+        color: $brand-primary;
+        cursor: pointer;
+      }
+    }
+  }
+  
+  .artifacts {
+    .artifacts-filter {
+      margin-top: -10px;
+      margin-bottom: 50px;
+    }
+    .center {
+      @media (min-width: $screen-md-min) {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    }
+    .artifact-version {
+      font-size: 30px;
+      color: $brand-secondary;
+      &:active,
+      &:focus,
+      &:hover {
+        text-decoration: none;
+        color: $brand-primary;
+      }
+    }
+    .artifact-info {
+      @media (min-width: 600px) {
+        float: right;
+      }
+    }
+    .fa-solid {
+      margin-left: 5px;
+    }
+    .scala-version {
+      padding-left: 15px;
+    }
+    .artifact-content {
+      h5 {
+        display: inline;
+      }
+    }
+    .filter-option-inner-inner {
+      color: white;
+    }
+    .dropdown {
+      margin-right: 15px;
+    }
+    .list-inline {
+      margin-top: 5px;
+      margin-left: 0;
+      .label {
+        font-size: 14px;
+        font-weight: 500;
+      }
+      i {
+        margin-right: 20px;
+      }
+    }
+    .result-count {
+      float: right;
+      font-size: 16px;
+    }
+  }
+  .artifact {
+    h3 {
+      margin-top: 0;
+      font-size: 2em;
+      display: inline;
+      color: $brand-secondary;
+      a {
+        color: inherit;
+        text-decoration: none;
+        &:hover, &:focus {
+          color: $brand-primary;
+        }
+      }
+    }
+    .artifact-version {
+      margin-left: 20px;
+    }
+    .artifact-info{
+      margin-top: 20px;
+    }
+  }
+  
+  
+  .version-matrix {
+    table {
+      margin-top: 25px;
+    }
+  
+    table, th, td {
+      border: 1px solid black;
+    }
+  
+    td, th {
+      padding: 5px;
+    }
+  
+    tbody {
+      tr:hover {
+        background-color: beige;
+      }
+  
+      tr:nth-child(odd) {
+        background-color: #ccc;
+      }
+    }
+  
+    .artifact {
+      min-width: 200px;
+    }
+  
+    .supported {
+      color: green;
+      text-align: center;
+      display: block;
+  
+      &:before {
+        content: '●';
+        font-size: 50px;
+      }
+    }
+
+    .artifact-line-hidden {
+      display: none;
+    }
+    
+    .version-line-hidden {
+      display: none;
+    }
+  }
+  
+  .project-badges {
+    .badge-section {
+      overflow: hidden;
+    }
+  
+    img {
+      margin-bottom: 24px;
+    }
+  }
+  
+  .documentation-link {
+    ul {
+      padding-left: 0;
+    }
+  
+    li {
+      display: block;
+    }
+  }
+}
