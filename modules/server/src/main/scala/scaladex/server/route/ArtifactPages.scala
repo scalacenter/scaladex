@@ -121,11 +121,12 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
             val future = database.getProject(ref).flatMap {
               case Some(project) =>
                 for {
-                  artifacts <- database.getArtifacts(ref, artifactName, artifactVersion).map(_.groupBy(_.binaryVersion))
-                  currentVersion = params.binaryVersion.getOrElse(artifacts.keys.toSeq.max(BinaryVersion.ordering))
-                  currentArtifact = artifacts(currentVersion).head
-                  directDeps <- database.getDirectDependencies(currentArtifact)
-                  reverseDeps <- database.getReverseDependencies(currentArtifact)
+                  artifacts <- database.getArtifacts(ref, artifactName, artifactVersion)
+                  binaryVersions = artifacts.map(_.binaryVersion).distinct.sortBy(_.platform)(Platform.ordering.reverse)
+                  binaryVersion = params.binaryVersion.getOrElse(binaryVersions.head)
+                  artifact = artifacts.find(_.binaryVersion == binaryVersion).get
+                  directDeps <- database.getDirectDependencies(artifact)
+                  reverseDeps <- database.getReverseDependencies(artifact)
                   numberOfVersions <- database.countVersions(ref)
                   lastVersion <- database.getLastVersion(ref)
                 } yield {
@@ -134,10 +135,8 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
                       env,
                       user,
                       project,
-                      artifactName,
-                      currentArtifact,
-                      artifacts,
-                      artifactVersion,
+                      artifact,
+                      binaryVersions,
                       params,
                       directDeps,
                       reverseDeps,

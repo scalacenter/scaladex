@@ -2,6 +2,7 @@
 @import scaladex.view.html.main
 @import scaladex.view.html._
 @import scaladex.core.model.web.ArtifactsPageParams
+@import scaladex.core.model.Language
 @import scala.collection.immutable.SortedMap
 @import scaladex.core.util.ScalaExtensions._
 @import scaladex.core.util.TimerUtils
@@ -92,7 +93,7 @@
       onchange="this.form.submit()">
       @for((platform, binaryVersions) <- allBinaryVersions.groupBy(_.platform)) {
         <optgroup label="@platform.label">
-          @for(binaryVersion <- binaryVersions) {
+          @for(binaryVersion <- binaryVersions.sortBy(_.language)(Language.ordering.reverse)) {
               <option value="@binaryVersion.label"
               @if(params.binaryVersions.contains(binaryVersion)) {selected}>
               @binaryVersion.language.label

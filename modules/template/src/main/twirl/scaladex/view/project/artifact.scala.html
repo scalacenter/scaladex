@@ -8,10 +8,8 @@
     env: Env,
     user: Option[UserState],
     project: Project,
-    artifactName: Artifact.Name,
     artifact: Artifact,
-    artifacts: Map[BinaryVersion, Seq[Artifact]],
-    artifactVersion: SemanticVersion,
+    binaryVersions: Seq[BinaryVersion],
     params: ArtifactPageParams,
     directDeps: Seq[ArtifactDependency.Direct],
     reverseDeps: Seq[ArtifactDependency.Reverse],
@@ -23,29 +21,29 @@
     @headproject(env, user, project, numberOfVersions, "Artifacts", lastProjectVersion)
     <div class="container">
       <div class="row">
-        <div class="col-md-7">
+        <div class="col-md-8">
           <div class="content-project">
             <div class="artifact box" data-organization="@project.reference.organization" data-repository="@project.reference.repository">
               <div class="float-right">
                 <form>
                   <select name="binary-version" class="selectpicker"
                   data-style="btn-primary" onchange="this.form.submit()">
-                  @for((platform, binaryVersions) <- artifacts.keys.groupBy(_.platform)) {
+                  @for((platform, binaryVersions) <- binaryVersions.groupBy(_.platform)) {
                     <optgroup label="@{platform.label}">
-                    @for(binaryVersion <- binaryVersions) {
-                      <option value="@binaryVersion.label"
-                      @if(params.binaryVersion.contains(binaryVersion) || artifact.binaryVersion == binaryVersion) {selected}>
-                      @binaryVersion.toString
-                      </option>
-                    }
+                      @for(binaryVersion <- binaryVersions.sortBy(_.language)(Language.ordering.reverse)) {
+                        <option value="@binaryVersion.label"
+                          @if(params.binaryVersion.contains(binaryVersion) || artifact.binaryVersion == binaryVersion) {selected}>
+                          @binaryVersion
+                        </option>
+                      }
                     </optgroup>
                   }
                   </select>
                 </form>
               </div>
               <h3>
-                <a href="@artifactsUri(project.reference, artifactName, params.binaryVersion)">@artifactName</a>
-                <span class="artifact-version">@artifactVersion</span>
+                <a href="@artifactsUri(project.reference, artifact.artifactName, params.binaryVersion)">@artifact.artifactName</a>
+                <span class="artifact-version">@artifact.version</span>
               </h3>
               <hr>
               @info("Group ID") { @artifact.groupId }
@@ -64,7 +62,7 @@
             @installBox(project.settings.cliArtifacts)
           </div>
         </div>
-        <div class="col-md-5 sidebar-project">
+        <div class="col-md-4 sidebar-project">
           @documentationBox
           @dependenciesBox
           @dependentsBox
