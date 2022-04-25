@@ -33,6 +33,7 @@ import scaladex.server.service.AdminTaskService
 import scaladex.server.service.PublishProcess
 import scaladex.server.service.SchedulerService
 import scaladex.server.service.SonatypeSynchronizer
+import scaladex.view.html.notfound
 
 object Server extends LazyLogging {
 
@@ -189,21 +190,10 @@ object Server extends LazyLogging {
         context => futureRoute.flatMap(_.apply(context))
       }
     val exceptionHandler = ExceptionHandler {
-      case ex: Exception =>
-        import java.io.{PrintWriter, StringWriter}
-
-        val sw = new StringWriter()
-        val pw = new PrintWriter(sw)
-        ex.printStackTrace(pw)
-
-        val out = sw.toString
-
-        logger.error(out)
-
-        complete(
-          StatusCodes.InternalServerError,
-          out
-        )
+      case NonFatal(cause) =>
+        import scaladex.server.TwirlSupport._
+        logger.error("Unhandled exception", cause)
+        complete(StatusCodes.InternalServerError, notfound(config.env, None))
     }
     handleExceptions(exceptionHandler)(route)
   }

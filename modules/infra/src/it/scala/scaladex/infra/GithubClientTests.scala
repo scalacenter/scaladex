@@ -88,17 +88,21 @@ class GithubClientTests extends AsyncFunSpec with Matchers {
   }
 
   if (!isCI) {
-    it("getOrganizationRepositories") {
-      for (repos <- client.getOrganizationRepositories("atry", Project.Organization("scala"), Nil))
-        yield repos should not be empty
-    }
     it("getUserRepositories") {
       for (repos <- client.getUserRepositories("atry", Nil))
         yield repos should not be empty
     }
+    it("getUserOrganizations when empty") {
+      for (orgs <- client.getUserOrganizations("central-ossrh"))
+        yield orgs shouldBe empty
+    }
     it("getUserOrganizations") {
       for (orgs <- client.getUserOrganizations("atry"))
         yield orgs should not be empty
+    }
+    it("getOrganizationRepositories") {
+      for (repos <- client.getOrganizationRepositories("atry", Project.Organization("scala"), Nil))
+        yield repos should not be empty
     }
   }
 }

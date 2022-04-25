@@ -141,7 +141,7 @@ object GithubModel {
       } yield if (isPullrequest.isEmpty) Some(OpenIssue(number, title, url, labelNames)) else None
   }
 
-  case class GraphQLPage[T](endCursor: String, hasNextPage: Boolean, nodes: Seq[T])
+  case class GraphQLPage[T](endCursor: Option[String], hasNextPage: Boolean, nodes: Seq[T])
   case class RepoWithPermission(nameWithOwner: String, viewerPermission: String)
 
   implicit val repoWithPermissionDecoder: Decoder[RepoWithPermission] = deriveDecoder
@@ -150,7 +150,7 @@ object GithubModel {
     (c: HCursor) => {
       val cursor = downFields.foldLeft[ACursor](c)(_.downField(_))
       for {
-        endCursor <- cursor.downField("pageInfo").downField("endCursor").as[String]
+        endCursor <- cursor.downField("pageInfo").downField("endCursor").as[Option[String]]
         hasNextPage <- cursor.downField("pageInfo").downField("hasNextPage").as[Boolean]
         nodes <- cursor.downField("nodes").as[Seq[T]]
       } yield GraphQLPage(endCursor, hasNextPage, nodes)
