@@ -109,7 +109,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
               case Some(project) =>
                 for {
                   artifacts <- database.getArtifacts(ref, artifactName, artifactVersion)
-                  binaryVersions = artifacts.map(_.binaryVersion).distinct.sortBy(_.platform)(Platform.ordering.reverse)
+                  binaryVersions = artifacts.map(_.binaryVersion).distinct.sorted(BinaryVersion.ordering.reverse)
                   binaryVersion = params.binaryVersion.getOrElse(binaryVersions.head)
                   artifact = artifacts.find(_.binaryVersion == binaryVersion).get
                   directDeps <- database.getDirectDependencies(artifact)
