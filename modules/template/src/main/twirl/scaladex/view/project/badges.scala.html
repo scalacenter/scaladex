@@ -25,14 +25,14 @@
           <h2>Latest version</h2>
           <img src="@artifact.latestBadgeUrl(env)" />
           <pre aria-label="Badge markdown" id="badge-markdown">[![@artifact.artifactName Scala version support](@artifact.latestBadgeUrl(env)](@artifact.fullHttpUrl(env))</pre>
-          <button class="btn btn-primary pull-right" data-clipboard-target="badge-markdown">Copy Markdown</button>
+          <button class="btn btn-primary btn-copy pull-right" data-clipboard-target="badge-markdown">Copy Markdown</button>
         </section>
         @platforms.iterator.map { platform =>
           <section class="badge-section" id="@platform">
             <h2>@platform badge</h2>
             <img src="@artifact.badgeUrl(env, Some(platform))" />
             <pre aria-label="Badge markdown" id="badge-markdown">[![@artifact.artifactName Scala version support](@artifact.badgeUrl(env, Some(platform))](@artifact.fullHttpUrl(env))</pre>
-            <button class="btn btn-primary pull-right" data-clipboard-target="badge-markdown">Copy Markdown</button>
+            <button class="btn btn-primary btn-copy pull-right" data-clipboard-target="badge-markdown">Copy Markdown</button>
           </section>
         }
       </div>
