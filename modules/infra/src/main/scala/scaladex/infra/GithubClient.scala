@@ -321,7 +321,7 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
       for {
         currentPage <- f(cursor)
         all <-
-          if (currentPage.hasNextPage) recurse(Some(currentPage.endCursor), acc ++ currentPage.nodes)
+          if (currentPage.hasNextPage) recurse(currentPage.endCursor, acc ++ currentPage.nodes)
           else Future.successful(acc ++ currentPage.nodes)
       } yield all
     recurse(None, Nil)

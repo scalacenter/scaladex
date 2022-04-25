@@ -21,7 +21,7 @@ package object route {
     case (orga, repo) => Tuple1(Project.Reference(orga, repo))
   }
 
-  val artifactM: PathMatcher1[Artifact.Name] = Segment.map(Artifact.Name.apply)
+  val artifactNameM: PathMatcher1[Artifact.Name] = Segment.map(Artifact.Name.apply)
   val versionM: PathMatcher1[SemanticVersion] = Segment.flatMap(SemanticVersion.parse)
 
   val mavenReferenceM: PathMatcher[Tuple1[Artifact.MavenReference]] = (Segment / Segment / Segment).tmap {

@@ -1,57 +1,41 @@
+@import scaladex.core.model.Project
 @import scaladex.core.model.Artifact
 @import scaladex.core.model.Env
+@import scaladex.core.model.UserState
+@import scaladex.core.model.SemanticVersion
+@import scaladex.view.html.main
 @import scaladex.core.model.Platform
-
 @import scala.collection.SortedSet
 
-@(artifact: Artifact, platforms: SortedSet[Platform], env: Env)
-<div class="box badge-showcase">
-  <h4>Badges</h4>
-  <div>
-    <div class="badge-image">
-      <a href="#badge-markdown">
-          <img src="@artifact.badgeUrl(env)" />
-      </a>
-      <div class="text-right">
-        <a href="#badge-markdown">See more</a>
+@(
+  env: Env,
+  user: Option[UserState],
+  project: Project,
+  versionCount: Long,
+  lastVersion: SemanticVersion,
+  artifact: Artifact,
+  platforms: SortedSet[Platform]
+)
+@main(env, title = project.repository.value, user, extraMeta = project.twitterCard.toHeadMeta) {
+  <main id="container-project">
+    @headproject(env, user, project, versionCount, "Badges", lastVersion)
+    <div class="container">
+      <div class="content-project box project-badges">
+        <section class="badge-section" id="latest">
+          <h2>Latest version</h2>
+          <img src="@artifact.latestBadgeUrl(env)" />
+          <pre aria-label="Badge markdown" id="badge-markdown">[![@artifact.artifactName Scala version support](@artifact.latestBadgeUrl(env)](@artifact.fullHttpUrl(env))</pre>
+          <button class="btn btn-primary btn-copy pull-right" data-clipboard-target="badge-markdown">Copy Markdown</button>
+        </section>
+        @platforms.iterator.map { platform =>
+          <section class="badge-section" id="@platform">
+            <h2>@platform badge</h2>
+            <img src="@artifact.badgeUrl(env, Some(platform))" />
+            <pre aria-label="Badge markdown" id="badge-markdown">[![@artifact.artifactName Scala version support](@artifact.badgeUrl(env, Some(platform))](@artifact.fullHttpUrl(env))</pre>
+            <button class="btn btn-primary btn-copy pull-right" data-clipboard-target="badge-markdown">Copy Markdown</button>
+          </section>
+        }
       </div>
     </div>
-  </div>
-  <div id="badge-markdown" class="overlay">
-    <div class="popup">
-      <a class="close" href="#">&times;</a>
-      @platforms.iterator.map { platform =>
-        <h2>@platform badge</h2>
-        <div class="content">
-          <img src="@artifact.badgeUrl(env, Some(platform))" />
-          <div>
-            <h5>Markdown:</h5>
-            <pre
-            aria-label="Badge markdown"
-            id="copy-badge-markdown"
-            class="copyable-incantation"
-            >[![@artifact.artifactName Scala version support](@artifact.badgeUrl(env, Some(platform))](@artifact.fullHttpUrl(env))</pre>
-            <button class="btn-copy btn btn-primary pull-right" data-clipboard-target="copy-badge-markdown">
-              Copy Markdown</button>
-          </div>
-        </div>
-      }
-      <h2>Latest version badge</h2>
-      <div class="content">
-        <img src="@artifact.latestBadgeUrl(env)" />
-        <div>
-          <h5>Markdown:</h5>
-          <pre
-          aria-label="Badge markdown"
-          id="copy-badge-markdown"
-          class="copyable-incantation"
-          >[![@artifact.artifactName Scala version support](@artifact.latestBadgeUrl(env)](@artifact.fullHttpUrl(env))</pre>
-          <button class="btn-copy btn btn-primary pull-right" data-clipboard-target="copy-badge-markdown">
-            Copy Markdown</button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-</div>
+  </main>
+}

@@ -7,6 +7,7 @@ import io.circe.generic.semiauto.deriveCodec
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Category
+import scaladex.core.model.DocumentationPattern
 import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubIssue
@@ -34,15 +35,15 @@ object Codecs {
   implicit val urlCodec: Codec[Url] = fromString(_.target, Url)
   implicit val contributor: Codec[GithubContributor] = deriveCodec
   implicit val githubIssue: Codec[GithubIssue] = deriveCodec
-  implicit val documentation: Codec[Project.DocumentationLink] =
+  implicit val documentation: Codec[DocumentationPattern] =
     Codec.from(
       Decoder[Map[String, String]].emap { map =>
         map.toList match {
-          case (key -> value) :: Nil => Right(Project.DocumentationLink(key, value))
+          case (key -> value) :: Nil => Right(DocumentationPattern(key, value))
           case _                     => Left(s"Cannot decode json to DocumentationLink: $map")
         }
       },
-      Encoder[Map[String, String]].contramap(docLink => Map(docLink.label -> docLink.link))
+      Encoder[Map[String, String]].contramap(doc => Map(doc.label -> doc.pattern))
     )
   implicit val githubInfoDocumentCodec: Codec[GithubInfoDocument] = deriveCodec
   implicit val githubInfoCodec: Codec[GithubInfo] = deriveCodec
@@ -59,6 +60,7 @@ object Codecs {
   implicit val resolverCodec: Codec[Resolver] = deriveCodec
   implicit val licenseCodec: Codec[License] = deriveCodec
   implicit val artifactCodec: Codec[Artifact] = deriveCodec
+  implicit val scopeCodec: Codec[ArtifactDependency.Scope] = fromString(_.value, ArtifactDependency.Scope.apply)
 
   implicit val mavenRefCodec: Codec[Artifact.MavenReference] = deriveCodec
   implicit val dependenciesCodec: Codec[ArtifactDependency] = deriveCodec

@@ -4,6 +4,7 @@ import java.time.Instant
 
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model.Project
 import scaladex.core.model.SemanticVersion
 import scaladex.data.cleanup._
@@ -41,7 +42,7 @@ class ArtifactConverter(paths: DataPaths) {
         ArtifactDependency(
           pom.mavenRef,
           dep.mavenRef,
-          dep.scope.getOrElse("compile")
+          dep.scope.map(Scope.apply).getOrElse(Scope.compile)
         )
       }.distinct
       (artifact, dependencies)

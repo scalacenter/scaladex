@@ -195,7 +195,7 @@ lazy val server = project
       "org.webjars" % "bootstrap-sass" % "3.4.1",
       "org.webjars" % "bootstrap-switch" % "3.3.4",
       "org.webjars" % "bootstrap-select" % "1.13.18",
-      "org.webjars.bower" % "font-awesome" % "4.7.0",
+      "org.webjars" % "font-awesome" % "6.0.0",
       "org.webjars" % "jquery" % "3.6.0",
       "org.webjars.bower" % "select2" % "4.0.3"
     ),

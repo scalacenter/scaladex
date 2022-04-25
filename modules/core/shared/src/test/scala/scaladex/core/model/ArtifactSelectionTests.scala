@@ -100,12 +100,7 @@ class ArtifactSelectionTests extends AsyncFunSpec with Matchers {
         )
       )
 
-    val selection = ArtifactSelection(
-      artifactNames = Some(Artifact.Name("akka-distributed-data-experimental")),
-      binaryVersion = None,
-      version = None,
-      selected = None
-    )
+    val selection = ArtifactSelection(None, Some(Artifact.Name("akka-distributed-data-experimental")))
 
     val result = selection.defaultArtifact(artifacts, project)
     val expected = prepare(
