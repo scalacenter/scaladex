@@ -1,12 +1,19 @@
 package scaladex.server.service
 
 import java.time.Instant
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+
 import akka.actor.ActorSystem
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
-import scaladex.core.model.{Artifact, ArtifactDependency, Env, Project, Sha1, UserState}
+import scaladex.core.model.Artifact
+import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.Env
+import scaladex.core.model.Project
+import scaladex.core.model.Sha1
+import scaladex.core.model.UserState
 import scaladex.core.service.Storage
 import scaladex.core.service.WebDatabase
 import scaladex.core.util.ScalaExtensions._
@@ -90,7 +97,7 @@ class PublishProcess(
         (maybeUserState, maybeProjectRef)
           .traverseN((userState, ref) => updateGithubInfo(new GithubClient(userState.info.token), ref, Instant.now))
           .map(_ => ())
-      else Future.successful()
+      else Future.successful(())
     }
 
   private def isPermittedToPublish(

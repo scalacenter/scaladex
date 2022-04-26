@@ -161,7 +161,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       artifactName = artifactIdResult.name,
       platform = artifactIdResult.binaryVersion.platform,
       language = artifactIdResult.binaryVersion.language,
-      projectRef = Project.Reference.from("", ""),
+      projectRef = Some(Project.Reference.from("", "")),
       description = None,
       releaseDate = Instant.now(),
       resolver = resolver,

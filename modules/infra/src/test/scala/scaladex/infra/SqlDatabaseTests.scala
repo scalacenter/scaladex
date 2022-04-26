@@ -71,8 +71,8 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     } yield {
       oldArtifacts shouldBe empty
       newArtifacts should contain theSameElementsAs Seq(
-        Cats.`core_3:2.6.1`.copy(projectRef = newRef),
-        Cats.core_sjs1_3.copy(projectRef = newRef)
+        Cats.`core_3:2.6.1`.copy(projectRef = Some(newRef)),
+        Cats.core_sjs1_3.copy(projectRef = Some(newRef))
       )
     }
   }

@@ -38,10 +38,13 @@ class InMemoryDatabase extends SchedulerDatabase {
       dependencies: Seq[ArtifactDependency],
       now: Instant
   ): Future[Boolean] = {
-    val ref = artifact.projectRef
-    val isNewProject = !projects.contains(ref)
-    if (isNewProject) projects.addOne(ref -> Project.default(ref, now = now))
-    artifacts.addOne(ref -> (artifacts.getOrElse(ref, Seq.empty) :+ artifact))
+    val projectRef = artifact.projectRef
+    val isNewProject = projectRef.fold(false)(projectRef => !projects.contains(projectRef))
+    if (isNewProject) projectRef.foreach(ref => projects.addOne(ref -> Project.default(ref, now = now)))
+    projectRef.foreach { ref =>
+      val prevArtifactsForProject = artifacts.get(ref).fold(Seq[Artifact]())(identity)
+      artifacts.addOne(ref -> (prevArtifactsForProject :+ artifact))
+    }
     dependencies.appendedAll(dependencies)
     Future.successful(isNewProject)
   }

@@ -20,7 +20,7 @@ class ArtifactSelectionTests extends AsyncFunSpec with Matchers {
       artifactId.value,
       version,
       artifactId.name,
-      reference,
+      Some(reference),
       None,
       Instant.ofEpochMilli(1475505237265L),
       None,

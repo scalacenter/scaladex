@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
+import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Env
 import scaladex.core.model.UserState
@@ -21,7 +22,7 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
         path("artifacts" / mavenReferenceM / "scaladoc" ~ RemainingPath) { (mavenRef, dri) =>
           val scaladocUriF = for {
             artifact <- database.getArtifactByMavenReference(mavenRef).map(_.get)
-            project <- database.getProject(artifact.projectRef)
+            project <- artifact.projectRef.flatTraverse(database.getProject)
           } yield project.flatMap(_.scaladoc(artifact).map(doc => Uri(doc.link)))
 
           onComplete(scaladocUriF) {
