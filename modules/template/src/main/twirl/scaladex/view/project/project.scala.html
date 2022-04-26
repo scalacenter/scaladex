@@ -33,7 +33,7 @@
         <div class="col-md-4">
           <div class="sidebar-project">
             @project.githubInfo.map(gh => statisticsBox(gh, project.reference, reverseDependency.size))
-						@commitActivityBox()
+						@commitActivityBox
             @documentationBox
             @project.githubInfo.map { github =>
               @contributorsBox(github.contributors)
@@ -69,25 +69,23 @@
   </div>
 }
 
-@commitActivities = project.githubInfo.map(_.commitActivity).getOrElse(Seq.empty)
+@commitActivities = @{project.githubInfo.map(_.commitActivity).getOrElse(Seq.empty)}
+@commitsPerWeek = @{commitActivities.sortBy(_.week).map(_.total).mkString(",")}
 @commitActivityBox = {
-	<div class="box commit-activities">
-		<h4>Activity</h4>
-		@commitsPerWeek = @{commitActivities.sortBy(_.week).map(_.total).mkString(",")}
-		@if(commitActivities.isEmpty){
-			<p>No data available</p>
-		}else {
-			<div class="commit-activity-container">	
-				<canvas class="commit-activity" data-commit-activity="@commitsPerWeek" />
-			</div>
-		}
-	</div>
+	@if(commitActivities.nonEmpty){
+		<div class="box commit-activities">
+			<h4>Activity</h4>
+				<div class="commit-activity-container">	
+					<canvas class="commit-activity" data-commit-activity="@commitsPerWeek" />
+				</div>
+		</div>
+	}
 }
 
 @documentationLinks = @{ project.globalDocumentation }
 @documentationBox = {
   @if(documentationLinks.nonEmpty) {
-    <div class="documentation box">
+	<div class="documentation box">
       <h4>Documentation</h4>
       <ul>
         @for(doc <- documentationLinks){
