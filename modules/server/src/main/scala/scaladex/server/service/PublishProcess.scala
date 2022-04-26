@@ -17,10 +17,10 @@ import scaladex.core.util.ScalaExtensions._
 import scaladex.data.cleanup.GithubRepoExtractor
 import scaladex.data.maven.ArtifactModel
 import scaladex.data.maven.PomsReader
-import scaladex.data.meta.ArtifactConverter
 import scaladex.infra.CoursierResolver
 import scaladex.infra.DataPaths
 import scaladex.infra.GithubClient
+import scaladex.server.service.ArtifactConverter
 
 sealed trait PublishResult
 object PublishResult {

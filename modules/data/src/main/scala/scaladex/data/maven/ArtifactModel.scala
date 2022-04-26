@@ -32,9 +32,6 @@ case class ArtifactModel(
     sbtPluginTarget: Option[SbtPluginTarget] =
       None // Information on the target scala and sbt versions, in case this artifact is an sbt plugin
 ) {
-  val mavenRef: Artifact.MavenReference =
-    Artifact.MavenReference(groupId, artifactId, version)
-
   private val packagingOfInterest = Set("aar", "jar", "bundle", "pom")
   val isPackagingOfInterest: Boolean = packagingOfInterest.contains(packaging)
 }

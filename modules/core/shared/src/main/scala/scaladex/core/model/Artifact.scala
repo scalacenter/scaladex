@@ -228,9 +228,6 @@ object Artifact {
   }
 
   case class MavenReference(groupId: String, artifactId: String, version: String) {
-
-    def name: String = s"$groupId/$artifactId"
-
     override def toString(): String = s"$groupId:$artifactId:$version"
 
     /**

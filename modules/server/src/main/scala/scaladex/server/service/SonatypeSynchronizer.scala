@@ -56,7 +56,6 @@ class SonatypeSynchronizer(
       missingVersions = findMissingVersions(mavenReferenceFromDatabase, mavenReferences)
       _ = if (missingVersions.nonEmpty)
         logger.warn(s"${missingVersions.size} artifacts are missing for ${groupId.value}:${artifactId.value}")
-      else ()
       missingPomFiles <- missingVersions.map(v => sonatypeService.getPomFile(v).map(_.map(v -> _))).sequence
       publishResult <- missingPomFiles.flatten.mapSync {
         case (mavenRef, (pomFile, creationDate)) =>

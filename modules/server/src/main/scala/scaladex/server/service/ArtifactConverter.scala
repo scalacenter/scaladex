@@ -1,10 +1,15 @@
-package scaladex.data.meta
+package scaladex.server.service
 
-import org.slf4j.LoggerFactory
+import java.time.Instant
+
+import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Artifact
+import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Java
 import scaladex.core.model.Jvm
+import scaladex.core.model.Project
 import scaladex.core.model.SbtPlugin
 import scaladex.core.model.Scala
 import scaladex.core.model.SemanticVersion
@@ -13,16 +18,50 @@ import scaladex.data.maven.ArtifactModel
 import scaladex.data.maven.SbtPluginTarget
 import scaladex.infra.DataPaths
 
-case class ArtifactMeta(
+private case class ArtifactMeta(
     artifactName: String,
     binaryVersion: BinaryVersion,
     isNonStandard: Boolean
-)
+) {
+  def artifactId: String = if (isNonStandard) artifactName else s"$artifactName${binaryVersion.label}"
+}
 
-class ArtifactMetaExtractor(paths: DataPaths) {
-  private val log = LoggerFactory.getLogger(getClass)
-
+class ArtifactConverter(paths: DataPaths) extends LazyLogging {
   private val nonStandardLibs = NonStandardLib.load(paths)
+  private val licenseCleanup = new LicenseCleanup(paths)
+
+  def convert(
+      pom: ArtifactModel,
+      projectRef: Project.Reference,
+      creationDate: Instant
+  ): Option[(Artifact, Seq[ArtifactDependency])] =
+    for {
+      version <- SemanticVersion.parse(pom.version)
+      meta <- extractMeta(pom)
+    } yield {
+      val artifact = Artifact(
+        Artifact.GroupId(pom.groupId),
+        meta.artifactId,
+        version,
+        Artifact.Name(meta.artifactName),
+        projectRef,
+        pom.description,
+        creationDate,
+        None,
+        licenseCleanup(pom),
+        meta.isNonStandard,
+        meta.binaryVersion.platform,
+        meta.binaryVersion.language
+      )
+      val dependencies = pom.dependencies.map { dep =>
+        ArtifactDependency(
+          artifact.mavenReference,
+          dep.mavenRef,
+          dep.scope.map(Scope.apply).getOrElse(Scope.compile)
+        )
+      }.distinct
+      (artifact, dependencies)
+    }
 
   /**
    * artifactId is often use to express binary compatibility with a scala version (ScalaTarget)
@@ -31,7 +70,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
    *
    * @return The artifact name (without suffix), the Scala target, whether this project is a usual Scala library or not
    */
-  def extract(pom: ArtifactModel): Option[ArtifactMeta] = {
+  private def extractMeta(pom: ArtifactModel): Option[ArtifactMeta] = {
     val nonStandardLookup =
       nonStandardLibs
         .find(lib =>
@@ -71,7 +110,7 @@ class ArtifactMetaExtractor(paths: DataPaths) {
                   )
                 )
               case _ =>
-                log.error(
+                logger.error(
                   s"Unable to decode the Scala target: $rawScalaVersion $rawSbtVersion"
                 )
                 None
