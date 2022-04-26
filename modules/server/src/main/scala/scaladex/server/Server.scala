@@ -191,9 +191,11 @@ object Server extends LazyLogging {
       }
     val exceptionHandler = ExceptionHandler {
       case NonFatal(cause) =>
-        import scaladex.server.TwirlSupport._
-        logger.error("Unhandled exception", cause)
-        complete(StatusCodes.InternalServerError, notfound(config.env, None))
+        extractUri { uri =>
+          import scaladex.server.TwirlSupport._
+          logger.error(s"Unhandled exception in $uri", cause)
+          complete(StatusCodes.InternalServerError, notfound(config.env, None))
+        }
     }
     handleExceptions(exceptionHandler)(route)
   }
