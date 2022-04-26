@@ -23,7 +23,7 @@ case class Artifact(
     artifactId: String,
     version: SemanticVersion,
     artifactName: Artifact.Name,
-    projectRef: Project.Reference,
+    projectRef: Option[Project.Reference],
     description: Option[String],
     releaseDate: Instant,
     resolver: Option[Resolver],
@@ -45,12 +45,15 @@ case class Artifact(
     s"$groupId$sep$artifactName"
   }
 
-  private def artifactHttpPath: String = s"/${projectRef.organization}/${projectRef.repository}/$artifactName"
+  private def artifactHttpPath: Option[String] = projectRef.map { ref =>
+    s"/${ref.organization}/${ref.repository}/$artifactName"
+  }
 
   val mavenReference: Artifact.MavenReference = Artifact.MavenReference(groupId.value, artifactId, version.encode)
 
-  def release: Release =
-    Release(projectRef.organization, projectRef.repository, platform, language, version, releaseDate)
+  def release: Option[Release] = projectRef.map { ref =>
+    Release(ref.organization, ref.repository, platform, language, version, releaseDate)
+  }
 
   def releaseDateFormat: String = Artifact.dateFormatter.format(releaseDate)
 

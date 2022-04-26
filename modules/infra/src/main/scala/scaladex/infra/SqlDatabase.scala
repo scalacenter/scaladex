@@ -7,6 +7,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import cats.effect.IO
+import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import com.zaxxer.hikari.HikariDataSource
 import doobie.implicits._
@@ -48,11 +49,11 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   ): Future[Boolean] = {
     val unknownStatus = GithubStatus.Unknown(time)
     for {
-      isNewProject <- insertProjectRef(artifact.projectRef, unknownStatus)
+      maybeIsNewProject <- artifact.projectRef.traverse(ref => insertProjectRef(ref, unknownStatus))
       _ <- run(ArtifactTable.insertIfNotExist(artifact))
-      _ <- run(ReleaseTable.insertIfNotExists.run(artifact.release))
+      _ <- artifact.release.traverse(release => run(ReleaseTable.insertIfNotExists.run(release)))
       _ <- insertDependencies(dependencies)
-    } yield isNewProject
+    } yield maybeIsNewProject.fold(true)(identity)
   }
 
   override def insertProject(project: Project): Future[Unit] =

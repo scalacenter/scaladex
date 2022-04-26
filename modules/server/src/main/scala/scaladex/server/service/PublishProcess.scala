@@ -1,16 +1,12 @@
 package scaladex.server.service
 
 import java.time.Instant
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-
 import akka.actor.ActorSystem
+import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
-import scaladex.core.model.Env
-import scaladex.core.model.Project
-import scaladex.core.model.Sha1
-import scaladex.core.model.UserState
+import scaladex.core.model.{Artifact, ArtifactDependency, Env, Project, Sha1, UserState}
 import scaladex.core.service.Storage
 import scaladex.core.service.WebDatabase
 import scaladex.core.util.ScalaExtensions._
@@ -27,7 +23,7 @@ object PublishResult {
   object InvalidPom extends PublishResult
   object NoGithubRepo extends PublishResult
   object Success extends PublishResult
-  case class Forbidden(login: String, repo: Project.Reference) extends PublishResult
+  case class Forbidden(login: String, repo: Option[Project.Reference]) extends PublishResult
 }
 
 class PublishProcess(
@@ -65,35 +61,50 @@ class PublishProcess(
       userState: Option[UserState]
   ): Future[PublishResult] = {
     val pomRef = s"${pom.groupId}:${pom.artifactId}:${pom.version}"
-    githubExtractor.extract(pom) match {
-      case None =>
-        // TODO: save artifact with no github information
-        Future.successful(PublishResult.NoGithubRepo)
-      case Some(repo) =>
-        // userState can be empty when the request of publish is done through the scheduler
-        if (userState.isEmpty || userState.get.hasPublishingAuthority(env) || userState.get.repos.contains(repo)) {
-          converter.convert(pom, repo, creationDate) match {
-            case Some((artifact, deps)) =>
-              for {
-                isNewProject <- database.insertArtifact(artifact, deps, Instant.now)
-                _ <-
-                  if (isNewProject && userState.nonEmpty)
-                    updateGithubInfo(new GithubClient(userState.get.info.token), artifact.projectRef, Instant.now())
-                  else Future.successful(())
-              } yield {
-                logger.info(s"Published $pomRef")
-                PublishResult.Success
-              }
-            case None =>
-              logger.warn(s"Cannot convert $pomRef to valid Scala artifact.")
-              Future.successful(PublishResult.InvalidPom)
+    val maybeProjectRef = githubExtractor.extract(pom)
+    if (isPermittedToPublish(userState, maybeProjectRef)) {
+      converter.convert(pom, maybeProjectRef, creationDate) match {
+        case Some((artifact, deps)) =>
+          insertArtifactWithDependencies(artifact, deps, maybeProjectRef, userState).map { _ =>
+            logger.info(s"Published $pomRef")
+            PublishResult.Success
           }
-        } else {
-          logger.warn(s"User ${userState.get.info.login} attempted to publish to $repo")
-          Future.successful(PublishResult.Forbidden(userState.get.info.login, repo))
-        }
+        case None =>
+          logger.warn(s"Cannot convert $pomRef to a valid Scala artifact")
+          Future.successful(PublishResult.InvalidPom)
+      }
+    } else {
+      logger.warn(s"User ${userState.get.info.login} attempted to publish to $maybeProjectRef")
+      Future.successful(PublishResult.Forbidden(userState.get.info.login, maybeProjectRef))
     }
   }
+
+  private def insertArtifactWithDependencies(
+      artifact: Artifact,
+      dependencies: Seq[ArtifactDependency],
+      maybeProjectRef: Option[Project.Reference],
+      maybeUserState: Option[UserState]
+  ): Future[Unit] =
+    database.insertArtifact(artifact, dependencies, Instant.now).flatMap { isNewProject =>
+      if (isNewProject && maybeProjectRef.isDefined && maybeUserState.isDefined)
+        (maybeUserState, maybeProjectRef)
+          .traverseN((userState, ref) => updateGithubInfo(new GithubClient(userState.info.token), ref, Instant.now))
+          .map(_ => ())
+      else Future.successful()
+    }
+
+  private def isPermittedToPublish(
+      maybeUserState: Option[UserState],
+      maybeProjectRef: Option[Project.Reference]
+  ): Boolean = {
+    val userCanPublish = maybeUserState.map(_.hasPublishingAuthority(env)).fold(false)(identity)
+    val userHasRepo = (maybeUserState, maybeProjectRef)
+      .mapN((userState, projectRef) => userState.repos.contains(projectRef))
+      .fold(false)(identity)
+    // UserState may be empty if a publish is performed via a scheduler.
+    maybeUserState.isEmpty || userCanPublish || userHasRepo
+  }
+
   private def updateGithubInfo(githubClient: GithubClient, ref: Project.Reference, now: Instant): Future[Unit] =
     for {
       githubResponse <- githubClient.getProjectInfo(ref)

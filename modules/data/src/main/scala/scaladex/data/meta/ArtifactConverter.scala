@@ -17,7 +17,7 @@ class ArtifactConverter(paths: DataPaths) {
 
   def convert(
       pom: ArtifactModel,
-      projectRef: Project.Reference,
+      projectRef: Option[Project.Reference],
       creationDate: Instant
   ): Option[(Artifact, Seq[ArtifactDependency])] =
     for {
