@@ -31,5 +31,8 @@ class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers
     check(ArtifactTable.selectArtifactByParams(Seq(`_sjs0.6_2.13`), false))
   }
   it("check selectMavenReferenceWithNoReleaseDate")(check(ArtifactTable.selectMavenReferenceWithNoReleaseDate))
-  it("check findLastVersion")(check(ArtifactTable.findLastSemanticVersionNotPrerelease))
+  it("check selectLastVersion")(check(ArtifactTable.selectLastVersion))
+  it("check selectLastReleaseVersion")(check(ArtifactTable.selectLastReleaseVersion))
+  it("check selectLastVersionByArtifactName")(check(ArtifactTable.selectLastVersionByArtifactName))
+  it("check selectLastReleaseVersionByArtifactName")(check(ArtifactTable.selectLastReleaseVersionByArtifactName))
 }

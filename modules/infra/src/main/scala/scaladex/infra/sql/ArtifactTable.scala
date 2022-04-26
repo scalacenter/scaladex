@@ -154,7 +154,7 @@ object ArtifactTable {
       groupBy = Seq("organization", "repository ", "platform ", "language_version", "version")
     )
 
-  val findLastSemanticVersionNotPrerelease: Query[Project.Reference, SemanticVersion] =
+  val selectLastReleaseVersion: Query[Project.Reference, SemanticVersion] =
     selectRequest1(
       table,
       "version",
@@ -163,11 +163,30 @@ object ArtifactTable {
       limit = Some(1L)
     )
 
-  val findLastVersion: Query[Project.Reference, SemanticVersion] =
+  val selectLastVersion: Query[Project.Reference, SemanticVersion] =
     selectRequest1(
       table,
       "version",
       where = Some("organization=? AND repository=?"),
+      orderBy = Some("release_date DESC"),
+      limit = Some(1L)
+    )
+
+  val selectLastReleaseVersionByArtifactName: Query[(Project.Reference, Artifact.Name), SemanticVersion] =
+    selectRequest1(
+      table,
+      "version",
+      where =
+        Some("organization=? AND repository=? AND artifact_name=? AND is_semantic='true' and is_prerelease='false'"),
+      orderBy = Some("release_date DESC"),
+      limit = Some(1L)
+    )
+
+  val selectLastVersionByArtifactName: Query[(Project.Reference, Artifact.Name), SemanticVersion] =
+    selectRequest1(
+      table,
+      "version",
+      where = Some("organization=? AND repository=? AND artifact_name=?"),
       orderBy = Some("release_date DESC"),
       limit = Some(1L)
     )

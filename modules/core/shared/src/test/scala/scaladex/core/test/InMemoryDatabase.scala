@@ -24,12 +24,12 @@ import scaladex.core.service.SchedulerDatabase
 class InMemoryDatabase extends SchedulerDatabase {
 
   private val projects = mutable.Map[Project.Reference, Project]()
-  private val artifacts = mutable.Map[Project.Reference, Seq[Artifact]]()
+  private val allArtifacts = mutable.Map[Project.Reference, Seq[Artifact]]()
   private val dependencies = mutable.Buffer[ArtifactDependency]()
 
   def reset(): Unit = {
     projects.clear()
-    artifacts.clear()
+    allArtifacts.clear()
     dependencies.clear()
   }
 
@@ -41,14 +41,14 @@ class InMemoryDatabase extends SchedulerDatabase {
     val ref = artifact.projectRef
     val isNewProject = !projects.contains(ref)
     if (isNewProject) projects.addOne(ref -> Project.default(ref, now = now))
-    artifacts.addOne(ref -> (artifacts.getOrElse(ref, Seq.empty) :+ artifact))
+    allArtifacts.addOne(ref -> (allArtifacts.getOrElse(ref, Seq.empty) :+ artifact))
     dependencies.appendedAll(dependencies)
     Future.successful(isNewProject)
   }
 
   override def insertProject(project: Project): Future[Unit] = ???
 
-  override def insertArtifacts(artifacts: Seq[Artifact]): Future[Unit] = ???
+  override def insertArtifacts(allArtifacts: Seq[Artifact]): Future[Unit] = ???
 
   override def insertDependencies(dependencies: Seq[ArtifactDependency]): Future[Unit] = ???
 
@@ -62,17 +62,17 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   override def getArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]] =
     Future.successful {
-      artifacts.values.flatten.filter { artifact: Artifact =>
+      allArtifacts.values.flatten.filter { artifact: Artifact =>
         artifact.groupId == groupId && artifact.artifactId == artifactId.value
       }.toSeq
     }
 
   override def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]] =
-    Future.successful(artifacts.getOrElse(projectRef, Nil))
+    Future.successful(allArtifacts.getOrElse(projectRef, Nil))
 
   override def getArtifactPlatforms(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Platform]] =
     Future.successful {
-      artifacts
+      allArtifacts
         .getOrElse(ref, Seq.empty)
         .filter(_.artifactName == artifactName)
         .map(_.platform)
@@ -91,18 +91,18 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   override def getArtifactsByName(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]] =
     Future.successful(
-      artifacts
+      allArtifacts
         .getOrElse(projectRef, Nil)
         .filter(_.artifactName == artifactName)
     )
 
   override def getArtifactsByVersion(ref: Project.Reference, version: SemanticVersion): Future[Seq[Artifact]] =
     Future.successful {
-      artifacts.getOrElse(ref, Seq.empty).filter(_.version == version)
+      allArtifacts.getOrElse(ref, Seq.empty).filter(_.version == version)
     }
 
   override def getArtifactNames(ref: Project.Reference): Future[Seq[Artifact.Name]] = Future.successful(
-    artifacts.getOrElse(ref, Nil).map(_.artifactName).distinct
+    allArtifacts.getOrElse(ref, Nil).map(_.artifactName).distinct
   )
 
   override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] = ???
@@ -120,7 +120,7 @@ class InMemoryDatabase extends SchedulerDatabase {
         (artifact: Artifact) => artifact.platform == platform
       case _ => (_: Artifact) => true
     }
-    Future.successful(artifacts.values.flatten.toSeq.filter(constraint))
+    Future.successful(allArtifacts.values.flatten.toSeq.filter(constraint))
   }
 
   override def getDirectDependencies(artifact: Artifact): Future[List[ArtifactDependency.Direct]] =
@@ -130,7 +130,7 @@ class InMemoryDatabase extends SchedulerDatabase {
     Future.successful(Nil)
 
   override def countArtifacts(): Future[Long] =
-    Future.successful(artifacts.values.flatten.size)
+    Future.successful(allArtifacts.values.flatten.size)
 
   override def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]] = ???
 
@@ -152,7 +152,7 @@ class InMemoryDatabase extends SchedulerDatabase {
     // not really implemented
     Future.successful(0)
 
-  override def updateArtifacts(artifacts: Seq[Artifact], newRef: Project.Reference): Future[Int] = ???
+  override def updateArtifacts(allArtifacts: Seq[Artifact], newRef: Project.Reference): Future[Int] = ???
   override def deleteDependenciesOfMovedProject(): scala.concurrent.Future[Unit] = ???
   override def getAllGroupIds(): Future[Seq[Artifact.GroupId]] = ???
   override def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]] = ???
@@ -190,7 +190,7 @@ class InMemoryDatabase extends SchedulerDatabase {
       params: ArtifactsPageParams
   ): Future[Seq[Artifact]] =
     // does not filter with params
-    Future.successful(artifacts.getOrElse(ref, Seq.empty).filter(_.artifactName == artifactName))
+    Future.successful(allArtifacts.getOrElse(ref, Seq.empty).filter(_.artifactName == artifactName))
   override def getDirectReleaseDependencies(
       ref: Project.Reference,
       version: SemanticVersion
@@ -199,17 +199,22 @@ class InMemoryDatabase extends SchedulerDatabase {
     Future.successful(Seq.empty)
   override def countVersions(ref: Project.Reference): Future[Long] =
     Future.successful {
-      artifacts.getOrElse(ref, Seq.empty).map(_.version).distinct.size
+      allArtifacts.getOrElse(ref, Seq.empty).map(_.version).distinct.size
     }
-  override def getLastVersion(ref: Project.Reference): Future[SemanticVersion] = Future.successful {
-    artifacts.getOrElse(ref, Seq.empty).head.version
-  }
+  override def getLastVersion(ref: Project.Reference, artifactNameOpt: Option[Artifact.Name]): Future[SemanticVersion] =
+    Future.successful {
+      val artifacts = allArtifacts.getOrElse(ref, Seq.empty)
+      artifactNameOpt match {
+        case Some(artifactName) => artifacts.find(_.artifactName == artifactName).get.version
+        case None               => artifacts.head.version
+      }
+    }
   override def getArtifacts(
       ref: Project.Reference,
       artifactName: Artifact.Name,
       version: SemanticVersion
   ): Future[Seq[Artifact]] =
     Future.successful {
-      artifacts.getOrElse(ref, Seq.empty).filter(a => a.artifactName == artifactName && a.version == version)
+      allArtifacts.getOrElse(ref, Seq.empty).filter(a => a.artifactName == artifactName && a.version == version)
     }
 }
