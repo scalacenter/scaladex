@@ -57,5 +57,5 @@ trait WebDatabase {
       now: Instant
   ): Future[Unit]
   def countVersions(ref: Project.Reference): Future[Long]
-  def getLastVersion(ref: Project.Reference): Future[SemanticVersion]
+  def getLastVersion(ref: Project.Reference, defaultArtifactName: Option[Artifact.Name]): Future[SemanticVersion]
 }

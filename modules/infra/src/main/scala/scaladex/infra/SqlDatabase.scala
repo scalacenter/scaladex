@@ -269,12 +269,25 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def countVersions(ref: Project.Reference): Future[Long] =
     run(ArtifactTable.countVersionsByProjct.unique(ref))
 
-  override def getLastVersion(ref: Project.Reference): Future[SemanticVersion] =
-    for {
-      versionOpt <- run(ArtifactTable.findLastSemanticVersionNotPrerelease.to[Seq](ref))
-      version <-
-        if (versionOpt.isEmpty) run(ArtifactTable.findLastVersion.unique(ref)) else Future.successful(versionOpt.head)
-    } yield version
+  override def getLastVersion(ref: Project.Reference, artifactNameOpt: Option[Artifact.Name]): Future[SemanticVersion] =
+    artifactNameOpt match {
+      case Some(artifactName) =>
+        for {
+          versionOpt <- run(ArtifactTable.selectLastReleaseVersionByArtifactName.option((ref, artifactName)))
+          version <- versionOpt match {
+            case Some(version) => Future.successful(version)
+            case None          => run(ArtifactTable.selectLastVersionByArtifactName.unique((ref, artifactName)))
+          }
+        } yield version
+      case None =>
+        for {
+          versionOpt <- run(ArtifactTable.selectLastReleaseVersion.option(ref))
+          version <- versionOpt match {
+            case Some(version) => Future.successful(version)
+            case None          => run(ArtifactTable.selectLastVersion.unique(ref))
+          }
+        } yield version
+    }
 
   def moveProject(
       ref: Project.Reference,

@@ -13,7 +13,6 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import com.typesafe.scalalogging.LazyLogging
-import play.twirl.api.HtmlFormat
 import scaladex.core.model._
 import scaladex.core.model.web.ArtifactPageParams
 import scaladex.core.model.web.ArtifactsPageParams
@@ -39,7 +38,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
             database.getProject(ref).flatMap {
               case Some(project) =>
                 for {
-                  lastVersion <- database.getLastVersion(ref)
+                  lastVersion <- database.getLastVersion(ref, project.settings.defaultArtifact)
                   artifacts <- database.getArtifactsByVersion(ref, lastVersion)
                 } yield {
                   val defaultArtifactName = project.settings.defaultArtifact
@@ -63,7 +62,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
                   artifactNames <- database.getArtifactNames(ref)
                   artifacts <- database.getArtifacts(ref, artifactName, params)
                   numberOfVersions <- database.countVersions(ref)
-                  lastVersion <- database.getLastVersion(ref)
+                  lastVersion <- database.getLastVersion(ref, project.settings.defaultArtifact)
                 } yield {
                   val binaryVersions = artifacts
                     .map(_.binaryVersion)
@@ -115,7 +114,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
                   directDeps <- database.getDirectDependencies(artifact)
                   reverseDeps <- database.getReverseDependencies(artifact)
                   numberOfVersions <- database.countVersions(ref)
-                  lastVersion <- database.getLastVersion(ref)
+                  lastVersion <- database.getLastVersion(ref, project.settings.defaultArtifact)
                 } yield {
                   val html = view.project.html
                     .artifact(
@@ -146,7 +145,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
               for {
                 artifacts <- database.getArtifacts(project.reference)
                 numberOfVersions <- database.countVersions(ref)
-                lastProjectVersion <- database.getLastVersion(ref)
+                lastProjectVersion <- database.getLastVersion(ref, project.settings.defaultArtifact)
               } yield {
                 val binaryVersionByPlatforms = artifacts
                   .map(_.binaryVersion)
@@ -189,7 +188,8 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         path(projectM / "settings") { projectRef =>
           user match {
             case Some(userState) if userState.canEdit(projectRef, env) =>
-              complete(getEditPage(projectRef, userState))
+              val future = getEditPage(projectRef, userState)
+              onSuccess(future)(identity)
             case _ =>
               complete((StatusCodes.Forbidden, view.html.forbidden(env, user)))
           }
@@ -254,18 +254,20 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
   private def getEditPage(
       ref: Project.Reference,
       user: UserState
-  ): Future[(StatusCode, HtmlFormat.Appendable)] =
-    for {
-      projectOpt <- database.getProject(ref)
-      artifacts <- database.getArtifacts(ref)
-      numberOfVersions <- database.countVersions(ref)
-      lastVersion <- database.getLastVersion(ref)
-    } yield projectOpt
-      .map { p =>
-        val page = view.project.html.editproject(env, p, artifacts, user, numberOfVersions, lastVersion)
-        (StatusCodes.OK, page)
-      }
-      .getOrElse((StatusCodes.NotFound, view.html.notfound(env, Some(user))))
+  ): Future[Route] =
+    database.getProject(ref).flatMap {
+      case Some(project) =>
+        for {
+          artifacts <- database.getArtifacts(ref)
+          numberOfVersions <- database.countVersions(ref)
+          lastVersion <- database.getLastVersion(ref, project.settings.defaultArtifact)
+        } yield {
+          val page = view.project.html.editproject(env, project, artifacts, user, numberOfVersions, lastVersion)
+          complete(page)
+        }
+      case None =>
+        Future.successful(complete(StatusCodes.NotFound, view.html.notfound(env, Some(user))))
+    }
 
   private def getProjectPage(
       ref: Project.Reference,
@@ -275,7 +277,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
     database.getProject(ref).flatMap {
       case Some(project) =>
         for {
-          lastVersion <- database.getLastVersion(ref)
+          lastVersion <- database.getLastVersion(ref, project.settings.defaultArtifact)
           versionCount <- database.countVersions(ref)
           directDependencies <- database.getDirectReleaseDependencies(ref, lastVersion)
           reverseDependencies <- reverseDependenciesF
@@ -317,7 +319,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
     database.getProject(ref).flatMap {
       case Some(project) =>
         for {
-          lastVersion <- database.getLastVersion(ref)
+          lastVersion <- database.getLastVersion(ref, project.settings.defaultArtifact)
           artifacts <- database.getArtifactsByVersion(ref, lastVersion)
           defaultArtifact =
             project.settings.defaultArtifact
