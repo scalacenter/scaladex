@@ -22,7 +22,7 @@ final case class ProjectDocument(
     updateDate: Option[Instant],
     languages: Seq[Language],
     platforms: Seq[Platform],
-    inverseProjectDependencies: Int,
+    dependents: Long,
     category: Option[Category],
     formerReferences: Seq[Project.Reference],
     githubInfo: Option[GithubInfoDocument]
@@ -55,7 +55,7 @@ object ProjectDocument {
   def apply(
       project: Project,
       artifacts: Seq[Artifact],
-      inverseProjectDependencies: Int,
+      dependents: Long,
       formerReferences: Seq[Project.Reference]
   ): ProjectDocument = {
     import project._
@@ -68,7 +68,7 @@ object ProjectDocument {
       updateDate = None,
       artifacts.map(_.binaryVersion.language).distinct.sorted,
       artifacts.map(_.binaryVersion.platform).distinct.sorted,
-      inverseProjectDependencies,
+      dependents,
       settings.category,
       formerReferences,
       project.githubInfo.map(_.toDocument)

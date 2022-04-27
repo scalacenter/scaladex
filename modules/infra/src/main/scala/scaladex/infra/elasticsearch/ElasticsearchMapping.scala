@@ -57,7 +57,7 @@ object ElasticsearchMapping {
     dateField("creationDate"),
     keywordField("languages"),
     keywordField("platforms"),
-    intField("inverseProjectDependencies"),
+    intField("dependents"),
     keywordField("category"),
     textField("githubInfo.description").analyzer("english"),
     textField("githubInfo.readme").analyzer("english_readme"),

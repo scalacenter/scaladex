@@ -196,7 +196,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       case Sorting.Forks        => Some(combinedWithPercentage("githubInfo.forks"))
       case Sorting.Contributors => Some(combinedWithPercentage("githubInfo.contributorCount"))
       case Sorting.Dependent =>
-        Some(fieldFactorScore("inverseProjectDependencies").missing(0).modifier(FieldValueFactorFunctionModifier.LOG1P))
+        Some(fieldFactorScore("dependents").missing(0).modifier(FieldValueFactorFunctionModifier.LOG1P))
     }
 
     val scoringQuery = scorer match {

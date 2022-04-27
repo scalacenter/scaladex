@@ -22,8 +22,8 @@ import scaladex.core.model.ProjectDependency
 import scaladex.core.model.ReleaseDependency
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserState
-import scaladex.core.model.web.ArtifactsPageParams
 import scaladex.core.service.SchedulerDatabase
+import scaladex.core.web.ArtifactsPageParams
 import scaladex.infra.sql.ArtifactDependencyTable
 import scaladex.infra.sql.ArtifactTable
 import scaladex.infra.sql.DoobieUtils
@@ -199,36 +199,36 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   def countProjectSettings(): Future[Long] =
     run(ProjectSettingsTable.count.unique)
 
-  override def computeProjectDependencies(): Future[Seq[ProjectDependency]] =
-    run(ArtifactDependencyTable.computeProjectDependency.to[Seq])
+  override def computeProjectDependencies(
+      ref: Project.Reference,
+      version: SemanticVersion
+  ): Future[Seq[ProjectDependency]] =
+    run(ArtifactDependencyTable.computeProjectDependencies.to[Seq]((ref, version)))
 
   override def computeReleaseDependencies(): Future[Seq[ReleaseDependency]] =
     run(ArtifactDependencyTable.computeReleaseDependency.to[Seq])
 
   override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] =
-    run(ProjectDependenciesTable.insertOrUpdate.updateMany(projectDependencies))
+    if (projectDependencies.isEmpty) Future.successful(0)
+    else run(ProjectDependenciesTable.insertOrUpdate.updateMany(projectDependencies))
+
+  override def deleteProjectDependencies(ref: Project.Reference): Future[Int] =
+    run(ProjectDependenciesTable.deleteBySource.run(ref))
 
   override def insertReleaseDependencies(releaseDependency: Seq[ReleaseDependency]): Future[Int] =
     run(ReleaseDependenciesTable.insertIfNotExists.updateMany(releaseDependency))
 
-  override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] =
-    run(ProjectDependenciesTable.countInverseDependencies.unique(projectRef))
+  override def countProjectDependents(projectRef: Project.Reference): Future[Long] =
+    run(ProjectDependenciesTable.countDependents.unique(projectRef))
 
-  override def getDirectReleaseDependencies(
+  override def getProjectDependencies(
       ref: Project.Reference,
       version: SemanticVersion
-  ): Future[Seq[ReleaseDependency.Direct]] =
-    run(ReleaseDependenciesTable.getDirectDependencies.to[Seq]((ref, version)))
+  ): Future[Seq[ProjectDependency]] =
+    run(ProjectDependenciesTable.getDependencies.to[Seq]((ref, version)))
 
-  override def getReverseReleaseDependencies(ref: Project.Reference): Future[Seq[ReleaseDependency.Reverse]] =
-    run(ReleaseDependenciesTable.getReverseDependencies.to[Seq](ref))
-
-  override def deleteDependenciesOfMovedProject(): Future[Unit] =
-    for {
-      moved <- run(ProjectTable.selectProjectByGithubStatus.to[Seq]("Moved"))
-      _ <- run(ProjectDependenciesTable.deleteBySource.updateMany(moved))
-      _ <- run(ProjectDependenciesTable.deleteByTarget.updateMany(moved))
-    } yield ()
+  override def getProjectDependents(ref: Project.Reference): Future[Seq[ProjectDependency]] =
+    run(ProjectDependenciesTable.getDependents.to[Seq](ref))
 
   override def computeAllProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]] =
     run(ArtifactTable.selectOldestByProject.to[Seq])
