@@ -18,19 +18,19 @@ import scaladex.core.model.ProjectDependency
 import scaladex.core.model.ReleaseDependency
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserState
-import scaladex.core.model.web.ArtifactsPageParams
 import scaladex.core.service.SchedulerDatabase
+import scaladex.core.web.ArtifactsPageParams
 
 class InMemoryDatabase extends SchedulerDatabase {
 
-  private val projects = mutable.Map[Project.Reference, Project]()
+  private val allProjects = mutable.Map[Project.Reference, Project]()
   private val allArtifacts = mutable.Map[Project.Reference, Seq[Artifact]]()
-  private val dependencies = mutable.Buffer[ArtifactDependency]()
+  private val allDependencies = mutable.Buffer[ArtifactDependency]()
 
   def reset(): Unit = {
-    projects.clear()
+    allProjects.clear()
     allArtifacts.clear()
-    dependencies.clear()
+    allDependencies.clear()
   }
 
   override def insertArtifact(
@@ -39,8 +39,8 @@ class InMemoryDatabase extends SchedulerDatabase {
       now: Instant
   ): Future[Boolean] = {
     val ref = artifact.projectRef
-    val isNewProject = !projects.contains(ref)
-    if (isNewProject) projects.addOne(ref -> Project.default(ref, now = now))
+    val isNewProject = !allProjects.contains(ref)
+    if (isNewProject) allProjects.addOne(ref -> Project.default(ref, now = now))
     allArtifacts.addOne(ref -> (allArtifacts.getOrElse(ref, Seq.empty) :+ artifact))
     dependencies.appendedAll(dependencies)
     Future.successful(isNewProject)
@@ -52,13 +52,15 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   override def insertDependencies(dependencies: Seq[ArtifactDependency]): Future[Unit] = ???
 
+  override def deleteProjectDependencies(ref: Project.Reference): Future[Int] = ???
+
   override def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit] = {
-    projects.update(ref, projects(ref).copy(settings = settings))
+    allProjects.update(ref, allProjects(ref).copy(settings = settings))
     Future.successful(())
   }
 
   override def getProject(projectRef: Project.Reference): Future[Option[Project]] =
-    Future.successful(projects.get(projectRef))
+    Future.successful(allProjects.get(projectRef))
 
   override def getArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]] =
     Future.successful {
@@ -82,7 +84,7 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getDependencies(projectRef: Project.Reference): Future[Seq[ArtifactDependency]] = ???
 
   override def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]] = {
-    val result = projects.view
+    val result = allProjects.view
       .mapValues(_.githubStatus)
       .collect { case (ref, GithubStatus.Moved(_, `projectRef`)) => ref }
       .toSeq
@@ -136,24 +138,25 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   override def getAllProjects(): Future[Seq[Project]] = ???
 
-  override def computeProjectDependencies(): Future[Seq[ProjectDependency]] = ???
+  override def computeProjectDependencies(
+      ref: Project.Reference,
+      version: SemanticVersion
+  ): Future[Seq[ProjectDependency]] = ???
   override def computeReleaseDependencies(): Future[Seq[ReleaseDependency]] = ???
 
   override def computeAllProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]] = ???
 
   override def updateProjectCreationDate(ref: Project.Reference, creationDate: Instant): Future[Unit] =
-    Future.successful(projects.update(ref, projects(ref).copy(creationDate = Some(creationDate))))
+    Future.successful(allProjects.update(ref, allProjects(ref).copy(creationDate = Some(creationDate))))
 
   override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] = ???
 
   override def insertReleaseDependencies(releaseDependency: Seq[ReleaseDependency]): Future[Int] = ???
 
-  override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] =
-    // not really implemented
+  override def countProjectDependents(ref: Project.Reference): Future[Long] =
     Future.successful(0)
 
   override def updateArtifacts(allArtifacts: Seq[Artifact], newRef: Project.Reference): Future[Int] = ???
-  override def deleteDependenciesOfMovedProject(): scala.concurrent.Future[Unit] = ???
   override def getAllGroupIds(): Future[Seq[Artifact.GroupId]] = ???
   override def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]] = ???
   override def insertSession(userId: UUID, userState: UserState): Future[Unit] = ???
@@ -168,7 +171,7 @@ class InMemoryDatabase extends SchedulerDatabase {
       githubStatus: GithubStatus
   ): Future[Unit] =
     Future.successful(
-      projects.update(ref, projects(ref).copy(githubInfo = Some(githubInfo), githubStatus = githubStatus))
+      allProjects.update(ref, allProjects(ref).copy(githubInfo = Some(githubInfo), githubStatus = githubStatus))
     )
 
   override def updateGithubInfo(
@@ -179,7 +182,10 @@ class InMemoryDatabase extends SchedulerDatabase {
     response match {
       case GithubResponse.Ok((repo, githubInfo)) =>
         Future.successful(
-          projects.update(repo, projects(repo).copy(githubInfo = Some(githubInfo), githubStatus = GithubStatus.Ok(now)))
+          allProjects.update(
+            repo,
+            allProjects(repo).copy(githubInfo = Some(githubInfo), githubStatus = GithubStatus.Ok(now))
+          )
         )
       case _ => Future.successful(())
     }
@@ -191,11 +197,12 @@ class InMemoryDatabase extends SchedulerDatabase {
   ): Future[Seq[Artifact]] =
     // does not filter with params
     Future.successful(allArtifacts.getOrElse(ref, Seq.empty).filter(_.artifactName == artifactName))
-  override def getDirectReleaseDependencies(
+  override def getProjectDependencies(
       ref: Project.Reference,
       version: SemanticVersion
-  ): Future[Seq[ReleaseDependency.Direct]] = Future.successful(Seq.empty)
-  override def getReverseReleaseDependencies(ref: Project.Reference): Future[Seq[ReleaseDependency.Reverse]] =
+  ): Future[Seq[ProjectDependency]] =
+    Future.successful(Seq.empty)
+  override def getProjectDependents(ref: Project.Reference): Future[Seq[ProjectDependency]] =
     Future.successful(Seq.empty)
   override def countVersions(ref: Project.Reference): Future[Long] =
     Future.successful {

@@ -13,7 +13,7 @@ import scaladex.core.model.Category
 import scaladex.core.model.Project
 import scaladex.core.model.search.AwesomeParams
 import scaladex.core.model.search.SearchParams
-import scaladex.core.model.web.ArtifactsPageParams
+import scaladex.core.web.ArtifactsPageParams
 
 package object html {
 

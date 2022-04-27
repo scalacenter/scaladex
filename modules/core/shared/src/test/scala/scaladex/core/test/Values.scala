@@ -172,11 +172,14 @@ object Values {
     val `core_2.13:2.6.1`: Artifact = getArtifact("cats-core", `_2.13`, `2.6.1`, description = Some("Cats core"))
     val `core_3:4`: Artifact = getArtifact("cats-core", `_3`, `4`, description = Some("Cats core"))
     val `core_3:2.7.0`: Artifact = getArtifact("cats-core", `_3`, `2.7.0`, description = Some("Cats core"))
+
     val core_sjs1_3: Artifact = getArtifact("cats-core", `_sjs1_3`, `2.6.1`, description = Some("Cats core"))
     val core_sjs06_213: Artifact =
       getArtifact("cats-core", `_sjs0.6_2.13`, `2.6.1`, description = Some("Cats core"))
     val core_native04_213: Artifact =
       getArtifact("cats-core", `_native0.4_2.13`, `2.6.1`, description = Some("Cats core"))
+
+    val `kernel_2.13`: Artifact = getArtifact("cats-kernel", `_2.13`, `2.6.1`)
     val kernel_3: Artifact = getArtifact("cats-kernel", `_3`, `2.6.1`)
     val laws_3: Artifact = getArtifact("cats-laws", `_3`, `2.6.1`)
 

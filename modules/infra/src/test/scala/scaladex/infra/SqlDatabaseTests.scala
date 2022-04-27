@@ -134,47 +134,39 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
   }
 
   it("should compute project dependencies") {
-    val artifacts: Map[Artifact, Seq[ArtifactDependency]] = Map(
-      Cats.`core_3:2.6.1` -> Seq(
-        ArtifactDependency(
-          source = Cats.`core_3:2.6.1`.mavenReference,
-          target = Artifact.MavenReference("fake", "fake_3", "version"),
-          scope = Scope.compile
-        )
-      ), // first case: a dependency to an external artifact
-      Cats.kernel_3 -> Seq(
-        ArtifactDependency(
-          source = Cats.kernel_3.mavenReference,
-          target = Cats.`core_3:2.6.1`.mavenReference,
-          Scope.compile
-        )
-      ), // depends on it self
-      Scalafix.artifact -> Cats.dependencies.map(
-        _.copy(source = Scalafix.artifact.mavenReference)
-      ), // dependends on two cats artifacts
-      Cats.laws_3 -> Seq(), // doesn't depend on anything
-      PlayJsonExtra.artifact -> Seq(
-        ArtifactDependency(
-          source = PlayJsonExtra.artifact.mavenReference,
-          target = Scalafix.artifact.mavenReference,
-          Scope.compile
-        )
-      )
-    )
     for {
-      _ <- artifacts.map {
-        case (artifact, dependencies) => database.insertArtifact(artifact, dependencies, now)
-      }.sequence
-      projectDependencies <- database.computeProjectDependencies()
-      _ <- database.insertProjectDependencies(projectDependencies)
-      catsInverseDependencies <- database.countInverseProjectDependencies(Cats.reference)
-    } yield {
-      projectDependencies shouldBe Seq(
-        ProjectDependency(Scalafix.reference, Cats.reference),
-        ProjectDependency(Cats.reference, Cats.reference),
-        ProjectDependency(PlayJsonExtra.reference, Scalafix.reference)
+      _ <- database.insertArtifact(Cats.`core_2.13:2.6.1`, Seq.empty, now)
+      _ <- database.insertArtifact(
+        Cats.`kernel_2.13`,
+        Seq(
+          ArtifactDependency(Cats.`kernel_2.13`.mavenReference, Cats.`core_2.13:2.6.1`.mavenReference, Scope("compile"))
+        ),
+        now
       )
-      catsInverseDependencies shouldBe 2
+      _ <- database.insertArtifact(
+        Scalafix.artifact,
+        Seq(
+          ArtifactDependency(Scalafix.artifact.mavenReference, Cats.`core_2.13:2.6.1`.mavenReference, Scope("compile"))
+        ),
+        now
+      )
+      scalafixDependencies <- database.computeProjectDependencies(Scalafix.reference, Scalafix.artifact.version)
+      catsDependencies <- database.computeProjectDependencies(Cats.reference, Cats.`core_2.13:2.6.1`.version)
+      _ <- database.insertProjectDependencies(scalafixDependencies ++ catsDependencies)
+      catsDependents <- database.countProjectDependents(Cats.reference)
+    } yield {
+      scalafixDependencies shouldBe Seq(
+        ProjectDependency(
+          Scalafix.reference,
+          Scalafix.artifact.version,
+          Cats.reference,
+          Cats.`core_2.13:2.6.1`.version,
+          Scope("compile")
+        )
+      )
+      catsDependencies shouldBe empty
+      catsDependents shouldBe 1
+      succeed
     }
   }
   it("should update creation date") {
@@ -211,23 +203,22 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     }
   }
 
-  it("should delete moved projects from project-dependency-table") {
+  it("should delete project dependencies") {
+    val dependencies = Seq(
+      ProjectDependency(
+        Scalafix.reference,
+        Scalafix.artifact.version,
+        Cats.reference,
+        Cats.`core_2.13:2.6.1`.version,
+        Scope("compile")
+      )
+    )
     for {
       _ <- database.insertArtifact(Scalafix.artifact, Seq.empty, now)
-      _ <- database.insertProjectDependencies(Seq(ProjectDependency(Scalafix.reference, Cats.reference)))
-      _ <- database.insertProjectDependencies(Seq(ProjectDependency(PlayJsonExtra.reference, Scalafix.reference)))
-      _ <- database.moveProject(
-        Scalafix.reference,
-        Scalafix.githubInfo,
-        GithubStatus.Moved(now, Project.Reference.from("scala", "fix"))
-      )
-      _ <- database.deleteDependenciesOfMovedProject()
-      scalafixInverseDeps <- database.countInverseProjectDependencies(Scalafix.reference)
-      catsInverseDeps <- database.countInverseProjectDependencies(Cats.reference)
-    } yield {
-      scalafixInverseDeps shouldBe 0
-      catsInverseDeps shouldBe 0
-    }
+      _ <- database.insertProjectDependencies(dependencies)
+      _ <- database.deleteProjectDependencies(Scalafix.reference)
+      catsDependents <- database.countProjectDependents(Cats.reference)
+    } yield catsDependents shouldBe 0
   }
 
   it("should insert and get user session from id") {

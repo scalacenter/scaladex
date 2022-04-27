@@ -25,7 +25,7 @@ case class RawProjectDocument(
     updateDate: Option[Instant],
     languages: Seq[String],
     platforms: Seq[String],
-    inverseProjectDependencies: Int,
+    dependents: Long,
     category: Option[String],
     formerReferences: Seq[Project.Reference],
     githubInfo: Option[GithubInfoDocument]
@@ -39,7 +39,7 @@ case class RawProjectDocument(
     updateDate,
     languages.flatMap(Language.fromLabel).sorted,
     platforms.flatMap(Platform.fromLabel).sorted,
-    inverseProjectDependencies,
+    dependents,
     category.flatMap(Category.byLabel.get),
     formerReferences,
     githubInfo
@@ -63,7 +63,7 @@ object RawProjectDocument {
       updateDate,
       languages.map(_.label),
       platforms.map(_.label),
-      inverseProjectDependencies,
+      dependents,
       category.map(_.label),
       formerReferences,
       githubInfo

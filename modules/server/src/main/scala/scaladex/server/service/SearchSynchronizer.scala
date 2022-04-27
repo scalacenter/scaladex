@@ -61,8 +61,8 @@ class SearchSynchronizer(database: WebDatabase, searchEngine: SearchEngine)(impl
   private def insertDocument(project: Project, formerReferences: Seq[Project.Reference]): Future[Unit] =
     for {
       artifacts <- database.getArtifacts(project.reference)
-      inverseProjectDependencies <- database.countInverseProjectDependencies(project.reference)
-      document = ProjectDocument(project, artifacts, inverseProjectDependencies, formerReferences)
+      dependents <- database.countProjectDependents(project.reference)
+      document = ProjectDocument(project, artifacts, dependents, formerReferences)
       _ <- searchEngine.insert(document)
       _ <- formerReferences.mapSync(searchEngine.delete)
     } yield ()

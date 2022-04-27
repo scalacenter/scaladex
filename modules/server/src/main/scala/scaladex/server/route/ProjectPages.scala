@@ -14,10 +14,10 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model._
-import scaladex.core.model.web.ArtifactPageParams
-import scaladex.core.model.web.ArtifactsPageParams
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
+import scaladex.core.web.ArtifactPageParams
+import scaladex.core.web.ArtifactsPageParams
 import scaladex.server.TwirlSupport._
 import scaladex.server.service.SearchSynchronizer
 import scaladex.view
@@ -272,18 +272,17 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
   private def getProjectPage(
       ref: Project.Reference,
       user: Option[UserState]
-  ): Future[StandardRoute] = {
-    val reverseDependenciesF = database.getReverseReleaseDependencies(ref)
+  ): Future[StandardRoute] =
     database.getProject(ref).flatMap {
       case Some(project) =>
         for {
           lastVersion <- database.getLastVersion(ref, project.settings.defaultArtifact)
           versionCount <- database.countVersions(ref)
-          directDependencies <- database.getDirectReleaseDependencies(ref, lastVersion)
-          reverseDependencies <- reverseDependenciesF
+          directDependencies <- database.getProjectDependencies(ref, lastVersion)
+          reverseDependencies <- database.getProjectDependents(ref)
         } yield {
           val groupedDirectDependencies = directDependencies
-            .groupBy(_.targetRef)
+            .groupBy(_.target)
             .view
             .mapValues { deps =>
               val scope = deps.map(_.scope).min
@@ -291,7 +290,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
               (scope, versions)
             }
           val groupedReverseDependencies = reverseDependencies
-            .groupBy(_.sourceRef)
+            .groupBy(_.source)
             .view
             .mapValues { deps =>
               val scope = deps.map(_.scope).min
@@ -313,7 +312,6 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
       case None =>
         Future.successful(complete(StatusCodes.NotFound, view.html.notfound(env, user)))
     }
-  }
 
   private def getBadges(ref: Project.Reference, user: Option[UserState]): Future[StandardRoute] =
     database.getProject(ref).flatMap {

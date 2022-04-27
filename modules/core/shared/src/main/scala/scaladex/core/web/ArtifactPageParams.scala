@@ -1,4 +1,4 @@
-package scaladex.core.model.web
+package scaladex.core.web
 
 import scaladex.core.model.BinaryVersion
 
