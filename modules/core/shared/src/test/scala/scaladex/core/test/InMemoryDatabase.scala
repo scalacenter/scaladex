@@ -207,7 +207,10 @@ class InMemoryDatabase extends SchedulerDatabase {
       allArtifacts.getOrElse(ref, Seq.empty).filter(a => a.artifactName == artifactName && a.version == version)
     }
 
-  override def updateGithubStatus(ref: Project.Reference, status: GithubStatus): Future[Unit] = ???
+  override def updateGithubStatus(ref: Project.Reference, status: GithubStatus): Future[Unit] =
+    Future.successful(
+      allProjects.update(ref, allProjects(ref).copy(githubStatus = status))
+    )
 
   override def moveProject(ref: Project.Reference, info: GithubInfo, status: GithubStatus.Moved): Future[Unit] = ???
 }
