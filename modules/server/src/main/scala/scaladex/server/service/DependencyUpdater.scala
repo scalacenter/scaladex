@@ -22,7 +22,7 @@ class DependencyUpdater(database: SchedulerDatabase)(implicit ec: ExecutionConte
       allProjects <- database.getAllProjects()
       _ = logger.info(s"Updating dependencies of ${allProjects.size} projects")
       _ <- allProjects.mapSync(updateDependencies)
-    } yield s"Updated dependencies of ${allProjects.size} projects successfully"
+    } yield s"Updated dependencies of ${allProjects.size} projects"
 
   def updateDependencies(project: Project): Future[Unit] = {
     val future =

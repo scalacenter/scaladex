@@ -10,26 +10,25 @@ import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SonatypeClient
 import scaladex.core.util.ScalaExtensions._
 
-class SonatypeSynchronizer(
+class SonatypeService(
     database: SchedulerDatabase,
     sonatypeService: SonatypeClient,
     publishProcess: PublishProcess
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
-  import SonatypeSynchronizer._
+  import SonatypeService._
 
   def syncAll(): Future[String] =
     for {
       groupIds <- database.getAllGroupIds()
       // we sort just to estimate through the logs the percentage of progress
       result <- groupIds.sortBy(_.value).mapSync(g => findAndIndexMissingArtifacts(g, None))
-    } yield s"${result.size} missing poms have been successfully indexed"
+    } yield s"Inserted ${result.size} missing poms"
 
-  def syncOne(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): Future[Unit] =
+  def syncOne(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): Future[String] =
     for {
       result <- findAndIndexMissingArtifacts(groupId, artifactNameOpt)
-      _ = logger.info(s"${result} poms have been successfully indexed")
-    } yield ()
+    } yield s"Inserted ${result} poms"
 
   private def findAndIndexMissingArtifacts(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): Future[Int] =
     for {
@@ -67,7 +66,7 @@ class SonatypeSynchronizer(
 
 }
 
-object SonatypeSynchronizer {
+object SonatypeService {
   def findMissingVersions(fromDatabase: Set[MavenReference], fromSonatype: Seq[MavenReference]): Seq[MavenReference] =
     fromSonatype.filterNot(fromDatabase)
 }

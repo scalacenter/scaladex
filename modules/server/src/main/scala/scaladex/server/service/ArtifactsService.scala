@@ -20,5 +20,5 @@ class ArtifactsService(database: SchedulerDatabase)(implicit ec: ExecutionContex
         }
         .sequence
         .map(_.sum)
-    } yield s"$total artifacts have been moved to their new projects"
+    } yield s"Moved $total artifacts"
 }

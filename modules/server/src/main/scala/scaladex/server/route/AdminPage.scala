@@ -7,11 +7,10 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.Env
 import scaladex.core.model.UserState
 import scaladex.server.TwirlSupport._
-import scaladex.server.service.AdminTaskService
-import scaladex.server.service.JobService
+import scaladex.server.service.AdminService
 import scaladex.view
 
-class AdminPage(env: Env, jobService: JobService, adminTaskService: AdminTaskService) {
+class AdminPage(env: Env, adminService: AdminService) {
 
   def route(user: Option[UserState]): Route =
     pathPrefix("admin") {
@@ -19,30 +18,32 @@ class AdminPage(env: Env, jobService: JobService, adminTaskService: AdminTaskSer
         case Some(user) if user.isAdmin(env) =>
           get {
             pathEnd {
-              val schedulers = jobService.allStatuses
-              val adminTasks = adminTaskService.getAllAdminTasks()
-              val html = view.admin.html.admin(env, user, schedulers, adminTasks)
+              val jobs = adminService.allJobStatuses
+              val tasks = adminService.allTaskStatuses
+              val html = view.admin.html.admin(env, user, jobs, tasks)
               complete(html)
             }
           } ~
             post {
-              path(Segment / "start") { job =>
-                jobService.start(job, user)
+              path("jobs" / Segment / "start") { job =>
+                adminService.startJob(job, user)
                 redirect(Uri("/admin"), StatusCodes.SeeOther)
               }
             } ~
             post {
-              path(Segment / "stop") { job =>
-                jobService.stop(job, user)
+              path("jobs" / Segment / "stop") { job =>
+                adminService.stopJob(job, user)
                 redirect(Uri("/admin"), StatusCodes.SeeOther)
               }
             } ~
-            path("index") {
-              formFields("group-id", "artifact-name") { (groupIdString, artifactNameString) =>
-                val groupId = Artifact.GroupId(groupIdString)
-                val artifactNameOpt = if (artifactNameString.isEmpty) None else Some(Artifact.Name(artifactNameString))
-                adminTaskService.indexArtifacts(groupId, artifactNameOpt, user.info.login)
-                redirect(Uri("/admin"), StatusCodes.SeeOther)
+            post {
+              path("tasks" / "missing-artifacts") {
+                formFields("group-id", "artifact-name") { (rawGroupId, rawArtifactName) =>
+                  val groupId = Artifact.GroupId(rawGroupId)
+                  val artifactNameOpt = if (rawArtifactName.isEmpty) None else Some(Artifact.Name(rawArtifactName))
+                  adminService.runMissingArtifactsTask(groupId, artifactNameOpt, user)
+                  redirect(Uri("/admin"), StatusCodes.SeeOther)
+                }
               }
             }
         case _ =>

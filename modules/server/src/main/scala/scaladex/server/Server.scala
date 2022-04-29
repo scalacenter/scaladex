@@ -29,10 +29,9 @@ import scaladex.infra.sql.DoobieUtils
 import scaladex.server.config.ServerConfig
 import scaladex.server.route._
 import scaladex.server.route.api._
-import scaladex.server.service.AdminTaskService
-import scaladex.server.service.JobService
+import scaladex.server.service.AdminService
 import scaladex.server.service.PublishProcess
-import scaladex.server.service.SonatypeSynchronizer
+import scaladex.server.service.SonatypeService
 import scaladex.view.html.notfound
 
 object Server extends LazyLogging {
@@ -73,19 +72,17 @@ object Server extends LazyLogging {
             val filesystem = FilesystemStorage(config.filesystem)
             val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(publishPool, system)
             val sonatypeClient = new SonatypeClientImpl()
-            val sonatypeSynchronizer = new SonatypeSynchronizer(schedulerDatabase, sonatypeClient, publishProcess)
-            val adminTaskService = new AdminTaskService(sonatypeSynchronizer)
-            val schedulerService =
-              new JobService(config.env, schedulerDatabase, searchEngine, githubClient, sonatypeSynchronizer)
+            val sonatypeSynchronizer = new SonatypeService(schedulerDatabase, sonatypeClient, publishProcess)
+            val adminService =
+              new AdminService(config.env, schedulerDatabase, searchEngine, githubClient, sonatypeSynchronizer)
 
             for {
-              _ <- init(webDatabase, schedulerService, searchEngine, config.elasticsearch.reset)
+              _ <- init(webDatabase, adminService, searchEngine, config.elasticsearch.reset)
               routes = configureRoutes(
                 config,
                 searchEngine,
                 webDatabase,
-                schedulerService,
-                adminTaskService,
+                adminService,
                 publishProcess
               )
               _ <- IO(
@@ -116,7 +113,7 @@ object Server extends LazyLogging {
 
   private def init(
       database: SqlDatabase,
-      scheduler: JobService,
+      adminService: AdminService,
       searchEngine: ElasticsearchEngine,
       resetElastic: Boolean
   )(
@@ -128,15 +125,14 @@ object Server extends LazyLogging {
       _ = logger.info("Waiting for ElasticSearch to start")
       _ <- IO.fromFuture(IO(searchEngine.init(resetElastic)))
       _ = logger.info("Starting all schedulers")
-      _ <- IO(scheduler.startAll())
+      _ <- IO(adminService.startAllJobs())
     } yield ()
   }
   private def configureRoutes(
       config: ServerConfig,
       searchEngine: ElasticsearchEngine,
       webDatabase: WebDatabase,
-      schedulerService: JobService,
-      adminTaskService: AdminTaskService,
+      adminService: AdminService,
       publishProcess: PublishProcess
   )(
       implicit actor: ActorSystem
@@ -148,7 +144,7 @@ object Server extends LazyLogging {
 
     val searchPages = new SearchPages(config.env, searchEngine)
     val frontPage = new FrontPage(config.env, webDatabase, searchEngine)
-    val adminPages = new AdminPage(config.env, schedulerService, adminTaskService)
+    val adminPages = new AdminPage(config.env, adminService)
     val projectPages = new ProjectPages(config.env, webDatabase, searchEngine)
     val artifactPages = new ArtifactPages(config.env, webDatabase)
     val awesomePages = new AwesomePages(config.env, searchEngine)

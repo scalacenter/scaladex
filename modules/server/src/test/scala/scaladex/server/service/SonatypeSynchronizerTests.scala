@@ -13,7 +13,7 @@ class SonatypeSynchronizerTests extends AnyFunSpec with Matchers {
       val mavenReferenceSonatype =
         Seq(MavenReference(groupId, artifactId, "0.1"), MavenReference(groupId, artifactId, "0.2"))
 
-      SonatypeSynchronizer.findMissingVersions(mavenReferenceDatabase, mavenReferenceSonatype) shouldBe Seq(
+      SonatypeService.findMissingVersions(mavenReferenceDatabase, mavenReferenceSonatype) shouldBe Seq(
         MavenReference(groupId, artifactId, "0.2")
       )
     }
