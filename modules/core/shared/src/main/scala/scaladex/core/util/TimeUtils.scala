@@ -5,7 +5,7 @@ import java.time.Instant
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.duration.MILLISECONDS
 
-object TimerUtils {
+object TimeUtils {
   def measure[A](task: => A): (A, FiniteDuration) = {
     val start = Instant.now()
     val result = task

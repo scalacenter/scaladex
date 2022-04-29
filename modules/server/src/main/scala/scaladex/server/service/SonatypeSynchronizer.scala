@@ -7,24 +7,23 @@ import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact._
 import scaladex.core.service.SchedulerDatabase
-import scaladex.core.service.SonatypeService
+import scaladex.core.service.SonatypeClient
 import scaladex.core.util.ScalaExtensions._
 
 class SonatypeSynchronizer(
     database: SchedulerDatabase,
-    sonatypeService: SonatypeService,
+    sonatypeService: SonatypeClient,
     publishProcess: PublishProcess
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
   import SonatypeSynchronizer._
 
-  def syncAll(): Future[Unit] =
+  def syncAll(): Future[String] =
     for {
       groupIds <- database.getAllGroupIds()
       // we sort just to estimate through the logs the percentage of progress
       result <- groupIds.sortBy(_.value).mapSync(g => findAndIndexMissingArtifacts(g, None))
-      _ = logger.info(s"${result.size} poms have been successfully indexed")
-    } yield ()
+    } yield s"${result.size} missing poms have been successfully indexed"
 
   def syncOne(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): Future[Unit] =
     for {

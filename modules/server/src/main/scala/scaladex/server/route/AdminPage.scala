@@ -8,10 +8,10 @@ import scaladex.core.model.Env
 import scaladex.core.model.UserState
 import scaladex.server.TwirlSupport._
 import scaladex.server.service.AdminTaskService
-import scaladex.server.service.SchedulerService
+import scaladex.server.service.JobService
 import scaladex.view
 
-class AdminPage(env: Env, schedulerSrv: SchedulerService, adminTaskService: AdminTaskService) {
+class AdminPage(env: Env, jobService: JobService, adminTaskService: AdminTaskService) {
 
   def route(user: Option[UserState]): Route =
     pathPrefix("admin") {
@@ -19,21 +19,21 @@ class AdminPage(env: Env, schedulerSrv: SchedulerService, adminTaskService: Admi
         case Some(user) if user.isAdmin(env) =>
           get {
             pathEnd {
-              val schedulers = schedulerSrv.getSchedulers()
+              val schedulers = jobService.allStatuses
               val adminTasks = adminTaskService.getAllAdminTasks()
               val html = view.admin.html.admin(env, user, schedulers, adminTasks)
               complete(html)
             }
           } ~
             post {
-              path(Segment / "start") { schedulerName =>
-                schedulerSrv.start(schedulerName)
+              path(Segment / "start") { job =>
+                jobService.start(job, user)
                 redirect(Uri("/admin"), StatusCodes.SeeOther)
               }
             } ~
             post {
-              path(Segment / "stop") { schedulerName =>
-                schedulerSrv.stop(schedulerName)
+              path(Segment / "stop") { job =>
+                jobService.stop(job, user)
                 redirect(Uri("/admin"), StatusCodes.SeeOther)
               }
             } ~

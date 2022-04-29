@@ -13,13 +13,12 @@ import scaladex.core.model.Sha1
 import scaladex.core.model.UserState
 import scaladex.core.service.Storage
 import scaladex.core.service.WebDatabase
-import scaladex.core.util.ScalaExtensions._
 import scaladex.data.cleanup.GithubRepoExtractor
 import scaladex.data.maven.ArtifactModel
 import scaladex.data.maven.PomsReader
 import scaladex.infra.CoursierResolver
 import scaladex.infra.DataPaths
-import scaladex.infra.GithubClient
+import scaladex.infra.GithubClientImpl
 import scaladex.server.service.ArtifactConverter
 
 sealed trait PublishResult
@@ -37,8 +36,10 @@ class PublishProcess(
     database: WebDatabase,
     pomsReader: PomsReader,
     env: Env
-)(implicit ec: ExecutionContext, system: ActorSystem)
+)(implicit system: ActorSystem)
     extends LazyLogging {
+  import system.dispatcher
+
   def publishPom(
       path: String,
       data: String,
@@ -77,9 +78,10 @@ class PublishProcess(
               for {
                 isNewProject <- database.insertArtifact(artifact, deps, Instant.now)
                 _ <-
-                  if (isNewProject && userState.nonEmpty)
-                    updateGithubInfo(new GithubClient(userState.get.info.token), artifact.projectRef, Instant.now())
-                  else Future.successful(())
+                  if (isNewProject && userState.nonEmpty) {
+                    val githubUpdater = new GithubUpdater(database, new GithubClientImpl(userState.get.info.token))
+                    githubUpdater.update(repo).map(_ => ())
+                  } else Future.successful(())
               } yield {
                 logger.info(s"Published $pomRef")
                 PublishResult.Success
@@ -94,12 +96,6 @@ class PublishProcess(
         }
     }
   }
-  private def updateGithubInfo(githubClient: GithubClient, ref: Project.Reference, now: Instant): Future[Unit] =
-    for {
-      githubResponse <- githubClient.getProjectInfo(ref)
-      _ <- database.updateGithubInfo(ref, githubResponse, now).failWithTry
-    } yield ()
-
 }
 
 object PublishProcess {

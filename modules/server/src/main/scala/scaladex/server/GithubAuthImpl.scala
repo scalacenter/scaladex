@@ -14,7 +14,7 @@ import scaladex.core.model.GithubResponse
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubAuth
 import scaladex.core.util.Secret
-import scaladex.infra.GithubClient
+import scaladex.infra.GithubClientImpl
 
 object Response {
   case class AccessToken(access_token: String) {
@@ -37,7 +37,7 @@ class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri: String
     } yield userState
 
   private def getUserState(token: Secret): Future[UserState] = {
-    val githubClient = new GithubClient(token)
+    val githubClient = new GithubClientImpl(token)
     githubClient.getUserState().flatMap {
       case GithubResponse.Ok(res)               => Future.successful(res)
       case GithubResponse.MovedPermanently(res) => Future.successful(res)

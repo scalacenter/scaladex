@@ -11,22 +11,22 @@ import scaladex.core.util.ScalaExtensions._
 
 class DependencyUpdater(database: SchedulerDatabase)(implicit ec: ExecutionContext) extends LazyLogging {
 
-  def updateAll(): Future[Unit] =
+  def updateAll(): Future[String] =
     for {
-      _ <- updateProjectDependencyTable()
+      status <- updateProjectDependencyTable()
       _ <- updateReleaseDependencyTable()
-    } yield ()
+    } yield status
 
-  def updateProjectDependencyTable(): Future[Unit] =
+  def updateProjectDependencyTable(): Future[String] =
     for {
       allProjects <- database.getAllProjects()
       _ = logger.info(s"Updating dependencies of ${allProjects.size} projects")
       _ <- allProjects.mapSync(updateDependencies)
-    } yield logger.info(s"Updated dependencies of ${allProjects.size} projects successfully")
+    } yield s"Updated dependencies of ${allProjects.size} projects successfully"
 
   def updateDependencies(project: Project): Future[Unit] = {
     val future =
-      if (project.githubStatus.moved)
+      if (project.githubStatus.isMoved)
         database.deleteProjectDependencies(project.reference).map(_ => ())
       else
         for {

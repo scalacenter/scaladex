@@ -22,16 +22,16 @@ import scaladex.data.util.PidLock
 import scaladex.infra.DataPaths
 import scaladex.infra.ElasticsearchEngine
 import scaladex.infra.FilesystemStorage
-import scaladex.infra.GithubClient
-import scaladex.infra.SonatypeClient
+import scaladex.infra.GithubClientImpl
+import scaladex.infra.SonatypeClientImpl
 import scaladex.infra.SqlDatabase
 import scaladex.infra.sql.DoobieUtils
 import scaladex.server.config.ServerConfig
 import scaladex.server.route._
 import scaladex.server.route.api._
 import scaladex.server.service.AdminTaskService
+import scaladex.server.service.JobService
 import scaladex.server.service.PublishProcess
-import scaladex.server.service.SchedulerService
 import scaladex.server.service.SonatypeSynchronizer
 import scaladex.view.html.notfound
 
@@ -68,21 +68,15 @@ object Server extends LazyLogging {
           case (webPool, schedulerPool, publishPool, datasourceForFlyway) =>
             val webDatabase = new SqlDatabase(datasourceForFlyway, webPool)
             val schedulerDatabase = new SqlDatabase(datasourceForFlyway, schedulerPool)
-            val githubService = config.github.token.map(new GithubClient(_))
+            val githubClient = config.github.token.map(new GithubClientImpl(_))
             val paths = DataPaths.from(config.filesystem)
             val filesystem = FilesystemStorage(config.filesystem)
             val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(publishPool, system)
-            val sonatypeClient = new SonatypeClient()
+            val sonatypeClient = new SonatypeClientImpl()
             val sonatypeSynchronizer = new SonatypeSynchronizer(schedulerDatabase, sonatypeClient, publishProcess)
             val adminTaskService = new AdminTaskService(sonatypeSynchronizer)
             val schedulerService =
-              new SchedulerService(
-                config.env,
-                schedulerDatabase,
-                searchEngine,
-                githubService,
-                sonatypeSynchronizer
-              )
+              new JobService(config.env, schedulerDatabase, searchEngine, githubClient, sonatypeSynchronizer)
 
             for {
               _ <- init(webDatabase, schedulerService, searchEngine, config.elasticsearch.reset)
@@ -122,7 +116,7 @@ object Server extends LazyLogging {
 
   private def init(
       database: SqlDatabase,
-      scheduler: SchedulerService,
+      scheduler: JobService,
       searchEngine: ElasticsearchEngine,
       resetElastic: Boolean
   )(
@@ -141,7 +135,7 @@ object Server extends LazyLogging {
       config: ServerConfig,
       searchEngine: ElasticsearchEngine,
       webDatabase: WebDatabase,
-      schedulerService: SchedulerService,
+      schedulerService: JobService,
       adminTaskService: AdminTaskService,
       publishProcess: PublishProcess
   )(

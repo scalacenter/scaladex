@@ -7,8 +7,6 @@ import scala.concurrent.Future
 import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact.MavenReference
 import scaladex.core.model.ArtifactDependency
-import scaladex.core.model.GithubInfo
-import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.model.ReleaseDependency
@@ -17,10 +15,8 @@ import scaladex.core.model.SemanticVersion
 trait SchedulerDatabase extends WebDatabase {
   // project and github
   def insertProject(project: Project): Future[Unit]
-  def updateGithubInfoAndStatus(ref: Project.Reference, githubInfo: GithubInfo, status: GithubStatus): Future[Unit]
   def updateProjectCreationDate(ref: Project.Reference, creationDate: Instant): Future[Unit]
   def computeAllProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]]
-  def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]]
 
   // project dependencies (and release dependencies)
   def computeProjectDependencies(reference: Project.Reference, version: SemanticVersion): Future[Seq[ProjectDependency]]
