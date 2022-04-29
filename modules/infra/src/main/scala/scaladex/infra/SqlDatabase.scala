@@ -13,7 +13,6 @@ import doobie.implicits._
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.GithubInfo
-import scaladex.core.model.GithubResponse
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
@@ -93,28 +92,6 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   override def updateArtifactReleaseDate(reference: Artifact.MavenReference, releaseDate: Instant): Future[Int] =
     run(ArtifactTable.updateReleaseDate.run((releaseDate, reference)))
-
-  override def updateGithubInfo(
-      repo: Project.Reference,
-      response: GithubResponse[(Project.Reference, GithubInfo)],
-      now: Instant
-  ): Future[Unit] =
-    response match {
-      case GithubResponse.Ok((_, info)) =>
-        val status = GithubStatus.Ok(now)
-        updateGithubInfoAndStatus(repo, info, status)
-
-      case GithubResponse.MovedPermanently((destination, info)) =>
-        val status = GithubStatus.Moved(now, destination)
-        logger.info(s"$repo moved to $status")
-        moveProject(repo, info, status)
-
-      case GithubResponse.Failed(code, reason) =>
-        val status =
-          if (code == 404) GithubStatus.NotFound(now) else GithubStatus.Failed(now, code, reason)
-        logger.info(s"Failed to download github info for $repo because of $status")
-        updateGithubStatus(repo, status)
-    }
 
   override def updateGithubInfoAndStatus(
       ref: Project.Reference,
@@ -288,7 +265,7 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
         } yield version
     }
 
-  def moveProject(
+  override def moveProject(
       ref: Project.Reference,
       githubInfo: GithubInfo,
       status: GithubStatus.Moved

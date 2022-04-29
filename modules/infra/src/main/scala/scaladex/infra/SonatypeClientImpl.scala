@@ -25,12 +25,12 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact.MavenReference
 import scaladex.core.model.SbtPlugin
 import scaladex.core.model.SemanticVersion
-import scaladex.core.service.SonatypeService
+import scaladex.core.service.SonatypeClient
 import scaladex.core.util.JsoupUtils
 
-class SonatypeClient()(implicit val system: ActorSystem)
+class SonatypeClientImpl()(implicit val system: ActorSystem)
     extends CommonAkkaHttpClient
-    with SonatypeService
+    with SonatypeClient
     with LazyLogging {
   private implicit val ec: ExecutionContextExecutor = system.dispatcher
   private val sonatypeUri = "https://repo1.maven.org/maven2"

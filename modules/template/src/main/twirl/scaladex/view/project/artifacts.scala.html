@@ -5,7 +5,7 @@
 @import scaladex.core.model.Language
 @import scala.collection.SortedMap
 @import scaladex.core.util.ScalaExtensions._
-@import scaladex.core.util.TimerUtils
+@import scaladex.core.util.TimeUtils
 @import scaladex.view.Formats
 
 @import java.time.Instant
@@ -49,7 +49,7 @@
               <div class="col-md-9">
                 <div class="artifact-info">
                   <a data-toggle="tooltip" data-placement="top" title="@formatInstant(releaseDate)">
-                    @TimerUtils.toFiniteDuration(releaseDate, Instant.now()).prettyPrint
+                    @TimeUtils.toFiniteDuration(releaseDate, Instant.now()).prettyPrint
                     ago<i class="fa-solid fa-calendar-days"></i>
                   </a>
                   <br>

@@ -9,7 +9,6 @@ import scala.concurrent.Future
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.GithubInfo
-import scaladex.core.model.GithubResponse
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
@@ -22,7 +21,6 @@ import scaladex.core.service.SchedulerDatabase
 import scaladex.core.web.ArtifactsPageParams
 
 class InMemoryDatabase extends SchedulerDatabase {
-
   private val allProjects = mutable.Map[Project.Reference, Project]()
   private val allArtifacts = mutable.Map[Project.Reference, Seq[Artifact]]()
   private val allDependencies = mutable.Buffer[ArtifactDependency]()
@@ -174,22 +172,6 @@ class InMemoryDatabase extends SchedulerDatabase {
       allProjects.update(ref, allProjects(ref).copy(githubInfo = Some(githubInfo), githubStatus = githubStatus))
     )
 
-  override def updateGithubInfo(
-      repo: Project.Reference,
-      response: GithubResponse[(Project.Reference, GithubInfo)],
-      now: Instant
-  ): Future[Unit] =
-    response match {
-      case GithubResponse.Ok((repo, githubInfo)) =>
-        Future.successful(
-          allProjects.update(
-            repo,
-            allProjects(repo).copy(githubInfo = Some(githubInfo), githubStatus = GithubStatus.Ok(now))
-          )
-        )
-      case _ => Future.successful(())
-    }
-
   override def getArtifacts(
       ref: Project.Reference,
       artifactName: Artifact.Name,
@@ -224,4 +206,11 @@ class InMemoryDatabase extends SchedulerDatabase {
     Future.successful {
       allArtifacts.getOrElse(ref, Seq.empty).filter(a => a.artifactName == artifactName && a.version == version)
     }
+
+  override def updateGithubStatus(ref: Project.Reference, status: GithubStatus): Future[Unit] =
+    Future.successful(
+      allProjects.update(ref, allProjects(ref).copy(githubStatus = status))
+    )
+
+  override def moveProject(ref: Project.Reference, info: GithubInfo, status: GithubStatus.Moved): Future[Unit] = ???
 }

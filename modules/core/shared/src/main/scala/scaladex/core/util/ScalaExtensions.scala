@@ -73,5 +73,20 @@ object ScalaExtensions {
         case _                                                           => duration.toString()
       }
     }
+
+    def shortPrint: String = {
+      def plural(n: Long, word: String): String = if (n == 1) s"1 $word" else s"$n ${word}s"
+
+      duration match {
+        case duration if duration.toSeconds == 0                         => s"${duration.toMillis}ms"
+        case duration if duration.toMinutes == 0                         => s"${duration.toSeconds}s"
+        case duration if duration.toHours == 0                           => s"${duration.toMinutes}min"
+        case duration if duration.toDays == 0                            => s"${duration.toHours}h"
+        case duration if duration.toDays < 30                            => plural(duration.toDays, "day")
+        case duration if duration.toDays >= 30 && duration.toDays <= 365 => plural(duration.toDays / 30, "month")
+        case duration if duration.toDays > 365                           => plural(duration.toDays / 365, "year")
+        case _                                                           => duration.toString()
+      }
+    }
   }
 }
