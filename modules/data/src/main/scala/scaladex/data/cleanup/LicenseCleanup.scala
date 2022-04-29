@@ -16,12 +16,15 @@ class LicenseCleanup(paths: DataPaths) {
 
   private val licensesFromName =
     License.all.groupBy(_.shortName).view.mapValues(_.head).toMap
-  private val variaNameToLicense: Map[String, License] =
+  private val licenseIdToLicense: Map[String, License] =
     innerJoin(byName, licensesFromName)((_, _)).flatMap {
       case (_, (xs, license)) =>
         xs.map((_, license))
     }
 
   def apply(d: maven.ArtifactModel): Set[License] =
-    d.licenses.map(l => variaNameToLicense.get(l.name)).flatten.toSet
+    d.licenses.map(l => licenseIdToLicense.get(l.name)).flatten.toSet
+
+  def licenseFrom(id: String): Option[License] =
+    licenseIdToLicense.get(id)
 }

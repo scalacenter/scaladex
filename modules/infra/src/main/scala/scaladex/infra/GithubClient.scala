@@ -103,7 +103,8 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
       codeOfConduct = communityProfile.flatMap(_.codeOfConductFile).map(Url),
       chatroom = chatroom.map(Url),
       openIssues = openIssues.map(_.toGithubIssue).toList,
-      scalaPercentage = Option(scalaPercentage)
+      scalaPercentage = Option(scalaPercentage),
+      license = None // Need to somehow get access to the `LicenseCleanup` here.
     )
 
   def getReadme(ref: Project.Reference): Future[Option[String]] = {
