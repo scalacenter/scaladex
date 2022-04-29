@@ -133,8 +133,8 @@
       @for((ref, (scope, versions)) <- dependencies.toSeq.sortBy { case (ref, _) => ref }){
         <li>
           <div class="row">
-            <div class="col-sm-8"><a href="/@ref">@ref</a> @scopeSpan(scope)</div>
-            <div class="col-sm-3">@versions.mkString(", ")</div>
+            <div class="col-xs-8"><a href="/@ref">@ref</a> @scopeSpan(scope)</div>
+            <div class="col-xs-4">@versions.mkString(", ")</div>
           </div>
         </li>
       }
@@ -149,8 +149,8 @@
       @for((ref, (scope, version)) <- dependencies.take(100).toSeq.sortBy { case (ref, _) => ref }){
         <li>
           <div class="row">
-            <div class="col-sm-8"><a href="/@ref">@ref</a> @scopeSpan(scope)</div>
-            <div class="col-sm-3">on @version</div>
+            <div class="col-xs-8"><a href="/@ref">@ref</a> @scopeSpan(scope)</div>
+            <div class="col-xs-4">on @version</div>
           </div>
         </li>
       }
