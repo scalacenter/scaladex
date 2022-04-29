@@ -11,7 +11,7 @@ import cats.effect._
 import com.typesafe.scalalogging.LazyLogging
 import doobie.hikari._
 import scaladex.core.util.ScalaExtensions._
-import scaladex.core.util.TimerUtils
+import scaladex.core.util.TimeUtils
 import scaladex.data.init.Init
 import scaladex.data.util.PidLock
 import scaladex.infra.DataPaths
@@ -102,7 +102,7 @@ object Main extends LazyLogging {
     }
 
     logger.info(s"Executing $name")
-    val (_, duration) = TimerUtils.measure(run())
+    val (_, duration) = TimeUtils.measure(run())
     logger.info(s"$name done in ${duration.prettyPrint}")
     system.terminate()
   }

@@ -8,7 +8,7 @@ import scala.concurrent.Future
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.GithubInfo
-import scaladex.core.model.GithubResponse
+import scaladex.core.model.GithubStatus
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
@@ -44,15 +44,16 @@ trait WebDatabase {
   // projects
   def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit]
   def getAllProjects(): Future[Seq[Project]]
+  def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]]
   def getProject(projectRef: Project.Reference): Future[Option[Project]]
   def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]]
-  def updateGithubInfo(
-      repo: Project.Reference,
-      response: GithubResponse[(Project.Reference, GithubInfo)],
-      now: Instant
-  ): Future[Unit]
   def countVersions(ref: Project.Reference): Future[Long]
   def getLastVersion(ref: Project.Reference, defaultArtifactName: Option[Artifact.Name]): Future[SemanticVersion]
+
+  // Github info and status
+  def updateGithubInfoAndStatus(ref: Project.Reference, info: GithubInfo, status: GithubStatus): Future[Unit]
+  def updateGithubStatus(ref: Project.Reference, status: GithubStatus): Future[Unit]
+  def moveProject(ref: Project.Reference, info: GithubInfo, status: GithubStatus.Moved): Future[Unit]
 
   // project dependencies
   def countProjectDependents(projectRef: Project.Reference): Future[Long]

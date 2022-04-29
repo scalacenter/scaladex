@@ -8,14 +8,14 @@ import scaladex.infra.config.GithubConfig
 import scaladex.core.model.GithubResponse
 import scaladex.core.test.Values._
 
-class GithubClientTests extends AsyncFunSpec with Matchers {
+class GithubClientImplTests extends AsyncFunSpec with Matchers {
   implicit val system: ActorSystem = ActorSystem("github-client-tests")
   val config: GithubConfig = GithubConfig.load()
 
   val isCI = System.getenv("CI") != null
 
   // you need to configure locally a token
-  val client = new GithubClient(config.token.get)
+  val client = new GithubClientImpl(config.token.get)
 
   it("getProjectInfo") {
     for (response <- client.getProjectInfo(Scalafix.reference))

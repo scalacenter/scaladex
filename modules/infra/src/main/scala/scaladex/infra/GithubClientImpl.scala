@@ -35,15 +35,15 @@ import scaladex.core.model.Project
 import scaladex.core.model.Url
 import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
-import scaladex.core.service.GithubService
+import scaladex.core.service.GithubClient
 import scaladex.core.util.ScalaExtensions._
 import scaladex.core.util.Secret
 import scaladex.infra.github.GithubModel
 import scaladex.infra.github.GithubModel._
 
-class GithubClient(token: Secret)(implicit val system: ActorSystem)
+class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
     extends CommonAkkaHttpClient
-    with GithubService
+    with GithubClient
     with LazyLogging {
   private val credentials: OAuth2BearerToken = OAuth2BearerToken(token.decode)
   private val acceptJson = RawHeader("Accept", "application/vnd.github.v3+json")
@@ -418,5 +418,3 @@ class GithubClient(token: Secret)(implicit val system: ActorSystem)
 
   private def perPage(value: Int = 100) = s"per_page=$value"
 }
-
-object GithubClient {}

@@ -7,7 +7,7 @@ import scaladex.core.model.GithubResponse
 import scaladex.core.model.Project
 import scaladex.core.model.UserState
 
-trait GithubService {
+trait GithubClient {
   def getProjectInfo(ref: Project.Reference): Future[GithubResponse[(Project.Reference, GithubInfo)]]
   def getUserState(): Future[GithubResponse[UserState]]
   def getUserOrganizations(login: String): Future[Seq[Project.Organization]]
