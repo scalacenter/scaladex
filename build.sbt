@@ -31,7 +31,7 @@ val amm = inputKey[Unit]("Start Ammonite REPL")
 lazy val ammoniteSettings = Def.settings(
   amm := (Test / run).evaluated,
   amm / aggregate := false,
-  libraryDependencies += ("com.lihaoyi" % "ammonite" % "2.5.2" % Test).cross(CrossVersion.full),
+  libraryDependencies += ("com.lihaoyi" % "ammonite" % "2.5.3" % Test).cross(CrossVersion.full),
   Test / sourceGenerators += Def.task {
     val file = (Test / sourceManaged).value / "amm.scala"
     IO.write(
