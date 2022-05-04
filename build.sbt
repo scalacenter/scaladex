@@ -86,7 +86,7 @@ lazy val infra = project
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4sVersion,
       "org.json4s" %% "json4s-native" % V.json4s,
-      "org.flywaydb" % "flyway-core" % "8.5.8", // for database migration
+      "org.flywaydb" % "flyway-core" % "8.5.10", // for database migration
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
@@ -195,7 +195,7 @@ lazy val server = project
       "org.webjars" % "bootstrap-sass" % "3.4.1",
       "org.webjars" % "bootstrap-switch" % "3.3.4",
       "org.webjars" % "bootstrap-select" % "1.13.18",
-      "org.webjars" % "font-awesome" % "6.0.0",
+      "org.webjars" % "font-awesome" % "6.1.0",
       "org.webjars" % "jquery" % "3.6.0",
       "org.webjars.bower" % "select2" % "4.0.3"
     ),
@@ -265,7 +265,7 @@ lazy val V = new {
   val akkaHttpVersion = "10.2.8"
   val elastic4sVersion = "7.10.9"
   val nscalaTimeVersion = "2.30.0"
-  val scalatest = "3.2.11"
+  val scalatest = "3.2.12"
   val circeVersion = "0.14.1"
   val json4s = "4.0.5"
 }

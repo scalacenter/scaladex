@@ -28,7 +28,6 @@ case class DataPaths(contrib: Path) {
   assert(Files.isDirectory(contrib))
 
   val claims: Path = initJsonFile(contrib, "claims.json")
-  val licensesByName: Path = initJsonFile(contrib, "licenses-by-name.json")
   val nonStandard: Path = initJsonFile(contrib, "non-standard.json")
 
   private def initJsonFile(parent: Path, name: String): Path = {
