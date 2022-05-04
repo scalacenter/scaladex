@@ -5,6 +5,7 @@ import scala.concurrent.Future
 import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
 import scala.util.Try
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.ContentTypes
@@ -28,7 +29,13 @@ import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.Json
 import io.circe.syntax._
-import scaladex.core.model.{GithubInfo, GithubResponse, License, Project, Url, UserInfo, UserState}
+import scaladex.core.model.GithubInfo
+import scaladex.core.model.GithubResponse
+import scaladex.core.model.License
+import scaladex.core.model.Project
+import scaladex.core.model.Url
+import scaladex.core.model.UserInfo
+import scaladex.core.model.UserState
 import scaladex.core.service.GithubClient
 import scaladex.core.util.ScalaExtensions._
 import scaladex.core.util.Secret
