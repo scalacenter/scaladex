@@ -9,6 +9,7 @@ import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Java
 import scaladex.core.model.Jvm
+import scaladex.core.model.License
 import scaladex.core.model.Project
 import scaladex.core.model.SbtPlugin
 import scaladex.core.model.Scala
@@ -28,7 +29,6 @@ private case class ArtifactMeta(
 
 class ArtifactConverter(paths: DataPaths) extends LazyLogging {
   private val nonStandardLibs = NonStandardLib.load(paths)
-  private val licenseCleanup = new LicenseCleanup(paths)
 
   def convert(
       pom: ArtifactModel,
@@ -48,7 +48,7 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
         pom.description,
         creationDate,
         None,
-        licenseCleanup(pom),
+        pom.licenses.flatMap(l => License.get(l.name)).toSet,
         meta.isNonStandard,
         meta.binaryVersion.platform,
         meta.binaryVersion.language
