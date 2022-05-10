@@ -85,6 +85,7 @@
               <span>
                 <a data-toggle="tooltip" data-placement="bottom" title="Contributors" href="#">@github.contributorCount <i class="fa-solid fa-users"></i></a>
               </span>
+							<div class="commit-activity-container"><canvas class="commit-activity" margin="5" data-commit-activity="@github.commitActivity.map(_.total).mkString(",")"/></div>
             }
             </div>
           </div>

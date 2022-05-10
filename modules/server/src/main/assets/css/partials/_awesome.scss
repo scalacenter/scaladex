@@ -318,6 +318,9 @@
         @media screen and (min-width: $screen-md-min) {
           text-align: right;
         }
+				.commit-activity-container{
+					max-height:40px;
+				}
       }
       a {
         color: $gray;

@@ -21,9 +21,9 @@ object Sparkline {
     obj.height = obj.parentElement.clientHeight
     val ctx = obj.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
     val spark = obj.getAttribute("data-commit-activity").split(",").map(_.toInt)
-    val margin = 10
-    val ratioW = ((obj.width - margin * 2) * 1) / spark.length
-    val ratioH = ((obj.height - margin * 2) * .8) / spark.max
+    val margin = obj.getAttribute("margin").toInt
+    val ratioW = Math.ceil(obj.width / (spark.length + 1.0))
+    val ratioH = ((obj.height - margin) * .8) / spark.max
 
     val grad = ctx.createLinearGradient(0, 0, obj.width, obj.height)
     grad.addColorStop(0, "rgb(0, 122, 201)"); // Initial path colour
@@ -40,20 +40,21 @@ object Sparkline {
     ctx.beginPath()
 
     // Move to starting point
-    ctx.moveTo(margin, obj.height - (spark.head * ratioH + margin))
+    ctx.moveTo(0, obj.height - (spark.head * ratioH + margin))
 
     // Start drawing the sparkline
     spark.tail.zip(LazyList.from(1)).foreach {
       case (sparkNode, index) =>
-        val x = index * ratioW + margin
+        val x = index * ratioW
         val y = obj.height - (sparkNode * ratioH + margin)
         ctx.lineTo(x, y)
+        println(s"x : $x, ${spark.length}")
     }
     ctx.stroke()
 
     // Wrapping up back to the beggining in order to fill the bottom part of the chart
-    ctx.lineTo((spark.length - 1) * ratioW + margin, obj.height)
-    ctx.lineTo(margin, obj.height)
+    ctx.lineTo((spark.length - 1) * ratioW, obj.height)
+    ctx.lineTo(0, obj.height)
     ctx.fill()
   }
 }
