@@ -437,6 +437,13 @@ main {
         @media screen and (min-width: $screen-md-min) {
           text-align: right;
         }
+				.commit-activity-container {
+					max-height:50px;
+					padding-left:20px;
+				}
+				canvas.commit-activity {
+					max-width:100%;
+				}
       }
       a {
         color: $gray;
