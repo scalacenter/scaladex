@@ -3,7 +3,7 @@ package scaladex.infra
 import java.time.Instant
 
 import io.circe._
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.generic.semiauto._
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Category
@@ -48,7 +48,52 @@ object Codecs {
       Encoder[Map[String, String]].contramap(doc => Map(doc.label -> doc.pattern))
     )
   implicit val githubInfoDocumentCodec: Codec[GithubInfoDocument] = deriveCodec
-  implicit val githubInfoCodec: Codec[GithubInfo] = deriveCodec
+  implicit val githubInfoEncoder: Encoder[GithubInfo] = deriveEncoder
+  implicit val githubInfoDecoder: Decoder[GithubInfo] = new Decoder[GithubInfo] {
+    final def apply(c: HCursor): Decoder.Result[GithubInfo] =
+      for {
+        homepage <- c.downField("homepage").as[Option[Url]]
+        description <- c.downField("description").as[Option[String]]
+        logo <- c.downField("logo").as[Option[Url]]
+        stars <- c.downField("stars").as[Option[Int]]
+        forks <- c.downField("forks").as[Option[Int]]
+        watchers <- c.downField("watchers").as[Option[Int]]
+        issues <- c.downField("issues").as[Option[Int]]
+        creationDate <- c.downField("creationDate").as[Option[Instant]]
+        readme <- c.downField("readme").as[Option[String]]
+        contributors <- c.downField("contributors").as[Seq[GithubContributor]]
+        commits <- c.downField("commits").as[Option[Int]]
+        topics <- c.downField("topics").as[Set[String]]
+        contributingGuide <- c.downField("contributingGuide").as[Option[Url]]
+        codeOfConduct <- c.downField("codeOfConduct").as[Option[Url]]
+        chatroom <- c.downField("chatroom").as[Option[Url]]
+        openIssues <- c.downField("openIssues").as[Seq[GithubIssue]]
+        scalaPercentage <- c.downField("scalaPercentage").as[Option[Int]]
+        commitActivity <- c
+          .downField("commitActivity")
+          .as[Option[Seq[GithubCommitActivity]]]
+          .map(_.getOrElse(Seq.empty))
+      } yield GithubInfo(
+        homepage,
+        description,
+        logo,
+        stars,
+        forks,
+        watchers,
+        issues,
+        creationDate,
+        readme,
+        contributors,
+        commits,
+        topics,
+        contributingGuide,
+        codeOfConduct,
+        chatroom,
+        openIssues,
+        scalaPercentage,
+        commitActivity
+      )
+  }
 
   implicit val categoryCodec: Codec[Category] = fromString(_.label, Category.byLabel)
   implicit val settings: Codec[Project.Settings] = deriveCodec
