@@ -215,7 +215,7 @@ object Artifact {
 
     private def FullParser[A: P] = {
       Start ~
-        (Alpha | Digit | "-" | "." | (!(BinaryVersion.IntermediateParserButNotInvalidSbt ~ End) ~ "_")).rep.! ~ // must end with scala target
+        (Alpha | Digit | "-" | "." | !(BinaryVersion.IntermediateParserButNotInvalidSbt ~ End) ~ "_").rep.! ~ // must end with scala target
         BinaryVersion.Parser ~
         End
     }.map {

@@ -183,7 +183,7 @@ object Client {
   def main(token: UndefOr[String]): Unit = {
     document.addEventListener[KeyboardEvent]("keydown", jumpToSearchInput _)
 
-    val autocompletion = new Autocompletion()
+    val autocompletion = new Autocompletion
 
     Dom.getSearchBox.foreach { searchBox =>
       searchBox.addEventListener[Event]("input", autocompletion.run _)

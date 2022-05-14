@@ -5,7 +5,7 @@ trait Parsers {
   import fastparse._
 
   def Alpha[A: P]: P[String] =
-    CharPred(c => (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')).!
+    CharPred(c => c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z').!
 
   def Digit[A: P]: P[String] = CharIn("0123456789").!
 

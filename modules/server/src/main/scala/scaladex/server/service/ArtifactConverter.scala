@@ -101,7 +101,7 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
             SemanticVersion
               .parse(rawScalaVersion)
               .zip(SemanticVersion.parse(rawSbtVersion)) match {
-              case Some((scalaVersion, sbtVersion)) =>
+              case Some(scalaVersion, sbtVersion) =>
                 Some(
                   ArtifactMeta(
                     artifactName = pom.artifactId,

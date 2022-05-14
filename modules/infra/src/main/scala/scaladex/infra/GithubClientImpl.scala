@@ -157,9 +157,9 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
   def getRepository(ref: Project.Reference): Future[GithubResponse[GithubModel.Repository]] = {
     val request = HttpRequest(uri = s"${repoUrl(ref)}").addHeader(acceptJson).addCredentials(credentials)
     process(request).flatMap {
-      case GithubResponse.Ok((_, entity)) =>
+      case GithubResponse.Ok(_, entity) =>
         Unmarshal(entity).to[GithubModel.Repository].map(GithubResponse.Ok(_))
-      case GithubResponse.MovedPermanently((_, entity)) =>
+      case GithubResponse.MovedPermanently(_, entity) =>
         Unmarshal(entity).to[GithubModel.Repository].map(GithubResponse.MovedPermanently(_))
       case GithubResponse.Failed(code, reason) => Future.successful(GithubResponse.Failed(code, reason))
     }
@@ -193,7 +193,7 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
 
   def getPercentageOfLanguage(ref: Project.Reference, language: String): Future[Int] = {
     def toPercentage(portion: Int, total: Int): Int =
-      ((portion.toFloat / total) * 100).toInt
+      (portion.toFloat / total * 100).toInt
     val request =
       HttpRequest(uri = s"${repoUrl(ref)}/languages").addHeader(acceptJson).addCredentials(credentials)
     get[Map[String, Int]](request).map { response =>
@@ -356,9 +356,9 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
          |}""".stripMargin
     val request = graphqlRequest(query)
     process(request).flatMap {
-      case GithubResponse.Ok((_, entity)) =>
+      case GithubResponse.Ok(_, entity) =>
         Unmarshal(entity).to[GithubModel.UserInfo].map(res => GithubResponse.Ok(res.toCoreUserInfo(token)))
-      case GithubResponse.MovedPermanently((_, entity)) =>
+      case GithubResponse.MovedPermanently(_, entity) =>
         Unmarshal(entity).to[GithubModel.UserInfo].map(res => GithubResponse.Ok(res.toCoreUserInfo(token)))
       case GithubResponse.Failed(code, errorMessage) =>
         Future.successful(GithubResponse.Failed(code, errorMessage))
@@ -389,9 +389,9 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
 
   private def getRaw(request: HttpRequest): Future[(Seq[HttpHeader], ResponseEntity)] =
     process(request).map {
-      case GithubResponse.Ok((headers, entity))               => (headers, entity)
-      case GithubResponse.MovedPermanently((headers, entity)) => (headers, entity)
-      case GithubResponse.Failed(code, reason)                => throw new Exception(s"$code: $reason")
+      case GithubResponse.Ok(headers, entity)               => (headers, entity)
+      case GithubResponse.MovedPermanently(headers, entity) => (headers, entity)
+      case GithubResponse.Failed(code, reason)              => throw new Exception(s"$code: $reason")
     }
 
   private def process(request: HttpRequest): Future[GithubResponse[(Seq[HttpHeader], ResponseEntity)]] = {

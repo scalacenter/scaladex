@@ -60,7 +60,7 @@ object DoobieUtils {
     } yield Transactor.fromDataSource[IO](datasource, ce, be)
 
   def getHikariDataSource(conf: PostgreSQLConfig): HikariDataSource = {
-    val config: HikariConfig = new HikariConfig()
+    val config: HikariConfig = new HikariConfig
     config.setDriverClassName(conf.driver)
     config.setJdbcUrl(conf.url)
     config.setUsername(conf.user)

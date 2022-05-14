@@ -74,7 +74,7 @@ object Postgres extends AutoPlugin {
     val container = new PostgreSQLContainer(dockerImage)
 
     // change the wait strategy because of https://github.com/testcontainers/testcontainers-java/issues/455
-    val waitStrategy = new HostPortWaitStrategy()
+    val waitStrategy = new HostPortWaitStrategy
     container.setWaitStrategy(waitStrategy)
 
     container.withDatabaseName(database)

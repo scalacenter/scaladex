@@ -103,7 +103,7 @@ package object html {
         "all arguments must be positive"
       )
 
-      val window = (max.min(toShow)) / 2
+      val window = max.min(toShow) / 2
       val left = selected - window
       val right = selected + window
 

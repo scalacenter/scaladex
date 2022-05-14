@@ -74,7 +74,7 @@ class PublishProcess(
         // userState can be empty when the request of publish is done through the scheduler
         if (userState.isEmpty || userState.get.hasPublishingAuthority(env) || userState.get.repos.contains(repo)) {
           converter.convert(pom, repo, creationDate) match {
-            case Some((artifact, deps)) =>
+            case Some(artifact, deps) =>
               for {
                 isNewProject <- database.insertArtifact(artifact, deps, Instant.now)
                 _ <-

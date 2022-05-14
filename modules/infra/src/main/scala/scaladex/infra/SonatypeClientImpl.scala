@@ -28,7 +28,7 @@ import scaladex.core.model.SemanticVersion
 import scaladex.core.service.SonatypeClient
 import scaladex.core.util.JsoupUtils
 
-class SonatypeClientImpl()(implicit val system: ActorSystem)
+class SonatypeClientImpl(implicit val system: ActorSystem)
     extends CommonAkkaHttpClient
     with SonatypeClient
     with LazyLogging {

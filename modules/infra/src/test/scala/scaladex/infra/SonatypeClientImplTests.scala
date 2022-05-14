@@ -9,7 +9,7 @@ import scaladex.core.model.SemanticVersion
 
 class SonatypeClientImplTests extends AsyncFunSpec with Matchers {
   implicit val system: ActorSystem = ActorSystem("sonatype-client-tests")
-  val sonatypeClient = new SonatypeClientImpl()
+  val sonatypeClient = new SonatypeClientImpl
   val groupId: GroupId = GroupId("ch.epfl.scala")
   val artifactId: ArtifactId = ArtifactId.parse("sbt-scalafix_2.12_1.0").get
   val version: SemanticVersion = SemanticVersion.parse("0.9.23").get

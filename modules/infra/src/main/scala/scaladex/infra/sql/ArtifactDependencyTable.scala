@@ -80,7 +80,7 @@ object ArtifactDependencyTable {
     selectRequest(
       fullJoin,
       s"${sourceReleaseFields.mkString(", ")}, MIN(d.release_date), ${targetReleaseFields.mkString(", ")}, MIN(t.release_date), d.scope",
-      groupBy = (sourceReleaseFields ++ targetReleaseFields) ++ Seq("d.scope")
+      groupBy = sourceReleaseFields ++ targetReleaseFields ++ Seq("d.scope")
     )
   }
 

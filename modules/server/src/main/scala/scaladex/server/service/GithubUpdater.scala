@@ -46,11 +46,11 @@ class GithubUpdater(database: WebDatabase, github: GithubClient)(implicit ec: Ex
   ): Future[GithubStatus] = {
     val now = Instant.now()
     response match {
-      case GithubResponse.Ok((_, info)) =>
+      case GithubResponse.Ok(_, info) =>
         val status = GithubStatus.Ok(now)
         database.updateGithubInfoAndStatus(repo, info, status).map(_ => status)
 
-      case GithubResponse.MovedPermanently((destination, info)) =>
+      case GithubResponse.MovedPermanently(destination, info) =>
         val status = GithubStatus.Moved(now, destination)
         logger.info(s"$repo moved to $status")
         database.moveProject(repo, info, status).map(_ => status)

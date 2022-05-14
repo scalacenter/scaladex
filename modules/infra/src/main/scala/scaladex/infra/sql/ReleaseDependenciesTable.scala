@@ -27,9 +27,9 @@ object ReleaseDependenciesTable {
   val scope = "scope"
   val sourceKeys: Seq[String] = sourcePrimaryKeys :+ "source_release_date"
   val targetKeys: Seq[String] = targetPrimaryKeys :+ "target_release_date"
-  private val primaryKeys = (sourcePrimaryKeys ++ targetPrimaryKeys) :+ scope
+  private val primaryKeys = sourcePrimaryKeys ++ targetPrimaryKeys :+ scope
 
-  private val fields: Seq[String] = (sourceKeys ++ targetKeys) :+ scope
+  private val fields: Seq[String] = sourceKeys ++ targetKeys :+ scope
 
   val insertIfNotExists: Update[ReleaseDependency] =
     insertOrUpdateRequest(table, fields, primaryKeys)
