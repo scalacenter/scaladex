@@ -223,7 +223,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
       "org.endpoints4s" %%% "algebra" % "1.6.0",
       "org.endpoints4s" %% "json-schema-playjson" % "1.7.0" % Test,
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
-      "org.jsoup" % "jsoup" % "1.14.3"
+      "org.jsoup" % "jsoup" % "1.15.1"
     ) ++ Seq(
       "io.circe" %%% "circe-core",
       "io.circe" %%% "circe-generic",
@@ -244,7 +244,7 @@ lazy val data = project
       "com.typesafe.akka" %% "akka-serialization-jackson" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-slf4j" % V.akkaVersion,
       "org.apache.maven" % "maven-model-builder" % "3.3.9",
-      "org.jsoup" % "jsoup" % "1.14.3",
+      "org.jsoup" % "jsoup" % "1.15.1",
       "org.apache.ivy" % "ivy" % "2.5.0",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-json4s" % "1.39.2",
