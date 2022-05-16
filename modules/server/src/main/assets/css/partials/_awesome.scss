@@ -199,10 +199,23 @@
         margin: 0;
       }
     }
-    .stats {
-      vertical-align: middle;
-      float: right;
-    }
+		.title {
+			width: 100%;
+			display: inline-grid;
+			grid-template-columns: 2.5fr 1fr 0.5fr;
+			column-gap: 3px;
+
+			.stats {
+				align-self:center;
+				justify-self:end;
+			}
+			.commit-activity-container {
+				max-height:20px;
+			}
+			canvas.commit-activity {
+				max-width:100%;
+			}
+		}
   }
 }
 
