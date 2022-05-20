@@ -21,9 +21,21 @@
             </div>
           } else {
             <div>
-              @githubUserAvatar(project.githubInfo.flatMap(_.logo))
-              <h4>@project.reference</h4>
+							<div class="header">
+								@githubUserAvatar(project.githubInfo.flatMap(_.logo))
+								<h4>@project.reference</h4>
 
+								@for(github <- project.githubInfo) {
+									@defining(github.commitActivity.sortBy(_.week).map(_.total).mkString(",")){ commitsPerWeek =>
+										@if(commitsPerWeek.nonEmpty){
+											<div class="commit-activity-container">	
+												<canvas class="commit-activity" margin="2" data-commit-activity="@commitsPerWeek" />
+											</div>
+										}
+
+									}
+								}
+							</div>
               @for(github <- project.githubInfo) {
                 @for(description <- github.description) {
                   <p class="description emojify">@description</p>
@@ -98,14 +110,6 @@
               <span>
                 <a data-toggle="tooltip" data-placement="bottom" title="Contributors" href="#">@github.contributorCount <i class="fa-solid fa-users"></i></a>
               </span>
-							@defining(github.commitActivity.sortBy(_.week).map(_.total).mkString(",")){ commitsPerWeek =>
-								@if(commitsPerWeek.nonEmpty){
-									<div class="commit-activity-container">	
-										<canvas class="commit-activity" margin="3" data-commit-activity="@commitsPerWeek" />
-									</div>
-								}
-
-							}
             }
             </div>
           </div>

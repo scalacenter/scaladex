@@ -404,10 +404,15 @@ main {
       .targets {
         padding-left: 16px;
       }
-      h4 {
-        padding-left: 44px;
+			.header {
+				display: grid;
+				grid-template-columns: min-content max-content fit-content(150px);
+				grid-column-gap:10px;
+				align-items:center;
         margin-bottom: 7px;
-        margin-top: 0;
+			}
+      h4 {
+        margin: 0;
         a {
           color: $gray-darker;
         }
@@ -437,14 +442,13 @@ main {
         @media screen and (min-width: $screen-md-min) {
           text-align: right;
         }
-				.commit-activity-container {
-					max-height:50px;
-					padding-left:20px;
-				}
-				canvas.commit-activity {
-					max-width:100%;
-				}
       }
+			.commit-activity-container {
+				max-height:20px;
+			}
+			canvas.commit-activity {
+				max-width:100%;
+			}
       a {
         color: $gray;
         &:hover,
