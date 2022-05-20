@@ -48,7 +48,6 @@ object Sparkline {
         val x = index * ratioW
         val y = obj.height - (sparkNode * ratioH + margin)
         ctx.lineTo(x, y)
-        println(s"x : $x, ${spark.length}")
     }
     ctx.stroke()
 

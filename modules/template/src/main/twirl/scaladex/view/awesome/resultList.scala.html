@@ -11,16 +11,16 @@
 						<div class="header">
 							@githubUserAvatar(project.githubInfo.flatMap(_.logo))
 							<h4>@project.reference</h4>
-            @for(github <- project.githubInfo) {
-							@defining(github.commitActivity.sortBy(_.week).map(_.total).mkString(",")){ commitsPerWeek =>
-								@if(commitsPerWeek.nonEmpty){
-									<div class="commit-activity-container">	
-										<canvas class="commit-activity" margin="2" data-commit-activity="@commitsPerWeek" />
-									</div>
-								}
+							@for(github <- project.githubInfo) {
+								@defining(github.commitActivity.sortBy(_.week).map(_.total).mkString(",")){ commitsPerWeek =>
+									@if(commitsPerWeek.nonEmpty){
+										<div class="commit-activity-container">	
+											<canvas class="commit-activity" margin="2" data-commit-activity="@commitsPerWeek" />
+										</div>
+									}
 
+								}
 							}
-						}
 						</div>
             @for(github <- project.githubInfo) {
               @for(description <- github.description) {
