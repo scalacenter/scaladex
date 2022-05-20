@@ -203,7 +203,7 @@
 			width: 100%;
 			display: inline-grid;
 			grid-template-columns: 2.5fr 1fr 0.5fr;
-			column-gap: 3px;
+			column-gap: 2px;
 
 			.stats {
 				align-self:center;
@@ -298,16 +298,19 @@
       .targets {
           padding-left: 16px;
       }
+			.header {
+				display: grid;
+				grid-template-columns: min-content max-content fit-content(150px);
+				grid-column-gap:10px;
+
+			}
       h4 {
-        padding-left: 44px;
-        margin-bottom: 7px;
         margin-top: 0;
         a {
             color: $gray-darker;
         }
       }
       img {
-        float: left;
         width: 28px;
         height: auto;
       }
@@ -331,10 +334,13 @@
         @media screen and (min-width: $screen-md-min) {
           text-align: right;
         }
-				.commit-activity-container{
-					max-height:40px;
-				}
       }
+			.commit-activity-container {
+				max-height:20px;
+			}
+			canvas.commit-activity {
+				max-width:100%;
+			}
       a {
         color: $gray;
         &:hover,
