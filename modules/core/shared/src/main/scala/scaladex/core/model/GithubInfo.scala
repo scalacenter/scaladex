@@ -60,7 +60,8 @@ case class GithubInfo(
       stars = stars,
       forks = forks,
       contributorCount = contributorCount,
-      scalaPercentage = scalaPercentage
+      scalaPercentage = scalaPercentage,
+      license = license
     )
 }
 

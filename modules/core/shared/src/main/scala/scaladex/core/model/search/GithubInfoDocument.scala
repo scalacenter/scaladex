@@ -1,6 +1,7 @@
 package scaladex.core.model.search
 
 import scaladex.core.model.GithubIssue
+import scaladex.core.model.License
 import scaladex.core.model.Url
 
 case class GithubInfoDocument(
@@ -15,10 +16,11 @@ case class GithubInfoDocument(
     stars: Option[Int],
     forks: Option[Int],
     contributorCount: Int,
-    scalaPercentage: Option[Int]
+    scalaPercentage: Option[Int],
+    license: Option[License]
 )
 
 object GithubInfoDocument {
   def default: GithubInfoDocument =
-    GithubInfoDocument(None, None, None, Seq.empty, Seq.empty, None, None, None, None, None, 0, None)
+    GithubInfoDocument(None, None, None, Seq.empty, Seq.empty, None, None, None, None, None, 0, None, None)
 }
