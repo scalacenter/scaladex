@@ -44,6 +44,9 @@
               <h3>
                 <a href="@artifactsUri(project.reference, artifact.artifactName, params.binaryVersion)">@artifact.artifactName</a>
                 <span class="artifact-version">@artifact.version</span>
+                @if(project.settings.deprecated) {
+                  <span class="label label-warning">Deprecated</span>
+                }
               </h3>
               <hr>
               @info("Group ID") { @artifact.groupId }
