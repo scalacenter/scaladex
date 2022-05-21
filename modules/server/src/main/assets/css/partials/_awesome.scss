@@ -188,7 +188,6 @@
       img {
         width: 28px;
         height: auto;
-        margin-right: 15px;
       }
       h4 {
           margin: 0;
@@ -202,15 +201,19 @@
 		.title {
 			width: 100%;
 			display: inline-grid;
-			grid-template-columns: 2.5fr 1fr 0.5fr;
-			column-gap: 2px;
-
+			grid-template-columns: auto fit-content(90px) max-content;
+			column-gap: 10px;
+			align-items: start;
+			h4 {
+				margin-left:5px;
+			}
 			.stats {
-				align-self:center;
 				justify-self:end;
+				grid-column: 3;
 			}
 			.commit-activity-container {
 				max-height:20px;
+				justify-self:end;
 			}
 			canvas.commit-activity {
 				max-width:100%;
@@ -301,7 +304,7 @@
 			.header {
 				display: grid;
 				grid-template-columns: min-content max-content fit-content(150px);
-				grid-column-gap:10px;
+				column-gap:10px;
 				margin-bottom: 7px;
 			}
       h4 {
