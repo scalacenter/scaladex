@@ -90,17 +90,22 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
   ): RequestContext => Future[RouteResult] =
     parameter("target".?) { binaryVersion =>
       shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
-        val res = getSelectedArtifact(
-          organization,
-          repository,
-          binaryVersion,
-          artifactName
-        )
+        val res = binaryVersion match {
+          case Some(binaryVersion) =>
+            getSelectedArtifact(
+              organization,
+              repository,
+              Some(binaryVersion),
+              artifactName
+            ).map(_.map(_.version))
+          case None =>
+            database.getLastVersion(Project.Reference(organization, repository), artifactName).map(Some(_))
+        }
         onSuccess(res) {
-          case Some(artifact) =>
+          case Some(version) =>
             shieldsSvg(
               subject.orElse(artifactName.map(_.value)).getOrElse(repository.value),
-              artifact.version.toString,
+              version.toString,
               color,
               style,
               logo,
