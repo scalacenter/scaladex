@@ -23,6 +23,7 @@ import scaladex.core.model.search.GithubInfoDocument
  * @param chatroom link to chatroom (ex: https://gitter.im/scalacenter/scaladex)
  * @param openIssues list of all open issues for the project
  * @param scalaPercentage the proportion of Scala code for this repo
+ * @param license the license for this project
  */
 case class GithubInfo(
     homepage: Option[Url],
@@ -41,7 +42,8 @@ case class GithubInfo(
     codeOfConduct: Option[Url],
     chatroom: Option[Url],
     openIssues: Seq[GithubIssue], // right now it's all issues, not only beginners issues
-    scalaPercentage: Option[Int]
+    scalaPercentage: Option[Int],
+    license: Option[License]
 ) {
   val contributorCount: Int = contributors.size
 
@@ -58,7 +60,8 @@ case class GithubInfo(
       stars = stars,
       forks = forks,
       contributorCount = contributorCount,
-      scalaPercentage = scalaPercentage
+      scalaPercentage = scalaPercentage,
+      license = license
     )
 }
 
@@ -80,6 +83,7 @@ object GithubInfo {
     codeOfConduct = None,
     chatroom = None,
     openIssues = Seq(),
-    scalaPercentage = None
+    scalaPercentage = None,
+    license = None
   )
 }

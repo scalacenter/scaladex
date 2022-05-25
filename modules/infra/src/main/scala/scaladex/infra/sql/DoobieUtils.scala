@@ -177,6 +177,12 @@ object DoobieUtils {
       }(_.label)
     implicit val scopeMeta: Meta[ArtifactDependency.Scope] =
       Meta[String].timap(ArtifactDependency.Scope.apply)(_.value)
+    implicit val licenseMeta: Meta[License] =
+      Meta[String].timap { x =>
+        License
+          .get(x)
+          .getOrElse(throw new Exception(s"Failed to parse $x as License"))
+      }(_.toString)
     implicit val licensesMeta: Meta[Set[License]] =
       Meta[String].timap(fromJson[Seq[License]](_).get.toSet)(toJson(_))
     implicit val resolverMeta: Meta[Resolver] =

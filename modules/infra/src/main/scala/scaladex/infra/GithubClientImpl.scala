@@ -31,6 +31,7 @@ import io.circe.Json
 import io.circe.syntax._
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubResponse
+import scaladex.core.model.License
 import scaladex.core.model.Project
 import scaladex.core.model.Url
 import scaladex.core.model.UserInfo
@@ -103,7 +104,8 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
       codeOfConduct = communityProfile.flatMap(_.codeOfConductFile).map(Url),
       chatroom = chatroom.map(Url),
       openIssues = openIssues.map(_.toGithubIssue).toList,
-      scalaPercentage = Option(scalaPercentage)
+      scalaPercentage = Option(scalaPercentage),
+      license = repo.licenseName.flatMap(License.get)
     )
 
   def getReadme(ref: Project.Reference): Future[Option[String]] = {

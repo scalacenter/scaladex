@@ -34,7 +34,8 @@ object GithubModel {
       open_issues: Int,
       default_branch: String, // master
       subscribers_count: Int, // Watch
-      topics: Seq[String]
+      topics: Seq[String],
+      licenseName: Option[String]
   ) {
 
     def creationDate: Option[Instant] = createdAt.flatMap(parseToInstant)
@@ -61,6 +62,7 @@ object GithubModel {
         default_branch <- c.downField("default_branch").as[String]
         subscribers_count <- c.downField("subscribers_count").as[Int]
         topics <- c.downField("topics").as[Seq[String]]
+        license <- c.downField("license").downField("spdx_id").as[Option[String]]
       } yield Repository(
         name.toLowerCase,
         owner.toLowerCase,
@@ -78,7 +80,8 @@ object GithubModel {
         open_issues,
         default_branch,
         subscribers_count,
-        topics
+        topics,
+        license
       )
   }
 
