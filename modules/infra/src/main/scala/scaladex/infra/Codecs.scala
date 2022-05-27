@@ -69,6 +69,7 @@ object Codecs {
         chatroom <- c.downField("chatroom").as[Option[Url]]
         openIssues <- c.downField("openIssues").as[Seq[GithubIssue]]
         scalaPercentage <- c.downField("scalaPercentage").as[Option[Int]]
+        license <- c.downField("license").as[Option[License]]
         commitActivity <- c
           .downField("commitActivity")
           .as[Option[Seq[GithubCommitActivity]]]
@@ -91,6 +92,7 @@ object Codecs {
         chatroom,
         openIssues,
         scalaPercentage,
+        license,
         commitActivity
       )
   }
@@ -105,7 +107,7 @@ object Codecs {
   implicit val platformCodec: Codec[Platform] = fromString(_.label, Platform.fromLabel(_).get)
   implicit val languageCodec: Codec[Language] = fromString(_.label, Language.fromLabel(_).get)
   implicit val resolverCodec: Codec[Resolver] = deriveCodec
-  implicit val licenseCodec: Codec[License] = deriveCodec
+  implicit val licenseCodec: Codec[License] = fromString(_.shortName, License.allByShortName.apply)
   implicit val artifactCodec: Codec[Artifact] = deriveCodec
   implicit val scopeCodec: Codec[ArtifactDependency.Scope] = fromString(_.value, ArtifactDependency.Scope.apply)
 

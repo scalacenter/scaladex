@@ -27,6 +27,7 @@ object GithubInfoTable {
     "chatroom",
     "open_issues",
     "scala_percentage",
+    "license",
     "commit_activity"
   )
 

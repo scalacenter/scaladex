@@ -32,7 +32,7 @@ class FilesystemStorage(projects: Path, temp: Path) extends Storage with LazyLog
   override def clearProjects(): Unit =
     Using.resource(Files.walk(projects)) { stream =>
       stream.iterator.asScala
-        .filter(_ != projects)
+        .filter(!Files.isDirectory(_))
         .foreach(Files.delete)
     }
 
