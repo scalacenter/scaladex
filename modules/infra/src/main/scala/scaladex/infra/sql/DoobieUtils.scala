@@ -182,7 +182,7 @@ object DoobieUtils {
         License
           .get(x)
           .getOrElse(throw new Exception(s"Failed to parse $x as License"))
-      }(_.toString)
+      }(_.shortName)
     implicit val licensesMeta: Meta[Set[License]] =
       Meta[String].timap(fromJson[Seq[License]](_).get.toSet)(toJson(_))
     implicit val resolverMeta: Meta[Resolver] =

@@ -43,7 +43,8 @@ object GithubModel {
   }
 
   implicit val repositoryDecoder: Decoder[Repository] = new Decoder[Repository] {
-    final def apply(c: HCursor): Decoder.Result[Repository] =
+    final def apply(cursor: HCursor): Decoder.Result[Repository] = {
+      val c = cursor.withFocus(json => json.dropNullValues)
       for {
         name <- c.downField("name").as[String]
         owner <- c.downField("owner").downField("login").as[String]
@@ -83,6 +84,7 @@ object GithubModel {
         topics,
         license
       )
+    }
   }
 
   case class Topic(value: String) extends AnyVal

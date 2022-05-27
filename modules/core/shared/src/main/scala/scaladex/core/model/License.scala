@@ -10,7 +10,7 @@ package scaladex.core.model
 case class License(name: String, shortName: String, url: Option[String])
 
 object License {
-  def get(name: String): Option[License] = allByName.get(name)
+  def get(shortName: String): Option[License] = allByShortName.get(shortName)
 
   /** inspired by: https://github.com/NixOS/nixpkgs/blob/master/lib/licenses.nix#L1 */
   val Academic: License = spdx("AFL-3.0", "Academic Free License")
@@ -91,7 +91,7 @@ object License {
   val W3C: License = spdx("W3C", "W3C Software Notice and License")
   val WTFPL: License = spdx("WTFPL", "Do What The F*ck You Want To Public License")
 
-  val allByName: Map[String, License] = Map(
+  val allByShortName: Map[String, License] = Map(
     Academic.shortName -> Academic,
     "Academic License (for original lex files)" -> Academic,
     Affero.shortName -> Affero,
