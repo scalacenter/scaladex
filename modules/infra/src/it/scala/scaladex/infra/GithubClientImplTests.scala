@@ -25,6 +25,13 @@ class GithubClientImplTests extends AsyncFunSpec with Matchers {
     for (response <- client.getRepository(Scalafix.reference))
       yield response should matchPattern { case GithubResponse.Ok(_) => () }
   }
+  it("getRepository with no license") {
+    for (response <- client.getRepository(Project.Reference.from("mainstreethub/sbt-parent-plugin")))
+      yield response match {
+        case GithubResponse.Ok(repo) => repo.licenseName shouldBe empty
+        case _                       => fail()
+      }
+  }
   it("getReadme") {
     for (readme <- client.getReadme(Scalafix.reference))
       yield readme shouldBe defined
