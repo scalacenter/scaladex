@@ -23,7 +23,7 @@ object Sparkline {
     val spark = obj.getAttribute("data-commit-activity").split(",").map(_.toInt)
     val margin = obj.getAttribute("margin").toInt
     val ratioW = Math.ceil(obj.width / (spark.length + 1.0))
-    val ratioH = ((obj.height - margin) * .8) / spark.max
+    val ratioH = ((obj.height - margin) * .9) / Math.max(spark.max, 1)
 
     val grad = ctx.createLinearGradient(0, 0, obj.width, obj.height)
     grad.addColorStop(0, "rgb(0, 122, 201)"); // Initial path colour
