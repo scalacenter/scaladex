@@ -6,9 +6,6 @@ addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.9.0")
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.2.0")
 addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.10.0")
 
-// this is experimental
-addSbtPlugin("ch.epfl.scala" % "sbt-github-dependency-graph" % "0.1.0-M5")
-
 libraryDependencies ++= Seq(
   "org.testcontainers" % "postgresql" % "1.17.1",
   "org.testcontainers" % "elasticsearch" % "1.17.1",
