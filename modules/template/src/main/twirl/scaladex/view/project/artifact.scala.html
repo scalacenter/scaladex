@@ -44,7 +44,7 @@
               <h3>
                 <a href="@artifactsUri(project.reference, artifact.artifactName, params.binaryVersion)">@artifact.artifactName</a>
                 <span class="artifact-version">@artifact.version</span>
-                @if(project.settings.deprecated) {
+                @if(project.settings.artifactDeprecations.contains(artifact.artifactName)) {
                   <span class="label label-warning">Deprecated</span>
                 }
               </h3>
