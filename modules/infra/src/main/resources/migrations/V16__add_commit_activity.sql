@@ -1,2 +1,2 @@
 ALTER TABLE github_info
-  ADD commit_activity VARCHAR = '[]' -- default value is empty seq
+  ADD commit_activity VARCHAR DEFAULT '[]' -- default value is empty seq

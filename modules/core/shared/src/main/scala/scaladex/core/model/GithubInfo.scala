@@ -64,7 +64,7 @@ case class GithubInfo(
       contributorCount = contributorCount,
       scalaPercentage = scalaPercentage,
       license = license,
-      commitActivity = commitActivity
+      commitsPerYear = Option(commitActivity.map(_.total).sum)
     )
 }
 
