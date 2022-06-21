@@ -334,6 +334,22 @@
           font-style: italic;
           font-weight: 300;
         }
+				.icons-container{
+					display: inline-grid;
+					grid-auto-flow:column;
+					align-items: center;
+					column-gap: 8px;
+					span {
+						margin-left:0px;
+					}
+				}
+				.stats-icon{
+					display: inline-grid;
+					grid-template-columns: repeat(2, min-content);
+					align-items: center;
+					justify-items:flex-start;
+					column-gap:2px;
+				}
         @media screen and (min-width: $screen-md-min) {
           text-align: right;
         }

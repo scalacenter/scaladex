@@ -84,13 +84,6 @@
 																<h4> @project.organization / @project.repository </h4>
 															</div>
 															@for(github <- project.githubInfo) {
-																@defining(github.commitActivity.sortBy(_.week).map(_.total).mkString(",")){ commitsPerWeek =>
-																	@if(commitsPerWeek.nonEmpty){
-																		<div class="commit-activity-container">	
-																			<canvas class="commit-activity" margin="3" data-commit-activity="@commitsPerWeek" />
-																		</div>
-																	}
-																}
 																<span class="stats">
 																	@github.stars <i class="fa-solid fa-star"></i>
 																</span>
