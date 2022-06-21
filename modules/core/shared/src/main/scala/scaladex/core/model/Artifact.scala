@@ -156,6 +156,9 @@ case class Artifact(
     ).flatten.mkString("\n")
   }
 
+  def scalaCliInstall: String =
+    s"//> using lib $groupId::$artifactId:$version"
+
   def csLaunch: String =
     s"cs launch $groupId:$artifactId:$version"
 
