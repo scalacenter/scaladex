@@ -30,6 +30,13 @@
               <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">
             </a>
           }
+          @for(license <- project.githubInfo.flatMap(_.license)) {
+            @license.url.map { url =>
+              <a href="@ensureUri(url)" class="btn btn-link" target="_blank" rel="nofollow">
+                <i class="fa-solid fa-award" aria-hidden="true"></i> @license.name
+              </a>
+            }
+          }
           @for(homepage <- project.githubInfo.flatMap(_.homepage)) {
             @if(homepage.target.nonEmpty) {
               <a href="@ensureUri(homepage.target)" class="btn btn-link" target="_blank" rel="nofollow">
