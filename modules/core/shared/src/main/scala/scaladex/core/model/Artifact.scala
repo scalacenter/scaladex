@@ -156,6 +156,11 @@ case class Artifact(
     ).flatten.mkString("\n")
   }
 
+  def scalaCliInstall: String = {
+    val artifactOperator = if (isNonStandardLib) ":" else "::"
+    s"//> using lib $groupId$artifactOperator$artifactId:$version"
+  }
+
   def csLaunch: String =
     s"cs launch $groupId:$artifactId:$version"
 
