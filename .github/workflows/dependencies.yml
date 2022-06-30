@@ -5,10 +5,12 @@ on:
       - main
 jobs:
   submit:
-    name: Submit
+    name: Submit Dependency Graph
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ github.token }}
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v3
-      - uses: scalacenter/sbt-dependency-graph-action@v0.1.0-M2
+      - uses: scalacenter/sbt-dependency-graph-action@v1.0.0-RC1
