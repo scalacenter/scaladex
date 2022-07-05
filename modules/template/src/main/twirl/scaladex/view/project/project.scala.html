@@ -48,6 +48,11 @@
       </div>
     </div>
   </main>
+  <script type="text/javascript">
+          document.addEventListener("DOMContentLoaded", function () {
+            ScaladexClient.createSparkline();
+          })
+  </script>
 }
 
 @statisticsBox(github: GithubInfo, ref: Project.Reference, dependentsCount: Int) = {
@@ -69,15 +74,13 @@
   </div>
 }
 
-@commitActivities = @{project.githubInfo.map(_.commitActivity).getOrElse(Seq.empty)}
-@commitsPerWeek = @{commitActivities.sortBy(_.week).map(_.total).mkString(",")}
+@commitActivities = @{project.githubInfo.map(_.commitActivity).getOrElse(Seq.empty).sortBy(_.week)}
+@maybeFirstWeek = @{commitActivities.headOption}
 @commitActivityBox = {
 	@if(commitActivities.nonEmpty){
 		<div class="box commit-activities">
 			<h4>Activity</h4>
-				<div class="commit-activity-container">	
-					<canvas class="commit-activity" margin="10" data-commit-activity="@commitsPerWeek" />
-				</div>
+			<div class="commit-activity-container"><canvas id="commit-activity" margin=10 data-commit-activity-count=@{commitActivities.flatMap(_.days).mkString(",")} data-commit-activity-month=@{maybeFirstWeek.map(_.week.getEpochSecond.toString).getOrElse("")} /></div>
 		</div>
 	}
 }
