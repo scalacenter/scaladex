@@ -1,12 +1,12 @@
-name: Dependency Graph
+name: Sbt Dependency Graph
 on:
   push:
     branches:
       - main
 jobs:
-  submit:
-    name: Submit Dependency Graph
+  updat-graph:
+    name: Update Dependency Graph
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: scalacenter/sbt-dependency-graph-action@v1
+      - uses: scalacenter/sbt-dependency-submission@v2
