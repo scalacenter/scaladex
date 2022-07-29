@@ -44,6 +44,9 @@
               <h3>
                 <a href="@artifactsUri(project.reference, artifact.artifactName, params.binaryVersion)">@artifact.artifactName</a>
                 <span class="artifact-version">@artifact.version</span>
+                @if(project.settings.artifactDeprecations.contains(artifact.artifactName)) {
+                  <span class="label label-warning">Deprecated</span>
+                }
               </h3>
               <hr>
               @info("Group ID") { @artifact.groupId }
@@ -149,6 +152,7 @@
       @if(cliArtifacts.contains(artifact.artifactName)) {
         @tabLink("coursier", "Coursier")
       }
+      @tabLink("scalaCli", "Scala CLI")
       @tabLink("ammonite", "Ammonite")
       @tabLink("maven", "Maven")
       @tabLink("gradle", "Gradle")
@@ -162,6 +166,9 @@
         @tabPanel("coursier", artifact.csLaunch) {
           <a href="https://get-coursier.io/docs/cli-overview">Coursier</a>
         }
+      }
+      @tabPanel("scalaCli", artifact.scalaCliInstall) {
+        <a href="https://scala-cli.virtuslab.org/docs/overview">Scala CLI</a>
       }
       @tabPanel("ammonite", artifact.ammInstall) {
         <a href="https://ammonite.io/#Ammonite-REPL">Ammonite REPL</a>
