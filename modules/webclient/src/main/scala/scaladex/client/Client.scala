@@ -14,7 +14,6 @@ import org.scalajs.dom.ext.Ajax
 import org.scalajs.dom.ext.KeyCode
 import org.scalajs.dom.raw._
 import org.scalajs.jquery.jQuery
-import scaladex.core.model.GithubCommitActivity
 
 @JSExportTopLevel("ScaladexClient")
 object Client {
@@ -217,9 +216,9 @@ object Client {
   }
 
   @JSExport
-  def createSparkline():Unit = {
+  def createSparkline(): Unit =
     Sparkline.createCommitActivitySparkline()
-  }
+
   @JSExport
   def updateVisibleArtifactsInGrid(): Unit = {
     def valuesOfCheckedInputsWithName(name: String): Set[String] =
