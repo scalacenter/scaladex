@@ -13,15 +13,9 @@ trait ChartDataset extends js.Object {
 }
 
 object ChartDataset {
-  def apply(
-      data: Seq[DataPoint],
-      label: String
-  ): ChartDataset =
+  def apply(data: Seq[DataPoint], label: String): ChartDataset =
     js.Dynamic
-      .literal(
-        data = data.toJSArray,
-        label = label
-      )
+      .literal(data = data.toJSArray, label = label)
       .asInstanceOf[ChartDataset]
 }
 @js.native
@@ -31,15 +25,9 @@ trait DataPoint extends js.Object {
 }
 
 object DataPoint {
-  def apply(
-      x: Double,
-      y: Double
-  ): DataPoint =
+  def apply(x: Double, y: Double): DataPoint =
     js.Dynamic
-      .literal(
-        x = x,
-        y = y
-      )
+      .literal(x = x, y = y)
       .asInstanceOf[DataPoint]
 }
 
@@ -95,10 +83,11 @@ object ChartOptions {
 
 @js.native
 trait PluginOptions extends js.Object {
+  def tooltip: TooltipOptions = js.native
   def legend: LegendOptions = js.native
 }
 object PluginOptions {
-  def apply(legend: LegendOptions): PluginOptions =
+  def apply(tooltip: TooltipOptions, legend: LegendOptions): PluginOptions =
     js.Dynamic.literal(legend = legend).asInstanceOf[PluginOptions]
 }
 
@@ -118,9 +107,9 @@ trait LineOptions extends js.Object {
   def borderColor: CanvasGradient = js.native
 }
 object LineOptions {
-  def apply(borderColor: CanvasGradient): LineOptions =
+  def apply(backgroundColor: CanvasGradient, borderColor: CanvasGradient, borderWidth: Int, fill: String): LineOptions =
     js.Dynamic
-      .literal(borderColor = borderColor)
+      .literal(backgroundColor = backgroundColor, borderColor = borderColor, borderWidth = borderWidth, fill = fill)
       .asInstanceOf[LineOptions]
 }
 
@@ -130,7 +119,7 @@ trait PointOptions extends js.Object {
   def borderColor: String = js.native
 }
 object PointOptions {
-  def apply(radius: Int, borderColor: String): PointOptions =
+  def apply(radius: Int, borderColor: String = "black"): PointOptions =
     js.Dynamic
       .literal(
         radius = radius,
@@ -141,30 +130,57 @@ object PointOptions {
 
 @js.native
 trait ScaleOptions extends js.Object {
-  def x: XAxisOptions = js.native
+  def x: AxisOptions = js.native
 }
 object ScaleOptions {
-  def apply(x: XAxisOptions): ScaleOptions =
+  def apply(x: AxisOptions, y: AxisOptions): ScaleOptions =
     js.Dynamic
       .literal(
-        x = x
+        x = x,
+        y = y
       )
       .asInstanceOf[ScaleOptions]
 }
 
 @js.native
-trait XAxisOptions extends js.Object {
+trait AxisOptions extends js.Object {
   def `type`: String = js.native
-  def time: TimeOptions = js.native
+  def ticks: TicksOptions = js.native
 }
-object XAxisOptions {
-  def apply(`type`: String, time: TimeOptions): XAxisOptions =
+object AxisOptions {
+  def apply(`type`: String = "linear", ticks: TicksOptions = TicksOptions()): AxisOptions =
     js.Dynamic
       .literal(
         `type` = `type`,
+        ticks = ticks
+      )
+      .asInstanceOf[AxisOptions]
+}
+
+@js.native
+trait AxisTimeOptions extends AxisOptions {
+  def time: TimeOptions = js.native
+}
+object AxisTimeOptions {
+  def apply(time: TimeOptions): AxisTimeOptions =
+    js.Dynamic
+      .literal(
+        `type` = "time",
         time = time
       )
-      .asInstanceOf[XAxisOptions]
+      .asInstanceOf[AxisTimeOptions]
+}
+@js.native
+trait TicksOptions extends js.Object {
+  def stepSize: Double = js.native
+}
+object TicksOptions {
+  def apply(stepSize: Double = 0.5): TicksOptions =
+    js.Dynamic
+      .literal(
+        stepSize = stepSize
+      )
+      .asInstanceOf[TicksOptions]
 }
 
 @js.native
@@ -189,6 +205,16 @@ trait LegendOptions extends js.Object {
 object LegendOptions {
   def apply(display: Boolean, font: FontOptions): LegendOptions =
     js.Dynamic.literal(display = display, font = font).asInstanceOf[LegendOptions]
+}
+
+@js.native
+trait TooltipOptions extends js.Object {
+  def enabled: Boolean = js.native
+}
+
+object TooltipOptions {
+  def apply(enabled: Boolean): TooltipOptions =
+    js.Dynamic.literal(enabled = enabled).asInstanceOf[TooltipOptions]
 }
 
 @js.native

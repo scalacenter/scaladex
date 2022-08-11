@@ -23,24 +23,34 @@ object Sparkline {
       val grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
       grad.addColorStop(0, "rgb(0, 122, 201)"); // Initial path colour
       grad.addColorStop(1, "rgb(0, 201, 114)"); // End stroke colour
+      val fillGrad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
+      fillGrad.addColorStop(0, "rgba(0, 122, 201, 0.5)"); // Initial path colour
+      fillGrad.addColorStop(1, "rgba(0, 201, 114, 0.5)"); // End stroke colour
 
       val chartOptions = ChartOptions(
-        PluginOptions(LegendOptions(display = false, FontOptions(size = 10))),
+        plugins = PluginOptions(
+          tooltip = TooltipOptions(enabled = false),
+          legend = LegendOptions(display = false, FontOptions(size = 10))
+        ),
         elements = ElementOptions(
           line = LineOptions(
-            borderColor = grad
+            backgroundColor = fillGrad,
+            borderColor = grad,
+            borderWidth = 1,
+            fill = "shape"
           ),
           point = PointOptions(
-            radius = 2,
-            borderColor = "rgb(0,201,114)"
+            radius = 0
           )
         ),
         scales = ScaleOptions(
-          x = XAxisOptions(
-            `type` = "time",
+          x = AxisTimeOptions(
             time = TimeOptions(
               unit = "month"
             )
+          ),
+          y = AxisOptions(
+            ticks = TicksOptions(stepSize = 1)
           )
         )
       )
