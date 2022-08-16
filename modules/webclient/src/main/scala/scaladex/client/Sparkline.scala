@@ -37,7 +37,7 @@ object Sparkline {
             backgroundColor = fillGrad,
             borderColor = grad,
             borderWidth = 1,
-            fill = "shape"
+            fill = "origin"
           ),
           point = PointOptions(
             radius = 0
