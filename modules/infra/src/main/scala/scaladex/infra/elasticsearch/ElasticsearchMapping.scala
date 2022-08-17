@@ -75,6 +75,6 @@ object ElasticsearchMapping {
       textField("organization").analyzer("standard"),
       textField("repository").analyzer("standard")
     ),
-    nestedField("githubInfo.commitActivity")
+    intField("githubInfo.commitsPerYear")
   )
 }

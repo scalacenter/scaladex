@@ -50,7 +50,8 @@ object Sparkline {
             )
           ),
           y = AxisOptions(
-            ticks = TicksOptions(stepSize = 1)
+            ticks = TicksOptions(stepSize = 1),
+            min = 0
           )
         )
       )

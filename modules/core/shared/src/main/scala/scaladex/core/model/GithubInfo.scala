@@ -64,7 +64,7 @@ case class GithubInfo(
       contributorCount = contributorCount,
       scalaPercentage = scalaPercentage,
       license = license,
-      commitsPerYear = Option(commitActivity.map(_.total).sum)
+      commitsPerYear = if (commitActivity.isEmpty) None else Some(commitActivity.map(_.total).sum)
     )
 }
 

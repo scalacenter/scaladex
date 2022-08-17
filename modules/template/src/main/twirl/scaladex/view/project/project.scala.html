@@ -7,7 +7,6 @@
 @import scaladex.view.html.main
 @import scaladex.core.model.ArtifactDependency
 @import scaladex.view.Formats
-@import java.time.temporal.ChronoUnit
 
 @(
   env: Env,
@@ -77,12 +76,11 @@
 
 @commitActivities = @{project.githubInfo.map(_.commitActivity).getOrElse(Seq.empty).sortBy(_.week)}
 @startingDay = @{commitActivities.headOption.map(_.week.getEpochSecond)}
-@lastDay = @{commitActivities.lastOption.map(_.week.plus(7, ChronoUnit.DAYS).getEpochSecond)}
 @commitActivityBox = {
 	@if(commitActivities.nonEmpty){
 		<div class="box commit-activities">
-			<h4>Activity</h4>
-			<div class="commit-activity-container"><canvas id="commit-activity" margin=10 data-commit-activity-count=@{commitActivities.flatMap(_.days).mkString(",")} data-commit-activity-starting-day=@{startingDay} data-commit-activity-last-day=@{lastDay} /></div>
+			<h4>Commit Activity</h4>
+			<div class="commit-activity-container"><canvas id="commit-activity" data-commit-activity-count=@{commitActivities.flatMap(_.days).mkString(",")} data-commit-activity-starting-day=@{startingDay} /></div>
 		</div>
 	}
 }

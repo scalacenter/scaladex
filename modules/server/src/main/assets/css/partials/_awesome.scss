@@ -211,13 +211,6 @@
 				justify-self:end;
 				grid-column: 3;
 			}
-			.commit-activity-container {
-				max-height:20px;
-				justify-self:end;
-			}
-			canvas.commit-activity {
-				max-width:100%;
-			}
 		}
   }
 }
@@ -354,12 +347,6 @@
           text-align: right;
         }
       }
-			.commit-activity-container {
-				max-height:20px;
-			}
-			canvas.commit-activity {
-				max-width:100%;
-			}
       a {
         color: $gray;
         &:hover,

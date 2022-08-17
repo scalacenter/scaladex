@@ -131,6 +131,7 @@ object PointOptions {
 @js.native
 trait ScaleOptions extends js.Object {
   def x: AxisOptions = js.native
+  def y: AxisOptions = js.native
 }
 object ScaleOptions {
   def apply(x: AxisOptions, y: AxisOptions): ScaleOptions =
@@ -146,13 +147,22 @@ object ScaleOptions {
 trait AxisOptions extends js.Object {
   def `type`: String = js.native
   def ticks: TicksOptions = js.native
+  def min: js.UndefOr[Double] = js.native
+  def max: js.UndefOr[Double] = js.native
 }
 object AxisOptions {
-  def apply(`type`: String = "linear", ticks: TicksOptions = TicksOptions()): AxisOptions =
+  def apply(
+      `type`: String = "linear",
+      ticks: TicksOptions = TicksOptions(),
+      min: js.UndefOr[Double] = js.undefined,
+      max: js.UndefOr[Double] = js.undefined
+  ): AxisOptions =
     js.Dynamic
       .literal(
         `type` = `type`,
-        ticks = ticks
+        ticks = ticks,
+        min = min,
+        max = max
       )
       .asInstanceOf[AxisOptions]
 }
