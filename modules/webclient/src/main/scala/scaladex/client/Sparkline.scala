@@ -17,7 +17,7 @@ object Sparkline {
     if (startingDay.nonEmpty) {
       val startDate = Instant.ofEpochSecond(startingDay.toLong)
       val data = commits.zipWithIndex.map {
-        case (commit, index) => DataPoint(startDate.plus(index, ChronoUnit.DAYS).toEpochMilli().toDouble, commit)
+        case (commit, index) => DataPoint(startDate.plus(index * 7, ChronoUnit.DAYS).toEpochMilli.toDouble, commit)
       }
       val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
       val grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
@@ -39,9 +39,10 @@ object Sparkline {
             borderWidth = 1,
             fill = "origin"
           ),
-          point = PointOptions(
+          point = new PointOptions {
             radius = 0
-          )
+            hitRadius = 10
+          }
         ),
         scales = ScaleOptions(
           x = AxisTimeOptions(
