@@ -78,24 +78,24 @@
                       <li>
                         <a href="/@project.reference">
                           <div class="project">
-														<div class="title">
-															<div>
-																@githubUserAvatar(project.githubInfo.flatMap(_.logo))
-																<h4> @project.organization / @project.repository </h4>
-															</div>
-															@for(github <- project.githubInfo) {
-																<span class="stats">
-																	@github.stars <i class="fa-solid fa-star"></i>
-																</span>
-															}
-														</div>
-														<div>
+                            <div class="title">
+                              <div>
+                                @githubUserAvatar(project.githubInfo.flatMap(_.logo))
+                                <h4> @project.organization / @project.repository </h4>
+                              </div>
+                              @for(github <- project.githubInfo) {
+                                <span class="stats">
+                                  @github.stars <i class="fa-solid fa-star"></i>
+                                </span>
+                              }
+                            </div>
+                            <div>
                             @for(github <- project.githubInfo) {
                               @for(description <- github.description) {
                                 <p class="description emojify">@description</p>
                               }
                             }
-														</div>
+                            </div>
                           </div>
                         </a>
                       </li>

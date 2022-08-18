@@ -404,13 +404,13 @@ main {
       .targets {
         padding-left: 16px;
       }
-			.header {
-				display: grid;
-				grid-template-columns: min-content max-content fit-content(150px);
-				column-gap:10px;
-				align-items:center;
+      .header {
+        display: grid;
+        grid-template-columns: min-content max-content fit-content(150px);
+        column-gap:10px;
+        align-items:center;
         margin-bottom: 7px;
-			}
+      }
       h4 {
         margin: 0;
         a {
@@ -439,22 +439,22 @@ main {
           font-style: italic;
           font-weight: 300;
         }
-				.icons-container{
-					display: inline-grid;
-					grid-auto-flow:column;
-					align-items: center;
-					column-gap: 8px;
-					span {
-						margin-left:0px;
-					}
-				}
-				.stats-icon{
-					display: inline-grid;
-					grid-template-columns: repeat(2, min-content);
-					align-items: center;
-					justify-items:flex-start;
-					column-gap:2px;
-				}
+        .icons-container{
+          display: inline-grid;
+          grid-auto-flow:column;
+          align-items: center;
+          column-gap: 8px;
+          span {
+            margin-left:0px;
+          }
+        }
+        .stats-icon{
+          display: inline-grid;
+          grid-template-columns: repeat(2, min-content);
+          align-items: center;
+          justify-items:flex-start;
+          column-gap:2px;
+        }
         @media screen and (min-width: $screen-md-min) {
           text-align: right;
         }

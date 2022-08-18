@@ -9,6 +9,7 @@ import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
+import scaladex.core.model.GithubCommitActivity
 import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubIssue
@@ -135,7 +136,8 @@ object Values {
         contributingGuide = Some(Url("https://github.com/typelevel/cats/blob/main/CONTRIBUTING.md")),
         chatroom = Some(Url("https://gitter.im/typelevel/cats")),
         openIssues = List(issueAboutFoo, issueAboutBar),
-        contributors = Seq(contributor("travisbrown"), contributor("ceedub"), contributor("kailuowang"))
+        contributors = Seq(contributor("travisbrown"), contributor("ceedub"), contributor("kailuowang")),
+        commitActivity = Seq(GithubCommitActivity(25, Instant.now, IndexedSeq(0, 3, 4, 0, 5, 6, 7)))
       )
     val project: Project = Project.default(
       reference,

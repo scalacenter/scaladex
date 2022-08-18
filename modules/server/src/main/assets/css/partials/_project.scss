@@ -115,14 +115,14 @@
     td {padding-left: 30px;}
   }
 
-	.commit-activities {
-		canvas.commit-activity {
-			max-width:100%;
-		}
-	}
+  .commit-activities {
+    canvas.commit-activity {
+      max-width:100%;
+    }
+  }
 
-	.sidebar-project {
-			margin-top: 20px;
+  .sidebar-project {
+      margin-top: 20px;
     @media screen and (min-width: $screen-md-min) {
       margin-bottom: 30px;
       margin-top: -40px;
