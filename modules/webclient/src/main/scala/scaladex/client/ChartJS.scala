@@ -113,19 +113,10 @@ object LineOptions {
       .asInstanceOf[LineOptions]
 }
 
-@js.native
 trait PointOptions extends js.Object {
-  def radius: Int = js.native
-  def borderColor: String = js.native
-}
-object PointOptions {
-  def apply(radius: Int, borderColor: String = "black"): PointOptions =
-    js.Dynamic
-      .literal(
-        radius = radius,
-        borderColor = borderColor
-      )
-      .asInstanceOf[PointOptions]
+  var radius: js.UndefOr[Int] = js.undefined
+  var hitRadius: js.UndefOr[Int] = js.undefined
+  var borderColor: js.UndefOr[String] = js.undefined
 }
 
 @js.native

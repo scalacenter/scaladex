@@ -80,7 +80,7 @@
   @if(commitActivities.nonEmpty){
     <div class="box commit-activities">
       <h4>Commit Activity</h4>
-      <div class="commit-activity-container"><canvas id="commit-activity" data-commit-activity-count=@{commitActivities.flatMap(_.days).mkString(",")} data-commit-activity-starting-day=@{startingDay} /></div>
+      <div class="commit-activity-container"><canvas id="commit-activity" data-commit-activity-count=@{commitActivities.map(_.total).mkString(",")} data-commit-activity-starting-day=@{startingDay} /></div>
     </div>
   }
 }
