@@ -24,6 +24,7 @@ import scaladex.core.model.search.GithubInfoDocument
  * @param openIssues list of all open issues for the project
  * @param scalaPercentage the proportion of Scala code for this repo
  * @param license the license for this project
+ * @param commitActivity the past year weekly commit activities for this repo
  */
 case class GithubInfo(
     homepage: Option[Url],
@@ -43,7 +44,8 @@ case class GithubInfo(
     chatroom: Option[Url],
     openIssues: Seq[GithubIssue], // right now it's all issues, not only beginners issues
     scalaPercentage: Option[Int],
-    license: Option[License]
+    license: Option[License],
+    commitActivity: Seq[GithubCommitActivity]
 ) {
   val contributorCount: Int = contributors.size
 
@@ -61,7 +63,8 @@ case class GithubInfo(
       forks = forks,
       contributorCount = contributorCount,
       scalaPercentage = scalaPercentage,
-      license = license
+      license = license,
+      commitsPerYear = if (commitActivity.isEmpty) None else Some(commitActivity.map(_.total).sum)
     )
 }
 
@@ -84,6 +87,7 @@ object GithubInfo {
     chatroom = None,
     openIssues = Seq(),
     scalaPercentage = None,
-    license = None
+    license = None,
+    commitActivity = Seq()
   )
 }

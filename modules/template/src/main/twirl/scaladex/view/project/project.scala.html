@@ -33,6 +33,7 @@
         <div class="col-md-4">
           <div class="sidebar-project">
             @project.githubInfo.map(gh => statisticsBox(gh, project.reference, reverseDependency.size))
+						@commitActivityBox
             @documentationBox
             @project.githubInfo.map { github =>
               @contributorsBox(github.contributors)
@@ -47,6 +48,11 @@
       </div>
     </div>
   </main>
+  <script type="text/javascript">
+          document.addEventListener("DOMContentLoaded", function () {
+            ScaladexClient.createSparkline();
+          })
+  </script>
 }
 
 @statisticsBox(github: GithubInfo, ref: Project.Reference, dependentsCount: Int) = {
@@ -68,10 +74,21 @@
   </div>
 }
 
+@commitActivities = @{project.githubInfo.map(_.commitActivity).getOrElse(Seq.empty).sortBy(_.week)}
+@startingDay = @{commitActivities.headOption.map(_.week.getEpochSecond)}
+@commitActivityBox = {
+	@if(commitActivities.nonEmpty){
+		<div class="box commit-activities">
+			<h4>Commit Activity</h4>
+			<div class="commit-activity-container"><canvas id="commit-activity" data-commit-activity-count=@{commitActivities.flatMap(_.days).mkString(",")} data-commit-activity-starting-day=@{startingDay} /></div>
+		</div>
+	}
+}
+
 @documentationLinks = @{ project.globalDocumentation }
 @documentationBox = {
   @if(documentationLinks.nonEmpty) {
-    <div class="documentation box">
+	<div class="documentation box">
       <h4>Documentation</h4>
       <ul>
         @for(doc <- documentationLinks){

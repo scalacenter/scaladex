@@ -17,10 +17,11 @@ case class GithubInfoDocument(
     forks: Option[Int],
     contributorCount: Int,
     scalaPercentage: Option[Int],
-    license: Option[License]
+    license: Option[License],
+    commitsPerYear: Option[Int]
 )
 
 object GithubInfoDocument {
   def default: GithubInfoDocument =
-    GithubInfoDocument(None, None, None, Seq.empty, Seq.empty, None, None, None, None, None, 0, None, None)
+    GithubInfoDocument(None, None, None, Seq.empty, Seq.empty, None, None, None, None, None, 0, None, None, None)
 }

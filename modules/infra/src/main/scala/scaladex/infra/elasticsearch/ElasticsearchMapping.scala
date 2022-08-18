@@ -74,6 +74,7 @@ object ElasticsearchMapping {
     objectField("formerReferences").fields(
       textField("organization").analyzer("standard"),
       textField("repository").analyzer("standard")
-    )
+    ),
+    intField("githubInfo.commitsPerYear")
   )
 }

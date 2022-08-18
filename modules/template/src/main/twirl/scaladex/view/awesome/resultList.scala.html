@@ -8,10 +8,10 @@
     <a href="/@project.organization/@project.repository">
       <div class="row">
         <div class="col-md-8">
-          <div>
-            @githubUserAvatar(project.githubInfo.flatMap(_.logo))
-            <h4>@project.reference</h4>
-
+						<div class="header">
+							@githubUserAvatar(project.githubInfo.flatMap(_.logo))
+							<h4>@project.reference</h4>
+						</div>
             @for(github <- project.githubInfo) {
               @for(description <- github.description) {
                 <p class="description emojify">@description</p>
@@ -52,7 +52,6 @@
                 }
               </div>
             }
-          </div>
         </div>
         <div class="col-md-4">
           <div class="stats">
@@ -70,20 +69,25 @@
             }
             </div>
 
-            <div>
+            <div class="icons-container">
             @for(github <- project.githubInfo) {
               @for(stars <- github.stars) {
                 <span>
-                  <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">@stars <i class="fa-solid fa-star"></i></a>
+									<a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Stars" href="#"><span>@stars</span><i class="fa-solid fa-star"></i></a>
                 </span>
               }
               @for(forks <- github.forks) {
                 <span>
-                  <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">@forks <i class="fa-solid fa-code-branch"></i></a>
+									<a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Forks" href="#"><span>@forks</span><i class="fa-solid fa-code-branch"></i></a>
                 </span>
               }
+							@for(commitsPerYear <- github.commitsPerYear){
+								<span>
+									<a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Commits in the past year" href="#"><span>@commitsPerYear</span><i class="fa-solid fa-code-merge"></i></a>
+								</span>
+							}
               <span>
-                <a data-toggle="tooltip" data-placement="bottom" title="Contributors" href="#">@github.contributorCount <i class="fa-solid fa-users"></i></a>
+								<a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Contributors" href="#"><span>@github.contributorCount</span><i class="fa-solid fa-users"></i></a>
               </span>
             }
             </div>

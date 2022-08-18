@@ -8,6 +8,7 @@ import cats.implicits.toTraverseOps
 import io.circe._
 import io.circe.generic.semiauto._
 import scaladex.core.model
+import scaladex.core.model.GithubCommitActivity
 import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubIssue
 import scaladex.core.model.Project
@@ -169,4 +170,14 @@ object GithubModel {
   val userInfoCaseClassDecoder: Decoder[UserInfo] = deriveDecoder
   implicit val userInfoDecoder: Decoder[UserInfo] =
     (c: HCursor) => c.downField("data").downField("viewer").as[UserInfo](userInfoCaseClassDecoder)
+
+  implicit val githubCommitActivityDecoder: Decoder[GithubCommitActivity] = new Decoder[GithubCommitActivity] {
+    final def apply(c: HCursor): Decoder.Result[GithubCommitActivity] =
+      for {
+        week <- c.downField("week").as[Long].map(Instant.ofEpochSecond)
+        days <- c.downField("days").as[IndexedSeq[Int]]
+        total <- c.downField("total").as[Int]
+      } yield GithubCommitActivity(total, week, days)
+  }
+
 }
