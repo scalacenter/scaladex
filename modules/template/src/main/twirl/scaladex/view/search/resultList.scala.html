@@ -92,14 +92,9 @@
 									<a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Stars" href="#"><span>@stars</span> <i class="fa-solid fa-star"></i></a>
                 </span>
               }
-              @for(forks <- github.forks) {
-                <span>
-									<a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Forks" href="#"><span>@forks</span> <i class="fa-solid fa-code-branch"></i></a>
-                </span>
-              }
               @for(commitsPerYear <- github.commitsPerYear) {
                 <span>
-									<a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Commits in the past year" href="#"><span>@commitsPerYear</span> <i class="fa-solid fa-code-merge"></i></a>
+<a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Commits in the past year" href="#"><span>@commitsPerYear</span> <i class="fa-solid fa-code-merge"></i></a>
                 </span>
               }
               <span>
