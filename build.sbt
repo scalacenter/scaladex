@@ -263,7 +263,7 @@ lazy val data = project
 
 lazy val V = new {
   val doobieVersion = "0.13.4"
-  val playJsonVersion = "2.9.2"
+  val playJsonVersion = "2.9.3"
   val akkaVersion = "2.6.18"
   val akkaHttpVersion = "10.2.8"
   val elastic4sVersion = "7.10.9"
