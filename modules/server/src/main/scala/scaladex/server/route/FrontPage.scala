@@ -7,6 +7,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import play.twirl.api.HtmlFormat
 import scaladex.core.model.Env
+import scaladex.core.model.MillPlugin
 import scaladex.core.model.SbtPlugin
 import scaladex.core.model.Scala
 import scaladex.core.model.ScalaJs
@@ -59,6 +60,7 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
       val scalaJsVersions = platforms.collect { case (v: ScalaJs, c) => (v, c) }
       val scalaNativeVersions = platforms.collect { case (v: ScalaNative, c) => (v, c) }
       val sbtVersions = platforms.collect { case (v: SbtPlugin, c) => (v, c) }
+      val millVersions = platforms.collect { case (v: MillPlugin, c) => (v, c) }
 
       frontpage(
         env,
@@ -67,6 +69,7 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
         scalaJsVersions,
         scalaNativeVersions,
         sbtVersions,
+        millVersions,
         latestProjects,
         mostDependedUpon,
         userInfo,
