@@ -3,6 +3,7 @@
 @import scaladex.view.html._
 @import scaladex.core.web.ArtifactsPageParams
 @import scaladex.core.model.Language
+@import scaladex.core.model.Platform
 @import scala.collection.SortedMap
 @import scaladex.core.util.ScalaExtensions._
 @import scaladex.core.util.TimeUtils
@@ -58,7 +59,13 @@
                   }
                 </div>
                 <div class="artifact-content">
-                  @for((platform, binaryVersions) <- artifacts.map(_.binaryVersion).groupBy(_.platform)) {
+                  @for(
+                    (platform, binaryVersions) <- artifacts
+                      .map(_.binaryVersion)
+                      .groupBy(_.platform)
+                      .toSeq
+                      .sortBy(_._1)(Platform.ordering.reverse)
+                  ) {
                     <h5>@platform:</h5>
                     @for(language <- binaryVersions.map(_.language).distinct.sorted) { 
                       <span class="scala-version">@language.label</span>
