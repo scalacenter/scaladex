@@ -20,10 +20,12 @@ class BinaryVersionTests extends AnyFunSpec with Matchers with OptionValues with
       BinaryVersion(ScalaNative(`0.3.0`), Scala.`2.11`),
       BinaryVersion(Jvm, Scala.`2.12`),
       BinaryVersion(Jvm, Scala.`2.11`),
-      BinaryVersion(Jvm, Scala.`2.10`)
+      BinaryVersion(Jvm, Scala.`2.10`),
+      BinaryVersion(MillPlugin.`0.10`, Scala.`2.13`)
     ).sorted
 
     val expected = List(
+      BinaryVersion(MillPlugin.`0.10`, Scala.`2.13`),
       BinaryVersion(ScalaNative(`0.3.0`), Scala.`2.11`),
       BinaryVersion(ScalaJs(`0.6.7`), Scala.`2.10`),
       BinaryVersion(ScalaJs(`0.6.7`), Scala.`2.11`),
@@ -43,14 +45,13 @@ class BinaryVersionTests extends AnyFunSpec with Matchers with OptionValues with
       ("input", "target"),
       ("_2.12", BinaryVersion(Jvm, Scala.`2.12`)),
       ("_3", BinaryVersion(Jvm, Scala.`3`)),
-      ("_sjs0.6_2.12", BinaryVersion(ScalaJs.`0.6`, Scala.`2.12`))
+      ("_sjs0.6_2.12", BinaryVersion(ScalaJs.`0.6`, Scala.`2.12`)),
+      ("_mill0.10_2.13", BinaryVersion(MillPlugin.`0.10`, Scala.`2.13`))
     )
 
-    forAll(cases)((input, expected) => BinaryVersion.parse(input) should contain(expected))
-  }
-
-  it("Should encode and parse a Scala.js binary version") {
-    val binaryVersion = BinaryVersion(ScalaJs.`0.6`, Scala.`2.10`)
-    assert(BinaryVersion.parse(binaryVersion.encode).get == binaryVersion)
+    forAll(cases) { (input, expected) =>
+      BinaryVersion.parse(input) should contain(expected)
+      expected.encode shouldBe input
+    }
   }
 }

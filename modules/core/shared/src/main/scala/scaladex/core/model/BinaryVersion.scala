@@ -28,7 +28,7 @@ object BinaryVersion {
   implicit val ordering: Ordering[BinaryVersion] = Ordering.by(v => (v.platform, v.language))
 
   def IntermediateParser[A: P]: P[(String, Option[SemanticVersion], Option[SemanticVersion])] =
-    ("_sjs" | "_native" | "_" | "").! ~ (SemanticVersion.Parser.?) ~ ("_" ~ SemanticVersion.Parser).?
+    ("_sjs" | "_native" | "_mill" | "_" | "").! ~ (SemanticVersion.Parser.?) ~ ("_" ~ SemanticVersion.Parser).?
 
   def IntermediateParserButNotInvalidSbt[A: P]: P[(String, Option[SemanticVersion], Option[SemanticVersion])] =
     IntermediateParser.filter {
@@ -41,6 +41,7 @@ object BinaryVersion {
       .map {
         case ("_sjs", Some(jsV), Some(scalaV))        => Some(BinaryVersion(ScalaJs(jsV), Scala(scalaV)))
         case ("_native", Some(nativeV), Some(scalaV)) => Some(BinaryVersion(ScalaNative(nativeV), Scala(scalaV)))
+        case ("_mill", Some(millV), Some(scalaV))     => Some(BinaryVersion(MillPlugin(millV), Scala(scalaV)))
         case ("_", Some(scalaV), Some(sbtV))          => Some(BinaryVersion(SbtPlugin(sbtV), Scala(scalaV)))
         case ("_", Some(scalaV), None)                => Some(BinaryVersion(Jvm, Scala(scalaV)))
         case ("", None, None)                         => Some(BinaryVersion(Jvm, Java))

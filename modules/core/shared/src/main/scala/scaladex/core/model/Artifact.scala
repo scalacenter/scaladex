@@ -74,29 +74,34 @@ case class Artifact(
   def latestBadgeUrl(env: Env): String =
     s"${fullHttpUrl(env)}/latest.svg"
 
-  def sbtInstall: String = {
+  def sbtInstall: Option[String] = {
     val install = binaryVersion.platform match {
       case SbtPlugin(_) =>
-        s"""addSbtPlugin("$groupId" % "$artifactName" % "$version")"""
+        Some(s"""addSbtPlugin("$groupId" % "$artifactName" % "$version")""")
       case _ if isNonStandardLib =>
-        s"""libraryDependencies += "$groupId" % "$artifactName" % "$version""""
+        Some(s"""libraryDependencies += "$groupId" % "$artifactName" % "$version"""")
       case ScalaJs(_) | ScalaNative(_) =>
-        s"""libraryDependencies += "$groupId" %%% "$artifactName" % "$version""""
+        Some(s"""libraryDependencies += "$groupId" %%% "$artifactName" % "$version"""")
       case Jvm =>
         binaryVersion.language match {
           case Java =>
-            s"""libraryDependencies += "$groupId" % "$artifactName" % "$version""""
+            Some(s"""libraryDependencies += "$groupId" % "$artifactName" % "$version"""")
           case Scala(PatchVersion(_, _, _)) =>
-            s"""libraryDependencies += "$groupId" % "$artifactName" % "$version" cross CrossVersion.full"""
+            Some(s"""libraryDependencies += "$groupId" % "$artifactName" % "$version" cross CrossVersion.full""")
           case _ =>
-            s"""libraryDependencies += "$groupId" %% "$artifactName" % "$version""""
+            Some(s"""libraryDependencies += "$groupId" %% "$artifactName" % "$version"""")
         }
+      case MillPlugin(_) => None
     }
 
-    List(
-      Some(install),
-      resolver.flatMap(_.sbt.map("resolvers += " + _))
-    ).flatten.mkString("\n")
+    install.map { install =>
+      resolver match {
+        case Some(resolver) =>
+          s"""|$install
+              |$resolver""".stripMargin
+        case None => install
+      }
+    }
   }
 
   /**
