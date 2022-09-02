@@ -21,7 +21,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       val expected =
         """libraryDependencies += "org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full"""
 
-      assert(expected == obtained)
+      obtained should contain(expected)
     }
 
     it("binary") {
@@ -37,7 +37,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       val expected =
         """libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.2.14""""
 
-      assert(expected == obtained)
+      obtained should contain(expected)
     }
 
     it("scala3") {
@@ -53,7 +53,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       val expected =
         """libraryDependencies += "org.typelevel" %% "circe_cats-core" % "2.3.0-M2""""
 
-      assertResult(expected)(obtained)
+      obtained should contain(expected)
     }
 
     it("Scala.js / Scala-Native") {
@@ -68,7 +68,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       val expected =
         """libraryDependencies += "org.scala-js" %%% "scalajs-dom" % "0.9.3""""
 
-      assert(expected == obtained)
+      obtained should contain(expected)
     }
 
     it("sbt-plugin") {
@@ -83,7 +83,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       val expected =
         """addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.2.2")"""
 
-      assert(expected == obtained)
+      obtained should contain(expected)
     }
 
     it("resolvers") {
@@ -100,12 +100,12 @@ class ArtifactTests extends AnyFunSpec with Matchers {
         """|libraryDependencies += "underscoreio" %% "doodle" % "0.8.2"
            |resolvers += Resolver.bintrayRepo("noelwelsh", "maven")""".stripMargin
 
-      assert(expected == obtained)
+      obtained should contain(expected)
     }
 
     it("Java") {
       val artifact = createArtifact("com.typesafe", "config", "1.3.1", BinaryVersion(Jvm, Java))
-      artifact.sbtInstall shouldBe """libraryDependencies += "com.typesafe" % "config" % "1.3.1""""
+      artifact.sbtInstall should contain("""libraryDependencies += "com.typesafe" % "config" % "1.3.1"""")
     }
   }
   describe("millInstall") {
@@ -121,7 +121,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       val expected =
         """ivy"org.http4s::http4s-core:0.18.12""""
 
-      assert(expected == obtained)
+      obtained should contain(expected)
     }
 
     it("resolvers") {
@@ -138,7 +138,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
         """|ivy"underscoreio::doodle:0.8.2"
            |MavenRepository("https://dl.bintray.com/noelwelsh/maven")""".stripMargin
 
-      assert(expected == obtained)
+      obtained should contain(expected)
     }
   }
   private def createArtifact(

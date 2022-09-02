@@ -10,37 +10,43 @@ object InstallTab {
   def allOf(artifact: Artifact, cliArtifacts: Set[Artifact.Name]): Seq[InstallTab] = {
     val coursierTab =
       if (cliArtifacts.contains(artifact.artifactName))
-        Some(
+        artifact.csLaunch.map(
           InstallTab(
             "coursier",
             "Coursier",
-            artifact.csLaunch,
+            _,
             html"""<a href="https://get-coursier.io/docs/cli-overview">Coursier</a>"""
           )
         )
       else None
     val sbtTab = artifact.sbtInstall.map(install => InstallTab("sbt", "sbt", install, html""))
-    val millTab = InstallTab(
-      "mill",
-      "Mill",
-      artifact.millInstall,
-      html"""<a href="https://com-lihaoyi.github.io/mill">Mill build tool</a>"""
+    val millTab = artifact.millInstall.map(
+      InstallTab(
+        "mill",
+        "Mill",
+        _,
+        html"""<a href="https://com-lihaoyi.github.io/mill">Mill build tool</a>"""
+      )
     )
-    val scalaCliTab = InstallTab(
-      "scala-cli",
-      "Scala CLI",
-      artifact.scalaCliInstall,
-      html"""<a href="https://scala-cli.virtuslab.org/docs/overview">Scala CLI</a>"""
+    val scalaCliTab = artifact.scalaCliInstall.map(
+      InstallTab(
+        "scala-cli",
+        "Scala CLI",
+        _,
+        html"""<a href="https://scala-cli.virtuslab.org/docs/overview">Scala CLI</a>"""
+      )
     )
-    val ammoniteTab = InstallTab(
-      "ammonite",
-      "Ammonite",
-      artifact.ammInstall,
-      html"""<a href="https://ammonite.io/#Ammonite-REPL">Ammonite REPL</a>"""
+    val ammoniteTab = artifact.ammInstall.map(
+      InstallTab(
+        "ammonite",
+        "Ammonite",
+        _,
+        html"""<a href="https://ammonite.io/#Ammonite-REPL">Ammonite REPL</a>"""
+      )
     )
-    val mavenTab = InstallTab("maven", "Maven", artifact.mavenInstall, html"")
-    val gradleTab = InstallTab("gradle", "Gradle", artifact.gradleInstall, html"")
+    val mavenTab = artifact.mavenInstall.map(InstallTab("maven", "Maven", _, html""))
+    val gradleTab = artifact.gradleInstall.map(InstallTab("gradle", "Gradle", _, html""))
 
-    coursierTab.toSeq ++ sbtTab.toSeq ++ Seq(millTab, scalaCliTab, ammoniteTab, mavenTab, gradleTab)
+    coursierTab.toSeq ++ sbtTab ++ millTab ++ scalaCliTab ++ ammoniteTab ++ mavenTab ++ gradleTab
   }
 }
