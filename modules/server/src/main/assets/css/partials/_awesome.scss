@@ -115,7 +115,7 @@
     }
   }
 
-  @media (max-width: 992px) {
+  @media (max-width: $screen-md-min) {
     .sidebar {
       position: static;
       overflow: visible;
@@ -188,7 +188,6 @@
       img {
         width: 28px;
         height: auto;
-        margin-right: 15px;
       }
       h4 {
           margin: 0;
@@ -199,9 +198,19 @@
         margin: 0;
       }
     }
-    .stats {
-      vertical-align: middle;
-      float: right;
+    .title {
+      width: 100%;
+      display: inline-grid;
+      grid-template-columns: auto fit-content(90px) max-content;
+      column-gap: 10px;
+      align-items: start;
+      h4 {
+        margin-left:5px;
+      }
+      .stats {
+        justify-self:end;
+        grid-column: 3;
+      }
     }
   }
 }
@@ -285,16 +294,19 @@
       .targets {
           padding-left: 16px;
       }
-      h4 {
-        padding-left: 44px;
+      .header {
+        display: grid;
+        grid-template-columns: min-content max-content fit-content(150px);
+        column-gap:10px;
         margin-bottom: 7px;
+      }
+      h4 {
         margin-top: 0;
         a {
             color: $gray-darker;
         }
       }
       img {
-        float: left;
         width: 28px;
         height: auto;
       }
@@ -314,6 +326,22 @@
           color: $gray-light;
           font-style: italic;
           font-weight: 300;
+        }
+        .icons-container{
+          display: inline-grid;
+          grid-auto-flow:column;
+          align-items: center;
+          column-gap: 8px;
+          span {
+            margin-left:0px;
+          }
+        }
+        .stats-icon{
+          display: inline-grid;
+          grid-template-columns: repeat(2, min-content);
+          align-items: center;
+          justify-items:flex-start;
+          column-gap:2px;
         }
         @media screen and (min-width: $screen-md-min) {
           text-align: right;

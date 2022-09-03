@@ -8,16 +8,21 @@ import scala.concurrent.Future
 
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
+import com.zaxxer.hikari.HikariDataSource
 import doobie.implicits._
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubStatus
+import scaladex.core.model.Language
+import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
+import scaladex.core.model.ReleaseDependency
+import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
-import scaladex.infra.config.PostgreSQLConfig
+import scaladex.core.web.ArtifactsPageParams
 import scaladex.infra.sql.ArtifactDependencyTable
 import scaladex.infra.sql.ArtifactTable
 import scaladex.infra.sql.DoobieUtils
@@ -25,11 +30,13 @@ import scaladex.infra.sql.GithubInfoTable
 import scaladex.infra.sql.ProjectDependenciesTable
 import scaladex.infra.sql.ProjectSettingsTable
 import scaladex.infra.sql.ProjectTable
+import scaladex.infra.sql.ReleaseDependenciesTable
+import scaladex.infra.sql.ReleaseTable
 import scaladex.infra.sql.UserSessionsTable
 
-class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
+class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
 
-  private val flyway = DoobieUtils.flyway(conf)
+  private val flyway = DoobieUtils.flyway(datasource)
   def migrate: IO[Unit] = IO(flyway.migrate())
   def dropTables: IO[Unit] = IO(flyway.clean())
 
@@ -37,12 +44,14 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
       artifact: Artifact,
       dependencies: Seq[ArtifactDependency],
       time: Instant
-  ): Future[Unit] = {
+  ): Future[Boolean] = {
     val unknownStatus = GithubStatus.Unknown(time)
-    val insertArtifactF = insertProjectRef(artifact.projectRef, unknownStatus)
-      .flatMap(_ => run(ArtifactTable.insertIfNotExist.run(artifact)))
-    val insertDepsF = insertDependencies(dependencies)
-    insertArtifactF.flatMap(_ => insertDepsF).map(_ => ())
+    for {
+      isNewProject <- insertProjectRef(artifact.projectRef, unknownStatus)
+      _ <- run(ArtifactTable.insertIfNotExist(artifact))
+      _ <- run(ReleaseTable.insertIfNotExists.run(artifact.release))
+      _ <- insertDependencies(dependencies)
+    } yield isNewProject
   }
 
   override def insertProject(project: Project): Future[Unit] =
@@ -61,7 +70,7 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
     } yield ()
 
   override def insertArtifacts(artifacts: Seq[Artifact]): Future[Unit] =
-    run(ArtifactTable.insertIfNotExist.updateMany(artifacts)).map(_ => ())
+    run(ArtifactTable.insertIfNotExist(artifacts)).map(_ => ())
 
   override def insertDependencies(dependencies: Seq[ArtifactDependency]): Future[Unit] =
     run(ArtifactDependencyTable.insertIfNotExist.updateMany(dependencies)).map(_ => ())
@@ -84,9 +93,6 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
   override def updateArtifactReleaseDate(reference: Artifact.MavenReference, releaseDate: Instant): Future[Int] =
     run(ArtifactTable.updateReleaseDate.run((releaseDate, reference)))
 
-  override def updateGithubStatus(ref: Project.Reference, githubStatus: GithubStatus): Future[Unit] =
-    run(ProjectTable.updateGithubStatus.run(githubStatus, ref)).map(_ => ())
-
   override def updateGithubInfoAndStatus(
       ref: Project.Reference,
       githubInfo: GithubInfo,
@@ -97,24 +103,14 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
       _ <- run(GithubInfoTable.insertOrUpdate.run((ref, githubInfo, githubInfo)))
     } yield ()
 
-  override def moveProject(
-      ref: Project.Reference,
-      githubInfo: GithubInfo,
-      status: GithubStatus.Moved
-  ): Future[Unit] =
-    for {
-      oldProject <- getProject(ref)
-      _ <- updateGithubStatus(ref, status)
-      _ <- run(ProjectTable.insertIfNotExists.run((status.destination, GithubStatus.Ok(status.updateDate))))
-      _ <- updateProjectSettings(status.destination, oldProject.map(_.settings).getOrElse(Project.Settings.default))
-      _ <- run(GithubInfoTable.insertOrUpdate.run(status.destination, githubInfo, githubInfo))
-    } yield ()
-
   override def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit] =
     run(ProjectSettingsTable.insertOrUpdate.run((ref, settings, settings))).map(_ => ())
 
   override def getProject(projectRef: Project.Reference): Future[Option[Project]] =
     run(ProjectTable.selectByReference.option(projectRef))
+
+  override def getArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactByGroupIdAndArtifactId.to[Seq](groupId, artifactId))
 
   override def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]] =
     run(ArtifactTable.selectArtifactByProject.to[Seq](projectRef))
@@ -125,14 +121,32 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
   override def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]] =
     run(ProjectTable.selectByNewReference.to[Seq](projectRef))
 
-  override def getArtifactsByName(
-      projectRef: Project.Reference,
-      artifactName: Artifact.Name
-  ): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifactByProjectAndName.to[Seq]((projectRef, artifactName)))
+  override def getArtifactsByName(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactByProjectAndName.to[Seq]((ref, artifactName)))
+
+  override def getArtifactsByVersion(ref: Project.Reference, version: SemanticVersion): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactByProjectAndVersion.to[Seq](ref, version))
+
+  override def getArtifactNames(ref: Project.Reference): Future[Seq[Artifact.Name]] =
+    run(ArtifactTable.selectArtifactName.to[Seq](ref))
+
+  override def getArtifactPlatforms(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Platform]] =
+    run(ArtifactTable.selectPlatformByArtifactName.to[Seq]((ref, artifactName)))
 
   override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] =
     run(ArtifactTable.selectByMavenReference.option(mavenRef))
+
+  override def getAllArtifacts(
+      maybeLanguage: Option[Language],
+      maybePlatform: Option[Platform]
+  ): Future[Seq[Artifact]] =
+    (maybeLanguage, maybePlatform) match {
+      case (Some(language), Some(platform)) =>
+        run(ArtifactTable.selectArtifactByLanguageAndPlatform.to[Seq](language, platform))
+      case (Some(language), _) => run(ArtifactTable.selectArtifactByLanguage.to[Seq](language))
+      case (_, Some(platform)) => run(ArtifactTable.selectArtifactByPlatform.to[Seq](platform))
+      case _                   => run(ArtifactTable.selectAllArtifacts.to[Seq])
+    }
 
   def countProjects(): Future[Long] =
     run(ProjectTable.countProjects.unique)
@@ -149,27 +163,49 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
   override def getReverseDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Reverse]] =
     run(ArtifactDependencyTable.selectReverseDependency.to[Seq](artifact.mavenReference))
 
+  override def getArtifacts(
+      ref: Project.Reference,
+      artifactName: Artifact.Name,
+      version: SemanticVersion
+  ): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactBy.to[Seq](ref, artifactName, version))
+
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.count.unique)
 
   def countProjectSettings(): Future[Long] =
     run(ProjectSettingsTable.count.unique)
 
-  override def computeProjectDependencies(): Future[Seq[ProjectDependency]] =
-    run(ArtifactDependencyTable.computeProjectDependency.to[Seq])
+  override def computeProjectDependencies(
+      ref: Project.Reference,
+      version: SemanticVersion
+  ): Future[Seq[ProjectDependency]] =
+    run(ArtifactDependencyTable.computeProjectDependencies.to[Seq]((ref, version)))
+
+  override def computeReleaseDependencies(): Future[Seq[ReleaseDependency]] =
+    run(ArtifactDependencyTable.computeReleaseDependency.to[Seq])
 
   override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] =
-    run(ProjectDependenciesTable.insertOrUpdate.updateMany(projectDependencies))
+    if (projectDependencies.isEmpty) Future.successful(0)
+    else run(ProjectDependenciesTable.insertOrUpdate.updateMany(projectDependencies))
 
-  override def countInverseProjectDependencies(projectRef: Project.Reference): Future[Int] =
-    run(ProjectDependenciesTable.countInverseDependencies.unique(projectRef))
+  override def deleteProjectDependencies(ref: Project.Reference): Future[Int] =
+    run(ProjectDependenciesTable.deleteBySource.run(ref))
 
-  override def deleteDependenciesOfMovedProject(): Future[Unit] =
-    for {
-      moved <- run(ProjectTable.selectProjectByGithubStatus.to[Seq]("Moved"))
-      _ <- run(ProjectDependenciesTable.deleteBySource.updateMany(moved))
-      _ <- run(ProjectDependenciesTable.deleteByTarget.updateMany(moved))
-    } yield ()
+  override def insertReleaseDependencies(releaseDependency: Seq[ReleaseDependency]): Future[Int] =
+    run(ReleaseDependenciesTable.insertIfNotExists.updateMany(releaseDependency))
+
+  override def countProjectDependents(projectRef: Project.Reference): Future[Long] =
+    run(ProjectDependenciesTable.countDependents.unique(projectRef))
+
+  override def getProjectDependencies(
+      ref: Project.Reference,
+      version: SemanticVersion
+  ): Future[Seq[ProjectDependency]] =
+    run(ProjectDependenciesTable.getDependencies.to[Seq]((ref, version)))
+
+  override def getProjectDependents(ref: Project.Reference): Future[Seq[ProjectDependency]] =
+    run(ProjectDependenciesTable.getDependents.to[Seq](ref))
 
   override def computeAllProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]] =
     run(ArtifactTable.selectOldestByProject.to[Seq])
@@ -189,8 +225,61 @@ class SqlDatabase(conf: PostgreSQLConfig, xa: doobie.Transactor[IO]) extends Sch
   override def getSession(userId: UUID): Future[Option[UserState]] =
     run(UserSessionsTable.selectUserSessionById.to[Seq](userId)).map(_.headOption)
 
-  override def getAllMavenReferencesWithNoReleaseDate(): Future[Seq[Artifact.MavenReference]] =
-    run(ArtifactTable.selectMavenReferenceWithNoReleaseDate.to[Seq])
+  override def getAllSessions(): Future[Seq[(UUID, UserState)]] =
+    run(UserSessionsTable.selectAllUserSessions.to[Seq])
+
+  override def deleteSession(userId: UUID): Future[Unit] =
+    run(UserSessionsTable.deleteByUserId.run(userId).map(_ => ()))
+
+  override def getArtifacts(
+      ref: Project.Reference,
+      artifactName: Artifact.Name,
+      params: ArtifactsPageParams
+  ): Future[Seq[Artifact]] =
+    run(
+      ArtifactTable
+        .selectArtifactByParams(params.binaryVersions, params.preReleases)
+        .to[Seq](ref, artifactName)
+    )
+
+  override def countVersions(ref: Project.Reference): Future[Long] =
+    run(ArtifactTable.countVersionsByProjct.unique(ref))
+
+  override def getLastVersion(ref: Project.Reference, artifactNameOpt: Option[Artifact.Name]): Future[SemanticVersion] =
+    artifactNameOpt match {
+      case Some(artifactName) =>
+        for {
+          versionOpt <- run(ArtifactTable.selectLastReleaseVersionByArtifactName.option((ref, artifactName)))
+          version <- versionOpt match {
+            case Some(version) => Future.successful(version)
+            case None          => run(ArtifactTable.selectLastVersionByArtifactName.unique((ref, artifactName)))
+          }
+        } yield version
+      case None =>
+        for {
+          versionOpt <- run(ArtifactTable.selectLastReleaseVersion.option(ref))
+          version <- versionOpt match {
+            case Some(version) => Future.successful(version)
+            case None          => run(ArtifactTable.selectLastVersion.unique(ref))
+          }
+        } yield version
+    }
+
+  override def moveProject(
+      ref: Project.Reference,
+      githubInfo: GithubInfo,
+      status: GithubStatus.Moved
+  ): Future[Unit] =
+    for {
+      oldProject <- getProject(ref)
+      _ <- updateGithubStatus(ref, status)
+      _ <- run(ProjectTable.insertIfNotExists.run((status.destination, GithubStatus.Ok(status.updateDate))))
+      _ <- updateProjectSettings(status.destination, oldProject.map(_.settings).getOrElse(Project.Settings.default))
+      _ <- run(GithubInfoTable.insertOrUpdate.run(status.destination, githubInfo, githubInfo))
+    } yield ()
+
+  def updateGithubStatus(ref: Project.Reference, githubStatus: GithubStatus): Future[Unit] =
+    run(ProjectTable.updateGithubStatus.run(githubStatus, ref)).map(_ => ())
 
   private def run[A](v: doobie.ConnectionIO[A]): Future[A] =
     v.transact(xa).unsafeToFuture()

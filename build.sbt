@@ -20,7 +20,7 @@ inThisBuild(
 lazy val loggingSettings = Seq(
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.2.11",
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4"
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
   ),
   // Drop and replace commons-logging with slf4j
   libraryDependencies += "org.slf4j" % "jcl-over-slf4j" % "1.7.36",
@@ -31,7 +31,7 @@ val amm = inputKey[Unit]("Start Ammonite REPL")
 lazy val ammoniteSettings = Def.settings(
   amm := (Test / run).evaluated,
   amm / aggregate := false,
-  libraryDependencies += ("com.lihaoyi" % "ammonite" % "2.5.2" % Test).cross(CrossVersion.full),
+  libraryDependencies += ("com.lihaoyi" % "ammonite" % "2.5.4" % Test).cross(CrossVersion.full),
   Test / sourceGenerators += Def.task {
     val file = (Test / sourceManaged).value / "amm.scala"
     IO.write(
@@ -86,7 +86,7 @@ lazy val infra = project
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4sVersion,
       "org.json4s" %% "json4s-native" % V.json4s,
-      "org.flywaydb" % "flyway-core" % "8.5.3", // for database migration
+      "org.flywaydb" % "flyway-core" % "8.5.13", // for database migration
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
@@ -191,11 +191,14 @@ lazy val server = project
       "ch.megard" %% "akka-http-cors" % "1.1.3",
       "com.softwaremill.akka-http-session" %% "core" % "0.7.0",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
-      "org.endpoints4s" %% "akka-http-server" % "5.1.0",
+      "org.endpoints4s" %% "akka-http-server" % "7.0.0",
       "org.webjars" % "bootstrap-sass" % "3.4.1",
       "org.webjars" % "bootstrap-switch" % "3.3.4",
       "org.webjars" % "bootstrap-select" % "1.13.18",
-      "org.webjars.bower" % "font-awesome" % "4.7.0",
+      "org.webjars" % "chartjs" % "3.7.1",
+      "org.webjars.npm" % "date-fns" % "2.28.0",
+      "org.webjars.npm" % "chartjs-adapter-date-fns" % "2.0.0",
+      "org.webjars" % "font-awesome" % "6.1.1",
       "org.webjars" % "jquery" % "3.6.0",
       "org.webjars.bower" % "select2" % "4.0.3"
     ),
@@ -218,11 +221,12 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
     scalacOptionsSettings,
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "fastparse" % "2.3.3",
-      "io.github.cquiroz" %%% "scala-java-time" % "2.3.0",
+      "io.github.cquiroz" %%% "scala-java-time" % "2.4.0",
       "com.typesafe.play" %%% "play-json" % V.playJsonVersion,
-      "org.endpoints4s" %%% "algebra" % "1.6.0",
+      "org.endpoints4s" %%% "algebra" % "1.8.0",
+      "org.endpoints4s" %% "json-schema-playjson" % "1.7.0" % Test,
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
-      "org.jsoup" % "jsoup" % "1.14.3"
+      "org.jsoup" % "jsoup" % "1.15.1"
     ) ++ Seq(
       "io.circe" %%% "circe-core",
       "io.circe" %%% "circe-generic",
@@ -242,8 +246,8 @@ lazy val data = project
       "com.typesafe.akka" %% "akka-actor-typed" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-serialization-jackson" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-slf4j" % V.akkaVersion,
-      "org.apache.maven" % "maven-model-builder" % "3.3.9",
-      "org.jsoup" % "jsoup" % "1.14.3",
+      "org.apache.maven" % "maven-model-builder" % "3.8.6",
+      "org.jsoup" % "jsoup" % "1.15.1",
       "org.apache.ivy" % "ivy" % "2.5.0",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-json4s" % "1.39.2",
@@ -259,12 +263,12 @@ lazy val data = project
 
 lazy val V = new {
   val doobieVersion = "0.13.4"
-  val playJsonVersion = "2.9.2"
+  val playJsonVersion = "2.9.3"
   val akkaVersion = "2.6.18"
   val akkaHttpVersion = "10.2.8"
   val elastic4sVersion = "7.10.9"
-  val nscalaTimeVersion = "2.30.0"
-  val scalatest = "3.2.11"
-  val circeVersion = "0.14.1"
-  val json4s = "4.0.4"
+  val nscalaTimeVersion = "2.32.0"
+  val scalatest = "3.2.12"
+  val circeVersion = "0.14.2"
+  val json4s = "4.0.5"
 }

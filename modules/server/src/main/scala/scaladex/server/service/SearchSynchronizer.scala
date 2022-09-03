@@ -13,7 +13,7 @@ import scaladex.core.util.ScalaExtensions._
 
 class SearchSynchronizer(database: WebDatabase, searchEngine: SearchEngine)(implicit ec: ExecutionContext)
     extends LazyLogging {
-  def syncAll(): Future[Unit] =
+  def syncAll(): Future[String] =
     for {
       allProjects <- database.getAllProjects()
       allProjectsAndStatus = allProjects.map(p => (p, p.githubStatus))
@@ -44,7 +44,7 @@ class SearchSynchronizer(database: WebDatabase, searchEngine: SearchEngine)(impl
         val formerReferences = movedProjects.getOrElse(project.reference, Seq.empty)
         insertDocument(project, formerReferences)
       }
-    } yield ()
+    } yield s"Updated ${projectsToSync.size} projects and removed ${projectsToDelete.size} projects"
 
   def syncProject(ref: Project.Reference): Future[Unit] =
     for {
@@ -53,7 +53,7 @@ class SearchSynchronizer(database: WebDatabase, searchEngine: SearchEngine)(impl
       _ <- projectOpt match {
         case Some(project) => insertDocument(project, formerReferences)
         case None =>
-          logger.error(s"Cannot update update project document of $ref because: project not found")
+          logger.error(s"Cannot update project document of $ref because: project not found")
           Future.successful(())
       }
     } yield ()
@@ -61,8 +61,8 @@ class SearchSynchronizer(database: WebDatabase, searchEngine: SearchEngine)(impl
   private def insertDocument(project: Project, formerReferences: Seq[Project.Reference]): Future[Unit] =
     for {
       artifacts <- database.getArtifacts(project.reference)
-      inverseProjectDependencies <- database.countInverseProjectDependencies(project.reference)
-      document = ProjectDocument(project, artifacts, inverseProjectDependencies, formerReferences)
+      dependents <- database.countProjectDependents(project.reference)
+      document = ProjectDocument(project, artifacts, dependents, formerReferences)
       _ <- searchEngine.insert(document)
       _ <- formerReferences.mapSync(searchEngine.delete)
     } yield ()

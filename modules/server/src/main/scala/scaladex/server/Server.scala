@@ -22,17 +22,17 @@ import scaladex.data.util.PidLock
 import scaladex.infra.DataPaths
 import scaladex.infra.ElasticsearchEngine
 import scaladex.infra.FilesystemStorage
-import scaladex.infra.GithubClient
-import scaladex.infra.SonatypeClient
+import scaladex.infra.GithubClientImpl
+import scaladex.infra.SonatypeClientImpl
 import scaladex.infra.SqlDatabase
 import scaladex.infra.sql.DoobieUtils
 import scaladex.server.config.ServerConfig
 import scaladex.server.route._
 import scaladex.server.route.api._
-import scaladex.server.service.AdminTaskService
+import scaladex.server.service.AdminService
 import scaladex.server.service.PublishProcess
-import scaladex.server.service.SchedulerService
-import scaladex.server.service.SonatypeSynchronizer
+import scaladex.server.service.SonatypeService
+import scaladex.view.html.notfound
 
 object Server extends LazyLogging {
 
@@ -53,42 +53,36 @@ object Server extends LazyLogging {
       // because of the sbtResolver mode
       val searchEngine = ElasticsearchEngine.open(config.elasticsearch)
 
-      val resources =
+      val resources = {
+        val datasourceWeb = DoobieUtils.getHikariDataSource(config.database)
+        val datasourceScheduler = DoobieUtils.getHikariDataSource(config.database)
         for {
-          webPool <- DoobieUtils.transactor(config.database)
-          schedulerPool <- DoobieUtils.transactor(config.database)
+          webPool <- DoobieUtils.transactor(datasourceWeb)
+          schedulerPool <- DoobieUtils.transactor(datasourceScheduler)
           publishPool <- ExecutionContexts.fixedThreadPool[IO](8)
-        } yield (webPool, schedulerPool, publishPool)
-
+        } yield (webPool, schedulerPool, publishPool, datasourceWeb)
+      }
       resources
         .use {
-          case (webPool, schedulerPool, publishPool) =>
-            val webDatabase = new SqlDatabase(config.database, webPool)
-            val schedulerDatabase = new SqlDatabase(config.database, schedulerPool)
-            val githubService = config.github.token.map(new GithubClient(_))
+          case (webPool, schedulerPool, publishPool, datasourceForFlyway) =>
+            val webDatabase = new SqlDatabase(datasourceForFlyway, webPool)
+            val schedulerDatabase = new SqlDatabase(datasourceForFlyway, schedulerPool)
+            val githubClient = config.github.token.map(new GithubClientImpl(_))
             val paths = DataPaths.from(config.filesystem)
             val filesystem = FilesystemStorage(config.filesystem)
-            val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(publishPool)
-            val sonatypeClient = new SonatypeClient()
-            val sonatypeSynchronizer = new SonatypeSynchronizer(schedulerDatabase, sonatypeClient, publishProcess)
-            val adminTaskService = new AdminTaskService(sonatypeSynchronizer)
-            val schedulerService =
-              new SchedulerService(
-                config.env,
-                schedulerDatabase,
-                searchEngine,
-                githubService,
-                sonatypeSynchronizer
-              )
+            val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(publishPool, system)
+            val sonatypeClient = new SonatypeClientImpl()
+            val sonatypeSynchronizer = new SonatypeService(schedulerDatabase, sonatypeClient, publishProcess)
+            val adminService =
+              new AdminService(config.env, schedulerDatabase, searchEngine, githubClient, sonatypeSynchronizer)
 
             for {
-              _ <- init(webDatabase, schedulerService, searchEngine, config.elasticsearch.reset)
+              _ <- init(webDatabase, adminService, searchEngine, config.elasticsearch.reset)
               routes = configureRoutes(
                 config,
                 searchEngine,
                 webDatabase,
-                schedulerService,
-                adminTaskService,
+                adminService,
                 publishProcess
               )
               _ <- IO(
@@ -119,7 +113,7 @@ object Server extends LazyLogging {
 
   private def init(
       database: SqlDatabase,
-      scheduler: SchedulerService,
+      adminService: AdminService,
       searchEngine: ElasticsearchEngine,
       resetElastic: Boolean
   )(
@@ -131,15 +125,14 @@ object Server extends LazyLogging {
       _ = logger.info("Waiting for ElasticSearch to start")
       _ <- IO.fromFuture(IO(searchEngine.init(resetElastic)))
       _ = logger.info("Starting all schedulers")
-      _ <- IO(scheduler.startAll())
+      _ <- IO(adminService.startAllJobs())
     } yield ()
   }
   private def configureRoutes(
       config: ServerConfig,
       searchEngine: ElasticsearchEngine,
       webDatabase: WebDatabase,
-      schedulerService: SchedulerService,
-      adminTaskService: AdminTaskService,
+      adminService: AdminService,
       publishProcess: PublishProcess
   )(
       implicit actor: ActorSystem
@@ -151,12 +144,13 @@ object Server extends LazyLogging {
 
     val searchPages = new SearchPages(config.env, searchEngine)
     val frontPage = new FrontPage(config.env, webDatabase, searchEngine)
-    val adminPages = new AdminPage(config.env, schedulerService, adminTaskService)
+    val adminPages = new AdminPage(config.env, adminService)
     val projectPages = new ProjectPages(config.env, webDatabase, searchEngine)
     val artifactPages = new ArtifactPages(config.env, webDatabase)
     val awesomePages = new AwesomePages(config.env, searchEngine)
     val publishApi = new PublishApi(githubAuth, publishProcess)
     val searchApi = new SearchApi(searchEngine)
+    val artifactApi = ArtifactApi(webDatabase)
     val oldSearchApi = new OldSearchApi(searchEngine, webDatabase)
     val badges = new Badges(webDatabase)
     val oauth2 = new Oauth2(config.oAuth2, githubAuth, session)
@@ -169,6 +163,7 @@ object Server extends LazyLogging {
           val apiRoute = concat(
             publishApi.routes,
             searchApi.route(maybeUser),
+            artifactApi.routes,
             oldSearchApi.routes,
             Assets.routes,
             badges.route,
@@ -185,21 +180,12 @@ object Server extends LazyLogging {
         context => futureRoute.flatMap(_.apply(context))
       }
     val exceptionHandler = ExceptionHandler {
-      case ex: Exception =>
-        import java.io.{PrintWriter, StringWriter}
-
-        val sw = new StringWriter()
-        val pw = new PrintWriter(sw)
-        ex.printStackTrace(pw)
-
-        val out = sw.toString
-
-        logger.error(out)
-
-        complete(
-          StatusCodes.InternalServerError,
-          out
-        )
+      case NonFatal(cause) =>
+        extractUri { uri =>
+          import scaladex.server.TwirlSupport._
+          logger.error(s"Unhandled exception in $uri", cause)
+          complete(StatusCodes.InternalServerError, notfound(config.env, None))
+        }
     }
     handleExceptions(exceptionHandler)(route)
   }

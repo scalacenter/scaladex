@@ -8,6 +8,7 @@ import cats.implicits.toTraverseOps
 import io.circe._
 import io.circe.generic.semiauto._
 import scaladex.core.model
+import scaladex.core.model.GithubCommitActivity
 import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubIssue
 import scaladex.core.model.Project
@@ -34,7 +35,8 @@ object GithubModel {
       open_issues: Int,
       default_branch: String, // master
       subscribers_count: Int, // Watch
-      topics: Seq[String]
+      topics: Seq[String],
+      licenseName: Option[String]
   ) {
 
     def creationDate: Option[Instant] = createdAt.flatMap(parseToInstant)
@@ -42,7 +44,8 @@ object GithubModel {
   }
 
   implicit val repositoryDecoder: Decoder[Repository] = new Decoder[Repository] {
-    final def apply(c: HCursor): Decoder.Result[Repository] =
+    final def apply(cursor: HCursor): Decoder.Result[Repository] = {
+      val c = cursor.withFocus(json => json.dropNullValues)
       for {
         name <- c.downField("name").as[String]
         owner <- c.downField("owner").downField("login").as[String]
@@ -61,6 +64,7 @@ object GithubModel {
         default_branch <- c.downField("default_branch").as[String]
         subscribers_count <- c.downField("subscribers_count").as[Int]
         topics <- c.downField("topics").as[Seq[String]]
+        license <- c.downField("license").downField("spdx_id").as[Option[String]]
       } yield Repository(
         name.toLowerCase,
         owner.toLowerCase,
@@ -78,8 +82,10 @@ object GithubModel {
         open_issues,
         default_branch,
         subscribers_count,
-        topics
+        topics,
+        license
       )
+    }
   }
 
   case class Topic(value: String) extends AnyVal
@@ -141,7 +147,7 @@ object GithubModel {
       } yield if (isPullrequest.isEmpty) Some(OpenIssue(number, title, url, labelNames)) else None
   }
 
-  case class GraphQLPage[T](endCursor: String, hasNextPage: Boolean, nodes: Seq[T])
+  case class GraphQLPage[T](endCursor: Option[String], hasNextPage: Boolean, nodes: Seq[T])
   case class RepoWithPermission(nameWithOwner: String, viewerPermission: String)
 
   implicit val repoWithPermissionDecoder: Decoder[RepoWithPermission] = deriveDecoder
@@ -150,7 +156,7 @@ object GithubModel {
     (c: HCursor) => {
       val cursor = downFields.foldLeft[ACursor](c)(_.downField(_))
       for {
-        endCursor <- cursor.downField("pageInfo").downField("endCursor").as[String]
+        endCursor <- cursor.downField("pageInfo").downField("endCursor").as[Option[String]]
         hasNextPage <- cursor.downField("pageInfo").downField("hasNextPage").as[Boolean]
         nodes <- cursor.downField("nodes").as[Seq[T]]
       } yield GraphQLPage(endCursor, hasNextPage, nodes)
@@ -164,4 +170,14 @@ object GithubModel {
   val userInfoCaseClassDecoder: Decoder[UserInfo] = deriveDecoder
   implicit val userInfoDecoder: Decoder[UserInfo] =
     (c: HCursor) => c.downField("data").downField("viewer").as[UserInfo](userInfoCaseClassDecoder)
+
+  implicit val githubCommitActivityDecoder: Decoder[GithubCommitActivity] = new Decoder[GithubCommitActivity] {
+    final def apply(c: HCursor): Decoder.Result[GithubCommitActivity] =
+      for {
+        week <- c.downField("week").as[Long].map(Instant.ofEpochSecond)
+        days <- c.downField("days").as[IndexedSeq[Int]]
+        total <- c.downField("total").as[Int]
+      } yield GithubCommitActivity(total, week, days)
+  }
+
 }

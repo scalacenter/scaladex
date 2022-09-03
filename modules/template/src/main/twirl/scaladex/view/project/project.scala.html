@@ -1,32 +1,29 @@
-@import scaladex.view.html.contributingInfo
 @import scaladex.core.model.Project
-@import scaladex.core.model.Artifact
-@import akka.http.scaladsl.model.headers.LinkParams.title
 @import scaladex.core.model.Env
 @import scaladex.core.model.UserState
 @import scaladex.core.model.SemanticVersion
-@import scaladex.core.model.BinaryVersion
-@import scaladex.core.model.TwitterSummaryCard
-@import scaladex.core.model.ArtifactDependency
+@import scaladex.core.model.GithubContributor
+@import scaladex.core.model.GithubInfo
 @import scaladex.view.html.main
-@import scaladex.core.model.Platform
+@import scaladex.core.model.ArtifactDependency
+@import scaladex.view.Formats
 
-@import scala.collection.SortedSet
 @(
-  env: Env, project: Project, artifacts: SortedSet[Artifact.Name], versions: SortedSet[SemanticVersion],
-  binaryVersions: SortedSet[BinaryVersion], platforms: SortedSet[Platform], artifact: Artifact, user: Option[UserState],
-  showEditButton: Boolean, twitterCard: Option[TwitterSummaryCard], artifactCount: Int,
-  directDependencies: Seq[ArtifactDependency.Direct], reverseDependency: Seq[ArtifactDependency.Reverse]
+  env: Env,
+  user: Option[UserState],
+  project: Project,
+  versionCount: Long,
+  lastVersion: SemanticVersion,
+  directDependencies: Map[Project.Reference, (ArtifactDependency.Scope, Seq[SemanticVersion])],
+  reverseDependency: Map[Project.Reference, (ArtifactDependency.Scope, SemanticVersion)],
 )
-
-@main(env, title = project.repository.value, user,
-      extraMeta = twitterCard.map(_.toHeadMeta).getOrElse(Nil)) {
+@main(env, title = project.repository.value, user, extraMeta = project.twitterCard.toHeadMeta) {
   <main id="container-project">
-    @headproject(project, artifacts, versions, binaryVersions, artifact, showEditButton)
+    @headproject(env, user, project, versionCount, "Project", lastVersion)
     <div class="container">
       <div class="row">
         <div class="col-md-8">
-          <div class="content-project box" id="README" 
+          <div class="content-project box project-main" id="README"
             data-organization="@project.reference.organization"
             data-repository="@project.reference.repository">
 
@@ -35,34 +32,152 @@
         </div>
         <div class="col-md-4">
           <div class="sidebar-project">
-            @if(project.settings.artifactDeprecations.contains(artifact.artifactName)) {
-            <div class="box">
-              <h1>[DEPRECATED]</h1>
-            </div>
-            }
-            @documentation(artifact, project)
-            @badges(artifact, platforms, env)
-            @install(artifact, project.settings.cliArtifacts)
-            @scastie(artifact.scastieURL)
-            @project.githubInfo.map(gh => statistic(gh, project.reference, artifactCount, reverseDependency.size))
+            @project.githubInfo.map(gh => statisticsBox(gh, project.reference, reverseDependency.size))
+            @commitActivityBox
+            @documentationBox
             @project.githubInfo.map { github =>
+              @contributorsBox(github.contributors)
               @if(github.openIssues.nonEmpty && github.chatroom.isDefined && github.contributingGuide.isDefined) {
-                  <div class="box project-contributing-info">
-                    <h4>Contributing Info</h4>
-                    <p>Beginner-friendly Issues:</p>
-                    <div>
-                      @contributingInfo(project)
-                    </div>
-                  </div>
+                @contributingBox
               }
             }
-            @project.githubInfo.map(gh => contributors(gh.contributors))
-            @license(artifact)
-            @dependencies(project.reference, directDependencies)
-            @dependents(artifact, reverseDependency)
+            @directDependenciesBox(directDependencies)
+            @reverseDependenciesBox(reverseDependency)
           </div>
         </div>
       </div>
     </div>
   </main>
+  <script type="text/javascript">
+          document.addEventListener("DOMContentLoaded", function () {
+            ScaladexClient.createSparkline();
+          })
+  </script>
+}
+
+@statisticsBox(github: GithubInfo, ref: Project.Reference, dependentsCount: Int) = {
+  <div class="statistic box">
+    <h4>Statistics</h4>
+    <div class="row">
+      <div >
+        <ul class="row">
+          <a href="https://github.com/@ref/watchers"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-eye"></i> @github.watchers watchers</li></a>
+          <a href="https://github.com/@ref/graphs/contributors"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-users"></i> @github.contributors.size Contributors</li></a>
+          <a href="https://github.com/@ref/stargazers"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-star"></i> @github.stars Stars</li></a>
+          <a href="https://github.com/@ref/network"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-code-branch"></i> @github.forks Forks</li></a>
+          <a href="https://github.com/@ref/commits"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-clock-rotate-left"></i> @github.commits Commits</li></a>
+          <a href="https://github.com/@ref/issues"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-circle-exclamation"></i> @github.issues Open issues</li></a>
+          <a href="#dependents"><li class="col-md-6 col-sm-6"><i class="fa-solid fa-sitemap"></i> @dependentsCount Dependents</li></a>
+        </ul>
+      </div>
+    </div>
+  </div>
+}
+
+@commitActivities = @{project.githubInfo.map(_.commitActivity).getOrElse(Seq.empty).sortBy(_.week)}
+@startingDay = @{commitActivities.headOption.map(_.week.getEpochSecond)}
+@commitActivityBox = {
+  @if(commitActivities.nonEmpty){
+    <div class="box commit-activities">
+      <h4>Commit Activity</h4>
+      <div class="commit-activity-container"><canvas id="commit-activity" data-commit-activity-count=@{commitActivities.map(_.total).mkString(",")} data-commit-activity-starting-day=@{startingDay} /></div>
+    </div>
+  }
+}
+
+@documentationLinks = @{ project.globalDocumentation }
+@documentationBox = {
+  @if(documentationLinks.nonEmpty) {
+  <div class="documentation box">
+      <h4>Documentation</h4>
+      <ul>
+        @for(doc <- documentationLinks){
+          <li><a href="@doc.link" rel="nofollow">@doc.label</a></li>
+        }
+      </ul>
+    </div>
+  }
+}
+
+@numberOfContributorMax = @{98}
+@contributorsBox(contributors: Seq[GithubContributor]) = {
+  @if(contributors.nonEmpty) {
+    <div class="collaborators box">
+      <h4>Contributors</h4>
+      <ul>
+      @for(contributor <- contributors.take(numberOfContributorMax)) {
+        <li>
+          <a href="@contributor.url.target" target="_blank" rel="noreferrer">
+            <img data-toggle="tooltip" data-placement="bottom" width="32" title="@contributor.login" src="@contributor.sizedAvatarUrl(32)" alt="">
+          </a>
+        </li>
+      }
+      </ul>
+      @if(numberOfContributorMax < contributors.size) {
+        <div class="more-collaborators">There are another <a href="@project.githubLink/graphs/contributors" target="_blank">@{contributors.size - numberOfContributorMax} contributors</a></div>
+      }
+    </div>
+  }
+}
+
+@contributingBox = {
+  <div class="box project-contributing-info">
+    <h4>Contributing Info</h4>
+    <hr>
+    <div>
+      @for(github <- project.githubInfo) {
+        <h5>Open Issues:</h5>
+        <ul>
+          @for(issue <- github.openIssues.take(3)) {
+            <a href="@issue.url.target" target="_blank">@issue</a>
+          }
+        </ul>
+    
+        <a href="https://github.com/@{project.reference}/issues"target="_blank">More Issues ...</a>
+        <hr>
+        @for(guide <- github.contributingGuide) { <a href="@guide.target" target="_blank">Contributing Guide</a> }
+        @for(chatroom <- github.chatroom) { <a href="@chatroom.target" target="_blank">Chatroom</a> }
+        @for(coc <- github.codeOfConduct) { <a href="@coc.target" target="_blank">Code of Conduct</a> }
+      }
+    </div>
+  </div>
+}
+
+@directDependenciesBox(dependencies: Map[Project.Reference, (ArtifactDependency.Scope, Seq[SemanticVersion])]) = {
+  <div class="dependencies box">
+    <h4>@Formats.plural(dependencies.size, "Dependency")</h4>
+    <ul>
+      @for((ref, (scope, versions)) <- dependencies.toSeq.sortBy { case (ref, _) => ref }){
+        <li>
+          <div class="row">
+            <div class="col-xs-8"><a href="/@ref">@ref</a> @scopeSpan(scope)</div>
+            <div class="col-xs-4">@versions.mkString(", ")</div>
+          </div>
+        </li>
+      }
+    </ul>
+  </div>
+}
+
+@reverseDependenciesBox(dependencies: Map[Project.Reference, (ArtifactDependency.Scope, SemanticVersion)]) = {
+  <section class="dependencies box" id="dependents">
+    <h4>@Formats.plural(dependencies.size, "Dependent")</h4>
+    <ul>
+      @for((ref, (scope, version)) <- dependencies.take(100).toSeq.sortBy { case (ref, _) => ref }){
+        <li>
+          <div class="row">
+            <div class="col-xs-8"><a href="/@ref">@ref</a> @scopeSpan(scope)</div>
+            <div class="col-xs-4">on @version</div>
+          </div>
+        </li>
+      }
+      @if(dependencies.size > 100) {
+        <p>and @{dependencies.size - 100} more</p>
+      }
+    </ul>
+  </section>
+}
+
+@scopeSpan(scope: ArtifactDependency.Scope) = {
+  @if(scope.value != "compile") { <span class="label label-default">@scope</span> }
 }

@@ -1,0 +1,139 @@
+@import scaladex.core.model.{Artifact, BinaryVersion, Project, SemanticVersion, UserState, Env}
+@import scaladex.view.html.main
+@import scaladex.view.html._
+@import scaladex.core.web.ArtifactsPageParams
+@import scaladex.core.model.Language
+@import scala.collection.SortedMap
+@import scaladex.core.util.ScalaExtensions._
+@import scaladex.core.util.TimeUtils
+@import scaladex.view.Formats
+
+@import java.time.Instant
+@(
+    env: Env,
+    project: Project,
+    user: Option[UserState],
+    artifactName: Artifact.Name,
+    artifactNames: Seq[Artifact.Name],
+    allBinaryVersions: Seq[BinaryVersion],
+    artifactByVersions: SortedMap[(Instant, SemanticVersion), Seq[Artifact]],
+    params: ArtifactsPageParams,
+    lastProjectVersion: SemanticVersion,
+    numberOfVersions: Long
+)
+
+@main(env, title = project.repository.toString, user) {
+  <main id="container-project">
+    @headproject(env, user, project, numberOfVersions, "Artifacts", lastProjectVersion)
+    <div class="container">
+      <div class="content-project artifacts box" data-organization="@project.reference.organization"
+      data-repository="@project.reference.repository">
+        <div class="artifacts-filter">
+          @filters()
+          <div class="result-count">
+            <b>@artifactByVersions.size</b>
+            @Formats.wordPlural(artifactByVersions.size, "version") found for
+            <b>@artifactName</b>
+          </div>
+        </div>
+        @if(artifactByVersions.isEmpty) {
+          <div>We can't find any release that matches all you criteria</div>
+        } else {
+        <div>
+          @artifactByVersions.map { case ((releaseDate, semanticVersion), artifacts) =>
+          <div class="panel">
+            <div class="artifact-row panel-body center">
+              <div class="col-md-3 center">
+                <a class="artifact-version" href="/@project.reference/artifacts/@artifactName/@semanticVersion">@semanticVersion</a>
+              </div>
+              <div class="col-md-9">
+                <div class="artifact-info">
+                  <a data-toggle="tooltip" data-placement="top" title="@formatInstant(releaseDate)">
+                    @TimeUtils.toFiniteDuration(releaseDate, Instant.now()).prettyPrint
+                    ago<i class="fa-solid fa-calendar-days"></i>
+                  </a>
+                  <br>
+                  @artifacts.head.licenses.map { license =>
+                    <a href="@license.url.getOrElse("#")">@license.shortName<i class="fa-solid fa-scale-balanced"></i></a>
+                  }
+                </div>
+                <div class="artifact-content">
+                  @for((platform, binaryVersions) <- artifacts.map(_.binaryVersion).groupBy(_.platform)) {
+                    <h5>@platform:</h5>
+                    @for(language <- binaryVersions.map(_.language).distinct.sorted) { 
+                      <span class="scala-version">@language.label</span>
+                    }
+                    <br>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+          }
+        }
+        </div>
+      </div>
+    </div>
+  </main>
+}
+
+@filters() = {
+  <form action="#" action="GET">
+    <select class="selectpicker" data-style="btn-primary" onchange="window.location=this.value">
+      @for(name <- artifactNames) {
+          <option value="@artifactsUri(project.reference, name, params)"
+          @if(name == artifactName) {selected}>
+          @name
+          </option>
+      }
+    </select>
+
+    <select class="selectpicker" name="binary-versions" 
+      title= "Scala Versions" multiple data-style="btn-primary" data-actions-box="true" data-selected-text-format="static"
+      onchange="this.form.submit()">
+      @for((platform, binaryVersions) <- allBinaryVersions.groupBy(_.platform)) {
+        <optgroup label="@platform">
+          @for(binaryVersion <- binaryVersions.sortBy(_.language)(Language.ordering.reverse)) {
+              <option value="@binaryVersion.label"
+              @if(params.binaryVersions.contains(binaryVersion)) {selected}>
+              @binaryVersion.language.label
+              </option>
+          }
+        </optgroup>
+      }
+    </select>
+    <label class="filter btn btn-default">
+      <input type="checkbox"  @if(params.preReleases) { checked } name="pre-releases" value="true" onclick="this.form.submit()">
+      Show pre-release versions
+    </label>
+  </form>
+  <div class="options-checked">
+    <ul class="list-inline">
+      @for(binaryVersion <- params.binaryVersions) {
+        <li>
+          <a href="@artifactsUri(project.reference, artifactName, params.remove(binaryVersion))" class="label label-default">
+            <i class="fa-solid fa-xmark"></i>
+            @binaryVersion
+          </a>
+        </li>
+      }
+      @if(params.preReleases) {
+        <li>
+          <a class="label label-info" href="@artifactsUri(project.reference, artifactName, params.withPreReleases(false))">
+            <i class="fa-solid fa-xmark"></i>
+            Show pre-release versions
+          </a>
+        </li>
+      }
+      @if(params.binaryVersions.nonEmpty || params.preReleases) {
+        <li>
+          <a href="@artifactsUri(project.reference, artifactName, ArtifactsPageParams.empty)" class="label label-warning clear-all">
+            <i class="fa-solid fa-xmark"></i>
+            Clear all filters
+          </a>
+        </li>
+      }
+    </ul>
+    
+  </div>
+}

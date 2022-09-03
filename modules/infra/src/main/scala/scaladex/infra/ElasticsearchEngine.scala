@@ -191,12 +191,12 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
 
   private def searchRequest(query: Query, sorting: Sorting): SearchRequest = {
     val scorer = sorting match {
-      case Sorting.Stars        => Some(combinedWithPercentage("githubInfo.stars"))
-      case Sorting.Created      => None
-      case Sorting.Forks        => Some(combinedWithPercentage("githubInfo.forks"))
-      case Sorting.Contributors => Some(combinedWithPercentage("githubInfo.contributorCount"))
+      case Sorting.Stars          => Some(combinedWithPercentage("githubInfo.stars"))
+      case Sorting.Created        => None
+      case Sorting.CommitActivity => Some(combinedWithPercentage("githubInfo.commitsPerYear"))
+      case Sorting.Contributors   => Some(combinedWithPercentage("githubInfo.contributorCount"))
       case Sorting.Dependent =>
-        Some(fieldFactorScore("inverseProjectDependencies").missing(0).modifier(FieldValueFactorFunctionModifier.LOG1P))
+        Some(fieldFactorScore("dependents").missing(0).modifier(FieldValueFactorFunctionModifier.LOG1P))
     }
 
     val scoringQuery = scorer match {

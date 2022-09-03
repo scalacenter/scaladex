@@ -1,0 +1,29 @@
+// 1. Utilities
+@import
+    'utilities/variables',
+    'utilities/mixins';
+
+// 2. Vendors
+@import
+    'lib/bootstrap-sass/stylesheets/_bootstrap.scss',
+    'lib/font-awesome/scss/fontawesome.scss',
+    'lib/select2/src/scss/core.scss';
+
+// 3. Vendors Extensions
+@import
+    'vendors-extensions/bootstrap',
+    'vendors-extensions/bootstrap-select';
+
+// 4. Base
+@import
+    'base/base';
+
+// 5. Partials
+@import
+    'partials/header',
+    'partials/main',
+    'partials/footer',
+    'partials/github',
+    'partials/awesome',
+    'partials/project',
+    'partials/admin';

@@ -6,8 +6,10 @@ import java.time.temporal.ChronoUnit
 import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact._
 import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
+import scaladex.core.model.GithubCommitActivity
 import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubIssue
@@ -37,6 +39,7 @@ object Values {
   val `7.2.0` = PatchVersion(7, 2, 0)
   val `7.3.0` = PatchVersion(7, 3, 0)
 
+  val `_2.13`: BinaryVersion = BinaryVersion(Jvm, Scala.`2.13`)
   val `_3`: BinaryVersion = BinaryVersion(Jvm, Scala.`3`)
   val `_sjs1_3`: BinaryVersion = BinaryVersion(ScalaJs.`1.x`, Scala.`3`)
   val `_sjs0.6_2.13` = BinaryVersion(ScalaJs.`0.6`, Scala.`2.13`)
@@ -55,7 +58,7 @@ object Values {
       language = artifactId.binaryVersion.language,
       projectRef = reference,
       description = None,
-      releaseDate = Some(creationDate),
+      releaseDate = creationDate,
       resolver = None,
       licenses = Set(),
       isNonStandardLib = false
@@ -101,7 +104,7 @@ object Values {
       language = artifactId.binaryVersion.language,
       projectRef = reference,
       description = None,
-      releaseDate = Some(creationDate),
+      releaseDate = creationDate,
       resolver = None,
       licenses = Set(),
       isNonStandardLib = false
@@ -110,7 +113,7 @@ object Values {
       ArtifactDependency(
         source = Cats.`core_3:2.6.1`.mavenReference,
         target = artifact.mavenReference,
-        "compile"
+        Scope("compile")
       )
     val githubInfo: GithubInfo = GithubInfo.empty
     val settings: Project.Settings =
@@ -133,7 +136,8 @@ object Values {
         contributingGuide = Some(Url("https://github.com/typelevel/cats/blob/main/CONTRIBUTING.md")),
         chatroom = Some(Url("https://gitter.im/typelevel/cats")),
         openIssues = List(issueAboutFoo, issueAboutBar),
-        contributors = Seq(contributor("travisbrown"), contributor("ceedub"), contributor("kailuowang"))
+        contributors = Seq(contributor("travisbrown"), contributor("ceedub"), contributor("kailuowang")),
+        commitActivity = Seq(GithubCommitActivity(25, Instant.now, IndexedSeq(0, 3, 4, 0, 5, 6, 7)))
       )
     val project: Project = Project.default(
       reference,
@@ -159,7 +163,7 @@ object Values {
         language = binaryVersion.language,
         projectRef = reference,
         description = description,
-        releaseDate = Some(Instant.ofEpochMilli(1620911032000L)),
+        releaseDate = Instant.ofEpochMilli(1620911032000L),
         resolver = None,
         licenses = Set(license),
         isNonStandardLib = false
@@ -167,13 +171,17 @@ object Values {
     }
 
     val `core_3:2.6.1`: Artifact = getArtifact("cats-core", `_3`, `2.6.1`, description = Some("Cats core"))
+    val `core_2.13:2.6.1`: Artifact = getArtifact("cats-core", `_2.13`, `2.6.1`, description = Some("Cats core"))
     val `core_3:4`: Artifact = getArtifact("cats-core", `_3`, `4`, description = Some("Cats core"))
     val `core_3:2.7.0`: Artifact = getArtifact("cats-core", `_3`, `2.7.0`, description = Some("Cats core"))
+
     val core_sjs1_3: Artifact = getArtifact("cats-core", `_sjs1_3`, `2.6.1`, description = Some("Cats core"))
     val core_sjs06_213: Artifact =
       getArtifact("cats-core", `_sjs0.6_2.13`, `2.6.1`, description = Some("Cats core"))
     val core_native04_213: Artifact =
       getArtifact("cats-core", `_native0.4_2.13`, `2.6.1`, description = Some("Cats core"))
+
+    val `kernel_2.13`: Artifact = getArtifact("cats-kernel", `_2.13`, `2.6.1`)
     val kernel_3: Artifact = getArtifact("cats-kernel", `_3`, `2.6.1`)
     val laws_3: Artifact = getArtifact("cats-laws", `_3`, `2.6.1`)
 
@@ -184,9 +192,9 @@ object Values {
       ArtifactDependency(
         source = `core_3:2.6.1`.mavenReference,
         target = kernel_3.mavenReference,
-        "compile"
+        Scope("compile")
       ),
-      ArtifactDependency(source = `core_3:2.6.1`.mavenReference, target = laws_3.mavenReference, "compile"),
+      ArtifactDependency(source = `core_3:2.6.1`.mavenReference, target = laws_3.mavenReference, Scope("compile")),
       ArtifactDependency(
         source = `core_3:2.6.1`.mavenReference,
         target = MavenReference(
@@ -194,7 +202,7 @@ object Values {
           "ztmp-scala-automation_2.10",
           "1.9"
         ), // dependency with a corresponding getArtifact
-        "compile"
+        Scope("compile")
       )
     )
 
@@ -210,7 +218,7 @@ object Values {
         "3.2.3"
       ),
       target = Cats.`core_3:2.6.1`.mavenReference,
-      "compile"
+      Scope("compile")
     )
 
     val testDependency: ArtifactDependency = ArtifactDependency(
@@ -220,7 +228,7 @@ object Values {
         "3.2.3"
       ),
       target = MavenReference("typelevel", "scalacheck_3", "1.15.4"),
-      "test"
+      Scope("test")
     )
   }
 

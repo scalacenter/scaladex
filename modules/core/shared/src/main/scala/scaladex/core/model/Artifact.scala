@@ -1,12 +1,14 @@
 package scaladex.core.model
 
 import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 import fastparse.P
 import fastparse.Start
 import fastparse._
+import scaladex.core.api.artifact.ArtifactMetadataResponse
 import scaladex.core.model.PatchVersion
-import scaladex.core.model.Project.DocumentationLink
 import scaladex.core.util.Parsers._
 
 /**
@@ -23,7 +25,7 @@ case class Artifact(
     artifactName: Artifact.Name,
     projectRef: Project.Reference,
     description: Option[String],
-    releaseDate: Option[Instant],
+    releaseDate: Instant,
     resolver: Option[Resolver],
     licenses: Set[License],
     isNonStandardLib: Boolean,
@@ -34,9 +36,23 @@ case class Artifact(
 
   def isValid: Boolean = binaryVersion.isValid
 
+  def groupIdAndName: String = {
+    val sep = binaryVersion match {
+      case BinaryVersion(Jvm, Java) | BinaryVersion(SbtPlugin(_), _) => ":"
+      case BinaryVersion(ScalaJs(_) | ScalaNative(_), _)             => ":::"
+      case _                                                         => "::"
+    }
+    s"$groupId$sep$artifactName"
+  }
+
   private def artifactHttpPath: String = s"/${projectRef.organization}/${projectRef.repository}/$artifactName"
 
   val mavenReference: Artifact.MavenReference = Artifact.MavenReference(groupId.value, artifactId, version.encode)
+
+  def release: Release =
+    Release(projectRef.organization, projectRef.repository, platform, language, version, releaseDate)
+
+  def releaseDateFormat: String = Artifact.dateFormatter.format(releaseDate)
 
   def fullHttpUrl(env: Env): String =
     env match {
@@ -140,12 +156,18 @@ case class Artifact(
     ).flatten.mkString("\n")
   }
 
-  def scaladoc(scaladocPattern: Option[String]): Option[String] =
-    (scaladocPattern, resolver) match {
-      case (None, None) =>
-        Some(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version")
-      case (None, Some(_))    => None
-      case (Some(pattern), _) => Some(evalLink(pattern))
+  def scalaCliInstall: String = {
+    val artifactOperator = if (isNonStandardLib) ":" else "::"
+    s"//> using lib $groupId$artifactOperator$artifactId:$version"
+  }
+
+  def csLaunch: String =
+    s"cs launch $groupId:$artifactId:$version"
+
+  def defaultScaladoc: Option[String] =
+    resolver match {
+      case None => Some(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version")
+      case _    => None
     }
 
   // todo: Add tests for this
@@ -172,28 +194,11 @@ case class Artifact(
       .map { case (k, v) => s"$k=$v" }
       .mkString(tryBaseUrl + "?", "&", "")
   }
-
-  def documentationLinks(patterns: Seq[DocumentationLink]): Seq[DocumentationLink] =
-    patterns.map { case DocumentationLink(label, url) => DocumentationLink(label, evalLink(url)) }
-
-  /**
-   * Documentation link are often related to a release version
-   * for example: https://playframework.com/documentation/2.6.x/Home
-   * we want to substitute input such as
-   * https://playframework.com/documentation/[major].[minor].x/Home
-   */
-  private def evalLink(pattern: String): String =
-    pattern
-      .replace("[groupId]", groupId.toString)
-      .replace("[artifactId]", artifactId)
-      .replace("[version]", version.toString)
-      .replace("[major]", version.major.toString)
-      .replace("[minor]", version.minor.toString)
-      .replace("[name]", artifactName.value)
-
 }
 
 object Artifact {
+  private val dateFormatter = DateTimeFormatter.ofPattern("MMM d, uuuu").withZone(ZoneOffset.UTC)
+
   case class Name(value: String) extends AnyVal {
     override def toString: String = value
   }
@@ -228,16 +233,24 @@ object Artifact {
   }
 
   case class MavenReference(groupId: String, artifactId: String, version: String) {
-
-    def name: String = s"$groupId/$artifactId"
-
     override def toString(): String = s"$groupId:$artifactId:$version"
 
     /**
      * url to maven page with related information to this reference
      */
-    def httpUrl: String =
-      s"http://search.maven.org/#artifactdetails|$groupId|$artifactId|$version|jar"
+    def searchUrl: String =
+      s"https://search.maven.org/#artifactdetails|$groupId|$artifactId|$version|jar"
+
+    def repoUrl: String =
+      s"https://repo1.maven.org/maven2/${groupId.replace('.', '/')}/$artifactId/$version/"
   }
 
+  def toMetadataResponse(artifact: Artifact): ArtifactMetadataResponse =
+    ArtifactMetadataResponse(
+      version = artifact.version.toString,
+      projectReference = Some(artifact.projectRef.toString),
+      releaseDate = artifact.releaseDate.toString,
+      language = artifact.language.toString,
+      platform = artifact.platform.toString
+    )
 }

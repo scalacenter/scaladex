@@ -28,6 +28,9 @@ case class SemanticVersion(
       patch2.isEmpty &&
       preRelease.forall(_.isSemantic)
 
+  def isPreRelease: Boolean =
+    preRelease.isDefined || metadata.isDefined
+
   override def toString: String = this match {
     case MajorVersion(major) => s"$major.x"
     case _                   => encode

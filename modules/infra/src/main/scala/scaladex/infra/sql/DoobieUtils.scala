@@ -16,8 +16,11 @@ import doobie.hikari.HikariTransactor
 import io.circe._
 import org.flywaydb.core.Flyway
 import scaladex.core.model.Artifact
+import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
+import scaladex.core.model.DocumentationPattern
+import scaladex.core.model.GithubCommitActivity
 import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubIssue
@@ -39,24 +42,25 @@ object DoobieUtils {
 
   private implicit val cs: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
+
   def flyway(conf: PostgreSQLConfig): Flyway = {
     val datasource = getHikariDataSource(conf)
+    flyway(datasource)
+  }
+  def flyway(datasource: HikariDataSource): Flyway =
     Flyway
       .configure()
       .dataSource(datasource)
       .locations("migrations", "scaladex/infra/migrations")
       .load()
-  }
 
-  def transactor(conf: PostgreSQLConfig): Resource[IO, HikariTransactor[IO]] = {
-    val datasource = getHikariDataSource(conf)
+  def transactor(datasource: HikariDataSource): Resource[IO, HikariTransactor[IO]] =
     for {
       ce <- ExecutionContexts.fixedThreadPool[IO](32) // our connect EC
       be <- Blocker[IO] // our blocking EC
     } yield Transactor.fromDataSource[IO](datasource, ce, be)
-  }
 
-  private def getHikariDataSource(conf: PostgreSQLConfig): HikariDataSource = {
+  def getHikariDataSource(conf: PostgreSQLConfig): HikariDataSource = {
     val config: HikariConfig = new HikariConfig()
     config.setDriverClassName(conf.driver)
     config.setJdbcUrl(conf.url)
@@ -142,8 +146,10 @@ object DoobieUtils {
       Meta[String].timap(fromJson[Seq[GithubContributor]](_).get)(toJson(_))
     implicit val githubIssuesMeta: Meta[Seq[GithubIssue]] =
       Meta[String].timap(fromJson[Seq[GithubIssue]](_).get)(toJson(_))
-    implicit val documentationLinksMeta: Meta[Seq[Project.DocumentationLink]] =
-      Meta[String].timap(fromJson[Seq[Project.DocumentationLink]](_).get)(toJson(_))
+    implicit val documentationPattern: Meta[Seq[DocumentationPattern]] =
+      Meta[String].timap(fromJson[Seq[DocumentationPattern]](_).get)(toJson(_))
+    implicit val githubCommitActivityMeta: Meta[Seq[GithubCommitActivity]] =
+      Meta[String].timap(fromJson[Seq[GithubCommitActivity]](_).get)(toJson(_))
     implicit val topicsMeta: Meta[Set[String]] =
       Meta[String].timap(_.split(",").filter(_.nonEmpty).toSet)(
         _.mkString(",")
@@ -152,6 +158,8 @@ object DoobieUtils {
       Meta[String].timap(_.split(",").filter(_.nonEmpty).map(Artifact.Name.apply).toSet)(_.mkString(","))
     implicit val semanticVersionMeta: Meta[SemanticVersion] =
       Meta[String].timap(SemanticVersion.parse(_).get)(_.encode)
+    implicit val artifactIdMeta: Meta[Artifact.ArtifactId] =
+      Meta[String].timap(Artifact.ArtifactId.parse(_).get)(_.value)
     implicit val binaryVersionMeta: Meta[BinaryVersion] =
       Meta[String].timap { x =>
         BinaryVersion
@@ -170,6 +178,14 @@ object DoobieUtils {
           .fromLabel(x)
           .getOrElse(throw new Exception(s"Failed to parse $x as Language"))
       }(_.label)
+    implicit val scopeMeta: Meta[ArtifactDependency.Scope] =
+      Meta[String].timap(ArtifactDependency.Scope.apply)(_.value)
+    implicit val licenseMeta: Meta[License] =
+      Meta[String].timap { x =>
+        License
+          .get(x)
+          .getOrElse(throw new Exception(s"Failed to parse $x as License"))
+      }(_.shortName)
     implicit val licensesMeta: Meta[Set[License]] =
       Meta[String].timap(fromJson[Seq[License]](_).get.toSet)(toJson(_))
     implicit val resolverMeta: Meta[Resolver] =

@@ -212,7 +212,12 @@ object Client {
     CopyToClipboard.addCopyListenersOnClass("btn-copy")
 
     ActiveNavObserver.start()
+
   }
+
+  @JSExport
+  def createSparkline(): Unit =
+    Sparkline.createCommitActivitySparkline()
 
   @JSExport
   def updateVisibleArtifactsInGrid(): Unit = {
@@ -257,4 +262,5 @@ object Client {
       }
     }
   }
+
 }

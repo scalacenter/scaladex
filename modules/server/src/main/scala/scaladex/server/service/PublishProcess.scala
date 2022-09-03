@@ -5,6 +5,7 @@ import java.time.Instant
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Env
 import scaladex.core.model.Project
@@ -15,9 +16,10 @@ import scaladex.core.service.WebDatabase
 import scaladex.data.cleanup.GithubRepoExtractor
 import scaladex.data.maven.ArtifactModel
 import scaladex.data.maven.PomsReader
-import scaladex.data.meta.ArtifactConverter
 import scaladex.infra.CoursierResolver
 import scaladex.infra.DataPaths
+import scaladex.infra.GithubClientImpl
+import scaladex.server.service.ArtifactConverter
 
 sealed trait PublishResult
 object PublishResult {
@@ -34,8 +36,10 @@ class PublishProcess(
     database: WebDatabase,
     pomsReader: PomsReader,
     env: Env
-)(implicit ec: ExecutionContext)
+)(implicit system: ActorSystem)
     extends LazyLogging {
+  import system.dispatcher
+
   def publishPom(
       path: String,
       data: String,
@@ -71,12 +75,17 @@ class PublishProcess(
         if (userState.isEmpty || userState.get.hasPublishingAuthority(env) || userState.get.repos.contains(repo)) {
           converter.convert(pom, repo, creationDate) match {
             case Some((artifact, deps)) =>
-              database
-                .insertArtifact(artifact, deps, Instant.now)
-                .map { _ =>
-                  logger.info(s"Published $pomRef")
-                  PublishResult.Success
-                }
+              for {
+                isNewProject <- database.insertArtifact(artifact, deps, Instant.now)
+                _ <-
+                  if (isNewProject && userState.nonEmpty) {
+                    val githubUpdater = new GithubUpdater(database, new GithubClientImpl(userState.get.info.token))
+                    githubUpdater.update(repo).map(_ => ())
+                  } else Future.successful(())
+              } yield {
+                logger.info(s"Published $pomRef")
+                PublishResult.Success
+              }
             case None =>
               logger.warn(s"Cannot convert $pomRef to valid Scala artifact.")
               Future.successful(PublishResult.InvalidPom)
@@ -87,12 +96,12 @@ class PublishProcess(
         }
     }
   }
-
 }
 
 object PublishProcess {
   def apply(paths: DataPaths, filesystem: Storage, database: WebDatabase, env: Env)(
-      implicit ec: ExecutionContext
+      implicit ec: ExecutionContext,
+      actorSystem: ActorSystem
   ): PublishProcess = {
     val githubExtractor = new GithubRepoExtractor(paths)
     val converter = new ArtifactConverter(paths)

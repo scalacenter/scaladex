@@ -3,10 +3,12 @@ package scaladex.infra
 import java.time.Instant
 
 import io.circe._
-import io.circe.generic.semiauto.deriveCodec
+import io.circe.generic.semiauto._
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Category
+import scaladex.core.model.DocumentationPattern
+import scaladex.core.model.GithubCommitActivity
 import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubIssue
@@ -18,7 +20,11 @@ import scaladex.core.model.Project
 import scaladex.core.model.Resolver
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.Url
+import scaladex.core.model.UserInfo
+import scaladex.core.model.UserState
 import scaladex.core.model.search.GithubInfoDocument
+import scaladex.core.util.Secret
+import scaladex.infra.github.GithubModel
 
 object Codecs {
   implicit val organization: Codec[Project.Organization] = fromString(_.value, Project.Organization.apply)
@@ -30,15 +36,16 @@ object Codecs {
   implicit val urlCodec: Codec[Url] = fromString(_.target, Url)
   implicit val contributor: Codec[GithubContributor] = deriveCodec
   implicit val githubIssue: Codec[GithubIssue] = deriveCodec
-  implicit val documentation: Codec[Project.DocumentationLink] =
+  implicit val githubCommitActivity: Codec[GithubCommitActivity] = deriveCodec
+  implicit val documentation: Codec[DocumentationPattern] =
     Codec.from(
       Decoder[Map[String, String]].emap { map =>
         map.toList match {
-          case (key -> value) :: Nil => Right(Project.DocumentationLink(key, value))
+          case (key -> value) :: Nil => Right(DocumentationPattern(key, value))
           case _                     => Left(s"Cannot decode json to DocumentationLink: $map")
         }
       },
-      Encoder[Map[String, String]].contramap(docLink => Map(docLink.label -> docLink.link))
+      Encoder[Map[String, String]].contramap(doc => Map(doc.label -> doc.pattern))
     )
   implicit val githubInfoDocumentCodec: Codec[GithubInfoDocument] = deriveCodec
   implicit val githubInfoCodec: Codec[GithubInfo] = deriveCodec
@@ -53,11 +60,17 @@ object Codecs {
   implicit val platformCodec: Codec[Platform] = fromString(_.label, Platform.fromLabel(_).get)
   implicit val languageCodec: Codec[Language] = fromString(_.label, Language.fromLabel(_).get)
   implicit val resolverCodec: Codec[Resolver] = deriveCodec
-  implicit val licenseCodec: Codec[License] = deriveCodec
+  implicit val licenseCodec: Codec[License] = fromString(_.shortName, License.allByShortName.apply)
   implicit val artifactCodec: Codec[Artifact] = deriveCodec
+  implicit val scopeCodec: Codec[ArtifactDependency.Scope] = fromString(_.value, ArtifactDependency.Scope.apply)
 
   implicit val mavenRefCodec: Codec[Artifact.MavenReference] = deriveCodec
   implicit val dependenciesCodec: Codec[ArtifactDependency] = deriveCodec
+
+  implicit val userStateCodec: Codec[UserState] = deriveCodec
+  implicit val userInfoCodec: Codec[GithubModel.UserInfo] = deriveCodec
+  implicit val coreUserInfoCodec: Codec[UserInfo] = deriveCodec
+  implicit val secretCodec: Codec[Secret] = fromString(_.decode, Secret.apply)
 
   private def fromLong[A](encode: A => Long, decode: Long => A): Codec[A] =
     Codec.from(Decoder[Long].map(decode), Encoder[Long].contramap(encode))

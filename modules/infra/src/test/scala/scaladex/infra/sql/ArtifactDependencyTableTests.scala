@@ -10,5 +10,6 @@ class ArtifactDependencyTableTests extends AnyFunSpec with BaseDatabaseSuite wit
   it("check select")(check(ArtifactDependencyTable.select))
   it("check selectDirectDependency")(check(ArtifactDependencyTable.selectDirectDependency))
   it("check selectReverseDependency")(check(ArtifactDependencyTable.selectReverseDependency))
-  it("check selectProjectDependency")(check(ArtifactDependencyTable.computeProjectDependency))
+  it("check computeProjectDependencies")(check(ArtifactDependencyTable.computeProjectDependencies))
+  it("check computeReleaseDependency")(check(ArtifactDependencyTable.computeReleaseDependency))
 }

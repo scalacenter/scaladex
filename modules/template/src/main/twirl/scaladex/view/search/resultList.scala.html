@@ -21,9 +21,11 @@
             </div>
           } else {
             <div>
-              @githubUserAvatar(project.githubInfo.flatMap(_.logo))
-              <h4>@project.reference</h4>
+              <div class="header">
+                @githubUserAvatar(project.githubInfo.flatMap(_.logo))
+                <h4>@project.reference</h4>
 
+              </div>
               @for(github <- project.githubInfo) {
                 @for(description <- github.description) {
                   <p class="description emojify">@description</p>
@@ -83,20 +85,20 @@
             }
             </div>
 
-            <div>
+            <div class="icons-container">
             @for(github <- project.githubInfo) {
               @for(stars <- github.stars) {
                 <span>
-                  <a data-toggle="tooltip" data-placement="bottom" title="Stars" href="#">@stars <i class="fa fa-star"></i></a>
+                  <a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Stars" href="#"><span>@stars</span> <i class="fa-solid fa-star"></i></a>
                 </span>
               }
-              @for(forks <- github.forks) {
+              @for(commitsPerYear <- github.commitsPerYear) {
                 <span>
-                  <a data-toggle="tooltip" data-placement="bottom" title="Forks" href="#">@forks <i class="fa fa-code-fork"></i></a>
+<a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Commits in the past year" href="#"><span>@commitsPerYear</span> <i class="fa-solid fa-code-merge"></i></a>
                 </span>
               }
               <span>
-                <a data-toggle="tooltip" data-placement="bottom" title="Contributors" href="#">@github.contributorCount <i class="fa fa-users"></i></a>
+                <a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Contributors" href="#"><span>@github.contributorCount</span> <i class="fa-solid fa-users"></i></a>
               </span>
             }
             </div>

@@ -7,10 +7,13 @@ import java.util.Locale
 
 import akka.http.scaladsl.model.Uri
 import akka.http.scaladsl.model.Uri.Query
+import scaladex.core.model.Artifact
+import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
+import scaladex.core.model.Project
 import scaladex.core.model.search.AwesomeParams
-import scaladex.core.model.search.Pagination
 import scaladex.core.model.search.SearchParams
+import scaladex.core.web.ArtifactsPageParams
 
 package object html {
 
@@ -31,6 +34,11 @@ package object html {
         case (acc, v) =>
           acc.appendQuery(k -> v)
       }
+    def appendQuery(k: String, vs: Set[String]): Uri =
+      vs.foldLeft(uri) {
+        case (acc, v) =>
+          acc.appendQuery(k -> v)
+      }
     def appendQuery(k: String, ov: Option[String]): Uri =
       ov match {
         case Some(v) => appendQuery(k -> v)
@@ -42,12 +50,7 @@ package object html {
     if (in.startsWith("https://") || in.startsWith("http://")) in
     else "http://" + in
 
-  def paginationUri(
-      params: SearchParams,
-      uri: Uri,
-      pagination: Pagination,
-      you: Boolean
-  )(page: Int): Uri = {
+  def paginationUri(params: SearchParams, uri: Uri, you: Boolean)(page: Int): Uri = {
 
     val newUri = uri
       .appendQuery("sort" -> params.sorting.label)
@@ -66,7 +69,7 @@ package object html {
 
   }
 
-  def paginationUri(category: Category, params: AwesomeParams, pagination: Pagination)(page: Int): Uri =
+  def paginationUri(category: Category, params: AwesomeParams)(page: Int): Uri =
     Uri(s"/awesome/${category.label}")
       .appendQuery("sort" -> params.sorting.label)
       .appendQuery("languages", params.languages.map(_.label))
@@ -79,12 +82,17 @@ package object html {
       .appendQuery("languages", params.languages.map(_.label))
       .appendQuery("platforms", params.platforms.map(_.label))
 
+  def artifactsUri(ref: Project.Reference, artifactName: Artifact.Name, params: ArtifactsPageParams): Uri =
+    Uri(s"/$ref/artifacts/$artifactName")
+      .appendQuery("binary-versions", params.binaryVersions.map(_.label))
+      .appendQuery(("pre-releases", params.preReleases.toString))
+
+  def artifactsUri(ref: Project.Reference, artifactName: Artifact.Name, binaryVersion: Option[BinaryVersion]): Uri =
+    Uri(s"/$ref/artifacts/$artifactName")
+      .appendQuery("binary-versions", binaryVersion.map(_.label))
+
   // https://www.reddit.com/r/scala/comments/4n73zz/scala_puzzle_gooooooogle_pagination/d41jor5
-  def paginationRender(
-      selected: Int,
-      max: Int,
-      toShow: Int = 10
-  ): (Option[Int], List[Int], Option[Int]) = {
+  def paginationRender(selected: Int, max: Int, toShow: Int = 10): (Option[Int], List[Int], Option[Int]) = {
     val min = 1
 
     if (selected == max && max == 1) (None, List(1), None)
@@ -143,4 +151,5 @@ package object html {
 
   def formatInstant(i: Instant): String = df.format(i)
   def formatInstant(i: Option[Instant]): String = i.map(df.format).getOrElse("_")
+
 }

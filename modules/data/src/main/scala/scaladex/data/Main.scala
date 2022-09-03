@@ -11,7 +11,7 @@ import cats.effect._
 import com.typesafe.scalalogging.LazyLogging
 import doobie.hikari._
 import scaladex.core.util.ScalaExtensions._
-import scaladex.core.util.TimerUtils
+import scaladex.core.util.TimeUtils
 import scaladex.data.init.Init
 import scaladex.data.util.PidLock
 import scaladex.infra.DataPaths
@@ -54,14 +54,15 @@ object Main extends LazyLogging {
 
     val dataPaths = DataPaths.from(config.filesystem)
     val localStorage = FilesystemStorage(config.filesystem)
+    val datasource = DoobieUtils.getHikariDataSource(config.database)
 
     def usingDatabase(f: SqlDatabase => Future[Unit]): Unit = {
       implicit val cs = IO.contextShift(system.dispatcher)
       val transactor: Resource[IO, HikariTransactor[IO]] =
-        DoobieUtils.transactor(config.database)
+        DoobieUtils.transactor(datasource)
       transactor
         .use { xa =>
-          val database = new SqlDatabase(config.database, xa)
+          val database = new SqlDatabase(datasource, xa)
           IO.fromFuture(IO(f(database)))
         }
         .unsafeRunSync()
@@ -101,7 +102,7 @@ object Main extends LazyLogging {
     }
 
     logger.info(s"Executing $name")
-    val (_, duration) = TimerUtils.measure(run())
+    val (_, duration) = TimeUtils.measure(run())
     logger.info(s"$name done in ${duration.prettyPrint}")
     system.terminate()
   }

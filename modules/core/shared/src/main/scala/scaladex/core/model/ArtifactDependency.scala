@@ -9,7 +9,7 @@ package scaladex.core.model
 case class ArtifactDependency(
     source: Artifact.MavenReference,
     target: Artifact.MavenReference,
-    scope: String
+    scope: ArtifactDependency.Scope
 )
 
 object ArtifactDependency {
@@ -17,16 +17,11 @@ object ArtifactDependency {
       artifactDep: ArtifactDependency,
       target: Option[Artifact]
   ) {
-    def url: String = target match {
-      case Some(dep) => dep.httpUrl
-      case None =>
-        s"http://search.maven.org/#artifactdetails|${artifactDep.target.groupId}|${artifactDep.target.artifactId}|${artifactDep.target.version}|jar"
-    }
+    def url: String = target.map(_.httpUrl).getOrElse(artifactDep.target.searchUrl)
 
-    def name: String = target match {
-      case Some(artifact) => s"${artifact.projectRef.organization}/${artifact.artifactName}"
-      case None =>
-        s"${artifactDep.target.groupId}/${artifactDep.target.artifactId}"
+    def groupIdAndName: String = target match {
+      case Some(artifact) => artifact.groupIdAndName
+      case None           => s"${artifactDep.target.groupId}:${artifactDep.target.artifactId}"
     }
 
     val version: String = artifactDep.target.version
@@ -36,7 +31,7 @@ object ArtifactDependency {
   }
   object Direct {
     implicit val order: Ordering[Direct] =
-      Ordering.by(d => ordering(d.artifactDep, d.name))
+      Ordering.by(d => (d.artifactDep.scope, d.groupIdAndName))
   }
 
   final case class Reverse(
@@ -44,12 +39,13 @@ object ArtifactDependency {
       source: Artifact
   ) {
     def url: String = source.httpUrl
-    def name: String = s"${source.projectRef.organization}/${source.artifactName}"
+    def groupIdAndName: String = source.groupIdAndName
+    def version: SemanticVersion = source.version
   }
 
   object Reverse {
     implicit val order: Ordering[Reverse] =
-      Ordering.by(d => ordering(d.dependency, d.name))
+      Ordering.by(d => (d.dependency.scope, d.groupIdAndName))
     def sample(deps: Seq[Reverse], sampleSize: Int): Seq[Reverse] =
       deps
         .groupBy(r => (r.source.projectRef, r.source.artifactId))
@@ -61,18 +57,21 @@ object ArtifactDependency {
         .take(sampleSize)
   }
 
-  private def ordering(
-      dependency: ArtifactDependency,
-      name: String
-  ): (Int, String) =
-    (
-      dependency.scope match {
-        case "compile"  => 0
-        case "provided" => 1
-        case "runtime"  => 2
-        case "test"     => 3
-        case _          => 4
-      },
-      name
-    )
+  // current values in the database: optional, macro, runtime, compile, provided, test
+  case class Scope(value: String) extends AnyVal with Ordered[Scope] {
+    override def toString: String = value
+    override def compare(that: Scope): Int =
+      Scope.ordering.compare(this, that)
+  }
+  object Scope {
+    implicit val ordering: Ordering[Scope] = Ordering.by {
+      case Scope("compile")  => 0
+      case Scope("provided") => 1
+      case Scope("runtime")  => 2
+      case Scope("test")     => 3
+      case _                 => 4
+    }
+
+    val compile: Scope = Scope("compile")
+  }
 }
