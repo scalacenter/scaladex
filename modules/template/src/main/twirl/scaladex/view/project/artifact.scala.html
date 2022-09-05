@@ -3,6 +3,7 @@
 @import scaladex.core.web.ArtifactPageParams
 @import scaladex.view.Formats
 @import scaladex.view.html._
+@import scaladex.view.InstallTab
 
 @(
     env: Env,
@@ -62,7 +63,7 @@
                 @info("Files") { <a href="@artifact.mavenReference.repoUrl">View all</a> }
               }
             </div>
-            @installBox(project.settings.cliArtifacts)
+            @installBox(InstallTab.allOf(artifact, project.settings.cliArtifacts))
           </div>
         </div>
         <div class="col-md-4 sidebar-project">
@@ -144,51 +145,23 @@
   </div>
 }
 
-@installBox(cliArtifacts: Set[Artifact.Name]) = {
+@installBox(tabs: Seq[InstallTab]) = {
   <div class="install">
     <ul class="nav nav-tabs nav-justified">
-      @tabLink("sbt", "sbt", true)
-      @tabLink("mill", "Mill")
-      @if(cliArtifacts.contains(artifact.artifactName)) {
-        @tabLink("coursier", "Coursier")
+      @for((tab, i) <- tabs.zipWithIndex) {
+        <li role="presentation" @if(i == 0 ){ class="active" }>
+          <a href="#@tab.ref" aria-controls="@tab.ref" role="tab" data-toggle="tab">@tab.title</a>
+        </li>
       }
-      @tabLink("scalaCli", "Scala CLI")
-      @tabLink("ammonite", "Ammonite")
-      @tabLink("maven", "Maven")
-      @tabLink("gradle", "Gradle")
     </ul>
     <div class="box tab-content">
-      @tabPanel("sbt", artifact.sbtInstall, true) { }
-      @tabPanel("mill", artifact.millInstall) {
-        <a href="https://com-lihaoyi.github.io/mill">Mill build tool</a>
+      @for((tab, i) <- tabs.zipWithIndex) {
+        <div role="tabpanel" class="tab-pane @if(i == 0){ active }" id="@tab.ref">
+          <p>@tab.description</p>
+          <pre id="copy-@tab.ref" class="copyable-incantation">@tab.install</pre>
+          <button class="btn btn-primary btn-copy pull-right" data-clipboard-target="copy-@tab.ref">Copy</button>
+        </div>
       }
-      @if(cliArtifacts.contains(artifact.artifactName)) {
-        @tabPanel("coursier", artifact.csLaunch) {
-          <a href="https://get-coursier.io/docs/cli-overview">Coursier</a>
-        }
-      }
-      @tabPanel("scalaCli", artifact.scalaCliInstall) {
-        <a href="https://scala-cli.virtuslab.org/docs/overview">Scala CLI</a>
-      }
-      @tabPanel("ammonite", artifact.ammInstall) {
-        <a href="https://ammonite.io/#Ammonite-REPL">Ammonite REPL</a>
-      }
-      @tabPanel("maven", artifact.mavenInstall) { }
-      @tabPanel("gradle", artifact.gradleInstall) { }
     </div>
-  </div>
-}
-
-@tabLink(ref: String, title: String, active: Boolean = false) = {
-  <li role="presentation" @if(active){ class="active" }>
-    <a href="#@ref" aria-controls="@ref" role="tab" data-toggle="tab">@title</a>
-  </li>
-}
-
-@tabPanel(ref: String, install: String, active: Boolean = false)(description: Html) = {
-  <div role="tabpanel" class="tab-pane @if(active){ active }" id="@ref">
-    <p>@description</p>
-    <pre id="copy-@ref" class="copyable-incantation">@install</pre>
-    <button class="btn btn-primary btn-copy pull-right" data-clipboard-target="copy-@ref">Copy</button>
   </div>
 }

@@ -49,12 +49,28 @@ object ScalaNative {
   val stableVersions: Set[ScalaNative] = Set(`0.3`, `0.4`)
 }
 
+case class MillPlugin(version: SemanticVersion) extends Platform {
+  override def toString: String = s"Mill $version"
+
+  override def label: String = s"mill${version.encode}"
+
+  override def isValid: Boolean = version match {
+    case MinorVersion(_, _) => true
+    case _                  => false
+  }
+}
+
+object MillPlugin {
+  val `0.10` = MillPlugin(MinorVersion(0, 10))
+}
+
 object Platform {
   implicit val ordering: Ordering[Platform] = Ordering.by {
-    case Jvm                  => (true, None, None, None)
-    case ScalaJs(version)     => (false, Some(version), None, None)
-    case ScalaNative(version) => (false, None, Some(version), None)
-    case SbtPlugin(version)   => (false, None, None, Some(version))
+    case Jvm                  => (true, None, None, None, None)
+    case ScalaJs(version)     => (false, Some(version), None, None, None)
+    case ScalaNative(version) => (false, None, Some(version), None, None)
+    case SbtPlugin(version)   => (false, None, None, Some(version), None)
+    case MillPlugin(version)  => (false, None, None, None, Some(version))
   }
 
   def fromLabel(input: String): Option[Platform] =
@@ -63,6 +79,7 @@ object Platform {
       case s"sjs$version"    => SemanticVersion.parse(version).map(ScalaJs.apply)
       case s"native$version" => SemanticVersion.parse(version).map(ScalaNative.apply)
       case s"sbt$version"    => SemanticVersion.parse(version).map(SbtPlugin.apply)
+      case s"mill$version"   => SemanticVersion.parse(version).map(MillPlugin.apply)
       case _                 => None
     }
 }

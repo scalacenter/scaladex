@@ -2,6 +2,7 @@
 @import scaladex.core.model.search.SearchParams
 @import scaladex.core.model.ScalaJs
 @import scaladex.core.model.ScalaNative
+@import scaladex.core.model.MillPlugin
 @import scaladex.core.model.SbtPlugin
 @import scaladex.view.html.main
 @import scaladex.core.model.UserState
@@ -15,6 +16,7 @@
   scalaJsVersions: Seq[(ScalaJs, Int)],
   scalaNativeVersions: Seq[(ScalaNative, Int)],
   sbtVersions: Seq[(SbtPlugin, Int)],
+  millVersions: Seq[(MillPlugin, Int)],
   latestProjects: Seq[ProjectDocument],
   mostDependedUpon: Seq[ProjectDocument],
   user: Option[UserState],
@@ -45,14 +47,6 @@
                         }
                     </ul>
                     <ul class="tag">
-                        <li><strong>Sbt Versions:</strong></li>
-                        @for((sbtVersion, count) <- sbtVersions) {
-                            <li>
-                                <a href="/search?q=*&platforms=@sbtVersion.label">@sbtVersion.version (@count)</a>
-                            </li>
-                        }
-                    </ul>
-                    <ul class="tag">
                         <li><strong>Scala.js Versions:</strong></li>
                         @for((scalaJsVersion, count) <- scalaJsVersions) {
                             <li>
@@ -69,6 +63,22 @@
                                 </li>
                             }
                         }
+                    </ul>
+                    <ul class="tag">
+                      <li><strong>Sbt Versions:</strong></li>
+                      @for((sbtVersion, count) <- sbtVersions) {
+                          <li>
+                              <a href="/search?q=*&platforms=@sbtVersion.label">@sbtVersion.version (@count)</a>
+                          </li>
+                      }
+                    </ul>
+                    <ul class="tag">
+                      <li><strong>Mill Versions:</strong></li>
+                      @for((millVersion, count) <- millVersions) {
+                          <li>
+                              <a href="/search?q=*&platforms=@millVersion.label">@millVersion.version (@count)</a>
+                          </li>
+                      }
                     </ul>
                     <ul class="tag">
                         <li><strong>Ecosystems:</strong></li>

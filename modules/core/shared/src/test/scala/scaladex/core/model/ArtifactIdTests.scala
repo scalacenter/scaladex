@@ -70,6 +70,7 @@ class ArtifactIdTests extends AsyncFunSpec with Matchers {
       result should contain(expected)
       result.get.value shouldBe artifactId
     }
+
     it("handles java artifacts") {
       val artifactId = "virtual-schema-common-java"
       val expected = ArtifactId(Name("virtual-schema-common-java"), BinaryVersion(Jvm, Java))
@@ -77,9 +78,18 @@ class ArtifactIdTests extends AsyncFunSpec with Matchers {
       result should contain(expected)
       result.get.value shouldBe artifactId
     }
+
     it("handles special char '_' in artifact name") {
       val artifactId = "pan-domain-auth-play_2-8_2.12"
       val expected = ArtifactId(Name("pan-domain-auth-play_2-8"), BinaryVersion(Jvm, Scala.`2.12`))
+      val result = ArtifactId.parse(artifactId)
+      result should contain(expected)
+      result.get.value shouldBe artifactId
+    }
+
+    it("parses Mill plugin") {
+      val artifactId = "mill-scalafix_mill0.10_2.13"
+      val expected = ArtifactId(Name("mill-scalafix"), BinaryVersion(MillPlugin.`0.10`, Scala.`2.13`))
       val result = ArtifactId.parse(artifactId)
       result should contain(expected)
       result.get.value shouldBe artifactId

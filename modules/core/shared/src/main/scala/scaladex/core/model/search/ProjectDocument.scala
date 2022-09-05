@@ -5,6 +5,7 @@ import java.time.Instant
 import scaladex.core.model.Artifact
 import scaladex.core.model.Category
 import scaladex.core.model.Language
+import scaladex.core.model.MillPlugin
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.SbtPlugin
@@ -33,6 +34,7 @@ final case class ProjectDocument(
   def scalaJsVersions: Seq[ScalaJs] = platforms.collect { case v: ScalaJs => v }
   def scalaNativeVersions: Seq[ScalaNative] = platforms.collect { case v: ScalaNative => v }
   def sbtVersions: Seq[SbtPlugin] = platforms.collect { case v: SbtPlugin => v }
+  def millVersions: Seq[MillPlugin] = platforms.collect { case v: MillPlugin => v }
 }
 
 object ProjectDocument {
