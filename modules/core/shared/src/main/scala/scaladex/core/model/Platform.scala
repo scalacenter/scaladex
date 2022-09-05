@@ -54,7 +54,10 @@ case class MillPlugin(version: SemanticVersion) extends Platform {
 
   override def label: String = s"mill${version.encode}"
 
-  override def isValid: Boolean = true
+  override def isValid: Boolean = version match {
+    case MinorVersion(_, _) => true
+    case _                  => false
+  }
 }
 
 object MillPlugin {
