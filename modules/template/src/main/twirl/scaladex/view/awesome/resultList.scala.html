@@ -19,7 +19,7 @@
             }
             @if(project.scalaVersions.nonEmpty){
               <div>
-                Scala Versions:
+                Scala versions:
                 @for(scalaVersion <- project.scalaVersions) {
                   <span class="targets">@scalaVersion.version</span>
                 }
@@ -28,7 +28,7 @@
 
             @if(project.scalaJsVersions.nonEmpty){
               <div>
-                Scala.js:
+                Scala.js versions:
                 @for(v <- project.scalaJsVersions) {
                   <span class="targets">@v.version</span>
                 }
@@ -37,7 +37,7 @@
 
             @if(project.scalaNativeVersions.nonEmpty){
               <div>
-                Scala Native:
+                Scala Native versions:
                 @for(v <- project.scalaNativeVersions) {
                   <span class="targets">@v.version</span>
                 }
@@ -46,7 +46,7 @@
 
             @if(project.sbtVersions.nonEmpty){
               <div>
-                Sbt:
+                sbt plugins:
                 @for(v <- project.sbtVersions) {
                   <span class="targets">@v.version</span>
                 }
@@ -55,7 +55,7 @@
 
             @if(project.sbtVersions.nonEmpty){
               <div>
-                Mill:
+                Mill plugins:
                 @for(v <- project.sbtVersions) {
                   <span class="targets">@v.version</span>
                 }

@@ -12,7 +12,7 @@
 @(
   env: Env,
   topics: Seq[(String, Int)],
-  scalaVersions:Seq[(Scala, Int)],
+  scalaVersions: Seq[(Scala, Int)],
   scalaJsVersions: Seq[(ScalaJs, Int)],
   scalaNativeVersions: Seq[(ScalaNative, Int)],
   sbtVersions: Seq[(SbtPlugin, Int)],
@@ -39,7 +39,7 @@
                         }
                     </ul>
                     <ul class="tag">
-                        <li><strong>Scala Versions:</strong></li>
+                        <li><strong>Scala libraries:</strong></li>
                         @scalaVersions.map { case (scalaVersion, count) =>
                             <li>
                                 <a href="/search?q=*&languages=@scalaVersion.label">@scalaVersion.version (@count)</a>
@@ -47,16 +47,16 @@
                         }
                     </ul>
                     <ul class="tag">
-                        <li><strong>Scala.js Versions:</strong></li>
+                        <li><strong>Scala.js libraries:</strong></li>
                         @for((scalaJsVersion, count) <- scalaJsVersions) {
                             <li>
                                 <a href="/search?q=*&platforms=@scalaJsVersion.label">@scalaJsVersion.version (@count)</a>
-                            </li>*
+                            </li>
                         }
                     </ul>
                     <ul class="tag">
                         @if(scalaNativeVersions.nonEmpty) {
-                            <li><strong>Scala-Native Versions:</strong></li>
+                            <li><strong>Scala-Native libraries:</strong></li>
                             @for((scalaNativeVersion, count) <- scalaNativeVersions) {
                                 <li>
                                     <a href="/search?q=*&platforms=@scalaNativeVersion.label">@scalaNativeVersion.version (@count)</a>
@@ -65,7 +65,7 @@
                         }
                     </ul>
                     <ul class="tag">
-                      <li><strong>Sbt Versions:</strong></li>
+                      <li><strong>sbt plugins:</strong></li>
                       @for((sbtVersion, count) <- sbtVersions) {
                           <li>
                               <a href="/search?q=*&platforms=@sbtVersion.label">@sbtVersion.version (@count)</a>
@@ -73,7 +73,7 @@
                       }
                     </ul>
                     <ul class="tag">
-                      <li><strong>Mill Versions:</strong></li>
+                      <li><strong>Mill plugins:</strong></li>
                       @for((millVersion, count) <- millVersions) {
                           <li>
                               <a href="/search?q=*&platforms=@millVersion.label">@millVersion.version (@count)</a>
