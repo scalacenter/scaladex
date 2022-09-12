@@ -25,10 +25,10 @@ object ScalaJs {
 }
 
 case class SbtPlugin(version: SemanticVersion) extends Platform {
-  override def toString: String = 
+  override def toString: String =
     version match {
       case MinorVersion(1, 0) => s"sbt 1.x"
-      case _ => s"sbt $version"
+      case _                  => s"sbt $version"
     }
   override def label: String = s"sbt${version.encode}"
   override def isValid: Boolean = SbtPlugin.stableVersions.contains(this)
