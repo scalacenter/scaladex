@@ -190,7 +190,8 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(
       selected <- filteredArtifacts.headOption
     } yield {
       val artifacts = filteredArtifacts.map(_.artifactName).distinct
-      val versions = filteredArtifacts.map(_.version).distinct
+      // Sort semantic versions by descending order
+      val versions = filteredArtifacts.map(_.version).distinct.sorted(Ordering[SemanticVersion].reverse)
       OldSearchApi.ArtifactOptions(
         artifacts.map(_.value),
         versions.map(_.toString),

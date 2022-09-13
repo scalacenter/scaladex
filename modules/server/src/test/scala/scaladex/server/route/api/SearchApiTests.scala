@@ -43,7 +43,7 @@ class OldSearchApiTests extends ControllerBaseSuite with PlayJsonSupport {
       Get("/api/project?organization=typelevel&repository=cats") ~> searchApi.routes ~> check {
         val result = responseAs[OldSearchApi.ArtifactOptions]
         (result.artifacts should contain).theSameElementsInOrderAs(Seq("cats-core", "cats-kernel", "cats-laws"))
-        result.versions should contain theSameElementsAs Seq(`2.7.0`, `2.6.1`).map(_.toString)
+        (result.versions should contain).theSameElementsInOrderAs(Seq(`2.7.0`, `2.6.1`).map(_.toString))
         result.groupId shouldBe Cats.groupId.value
         result.artifactId shouldBe Cats.`core_3:2.7.0`.artifactId
         result.version shouldBe `2.7.0`.toString
