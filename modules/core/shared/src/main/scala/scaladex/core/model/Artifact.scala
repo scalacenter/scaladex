@@ -3,12 +3,11 @@ package scaladex.core.model
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-
 import fastparse.P
 import fastparse.Start
+import cats.syntax.apply._
 import fastparse._
 import scaladex.core.api.artifact.ArtifactMetadataResponse
-import scaladex.core.model.PatchVersion
 import scaladex.core.util.Parsers._
 
 /**
@@ -219,6 +218,28 @@ case class Artifact(
       case None => Some(s"https://www.javadoc.io/doc/$groupId/$artifactId/$version")
       case _    => None
     }
+
+  def maybeScastieURL: Option[String] = {
+    val baseURL = "https://scastie.scala-lang.org/try"
+    val mavenGroupId = groupId.value
+    val mavenArtifactId = artifactName.value
+    val mavenArtifactVersion = version.toString
+    val maybeTargetType = binaryVersion.platform match {
+      case ScalaJs(_) => Some("js")
+      case Jvm        => Some("jvm")
+      case _          => None
+    }
+    val maybeScalaVersion = binaryVersion.language match {
+      case Scala(version) => Some(version.toString)
+      case _              => None
+    }
+    val scaladexOrg = projectRef.organization.value
+    val scaladexRepo = projectRef.repository.value
+    (maybeTargetType, maybeScalaVersion).mapN {
+      case (targetType, scalaVersion) =>
+        s"$baseURL?g=$mavenGroupId&a=$mavenArtifactId&v=$mavenArtifactVersion&t=$targetType&sv=$scalaVersion&o=$scaladexOrg&r=$scaladexRepo"
+    }
+  }
 
   // todo: Add tests for this
   def scastieURL: String = {
