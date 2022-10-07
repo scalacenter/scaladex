@@ -77,18 +77,9 @@ class AdminService(
   def addProjectNoArtifact(reference: Project.Reference, user: UserState
                           ): Unit = {
 
-    /**
-     * Builds empty Settings
-     * @return
-     */
     def buildSettings(): Settings = Settings(
       false, None, false, None, List.empty, false,false, Set.empty, Set.empty, None, None)
 
-    /**
-     * Givem a GithubInfo, creates a scaladex Project
-     * @param info
-     * @return
-     */
     def buildProject(info: GithubInfo): Project = new Project(
       organization = Organization(""), // FIXME
       repository = Repository(""), // FIXME
@@ -101,26 +92,20 @@ class AdminService(
     val input = Seq("Organization" -> reference.organization.value, "Repository" -> reference.repository.value)
 
     val task = TaskRunner.run(Task.missingProjectNoArtifact, user.info.login, input) { () =>
-      githubClientOpt match {
-        case None =>
-          throw new Exception("Failed because 1 ??")
-        case Some(githubClient) =>
-          githubClient.getProjectInfo(reference).flatMap {
-            case GithubResponse.Ok((_, info)) =>
-              info.scalaPercentage match {
-                case None =>
-                  throw new Exception("Failed because 2 ???")
-                case Some(percentage) =>
-                  if(percentage <= 0) {
-                    throw new Exception("Failed because 3 ???")
-                  } else {
-                    val project = buildProject(info)
-                    database.insertProject(project)
-                      .flatMap(_ => searchSynchronizer.syncProject(reference))
-                      .map(_ => "success")
-                  }
-              }
-          }
+      githubClientOpt.fold(throw new Exception("Failed because 1 ??")) { githubClient =>
+        githubClient.getProjectInfo(reference).flatMap {
+          case GithubResponse.Ok((_, info)) =>
+            info.scalaPercentage.fold(throw new Exception("Failed because 2 ???")) { percentage =>
+                if(percentage <= 0) {
+                  throw new Exception("Failed because 3 ???")
+                } else {
+                  val project = buildProject(info)
+                  database.insertProject(project)
+                    .flatMap(_ => searchSynchronizer.syncProject(reference))
+                    .map(_ => "success")
+                }
+            }
+        }
       }
     }
     tasks = tasks :+ task
