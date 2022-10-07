@@ -1,9 +1,12 @@
 package scaladex.server.service
 import scala.concurrent.Future
+
 import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
-import scaladex.core.model.Project.{Organization, Repository, Settings}
+
 import scaladex.core.model.{Artifact, Env, GithubInfo, GithubResponse, GithubStatus, Project, UserState}
+import scaladex.core.model.Project.{Organization, Repository, Settings}
+
 import scaladex.core.service.GithubClient
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
@@ -75,14 +78,14 @@ class AdminService(
                           ): Unit = {
 
     /**
-     * Build empty Settings
+     * Builds empty Settings
      * @return
      */
     def buildSettings(): Settings = Settings(
       false, None, false, None, List.empty, false,false, Set.empty, Set.empty, None, None)
 
     /**
-     * Give a GithubInfo create a scaladex Project
+     * Givem a GithubInfo, creates a scaladex Project
      * @param info
      * @return
      */
