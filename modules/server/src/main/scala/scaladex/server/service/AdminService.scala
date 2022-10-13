@@ -3,10 +3,14 @@ import scala.concurrent.Future
 
 import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
-
-import scaladex.core.model.{Artifact, Env, GithubInfo, GithubResponse, GithubStatus, Project, UserState}
-import scaladex.core.model.Project.{Settings}
-
+import scaladex.core.model.Artifact
+import scaladex.core.model.Env
+import scaladex.core.model.GithubInfo
+import scaladex.core.model.GithubResponse
+import scaladex.core.model.GithubStatus
+import scaladex.core.model.Project
+import scaladex.core.model.Project.Settings
+import scaladex.core.model.UserState
 import scaladex.core.service.GithubClient
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
