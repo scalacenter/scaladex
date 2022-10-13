@@ -96,7 +96,8 @@ class AdminService(
           case GithubResponse.MovedPermanently(res) =>
             throw new Exception(s"Failed to add project. Project moved to ${res._1.repository}")
           case GithubResponse.Ok((_, info)) =>
-            info.scalaPercentage.fold(throw new Exception("Failed because 2 ???")) { percentage =>
+            info.scalaPercentage.fold {
+              throw new Exception(s"Failed to add project. Could obtain percentage of Scala for this project.")} { percentage =>
                 if(percentage <= 0) {
                   throw new Exception(s"Failed to add project. Project seems not a Scala one.")
                 } else {
