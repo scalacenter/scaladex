@@ -5,7 +5,7 @@ import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 
 import scaladex.core.model.{Artifact, Env, GithubInfo, GithubResponse, GithubStatus, Project, UserState}
-import scaladex.core.model.Project.{Organization, Repository, Settings}
+import scaladex.core.model.Project.{Settings}
 
 import scaladex.core.service.GithubClient
 import scaladex.core.service.SchedulerDatabase
@@ -77,27 +77,28 @@ class AdminService(
   def addProjectNoArtifact(reference: Project.Reference, user: UserState
                           ): Unit = {
 
-    def buildSettings(): Settings = Settings(
-      false, None, false, None, List.empty, false,false, Set.empty, Set.empty, None, None)
+    val input = Seq("Organization" -> reference.organization.value, "Repository" -> reference.repository.value)
 
     def buildProject(info: GithubInfo): Project = new Project(
-      organization = Organization(""), // FIXME
-      repository = Repository(""), // FIXME
-      creationDate = None, // FIXME
+      organization = reference.organization,
+      repository = reference.repository,
+      creationDate = None,
       GithubStatus.Ok(java.time.Instant.now),
       githubInfo = Some(info),
-      settings = buildSettings()
+      settings = Settings.default
     )
-
-    val input = Seq("Organization" -> reference.organization.value, "Repository" -> reference.repository.value)
 
     val task = TaskRunner.run(Task.missingProjectNoArtifact, user.info.login, input) { () =>
       githubClientOpt.fold(throw new Exception("Failed because 1 ??")) { githubClient =>
         githubClient.getProjectInfo(reference).flatMap {
+          case GithubResponse.Failed(code, errorMessage) =>
+              throw new Exception(s"Failed to add project due to GitHub error $code : $errorMessage")
+          case GithubResponse.MovedPermanently(res) =>
+            throw new Exception(s"Failed to add project. Project moved to ${res._1.repository}")
           case GithubResponse.Ok((_, info)) =>
             info.scalaPercentage.fold(throw new Exception("Failed because 2 ???")) { percentage =>
                 if(percentage <= 0) {
-                  throw new Exception("Failed because 3 ???")
+                  throw new Exception(s"Failed to add project. Project seems not a Scala one.")
                 } else {
                   val project = buildProject(info)
                   database.insertProject(project)
