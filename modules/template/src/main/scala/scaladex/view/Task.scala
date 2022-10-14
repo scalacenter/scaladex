@@ -14,6 +14,11 @@ object Task {
     "Fetch all missing artifacts from Maven Central, given a group ID and an optional artifact name."
   )
 
+  val missingProjectNoArtifact: Task = Task(
+    "missing-project-no-artifact",
+    "Fetch a missing project without any published artifact, given a project reference."
+  )
+
   case class Status(name: String, user: String, start: Instant, input: Seq[(String, String)], state: State) {
     def fromNow: FiniteDuration = TimeUtils.toFiniteDuration(start, Instant.now())
   }

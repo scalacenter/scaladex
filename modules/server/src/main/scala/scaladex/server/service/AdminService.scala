@@ -5,12 +5,16 @@ import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Artifact
 import scaladex.core.model.Env
+import scaladex.core.model.GithubInfo
+import scaladex.core.model.GithubResponse
+import scaladex.core.model.GithubStatus
+import scaladex.core.model.Project
+import scaladex.core.model.Project.Settings
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubClient
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions._
-import scaladex.server.service.JobScheduler
 import scaladex.view.Job
 import scaladex.view.Task
 
@@ -73,6 +77,46 @@ class AdminService(
   }
 
   def allTaskStatuses: Seq[Task.Status] = tasks.map(_.status)
+
+  def addProjectNoArtifact(reference: Project.Reference, user: UserState): Unit = {
+
+    val input = Seq("Organization" -> reference.organization.value, "Repository" -> reference.repository.value)
+
+    def buildProject(info: GithubInfo): Project = new Project(
+      organization = reference.organization,
+      repository = reference.repository,
+      creationDate = None,
+      GithubStatus.Ok(java.time.Instant.now),
+      githubInfo = Some(info),
+      settings = Settings.default
+    )
+
+    val task = TaskRunner.run(Task.missingProjectNoArtifact, user.info.login, input) { () =>
+      githubClientOpt.fold(throw new Exception("Failed because 1 ??")) { githubClient =>
+        githubClient.getProjectInfo(reference).flatMap {
+          case GithubResponse.Failed(code, errorMessage) =>
+            throw new Exception(s"Failed to add project due to GitHub error $code : $errorMessage")
+          case GithubResponse.MovedPermanently(res) =>
+            throw new Exception(s"Failed to add project. Project moved to ${res._1.repository}")
+          case GithubResponse.Ok((_, info)) =>
+            info.scalaPercentage.fold {
+              throw new Exception(s"Failed to add project. Could obtain percentage of Scala for this project.")
+            } { percentage =>
+              if (percentage <= 0) {
+                throw new Exception(s"Failed to add project. Project seems not a Scala one.")
+              } else {
+                val project = buildProject(info)
+                database
+                  .insertProject(project)
+                  .flatMap(_ => searchSynchronizer.syncProject(reference))
+                  .map(_ => "success")
+              }
+            }
+        }
+      }
+    }
+    tasks = tasks :+ task
+  }
 
   private def updateProjectCreationDate(): Future[String] =
     for {
