@@ -78,8 +78,7 @@ class AdminService(
 
   def allTaskStatuses: Seq[Task.Status] = tasks.map(_.status)
 
-  def addProjectNoArtifact(reference: Project.Reference, user: UserState
-                          ): Unit = {
+  def addProjectNoArtifact(reference: Project.Reference, user: UserState): Unit = {
 
     val input = Seq("Organization" -> reference.organization.value, "Repository" -> reference.repository.value)
 
@@ -96,20 +95,22 @@ class AdminService(
       githubClientOpt.fold(throw new Exception("Failed because 1 ??")) { githubClient =>
         githubClient.getProjectInfo(reference).flatMap {
           case GithubResponse.Failed(code, errorMessage) =>
-              throw new Exception(s"Failed to add project due to GitHub error $code : $errorMessage")
+            throw new Exception(s"Failed to add project due to GitHub error $code : $errorMessage")
           case GithubResponse.MovedPermanently(res) =>
             throw new Exception(s"Failed to add project. Project moved to ${res._1.repository}")
           case GithubResponse.Ok((_, info)) =>
             info.scalaPercentage.fold {
-              throw new Exception(s"Failed to add project. Could obtain percentage of Scala for this project.")} { percentage =>
-                if(percentage <= 0) {
-                  throw new Exception(s"Failed to add project. Project seems not a Scala one.")
-                } else {
-                  val project = buildProject(info)
-                  database.insertProject(project)
-                    .flatMap(_ => searchSynchronizer.syncProject(reference))
-                    .map(_ => "success")
-                }
+              throw new Exception(s"Failed to add project. Could obtain percentage of Scala for this project.")
+            } { percentage =>
+              if (percentage <= 0) {
+                throw new Exception(s"Failed to add project. Project seems not a Scala one.")
+              } else {
+                val project = buildProject(info)
+                database
+                  .insertProject(project)
+                  .flatMap(_ => searchSynchronizer.syncProject(reference))
+                  .map(_ => "success")
+              }
             }
         }
       }
