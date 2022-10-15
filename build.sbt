@@ -154,7 +154,7 @@ lazy val webclient = project
     scalacOptions -= "-Wunused", // don't report unused params
     scalacOptions += "-Wunused:imports",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "scalatags" % "0.8.6",
+      "com.lihaoyi" %%% "scalatags" % "0.12.0",
       "be.doeraene" %%% "scalajs-jquery" % "1.0.0",
       "org.endpoints4s" %%% "xhr-client" % "3.1.0"
     )
