@@ -156,7 +156,7 @@ lazy val webclient = project
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "scalatags" % "0.8.6",
       "be.doeraene" %%% "scalajs-jquery" % "1.0.0",
-      "org.endpoints4s" %%% "xhr-client" % "3.1.0"
+      "org.endpoints4s" %%% "xhr-client" % "5.1.0"
     )
   )
   .enablePlugins(ScalaJSPlugin)
