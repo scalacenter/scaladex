@@ -270,5 +270,5 @@ lazy val V = new {
   val nscalaTimeVersion = "2.32.0"
   val scalatest = "3.2.12"
   val circeVersion = "0.14.3"
-  val json4s = "4.0.5"
+  val json4s = "4.0.6"
 }
