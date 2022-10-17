@@ -31,7 +31,7 @@ val amm = inputKey[Unit]("Start Ammonite REPL")
 lazy val ammoniteSettings = Def.settings(
   amm := (Test / run).evaluated,
   amm / aggregate := false,
-  libraryDependencies += ("com.lihaoyi" % "ammonite" % "2.5.4" % Test).cross(CrossVersion.full),
+  libraryDependencies += ("com.lihaoyi" % "ammonite" % "2.5.5" % Test).cross(CrossVersion.full),
   Test / sourceGenerators += Def.task {
     val file = (Test / sourceManaged).value / "amm.scala"
     IO.write(
@@ -224,9 +224,9 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
       "io.github.cquiroz" %%% "scala-java-time" % "2.4.0",
       "com.typesafe.play" %%% "play-json" % V.playJsonVersion,
       "org.endpoints4s" %%% "algebra" % "1.8.0",
-      "org.endpoints4s" %% "json-schema-playjson" % "1.7.0" % Test,
+      "org.endpoints4s" %% "json-schema-playjson" % "1.8.0" % Test,
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
-      "org.jsoup" % "jsoup" % "1.15.1"
+      "org.jsoup" % "jsoup" % "1.15.3"
     ) ++ Seq(
       "io.circe" %%% "circe-core",
       "io.circe" %%% "circe-generic",
@@ -247,7 +247,7 @@ lazy val data = project
       "com.typesafe.akka" %% "akka-serialization-jackson" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-slf4j" % V.akkaVersion,
       "org.apache.maven" % "maven-model-builder" % "3.8.6",
-      "org.jsoup" % "jsoup" % "1.15.1",
+      "org.jsoup" % "jsoup" % "1.15.3",
       "org.apache.ivy" % "ivy" % "2.5.0",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-json4s" % "1.39.2",
@@ -269,6 +269,6 @@ lazy val V = new {
   val elastic4sVersion = "7.10.9"
   val nscalaTimeVersion = "2.32.0"
   val scalatest = "3.2.14"
-  val circeVersion = "0.14.2"
+  val circeVersion = "0.14.3"
   val json4s = "4.0.5"
 }
