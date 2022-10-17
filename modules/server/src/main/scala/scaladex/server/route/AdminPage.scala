@@ -5,6 +5,7 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import scaladex.core.model.Artifact
 import scaladex.core.model.Env
+import scaladex.core.model.Project
 import scaladex.core.model.UserState
 import scaladex.server.TwirlSupport._
 import scaladex.server.service.AdminService
@@ -42,6 +43,15 @@ class AdminPage(env: Env, adminService: AdminService) {
                   val groupId = Artifact.GroupId(rawGroupId)
                   val artifactNameOpt = if (rawArtifactName.isEmpty) None else Some(Artifact.Name(rawArtifactName))
                   adminService.runMissingArtifactsTask(groupId, artifactNameOpt, user)
+                  redirect(Uri("/admin"), StatusCodes.SeeOther)
+                }
+              }
+            } ~
+            post {
+              path("tasks" / "missing-project-no-artifact") {
+                formFields("organization", "repository") { (org, repo) =>
+                  val reference = Project.Reference.from(org, repo)
+                  adminService.addProjectNoArtifact(reference, user)
                   redirect(Uri("/admin"), StatusCodes.SeeOther)
                 }
               }
