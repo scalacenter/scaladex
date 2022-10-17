@@ -82,6 +82,25 @@
             <td><button type="submit" class="btn btn-primary">Submit</button></td>
           </form>
         </tr>
+        <tr>
+          <td>
+            <h5>@Task.missingProjectNoArtifact.name</h5>
+            <p>@Task.missingProjectNoArtifact.description</p>
+          </td>
+          <form action="/admin/tasks/missing-project-no-artifact" method="POST">
+            <td>
+              <div class="input-group">
+                <span class="input-group-addon" id="organization">Organization</span>
+                <input type="text" class="form-control" name="organization" placeholder="Ex: scalacenter" required>
+              </div>
+              <div class="input-group">
+                <span class="input-group-addon" id="repository">Repository</span>
+                <input type="text" class="form-control" name="repository" placeholder="Ex: bloop">
+              </div>
+            </td>
+            <td><button type="submit" class="btn btn-primary">Submit</button></td>
+          </form>
+        </tr>
       </tbody>
     </table>
     <h2>Task History</h2>
@@ -141,7 +160,7 @@
             <h6>Success <small>@success.fromNow.shortPrint ago</small></h6>
             <p>Duration: @success.duration.shortPrint</p>
             <p>Message: @success.message</p>
-            
+
           }
           case failure: Job.Failure => {
             <h6>Failure <small>@failure.fromNow.shortPrint ago</small></h6>
