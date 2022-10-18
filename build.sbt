@@ -186,7 +186,7 @@ lazy val server = project
       "org.webjars" % "bootstrap-select" % "1.13.18",
       "org.webjars.bower" % "font-awesome" % "4.6.3",
       "org.webjars" % "jquery" % "3.6.0",
-      "org.webjars.bower" % "select2" % "4.0.13"
+      "org.webjars.bower" % "select2" % "4.0.3"
     ),
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
     Compile / resourceGenerators += Def.task(
