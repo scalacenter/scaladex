@@ -1,0 +1,29 @@
+name: "[Private] Improvement or Feature"
+description: Private template to create issues with some implementation details
+title: "<title>"
+labels: [good first issue, student-project]
+body:
+- type: textarea
+  attributes:
+    label: Motivation
+    description: What's the main motivation of the proposed improvement
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Identified Obstacles
+    description: What are the known difficulties or potential obstacles.
+  validations:
+    required: false
+- type: textarea
+  attributes:
+    label: Implementation Guideline
+    description: Some hints on how to implement this feature
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Expectations
+    description: The expected result and tests.
+  validations:
+    required: true

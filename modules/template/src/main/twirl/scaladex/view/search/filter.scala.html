@@ -1,0 +1,69 @@
+@import scaladex.core.model.search.SearchParams
+@import scaladex.core.model.Platform
+@import scaladex.core.model.Language
+
+@(
+  params: SearchParams,
+  topics: Seq[(String, Int)],
+  languages: Seq[(Language, Int)],
+  platforms: Seq[(Platform, Int)],
+  you: Boolean
+)
+<div class="filters">
+  <form action="/search" action="GET">
+    @if(params.contributingSearch) {
+      <a class="btn btn-primary" href="/search?q=">Normal Search</a>
+      <input type="hidden" name="contributingSearch" value="true">
+    } else {
+      <a class="btn btn-primary" href="/search?q=&contributingSearch=true">Contributing Search</a>
+    }
+    <h3>Filters</h3>
+    <fieldset>
+      <legend>Languages</legend>
+      <ul>
+      @for((language, count) <- languages) {
+        <li>
+          <label>
+            <input type="checkbox" @if(params.languages.contains(language.label)) { checked }
+                    name="languages" value="@language.label" onclick="this.form.submit()">
+            @language (@count)
+          </label>
+        </li>
+      }
+      </ul>
+    </fieldset>
+    <fieldset>
+      <legend>Platforms</legend>
+      <ul>
+      @for((platform, count) <- platforms) {
+        <li>
+          <label>
+            <input type="checkbox" @if(params.platforms.contains(platform.label)) { checked }
+                    name="platforms" value="@platform.label" onclick="this.form.submit()">
+            @platform (@count)
+          </label>
+        </li>
+      }
+      </ul>
+    </fieldset>
+    <fieldset>
+      <legend>Topics</legend>
+      <ul>
+        @for((topic, count) <- topics.sortBy(_._1)) {
+        <li>
+          <label>
+            <input type="checkbox" @if(params.topics.contains(topic)) { checked }
+                   name="topics" value="@topic" onclick="this.form.submit()">
+            @topic (@count)
+          </label>
+        </li>
+        }
+      </ul>
+    </fieldset>
+
+    <input type="hidden" name="q" value="@params.queryString">
+    @if(you){
+      <input type="hidden" name="you" value="">
+    }
+  </form>
+</div>

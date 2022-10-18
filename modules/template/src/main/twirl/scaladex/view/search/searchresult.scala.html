@@ -1,0 +1,29 @@
+@import akka.http.scaladsl.model.Uri
+@import scaladex.view.html._
+@import scaladex.core.model.search.SearchParams
+@import scaladex.core.model.search.Pagination
+@import scaladex.core.model.search.ProjectHit
+@import scaladex.core.model.UserState
+@import scaladex.core.model.Platform
+@import scaladex.core.model.Env
+@import scaladex.core.model.Language
+
+@(
+  env: Env,
+  params: SearchParams,
+  uri: Uri,
+  pagination: Pagination,
+  projects: Seq[ProjectHit],
+  user: Option[UserState],
+  you: Boolean,
+  topics: Seq[(String, Int)],
+  languages: Seq[(Language, Int)],
+  platforms: Seq[(Platform, Int)]
+)
+@main(env, title = s"Search ${params.queryString}", user, params = params, you = you) {
+  <main id="container-search">
+    <div class="container">
+      @result(params, uri, pagination, projects, you, topics, languages, platforms)
+    </div>
+  </main>
+}

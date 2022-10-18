@@ -1,0 +1,167 @@
+@import scaladex.core.model._
+@import scaladex.view.html.main
+@import scaladex.core.web.ArtifactPageParams
+@import scaladex.view.Formats
+@import scaladex.view.html._
+@import scaladex.view.InstallTab
+
+@(
+    env: Env,
+    user: Option[UserState],
+    project: Project,
+    artifact: Artifact,
+    binaryVersions: Seq[BinaryVersion],
+    params: ArtifactPageParams,
+    directDeps: Seq[ArtifactDependency.Direct],
+    reverseDeps: Seq[ArtifactDependency.Reverse],
+    numberOfVersions: Long,
+    lastProjectVersion: SemanticVersion
+)
+@main(env, title = project.repository.toString, user) {
+  <main id="container-project">
+    @headproject(env, user, project, numberOfVersions, "Artifacts", lastProjectVersion)
+    <div class="container">
+      <div class="row">
+        <div class="col-md-8">
+          <div class="content-project">
+            <div class="artifact box" data-organization="@project.reference.organization" data-repository="@project.reference.repository">
+              <div class="float-right">
+                <form>
+                  <select name="binary-version" class="selectpicker"
+                  data-style="btn-primary" onchange="this.form.submit()">
+                  @for((platform, binaryVersions) <- binaryVersions.groupBy(_.platform)) {
+                    <optgroup label="@platform">
+                      @for(binaryVersion <- binaryVersions.sortBy(_.language)(Language.ordering.reverse)) {
+                        <option value="@binaryVersion.label"
+                          @if(params.binaryVersion.contains(binaryVersion) || artifact.binaryVersion == binaryVersion) {selected}>
+                          @binaryVersion
+                        </option>
+                      }
+                    </optgroup>
+                  }
+                  </select>
+                </form>
+              </div>
+              <h3>
+                <a href="@artifactsUri(project.reference, artifact.artifactName, params.binaryVersion)">@artifact.artifactName</a>
+                <span class="artifact-version">@artifact.version</span>
+                @if(project.settings.artifactDeprecations.contains(artifact.artifactName)) {
+                  <span class="label label-warning">Deprecated</span>
+                }
+              </h3>
+              <hr>
+              @info("Group ID") { @artifact.groupId }
+              @info("Artifact ID") { @artifact.artifactId }
+              @info("Version") { @artifact.version }
+              @info("Release Date") { @artifact.releaseDateFormat }
+              @info("Licenses") {
+                @for(license <- artifact.licenses) {
+                <a href="@license.url.getOrElse("#")">@license.shortName</a>
+                }
+              }
+              @if(artifact.resolver.isEmpty) {
+                @info("Files") { <a href="@artifact.mavenReference.repoUrl">View all</a> }
+              }
+            </div>
+            @installBox(InstallTab.allOf(artifact, project.settings.cliArtifacts))
+          </div>
+        </div>
+        <div class="col-md-4 sidebar-project">
+          @documentationBox
+          @dependenciesBox
+          @dependentsBox
+        </div>
+      </div>
+    </div>
+  </main>
+}
+
+@info(key: String)(value: Html) = {
+  <div class="row">
+    <div class="col-xs-5 col-sm-3">@key:</div>
+    <div class="col-xs-7 col-sm-9">@value</div>
+  </div>
+}
+
+@documentationLinks = @{ project.artifactDocumentation(artifact) }
+@documentationBox = {
+  @if(documentationLinks.nonEmpty) {
+    <div class="documentation box">
+      <h4>Documentation</h4>
+      <ul>
+        @for(doc <- documentationLinks){
+          <li><a href="@doc.link" rel="nofollow">@doc.label</a></li>
+        }
+      </ul>
+    </div>
+  }
+}
+
+@dependenciesBox = {
+  <div class="dependencies box">
+    <h4>@Formats.plural(directDeps.size, "Dependency")</h4>
+    <hr>
+    <ul>
+      @for(dep <- directDeps.sorted){
+        <li>
+          <div class="row">
+            <div class="col-xs-9">
+              <a href="@dep.url">@dep.groupIdAndName</a>
+              @if(dep.artifactDep.scope.value != "compile") { 
+                <span class="label label-default">@dep.artifactDep.scope</span>
+              }
+            </div>
+            <div class="col-xs-3">@dep.version</div>
+          </div>
+        </li>
+      }
+      </ul>
+  </div>
+}
+
+@sample = @{ArtifactDependency.Reverse.sample(reverseDeps, 100)}
+@dependentsBox = {
+  <div class="dependents box">
+    <h4>@Formats.plural(reverseDeps.size, "Dependent")</h4>
+    <hr>
+    <ul>
+      @for(dep <- sample){
+        <li>
+          <div class="row">
+            <div class="col-xs-9">
+              <a href="@dep.url">@dep.groupIdAndName</a>
+              @if(dep.dependency.scope.value != "compile") {
+                <span class="label label-default">@dep.dependency.scope</span>
+              }
+            </div>
+            <div class="col-xs-3">@dep.version</div>
+          </div>
+        </li>
+      }
+      @if(reverseDeps.size > 100) {
+        <p>and @{reverseDeps.size - 100} more</p>
+      }
+    </ul>
+  </div>
+}
+
+@installBox(tabs: Seq[InstallTab]) = {
+  <div class="install">
+    <ul class="nav nav-tabs nav-justified">
+      @for((tab, i) <- tabs.zipWithIndex) {
+        <li role="presentation" @if(i == 0 ){ class="active" }>
+          <a href="#@tab.ref" aria-controls="@tab.ref" role="tab" data-toggle="tab">@tab.title</a>
+        </li>
+      }
+    </ul>
+    <div class="box tab-content">
+      @for((tab, i) <- tabs.zipWithIndex) {
+        <div role="tabpanel" class="tab-pane @if(i == 0){ active }" id="@tab.ref">
+          <p>@tab.description</p>
+          <pre id="copy-@tab.ref" class="copyable-incantation">@tab.install</pre>
+          <button class="btn btn-primary btn-copy pull-right" data-clipboard-target="copy-@tab.ref">Copy</button>
+        </div>
+      }
+    </div>
+  </div>
+}

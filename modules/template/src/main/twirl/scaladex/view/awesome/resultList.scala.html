@@ -1,0 +1,109 @@
+@import scaladex.view.html._
+@import scaladex.core.model.search.ProjectDocument
+
+@(projects: Seq[ProjectDocument])
+<ol class="list-result box">
+  @for(project <- projects){
+  <li class="item-list">
+    <a href="/@project.organization/@project.repository">
+      <div class="row">
+        <div class="col-md-8">
+            <div class="header">
+              @githubUserAvatar(project.githubInfo.flatMap(_.logo))
+              <h4>@project.reference</h4>
+            </div>
+            @for(github <- project.githubInfo) {
+              @for(description <- github.description) {
+                <p class="description emojify">@description</p>
+              }
+            }
+            @if(project.scalaVersions.nonEmpty){
+              <div>
+                Scala versions:
+                @for(scalaVersion <- project.scalaVersions) {
+                  <span class="targets">@scalaVersion.version</span>
+                }
+              </div>
+            }
+
+            @if(project.scalaJsVersions.nonEmpty){
+              <div>
+                Scala.js versions:
+                @for(v <- project.scalaJsVersions) {
+                  <span class="targets">@v.version</span>
+                }
+              </div>
+            }
+
+            @if(project.scalaNativeVersions.nonEmpty){
+              <div>
+                Scala Native versions:
+                @for(v <- project.scalaNativeVersions) {
+                  <span class="targets">@v.version</span>
+                }
+              </div>
+            }
+
+            @if(project.sbtVersions.nonEmpty){
+              <div>
+                sbt plugins:
+                @for(v <- project.sbtVersions) {
+                  <span class="targets">@v.version</span>
+                }
+              </div>
+            }
+
+            @if(project.sbtVersions.nonEmpty){
+              <div>
+                Mill plugins:
+                @for(v <- project.sbtVersions) {
+                  <span class="targets">@v.version</span>
+                }
+              </div>
+            }
+        </div>
+        <div class="col-md-4">
+          <div class="stats">
+            <div>
+            @for(github <- project.githubInfo) {
+              @if(github.topics.nonEmpty) {
+                @for(topic <- github.topics) {
+                  <span class="item-filter-tag">
+                    <a href="/search?topics=@topic">
+                      @topic
+                    </a>
+                  </span>
+                }
+              }
+            }
+            </div>
+
+            <div class="icons-container">
+            @for(github <- project.githubInfo) {
+              @for(stars <- github.stars) {
+                <span>
+                  <a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Stars" href="#"><span>@stars</span><i class="fa-solid fa-star"></i></a>
+                </span>
+              }
+              @for(forks <- github.forks) {
+                <span>
+                  <a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Forks" href="#"><span>@forks</span><i class="fa-solid fa-code-branch"></i></a>
+                </span>
+              }
+              @for(commitsPerYear <- github.commitsPerYear){
+                <span>
+                  <a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Commits in the past year" href="#"><span>@commitsPerYear</span><i class="fa-solid fa-code-merge"></i></a>
+                </span>
+              }
+              <span>
+                <a class="stats-icon" data-toggle="tooltip" data-placement="bottom" title="Contributors" href="#"><span>@github.contributorCount</span><i class="fa-solid fa-users"></i></a>
+              </span>
+            }
+            </div>
+          </div>
+        </div>
+      </div>
+    </a>
+  </li>
+  }
+</ol>

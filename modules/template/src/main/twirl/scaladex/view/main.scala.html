@@ -1,0 +1,170 @@
+@import scaladex.core.model.search.SearchParams
+@import scaladex.core.model.UserState
+@import scaladex.core.model.HeadMeta
+@import scaladex.core.model.Env
+
+@(
+  env: Env,
+  title: String,
+  user: Option[UserState],
+  showSearch: Boolean = true,
+  params: SearchParams = SearchParams(), you: Boolean = false,
+  extraMeta: Seq[HeadMeta] = Seq.empty,
+  totalProjects: Option[Long] = None, totalArtifacts: Option[Long] = None
+)(content: Html)
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>@title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--meta name="description" content="Description...">
+    <meta name="author" content="Author..."-->
+    <link rel="search" type="application/opensearchdescription+xml" href="/assets/opensearch.xml" title="@title">
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/img/apple-touch-icon.png">
+    <link rel="icon" type="image/png" href="/assets/img/favicon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="/assets/img/favicon-16x16.png" sizes="16x16">
+    <link rel="manifest" href="/assets/img/manifest.json">
+    <link rel="mask-icon" href="/assets/img/safari-pinned-tab.svg" color="#f26527">
+    <link rel="shortcut icon" href="/assets/img/favicon.ico">
+    <meta name="msapplication-config" content="/assets/img/browserconfig.xml">
+
+    <link rel="stylesheet" href="/assets/lib/font-awesome/css/all.min.css">
+    <link rel="stylesheet" href="/assets/lib/bootstrap-switch/css/bootstrap3/bootstrap-switch.css">
+    <link rel="stylesheet" href="/assets/lib/bootstrap-select/css/bootstrap-select.css">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/css/basic/emojify.min.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/css/main-4.css" />
+
+    <!-- Chrome, Firefox OS and Opera -->
+    <meta name="theme-color" content="#002b37">
+    <!-- Windows Phone -->
+    <meta name="msapplication-navbutton-color" content="#002b37">
+    <!-- iOS Safari -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    @for(meta <- extraMeta) {
+      <meta name="@meta.name" content="@meta.content">
+    }
+  </head>
+
+  <body>
+      <!--[if IE]>
+        <script src="https://cdn.jsdelivr.net/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/respond/1.4.2/respond.min.js"></script>
+      <![endif]-->
+    <!-- Start coding here -->
+    <header id="top">
+        <nav>
+            <div class="container">
+
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="/">
+                            <img src="/assets/img/scaladex-brand.svg" alt="scaladex logo" class="logo">
+                        </a>
+                    </div>
+                    <div class="col-md-5">
+                        @if(showSearch) {
+                            @searchinput(params, you, totalProjects, totalArtifacts)
+                        }
+                    </div>
+                    <div class="col-md-4">
+                      <div class="pull-right">
+                        <a class="btn btn-default awesome" href="/awesome">Awesome Scala</a>
+                        @user.map{ u =>
+                          <button class="btn btn-default dropdown-toggle you"
+                          type="button" id="userLogging"
+                          data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                              <img src="@u.info.sizedAvatarUrl(38)" alt="Your Avatar - @u.info.login">
+                              <span style="vertical-align: middle">@u.info.login</span>
+                              <span class="caret"></span>
+                          </button>
+                          <ul class="dropdown-menu" aria-labelledby="userLogging">
+                              <li><a href="/search?q=@params.queryString@if(!you){&you=✓}">My projects</a></li>
+                              @if(u.isAdmin(env)) {
+                                  <li><a href="/admin">Admin</a></li>
+                              } else ()
+                              <li role="separator" class="divider"></li>
+                              <li><a href="/logout">Logout</a></li>
+                          </ul>
+                        }.getOrElse {
+                            <a class="btn btn-primary pull-right" href="/login">
+                                <i class="fa-brands fa-github fa-lg" aria-hidden="true"></i> Login
+                            </a>
+                        }
+                      </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+    @content
+    <footer id="bottom">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-2">
+                    <ul>
+                        <li>
+                            <h5>Scaladex</h5></li>
+                        <li><a href="https://github.com/scalacenter/scaladex/wiki/FAQ">FAQs</a></li>
+                        <li><a href="https://github.com/scalacenter/scaladex/issues/new">Report an Issue</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2">
+                    <ul class="social">
+                        <li>
+                            <h5>Follow us:</h5></li>
+                        <li><a href="https://twitter.com/scala_index"><i class="fa-brands fa-twitter fa-lg"></i></a></li>
+                        <li><a href="https://github.com/scalacenter/scaladex"><i class="fa-brands fa-github fa-lg"></i></a></li>
+                    </ul>
+                </div>
+                <div class="col-md-8">
+                  <a class="sponsors" href="https://scala.epfl.ch/"><img src="/assets/img/scala-center-logo.png" alt="powered by Scala Center"></a>
+                  <a class="sponsors" href="https://www.jfrog.com/bintray/"><img src="/assets/img/Bintray.png" alt="powered by Bintray"></a>
+                  <a class="sponsors" href="https://www.sonatype.com/"><img src="/assets/img/sonatype_nexus.png" alt="powered by Sonatype"></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- Coding End -->
+
+    @if(env.isProd || env.isDev) {
+        <script src="/assets/webclient-opt.js"></script>
+    } else {
+        <script src="/assets/webclient-fastopt.js"></script>
+    }
+
+    <script src="/assets/lib/jquery/jquery.min.js"></script>
+    <script src="/assets/lib/bootstrap-sass/javascripts/bootstrap.min.js"></script>
+    <script src="/assets/lib/bootstrap-select/js/bootstrap-select.min.js"></script>
+    <script src="/assets/lib/select2/dist/js/select2.min.js"></script>
+    <script src="/assets/lib/bootstrap-switch/js/bootstrap-switch.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/js/emojify.js"></script>
+    <script src="/assets/lib/chartjs/dist/chart.min.js"></script>
+    <script src="/assets/lib/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    @if(env.isProd) {
+      <script defer data-domain="index.scala-lang.org" src="https://plausible.scala-lang.org/js/script.js"></script>
+    } else if (env.isDev) {
+      <script defer data-domain="index-dev.scala-lang.org" src="https://plausible.scala-lang.org/js/script.js"></script>
+    }
+
+    <script>
+        // Tooltips
+        $(function () {
+          $('[data-toggle="tooltip"]').tooltip();
+          $(".js-keywords-multiple").select2({tags: true});
+          $(".js-stackoverflowtags-multiple").select2({tags: true});
+          $('.edit-project input[type="checkbox"]').bootstrapSwitch();
+        });
+
+        // Run client scalajs code (for instance, autocomplete)
+        @if(user.isDefined) {
+          ScaladexClient.main("@user.get.info.token.decode");
+        } else {
+          ScaladexClient.main();
+        }
+    </script>
+</body>
+</html>

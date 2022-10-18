@@ -1,0 +1,193 @@
+@import scaladex.view.Job
+@import scaladex.view.Task
+@import scaladex.view.html._
+@import scaladex.core.model.UserState
+@import scaladex.core.model.Env
+@import scaladex.core.util.ScalaExtensions._
+
+@(env: Env, user: UserState, jobs: Seq[(Job, Job.Status)], tasks: Seq[Task.Status])
+@main(env, title = "Admin page", Some(user)) {
+  <div class="container admin-content">
+    <h2>Background jobs</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Job</th>
+          <th scope="col">Status</th>
+          <th scope="col">Results</th>
+          <th scope="col">Progress</th>
+          <th scope="col">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        @jobs.map { case (job, status) =>
+          <tr>
+            <td>
+              <h5>@job.name <small>every @job.frequency.shortPrint</small></h5>
+              <p>@job.description</p>
+            </th>
+            <td>@jobState(status.state)</td>
+            <td>@jobResults(status.results)</td>
+            <td>
+              @status.progress match {
+                case Some(progress) => {
+                  @progressBar(progress)
+                }
+                case None => {
+                  <div style="text-align: center;">-</div>
+                }
+              }
+            </td>
+            <td>
+              @if(status.isStarted) {
+                <form action="/admin/jobs/@job.name/stop" method="post">
+                  <button type="submit" class="btn btn-danger">Stop</button>
+                </form>
+              } else {
+                <form action="/admin/jobs/@job.name/start" method="post">
+                  <button type="submit" class="btn btn-success">Start</button>
+                </form>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+    <h2>Tasks</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Task</th>
+          <th scope="col">Form</th>
+          <th scope="col">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <h5>@Task.missingArtifacts.name</h5>
+            <p>@Task.missingArtifacts.description</p>
+          </td>
+          <form action="/admin/tasks/missing-artifacts" method="POST">
+            <td>
+              <div class="input-group">
+                <span class="input-group-addon" id="group-id">Group ID</span>
+                <input type="text" class="form-control" name="group-id" placeholder="Ex: ch.epfl.scala" required>
+              </div>
+              <div class="input-group">
+                <span class="input-group-addon" id="group-id">Artifact Name</span>
+                <input type="text" class="form-control" name="artifact-name" placeholder="Ex: scalafix-core (optional)">
+              </div>
+            </td>
+            <td><button type="submit" class="btn btn-primary">Submit</button></td>
+          </form>
+        </tr>
+        <tr>
+          <td>
+            <h5>@Task.missingProjectNoArtifact.name</h5>
+            <p>@Task.missingProjectNoArtifact.description</p>
+          </td>
+          <form action="/admin/tasks/missing-project-no-artifact" method="POST">
+            <td>
+              <div class="input-group">
+                <span class="input-group-addon" id="organization">Organization</span>
+                <input type="text" class="form-control" name="organization" placeholder="Ex: scalacenter" required>
+              </div>
+              <div class="input-group">
+                <span class="input-group-addon" id="repository">Repository</span>
+                <input type="text" class="form-control" name="repository" placeholder="Ex: bloop">
+              </div>
+            </td>
+            <td><button type="submit" class="btn btn-primary">Submit</button></td>
+          </form>
+        </tr>
+      </tbody>
+    </table>
+    <h2>Task History</h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Task</th>
+          <th scope="col">Input</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for(task <- tasks.reverse) {
+          <tr>
+            <td>
+              <h5>@task.name <small>@task.fromNow.shortPrint ago</small></h5>
+              <p>Submitted by @task.user</p>
+            </td>
+            <td>
+              @for((key, value) <- task.input) {
+                <p>@key: @value</p>
+              }
+            </td>
+            <td>@taskState(task.state)</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
+
+@progressBar(progress: Job.Progress) = {
+  <div class="progress">
+    <div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="@progress.percentage" aria-valuemin="0" aria-valuemax="100" style="width: @progress.percentage%">
+      @{progress.duration.shortPrint} (@{progress.percentage.round} %)
+    </div>
+  </div>
+}
+
+@jobState(state: Job.State) = {
+  @state match {
+    case Job.Started(_, user) => {
+      Started @user.map(u => s" by $u").getOrElse("")<br/>@state.fromNow.shortPrint ago
+    }
+    case Job.Stopped(_, user) => {
+      Stopped @user.map(u => s" by $u").getOrElse("")<br/>@state.fromNow.shortPrint ago
+    }
+  }
+}
+
+@jobResults(results: Seq[Job.Result]) = {
+  <ul>
+    @for(result <- results.reverse.take(3)) {
+      <li>
+        @result match {
+          case success: Job.Success => {
+            <h6>Success <small>@success.fromNow.shortPrint ago</small></h6>
+            <p>Duration: @success.duration.shortPrint</p>
+            <p>Message: @success.message</p>
+
+          }
+          case failure: Job.Failure => {
+            <h6>Failure <small>@failure.fromNow.shortPrint ago</small></h6>
+            <p>Duration: @failure.duration.shortPrint</p>
+            <p>Cause: @failure.cause</p>
+          }
+        }
+      </li>
+    }
+  </ul>
+}
+
+@taskState(status: Task.State) = {
+  @status match {
+    case running: Task.Running => {
+      <h6>Running</h6>
+      <p>Started @running.fromNow.shortPrint ago.</p>
+    }
+    case success: Task.Success => {
+      <h6>Success</h6>
+      <p>Duration: @success.duration.shortPrint</p>
+      <p>Message: @success.message</p>
+    }
+    case failure: Task.Failure => {
+      <h6>Failure</h6>
+      <p>Duration: @failure.duration.shortPrint</p>
+      <p>Cause: @failure.cause</p>
+    }
+  }
+}

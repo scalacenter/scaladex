@@ -1,0 +1,127 @@
+@import scaladex.view.html._
+@import scaladex.core.model.Category
+@import scaladex.core.model.Env
+@import scaladex.core.model.UserState
+@import scaladex.core.model.MetaCategory
+@import scaladex.core.model.search.ProjectDocument
+@import scaladex.core.model.Scala
+@import scaladex.core.model.Platform
+@import scaladex.core.model.search.AwesomeParams
+
+@(
+  env: Env,
+  user: Option[UserState],
+  categoriesByMetaCategory: Seq[(MetaCategory, Seq[Category])],
+  projectsByCategory: Map[Category, Seq[ProjectDocument]],
+  languages: Seq[Scala],
+  platforms: Seq[Platform],
+  params: AwesomeParams
+)
+@main(env, title = "Awesome Scala", user) {
+  <main id="container-awesome-all">
+    <div class="awesome-header">
+      <div class="container">
+        @howToContribute()
+        <h1><a class="awesome" href="/awesome">Awesome Scala</a></h1>
+        <p>A curated list of awesome Scala frameworks, libraries and tools.</p>
+      </div>
+    </div>
+    <div class="container awesome-content">
+      <div class="col-lg-3 col-md-4 sidebar">
+        <form action="/awesome" action="GET">
+          <div class="filter">
+            <label for="select-platform"><h3>Platform:</h3></label>
+            <select id="select-platform" name="platforms" class="selectpicker" multiple data-max-options="1" onchange="this.form.submit()">
+              @for(platform <- platforms) {
+                <option value="@platform.label" @if(params.platforms.contains(platform)){selected}>
+                  @platform
+                </option>
+              }
+            </select>
+          </div>
+          
+          <div class="filter">
+            <label for="select-language"><h3>Scala Version:</h3></label>
+            <select id="select-language" name="languages" class="selectpicker" multiple data-max-options="1" onchange="this.form.submit()">
+              @for(language <- languages) {
+                <option value="@language.label" @if(params.languages.contains(language)){selected}>
+                  @language
+                </option>
+              }
+            </select>
+          </div>
+        </form>
+        
+        <nav>
+          <h3>Categories:</h3>
+          <ul>
+            @for((meta, _) <- categoriesByMetaCategory) { 
+              <li>
+                <a href="#@meta.label"> @meta.title </a>
+              </li>
+            }
+          </ul>
+        </div>
+      </nav>
+      <div class="col-lg-9 col-md-8 col-sm-12">
+        @for((meta, categories) <- categoriesByMetaCategory) {
+          <section class="meta-category" id="@meta.label">
+            <h2>@meta.title</h2>
+            <div class="row">
+              @for(category <- categories) {
+                <section class="category col-lg-6 col-md-12" id="@category.label">
+                  <h3>
+                    <a href="@awesomeCategoryUri(category, params)">@category.title</a>
+                  </h3>
+                  <ol>
+                    @for(project <- projectsByCategory(category)) {
+                      <li>
+                        <a href="/@project.reference">
+                          <div class="project">
+                            <div class="title">
+                              <div>
+                                @githubUserAvatar(project.githubInfo.flatMap(_.logo))
+                                <h4> @project.organization / @project.repository </h4>
+                              </div>
+                              @for(github <- project.githubInfo) {
+                                <span class="stats">
+                                  @github.stars <i class="fa-solid fa-star"></i>
+                                </span>
+                              }
+                            </div>
+                            <div>
+                            @for(github <- project.githubInfo) {
+                              @for(description <- github.description) {
+                                <p class="description emojify">@description</p>
+                              }
+                            }
+                            </div>
+                          </div>
+                        </a>
+                      </li>
+                    }
+                  </ol>
+                  <div class="see-more">
+                    <a href="@awesomeCategoryUri(category, params)">See More</a>
+                  </div>
+                </section>
+              }
+              @defining(meta.seeAlsoCategories.filter(projectsByCategory.contains(_))) { seeAlsoCategories =>
+                @if(seeAlsoCategories.nonEmpty) {
+                  <div class="see-also col-lg-6 col-md-12">
+                    <h3>See also:</h3>
+                    <ul>
+                      @for(category <- seeAlsoCategories) {
+                        <li><a href="#@category.label">@category.title</a></li>
+                      }
+                    </ul>
+                  </div>
+                }
+              }
+            </div>
+          </section>
+        }
+      </div>
+    </div>
+  </main>
+}

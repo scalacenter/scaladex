@@ -1,0 +1,39 @@
+@import scaladex.core.model.search.SearchParams
+@import scaladex.core.model.search.Sorting
+
+@(params: SearchParams,
+  you: Boolean)
+<div class="order-by">
+  <form action="/search" action="GET">
+    <input type="hidden" name="q" value="@params.queryString">
+    @if(you){
+      <input type="hidden" name="you" value="">
+    }
+
+    @for(topic <- params.topics){
+      <input type="hidden" name="topics" value="@topic">
+    }
+
+    @for(language <- params.languages){
+      <input type="hidden" name="languages" value="@language">
+    }
+
+    @for(platform <- params.platforms){
+      <input type="hidden" name="platforms" value="@platform">
+    }
+
+    @if(params.contributingSearch){
+      <input type="hidden" name="contributingSearch" value="true">
+    }
+
+    <h3>Sorting</h3>
+    <div class="btn-group" role="group" aria-label="sorting">
+      @for(sorting <- Sorting.all) {
+        <button name="sort" value="@sorting.label" type="submit" 
+          class="btn btn-default @if(params.sorting == sorting) { active }">
+          @sorting.title
+        </button>
+      }
+    </div>
+  </form>
+</div>

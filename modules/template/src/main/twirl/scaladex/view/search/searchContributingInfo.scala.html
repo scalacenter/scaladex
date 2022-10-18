@@ -1,0 +1,31 @@
+@import scaladex.core.model.search.ProjectHit
+@import scaladex.core.model.search.SearchParams
+
+
+@(project: ProjectHit, params: SearchParams)
+<div class="content-project-body">
+  @for(github <- project.document.githubInfo) {
+    @for(desc <- github.description) { <p class="description">@desc</p> }
+    <ul>
+      @for(issue <- project.displayedIssues.take(6)) {
+        <li>
+          <a href="@issue.url.target" target="_blank">@issue</a>
+        </li>
+      }
+    </ul>
+
+    @if(project.displayedIssues.length > 6) {
+      @if(project.beginnerIssueHits.nonEmpty) {
+          <a href='https://github.com/@{project.document.reference}/issues?utf8=✓&q=is:open @{params.queryString}'
+          target="_blank">More Issues ...</a>
+      } else {
+          <a href="https://github.com/@{project.document.reference}/issues"
+          target="_blank">More Issues ...</a>
+      }
+    }
+    <hr>
+    @for(guide <- github.contributingGuide) { <a href="@guide.target" target="_blank">Contributing Guide</a> }
+    @for(chatroom <- github.chatroom) { <a href="@chatroom.target" target="_blank">Chatroom</a> }
+    @for(coc <- github.codeOfConduct) { <a href="@coc.target" target="_blank">Code of Conduct</a> }
+  }
+</div>

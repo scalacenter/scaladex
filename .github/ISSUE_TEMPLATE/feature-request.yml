@@ -1,0 +1,13 @@
+name: 🚀 Feature Request
+description: Please use https://github.com/scalacenter/scaladex/discussions
+body:
+- type: markdown
+  attributes:
+    value: |
+      We appreciate all ideas to improve Scaladex.
+      Feel free to open a new discussion in https://github.com/scalacenter/scaladex/discussions.
+      We will be happy to discuss and refine the idea into a concrete implementation plan.
+- type: textarea
+  attributes:
+    label: Empty text area.
+    value: You may not want to write in here.
