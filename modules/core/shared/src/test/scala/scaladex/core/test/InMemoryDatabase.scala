@@ -212,5 +212,14 @@ class InMemoryDatabase extends SchedulerDatabase {
       allProjects.update(ref, allProjects(ref).copy(githubStatus = status))
     )
 
-  override def moveProject(ref: Project.Reference, info: GithubInfo, status: GithubStatus.Moved): Future[Unit] = ???
+  override def moveProject(ref: Project.Reference, info: GithubInfo, status: GithubStatus.Moved): Future[Unit] = {
+    val projectToMove = allProjects(ref)
+    val newProject = projectToMove.copy(
+      organization = status.destination.organization,
+      repository = status.destination.repository
+    )
+    allProjects.update(status.destination, newProject)
+    allProjects.update(ref, projectToMove.copy(githubStatus = status))
+    Future.successful(())
+  }
 }
