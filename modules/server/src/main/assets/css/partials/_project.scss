@@ -224,7 +224,7 @@
       }
     }
     .info-project {
-      margin-bottom: 60px;
+      margin-bottom: 40px;
   
       h1 {
         display: inline-block;
@@ -325,8 +325,16 @@
     .fa-solid {
       margin-left: 5px;
     }
-    .scala-version {
-      padding-left: 15px;
+    a.scala-version {
+      padding-left: 16px;
+      display: inline-block;
+      color: $gray;
+      &:active,
+      &:focus,
+      &:hover {
+        text-decoration: none;
+        color: $brand-primary;
+      }
     }
     .artifact-content {
       h5 {

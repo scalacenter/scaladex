@@ -40,11 +40,11 @@
           <div>We can't find any release that matches all you criteria</div>
         } else {
         <div>
-          @artifactByVersions.map { case ((releaseDate, semanticVersion), artifacts) =>
+          @artifactByVersions.map { case ((releaseDate, version), artifacts) =>
           <div class="panel">
             <div class="artifact-row panel-body center">
               <div class="col-md-3 center">
-                <a class="artifact-version" href="/@project.reference/artifacts/@artifactName/@semanticVersion">@semanticVersion</a>
+                <a class="artifact-version" href="/@project.reference/artifacts/@artifactName/@version">@version</a>
               </div>
               <div class="col-md-9">
                 <div class="artifact-info">
@@ -66,8 +66,10 @@
                       .sortBy(_._1)(Platform.ordering.reverse)
                   ) {
                     <h5>@platform:</h5>
-                    @for(language <- binaryVersions.map(_.language).distinct.sorted) { 
-                      <span class="scala-version">@language.label</span>
+                    @for(binaryVersion <- binaryVersions.distinct.sorted) { 
+                      <a href="/@project.reference/artifacts/@artifactName/@version?binary-version=@binaryVersion.encode" class="scala-version">
+                        @binaryVersion.language.label
+                      </a>
                     }
                     <br>
                   }
