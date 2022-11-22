@@ -1,21 +1,21 @@
 @import scaladex.core.model.{Artifact, BinaryVersion, Platform, Project, SemanticVersion, UserState, Env}
 @import scaladex.view.html.main
+@import scaladex.view.model.ProjectHeader
 
 @(
         env: Env,
-        project: Project,
         user: Option[UserState],
+        project: Project,
+        header: ProjectHeader,
         binaryVersionsByPlatforms: Seq[(Platform, Seq[BinaryVersion])],
-        artifactsByVersions: Seq[(SemanticVersion, Seq[(Artifact.Name, Seq[Artifact])])],
-        numberOfVersions: Long,
-        lastProjectVersion: SemanticVersion
+        artifactsByVersions: Seq[(SemanticVersion, Seq[(Artifact.Name, Seq[Artifact])])]
 )
 @allBinaryVersions = @{
   binaryVersionsByPlatforms.flatMap(_._2)
 }
 @main(env, title = project.repository.toString, user, showSearch = true) {
   <main id="container-project">
-    @headproject(env, user, project, numberOfVersions, "Version Matrix", lastProjectVersion)
+    @headproject(env, user, project, header, "Version Matrix")
     <div class="container">
       <div class="content-project version-matrix box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">

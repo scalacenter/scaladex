@@ -47,9 +47,9 @@ object ArtifactTable {
     insertOrUpdateRequest(table, fields ++ versionFields, mavenReferenceFields)
 
   val count: Query0[Long] =
-    selectRequest(table, "COUNT(*)")
+    selectRequest(table, Seq("COUNT(*)"))
 
-  val countVersionsByProjct: Query[Project.Reference, Long] =
+  val countVersionsByProject: Query[Project.Reference, Long] =
     selectRequest(table, Seq("Count(DISTINCT version)"), projectReferenceFields)
 
   val updateProjectRef: Update[(Project.Reference, Artifact.MavenReference)] =
@@ -58,37 +58,28 @@ object ArtifactTable {
   val updateReleaseDate: Update[(Instant, Artifact.MavenReference)] =
     updateRequest(table, Seq("release_date"), mavenReferenceFields)
 
-  val selectAllArtifacts: Query0[Artifact] =
-    selectRequest(table, fields = fields)
-
-  val selectArtifactByLanguage: Query[Language, Artifact] =
-    selectRequest(table, fields, keys = Seq("language_version"))
-
-  val selectArtifactByPlatform: Query[Platform, Artifact] =
-    selectRequest(table, fields, keys = Seq("platform"))
-
-  val selectArtifactByLanguageAndPlatform: Query[(Language, Platform), Artifact] =
-    selectRequest(table, fields, keys = Seq("language_version", "platform"))
+  def selectAllArtifacts(language: Option[Language], platform: Option[Platform]): Query0[Artifact] = {
+    val where = language.map(v => s"language_version='${v.label}'").toSeq ++ platform.map(p => s"platform='${p.label}'")
+    selectRequest(table, fields, where = where)
+  }
 
   val selectArtifactByGroupIdAndArtifactId: Query[(Artifact.GroupId, Artifact.ArtifactId), Artifact] =
     selectRequest(table, fields, Seq("group_id", "artifact_id"))
 
-  val selectArtifactByProject: Query[Project.Reference, Artifact] = {
-    val where = projectReferenceFields.map(f => s"$f=?").mkString(" AND ")
+  val selectArtifactByProject: Query[Project.Reference, Artifact] =
     selectRequest1(
       table,
-      fields.mkString(", "),
-      where = Some(where),
+      fields,
+      where = projectReferenceFields.map(f => s"$f=?"),
       orderBy = Some("release_date DESC"),
       limit = Some(10000)
     )
-  }
 
   val selectArtifactBy: Query[(Project.Reference, Artifact.Name, SemanticVersion), Artifact] =
     selectRequest1(
       table,
-      fields.mkString(", "),
-      where = Some("organization=? AND repository=? AND artifact_name=? AND version=?")
+      fields,
+      where = Seq("organization=?", "repository=?", "artifact_name=?", "version=?")
     )
 
   def selectArtifactByParams(
@@ -118,76 +109,55 @@ object ArtifactTable {
   val selectArtifactByProjectAndName: Query[(Project.Reference, Artifact.Name), Artifact] =
     selectRequest(table, fields, projectReferenceFields :+ "artifact_name")
 
-  val selectArtifactByProjectAndVersion: Query[(Project.Reference, SemanticVersion), Artifact] =
-    selectRequest(table, fields, projectReferenceFields :+ "version")
-
   val selectByMavenReference: Query[Artifact.MavenReference, Artifact] =
     selectRequest(table, fields, mavenReferenceFields)
 
   val selectGroupIds: Query0[Artifact.GroupId] =
-    selectRequest(table, "DISTINCT group_id")
-
-  val selectArtifactName: Query[Project.Reference, Artifact.Name] =
-    selectRequest(table, Seq("DISTINCT artifact_name"), projectReferenceFields)
-
-  val selectPlatformByArtifactName: Query[(Project.Reference, Artifact.Name), Platform] =
-    selectRequest(table, Seq("DISTINCT platform"), projectReferenceFields :+ "artifact_name")
+    selectRequest(table, Seq("DISTINCT group_id"))
 
   val selectMavenReference: Query0[Artifact.MavenReference] =
-    selectRequest(table, """DISTINCT group_id, artifact_id, "version"""")
+    selectRequest(table, Seq("DISTINCT group_id", "artifact_id", "\"version\""))
 
   val selectMavenReferenceWithNoReleaseDate: Query0[Artifact.MavenReference] =
-    selectRequest(table, """group_id, artifact_id, "version"""", where = Some("release_date is NULL"))
+    selectRequest(table, Seq("group_id", "artifact_id", "\"version\""), where = Seq("release_date is NULL"))
 
   val selectOldestByProject: Query0[(Instant, Project.Reference)] =
     selectRequest(
       table,
-      "MIN(release_date) as oldest_artifact, organization, repository",
-      where = Some("release_date IS NOT NULL"),
+      Seq("MIN(release_date)", "organization", "repository"),
+      where = Seq("release_date IS NOT NULL"),
       groupBy = projectReferenceFields
     )
 
   val getReleasesFromArtifacts: Query0[Release] =
     selectRequest(
       table,
-      "organization, repository, platform , language_version , version , MIN(release_date) as release_date",
+      Seq("organization", "repository", "platform", "language_version", "version", "MIN(release_date)"),
       groupBy = Seq("organization", "repository ", "platform ", "language_version", "version")
     )
 
-  val selectLastReleaseVersion: Query[Project.Reference, SemanticVersion] =
+  def selectLatestArtifacts(mustBeRelease: Boolean): Query[Project.Reference, Artifact] =
     selectRequest1(
-      table,
-      "version",
-      where = Some("organization=? AND repository=? AND is_semantic='true' and is_prerelease='false'"),
-      orderBy = Some("release_date DESC"),
-      limit = Some(1L)
+      latestDateTable(mustBeRelease),
+      fields.map(c => s"a.$c"),
+      where = Seq("a.organization=?", "a.repository=?")
     )
 
-  val selectLastVersion: Query[Project.Reference, SemanticVersion] =
-    selectRequest1(
-      table,
-      "version",
-      where = Some("organization=? AND repository=?"),
-      orderBy = Some("release_date DESC"),
-      limit = Some(1L)
-    )
+  // the latest release date of all artifact IDs
+  private def latestDateTable(mustBeRelease: Boolean): String =
+    s"($table a " +
+      s"INNER JOIN (${selectLatestDate(mustBeRelease).sql}) d " +
+      s"ON a.group_id=d.group_id " +
+      s"AND a.artifact_id=d.artifact_id " +
+      s"AND a.release_date=d.release_date)"
 
-  val selectLastReleaseVersionByArtifactName: Query[(Project.Reference, Artifact.Name), SemanticVersion] =
-    selectRequest1(
+  private def selectLatestDate(mustBeRelease: Boolean): Query0[(Artifact.GroupId, String, Instant)] = {
+    val isReleaseFilters = if (mustBeRelease) Seq("is_semantic='true'", "is_prerelease='false'") else Seq.empty
+    selectRequest(
       table,
-      "version",
-      where =
-        Some("organization=? AND repository=? AND artifact_name=? AND is_semantic='true' and is_prerelease='false'"),
-      orderBy = Some("release_date DESC"),
-      limit = Some(1L)
+      Seq("group_id", "artifact_id", "MAX(release_date) as release_date"),
+      where = Seq("release_date IS NOT NULL") ++ isReleaseFilters,
+      groupBy = Seq("group_id", "artifact_id")
     )
-
-  val selectLastVersionByArtifactName: Query[(Project.Reference, Artifact.Name), SemanticVersion] =
-    selectRequest1(
-      table,
-      "version",
-      where = Some("organization=? AND repository=? AND artifact_name=?"),
-      orderBy = Some("release_date DESC"),
-      limit = Some(1L)
-    )
+  }
 }

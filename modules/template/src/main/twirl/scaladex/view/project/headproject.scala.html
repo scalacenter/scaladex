@@ -1,11 +1,11 @@
-@import scaladex.view.html.ensureUri
 @import scaladex.core.model.Project
-@import scaladex.view.Formats._
 @import scaladex.core.model.UserState
 @import scaladex.core.model.Env
+@import scaladex.view.Formats._
+@import scaladex.view.html.ensureUri
+@import scaladex.view.model.ProjectHeader
 
-@import scaladex.core.model.SemanticVersion
-@(env: Env, user: Option[UserState], project: Project, numberOfVersions: Long, activeTab: String, lastVersion: SemanticVersion)
+@(env: Env, user: Option[UserState], project: Project, header: ProjectHeader, activeTab: String)
 
 @canEdit = @{user.exists(_.canEdit(project.reference, env))}
 @isActive(nameTab: String) = @{if(nameTab == activeTab) "active" else ""}
@@ -17,36 +17,34 @@
 <div class="head-project">
   <div class="container">
     <div class="info-project">
-      <div class="row">
-        <div class="col-md-12">
-          <h1>
-            <a href="/@project.organization">@project.organization</a> /
-            <a href="/@project.reference">@project.repository</a>
-            <span class="head-last-version">&nbsp;&nbsp;@lastVersion.encode </span>
-          </h1>
+      <div>
+        <h1>
+          <a href="/@project.organization">@project.organization</a> /
+          <a href="/@project.reference">@project.repository</a>
+          <span class="head-last-version">&nbsp;&nbsp;@header.defaultVersion.encode </span>
+        </h1>
 
-          @if(project.settings.contributorsWanted) {
-            <a class="contributors-tag" href="/search?q=contributorsWanted:true">
-              <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">
+        @if(project.settings.contributorsWanted) {
+          <a class="contributors-tag" href="/search?q=contributorsWanted:true">
+            <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">
+          </a>
+        }
+        @for(license <- project.githubInfo.flatMap(_.license)) {
+          @license.url.map { url =>
+            <a href="@ensureUri(url)" class="btn btn-link" target="_blank" rel="nofollow">
+              <i class="fa-solid fa-award" aria-hidden="true"></i> @license.name
             </a>
           }
-          @for(license <- project.githubInfo.flatMap(_.license)) {
-            @license.url.map { url =>
-              <a href="@ensureUri(url)" class="btn btn-link" target="_blank" rel="nofollow">
-                <i class="fa-solid fa-award" aria-hidden="true"></i> @license.name
-              </a>
-            }
+        }
+        @for(homepage <- project.githubInfo.flatMap(_.homepage)) {
+          @if(homepage.target.nonEmpty) {
+            <a href="@ensureUri(homepage.target)" class="btn btn-link" target="_blank" rel="nofollow">
+              <i class="fa-solid fa-earth-africa" aria-hidden="true"></i> Website
+            </a>
           }
-          @for(homepage <- project.githubInfo.flatMap(_.homepage)) {
-            @if(homepage.target.nonEmpty) {
-              <a href="@ensureUri(homepage.target)" class="btn btn-link" target="_blank" rel="nofollow">
-                <i class="fa-solid fa-earth-africa" aria-hidden="true"></i> Website
-              </a>
-            }
-          }
-          <a href="https://github.com/@project.reference" class="btn btn-link" target="_blank"><i class="fa-brands fa-github"></i>
-            GitHub</a>
-        </div>
+        }
+        <a href="https://github.com/@project.reference" class="btn btn-link" target="_blank"><i class="fa-brands fa-github"></i>
+          GitHub</a>
       </div>
       @for(github <- project.githubInfo) {
         @for(description <- github.description) {
@@ -60,13 +58,59 @@
         }
         </ul>
       }
+      <div class="project-versions">
+        @if(header.scalaVersions.nonEmpty){
+          <div>
+            Scala versions:
+            @for(scalaVersion <- header.scalaVersions) {
+              <a href="@header.artifactsUrl(scalaVersion)" class="targets">@scalaVersion.version</a>
+            }
+          </div>
+        }
+  
+        @if(header.scalaJsVersions.nonEmpty){
+          <div>
+            Scala.js versions:
+            @for(platform <- header.scalaJsVersions) {
+              <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
+            }
+          </div>
+        }
+  
+        @if(header.scalaNativeVersions.nonEmpty){
+          <div>
+            Scala Native versions:
+            @for(platform <- header.scalaNativeVersions) {
+              <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
+            }
+          </div>
+        }
+  
+        @if(header.sbtVersions.nonEmpty){
+          <div>
+            sbt plugins:
+            @for(platform <- header.sbtVersions) {
+              <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
+            }
+          </div>
+        }
+  
+        @if(header.millVersions.nonEmpty){
+          <div>
+            Mill plugins:
+            @for(platform <- header.millVersions) {
+              <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
+            }
+          </div>
+        }
+      </div>
     </div>
     <div class="row">
       <div class="col-md-12">
         <div class="project-nav-bar">
           <ul class="nav nav-tabs">
             <li role="project" class="@isActive("Project")"><a href="/@project.reference">Project</a></li>
-            <li role="artifacts" class="@isActive("Artifacts")"><a href="/@project.reference/artifacts">@plural(numberOfVersions, "Version")</a></li>
+            <li role="artifacts" class="@isActive("Artifacts")"><a href="@header.artifactsUrl">@plural(header.versionCount, "Version")</a></li>
             <!-- <li role="version-matrix" class="@isActive("Version Matrix")"><a href="/@project.reference/version-matrix">Version Matrix</a></li> -->
             <li role="badges" class="@isActive("Badges")"><a href="/@project.reference/badges">Badges</a></li>
             @if(canEdit) {

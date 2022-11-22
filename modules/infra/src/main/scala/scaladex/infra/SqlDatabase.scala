@@ -35,7 +35,6 @@ import scaladex.infra.sql.ReleaseTable
 import scaladex.infra.sql.UserSessionsTable
 
 class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
-
   private val flyway = DoobieUtils.flyway(datasource)
   def migrate: IO[Unit] = IO(flyway.migrate())
   def dropTables: IO[Unit] = IO(flyway.clean())
@@ -54,6 +53,50 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
     } yield isNewProject
   }
 
+  override def insertArtifacts(artifacts: Seq[Artifact]): Future[Unit] =
+    run(ArtifactTable.insertIfNotExist(artifacts)).map(_ => ())
+
+  override def updateArtifacts(artifacts: Seq[Artifact], newRef: Project.Reference): Future[Int] = {
+    val mavenReferences = artifacts.map(r => newRef -> r.mavenReference)
+    run(ArtifactTable.updateProjectRef.updateMany(mavenReferences))
+  }
+
+  override def updateArtifactReleaseDate(reference: Artifact.MavenReference, releaseDate: Instant): Future[Int] =
+    run(ArtifactTable.updateReleaseDate.run((releaseDate, reference)))
+
+  override def getArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactByGroupIdAndArtifactId.to[Seq](groupId, artifactId))
+
+  override def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactByProject.to[Seq](projectRef))
+
+  override def getArtifacts(
+      ref: Project.Reference,
+      artifactName: Artifact.Name,
+      version: SemanticVersion
+  ): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactBy.to[Seq](ref, artifactName, version))
+
+  override def getArtifactsByName(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactByProjectAndName.to[Seq]((ref, artifactName)))
+
+  override def getLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]] =
+    for {
+      releases <- run(ArtifactTable.selectLatestArtifacts(mustBeRelease = true).to[Seq](ref))
+      nonReleases <- run(ArtifactTable.selectLatestArtifacts(mustBeRelease = false).to[Seq](ref))
+    } yield {
+      // override non-released artifacts with their latest released version
+      val merge = nonReleases.map(artifact => artifact.mavenReference -> artifact).toMap ++
+        releases.map(artifact => artifact.mavenReference -> artifact).toMap
+      merge.values.toSeq
+    }
+
+  override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] =
+    run(ArtifactTable.selectByMavenReference.option(mavenRef))
+
+  override def getAllArtifacts(language: Option[Language], platform: Option[Platform]): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectAllArtifacts(language, platform).to[Seq])
+
   override def insertProject(project: Project): Future[Unit] =
     for {
       updated <- insertProjectRef(project.reference, project.githubStatus)
@@ -69,9 +112,6 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
         }
     } yield ()
 
-  override def insertArtifacts(artifacts: Seq[Artifact]): Future[Unit] =
-    run(ArtifactTable.insertIfNotExist(artifacts)).map(_ => ())
-
   override def insertDependencies(dependencies: Seq[ArtifactDependency]): Future[Unit] =
     run(ArtifactDependencyTable.insertIfNotExist.updateMany(dependencies)).map(_ => ())
 
@@ -84,14 +124,6 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   override def getAllProjects(): Future[Seq[Project]] =
     run(ProjectTable.selectProject.to[Seq])
-
-  override def updateArtifacts(artifacts: Seq[Artifact], newRef: Project.Reference): Future[Int] = {
-    val mavenReferences = artifacts.map(r => newRef -> r.mavenReference)
-    run(ArtifactTable.updateProjectRef.updateMany(mavenReferences))
-  }
-
-  override def updateArtifactReleaseDate(reference: Artifact.MavenReference, releaseDate: Instant): Future[Int] =
-    run(ArtifactTable.updateReleaseDate.run((releaseDate, reference)))
 
   override def updateGithubInfoAndStatus(
       ref: Project.Reference,
@@ -109,44 +141,11 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getProject(projectRef: Project.Reference): Future[Option[Project]] =
     run(ProjectTable.selectByReference.option(projectRef))
 
-  override def getArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifactByGroupIdAndArtifactId.to[Seq](groupId, artifactId))
-
-  override def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifactByProject.to[Seq](projectRef))
-
   override def getDependencies(projectRef: Project.Reference): Future[Seq[ArtifactDependency]] =
     run(ArtifactDependencyTable.selectDependencyFromProject.to[Seq](projectRef))
 
   override def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]] =
     run(ProjectTable.selectByNewReference.to[Seq](projectRef))
-
-  override def getArtifactsByName(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifactByProjectAndName.to[Seq]((ref, artifactName)))
-
-  override def getArtifactsByVersion(ref: Project.Reference, version: SemanticVersion): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifactByProjectAndVersion.to[Seq](ref, version))
-
-  override def getArtifactNames(ref: Project.Reference): Future[Seq[Artifact.Name]] =
-    run(ArtifactTable.selectArtifactName.to[Seq](ref))
-
-  override def getArtifactPlatforms(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Platform]] =
-    run(ArtifactTable.selectPlatformByArtifactName.to[Seq]((ref, artifactName)))
-
-  override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] =
-    run(ArtifactTable.selectByMavenReference.option(mavenRef))
-
-  override def getAllArtifacts(
-      maybeLanguage: Option[Language],
-      maybePlatform: Option[Platform]
-  ): Future[Seq[Artifact]] =
-    (maybeLanguage, maybePlatform) match {
-      case (Some(language), Some(platform)) =>
-        run(ArtifactTable.selectArtifactByLanguageAndPlatform.to[Seq](language, platform))
-      case (Some(language), _) => run(ArtifactTable.selectArtifactByLanguage.to[Seq](language))
-      case (_, Some(platform)) => run(ArtifactTable.selectArtifactByPlatform.to[Seq](platform))
-      case _                   => run(ArtifactTable.selectAllArtifacts.to[Seq])
-    }
 
   def countProjects(): Future[Long] =
     run(ProjectTable.countProjects.unique)
@@ -162,13 +161,6 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   override def getReverseDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Reverse]] =
     run(ArtifactDependencyTable.selectReverseDependency.to[Seq](artifact.mavenReference))
-
-  override def getArtifacts(
-      ref: Project.Reference,
-      artifactName: Artifact.Name,
-      version: SemanticVersion
-  ): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifactBy.to[Seq](ref, artifactName, version))
 
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.count.unique)
@@ -243,27 +235,7 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
     )
 
   override def countVersions(ref: Project.Reference): Future[Long] =
-    run(ArtifactTable.countVersionsByProjct.unique(ref))
-
-  override def getLastVersion(ref: Project.Reference, artifactNameOpt: Option[Artifact.Name]): Future[SemanticVersion] =
-    artifactNameOpt match {
-      case Some(artifactName) =>
-        for {
-          versionOpt <- run(ArtifactTable.selectLastReleaseVersionByArtifactName.option((ref, artifactName)))
-          version <- versionOpt match {
-            case Some(version) => Future.successful(version)
-            case None          => run(ArtifactTable.selectLastVersionByArtifactName.unique((ref, artifactName)))
-          }
-        } yield version
-      case None =>
-        for {
-          versionOpt <- run(ArtifactTable.selectLastReleaseVersion.option(ref))
-          version <- versionOpt match {
-            case Some(version) => Future.successful(version)
-            case None          => run(ArtifactTable.selectLastVersion.unique(ref))
-          }
-        } yield version
-    }
+    run(ArtifactTable.countVersionsByProject.unique(ref))
 
   override def moveProject(
       ref: Project.Reference,

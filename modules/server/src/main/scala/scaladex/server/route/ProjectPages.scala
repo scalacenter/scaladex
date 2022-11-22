@@ -4,7 +4,6 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 import scala.collection.SortedMap
-import scala.collection.SortedSet
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Failure
@@ -22,7 +21,10 @@ import scaladex.core.web.ArtifactPageParams
 import scaladex.core.web.ArtifactsPageParams
 import scaladex.server.TwirlSupport._
 import scaladex.server.service.SearchSynchronizer
-import scaladex.view
+import scaladex.view.html.forbidden
+import scaladex.view.html.notfound
+import scaladex.view.model.ProjectHeader
+import scaladex.view.project.html
 
 class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
     implicit executionContext: ExecutionContext
@@ -35,30 +37,12 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         path(projectM)(getProjectPage(_, user))
       },
       get {
-        path(projectM / "artifacts") { ref =>
-          getProjectOrRedirect(ref, user) { project =>
-            for {
-              lastVersion <- database.getLastVersion(ref, project.settings.defaultArtifact)
-              artifacts <- database.getArtifactsByVersion(ref, lastVersion)
-            } yield {
-              val defaultArtifactName = project.settings.defaultArtifact
-                .flatMap(name => artifacts.find(_.artifactName == name))
-                .getOrElse(ProjectPages.getDefault(artifacts))
-                .artifactName
-              redirect(s"/$ref/artifacts/$defaultArtifactName", StatusCodes.TemporaryRedirect)
-            }
-          }
-        }
-      },
-      get {
         path(projectM / "artifacts" / artifactNameM) { (ref, artifactName) =>
           artifactsParams { params =>
             getProjectOrRedirect(ref, user) { project =>
               for {
-                artifactNames <- database.getArtifactNames(ref)
                 artifacts <- database.getArtifacts(ref, artifactName, params)
-                numberOfVersions <- database.countVersions(ref)
-                lastVersion <- database.getLastVersion(ref, project.settings.defaultArtifact)
+                header <- getProjectHeader(project)
               } yield {
                 val binaryVersions = artifacts
                   .map(_.binaryVersion)
@@ -74,21 +58,20 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
                           .forall(binaryVersion => artifacts.exists(_.binaryVersion == binaryVersion))
                     }
                     .map { case (version, artifacts) => (artifacts.map(_.releaseDate).min, version) -> artifacts }
-                val html = view.project.html.artifacts(
-                  env,
-                  project,
-                  user,
-                  artifactName,
-                  artifactNames,
-                  binaryVersions,
-                  SortedMap.from(artifactsByVersion)(
-                    Ordering.Tuple2(Ordering[Instant].reverse, Ordering[SemanticVersion].reverse)
-                  ),
-                  params,
-                  lastVersion,
-                  numberOfVersions
+                val sortedArtifactsByVersion = SortedMap.from(artifactsByVersion)(
+                  Ordering.Tuple2(Ordering[Instant].reverse, Ordering[SemanticVersion].reverse)
                 )
-                complete(html)
+                val page = html.artifacts(
+                  env,
+                  user,
+                  project,
+                  header,
+                  artifactName,
+                  binaryVersions,
+                  sortedArtifactsByVersion,
+                  params
+                )
+                complete(page)
               }
             }
           }
@@ -105,23 +88,20 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
                 artifact = artifacts.find(_.binaryVersion == binaryVersion).get
                 directDeps <- database.getDirectDependencies(artifact)
                 reverseDeps <- database.getReverseDependencies(artifact)
-                numberOfVersions <- database.countVersions(ref)
-                lastVersion <- database.getLastVersion(ref, project.settings.defaultArtifact)
+                header <- getProjectHeader(project)
               } yield {
-                val html = view.project.html
-                  .artifact(
-                    env,
-                    user,
-                    project,
-                    artifact,
-                    binaryVersions,
-                    params,
-                    directDeps,
-                    reverseDeps,
-                    numberOfVersions,
-                    lastVersion
-                  )
-                complete(html)
+                val page = html.artifact(
+                  env,
+                  user,
+                  project,
+                  header,
+                  artifact,
+                  binaryVersions,
+                  params,
+                  directDeps,
+                  reverseDeps
+                )
+                complete(page)
               }
             }
           }
@@ -132,8 +112,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           getProjectOrRedirect(ref, user) { project =>
             for {
               artifacts <- database.getArtifacts(project.reference)
-              numberOfVersions <- database.countVersions(ref)
-              lastProjectVersion <- database.getLastVersion(ref, project.settings.defaultArtifact)
+              header <- getProjectHeader(project)
             } yield {
               val binaryVersionByPlatforms = artifacts
                 .map(_.binaryVersion)
@@ -149,18 +128,8 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
                 .map { case (version, artifacts) => (version, artifacts.groupBy(_.artifactName).toSeq.sortBy(_._1)) }
                 .toSeq
                 .sortBy(_._1)(SemanticVersion.ordering.reverse)
-              complete(
-                view.project.html
-                  .versionMatrix(
-                    env,
-                    project,
-                    user,
-                    binaryVersionByPlatforms,
-                    artifactsByVersions,
-                    numberOfVersions,
-                    lastProjectVersion
-                  )
-              )
+              val page = html.versionMatrix(env, user, project, header, binaryVersionByPlatforms, artifactsByVersions)
+              complete(page)
             }
           }
         }
@@ -174,7 +143,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
             case Some(userState) if userState.canEdit(projectRef, env) =>
               getEditPage(projectRef, userState)
             case _ =>
-              complete((StatusCodes.Forbidden, view.html.forbidden(env, user)))
+              complete((StatusCodes.Forbidden, forbidden(env, user)))
           }
         }
       },
@@ -227,7 +196,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           )
           Future.successful(redirect(redirectUri, StatusCodes.MovedPermanently))
         case Some(project) => f(project)
-        case None          => Future.successful(complete(StatusCodes.NotFound, view.html.notfound(env, user)))
+        case None          => Future.successful(complete(StatusCodes.NotFound, notfound(env, user)))
       }
       onSuccess(future)(identity)
     }
@@ -259,23 +228,26 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
     getProjectOrRedirect(ref, Some(user)) { project =>
       for {
         artifacts <- database.getArtifacts(ref)
-        numberOfVersions <- database.countVersions(ref)
-        lastVersion <- database.getLastVersion(ref, project.settings.defaultArtifact)
+        header <- getProjectHeader(project)
       } yield {
-        val page = view.project.html.editproject(env, project, artifacts, user, numberOfVersions, lastVersion)
+        val page = html.editproject(env, user, project, header, artifacts)
         complete(page)
       }
     }
 
-  private def getProjectPage(
-      ref: Project.Reference,
-      user: Option[UserState]
-  ): Route =
+  private def getProjectHeader(project: Project): Future[ProjectHeader] = {
+    val ref = project.reference
+    for {
+      latestArtifacts <- database.getLatestArtifacts(ref)
+      versionCount <- database.countVersions(ref)
+    } yield ProjectHeader(project.reference, latestArtifacts, versionCount, project.settings.defaultArtifact)
+  }
+
+  private def getProjectPage(ref: Project.Reference, user: Option[UserState]): Route =
     getProjectOrRedirect(ref, user) { project =>
       for {
-        lastVersion <- database.getLastVersion(ref, project.settings.defaultArtifact)
-        versionCount <- database.countVersions(ref)
-        directDependencies <- database.getProjectDependencies(ref, lastVersion)
+        header <- getProjectHeader(project)
+        directDependencies <- database.getProjectDependencies(ref, header.defaultVersion)
         reverseDependencies <- database.getProjectDependents(ref)
       } yield {
         val groupedDirectDependencies = directDependencies
@@ -294,41 +266,20 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
             val version = deps.map(_.targetVersion).max
             (scope, version)
           }
-        val html = view.project.html.project(
-          env,
-          user,
-          project,
-          versionCount,
-          lastVersion,
-          groupedDirectDependencies.toMap,
-          groupedReverseDependencies.toMap
-        )
-        complete(StatusCodes.OK, html)
+        val page =
+          html.project(env, user, project, header, groupedDirectDependencies.toMap, groupedReverseDependencies.toMap)
+        complete(page)
       }
     }
 
   private def getBadges(ref: Project.Reference, user: Option[UserState]): Route =
     getProjectOrRedirect(ref, user) { project =>
       for {
-        lastVersion <- database.getLastVersion(ref, project.settings.defaultArtifact)
-        artifacts <- database.getArtifactsByVersion(ref, lastVersion)
-        defaultArtifact =
-          project.settings.defaultArtifact
-            .flatMap(name => artifacts.find(_.artifactName == name))
-            .getOrElse(ProjectPages.getDefault(artifacts))
-        versionCount <- database.countVersions(ref)
-        platforms <- database.getArtifactPlatforms(ref, defaultArtifact.artifactName)
+        header <- getProjectHeader(project)
+        artifact = header.getDefaultArtifact(None, None)
       } yield {
-        val html = view.project.html.badges(
-          env,
-          user,
-          project,
-          versionCount,
-          lastVersion,
-          defaultArtifact,
-          SortedSet.from(platforms)(Platform.ordering.reverse)
-        )
-        complete(StatusCodes.OK, html)
+        val page = html.badges(env, user, project, header, artifact)
+        complete(StatusCodes.OK, page)
       }
     }
 
@@ -398,12 +349,4 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           Tuple1(settings)
       }
     )
-}
-
-object ProjectPages {
-  def getDefault(artifacts: Seq[Artifact]): Artifact =
-    artifacts
-      .maxBy(a => (a.platform, a.language, a.artifactName))(
-        Ordering.Tuple3(Ordering[Platform], Ordering[Language], Ordering[Artifact.Name].reverse)
-      )
 }

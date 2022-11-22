@@ -8,6 +8,7 @@ import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Project
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions._
+import scaladex.view.model.ProjectHeader
 
 class DependencyUpdater(database: SchedulerDatabase)(implicit ec: ExecutionContext) extends LazyLogging {
 
@@ -30,8 +31,9 @@ class DependencyUpdater(database: SchedulerDatabase)(implicit ec: ExecutionConte
         database.deleteProjectDependencies(project.reference).map(_ => ())
       else
         for {
-          lastVersion <- database.getLastVersion(project.reference, project.settings.defaultArtifact)
-          dependencies <- database.computeProjectDependencies(project.reference, lastVersion)
+          latestArtifacts <- database.getLatestArtifacts(project.reference)
+          projectHeader = ProjectHeader(project.reference, latestArtifacts, 0, project.settings.defaultArtifact)
+          dependencies <- database.computeProjectDependencies(project.reference, projectHeader.defaultVersion)
           _ <- database.deleteProjectDependencies(project.reference)
           _ <- database.insertProjectDependencies(dependencies)
         } yield ()

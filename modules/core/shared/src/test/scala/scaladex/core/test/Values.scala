@@ -175,26 +175,38 @@ object Values {
     val `core_3:4`: Artifact = getArtifact("cats-core", `_3`, `4`, description = Some("Cats core"))
     val `core_3:2.7.0`: Artifact = getArtifact("cats-core", `_3`, `2.7.0`, description = Some("Cats core"))
 
-    val core_sjs1_3: Artifact = getArtifact("cats-core", `_sjs1_3`, `2.6.1`, description = Some("Cats core"))
-    val core_sjs06_213: Artifact =
+    val `core_sjs1_3:2.6.1`: Artifact = getArtifact("cats-core", `_sjs1_3`, `2.6.1`, description = Some("Cats core"))
+    val `core_sjs06_2.13:2.6.1`: Artifact =
       getArtifact("cats-core", `_sjs0.6_2.13`, `2.6.1`, description = Some("Cats core"))
-    val core_native04_213: Artifact =
+    val `core_native04_2.13:2.6.1`: Artifact =
       getArtifact("cats-core", `_native0.4_2.13`, `2.6.1`, description = Some("Cats core"))
 
     val `kernel_2.13`: Artifact = getArtifact("cats-kernel", `_2.13`, `2.6.1`)
-    val kernel_3: Artifact = getArtifact("cats-kernel", `_3`, `2.6.1`)
-    val laws_3: Artifact = getArtifact("cats-laws", `_3`, `2.6.1`)
+    val `kernel_3:2.6.1`: Artifact = getArtifact("cats-kernel", `_3`, `2.6.1`)
+    val `laws_3:2.6.1`: Artifact = getArtifact("cats-laws", `_3`, `2.6.1`)
 
     val allArtifacts: Seq[Artifact] =
-      Seq(`core_3:2.6.1`, `core_3:2.7.0`, core_sjs1_3, core_sjs06_213, core_native04_213, kernel_3, laws_3)
+      Seq(
+        `core_3:2.6.1`,
+        `core_3:2.7.0`,
+        `core_sjs1_3:2.6.1`,
+        `core_sjs06_2.13:2.6.1`,
+        `core_native04_2.13:2.6.1`,
+        `kernel_3:2.6.1`,
+        `laws_3:2.6.1`
+      )
 
     val dependencies: Seq[ArtifactDependency] = Seq(
       ArtifactDependency(
         source = `core_3:2.6.1`.mavenReference,
-        target = kernel_3.mavenReference,
+        target = `kernel_3:2.6.1`.mavenReference,
         Scope("compile")
       ),
-      ArtifactDependency(source = `core_3:2.6.1`.mavenReference, target = laws_3.mavenReference, Scope("compile")),
+      ArtifactDependency(
+        source = `core_3:2.6.1`.mavenReference,
+        target = `laws_3:2.6.1`.mavenReference,
+        Scope("compile")
+      ),
       ArtifactDependency(
         source = `core_3:2.6.1`.mavenReference,
         target = MavenReference(

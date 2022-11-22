@@ -6,19 +6,18 @@
 @import scaladex.view.html.main
 @import scaladex.core.model.Platform
 @import scala.collection.SortedSet
+@import scaladex.view.model.ProjectHeader
 
 @(
   env: Env,
   user: Option[UserState],
   project: Project,
-  versionCount: Long,
-  lastVersion: SemanticVersion,
-  artifact: Artifact,
-  platforms: SortedSet[Platform]
+  header: ProjectHeader,
+  artifact: Artifact
 )
 @main(env, title = project.repository.value, user, extraMeta = project.twitterCard.toHeadMeta) {
   <main id="container-project">
-    @headproject(env, user, project, versionCount, "Badges", lastVersion)
+    @headproject(env, user, project, header, "Badges")
     <div class="container">
       <div class="content-project box project-badges">
         <section class="badge-section" id="latest">
@@ -27,7 +26,7 @@
           <pre aria-label="Badge markdown" id="badge-markdown">[![@artifact.artifactName Scala version support](@artifact.latestBadgeUrl(env))](@artifact.fullHttpUrl(env))</pre>
           <button class="btn btn-primary btn-copy pull-right" data-clipboard-target="badge-markdown">Copy Markdown</button>
         </section>
-        @platforms.iterator.map { platform =>
+        @header.platforms(artifact.artifactName).map { platform =>
           <section class="badge-section" id="@platform">
             <h2>@platform badge</h2>
             <img src="@artifact.badgeUrl(env, Some(platform))" />

@@ -64,15 +64,15 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     val newRef = Project.Reference.from("kindlevel", "dogs")
     for {
       _ <- database.insertArtifact(Cats.`core_3:2.6.1`, Cats.dependencies, now)
-      _ <- database.insertArtifact(Cats.core_sjs1_3, Seq.empty, now)
-      _ <- database.updateArtifacts(Seq(Cats.`core_3:2.6.1`, Cats.core_sjs1_3), newRef)
+      _ <- database.insertArtifact(Cats.`core_sjs1_3:2.6.1`, Seq.empty, now)
+      _ <- database.updateArtifacts(Seq(Cats.`core_3:2.6.1`, Cats.`core_sjs1_3:2.6.1`), newRef)
       oldArtifacts <- database.getArtifacts(Cats.reference)
       newArtifacts <- database.getArtifacts(newRef)
     } yield {
       oldArtifacts shouldBe empty
       newArtifacts should contain theSameElementsAs Seq(
         Cats.`core_3:2.6.1`.copy(projectRef = newRef),
-        Cats.core_sjs1_3.copy(projectRef = newRef)
+        Cats.`core_sjs1_3:2.6.1`.copy(projectRef = newRef)
       )
     }
   }
@@ -90,15 +90,15 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
   it("should find artifacts by name") {
     for {
       _ <- database.insertArtifact(Cats.`core_3:2.6.1`, Cats.dependencies, now)
-      _ <- database.insertArtifact(Cats.core_sjs1_3, Seq.empty, now)
+      _ <- database.insertArtifact(Cats.`core_sjs1_3:2.6.1`, Seq.empty, now)
       artifacts <- database.getArtifactsByName(Cats.reference, Cats.`core_3:2.6.1`.artifactName)
-    } yield artifacts should contain theSameElementsAs Seq(Cats.`core_3:2.6.1`, Cats.core_sjs1_3)
+    } yield artifacts should contain theSameElementsAs Seq(Cats.`core_3:2.6.1`, Cats.`core_sjs1_3:2.6.1`)
   }
 
   it("should count projects, artifacts, dependencies, github infos and data forms") {
     for {
       _ <- database.insertArtifact(Cats.`core_3:2.6.1`, Cats.dependencies, now)
-      _ <- database.insertArtifact(Cats.core_sjs1_3, Seq.empty, now)
+      _ <- database.insertArtifact(Cats.`core_sjs1_3:2.6.1`, Seq.empty, now)
       _ <- database.insertArtifact(Scalafix.artifact, Seq.empty, now)
       _ <- database.insertArtifact(PlayJsonExtra.artifact, Seq.empty, now)
       _ <- database.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, GithubStatus.Ok(now))
@@ -120,16 +120,19 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
   it("should find directDependencies") {
     for {
       _ <- database.insertArtifact(Cats.`core_3:2.6.1`, Cats.dependencies, now)
-      _ <- database.insertArtifact(Cats.kernel_3, Seq.empty, now)
+      _ <- database.insertArtifact(Cats.`kernel_3:2.6.1`, Seq.empty, now)
       directDependencies <- database.getDirectDependencies(Cats.`core_3:2.6.1`)
-    } yield directDependencies.map(_.target) should contain theSameElementsAs List(Some(Cats.kernel_3), None, None)
+    } yield {
+      val targets = directDependencies.map(_.target)
+      targets should contain theSameElementsAs List(Some(Cats.`kernel_3:2.6.1`), None, None)
+    }
   }
 
   it("should find reverseDependencies") {
     for {
       _ <- database.insertArtifact(Cats.`core_3:2.6.1`, Cats.dependencies, now)
-      _ <- database.insertArtifact(Cats.kernel_3, Seq.empty, now)
-      reverseDependencies <- database.getReverseDependencies(Cats.kernel_3)
+      _ <- database.insertArtifact(Cats.`kernel_3:2.6.1`, Seq.empty, now)
+      reverseDependencies <- database.getReverseDependencies(Cats.`kernel_3:2.6.1`)
     } yield reverseDependencies.map(_.source) should contain theSameElementsAs List(Cats.`core_3:2.6.1`)
   }
 
@@ -282,21 +285,21 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     val testArtifacts = Seq(Scalafix.artifact, Cats.`core_3:4`, PlayJsonExtra.artifact)
     for {
       _ <- database.insertArtifacts(testArtifacts)
-      storedArtifacts <- database.getAllArtifacts(maybeLanguage = None, maybePlatform = None)
+      storedArtifacts <- database.getAllArtifacts(None, None)
     } yield storedArtifacts.forall(testArtifacts.contains) shouldBe true
   }
 
   it("should return no artifacts given a language that has no artifacts stored") {
     for {
       _ <- database.insertArtifact(Scalafix.artifact, Seq.empty, now) // Scalafix has Scala version 2.13
-      storedArtifacts <- database.getAllArtifacts(maybeLanguage = Some(Scala.`3`), maybePlatform = None)
+      storedArtifacts <- database.getAllArtifacts(Some(Scala.`3`), None)
     } yield storedArtifacts.size shouldBe 0
   }
 
   it("should return no artifacts given a platform that has no artifacts stored") {
     for {
       _ <- database.insertArtifact(Scalafix.artifact, Seq.empty, now) // Scalafix is a JVM-platform artifact
-      storedArtifacts <- database.getAllArtifacts(maybeLanguage = None, maybePlatform = Some(ScalaJs.`1.x`))
+      storedArtifacts <- database.getAllArtifacts(None, Some(ScalaJs.`1.x`))
     } yield storedArtifacts.size shouldBe 0
   }
 
@@ -307,7 +310,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     )
     for {
       _ <- database.insertArtifacts(testArtifacts)
-      storedArtifacts <- database.getAllArtifacts(maybeLanguage = Some(Scala.`3`), maybePlatform = Some(Jvm))
+      storedArtifacts <- database.getAllArtifacts(Some(Scala.`3`), Some(Jvm))
     } yield storedArtifacts.forall(testArtifacts.contains) shouldBe true
   }
 
@@ -320,10 +323,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     )
     for {
       _ <- database.insertArtifacts(testArtifacts)
-      storedArtifacts <- database.getAllArtifacts(
-        maybeLanguage = Some(Scala.`3`),
-        maybePlatform = Some(ScalaJs(SemanticVersion(3)))
-      )
+      storedArtifacts <- database.getAllArtifacts(Some(Scala.`3`), Some(ScalaJs(SemanticVersion(3))))
     } yield storedArtifacts.size shouldBe 0
   }
 

@@ -37,6 +37,5 @@ object GithubInfoTable {
   val insertOrUpdate: Update[(Project.Reference, GithubInfo, GithubInfo)] =
     insertOrUpdateRequest(table, referenceFields ++ infoFields, referenceFields, infoFields)
 
-  val count: Query0[Long] =
-    selectRequest(table, "COUNT(*)")
+  val count: Query0[Long] = selectRequest(table, Seq("COUNT(*)"))
 }

@@ -8,24 +8,23 @@
 @import scaladex.core.util.ScalaExtensions._
 @import scaladex.core.util.TimeUtils
 @import scaladex.view.Formats
+@import scaladex.view.model.ProjectHeader
 
 @import java.time.Instant
 @(
     env: Env,
-    project: Project,
     user: Option[UserState],
+    project: Project,
+    header: ProjectHeader,
     artifactName: Artifact.Name,
-    artifactNames: Seq[Artifact.Name],
     allBinaryVersions: Seq[BinaryVersion],
     artifactByVersions: SortedMap[(Instant, SemanticVersion), Seq[Artifact]],
-    params: ArtifactsPageParams,
-    lastProjectVersion: SemanticVersion,
-    numberOfVersions: Long
+    params: ArtifactsPageParams
 )
 
 @main(env, title = project.repository.toString, user) {
   <main id="container-project">
-    @headproject(env, user, project, numberOfVersions, "Artifacts", lastProjectVersion)
+    @headproject(env, user, project, header, "Artifacts")
     <div class="container">
       <div class="content-project artifacts box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">
@@ -87,7 +86,7 @@
 @filters() = {
   <form action="#" action="GET">
     <select class="selectpicker" data-style="btn-primary" onchange="window.location=this.value">
-      @for(name <- artifactNames) {
+      @for(name <- header.artifactNames) {
           <option value="@artifactsUri(project.reference, name, params)"
           @if(name == artifactName) {selected}>
           @name

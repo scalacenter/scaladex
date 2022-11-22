@@ -31,7 +31,7 @@ class V9__fix_platform_and_language extends BaseJavaMigration with ScaladexBaseM
     }
 
   val selectArtifact: Query0[Artifact] =
-    selectRequest("artifacts", "*", where = Some("language_version = 'Java' and version ~ '^[^.]*$'"))
+    selectRequest("artifacts", Seq("*"), where = Seq("language_version = 'Java'", "version ~ '^[^.]*$'"))
 
   val updatePlatformAndLanguage: Update[(Platform, Language, MavenReference)] =
     updateRequest("artifacts", Seq("platform", "language_version"), Seq("group_id", "artifact_id", "version"))

@@ -259,24 +259,22 @@
           margin-top: 8px;
         }
       }
-      i {
-        margin-right: 6px;
-      }
-      p {
+      .description {
         font-size: $font-size-large;
         margin-top: 10px;
       }
-      .description {
-        display: inline-block;
+      .project-versions {
+        font-size: 18px;
       }
-      .project-links {
-        margin-bottom: 10px;
-        a {
-          font-size: large;
-          margin-right: 10px;
-        }
-        .btn {
-          padding: 6px 12px;
+      .targets {
+        padding-left: 16px;
+        display: inline-block;
+        color: $gray-lighter;
+        &:active,
+        &:focus,
+        &:hover {
+          text-decoration: none;
+          color: $brand-primary;
         }
       }
     }

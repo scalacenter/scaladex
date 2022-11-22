@@ -74,7 +74,7 @@ lazy val template = project
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
-  .dependsOn(core.jvm)
+  .dependsOn(core.jvm % "compile->compile;test->test")
   .enablePlugins(SbtTwirl)
 
 lazy val infra = project
