@@ -91,14 +91,6 @@
       position: relative;
       margin-left: 5px;
     }
-    
-    ul {
-      padding: 0;
-      margin: 0;
-      li {
-        list-style: none;
-      }
-    }
   }
   
   .project-contributing-info {
@@ -126,6 +118,14 @@
     @media screen and (min-width: $screen-md-min) {
       margin-bottom: 30px;
       margin-top: -40px;
+      
+      ul {
+        padding: 0;
+        margin: 0;
+        li {
+          list-style: none;
+        }
+      }
     }
    
     h4 {
