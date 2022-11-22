@@ -4,22 +4,22 @@
 @import scaladex.core.model.SemanticVersion
 @import scaladex.core.model.GithubContributor
 @import scaladex.core.model.GithubInfo
-@import scaladex.view.html.main
 @import scaladex.core.model.ArtifactDependency
 @import scaladex.view.Formats
+@import scaladex.view.html.main
+@import scaladex.view.model.ProjectHeader
 
 @(
   env: Env,
   user: Option[UserState],
   project: Project,
-  versionCount: Long,
-  lastVersion: SemanticVersion,
+  header: ProjectHeader,
   directDependencies: Map[Project.Reference, (ArtifactDependency.Scope, Seq[SemanticVersion])],
   reverseDependency: Map[Project.Reference, (ArtifactDependency.Scope, SemanticVersion)],
 )
 @main(env, title = project.repository.value, user, extraMeta = project.twitterCard.toHeadMeta) {
   <main id="container-project">
-    @headproject(env, user, project, versionCount, "Project", lastVersion)
+    @headproject(env, user, project, header, "Project")
     <div class="container">
       <div class="row">
         <div class="col-md-8">

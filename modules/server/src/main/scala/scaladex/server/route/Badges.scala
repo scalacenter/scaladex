@@ -185,7 +185,7 @@ object Badges {
   private def summaryOfLatestVersions(artifacts: Seq[Artifact]): String = {
     val versionsByScalaVersions = artifacts
       .groupMap(_.binaryVersion.language)(_.version)
-      .collect { case (Scala(v), platform) => Scala(v) -> platform }
+      .collect { case (Scala(v), version) => Scala(v) -> version }
     summaryOfLatestVersions(versionsByScalaVersions)
   }
 

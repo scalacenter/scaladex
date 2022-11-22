@@ -68,8 +68,8 @@ object ArtifactDependencyTable {
   val computeProjectDependencies: Query[(Project.Reference, SemanticVersion), ProjectDependency] =
     selectRequest1[(Project.Reference, SemanticVersion, Project.Reference), ProjectDependency](
       fullJoin,
-      "d.organization, d.repository, d.version, t.organization, t.repository, t.version, d.scope",
-      where = Some("d.organization=? AND d.repository=? AND d.version=? AND (t.organization<>? OR t.repository<>?)"),
+      Seq("d.organization", "d.repository", "d.version", "t.organization", "t.repository", "t.version", "d.scope"),
+      where = Seq("d.organization=?", "d.repository=?", "d.version=?", "(t.organization<>? OR t.repository<>?)"),
       groupBy =
         Seq("d.organization", "d.repository", "d.version", "t.organization", "t.repository", "t.version", "d.scope")
     ).contramap { case (ref, version) => (ref, version, ref) }
@@ -79,7 +79,7 @@ object ArtifactDependencyTable {
     val targetReleaseFields = ReleaseTable.primaryKeys.map("t." + _)
     selectRequest(
       fullJoin,
-      s"${sourceReleaseFields.mkString(", ")}, MIN(d.release_date), ${targetReleaseFields.mkString(", ")}, MIN(t.release_date), d.scope",
+      sourceReleaseFields ++ Seq("MIN(d.release_date)") ++ targetReleaseFields ++ Seq("MIN(t.release_date)", "d.scope"),
       groupBy = (sourceReleaseFields ++ targetReleaseFields) ++ Seq("d.scope")
     )
   }

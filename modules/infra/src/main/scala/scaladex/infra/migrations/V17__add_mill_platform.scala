@@ -23,7 +23,8 @@ class V17__add_mill_platform extends BaseJavaMigration with ScaladexBaseMigratio
     migrateIO.unsafeRunSync()
   }
 
-  val selectArtifact: Query0[Artifact] = selectRequest("artifacts", "*", where = Some("artifact_name LIKE '%_mill0_%'"))
+  val selectArtifact: Query0[Artifact] =
+    selectRequest("artifacts", Seq("*"), where = Seq("artifact_name LIKE '%_mill0_%'"))
   val updateNewFields: Update[(Artifact.Name, Platform, Artifact.MavenReference)] =
     updateRequest("artifacts", Seq("artifact_name", "platform"), Seq("group_id", "artifact_id", "version"))
 

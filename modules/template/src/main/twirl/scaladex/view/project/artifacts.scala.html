@@ -8,24 +8,23 @@
 @import scaladex.core.util.ScalaExtensions._
 @import scaladex.core.util.TimeUtils
 @import scaladex.view.Formats
+@import scaladex.view.model.ProjectHeader
 
 @import java.time.Instant
 @(
     env: Env,
-    project: Project,
     user: Option[UserState],
+    project: Project,
+    header: ProjectHeader,
     artifactName: Artifact.Name,
-    artifactNames: Seq[Artifact.Name],
     allBinaryVersions: Seq[BinaryVersion],
     artifactByVersions: SortedMap[(Instant, SemanticVersion), Seq[Artifact]],
-    params: ArtifactsPageParams,
-    lastProjectVersion: SemanticVersion,
-    numberOfVersions: Long
+    params: ArtifactsPageParams
 )
 
 @main(env, title = project.repository.toString, user) {
   <main id="container-project">
-    @headproject(env, user, project, numberOfVersions, "Artifacts", lastProjectVersion)
+    @headproject(env, user, project, header, "Artifacts")
     <div class="container">
       <div class="content-project artifacts box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">
@@ -41,11 +40,11 @@
           <div>We can't find any release that matches all you criteria</div>
         } else {
         <div>
-          @artifactByVersions.map { case ((releaseDate, semanticVersion), artifacts) =>
+          @artifactByVersions.map { case ((releaseDate, version), artifacts) =>
           <div class="panel">
             <div class="artifact-row panel-body center">
               <div class="col-md-3 center">
-                <a class="artifact-version" href="/@project.reference/artifacts/@artifactName/@semanticVersion">@semanticVersion</a>
+                <a class="artifact-version" href="/@project.reference/artifacts/@artifactName/@version">@version</a>
               </div>
               <div class="col-md-9">
                 <div class="artifact-info">
@@ -67,8 +66,10 @@
                       .sortBy(_._1)(Platform.ordering.reverse)
                   ) {
                     <h5>@platform:</h5>
-                    @for(language <- binaryVersions.map(_.language).distinct.sorted) { 
-                      <span class="scala-version">@language.label</span>
+                    @for(binaryVersion <- binaryVersions.distinct.sorted) { 
+                      <a href="/@project.reference/artifacts/@artifactName/@version?binary-version=@binaryVersion.encode" class="scala-version">
+                        @binaryVersion.language.label
+                      </a>
                     }
                     <br>
                   }
@@ -87,7 +88,7 @@
 @filters() = {
   <form action="#" action="GET">
     <select class="selectpicker" data-style="btn-primary" onchange="window.location=this.value">
-      @for(name <- artifactNames) {
+      @for(name <- header.artifactNames) {
           <option value="@artifactsUri(project.reference, name, params)"
           @if(name == artifactName) {selected}>
           @name

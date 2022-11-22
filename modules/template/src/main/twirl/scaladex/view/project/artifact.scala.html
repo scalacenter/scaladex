@@ -4,22 +4,22 @@
 @import scaladex.view.Formats
 @import scaladex.view.html._
 @import scaladex.view.InstallTab
+@import scaladex.view.model.ProjectHeader
 
 @(
     env: Env,
     user: Option[UserState],
     project: Project,
+    header: ProjectHeader,
     artifact: Artifact,
     binaryVersions: Seq[BinaryVersion],
     params: ArtifactPageParams,
     directDeps: Seq[ArtifactDependency.Direct],
-    reverseDeps: Seq[ArtifactDependency.Reverse],
-    numberOfVersions: Long,
-    lastProjectVersion: SemanticVersion
+    reverseDeps: Seq[ArtifactDependency.Reverse]
 )
 @main(env, title = project.repository.toString, user) {
   <main id="container-project">
-    @headproject(env, user, project, numberOfVersions, "Artifacts", lastProjectVersion)
+    @headproject(env, user, project, header, "Artifacts")
     <div class="container">
       <div class="row">
         <div class="col-md-8">

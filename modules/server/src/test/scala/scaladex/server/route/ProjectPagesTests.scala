@@ -34,20 +34,6 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach {
   val artifactPages = new ArtifactPages(config.env, database)
   val route: Route = projectPages.route(None) ~ artifactPages.route(None)
 
-  describe("getDefault") {
-    import Cats._
-
-    it("should prefer JVM") {
-      ProjectPages.getDefault(Seq(kernel_3, core_sjs1_3)) shouldBe kernel_3
-    }
-    it("should prefer higher Scala version") {
-      ProjectPages.getDefault(Seq(`core_2.13:2.6.1`, kernel_3)) shouldBe kernel_3
-    }
-    it("should use alphabetical order") {
-      ProjectPages.getDefault(Seq(`core_3:2.6.1`, kernel_3)) shouldBe `core_3:2.6.1`
-    }
-  }
-
   it("should return NotFound") {
     Get(s"/non-existing-org/non-existing-project}") ~> route ~> check {
       status shouldEqual StatusCodes.NotFound

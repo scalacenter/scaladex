@@ -74,7 +74,7 @@ lazy val template = project
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
-  .dependsOn(core.jvm)
+  .dependsOn(core.jvm % "compile->compile;test->test")
   .enablePlugins(SbtTwirl)
 
 lazy val infra = project
@@ -90,7 +90,7 @@ lazy val infra = project
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
-      "io.get-coursier" %% "coursier" % "2.0.16",
+      "io.get-coursier" %% "coursier" % "2.1.0-RC2",
       "org.tpolecat" %% "doobie-scalatest" % V.doobieVersion % Test,
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it"
     ) ++ Seq(

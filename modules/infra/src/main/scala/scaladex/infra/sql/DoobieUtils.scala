@@ -106,34 +106,34 @@ object DoobieUtils {
 
   def selectRequest[A: Read](
       table: String,
-      fields: String,
-      where: Option[String] = None,
+      fields: Seq[String],
+      where: Seq[String] = Seq.empty,
       groupBy: Seq[String] = Seq.empty,
       orderBy: Option[String] = None,
       limit: Option[Long] = None
   ): Query0[A] = {
-    val sql = s"SELECT $fields FROM $table" +
-      where.map(p => s" WHERE $p").getOrElse("") +
-      (if (groupBy.nonEmpty) groupBy.mkString(" GROUP BY ", ", ", "") else "") +
-      orderBy.map(o => s" ORDER BY $o").getOrElse("") +
-      limit.map(l => s" LIMIT $l").getOrElse("")
-    Query0(sql)
+    val fieldsStr = fields.mkString(", ")
+    val whereStr = if (where.nonEmpty) where.mkString(" WHERE ", " AND ", "") else ""
+    val groupByStr = if (groupBy.nonEmpty) groupBy.mkString(" GROUP BY ", ", ", "") else ""
+    val orderByStr = orderBy.map(o => s" ORDER BY $o").getOrElse("")
+    val limitStr = limit.map(l => s" LIMIT $l").getOrElse("")
+    Query0(s"SELECT $fieldsStr FROM $table" + whereStr + groupByStr + orderByStr + limitStr)
   }
 
   def selectRequest1[A: Write, B: Read](
       table: String,
-      fields: String,
-      where: Option[String] = None,
+      fields: Seq[String],
+      where: Seq[String] = Seq.empty,
       groupBy: Seq[String] = Seq.empty,
       orderBy: Option[String] = None,
       limit: Option[Long] = None
   ): Query[A, B] = {
-    val sql = s"SELECT $fields FROM $table" +
-      where.map(p => s" WHERE $p").getOrElse("") +
-      (if (groupBy.nonEmpty) groupBy.mkString(" GROUP BY ", ", ", "") else "") +
-      orderBy.map(o => s" ORDER BY $o").getOrElse("") +
-      limit.map(l => s" LIMIT $l").getOrElse("")
-    Query(sql)
+    val fieldsStr = fields.mkString(", ")
+    val whereStr = if (where.nonEmpty) where.mkString(" WHERE ", " AND ", "") else ""
+    val groupByStr = if (groupBy.nonEmpty) groupBy.mkString(" GROUP BY ", ", ", "") else ""
+    val orderByStr = orderBy.map(o => s" ORDER BY $o").getOrElse("")
+    val limitStr = limit.map(l => s" LIMIT $l").getOrElse("")
+    Query(s"SELECT $fieldsStr FROM $table" + whereStr + groupByStr + orderByStr + limitStr)
   }
 
   def deleteRequest[T: Write](table: String, where: Seq[String]): Update[T] = {

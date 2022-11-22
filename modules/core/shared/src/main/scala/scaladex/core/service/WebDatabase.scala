@@ -30,11 +30,9 @@ trait WebDatabase {
   ): Future[Seq[Artifact]]
   def getArtifacts(ref: Project.Reference, artifactName: Artifact.Name, version: SemanticVersion): Future[Seq[Artifact]]
   def getArtifactsByName(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]]
-  def getArtifactsByVersion(ref: Project.Reference, version: SemanticVersion): Future[Seq[Artifact]]
+  def getLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]]
   def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]]
-  def getAllArtifacts(maybeLanguage: Option[Language], maybePlatform: Option[Platform]): Future[Seq[Artifact]]
-  def getArtifactNames(ref: Project.Reference): Future[Seq[Artifact.Name]]
-  def getArtifactPlatforms(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Platform]]
+  def getAllArtifacts(language: Option[Language], platform: Option[Platform]): Future[Seq[Artifact]]
   def countArtifacts(): Future[Long]
 
   // artifact dependencies
@@ -48,7 +46,6 @@ trait WebDatabase {
   def getProject(projectRef: Project.Reference): Future[Option[Project]]
   def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]]
   def countVersions(ref: Project.Reference): Future[Long]
-  def getLastVersion(ref: Project.Reference, defaultArtifactName: Option[Artifact.Name]): Future[SemanticVersion]
 
   // Github info and status
   def updateGithubInfoAndStatus(ref: Project.Reference, info: GithubInfo, status: GithubStatus): Future[Unit]

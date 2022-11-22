@@ -70,15 +70,6 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]] =
     Future.successful(allArtifacts.getOrElse(projectRef, Nil))
 
-  override def getArtifactPlatforms(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Platform]] =
-    Future.successful {
-      allArtifacts
-        .getOrElse(ref, Seq.empty)
-        .filter(_.artifactName == artifactName)
-        .map(_.platform)
-        .distinct
-    }
-
   override def getDependencies(projectRef: Project.Reference): Future[Seq[ArtifactDependency]] = ???
 
   override def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]] = {
@@ -95,15 +86,6 @@ class InMemoryDatabase extends SchedulerDatabase {
         .getOrElse(projectRef, Nil)
         .filter(_.artifactName == artifactName)
     )
-
-  override def getArtifactsByVersion(ref: Project.Reference, version: SemanticVersion): Future[Seq[Artifact]] =
-    Future.successful {
-      allArtifacts.getOrElse(ref, Seq.empty).filter(_.version == version)
-    }
-
-  override def getArtifactNames(ref: Project.Reference): Future[Seq[Artifact.Name]] = Future.successful(
-    allArtifacts.getOrElse(ref, Nil).map(_.artifactName).distinct
-  )
 
   override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] = ???
 
@@ -190,14 +172,7 @@ class InMemoryDatabase extends SchedulerDatabase {
     Future.successful {
       allArtifacts.getOrElse(ref, Seq.empty).map(_.version).distinct.size
     }
-  override def getLastVersion(ref: Project.Reference, artifactNameOpt: Option[Artifact.Name]): Future[SemanticVersion] =
-    Future.successful {
-      val artifacts = allArtifacts.getOrElse(ref, Seq.empty)
-      artifactNameOpt match {
-        case Some(artifactName) => artifacts.find(_.artifactName == artifactName).get.version
-        case None               => artifacts.head.version
-      }
-    }
+
   override def getArtifacts(
       ref: Project.Reference,
       artifactName: Artifact.Name,
@@ -221,5 +196,14 @@ class InMemoryDatabase extends SchedulerDatabase {
     allProjects.update(status.destination, newProject)
     allProjects.update(ref, projectToMove.copy(githubStatus = status))
     Future.successful(())
+  }
+
+  override def getLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]] = {
+    val res = allArtifacts(ref)
+      .groupBy(a => (a.groupId, a.artifactId))
+      .values
+      .map(artifacts => artifacts.maxBy(_.releaseDate))
+      .toSeq
+    Future.successful(res)
   }
 }
