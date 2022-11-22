@@ -10,49 +10,27 @@ object ElasticsearchMapping {
     "https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)",
     ""
   )
-  val codeStrip: CharFilter = PatternReplaceCharFilter(
-    "code_strip",
-    "<code>[\\w\\W]*?<\\/code>",
-    ""
-  )
-  val englishStop: TokenFilter = StopTokenFilter(
-    "english_stop",
-    language = Some(NamedStopTokenFilter.English)
-  )
-  val englishStemmer: TokenFilter =
-    StemmerTokenFilter("english_stemmer", "english")
-  val englishPossessiveStemmer: TokenFilter = StemmerTokenFilter(
-    "english_possessive_stemmer",
-    "possessive_english"
-  )
+  val codeStrip: CharFilter = PatternReplaceCharFilter("code_strip", "<code>[\\w\\W]*?<\\/code>", "")
 
-  val englishReadme: CustomAnalyzer =
-    CustomAnalyzer(
-      "english_readme",
-      "standard",
-      List("code_strip", "html_strip", "url_strip"),
-      List(
-        "lowercase",
-        "english_possessive_stemmer",
-        "english_stop",
-        "english_stemmer"
-      )
-    )
+  val englishStop: TokenFilter = StopTokenFilter("english_stop", language = Some(NamedStopTokenFilter.English))
+  val englishStemmer: TokenFilter = StemmerTokenFilter("english_stemmer", "english")
+  val englishPossessiveStemmer: TokenFilter = StemmerTokenFilter("english_possessive_stemmer", "possessive_english")
 
-  val lowercase: Normalizer =
-    CustomNormalizer("lowercase", List(), List("lowercase"))
+  val englishReadme: CustomAnalyzer = CustomAnalyzer(
+    "english_readme",
+    "standard",
+    List("code_strip", "html_strip", "url_strip"),
+    List("lowercase", "english_possessive_stemmer", "english_stop", "english_stemmer")
+  )
+  val lowercase: Normalizer = CustomNormalizer("lowercase", List(), List("lowercase"))
 
   val projectFields: Seq[ElasticField] = List(
     textField("organization")
       .analyzer("standard")
-      .fields(
-        keywordField("keyword").normalizer("lowercase")
-      ),
+      .fields(keywordField("keyword").normalizer("lowercase")),
     textField("repository")
       .analyzer("standard")
-      .fields(
-        keywordField("keyword").normalizer("lowercase")
-      ),
+      .fields(keywordField("keyword").normalizer("lowercase")),
     keywordField("artifactNames").normalizer("lowercase"),
     dateField("creationDate"),
     keywordField("languages"),
@@ -67,11 +45,8 @@ object ElasticsearchMapping {
     intField("githubInfo.contributorCount"),
     textField("githubInfo.topics")
       .analyzer("standard")
-      .fields(
-        keywordField("keyword").normalizer("lowercase")
-      ),
+      .fields(keywordField("keyword").normalizer("lowercase")),
     nestedField("githubInfo.openIssues"),
-    objectField(""),
     objectField("formerReferences").copy(
       properties = Seq(
         textField("organization").analyzer("standard"),

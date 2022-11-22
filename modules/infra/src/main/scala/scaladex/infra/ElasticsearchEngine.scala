@@ -2,6 +2,7 @@ package scaladex.infra
 
 import java.io.Closeable
 
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
@@ -11,6 +12,7 @@ import com.sksamuel.elastic4s.ElasticProperties
 import com.sksamuel.elastic4s.Response
 import com.sksamuel.elastic4s.analysis.Analysis
 import com.sksamuel.elastic4s.http.JavaClient
+import com.sksamuel.elastic4s.json.SourceAsContentBuilder
 import com.sksamuel.elastic4s.requests.common.HealthStatus
 import com.sksamuel.elastic4s.requests.mappings.MappingDefinition
 import com.sksamuel.elastic4s.requests.script.Script
@@ -44,7 +46,6 @@ import scaladex.infra.Codecs._
 import scaladex.infra.config.ElasticsearchConfig
 import scaladex.infra.elasticsearch.ElasticsearchMapping._
 import scaladex.infra.elasticsearch.RawProjectDocument
-import com.sksamuel.elastic4s.json.SourceAsContentBuilder
 
 /**
  * @param esClient TCP client of the elasticsearch server
@@ -240,7 +241,8 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       .toSeq
       .flatMap(_.hits)
       .flatMap { hit =>
-        parser.decode[GithubIssue](SourceAsContentBuilder(hit.source).string()) match {
+        val source = SourceAsContentBuilder(hit.source).string: @nowarn("cat=deprecation")
+        parser.decode[GithubIssue](source) match {
           case Right(issue) => Some(issue)
           case Left(_) =>
             logger.warn("cannot parse beginner issue: ")
