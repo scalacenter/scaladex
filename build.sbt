@@ -27,25 +27,6 @@ lazy val loggingSettings = Seq(
   excludeDependencies += ExclusionRule("commons-logging", "commons-logging")
 )
 
-val amm = inputKey[Unit]("Start Ammonite REPL")
-lazy val ammoniteSettings = Def.settings(
-  amm := (Test / run).evaluated,
-  amm / aggregate := false,
-  libraryDependencies += ("com.lihaoyi" % "ammonite" % "2.5.5" % Test).cross(CrossVersion.full),
-  Test / sourceGenerators += Def.task {
-    val file = (Test / sourceManaged).value / "amm.scala"
-    IO.write(
-      file,
-      """
-        |object AmmoniteBridge extends App {
-        |  ammonite.AmmoniteMain.main(args)
-        |}
-      """.stripMargin
-    )
-    Seq(file)
-  }.taskValue
-)
-
 lazy val scalacOptionsSettings = Def.settings(
   scalacOptions ++= Seq(
     "-deprecation",
@@ -173,7 +154,6 @@ lazy val server = project
       "-Dcom.sun.management.jmxremote.ssl=false"
     ),
     loggingSettings,
-    ammoniteSettings,
     packageScalaJS(webclient),
     javaOptions ++= Seq(
       "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044"
@@ -238,7 +218,6 @@ lazy val data = project
   .in(file("modules/data"))
   .settings(
     scalacOptionsSettings,
-    ammoniteSettings,
     loggingSettings,
     libraryDependencies ++= Seq(
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTimeVersion,
