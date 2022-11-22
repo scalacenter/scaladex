@@ -44,6 +44,7 @@ import scaladex.infra.Codecs._
 import scaladex.infra.config.ElasticsearchConfig
 import scaladex.infra.elasticsearch.ElasticsearchMapping._
 import scaladex.infra.elasticsearch.RawProjectDocument
+import com.sksamuel.elastic4s.json.SourceAsContentBuilder
 
 /**
  * @param esClient TCP client of the elasticsearch server
@@ -239,7 +240,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       .toSeq
       .flatMap(_.hits)
       .flatMap { hit =>
-        parser.decode[GithubIssue](hit.sourceAsString) match {
+        parser.decode[GithubIssue](SourceAsContentBuilder(hit.source).string()) match {
           case Right(issue) => Some(issue)
           case Left(_) =>
             logger.warn("cannot parse beginner issue: ")

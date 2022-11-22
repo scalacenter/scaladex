@@ -2,7 +2,7 @@ package scaladex.infra.elasticsearch
 
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.analysis._
-import com.sksamuel.elastic4s.requests.mappings.FieldDefinition
+import com.sksamuel.elastic4s.fields.ElasticField
 
 object ElasticsearchMapping {
   val urlStrip: CharFilter = PatternReplaceCharFilter(
@@ -42,7 +42,7 @@ object ElasticsearchMapping {
   val lowercase: Normalizer =
     CustomNormalizer("lowercase", List(), List("lowercase"))
 
-  val projectFields: Seq[FieldDefinition] = List(
+  val projectFields: Seq[ElasticField] = List(
     textField("organization")
       .analyzer("standard")
       .fields(
@@ -71,9 +71,12 @@ object ElasticsearchMapping {
         keywordField("keyword").normalizer("lowercase")
       ),
     nestedField("githubInfo.openIssues"),
-    objectField("formerReferences").fields(
-      textField("organization").analyzer("standard"),
-      textField("repository").analyzer("standard")
+    objectField(""),
+    objectField("formerReferences").copy(
+      properties = Seq(
+        textField("organization").analyzer("standard"),
+        textField("repository").analyzer("standard")
+      )
     ),
     intField("githubInfo.commitsPerYear")
   )
