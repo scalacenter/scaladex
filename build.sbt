@@ -27,25 +27,6 @@ lazy val loggingSettings = Seq(
   excludeDependencies += ExclusionRule("commons-logging", "commons-logging")
 )
 
-val amm = inputKey[Unit]("Start Ammonite REPL")
-lazy val ammoniteSettings = Def.settings(
-  amm := (Test / run).evaluated,
-  amm / aggregate := false,
-  libraryDependencies += ("com.lihaoyi" % "ammonite" % "2.5.5" % Test).cross(CrossVersion.full),
-  Test / sourceGenerators += Def.task {
-    val file = (Test / sourceManaged).value / "amm.scala"
-    IO.write(
-      file,
-      """
-        |object AmmoniteBridge extends App {
-        |  ammonite.AmmoniteMain.main(args)
-        |}
-      """.stripMargin
-    )
-    Seq(file)
-  }.taskValue
-)
-
 lazy val scalacOptionsSettings = Def.settings(
   scalacOptions ++= Seq(
     "-deprecation",
@@ -173,7 +154,6 @@ lazy val server = project
       "-Dcom.sun.management.jmxremote.ssl=false"
     ),
     loggingSettings,
-    ammoniteSettings,
     packageScalaJS(webclient),
     javaOptions ++= Seq(
       "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044"
@@ -238,7 +218,6 @@ lazy val data = project
   .in(file("modules/data"))
   .settings(
     scalacOptionsSettings,
-    ammoniteSettings,
     loggingSettings,
     libraryDependencies ++= Seq(
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTimeVersion,
@@ -265,7 +244,7 @@ lazy val V = new {
   val doobieVersion = "0.13.4"
   val playJsonVersion = "2.9.3"
   val akkaVersion = "2.6.18"
-  val akkaHttpVersion = "10.2.8"
+  val akkaHttpVersion = "10.2.10"
   val elastic4sVersion = "8.4.4"
   val nscalaTimeVersion = "2.32.0"
   val scalatest = "3.2.14"
