@@ -2,16 +2,17 @@ package scaladex.client
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-import org.scalajs.dom
-import org.scalajs.dom.document
+import org.scalajs.dom._
 
 /**
  * Create the ChartJS line chart with the commit activity
   */
 object Sparkline {
 
-  def createCommitActivitySparkline(): Unit = {
-    val canvas = document.querySelector("#commit-activity").asInstanceOf[dom.raw.HTMLCanvasElement]
+  def createCommitActivity(): Unit =
+    Dom.getById[HTMLCanvasElement]("commit-activity").foreach(createSparkline)
+
+  def createSparkline(canvas: HTMLCanvasElement): Unit = {
     val commits = canvas.getAttribute("data-commit-activity-count").split(",").map(_.toDouble).toSeq
     val startingDay = canvas.getAttribute("data-commit-activity-starting-day")
     if (startingDay.nonEmpty) {
@@ -19,7 +20,7 @@ object Sparkline {
       val data = commits.zipWithIndex.map {
         case (commit, index) => DataPoint(startDate.plus(index * 7, ChronoUnit.DAYS).toEpochMilli.toDouble, commit)
       }
-      val ctx = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
+      val ctx = canvas.getContext("2d").asInstanceOf[CanvasRenderingContext2D]
       val grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
       grad.addColorStop(0, "rgb(0, 122, 201)"); // Initial path colour
       grad.addColorStop(1, "rgb(0, 201, 114)"); // End stroke colour
@@ -56,15 +57,13 @@ object Sparkline {
           )
         )
       )
-      val t =
-        new Chart(
-          ctx,
-          Chart.Line(
-            ChartData(Seq(ChartDataset(data, "Commit count"))),
-            chartOptions
-          )
+      new Chart(
+        ctx,
+        Chart.Line(
+          ChartData(Seq(ChartDataset(data, "Commit count"))),
+          chartOptions
         )
+      )
     }
   }
-
 }

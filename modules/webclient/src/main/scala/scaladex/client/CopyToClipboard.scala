@@ -1,10 +1,9 @@
 package scaladex.client
 
 import org.scalajs.dom
+import org.scalajs.dom.Event
+import org.scalajs.dom.HTMLButtonElement
 import org.scalajs.dom.document
-import org.scalajs.dom.raw.Event
-import org.scalajs.dom.raw.HTMLButtonElement
-import org.scalajs.dom.raw.HTMLCollection
 
 object CopyToClipboard {
   private val errorPrefix = "[CopyToClipboard] -"
@@ -13,11 +12,8 @@ object CopyToClipboard {
    * Add listeners on the copy buttons
    * @param triggerClass the HTML tag class identifying the buttons to listen
    */
-  def addCopyListenersOnClass(triggerClass: String): Unit = {
-    val triggers: HTMLCollection = document.getElementsByClassName(triggerClass)
-
-    for (i <- 0 until triggers.length) {
-      val trigger = triggers.item(i)
+  def addCopyListenersOnClass(triggerClass: String): Unit =
+    document.getElementsByClassName(triggerClass).foreach { trigger =>
       trigger.addEventListener(
         `type` = "click",
         listener = listener(
@@ -27,7 +23,6 @@ object CopyToClipboard {
         useCapture = true
       )
     }
-  }
 
   /**
    * Listen a copy button
