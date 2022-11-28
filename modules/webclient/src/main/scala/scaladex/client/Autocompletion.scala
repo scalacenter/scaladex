@@ -3,12 +3,11 @@ package scaladex.client
 import scala.concurrent.ExecutionContext
 
 import org.scalajs.dom
+import org.scalajs.dom.Element
+import org.scalajs.dom.HTMLUListElement
 import org.scalajs.dom.KeyboardEvent
+import org.scalajs.dom.Node
 import org.scalajs.dom.ext.KeyCode
-import org.scalajs.dom.raw.Element
-import org.scalajs.dom.raw.HTMLUListElement
-import org.scalajs.dom.raw.Node
-import org.scalajs.jquery.jQuery
 import scaladex.client.rpc.RPC
 import scaladex.core.api.AutocompletionResponse
 import scalatags.JsDom.all._
@@ -28,7 +27,7 @@ class Autocompletion(implicit ec: ExecutionContext) {
   def run(event: dom.Event): Unit =
     Dom.getSearchRequest match {
       case Some(request) =>
-        for (autocompletion <- RPC.autocomplete(request))
+        for (autocompletion <- RPC.autocomplete(request).future)
           yield update(autocompletion, request.query)
       case None => cleanResults()
     }
@@ -99,7 +98,7 @@ class Autocompletion(implicit ec: ExecutionContext) {
       resultContainer <- Dom.getResultList
       newItem = projectSuggestion(owner, repo, description)
     } yield {
-      jQuery(newItem).find(".emojify").each { el: Element => emojify.run(el) }
+      newItem.getElementsByClassName("emojify").foreach(el => emojify.run(el))
       resultContainer.appendChild(newItem)
     }
 

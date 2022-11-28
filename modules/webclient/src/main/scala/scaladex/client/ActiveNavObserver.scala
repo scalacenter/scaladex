@@ -3,7 +3,6 @@ package scaladex.client
 import scala.scalajs.js.timers
 
 import org.scalajs.dom.document
-import org.scalajs.dom.ext._
 import org.scalajs.dom.html.Element
 import org.scalajs.dom.html.Link
 import scaladex.dom.IntersectionObserver

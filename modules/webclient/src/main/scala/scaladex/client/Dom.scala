@@ -1,9 +1,9 @@
 package scaladex.client
 
+import org.scalajs.dom.Element
+import org.scalajs.dom.HTMLInputElement
 import org.scalajs.dom.Node
 import org.scalajs.dom.document
-import org.scalajs.dom.raw.Element
-import org.scalajs.dom.raw.HTMLInputElement
 import scaladex.core.api.AutocompletionParams
 
 object Dom {
@@ -11,44 +11,35 @@ object Dom {
     for (query <- getSearchQuery)
       yield AutocompletionParams(
         query = query,
-        you = getElementById("you").map(_.asInput.value).contains("✓"),
+        you = getById[HTMLInputElement]("you").map(_.value).contains("✓"),
         topics = getSearchFilter("topics"),
         languages = getSearchFilter("languages"),
         platforms = getSearchFilter("platforms"),
-        contributingSearch = getElementById("contributing-search")
-          .map(_.asInput.value)
-          .contains("true")
+        contributingSearch = getById[HTMLInputElement]("contributing-search").map(_.value).contains("true")
       )
 
   def getSearchQuery: Option[String] =
     getSearchInput.map(_.value).filter(_.length > 0)
 
-  def getSearchInput: Option[HTMLInputElement] = getSearchBox.map(_.asInput)
+  def getSearchInput: Option[HTMLInputElement] = getById("search")
 
-  def getResultList: Option[Element] = getElementById("list-result")
+  def getResultList: Option[Element] = getById("list-result")
 
-  def getSearchBox: Option[Element] = getElementById("search")
+  def getById[E <: Element](id: String): Option[E] =
+    Option(document.getElementById(id)).map(_.asInstanceOf[E])
 
-  def getElementById(id: String): Option[Element] =
-    Option(document.getElementById(id))
+  def getBySelectors[E <: Element](selectors: String): Option[E] =
+    Option(document.querySelector(selectors)).map(_.asInstanceOf[E])
 
-  private def getSearchFilter(name: String): Seq[String] =
-    getElementsByName(name)
-      .map(_.asInput)
-      .filter(_.checked)
-      .map(_.value)
+  def getSearchFilter(name: String): Seq[String] =
+    getAllByName[HTMLInputElement](name).filter(_.checked).map(_.value)
 
-  private def getElementsByName(name: String): Seq[Element] = {
-    val nodeList = document.getElementsByName(name)
-    0.until(nodeList.length).map(nodeList(_).asElement)
-  }
+  def getAllByName[E <: Node](name: String): Seq[E] =
+    document.getElementsByName(name).toSeq.map(_.asInstanceOf[E])
 
-  implicit class ElementOps(e: Element) {
-    def asInput: HTMLInputElement = as[HTMLInputElement]
-    def as[A <: Element]: A = e.asInstanceOf[A]
-  }
+  def getAllByClassNames[E <: Element](classNames: String): Seq[E] =
+    document.getElementsByClassName(classNames).toSeq.map(_.asInstanceOf[E])
 
-  private implicit class NodeOps(n: Node) {
-    def asElement: Element = n.asInstanceOf[Element]
-  }
+  def getAllBySelectors[E <: Element](selectors: String): Seq[E] =
+    document.querySelectorAll(selectors).toSeq.map(_.asInstanceOf[E])
 }

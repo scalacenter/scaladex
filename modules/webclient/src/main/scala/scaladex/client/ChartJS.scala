@@ -4,7 +4,7 @@ import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 
 import org.scalajs.dom
-import org.scalajs.dom.raw.CanvasGradient
+import org.scalajs.dom.CanvasGradient
 
 @js.native
 trait ChartDataset extends js.Object {
