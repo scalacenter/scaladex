@@ -2,10 +2,10 @@ package scaladex.infra.sql
 
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.infra.BaseDatabaseSuite
+import scaladex.infra.DatabaseSuite
 import scaladex.infra.sql.ProjectTable
 
-class ProjectTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
+class ProjectTableTests extends AnyFunSpec with DatabaseSuite with Matchers {
   it("check insertIfNotExists")(check(ProjectTable.insertIfNotExists))
   it("check updateCreationDate")(check(ProjectTable.updateCreationDate))
   it("check updateGithubStatus")(check(ProjectTable.updateGithubStatus))

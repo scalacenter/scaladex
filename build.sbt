@@ -67,7 +67,7 @@ lazy val infra = project
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4sVersion,
       "org.json4s" %% "json4s-native" % V.json4s,
-      "org.flywaydb" % "flyway-core" % "8.5.13", // for database migration
+      "org.flywaydb" % "flyway-core" % "9.8.3", // for database migration
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
@@ -244,7 +244,7 @@ lazy val V = new {
   val playJsonVersion = "2.9.3"
   val akkaVersion = "2.6.18"
   val akkaHttpVersion = "10.2.10"
-  val elastic4sVersion = "8.4.4"
+  val elastic4sVersion = "8.5.0"
   val nscalaTimeVersion = "2.32.0"
   val scalatest = "3.2.14"
   val circeVersion = "0.14.3"

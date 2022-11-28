@@ -43,14 +43,11 @@ object DoobieUtils {
   private implicit val cs: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
-  def flyway(conf: PostgreSQLConfig): Flyway = {
-    val datasource = getHikariDataSource(conf)
-    flyway(datasource)
-  }
-  def flyway(datasource: HikariDataSource): Flyway =
+  def flyway(datasource: HikariDataSource, testMode: Boolean): Flyway =
     Flyway
       .configure()
       .dataSource(datasource)
+      .cleanDisabled(!testMode)
       .locations("migrations", "scaladex/infra/migrations")
       .load()
 

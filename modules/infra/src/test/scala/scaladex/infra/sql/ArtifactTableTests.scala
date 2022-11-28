@@ -6,9 +6,9 @@ import scaladex.core.model.Jvm
 import scaladex.core.model.Scala
 import scaladex.core.model.ScalaJs
 import scaladex.core.test.Values._
-import scaladex.infra.BaseDatabaseSuite
+import scaladex.infra.DatabaseSuite
 
-class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
+class ArtifactTableTests extends AnyFunSpec with DatabaseSuite with Matchers {
   import ArtifactTable._
   it("check insertIfNotExist")(check(insertIfNotExist))
   it("check selectAllArtifacts") {

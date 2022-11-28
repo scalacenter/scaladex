@@ -2,40 +2,30 @@ package scaladex.infra.migrations
 
 import java.time.Instant
 
+import cats.effect.IO
 import cats.implicits._
-import com.typesafe.scalalogging.LazyLogging
 import doobie.Query0
 import doobie.implicits._
 import doobie.util.update.Update
-import org.flywaydb.core.api.migration.BaseJavaMigration
-import org.flywaydb.core.api.migration.Context
 import scaladex.core.model.Artifact.MavenReference
 import scaladex.core.model._
 import scaladex.infra.sql.DoobieUtils.Mappings._
 import scaladex.infra.sql.DoobieUtils.selectRequest
 import scaladex.infra.sql.DoobieUtils.updateRequest
 
-class V7_2__edit_platform_and_language extends BaseJavaMigration with ScaladexBaseMigration with LazyLogging {
+class V7_2__edit_platform_and_language extends FlywayMigration {
 
   import V7_2__edit_platform_and_language._
 
-  override def migrate(context: Context): Unit =
-    try {
-      (for {
-        oldArtifacts <- run(xa)(selectArtifact.to[Seq])
-        groupedArtifacts = oldArtifacts.grouped(10000).toSeq
-        _ <- groupedArtifacts
-          .map(artifacts => run(xa)(updatePlatformAndLanguage.updateMany(artifacts.map(_.update))))
-          .sequence
-        _ <- run(xa)(sql"ALTER TABLE artifacts DROP COLUMN binary_version".update.run)
-      } yield ())
-        .unsafeRunSync()
-
-    } catch {
-      case e: Throwable =>
-        logger.info("failed to migrate the database")
-        throw new Exception(s"failed to migrate the database because of ${e.getMessage}")
-    }
+  override def migrationIO: IO[Unit] =
+    for {
+      oldArtifacts <- run(selectArtifact.to[Seq])
+      groupedArtifacts = oldArtifacts.grouped(10000).toSeq
+      _ <- groupedArtifacts
+        .map(artifacts => run(updatePlatformAndLanguage.updateMany(artifacts.map(_.update))))
+        .sequence
+      _ <- run(sql"ALTER TABLE artifacts DROP COLUMN binary_version".update.run)
+    } yield ()
 
   val selectArtifact: Query0[OldArtifact] = selectRequest("artifacts", Seq("*"))
 
