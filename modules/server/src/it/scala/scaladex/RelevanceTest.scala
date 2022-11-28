@@ -33,7 +33,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     val transactor = DoobieUtils.transactor(datasource)
     transactor
       .use { xa =>
-        val database = new SqlDatabase(datasource, xa)
+        val database = new SqlDatabase(datasource, xa, testMode = true)
         val filesystem = FilesystemStorage(config.filesystem)
 
         val searchSync = new SearchSynchronizer(database, searchEngine)

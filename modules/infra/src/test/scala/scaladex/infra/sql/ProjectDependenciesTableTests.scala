@@ -2,10 +2,10 @@ package scaladex.infra.sql
 
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.infra.BaseDatabaseSuite
+import scaladex.infra.DatabaseSuite
 import scaladex.infra.sql.ProjectDependenciesTable
 
-class ProjectDependenciesTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
+class ProjectDependenciesTableTests extends AnyFunSpec with DatabaseSuite with Matchers {
   it("check insertOrUpdate")(check(ProjectDependenciesTable.insertOrUpdate))
   it("check deleteBySource")(check(ProjectDependenciesTable.deleteBySource))
   it("check getDependencies")(check(ProjectDependenciesTable.getDependencies))

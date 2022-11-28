@@ -1,27 +1,23 @@
 package scaladex.infra.migrations
 
-import com.typesafe.scalalogging.LazyLogging
+import cats.effect.IO
 import doobie._
-import org.flywaydb.core.api.migration.BaseJavaMigration
-import org.flywaydb.core.api.migration.Context
 import scaladex.core.model._
 import scaladex.infra.sql.DoobieUtils.Mappings._
 import scaladex.infra.sql.DoobieUtils._
 
-class V17__add_mill_platform extends BaseJavaMigration with ScaladexBaseMigration with LazyLogging {
-  override def migrate(context: Context): Unit = {
-    val migrateIO = for {
-      oldArtifacts <- run(xa)(selectArtifact.to[Seq])
+class V17__add_mill_platform extends FlywayMigration {
+  override def migrationIO: IO[Unit] =
+    for {
+      oldArtifacts <- run(selectArtifact.to[Seq])
       newArtifacts = oldArtifacts.map { a =>
         val newId = Artifact.ArtifactId.parse(a.artifactId).get
         a.copy(artifactName = newId.name, platform = newId.binaryVersion.platform)
       }
       (toUpdate, toDelete) = newArtifacts.partition(a => isValidMillPlugin(a))
-      _ <- run(xa)(updateNewFields.updateMany(toUpdate.map(update)))
-      _ <- run(xa)(delete.updateMany(toDelete.map(_.mavenReference)))
+      _ <- run(updateNewFields.updateMany(toUpdate.map(update)))
+      _ <- run(delete.updateMany(toDelete.map(_.mavenReference)))
     } yield ()
-    migrateIO.unsafeRunSync()
-  }
 
   val selectArtifact: Query0[Artifact] =
     selectRequest("artifacts", Seq("*"), where = Seq("artifact_name LIKE '%_mill0_%'"))

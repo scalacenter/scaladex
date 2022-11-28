@@ -34,8 +34,10 @@ import scaladex.infra.sql.ReleaseDependenciesTable
 import scaladex.infra.sql.ReleaseTable
 import scaladex.infra.sql.UserSessionsTable
 
-class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
-  private val flyway = DoobieUtils.flyway(datasource)
+class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO], testMode: Boolean = false)
+    extends SchedulerDatabase
+    with LazyLogging {
+  private val flyway = DoobieUtils.flyway(datasource, testMode)
   def migrate: IO[Unit] = IO(flyway.migrate())
   def dropTables: IO[Unit] = IO(flyway.clean())
 

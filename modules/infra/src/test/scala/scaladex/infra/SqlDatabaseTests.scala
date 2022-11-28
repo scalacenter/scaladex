@@ -24,7 +24,7 @@ import scaladex.core.model.UserState
 import scaladex.core.util.ScalaExtensions._
 import scaladex.core.util.Secret
 
-class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers {
+class SqlDatabaseTests extends AsyncFunSpec with DatabaseSuite with Matchers {
 
   val executorService: ExecutorService = Executors.newFixedThreadPool(1)
   override implicit val executionContext: ExecutionContext =
