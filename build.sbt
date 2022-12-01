@@ -5,7 +5,7 @@ lazy val isCI: Boolean = System.getenv("CI") != null
 
 inThisBuild(
   List(
-    scalaVersion := "2.13.8",
+    scalaVersion := "2.13.10",
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     scalafixScalaBinaryVersion := "2.13",
@@ -170,14 +170,14 @@ lazy val server = project
       "ch.megard" %% "akka-http-cors" % "1.1.3",
       "com.softwaremill.akka-http-session" %% "core" % "0.7.0",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
-      "org.endpoints4s" %% "akka-http-server" % "7.0.0",
+      "org.endpoints4s" %% "akka-http-server" % "7.1.0",
       "org.webjars" % "bootstrap-sass" % "3.4.1",
       "org.webjars" % "bootstrap-switch" % "3.3.4",
       "org.webjars" % "bootstrap-select" % "1.13.18",
       "org.webjars" % "chartjs" % "3.9.1",
-      "org.webjars.npm" % "date-fns" % "2.28.0",
+      "org.webjars.npm" % "date-fns" % "2.29.3",
       "org.webjars.npm" % "chartjs-adapter-date-fns" % "2.0.0",
-      "org.webjars" % "font-awesome" % "6.1.2",
+      "org.webjars" % "font-awesome" % "6.2.0",
       "org.webjars" % "jquery" % "3.6.1",
       "org.webjars.bower" % "select2" % "4.0.13"
     ),
@@ -202,8 +202,8 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
       "com.lihaoyi" %%% "fastparse" % "2.3.3",
       "io.github.cquiroz" %%% "scala-java-time" % "2.4.0",
       "com.typesafe.play" %%% "play-json" % V.playJsonVersion,
-      "org.endpoints4s" %%% "algebra" % "1.8.0",
-      "org.endpoints4s" %% "json-schema-playjson" % "1.8.0" % Test,
+      "org.endpoints4s" %%% "algebra" % "1.9.0",
+      "org.endpoints4s" %% "json-schema-playjson" % "1.9.0" % Test,
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
       "org.jsoup" % "jsoup" % "1.15.3"
     ) ++ Seq(
@@ -226,7 +226,7 @@ lazy val data = project
       "com.typesafe.akka" %% "akka-slf4j" % V.akkaVersion,
       "org.apache.maven" % "maven-model-builder" % "3.8.6",
       "org.jsoup" % "jsoup" % "1.15.3",
-      "org.apache.ivy" % "ivy" % "2.5.0",
+      "org.apache.ivy" % "ivy" % "2.5.1",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-json4s" % "1.39.2",
       "org.json4s" %% "json4s-native" % V.json4s,
