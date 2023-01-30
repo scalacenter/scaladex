@@ -56,11 +56,11 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
         "Typelevel" -> "typelevel"
       )
 
-      val scalaVersions = languages.collect { case (v: Scala, c) => (v, c) }
-      val scalaJsVersions = platforms.collect { case (v: ScalaJs, c) => (v, c) }
-      val scalaNativeVersions = platforms.collect { case (v: ScalaNative, c) => (v, c) }
-      val sbtVersions = platforms.collect { case (v: SbtPlugin, c) => (v, c) }
-      val millVersions = platforms.collect { case (v: MillPlugin, c) => (v, c) }
+      val scalaVersions = languages.collect { case (v: Scala, c) => (v, c) }.sortBy(_._1.version).reverse
+      val scalaJsVersions = platforms.collect { case (v: ScalaJs, c) => (v, c) }.sortBy(_._1.version).reverse
+      val scalaNativeVersions = platforms.collect { case (v: ScalaNative, c) => (v, c) }.sortBy(_._1.version).reverse
+      val sbtVersions = platforms.collect { case (v: SbtPlugin, c) => (v, c) }.sortBy(_._1.version).reverse
+      val millVersions = platforms.collect { case (v: MillPlugin, c) => (v, c) }.sortBy(_._1.version).reverse
 
       frontpage(
         env,
