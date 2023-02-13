@@ -8,6 +8,7 @@ import akka.http.scaladsl.server.Route
 import play.twirl.api.HtmlFormat
 import scaladex.core.model.Env
 import scaladex.core.model.MillPlugin
+import scaladex.core.model.Platform
 import scaladex.core.model.SbtPlugin
 import scaladex.core.model.Scala
 import scaladex.core.model.ScalaJs
@@ -17,7 +18,6 @@ import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 import scaladex.server.TwirlSupport._
 import scaladex.view.html.frontpage
-import scaladex.core.model.Platform
 
 class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(implicit ec: ExecutionContext) {
   val limitOfProjects = 12
