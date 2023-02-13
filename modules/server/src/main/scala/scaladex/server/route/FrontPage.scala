@@ -17,6 +17,7 @@ import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 import scaladex.server.TwirlSupport._
 import scaladex.view.html.frontpage
+import scaladex.core.model.Platform
 
 class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(implicit ec: ExecutionContext) {
   val limitOfProjects = 12
@@ -35,8 +36,8 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
       totalProjects <- totalProjectsF
       totalArtifacts <- totalArtifactsF
       topics <- topicsF
-      platforms <- platformsF.map(_.sorted)
-      languages <- languagesF.map(_.sorted)
+      platforms <- platformsF
+      languages <- languagesF
       mostDependedUpon <- mostDependedUponF
       latestProjects <- latestProjectsF
     } yield {
@@ -56,11 +57,17 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
         "Typelevel" -> "typelevel"
       )
 
-      val scalaVersions = languages.collect { case (v: Scala, c) => (v, c) }.sortBy(_._1.version).reverse
-      val scalaJsVersions = platforms.collect { case (v: ScalaJs, c) => (v, c) }.sortBy(_._1.version).reverse
-      val scalaNativeVersions = platforms.collect { case (v: ScalaNative, c) => (v, c) }.sortBy(_._1.version).reverse
-      val sbtVersions = platforms.collect { case (v: SbtPlugin, c) => (v, c) }.sortBy(_._1.version).reverse
-      val millVersions = platforms.collect { case (v: MillPlugin, c) => (v, c) }.sortBy(_._1.version).reverse
+      val RecentScalaVersionsFirst: Ordering[(Scala, Int)] = Scala.ordering.reverse.on(_._1)
+
+      val RecentPlatformVersionsFirst: Ordering[(Platform, Int)] =
+        Platform.ordering.reverse.on(_._1)
+
+      val scalaVersions = languages.collect { case (v: Scala, c) => (v, c) }.sorted(RecentScalaVersionsFirst)
+      val scalaJsVersions = platforms.collect { case (v: ScalaJs, c) => (v, c) }.sorted(RecentPlatformVersionsFirst)
+      val scalaNativeVersions =
+        platforms.collect { case (v: ScalaNative, c) => (v, c) }.sorted(RecentPlatformVersionsFirst)
+      val sbtVersions = platforms.collect { case (v: SbtPlugin, c) => (v, c) }.sorted(RecentPlatformVersionsFirst)
+      val millVersions = platforms.collect { case (v: MillPlugin, c) => (v, c) }.sorted(RecentPlatformVersionsFirst)
 
       frontpage(
         env,
