@@ -33,7 +33,7 @@
               @if(project.scalaVersions.nonEmpty){
                 <div>
                   Scala versions:
-                  @for(scalaVersion <- project.scalaVersions) {
+                  @for(scalaVersion <- project.scalaVersions.sortBy(_.version).reverse) {
                     <span class="targets">@scalaVersion.version</span>
                   }
                 </div>
@@ -42,7 +42,7 @@
               @if(project.scalaJsVersions.nonEmpty){
                 <div>
                   Scala.js versions:
-                  @for(v <- project.scalaJsVersions) {
+                  @for(v <- project.scalaJsVersions.sortBy(_.version).reverse) {
                     <span class="targets">@v.version</span>
                   }
                 </div>
@@ -51,7 +51,7 @@
               @if(project.scalaNativeVersions.nonEmpty){
                 <div>
                   Scala Native versions:
-                  @for(v <- project.scalaNativeVersions) {
+                  @for(v <- project.scalaNativeVersions.sortBy(_.version).reverse) {
                     <span class="targets">@v.version</span>
                   }
                 </div>
@@ -60,7 +60,7 @@
               @if(project.sbtVersions.nonEmpty){
                 <div>
                   sbt plugins:
-                  @for(v <- project.sbtVersions) {
+                  @for(v <- project.sbtVersions.sortBy(_.version).reverse) {
                     <span class="targets">@v.version</span>
                   }
                 </div>
@@ -69,7 +69,7 @@
               @if(project.millVersions.nonEmpty){
                 <div>
                   Mill plugins:
-                  @for(v <- project.millVersions) {
+                  @for(v <- project.millVersions.sortBy(_.version).reverse) {
                     <span class="targets">@v.version</span>
                   }
                 </div>

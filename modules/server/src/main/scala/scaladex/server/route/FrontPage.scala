@@ -8,6 +8,7 @@ import akka.http.scaladsl.server.Route
 import play.twirl.api.HtmlFormat
 import scaladex.core.model.Env
 import scaladex.core.model.MillPlugin
+import scaladex.core.model.Platform
 import scaladex.core.model.SbtPlugin
 import scaladex.core.model.Scala
 import scaladex.core.model.ScalaJs
@@ -35,8 +36,8 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
       totalProjects <- totalProjectsF
       totalArtifacts <- totalArtifactsF
       topics <- topicsF
-      platforms <- platformsF.map(_.sorted)
-      languages <- languagesF.map(_.sorted)
+      platforms <- platformsF
+      languages <- languagesF
       mostDependedUpon <- mostDependedUponF
       latestProjects <- latestProjectsF
     } yield {
@@ -56,11 +57,17 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
         "Typelevel" -> "typelevel"
       )
 
-      val scalaVersions = languages.collect { case (v: Scala, c) => (v, c) }
-      val scalaJsVersions = platforms.collect { case (v: ScalaJs, c) => (v, c) }
-      val scalaNativeVersions = platforms.collect { case (v: ScalaNative, c) => (v, c) }
-      val sbtVersions = platforms.collect { case (v: SbtPlugin, c) => (v, c) }
-      val millVersions = platforms.collect { case (v: MillPlugin, c) => (v, c) }
+      val RecentScalaVersionsFirst: Ordering[(Scala, Int)] = Scala.ordering.reverse.on(_._1)
+
+      val RecentPlatformVersionsFirst: Ordering[(Platform, Int)] =
+        Platform.ordering.reverse.on(_._1)
+
+      val scalaVersions = languages.collect { case (v: Scala, c) => (v, c) }.sorted(RecentScalaVersionsFirst)
+      val scalaJsVersions = platforms.collect { case (v: ScalaJs, c) => (v, c) }.sorted(RecentPlatformVersionsFirst)
+      val scalaNativeVersions =
+        platforms.collect { case (v: ScalaNative, c) => (v, c) }.sorted(RecentPlatformVersionsFirst)
+      val sbtVersions = platforms.collect { case (v: SbtPlugin, c) => (v, c) }.sorted(RecentPlatformVersionsFirst)
+      val millVersions = platforms.collect { case (v: MillPlugin, c) => (v, c) }.sorted(RecentPlatformVersionsFirst)
 
       frontpage(
         env,
