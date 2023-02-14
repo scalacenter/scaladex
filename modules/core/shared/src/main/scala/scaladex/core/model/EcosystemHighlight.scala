@@ -4,8 +4,6 @@ final case class EcosystemVersion(version: SemanticVersion, deprecated: Boolean,
 
 final case class EcosystemHighlight(
     ecosystem: String,
-    description: Option[String],
     currentVersion: EcosystemVersion,
-    otherVersions: Seq[EcosystemVersion],
-    logo: Option[Url] = None
+    otherVersions: Seq[EcosystemVersion]
 )

@@ -80,11 +80,9 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
         selectCurrent(allVersions).map {
           case (currentVersion, otherVersions) =>
             EcosystemHighlight(
-              "Scala.js",
-              Some("Robust Scala-to-JavaScript compiler for browser and node.js."),
-              currentVersion,
-              otherVersions,
-              logo = Option(Url("https://www.scala-js.org/assets/img/scala-js-logo.svg"))
+              ecosystem = "Scala.js",
+              currentVersion = currentVersion,
+              otherVersions = otherVersions
             )
         }
       }
@@ -106,10 +104,8 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
           case (current, other) =>
             EcosystemHighlight(
               ecosystem = "Scala",
-              description = None,
               currentVersion = current,
-              otherVersions = other,
-              logo = Some(Url("https://www.scala-lang.org/resources/img/frontpage/scala-spiral.png"))
+              otherVersions = other
             )
         }
 
@@ -118,10 +114,8 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
           case (current, other) =>
             EcosystemHighlight(
               ecosystem = "Scala",
-              description = None,
               currentVersion = current,
-              otherVersions = other,
-              logo = Some(Url("https://www.scala-lang.org/resources/img/frontpage/scala-spiral.png"))
+              otherVersions = other
             )
         }
 
@@ -139,10 +133,8 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
           case (currentVersion, otherVersions) =>
             EcosystemHighlight(
               ecosystem = "Scala Native",
-              description = Some("Run Scala directly on bare metal using LLVM."),
               currentVersion = currentVersion,
-              otherVersions = otherVersions,
-              logo = Option(Url("https://scala-native.org/en/stable/_static/logo.png"))
+              otherVersions = otherVersions
             )
         }
       }
@@ -160,8 +152,7 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
         selectCurrent(allVersions).map {
           case (currentVersion, otherVersions) =>
             EcosystemHighlight(
-              ecosystem = "SBT",
-              description = None,
+              ecosystem = "sbt",
               currentVersion = currentVersion,
               otherVersions = otherVersions,
               logo = None
@@ -183,7 +174,6 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
           case (currentVersion, otherVersions) =>
             EcosystemHighlight(
               ecosystem = "Mill",
-              description = None,
               currentVersion = currentVersion,
               otherVersions = otherVersions,
               logo = None
