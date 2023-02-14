@@ -154,8 +154,7 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
             EcosystemHighlight(
               ecosystem = "sbt",
               currentVersion = currentVersion,
-              otherVersions = otherVersions,
-              logo = None
+              otherVersions = otherVersions
             )
         }
       }
@@ -175,8 +174,7 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
             EcosystemHighlight(
               ecosystem = "Mill",
               currentVersion = currentVersion,
-              otherVersions = otherVersions,
-              logo = None
+              otherVersions = otherVersions
             )
         }
       }
