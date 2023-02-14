@@ -1,26 +1,20 @@
 @import scaladex.core.model.search.ProjectDocument
 @import scaladex.core.model.search.SearchParams
-@import scaladex.core.model.ScalaJs
-@import scaladex.core.model.ScalaNative
-@import scaladex.core.model.MillPlugin
-@import scaladex.core.model.SbtPlugin
-@import scaladex.view.html.main
+@import scaladex.core.model._
 @import scaladex.core.model.UserState
 @import scaladex.core.model.Env
 @import scaladex.core.model.Scala
 
 @(
   env: Env,
-  topics: Seq[(String, Int)],
-  scalaVersions: Seq[(Scala, Int)],
-  scalaJsVersions: Seq[(ScalaJs, Int)],
-  scalaNativeVersions: Seq[(ScalaNative, Int)],
-  sbtVersions: Seq[(SbtPlugin, Int)],
-  millVersions: Seq[(MillPlugin, Int)],
+  topics: Seq[TopicCount],
+  scalaVersions: Seq[EcosystemHighlight],
+  platforms: Seq[EcosystemHighlight],
+  buildToolPlugins: Seq[EcosystemHighlight],
+  ecosystems: Seq[(String, Url)],
   latestProjects: Seq[ProjectDocument],
   mostDependedUpon: Seq[ProjectDocument],
   user: Option[UserState],
-  ecosystems: Map[String, String],
   totalProjects: Int,
   totalArtifacts: Long
 )
@@ -32,58 +26,14 @@
             <div class="row">
                 <div class="col-md-8 col-md-offset-2">
                     <h1>The Scala Library Index</h1> @searchinput(SearchParams(), false, Some(totalProjects), Some(totalArtifacts))
-                    <ul class="tag">
-                        <li><strong>Topics:</strong></li>
-                        @for((topic, count) <- topics) {
-                            <li><a href="/search?q=*&topics=@topic">@topic (@count)</a></li>
-                        }
-                    </ul>
-                    <ul class="tag">
-                        <li><strong>Scala libraries:</strong></li>
-                        @scalaVersions.map { case (scalaVersion, count) =>
-                            <li>
-                                <a href="/search?q=*&languages=@scalaVersion.label">@scalaVersion.version (@count)</a>
-                            </li>
-                        }
-                    </ul>
-                    <ul class="tag">
-                        <li><strong>Scala.js libraries:</strong></li>
-                        @for((scalaJsVersion, count) <- scalaJsVersions) {
-                            <li>
-                                <a href="/search?q=*&platforms=@scalaJsVersion.label">@scalaJsVersion.version (@count)</a>
-                            </li>
-                        }
-                    </ul>
-                    <ul class="tag">
-                        @if(scalaNativeVersions.nonEmpty) {
-                            <li><strong>Scala-Native libraries:</strong></li>
-                            @for((scalaNativeVersion, count) <- scalaNativeVersions) {
-                                <li>
-                                    <a href="/search?q=*&platforms=@scalaNativeVersion.label">@scalaNativeVersion.version (@count)</a>
-                                </li>
-                            }
-                        }
-                    </ul>
-                    <ul class="tag">
-                      <li><strong>sbt plugins:</strong></li>
-                      @for((sbtVersion, count) <- sbtVersions) {
-                          <li>
-                              <a href="/search?q=*&platforms=@sbtVersion.label">@sbtVersion.version (@count)</a>
-                          </li>
-                      }
-                    </ul>
-                    <ul class="tag">
-                      <li><strong>Mill plugins:</strong></li>
-                      @for((millVersion, count) <- millVersions) {
-                          <li>
-                              <a href="/search?q=*&platforms=@millVersion.label">@millVersion.version (@count)</a>
-                          </li>
-                      }
-                    </ul>
+                    @topicsCloud(topics)
+                    @ecosystemHighlights(scalaVersions)
+                    @ecosystemHighlights(platforms)
+                    @ecosystemHighlights(buildToolPlugins)
                     <ul class="tag">
                         <li><strong>Ecosystems:</strong></li>
-                        @for((name, url) <- ecosystems) {
-                            <li><a href="/@url">@name</a></li>
+                       @for((name, url) <- ecosystems) {
+                            <li><a href="/@url.target">@name</a></li>
                         }
                     </ul>
                 </div>

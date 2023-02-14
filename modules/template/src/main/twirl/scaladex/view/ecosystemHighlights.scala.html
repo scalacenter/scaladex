@@ -1,0 +1,30 @@
+@import scaladex.core.model._
+
+@(
+  highlights: Seq[EcosystemHighlight]
+)
+<div class = "ecosystem-badges">
+@for(highlight <- highlights) {
+  <div class="ecosystem-badge">
+    <div class = "ecosystem-badge-logo">
+      @highlight.logo.map { image => 
+        <img src = "@image.target" width="50" />
+      }
+    </div>
+    <div class = "ecosystem-badge-text">
+      <a class="badge-title" href = "@highlight.currentVersion.search.target">@highlight.ecosystem @highlight.currentVersion.version</a>
+      <p class = "badge-description">
+        @highlight.description.getOrElse("") <b>@highlight.currentVersion.libraryCount</b> projects
+        @if(highlight.otherVersions.nonEmpty) {
+          <br / >
+          <i>Other versions: @highlight.otherVersions.map { ver => 
+            <a class = "badge-other-version" href = "@ver.search.target">@ver.version</a>
+        
+          </i>
+          }
+        }
+      </p>
+    </div>
+  </div>
+}
+</div>
