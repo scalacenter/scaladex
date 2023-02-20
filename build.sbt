@@ -71,7 +71,7 @@ lazy val infra = project
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
-      "io.get-coursier" %% "coursier" % "2.1.0-RC4",
+      "io.get-coursier" %% "coursier" % "2.1.0-RC5",
       "org.tpolecat" %% "doobie-scalatest" % V.doobieVersion % Test,
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it"
     ) ++ Seq(
@@ -241,10 +241,10 @@ lazy val data = project
 
 lazy val V = new {
   val doobieVersion = "0.13.4"
-  val playJsonVersion = "2.9.3"
+  val playJsonVersion = "2.9.4"
   val akkaVersion = "2.6.18"
   val akkaHttpVersion = "10.2.10"
-  val elastic4sVersion = "8.5.2"
+  val elastic4sVersion = "8.5.3"
   val nscalaTimeVersion = "2.32.0"
   val scalatest = "3.2.15"
   val circeVersion = "0.14.3"
