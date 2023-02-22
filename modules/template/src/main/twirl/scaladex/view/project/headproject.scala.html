@@ -62,7 +62,7 @@
         @if(header.scalaVersions.nonEmpty){
           <div>
             Scala versions:
-            @for(scalaVersion <- header.scalaVersions) {
+            @for(scalaVersion <- header.scalaVersions.sorted.reverse) {
               <a href="@header.artifactsUrl(scalaVersion)" class="targets">@scalaVersion.version</a>
             }
           </div>
@@ -71,7 +71,7 @@
         @if(header.scalaJsVersions.nonEmpty){
           <div>
             Scala.js versions:
-            @for(platform <- header.scalaJsVersions) {
+            @for(platform <- header.scalaJsVersions.sorted.reverse) {
               <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
             }
           </div>
@@ -80,7 +80,7 @@
         @if(header.scalaNativeVersions.nonEmpty){
           <div>
             Scala Native versions:
-            @for(platform <- header.scalaNativeVersions) {
+            @for(platform <- header.scalaNativeVersions.sorted.reverse) {
               <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
             }
           </div>
@@ -89,7 +89,7 @@
         @if(header.sbtVersions.nonEmpty){
           <div>
             sbt plugins:
-            @for(platform <- header.sbtVersions) {
+            @for(platform <- header.sbtVersions.sorted.reverse) {
               <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
             }
           </div>
@@ -98,7 +98,7 @@
         @if(header.millVersions.nonEmpty){
           <div>
             Mill plugins:
-            @for(platform <- header.millVersions) {
+            @for(platform <- header.millVersions.sorted.reverse) {
               <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
             }
           </div>
