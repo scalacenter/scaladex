@@ -61,12 +61,14 @@
                   @for(
                     (platform, binaryVersions) <- artifacts
                       .map(_.binaryVersion)
+                      .distinct
+                      .sorted
+                      .reverse
                       .groupBy(_.platform)
                       .toSeq
-                      .sortBy(_._1)(Platform.ordering.reverse)
                   ) {
                     <h5>@platform:</h5>
-                    @for(binaryVersion <- binaryVersions.distinct.sorted) { 
+                    @for(binaryVersion <- binaryVersions) { 
                       <a href="/@project.reference/artifacts/@artifactName/@version?binary-version=@binaryVersion.encode" class="scala-version">
                         @binaryVersion.language.label
                       </a>
@@ -99,9 +101,9 @@
     <select class="selectpicker" name="binary-versions" 
       title= "Scala Versions" multiple data-style="btn-primary" data-actions-box="true" data-selected-text-format="static"
       onchange="this.form.submit()">
-      @for((platform, binaryVersions) <- allBinaryVersions.groupBy(_.platform)) {
+      @for((platform, binaryVersions) <- allBinaryVersions.sorted.groupBy(_.platform)) {
         <optgroup label="@platform">
-          @for(binaryVersion <- binaryVersions.sortBy(_.language)(Language.ordering.reverse)) {
+          @for(binaryVersion <- binaryVersions.reverse) {
               <option value="@binaryVersion.label"
               @if(params.binaryVersions.contains(binaryVersion)) {selected}>
               @binaryVersion.language.label
