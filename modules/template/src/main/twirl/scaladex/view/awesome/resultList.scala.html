@@ -53,10 +53,10 @@
               </div>
             }
 
-            @if(project.sbtVersions.nonEmpty){
+            @if(project.millVersions.nonEmpty){
               <div>
                 Mill plugins:
-                @for(v <- project.sbtVersions) {
+                @for(v <- project.millVersions) {
                   <span class="targets">@v.version</span>
                 }
               </div>
