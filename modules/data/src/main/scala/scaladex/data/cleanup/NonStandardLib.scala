@@ -7,7 +7,6 @@ import scala.io.Source
 import scala.util.Using
 
 import io.circe.parser._
-import org.json4s._
 import scaladex.infra.DataPaths
 
 /**
@@ -45,13 +44,6 @@ case object NoScalaTargetPureJavaDependency extends ScalaTargetLookup
 case object ScalaTargetFromVersion extends ScalaTargetLookup
 
 object NonStandardLib {
-
-  /**
-   * json4s formats
-   */
-  implicit val formats: DefaultFormats.type = DefaultFormats
-  implicit val serialization: org.json4s.native.Serialization.type =
-    native.Serialization
 
   /**
    * fetch non standard libs from json

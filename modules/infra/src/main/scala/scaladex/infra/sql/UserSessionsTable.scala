@@ -5,6 +5,7 @@ import java.util.UUID
 import doobie.Query0
 import doobie.util.query.Query
 import doobie.util.update.Update
+import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
 import scaladex.infra.sql.DoobieUtils.Mappings._
 import scaladex.infra.sql.DoobieUtils._
@@ -13,19 +14,21 @@ object UserSessionsTable {
 
   private[sql] val table = "user_sessions"
   private val userId = "user_id"
-  private val userStateFields = Seq("repos", "orgs")
   private val userInfoFields = Seq("login", "name", "avatar_url", "secret")
-  private val allFields = userId +: (userStateFields ++ userInfoFields)
+  private val userStateFields = Seq("repos", "orgs") ++ userInfoFields
 
-  val insertOrUpdate: Update[(UUID, UserState)] =
-    insertOrUpdateRequest(table, allFields, Seq(userId))
+  val insert: Update[(UUID, UserInfo)] =
+    insertRequest(table, userId +: userInfoFields)
 
-  val selectUserSessionById: Query[UUID, UserState] =
-    selectRequest(table, userStateFields ++ userInfoFields, Seq("user_id"))
+  val update: Update[(UserState, UUID)] =
+    updateRequest(table, userStateFields, Seq(userId))
 
-  val selectAllUserSessions: Query0[(UUID, UserState)] =
-    selectRequest(table, fields = allFields)
+  val selectById: Query[UUID, UserState] =
+    selectRequest(table, userStateFields, Seq("user_id"))
 
-  val deleteByUserId: Update[UUID] =
+  val selectAll: Query0[(UUID, UserInfo)] =
+    selectRequest(table, fields = userId +: userInfoFields)
+
+  val deleteById: Update[UUID] =
     deleteRequest(table, Seq(userId))
 }

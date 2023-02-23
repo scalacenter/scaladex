@@ -20,6 +20,7 @@ import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.model.ReleaseDependency
 import scaladex.core.model.SemanticVersion
+import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.web.ArtifactsPageParams
@@ -211,17 +212,20 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]] =
     run(ArtifactTable.selectMavenReference.to[Seq])
 
-  override def insertSession(userId: UUID, userState: UserState): Future[Unit] =
-    run(UserSessionsTable.insertOrUpdate.run((userId, userState)).map(_ => ()))
+  override def insertUser(userId: UUID, userInfo: UserInfo): Future[Unit] =
+    run(UserSessionsTable.insert.run((userId, userInfo)).map(_ => ()))
 
-  override def getSession(userId: UUID): Future[Option[UserState]] =
-    run(UserSessionsTable.selectUserSessionById.to[Seq](userId)).map(_.headOption)
+  override def updateUser(userId: UUID, userState: UserState): Future[Unit] =
+    run(UserSessionsTable.update.run((userState, userId)).map(_ => ()))
 
-  override def getAllSessions(): Future[Seq[(UUID, UserState)]] =
-    run(UserSessionsTable.selectAllUserSessions.to[Seq])
+  override def getUser(userId: UUID): Future[Option[UserState]] =
+    run(UserSessionsTable.selectById.option(userId))
 
-  override def deleteSession(userId: UUID): Future[Unit] =
-    run(UserSessionsTable.deleteByUserId.run(userId).map(_ => ()))
+  override def getAllUsers(): Future[Seq[(UUID, UserInfo)]] =
+    run(UserSessionsTable.selectAll.to[Seq])
+
+  override def deleteUser(userId: UUID): Future[Unit] =
+    run(UserSessionsTable.deleteById.run(userId).map(_ => ()))
 
   override def getArtifacts(
       ref: Project.Reference,

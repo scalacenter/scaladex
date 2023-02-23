@@ -66,7 +66,6 @@ lazy val infra = project
     loggingSettings,
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4sVersion,
-      "org.json4s" %% "json4s-native" % V.json4s,
       "org.flywaydb" % "flyway-core" % "8.5.13", // for database migration
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
@@ -228,7 +227,6 @@ lazy val data = project
       "org.jsoup" % "jsoup" % "1.15.3",
       "org.apache.ivy" % "ivy" % "2.5.1",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
-      "de.heikoseeberger" %% "akka-http-json4s" % "1.39.2",
       "org.json4s" %% "json4s-native" % V.json4s,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     ),

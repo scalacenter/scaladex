@@ -12,9 +12,6 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import cats.effect.ContextShift
 import cats.effect.IO
-import cats.implicits.toTraverseOps
-import com.softwaremill.session.SessionDirectives._
-import com.softwaremill.session.SessionOptions._
 import com.typesafe.scalalogging.LazyLogging
 import doobie.util.ExecutionContexts
 import scaladex.core.service.WebDatabase
@@ -27,13 +24,13 @@ import scaladex.infra.SonatypeClientImpl
 import scaladex.infra.SqlDatabase
 import scaladex.infra.sql.DoobieUtils
 import scaladex.server.config.ServerConfig
+import scaladex.server.route.AuthenticationApi
 import scaladex.server.route._
 import scaladex.server.route.api._
 import scaladex.server.service.AdminService
 import scaladex.server.service.PublishProcess
 import scaladex.server.service.SonatypeService
 import scaladex.view.html.notfound
-
 object Server extends LazyLogging {
 
   def main(args: Array[String]): Unit =
@@ -139,8 +136,7 @@ object Server extends LazyLogging {
   ): Route = {
     import actor.dispatcher
 
-    val githubAuth = new GithubAuthImpl(config.oAuth2.clientId, config.oAuth2.clientSecret, config.oAuth2.redirectUri)
-    val session = new GithubUserSession(config.session, webDatabase)
+    val githubAuth = GithubAuthImpl(config.oAuth2)
 
     val searchPages = new SearchPages(config.env, searchEngine)
     val frontPage = new FrontPage(config.env, webDatabase, searchEngine)
@@ -153,31 +149,31 @@ object Server extends LazyLogging {
     val artifactApi = ArtifactApi(webDatabase)
     val oldSearchApi = new OldSearchApi(searchEngine, webDatabase)
     val badges = new Badges(webDatabase)
-    val oauth2 = new Oauth2(config.oAuth2, githubAuth, session)
+    val authentication = new AuthenticationApi(config.oAuth2.clientId, config.session, githubAuth, webDatabase)
 
-    import session.implicits._
     val route: Route =
-      optionalSession(refreshable, usingCookies) { maybeUserId =>
-        val futureMaybeUser = maybeUserId.traverse(session.getUser).map(_.flatten)
-        val futureRoute = futureMaybeUser.map { maybeUser =>
-          val apiRoute = concat(
-            publishApi.routes,
-            searchApi.route(maybeUser),
-            artifactApi.routes,
-            oldSearchApi.routes,
-            Assets.routes,
-            badges.route,
-            oauth2.routes,
-            DocumentationRoutes.routes
-          )
+      authentication.optionalUser { user =>
+        val apiRoute = concat(
+          publishApi.routes,
+          searchApi.route(user),
+          artifactApi.routes,
+          oldSearchApi.routes,
+          Assets.routes,
+          badges.route,
+          authentication.routes,
+          DocumentationRoutes.routes
+        )
 
-          apiRoute ~ frontPage.route(maybeUser) ~ adminPages.route(maybeUser) ~
-            awesomePages.route(maybeUser) ~ artifactPages.route(maybeUser) ~
-            redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
-              projectPages.route(maybeUser) ~ searchPages.route(maybeUser)
-            }
-        }
-        context => futureRoute.flatMap(_.apply(context))
+        concat(
+          apiRoute,
+          frontPage.route(user),
+          adminPages.route(user),
+          awesomePages.route(user),
+          artifactPages.route(user),
+          redirectToNoTrailingSlashIfPresent(StatusCodes.MovedPermanently) {
+            projectPages.route(user) ~ searchPages.route(user)
+          }
+        )
       }
     val exceptionHandler = ExceptionHandler {
       case NonFatal(cause) =>

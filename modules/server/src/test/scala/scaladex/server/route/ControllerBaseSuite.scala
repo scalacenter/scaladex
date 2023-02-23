@@ -12,7 +12,6 @@ import scaladex.core.test.InMemorySearchEngine
 import scaladex.core.test.MockGithubAuth
 import scaladex.infra.DataPaths
 import scaladex.infra.FilesystemStorage
-import scaladex.server.GithubUserSession
 import scaladex.server.config.ServerConfig
 
 trait ControllerBaseSuite extends AsyncFunSpec with Matchers with ScalatestRouteTest {
@@ -24,7 +23,6 @@ trait ControllerBaseSuite extends AsyncFunSpec with Matchers with ScalatestRoute
 
   val githubAuth = MockGithubAuth
   val database: InMemoryDatabase = new InMemoryDatabase()
-  val githubUserSession = new GithubUserSession(config.session, database)
 
   val searchEngine: SearchEngine = new InMemorySearchEngine()
   val dataPaths: DataPaths = DataPaths.from(config.filesystem)

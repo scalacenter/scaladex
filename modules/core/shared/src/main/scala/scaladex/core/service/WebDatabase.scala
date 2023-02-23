@@ -14,6 +14,7 @@ import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.model.SemanticVersion
+import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
 import scaladex.core.web.ArtifactsPageParams
 
@@ -57,9 +58,10 @@ trait WebDatabase {
   def getProjectDependencies(ref: Project.Reference, version: SemanticVersion): Future[Seq[ProjectDependency]]
   def getProjectDependents(ref: Project.Reference): Future[Seq[ProjectDependency]]
 
-  // sessions
-  def insertSession(userId: UUID, userState: UserState): Future[Unit]
-  def getSession(userId: UUID): Future[Option[UserState]]
-  def getAllSessions(): Future[Seq[(UUID, UserState)]]
-  def deleteSession(userId: UUID): Future[Unit]
+  // users
+  def insertUser(userId: UUID, user: UserInfo): Future[Unit]
+  def updateUser(userId: UUID, userState: UserState): Future[Unit]
+  def getUser(userId: UUID): Future[Option[UserState]]
+  def getAllUsers(): Future[Seq[(UUID, UserInfo)]]
+  def deleteUser(userId: UUID): Future[Unit]
 }
