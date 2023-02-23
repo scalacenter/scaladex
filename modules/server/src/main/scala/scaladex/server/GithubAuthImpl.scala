@@ -1,5 +1,6 @@
 package scaladex.server
 
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 
 import akka.actor.ActorSystem
@@ -11,10 +12,13 @@ import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.GithubResponse
+import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubAuth
+import scaladex.core.service.GithubClient
 import scaladex.core.util.Secret
 import scaladex.infra.GithubClientImpl
+import scaladex.server.config.OAuth2Config
 
 object Response {
   case class AccessToken(access_token: String) {
@@ -22,32 +26,15 @@ object Response {
   }
 }
 //todo: remove Json4sSupport
-class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri: String)(implicit sys: ActorSystem)
+private class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri: String)(implicit sys: ActorSystem)
     extends GithubAuth
     with Json4sSupport
     with LazyLogging {
   import sys.dispatcher
 
-  def getUserStateWithToken(token: String): Future[UserState] = getUserState(Secret(token))
+  private val githubClients: TrieMap[Secret, GithubClient] = TrieMap()
 
-  def getUserStateWithOauth2(code: String): Future[UserState] =
-    for {
-      token <- getTokenWithOauth2(code)
-      userState <- getUserState(token)
-    } yield userState
-
-  private def getUserState(token: Secret): Future[UserState] = {
-    val githubClient = new GithubClientImpl(token)
-    githubClient.getUserState().flatMap {
-      case GithubResponse.Ok(res)               => Future.successful(res)
-      case GithubResponse.MovedPermanently(res) => Future.successful(res)
-      case GithubResponse.Failed(errorCode, errorMessage) =>
-        val message = s"Call to GithubClient#getUserState failed with code: $errorCode, message: $errorMessage"
-        Future.failed(new Exception(message))
-    }
-  }
-
-  private def getTokenWithOauth2(code: String): Future[Secret] =
+  def getToken(code: String): Future[Secret] =
     Http()
       .singleRequest(
         HttpRequest(
@@ -64,4 +51,31 @@ class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri: String
         )
       )
       .flatMap(response => Unmarshal(response).to[Response.AccessToken].map(_.token))
+
+  def getUser(token: Secret): Future[UserInfo] = {
+    val githubClient = githubClients.getOrElseUpdate(token, new GithubClientImpl(token))
+    githubClient.getUserInfo().map {
+      case GithubResponse.Ok(res)               => res
+      case GithubResponse.MovedPermanently(res) => res
+      case GithubResponse.Failed(errorCode, errorMessage) =>
+        val message = s"Failed to get user state: $errorCode, $errorMessage"
+        throw new Exception(message)
+    }
+  }
+
+  def getUserState(token: Secret): Future[Option[UserState]] = {
+    val githubClient = githubClients.getOrElseUpdate(token, new GithubClientImpl(token))
+    githubClient.getUserState().map {
+      case GithubResponse.Ok(userState)               => Some(userState)
+      case GithubResponse.MovedPermanently(userState) => Some(userState)
+      case GithubResponse.Failed(errorCode, errorMessage) =>
+        logger.warn(s"Failed to get user state: $errorCode, $errorMessage")
+        None
+    }
+  }
+}
+
+object GithubAuthImpl {
+  def apply(config: OAuth2Config)(implicit sys: ActorSystem): GithubAuth =
+    new GithubAuthImpl(config.clientId, config.clientSecret, config.redirectUri)
 }

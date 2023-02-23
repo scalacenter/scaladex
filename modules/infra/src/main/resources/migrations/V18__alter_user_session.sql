@@ -1,0 +1,3 @@
+ALTER TABLE user_sessions
+  ALTER COLUMN repos SET DEFAULT '',
+  ALTER COLUMN orgs SET DEFAULT '';

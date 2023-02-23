@@ -11,6 +11,7 @@ import scaladex.core.model.GithubResponse
 import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions._
+import scaladex.core.util.Secret
 import scaladex.infra.GithubClientImpl
 
 class UserSessionService(database: SchedulerDatabase)(implicit system: ActorSystem) extends LazyLogging {
@@ -18,8 +19,8 @@ class UserSessionService(database: SchedulerDatabase)(implicit system: ActorSyst
 
   def updateAll(): Future[String] =
     for {
-      sessions <- database.getAllSessions()
-      responses <- sessions.mapSync { case (userId, userState) => updateUserSession(userId, userState) }
+      sessions <- database.getAllUsers()
+      responses <- sessions.mapSync { case (userId, userInfo) => updateUserSession(userId, userInfo.token) }
     } yield {
       val totalOk = responses.count(_.isOk)
       val totalMoved = responses.count(_.isMoved)
@@ -30,17 +31,17 @@ class UserSessionService(database: SchedulerDatabase)(implicit system: ActorSyst
       s"Updated ${sessions.size} sessions: $totalOk OK, $totalMoved moved, $totalUnauthorized unauthorized, $otherFailed failures"
     }
 
-  private def updateUserSession(userId: UUID, userState: UserState): Future[GithubResponse[UserState]] = {
-    val client = new GithubClientImpl(userState.info.token)
+  private def updateUserSession(userId: UUID, token: Secret): Future[GithubResponse[UserState]] = {
+    val client = new GithubClientImpl(token)
     for {
       response <- client.getUserState()
       _ <- response match {
-        case GithubResponse.Ok(updatedState)               => database.insertSession(userId, updatedState)
-        case GithubResponse.MovedPermanently(updatedState) => database.insertSession(userId, updatedState)
+        case GithubResponse.Ok(state)               => database.updateUser(userId, state)
+        case GithubResponse.MovedPermanently(state) => database.updateUser(userId, state)
         case GithubResponse.Failed(code, errorMessage) =>
           if (code == StatusCodes.Unauthorized.intValue) {
             logger.info(s"Token for user with id: '$userId' is likely expired, with error: $errorMessage")
-            database.deleteSession(userId)
+            database.deleteUser(userId)
           } else Future.successful(())
       }
     } yield response
