@@ -40,9 +40,11 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         path(projectM / "artifacts" / artifactNameM) { (ref, artifactName) =>
           artifactsParams { params =>
             getProjectOrRedirect(ref, user) { project =>
+              val artifactsF = database.getArtifacts(ref, artifactName, params)
+              val headerF = getProjectHeader(project)
               for {
-                artifacts <- database.getArtifacts(ref, artifactName, params)
-                header <- getProjectHeader(project)
+                artifacts <- artifactsF
+                header <- headerF
               } yield {
                 val binaryVersions = artifacts
                   .map(_.binaryVersion)
@@ -81,14 +83,18 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         path(projectM / "artifacts" / artifactNameM / versionM) { (ref, artifactName, artifactVersion) =>
           artifactParams { params =>
             getProjectOrRedirect(ref, user) { project =>
+              val headerF = getProjectHeader(project)
+              val artifactsF = database.getArtifacts(ref, artifactName, artifactVersion)
               for {
-                artifacts <- database.getArtifacts(ref, artifactName, artifactVersion)
+                artifacts <- artifactsF
+                header <- headerF
                 binaryVersions = artifacts.map(_.binaryVersion).distinct.sorted(BinaryVersion.ordering.reverse)
                 binaryVersion = params.binaryVersion.getOrElse(binaryVersions.head)
                 artifact = artifacts.find(_.binaryVersion == binaryVersion).get
-                directDeps <- database.getDirectDependencies(artifact)
-                reverseDeps <- database.getReverseDependencies(artifact)
-                header <- getProjectHeader(project)
+                directDepsF = database.getDirectDependencies(artifact)
+                reverseDepsF = database.getReverseDependencies(artifact)
+                directDeps <- directDepsF
+                reverseDeps <- reverseDepsF
               } yield {
                 val page = html.artifact(
                   env,
