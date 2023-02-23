@@ -26,7 +26,6 @@ import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.Json
 import io.circe.syntax._
 import scaladex.core.model.GithubCommitActivity

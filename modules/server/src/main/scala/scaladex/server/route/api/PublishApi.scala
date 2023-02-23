@@ -19,10 +19,7 @@ import scaladex.server.route._
 import scaladex.server.service.PublishProcess
 import scaladex.server.service.PublishResult
 
-class PublishApi(
-    githubAuth: GithubAuth,
-    publishProcess: PublishProcess
-)(implicit ec: ExecutionContext)
+class PublishApi(githubAuth: GithubAuth, publishProcess: PublishProcess)(implicit ec: ExecutionContext)
     extends LazyLogging {
 
   private val credentialsCache: TrieMap[Secret, UserState] =

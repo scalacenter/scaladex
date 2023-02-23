@@ -11,6 +11,8 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import com.typesafe.scalalogging.LazyLogging
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.Json
 import scaladex.core.model.GithubResponse
 import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
@@ -20,15 +22,9 @@ import scaladex.core.util.Secret
 import scaladex.infra.GithubClientImpl
 import scaladex.server.config.OAuth2Config
 
-object Response {
-  case class AccessToken(access_token: String) {
-    val token: Secret = Secret(access_token)
-  }
-}
-//todo: remove Json4sSupport
 private class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri: String)(implicit sys: ActorSystem)
     extends GithubAuth
-    with Json4sSupport
+    with FailFastCirceSupport
     with LazyLogging {
   import sys.dispatcher
 
@@ -50,7 +46,12 @@ private class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri
           headers = List(Accept(MediaTypes.`application/json`))
         )
       )
-      .flatMap(response => Unmarshal(response).to[Response.AccessToken].map(_.token))
+      .flatMap { response =>
+        Unmarshal(response)
+          .to[Json]
+          .map(json => json.hcursor.downField("access_token").as[String].fold(throw _, identity))
+          .map(Secret.apply)
+      }
 
   def getUser(token: Secret): Future[UserInfo] = {
     val githubClient = githubClients.getOrElseUpdate(token, new GithubClientImpl(token))
