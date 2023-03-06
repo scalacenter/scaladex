@@ -191,13 +191,13 @@ case class Artifact(
   def scalaCliInstall: Option[String] =
     binaryVersion.platform match {
       case MillPlugin(_) | SbtPlugin(_) => None
-      case ScalaNative(_) | ScalaJs(_)  => Some(s"""//> using lib "$groupId::$artifactName::$version"""")
+      case ScalaNative(_) | ScalaJs(_)  => Some(s"""//> using dep "$groupId::$artifactName::$version"""")
       case Jvm =>
         binaryVersion.language match {
-          case _ if isNonStandardLib        => Some(s"""//> using lib "$groupId:$artifactId:$version"""")
-          case Java                         => Some(s"""//> using lib "$groupId:$artifactId:$version"""")
-          case Scala(PatchVersion(_, _, _)) => Some(s"""//> using lib "$groupId:::$artifactName:$version"""")
-          case _                            => Some(s"""//> using lib "$groupId::$artifactName:$version"""")
+          case _ if isNonStandardLib        => Some(s"""//> using dep "$groupId:$artifactId:$version"""")
+          case Java                         => Some(s"""//> using dep "$groupId:$artifactId:$version"""")
+          case Scala(PatchVersion(_, _, _)) => Some(s"""//> using dep "$groupId:::$artifactName:$version"""")
+          case _                            => Some(s"""//> using dep "$groupId::$artifactName:$version"""")
         }
     }
 
