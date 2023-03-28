@@ -10,6 +10,7 @@ import scaladex.core.model.UserState
 import scaladex.server.TwirlSupport._
 import scaladex.server.service.AdminService
 import scaladex.view
+import scaladex.view.Task
 
 class AdminPage(env: Env, adminService: AdminService) {
 
@@ -38,20 +39,29 @@ class AdminPage(env: Env, adminService: AdminService) {
               }
             } ~
             post {
-              path("tasks" / "missing-artifacts") {
+              path("tasks" / Task.findMissingArtifacts.name) {
                 formFields("group-id", "artifact-name") { (rawGroupId, rawArtifactName) =>
                   val groupId = Artifact.GroupId(rawGroupId)
                   val artifactNameOpt = if (rawArtifactName.isEmpty) None else Some(Artifact.Name(rawArtifactName))
-                  adminService.runMissingArtifactsTask(groupId, artifactNameOpt, user)
+                  adminService.findMissingArtifacts(groupId, artifactNameOpt, user)
                   redirect(Uri("/admin"), StatusCodes.SeeOther)
                 }
               }
             } ~
             post {
-              path("tasks" / "missing-project-no-artifact") {
+              path("tasks" / Task.updateGithubInfo.name) {
                 formFields("organization", "repository") { (org, repo) =>
                   val reference = Project.Reference.from(org, repo)
-                  adminService.addProjectNoArtifact(reference, user)
+                  adminService.updateGithubInfo(reference, user)
+                  redirect(Uri("/admin"), StatusCodes.SeeOther)
+                }
+              }
+            } ~
+            post {
+              path("tasks" / Task.addEmptyProject.name) {
+                formFields("organization", "repository") { (org, repo) =>
+                  val reference = Project.Reference.from(org, repo)
+                  adminService.addEmptyProject(reference, user)
                   redirect(Uri("/admin"), StatusCodes.SeeOther)
                 }
               }

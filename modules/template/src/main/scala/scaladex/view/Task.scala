@@ -9,14 +9,19 @@ import scaladex.core.util.TimeUtils
 final case class Task(name: String, description: String)
 
 object Task {
-  val missingArtifacts: Task = Task(
-    "missing-artifacts",
-    "Fetch all missing artifacts from Maven Central, given a group ID and an optional artifact name."
+  val findMissingArtifacts: Task = Task(
+    "find-missing-artifacts",
+    "Find all missing artifacts from Maven Central."
   )
 
-  val missingProjectNoArtifact: Task = Task(
-    "missing-project-no-artifact",
-    "Fetch a missing project without any published artifact, given a project reference."
+  val addEmptyProject: Task = Task(
+    "add-empty-project",
+    "Add project from Github without any published artifact."
+  )
+
+  val updateGithubInfo: Task = Task(
+    "update-github-info",
+    "Update the Github info of an existing project"
   )
 
   case class Status(name: String, user: String, start: Instant, input: Seq[(String, String)], state: State) {

@@ -65,10 +65,10 @@
       <tbody>
         <tr>
           <td>
-            <h5>@Task.missingArtifacts.name</h5>
-            <p>@Task.missingArtifacts.description</p>
+            <h5>@Task.findMissingArtifacts.name</h5>
+            <p>@Task.findMissingArtifacts.description</p>
           </td>
-          <form action="/admin/tasks/missing-artifacts" method="POST">
+          <form action="/admin/tasks/@Task.findMissingArtifacts.name" method="POST">
             <td>
               <div class="input-group">
                 <span class="input-group-addon" id="group-id">Group ID</span>
@@ -84,10 +84,29 @@
         </tr>
         <tr>
           <td>
-            <h5>@Task.missingProjectNoArtifact.name</h5>
-            <p>@Task.missingProjectNoArtifact.description</p>
+            <h5>@Task.addEmptyProject.name</h5>
+            <p>@Task.addEmptyProject.description</p>
           </td>
-          <form action="/admin/tasks/missing-project-no-artifact" method="POST">
+          <form action="/admin/tasks/@Task.addEmptyProject.name" method="POST">
+            <td>
+              <div class="input-group">
+                <span class="input-group-addon" id="organization">Organization</span>
+                <input type="text" class="form-control" name="organization" placeholder="Ex: scalacenter" required>
+              </div>
+              <div class="input-group">
+                <span class="input-group-addon" id="repository">Repository</span>
+                <input type="text" class="form-control" name="repository" placeholder="Ex: bloop">
+              </div>
+            </td>
+            <td><button type="submit" class="btn btn-primary">Submit</button></td>
+          </form>
+        </tr>
+        <tr>
+          <td>
+            <h5>@Task.updateGithubInfo.name</h5>
+            <p>@Task.updateGithubInfo.description</p>
+          </td>
+          <form action="/admin/tasks/@Task.updateGithubInfo.name" method="POST">
             <td>
               <div class="input-group">
                 <span class="input-group-addon" id="organization">Organization</span>
