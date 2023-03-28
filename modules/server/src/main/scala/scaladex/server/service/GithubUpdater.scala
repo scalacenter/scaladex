@@ -19,7 +19,7 @@ class GithubUpdater(database: WebDatabase, github: GithubClient)(implicit ec: Ex
     database.getAllProjectsStatuses().flatMap { projectStatuses =>
       val projectToUpdate =
         projectStatuses
-          .filter { case (_, status) => !status.isMoved && !status.isNotFound }
+          .filter { case (_, status) => !status.isMoved }
           .toSeq
           .sortBy(_._2)
           .map(_._1)

@@ -5,7 +5,6 @@ import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Artifact
 import scaladex.core.model.Env
-import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubResponse
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
@@ -32,6 +31,7 @@ class AdminService(
   val projectDependenciesUpdater = new DependencyUpdater(database)
   val userSessionService = new UserSessionService(database)
   val artifactsService = new ArtifactsService(database)
+  val githubUpdaterOpt: Option[GithubUpdater] = githubClientOpt.map(client => new GithubUpdater(database, client))
 
   private val jobs: Map[String, JobScheduler] = {
     val seq = Seq(
@@ -63,14 +63,14 @@ class AdminService(
   def allJobStatuses: Seq[(Job, Job.Status)] =
     jobs.values.map(s => s.job -> s.status).toSeq
 
-  def runMissingArtifactsTask(
+  def findMissingArtifacts(
       groupId: Artifact.GroupId,
       artifactNameOpt: Option[Artifact.Name],
       user: UserState
   ): Unit = {
     val input = Seq("Group ID" -> groupId.value) ++
       artifactNameOpt.map(name => "Artifact Name" -> name.value)
-    val task = TaskRunner.run(Task.missingArtifacts, user.info.login, input) { () =>
+    val task = TaskRunner.run(Task.findMissingArtifacts, user.info.login, input) { () =>
       sonatypeSynchronizer.syncOne(groupId, artifactNameOpt)
     }
     tasks = tasks :+ task
@@ -78,21 +78,12 @@ class AdminService(
 
   def allTaskStatuses: Seq[Task.Status] = tasks.map(_.status)
 
-  def addProjectNoArtifact(reference: Project.Reference, user: UserState): Unit = {
+  def addEmptyProject(reference: Project.Reference, user: UserState): Unit = {
 
     val input = Seq("Organization" -> reference.organization.value, "Repository" -> reference.repository.value)
 
-    def buildProject(info: GithubInfo): Project = new Project(
-      organization = reference.organization,
-      repository = reference.repository,
-      creationDate = None,
-      GithubStatus.Ok(java.time.Instant.now),
-      githubInfo = Some(info),
-      settings = Settings.default
-    )
-
-    val task = TaskRunner.run(Task.missingProjectNoArtifact, user.info.login, input) { () =>
-      githubClientOpt.fold(throw new Exception("Failed because 1 ??")) { githubClient =>
+    val task = TaskRunner.run(Task.addEmptyProject, user.info.login, input) { () =>
+      githubClientOpt.fold(throw new Exception("No configured Github token")) { githubClient =>
         githubClient.getProjectInfo(reference).flatMap {
           case GithubResponse.Failed(code, errorMessage) =>
             throw new Exception(s"Failed to add project due to GitHub error $code : $errorMessage")
@@ -100,12 +91,20 @@ class AdminService(
             throw new Exception(s"Failed to add project. Project moved to ${res._1.repository}")
           case GithubResponse.Ok((_, info)) =>
             info.scalaPercentage.fold {
-              throw new Exception(s"Failed to add project. Could obtain percentage of Scala for this project.")
+              throw new Exception(s"Failed to add project. Could not obtain percentage of Scala for this project.")
             } { percentage =>
               if (percentage <= 0) {
                 throw new Exception(s"Failed to add project. Project seems not a Scala one.")
               } else {
-                val project = buildProject(info)
+                val project =
+                  new Project(
+                    organization = reference.organization,
+                    repository = reference.repository,
+                    creationDate = None,
+                    GithubStatus.Ok(java.time.Instant.now),
+                    githubInfo = Some(info),
+                    settings = Settings.default
+                  )
                 database
                   .insertProject(project)
                   .flatMap(_ => searchSynchronizer.syncProject(reference))
@@ -113,6 +112,17 @@ class AdminService(
               }
             }
         }
+      }
+    }
+    tasks = tasks :+ task
+  }
+
+  def updateGithubInfo(reference: Project.Reference, user: UserState): Unit = {
+    val input = Seq("Organization" -> reference.organization.value, "Repository" -> reference.repository.value)
+
+    val task = TaskRunner.run(Task.updateGithubInfo, user.info.login, input) { () =>
+      githubUpdaterOpt.fold(throw new Exception("No configured Github token")) { githubUpdater =>
+        githubUpdater.update(reference).map(_.toString)
       }
     }
     tasks = tasks :+ task
