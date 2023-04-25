@@ -7,7 +7,7 @@ addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.0")
 addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.10.4")
 
 libraryDependencies ++= Seq(
-  "org.testcontainers" % "postgresql" % "1.17.6",
-  "org.testcontainers" % "elasticsearch" % "1.17.6",
+  "org.testcontainers" % "postgresql" % "1.18.0",
+  "org.testcontainers" % "elasticsearch" % "1.18.0",
   "org.tpolecat" %% "doobie-postgres" % "0.13.4"
 )
