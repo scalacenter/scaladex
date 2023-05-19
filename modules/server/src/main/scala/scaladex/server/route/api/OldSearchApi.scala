@@ -34,12 +34,14 @@ object OldSearchApi {
   case class Project(
       organization: String,
       repository: String,
-      logo: Option[String] = None,
-      artifacts: Seq[String] = Nil
+      logo: Option[String],
+      artifacts: Seq[String],
+      deprecatedArtifacts: Seq[String]
   )
 
   case class ArtifactOptions(
       artifacts: Seq[String],
+      deprecatedArtifacts: Seq[String],
       versions: Seq[String],
       groupId: String,
       artifactId: String,
@@ -114,7 +116,8 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(
                   project.organization.value,
                   project.repository.value,
                   project.githubInfo.flatMap(_.logo.map(_.target)),
-                  project.artifactNames.map(_.value)
+                  project.artifactNames.map(_.value),
+                  project.deprecatedArtifactNames.map(_.value)
                 )
 
               binaryVersion match {
@@ -189,11 +192,15 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(
       filteredArtifacts = selection.filterArtifacts(artifacts, project)
       selected <- filteredArtifacts.headOption
     } yield {
-      val artifacts = filteredArtifacts.map(_.artifactName).distinct
+      val (deprecatedArtifacts, artifacts) = filteredArtifacts
+        .map(_.artifactName)
+        .distinct
+        .partition(project.settings.artifactDeprecations.contains)
       // Sort semantic versions by descending order
       val versions = filteredArtifacts.map(_.version).distinct.sorted(Ordering[SemanticVersion].reverse)
       OldSearchApi.ArtifactOptions(
-        artifacts.map(_.value),
+        artifacts = artifacts.map(_.value),
+        deprecatedArtifacts = deprecatedArtifacts.map(_.value),
         versions.map(_.toString),
         selected.groupId.value,
         selected.artifactId,

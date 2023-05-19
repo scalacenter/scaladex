@@ -18,6 +18,7 @@ final case class ProjectDocument(
     organization: Project.Organization,
     repository: Project.Repository,
     artifactNames: Seq[Artifact.Name],
+    deprecatedArtifactNames: Seq[Artifact.Name],
     hasCli: Boolean,
     creationDate: Option[Instant],
     updateDate: Option[Instant],
@@ -43,6 +44,7 @@ object ProjectDocument {
       reference.organization,
       reference.repository,
       Seq.empty,
+      Seq.empty,
       false,
       None,
       None,
@@ -60,11 +62,18 @@ object ProjectDocument {
       dependents: Long,
       formerReferences: Seq[Project.Reference]
   ): ProjectDocument = {
+    val (deprecatedArtifactNames, artifactNames) =
+      artifacts
+        .map(_.artifactName)
+        .distinct
+        .sorted
+        .partition(project.settings.artifactDeprecations.contains)
     import project._
     ProjectDocument(
       organization,
       repository,
-      artifacts.map(_.artifactName).sorted.distinct,
+      artifactNames,
+      deprecatedArtifactNames,
       hasCli,
       creationDate,
       updateDate = None,
