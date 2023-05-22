@@ -67,8 +67,5 @@ case class ArtifactSelection(
 }
 
 object ArtifactSelection {
-  def parse(binaryVersion: Option[String], artifactName: Option[Artifact.Name]): ArtifactSelection =
-    new ArtifactSelection(binaryVersion.flatMap(BinaryVersion.fromLabel), artifactName)
-
   def empty = new ArtifactSelection(None, None)
 }
