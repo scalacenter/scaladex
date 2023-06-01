@@ -135,7 +135,7 @@ lazy val webclient = project
     scalacOptions += "-Wunused:imports",
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "scalatags" % "0.11.1",
-      "org.endpoints4s" %%% "fetch-client" % "3.0.0"
+      "org.endpoints4s" %%% "fetch-client" % "3.1.0"
     )
   )
   .enablePlugins(ScalaJSPlugin)
