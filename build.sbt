@@ -244,7 +244,7 @@ lazy val V = new {
   val akkaHttpVersion = "10.2.10"
   val elastic4sVersion = "8.7.0"
   val nscalaTimeVersion = "2.32.0"
-  val scalatest = "3.2.15"
+  val scalatest = "3.2.16"
   val circeVersion = "0.14.5"
   val json4s = "4.0.6"
 }
