@@ -66,7 +66,7 @@ lazy val infra = project
     loggingSettings,
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4sVersion,
-      "org.flywaydb" % "flyway-core" % "8.5.13", // for database migration
+      "org.flywaydb" % "flyway-core" % "9.19.1", // for database migration
       "com.typesafe.akka" %% "akka-stream" % V.akkaVersion,
       "com.typesafe.akka" %% "akka-http" % V.akkaHttpVersion,
       "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
