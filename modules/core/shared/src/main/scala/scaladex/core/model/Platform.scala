@@ -3,21 +3,18 @@ package scaladex.core.model
 sealed trait Platform {
   def label: String
   def isValid: Boolean
-  def isDeprecated: Boolean
 }
 
 case object Jvm extends Platform {
   override def toString: String = "JVM"
   override def label: String = "jvm"
   override def isValid: Boolean = true
-  override def isDeprecated: Boolean = false
 }
 
 case class ScalaJs(version: SemanticVersion) extends Platform {
   override def toString: String = s"Scala.js $version"
   override def label: String = s"sjs${version.encode}"
   override def isValid: Boolean = ScalaJs.stableVersions.contains(this)
-  override def isDeprecated: Boolean = version < ScalaJs.`1.x`.version
 }
 
 object ScalaJs {
@@ -37,7 +34,6 @@ case class SbtPlugin(version: SemanticVersion) extends Platform {
     }
   override def label: String = s"sbt${version.encode}"
   override def isValid: Boolean = SbtPlugin.stableVersions.contains(this)
-  override def isDeprecated: Boolean = version < SbtPlugin.`1.0`.version
 }
 
 object SbtPlugin {
@@ -52,7 +48,6 @@ case class ScalaNative(version: SemanticVersion) extends Platform {
   override def toString: String = s"Scala Native $version"
   override def label: String = s"native${version.encode}"
   override def isValid: Boolean = ScalaNative.stableVersions.contains(this)
-  override def isDeprecated: Boolean = version < ScalaNative.`0.4`.version
 }
 
 object ScalaNative {
@@ -73,7 +68,6 @@ case class MillPlugin(version: SemanticVersion) extends Platform {
     case MinorVersion(_, _) => true
     case _                  => false
   }
-  override def isDeprecated: Boolean = false
 }
 
 object MillPlugin {

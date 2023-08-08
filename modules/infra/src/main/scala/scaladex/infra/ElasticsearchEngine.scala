@@ -33,6 +33,7 @@ import scaladex.core.model.GithubIssue
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
+import scaladex.core.model.TopicCount
 import scaladex.core.model.search.AwesomeParams
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.PageParams
@@ -128,9 +129,9 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     esClient.execute(request).map(_.result.totalHits.toInt)
   }
 
-  override def countByTopics(limit: Int): Future[Seq[(String, Int)]] =
+  override def countByTopics(limit: Int): Future[Seq[TopicCount]] =
     countAllUnique("githubInfo.topics.keyword", matchAllQuery(), limit)
-      .map(_.sortBy(_._1))
+      .map(_.map { case (topic, count) => TopicCount(topic, count) }.sorted)
 
   def countByLanguages(): Future[Seq[(Language, Int)]] =
     languageAggregation(matchAllQuery())

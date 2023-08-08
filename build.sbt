@@ -105,14 +105,6 @@ lazy val infra = project
         s"-Dscaladex.elasticsearch.port=$elasticsearchPort"
       )
     },
-    reStart / javaOptions ++= {
-      val elasticsearchPort = startElasticsearch.value
-      val postgresPort = (Compile / startPostgres).value
-      Seq(
-        s"-Dscaladex.database.port=$postgresPort",
-        s"-Dscaladex.elasticsearch.port=$elasticsearchPort"
-      )
-    },
     inConfig(Test)(
       Postgres.settings(defaultPort = 5432, database = "scaladex-test")
     ),

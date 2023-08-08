@@ -35,7 +35,6 @@ final case class Scala(version: SemanticVersion) extends Language {
   override def label: String = version.toString
   override def isValid: Boolean = Scala.stableVersions.contains(this)
   override def toString: String = s"Scala $version"
-  def isDeprecated: Boolean = version < Scala.`2.12`.version
 }
 
 object Scala {

@@ -1,9 +1,7 @@
 @import scaladex.core.model.search.ProjectDocument
 @import scaladex.core.model.search.SearchParams
 @import scaladex.core.model._
-@import scaladex.core.model.UserState
-@import scaladex.core.model.Env
-@import scaladex.core.model.Scala
+@import scaladex.view.model.EcosystemHighlight
 
 @(
   env: Env,
@@ -11,7 +9,6 @@
   scalaVersions: Seq[EcosystemHighlight],
   platforms: Seq[EcosystemHighlight],
   buildToolPlugins: Seq[EcosystemHighlight],
-  ecosystems: Seq[(String, Url)],
   latestProjects: Seq[ProjectDocument],
   mostDependedUpon: Seq[ProjectDocument],
   user: Option[UserState],
@@ -21,85 +18,104 @@
 
 @main(env, title = "Scaladex", user, showSearch = false) {
 <main id="container-home">
-    <section class="content-search-home">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-8 col-md-offset-2">
-                    <h1>The Scala Library Index</h1> @searchinput(SearchParams(), false, Some(totalProjects), Some(totalArtifacts))
-                    @topicsCloud(topics)
-                    @ecosystemHighlights(scalaVersions)
-                    @ecosystemHighlights(platforms)
-                    <div class = "ecosystem-heading">Build tool plugins</div>
-                    @ecosystemHighlights(buildToolPlugins)
-                    <ul class="tag">
-                        <li><strong>Ecosystems:</strong></li>
-                       @for((name, url) <- ecosystems) {
-                            <li><a href="/@url.target">@name</a></li>
-                        }
-                    </ul>
+  <section class="home-search">
+    <div class="container">
+      <h1 class="text-center">The Scala Library Index</h1>
+      <div class="row">
+        <div class="col-md-8 col-md-offset-2">
+          @searchinput(SearchParams(), false, Some(totalProjects), Some(totalArtifacts))
+          @topicsCloud(topics)
+          @ecosystemHighlights("Scala Versions", scalaVersions)
+          @ecosystemHighlights("Platforms", platforms)
+          @ecosystemHighlights("Build Tool Plugins", buildToolPlugins)
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="recent-projects" id="recent-projects">
+    <div class="container">
+      <h2 class="text-center">Recent projects</h2>
+      <div class="row">
+        @for(project <- latestProjects) {
+          <div class="col-md-4 col-sm-6">
+            <a href="/@project.organization/@project.repository">
+              <div class="content-project box">
+                <div class="content-project-header">
+                  @githubUserAvatar(project.githubInfo.flatMap(_.logo))
+                  <h4>@project.organization/@project.repository</h4>
                 </div>
-            </div>
-        </div>
-    </section>
-    <section class="recent-projects" id="recent-projects">
-        <div class="container">
-            <h2 class="text-center">Recent projects</h2>
-            <div class="row">
-                @for(project <- latestProjects){
-                    <div class="col-md-4 col-sm-6">
-                        <a href="/@project.organization/@project.repository">
-                            <div class="content-project box">
-                                <div class="content-project-header">
-                                    @githubUserAvatar(project.githubInfo.flatMap(_.logo))
-                                    <h4>@project.organization/@project.repository</h4>
-                                </div>
-                                <div class="content-project-body">
-                                    @for(github <- project.githubInfo) {
-                                      @for(description <- github.description) {
-                                        <p class="description emojify">@description</p>
-                                      }
-                                    }
-                                    @for(created <- project.creationDate) {
-                                        @{formatInstant(created)}
-                                    }
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                }
-            </div>
-            <a class="btn btn-default" href="/search?q=*&sort=created">More ...</a>
-        </div>
-    </section>
-        <section class="recent-projects" id="most-depended-upon-projects">
-        <div class="container">
-            <h2 class="text-center">Most depended-upon Projects</h2>
-            <div class="row">
-                @for(project <- mostDependedUpon){
-                    <div class="col-md-4 col-sm-6">
-                        <a href="/@project.organization/@project.repository">
-                            <div class="content-project box">
-                                <div class="content-project-header">
-                                    @githubUserAvatar(project.githubInfo.flatMap(_.logo))
-                                    <h4>@project.organization/@project.repository</h4>
-                                </div>
-                                <div class="content-project-body">
-                                    @for(github <- project.githubInfo) {
-                                      @for(description <- github.description) {
-                                        <p class="description">@description</p>
-                                      }
-                                    }
-                                    @for(created <- project.creationDate) {
-                                        @{formatInstant(created)}
-                                    }
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                }
-            </div>
-            <a class="btn btn-default" href="/search?q=*&sort=dependent">More ...</a>
-        </div>
-    </section>
+                <div class="content-project-body">
+                  @for(github <- project.githubInfo) { 
+                    @for(description <- github.description) {
+                      <p class="description emojify">@description</p>
+                    }
+                  }
+                  @for(created <- project.creationDate) { 
+                    @{formatInstant(created)} 
+                  } 
+                </div>
+              </div>
+            </a>
+          </div>
+        }
+      </div>
+      <a class="btn btn-default" href="/search?q=*&sort=created">More ...</a>
+    </div>
+  </section>
+  <section class="recent-projects" id="most-depended-upon-projects">
+    <div class="container">
+      <h2 class="text-center">Most depended-upon Projects</h2>
+      <div class="row">
+        @for(project <- mostDependedUpon) {
+          <div class="col-md-4 col-sm-6">
+            <a href="/@project.organization/@project.repository">
+              <div class="content-project box">
+                <div class="content-project-header">
+                  @githubUserAvatar(project.githubInfo.flatMap(_.logo))
+                  <h4>@project.organization/@project.repository</h4>
+                </div>
+                <div class="content-project-body">
+                  @for(github <- project.githubInfo) {
+                    @for(description <- github.description) { 
+                      <p class="description">@description</p> 
+                    }
+                  }
+                  @for(created <- project.creationDate) { 
+                    @{formatInstant(created)}
+                  }
+                </div>
+              </div>
+            </a>
+          </div>
+        }
+      </div>
+      <a class="btn btn-default" href="/search?q=*&sort=dependent">More ...</a>
+    </div>
+  </section>
 </main>
+}
+
+@ecosystemHighlights(title: String, highlights: Seq[EcosystemHighlight]) = {
+  <div class="row ecosystem-row">
+    <div class="col-sm-2 col-sm-offset-1"><h3>@title</h3></div>
+    @for(highlight <- highlights) {
+      <div class="ecosystem-badge col-sm-4">
+        <a href="@highlight.currentVersion.search.target">
+          <h4 class="badge-title">@highlight.ecosystem @highlight.currentVersion.version</h4>
+          <p>@highlight.currentVersion.libraryCount projects</p>
+        </a>
+        @if(highlight.otherVersions.nonEmpty) {
+          <p class="badge-other-versions">Other versions: @highlight.otherVersions.map { ver => <a href="@ver.search.target">@ver.version</a>}</p>
+        }
+      </div>
+    }
+  </div>
+}
+
+@topicsCloud(topics: Seq[TopicCount]) = {
+  <ul class="topic">
+    @for(TopicCount(topic, count) <- topics) {
+      <li><a href="/search?q=*&topics=@topic">@topic</a><span class = "super-count">@count</span></li>
+    }
+  </ul>
 }

@@ -11,6 +11,8 @@ import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 import scaladex.server.TwirlSupport._
 import scaladex.view.html.frontpage
+import scaladex.view.model.EcosystemHighlight
+import scaladex.view.model.EcosystemVersion
 
 class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(implicit ec: ExecutionContext) {
   val limitOfProjects = 12
@@ -28,164 +30,62 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
     for {
       totalProjects <- totalProjectsF
       totalArtifacts <- totalArtifactsF
-      topics <- topicsF.map(_.map { case (topic, count) => TopicCount(topic, count, None) })
+      topics <- topicsF
       platforms <- platformsF
       languages <- languagesF
       mostDependedUpon <- mostDependedUponF
       latestProjects <- latestProjectsF
     } yield {
 
-      def query(label: String)(xs: String*): Url =
-        Url(xs.map(v => s"$label:$v").mkString("search?q=", " OR ", ""))
-
-      val ecosystems = List(
-        "Akka" -> query("topics")(
-          "akka",
-          "akka-http",
-          "akka-persistence",
-          "akka-streams"
-        ),
-        "Spark" -> query("topics")("spark"),
-        "Typelevel" -> Url("search?q=typelevel")
+      val scala3Ecosystem = EcosystemHighlight(
+        "Scala",
+        languages.collect {
+          case (sv @ Scala.`3`, count) =>
+            EcosystemVersion(Scala.`3`.version, count, Url(s"search?languages=${sv.label}"))
+        }
       )
-
-      val RecentScalaVersionsFirst: Ordering[(Scala, Int)] = Scala.ordering.reverse.on(_._1)
-
-      val RecentPlatformVersionsFirst: Ordering[(Platform, Int)] =
-        Platform.ordering.reverse.on(_._1)
-
-      val scalaVersions = languages.collect { case (v: Scala, c) => (v, c) }.sorted(RecentScalaVersionsFirst)
-      val scalaJsVersions = platforms.collect { case (v: ScalaJs, c) => (v, c) }.sorted(RecentPlatformVersionsFirst)
-      val scalaNativeVersions =
-        platforms.collect { case (v: ScalaNative, c) => (v, c) }.sorted(RecentPlatformVersionsFirst)
-      val sbtVersions = platforms.collect { case (v: SbtPlugin, c) => (v, c) }.sorted(RecentPlatformVersionsFirst)
-      val millVersions = platforms.collect { case (v: MillPlugin, c) => (v, c) }.sorted(RecentPlatformVersionsFirst)
-
-      def selectCurrent(allVersions: Seq[EcosystemVersion]): Option[(EcosystemVersion, Seq[EcosystemVersion])] =
-        allVersions.filterNot(_.deprecated).headOption.map { currentVersion =>
-          val otherVersions = allVersions.filterNot(_ == currentVersion)
-          currentVersion -> otherVersions
+      val scala2Ecosystem = EcosystemHighlight(
+        "Scala",
+        languages.collect {
+          case (sv: Scala, count) if sv.version < Scala.`3`.version =>
+            EcosystemVersion(sv.version, count, Url(s"search?languages=${sv.label}"))
         }
-
-      val scalajsEcosystem = {
-        val allVersions = scalaJsVersions.map {
-          case (sjs, cnt) =>
-            EcosystemVersion(
-              version = sjs.version,
-              deprecated = sjs.isDeprecated,
-              libraryCount = cnt,
-              search = Url(s"search?platforms=${sjs.label}")
-            )
+      )
+      val scalajsEcosystem = EcosystemHighlight(
+        "Scala.js",
+        platforms.collect {
+          case (sjs: ScalaJs, count) =>
+            EcosystemVersion(sjs.version, count, search = Url(s"search?platforms=${sjs.label}"))
         }
-        selectCurrent(allVersions).map {
-          case (currentVersion, otherVersions) =>
-            EcosystemHighlight(
-              ecosystem = "Scala.js",
-              currentVersion = currentVersion,
-              otherVersions = otherVersions
-            )
+      )
+      val scalaNativeEcosystem = EcosystemHighlight(
+        "Scala Native",
+        platforms.collect {
+          case (sn: ScalaNative, count) =>
+            EcosystemVersion(sn.version, count, search = Url(s"search?platforms=${sn.label}"))
         }
-      }
-
-      val (scala2, scala3) = scalaVersions
-        .map {
-          case (scalaVersion, count) =>
-            EcosystemVersion(
-              version = scalaVersion.version,
-              deprecated = scalaVersion.isDeprecated,
-              libraryCount = count,
-              search = Url(s"search?languages=${scalaVersion.label}")
-            )
+      )
+      val sbtPluginEcosystem = EcosystemHighlight(
+        "sbt",
+        platforms.collect {
+          case (sbtP: SbtPlugin, count) =>
+            EcosystemVersion(sbtP.version, count, search = Url(s"search?platforms=${sbtP.label}"))
         }
-        .partition(_.version < Scala.`3`.version)
-
-      val scala3Ecosystem =
-        selectCurrent(scala3).map {
-          case (current, other) =>
-            EcosystemHighlight(
-              ecosystem = "Scala",
-              currentVersion = current,
-              otherVersions = other
-            )
+      )
+      val millPluginEcosystem = EcosystemHighlight(
+        "Mill",
+        platforms.collect {
+          case (millP: MillPlugin, count) =>
+            EcosystemVersion(millP.version, count, search = Url(s"search?platforms=${millP.label}"))
         }
-
-      val scala2Ecosystem =
-        selectCurrent(scala2).map {
-          case (current, other) =>
-            EcosystemHighlight(
-              ecosystem = "Scala",
-              currentVersion = current,
-              otherVersions = other
-            )
-        }
-
-      val snEcosystem = {
-        val allVersions = scalaNativeVersions.map {
-          case (sn, cnt) =>
-            EcosystemVersion(
-              version = sn.version,
-              deprecated = sn.isDeprecated,
-              libraryCount = cnt,
-              search = Url(s"search?platforms=${sn.label}")
-            )
-        }
-        selectCurrent(allVersions).map {
-          case (currentVersion, otherVersions) =>
-            EcosystemHighlight(
-              ecosystem = "Scala Native",
-              currentVersion = currentVersion,
-              otherVersions = otherVersions
-            )
-        }
-      }
-
-      val sbtPluginEcosystem = {
-        val allVersions = sbtVersions.map {
-          case (sbt, cnt) =>
-            EcosystemVersion(
-              version = sbt.version,
-              deprecated = sbt.isDeprecated,
-              libraryCount = cnt,
-              search = Url(s"search?platforms=${sbt.label}")
-            )
-        }
-        selectCurrent(allVersions).map {
-          case (currentVersion, otherVersions) =>
-            EcosystemHighlight(
-              ecosystem = "sbt",
-              currentVersion = currentVersion,
-              otherVersions = otherVersions
-            )
-        }
-      }
-
-      val millPluginEcosystem = {
-        val allVersions = millVersions.map {
-          case (mill, cnt) =>
-            EcosystemVersion(
-              version = mill.version,
-              deprecated = mill.isDeprecated,
-              libraryCount = cnt,
-              search = Url(s"search?platforms=${mill.label}")
-            )
-        }
-        selectCurrent(allVersions).map {
-          case (currentVersion, otherVersions) =>
-            EcosystemHighlight(
-              ecosystem = "Mill",
-              currentVersion = currentVersion,
-              otherVersions = otherVersions
-            )
-        }
-      }
+      )
 
       frontpage(
         env,
         topics,
         Seq(scala3Ecosystem, scala2Ecosystem).flatten,
-        Seq(scalajsEcosystem, snEcosystem).flatten,
+        Seq(scalajsEcosystem, scalaNativeEcosystem).flatten,
         Seq(sbtPluginEcosystem, millPluginEcosystem).flatten,
-        ecosystems,
         latestProjects,
         mostDependedUpon,
         userInfo,
