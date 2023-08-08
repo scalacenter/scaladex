@@ -18,7 +18,7 @@ class SonatypeService(
     extends LazyLogging {
   import SonatypeService._
 
-  def syncAll(): Future[String] =
+  def findMissing(): Future[String] =
     for {
       groupIds <- database.getAllGroupIds()
       // we sort just to estimate through the logs the percentage of progress

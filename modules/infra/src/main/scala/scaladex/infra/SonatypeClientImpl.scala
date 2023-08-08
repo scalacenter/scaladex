@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.concurrent.Promise
+import scala.util.Failure
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -76,20 +77,25 @@ class SonatypeClientImpl()(implicit val system: ActorSystem)
       }
   }
 
-  override def getPomFile(mavenReference: Artifact.MavenReference): Future[Option[(String, Instant)]] =
-    for {
+  override def getPomFile(mavenReference: Artifact.MavenReference): Future[Option[(String, Instant)]] = {
+    val future = for {
       responseOpt <- getHttpResponse(mavenReference)
       res <- responseOpt.map(getPomFileWithLastModifiedTime).getOrElse(Future.successful(None))
     } yield res
+    future.onComplete {
+      case Failure(exception) => logger.warn(s"Could not get pom file of $mavenReference because of $exception")
+      case _                  => ()
+    }
+    future
+  }
 
   private def getPomFileWithLastModifiedTime(response: HttpResponse): Future[Option[(String, Instant)]] =
     response match {
       case _ @HttpResponse(StatusCodes.OK, headers: Seq[model.HttpHeader], entity, _) =>
-        for {
-          page <- Unmarshaller.stringUnmarshaller(entity)
-        } yield headers
-          .find(_.is("last-modified"))
-          .map(header => page -> format(header.value))
+        val lastModified = headers.find(_.is("last-modified")).map(header => parseDate(header.value))
+        Unmarshaller
+          .stringUnmarshaller(entity)
+          .map(page => lastModified.map(page -> _))
       case _ => Future.successful(None)
     }
 
@@ -110,10 +116,9 @@ class SonatypeClientImpl()(implicit val system: ActorSystem)
   }
 
   // Wed, 04 Nov 2020 23:36:02 GMT
-  private val df = DateTimeFormatter
-    .ofPattern("E, dd MMM yyyy HH:mm:ss z")
+  private val df = DateTimeFormatter.ofPattern("E, dd MMM yyyy HH:mm:ss z")
 
-  private def format(i: String) = ZonedDateTime.parse(i, df).toInstant
+  private[infra] def parseDate(i: String): Instant = ZonedDateTime.parse(i, df).toInstant
 
   private def getPomUrl(artifactId: Artifact.ArtifactId, version: String): String =
     artifactId.binaryVersion.platform match {
