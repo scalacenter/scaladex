@@ -186,6 +186,7 @@ lazy val server = project
     ),
     fork := true,
     Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value,
+    reStart / javaOptions ++= (infra / Compile / run / javaOptions).value,
     Test / javaOptions ++= (infra / javaOptions).value,
     Defaults.itSettings,
     IntegrationTest / javaOptions ++= (infra / Compile / run / javaOptions).value

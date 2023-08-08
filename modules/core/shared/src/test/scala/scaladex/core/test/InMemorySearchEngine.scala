@@ -8,6 +8,7 @@ import scaladex.core.model.Category
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
+import scaladex.core.model.TopicCount
 import scaladex.core.model.search.AwesomeParams
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.PageParams
@@ -33,7 +34,7 @@ class InMemorySearchEngine extends SearchEngine {
 
   override def countByPlatforms(): Future[Seq[(Platform, Int)]] = ???
 
-  override def countByTopics(limit: Int): Future[Seq[(String, Int)]] = ???
+  override def countByTopics(limit: Int): Future[Seq[TopicCount]] = ???
 
   override def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]] = ???
 

@@ -6,7 +6,7 @@
     <form action="/search" action="GET">
         <input autocomplete="off" autofocus
           @if(!params.queryString.isEmpty){
-            value = "@params.queryString"
+            value="@params.queryString"
           }
           name="q" id="search" type="text" class="form-control"
           @if(params.contributingSearch){
