@@ -115,7 +115,7 @@
 @topicsCloud(topics: Seq[TopicCount]) = {
   <ul class="topic">
     @for(TopicCount(topic, count) <- topics) {
-      <li><a href="/search?q=*&topics=@topic">@topic</a><span class = "super-count">@count</span></li>
+      <li><a href="/search?q=*&topics=@topic">@topic</a><span class="super-count">@count</span></li>
     }
   </ul>
 }

@@ -41,6 +41,7 @@
   .topic {
     padding: 0;
     margin-top: 10px;
+    margin-bottom: 24px;
     text-align: center;
     li {
       list-style: none;
@@ -48,7 +49,7 @@
       a {
         color: $gray-lighter;
         text-decoration: none;
-        padding: 0 5px;
+        padding: 0 4px 0 8px;
         &:hover,
         &:focus {
           color: $brand-primary;
@@ -57,7 +58,7 @@
       }
       .super-count {
         vertical-align: super;
-        color: #999; 
+        color: $gray-light;
         font-size: small;
       }
     }
@@ -67,7 +68,7 @@
       font-size: large;
       text-align: center;
       font-weight: bold;
-      color: $gray;
+      color: $gray-light;
       margin-top: 24px;
     }
   }
@@ -95,6 +96,7 @@
     }
     .badge-other-versions {
       a {
+        padding-left: 5px;
         color: white;
         text-decoration: underline;
         &:hover,
