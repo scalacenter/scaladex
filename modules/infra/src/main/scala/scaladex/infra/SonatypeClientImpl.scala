@@ -7,7 +7,6 @@ import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.concurrent.Promise
-import scala.util.Failure
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -71,10 +70,10 @@ class SonatypeClientImpl()(implicit val system: ActorSystem)
       versionParsed = versions.flatMap(SemanticVersion.parse)
     } yield versionParsed
     future.recoverWith {
-        case NonFatal(exception) =>
-          logger.warn(s"failed to retrieve versions from $uri because ${exception.getMessage}")
-          Future.successful(Nil)
-      }
+      case NonFatal(exception) =>
+        logger.warn(s"failed to retrieve versions from $uri because ${exception.getMessage}")
+        Future.successful(Nil)
+    }
   }
 
   override def getPomFile(mavenReference: Artifact.MavenReference): Future[Option[(String, Instant)]] = {

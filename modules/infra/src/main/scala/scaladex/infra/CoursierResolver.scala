@@ -15,9 +15,9 @@ import coursier.Organization
 import coursier.Repositories
 import coursier.core.Type
 import coursier.error.ResolutionError
-import scaladex.core.service.PomResolver
 import coursier.maven.SbtMavenRepository
 import scaladex.core.model.Artifact
+import scaladex.core.service.PomResolver
 
 class CoursierResolver(implicit val ec: ExecutionContext) extends PomResolver with LazyLogging {
   private val repositories = Seq(

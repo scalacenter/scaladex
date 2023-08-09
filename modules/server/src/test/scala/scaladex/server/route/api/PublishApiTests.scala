@@ -1,7 +1,4 @@
 package scaladex.server.route.api
-
-import java.nio.file.Path
-
 import scala.concurrent.duration.DurationInt
 
 import akka.http.scaladsl.model.ContentTypes
@@ -13,10 +10,10 @@ import org.scalatest.BeforeAndAfterEach
 import scaladex.core.model.Env
 import scaladex.core.test.MockGithubAuth
 import scaladex.core.test.Values._
+import scaladex.infra.CoursierResolver
 import scaladex.server.route.ControllerBaseSuite
 import scaladex.server.route.api.PublishApi
 import scaladex.server.service.PublishProcess
-import scaladex.infra.CoursierResolver
 
 class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
   val pomResolver = new CoursierResolver
@@ -94,10 +91,10 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
     val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity).addCredentials(admin)
     request ~> publishApi.routes ~> check {
       for (artifacts <- database.getArtifacts(SbtCrossProject.reference))
-      yield {
-        val mavenRefs = artifacts.map(_.mavenReference)
-        mavenRefs should contain theSameElementsAs Seq(SbtCrossProject.mavenReference)
-      }
+        yield {
+          val mavenRefs = artifacts.map(_.mavenReference)
+          mavenRefs should contain theSameElementsAs Seq(SbtCrossProject.mavenReference)
+        }
     }
   }
 }
