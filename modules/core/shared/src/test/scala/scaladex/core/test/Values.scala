@@ -244,6 +244,12 @@ object Values {
     )
   }
 
+  object SbtCrossProject {
+    val reference = Project.Reference.from("portable-scala", "sbt-crossproject")
+    val mavenReference = MavenReference("org.portable-scala", "sbt-scalajs-crossproject_2.12_1.0", "1.3.2")
+    val creationDate = Instant.ofEpochSecond(1688667180L)
+  }
+
   private def contributor(login: String): GithubContributor =
     GithubContributor(login, "", Url(""), 1)
 
