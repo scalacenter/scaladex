@@ -64,6 +64,6 @@ class SonatypeClientImplTests extends AsyncFunSpec with Matchers {
   }
 
   it(s"parse date time") {
-    sonatypeClient.parseDate("Fri, 11 Sep 2020 10:43:20 GMT") shouldBe Instant.ofEpochMilli(1599821000000L)
+    sonatypeClient.parseDate("Wed, 23 Sep 2020 11:40:44 GMT") shouldBe Instant.ofEpochSecond(1600861244L)
   }
 }

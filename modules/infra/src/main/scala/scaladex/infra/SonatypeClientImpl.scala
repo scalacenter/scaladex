@@ -64,13 +64,13 @@ class SonatypeClientImpl()(implicit val system: ActorSystem)
     val uri = s"$sonatypeUri/${groupId.mavenUrl}/${artifactId.value}/"
     val request = HttpRequest(uri = uri)
 
-    (for {
+    val future = for {
       responseFuture <- queueRequest(request)
       page <- Unmarshaller.stringUnmarshaller(responseFuture.entity)
       versions = JsoupUtils.listDirectories(uri, page)
       versionParsed = versions.flatMap(SemanticVersion.parse)
-    } yield versionParsed)
-      .recoverWith {
+    } yield versionParsed
+    future.recoverWith {
         case NonFatal(exception) =>
           logger.warn(s"failed to retrieve versions from $uri because ${exception.getMessage}")
           Future.successful(Nil)
@@ -82,11 +82,11 @@ class SonatypeClientImpl()(implicit val system: ActorSystem)
       responseOpt <- getHttpResponse(mavenReference)
       res <- responseOpt.map(getPomFileWithLastModifiedTime).getOrElse(Future.successful(None))
     } yield res
-    future.onComplete {
-      case Failure(exception) => logger.warn(s"Could not get pom file of $mavenReference because of $exception")
-      case _                  => ()
+    future.recoverWith {
+      case NonFatal(exception) =>
+        logger.warn(s"Could not get pom file of $mavenReference because of $exception")
+        Future.successful(None)
     }
-    future
   }
 
   private def getPomFileWithLastModifiedTime(response: HttpResponse): Future[Option[(String, Instant)]] =
@@ -116,9 +116,8 @@ class SonatypeClientImpl()(implicit val system: ActorSystem)
   }
 
   // Wed, 04 Nov 2020 23:36:02 GMT
-  private val df = DateTimeFormatter.ofPattern("E, dd MMM yyyy HH:mm:ss z")
-
-  private[infra] def parseDate(i: String): Instant = ZonedDateTime.parse(i, df).toInstant
+  private val dateFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
+  private[infra] def parseDate(dateStr: String): Instant = ZonedDateTime.parse(dateStr, dateFormatter).toInstant
 
   private def getPomUrl(artifactId: Artifact.ArtifactId, version: String): String =
     artifactId.binaryVersion.platform match {
