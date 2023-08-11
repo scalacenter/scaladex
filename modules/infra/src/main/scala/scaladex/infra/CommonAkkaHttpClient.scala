@@ -18,8 +18,9 @@ import akka.stream.scaladsl.Keep
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
 import akka.stream.scaladsl.SourceQueueWithComplete
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 
-abstract class CommonAkkaHttpClient(implicit system: ActorSystem) {
+abstract class CommonAkkaHttpClient(implicit system: ActorSystem) extends FailFastCirceSupport {
 
   val poolClientFlow: Flow[
     (HttpRequest, Promise[HttpResponse]),

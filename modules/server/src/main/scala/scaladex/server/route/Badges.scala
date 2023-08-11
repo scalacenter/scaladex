@@ -12,6 +12,7 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.RouteResult
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactSelection
+import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Jvm
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
@@ -32,13 +33,11 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
   val route: Route =
     get {
       concat(
-        path(organizationM / repositoryM / "latest.svg")((org, repo) => latest(org, repo, None)),
-        path(organizationM / repositoryM / artifactNameM / "latest.svg") { (org, repo, artifact) =>
-          latest(org, repo, Some(artifact))
-        },
-        path(
-          organizationM / repositoryM / artifactNameM / "latest-by-scala-version.svg"
-        )((org, repo, artifact) => latestByScalaVersion(Project.Reference(org, repo), artifact))
+        path(projectM / "latest.svg")(ref => latest(ref, None)),
+        path(projectM / artifactNameM / "latest.svg")((ref, artifact) => latest(ref, Some(artifact))),
+        path(projectM / artifactNameM / "latest-by-scala-version.svg") { (ref, artifact) =>
+          latestByScalaVersion(ref, artifact)
+        }
       )
     }
 
@@ -84,39 +83,27 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
   }
 
   def latest(
-      organization: Project.Organization,
-      repository: Project.Repository,
+      ref: Project.Reference,
       artifactName: Option[Artifact.Name]
   ): RequestContext => Future[RouteResult] =
     parameter("target".?) { binaryVersion =>
-      shieldsOptionalSubject { (color, style, logo, logoWidth, subject) =>
-        val res = getSelectedArtifact(
-          organization,
-          repository,
-          binaryVersion,
-          artifactName
-        )
-        onSuccess(res) {
-          case Some(artifact) =>
-            shieldsSvg(
-              subject.orElse(artifactName.map(_.value)).getOrElse(repository.value),
-              artifact.version.toString,
-              color,
-              style,
-              logo,
-              logoWidth
-            )
-          case _ =>
-            shieldsSvg(
-              subject.orElse(artifactName.map(_.value)).getOrElse(repository.value),
-              "no published artifact",
-              color.orElse(Some("lightgrey")),
-              style,
-              logo,
-              logoWidth
-            )
+      shieldsOptionalSubject { (color, style, logo, logoWidth, subjectOpt) =>
+        val subject = subjectOpt.orElse(artifactName.map(_.value)).getOrElse(ref.repository.value)
+        def error(msg: String) =
+          shieldsSvg(subject, msg, color.orElse(Some("lightgrey")), style, logo, logoWidth)
+
+        val res = database.getProject(ref).flatMap {
+          case None => Future.successful(error("project not found"))
+          case Some(project) =>
+            val bv = binaryVersion.flatMap(BinaryVersion.fromLabel)
+            getDefaultArtifact(project, bv, artifactName).map {
+              case None => error("no published artifacts")
+              case Some(artifact) =>
+                shieldsSvg(subject, artifact.version.toString, color, style, logo, logoWidth)
+            }
 
         }
+        onSuccess(res)(identity)
       }
     }
 
@@ -161,23 +148,18 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
       }
     }
 
-  private def getSelectedArtifact(
-      org: Project.Organization,
-      repo: Project.Repository,
-      binaryVersion: Option[String],
+  private def getDefaultArtifact(
+      project: Project,
+      binaryVersion: Option[BinaryVersion],
       artifact: Option[Artifact.Name]
   ): Future[Option[Artifact]] = {
-    val artifactSelection = ArtifactSelection.parse(
-      binaryVersion = binaryVersion,
-      artifactName = artifact
-    )
-    val projectRef = Project.Reference(org, repo)
-    for {
-      project <- database.getProject(projectRef)
-      artifacts <- database.getArtifacts(projectRef)
-      defaultArtifact = project
-        .flatMap(p => artifactSelection.defaultArtifact(artifacts, p))
-    } yield defaultArtifact
+    val artifactSelection = ArtifactSelection(binaryVersion, artifact)
+    database.getArtifacts(project.reference).map { artifacts =>
+      val (releaseArtifacts, nonReleaseArtifacts) = artifacts.partition(_.version.isRelease)
+      artifactSelection
+        .defaultArtifact(releaseArtifacts, project)
+        .orElse(artifactSelection.defaultArtifact(nonReleaseArtifacts, project))
+    }
   }
 }
 

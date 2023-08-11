@@ -224,13 +224,16 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     } yield catsDependents shouldBe 0
   }
 
-  it("should insert and get user session from id") {
+  it("should insert, update and get user session from id") {
     val userId = UUID.randomUUID()
-    val userInfo = UserInfo("login", Some("name"), "", new Secret("token"))
+    val userInfo = UserInfo("login", Some("name"), "", Secret("token"))
     val userState = UserState(Set(Scalafix.reference), Set(Organization("scalacenter")), userInfo)
     for {
-      _ <- database.insertSession(userId, userState)
-      obtained <- database.getSession(userId)
+      _ <- database.insertUser(userId, userInfo)
+      state1 <- database.getUser(userId)
+      _ = state1 shouldBe Some(UserState(Set.empty, Set.empty, userInfo))
+      _ <- database.updateUser(userId, userState)
+      obtained <- database.getUser(userId)
     } yield obtained shouldBe Some(userState)
   }
 
@@ -239,32 +242,21 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     val secondUserId = UUID.randomUUID()
     val firstUserInfo = UserInfo("first login", Some("first name"), "", Secret("firstToken"))
     val secondUserInfo = UserInfo("second login", Some("second name"), "", Secret("secondToken"))
-    val firstUserState = UserState(Set(Scalafix.reference), Set(Organization("scalacenter")), firstUserInfo)
-    val secondUserState = UserState(Set(Cats.reference), Set(Organization("typelevel")), secondUserInfo)
     for {
-      _ <- database.insertSession(firstUserId, firstUserState)
-      _ <- database.insertSession(secondUserId, secondUserState)
-      storedUserStates <- database.getAllSessions()
-    } yield {
-      val userStateMap = storedUserStates.toMap
-      userStateMap.get(firstUserId).map(_.info.token.decode) shouldBe Some("firstToken")
-      userStateMap.get(secondUserId).map(_.info.token.decode) shouldBe Some("secondToken")
-    }
+      _ <- database.insertUser(firstUserId, firstUserInfo)
+      _ <- database.insertUser(secondUserId, secondUserInfo)
+      allUsers <- database.getAllUsers()
+    } yield allUsers should contain theSameElementsAs Seq(firstUserId -> firstUserInfo, secondUserId -> secondUserInfo)
   }
 
   it("should delete by user id") {
     val userId = UUID.randomUUID()
     val userInfo = UserInfo("login", Some("name"), "", new Secret("token"))
-    val userState = UserState(Set(Scalafix.reference), Set(Organization("scalacenter")), userInfo)
     for {
-      _ <- database.insertSession(userId, userState)
-      maybeUserStateBeforeDeletion <- database.getSession(userId)
-      _ <- database.deleteSession(userId)
-      maybeUserStateAfterDeletion <- database.getSession(userId)
-    } yield {
-      maybeUserStateBeforeDeletion shouldBe Some(userState)
-      maybeUserStateAfterDeletion shouldBe None
-    }
+      _ <- database.insertUser(userId, userInfo)
+      _ <- database.deleteUser(userId)
+      obtained <- database.getUser(userId)
+    } yield obtained shouldBe None
   }
 
   it("should return artifact from maven reference") {

@@ -32,6 +32,7 @@ object ElasticsearchMapping {
       .analyzer("standard")
       .fields(keywordField("keyword").normalizer("lowercase")),
     keywordField("artifactNames").normalizer("lowercase"),
+    keywordField("deprecatedArtifactNames").normalizer("lowercase"),
     dateField("creationDate"),
     keywordField("languages"),
     keywordField("platforms"),

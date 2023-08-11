@@ -16,6 +16,7 @@ import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.model.ReleaseDependency
 import scaladex.core.model.SemanticVersion
+import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.web.ArtifactsPageParams
@@ -139,10 +140,11 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def updateArtifacts(allArtifacts: Seq[Artifact], newRef: Project.Reference): Future[Int] = ???
   override def getAllGroupIds(): Future[Seq[Artifact.GroupId]] = ???
   override def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]] = ???
-  override def insertSession(userId: UUID, userState: UserState): Future[Unit] = ???
-  override def getSession(userId: UUID): Future[Option[UserState]] = ???
-  override def getAllSessions(): Future[Seq[(UUID, UserState)]] = ???
-  override def deleteSession(userId: UUID): Future[Unit] = ???
+  override def insertUser(userId: UUID, userInfo: UserInfo): Future[Unit] = ???
+  override def updateUser(userId: UUID, userInfo: UserState): Future[Unit] = ???
+  override def getUser(userId: UUID): Future[Option[UserState]] = ???
+  override def getAllUsers(): Future[Seq[(UUID, UserInfo)]] = ???
+  override def deleteUser(userId: UUID): Future[Unit] = ???
   override def updateArtifactReleaseDate(reference: Artifact.MavenReference, releaseDate: Instant): Future[Int] = ???
 
   override def updateGithubInfoAndStatus(

@@ -22,6 +22,8 @@ object ScalaJs {
   val `1.x`: ScalaJs = ScalaJs(MajorVersion(1))
 
   val stableVersions: Set[ScalaJs] = Set(`0.6`, `1.x`)
+
+  implicit val ordering: Ordering[ScalaJs] = Ordering.by(p => p.asInstanceOf[Platform])
 }
 
 case class SbtPlugin(version: SemanticVersion) extends Platform {
@@ -38,6 +40,8 @@ object SbtPlugin {
   val `0.13`: SbtPlugin = SbtPlugin(MinorVersion(0, 13))
   val `1.0`: SbtPlugin = SbtPlugin(MinorVersion(1, 0))
   val stableVersions: Set[SbtPlugin] = Set(`0.13`, `1.0`)
+
+  implicit val ordering: Ordering[SbtPlugin] = Ordering.by(p => p.asInstanceOf[Platform])
 }
 
 case class ScalaNative(version: SemanticVersion) extends Platform {
@@ -51,6 +55,8 @@ object ScalaNative {
   val `0.4`: ScalaNative = ScalaNative(MinorVersion(0, 4))
 
   val stableVersions: Set[ScalaNative] = Set(`0.3`, `0.4`)
+
+  implicit val ordering: Ordering[ScalaNative] = Ordering.by(p => p.asInstanceOf[Platform])
 }
 
 case class MillPlugin(version: SemanticVersion) extends Platform {
@@ -66,15 +72,17 @@ case class MillPlugin(version: SemanticVersion) extends Platform {
 
 object MillPlugin {
   val `0.10` = MillPlugin(MinorVersion(0, 10))
+
+  implicit val ordering: Ordering[MillPlugin] = Ordering.by(p => p.asInstanceOf[Platform])
 }
 
 object Platform {
   implicit val ordering: Ordering[Platform] = Ordering.by {
-    case Jvm                  => (true, None, None, None, None)
-    case ScalaJs(version)     => (false, Some(version), None, None, None)
-    case ScalaNative(version) => (false, None, Some(version), None, None)
-    case SbtPlugin(version)   => (false, None, None, Some(version), None)
-    case MillPlugin(version)  => (false, None, None, None, Some(version))
+    case Jvm                  => (5, None)
+    case ScalaJs(version)     => (4, Some(version))
+    case ScalaNative(version) => (3, Some(version))
+    case SbtPlugin(version)   => (2, Some(version))
+    case MillPlugin(version)  => (1, Some(version))
   }
 
   def fromLabel(input: String): Option[Platform] =

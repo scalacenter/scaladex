@@ -7,6 +7,7 @@ import scaladex.core.model.Category
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
+import scaladex.core.model.TopicCount
 import scaladex.core.model.search.AwesomeParams
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.PageParams
@@ -21,7 +22,7 @@ trait SearchEngine {
 
   // Front page
   def count(): Future[Int]
-  def countByTopics(limit: Int): Future[Seq[(String, Int)]]
+  def countByTopics(limit: Int): Future[Seq[TopicCount]]
   def countByLanguages(): Future[Seq[(Language, Int)]]
   def countByPlatforms(): Future[Seq[(Platform, Int)]]
   def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]]

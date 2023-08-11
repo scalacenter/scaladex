@@ -78,7 +78,7 @@ class PomsReader(resolver: PomResolver) extends LazyLogging {
   jdk.setProperty("java.version", "1.8") // << ???
 
   def loadOne(path: Path): Try[(ArtifactModel, String)] = {
-    val sha1 = path.getFileName().toString.dropRight(".pom".length)
+    val sha1 = path.getFileName.toString.stripSuffix(".pom")
 
     Try {
       val request = (new DefaultModelBuildingRequest)

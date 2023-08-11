@@ -9,18 +9,9 @@ import scaladex.core.util.Secret
  * @param name the real name of the user
  * @param avatarUrl the avatar icon
  */
-case class UserInfo(
-    login: String,
-    name: Option[String],
-    avatarUrl: String,
-    token: Secret
-) extends AvatarUrl
+case class UserInfo(login: String, name: Option[String], avatarUrl: String, token: Secret) extends AvatarUrl
 
-case class UserState(
-    repos: Set[Project.Reference],
-    orgs: Set[Project.Organization],
-    info: UserInfo
-) {
+case class UserState(repos: Set[Project.Reference], orgs: Set[Project.Organization], info: UserInfo) {
   def isAdmin(env: Env): Boolean = orgs.contains(Project.Organization("scalacenter")) || env.isLocal
   def canEdit(githubRepo: Project.Reference, env: Env): Boolean =
     isAdmin(env) || repos.contains(githubRepo)

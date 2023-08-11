@@ -26,7 +26,6 @@ import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.Json
 import io.circe.syntax._
 import scaladex.core.model.GithubCommitActivity
@@ -217,7 +216,10 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
     val uri = s"https://gitter.im/$ref"
     val request = HttpRequest(uri = uri)
     Http().singleRequest(request).map {
-      case _ @HttpResponse(StatusCodes.OK, _, entity, _) =>
+      case HttpResponse(StatusCodes.OK, _, entity, _) =>
+        entity.discardBytes()
+        Some(uri)
+      case HttpResponse(StatusCodes.Redirection(_), _, entity, _) =>
         entity.discardBytes()
         Some(uri)
       case resp =>

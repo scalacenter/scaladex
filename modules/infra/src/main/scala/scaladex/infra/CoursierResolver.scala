@@ -15,17 +15,29 @@ import coursier.Organization
 import coursier.Repositories
 import coursier.core.Type
 import coursier.error.ResolutionError
+import coursier.maven.SbtMavenRepository
+import scaladex.core.model.Artifact
 import scaladex.core.service.PomResolver
 
-class CoursierResolver()(implicit val ec: ExecutionContext) extends PomResolver with LazyLogging {
+class CoursierResolver(implicit val ec: ExecutionContext) extends PomResolver with LazyLogging {
   private val repositories = Seq(
-    Repositories.central,
-    Repositories.jcenter,
+    SbtMavenRepository(Repositories.central),
+    SbtMavenRepository(Repositories.jcenter),
     Repositories.sbtPlugin("releases")
   )
   private val fetchPoms = Fetch()
     .withArtifactTypes(Set(Type.pom))
     .withRepositories(repositories)
+
+  def resolveSync(ref: Artifact.MavenReference): Path = {
+    val dep = Dependency(Module(Organization(ref.groupId), ModuleName(ref.artifactId)), ref.version)
+      .withPublication(ref.artifactId, Type.pom)
+    fetchPoms
+      .addDependencies(dep)
+      .run()
+      .head
+      .toPath
+  }
 
   def resolve(groupId: String, artifactId: String, version: String): Future[Option[Path]] = {
     val dep = Dependency(Module(Organization(groupId), ModuleName(artifactId)), version)

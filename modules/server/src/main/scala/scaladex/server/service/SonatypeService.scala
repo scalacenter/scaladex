@@ -18,7 +18,7 @@ class SonatypeService(
     extends LazyLogging {
   import SonatypeService._
 
-  def syncAll(): Future[String] =
+  def findMissing(): Future[String] =
     for {
       groupIds <- database.getAllGroupIds()
       // we sort just to estimate through the logs the percentage of progress
@@ -54,10 +54,10 @@ class SonatypeService(
       missingVersions = findMissingVersions(mavenReferenceFromDatabase, mavenReferences)
       _ = if (missingVersions.nonEmpty)
         logger.warn(s"${missingVersions.size} artifacts are missing for ${groupId.value}:${artifactId.value}")
-      missingPomFiles <- missingVersions.map(v => sonatypeService.getPomFile(v).map(_.map(v -> _))).sequence
+      missingPomFiles <- missingVersions.map(ref => sonatypeService.getPomFile(ref).map(_.map(ref -> _))).sequence
       publishResult <- missingPomFiles.flatten.mapSync {
         case (mavenRef, (pomFile, creationDate)) =>
-          publishProcess.publishPom(s"${mavenRef}", pomFile, creationDate, None)
+          publishProcess.publishPom(mavenRef.toString, pomFile, creationDate, None)
       }
     } yield publishResult.count {
       case PublishResult.Success => true

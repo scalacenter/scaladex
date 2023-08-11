@@ -139,8 +139,7 @@ object ArtifactTable {
   def selectLatestArtifacts(mustBeRelease: Boolean): Query[Project.Reference, Artifact] =
     selectRequest1(
       latestDateTable(mustBeRelease),
-      fields.map(c => s"a.$c"),
-      where = Seq("a.organization=?", "a.repository=?")
+      fields.map(c => s"a.$c")
     )
 
   // the latest release date of all artifact IDs
@@ -151,12 +150,14 @@ object ArtifactTable {
       s"AND a.artifact_id=d.artifact_id " +
       s"AND a.release_date=d.release_date)"
 
-  private def selectLatestDate(mustBeRelease: Boolean): Query0[(Artifact.GroupId, String, Instant)] = {
+  private def selectLatestDate(
+      mustBeRelease: Boolean
+  ): Query[Project.Reference, (Artifact.GroupId, String, Instant)] = {
     val isReleaseFilters = if (mustBeRelease) Seq("is_semantic='true'", "is_prerelease='false'") else Seq.empty
-    selectRequest(
+    selectRequest1(
       table,
       Seq("group_id", "artifact_id", "MAX(release_date) as release_date"),
-      where = Seq("release_date IS NOT NULL") ++ isReleaseFilters,
+      where = Seq("release_date IS NOT NULL") ++ isReleaseFilters ++ Seq("organization=?", "repository=?"),
       groupBy = Seq("group_id", "artifact_id")
     )
   }

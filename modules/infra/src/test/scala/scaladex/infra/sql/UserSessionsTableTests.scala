@@ -5,8 +5,9 @@ import org.scalatest.matchers.should.Matchers
 import scaladex.infra.BaseDatabaseSuite
 
 class UserSessionsTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
-  it("check insertOrUpdate")(check(UserSessionsTable.insertOrUpdate))
-  it("check selectUserSessionById")(check(UserSessionsTable.selectUserSessionById))
-  it("check selectAllUserSessions")(check(UserSessionsTable.selectAllUserSessions))
-  it("check deleteByUserId")(check(UserSessionsTable.deleteByUserId))
+  it("check insert")(check(UserSessionsTable.insert))
+  it("check update")(check(UserSessionsTable.update))
+  it("check selectById")(check(UserSessionsTable.selectById))
+  it("check selectAll")(check(UserSessionsTable.selectAll))
+  it("check deleteById")(check(UserSessionsTable.deleteById))
 }

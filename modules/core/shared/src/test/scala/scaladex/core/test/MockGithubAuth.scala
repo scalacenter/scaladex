@@ -31,15 +31,18 @@ object MockGithubAuth extends GithubAuth {
     val userState: UserState = UserState(projects, organizations, info)
   }
 
-  private val users: Map[String, UserState] = Map(
-    Sonatype.token -> Sonatype.userState,
-    Admin.token -> Admin.userState,
-    Typelevel.token -> Typelevel.userState
+  private val users: Map[Secret, UserState] = Map(
+    Secret(Sonatype.token) -> Sonatype.userState,
+    Secret(Admin.token) -> Admin.userState,
+    Secret(Typelevel.token) -> Typelevel.userState
   )
 
-  override def getUserStateWithToken(token: String): Future[UserState] =
-    Future.successful(users(token))
-
-  override def getUserStateWithOauth2(code: String): Future[UserState] =
+  override def getToken(code: String): Future[Secret] =
     ???
+
+  override def getUser(token: Secret): Future[UserInfo] =
+    Future.successful(users(token).info)
+
+  override def getUserState(token: Secret): Future[Option[UserState]] =
+    Future.successful(users.get(token))
 }
