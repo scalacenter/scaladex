@@ -14,6 +14,7 @@ import scaladex.core.model.Project
 import scaladex.core.model.Scala
 import scaladex.core.model.ScalaJs
 import scaladex.core.model.ScalaNative
+import scaladex.core.model.TopicCount
 import scaladex.core.model.search.GithubInfoDocument
 import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.ProjectDocument
@@ -93,7 +94,7 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
   }
 
   "count by topics" in {
-    val expected = Scalafix.githubInfo.topics.toSeq.sorted.map(_ -> 1L)
+    val expected = Scalafix.githubInfo.topics.toSeq.sorted.map(TopicCount(_, 1))
     for {
       _ <- insertAll(projects)
       topics <- searchEngine.countByTopics(10)

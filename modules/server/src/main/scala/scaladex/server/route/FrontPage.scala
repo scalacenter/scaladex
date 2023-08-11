@@ -6,18 +6,13 @@ import scala.concurrent.Future
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import play.twirl.api.HtmlFormat
-import scaladex.core.model.Env
-import scaladex.core.model.MillPlugin
-import scaladex.core.model.Platform
-import scaladex.core.model.SbtPlugin
-import scaladex.core.model.Scala
-import scaladex.core.model.ScalaJs
-import scaladex.core.model.ScalaNative
-import scaladex.core.model.UserState
+import scaladex.core.model._
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 import scaladex.server.TwirlSupport._
 import scaladex.view.html.frontpage
+import scaladex.view.model.EcosystemHighlight
+import scaladex.view.model.EcosystemVersion
 
 class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(implicit ec: ExecutionContext) {
   val limitOfProjects = 12
@@ -42,45 +37,58 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
       latestProjects <- latestProjectsF
     } yield {
 
-      def query(label: String)(xs: String*): String =
-        xs.map(v => s"$label:$v").mkString("search?q=", " OR ", "")
-
-      val ecosystems = Map(
-        "Akka" -> query("topics")(
-          "akka",
-          "akka-http",
-          "akka-persistence",
-          "akka-streams"
-        ),
-        "Scala.js" -> "search?binaryVersions=sjs1",
-        "Spark" -> query("topics")("spark"),
-        "Typelevel" -> "typelevel"
+      val scala3Ecosystem = EcosystemHighlight(
+        "Scala",
+        languages.collect {
+          case (sv @ Scala.`3`, count) =>
+            EcosystemVersion(Scala.`3`.version, count, Url(s"search?languages=${sv.label}"))
+        }
       )
-
-      val RecentScalaVersionsFirst: Ordering[(Scala, Int)] = Scala.ordering.reverse.on(_._1)
-
-      val RecentPlatformVersionsFirst: Ordering[(Platform, Int)] =
-        Platform.ordering.reverse.on(_._1)
-
-      val scalaVersions = languages.collect { case (v: Scala, c) => (v, c) }.sorted(RecentScalaVersionsFirst)
-      val scalaJsVersions = platforms.collect { case (v: ScalaJs, c) => (v, c) }.sorted(RecentPlatformVersionsFirst)
-      val scalaNativeVersions =
-        platforms.collect { case (v: ScalaNative, c) => (v, c) }.sorted(RecentPlatformVersionsFirst)
-      val sbtVersions = platforms.collect { case (v: SbtPlugin, c) => (v, c) }.sorted(RecentPlatformVersionsFirst)
-      val millVersions = platforms.collect { case (v: MillPlugin, c) => (v, c) }.sorted(RecentPlatformVersionsFirst)
+      val scala2Ecosystem = EcosystemHighlight(
+        "Scala",
+        languages.collect {
+          case (sv: Scala, count) if sv.version < Scala.`3`.version =>
+            EcosystemVersion(sv.version, count, Url(s"search?languages=${sv.label}"))
+        }
+      )
+      val scalajsEcosystem = EcosystemHighlight(
+        "Scala.js",
+        platforms.collect {
+          case (sjs: ScalaJs, count) =>
+            EcosystemVersion(sjs.version, count, search = Url(s"search?platforms=${sjs.label}"))
+        }
+      )
+      val scalaNativeEcosystem = EcosystemHighlight(
+        "Scala Native",
+        platforms.collect {
+          case (sn: ScalaNative, count) =>
+            EcosystemVersion(sn.version, count, search = Url(s"search?platforms=${sn.label}"))
+        }
+      )
+      val sbtPluginEcosystem = EcosystemHighlight(
+        "sbt",
+        platforms.collect {
+          case (sbtP: SbtPlugin, count) =>
+            EcosystemVersion(sbtP.version, count, search = Url(s"search?platforms=${sbtP.label}"))
+        }
+      )
+      val millPluginEcosystem = EcosystemHighlight(
+        "Mill",
+        platforms.collect {
+          case (millP: MillPlugin, count) =>
+            EcosystemVersion(millP.version, count, search = Url(s"search?platforms=${millP.label}"))
+        }
+      )
 
       frontpage(
         env,
         topics,
-        scalaVersions,
-        scalaJsVersions,
-        scalaNativeVersions,
-        sbtVersions,
-        millVersions,
+        Seq(scala3Ecosystem, scala2Ecosystem).flatten,
+        Seq(scalajsEcosystem, scalaNativeEcosystem).flatten,
+        Seq(sbtPluginEcosystem, millPluginEcosystem).flatten,
         latestProjects,
         mostDependedUpon,
         userInfo,
-        ecosystems,
         totalProjects,
         totalArtifacts
       )
