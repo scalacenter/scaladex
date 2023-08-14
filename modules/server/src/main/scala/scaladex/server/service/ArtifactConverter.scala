@@ -104,7 +104,7 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
               case Some((scalaVersion, sbtVersion)) =>
                 Some(
                   ArtifactMeta(
-                    artifactName = pom.artifactId,
+                    artifactName = pom.artifactId.stripSuffix(s"_${rawScalaVersion}_$rawSbtVersion"),
                     binaryVersion = BinaryVersion(SbtPlugin(sbtVersion), Scala(scalaVersion)),
                     isNonStandard = false
                   )

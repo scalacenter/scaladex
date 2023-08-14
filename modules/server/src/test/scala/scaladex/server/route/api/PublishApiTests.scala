@@ -1,7 +1,4 @@
 package scaladex.server.route.api
-
-import java.nio.file.Path
-
 import scala.concurrent.duration.DurationInt
 
 import akka.http.scaladsl.model.ContentTypes
@@ -9,22 +6,17 @@ import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.model.headers.BasicHttpCredentials
 import akka.http.scaladsl.testkit.RouteTestTimeout
-import coursier.Dependency
-import coursier.Fetch
-import coursier.Module
-import coursier.ModuleName
-import coursier.Organization
-import coursier.core.Type
 import org.scalatest.BeforeAndAfterEach
-import scaladex.core.model.Artifact
 import scaladex.core.model.Env
 import scaladex.core.test.MockGithubAuth
 import scaladex.core.test.Values._
+import scaladex.infra.CoursierResolver
 import scaladex.server.route.ControllerBaseSuite
 import scaladex.server.route.api.PublishApi
 import scaladex.server.service.PublishProcess
 
 class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
+  val pomResolver = new CoursierResolver
   val publishProcess: PublishProcess = PublishProcess(dataPaths, localStorage, database, Env.Dev)
   val publishApi = new PublishApi(githubAuth, publishProcess)
 
@@ -36,7 +28,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
 
   it("sonatype should publish any artifact") {
     implicit val customTimeout = RouteTestTimeout(2.seconds)
-    val pomFile = downloadPom(Cats.`core_3:2.6.1`)
+    val pomFile = pomResolver.resolveSync(Cats.`core_3:2.6.1`.mavenReference)
     val creationDate = Cats.`core_3:2.6.1`.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
     val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity)
@@ -50,7 +42,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
   }
 
   it("admin should publish any artifact") {
-    val pomFile = downloadPom(Cats.`core_3:2.7.0`)
+    val pomFile = pomResolver.resolveSync(Cats.`core_3:2.7.0`.mavenReference)
     val creationDate = Cats.`core_3:2.7.0`.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
     val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity)
@@ -64,7 +56,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
   }
 
   it("owner should publish artifact of its project") {
-    val pomFile = downloadPom(Cats.`core_sjs1_3:2.6.1`)
+    val pomFile = pomResolver.resolveSync(Cats.`core_sjs1_3:2.6.1`.mavenReference)
     val creationDate = Cats.`core_sjs1_3:2.6.1`.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
     val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity)
@@ -78,7 +70,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
   }
 
   it("user should not publish artifcat of project it does not own") {
-    val pomFile = downloadPom(Scalafix.artifact)
+    val pomFile = pomResolver.resolveSync(Scalafix.artifact.mavenReference)
     val creationDate = Scalafix.artifact.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
     val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity)
@@ -91,22 +83,18 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
     }
   }
 
-  def downloadPom(artifact: Artifact): Path = {
-    val dep =
-      Dependency(
-        Module(Organization(artifact.groupId.value), ModuleName(artifact.artifactId)),
-        artifact.version.toString
-      )
-        .withPublication(
-          artifact.artifactId,
-          Type.pom
-        ) // needed to download the pom file (see https://github.com/coursier/coursier/issues/2029#issuecomment-1012033951)
-
-    Fetch()
-      .withArtifactTypes(Set(Type.pom))
-      .withDependencies(Seq(dep))
-      .run()
-      .head
-      .toPath
+  it("publish sbt plugin with cross version") {
+    implicit val customTimeout = RouteTestTimeout(2.minutes)
+    val pomFile = pomResolver.resolveSync(SbtCrossProject.mavenReference)
+    val creationDate = SbtCrossProject.creationDate.getEpochSecond
+    val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
+    val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity).addCredentials(admin)
+    request ~> publishApi.routes ~> check {
+      for (artifacts <- database.getArtifacts(SbtCrossProject.reference))
+        yield {
+          val mavenRefs = artifacts.map(_.mavenReference)
+          mavenRefs should contain theSameElementsAs Seq(SbtCrossProject.mavenReference)
+        }
+    }
   }
 }

@@ -63,33 +63,38 @@ class SonatypeClientImpl()(implicit val system: ActorSystem)
     val uri = s"$sonatypeUri/${groupId.mavenUrl}/${artifactId.value}/"
     val request = HttpRequest(uri = uri)
 
-    (for {
+    val future = for {
       responseFuture <- queueRequest(request)
       page <- Unmarshaller.stringUnmarshaller(responseFuture.entity)
       versions = JsoupUtils.listDirectories(uri, page)
       versionParsed = versions.flatMap(SemanticVersion.parse)
-    } yield versionParsed)
-      .recoverWith {
-        case NonFatal(exception) =>
-          logger.warn(s"failed to retrieve versions from $uri because ${exception.getMessage}")
-          Future.successful(Nil)
-      }
+    } yield versionParsed
+    future.recoverWith {
+      case NonFatal(exception) =>
+        logger.warn(s"failed to retrieve versions from $uri because ${exception.getMessage}")
+        Future.successful(Nil)
+    }
   }
 
-  override def getPomFile(mavenReference: Artifact.MavenReference): Future[Option[(String, Instant)]] =
-    for {
+  override def getPomFile(mavenReference: Artifact.MavenReference): Future[Option[(String, Instant)]] = {
+    val future = for {
       responseOpt <- getHttpResponse(mavenReference)
       res <- responseOpt.map(getPomFileWithLastModifiedTime).getOrElse(Future.successful(None))
     } yield res
+    future.recoverWith {
+      case NonFatal(exception) =>
+        logger.warn(s"Could not get pom file of $mavenReference because of $exception")
+        Future.successful(None)
+    }
+  }
 
   private def getPomFileWithLastModifiedTime(response: HttpResponse): Future[Option[(String, Instant)]] =
     response match {
       case _ @HttpResponse(StatusCodes.OK, headers: Seq[model.HttpHeader], entity, _) =>
-        for {
-          page <- Unmarshaller.stringUnmarshaller(entity)
-        } yield headers
-          .find(_.is("last-modified"))
-          .map(header => page -> format(header.value))
+        val lastModified = headers.find(_.is("last-modified")).map(header => parseDate(header.value))
+        Unmarshaller
+          .stringUnmarshaller(entity)
+          .map(page => lastModified.map(page -> _))
       case _ => Future.successful(None)
     }
 
@@ -110,10 +115,8 @@ class SonatypeClientImpl()(implicit val system: ActorSystem)
   }
 
   // Wed, 04 Nov 2020 23:36:02 GMT
-  private val df = DateTimeFormatter
-    .ofPattern("E, dd MMM yyyy HH:mm:ss z")
-
-  private def format(i: String) = ZonedDateTime.parse(i, df).toInstant
+  private val dateFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
+  private[infra] def parseDate(dateStr: String): Instant = ZonedDateTime.parse(dateStr, dateFormatter).toInstant
 
   private def getPomUrl(artifactId: Artifact.ArtifactId, version: String): String =
     artifactId.binaryVersion.platform match {
