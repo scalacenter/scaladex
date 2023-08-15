@@ -225,7 +225,7 @@ lazy val data = project
       "com.typesafe.akka" %% "akka-actor-typed" % V.akka,
       "com.typesafe.akka" %% "akka-serialization-jackson" % V.akka,
       "com.typesafe.akka" %% "akka-slf4j" % V.akka,
-      "org.apache.maven" % "maven-model-builder" % "3.9.3",
+      "org.apache.maven" % "maven-model-builder" % "3.9.4",
       "org.jsoup" % "jsoup" % "1.16.1",
       "org.apache.ivy" % "ivy" % "2.5.1",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttp,
