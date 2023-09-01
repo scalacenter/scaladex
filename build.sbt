@@ -168,7 +168,7 @@ lazy val server = project
       "com.typesafe.akka" %% "akka-stream-testkit" % V.akka % Test,
       "com.typesafe.akka" %% "akka-http-testkit" % V.akkaHttp % Test,
       "ch.megard" %% "akka-http-cors" % "1.2.0",
-      "com.softwaremill.akka-http-session" %% "core" % "0.7.0",
+      "com.softwaremill.akka-http-session" %% "core" % "0.7.1",
       "com.typesafe.akka" %% "akka-http" % V.akkaHttp,
       "org.endpoints4s" %% "akka-http-server" % "7.2.0",
       "org.webjars" % "bootstrap-sass" % "3.4.1",
