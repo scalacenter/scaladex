@@ -249,5 +249,5 @@ lazy val V = new {
   val scalatest = "3.2.16"
   val circe = "0.14.5"
   val json4s = "4.0.6"
-  val coursier = "2.1.5"
+  val coursier = "2.1.6"
 }
