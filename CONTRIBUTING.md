@@ -123,11 +123,11 @@ Locally, we do not receive any POM files, instead we use the `data / run init` t
 
 While running, the server executes some scheduled jobs periodically to update the information of the projects and to synchronize the search engine:
 Here are some examples of scheduled jobs:
-- Github updater: Update information about the projects form Github.
-- Project dependencies updater: Compute the dependencies of a project from the dependencies of its artifacts.
-- Search synchronizer: Update the content of the Elasticsearch index.
+- github-info: Update information about the projects form Github.
+- project-dependencies: Compute the dependencies of a project from the dependencies of its artifacts.
+- sync-search: Update the content of the Elasticsearch index.
 
-Check out the [SchedulerService](https://github.com/scalacenter/scaladex/blob/main/modules/server/src/main/scala/scaladex/server/service/SchedulerService.scala) class to have a complete list of all the scheduled jobs.
+Check out the [Job](https://github.com/scalacenter/scaladex/blob/main/modules/template/src/main/scala/scaladex/view/Job.scala) class to have a complete list of all the scheduled jobs.
 
 The main and search pages are computed with information coming from Elasticsearch.
 The project and artifact pages contain data from the SQL database.
