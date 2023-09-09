@@ -17,7 +17,7 @@
   directDependencies: Map[Project.Reference, (ArtifactDependency.Scope, Seq[SemanticVersion])],
   reverseDependency: Map[Project.Reference, (ArtifactDependency.Scope, SemanticVersion)],
 )
-@main(env, title = project.repository.value, user, extraMeta = project.twitterCard.toHeadMeta ++ project.ogp.toHeadMeta) {
+@main(env, title = project.repository.value, user, extraMeta = project.twitterCard.toHeadMeta, extraMetaProperty = project.ogp.toHeadMetaProperty) {
   <main id="container-project">
     @headproject(env, user, project, header, "Project")
     <div class="container">

@@ -18,12 +18,13 @@ case class OGP(
 ) {
   val `type`: String = "article"
   val siteName: String = "Scaladex"
-  def toHeadMeta: Seq[HeadMeta] = Seq(
-    HeadMeta(name = "og:title", content = title),
-    HeadMeta(name = "og:url", content = url.target),
-    HeadMeta(name = "og:description", content = description),
-    HeadMeta(name = "og:site_name", content = siteName)
-  ) ++ image.map(c => HeadMeta(name = "og:image", content = c.target)) ++ imageAlt.map(c =>
-    HeadMeta(name = "og:image:alt", c)
+  def toHeadMetaProperty: Seq[HeadMetaProperty] = Seq(
+    HeadMetaProperty(property = "og:title", content = title),
+    HeadMetaProperty(property = "og:url", content = url.target),
+    HeadMetaProperty(property = "og:type", content = `type`),
+    HeadMetaProperty(property = "og:description", content = description),
+    HeadMetaProperty(property = "og:site_name", content = siteName)
+  ) ++ image.map(c => HeadMetaProperty(property = "og:image", content = c.target)) ++ imageAlt.map(c =>
+    HeadMetaProperty(property = "og:image:alt", c)
   )
 }
