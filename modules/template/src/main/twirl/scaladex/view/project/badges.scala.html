@@ -15,7 +15,7 @@
   header: ProjectHeader,
   artifact: Artifact
 )
-@main(env, title = project.repository.value, user, extraMeta = project.twitterCard.toHeadMeta) {
+@main(env, title = project.repository.value, user, extraMeta = project.twitterCard.toHeadMeta ++ project.ogp.toHeadMeta) {
   <main id="container-project">
     @headproject(env, user, project, header, "Badges")
     <div class="container">

@@ -28,6 +28,16 @@ case class Project(
     githubInfo.flatMap(_.logo)
   )
 
+  /**
+    * This is used in embedding to another website to render the card of a scaladex project link.
+    */
+  def ogp: OGP = OGP(
+    title = s"Scaladex - ${organization.toString()} / ${repository.toString()}",
+    url = Url(s"https://index.scala-lang.org/${organization.toString()}/${repository.toString()}"),
+    description = githubInfo.flatMap(_.description).getOrElse(""),
+    image = githubInfo.flatMap(_.logo).orElse(Some(Url("https://index.scala-lang.org/assets/img/scaladex-brand.svg"))),
+  )
+
   def scaladoc(artifact: Artifact): Option[DocumentationLink] =
     settings.customScalaDoc
       .map(DocumentationPattern("Scaladoc", _).eval(artifact))
