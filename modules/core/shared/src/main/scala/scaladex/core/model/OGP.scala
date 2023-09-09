@@ -20,7 +20,7 @@ case class OGP(
   val siteName: String = "Scaladex"
   def toHeadMeta: Seq[HeadMeta] = Seq(
     HeadMeta(name = "og:title", content = title),
-    HeadMeta(name = "og:url", content = url.toString()),
+    HeadMeta(name = "og:url", content = url.target),
     HeadMeta(name = "og:description", content = description),
     HeadMeta(name = "og:site_name", content = siteName)
   ) ++ image.map(c => HeadMeta(name = "og:image", content = c.target)) ++ imageAlt.map(c =>
