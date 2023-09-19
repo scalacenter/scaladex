@@ -1,6 +1,7 @@
 @import scaladex.core.model.search.SearchParams
 @import scaladex.core.model.UserState
 @import scaladex.core.model.HeadMeta
+@import scaladex.core.model.HeadMetaProperty
 @import scaladex.core.model.Env
 
 @(
@@ -10,6 +11,7 @@
   showSearch: Boolean = true,
   params: SearchParams = SearchParams(), you: Boolean = false,
   extraMeta: Seq[HeadMeta] = Seq.empty,
+  extraMetaProperty: Seq[HeadMetaProperty] = Seq.empty,
   totalProjects: Option[Long] = None, totalArtifacts: Option[Long] = None
 )(content: Html)
 <!DOCTYPE HTML>
@@ -46,6 +48,9 @@
 
     @for(meta <- extraMeta) {
       <meta name="@meta.name" content="@meta.content">
+    }
+    @for(meta <- extraMetaProperty) {
+      <meta property="@meta.property" content="@meta.content">
     }
   </head>
 
