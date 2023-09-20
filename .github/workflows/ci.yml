@@ -12,14 +12,14 @@ jobs:
     name: Scalafmt and Scalafix
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: coursier/setup-action@v1
       - run: sbt "scalafixAll --check"
       - run: ./bin/scalafmt --test
   unit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - uses: coursier/setup-action@v1
@@ -35,7 +35,7 @@ jobs:
   integration:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - uses: coursier/setup-action@v1
