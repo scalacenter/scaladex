@@ -262,6 +262,30 @@ object DoobieUtils {
         case (repos, orgs, info) => UserState(repos, orgs, info)
       }
 
+    implicit val readArtifact: Read[scaladex.core.model.Artifact] = ???
+    implicit val writeArtifact: Write[scaladex.core.model.Artifact] = ???
+
+    implicit val writeArtifactName: Write[scaladex.core.model.Artifact.Name] = ???
+    implicit val readArtifactName: Read[scaladex.core.model.Artifact.Name] = ???
+    implicit val writePlatform: Write[scaladex.core.model.Platform] = ???
+    implicit val readPlatform: Read[scaladex.core.model.Platform] = ???
+    implicit val writeArtifactMavenRef: Write[scaladex.core.model.Artifact.MavenReference] = ???
+    implicit val readArtifactMavenRef: Read[scaladex.core.model.Artifact.MavenReference] = ???
+    implicit val writeArtifactGId: Write[scaladex.core.model.Artifact.GroupId] = ???
+    implicit val readArtifactGId: Read[scaladex.core.model.Artifact.GroupId] = ???
+    implicit val writeSemV: Write[scaladex.core.model.SemanticVersion] = ???
+    implicit val readSemV: Read[scaladex.core.model.SemanticVersion] = ???
+    implicit val writeBinV: Write[scaladex.core.model.BinaryVersion] = ???
+    implicit val readBinV: Read[scaladex.core.model.BinaryVersion] = ???
+    implicit val writeReleaseD: Write[scaladex.core.model.ReleaseDependency] = ???
+    implicit val readReleaseD: Read[scaladex.core.model.ReleaseDependency] = ???
+    implicit val writeRelease: Write[scaladex.core.model.Release] = ???
+    implicit val readRelease: Read[scaladex.core.model.Release] = ???
+
+
+    implicit val readProjectOrg: Read[scaladex.core.model.Project.Organization] = ???
+    implicit val readProjectRepo: Read[scaladex.core.model.Project.Repository] = ???
+
     private def toJson[A](v: A)(implicit e: Encoder[A]): String =
       e.apply(v).noSpaces
 

@@ -26,10 +26,12 @@ import scaladex.core.service.WebDatabase
 
 object OldSearchApi {
   implicit val formatProject: OFormat[Project] =
-    Json.format[Project]
+    // Json.format[Project]
+    ???
 
   implicit val formatArtifactOptions: OFormat[ArtifactOptions] =
-    Json.format[ArtifactOptions]
+    // Json.format[ArtifactOptions]
+    ???
 
   case class Project(
       organization: String,
@@ -125,7 +127,7 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(
                   val result = searchEngine
                     .find(q, binaryVersion, cli, pageParams)
                     .map(page => page.items.map(p => convert(p)))
-                  complete(OK, result)
+                  complete(OK, result)(using ??? /* TODO: source of crasher */)
 
                 case None =>
                   val errorMessage =

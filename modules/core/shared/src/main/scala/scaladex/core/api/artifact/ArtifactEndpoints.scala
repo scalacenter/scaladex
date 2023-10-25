@@ -15,7 +15,7 @@ trait ArtifactEndpoints
   ) & qs[Option[String]](
     name = "platform",
     docs = Some("Filter the results matching the given platform only (e.g., 'jvm', 'sjs1', 'native0.4', 'sbt1.0')")
-  )).xmap((ArtifactParams.apply _).tupled)(Function.unlift(ArtifactParams.unapply))
+  )).xmap((ArtifactParams.apply _).tupled)({ case ps: ArtifactParams => (ps.maybeLanguage, ps.maybePlatform) })
 
   val artifactMetadataEndpointParams: Path[ArtifactMetadataParams] = (segment[String](
     name = "group_id",
@@ -27,7 +27,8 @@ trait ArtifactEndpoints
     docs = Some(
       "Filter the results matching the given artifact id only (e.g., 'cats-core_3', 'cats-core_sjs0.6_2.13')"
     )
-  )).xmap(ArtifactMetadataParams.tupled)(Function.unlift(ArtifactMetadataParams.unapply))
+  // )).xmap(ArtifactMetadataParams.tupled)(Function.unlift(ArtifactMetadataParams.unapply))
+  )).xmap((ArtifactMetadataParams.apply).tupled)({ case md: ArtifactMetadataParams => (md.groupId, md.artifactId) })
 
   // Artifact endpoint definition
   val artifact: Endpoint[ArtifactParams, Page[ArtifactResponse]] =

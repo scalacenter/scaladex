@@ -22,7 +22,7 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 
 abstract class CommonAkkaHttpClient(implicit system: ActorSystem) extends FailFastCirceSupport {
 
-  val poolClientFlow: Flow[
+  lazy val poolClientFlow: Flow[
     (HttpRequest, Promise[HttpResponse]),
     (Try[HttpResponse], Promise[HttpResponse]),
     Http.HostConnectionPool

@@ -8,7 +8,6 @@ import fastparse.P
 import fastparse.Start
 import fastparse._
 import scaladex.core.api.artifact.ArtifactMetadataResponse
-import scaladex.core.model.PatchVersion
 import scaladex.core.util.Parsers._
 
 /**

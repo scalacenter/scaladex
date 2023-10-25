@@ -152,8 +152,8 @@ object AxisOptions {
       .literal(
         `type` = `type`,
         ticks = ticks,
-        min = min,
-        max = max
+        min = min.asInstanceOf[js.Any],
+        max = max.asInstanceOf[js.Any]
       )
       .asInstanceOf[AxisOptions]
 }

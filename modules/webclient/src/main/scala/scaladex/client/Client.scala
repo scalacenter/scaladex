@@ -42,8 +42,8 @@ object Client {
 
     val request = new Request(
       s"https://api.github.com/repos/$organization/$repository/readme",
-      new RequestInit {
-        headers = headersWithCreds.toJSDictionary
+      new RequestInit { self =>
+        self.headers = headersWithCreds.toJSDictionary
       }
     )
     fetch(request).toFuture
@@ -112,8 +112,8 @@ object Client {
 
         val request = new Request(
           s"https://api.github.com/repos/$organization/$repository/issues?state=open&labels=$label",
-          new RequestInit {
-            headers = headersWithCreds.toJSDictionary
+          new RequestInit { self =>
+            self.headers = headersWithCreds.toJSDictionary
           }
         )
 

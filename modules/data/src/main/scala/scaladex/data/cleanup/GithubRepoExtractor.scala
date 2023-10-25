@@ -5,6 +5,8 @@ import scala.io.Source
 import scala.util.Using
 import scala.util.matching.Regex
 
+import org.json4s.given
+
 import org.json4s.CustomSerializer
 import org.json4s.DefaultFormats
 import org.json4s.Formats
