@@ -1,5 +1,6 @@
 package scaladex.client
 
+import scala.concurrent.Future
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.UndefOr
@@ -47,7 +48,13 @@ object Client {
       }
     )
     fetch(request).toFuture
-      .flatMap(res => res.text().toFuture)
+      .flatMap { res =>
+        if (res.status == 200) {
+          res.text().toFuture
+        } else {
+          Future.successful("No README found for this project, please check the repository")
+        }
+      }
       .foreach { res =>
         element.innerHTML = res
 
