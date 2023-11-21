@@ -33,38 +33,6 @@ object Client {
 
   private def fetchAndReplaceReadme(element: Element, token: Option[String]): Unit = {
 
-    def getLogoAndSetHTML(branch: String, organization: String, repository: String) = {
-      val root = s"https://github.com/$organization/$repository"
-      val raw = s"$root/raw/$branch"
-      val blob = s"$root/blob/$branch"
-
-      element
-        .querySelectorAll("img,a")
-        .filter(e => !Seq("href", "src").flatMap(a => Option(e.getAttribute(a))).head.startsWith("http"))
-        .foreach { e =>
-          val (at, newBase) =
-            if (e.tagName == "A") {
-              val attr = "href"
-              val href =
-                if (e.getAttribute(attr).startsWith("#")) root
-                else blob
-
-              e.setAttribute("target", "_blank")
-              (attr, href)
-            } else ("src", raw)
-
-          Option(e.getAttribute(at))
-            .foreach { oldUrl =>
-              if (oldUrl.nonEmpty) {
-                val newUrl =
-                  if (!oldUrl.startsWith("/")) s"$newBase/$oldUrl"
-                  else s"$newBase$oldUrl"
-                e.setAttribute(at, newUrl)
-              }
-            }
-        }
-    }
-
     val organization = element.attributes.getNamedItem("data-organization").value
     val repository = element.attributes.getNamedItem("data-repository").value
     val headers = Map("Accept" -> "application/vnd.github.VERSION.html")
@@ -74,37 +42,72 @@ object Client {
         .map(t => headers + ("Authorization" -> s"bearer $t"))
         .getOrElse(headers)
 
-    val readmeRequest: Request = new Request(
-      s"https://api.github.com/repos/$organization/$repository/readme",
-      new RequestInit {
-        headers = headersWithCreds.toJSDictionary
-      }
-    )
-
-    val repoRequest: Request = new Request(
-      s"https://api.github.com/repos/$organization/$repository",
-      new RequestInit {
-        headers = headersWithCreds.toJSDictionary
-      }
-    )
-
-    def setReadme(): Future[Unit] = fetch(readmeRequest).toFuture
-      .flatMap { res =>
-        if (res.status == 200) {
-          res.text().toFuture
-        } else {
-          Future.successful("No README found for this project, please check the repository")
+    def setReadme(): Future[Unit] = {
+      val readmeRequest: Request = new Request(
+        s"https://api.github.com/repos/$organization/$repository/readme",
+        new RequestInit {
+          headers = headersWithCreds.toJSDictionary
         }
-      }
-      .flatMap(res => Future { element.innerHTML = res })
+      )
 
-    def setLogo(): Future[Unit] = fetch(repoRequest).toFuture
-      .flatMap(res => res.text().toFuture)
-      .flatMap { res =>
-        val resJson = js.JSON.parse(res)
-        val branch = resJson.asInstanceOf[Repo].default_branch
-        Future(getLogoAndSetHTML(branch, organization, repository))
+      fetch(readmeRequest).toFuture
+        .flatMap { res =>
+          if (res.status == 200) {
+            res.text().toFuture
+          } else {
+            Future.successful("No README found for this project, please check the repository")
+          }
+        }
+        .flatMap(res => Future { element.innerHTML = res })
+    }
+
+    def setLogo(): Future[Unit] = {
+      def getLogoAndSetHTML(branch: String, organization: String, repository: String): Unit = {
+        val root = s"https://github.com/$organization/$repository"
+        val raw = s"$root/raw/$branch"
+        val blob = s"$root/blob/$branch"
+
+        element
+          .querySelectorAll("img,a")
+          .filter(e => !Seq("href", "src").flatMap(a => Option(e.getAttribute(a))).head.startsWith("http"))
+          .foreach { e =>
+            val (at, newBase) =
+              if (e.tagName == "A") {
+                val attr = "href"
+                val href =
+                  if (e.getAttribute(attr).startsWith("#")) root
+                  else blob
+
+                e.setAttribute("target", "_blank")
+                (attr, href)
+              } else ("src", raw)
+
+            Option(e.getAttribute(at))
+              .foreach { oldUrl =>
+                if (oldUrl.nonEmpty) {
+                  val newUrl =
+                    if (!oldUrl.startsWith("/")) s"$newBase/$oldUrl"
+                    else s"$newBase$oldUrl"
+                  e.setAttribute(at, newUrl)
+                }
+              }
+          }
       }
+
+      val repoRequest: Request = new Request(
+        s"https://api.github.com/repos/$organization/$repository",
+        new RequestInit {
+          headers = headersWithCreds.toJSDictionary
+        }
+      )
+      fetch(repoRequest).toFuture
+        .flatMap(res => res.text().toFuture)
+        .flatMap { res =>
+          val resJson = js.JSON.parse(res)
+          val branch = resJson.asInstanceOf[Repo].default_branch
+          Future(getLogoAndSetHTML(branch, organization, repository))
+        }
+    }
 
     for {
       _ <- setReadme()
