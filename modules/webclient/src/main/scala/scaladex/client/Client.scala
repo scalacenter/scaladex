@@ -101,7 +101,13 @@ object Client {
         }
       )
       fetch(repoRequest).toFuture
-        .flatMap(res => res.text().toFuture)
+        .flatMap { res =>
+          if (res.status == 200) {
+            res.text().toFuture
+          } else {
+            Future.successful("{\"default_branch\": \"master\"}")
+          }
+        }
         .flatMap { res =>
           val resJson = js.JSON.parse(res)
           val branch = resJson.asInstanceOf[Repo].default_branch
