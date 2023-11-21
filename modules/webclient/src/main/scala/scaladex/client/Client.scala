@@ -74,21 +74,21 @@ object Client {
         .map(t => headers + ("Authorization" -> s"bearer $t"))
         .getOrElse(headers)
 
-    val readmeRequest = new Request(
+    val readmeRequest: Request = new Request(
       s"https://api.github.com/repos/$organization/$repository/readme",
       new RequestInit {
         headers = headersWithCreds.toJSDictionary
       }
     )
 
-    val repoRequest = new Request(
+    val repoRequest: Request = new Request(
       s"https://api.github.com/repos/$organization/$repository",
       new RequestInit {
         headers = headersWithCreds.toJSDictionary
       }
     )
 
-    def setReadme() = fetch(readmeRequest).toFuture
+    def setReadme(): Future[Unit] = fetch(readmeRequest).toFuture
       .flatMap { res =>
         if (res.status == 200) {
           res.text().toFuture
@@ -98,7 +98,7 @@ object Client {
       }
       .flatMap(res => Future { element.innerHTML = res })
 
-    def setLogo() = fetch(repoRequest).toFuture
+    def setLogo(): Future[Unit] = fetch(repoRequest).toFuture
       .flatMap(res => res.text().toFuture)
       .flatMap { res =>
         val resJson = js.JSON.parse(res)
