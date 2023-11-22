@@ -109,9 +109,7 @@ object Client {
             res.text().toFuture.map(extractDefaultBranch)
           } else { Future.successful("master") }
         }
-        .map { branch =>
-          fixImages(branch, organization, repository)
-        }
+        .map(branch => fixImages(branch, organization, repository))
     }
 
     for {
