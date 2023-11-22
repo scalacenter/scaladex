@@ -26,7 +26,13 @@ object Client {
       }
     }
 
+  @js.native
+  trait Repo extends js.Object {
+    val default_branch: String = js.native
+  }
+
   private def fetchAndReplaceReadme(element: Element, token: Option[String]): Unit = {
+
     val organization = element.attributes.getNamedItem("data-organization").value
     val repository = element.attributes.getNamedItem("data-repository").value
     val headers = Map("Accept" -> "application/vnd.github.VERSION.html")
@@ -36,27 +42,33 @@ object Client {
         .map(t => headers + ("Authorization" -> s"bearer $t"))
         .getOrElse(headers)
 
-    val root = s"https://github.com/$organization/$repository"
-    def base(v: String) = s"$root/$v/master"
-    val raw = base("raw")
-    val blob = base("blob")
-
-    val request = new Request(
-      s"https://api.github.com/repos/$organization/$repository/readme",
-      new RequestInit {
-        headers = headersWithCreds.toJSDictionary
-      }
-    )
-    fetch(request).toFuture
-      .flatMap { res =>
-        if (res.status == 200) {
-          res.text().toFuture
-        } else {
-          Future.successful("No README found for this project, please check the repository")
+    def setReadme(): Future[Unit] = {
+      val readmeRequest: Request = new Request(
+        s"https://api.github.com/repos/$organization/$repository/readme",
+        new RequestInit {
+          headers = headersWithCreds.toJSDictionary
         }
-      }
-      .foreach { res =>
-        element.innerHTML = res
+      )
+
+      fetch(readmeRequest).toFuture
+        .flatMap { res =>
+          if (res.status == 200) {
+            res.text().toFuture
+          } else {
+            Future.successful("No README found for this project, please check the repository")
+          }
+        }
+        .map(res => element.innerHTML = res)
+    }
+
+    def getDefaultBranchAndFixImages(): Future[Unit] = {
+      def extractDefaultBranch(text: String): String =
+        js.JSON.parse(text).asInstanceOf[Repo].default_branch
+
+      def fixImages(branch: String, organization: String, repository: String): Unit = {
+        val root = s"https://github.com/$organization/$repository"
+        val raw = s"$root/raw/$branch"
+        val blob = s"$root/blob/$branch"
 
         element
           .querySelectorAll("img,a")
@@ -84,6 +96,31 @@ object Client {
               }
           }
       }
+
+      val repoRequest: Request = new Request(
+        s"https://api.github.com/repos/$organization/$repository",
+        new RequestInit {
+          headers = headersWithCreds.toJSDictionary
+        }
+      )
+      fetch(repoRequest).toFuture
+        .flatMap { res =>
+          if (res.status == 200) {
+            res.text().toFuture.map(extractDefaultBranch)
+          } else { Future.successful("master") }
+        }
+        .map { res =>
+          val resJson = js.JSON.parse(res)
+          val branch = resJson.asInstanceOf[Repo].default_branch
+          fixImages(branch, organization, repository)
+        }
+    }
+
+    for {
+      _ <- setReadme()
+      _ <- getDefaultBranchAndFixImages()
+    } yield ()
+
   }
 
   @js.native
