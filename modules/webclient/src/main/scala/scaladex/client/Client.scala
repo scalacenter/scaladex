@@ -109,9 +109,7 @@ object Client {
             res.text().toFuture.map(extractDefaultBranch)
           } else { Future.successful("master") }
         }
-        .map { res =>
-          val resJson = js.JSON.parse(res)
-          val branch = resJson.asInstanceOf[Repo].default_branch
+        .map { branch =>
           fixImages(branch, organization, repository)
         }
     }
