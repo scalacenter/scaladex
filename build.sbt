@@ -203,8 +203,8 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
       "com.lihaoyi" %%% "fastparse" % "2.3.3",
       "io.github.cquiroz" %%% "scala-java-time" % "2.5.0",
       "com.typesafe.play" %%% "play-json" % V.playJson,
-      "org.endpoints4s" %%% "algebra" % "1.10.0",
-      "org.endpoints4s" %% "json-schema-playjson" % "1.10.0" % Test,
+      "org.endpoints4s" %%% "algebra" % "1.11.1",
+      "org.endpoints4s" %% "json-schema-playjson" % "1.11.1" % Test,
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
       "org.jsoup" % "jsoup" % "1.16.2"
     ) ++ Seq(
