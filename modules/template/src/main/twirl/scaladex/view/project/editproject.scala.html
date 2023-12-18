@@ -8,7 +8,7 @@
 @import scaladex.core.model.SemanticVersion
 @import scaladex.view.model.ProjectHeader
 
-@(env: Env, user: UserState, project: Project, header: ProjectHeader, artifacts: Seq[Artifact])
+@(env: Env, user: UserState, project: Project, header: Option[ProjectHeader], artifacts: Seq[Artifact])
 
 @artifactNames = @{ artifacts.map(_.artifactName).distinct }
 @main(env, title = s"Edit ${project.repository}", Some(user)) {

@@ -17,7 +17,7 @@
 )
 @main(env, title = project.repository.value, user, extraMeta = project.twitterCard.toHeadMeta, extraMetaProperty = project.ogp.toHeadMetaProperty) {
   <main id="container-project">
-    @headproject(env, user, project, header, "Badges")
+    @headproject(env, user, project, Some(header), "Badges")
     <div class="container">
       <div class="content-project box project-badges">
         <section class="badge-section" id="latest">
