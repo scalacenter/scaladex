@@ -135,7 +135,7 @@ lazy val webclient = project
     scalacOptions -= "-Wunused", // don't report unused params
     scalacOptions += "-Wunused:imports",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "scalatags" % "0.11.1",
+      "com.lihaoyi" %%% "scalatags" % "0.12.0",
       "org.endpoints4s" %%% "fetch-client" % "3.2.1"
     )
   )
