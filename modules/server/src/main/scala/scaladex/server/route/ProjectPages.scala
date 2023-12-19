@@ -41,11 +41,8 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           artifactsParams { params =>
             getProjectOrRedirect(ref, user) { project =>
               val artifactsF = database.getArtifacts(ref, artifactName, params)
-              val headerF = getProjectHeader(project)
-              for {
-                artifacts <- artifactsF
-                header <- headerF
-              } yield {
+              val headerF = getProjectHeader(project).map(_.get)
+              for (artifacts <- artifactsF; header <- headerF) yield {
                 val binaryVersions = artifacts
                   .map(_.binaryVersion)
                   .distinct
@@ -241,7 +238,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
       }
     }
 
-  private def getProjectHeader(project: Project): Future[ProjectHeader] = {
+  private def getProjectHeader(project: Project): Future[Option[ProjectHeader]] = {
     val ref = project.reference
     for {
       latestArtifacts <- database.getLatestArtifacts(ref)
@@ -253,7 +250,10 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
     getProjectOrRedirect(ref, user) { project =>
       for {
         header <- getProjectHeader(project)
-        directDependencies <- database.getProjectDependencies(ref, header.defaultVersion)
+        directDependencies <-
+          header
+            .map(h => database.getProjectDependencies(ref, h.defaultVersion))
+            .getOrElse(Future.successful(Seq.empty))
         reverseDependencies <- database.getProjectDependents(ref)
       } yield {
         val groupedDirectDependencies = directDependencies
@@ -280,10 +280,8 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
 
   private def getBadges(ref: Project.Reference, user: Option[UserState]): Route =
     getProjectOrRedirect(ref, user) { project =>
-      for {
-        header <- getProjectHeader(project)
-        artifact = header.getDefaultArtifact(None, None)
-      } yield {
+      for (header <- getProjectHeader(project).map(_.get)) yield {
+        val artifact = header.getDefaultArtifact(None, None)
         val page = html.badges(env, user, project, header, artifact)
         complete(StatusCodes.OK, page)
       }

@@ -5,7 +5,7 @@
 @import scaladex.view.html.ensureUri
 @import scaladex.view.model.ProjectHeader
 
-@(env: Env, user: Option[UserState], project: Project, header: ProjectHeader, activeTab: String)
+@(env: Env, user: Option[UserState], project: Project, header: Option[ProjectHeader], activeTab: String)
 
 @canEdit = @{user.exists(_.canEdit(project.reference, env))}
 @isActive(nameTab: String) = @{if(nameTab == activeTab) "active" else ""}
@@ -21,7 +21,9 @@
         <h1>
           <a href="/@project.organization">@project.organization</a> /
           <a href="/@project.reference">@project.repository</a>
-          <span class="head-last-version">&nbsp;&nbsp;@header.defaultVersion.encode </span>
+          @for(header <- header) {
+            <span class="head-last-version">&nbsp;&nbsp;@header.defaultVersion.encode</span>
+          } 
         </h1>
 
         @if(project.settings.contributorsWanted) {
@@ -58,50 +60,52 @@
         }
         </ul>
       }
-      <div class="project-versions">
-        @if(header.scalaVersions.nonEmpty){
-          <div>
-            Scala versions:
-            @for(scalaVersion <- header.scalaVersions.sorted.reverse) {
-              <a href="@header.artifactsUrl(scalaVersion)" class="targets">@scalaVersion.version</a>
-            }
-          </div>
-        }
-  
-        @if(header.scalaJsVersions.nonEmpty){
-          <div>
-            Scala.js versions:
-            @for(platform <- header.scalaJsVersions.sorted.reverse) {
-              <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
-            }
-          </div>
-        }
-  
-        @if(header.scalaNativeVersions.nonEmpty){
-          <div>
-            Scala Native versions:
-            @for(platform <- header.scalaNativeVersions.sorted.reverse) {
-              <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
-            }
-          </div>
-        }
-  
-        @if(header.sbtVersions.nonEmpty){
-          <div>
-            sbt plugins:
-            @for(platform <- header.sbtVersions.sorted.reverse) {
-              <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
-            }
-          </div>
-        }
-  
-        @if(header.millVersions.nonEmpty){
-          <div>
-            Mill plugins:
-            @for(platform <- header.millVersions.sorted.reverse) {
-              <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
-            }
-          </div>
+      @for(header <- header) {
+        <div class="project-versions">
+          @if(header.scalaVersions.nonEmpty){
+            <div>
+              Scala versions:
+              @for(scalaVersion <- header.scalaVersions.sorted.reverse) {
+                <a href="@header.artifactsUrl(scalaVersion)" class="targets">@scalaVersion.version</a>
+              }
+            </div>
+          }
+    
+          @if(header.scalaJsVersions.nonEmpty){
+            <div>
+              Scala.js versions:
+              @for(platform <- header.scalaJsVersions.sorted.reverse) {
+                <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
+              }
+            </div>
+          }
+    
+          @if(header.scalaNativeVersions.nonEmpty){
+            <div>
+              Scala Native versions:
+              @for(platform <- header.scalaNativeVersions.sorted.reverse) {
+                <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
+              }
+            </div>
+          }
+    
+          @if(header.sbtVersions.nonEmpty){
+            <div>
+              sbt plugins:
+              @for(platform <- header.sbtVersions.sorted.reverse) {
+                <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
+              }
+            </div>
+          }
+    
+          @if(header.millVersions.nonEmpty){
+            <div>
+              Mill plugins:
+              @for(platform <- header.millVersions.sorted.reverse) {
+                <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
+              }
+            </div>
+          }
         }
       </div>
     </div>
@@ -110,7 +114,9 @@
         <div class="project-nav-bar">
           <ul class="nav nav-tabs">
             <li role="project" class="@isActive("Project")"><a href="/@project.reference">Project</a></li>
-            <li role="artifacts" class="@isActive("Artifacts")"><a href="@header.artifactsUrl">@plural(header.versionCount, "Version")</a></li>
+            @for(header <- header) {
+              <li role="artifacts" class="@isActive("Artifacts")"><a href="@header.artifactsUrl">@plural(header.versionCount, "Version")</a></li>
+            }
             <!-- <li role="version-matrix" class="@isActive("Version Matrix")"><a href="/@project.reference/version-matrix">Version Matrix</a></li> -->
             <li role="badges" class="@isActive("Badges")"><a href="/@project.reference/badges">Badges</a></li>
             @if(canEdit) {

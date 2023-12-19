@@ -12,6 +12,16 @@ import scaladex.core.model.ScalaJs
 import scaladex.core.model.ScalaNative
 import scaladex.core.model.SemanticVersion
 
+object ProjectHeader {
+  def apply(
+      ref: Project.Reference,
+      latestArtifacts: Seq[Artifact],
+      versionCount: Long,
+      defaultArtifactName: Option[Artifact.Name]
+  ): Option[ProjectHeader] =
+    Option.when(latestArtifacts.nonEmpty)(new ProjectHeader(ref, latestArtifacts, versionCount, defaultArtifactName))
+}
+
 final case class ProjectHeader(
     ref: Project.Reference,
     latestArtifacts: Seq[Artifact],
@@ -88,7 +98,7 @@ final case class ProjectHeader(
       .orElse(byNamePrerelease)
       .orElse(byLatestVersionStable)
       .orElse(byLatestVersionPrerelease)
-      .getOrElse(throw new Exception(s"No default artifact found for $ref with $language and $platform"))
+      .get
   }
 
   def scalaVersions: Seq[Scala] = languages.collect { case v: Scala => v }

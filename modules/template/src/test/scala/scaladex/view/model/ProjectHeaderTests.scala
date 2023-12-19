@@ -21,7 +21,7 @@ class ProjectHeaderTests extends AnyFunSpec with Matchers {
   }
 
   private def getDefaultArtifact(artifacts: Artifact*): Artifact = {
-    val header = ProjectHeader(reference, artifacts, 10, None)
+    val header = ProjectHeader(reference, artifacts, 10, None).get
     header.getDefaultArtifact(None, None)
   }
 }

@@ -6,7 +6,7 @@
         env: Env,
         user: Option[UserState],
         project: Project,
-        header: ProjectHeader,
+        header: Option[ProjectHeader],
         binaryVersionsByPlatforms: Seq[(Platform, Seq[BinaryVersion])],
         artifactsByVersions: Seq[(SemanticVersion, Seq[(Artifact.Name, Seq[Artifact])])]
 )

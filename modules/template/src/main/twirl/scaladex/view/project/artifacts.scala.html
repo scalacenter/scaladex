@@ -24,7 +24,7 @@
 
 @main(env, title = project.repository.toString, user) {
   <main id="container-project">
-    @headproject(env, user, project, header, "Artifacts")
+    @headproject(env, user, project, Some(header), "Artifacts")
     <div class="container">
       <div class="content-project artifacts box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">

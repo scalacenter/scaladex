@@ -13,7 +13,7 @@
   env: Env,
   user: Option[UserState],
   project: Project,
-  header: ProjectHeader,
+  header: Option[ProjectHeader],
   directDependencies: Map[Project.Reference, (ArtifactDependency.Scope, Seq[SemanticVersion])],
   reverseDependency: Map[Project.Reference, (ArtifactDependency.Scope, SemanticVersion)],
 )
