@@ -21,6 +21,7 @@ import scaladex.core.model.Scala
 import scaladex.core.model.ScalaJs
 import scaladex.core.model.ScalaNative
 import scaladex.core.model.SemanticVersion
+import scaladex.core.model.SemanticVersion.PreferReleases
 import scaladex.core.service.WebDatabase
 
 class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext) {
@@ -173,7 +174,7 @@ object Badges {
 
   private[route] def summaryOfLatestVersions(versionsByScalaVersions: Map[Scala, Seq[SemanticVersion]]): String =
     versionsByScalaVersions.view
-      .mapValues(_.max)
+      .mapValues(_.max(PreferReleases))
       .groupMap { case (_, latestVersion) => latestVersion } { case (scalaVersion, _) => scalaVersion }
       .toSeq
       .sortBy(_._1)(SemanticVersion.ordering.reverse)

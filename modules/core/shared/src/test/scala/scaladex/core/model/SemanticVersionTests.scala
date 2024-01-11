@@ -3,6 +3,8 @@ package scaladex.core.model
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
+import scaladex.core.model.SemanticVersion.PreferReleases
+import scaladex.core.test.Values._
 
 class SemanticVersionTests extends AsyncFunSpec with Matchers with TableDrivenPropertyChecks {
   it("should parse any version") {
@@ -37,6 +39,12 @@ class SemanticVersionTests extends AsyncFunSpec with Matchers with TableDrivenPr
     )
 
     forAll(inputs)((lower, higher) => lower shouldBe <(higher))
+  }
+
+  it("should allow us to prefer releases over pre-releases") {
+    val versions = Seq(`7.0.0`, `7.1.0`, `7.2.0-PREVIEW.1`)
+    versions.max shouldBe `7.2.0-PREVIEW.1`
+    versions.max(PreferReleases) shouldBe `7.1.0`
   }
 
   it("should encode and decode any version") {
