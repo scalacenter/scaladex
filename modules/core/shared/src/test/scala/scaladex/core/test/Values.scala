@@ -36,6 +36,8 @@ object Values {
   val `2.7.0` = PatchVersion(2, 7, 0)
   val `7.0.0` = PatchVersion(7, 0, 0)
   val `7.1.0` = PatchVersion(7, 1, 0)
+  val `7.2.0-PREVIEW.1` = SemanticVersion.parse("7.2.0-PREVIEW.1").get
+  val `7.2.0-PREVIEW.2` = SemanticVersion.parse("7.2.0-PREVIEW.2").get
   val `7.2.0` = PatchVersion(7, 2, 0)
   val `7.3.0` = PatchVersion(7, 3, 0)
 

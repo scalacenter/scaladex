@@ -103,6 +103,13 @@ object SemanticVersion {
       )
   }
 
+  /**
+   * Often we will prefer the latest release, but if there is no full release, we will select the most recent
+   * pre-release.
+   */
+  val PreferReleases: Ordering[SemanticVersion] =
+    Ordering.by[SemanticVersion, Boolean](_.isRelease).orElse(ordering)
+
   private def MajorP[A: P]: P[Int] = Number
 
   // http://semver.org/#spec-item-10
