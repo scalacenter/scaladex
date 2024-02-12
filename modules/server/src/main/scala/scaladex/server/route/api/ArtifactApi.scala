@@ -3,10 +3,10 @@ package scaladex.server.route.api
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
-import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
-import endpoints4s.akkahttp.server
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.cors.scaladsl.CorsDirectives.cors
+import endpoints4s.pekkohttp.server
 import scaladex.core.api.artifact.ArtifactEndpoints
 import scaladex.core.api.artifact.ArtifactMetadataParams
 import scaladex.core.api.artifact.ArtifactMetadataResponse
@@ -18,6 +18,7 @@ import scaladex.core.model.Platform
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.Pagination
 import scaladex.core.service.WebDatabase
+
 
 class ArtifactApi(database: WebDatabase)(
     implicit ec: ExecutionContext

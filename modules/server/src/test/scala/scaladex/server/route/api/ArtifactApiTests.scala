@@ -4,8 +4,8 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Route
 import cats.implicits.toTraverseOps
 import org.scalatest.BeforeAndAfterEach
 import play.api.libs.json.Reads

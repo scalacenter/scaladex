@@ -5,7 +5,7 @@ import java.time.Instant
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Env
 import scaladex.core.model.Project

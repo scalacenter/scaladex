@@ -51,7 +51,7 @@ lazy val template = project
     libraryDependencies ++= Seq(
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTime,
       "com.typesafe" % "config" % "1.4.3",
-      "com.typesafe.akka" %% "akka-http-core" % V.akkaHttp,
+      "org.apache.pekko" %% "pekko-http-core" % V.pekkoHttp,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
   )
@@ -67,9 +67,9 @@ lazy val infra = project
     libraryDependencies ++= Seq(
       "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4s,
       "org.flywaydb" % "flyway-core" % "8.5.13", // for database migration
-      "com.typesafe.akka" %% "akka-stream" % V.akka,
-      "com.typesafe.akka" %% "akka-http" % V.akkaHttp,
-      "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
+      "org.apache.pekko" %% "pekko-stream" % V.pekko,
+      "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
+      "com.github.pjfanning" %% "pekko-http-circe" % "2.3.4",
       "io.get-coursier" %% "coursier" % V.coursier,
       "io.get-coursier" %% "coursier-sbt-maven-repository" % V.coursier,
       "org.tpolecat" %% "doobie-scalatest" % V.doobie % Test,
@@ -161,16 +161,16 @@ lazy val server = project
       "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
       "com.typesafe.play" %%% "play-json" % V.playJson,
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it",
-      "com.typesafe.akka" %% "akka-testkit" % V.akka % "test,it",
-      "com.typesafe.akka" %% "akka-slf4j" % V.akka,
-      "com.typesafe.akka" %% "akka-serialization-jackson" % V.akka,
-      "com.typesafe.akka" %% "akka-actor-typed" % V.akka,
-      "com.typesafe.akka" %% "akka-stream-testkit" % V.akka % Test,
-      "com.typesafe.akka" %% "akka-http-testkit" % V.akkaHttp % Test,
-      "ch.megard" %% "akka-http-cors" % "1.2.0",
-      "com.softwaremill.akka-http-session" %% "core" % "0.7.1",
-      "com.typesafe.akka" %% "akka-http" % V.akkaHttp,
-      "org.endpoints4s" %% "akka-http-server" % "7.2.0",
+      "org.apache.pekko" %% "pekko-testkit" % V.pekko % "test,it",
+      "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
+      "org.apache.pekko" %% "pekko-serialization-jackson" % V.pekko,
+      "org.apache.pekko" %% "pekko-actor-typed" % V.pekko,
+      "org.apache.pekko" %% "pekko-stream-testkit" % V.pekko % Test,
+      "org.apache.pekko" %% "pekko-http-testkit" % V.pekkoHttp % Test,
+      "org.apache.pekko" %% "pekko-http-cors" % V.pekkoHttp,
+      "com.softwaremill.pekko-http-session" %% "core" % "0.7.1",
+      "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
+      "org.endpoints4s" %% "pekko-http-server" % "1.0.1",
       "org.webjars" % "bootstrap-sass" % "3.4.1",
       "org.webjars" % "bootstrap-switch" % "3.3.4",
       "org.webjars" % "bootstrap-select" % "1.13.18",
@@ -221,14 +221,14 @@ lazy val data = project
     loggingSettings,
     libraryDependencies ++= Seq(
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTime,
-      "com.typesafe.akka" %% "akka-stream" % V.akka,
-      "com.typesafe.akka" %% "akka-actor-typed" % V.akka,
-      "com.typesafe.akka" %% "akka-serialization-jackson" % V.akka,
-      "com.typesafe.akka" %% "akka-slf4j" % V.akka,
+      "org.apache.pekko" %% "pekko-stream" % V.pekko,
+      "org.apache.pekko" %% "pekko-actor-typed" % V.pekko,
+      "org.apache.pekko" %% "pekko-serialization-jackson" % V.pekko,
+      "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
       "org.apache.maven" % "maven-model-builder" % "3.9.5",
       "org.jsoup" % "jsoup" % "1.17.2",
       "org.apache.ivy" % "ivy" % "2.5.2",
-      "com.typesafe.akka" %% "akka-http" % V.akkaHttp,
+      "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
       "org.json4s" %% "json4s-native" % V.json4s,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     ),
@@ -242,8 +242,8 @@ lazy val data = project
 lazy val V = new {
   val doobie = "0.13.4"
   val playJson = "2.9.4"
-  val akka = "2.6.18"
-  val akkaHttp = "10.2.10"
+  val pekko = "1.0.2"
+  val pekkoHttp = "1.0.1"
   val elastic4s = "8.11.5"
   val nscalaTime = "2.32.0"
   val scalatest = "3.2.17"

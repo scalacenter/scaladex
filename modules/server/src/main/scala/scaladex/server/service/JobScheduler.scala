@@ -7,8 +7,8 @@ import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
-import akka.actor.ActorSystem
-import akka.actor.Cancellable
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.actor.Cancellable
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.UserState
 import scaladex.view.Job

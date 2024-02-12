@@ -6,7 +6,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.sys.process.Process
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import cats.effect._
 import com.typesafe.scalalogging.LazyLogging
 import doobie.hikari._

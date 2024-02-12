@@ -5,8 +5,8 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.model.Uri.Query
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.model.Uri.Query
 import scaladex.core.model.Artifact
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category

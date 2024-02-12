@@ -9,10 +9,10 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-import akka.http.scaladsl.model.Uri._
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server._
+import org.apache.pekko.http.scaladsl.model.Uri._
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server._
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model._
 import scaladex.core.service.SearchEngine

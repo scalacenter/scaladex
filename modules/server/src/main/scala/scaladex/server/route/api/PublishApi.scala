@@ -5,12 +5,12 @@ import java.time.Instant
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext
 
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.server.AuthorizationFailedRejection
-import akka.http.scaladsl.server.Directive1
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers._
+import org.apache.pekko.http.scaladsl.server.AuthorizationFailedRejection
+import org.apache.pekko.http.scaladsl.server.Directive1
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubAuth

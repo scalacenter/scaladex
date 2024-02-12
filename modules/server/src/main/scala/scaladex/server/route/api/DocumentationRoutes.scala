@@ -1,8 +1,8 @@
 package scaladex.server.route.api
 
-import akka.http.scaladsl.server.Route
-import ch.megard.akka.http.cors.scaladsl.CorsDirectives.cors
-import endpoints4s.akkahttp.server
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.cors.scaladsl.CorsDirectives.cors
+import endpoints4s.pekkohttp.server
 import endpoints4s.openapi.model.OpenApi
 
 /**

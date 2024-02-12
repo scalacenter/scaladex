@@ -2,10 +2,10 @@ package scaladex.server
 
 // https://github.com/btomala/akka-http-twirl
 
-import akka.http.scaladsl.marshalling.Marshaller
-import akka.http.scaladsl.marshalling.ToEntityMarshaller
-import akka.http.scaladsl.model.MediaType
-import akka.http.scaladsl.model.MediaTypes._
+import org.apache.pekko.http.scaladsl.marshalling.Marshaller
+import org.apache.pekko.http.scaladsl.marshalling.ToEntityMarshaller
+import org.apache.pekko.http.scaladsl.model.MediaType
+import org.apache.pekko.http.scaladsl.model.MediaTypes._
 import play.twirl.api.Html
 import play.twirl.api.Txt
 import play.twirl.api.Xml

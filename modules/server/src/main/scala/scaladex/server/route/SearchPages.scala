@@ -2,9 +2,9 @@ package scaladex.server.route
 
 import scala.concurrent.ExecutionContext
 
-import akka.http.scaladsl.model.Uri._
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server._
+import org.apache.pekko.http.scaladsl.model.Uri._
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server._
 import scaladex.core.model.Env
 import scaladex.core.model.UserState
 import scaladex.core.model.search.Page

@@ -1,8 +1,8 @@
 package scaladex.server.route
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.Uri
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
 import scaladex.core.model.Artifact
 import scaladex.core.model.Env
 import scaladex.core.model.Project

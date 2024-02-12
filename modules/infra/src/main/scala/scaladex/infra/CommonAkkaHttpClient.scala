@@ -7,18 +7,18 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.HttpRequest
-import akka.http.scaladsl.model.HttpResponse
-import akka.stream.OverflowStrategy
-import akka.stream.QueueOfferResult
-import akka.stream.scaladsl.Flow
-import akka.stream.scaladsl.Keep
-import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.Source
-import akka.stream.scaladsl.SourceQueueWithComplete
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.HttpRequest
+import org.apache.pekko.http.scaladsl.model.HttpResponse
+import org.apache.pekko.stream.OverflowStrategy
+import org.apache.pekko.stream.QueueOfferResult
+import org.apache.pekko.stream.scaladsl.Flow
+import org.apache.pekko.stream.scaladsl.Keep
+import org.apache.pekko.stream.scaladsl.Sink
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.stream.scaladsl.SourceQueueWithComplete
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 
 abstract class CommonAkkaHttpClient(implicit system: ActorSystem) extends FailFastCirceSupport {
 

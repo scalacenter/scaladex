@@ -1,8 +1,8 @@
 package scaladex
 
 import scala.concurrent.Future
-import akka.actor.ActorSystem
-import akka.testkit.TestKit
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.testkit.TestKit
 import org.scalatest.Assertion
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AsyncFunSuiteLike

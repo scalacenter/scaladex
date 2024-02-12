@@ -3,8 +3,8 @@ package scaladex.server.route
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
 import play.twirl.api.HtmlFormat
 import scaladex.core.model._
 import scaladex.core.service.SearchEngine
