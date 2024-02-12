@@ -1,5 +1,6 @@
 package scaladex.infra
 
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -30,7 +31,7 @@ abstract class CommonAkkaHttpClient(implicit system: ActorSystem) extends FailFa
 
   val queue: SourceQueueWithComplete[(HttpRequest, Promise[HttpResponse])] =
     Source
-      .queue[(HttpRequest, Promise[HttpResponse])](10000, OverflowStrategy.dropNew)
+      .queue[(HttpRequest, Promise[HttpResponse])](10000, OverflowStrategy.dropNew: @nowarn)
       .via(poolClientFlow)
       .toMat(Sink.foreach {
         case (Success(resp), p) => p.success(resp)
