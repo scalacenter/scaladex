@@ -3,6 +3,9 @@ package scaladex.server
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
+import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl._
 import org.apache.pekko.http.scaladsl.model.HttpMethods.POST
@@ -10,9 +13,6 @@ import org.apache.pekko.http.scaladsl.model.Uri._
 import org.apache.pekko.http.scaladsl.model._
 import org.apache.pekko.http.scaladsl.model.headers._
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
-import com.typesafe.scalalogging.LazyLogging
-import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
-import io.circe.Json
 import scaladex.core.model.GithubResponse
 import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState

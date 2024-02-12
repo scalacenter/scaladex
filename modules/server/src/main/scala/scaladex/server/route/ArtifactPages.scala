@@ -3,11 +3,11 @@ package scaladex.server.route
 import scala.concurrent.ExecutionContext
 import scala.util.Success
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.model._
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
-import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Env
 import scaladex.core.model.UserState
 import scaladex.core.service.WebDatabase

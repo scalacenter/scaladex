@@ -7,6 +7,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.HttpRequest
@@ -18,7 +19,6 @@ import org.apache.pekko.stream.scaladsl.Keep
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.stream.scaladsl.SourceQueueWithComplete
-import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 
 abstract class CommonAkkaHttpClient(implicit system: ActorSystem) extends FailFastCirceSupport {
 

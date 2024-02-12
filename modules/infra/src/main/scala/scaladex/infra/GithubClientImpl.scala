@@ -6,6 +6,10 @@ import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
 import scala.util.Try
 
+import cats.implicits.toTraverseOps
+import com.typesafe.scalalogging.LazyLogging
+import io.circe.Json
+import io.circe.syntax._
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.ContentTypes
@@ -24,10 +28,6 @@ import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.util.ByteString
-import cats.implicits.toTraverseOps
-import com.typesafe.scalalogging.LazyLogging
-import io.circe.Json
-import io.circe.syntax._
 import scaladex.core.model.GithubCommitActivity
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubResponse

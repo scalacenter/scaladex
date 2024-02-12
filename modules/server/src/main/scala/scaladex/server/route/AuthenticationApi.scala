@@ -5,14 +5,6 @@ import java.util.UUID
 import scala.util.Success
 import scala.util.Try
 
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.http.scaladsl.model.StatusCodes.TemporaryRedirect
-import org.apache.pekko.http.scaladsl.model.Uri.Query
-import org.apache.pekko.http.scaladsl.model._
-import org.apache.pekko.http.scaladsl.model.headers.Referer
-import org.apache.pekko.http.scaladsl.server.Directive1
-import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.Route
 import com.softwaremill.pekkohttpsession.CsrfDirectives._
 import com.softwaremill.pekkohttpsession.CsrfOptions._
 import com.softwaremill.pekkohttpsession.SessionConfig
@@ -23,6 +15,14 @@ import com.softwaremill.pekkohttpsession.SessionSerializer
 import com.softwaremill.pekkohttpsession.SingleValueSessionSerializer
 import com.softwaremill.pekkohttpsession.javadsl.InMemoryRefreshTokenStorage
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.StatusCodes.TemporaryRedirect
+import org.apache.pekko.http.scaladsl.model.Uri.Query
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers.Referer
+import org.apache.pekko.http.scaladsl.server.Directive1
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubAuth
 import scaladex.core.service.WebDatabase

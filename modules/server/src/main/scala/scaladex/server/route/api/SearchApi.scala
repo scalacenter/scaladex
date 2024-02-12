@@ -2,9 +2,9 @@ package scaladex.server.route.api
 
 import scala.concurrent.ExecutionContext
 
-import org.apache.pekko.http.scaladsl.server.Route
-import org.apache.pekko.http.cors.scaladsl.CorsDirectives._
 import endpoints4s.pekkohttp.server
+import org.apache.pekko.http.cors.scaladsl.CorsDirectives._
+import org.apache.pekko.http.scaladsl.server.Route
 import scaladex.core.api.AutocompletionResponse
 import scaladex.core.api.SearchEndpoints
 import scaladex.core.model.UserState
