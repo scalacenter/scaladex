@@ -1,6 +1,6 @@
 package scaladex.server.config
 
-import com.softwaremill.session.SessionConfig
+import com.softwaremill.pekkohttpsession.SessionConfig
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import scaladex.core.model.Env

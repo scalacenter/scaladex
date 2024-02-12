@@ -2,7 +2,7 @@ package scaladex.infra
 
 import java.time.Instant
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.Artifact

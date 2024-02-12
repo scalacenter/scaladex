@@ -3,16 +3,16 @@ package scaladex.server
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl._
-import akka.http.scaladsl.model.HttpMethods.POST
-import akka.http.scaladsl.model.Uri._
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.scalalogging.LazyLogging
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl._
+import org.apache.pekko.http.scaladsl.model.HttpMethods.POST
+import org.apache.pekko.http.scaladsl.model.Uri._
+import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.headers._
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import scaladex.core.model.GithubResponse
 import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState

@@ -18,15 +18,15 @@ package scaladex.server.route.api
 
 import scala.collection.immutable.Seq
 
-import akka.http.scaladsl.marshalling.Marshaller
-import akka.http.scaladsl.marshalling.ToEntityMarshaller
-import akka.http.scaladsl.model.ContentTypeRange
-import akka.http.scaladsl.model.MediaTypes.`application/json`
-import akka.http.scaladsl.server.RejectionError
-import akka.http.scaladsl.server.ValidationRejection
-import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
-import akka.http.scaladsl.unmarshalling.Unmarshaller
-import akka.util.ByteString
+import org.apache.pekko.http.scaladsl.marshalling.Marshaller
+import org.apache.pekko.http.scaladsl.marshalling.ToEntityMarshaller
+import org.apache.pekko.http.scaladsl.model.ContentTypeRange
+import org.apache.pekko.http.scaladsl.model.MediaTypes.`application/json`
+import org.apache.pekko.http.scaladsl.server.RejectionError
+import org.apache.pekko.http.scaladsl.server.ValidationRejection
+import org.apache.pekko.http.scaladsl.unmarshalling.FromEntityUnmarshaller
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
+import org.apache.pekko.util.ByteString
 import play.api.libs.json.JsError
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json

@@ -3,7 +3,7 @@ package scaladex.server.route
 import java.nio.file.Files
 import java.nio.file.Path
 
-import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 import scaladex.core.service.SearchEngine

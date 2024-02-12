@@ -1,11 +1,11 @@
 package scaladex.server.route.api
 import scala.concurrent.duration.DurationInt
 
-import akka.http.scaladsl.model.ContentTypes
-import akka.http.scaladsl.model.HttpEntity
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.model.headers.BasicHttpCredentials
-import akka.http.scaladsl.testkit.RouteTestTimeout
+import org.apache.pekko.http.scaladsl.model.ContentTypes
+import org.apache.pekko.http.scaladsl.model.HttpEntity
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.testkit.RouteTestTimeout
 import org.scalatest.BeforeAndAfterEach
 import scaladex.core.model.Env
 import scaladex.core.test.MockGithubAuth

@@ -6,10 +6,10 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.sys.process.Process
 
-import akka.actor.ActorSystem
 import cats.effect._
 import com.typesafe.scalalogging.LazyLogging
 import doobie.hikari._
+import org.apache.pekko.actor.ActorSystem
 import scaladex.core.util.ScalaExtensions._
 import scaladex.core.util.TimeUtils
 import scaladex.data.init.Init

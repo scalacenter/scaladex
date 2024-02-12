@@ -4,9 +4,9 @@ import java.util.UUID
 
 import scala.concurrent.Future
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.StatusCodes
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import scaladex.core.model.GithubResponse
 import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase

@@ -1,6 +1,6 @@
 package scaladex.server.route.api
 
-import akka.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import play.api.libs.json.JsValue
 import scaladex.server.route.ControllerBaseSuite
 

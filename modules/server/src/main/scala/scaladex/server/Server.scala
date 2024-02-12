@@ -5,15 +5,15 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.control.NonFatal
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl._
-import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server._
 import cats.effect.ContextShift
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import doobie.util.ExecutionContexts
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl._
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server._
 import scaladex.core.service.WebDatabase
 import scaladex.data.util.PidLock
 import scaladex.infra.DataPaths

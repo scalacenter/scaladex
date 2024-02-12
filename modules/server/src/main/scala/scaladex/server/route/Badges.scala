@@ -3,13 +3,13 @@ package scaladex.server.route
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.model.headers.CacheDirectives._
-import akka.http.scaladsl.model.headers._
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.RequestContext
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.RouteResult
+import org.apache.pekko.http.scaladsl.model.StatusCodes._
+import org.apache.pekko.http.scaladsl.model.headers.CacheDirectives._
+import org.apache.pekko.http.scaladsl.model.headers._
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.RequestContext
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.server.RouteResult
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactSelection
 import scaladex.core.model.BinaryVersion

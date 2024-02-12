@@ -1,8 +1,8 @@
 package scaladex.server.service
 import scala.concurrent.Future
 
-import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.actor.ActorSystem
 import scaladex.core.model.Artifact
 import scaladex.core.model.Env
 import scaladex.core.model.GithubResponse

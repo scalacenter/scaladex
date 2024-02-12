@@ -3,10 +3,10 @@ package scaladex.server.route.api
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import akka.http.scaladsl.model.StatusCodes._
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
-import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
+import org.apache.pekko.http.cors.scaladsl.CorsDirectives._
+import org.apache.pekko.http.scaladsl.model.StatusCodes._
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
 import play.api.libs.json._
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactSelection
