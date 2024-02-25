@@ -1,6 +1,8 @@
 package scaladex.infra
 
 import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.util.UUID
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -34,6 +36,7 @@ import scaladex.infra.sql.ProjectTable
 import scaladex.infra.sql.ReleaseDependenciesTable
 import scaladex.infra.sql.ReleaseTable
 import scaladex.infra.sql.UserSessionsTable
+import scaladex.core.model.BinaryVersion
 
 class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
   private val flyway = DoobieUtils.flyway(datasource)
@@ -150,6 +153,16 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   def countProjects(): Future[Long] =
     run(ProjectTable.countProjects.unique)
+
+  def countProjects(year: Int): Future[Long] = {
+    val instant = OffsetDateTime.of(year + 1, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC).toInstant
+    run(ProjectTable.countProjectsUntil.unique(instant))
+  }
+
+  def getProjectsByYear(year: Int): Future[Seq[(Project.Reference, Language)]] = {
+    val instant = OffsetDateTime.of(year + 1, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC).toInstant
+    run(ArtifactTable.selectProjectsUntil.to[Seq](instant))
+  }
 
   override def countArtifacts(): Future[Long] =
     run(ArtifactTable.count.unique)
