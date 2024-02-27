@@ -85,9 +85,7 @@ lazy val infra = project
       "io.circe" %% "circe-parser"
     ).map(_ % V.circe),
     Elasticsearch.settings(defaultPort = 9200),
-    inConfig(Compile)(
-      Postgres.settings(defaultPort = 5432, database = "scaladex")
-    ),
+    Postgres.settings(Compile, defaultPort = 5432, database = "scaladex"),
     javaOptions ++= {
       val base = (ThisBuild / baseDirectory).value
       val index = base / "small-index"
@@ -105,9 +103,7 @@ lazy val infra = project
         s"-Dscaladex.elasticsearch.port=$elasticsearchPort"
       )
     },
-    inConfig(Test)(
-      Postgres.settings(defaultPort = 5432, database = "scaladex-test")
-    ),
+    Postgres.settings(Test, defaultPort = 5432, database = "scaladex-test"),
     Test / javaOptions ++= {
       val elasticsearchPort = startElasticsearch.value
       val postgresPort = (Test / startPostgres).value

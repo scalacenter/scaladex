@@ -1,70 +1,66 @@
-import sbt._
+import java.nio.file.Path
+import java.sql.DriverManager
 
-import org.testcontainers.dockerclient.DockerClientProviderStrategy
-import org.testcontainers.utility.DockerImageName
+import scala.collection.JavaConverters._
+import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
+import scala.util.Try
+
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
-
-import java.sql.DriverManager
-import scala.util.Try
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
+import org.testcontainers.containers.wait.strategy.WaitAllStrategy
+import org.testcontainers.dockerclient.DockerClientProviderStrategy
+import org.testcontainers.utility.DockerImageName
+import sbt._
 
 object Postgres extends AutoPlugin {
+  private val containers: mutable.Map[Path, PostgreSQLContainer[Nothing]] = TrieMap.empty
+
   object autoImport {
-    val postgresDefaultPort = settingKey[Int]("Default port of postgres")
-    val postgresFolder =
-      settingKey[File]("Folder where postgres data are stored")
-    val postgresDatabase = settingKey[String]("Name of the postgres database")
-    val startPostgres = taskKey[Int](
-      "Chek that postgres has already started or else start a container"
-    )
+    val startPostgres = taskKey[Int]("Connect to Postgres or start a Postgres container")
   }
 
   import autoImport._
 
-  def settings(defaultPort: Int, database: String): Seq[Setting[_]] = Seq(
-    postgresDefaultPort := defaultPort,
-    postgresFolder := {
-      val c = Keys.configuration.?.value
-      val suffix = c.map(c => s"-${c.name}").getOrElse("")
-      Keys.baseDirectory.value / s".postgresql$suffix"
-    },
-    postgresDatabase := database,
-    startPostgres := {
+  def settings(config: Configuration, defaultPort: Int, database: String): Seq[Setting[_]] = Seq(
+    config / startPostgres := {
       import sbt.util.CacheImplicits._
-      val dataFolder = postgresFolder.value
-      val defaultPort = postgresDefaultPort.value
-      val database = postgresDatabase.value
+      val dataFolder = Keys.baseDirectory.value / s".postgresql-${config.name}"
       val streams = Keys.streams.value
-      val store = streams.cacheStoreFactory.make("last")
       val logger = streams.log
-      val tracker = util.Tracked.lastOutput[Unit, Int](store) {
-        case (_, None) =>
-          checkOrStart(dataFolder, defaultPort, database, logger)
-        case (_, Some(previousPort)) =>
-          checkOrStart(dataFolder, previousPort, database, logger)
+
+      if (canConnect(defaultPort, database)) {
+        logger.info(s"Postgres is available on port $defaultPort")
+        defaultPort
+      } else {
+        // we cache the container to reuse it after a reload
+        val store = streams.cacheStoreFactory.make("container")
+        val tracker = util.Tracked.lastOutput[Unit, (String, Int)](store) {
+          case (_, None) =>
+            startContainer(dataFolder, database, logger)
+          case (_, Some((containerId, port))) =>
+            if (canConnect(port, database)) {
+              logger.info(s"Postgres container already started on port $port")
+              (containerId, port)
+            } else {
+              Docker.kill(containerId)
+              startContainer(dataFolder, database, logger)
+            }
+        }
+        tracker(())._2
       }
-      tracker(())
+    },
+    Keys.clean := {
+      Keys.clean.value
+      val dataFolder = Keys.baseDirectory.value / s".postgresql-${config.name}"
+      containers.get(dataFolder.toPath).foreach(_.close())
+      containers.remove(dataFolder.toPath)
     }
   )
 
-  private def checkOrStart(
-      dataFolder: File,
-      previousPort: Int,
-      database: String,
-      logger: Logger
-  ): Int =
-    if (alreadyStarted(previousPort, database, logger)) {
-      logger.info(s"Postgres has already started on port $previousPort")
-      previousPort
-    } else {
-      logger.info("Trying to start postgres container")
-      val port = start(dataFolder, database)
-      logger.info(s"Postgres container successfully started with port $port")
-      port
-    }
-
-  private def start(dataFolder: File, database: String): Int = {
+  private def startContainer(dataFolder: File, database: String, logger: Logger): (String, Int) = {
     if (!dataFolder.exists) IO.createDirectory(dataFolder)
     IO.setPermissions(dataFolder, "rwxrwxrwx")
 
@@ -74,35 +70,49 @@ object Postgres extends AutoPlugin {
     val container = new PostgreSQLContainer(dockerImage)
 
     // change the wait strategy because of https://github.com/testcontainers/testcontainers-java/issues/455
-    val waitStrategy = new HostPortWaitStrategy()
-    container.setWaitStrategy(waitStrategy)
+    // and https://github.com/testcontainers/testcontainers-java/issues/3372
+    val hostPort = new HostPortWaitStrategy()
+    val logMessage = new LogMessageWaitStrategy().withRegEx(".*database system is ready to accept connections.*")
+    val portAndMessage = new WaitAllStrategy().withStrategy(hostPort).withStrategy(logMessage)
+    container.waitingFor(portAndMessage)
 
     container.withDatabaseName(database)
     container.withUsername("user")
     container.withPassword("password")
     container.withEnv("PGDATA", "/usr/share/postgres/data")
-    container.addFileSystemBind(
+    container.withFileSystemBind(
       dataFolder.toString,
       "/usr/share/postgres",
       BindMode.READ_WRITE
     )
-    container.start()
-    container.getFirstMappedPort()
+
+    val port =
+      try {
+        container.start()
+        container.getFirstMappedPort()
+      } catch {
+        case e: Throwable =>
+          container.close()
+          throw e
+      }
+    logger.info(s"Postgres container started on port $port")
+    containers(dataFolder.toPath) = container
+    (container.getContainerId(), port)
   }
 
-  private def alreadyStarted(
-      port: Int,
-      database: String,
-      logger: Logger
-  ): Boolean = {
+  private def canConnect(port: Int, database: String): Boolean = {
     // `CurrentThread.setContextClassLoader[org.postgresql.Driver]` should work but it does not
     CurrentThread.setContextClassLoader("org.postgresql.Driver")
-    Try(
-      DriverManager.getConnection(
+    try {
+      val connection = DriverManager.getConnection(
         s"jdbc:postgresql://localhost:$port/$database",
         "user",
         "password"
       )
-    ).fold(fa => { println(fa); false }, _ => true)
+      connection.close()
+      true
+    } catch {
+      case _: Throwable => false
+    }
   }
 }
