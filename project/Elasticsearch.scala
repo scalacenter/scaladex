@@ -9,60 +9,55 @@ import java.net.URL
 import java.io.IOException
 import org.testcontainers.elasticsearch.ElasticsearchContainer
 import org.testcontainers.containers.BindMode
+import scala.collection.mutable
+import scala.collection.concurrent.TrieMap
+import java.nio.file.Path
 
 object Elasticsearch extends AutoPlugin {
+  private val containers: mutable.Map[Path, ElasticsearchContainer] = TrieMap.empty
+
   object autoImport {
-    val elasticsearchDefaultPort =
-      settingKey[Int]("Port of elasticserach instance")
-    val elasticsearchFolder =
-      settingKey[File]("Folder where elasticsearch data are stored")
-    val startElasticsearch = taskKey[Int](
-      "Chek that elasticsearch has already started or else start a container"
-    )
+    val startElasticsearch = taskKey[Int]("Connect to Elasticsearch or start an Elasticsearch container")
   }
 
   import autoImport._
 
   def settings(defaultPort: Int): Seq[Setting[_]] = Seq(
-    elasticsearchDefaultPort := defaultPort,
-    elasticsearchFolder := Keys.baseDirectory.value / ".esdata",
     startElasticsearch := {
       import sbt.util.CacheImplicits._
-      val dataFolder = elasticsearchFolder.value
-      val defaultPort = elasticsearchDefaultPort.value
+      val dataFolder = Keys.baseDirectory.value / ".esdata"
       val streams = Keys.streams.value
-      val store = streams.cacheStoreFactory.make("last")
       val logger = streams.log
-      val tracker = util.Tracked.lastOutput[Unit, Int](store) {
-        case (_, None) =>
-          checkOrStart(dataFolder, defaultPort, logger)
-        case (_, Some(previousPort)) =>
-          checkOrStart(dataFolder, previousPort, logger)
+      if (canConnect(defaultPort)) {
+        logger.info(s"Elasticsearch available on port $defaultPort")
+        defaultPort
+      } else {
+        // we cache the container to reuse it after a reload
+        val store = streams.cacheStoreFactory.make("container")
+        val tracker = util.Tracked.lastOutput[Unit, (String, Int)](store) {
+          case (_, None) =>
+            startContainer(dataFolder, logger)
+          case (_, Some((containerId, port))) =>
+            if (canConnect(port)) {
+              logger.info(s"Elasticsearch container already started on port $port")
+              (containerId, port)
+            } else {
+              Docker.kill(containerId)
+              startContainer(dataFolder, logger)
+            }
+        }
+        tracker(())._2
       }
-      tracker(())
+    },
+    Keys.clean := {
+      Keys.clean.value
+      val dataFolder = Keys.baseDirectory.value / ".esdata"
+      containers.get(dataFolder.toPath).foreach(_.close())
+      containers.remove(dataFolder.toPath)
     }
   )
 
-  private def checkOrStart(
-      dataFolder: File,
-      previousPort: Int,
-      logger: Logger
-  ): Int = {
-    logger.info(s"Trying to connect to elasticsearch on port $previousPort")
-    if (alreadyStarted(previousPort)) {
-      logger.info(s"Elasticsearch has already started on port $previousPort")
-      previousPort
-    } else {
-      logger.info("Trying to start elasticsearch container")
-      val port = start(dataFolder)
-      logger.info(
-        s"Elasticsearch container successfully started with port $port"
-      )
-      port
-    }
-  }
-
-  private def start(dataFolder: File): Int = {
+  private def startContainer(dataFolder: File, logger: Logger): (String, Int) = {
     if (!dataFolder.exists) IO.createDirectory(dataFolder)
     IO.setPermissions(dataFolder, "rwxrwxrwx")
 
@@ -74,16 +69,26 @@ object Elasticsearch extends AutoPlugin {
     container
       .withEnv("discovery.type", "single-node")
       .withEnv("ES_JAVA_OPTS", "-Xms512m -Xmx512m")
-      .addFileSystemBind(
+      .withFileSystemBind(
         dataFolder.toString,
         "/usr/share/elasticsearch/data",
         BindMode.READ_WRITE
       )
-    container.start()
-    container.getFirstMappedPort()
+    val port =
+      try {
+        container.start()
+        container.getFirstMappedPort()
+      } catch {
+        case e: Throwable =>
+          container.stop()
+          throw e
+      }
+    logger.info(s"Ealsticsearch container started on port $port")
+    containers(dataFolder.toPath) = container
+    (container.getContainerId, port)
   }
 
-  private def alreadyStarted(port: Int): Boolean = {
+  private def canConnect(port: Int): Boolean = {
     val url = new URL(s"http://localhost:$port/")
     try {
       val connection = url.openConnection().asInstanceOf[HttpURLConnection]
@@ -92,6 +97,7 @@ object Elasticsearch extends AutoPlugin {
       val respCode = connection.getResponseCode
       if (respCode != HttpURLConnection.HTTP_OK)
         throw new MessageOnlyException(s"Got response code $respCode on $url")
+      connection.disconnect()
       true
     } catch {
       case _: TimeoutException | _: IOException => false
