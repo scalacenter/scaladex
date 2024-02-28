@@ -14,10 +14,10 @@ case class SearchParams(
 ) {
   def toAutocomplete: AutocompletionParams = AutocompletionParams(
     queryString,
-    userRepos.nonEmpty,
     topics,
     languages,
     platforms,
-    contributingSearch
+    contributingSearch,
+    userRepos.nonEmpty
   )
 }

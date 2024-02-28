@@ -8,8 +8,8 @@ import org.apache.pekko.http.scaladsl.server.Route
 /**
  * Akka-Http routes serving the documentation of the public HTTP API of Scaladex
  */
-object DocumentationRoutes extends server.Endpoints with server.JsonEntitiesFromEncodersAndDecoders {
-  val routes: Route = cors() {
+object DocumentationRoute extends server.Endpoints with server.JsonEntitiesFromEncodersAndDecoders {
+  val route: Route = cors() {
     endpoint(
       get(path / "api" / "open-api.json"),
       ok(jsonResponse[OpenApi])

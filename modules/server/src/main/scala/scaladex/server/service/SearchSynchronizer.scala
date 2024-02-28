@@ -30,8 +30,8 @@ class SearchSynchronizer(database: WebDatabase, searchEngine: SearchEngine)(impl
         allProjectsAndStatus.collect { case (p, GithubStatus.NotFound(_)) => p.reference }
       projectsToSync = allProjectsAndStatus
         .collect {
-          case (p, GithubStatus.Ok(_) | GithubStatus.Unknown(_) | GithubStatus.Failed(_, _, _))
-              if !deprecatedProjects.contains(p.reference) =>
+          case (p, status)
+              if status.isOk || status.isUnknown || status.isFailed && !deprecatedProjects.contains(p.reference) =>
             p
         }
 

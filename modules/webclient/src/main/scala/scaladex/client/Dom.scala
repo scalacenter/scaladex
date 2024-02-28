@@ -11,11 +11,11 @@ object Dom {
     for (query <- getSearchQuery)
       yield AutocompletionParams(
         query = query,
-        you = getById[HTMLInputElement]("you").map(_.value).contains("✓"),
         topics = getSearchFilter("topics"),
         languages = getSearchFilter("languages"),
         platforms = getSearchFilter("platforms"),
-        contributingSearch = getById[HTMLInputElement]("contributing-search").map(_.value).contains("true")
+        contributingSearch = getById[HTMLInputElement]("contributing-search").map(_.value).contains("true"),
+        you = getById[HTMLInputElement]("you").map(_.value).contains("✓")
       )
 
   def getSearchQuery: Option[String] =
