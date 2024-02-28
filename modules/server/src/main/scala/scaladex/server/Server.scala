@@ -145,8 +145,7 @@ object Server extends LazyLogging {
     val artifactPages = new ArtifactPages(config.env, webDatabase)
     val awesomePages = new AwesomePages(config.env, searchEngine)
     val publishApi = new PublishApi(githubAuth, publishProcess)
-    val searchApi = new SearchApi(searchEngine)
-    val artifactApi = ArtifactApi(webDatabase)
+    val apiEndpoints = new ApiEndpointsImpl(webDatabase, searchEngine)
     val oldSearchApi = new OldSearchApi(searchEngine, webDatabase)
     val badges = new Badges(webDatabase)
     val authentication = new AuthenticationApi(config.oAuth2.clientId, config.session, githubAuth, webDatabase)
@@ -155,13 +154,12 @@ object Server extends LazyLogging {
       authentication.optionalUser { user =>
         val apiRoute = concat(
           publishApi.routes,
-          searchApi.route(user),
-          artifactApi.routes,
+          apiEndpoints.routes(user),
           oldSearchApi.routes,
           Assets.routes,
           badges.route,
           authentication.routes,
-          DocumentationRoutes.routes
+          DocumentationRoute.route
         )
 
         concat(

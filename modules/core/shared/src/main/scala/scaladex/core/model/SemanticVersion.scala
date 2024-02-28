@@ -130,4 +130,6 @@ object SemanticVersion {
       case Parsed.Success(v, _) => Some(v)
       case _                    => None
     }
+
+  def from(version: String): SemanticVersion = parse(version).get
 }
