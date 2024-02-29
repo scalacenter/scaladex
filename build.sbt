@@ -174,7 +174,7 @@ lazy val server = project
       "org.webjars.npm" % "date-fns" % "2.30.0",
       "org.webjars.npm" % "chartjs-adapter-date-fns" % "3.0.0",
       "org.webjars" % "font-awesome" % "6.5.1",
-      "org.webjars" % "jquery" % "3.6.3",
+      "org.webjars" % "jquery" % "3.6.4",
       "org.webjars.bower" % "select2" % "4.0.13"
     ),
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
