@@ -20,28 +20,30 @@ import scaladex.infra.DataPaths
 case class NonStandardLib(
     groupId: String,
     artifactId: String,
-    lookup: ScalaTargetLookup
+    lookup: BinaryVersionLookup
 )
 
-sealed trait ScalaTargetLookup
+sealed trait BinaryVersionLookup
 
-/**
- * The version is encoded in the pom file
- * dependency on org.scala-lang:scala-library
- * ex: io.gatling : gatling-compiler : 2.2.2
- */
-case object ScalaTargetFromPom extends ScalaTargetLookup
+object BinaryVersionLookup {
+  /**
+   * The version is encoded in the pom file
+   * dependency on org.scala-lang:scala-library
+   * ex: io.gatling : gatling-compiler : 2.2.2
+   */
+  case object FromDependency extends BinaryVersionLookup
 
-/**
- * The project is a plain-java project, thus no ScalaTarget.
- * ex: com.typesafe : config : 1.3.1
- */
-case object NoScalaTargetPureJavaDependency extends ScalaTargetLookup
+  /**
+   * The project is a plain-java project, thus no ScalaTarget.
+   * ex: com.typesafe : config : 1.3.1
+   */
+  case object Java extends BinaryVersionLookup
 
-/**
- * The version is encoded in the version (ex: scala-library itself)
- */
-case object ScalaTargetFromVersion extends ScalaTargetLookup
+  /**
+   * The version is encoded in the version (ex: scala-library itself)
+   */
+  case object FromArtifactVersion extends BinaryVersionLookup
+}
 
 object NonStandardLib {
 
@@ -58,9 +60,9 @@ object NonStandardLib {
         case (artifact, rawLookup) =>
           val lookup =
             rawLookup match {
-              case "pom"     => ScalaTargetFromPom
-              case "java"    => NoScalaTargetPureJavaDependency
-              case "version" => ScalaTargetFromVersion
+              case "pom"     => BinaryVersionLookup.FromDependency
+              case "java"    => BinaryVersionLookup.Java
+              case "version" => BinaryVersionLookup.FromArtifactVersion
               case _         => sys.error("unknown lookup: '" + rawLookup + "'")
             }
 

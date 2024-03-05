@@ -9,49 +9,65 @@ import scaladex.core.model.Artifact._
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SonatypeClient
 import scaladex.core.util.ScalaExtensions._
+import scaladex.data.cleanup.NonStandardLib
+import scaladex.infra.DataPaths
 
 class SonatypeService(
+    dataPaths: DataPaths,
     database: SchedulerDatabase,
     sonatypeService: SonatypeClient,
     publishProcess: PublishProcess
 )(implicit ec: ExecutionContext)
     extends LazyLogging {
-  import SonatypeService._
+
+  def findNonStandard(): Future[String] = {
+    val nonStandardLibs = NonStandardLib.load(dataPaths)
+    for {
+      mavenReferenceFromDatabase <- database.getAllMavenReferences()
+      result <- nonStandardLibs.mapSync { lib =>
+        val groupId = Artifact.GroupId(lib.groupId)
+        // get should not throw: it is a fixed set of artifactIds
+        val artifactId = Artifact.ArtifactId.parse(lib.artifactId).get 
+        findAndIndexMissingArtifacts(groupId, artifactId, mavenReferenceFromDatabase.toSet)
+      }
+    } yield s"Inserted ${result.sum} missing poms"
+  }
 
   def findMissing(): Future[String] =
     for {
-      groupIds <- database.getAllGroupIds()
+      mavenReferenceFromDatabase <- database.getAllMavenReferences().map(_.toSet)
+      groupIds = mavenReferenceFromDatabase.map(_.groupId).toSeq.sorted.map(Artifact.GroupId)
       // we sort just to estimate through the logs the percentage of progress
-      result <- groupIds.sortBy(_.value).mapSync(g => findAndIndexMissingArtifacts(g, None))
-    } yield s"Inserted ${result.size} missing poms"
+      result <- groupIds.mapSync(g => findAndIndexMissingArtifacts(g, None, mavenReferenceFromDatabase))
+    } yield s"Inserted ${result.sum} missing poms"
 
   def syncOne(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): Future[String] =
     for {
-      result <- findAndIndexMissingArtifacts(groupId, artifactNameOpt)
+      mavenReferenceFromDatabase <- database.getAllMavenReferences()
+      result <- findAndIndexMissingArtifacts(groupId, artifactNameOpt, mavenReferenceFromDatabase.toSet)
     } yield s"Inserted ${result} poms"
 
-  private def findAndIndexMissingArtifacts(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): Future[Int] =
+  private def findAndIndexMissingArtifacts(groupId: GroupId, artifactNameOpt: Option[Artifact.Name], knownRefs: Set[MavenReference]): Future[Int] =
     for {
-      mavenReferenceFromDatabase <- database.getAllMavenReferences()
       artifactIds <- sonatypeService.getAllArtifactIds(groupId)
       scalaArtifactIds = artifactIds.filter(artifact =>
         artifactNameOpt.forall(_ == artifact.name) && artifact.isScala && artifact.binaryVersion.isValid
       )
       result <- scalaArtifactIds
-        .mapSync(id => findAndIndexMissingArtifacts(groupId, id, mavenReferenceFromDatabase.toSet))
+        .mapSync(id => findAndIndexMissingArtifacts(groupId, id, knownRefs))
     } yield result.sum
 
   private def findAndIndexMissingArtifacts(
       groupId: GroupId,
       artifactId: ArtifactId,
-      mavenReferenceFromDatabase: Set[MavenReference]
+      knownRefs: Set[MavenReference]
   ): Future[Int] =
     for {
       versions <- sonatypeService.getAllVersions(groupId, artifactId)
       mavenReferences = versions.map(v =>
         MavenReference(groupId = groupId.value, artifactId = artifactId.value, version = v.toString)
       )
-      missingVersions = findMissingVersions(mavenReferenceFromDatabase, mavenReferences)
+      missingVersions = mavenReferences.filterNot(knownRefs)
       _ = if (missingVersions.nonEmpty)
         logger.warn(s"${missingVersions.size} artifacts are missing for ${groupId.value}:${artifactId.value}")
       missingPomFiles <- missingVersions.map(ref => sonatypeService.getPomFile(ref).map(_.map(ref -> _))).sequence
@@ -63,10 +79,4 @@ class SonatypeService(
       case PublishResult.Success => true
       case _                     => false
     }
-
-}
-
-object SonatypeService {
-  def findMissingVersions(fromDatabase: Set[MavenReference], fromSonatype: Seq[MavenReference]): Seq[MavenReference] =
-    fromSonatype.filterNot(fromDatabase)
 }

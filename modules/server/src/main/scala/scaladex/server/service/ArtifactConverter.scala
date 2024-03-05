@@ -68,14 +68,12 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
    * if the developer follow this convention we extract the relevant parts and we mark
    * the library as standard. Otherwise we either have a library like gatling or the scala library itself
    *
-   * @return The artifact name (without suffix), the Scala target, whether this project is a usual Scala library or not
+   * @return The artifact name (without suffix), the binary version, whether this project is a standard Scala library or not
    */
   private def extractMeta(pom: ArtifactModel): Option[ArtifactMeta] = {
     val nonStandardLookup =
-      nonStandardLibs
-        .find(lib =>
-          lib.groupId == pom.groupId &&
-            lib.artifactId == pom.artifactId
+      nonStandardLibs.find(lib =>
+          lib.groupId == pom.groupId && lib.artifactId == pom.artifactId
         )
         .map(_.lookup)
 
@@ -118,7 +116,7 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
         }
 
       // For example: io.gatling
-      case Some(ScalaTargetFromPom) =>
+      case Some(BinaryVersionLookup.FromDependency) =>
         for {
           dep <- pom.dependencies.find { dep =>
             dep.groupId == "org.scala-lang" &&
@@ -133,7 +131,7 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
           isNonStandard = true
         )
       // For example: typesafe config
-      case Some(NoScalaTargetPureJavaDependency) =>
+      case Some(BinaryVersionLookup.Java) =>
         Some(
           ArtifactMeta(
             artifactName = pom.artifactId,
@@ -143,7 +141,7 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
         )
 
       // For example: scala-compiler
-      case Some(ScalaTargetFromVersion) =>
+      case Some(BinaryVersionLookup.FromArtifactVersion) =>
         for (version <- SemanticVersion.parse(pom.version))
           yield ArtifactMeta(
             artifactName = pom.artifactId,

@@ -69,7 +69,7 @@ object Server extends LazyLogging {
             val filesystem = FilesystemStorage(config.filesystem)
             val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(publishPool, system)
             val sonatypeClient = new SonatypeClientImpl()
-            val sonatypeSynchronizer = new SonatypeService(schedulerDatabase, sonatypeClient, publishProcess)
+            val sonatypeSynchronizer = new SonatypeService(paths, schedulerDatabase, sonatypeClient, publishProcess)
             val adminService =
               new AdminService(config.env, schedulerDatabase, searchEngine, githubClient, sonatypeSynchronizer)
 
