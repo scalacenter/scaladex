@@ -44,8 +44,14 @@ class AdminService(
       githubClientOpt.map { client =>
         val githubUpdater = new GithubUpdater(database, client)
         new JobScheduler(Job.githubInfo, githubUpdater.updateAll)
-      } ++
-      Option.when(!env.isLocal)(new JobScheduler(Job.missingMavenArtifacts, sonatypeSynchronizer.findMissing))
+      } ++ (
+        if (!env.isLocal) {
+          Seq(
+            new JobScheduler(Job.missingMavenArtifacts, sonatypeSynchronizer.findMissing),
+            new JobScheduler(Job.nonStandardArtifacts, sonatypeSynchronizer.findNonStandard)
+          )
+        } else Seq.empty
+      )
     seq.map(s => s.job.name -> s).toMap
   }
 
