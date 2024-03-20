@@ -74,6 +74,7 @@ object Elasticsearch extends AutoPlugin {
         "/usr/share/elasticsearch/data",
         BindMode.READ_WRITE
       )
+    container.withLogConsumer(frame => logger.info(frame.getUtf8StringWithoutLineEnding))
     val port =
       try {
         container.start()
@@ -83,7 +84,7 @@ object Elasticsearch extends AutoPlugin {
           container.stop()
           throw e
       }
-    logger.info(s"Ealsticsearch container started on port $port")
+    logger.info(s"Elasticsearch container started on port $port")
     containers(dataFolder.toPath) = container
     (container.getContainerId, port)
   }
@@ -92,7 +93,7 @@ object Elasticsearch extends AutoPlugin {
     val url = new URL(s"http://localhost:$port/")
     try {
       val connection = url.openConnection().asInstanceOf[HttpURLConnection]
-      connection.setConnectTimeout(100)
+      connection.setConnectTimeout(200)
       connection.connect()
       val respCode = connection.getResponseCode
       if (respCode != HttpURLConnection.HTTP_OK)
