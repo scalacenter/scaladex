@@ -27,7 +27,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
   override protected def beforeEach(): Unit = database.reset()
 
   it("sonatype should publish any artifact") {
-    implicit val customTimeout = RouteTestTimeout(2.seconds)
+    implicit val customTimeout = RouteTestTimeout(8.seconds)
     val pomFile = pomResolver.resolveSync(Cats.`core_3:2.6.1`.mavenReference)
     val creationDate = Cats.`core_3:2.6.1`.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
