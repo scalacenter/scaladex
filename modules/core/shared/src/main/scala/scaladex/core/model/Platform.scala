@@ -53,8 +53,9 @@ case class ScalaNative(version: SemanticVersion) extends Platform {
 object ScalaNative {
   val `0.3`: ScalaNative = ScalaNative(MinorVersion(0, 3))
   val `0.4`: ScalaNative = ScalaNative(MinorVersion(0, 4))
+  val `0.5`: ScalaNative = ScalaNative(MinorVersion(0, 5))
 
-  val stableVersions: Set[ScalaNative] = Set(`0.3`, `0.4`)
+  val stableVersions: Set[ScalaNative] = Set(`0.3`, `0.4`, `0.5`)
 
   implicit val ordering: Ordering[ScalaNative] = Ordering.by(p => p.asInstanceOf[Platform])
 }
