@@ -74,7 +74,7 @@ object Elasticsearch extends AutoPlugin {
         "/usr/share/elasticsearch/data",
         BindMode.READ_WRITE
       )
-    container.withLogConsumer(frame => logger.info(frame.getUtf8StringWithoutLineEnding))
+    // container.withLogConsumer(frame => logger.info(frame.getUtf8StringWithoutLineEnding))
     val port =
       try {
         container.start()
