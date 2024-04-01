@@ -199,7 +199,10 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           )
           Future.successful(redirect(redirectUri, StatusCodes.MovedPermanently))
         case Some(project) => f(project)
-        case None          => Future.successful(complete(StatusCodes.NotFound, notfound(env, user)))
+        case None          => {
+          logger.warn(s"Project $ref not found")
+          Future.successful(complete(StatusCodes.NotFound, notfound(env, user)))
+        }
       }
       onSuccess(future)(identity)
     }
@@ -248,6 +251,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
 
   private def getProjectPage(ref: Project.Reference, user: Option[UserState]): Route =
     getProjectOrRedirect(ref, user) { project =>
+      logger.info(s"Accessing project page for: $ref")
       for {
         header <- getProjectHeader(project)
         directDependencies <-
@@ -256,6 +260,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
             .getOrElse(Future.successful(Seq.empty))
         reverseDependencies <- database.getProjectDependents(ref)
       } yield {
+        logger.info(s"Successfully retrieved project data for: $ref")
         val groupedDirectDependencies = directDependencies
           .groupBy(_.target)
           .view
