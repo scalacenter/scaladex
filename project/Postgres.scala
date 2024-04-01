@@ -92,7 +92,7 @@ object Postgres extends AutoPlugin {
         container.getFirstMappedPort()
       } catch {
         case e: Throwable =>
-          logger.error("Error starting PostgreSQL container:", e)
+          logger.error(s"Error starting PostgreSQL container: {$e}")
           container.close()
           throw e
       }

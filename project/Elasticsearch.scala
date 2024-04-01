@@ -81,7 +81,7 @@ object Elasticsearch extends AutoPlugin {
         container.getFirstMappedPort()
       } catch {
         case e: Throwable =>
-          logger.error("Error starting Elasticsearch container:", e)
+          logger.error(s"Error starting Elasticsearch container: {$e}")
           container.stop()
           throw e
       }
