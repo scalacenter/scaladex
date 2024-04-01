@@ -27,7 +27,7 @@ class SonatypeService(
       result <- nonStandardLibs.mapSync { lib =>
         val groupId = Artifact.GroupId(lib.groupId)
         // get should not throw: it is a fixed set of artifactIds
-        val artifactId = Artifact.ArtifactId.parse(lib.artifactId).get 
+        val artifactId = Artifact.ArtifactId.parse(lib.artifactId).get
         findAndIndexMissingArtifacts(groupId, artifactId, mavenReferenceFromDatabase.toSet)
       }
     } yield s"Inserted ${result.sum} missing poms"
@@ -47,7 +47,11 @@ class SonatypeService(
       result <- findAndIndexMissingArtifacts(groupId, artifactNameOpt, mavenReferenceFromDatabase.toSet)
     } yield s"Inserted ${result} poms"
 
-  private def findAndIndexMissingArtifacts(groupId: GroupId, artifactNameOpt: Option[Artifact.Name], knownRefs: Set[MavenReference]): Future[Int] =
+  private def findAndIndexMissingArtifacts(
+      groupId: GroupId,
+      artifactNameOpt: Option[Artifact.Name],
+      knownRefs: Set[MavenReference]
+  ): Future[Int] =
     for {
       artifactIds <- sonatypeService.getAllArtifactIds(groupId)
       scalaArtifactIds = artifactIds.filter(artifact =>
