@@ -26,6 +26,7 @@ case class NonStandardLib(
 sealed trait BinaryVersionLookup
 
 object BinaryVersionLookup {
+
   /**
    * The version is encoded in the pom file
    * dependency on org.scala-lang:scala-library

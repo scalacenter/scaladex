@@ -72,9 +72,8 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
    */
   private def extractMeta(pom: ArtifactModel): Option[ArtifactMeta] = {
     val nonStandardLookup =
-      nonStandardLibs.find(lib =>
-          lib.groupId == pom.groupId && lib.artifactId == pom.artifactId
-        )
+      nonStandardLibs
+        .find(lib => lib.groupId == pom.groupId && lib.artifactId == pom.artifactId)
         .map(_.lookup)
 
     val artifactMetaOption = nonStandardLookup match {
