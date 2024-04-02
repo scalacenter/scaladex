@@ -247,14 +247,14 @@ case class Artifact(
 
   def isSbtPlugin: Boolean = platform match {
     case SbtPlugin(_) => true
-    case _ => false
+    case _            => false
   }
 
   def getOrganization: String = projectRef.organization.toString
 
   def getRepository: String = projectRef.repository.toString
 
-  def scastieURL: Option[String] = {
+  def scastieURL: Option[String] =
     if (isSbtPlugin) {
       None
     } else {
@@ -280,7 +280,6 @@ case class Artifact(
 
       Some(params.map { case (k, v) => s"$k=$v" }.mkString(tryBaseUrl + "?", "&", ""))
     }
-  }
 }
 
 object Artifact {
