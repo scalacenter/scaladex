@@ -221,28 +221,65 @@ case class Artifact(
     }
 
   // todo: Add tests for this
-  def scastieURL: String = {
-    val tryBaseUrl = "https://scastie.scala-lang.org/try"
+  // def scastieURL: String = {
+  //   val tryBaseUrl = "https://scastie.scala-lang.org/try"
 
-    val targetParam = binaryVersion.platform match {
-      case ScalaJs(_) => Some("t" -> "JS")
-      case _          => None
+  //   val targetParam = binaryVersion.platform match {
+  //     case ScalaJs(_) => Some("t" -> "JS")
+  //     case _          => None
+  //   }
+
+  //   val scalaVersionParam = binaryVersion.language match {
+  //     case Scala(v) => Some("sv" -> v.toString)
+  //     case _        => None
+  //   }
+
+  //   val params: List[(String, String)] = List(
+  //     "g" -> groupId.value,
+  //     "a" -> artifactName.value,
+  //     "v" -> version.toString
+  //   ) ++ targetParam ++ scalaVersionParam
+
+  //   params
+  //     .map { case (k, v) => s"$k=$v" }
+  //     .mkString(tryBaseUrl + "?", "&", "")
+  // }
+
+  def isSbtPlugin: Boolean = platform match {
+    case SbtPlugin(_) => true
+    case _ => false
+  }
+
+  def getOrganization: String = projectRef.organization.toString
+
+  def getRepository: String = projectRef.repository.toString
+
+  def scastieURL: Option[String] = {
+    if (isSbtPlugin) {
+      None
+    } else {
+      val tryBaseUrl = "https://scastie.scala-lang.org/try"
+
+      val targetParam = binaryVersion.platform match {
+        case ScalaJs(_) => Some("t" -> "JS")
+        case _          => Some("t" -> "JVM")
+      }
+
+      val scalaVersionParam = binaryVersion.language match {
+        case Scala(v) => Some("sv" -> v.toString)
+        case _        => None
+      }
+
+      val params: List[(String, String)] = List(
+        "g" -> groupId.value,
+        "a" -> artifactName.value,
+        "v" -> version.toString,
+        "o" -> getOrganization, // get organization value
+        "r" -> getRepository // get repository value
+      ) ++ targetParam ++ scalaVersionParam
+
+      Some(params.map { case (k, v) => s"$k=$v" }.mkString(tryBaseUrl + "?", "&", ""))
     }
-
-    val scalaVersionParam = binaryVersion.language match {
-      case Scala(v) => Some("sv" -> v.toString)
-      case _        => None
-    }
-
-    val params: List[(String, String)] = List(
-      "g" -> groupId.value,
-      "a" -> artifactName.value,
-      "v" -> version.toString
-    ) ++ targetParam ++ scalaVersionParam
-
-    params
-      .map { case (k, v) => s"$k=$v" }
-      .mkString(tryBaseUrl + "?", "&", "")
   }
 }
 
