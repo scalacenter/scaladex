@@ -33,8 +33,7 @@ object ActiveNavObserver {
           if (isInViewport(section)) {
             navItem.classList.add("active")
             println(s"Section ${section.getAttribute("id")} is in viewport")
-          }
-          else {
+          } else {
             navItem.classList.remove("active")
             println(s"Section ${section.getAttribute("id")} is out of viewport")
           }

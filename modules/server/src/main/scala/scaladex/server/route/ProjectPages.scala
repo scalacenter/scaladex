@@ -199,10 +199,9 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           )
           Future.successful(redirect(redirectUri, StatusCodes.MovedPermanently))
         case Some(project) => f(project)
-        case None          => {
+        case None =>
           logger.warn(s"Project $ref not found")
           Future.successful(complete(StatusCodes.NotFound, notfound(env, user)))
-        }
       }
       onSuccess(future)(identity)
     }
