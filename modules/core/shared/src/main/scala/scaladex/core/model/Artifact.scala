@@ -250,10 +250,6 @@ case class Artifact(
     case _            => false
   }
 
-  def getOrganization: String = projectRef.organization.toString
-
-  def getRepository: String = projectRef.repository.toString
-
   def scastieURL: Option[String] =
     if (isSbtPlugin) {
       None
@@ -274,8 +270,8 @@ case class Artifact(
         "g" -> groupId.value,
         "a" -> artifactName.value,
         "v" -> version.toString,
-        "o" -> getOrganization, // get organization value
-        "r" -> getRepository // get repository value
+        "o" -> projectRef.organization.toString, // removed getters
+        "r" -> projectRef.repository.toString
       ) ++ targetParam ++ scalaVersionParam
 
       Some(params.map { case (k, v) => s"$k=$v" }.mkString(tryBaseUrl + "?", "&", ""))
