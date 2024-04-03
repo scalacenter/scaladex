@@ -30,8 +30,13 @@ object ActiveNavObserver {
       // ignore the observed entry and update all sections instead
       debounceUpdate = timers.setTimeout(150) {
         for ((section, navItem) <- sectionsAndNavItem)
-          if (isInViewport(section)) navItem.classList.add("active")
-          else navItem.classList.remove("active")
+          if (isInViewport(section)) {
+            navItem.classList.add("active")
+            println(s"Section ${section.getAttribute("id")} is in viewport")
+          } else {
+            navItem.classList.remove("active")
+            println(s"Section ${section.getAttribute("id")} is out of viewport")
+          }
       }
     }
 
