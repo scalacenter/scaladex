@@ -251,7 +251,7 @@ case class Artifact(
   }
 
   def scastieURL: Option[String] =
-    if (isSbtPlugin) {
+    if (isSbtPlugin || binaryVersion.platform == ScalaNative(_)) {
       None
     } else {
       val tryBaseUrl = "https://scastie.scala-lang.org/try"

@@ -85,7 +85,7 @@ object Elasticsearch extends AutoPlugin {
           container.stop()
           throw e
       }
-    logger.info(s"Ealsticsearch container started on port $port")
+    logger.info(s"Elasticsearch container started on port $port")
     containers(dataFolder.toPath) = container
     (container.getContainerId, port)
   }

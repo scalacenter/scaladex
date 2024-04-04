@@ -27,7 +27,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
   override protected def beforeEach(): Unit = database.reset()
 
   it("sonatype should publish any artifact") {
-    implicit val customTimeout = RouteTestTimeout(20.seconds)
+    implicit val customTimeout = RouteTestTimeout(8.seconds)
     val pomFile = pomResolver.resolveSync(Cats.`core_3:2.6.1`.mavenReference)
     val creationDate = Cats.`core_3:2.6.1`.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
@@ -84,7 +84,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
   }
 
   it("publish sbt plugin with cross version") {
-    implicit val customTimeout = RouteTestTimeout(10.minutes)
+    implicit val customTimeout = RouteTestTimeout(2.minutes)
     val pomFile = pomResolver.resolveSync(SbtCrossProject.mavenReference)
     val creationDate = SbtCrossProject.creationDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
