@@ -245,15 +245,14 @@ case class Artifact(
   //     .mkString(tryBaseUrl + "?", "&", "")
   // }
 
-  def isSbtPlugin: Boolean = platform match {
-    case SbtPlugin(_) => true
-    case _            => false
-  }
+  // def isSbtPlugin: Boolean = platform match {
+  //   case SbtPlugin(_) => true
+  //   case _            => false
+  // }
 
-  def scastieURL: Option[String] =
-    if (isSbtPlugin || binaryVersion.platform == ScalaNative(_)) {
-      None
-    } else {
+  def scastieURL: Option[String] = binaryVersion.platform match {
+    case SbtPlugin(_) | ScalaNative(_) => None
+    case _ =>
       val tryBaseUrl = "https://scastie.scala-lang.org/try"
 
       val targetParam = binaryVersion.platform match {
@@ -275,7 +274,7 @@ case class Artifact(
       ) ++ targetParam ++ scalaVersionParam
 
       Some(params.map { case (k, v) => s"$k=$v" }.mkString(tryBaseUrl + "?", "&", ""))
-    }
+  }
 }
 
 object Artifact {

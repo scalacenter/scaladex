@@ -68,6 +68,7 @@
         </div>
         <div class="col-md-4 sidebar-project">
           @documentationBox
+          @scastieBox
           @dependenciesBox
           @dependentsBox
         </div>
@@ -93,6 +94,17 @@
           <li><a href="@doc.link" rel="nofollow">@doc.label</a></li>
         }
       </ul>
+    </div>
+  }
+}
+
+@scastieBox = {
+  @if(artifact.scastieURL.nonEmpty) {
+    <div class="box">
+      <a href="@artifact.scastieURL" target="_blank" rel="nofollow noopener">
+        <h6>Try online with Scastie</h6>
+        <img style="height: 100px;" src="/assets/img/scastie.svg" alt="Try on Scastie">
+      </a>
     </div>
   }
 }
