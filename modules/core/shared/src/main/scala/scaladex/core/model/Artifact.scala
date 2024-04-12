@@ -220,8 +220,6 @@ case class Artifact(
       case _    => None
     }
 
-  // todo: Add tests for this
-
   def scastieURL: Option[String] = {
     val tryBaseUrl = "https://scastie.scala-lang.org/try"
 
