@@ -250,6 +250,7 @@ case class Artifact(
         scalaVersion
       )
       params.map { case (k, v) => s"$k=$v" }.mkString(tryBaseUrl + "?", "&", "")
+      
     }
   }
 }
