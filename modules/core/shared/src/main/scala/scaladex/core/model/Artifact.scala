@@ -221,7 +221,7 @@ case class Artifact(
     }
 
   // todo: Add tests for this
-  
+
   def scastieURL: Option[String] = {
     val tryBaseUrl = "https://scastie.scala-lang.org/try"
 
@@ -250,7 +250,7 @@ case class Artifact(
         scalaVersion
       )
       params.map { case (k, v) => s"$k=$v" }.mkString(tryBaseUrl + "?", "&", "")
-      
+
     }
   }
 }
