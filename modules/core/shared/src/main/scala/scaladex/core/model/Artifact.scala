@@ -221,59 +221,36 @@ case class Artifact(
     }
 
   // todo: Add tests for this
-  // def scastieURL: String = {
-  //   val tryBaseUrl = "https://scastie.scala-lang.org/try"
+  
+  def scastieURL: Option[String] = {
+    val tryBaseUrl = "https://scastie.scala-lang.org/try"
 
-  //   val targetParam = binaryVersion.platform match {
-  //     case ScalaJs(_) => Some("t" -> "JS")
-  //     case _          => None
-  //   }
+    val targetParam = binaryVersion.platform match {
+      case ScalaJs(_) => Some("t" -> "JS")
+      case Jvm        => Some("t" -> "JVM")
+      case _          => None
+    }
 
-  //   val scalaVersionParam = binaryVersion.language match {
-  //     case Scala(v) => Some("sv" -> v.toString)
-  //     case _        => None
-  //   }
+    val scalaVersionParam = binaryVersion.language match {
+      case Scala(v) => Some("sv" -> v.toString)
+      case _        => None
+    }
 
-  //   val params: List[(String, String)] = List(
-  //     "g" -> groupId.value,
-  //     "a" -> artifactName.value,
-  //     "v" -> version.toString
-  //   ) ++ targetParam ++ scalaVersionParam
-
-  //   params
-  //     .map { case (k, v) => s"$k=$v" }
-  //     .mkString(tryBaseUrl + "?", "&", "")
-  // }
-
-  // def isSbtPlugin: Boolean = platform match {
-  //   case SbtPlugin(_) => true
-  //   case _            => false
-  // }
-
-  def scastieURL: Option[String] = binaryVersion.platform match {
-    case SbtPlugin(_) | ScalaNative(_) => None
-    case _ =>
-      val tryBaseUrl = "https://scastie.scala-lang.org/try"
-
-      val targetParam = binaryVersion.platform match {
-        case ScalaJs(_) => Some("t" -> "JS")
-        case _          => Some("t" -> "JVM")
-      }
-
-      val scalaVersionParam = binaryVersion.language match {
-        case Scala(v) => Some("sv" -> v.toString)
-        case _        => None
-      }
-
+    for {
+      target <- targetParam
+      scalaVersion <- scalaVersionParam
+    } yield {
       val params: List[(String, String)] = List(
         "g" -> groupId.value,
         "a" -> artifactName.value,
         "v" -> version.toString,
-        "o" -> projectRef.organization.toString, // removed getters
-        "r" -> projectRef.repository.toString
-      ) ++ targetParam ++ scalaVersionParam
-
-      Some(params.map { case (k, v) => s"$k=$v" }.mkString(tryBaseUrl + "?", "&", ""))
+        "o" -> projectRef.organization.toString,
+        "r" -> projectRef.repository.toString,
+        target,
+        scalaVersion
+      )
+      params.map { case (k, v) => s"$k=$v" }.mkString(tryBaseUrl + "?", "&", "")
+    }
   }
 }
 
