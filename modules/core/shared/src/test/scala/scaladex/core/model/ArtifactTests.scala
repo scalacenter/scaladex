@@ -144,34 +144,40 @@ class ArtifactTests extends AnyFunSpec with Matchers {
 
   describe("scastieURL") {
     it("should return None if artifact is SbtPlugin") {
-      val artifact = createArtifact(
+      createArtifact(
         groupId = "com.typesafe.sbt",
         artifactId = "sbt-native-packager_2.10_0.13",
         version = "1.2.2",
         binaryVersion = BinaryVersion(SbtPlugin.`0.13`, Scala.`2.10`)
-      )
-      artifact.scastieURL should be(None)
+      ).scastieURL should be(None)
     }
 
     it("should return None if artifact is ScalaNative") {
-      val artifact = createArtifact(
+      createArtifact(
         groupId = "org.typelevel",
         artifactId = "cats-core",
         version = "2.6.1",
         binaryVersion = BinaryVersion(ScalaNative.`0.4`, Scala.`2.13`)
-      )
-      artifact.scastieURL should be(None)
+      ).scastieURL should be(None)
     }
 
-    it("should return a valid url") {
-      val artifact = createArtifact(
+    it("should return None if artifact doesn't have ScalaVersion") {
+      createArtifact(
+        groupId = "org.typelevel",
+        artifactId = "",
+        version = "2.6.1",
+        binaryVersion = BinaryVersion(Jvm, Java)
+      ).scastieURL should be(None)
+    }
+
+    it("should return a valid URL") {
+      createArtifact(
         groupId = "org.scalameta",
         artifactId = "metals_2.13",
         version = "0.11.8",
         binaryVersion = BinaryVersion(Jvm, Scala.`2.13`),
         projectRef = Some(Project.Reference.from("scalameta", "metals"))
-      )
-      artifact.scastieURL should be(
+      ).scastieURL should be(
         Some("https://scastie.scala-lang.org/try?g=org.scalameta&a=metals&v=0.11.8&o=scalameta&r=metals&t=JVM&sv=2.13")
       )
     }
