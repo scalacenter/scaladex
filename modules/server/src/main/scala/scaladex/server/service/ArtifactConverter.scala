@@ -1,19 +1,9 @@
 package scaladex.server.service
 
 import java.time.Instant
-
 import com.typesafe.scalalogging.LazyLogging
-import scaladex.core.model.Artifact
-import scaladex.core.model.ArtifactDependency
+import scaladex.core.model.{Artifact, ArtifactDependency, BinaryVersion, Java, Jvm, Language, License, Project, SbtPlugin, Scala, SemanticVersion}
 import scaladex.core.model.ArtifactDependency.Scope
-import scaladex.core.model.BinaryVersion
-import scaladex.core.model.Java
-import scaladex.core.model.Jvm
-import scaladex.core.model.License
-import scaladex.core.model.Project
-import scaladex.core.model.SbtPlugin
-import scaladex.core.model.Scala
-import scaladex.core.model.SemanticVersion
 import scaladex.data.cleanup._
 import scaladex.data.maven.ArtifactModel
 import scaladex.data.maven.SbtPluginTarget
@@ -34,7 +24,7 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
       pom: ArtifactModel,
       projectRef: Project.Reference,
       creationDate: Instant
-  ): Option[(Artifact, Seq[ArtifactDependency])] =
+  ): Option[(Artifact, Seq[ArtifactDependency])] = {
     for {
       version <- SemanticVersion.parse(pom.version)
       meta <- extractMeta(pom)
@@ -52,7 +42,7 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
         meta.isNonStandard,
         meta.binaryVersion.platform,
         meta.binaryVersion.language,
-        None
+        languageToScalaVersion(meta.binaryVersion.language)
       )
       val dependencies = pom.dependencies.map { dep =>
         ArtifactDependency(
@@ -63,6 +53,13 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
       }.distinct
       (artifact, dependencies)
     }
+  }
+  def languageToScalaVersion(language: Language): Option[SemanticVersion] = {
+    language match {
+      case Scala(version) => Some(version)
+      case Java => None
+    }
+  }
 
   /**
    * artifactId is often use to express binary compatibility with a scala version (ScalaTarget)
