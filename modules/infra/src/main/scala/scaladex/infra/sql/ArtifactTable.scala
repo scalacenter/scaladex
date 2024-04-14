@@ -32,7 +32,8 @@ object ArtifactTable {
       "licenses",
       "is_non_standard_Lib",
       "platform",
-      "language_version"
+      "language_version",
+      "full_scala_version"
     )
   // these field are usually excluded when we read artifacts from the artifacts table.
   val versionFields: Seq[String] = Seq("is_semantic", "is_prerelease")
