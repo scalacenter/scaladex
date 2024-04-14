@@ -51,7 +51,8 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
         pom.licenses.flatMap(l => License.get(l.name)).toSet,
         meta.isNonStandard,
         meta.binaryVersion.platform,
-        meta.binaryVersion.language
+        meta.binaryVersion.language,
+        None
       )
       val dependencies = pom.dependencies.map { dep =>
         ArtifactDependency(

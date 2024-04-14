@@ -63,7 +63,8 @@ object Values {
       releaseDate = creationDate,
       resolver = None,
       licenses = Set(),
-      isNonStandardLib = false
+      isNonStandardLib = false,
+      fullScalaVersion = None
     )
     val githubInfo: GithubInfo =
       GithubInfo.empty
@@ -109,7 +110,8 @@ object Values {
       releaseDate = creationDate,
       resolver = None,
       licenses = Set(),
-      isNonStandardLib = false
+      isNonStandardLib = false,
+      fullScalaVersion = None
     )
     val dependency: ArtifactDependency =
       ArtifactDependency(
@@ -168,7 +170,8 @@ object Values {
         releaseDate = Instant.ofEpochMilli(1620911032000L),
         resolver = None,
         licenses = Set(license),
-        isNonStandardLib = false
+        isNonStandardLib = false,
+        fullScalaVersion = None
       )
     }
 

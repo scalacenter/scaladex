@@ -30,7 +30,8 @@ case class Artifact(
     licenses: Set[License],
     isNonStandardLib: Boolean,
     platform: Platform,
-    language: Language
+    language: Language,
+    fullScalaVersion: Option[SemanticVersion]
 ) {
   val binaryVersion: BinaryVersion = BinaryVersion(platform, language)
 
@@ -261,7 +262,7 @@ object Artifact {
     def mavenUrl: String = value.replace('.', '/')
   }
   case class ArtifactId(name: Name, binaryVersion: BinaryVersion) {
-    def value: String = s"${name}${binaryVersion.encode}"
+    def value: String = s"$name${binaryVersion.encode}"
     def isScala: Boolean = binaryVersion.language.isScala
   }
 
