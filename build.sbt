@@ -23,7 +23,7 @@ lazy val loggingSettings = Seq(
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
   ),
   // Drop and replace commons-logging with slf4j
-  libraryDependencies += "org.slf4j" % "jcl-over-slf4j" % "2.0.12",
+  libraryDependencies += "org.slf4j" % "jcl-over-slf4j" % "2.0.13",
   excludeDependencies += ExclusionRule("commons-logging", "commons-logging")
 )
 
@@ -173,7 +173,7 @@ lazy val server = project
       "org.webjars" % "chartjs" % "3.9.1",
       "org.webjars.npm" % "date-fns" % "2.30.0",
       "org.webjars.npm" % "chartjs-adapter-date-fns" % "3.0.0",
-      "org.webjars" % "font-awesome" % "6.5.1",
+      "org.webjars" % "font-awesome" % "6.5.2",
       "org.webjars" % "jquery" % "3.7.1",
       "org.webjars.bower" % "select2" % "4.0.13"
     ),
