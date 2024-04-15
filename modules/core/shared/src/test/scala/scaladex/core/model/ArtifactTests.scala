@@ -141,13 +141,70 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       obtained should contain(expected)
     }
   }
+
+  describe("scastieURL") {
+    it("should return None if artifact is SbtPlugin") {
+      createArtifact(
+        groupId = "com.typesafe.sbt",
+        artifactId = "sbt-native-packager_2.10_0.13",
+        version = "1.2.2",
+        binaryVersion = BinaryVersion(SbtPlugin.`0.13`, Scala.`2.10`)
+      ).scastieURL should be(None)
+    }
+
+    it("should return None if artifact is ScalaNative") {
+      createArtifact(
+        groupId = "org.typelevel",
+        artifactId = "cats-core_native0.4_2.13",
+        version = "2.6.1",
+        binaryVersion = BinaryVersion(ScalaNative.`0.4`, Scala.`2.13`)
+      ).scastieURL should be(None)
+    }
+
+    it("should return None if artifact doesn't have ScalaVersion") {
+      createArtifact(
+        groupId = "com.typesafe",
+        artifactId = "config",
+        version = "2.6.1",
+        binaryVersion = BinaryVersion(Jvm, Java)
+      ).scastieURL should be(None)
+    }
+
+    it("should return a valid URL") {
+      createArtifact(
+        groupId = "org.scalameta",
+        artifactId = "metals_2.13",
+        version = "0.11.8",
+        binaryVersion = BinaryVersion(Jvm, Scala.`2.13`),
+        projectRef = Some(Project.Reference.from("scalameta", "metals"))
+      ).scastieURL should be(
+        Some("https://scastie.scala-lang.org/try?g=org.scalameta&a=metals&v=0.11.8&o=scalameta&r=metals&t=JVM&sv=2.13")
+      )
+    }
+
+    it("should return a valid URL for a ScalaJs artifact") {
+      createArtifact(
+        groupId = "org.scala-js",
+        artifactId = "scalajs-dom_sjs1_2.13",
+        version = "2.8.0",
+        binaryVersion = BinaryVersion(ScalaJs.`1.x`, Scala.`2.13`),
+        projectRef = Some(Project.Reference.from("Scala.js", "scalajs-library"))
+      ).scastieURL should be(
+        Some(
+          "https://scastie.scala-lang.org/try?g=org.scala-js&a=scalajs-dom&v=2.8.0&o=scala.js&r=scalajs-library&t=JS&sv=2.13"
+        )
+      )
+    }
+  }
+
   private def createArtifact(
       groupId: String,
       artifactId: String,
       version: String,
       binaryVersion: BinaryVersion,
       artifactName: Option[Artifact.Name] = None,
-      resolver: Option[Resolver] = None
+      resolver: Option[Resolver] = None,
+      projectRef: Option[Project.Reference] = None
   ) = {
     // An artifact always have an artifactId that can be parsed, but in the case we don't really care about if it can
     // be parsed or not, we just want to test methods in artifacts like sbtInstall
@@ -161,7 +218,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       artifactName = artifactIdResult.name,
       platform = artifactIdResult.binaryVersion.platform,
       language = artifactIdResult.binaryVersion.language,
-      projectRef = Project.Reference.from("", ""),
+      projectRef = projectRef.getOrElse(Project.Reference.from("", "")),
       description = None,
       releaseDate = Instant.now(),
       resolver = resolver,
