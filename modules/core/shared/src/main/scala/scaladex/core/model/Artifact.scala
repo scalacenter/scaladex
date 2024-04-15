@@ -220,12 +220,12 @@ case class Artifact(
       case _    => None
     }
 
-  // todo: Add tests for this
-  def scastieURL: String = {
+  def scastieURL: Option[String] = {
     val tryBaseUrl = "https://scastie.scala-lang.org/try"
 
     val targetParam = binaryVersion.platform match {
       case ScalaJs(_) => Some("t" -> "JS")
+      case Jvm        => Some("t" -> "JVM")
       case _          => None
     }
 
@@ -234,15 +234,22 @@ case class Artifact(
       case _        => None
     }
 
-    val params: List[(String, String)] = List(
-      "g" -> groupId.value,
-      "a" -> artifactName.value,
-      "v" -> version.toString
-    ) ++ targetParam ++ scalaVersionParam
+    for {
+      target <- targetParam
+      scalaVersion <- scalaVersionParam
+    } yield {
+      val params: List[(String, String)] = List(
+        "g" -> groupId.value,
+        "a" -> artifactName.value,
+        "v" -> version.toString,
+        "o" -> projectRef.organization.toString,
+        "r" -> projectRef.repository.toString,
+        target,
+        scalaVersion
+      )
+      params.map { case (k, v) => s"$k=$v" }.mkString(tryBaseUrl + "?", "&", "")
 
-    params
-      .map { case (k, v) => s"$k=$v" }
-      .mkString(tryBaseUrl + "?", "&", "")
+    }
   }
 }
 
