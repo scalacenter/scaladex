@@ -10,40 +10,64 @@
 #bottom {
     padding: 40px 0;
     background: $gray-darker;
-    ul {
-        padding: 0;
-        margin: 0;
-        li {
-            margin: 0;
-            padding: 0;
-            list-style: none;
-            h5 {
-                font-family: $font-family-sans-serif;
-                color: #fff;
-            }
-            a {
-                color: rgba(255, 255, 255, 0.3);
-                &:hover,
-                &:focus {
-                    color: rgba(255, 255, 255, 0.7);
+    color: rgba(#fff, 0.5);
+
+    
+    .footer-top {
+        margin-bottom: 40px;
+        padding-bottom: 1px;
+        ul {
+            list-style-type: none;
+            @include make-row();
+
+            li {
+            margin-bottom: 3px;
+                h5 {
+                    color: #fff;
+                    margin-bottom: 10px;
+                    text-transform: uppercase;
+                    font-family: $font-family-base;
+                    font-weight: 700;
+                    font-size: $font-size-large;
+                }
+
+                a {
+                color: rgba(#fff, 0.5);
+                font-size: $font-size-base;
+
+                &:active,
+                &:focus,
+                &:hover {
+                    color: #fff;
                     text-decoration: none;
+                }
                 }
             }
         }
-    }
-    ul.social {
-        text-align: left;
-        @media screen and (min-width: $screen-md-min) {
-            text-align: right;
-        }
-        li {
-            display: inline-block;
-            margin-right: 10px;
+        ul.social {
+            text-align: left;
+            // @media screen and (min-width: $screen-md-min) {
+            //     text-align: right;
+            // }
+            li {
+                display: block;
+                margin-right: 10px;
+            }
         }
     }
 
-    .sponsors img {
-        width: 150px;
-        margin: 10px;
+    .footer-bottom {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        .sponsors img {
+            width: 180px;
+            margin: 10px;
+            height: auto;
+        }
+        .copyright {
+            text-align: left;
+        }
     }
 }

@@ -107,32 +107,46 @@
     </header>
     @content
     <footer id="bottom">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-2">
-                    <ul>
-                        <li>
-                            <h5>Scaladex</h5></li>
-                        <li><a href="https://github.com/scalacenter/scaladex/wiki/FAQ">FAQs</a></li>
-                        <li><a href="https://github.com/scalacenter/scaladex/issues/new">Report an Issue</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-2">
-                    <ul class="social">
-                        <li>
-                            <h5>Follow us:</h5></li>
-                        <li><a href="https://twitter.com/scala_index"><i class="fa-brands fa-twitter fa-lg"></i></a></li>
-                        <li><a href="https://github.com/scalacenter/scaladex"><i class="fa-brands fa-github fa-lg"></i></a></li>
-                    </ul>
-                </div>
-                <div class="col-md-8">
+      <div class="container">
+          <div class="footer-top row">
+              <div class="col-md-3">
+                  <ul>
+                      <li><h5>Community</h5></li>
+                      <li><a href="https://github.com/scalacenter/scaladex"><i class="fa-brands fa-github fa-lg"></i> Github</a></li>
+                      <li><a href="https://discord.com/invite/scala"><i class="fab fa-discord fa-lg"></i> Discord</a></li>
+                  </ul>
+              </div>
+              <div class="col-md-3">
+                  <ul>
+                      <li><h5>Contribute</h5></li>
+                      <li><a href="https://github.com/scalacenter/scaladex/blob/main/CONTRIBUTING.md">Contribution Guide</a></li>
+                      <li><a href="https://github.com/scalacenter/scaladex/issues/new">Report an Issue</a></li>
+                  </ul>
+              </div>
+              <div class="col-md-3">
+                  <ul>
+                      <li><h5>Scaladex</h5></li>
+                      <li><a href="https://github.com/scalacenter/scaladex/wiki/FAQ">FAQs</a></li>
+                      <li><a href="https://scala-lang.org/conduct/">Code of Conduct</a></li>
+                      <li><a href="https://github.com/scalacenter/scaladex?tab=BSD-3-Clause-1-ov-file">License</a></li>
+                  </ul>
+              </div>
+          </div>
+  
+          <div class="footer-bottom row">
+              <div class="col-md-4">
+                  <p class="copyright text-center">Copyright © 2002-@java.time.Year.now() École Polytechnique Fédérale Lausanne (EPFL) Lausanne, Switzerland</p>
+              </div>
+              <div class="col-md-6">
+                  <!-- Empty column for alignment -->
+              </div>
+              <div class="col-md-2">
                   <a class="sponsors" href="https://scala.epfl.ch/"><img src="/assets/img/scala-center-logo.png" alt="powered by Scala Center"></a>
-                  <a class="sponsors" href="https://www.jfrog.com/bintray/"><img src="/assets/img/Bintray.png" alt="powered by Bintray"></a>
-                  <a class="sponsors" href="https://www.sonatype.com/"><img src="/assets/img/sonatype_nexus.png" alt="powered by Sonatype"></a>
-                </div>
-            </div>
-        </div>
-    </footer>
+              </div>
+          </div>
+      </div>
+  </footer>
+  
     <!-- Coding End -->
 
     @if(env.isProd || env.isDev) {
