@@ -155,7 +155,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
     it("should return None if artifact is ScalaNative") {
       createArtifact(
         groupId = "org.typelevel",
-        artifactId = "cats-core",
+        artifactId = "cats-core_native0.4_2.13",
         version = "2.6.1",
         binaryVersion = BinaryVersion(ScalaNative.`0.4`, Scala.`2.13`)
       ).scastieURL should be(None)
@@ -163,8 +163,8 @@ class ArtifactTests extends AnyFunSpec with Matchers {
 
     it("should return None if artifact doesn't have ScalaVersion") {
       createArtifact(
-        groupId = "org.typelevel",
-        artifactId = "",
+        groupId = "com.typesafe",
+        artifactId = "config",
         version = "2.6.1",
         binaryVersion = BinaryVersion(Jvm, Java)
       ).scastieURL should be(None)
@@ -185,13 +185,13 @@ class ArtifactTests extends AnyFunSpec with Matchers {
     it("should return a valid URL for a ScalaJs artifact") {
       createArtifact(
         groupId = "org.scala-js",
-        artifactId = "scalajs-library_2.13",
-        version = "1.16.0",
-        binaryVersion = BinaryVersion(ScalaJs.`1.x`, Scala.`3`),
+        artifactId = "scalajs-dom_sjs1_2.13",
+        version = "2.8.0",
+        binaryVersion = BinaryVersion(ScalaJs.`1.x`, Scala.`2.13`),
         projectRef = Some(Project.Reference.from("Scala.js", "scalajs-library"))
       ).scastieURL should be(
         Some(
-          "https://scastie.scala-lang.org/try?g=org.scala-js&a=scalajs-library&v=1.16.0&o=scala.js&r=scalajs-library&t=JVM&sv=2.13"
+          "https://scastie.scala-lang.org/try?g=org.scala-js&a=scalajs-dom&v=2.8.0&o=scala.js&r=scalajs-library&t=JS&sv=2.13"
         )
       )
     }
