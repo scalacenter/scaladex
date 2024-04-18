@@ -8,7 +8,11 @@ Its main purpose is to help Scala developers find useful libraries and to help l
 
 ## Acknowledgments
 
-<a title="Scala Center" href="https://scala.epfl.ch/"><img alt="Scala Center" src="https://scala.epfl.ch/resources/img/scala-center-logo-black.png" height="60" /></a>
+<picture>
+    <source media="(prefers-color-scheme: light)" srcset="https://scala.epfl.ch/resources/img/scala-center-logo-black.png">
+    <source media="(prefers-color-scheme: dark)" srcset="https://scala.epfl.ch/resources/img/scala-center-logo.png">
+    <img alt="Scala Center" src="https://scala.epfl.ch/resources/img/scala-center-logo.png" height="60">
+</picture>
 
 This project is funded by the <a title="Scala Center" href="https://scala.epfl.ch/">Scala Center</a>.
 
