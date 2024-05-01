@@ -237,7 +237,7 @@ lazy val data = project
 
 lazy val V = new {
   val doobie = "0.13.4"
-  val playJson = "2.9.4"
+  val playJson = "2.10.5"
   val pekko = "1.0.2"
   val pekkoHttp = "1.0.1"
   val elastic4s = "8.11.5"
