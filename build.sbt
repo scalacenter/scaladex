@@ -65,7 +65,7 @@ lazy val infra = project
     scalacOptionsSettings,
     loggingSettings,
     libraryDependencies ++= Seq(
-      "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % V.elastic4s,
+      "nl.gn0s1s" %% "elastic4s-client-esjava" % V.elastic4s,
       "org.flywaydb" % "flyway-core" % "8.5.13", // for database migration
       "org.apache.pekko" %% "pekko-stream" % V.pekko,
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
@@ -240,7 +240,7 @@ lazy val V = new {
   val playJson = "2.9.4"
   val pekko = "1.0.2"
   val pekkoHttp = "1.0.1"
-  val elastic4s = "8.11.5"
+  val elastic4s = "8.12.0"
   val nscalaTime = "2.32.0"
   val scalatest = "3.2.18"
   val circe = "0.14.7"
