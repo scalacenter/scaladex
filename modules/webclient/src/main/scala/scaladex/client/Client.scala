@@ -7,7 +7,6 @@ import scala.scalajs.js.UndefOr
 import scala.scalajs.js.annotation.JSExport
 import scala.scalajs.js.annotation.JSExportTopLevel
 
-import org.scalajs.dom
 import org.scalajs.dom._
 import org.scalajs.dom.document
 import org.scalajs.dom.ext.KeyCode
@@ -119,90 +118,6 @@ object Client {
 
   }
 
-  @js.native
-  trait Issue extends js.Object {
-    val html_url: String = js.native
-    val number: Int = js.native
-    val title: String = js.native
-  }
-
-  private def getIssueJson(issue: Issue): String =
-    s"""{ "number":${issue.number}, "title":"${issue.title
-        .replace("\"", "\\\"")}", "url":{"target":"${issue.html_url}"} }"""
-
-  private def getIssuesListener(token: Option[String])(event: dom.Event): Unit =
-    getIssues(token)
-
-  // used to access methods from bootstrap-select library like .selectpicker("val")
-  // see https://silviomoreto.github.io/bootstrap-select/methods/
-  private def getSelectedIssue(): HTMLSelectElement =
-    Dom.getById[HTMLSelectElement]("selectedBeginnerIssues").get
-
-  private def getIssues(token: Option[String], showSelected: Boolean = false): Unit =
-    Dom.getById[HTMLInputElement]("beginnerIssuesLabel").foreach { issuesLabelEl =>
-      val label = issuesLabelEl.value
-      if (!label.isEmpty) {
-        val organization = issuesLabelEl.attributes.getNamedItem("data-organization").value
-        val repository = issuesLabelEl.attributes.getNamedItem("data-repository").value
-
-        val headers = Map("Accept" -> "application/vnd.github.VERSION.raw+json")
-        val headersWithCreds = token
-          .map(t => headers + ("Authorization" -> s"bearer $t"))
-          .getOrElse(headers)
-
-        val request = new Request(
-          s"https://api.github.com/repos/$organization/$repository/issues?state=open&labels=$label",
-          new RequestInit {
-            headers = headersWithCreds.toJSDictionary
-          }
-        )
-
-        fetch(request).toFuture
-          .flatMap(res => res.text().toFuture)
-          .foreach { res =>
-            val rawIssues = js.JSON.parse(res)
-            val issues = rawIssues.asInstanceOf[js.Array[Issue]]
-            val options = issues.map { issue =>
-              s"""<option value='${getIssueJson(
-                  issue
-                )}' title="#${issue.number}"> #${issue.number} - ${issue.title}</option>"""
-            }
-            val selectedIssue = getSelectedIssue()
-            selectedIssue.innerHTML = options.mkString
-            Dom.getById[HTMLInputElement]("openIssues").foreach { input =>
-              val openIssuesJson = s"[${issues.map(getIssueJson).mkString(",")}]"
-              input.value = openIssuesJson
-            }
-
-            disableBeginnerIssues(false)
-
-            if (showSelected) {
-              val selectedIssueNumbers: Array[Int] =
-                if (!selectedIssue.getAttribute("data-selected").isEmpty)
-                  selectedIssue.getAttribute("data-selected").split(",").map(_.toInt)
-                else Array()
-              val selectedIssueValues = issues.collect {
-                case issue if selectedIssueNumbers.contains(issue.number) =>
-                  getIssueJson(issue)
-              }
-              getSelectedIssue().asInstanceOf[js.Dynamic].selectpicker("val", selectedIssueValues)
-            }
-          }
-      } else {
-        val selectedIssue = getSelectedIssue()
-        selectedIssue.innerHTML = ""
-        Dom.getById[HTMLInputElement]("openIssues").foreach(_.value = "")
-        disableBeginnerIssues(true)
-      }
-    }
-
-  private def disableBeginnerIssues(disable: Boolean): Unit = {
-    val selectedIssue = getSelectedIssue()
-    selectedIssue.setAttribute("disabled", disable.toString)
-    selectedIssue.asInstanceOf[js.Dynamic].selectpicker("refresh")
-    selectedIssue.asInstanceOf[js.Dynamic].selectpicker("deselectAll")
-  }
-
   @JSExport
   def main(token: UndefOr[String]): Unit = {
     document.addEventListener[KeyboardEvent]("keydown", jumpToSearchInput _)
@@ -215,11 +130,6 @@ object Client {
     }
 
     Dom.getById[Element]("README").foreach(fetchAndReplaceReadme(_, token.toOption))
-    Dom
-      .getById[Element]("beginnerIssuesLabel")
-      .foreach(el => el.addEventListener("change", getIssuesListener(token.toOption)))
-
-    getIssues(token.toOption, showSelected = true)
 
     val config =
       js.Dictionary[js.Any]("img_dir" -> "https://cdnjs.cloudflare.com/ajax/libs/emojify.js/1.1.0/images/basic")
