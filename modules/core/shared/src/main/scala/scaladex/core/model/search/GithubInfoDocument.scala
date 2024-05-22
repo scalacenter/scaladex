@@ -11,7 +11,6 @@ case class GithubInfoDocument(
     openIssues: Seq[GithubIssue],
     topics: Seq[String],
     contributingGuide: Option[Url],
-    chatroom: Option[Url],
     codeOfConduct: Option[Url],
     stars: Option[Int],
     forks: Option[Int],
@@ -22,6 +21,6 @@ case class GithubInfoDocument(
 )
 
 object GithubInfoDocument {
-  def default: GithubInfoDocument =
-    GithubInfoDocument(None, None, None, Seq.empty, Seq.empty, None, None, None, None, None, 0, None, None, None)
+  def empty: GithubInfoDocument =
+    GithubInfoDocument(None, None, None, Seq.empty, Seq.empty, None, None, None, None, 0, None, None, None)
 }

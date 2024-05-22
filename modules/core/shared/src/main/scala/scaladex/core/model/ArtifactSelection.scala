@@ -14,17 +14,20 @@ case class ArtifactSelection(
       (
         // default artifact (ex: akka-actors is the default for akka/akka)
         project.settings.defaultArtifact.contains(artifact.artifactName),
+        // not deprecated
+        !project.settings.deprecatedArtifacts.contains(artifact.artifactName),
         // project repository (ex: shapeless)
         project.repository.value == artifact.artifactName.value,
         // alphabetically
         artifact.artifactName,
         // stable version first
-        project.settings.defaultStableVersion && artifact.version.preRelease.isDefined,
+        project.settings.preferStableVersion && artifact.version.preRelease.isDefined,
         artifact.version,
         artifact.binaryVersion
       )
     }(
-      Ordering.Tuple6(
+      Ordering.Tuple7(
+        Ordering[Boolean],
         Ordering[Boolean],
         Ordering[Boolean],
         Ordering[Artifact.Name].reverse,
@@ -42,18 +45,21 @@ case class ArtifactSelection(
         (
           // default artifact (ex: akka-actors is the default for akka/akka)
           project.settings.defaultArtifact.contains(artifact.artifactName),
+          // not deprecated
+          !project.settings.deprecatedArtifacts.contains(artifact.artifactName),
           // project repository (ex: shapeless)
           project.repository.value == artifact.artifactName.value,
           // alphabetically
           artifact.artifactName,
           // stable version first
-          project.settings.defaultStableVersion && artifact.version.preRelease.isDefined,
+          project.settings.preferStableVersion && artifact.version.preRelease.isDefined,
           artifact.version,
           artifact.binaryVersion
         )
       }(
         Ordering
-          .Tuple6(
+          .Tuple7(
+            Ordering[Boolean],
             Ordering[Boolean],
             Ordering[Boolean],
             Ordering[Artifact.Name].reverse,

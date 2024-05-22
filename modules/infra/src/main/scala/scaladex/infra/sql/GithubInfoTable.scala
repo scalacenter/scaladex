@@ -24,7 +24,6 @@ object GithubInfoTable {
     "topics",
     "contributing_guide",
     "code_of_conduct",
-    "chatroom",
     "open_issues",
     "scala_percentage",
     "license",

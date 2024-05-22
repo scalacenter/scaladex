@@ -291,40 +291,27 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
       }
     }
 
-  // TODO remove all unused parameters
   private val editForm: Directive1[Project.Settings] =
     formFieldSeq.tflatMap(fields =>
       formFields(
-        "contributorsWanted".as[Boolean] ? false,
-        "defaultArtifact".?,
-        "defaultStableVersion".as[Boolean] ? false,
-        "strictVersions".as[Boolean] ? false,
-        "deprecated".as[Boolean] ? false,
-        "artifactDeprecations".as[String].*,
-        "cliArtifacts".as[String].*,
-        "customScalaDoc".?,
         "category".?,
-        "beginnerIssuesLabel".?,
-        "selectedBeginnerIssues".as[String].*,
         "chatroom".?,
-        "contributingGuide".?,
-        "codeOfConduct".?
+        "contributorsWanted".as[Boolean].?(false),
+        "defaultArtifact".?,
+        "preferStableVersion".as[Boolean].?(false),
+        "deprecatedArtifacts".as[String].*,
+        "cliArtifacts".as[String].*,
+        "customScalaDoc".?
       ).tmap {
         case (
+              rawCategory,
+              rawChatroom,
               contributorsWanted,
               rawDefaultArtifact,
-              defaultStableVersion,
-              strictVersions,
-              deprecated,
-              rawArtifactDeprecations,
+              preferStableVersion,
+              rawDeprecatedArtifacts,
               rawCliArtifacts,
-              rawCustomScalaDoc,
-              rawCategory,
-              rawBeginnerIssuesLabel,
-              _,
-              _,
-              _,
-              _
+              rawCustomScalaDoc
             ) =>
           val documentationLinks =
             fields._1
@@ -342,18 +329,17 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
             if (value.isEmpty) None else Some(value)
 
           val settings: Project.Settings = Project.Settings(
-            defaultStableVersion,
+            preferStableVersion,
             rawDefaultArtifact.flatMap(noneIfEmpty).map(Artifact.Name.apply),
-            strictVersions,
             rawCustomScalaDoc.flatMap(noneIfEmpty),
             documentationLinks,
-            deprecated,
             contributorsWanted,
-            rawArtifactDeprecations.map(Artifact.Name.apply).toSet,
+            rawDeprecatedArtifacts.map(Artifact.Name.apply).toSet,
             rawCliArtifacts.map(Artifact.Name.apply).toSet,
             rawCategory.flatMap(Category.byLabel.get),
-            rawBeginnerIssuesLabel.flatMap(noneIfEmpty)
+            rawChatroom.flatMap(noneIfEmpty)
           )
+          println(settings)
           Tuple1(settings)
       }
     )

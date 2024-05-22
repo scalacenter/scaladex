@@ -90,7 +90,7 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
     for {
       _ <- insertAll(projects)
       hits <- searchEngine.find(params, pageParams)
-    } yield hits.items.flatMap(_.beginnerIssueHits) should contain theSameElementsAs expected
+    } yield hits.items.flatMap(_.issues) should contain theSameElementsAs expected
   }
 
   "count by topics" in {
@@ -173,7 +173,7 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
   }
 
   private def projectDocument(ref: String, stars: Int, scalaPercentage: Int): ProjectDocument = {
-    val githubInfo = GithubInfoDocument.default.copy(stars = Some(stars), scalaPercentage = Some(scalaPercentage))
+    val githubInfo = GithubInfoDocument.empty.copy(stars = Some(stars), scalaPercentage = Some(scalaPercentage))
     ProjectDocument.default(Project.Reference.from(ref)).copy(githubInfo = Some(githubInfo))
   }
 

@@ -9,11 +9,6 @@
 
 @canEdit = @{user.exists(_.canEdit(project.reference, env))}
 @isActive(nameTab: String) = @{if(nameTab == activeTab) "active" else ""}
-@if(project.settings.deprecated) {
-  <div class="deprecated-project">
-    This repository has been deprecated by the owner.
-  </div>
-}
 <div class="head-project">
   <div class="container">
     <div class="info-project">

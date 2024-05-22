@@ -41,7 +41,6 @@ case class GithubInfo(
     topics: Set[String],
     contributingGuide: Option[Url],
     codeOfConduct: Option[Url],
-    chatroom: Option[Url],
     openIssues: Seq[GithubIssue], // right now it's all issues, not only beginners issues
     scalaPercentage: Option[Int],
     license: Option[License],
@@ -57,7 +56,6 @@ case class GithubInfo(
       openIssues = openIssues,
       topics = topics.toSeq,
       contributingGuide = contributingGuide,
-      chatroom = chatroom,
       codeOfConduct = codeOfConduct,
       stars = stars,
       forks = forks,
@@ -84,7 +82,6 @@ object GithubInfo {
     topics = Set(),
     contributingGuide = None,
     codeOfConduct = None,
-    chatroom = None,
     openIssues = Seq(),
     scalaPercentage = None,
     license = None,

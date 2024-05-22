@@ -67,7 +67,7 @@ object ProjectDocument {
         .map(_.artifactName)
         .distinct
         .sorted
-        .partition(project.settings.artifactDeprecations.contains)
+        .partition(project.settings.deprecatedArtifacts.contains)
     import project._
     ProjectDocument(
       organization,

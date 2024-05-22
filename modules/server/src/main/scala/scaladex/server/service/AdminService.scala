@@ -109,7 +109,7 @@ class AdminService(
                     creationDate = None,
                     GithubStatus.Ok(java.time.Instant.now),
                     githubInfo = Some(info),
-                    settings = Settings.default
+                    settings = Settings.empty
                   )
                 database
                   .insertProject(project)

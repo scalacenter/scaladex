@@ -241,7 +241,7 @@ object DoobieUtils {
               githubStatus = githubStatus,
               githubInfo = githubInfo,
               creationDate = creationDate,
-              settings = settings.getOrElse(Project.Settings.default)
+              settings = settings.getOrElse(Project.Settings.empty)
             )
         }
 

@@ -92,20 +92,6 @@
       margin-left: 5px;
     }
   }
-  
-  .project-contributing-info {
-    a {
-      display: block;
-      padding-bottom: 10px;
-      color: $gray;
-      &:hover,
-      &:focus {
-        color: $brand-primary;
-        text-decoration: underline;
-      }
-    }
-    td {padding-left: 30px;}
-  }
 
   .commit-activities {
     canvas.commit-activity {
@@ -138,7 +124,7 @@
     }
   }
 
-  .collaborators {
+  .contributors {
     ul {
       li {
         margin: 0 6px 6px 0;
@@ -152,7 +138,7 @@
         }
       }
     }
-    .more-collaborators {
+    .more-contributors {
       padding-top: 15px;
     }
   }
@@ -180,13 +166,6 @@
     }
   }
 
-  .deprecated-project {
-    background-color: #FFF8C5;
-    font-size: 22px;
-    text-align: center;
-    color: $gray-darker;
-  }
-  
   .install {
     .nav-tabs>li>a {
       background: transparent;

@@ -44,8 +44,8 @@ case class Project(
       .orElse(artifact.defaultScaladoc.map(DocumentationLink("Scaladoc", _)))
 
   def globalDocumentation: Seq[DocumentationLink] =
-    settings.customScalaDoc.flatMap(DocumentationPattern("Scaladoc", _).eval).toSeq ++
-      settings.documentationLinks.flatMap(_.eval)
+    settings.customScalaDoc.flatMap(DocumentationPattern("Scaladoc", _).asGlobal).toSeq ++
+      settings.documentationLinks.flatMap(_.asGlobal)
 
   def artifactDocumentation(artifact: Artifact): Seq[DocumentationLink] =
     scaladoc(artifact).toSeq ++ settings.documentationLinks.map(_.eval(artifact))
@@ -84,21 +84,19 @@ object Project {
       githubStatus = githubInfo.map(_ => GithubStatus.Ok(now)).getOrElse(GithubStatus.Unknown(now)),
       githubInfo = githubInfo,
       creationDate = creationDate,
-      settings = settings.getOrElse(Settings.default)
+      settings = settings.getOrElse(Settings.empty)
     )
 
   case class Settings(
-      defaultStableVersion: Boolean,
+      preferStableVersion: Boolean,
       defaultArtifact: Option[Artifact.Name],
-      strictVersions: Boolean,
       customScalaDoc: Option[String],
       documentationLinks: Seq[DocumentationPattern],
-      deprecated: Boolean,
       contributorsWanted: Boolean,
-      artifactDeprecations: Set[Artifact.Name],
+      deprecatedArtifacts: Set[Artifact.Name],
       cliArtifacts: Set[Artifact.Name],
       category: Option[Category],
-      beginnerIssuesLabel: Option[String]
+      chatroom: Option[String]
   )
 
   case class Organization private (value: String) extends AnyVal {
@@ -117,18 +115,16 @@ object Project {
   }
 
   object Settings {
-    val default: Settings = Settings(
-      defaultStableVersion = true,
+    val empty: Settings = Settings(
+      preferStableVersion = true,
       defaultArtifact = None,
-      strictVersions = false,
       customScalaDoc = None,
       documentationLinks = List(),
-      deprecated = false,
       contributorsWanted = false,
-      artifactDeprecations = Set(),
+      deprecatedArtifacts = Set(),
       cliArtifacts = Set(),
       category = None,
-      beginnerIssuesLabel = None
+      chatroom = None
     )
   }
 }

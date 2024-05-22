@@ -250,7 +250,7 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
       oldProject <- getProject(ref)
       _ <- updateGithubStatus(ref, status)
       _ <- run(ProjectTable.insertIfNotExists.run((status.destination, GithubStatus.Ok(status.updateDate))))
-      _ <- updateProjectSettings(status.destination, oldProject.map(_.settings).getOrElse(Project.Settings.default))
+      _ <- updateProjectSettings(status.destination, oldProject.map(_.settings).getOrElse(Project.Settings.empty))
       _ <- run(GithubInfoTable.insertOrUpdate.run(status.destination, githubInfo, githubInfo))
     } yield ()
 

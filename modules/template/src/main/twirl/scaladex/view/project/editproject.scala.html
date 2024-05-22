@@ -21,63 +21,18 @@
             <a class="btn btn-default pull-right" href="/@project.organization/@project.repository">Cancel</a>
             <button type="submit" form="project-settings" class="btn btn-primary pull-right">Update</button>
 
-            <h1>Edit project</h1>
+            <h1>Project Settings</h1>
             <form action="/@project.organization/@project.repository/settings" method="POST" id="project-settings">
               <div class="form-group">
-                <input type="checkbox" name="contributorsWanted" @if(project.settings.contributorsWanted){ checked }> 
-                <img src="/assets/img/contributors_tag.png" alt="Contributors Wanted">
-              </div>
-
-              <div class="form-group">
-                <label for="cliArtifacts">Command Line Artifacts</label>
-                <select
-                  name="cliArtifacts"
-                  class="js-keywords-multiple js-states form-control"
-                  id="cliArtifacts"
-                  multiple="multiple">
-                @for(artifact <- artifactNames) {
-                  <option
-                    value="@artifact" 
-                    @if(project.settings.cliArtifacts.contains(artifact)){selected}>
-                      @artifact
-                  </option>
-                }
-                </select>
-              </div>
-
-              <div class="form-group">
-                <input type="checkbox" name="deprecated" @if(project.settings.deprecated){ checked } id="deprecated">
-                <label label-for="deprecated">Project Deprecated</label>
-              </div>
-
-              <div class="form-group">
-                <label for="deprecations">Deprecated Artifacts</label>
-                <select
-                  name="artifactDeprecations"
-                  class="js-keywords-multiple js-states form-control"
-                  id="deprecations"
-                  multiple="multiple">
-                @for(artifact <- artifactNames) {
-                  <option
-                    value="@artifact" 
-                    @if(project.settings.artifactDeprecations.contains(artifact)){selected}>
-                      @artifact
-                  </option>
-                }
-                </select>
-              </div>
-
-              <div class="form-group">
                 <label for="category">Category</label>
+                <p>This is used to compute the <a href="/awesome">Awesome Scala</a> page.</p>
                 <select
                   id="category"
                   name="category"
                   data-live-search="true"
                   class="selectpicker"
                   data-style="btn-primary">
-                @if(project.settings.category.isEmpty) {
-                  <option>Choose a category</option>
-                }
+                @if(project.settings.category.isEmpty) {<option>Choose a category</option>}
                 @for(meta <- MetaCategory.all) {
                   <optgroup label="@meta.title">
                     @for(category <- meta.categories) {
@@ -92,42 +47,20 @@
                 </select>
               </div>
 
-              @for(github <- project.githubInfo) {
-                <fieldset>
-                  <legend>Contributing Info</legend>
-                  <div class="form-group">
-                    <p>In order for this project to show up on the front page and in the
-                    Contributing Search, it needs to have a Beginner Issues Label, Chatroom
-                    and Contributing Guide. The Code of Conduct is optional.</p>
-                    <label for="beginnerIssuesLabel">Beginner Issues Label</label>
-                    <input id="beginnerIssuesLabel" name="beginnerIssuesLabel" value="@project.settings.beginnerIssuesLabel.getOrElse("")"
-                      placeholder="Label used to mark beginner-friendly Issues on Github"
-                      class="form-control list-group-item" data-organization="@project.reference.organization"
-                      data-repository="@project.reference.repository">
-                  </div>
-                  <div class="form-group">
-                    <label for="chatroom">Chatroom</label>
-                    <input name="chatroom" value="@github.chatroom.getOrElse(Url("")).target"
-                      class="form-control list-group-item"
-                      placeholder="Link to chatroom (Ex. https://gitter.im/scalacenter/scaladex)">
-                  </div>
-                  <div class="form-group">
-                    <label for="contributingGuide">Contributing Guide</label>
-                    <input name="contributingGuide" value="@github.contributingGuide.getOrElse(Url("")).target"
-                      placeholder="Link to contributing guide (Ex. https://github.com/scalacenter/scaladex/blob/master/CONTRIBUTING.md)"
-                      class="form-control list-group-item">
-                  </div>
-                  <div class="form-group">
-                    <label for="codeOfConduct">Code of Conduct</label>
-                    <input name="codeOfConduct" value="@github.codeOfConduct.getOrElse(Url("")).target"
-                      placeholder="Link to code of conduct (Ex. https://github.com/playframework/playframework/blob/master/CODE_OF_CONDUCT.md)"
-                      class="form-control list-group-item">
-                  </div>
-                </fieldset>
-              }
+              <div class="form-group">
+                <label for="chatroom">Chatroom</label>
+                <input name="chatroom" value="@project.settings.chatroom.getOrElse("")"
+                  class="form-control list-group-item"
+                  placeholder="https://gitter.im/@project.reference">
+              </div>
+              <div class="form-group">
+                <label for="contributorsWanted">Contributors Wanted</label>
+                <br/>
+                <input type="checkbox" name="contributorsWanted" id="contributorsWanted" @if(project.settings.contributorsWanted){ checked }> 
+              </div>
 
               <fieldset>
-                <legend>Default Artifact Selection</legend>
+                <legend>Artifact Settings</legend>
                 <div class="form-group">
                   <label for="defaultArtifact">Default Artifact</label>
                   <p>
@@ -141,7 +74,6 @@
                     name="defaultArtifact"
                     data-live-search="true"
                     class="selectpicker" data-style="btn-primary">
-
                   @for(artifact <- artifactNames){
                     <option 
                       value="@artifact"
@@ -153,21 +85,46 @@
                 </div>
 
                 <div class="form-group">
-                  <p>If possible we do not use any release candidate or milestone as the default version. For example, if an artifact has version 1.2.1 and  2.0.0-RC1, we will use 1.2.1 as default. If you prefer to select 2.0.0-RC1 uncheck this box:</p>
-                  <input type="checkbox" name="defaultStableVersion" @if(project.settings.defaultStableVersion){ checked } id="defaultStableVersion">
-                  <label label-for="defaultStableVersion">Do not select pre-released versions</label>
-
-                  <p>Remove versions not following the semver.org specifications</p>
-                  <input type="checkbox" name="strictVersions" @if(project.settings.strictVersions){ checked } id="strictVersions">
-                  <label label-for="strictVersions">Semantic Versions only</label>
+                  <label for="preferStableVersion">Stable version filter</label>
+                  <p>If enabled, Scaladex filters pre-release versions out to compute the latest version.</p>
+                  <input type="checkbox" name="preferStableVersion" id="preferStableVersion" @if(project.settings.preferStableVersion){ checked }>
                 </div>
-
-
+                <div class="form-group">
+                  <label for="deprecatedArtifacts">Deprecated Artifacts</label>
+                  <select
+                    name="deprecatedArtifacts"
+                    class="js-keywords-multiple js-states form-control"
+                    id="deprecatedArtifacts"
+                    multiple="multiple">
+                    @for(artifact <- artifactNames) {
+                      <option
+                        value="@artifact" 
+                        @if(project.settings.deprecatedArtifacts.contains(artifact)){selected}>
+                          @artifact
+                      </option>
+                    }
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="cliArtifacts">Command Line Artifacts</label>
+                  <select
+                    name="cliArtifacts"
+                    class="js-keywords-multiple js-states form-control"
+                    id="cliArtifacts"
+                    multiple="multiple">
+                  @for(artifact <- artifactNames) {
+                    <option
+                      value="@artifact" 
+                      @if(project.settings.cliArtifacts.contains(artifact)){selected}>
+                        @artifact
+                    </option>
+                  }
+                  </select>
+                </div>
               </fieldset>
 
               <fieldset>
                 <legend>Documentation</legend>
-
                 <pre>
 [groupId]    org.example
 [artifactId] foo_2.11
@@ -179,17 +136,16 @@
                 
                 <div class="form-group">
                   <label for="customScalaDoc">Custom Scaladoc Link</label>
-                  <p>Default: <code>https://www.javadoc.io/doc/[groupId]/[artifactId]/[version]</code></p>
                   <input
                     name="customScalaDoc" 
                     value="@project.settings.customScalaDoc.getOrElse("")"
-                    placeholder="http://example.org/api/[name]/[version]"
+                    placeholder="https://www.javadoc.io/doc/[groupId]/[artifactId]/[version]"
                     type="text" 
                     class="form-control" id="customScalaDoc">
                 </div>
 
                 <fieldset class="documentation-link">
-                  <legend>Documentation links</legend>
+                  <label>Documentation links</label>
                   <ul>
                   @for((doc, i) <- project.settings.documentationLinks.zipWithIndex){
                     <li class="list-group">
@@ -204,7 +160,7 @@
                         class="form-control list-group-item">
                     </li>
                   }
-                  @for((i) <- ((project.settings.documentationLinks.size) to (project.settings.documentationLinks.size + 5))) {
+                  @for(i <- (0 to 1).map(_ + project.settings.documentationLinks.size)) {
                     <li class="list-group">
                       <input
                         name="documentationLinks[@i].label" value=""
