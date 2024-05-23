@@ -80,15 +80,14 @@
 }
 
 @communityBox = {
-  <div class="box">
-    <h4>Community</h4>
-    <ul>
-      @for(coc <- project.githubInfo.flatMap(_.codeOfConduct)) { <li><a href="@coc.target" target="_blank">Code of Conduct</a></li> }
-      @for(doc <- project.globalDocumentation){ <li><a href="@doc.link" rel="nofollow">@doc.label</a></li> }
-      @for(chatroom <- project.settings.chatroom) { <li><a href="@chatroom" target="_blank">Chatroom</a></li> }
-      @for(guide <- project.githubInfo.flatMap(_.contributingGuide)) { <li><a href="@guide.target" target="_blank">Contributing Guide</a></li> }
-    </ul>
-  </div>
+  @if(project.communityLinks.nonEmpty) {
+    <div class="box">
+      <h4>Community</h4>
+      <ul>
+        @for(link <- project.communityLinks) { <li><a href="@link.link">@link.label</a></li> }
+      </ul>
+    </div>
+  }
 }
 
 @contributorsLimit = @{21}

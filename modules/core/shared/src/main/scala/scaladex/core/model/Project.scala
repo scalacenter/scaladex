@@ -18,6 +18,12 @@ case class Project(
 
   def githubLink: String = s"https://github.com/$reference"
 
+  def communityLinks: Seq[LabeledLink] =
+    githubInfo.flatMap(_.codeOfConduct).map(l => l.labeled("Code of Conduct")).toSeq ++
+      globalDocumentation ++
+      settings.chatroom.map(LabeledLink("Chatroom", _)) ++
+      githubInfo.flatMap(_.contributingGuide).map(l => l.labeled("Contributing Guide"))
+
   /**
    * This is used in twitter to render the card of a scaladex project link.
    */
@@ -38,16 +44,16 @@ case class Project(
     image = githubInfo.flatMap(_.logo).orElse(Some(Url("https://index.scala-lang.org/assets/img/scaladex-brand.svg")))
   )
 
-  def scaladoc(artifact: Artifact): Option[DocumentationLink] =
+  def scaladoc(artifact: Artifact): Option[LabeledLink] =
     settings.customScalaDoc
       .map(DocumentationPattern("Scaladoc", _).eval(artifact))
-      .orElse(artifact.defaultScaladoc.map(DocumentationLink("Scaladoc", _)))
+      .orElse(artifact.defaultScaladoc.map(LabeledLink("Scaladoc", _)))
 
-  def globalDocumentation: Seq[DocumentationLink] =
+  private def globalDocumentation: Seq[LabeledLink] =
     settings.customScalaDoc.flatMap(DocumentationPattern("Scaladoc", _).asGlobal).toSeq ++
       settings.documentationLinks.flatMap(_.asGlobal)
 
-  def artifactDocumentation(artifact: Artifact): Seq[DocumentationLink] =
+  def artifactDocumentation(artifact: Artifact): Seq[LabeledLink] =
     scaladoc(artifact).toSeq ++ settings.documentationLinks.map(_.eval(artifact))
 }
 

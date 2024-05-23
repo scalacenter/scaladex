@@ -1,9 +1,9 @@
 package scaladex.core.model
 
 final case class DocumentationPattern(label: String, pattern: String) {
-  def asGlobal: Option[DocumentationLink] =
+  def asGlobal: Option[LabeledLink] =
     if (DocumentationPattern.placeholders.exists(pattern.contains)) None
-    else Some(DocumentationLink(label, pattern))
+    else Some(LabeledLink(label, pattern))
 
   /**
    * Documentation link are often related to a release version
@@ -11,7 +11,7 @@ final case class DocumentationPattern(label: String, pattern: String) {
    * we want to substitute input such as
    * https://playframework.com/documentation/[major].[minor].x/Home
    */
-  def eval(artifact: Artifact): DocumentationLink = {
+  def eval(artifact: Artifact): LabeledLink = {
     val link = pattern
       .replace("[groupId]", artifact.groupId.value)
       .replace("[artifactId]", artifact.artifactId)
@@ -19,7 +19,7 @@ final case class DocumentationPattern(label: String, pattern: String) {
       .replace("[major]", artifact.version.major.toString)
       .replace("[minor]", artifact.version.minor.toString)
       .replace("[name]", artifact.artifactName.value)
-    DocumentationLink(label, link)
+    LabeledLink(label, link)
   }
 }
 
