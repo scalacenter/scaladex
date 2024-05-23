@@ -1,21 +1,34 @@
 package scaladex.infra
 
+import scala.concurrent.Await
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
 import org.apache.pekko.actor.ActorSystem
+import org.scalactic.source.Position
+import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model.Project
-import scaladex.infra.config.GithubConfig
 import scaladex.core.model.GithubResponse
+import scaladex.core.model.GithubResponse._
+import scaladex.core.model.Project
 import scaladex.core.test.Values._
+import scaladex.infra.config.GithubConfig
 
 class GithubClientImplTests extends AsyncFunSpec with Matchers {
   implicit val system: ActorSystem = ActorSystem("github-client-tests")
   val config: GithubConfig = GithubConfig.load()
-
   val isCI = System.getenv("CI") != null
-
-  // you need to configure locally a token
-  val client = new GithubClientImpl(config.token.get)
+  val token = config.token.getOrElse(throw new Exception(s"Missing GITHUB_TOKEN"))
+  val client = new GithubClientImpl(token)
+  val userState =
+    if (isCI) None
+    else
+      Await.result(client.getUserState(), 30.seconds) match {
+        case Failed(code, errorMessage)  => throw new Exception(s"$code $errorMessage")
+        case MovedPermanently(userState) => Some(userState)
+        case Ok(userState)               => Some(userState)
+      }
 
   it("getProjectInfo") {
     for (response <- client.getProjectInfo(Scalafix.reference))
@@ -95,7 +108,7 @@ class GithubClientImplTests extends AsyncFunSpec with Matchers {
   }
 
   it("getCommitActivity") {
-    for (commitActivities <- client.getCommitActivity(Scalafix.reference))
+    for (commitActivities <- client.getCommitActivity(Scala3.reference))
       yield commitActivities should not be empty
   }
 
@@ -105,22 +118,25 @@ class GithubClientImplTests extends AsyncFunSpec with Matchers {
       yield commitActivities shouldBe empty
   }
 
-  if (!isCI) {
-    it("getUserRepositories") {
-      for (repos <- client.getUserRepositories("atry", Nil))
-        yield repos should not be empty
-    }
-    it("getUserOrganizations when empty") {
-      for (orgs <- client.getUserOrganizations("central-ossrh"))
-        yield orgs shouldBe empty
-    }
-    it("getUserOrganizations") {
-      for (orgs <- client.getUserOrganizations("atry"))
-        yield orgs should not be empty
-    }
-    it("getOrganizationRepositories") {
-      for (repos <- client.getOrganizationRepositories("atry", Project.Organization("scala"), Nil))
-        yield repos should not be empty
-    }
+  testOrIgnore("getUserRepositories") {
+    for (repos <- client.getUserRepositories("atry", Nil))
+      yield repos should not be empty
   }
+  testOrIgnore("getUserOrganizations when empty") {
+    for (orgs <- client.getUserOrganizations("central-ossrh"))
+      yield orgs shouldBe empty
+  }
+  testOrIgnore("getUserOrganizations") {
+    for (orgs <- client.getUserOrganizations("atry"))
+      yield orgs should not be empty
+  }
+  testOrIgnore("getOrganizationRepositories", ignored = !userState.exists(_.orgs.contains(Scala3.organization))) {
+    for (repos <- client.getOrganizationRepositories("atry", Scala3.organization, Nil))
+      yield repos should contain(Scala3.reference)
+  }
+
+  private def testOrIgnore(name: String, ignored: Boolean = userState.isEmpty)(testFun: => Future[Assertion])(
+      implicit pos: Position
+  ): Unit =
+    if (ignored) ignore(name)(testFun)(pos) else it(name)(testFun)(pos)
 }

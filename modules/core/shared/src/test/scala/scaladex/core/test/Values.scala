@@ -253,6 +253,11 @@ object Values {
     val creationDate: Instant = Instant.ofEpochSecond(1688667180L)
   }
 
+  object Scala3 {
+    val organization: Project.Organization = Project.Organization("scala")
+    val reference: Project.Reference = Project.Reference.from("scala/scala3")
+  }
+
   private def contributor(login: String): GithubContributor =
     GithubContributor(login, "", Url(""), 1)
 
