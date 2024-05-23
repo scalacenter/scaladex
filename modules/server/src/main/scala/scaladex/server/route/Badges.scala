@@ -21,7 +21,7 @@ import scaladex.core.model.Scala
 import scaladex.core.model.ScalaJs
 import scaladex.core.model.ScalaNative
 import scaladex.core.model.SemanticVersion
-import scaladex.core.model.SemanticVersion.PreferReleases
+import scaladex.core.model.SemanticVersion.PreferStable
 import scaladex.core.service.WebDatabase
 
 class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext) {
@@ -156,10 +156,10 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
   ): Future[Option[Artifact]] = {
     val artifactSelection = ArtifactSelection(binaryVersion, artifact)
     database.getArtifacts(project.reference).map { artifacts =>
-      val (releaseArtifacts, nonReleaseArtifacts) = artifacts.partition(_.version.isRelease)
+      val (stableArtifacts, nonStableArtifacts) = artifacts.partition(_.version.isStable)
       artifactSelection
-        .defaultArtifact(releaseArtifacts, project)
-        .orElse(artifactSelection.defaultArtifact(nonReleaseArtifacts, project))
+        .defaultArtifact(stableArtifacts, project)
+        .orElse(artifactSelection.defaultArtifact(nonStableArtifacts, project))
     }
   }
 }
@@ -174,7 +174,7 @@ object Badges {
 
   private[route] def summaryOfLatestVersions(versionsByScalaVersions: Map[Scala, Seq[SemanticVersion]]): String =
     versionsByScalaVersions.view
-      .mapValues(_.max(PreferReleases))
+      .mapValues(_.max(PreferStable))
       .groupMap { case (_, latestVersion) => latestVersion } { case (scalaVersion, _) => scalaVersion }
       .toSeq
       .sortBy(_._1)(SemanticVersion.ordering.reverse)

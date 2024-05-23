@@ -17,7 +17,6 @@ class SearchSynchronizer(database: WebDatabase, searchEngine: SearchEngine)(impl
     for {
       allProjects <- database.getAllProjects()
       allProjectsAndStatus = allProjects.map(p => (p, p.githubStatus))
-      deprecatedProjects = allProjects.filter(_.settings.deprecated).map(_.reference).toSet
 
       // Create a map of project reference to their old references
       movedProjects = allProjectsAndStatus
@@ -26,14 +25,10 @@ class SearchSynchronizer(database: WebDatabase, searchEngine: SearchEngine)(impl
             newRef -> p.reference
         }
         .groupMap { case (newRef, _) => newRef } { case (_, ref) => ref }
-      projectsToDelete = deprecatedProjects ++
+      projectsToDelete =
         allProjectsAndStatus.collect { case (p, GithubStatus.NotFound(_)) => p.reference }
       projectsToSync = allProjectsAndStatus
-        .collect {
-          case (p, GithubStatus.Ok(_) | GithubStatus.Unknown(_) | GithubStatus.Failed(_, _, _))
-              if !deprecatedProjects.contains(p.reference) =>
-            p
-        }
+        .collect { case (p, GithubStatus.Ok(_) | GithubStatus.Unknown(_) | GithubStatus.Failed(_, _, _)) => p }
 
       _ = logger.info(s"${movedProjects.size} projects were moved")
       _ = logger.info(s"Deleting ${projectsToDelete.size} projects from search engine")

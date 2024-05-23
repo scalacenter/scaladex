@@ -15,7 +15,7 @@
     </ul>
 
     @if(project.displayedIssues.length > 6) {
-      @if(project.beginnerIssueHits.nonEmpty) {
+      @if(project.issues.nonEmpty) {
           <a href='https://github.com/@{project.document.reference}/issues?utf8=✓&q=is:open @{params.queryString}'
           target="_blank">More Issues ...</a>
       } else {
@@ -25,7 +25,6 @@
     }
     <hr>
     @for(guide <- github.contributingGuide) { <a href="@guide.target" target="_blank">Contributing Guide</a> }
-    @for(chatroom <- github.chatroom) { <a href="@chatroom.target" target="_blank">Chatroom</a> }
     @for(coc <- github.codeOfConduct) { <a href="@coc.target" target="_blank">Code of Conduct</a> }
   }
 </div>

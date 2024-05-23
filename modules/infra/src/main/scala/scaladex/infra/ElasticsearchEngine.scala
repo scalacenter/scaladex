@@ -446,8 +446,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
         "githubInfo.openIssues",
         existsQuery("githubInfo.openIssues")
       ),
-      existsQuery("githubInfo.contributingGuide"),
-      existsQuery("githubInfo.chatroom")
+      existsQuery("githubInfo.contributingGuide")
     )
   )
 

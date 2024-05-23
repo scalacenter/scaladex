@@ -32,15 +32,9 @@
         </div>
         <div class="col-md-4">
           <div class="sidebar-project">
+            @communityBox
             @project.githubInfo.map(gh => statisticsBox(gh, project.reference, reverseDependency.size))
             @commitActivityBox
-            @documentationBox
-            @project.githubInfo.map { github =>
-              @contributorsBox(github.contributors)
-              @if(github.openIssues.nonEmpty && github.chatroom.isDefined && github.contributingGuide.isDefined) {
-                @contributingBox
-              }
-            }
             @directDependenciesBox(directDependencies)
             @reverseDependenciesBox(reverseDependency)
           </div>
@@ -85,27 +79,25 @@
   }
 }
 
-@documentationLinks = @{ project.globalDocumentation }
-@documentationBox = {
-  @if(documentationLinks.nonEmpty) {
-  <div class="documentation box">
-      <h4>Documentation</h4>
-      <ul>
-        @for(doc <- documentationLinks){
-          <li><a href="@doc.link" rel="nofollow">@doc.label</a></li>
-        }
-      </ul>
-    </div>
-  }
+@communityBox = {
+  <div class="box">
+    <h4>Community</h4>
+    <ul>
+      @for(coc <- project.githubInfo.flatMap(_.codeOfConduct)) { <li><a href="@coc.target" target="_blank">Code of Conduct</a></li> }
+      @for(doc <- project.globalDocumentation){ <li><a href="@doc.link" rel="nofollow">@doc.label</a></li> }
+      @for(chatroom <- project.settings.chatroom) { <li><a href="@chatroom" target="_blank">Chatroom</a></li> }
+      @for(guide <- project.githubInfo.flatMap(_.contributingGuide)) { <li><a href="@guide.target" target="_blank">Contributing Guide</a></li> }
+    </ul>
+  </div>
 }
 
-@numberOfContributorMax = @{98}
+@contributorsLimit = @{21}
 @contributorsBox(contributors: Seq[GithubContributor]) = {
   @if(contributors.nonEmpty) {
-    <div class="collaborators box">
+    <div class="contributors box">
       <h4>Contributors</h4>
       <ul>
-      @for(contributor <- contributors.take(numberOfContributorMax)) {
+      @for(contributor <- contributors.take(contributorsLimit)) {
         <li>
           <a href="@contributor.url.target" target="_blank" rel="noreferrer">
             <img data-toggle="tooltip" data-placement="bottom" width="32" title="@contributor.login" src="@contributor.sizedAvatarUrl(32)" alt="">
@@ -113,34 +105,11 @@
         </li>
       }
       </ul>
-      @if(numberOfContributorMax < contributors.size) {
-        <div class="more-collaborators">There are another <a href="@project.githubLink/graphs/contributors" target="_blank">@{contributors.size - numberOfContributorMax} contributors</a></div>
+      @if(contributorsLimit < contributors.size) {
+        <div class="more-contributors">There are another <a href="@project.githubLink/graphs/contributors" target="_blank">@{contributors.size - contributorsLimit} contributors</a></div>
       }
     </div>
   }
-}
-
-@contributingBox = {
-  <div class="box project-contributing-info">
-    <h4>Contributing Info</h4>
-    <hr>
-    <div>
-      @for(github <- project.githubInfo) {
-        <h5>Open Issues:</h5>
-        <ul>
-          @for(issue <- github.openIssues.take(3)) {
-            <a href="@issue.url.target" target="_blank">@issue</a>
-          }
-        </ul>
-    
-        <a href="https://github.com/@{project.reference}/issues"target="_blank">More Issues ...</a>
-        <hr>
-        @for(guide <- github.contributingGuide) { <a href="@guide.target" target="_blank">Contributing Guide</a> }
-        @for(chatroom <- github.chatroom) { <a href="@chatroom.target" target="_blank">Chatroom</a> }
-        @for(coc <- github.codeOfConduct) { <a href="@coc.target" target="_blank">Code of Conduct</a> }
-      }
-    </div>
-  </div>
 }
 
 @directDependenciesBox(dependencies: Map[Project.Reference, (ArtifactDependency.Scope, Seq[SemanticVersion])]) = {

@@ -85,7 +85,6 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
       communityProfile <- getCommunityProfile(repo.ref)
       contributors <- getContributors(repo.ref)
       openIssues <- getOpenIssues(repo.ref)
-      chatroom <- getGitterChatRoom(repo.ref)
       scalaPercentage <- getPercentageOfLanguage(repo.ref, language = "Scala")
       commitActivity <- getCommitActivity(repo.ref)
     } yield GithubInfo(
@@ -103,7 +102,6 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
       topics = repo.topics.toSet,
       contributingGuide = communityProfile.flatMap(_.contributingFile).map(Url),
       codeOfConduct = communityProfile.flatMap(_.codeOfConductFile).map(Url),
-      chatroom = chatroom.map(Url),
       openIssues = openIssues.map(_.toGithubIssue).toList,
       scalaPercentage = Option(scalaPercentage),
       license = repo.licenseName.flatMap(License.get),
@@ -210,22 +208,6 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
     val request =
       HttpRequest(uri = s"${repoUrl(ref)}/stats/commit_activity").addHeader(acceptJson).addCredentials(credentials)
     get[Seq[GithubCommitActivity]](request).fallbackTo(Future.successful(Seq.empty))
-  }
-
-  def getGitterChatRoom(ref: Project.Reference): Future[Option[String]] = {
-    val uri = s"https://gitter.im/$ref"
-    val request = HttpRequest(uri = uri)
-    Http().singleRequest(request).map {
-      case HttpResponse(StatusCodes.OK, _, entity, _) =>
-        entity.discardBytes()
-        Some(uri)
-      case HttpResponse(StatusCodes.Redirection(_), _, entity, _) =>
-        entity.discardBytes()
-        Some(uri)
-      case resp =>
-        resp.entity.discardBytes()
-        None
-    }
   }
 
   def getUserOrganizations(user: String): Future[Seq[Project.Organization]] =

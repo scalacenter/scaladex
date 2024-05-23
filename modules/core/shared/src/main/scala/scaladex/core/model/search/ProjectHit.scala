@@ -7,9 +7,9 @@ import scaladex.core.model.GithubIssue
  */
 final case class ProjectHit(
     document: ProjectDocument,
-    beginnerIssueHits: Seq[GithubIssue]
+    issues: Seq[GithubIssue]
 ) {
   def displayedIssues: Seq[GithubIssue] =
-    if (beginnerIssueHits.nonEmpty) beginnerIssueHits
+    if (issues.nonEmpty) issues
     else document.githubInfo.toSeq.flatMap(_.openIssues)
 }

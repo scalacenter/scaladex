@@ -10,17 +10,15 @@ object ProjectSettingsTable {
 
   val referenceFields: Seq[String] = Seq("organization", "repository")
   val settingsFields: Seq[String] = Seq(
-    "default_stable_version",
+    "prefer_stable_version",
     "default_artifact",
-    "strict_versions",
     "custom_scaladoc",
     "documentation_links",
-    "deprecated",
     "contributors_wanted",
-    "artifact_deprecations",
+    "deprecated_artifacts",
     "cli_artifacts",
     "category",
-    "beginner_issues_label"
+    "chatroom"
   )
 
   val insertOrUpdate: Update[(Project.Reference, Project.Settings, Project.Settings)] =

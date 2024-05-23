@@ -69,10 +69,6 @@ class GithubClientImplTests extends AsyncFunSpec with Matchers {
     for (openIssues <- client.getOpenIssues(Scalafix.reference))
       yield openIssues should not be empty
   }
-  it("getGitterChatRoom") {
-    for (chatroom <- client.getGitterChatRoom(Scalafix.reference))
-      yield chatroom shouldBe defined
-  }
 
   it("should return moved project") {
     val reference = Project.Reference.from("rickynils", "scalacheck")

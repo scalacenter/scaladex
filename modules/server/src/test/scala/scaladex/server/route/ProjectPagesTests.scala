@@ -70,12 +70,9 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach {
     it("should replace empty customScalaDoc with None") {
       val formData = FormData(
         "category" -> "json",
-        "beginnerIssuesLabel" -> "",
         "chatroom" -> "",
-        "contributingGuide" -> "",
-        "codeOfConduct" -> "",
         "defaultArtifact" -> "play-json-extra",
-        "defaultStableVersion" -> "on",
+        "preferStableVersion" -> "on",
         "customScalaDoc" -> "",
         "documentationLinks[0].label" -> "",
         "documentationLinks[0].url" -> "",
@@ -84,11 +81,10 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach {
       )
       Post(s"/${PlayJsonExtra.reference}/settings", formData) ~> route ~> check {
         status shouldBe StatusCodes.SeeOther
-        for (project <- database.getProject(PlayJsonExtra.reference))
-          yield {
-            val settings = project.get.settings
-            settings shouldBe PlayJsonExtra.settings
-          }
+        for (project <- database.getProject(PlayJsonExtra.reference)) yield {
+          val settings = project.get.settings
+          settings shouldBe PlayJsonExtra.settings
+        }
       }
     }
   }

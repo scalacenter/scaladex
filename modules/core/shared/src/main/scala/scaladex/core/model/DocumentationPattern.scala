@@ -1,7 +1,7 @@
 package scaladex.core.model
 
 final case class DocumentationPattern(label: String, pattern: String) {
-  def eval: Option[DocumentationLink] =
+  def asGlobal: Option[DocumentationLink] =
     if (DocumentationPattern.placeholders.exists(pattern.contains)) None
     else Some(DocumentationLink(label, pattern))
 

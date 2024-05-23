@@ -31,7 +31,7 @@ trait WebDatabase {
   ): Future[Seq[Artifact]]
   def getArtifacts(ref: Project.Reference, artifactName: Artifact.Name, version: SemanticVersion): Future[Seq[Artifact]]
   def getArtifactsByName(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]]
-  def getLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]]
+  def getLatestArtifacts(ref: Project.Reference, preferStableVersions: Boolean): Future[Seq[Artifact]]
   def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]]
   def getAllArtifacts(language: Option[Language], platform: Option[Platform]): Future[Seq[Artifact]]
   def countArtifacts(): Future[Long]

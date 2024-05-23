@@ -31,7 +31,7 @@ case class SemanticVersion(
   def isPreRelease: Boolean =
     preRelease.isDefined || metadata.isDefined
 
-  def isRelease: Boolean =
+  def isStable: Boolean =
     isSemantic && !isPreRelease
 
   override def toString: String = this match {
@@ -103,12 +103,9 @@ object SemanticVersion {
       )
   }
 
-  /**
-   * Often we will prefer the latest release, but if there is no full release, we will select the most recent
-   * pre-release.
-   */
-  val PreferReleases: Ordering[SemanticVersion] =
-    Ordering.by[SemanticVersion, Boolean](_.isRelease).orElse(ordering)
+  // We prefer the latest stable artifact.
+  val PreferStable: Ordering[SemanticVersion] =
+    Ordering.by[SemanticVersion, Boolean](_.isStable).orElse(ordering)
 
   private def MajorP[A: P]: P[Int] = Number
 
