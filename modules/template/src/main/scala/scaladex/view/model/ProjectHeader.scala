@@ -53,26 +53,35 @@ final case class ProjectHeader(
   }
 
   def getDefaultArtifact(language: Option[Language], platform: Option[Platform]): Artifact = {
-    val filteredArtifacts = latestArtifacts
+    val artifacts = latestArtifacts
       .filter(artifact => language.forall(_ == artifact.language) && platform.forall(_ == artifact.platform))
+    val stableArtifacts = latestArtifacts.filter(_.version.isStable)
 
-    def byName: Option[Artifact] =
+    def byName(artifacts: Seq[Artifact]): Option[Artifact] =
       defaultArtifactName.toSeq
-        .flatMap(defaultName => filteredArtifacts.filter(a => defaultName == a.artifactName))
+        .flatMap(defaultName => artifacts.filter(a => defaultName == a.artifactName))
         .maxByOption(_.binaryVersion)
 
     def ofVersion(version: SemanticVersion): Artifact =
-      filteredArtifacts
+      artifacts
         .filter(_.version == version)
         .maxBy(a => (a.binaryVersion, a.artifactName))(
           Ordering.Tuple2(Ordering[BinaryVersion], Ordering[Artifact.Name].reverse)
         )
 
     // find version of latest stable artifact then default artifact of that version
-    def byLatestVersion: Option[Artifact] =
-      filteredArtifacts.sortBy(_.releaseDate).lastOption.map(a => ofVersion(a.version))
+    def byLatestVersion(artifacts: Seq[Artifact]): Option[Artifact] =
+      artifacts.sortBy(_.releaseDate).lastOption.map(a => ofVersion(a.version))
 
-    byName.orElse(byLatestVersion).get
+    if (preferStableVersion) {
+      byName(stableArtifacts)
+        .orElse(byName(artifacts))
+        .orElse(byLatestVersion(stableArtifacts))
+        .orElse(byLatestVersion(artifacts))
+        .get
+    } else {
+      byName(artifacts).orElse(byLatestVersion(artifacts)).get
+    }
   }
 
   def scalaVersions: Seq[Scala] = languages.collect { case v: Scala => v }

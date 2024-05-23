@@ -343,7 +343,6 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
             rawCategory.flatMap(Category.byLabel.get),
             rawChatroom.flatMap(noneIfEmpty)
           )
-          println(settings)
           Tuple1(settings)
       }
     )
