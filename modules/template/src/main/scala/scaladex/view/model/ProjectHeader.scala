@@ -17,88 +17,62 @@ object ProjectHeader {
       ref: Project.Reference,
       latestArtifacts: Seq[Artifact],
       versionCount: Long,
-      defaultArtifactName: Option[Artifact.Name]
+      defaultArtifactName: Option[Artifact.Name],
+      preferStableVersion: Boolean
   ): Option[ProjectHeader] =
-    Option.when(latestArtifacts.nonEmpty)(new ProjectHeader(ref, latestArtifacts, versionCount, defaultArtifactName))
+    Option.when(latestArtifacts.nonEmpty) {
+      new ProjectHeader(ref, latestArtifacts, versionCount, defaultArtifactName, preferStableVersion)
+    }
 }
 
 final case class ProjectHeader(
     ref: Project.Reference,
     latestArtifacts: Seq[Artifact],
     versionCount: Long,
-    defaultArtifactName: Option[Artifact.Name]
+    defaultArtifactName: Option[Artifact.Name],
+    preferStableVersion: Boolean
 ) {
   def artifactNames: Seq[Artifact.Name] = latestArtifacts.map(_.artifactName).distinct.sorted
   def languages: Seq[Language] = latestArtifacts.map(_.language).distinct.sorted
   def platforms: Seq[Platform] = latestArtifacts.map(_.platform).distinct.sorted
 
   def platforms(artifactName: Artifact.Name): Seq[Platform] =
-    latestArtifacts.filter(_.artifactName == artifactName).map(_.platform).distinct.sorted
+    latestArtifacts.filter(_.artifactName == artifactName).map(_.platform).distinct.sorted(Platform.ordering.reverse)
 
   def defaultVersion: SemanticVersion = getDefaultArtifact(None, None).version
 
-  def artifactsUrl: String = {
-    val artifact = getDefaultArtifact(None, None)
-    val preReleaseFilter =
-      if (artifact.version.isPreRelease || !artifact.version.isSemantic) "?pre-releases=true" else ""
-    s"/$ref/artifacts/${artifact.artifactName}$preReleaseFilter"
-  }
+  def artifactsUrl: String = artifactsUrl(getDefaultArtifact(None, None))
 
-  def artifactsUrl(language: Language): String = {
-    val artifact = getDefaultArtifact(Some(language), None)
-    val preReleaseFilter =
-      if (artifact.version.isPreRelease || !artifact.version.isSemantic) "&pre-releases=true" else ""
-    s"/$ref/artifacts/${artifact.artifactName}?binary-versions=${artifact.binaryVersion.label}$preReleaseFilter"
-  }
+  def artifactsUrl(language: Language): String = artifactsUrl(getDefaultArtifact(Some(language), None))
 
-  def artifactsUrl(platform: Platform): String = {
-    val artifact = getDefaultArtifact(None, Some(platform))
-    val preReleaseFilter =
-      if (artifact.version.isPreRelease || !artifact.version.isSemantic) "&pre-releases=true" else ""
-    s"/$ref/artifacts/${artifact.artifactName}?binary-versions=${artifact.binaryVersion.label}$preReleaseFilter"
+  def artifactsUrl(platform: Platform): String = artifactsUrl(getDefaultArtifact(None, Some(platform)))
+
+  private def artifactsUrl(defaultArtifact: Artifact): String = {
+    val preReleaseFilter = if (!preferStableVersion || !defaultArtifact.version.isStable) "&pre-releases=true" else ""
+    s"/$ref/artifacts/${defaultArtifact.artifactName}?binary-versions=${defaultArtifact.binaryVersion.label}$preReleaseFilter"
   }
 
   def getDefaultArtifact(language: Option[Language], platform: Option[Platform]): Artifact = {
-    val candidates = latestArtifacts
+    val filteredArtifacts = latestArtifacts
       .filter(artifact => language.forall(_ == artifact.language) && platform.forall(_ == artifact.platform))
-    val stableCandidates = candidates.filter(artifact => artifact.version.isSemantic && !artifact.version.isPreRelease)
 
-    def byNameStable = stableCandidates
-      .filter(a => defaultArtifactName.exists(_ == a.artifactName))
-      .sortBy(_.binaryVersion)(BinaryVersion.ordering.reverse)
-      .headOption
+    def byName: Option[Artifact] =
+      defaultArtifactName.toSeq
+        .flatMap(defaultName => filteredArtifacts.filter(a => defaultName == a.artifactName))
+        .maxByOption(_.binaryVersion)
 
-    def byNamePrerelease = candidates
-      .filter(a => defaultArtifactName.exists(_ == a.artifactName))
-      .sortBy(_.binaryVersion)(BinaryVersion.ordering.reverse)
-      .headOption
-
-    def byVersion(version: SemanticVersion) =
-      candidates
+    def ofVersion(version: SemanticVersion): Artifact =
+      filteredArtifacts
         .filter(_.version == version)
-        .sortBy(a => (a.binaryVersion, a.artifactName))(
-          Ordering.Tuple2(Ordering[BinaryVersion].reverse, Ordering[Artifact.Name])
+        .maxBy(a => (a.binaryVersion, a.artifactName))(
+          Ordering.Tuple2(Ordering[BinaryVersion], Ordering[Artifact.Name].reverse)
         )
-        .head
 
     // find version of latest stable artifact then default artifact of that version
-    def byLatestVersionStable =
-      stableCandidates
-        .sortBy(_.releaseDate)
-        .lastOption
-        .map(a => byVersion(a.version))
+    def byLatestVersion: Option[Artifact] =
+      filteredArtifacts.sortBy(_.releaseDate).lastOption.map(a => ofVersion(a.version))
 
-    def byLatestVersionPrerelease =
-      candidates
-        .sortBy(_.releaseDate)
-        .lastOption
-        .map(a => byVersion(a.version))
-
-    byNameStable
-      .orElse(byNamePrerelease)
-      .orElse(byLatestVersionStable)
-      .orElse(byLatestVersionPrerelease)
-      .get
+    byName.orElse(byLatestVersion).get
   }
 
   def scalaVersions: Seq[Scala] = languages.collect { case v: Scala => v }

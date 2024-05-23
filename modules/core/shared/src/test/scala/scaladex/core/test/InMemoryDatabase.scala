@@ -200,7 +200,7 @@ class InMemoryDatabase extends SchedulerDatabase {
     Future.successful(())
   }
 
-  override def getLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]] = {
+  override def getLatestArtifacts(ref: Project.Reference, preferStableVersion: Boolean): Future[Seq[Artifact]] = {
     val res = allArtifacts(ref)
       .groupBy(a => (a.groupId, a.artifactId))
       .values

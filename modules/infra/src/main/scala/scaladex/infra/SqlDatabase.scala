@@ -81,16 +81,21 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getArtifactsByName(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]] =
     run(ArtifactTable.selectArtifactByProjectAndName.to[Seq]((ref, artifactName)))
 
-  override def getLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]] =
-    for {
-      releases <- run(ArtifactTable.selectLatestArtifacts(mustBeRelease = true).to[Seq](ref))
-      nonReleases <- run(ArtifactTable.selectLatestArtifacts(mustBeRelease = false).to[Seq](ref))
-    } yield {
-      // override non-released artifacts with their latest released version
-      val merge = nonReleases.map(artifact => artifact.mavenReference -> artifact).toMap ++
-        releases.map(artifact => artifact.mavenReference -> artifact).toMap
-      merge.values.toSeq
-    }
+  override def getLatestArtifacts(ref: Project.Reference, preferStableVersions: Boolean): Future[Seq[Artifact]] = {
+    val latestArtifactsF = run(ArtifactTable.selectLatestArtifacts(stableOnly = false).to[Seq](ref))
+    if (preferStableVersions) {
+      for {
+        latestStableArtifacts <- run(ArtifactTable.selectLatestArtifacts(stableOnly = true).to[Seq](ref))
+        latestArtifacts <- latestArtifactsF
+      } yield
+      // override non-stable version with the latest stable version
+      (latestStableArtifacts ++ latestArtifacts)
+        .groupBy(a => (a.groupId, a.artifactId))
+        .valuesIterator
+        .map(_.head)
+        .toSeq
+    } else latestArtifactsF
+  }
 
   override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] =
     run(ArtifactTable.selectByMavenReference.option(mavenRef))

@@ -31,8 +31,14 @@ class DependencyUpdater(database: SchedulerDatabase)(implicit ec: ExecutionConte
         database.deleteProjectDependencies(project.reference).map(_ => ())
       else
         for {
-          latestArtifacts <- database.getLatestArtifacts(project.reference)
-          header = ProjectHeader(project.reference, latestArtifacts, 0, project.settings.defaultArtifact)
+          latestArtifacts <- database.getLatestArtifacts(project.reference, project.settings.preferStableVersion)
+          header = ProjectHeader(
+            project.reference,
+            latestArtifacts,
+            0,
+            project.settings.defaultArtifact,
+            project.settings.preferStableVersion
+          )
           dependencies <- header
             .map(h => database.computeProjectDependencies(project.reference, h.defaultVersion))
             .getOrElse(Future.successful(Seq.empty))

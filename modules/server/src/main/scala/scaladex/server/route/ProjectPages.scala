@@ -243,14 +243,19 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
   private def getProjectHeader(project: Project): Future[Option[ProjectHeader]] = {
     val ref = project.reference
     for {
-      latestArtifacts <- database.getLatestArtifacts(ref)
+      latestArtifacts <- database.getLatestArtifacts(ref, project.settings.preferStableVersion)
       versionCount <- database.countVersions(ref)
-    } yield ProjectHeader(project.reference, latestArtifacts, versionCount, project.settings.defaultArtifact)
+    } yield ProjectHeader(
+      project.reference,
+      latestArtifacts,
+      versionCount,
+      project.settings.defaultArtifact,
+      project.settings.preferStableVersion
+    )
   }
 
   private def getProjectPage(ref: Project.Reference, user: Option[UserState]): Route =
     getProjectOrRedirect(ref, user) { project =>
-      logger.info(s"Accessing project page for: $ref")
       for {
         header <- getProjectHeader(project)
         directDependencies <-
@@ -259,7 +264,6 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
             .getOrElse(Future.successful(Seq.empty))
         reverseDependencies <- database.getProjectDependents(ref)
       } yield {
-        logger.info(s"Successfully retrieved project data for: $ref")
         val groupedDirectDependencies = directDependencies
           .groupBy(_.target)
           .view
