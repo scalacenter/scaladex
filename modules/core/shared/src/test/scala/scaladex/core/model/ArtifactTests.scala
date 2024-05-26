@@ -223,7 +223,8 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       releaseDate = Instant.now(),
       resolver = resolver,
       licenses = Set(),
-      isNonStandardLib = false
+      isNonStandardLib = false,
+      fullScalaVersion = None
     )
   }
 }
