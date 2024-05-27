@@ -55,7 +55,7 @@ final case class ProjectHeader(
   def getDefaultArtifact(language: Option[Language], platform: Option[Platform]): Artifact = {
     val artifacts = latestArtifacts
       .filter(artifact => language.forall(_ == artifact.language) && platform.forall(_ == artifact.platform))
-    val stableArtifacts = latestArtifacts.filter(_.version.isStable)
+    val stableArtifacts = artifacts.filter(_.version.isStable)
 
     def byName(artifacts: Seq[Artifact]): Option[Artifact] =
       defaultArtifactName.toSeq
