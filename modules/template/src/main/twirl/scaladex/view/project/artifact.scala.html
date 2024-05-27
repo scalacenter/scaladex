@@ -62,7 +62,7 @@
               @if(artifact.resolver.isEmpty) {
                 @info("Files") { <a href="@artifact.mavenReference.repoUrl">View all</a> }
               }
-              @artifact.fullScalaVersion.map{ version => @info("Scala version") { @version.toString }}
+              @artifact.fullScalaVersion.map{ version => @info("Full Scala Version") { @version.toString }}
             </div>
             @installBox(InstallTab.allOf(artifact, project.settings.cliArtifacts))
           </div>

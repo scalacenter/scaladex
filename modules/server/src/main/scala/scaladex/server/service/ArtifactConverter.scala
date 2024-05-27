@@ -62,12 +62,7 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
       (dep.artifactId == "scala-library" || dep.artifactId == "scala3-library_3")
     }
 
-    val sortedScalaDependencies = scalaDependencies.sortBy(_.artifactId)
-    val fullScalaVersion = scalaDependencies match {
-      case _ :: _ :: _ => Some(sortedScalaDependencies.last.version)
-      case head :: Nil => Some(head.version)
-      case _           => None
-    }
+    val fullScalaVersion = scalaDependencies.sortBy(_.artifactId).lastOption.map(_.version)
 
     fullScalaVersion.flatMap(SemanticVersion.parse)
   }
