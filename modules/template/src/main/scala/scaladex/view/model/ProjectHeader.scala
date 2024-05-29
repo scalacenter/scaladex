@@ -41,15 +41,18 @@ final case class ProjectHeader(
 
   def defaultVersion: SemanticVersion = getDefaultArtifact(None, None).version
 
-  def artifactsUrl: String = artifactsUrl(getDefaultArtifact(None, None))
+  def artifactsUrl: String = artifactsUrl(getDefaultArtifact(None, None), withBinaryVersion = false)
 
   def artifactsUrl(language: Language): String = artifactsUrl(getDefaultArtifact(Some(language), None))
 
   def artifactsUrl(platform: Platform): String = artifactsUrl(getDefaultArtifact(None, Some(platform)))
 
-  private def artifactsUrl(defaultArtifact: Artifact): String = {
-    val preReleaseFilter = if (!preferStableVersion || !defaultArtifact.version.isStable) "&pre-releases=true" else ""
-    s"/$ref/artifacts/${defaultArtifact.artifactName}?binary-versions=${defaultArtifact.binaryVersion.label}$preReleaseFilter"
+  private def artifactsUrl(defaultArtifact: Artifact, withBinaryVersion: Boolean = true): String = {
+    val preReleaseFilter = Option.when(!preferStableVersion || !defaultArtifact.version.isStable)("pre-releases=true")
+    val binaryVersionFilter = Option.when(withBinaryVersion)(s"binary-versions=${defaultArtifact.binaryVersion.label}")
+    val filters = preReleaseFilter.toSeq ++ binaryVersionFilter
+    val queryParams = if (filters.nonEmpty) "?" + filters.mkString("&") else ""
+    s"/$ref/artifacts/${defaultArtifact.artifactName}$queryParams"
   }
 
   def getDefaultArtifact(language: Option[Language], platform: Option[Platform]): Artifact = {
