@@ -12,9 +12,9 @@ import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 import scaladex.core.util.ScalaExtensions._
 
-
-class SearchSynchronizer(database: WebDatabase, service: ProjectService, searchEngine: SearchEngine)(implicit ec: ExecutionContext)
-    extends LazyLogging {
+class SearchSynchronizer(database: WebDatabase, service: ProjectService, searchEngine: SearchEngine)(
+    implicit ec: ExecutionContext
+) extends LazyLogging {
   def syncAll(): Future[String] =
     for {
       allProjects <- database.getAllProjects()

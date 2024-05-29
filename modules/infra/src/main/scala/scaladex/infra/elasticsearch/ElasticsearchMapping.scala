@@ -36,6 +36,7 @@ object ElasticsearchMapping {
     dateField("creationDate"),
     keywordField("languages"),
     keywordField("platforms"),
+    keywordField("latestVersion"),
     intField("dependents"),
     keywordField("category"),
     textField("githubInfo.description").analyzer("english"),

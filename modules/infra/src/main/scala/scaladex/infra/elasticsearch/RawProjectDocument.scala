@@ -11,6 +11,7 @@ import scaladex.core.model.Category
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
+import scaladex.core.model.SemanticVersion
 import scaladex.core.model.search.GithubInfoDocument
 import scaladex.core.model.search.ProjectDocument
 
@@ -26,6 +27,7 @@ case class RawProjectDocument(
     updateDate: Option[Instant],
     languages: Seq[String],
     platforms: Seq[String],
+    latestVersion: Option[String],
     dependents: Long,
     category: Option[String],
     formerReferences: Seq[Project.Reference],
@@ -41,6 +43,7 @@ case class RawProjectDocument(
     updateDate,
     languages.flatMap(Language.fromLabel).sorted,
     platforms.flatMap(Platform.fromLabel).sorted,
+    latestVersion.flatMap(SemanticVersion.parse),
     dependents,
     category.flatMap(Category.byLabel.get),
     formerReferences,
@@ -66,6 +69,7 @@ object RawProjectDocument {
       updateDate,
       languages.map(_.label),
       platforms.map(_.label),
+      latestVersion.map(_.encode),
       dependents,
       category.map(_.label),
       formerReferences,

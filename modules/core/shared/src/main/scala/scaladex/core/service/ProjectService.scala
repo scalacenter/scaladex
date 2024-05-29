@@ -1,8 +1,9 @@
 package scaladex.core.service
 
-import scaladex.core.model._
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+import scaladex.core.model._
 
 class ProjectService(database: WebDatabase)(implicit context: ExecutionContext) {
   def getProjectHeader(project: Project): Future[Option[ProjectHeader]] = {

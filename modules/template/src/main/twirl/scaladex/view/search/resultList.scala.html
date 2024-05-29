@@ -22,8 +22,12 @@
             <div>
               <div class="header">
                 @githubUserAvatar(project.githubInfo.flatMap(_.logo))
-                <h4>@project.reference</h4>
-
+                <h4>
+                  @project.reference
+                  @for(latestVersion <- project.latestVersion){
+                    <span class="latest-version">&nbsp;&nbsp;@latestVersion.encode</span>
+                  }
+                </h4>
               </div>
               @for(github <- project.githubInfo) {
                 @for(description <- github.description) {

@@ -15,6 +15,7 @@ import org.apache.pekko.http.scaladsl.model._
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
 import scaladex.core.model._
+import scaladex.core.service.ProjectService
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 import scaladex.core.web.ArtifactPageParams
@@ -24,7 +25,6 @@ import scaladex.server.service.SearchSynchronizer
 import scaladex.view.html.forbidden
 import scaladex.view.html.notfound
 import scaladex.view.project.html
-import scaladex.core.service.ProjectService
 
 class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
     implicit executionContext: ExecutionContext
