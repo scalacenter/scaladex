@@ -90,7 +90,7 @@
 @filters() = {
   <form action="#" action="GET">
     <select class="selectpicker" data-style="btn-primary" onchange="window.location=this.value">
-      @for(name <- header.artifactNames) {
+      @for(name <- header.allArtifactNames) {
           <option value="@artifactsUri(project.reference, name, params)"
           @if(name == artifactName) {selected}>
           @name

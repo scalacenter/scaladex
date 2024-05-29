@@ -260,7 +260,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         header <- getProjectHeader(project)
         directDependencies <-
           header
-            .map(h => database.getProjectDependencies(ref, h.defaultVersion))
+            .map(h => database.getProjectDependencies(ref, h.latestVersion))
             .getOrElse(Future.successful(Seq.empty))
         reverseDependencies <- database.getProjectDependents(ref)
       } yield {

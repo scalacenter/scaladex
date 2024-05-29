@@ -15,31 +15,32 @@ import scaladex.core.model.SemanticVersion
 object ProjectHeader {
   def apply(
       ref: Project.Reference,
-      latestArtifacts: Seq[Artifact],
+      allArtifacts: Seq[Artifact],
       versionCount: Long,
       defaultArtifactName: Option[Artifact.Name],
       preferStableVersion: Boolean
   ): Option[ProjectHeader] =
-    Option.when(latestArtifacts.nonEmpty) {
-      new ProjectHeader(ref, latestArtifacts, versionCount, defaultArtifactName, preferStableVersion)
+    Option.when(allArtifacts.nonEmpty) {
+      new ProjectHeader(ref, allArtifacts, versionCount, defaultArtifactName, preferStableVersion)
     }
 }
 
 final case class ProjectHeader(
     ref: Project.Reference,
-    latestArtifacts: Seq[Artifact],
+    allArtifacts: Seq[Artifact],
     versionCount: Long,
     defaultArtifactName: Option[Artifact.Name],
     preferStableVersion: Boolean
 ) {
-  def artifactNames: Seq[Artifact.Name] = latestArtifacts.map(_.artifactName).distinct.sorted
-  def languages: Seq[Language] = latestArtifacts.map(_.language).distinct.sorted
-  def platforms: Seq[Platform] = latestArtifacts.map(_.platform).distinct.sorted
+  lazy val defaultArtifact: Artifact = getDefaultArtifact(None, None)
+  lazy val latestVersion: SemanticVersion = defaultArtifact.version
+  lazy val latestArtifacts: Seq[Artifact] = allArtifacts.filter(_.version == latestVersion)
+  lazy val latestLanguages: Seq[Language] = latestArtifacts.map(_.language).distinct.sorted
+  lazy val latestPlatforms: Seq[Platform] = latestArtifacts.map(_.platform).distinct.sorted
 
+  def allArtifactNames: Seq[Artifact.Name] = allArtifacts.map(_.artifactName).distinct.sorted
   def platforms(artifactName: Artifact.Name): Seq[Platform] =
-    latestArtifacts.filter(_.artifactName == artifactName).map(_.platform).distinct.sorted(Platform.ordering.reverse)
-
-  def defaultVersion: SemanticVersion = getDefaultArtifact(None, None).version
+    allArtifacts.filter(_.artifactName == artifactName).map(_.platform).distinct.sorted(Platform.ordering.reverse)
 
   def artifactsUrl: String = artifactsUrl(getDefaultArtifact(None, None), withBinaryVersion = false)
 
@@ -56,7 +57,7 @@ final case class ProjectHeader(
   }
 
   def getDefaultArtifact(language: Option[Language], platform: Option[Platform]): Artifact = {
-    val artifacts = latestArtifacts
+    val artifacts = allArtifacts
       .filter(artifact => language.forall(_ == artifact.language) && platform.forall(_ == artifact.platform))
     val stableArtifacts = artifacts.filter(_.version.isStable)
 
@@ -87,9 +88,9 @@ final case class ProjectHeader(
     }
   }
 
-  def scalaVersions: Seq[Scala] = languages.collect { case v: Scala => v }
-  def scalaJsVersions: Seq[ScalaJs] = platforms.collect { case v: ScalaJs => v }
-  def scalaNativeVersions: Seq[ScalaNative] = platforms.collect { case v: ScalaNative => v }
-  def sbtVersions: Seq[SbtPlugin] = platforms.collect { case v: SbtPlugin => v }
-  def millVersions: Seq[MillPlugin] = platforms.collect { case v: MillPlugin => v }
+  def latestScalaVersions: Seq[Scala] = latestLanguages.collect { case v: Scala => v }
+  def latestScalaJsVersions: Seq[ScalaJs] = latestPlatforms.collect { case v: ScalaJs => v }
+  def latestScalaNativeVersions: Seq[ScalaNative] = latestPlatforms.collect { case v: ScalaNative => v }
+  def latestSbtVersions: Seq[SbtPlugin] = latestPlatforms.collect { case v: SbtPlugin => v }
+  def latestMillVersions: Seq[MillPlugin] = latestPlatforms.collect { case v: MillPlugin => v }
 }

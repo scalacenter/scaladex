@@ -40,7 +40,7 @@ class DependencyUpdater(database: SchedulerDatabase)(implicit ec: ExecutionConte
             project.settings.preferStableVersion
           )
           dependencies <- header
-            .map(h => database.computeProjectDependencies(project.reference, h.defaultVersion))
+            .map(h => database.computeProjectDependencies(project.reference, h.latestVersion))
             .getOrElse(Future.successful(Seq.empty))
           _ <- database.deleteProjectDependencies(project.reference)
           _ <- database.insertProjectDependencies(dependencies)

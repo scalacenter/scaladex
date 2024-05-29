@@ -17,7 +17,7 @@
           <a href="/@project.organization">@project.organization</a> /
           <a href="/@project.reference">@project.repository</a>
           @for(header <- header) {
-            <span class="head-last-version">&nbsp;&nbsp;@header.defaultVersion.encode</span>
+            <span class="head-last-version">&nbsp;&nbsp;@header.latestVersion.encode</span>
           } 
         </h1>
 
@@ -57,46 +57,46 @@
       }
       @for(header <- header) {
         <div class="project-versions">
-          @if(header.scalaVersions.nonEmpty){
+          @if(header.latestScalaVersions.nonEmpty){
             <div>
               Scala versions:
-              @for(scalaVersion <- header.scalaVersions.sorted.reverse) {
+              @for(scalaVersion <- header.latestScalaVersions.sorted.reverse) {
                 <a href="@header.artifactsUrl(scalaVersion)" class="targets">@scalaVersion.version</a>
               }
             </div>
           }
     
-          @if(header.scalaJsVersions.nonEmpty){
+          @if(header.latestScalaJsVersions.nonEmpty){
             <div>
               Scala.js versions:
-              @for(platform <- header.scalaJsVersions.sorted.reverse) {
+              @for(platform <- header.latestScalaJsVersions.sorted.reverse) {
                 <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
               }
             </div>
           }
     
-          @if(header.scalaNativeVersions.nonEmpty){
+          @if(header.latestScalaNativeVersions.nonEmpty){
             <div>
               Scala Native versions:
-              @for(platform <- header.scalaNativeVersions.sorted.reverse) {
+              @for(platform <- header.latestScalaNativeVersions.sorted.reverse) {
                 <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
               }
             </div>
           }
     
-          @if(header.sbtVersions.nonEmpty){
+          @if(header.latestSbtVersions.nonEmpty){
             <div>
               sbt plugins:
-              @for(platform <- header.sbtVersions.sorted.reverse) {
+              @for(platform <- header.latestSbtVersions.sorted.reverse) {
                 <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
               }
             </div>
           }
     
-          @if(header.millVersions.nonEmpty){
+          @if(header.latestMillVersions.nonEmpty){
             <div>
               Mill plugins:
-              @for(platform <- header.millVersions.sorted.reverse) {
+              @for(platform <- header.latestMillVersions.sorted.reverse) {
                 <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
               }
             </div>
