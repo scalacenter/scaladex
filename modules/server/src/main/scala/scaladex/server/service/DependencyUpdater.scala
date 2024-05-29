@@ -6,9 +6,9 @@ import scala.util.control.NonFatal
 
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Project
+import scaladex.core.model.ProjectHeader
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions._
-import scaladex.view.model.ProjectHeader
 
 class DependencyUpdater(database: SchedulerDatabase)(implicit ec: ExecutionContext) extends LazyLogging {
 

@@ -1,9 +1,10 @@
 @import scaladex.core.model.Project
+@import scaladex.core.model.ProjectHeader
 @import scaladex.core.model.UserState
 @import scaladex.core.model.Env
 @import scaladex.view.Formats._
 @import scaladex.view.html.ensureUri
-@import scaladex.view.model.ProjectHeader
+
 
 @(env: Env, user: Option[UserState], project: Project, header: Option[ProjectHeader], activeTab: String)
 
@@ -94,7 +95,7 @@
           }
     
           @if(header.latestMillVersions.nonEmpty){
-            <div>
+            <div>{Artifact, BinaryVersion, Project, SemanticVersion, UserState, Env}
               Mill plugins:
               @for(platform <- header.latestMillVersions.sorted.reverse) {
                 <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>

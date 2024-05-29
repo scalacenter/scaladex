@@ -1,16 +1,4 @@
-package scaladex.view.model
-
-import scaladex.core.model.Artifact
-import scaladex.core.model.BinaryVersion
-import scaladex.core.model.Language
-import scaladex.core.model.MillPlugin
-import scaladex.core.model.Platform
-import scaladex.core.model.Project
-import scaladex.core.model.SbtPlugin
-import scaladex.core.model.Scala
-import scaladex.core.model.ScalaJs
-import scaladex.core.model.ScalaNative
-import scaladex.core.model.SemanticVersion
+package scaladex.core.model
 
 object ProjectHeader {
   def apply(

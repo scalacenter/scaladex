@@ -1,4 +1,4 @@
-package scaladex.view.model
+package scaladex.core.model
 
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
