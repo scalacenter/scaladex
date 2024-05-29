@@ -7,11 +7,13 @@ import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.model.search.ProjectDocument
+import scaladex.core.service.ProjectService
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 import scaladex.core.util.ScalaExtensions._
 
-class SearchSynchronizer(database: WebDatabase, searchEngine: SearchEngine)(implicit ec: ExecutionContext)
+
+class SearchSynchronizer(database: WebDatabase, service: ProjectService, searchEngine: SearchEngine)(implicit ec: ExecutionContext)
     extends LazyLogging {
   def syncAll(): Future[String] =
     for {
@@ -55,9 +57,9 @@ class SearchSynchronizer(database: WebDatabase, searchEngine: SearchEngine)(impl
 
   private def insertDocument(project: Project, formerReferences: Seq[Project.Reference]): Future[Unit] =
     for {
-      artifacts <- database.getArtifacts(project.reference)
+      header <- service.getProjectHeader(project)
       dependents <- database.countProjectDependents(project.reference)
-      document = ProjectDocument(project, artifacts, dependents, formerReferences)
+      document = ProjectDocument(project, header, dependents, formerReferences)
       _ <- searchEngine.insert(document)
       _ <- formerReferences.mapSync(searchEngine.delete)
     } yield ()

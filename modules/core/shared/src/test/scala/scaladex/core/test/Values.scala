@@ -26,6 +26,7 @@ import scaladex.core.model.ScalaNative
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.Url
 import scaladex.core.model.search.ProjectDocument
+import scaladex.core.model.ProjectHeader
 
 object Values {
   val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
@@ -88,8 +89,15 @@ object Values {
     val project: Project =
       Project.default(reference, None, Some(githubInfo), Some(settings), now = now)
 
+    val projectHeader: ProjectHeader = ProjectHeader(
+      reference,
+      Seq(artifact),
+      1,
+      settings.defaultArtifact,
+      settings.preferStableVersion
+    ).get
     val projectDocument: ProjectDocument =
-      ProjectDocument(project.copy(creationDate = Some(now.minus(1, ChronoUnit.MINUTES))), Seq(artifact), 0, Seq.empty)
+      ProjectDocument(project.copy(creationDate = Some(now.minus(1, ChronoUnit.MINUTES))), Some(projectHeader), 0, Seq.empty)
   }
 
   object PlayJsonExtra {
@@ -231,9 +239,10 @@ object Values {
         Scope("compile")
       )
     )
-
+    val versionCount = allArtifacts.map(_.version).distinct.size
+    val projectHeader: ProjectHeader = ProjectHeader(reference, allArtifacts, versionCount, None, true).get
     val projectDocument: ProjectDocument =
-      ProjectDocument(project.copy(creationDate = Some(now.minus(10, ChronoUnit.MINUTES))), allArtifacts, 1, Seq.empty)
+      ProjectDocument(project.copy(creationDate = Some(now.minus(10, ChronoUnit.MINUTES))), Some(projectHeader), 1, Seq.empty)
   }
 
   object CatsEffect {

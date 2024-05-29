@@ -30,7 +30,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
     implicit executionContext: ExecutionContext
 ) extends LazyLogging {
   private val service = new ProjectService(database)
-  private val searchSynchronizer = new SearchSynchronizer(database, searchEngine)
+  private val searchSynchronizer = new SearchSynchronizer(database, service, searchEngine)
 
   def route(user: Option[UserState]): Route =
     concat(

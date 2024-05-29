@@ -19,6 +19,7 @@ import scaladex.infra.sql.DoobieUtils
 import scaladex.server.service.SearchSynchronizer
 import scaladex.core.model.search.PageParams
 import scaladex.server.service.DependencyUpdater
+import scaladex.core.service.ProjectService
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 
@@ -36,7 +37,8 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
         val database = new SqlDatabase(datasource, xa)
         val filesystem = FilesystemStorage(config.filesystem)
 
-        val searchSync = new SearchSynchronizer(database, searchEngine)
+        val projectService = new ProjectService(database)
+        val searchSync = new SearchSynchronizer(database, projectService, searchEngine)
         val projectDependenciesUpdater = new DependencyUpdater(database)
 
         IO.fromFuture(IO {

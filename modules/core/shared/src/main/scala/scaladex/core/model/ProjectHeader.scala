@@ -3,32 +3,32 @@ package scaladex.core.model
 object ProjectHeader {
   def apply(
       ref: Project.Reference,
-      allArtifacts: Seq[Artifact],
+      artifacts: Seq[Artifact],
       versionCount: Long,
       defaultArtifactName: Option[Artifact.Name],
       preferStableVersion: Boolean
   ): Option[ProjectHeader] =
-    Option.when(allArtifacts.nonEmpty) {
-      new ProjectHeader(ref, allArtifacts, versionCount, defaultArtifactName, preferStableVersion)
+    Option.when(artifacts.nonEmpty) {
+      new ProjectHeader(ref, artifacts, versionCount, defaultArtifactName, preferStableVersion)
     }
 }
 
 final case class ProjectHeader(
     ref: Project.Reference,
-    allArtifacts: Seq[Artifact],
+    artifacts: Seq[Artifact],
     versionCount: Long,
     defaultArtifactName: Option[Artifact.Name],
     preferStableVersion: Boolean
 ) {
   lazy val defaultArtifact: Artifact = getDefaultArtifact(None, None)
   lazy val latestVersion: SemanticVersion = defaultArtifact.version
-  lazy val latestArtifacts: Seq[Artifact] = allArtifacts.filter(_.version == latestVersion)
+  lazy val latestArtifacts: Seq[Artifact] = artifacts.filter(_.version == latestVersion)
   lazy val latestLanguages: Seq[Language] = latestArtifacts.map(_.language).distinct.sorted
   lazy val latestPlatforms: Seq[Platform] = latestArtifacts.map(_.platform).distinct.sorted
 
-  def allArtifactNames: Seq[Artifact.Name] = allArtifacts.map(_.artifactName).distinct.sorted
+  def allArtifactNames: Seq[Artifact.Name] = artifacts.map(_.artifactName).distinct.sorted
   def platforms(artifactName: Artifact.Name): Seq[Platform] =
-    allArtifacts.filter(_.artifactName == artifactName).map(_.platform).distinct.sorted(Platform.ordering.reverse)
+    artifacts.filter(_.artifactName == artifactName).map(_.platform).distinct.sorted(Platform.ordering.reverse)
 
   def artifactsUrl: String = artifactsUrl(getDefaultArtifact(None, None), withBinaryVersion = false)
 
@@ -45,9 +45,9 @@ final case class ProjectHeader(
   }
 
   def getDefaultArtifact(language: Option[Language], platform: Option[Platform]): Artifact = {
-    val artifacts = allArtifacts
+    val filteredArtifacts = artifacts
       .filter(artifact => language.forall(_ == artifact.language) && platform.forall(_ == artifact.platform))
-    val stableArtifacts = artifacts.filter(_.version.isStable)
+    val stableArtifacts = filteredArtifacts.filter(_.version.isStable)
 
     def byName(artifacts: Seq[Artifact]): Option[Artifact] =
       defaultArtifactName.toSeq
@@ -55,7 +55,7 @@ final case class ProjectHeader(
         .maxByOption(_.binaryVersion)
 
     def ofVersion(version: SemanticVersion): Artifact =
-      artifacts
+      filteredArtifacts
         .filter(_.version == version)
         .maxBy(a => (a.binaryVersion, a.artifactName))(
           Ordering.Tuple2(Ordering[BinaryVersion], Ordering[Artifact.Name].reverse)
@@ -67,12 +67,12 @@ final case class ProjectHeader(
 
     if (preferStableVersion) {
       byName(stableArtifacts)
-        .orElse(byName(artifacts))
+        .orElse(byName(filteredArtifacts))
         .orElse(byLatestVersion(stableArtifacts))
-        .orElse(byLatestVersion(artifacts))
+        .orElse(byLatestVersion(filteredArtifacts))
         .get
     } else {
-      byName(artifacts).orElse(byLatestVersion(artifacts)).get
+      byName(filteredArtifacts).orElse(byLatestVersion(filteredArtifacts)).get
     }
   }
 
