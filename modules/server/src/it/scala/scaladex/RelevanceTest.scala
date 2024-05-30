@@ -113,9 +113,9 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     )
   }
 
-  test("filter _sjs0.6_2.12") {
+  test("filter _sjs1_2.13") {
     top(
-      SearchParams(languages = Seq("2.12"), platforms = Seq("sjs0.6")),
+      SearchParams(languages = Seq("2.13"), platforms = Seq("sjs1")),
       List(
         "scala-js" -> "scala-js"
       )
@@ -133,9 +133,9 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
     )
   }
 
-  test("filter _native0.3_2.11") {
+  test("filter _native0.4_2.13") {
     top(
-      SearchParams(languages = Seq("2.11"), platforms = Seq("native0.3")),
+      SearchParams(languages = Seq("2.13"), platforms = Seq("native0.4")),
       List(
         ("scalaz", "scalaz"),
         ("scopt", "scopt"),
