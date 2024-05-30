@@ -11,6 +11,7 @@ import scaladex.core.model.Project
 import scaladex.core.model.Project.Settings
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubClient
+import scaladex.core.service.ProjectService
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions._
@@ -27,7 +28,8 @@ class AdminService(
     extends LazyLogging {
   import actorSystem.dispatcher
 
-  val searchSynchronizer = new SearchSynchronizer(database, searchEngine)
+  val projectService = new ProjectService(database)
+  val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)
   val projectDependenciesUpdater = new DependencyUpdater(database)
   val userSessionService = new UserSessionService(database)
   val artifactsService = new ArtifactsService(database)

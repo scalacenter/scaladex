@@ -15,6 +15,7 @@ import org.apache.pekko.http.scaladsl.model._
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
 import scaladex.core.model._
+import scaladex.core.service.ProjectService
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 import scaladex.core.web.ArtifactPageParams
@@ -23,13 +24,13 @@ import scaladex.server.TwirlSupport._
 import scaladex.server.service.SearchSynchronizer
 import scaladex.view.html.forbidden
 import scaladex.view.html.notfound
-import scaladex.view.model.ProjectHeader
 import scaladex.view.project.html
 
 class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
     implicit executionContext: ExecutionContext
 ) extends LazyLogging {
-  private val searchSynchronizer = new SearchSynchronizer(database, searchEngine)
+  private val service = new ProjectService(database)
+  private val searchSynchronizer = new SearchSynchronizer(database, service, searchEngine)
 
   def route(user: Option[UserState]): Route =
     concat(
@@ -41,7 +42,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           artifactsParams { params =>
             getProjectOrRedirect(ref, user) { project =>
               val artifactsF = database.getArtifacts(ref, artifactName, params)
-              val headerF = getProjectHeader(project).map(_.get)
+              val headerF = service.getProjectHeader(project).map(_.get)
               for (artifacts <- artifactsF; header <- headerF) yield {
                 val binaryVersions = artifacts
                   .map(_.binaryVersion)
@@ -80,7 +81,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         path(projectM / "artifacts" / artifactNameM / versionM) { (ref, artifactName, artifactVersion) =>
           artifactParams { params =>
             getProjectOrRedirect(ref, user) { project =>
-              val headerF = getProjectHeader(project)
+              val headerF = service.getProjectHeader(project)
               val artifactsF = database.getArtifacts(ref, artifactName, artifactVersion)
               for {
                 artifacts <- artifactsF
@@ -115,7 +116,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           getProjectOrRedirect(ref, user) { project =>
             for {
               artifacts <- database.getArtifacts(project.reference)
-              header <- getProjectHeader(project)
+              header <- service.getProjectHeader(project)
             } yield {
               val binaryVersionByPlatforms = artifacts
                 .map(_.binaryVersion)
@@ -233,34 +234,20 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
     getProjectOrRedirect(ref, Some(user)) { project =>
       for {
         artifacts <- database.getArtifacts(ref)
-        header <- getProjectHeader(project)
+        header <- service.getProjectHeader(project)
       } yield {
         val page = html.editproject(env, user, project, header, artifacts)
         complete(page)
       }
     }
 
-  private def getProjectHeader(project: Project): Future[Option[ProjectHeader]] = {
-    val ref = project.reference
-    for {
-      latestArtifacts <- database.getLatestArtifacts(ref, project.settings.preferStableVersion)
-      versionCount <- database.countVersions(ref)
-    } yield ProjectHeader(
-      project.reference,
-      latestArtifacts,
-      versionCount,
-      project.settings.defaultArtifact,
-      project.settings.preferStableVersion
-    )
-  }
-
   private def getProjectPage(ref: Project.Reference, user: Option[UserState]): Route =
     getProjectOrRedirect(ref, user) { project =>
       for {
-        header <- getProjectHeader(project)
+        header <- service.getProjectHeader(project)
         directDependencies <-
           header
-            .map(h => database.getProjectDependencies(ref, h.defaultVersion))
+            .map(h => database.getProjectDependencies(ref, h.latestVersion))
             .getOrElse(Future.successful(Seq.empty))
         reverseDependencies <- database.getProjectDependents(ref)
       } yield {
@@ -288,7 +275,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
 
   private def getBadges(ref: Project.Reference, user: Option[UserState]): Route =
     getProjectOrRedirect(ref, user) { project =>
-      for (header <- getProjectHeader(project).map(_.get)) yield {
+      for (header <- service.getProjectHeader(project).map(_.get)) yield {
         val artifact = header.getDefaultArtifact(None, None)
         val page = html.badges(env, user, project, header, artifact)
         complete(StatusCodes.OK, page)

@@ -6,9 +6,9 @@ import scala.util.control.NonFatal
 
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Project
+import scaladex.core.model.ProjectHeader
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions._
-import scaladex.view.model.ProjectHeader
 
 class DependencyUpdater(database: SchedulerDatabase)(implicit ec: ExecutionContext) extends LazyLogging {
 
@@ -40,7 +40,7 @@ class DependencyUpdater(database: SchedulerDatabase)(implicit ec: ExecutionConte
             project.settings.preferStableVersion
           )
           dependencies <- header
-            .map(h => database.computeProjectDependencies(project.reference, h.defaultVersion))
+            .map(h => database.computeProjectDependencies(project.reference, h.latestVersion))
             .getOrElse(Future.successful(Seq.empty))
           _ <- database.deleteProjectDependencies(project.reference)
           _ <- database.insertProjectDependencies(dependencies)

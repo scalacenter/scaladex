@@ -2,16 +2,7 @@ package scaladex.core.model.search
 
 import java.time.Instant
 
-import scaladex.core.model.Artifact
-import scaladex.core.model.Category
-import scaladex.core.model.Language
-import scaladex.core.model.MillPlugin
-import scaladex.core.model.Platform
-import scaladex.core.model.Project
-import scaladex.core.model.SbtPlugin
-import scaladex.core.model.Scala
-import scaladex.core.model.ScalaJs
-import scaladex.core.model.ScalaNative
+import scaladex.core.model._
 
 // Project document indexed by the search engine
 final case class ProjectDocument(
@@ -24,6 +15,7 @@ final case class ProjectDocument(
     updateDate: Option[Instant],
     languages: Seq[Language],
     platforms: Seq[Platform],
+    latestVersion: Option[SemanticVersion],
     dependents: Long,
     category: Option[Category],
     formerReferences: Seq[Project.Reference],
@@ -50,6 +42,7 @@ object ProjectDocument {
       None,
       Seq.empty,
       Seq.empty,
+      None,
       0,
       None,
       Seq.empty,
@@ -58,29 +51,25 @@ object ProjectDocument {
 
   def apply(
       project: Project,
-      artifacts: Seq[Artifact],
+      header: Option[ProjectHeader],
       dependents: Long,
       formerReferences: Seq[Project.Reference]
   ): ProjectDocument = {
     val (deprecatedArtifactNames, artifactNames) =
-      artifacts
-        .map(_.artifactName)
-        .distinct
-        .sorted
-        .partition(project.settings.deprecatedArtifacts.contains)
-    import project._
+      header.toSeq.flatMap(_.allArtifactNames).partition(project.settings.deprecatedArtifacts.contains)
     ProjectDocument(
-      organization,
-      repository,
+      project.organization,
+      project.repository,
       artifactNames,
       deprecatedArtifactNames,
-      hasCli,
-      creationDate,
+      project.hasCli,
+      project.creationDate,
       updateDate = None,
-      artifacts.map(_.binaryVersion.language).distinct.sorted,
-      artifacts.map(_.binaryVersion.platform).distinct.sorted,
+      header.toSeq.flatMap(_.latestLanguages),
+      header.toSeq.flatMap(_.latestPlatforms),
+      header.map(_.latestVersion),
       dependents,
-      settings.category,
+      project.settings.category,
       formerReferences,
       project.githubInfo.map(_.toDocument)
     )

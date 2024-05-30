@@ -1,4 +1,4 @@
-@import scaladex.core.model.{Artifact, BinaryVersion, Project, SemanticVersion, UserState, Env}
+@import scaladex.core.model._
 @import scaladex.view.html.main
 @import scaladex.view.html._
 @import scaladex.core.web.ArtifactsPageParams
@@ -8,7 +8,6 @@
 @import scaladex.core.util.ScalaExtensions._
 @import scaladex.core.util.TimeUtils
 @import scaladex.view.Formats
-@import scaladex.view.model.ProjectHeader
 
 @import java.time.Instant
 @(
@@ -90,7 +89,7 @@
 @filters() = {
   <form action="#" action="GET">
     <select class="selectpicker" data-style="btn-primary" onchange="window.location=this.value">
-      @for(name <- header.artifactNames) {
+      @for(name <- header.allArtifactNames) {
           <option value="@artifactsUri(project.reference, name, params)"
           @if(name == artifactName) {selected}>
           @name
