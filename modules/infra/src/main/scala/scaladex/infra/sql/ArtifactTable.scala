@@ -94,16 +94,11 @@ object ArtifactTable {
           .map(bv => s"(platform='${bv.platform.label}' AND language_version='${bv.language.label}')")
           .mkString("(", " OR ", ")")
     val preReleaseFilter = if (preReleases) s"true" else "is_prerelease=false"
-    val releases =
-      s"""|SELECT organization, repository, artifact_name, version
+    Query[(Project.Reference, Artifact.Name), Artifact](
+      s"""|SELECT ${fields.mkString(", ")}
           |FROM $table WHERE
           |organization=? AND repository=? AND artifact_name=? AND $binaryVersionFilter AND $preReleaseFilter
           |""".stripMargin
-    val artifactFields = fields.map(f => s"a.$f").mkString(", ")
-    Query[(Project.Reference, Artifact.Name), Artifact](
-      s"""|SELECT $artifactFields FROM ($releases) r INNER JOIN $table a ON
-          | r.version = a.version AND r.organization = a.organization AND
-          | r.repository = a.repository AND r.artifact_name = a.artifact_name""".stripMargin
     )
   }
 

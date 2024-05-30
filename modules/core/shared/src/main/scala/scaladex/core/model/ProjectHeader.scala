@@ -1,5 +1,7 @@
 package scaladex.core.model
 
+import java.time.Instant
+
 object ProjectHeader {
   def apply(
       ref: Project.Reference,
@@ -52,18 +54,18 @@ final case class ProjectHeader(
     def byName(artifacts: Seq[Artifact]): Option[Artifact] =
       defaultArtifactName.toSeq
         .flatMap(defaultName => artifacts.filter(a => defaultName == a.artifactName))
-        .maxByOption(_.binaryVersion)
+        .maxByOption(a => (a.binaryVersion, a.releaseDate))
 
     def ofVersion(version: SemanticVersion): Artifact =
       filteredArtifacts
         .filter(_.version == version)
-        .maxBy(a => (a.binaryVersion, a.artifactName))(
-          Ordering.Tuple2(Ordering[BinaryVersion], Ordering[Artifact.Name].reverse)
+        .maxBy(a => (a.binaryVersion, a.artifactName, a.releaseDate))(
+          Ordering.Tuple3(Ordering[BinaryVersion], Ordering[Artifact.Name].reverse, Ordering[Instant])
         )
 
     // find version of latest stable artifact then default artifact of that version
     def byLatestVersion(artifacts: Seq[Artifact]): Option[Artifact] =
-      artifacts.sortBy(_.releaseDate).lastOption.map(a => ofVersion(a.version))
+      artifacts.maxByOption(_.releaseDate).map(a => ofVersion(a.version))
 
     if (preferStableVersion) {
       byName(stableArtifacts)
