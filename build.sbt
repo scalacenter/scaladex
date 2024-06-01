@@ -69,7 +69,7 @@ lazy val infra = project
       "org.flywaydb" % "flyway-core" % "8.5.13", // for database migration
       "org.apache.pekko" %% "pekko-stream" % V.pekko,
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
-      "com.github.pjfanning" %% "pekko-http-circe" % "2.5.0",
+      "com.github.pjfanning" %% "pekko-http-circe" % "2.6.0",
       "io.get-coursier" %% "coursier" % V.coursier,
       "io.get-coursier" %% "coursier-sbt-maven-repository" % V.coursier,
       "org.tpolecat" %% "doobie-scalatest" % V.doobie % Test,
