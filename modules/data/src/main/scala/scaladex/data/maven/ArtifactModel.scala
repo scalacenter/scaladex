@@ -1,7 +1,7 @@
 package scaladex.data
 package maven
 
-import scaladex.core.model.Artifact
+import scaladex.core.model.{Artifact, Url}
 
 /** Abstract model of a released artifact. Initially modeled after the POM model. Tweaked to fit with ivy.xml descriptors */
 // POM Model
@@ -30,7 +30,9 @@ case class ArtifactModel(
     repositories: List[Repository] = Nil,
     organization: Option[Organization] = None,
     sbtPluginTarget: Option[SbtPluginTarget] =
-      None // Information on the target scala and sbt versions, in case this artifact is an sbt plugin
+      None, // Information on the target scala and sbt versions, in case this artifact is an sbt plugin
+    scaladocUrl: Option[Url] = None,
+    versionScheme: Option[String] = None
 ) {
   private val packagingOfInterest = Set("aar", "jar", "bundle", "pom")
   val isPackagingOfInterest: Boolean = packagingOfInterest.contains(packaging)
