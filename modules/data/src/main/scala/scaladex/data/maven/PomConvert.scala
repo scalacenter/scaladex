@@ -1,7 +1,7 @@
 package scaladex.data
 package maven
 
-import scaladex.core.model.Url
+import scaladex.core.model.{Contributor, Url}
 
 private[maven] object PomConvert {
   def apply(model: org.apache.maven.model.Model): ArtifactModel = {
