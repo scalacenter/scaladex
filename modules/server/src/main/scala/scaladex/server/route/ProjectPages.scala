@@ -112,7 +112,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         }
       },
       get {
-        path(projectM / "intermediateArtifacts") { ref =>
+        path(projectM / "artifacts") { ref =>
           getProjectOrRedirect(ref, user) { project =>
             for {
               header <- service.getProjectHeader(project)
