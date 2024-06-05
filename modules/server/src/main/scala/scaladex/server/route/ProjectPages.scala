@@ -112,6 +112,18 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         }
       },
       get {
+        path(projectM / "intermediateArtifacts") { ref =>
+          getProjectOrRedirect(ref, user) { project =>
+            for {
+              header <- service.getProjectHeader(project)
+            } yield {
+              val page = html.intermediateArtifacts(env, user, project, header.get)
+              complete(page)
+            }
+          }
+        }
+      },
+      get {
         path(projectM / "version-matrix") { ref =>
           getProjectOrRedirect(ref, user) { project =>
             for {
