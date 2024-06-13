@@ -8,7 +8,7 @@ import org.scalajs.dom.HTMLUListElement
 import org.scalajs.dom.KeyboardEvent
 import org.scalajs.dom.Node
 import org.scalajs.dom.ext.KeyCode
-import scaladex.client.rpc.RPC
+import scaladex.client.RPC
 import scaladex.core.api.AutocompletionResponse
 import scalatags.JsDom.all._
 

@@ -88,7 +88,8 @@ class InMemoryDatabase extends SchedulerDatabase {
         .filter(_.artifactName == artifactName)
     )
 
-  override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] = ???
+  override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] =
+    Future.successful(allArtifacts.values.iterator.flatten.find(a => a.mavenReference == mavenRef))
 
   override def getAllArtifacts(
       maybeLanguage: Option[Language],
@@ -115,7 +116,8 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def countArtifacts(): Future[Long] =
     Future.successful(allArtifacts.values.flatten.size)
 
-  override def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]] = ???
+  override def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]] =
+    Future.successful(allProjects.view.mapValues(p => p.githubStatus).toMap)
 
   override def getAllProjects(): Future[Seq[Project]] = ???
 

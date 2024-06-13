@@ -5,10 +5,9 @@ import play.api.libs.json.JsValue
 import scaladex.server.route.ControllerBaseSuite
 
 class DocumentationRoutesTests extends ControllerBaseSuite with PlayJsonSupport {
-
   describe("route") {
     it("should serve OpenAPI documentation") {
-      Get("/api/open-api.json") ~> DocumentationRoutes.routes ~> check {
+      Get("/api/open-api.json") ~> DocumentationRoute.route ~> check {
         status shouldBe StatusCodes.OK
         responseAs[JsValue] shouldNot be(null)
       }
