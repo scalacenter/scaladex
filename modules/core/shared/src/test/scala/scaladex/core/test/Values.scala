@@ -9,6 +9,7 @@ import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
+import scaladex.core.model.Contributor
 import scaladex.core.model.GithubCommitActivity
 import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubInfo
@@ -65,7 +66,10 @@ object Values {
       resolver = None,
       licenses = Set(),
       isNonStandardLib = false,
-      fullScalaVersion = None
+      fullScalaVersion = None,
+      scaladocUrl = None,
+      versionScheme = None,
+      developers = None
     )
     val githubInfo: GithubInfo =
       GithubInfo.empty
@@ -122,7 +126,10 @@ object Values {
       resolver = None,
       licenses = Set(),
       isNonStandardLib = false,
-      fullScalaVersion = None
+      fullScalaVersion = None,
+      developers = None,
+      scaladocUrl = None,
+      versionScheme = None
     )
     val dependency: ArtifactDependency =
       ArtifactDependency(
@@ -165,7 +172,10 @@ object Values {
         binaryVersion: BinaryVersion,
         version: SemanticVersion,
         description: Option[String] = None,
-        fullScalaVersion: Option[SemanticVersion] = None
+        fullScalaVersion: Option[SemanticVersion] = None,
+        developers: Option[List[Contributor]] = None,
+        scaladocUrl: Option[Url] = None,
+        versionScheme: Option[String] = None
     ): Artifact = {
       val artifactId = ArtifactId(Name(name), binaryVersion)
       Artifact(
@@ -181,7 +191,10 @@ object Values {
         resolver = None,
         licenses = Set(license),
         isNonStandardLib = false,
-        fullScalaVersion = fullScalaVersion
+        fullScalaVersion = fullScalaVersion,
+        developers = developers,
+        scaladocUrl = scaladocUrl,
+        versionScheme = versionScheme
       )
     }
 
@@ -190,7 +203,178 @@ object Values {
       `_3`,
       `2.6.1`,
       description = Some("Cats core"),
-      fullScalaVersion = SemanticVersion.parse("3.0.0")
+      fullScalaVersion = SemanticVersion.parse("3.0.0"),
+      scaladocUrl = Some(Url("http://typelevel.org/cats/api/")),
+      versionScheme = Some("semver-spec"),
+      developers = Some(
+        List(
+          Contributor(
+            Some("Cody Allen"),
+            None,
+            Some("https://github.com/ceedubs/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Ross Baker"),
+            None,
+            Some("https://github.com/rossabaker/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("P. Oscar Boykin"),
+            None,
+            Some("https://github.com/johnynek/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Travis Brown"),
+            None,
+            Some("https://github.com/travisbrown/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Adelbert Chang"),
+            None,
+            Some("https://github.com/adelbertc/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Peter Neyens"),
+            None,
+            Some("https://github.com/peterneyens/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Rob Norris"),
+            None,
+            Some("https://github.com/tpolecat/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Erik Osheim"),
+            None,
+            Some("https://github.com/non/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("LukaJCB"),
+            None,
+            Some("https://github.com/LukaJCB/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Michael Pilquist"),
+            None,
+            Some("https://github.com/mpilquist/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Miles Sabin"),
+            None,
+            Some("https://github.com/milessabin/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Daniel Spiewak"),
+            None,
+            Some("https://github.com/djspiewak/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Frank Thomas"),
+            None,
+            Some("https://github.com/fthomas/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Julien Truffaut"),
+            None,
+            Some("https://github.com/julien-truffaut/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Kailuo Wang"),
+            None,
+            Some("https://github.com/kailuowang/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.6.1")
+          )
+        )
+      )
     )
     val `core_2.13:2.6.1`: Artifact = getArtifact("cats-core", `_2.13`, `2.6.1`, description = Some("Cats core"))
     val `core_3:4`: Artifact = getArtifact("cats-core", `_3`, `4`, description = Some("Cats core"))
@@ -199,10 +383,357 @@ object Values {
       `_3`,
       `2.7.0`,
       description = Some("Cats core"),
-      fullScalaVersion = SemanticVersion.parse("3.0.2")
+      fullScalaVersion = SemanticVersion.parse("3.0.2"),
+      scaladocUrl = Some(Url("http://typelevel.org/cats/api/")),
+      versionScheme = Some("semver-spec"),
+      developers = Some(
+        List(
+          Contributor(
+            Some("Cody Allen"),
+            None,
+            Some("https://github.com/ceedubs/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.7.0")
+          ),
+          Contributor(
+            Some("Ross Baker"),
+            None,
+            Some("https://github.com/rossabaker/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.7.0")
+          ),
+          Contributor(
+            Some("P. Oscar Boykin"),
+            None,
+            Some("https://github.com/johnynek/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.7.0")
+          ),
+          Contributor(
+            Some("Travis Brown"),
+            None,
+            Some("https://github.com/travisbrown/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.7.0")
+          ),
+          Contributor(
+            Some("Adelbert Chang"),
+            None,
+            Some("https://github.com/adelbertc/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.7.0")
+          ),
+          Contributor(
+            Some("Peter Neyens"),
+            None,
+            Some("https://github.com/peterneyens/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.7.0")
+          ),
+          Contributor(
+            Some("Rob Norris"),
+            None,
+            Some("https://github.com/tpolecat/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.7.0")
+          ),
+          Contributor(
+            Some("Erik Osheim"),
+            None,
+            Some("https://github.com/non/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.7.0")
+          ),
+          Contributor(
+            Some("LukaJCB"),
+            None,
+            Some("https://github.com/LukaJCB/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.7.0")
+          ),
+          Contributor(
+            Some("Michael Pilquist"),
+            None,
+            Some("https://github.com/mpilquist/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.7.0")
+          ),
+          Contributor(
+            Some("Miles Sabin"),
+            None,
+            Some("https://github.com/milessabin/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.7.0")
+          ),
+          Contributor(
+            Some("Daniel Spiewak"),
+            None,
+            Some("https://github.com/djspiewak/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.7.0")
+          ),
+          Contributor(
+            Some("Frank Thomas"),
+            None,
+            Some("https://github.com/fthomas/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.7.0")
+          ),
+          Contributor(
+            Some("Julien Truffaut"),
+            None,
+            Some("https://github.com/julien-truffaut/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.7.0")
+          ),
+          Contributor(
+            Some("Kailuo Wang"),
+            None,
+            Some("https://github.com/kailuowang/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_3:jar:2.7.0")
+          )
+        )
+      )
     )
 
-    val `core_sjs1_3:2.6.1`: Artifact = getArtifact("cats-core", `_sjs1_3`, `2.6.1`, description = Some("Cats core"))
+    val `core_sjs1_3:2.6.1`: Artifact = getArtifact(
+      "cats-core",
+      `_sjs1_3`,
+      `2.6.1`,
+      description = Some("Cats core"),
+      scaladocUrl = Some(Url("http://typelevel.org/cats/api/")),
+      versionScheme = Some("semver-spec"),
+      developers = Some(
+        List(
+          Contributor(
+            Some("Cody Allen"),
+            None,
+            Some("https://github.com/ceedubs/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Ross Baker"),
+            None,
+            Some("https://github.com/rossabaker/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("P. Oscar Boykin"),
+            None,
+            Some("https://github.com/johnynek/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Travis Brown"),
+            None,
+            Some("https://github.com/travisbrown/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Adelbert Chang"),
+            None,
+            Some("https://github.com/adelbertc/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Peter Neyens"),
+            None,
+            Some("https://github.com/peterneyens/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Rob Norris"),
+            None,
+            Some("https://github.com/tpolecat/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Erik Osheim"),
+            None,
+            Some("https://github.com/non/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("LukaJCB"),
+            None,
+            Some("https://github.com/LukaJCB/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Michael Pilquist"),
+            None,
+            Some("https://github.com/mpilquist/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Miles Sabin"),
+            None,
+            Some("https://github.com/milessabin/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Daniel Spiewak"),
+            None,
+            Some("https://github.com/djspiewak/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Frank Thomas"),
+            None,
+            Some("https://github.com/fthomas/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Julien Truffaut"),
+            None,
+            Some("https://github.com/julien-truffaut/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
+          ),
+          Contributor(
+            Some("Kailuo Wang"),
+            None,
+            Some("https://github.com/kailuowang/"),
+            None,
+            None,
+            List(),
+            None,
+            Map(),
+            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
+          )
+        )
+      )
+    )
     val `core_sjs06_2.13:2.6.1`: Artifact =
       getArtifact("cats-core", `_sjs0.6_2.13`, `2.6.1`, description = Some("Cats core"))
     val `core_native04_2.13:2.6.1`: Artifact =
