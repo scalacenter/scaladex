@@ -28,6 +28,9 @@ class ArtifactSelectionTests extends AsyncFunSpec with Matchers {
       isNonStandardLib = false,
       artifactId.binaryVersion.platform,
       artifactId.binaryVersion.language,
+      None,
+      None,
+      None,
       None
     )
   }

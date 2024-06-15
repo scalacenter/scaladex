@@ -7,7 +7,6 @@ import java.time.format.DateTimeFormatter
 import fastparse.P
 import fastparse.Start
 import fastparse._
-import scaladex.core.model.PatchVersion
 import scaladex.core.util.Parsers._
 
 /**
@@ -30,9 +29,13 @@ case class Artifact(
     isNonStandardLib: Boolean,
     platform: Platform,
     language: Language,
-    fullScalaVersion: Option[SemanticVersion]
+    fullScalaVersion: Option[SemanticVersion],
+    scaladocUrl: Option[Url],
+    versionScheme: Option[String],
+    developers: Option[List[Contributor]]
 ) {
   val binaryVersion: BinaryVersion = BinaryVersion(platform, language)
+  val mavenReference: Artifact.MavenReference = Artifact.MavenReference(groupId.value, artifactId, version.encode)
 
   def isValid: Boolean = binaryVersion.isValid
 
@@ -45,14 +48,18 @@ case class Artifact(
     s"$groupId$sep$artifactName"
   }
 
-  private def artifactHttpPath: String = s"/${projectRef.organization}/${projectRef.repository}/$artifactName"
-
-  val mavenReference: Artifact.MavenReference = Artifact.MavenReference(groupId.value, artifactId, version.encode)
-
   def release: Release =
     Release(projectRef.organization, projectRef.repository, platform, language, version, releaseDate)
 
   def releaseDateFormat: String = Artifact.dateFormatter.format(releaseDate)
+
+  def httpUrl: String = {
+    val binaryVersionQuery = s"?binaryVersion=${binaryVersion.encode}"
+    s"$artifactHttpPath/$version$binaryVersionQuery"
+  }
+
+  def badgeUrl(env: Env, platform: Option[Platform] = None): String =
+    s"${fullHttpUrl(env)}/latest-by-scala-version.svg?platform=${platform.map(_.label).getOrElse(binaryVersion.platform.label)}"
 
   def fullHttpUrl(env: Env): String =
     env match {
@@ -63,13 +70,7 @@ case class Artifact(
         s"http://localhost:8080$artifactHttpPath" // todo: fix locally
     }
 
-  def httpUrl: String = {
-    val binaryVersionQuery = s"?binaryVersion=${binaryVersion.encode}"
-    s"$artifactHttpPath/$version$binaryVersionQuery"
-  }
-
-  def badgeUrl(env: Env, platform: Option[Platform] = None): String =
-    s"${fullHttpUrl(env)}/latest-by-scala-version.svg?platform=${platform.map(_.label).getOrElse(binaryVersion.platform.label)}"
+  private def artifactHttpPath: String = s"/${projectRef.organization}/${projectRef.repository}/$artifactName"
 
   def latestBadgeUrl(env: Env): String =
     s"${fullHttpUrl(env)}/latest.svg"
