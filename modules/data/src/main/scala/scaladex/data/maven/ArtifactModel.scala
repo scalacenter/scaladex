@@ -1,7 +1,9 @@
 package scaladex.data
 package maven
 
-import scaladex.core.model.{Artifact, Contributor, Url}
+import scaladex.core.model.Artifact
+import scaladex.core.model.Contributor
+import scaladex.core.model.Url
 
 /** Abstract model of a released artifact. Initially modeled after the POM model. Tweaked to fit with ivy.xml descriptors */
 // POM Model
@@ -68,7 +70,6 @@ case class License(
     // Addendum information pertaining to this license.
     comments: Option[String] = None
 )
-
 
 case class Dependency(
     groupId: String, // org.apache.maven
