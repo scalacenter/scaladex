@@ -11,15 +11,41 @@
 
 @import java.time.Instant
 
-@(env: Env, user: Option[UserState], project: Project, header: ProjectHeader)
+@(
+    env: Env,
+    user: Option[UserState],
+    project: Project,
+    header: Option[ProjectHeader],
+    groupedArtifacts: Map[SemanticVersion, Seq[Artifact]]
+)
 
-@main(env, title = s"${project.repository} Artifacts", user) {
+@main(env, title = project.repository.toString, user) {
   <main id="container-project">
-    @headproject(env, user, project, Some(header), "Artifacts")
+    @headproject(env, user, project, header, "Artifacts")
     <div class="container">
-      <div class="content-project artifacts box">
-        <h2>Artifacts for Project @project.reference.repository</h2>
-        <p>This is demo Intermediate artifacts page</p>
+      <div class="content-project artifacts box" data-organization="@project.reference.organization"
+      data-repository="@project.reference.repository">
+        <div class="artifacts-filter">
+          <div class="result-count">
+            <b>@groupedArtifacts.size</b> @Formats.wordPlural(groupedArtifacts.size, "version") found
+          </div>
+        </div>
+        @if(groupedArtifacts.isEmpty) {
+          <div>We can't find any artifacts for this project.</div>
+        } else {
+          <div>
+            @for((version, artifacts) <- groupedArtifacts.toSeq.sortBy(_._1).reverse) {
+              <h3>Version @version</h3>
+              <ul>
+                @for(artifact <- artifacts) {
+                  <li>
+                    <span>@artifact.artifactName</span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
       </div>
     </div>
   </main>

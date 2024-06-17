@@ -114,10 +114,27 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
       get {
         path(projectM / "artifacts") { ref =>
           getProjectOrRedirect(ref, user) { project =>
+            val latestArtifactsF = database.getLatestArtifacts(ref, preferStableVersions = false)
+            val headerF = service.getProjectHeader(project)
             for {
-              header <- service.getProjectHeader(project)
+              latestArtifacts <- latestArtifactsF
+              header <- headerF
             } yield {
-              val page = html.artifacts(env, user, project, header.get)
+              // Remove duplicate
+              val distinctArtifacts = latestArtifacts
+                .groupBy(_.artifactName)
+                .values
+                .flatMap(_.maxByOption(_.releaseDate))
+                .toSeq
+
+              // Group them by latest version
+              val groupedArtifacts = distinctArtifacts
+                .groupBy(_.version)
+                .view
+                .mapValues(_.sortBy(_.artifactName))
+                .toMap
+
+              val page = html.artifacts(env, user, project, header, groupedArtifacts)
               complete(page)
             }
           }
