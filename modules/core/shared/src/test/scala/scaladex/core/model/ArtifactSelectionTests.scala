@@ -31,7 +31,7 @@ class ArtifactSelectionTests extends AsyncFunSpec with Matchers {
       None,
       None,
       None,
-      None
+      Nil
     )
   }
 

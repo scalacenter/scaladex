@@ -205,7 +205,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       artifactName: Option[Artifact.Name] = None,
       resolver: Option[Resolver] = None,
       projectRef: Option[Project.Reference] = None,
-      developers: Option[List[Contributor]] = None,
+      developers: Seq[Contributor] = Nil,
       scaladocUrl: Option[Url] = None,
       versionScheme: Option[String] = None
   ) = {

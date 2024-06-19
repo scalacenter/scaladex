@@ -245,8 +245,8 @@ object DoobieUtils {
       Read[(Set[Project.Reference], Set[Project.Organization], UserInfo)].map {
         case (repos, orgs, info) => UserState(repos, orgs, info)
       }
-    implicit val developerMeta: Meta[List[Contributor]] =
-      Meta[String].timap(fromJson[List[Contributor]](_).get.toList)(toJson(_))
+    implicit val developerMeta: Meta[Seq[Contributor]] =
+      Meta[String].timap(fromJson[Seq[Contributor]](_).get)(toJson(_))
 
     private def toJson[A](v: A)(implicit e: Encoder[A]): String =
       e.apply(v).noSpaces

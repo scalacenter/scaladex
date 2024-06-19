@@ -32,7 +32,7 @@ case class Artifact(
     fullScalaVersion: Option[SemanticVersion],
     scaladocUrl: Option[Url],
     versionScheme: Option[String],
-    developers: Option[List[Contributor]]
+    developers: Seq[Contributor]
 ) {
   val binaryVersion: BinaryVersion = BinaryVersion(platform, language)
   val mavenReference: Artifact.MavenReference = Artifact.MavenReference(groupId.value, artifactId, version.encode)

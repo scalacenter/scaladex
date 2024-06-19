@@ -1,8 +1,5 @@
 package scaladex.core.test
 
-import java.time.Instant
-import java.time.temporal.ChronoUnit
-
 import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact._
 import scaladex.core.model.ArtifactDependency
@@ -29,6 +26,9 @@ import scaladex.core.model.SemanticVersion
 import scaladex.core.model.Url
 import scaladex.core.model.search.ProjectDocument
 
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+
 object Values {
   val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
   val ok: GithubStatus = GithubStatus.Ok(now)
@@ -48,6 +48,12 @@ object Values {
   val `_sjs1_3`: BinaryVersion = BinaryVersion(ScalaJs.`1.x`, Scala.`3`)
   val `_sjs0.6_2.13` = BinaryVersion(ScalaJs.`0.6`, Scala.`2.13`)
   val `_native0.4_2.13` = BinaryVersion(ScalaNative.`0.4`, Scala.`2.13`)
+
+  private def contributor(login: String): GithubContributor =
+    GithubContributor(login, "", Url(""), 1)
+
+  private def developer(name: String, url: String, id: String) =
+    Contributor(Some(name), None, Some(url), None, None, List(), None, Map(), Some(id))
 
   object Scalafix {
     val reference: Project.Reference = Project.Reference.from("scalacenter", "scalafix")
@@ -69,7 +75,7 @@ object Values {
       fullScalaVersion = None,
       scaladocUrl = None,
       versionScheme = None,
-      developers = None
+      developers = Nil
     )
     val githubInfo: GithubInfo =
       GithubInfo.empty
@@ -127,7 +133,7 @@ object Values {
       licenses = Set(),
       isNonStandardLib = false,
       fullScalaVersion = None,
-      developers = None,
+      developers = Nil,
       scaladocUrl = None,
       versionScheme = None
     )
@@ -166,38 +172,6 @@ object Values {
     )
     val groupId: GroupId = GroupId("org.typelevel")
     val license: License = License("MIT License", "MIT", Some("https://spdx.org/licenses/MIT.html"))
-
-    private def getArtifact(
-        name: String,
-        binaryVersion: BinaryVersion,
-        version: SemanticVersion,
-        description: Option[String] = None,
-        fullScalaVersion: Option[SemanticVersion] = None,
-        developers: Option[List[Contributor]] = None,
-        scaladocUrl: Option[Url] = None,
-        versionScheme: Option[String] = None
-    ): Artifact = {
-      val artifactId = ArtifactId(Name(name), binaryVersion)
-      Artifact(
-        groupId = groupId,
-        artifactId = artifactId.value,
-        version = version,
-        artifactName = artifactId.name,
-        platform = binaryVersion.platform,
-        language = binaryVersion.language,
-        projectRef = reference,
-        description = description,
-        releaseDate = Instant.ofEpochMilli(1620911032000L),
-        resolver = None,
-        licenses = Set(license),
-        isNonStandardLib = false,
-        fullScalaVersion = fullScalaVersion,
-        developers = developers,
-        scaladocUrl = scaladocUrl,
-        versionScheme = versionScheme
-      )
-    }
-
     val `core_3:2.6.1`: Artifact = getArtifact(
       "cats-core",
       `_3`,
@@ -206,174 +180,22 @@ object Values {
       fullScalaVersion = SemanticVersion.parse("3.0.0"),
       scaladocUrl = Some(Url("http://typelevel.org/cats/api/")),
       versionScheme = Some("semver-spec"),
-      developers = Some(
-        List(
-          Contributor(
-            Some("Cody Allen"),
-            None,
-            Some("https://github.com/ceedubs/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Ross Baker"),
-            None,
-            Some("https://github.com/rossabaker/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("P. Oscar Boykin"),
-            None,
-            Some("https://github.com/johnynek/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Travis Brown"),
-            None,
-            Some("https://github.com/travisbrown/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Adelbert Chang"),
-            None,
-            Some("https://github.com/adelbertc/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Peter Neyens"),
-            None,
-            Some("https://github.com/peterneyens/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Rob Norris"),
-            None,
-            Some("https://github.com/tpolecat/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Erik Osheim"),
-            None,
-            Some("https://github.com/non/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("LukaJCB"),
-            None,
-            Some("https://github.com/LukaJCB/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Michael Pilquist"),
-            None,
-            Some("https://github.com/mpilquist/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Miles Sabin"),
-            None,
-            Some("https://github.com/milessabin/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Daniel Spiewak"),
-            None,
-            Some("https://github.com/djspiewak/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Frank Thomas"),
-            None,
-            Some("https://github.com/fthomas/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Julien Truffaut"),
-            None,
-            Some("https://github.com/julien-truffaut/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Kailuo Wang"),
-            None,
-            Some("https://github.com/kailuowang/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.6.1")
-          )
-        )
+      developers = Seq(
+        developer("Cody Allen", "https://github.com/ceedubs/", "org.typelevel:cats-core_3:jar:2.6.1"),
+        developer("Ross Baker", "https://github.com/rossabaker/", "org.typelevel:cats-core_3:jar:2.6.1"),
+        developer("P. Oscar Boykin", "https://github.com/johnynek/", "org.typelevel:cats-core_3:jar:2.6.1"),
+        developer("Travis Brown", "https://github.com/travisbrown/", "org.typelevel:cats-core_3:jar:2.6.1"),
+        developer("Adelbert Chang", "https://github.com/adelbertc/", "org.typelevel:cats-core_3:jar:2.6.1"),
+        developer("Peter Neyens", "https://github.com/peterneyens/", "org.typelevel:cats-core_3:jar:2.6.1"),
+        developer("Rob Norris", "https://github.com/tpolecat/", "org.typelevel:cats-core_3:jar:2.6.1"),
+        developer("Erik Osheim", "https://github.com/non/", "org.typelevel:cats-core_3:jar:2.6.1"),
+        developer("LukaJCB", "https://github.com/LukaJCB/", "org.typelevel:cats-core_3:jar:2.6.1"),
+        developer("Michael Pilquist", "https://github.com/mpilquist/", "org.typelevel:cats-core_3:jar:2.6.1"),
+        developer("Miles Sabin", "https://github.com/milessabin/", "org.typelevel:cats-core_3:jar:2.6.1"),
+        developer("Daniel Spiewak", "https://github.com/djspiewak/", "org.typelevel:cats-core_3:jar:2.6.1"),
+        developer("Frank Thomas", "https://github.com/fthomas/", "org.typelevel:cats-core_3:jar:2.6.1"),
+        developer("Julien Truffaut", "https://github.com/julien-truffaut/", "org.typelevel:cats-core_3:jar:2.6.1"),
+        developer("Kailuo Wang", "https://github.com/kailuowang/", "org.typelevel:cats-core_3:jar:2.6.1")
       )
     )
     val `core_2.13:2.6.1`: Artifact = getArtifact("cats-core", `_2.13`, `2.6.1`, description = Some("Cats core"))
@@ -386,177 +208,24 @@ object Values {
       fullScalaVersion = SemanticVersion.parse("3.0.2"),
       scaladocUrl = Some(Url("http://typelevel.org/cats/api/")),
       versionScheme = Some("semver-spec"),
-      developers = Some(
-        List(
-          Contributor(
-            Some("Cody Allen"),
-            None,
-            Some("https://github.com/ceedubs/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.7.0")
-          ),
-          Contributor(
-            Some("Ross Baker"),
-            None,
-            Some("https://github.com/rossabaker/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.7.0")
-          ),
-          Contributor(
-            Some("P. Oscar Boykin"),
-            None,
-            Some("https://github.com/johnynek/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.7.0")
-          ),
-          Contributor(
-            Some("Travis Brown"),
-            None,
-            Some("https://github.com/travisbrown/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.7.0")
-          ),
-          Contributor(
-            Some("Adelbert Chang"),
-            None,
-            Some("https://github.com/adelbertc/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.7.0")
-          ),
-          Contributor(
-            Some("Peter Neyens"),
-            None,
-            Some("https://github.com/peterneyens/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.7.0")
-          ),
-          Contributor(
-            Some("Rob Norris"),
-            None,
-            Some("https://github.com/tpolecat/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.7.0")
-          ),
-          Contributor(
-            Some("Erik Osheim"),
-            None,
-            Some("https://github.com/non/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.7.0")
-          ),
-          Contributor(
-            Some("LukaJCB"),
-            None,
-            Some("https://github.com/LukaJCB/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.7.0")
-          ),
-          Contributor(
-            Some("Michael Pilquist"),
-            None,
-            Some("https://github.com/mpilquist/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.7.0")
-          ),
-          Contributor(
-            Some("Miles Sabin"),
-            None,
-            Some("https://github.com/milessabin/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.7.0")
-          ),
-          Contributor(
-            Some("Daniel Spiewak"),
-            None,
-            Some("https://github.com/djspiewak/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.7.0")
-          ),
-          Contributor(
-            Some("Frank Thomas"),
-            None,
-            Some("https://github.com/fthomas/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.7.0")
-          ),
-          Contributor(
-            Some("Julien Truffaut"),
-            None,
-            Some("https://github.com/julien-truffaut/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.7.0")
-          ),
-          Contributor(
-            Some("Kailuo Wang"),
-            None,
-            Some("https://github.com/kailuowang/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_3:jar:2.7.0")
-          )
-        )
+      developers = Seq(
+        developer("Cody Allen", "https://github.com/ceedubs/", "org.typelevel:cats-core_3:jar:2.7.0"),
+        developer("Ross Baker", "https://github.com/rossabaker/", "org.typelevel:cats-core_3:jar:2.7.0"),
+        developer("P. Oscar Boykin", "https://github.com/johnynek/", "org.typelevel:cats-core_3:jar:2.7.0"),
+        developer("Travis Brown", "https://github.com/travisbrown/", "org.typelevel:cats-core_3:jar:2.7.0"),
+        developer("Adelbert Chang", "https://github.com/adelbertc/", "org.typelevel:cats-core_3:jar:2.7.0"),
+        developer("Peter Neyens", "https://github.com/peterneyens/", "org.typelevel:cats-core_3:jar:2.7.0"),
+        developer("Rob Norris", "https://github.com/tpolecat/", "org.typelevel:cats-core_3:jar:2.7.0"),
+        developer("Erik Osheim", "https://github.com/non/", "org.typelevel:cats-core_3:jar:2.7.0"),
+        developer("LukaJCB", "https://github.com/LukaJCB/", "org.typelevel:cats-core_3:jar:2.7.0"),
+        developer("Michael Pilquist", "https://github.com/mpilquist/", "org.typelevel:cats-core_3:jar:2.7.0"),
+        developer("Miles Sabin", "https://github.com/milessabin/", "org.typelevel:cats-core_3:jar:2.7.0"),
+        developer("Daniel Spiewak", "https://github.com/djspiewak/", "org.typelevel:cats-core_3:jar:2.7.0"),
+        developer("Frank Thomas", "https://github.com/fthomas/", "org.typelevel:cats-core_3:jar:2.7.0"),
+        developer("Julien Truffaut", "https://github.com/julien-truffaut/", "org.typelevel:cats-core_3:jar:2.7.0"),
+        developer("Kailuo Wang", "https://github.com/kailuowang/", "org.typelevel:cats-core_3:jar:2.7.0")
       )
     )
-
     val `core_sjs1_3:2.6.1`: Artifact = getArtifact(
       "cats-core",
       `_sjs1_3`,
@@ -564,185 +233,35 @@ object Values {
       description = Some("Cats core"),
       scaladocUrl = Some(Url("http://typelevel.org/cats/api/")),
       versionScheme = Some("semver-spec"),
-      developers = Some(
-        List(
-          Contributor(
-            Some("Cody Allen"),
-            None,
-            Some("https://github.com/ceedubs/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Ross Baker"),
-            None,
-            Some("https://github.com/rossabaker/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("P. Oscar Boykin"),
-            None,
-            Some("https://github.com/johnynek/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Travis Brown"),
-            None,
-            Some("https://github.com/travisbrown/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Adelbert Chang"),
-            None,
-            Some("https://github.com/adelbertc/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Peter Neyens"),
-            None,
-            Some("https://github.com/peterneyens/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Rob Norris"),
-            None,
-            Some("https://github.com/tpolecat/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Erik Osheim"),
-            None,
-            Some("https://github.com/non/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("LukaJCB"),
-            None,
-            Some("https://github.com/LukaJCB/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Michael Pilquist"),
-            None,
-            Some("https://github.com/mpilquist/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Miles Sabin"),
-            None,
-            Some("https://github.com/milessabin/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Daniel Spiewak"),
-            None,
-            Some("https://github.com/djspiewak/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Frank Thomas"),
-            None,
-            Some("https://github.com/fthomas/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Julien Truffaut"),
-            None,
-            Some("https://github.com/julien-truffaut/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
-          ),
-          Contributor(
-            Some("Kailuo Wang"),
-            None,
-            Some("https://github.com/kailuowang/"),
-            None,
-            None,
-            List(),
-            None,
-            Map(),
-            Some("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
-          )
-        )
+      developers = Seq(
+        developer("Cody Allen", "https://github.com/ceedubs/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
+        developer("Ross Baker", "https://github.com/rossabaker/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
+        developer("P. Oscar Boykin", "https://github.com/johnynek/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
+        developer("Travis Brown", "https://github.com/travisbrown/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
+        developer("Adelbert Chang", "https://github.com/adelbertc/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
+        developer("Peter Neyens", "https://github.com/peterneyens/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
+        developer("Rob Norris", "https://github.com/tpolecat/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
+        developer("Erik Osheim", "https://github.com/non/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
+        developer("LukaJCB", "https://github.com/LukaJCB/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
+        developer("Michael Pilquist", "https://github.com/mpilquist/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
+        developer("Miles Sabin", "https://github.com/milessabin/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
+        developer("Daniel Spiewak", "https://github.com/djspiewak/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
+        developer("Frank Thomas", "https://github.com/fthomas/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
+        developer(
+          "Julien Truffaut",
+          "https://github.com/julien-truffaut/",
+          "org.typelevel:cats-core_sjs1_3:jar:2.6.1"
+        ),
+        developer("Kailuo Wang", "https://github.com/kailuowang/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1")
       )
     )
     val `core_sjs06_2.13:2.6.1`: Artifact =
       getArtifact("cats-core", `_sjs0.6_2.13`, `2.6.1`, description = Some("Cats core"))
     val `core_native04_2.13:2.6.1`: Artifact =
       getArtifact("cats-core", `_native0.4_2.13`, `2.6.1`, description = Some("Cats core"))
-
     val `kernel_2.13`: Artifact = getArtifact("cats-kernel", `_2.13`, `2.6.1`)
     val `kernel_3:2.6.1`: Artifact = getArtifact("cats-kernel", `_3`, `2.6.1`)
     val `laws_3:2.6.1`: Artifact = getArtifact("cats-laws", `_3`, `2.6.1`)
-
     val allArtifacts: Seq[Artifact] =
       Seq(
         `core_3:2.6.1`,
@@ -753,7 +272,6 @@ object Values {
         `kernel_3:2.6.1`,
         `laws_3:2.6.1`
       )
-
     val dependencies: Seq[ArtifactDependency] = Seq(
       ArtifactDependency(
         source = `core_3:2.6.1`.mavenReference,
@@ -784,6 +302,37 @@ object Values {
         1,
         Seq.empty
       )
+
+    private def getArtifact(
+        name: String,
+        binaryVersion: BinaryVersion,
+        version: SemanticVersion,
+        description: Option[String] = None,
+        fullScalaVersion: Option[SemanticVersion] = None,
+        developers: Seq[Contributor] = Nil,
+        scaladocUrl: Option[Url] = None,
+        versionScheme: Option[String] = None
+    ): Artifact = {
+      val artifactId = ArtifactId(Name(name), binaryVersion)
+      Artifact(
+        groupId = groupId,
+        artifactId = artifactId.value,
+        version = version,
+        artifactName = artifactId.name,
+        platform = binaryVersion.platform,
+        language = binaryVersion.language,
+        projectRef = reference,
+        description = description,
+        releaseDate = Instant.ofEpochMilli(1620911032000L),
+        resolver = None,
+        licenses = Set(license),
+        isNonStandardLib = false,
+        fullScalaVersion = fullScalaVersion,
+        developers = developers,
+        scaladocUrl = scaladocUrl,
+        versionScheme = versionScheme
+      )
+    }
   }
 
   object CatsEffect {
@@ -819,8 +368,5 @@ object Values {
     val organization: Project.Organization = Project.Organization("scala")
     val reference: Project.Reference = Project.Reference.from("scala/scala3")
   }
-
-  private def contributor(login: String): GithubContributor =
-    GithubContributor(login, "", Url(""), 1)
 
 }
