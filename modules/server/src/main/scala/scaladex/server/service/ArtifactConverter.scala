@@ -44,7 +44,10 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
         meta.isNonStandard,
         meta.binaryVersion.platform,
         meta.binaryVersion.language,
-        extractScalaVersion(pom)
+        extractScalaVersion(pom),
+        pom.scaladocUrl,
+        pom.versionScheme,
+        pom.developers.distinct
       )
       val dependencies = pom.dependencies.map { dep =>
         ArtifactDependency(

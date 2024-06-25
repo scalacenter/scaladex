@@ -1,14 +1,12 @@
 package scaladex.core.test
 
-import java.time.Instant
-import java.time.temporal.ChronoUnit
-
 import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact._
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
+import scaladex.core.model.Contributor
 import scaladex.core.model.GithubCommitActivity
 import scaladex.core.model.GithubContributor
 import scaladex.core.model.GithubInfo
@@ -27,6 +25,9 @@ import scaladex.core.model.ScalaNative
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.Url
 import scaladex.core.model.search.ProjectDocument
+
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 object Values {
   val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
@@ -48,6 +49,12 @@ object Values {
   val `_sjs0.6_2.13` = BinaryVersion(ScalaJs.`0.6`, Scala.`2.13`)
   val `_native0.4_2.13` = BinaryVersion(ScalaNative.`0.4`, Scala.`2.13`)
 
+  private def contributor(login: String): GithubContributor =
+    GithubContributor(login, "", Url(""), 1)
+
+  private def developer(name: String, url: String, id: String) =
+    Contributor(Some(name), None, Some(url), None, None, List(), None, Map(), Some(id))
+
   object Scalafix {
     val reference: Project.Reference = Project.Reference.from("scalacenter", "scalafix")
     val creationDate: Instant = Instant.ofEpochMilli(1475505237265L)
@@ -65,7 +72,10 @@ object Values {
       resolver = None,
       licenses = Set(),
       isNonStandardLib = false,
-      fullScalaVersion = None
+      fullScalaVersion = None,
+      scaladocUrl = None,
+      versionScheme = None,
+      developers = Nil
     )
     val githubInfo: GithubInfo =
       GithubInfo.empty
@@ -122,7 +132,10 @@ object Values {
       resolver = None,
       licenses = Set(),
       isNonStandardLib = false,
-      fullScalaVersion = None
+      fullScalaVersion = None,
+      developers = Nil,
+      scaladocUrl = None,
+      versionScheme = None
     )
     val dependency: ArtifactDependency =
       ArtifactDependency(
@@ -159,38 +172,15 @@ object Values {
     )
     val groupId: GroupId = GroupId("org.typelevel")
     val license: License = License("MIT License", "MIT", Some("https://spdx.org/licenses/MIT.html"))
-
-    private def getArtifact(
-        name: String,
-        binaryVersion: BinaryVersion,
-        version: SemanticVersion,
-        description: Option[String] = None,
-        fullScalaVersion: Option[SemanticVersion] = None
-    ): Artifact = {
-      val artifactId = ArtifactId(Name(name), binaryVersion)
-      Artifact(
-        groupId = groupId,
-        artifactId = artifactId.value,
-        version = version,
-        artifactName = artifactId.name,
-        platform = binaryVersion.platform,
-        language = binaryVersion.language,
-        projectRef = reference,
-        description = description,
-        releaseDate = Instant.ofEpochMilli(1620911032000L),
-        resolver = None,
-        licenses = Set(license),
-        isNonStandardLib = false,
-        fullScalaVersion = fullScalaVersion
-      )
-    }
-
     val `core_3:2.6.1`: Artifact = getArtifact(
       "cats-core",
       `_3`,
       `2.6.1`,
       description = Some("Cats core"),
-      fullScalaVersion = SemanticVersion.parse("3.0.0")
+      fullScalaVersion = SemanticVersion.parse("3.0.0"),
+      scaladocUrl = Some(Url("http://typelevel.org/cats/api/")),
+      versionScheme = Some("semver-spec"),
+      developers = developers("org.typelevel:cats-core_3:jar:2.6.1")
     )
     val `core_2.13:2.6.1`: Artifact = getArtifact("cats-core", `_2.13`, `2.6.1`, description = Some("Cats core"))
     val `core_3:4`: Artifact = getArtifact("cats-core", `_3`, `4`, description = Some("Cats core"))
@@ -199,19 +189,27 @@ object Values {
       `_3`,
       `2.7.0`,
       description = Some("Cats core"),
-      fullScalaVersion = SemanticVersion.parse("3.0.2")
+      fullScalaVersion = SemanticVersion.parse("3.0.2"),
+      scaladocUrl = Some(Url("http://typelevel.org/cats/api/")),
+      versionScheme = Some("semver-spec"),
+      developers = developers("org.typelevel:cats-core_3:jar:2.7.0")
     )
-
-    val `core_sjs1_3:2.6.1`: Artifact = getArtifact("cats-core", `_sjs1_3`, `2.6.1`, description = Some("Cats core"))
+    val `core_sjs1_3:2.6.1`: Artifact = getArtifact(
+      "cats-core",
+      `_sjs1_3`,
+      `2.6.1`,
+      description = Some("Cats core"),
+      scaladocUrl = Some(Url("http://typelevel.org/cats/api/")),
+      versionScheme = Some("semver-spec"),
+      developers = developers("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
+    )
     val `core_sjs06_2.13:2.6.1`: Artifact =
       getArtifact("cats-core", `_sjs0.6_2.13`, `2.6.1`, description = Some("Cats core"))
     val `core_native04_2.13:2.6.1`: Artifact =
       getArtifact("cats-core", `_native0.4_2.13`, `2.6.1`, description = Some("Cats core"))
-
     val `kernel_2.13`: Artifact = getArtifact("cats-kernel", `_2.13`, `2.6.1`)
     val `kernel_3:2.6.1`: Artifact = getArtifact("cats-kernel", `_3`, `2.6.1`)
     val `laws_3:2.6.1`: Artifact = getArtifact("cats-laws", `_3`, `2.6.1`)
-
     val allArtifacts: Seq[Artifact] =
       Seq(
         `core_3:2.6.1`,
@@ -222,7 +220,6 @@ object Values {
         `kernel_3:2.6.1`,
         `laws_3:2.6.1`
       )
-
     val dependencies: Seq[ArtifactDependency] = Seq(
       ArtifactDependency(
         source = `core_3:2.6.1`.mavenReference,
@@ -253,6 +250,55 @@ object Values {
         1,
         Seq.empty
       )
+
+    def developers(id: String): Seq[Contributor] = Seq(
+      developer("Cody Allen", "https://github.com/ceedubs/", id),
+      developer("Ross Baker", "https://github.com/rossabaker/", id),
+      developer("P. Oscar Boykin", "https://github.com/johnynek/", id),
+      developer("Travis Brown", "https://github.com/travisbrown/", id),
+      developer("Adelbert Chang", "https://github.com/adelbertc/", id),
+      developer("Peter Neyens", "https://github.com/peterneyens/", id),
+      developer("Rob Norris", "https://github.com/tpolecat/", id),
+      developer("Erik Osheim", "https://github.com/non/", id),
+      developer("LukaJCB", "https://github.com/LukaJCB/", id),
+      developer("Michael Pilquist", "https://github.com/mpilquist/", id),
+      developer("Miles Sabin", "https://github.com/milessabin/", id),
+      developer("Daniel Spiewak", "https://github.com/djspiewak/", id),
+      developer("Frank Thomas", "https://github.com/fthomas/", id),
+      developer("Julien Truffaut", "https://github.com/julien-truffaut/", id),
+      developer("Kailuo Wang", "https://github.com/kailuowang/", id)
+    )
+
+    private def getArtifact(
+        name: String,
+        binaryVersion: BinaryVersion,
+        version: SemanticVersion,
+        description: Option[String] = None,
+        fullScalaVersion: Option[SemanticVersion] = None,
+        developers: Seq[Contributor] = Nil,
+        scaladocUrl: Option[Url] = None,
+        versionScheme: Option[String] = None
+    ): Artifact = {
+      val artifactId = ArtifactId(Name(name), binaryVersion)
+      Artifact(
+        groupId = groupId,
+        artifactId = artifactId.value,
+        version = version,
+        artifactName = artifactId.name,
+        platform = binaryVersion.platform,
+        language = binaryVersion.language,
+        projectRef = reference,
+        description = description,
+        releaseDate = Instant.ofEpochMilli(1620911032000L),
+        resolver = None,
+        licenses = Set(license),
+        isNonStandardLib = false,
+        fullScalaVersion = fullScalaVersion,
+        developers = developers,
+        scaladocUrl = scaladocUrl,
+        versionScheme = versionScheme
+      )
+    }
   }
 
   object CatsEffect {
@@ -288,8 +334,5 @@ object Values {
     val organization: Project.Organization = Project.Organization("scala")
     val reference: Project.Reference = Project.Reference.from("scala/scala3")
   }
-
-  private def contributor(login: String): GithubContributor =
-    GithubContributor(login, "", Url(""), 1)
 
 }
