@@ -1,8 +1,5 @@
 package scaladex.core.test
 
-import java.time.Instant
-import java.time.temporal.ChronoUnit
-
 import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact._
 import scaladex.core.model.ArtifactDependency
@@ -28,6 +25,9 @@ import scaladex.core.model.ScalaNative
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.Url
 import scaladex.core.model.search.ProjectDocument
+
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 object Values {
   val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
@@ -180,23 +180,7 @@ object Values {
       fullScalaVersion = SemanticVersion.parse("3.0.0"),
       scaladocUrl = Some(Url("http://typelevel.org/cats/api/")),
       versionScheme = Some("semver-spec"),
-      developers = Seq(
-        developer("Cody Allen", "https://github.com/ceedubs/", "org.typelevel:cats-core_3:jar:2.6.1"),
-        developer("Ross Baker", "https://github.com/rossabaker/", "org.typelevel:cats-core_3:jar:2.6.1"),
-        developer("P. Oscar Boykin", "https://github.com/johnynek/", "org.typelevel:cats-core_3:jar:2.6.1"),
-        developer("Travis Brown", "https://github.com/travisbrown/", "org.typelevel:cats-core_3:jar:2.6.1"),
-        developer("Adelbert Chang", "https://github.com/adelbertc/", "org.typelevel:cats-core_3:jar:2.6.1"),
-        developer("Peter Neyens", "https://github.com/peterneyens/", "org.typelevel:cats-core_3:jar:2.6.1"),
-        developer("Rob Norris", "https://github.com/tpolecat/", "org.typelevel:cats-core_3:jar:2.6.1"),
-        developer("Erik Osheim", "https://github.com/non/", "org.typelevel:cats-core_3:jar:2.6.1"),
-        developer("LukaJCB", "https://github.com/LukaJCB/", "org.typelevel:cats-core_3:jar:2.6.1"),
-        developer("Michael Pilquist", "https://github.com/mpilquist/", "org.typelevel:cats-core_3:jar:2.6.1"),
-        developer("Miles Sabin", "https://github.com/milessabin/", "org.typelevel:cats-core_3:jar:2.6.1"),
-        developer("Daniel Spiewak", "https://github.com/djspiewak/", "org.typelevel:cats-core_3:jar:2.6.1"),
-        developer("Frank Thomas", "https://github.com/fthomas/", "org.typelevel:cats-core_3:jar:2.6.1"),
-        developer("Julien Truffaut", "https://github.com/julien-truffaut/", "org.typelevel:cats-core_3:jar:2.6.1"),
-        developer("Kailuo Wang", "https://github.com/kailuowang/", "org.typelevel:cats-core_3:jar:2.6.1")
-      )
+      developers = developers("org.typelevel:cats-core_3:jar:2.6.1")
     )
     val `core_2.13:2.6.1`: Artifact = getArtifact("cats-core", `_2.13`, `2.6.1`, description = Some("Cats core"))
     val `core_3:4`: Artifact = getArtifact("cats-core", `_3`, `4`, description = Some("Cats core"))
@@ -208,23 +192,7 @@ object Values {
       fullScalaVersion = SemanticVersion.parse("3.0.2"),
       scaladocUrl = Some(Url("http://typelevel.org/cats/api/")),
       versionScheme = Some("semver-spec"),
-      developers = Seq(
-        developer("Cody Allen", "https://github.com/ceedubs/", "org.typelevel:cats-core_3:jar:2.7.0"),
-        developer("Ross Baker", "https://github.com/rossabaker/", "org.typelevel:cats-core_3:jar:2.7.0"),
-        developer("P. Oscar Boykin", "https://github.com/johnynek/", "org.typelevel:cats-core_3:jar:2.7.0"),
-        developer("Travis Brown", "https://github.com/travisbrown/", "org.typelevel:cats-core_3:jar:2.7.0"),
-        developer("Adelbert Chang", "https://github.com/adelbertc/", "org.typelevel:cats-core_3:jar:2.7.0"),
-        developer("Peter Neyens", "https://github.com/peterneyens/", "org.typelevel:cats-core_3:jar:2.7.0"),
-        developer("Rob Norris", "https://github.com/tpolecat/", "org.typelevel:cats-core_3:jar:2.7.0"),
-        developer("Erik Osheim", "https://github.com/non/", "org.typelevel:cats-core_3:jar:2.7.0"),
-        developer("LukaJCB", "https://github.com/LukaJCB/", "org.typelevel:cats-core_3:jar:2.7.0"),
-        developer("Michael Pilquist", "https://github.com/mpilquist/", "org.typelevel:cats-core_3:jar:2.7.0"),
-        developer("Miles Sabin", "https://github.com/milessabin/", "org.typelevel:cats-core_3:jar:2.7.0"),
-        developer("Daniel Spiewak", "https://github.com/djspiewak/", "org.typelevel:cats-core_3:jar:2.7.0"),
-        developer("Frank Thomas", "https://github.com/fthomas/", "org.typelevel:cats-core_3:jar:2.7.0"),
-        developer("Julien Truffaut", "https://github.com/julien-truffaut/", "org.typelevel:cats-core_3:jar:2.7.0"),
-        developer("Kailuo Wang", "https://github.com/kailuowang/", "org.typelevel:cats-core_3:jar:2.7.0")
-      )
+      developers = developers("org.typelevel:cats-core_3:jar:2.7.0")
     )
     val `core_sjs1_3:2.6.1`: Artifact = getArtifact(
       "cats-core",
@@ -233,27 +201,7 @@ object Values {
       description = Some("Cats core"),
       scaladocUrl = Some(Url("http://typelevel.org/cats/api/")),
       versionScheme = Some("semver-spec"),
-      developers = Seq(
-        developer("Cody Allen", "https://github.com/ceedubs/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
-        developer("Ross Baker", "https://github.com/rossabaker/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
-        developer("P. Oscar Boykin", "https://github.com/johnynek/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
-        developer("Travis Brown", "https://github.com/travisbrown/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
-        developer("Adelbert Chang", "https://github.com/adelbertc/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
-        developer("Peter Neyens", "https://github.com/peterneyens/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
-        developer("Rob Norris", "https://github.com/tpolecat/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
-        developer("Erik Osheim", "https://github.com/non/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
-        developer("LukaJCB", "https://github.com/LukaJCB/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
-        developer("Michael Pilquist", "https://github.com/mpilquist/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
-        developer("Miles Sabin", "https://github.com/milessabin/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
-        developer("Daniel Spiewak", "https://github.com/djspiewak/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
-        developer("Frank Thomas", "https://github.com/fthomas/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1"),
-        developer(
-          "Julien Truffaut",
-          "https://github.com/julien-truffaut/",
-          "org.typelevel:cats-core_sjs1_3:jar:2.6.1"
-        ),
-        developer("Kailuo Wang", "https://github.com/kailuowang/", "org.typelevel:cats-core_sjs1_3:jar:2.6.1")
-      )
+      developers = developers("org.typelevel:cats-core_sjs1_3:jar:2.6.1")
     )
     val `core_sjs06_2.13:2.6.1`: Artifact =
       getArtifact("cats-core", `_sjs0.6_2.13`, `2.6.1`, description = Some("Cats core"))
@@ -302,6 +250,24 @@ object Values {
         1,
         Seq.empty
       )
+
+    def developers(id: String): Seq[Contributor] = Seq(
+      developer("Cody Allen", "https://github.com/ceedubs/", id),
+      developer("Ross Baker", "https://github.com/rossabaker/", id),
+      developer("P. Oscar Boykin", "https://github.com/johnynek/", id),
+      developer("Travis Brown", "https://github.com/travisbrown/", id),
+      developer("Adelbert Chang", "https://github.com/adelbertc/", id),
+      developer("Peter Neyens", "https://github.com/peterneyens/", id),
+      developer("Rob Norris", "https://github.com/tpolecat/", id),
+      developer("Erik Osheim", "https://github.com/non/", id),
+      developer("LukaJCB", "https://github.com/LukaJCB/", id),
+      developer("Michael Pilquist", "https://github.com/mpilquist/", id),
+      developer("Miles Sabin", "https://github.com/milessabin/", id),
+      developer("Daniel Spiewak", "https://github.com/djspiewak/", id),
+      developer("Frank Thomas", "https://github.com/fthomas/", id),
+      developer("Julien Truffaut", "https://github.com/julien-truffaut/", id),
+      developer("Kailuo Wang", "https://github.com/kailuowang/", id)
+    )
 
     private def getArtifact(
         name: String,
