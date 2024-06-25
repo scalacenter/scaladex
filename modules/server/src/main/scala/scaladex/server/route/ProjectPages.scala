@@ -111,35 +111,43 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           }
         }
       },
+
       get {
-        path(projectM / "artifacts") { ref =>
-          getProjectOrRedirect(ref, user) { project =>
-            val latestArtifactsF = database.getLatestArtifacts(ref, preferStableVersions = false)
+        path(projectM / "artifacts" ) { ref => 
+          getProjectOrRedirect(ref,user) { project => 
             val headerF = service.getProjectHeader(project)
             for {
-              latestArtifacts <- latestArtifactsF
               header <- headerF
             } yield {
-              // Remove duplicate
-              val distinctArtifacts = latestArtifacts
-                .groupBy(_.artifactName)
-                .values
-                .flatMap(_.maxByOption(_.releaseDate))
-                .toSeq
+              val allArtifacts = header.toSeq.flatMap(_.artifacts)
 
-              // Group them by latest version
-              val groupedArtifacts = distinctArtifacts
+              // Group by artifact name
+              val artifactsByName = allArtifacts.groupBy(_.artifactName)
+
+              // Get latest version for each artifact name 
+              val latestArtifacts = artifactsByName.flatMap {
+                case (artifactName, artifacts) =>
+                  val latestVersion = artifacts.maxBy(_.version).version
+                  artifacts.filter(_.version == latestVersion)
+              }.toSeq
+
+              // Group by version and then by artifact name
+              val groupedArtifacts: Map[SemanticVersion, Map[Artifact.Name, Seq[Artifact]]] = latestArtifacts
                 .groupBy(_.version)
-                .view
-                .mapValues(_.sortBy(_.artifactName))
-                .toMap
+                .map {
+                  case (version, artifacts) =>
+                    version -> artifacts.groupBy(_.artifactName)
+                }
 
               val page = html.artifacts(env, user, project, header, groupedArtifacts)
               complete(page)
             }
+
           }
+
         }
       },
+      
       get {
         path(projectM / "version-matrix") { ref =>
           getProjectOrRedirect(ref, user) { project =>

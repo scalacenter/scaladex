@@ -16,7 +16,7 @@
     user: Option[UserState],
     project: Project,
     header: Option[ProjectHeader],
-    groupedArtifacts: Map[SemanticVersion, Seq[Artifact]]
+    groupedArtifacts: Map[SemanticVersion, Map[Artifact.Name, Seq[Artifact]]]
 )
 
 @main(env, title = project.repository.toString, user) {
@@ -34,15 +34,30 @@
           <div>We can't find any artifacts for this project.</div>
         } else {
           <div>
-            @for((version, artifacts) <- groupedArtifacts.toSeq.sortBy(_._1).reverse) {
+            @for((version, artifactsByName) <- groupedArtifacts.toSeq.sortBy(_._1).reverse) {
               <h3>Version @version</h3>
-              <ul>
-                @for(artifact <- artifacts) {
-                  <li>
-                    <span>@artifact.artifactName</span>
-                  </li>
-                }
-              </ul>
+              @for((artifactName, artifacts) <- artifactsByName.toSeq.sortBy(_._1)) {
+                <h4>@artifactName</h4>
+                <div class="artifact-content">
+                  @for(
+                    (platform, binaryVersions) <- artifacts
+                      .map(_.binaryVersion)
+                      .distinct
+                      .sorted
+                      .reverse
+                      .groupBy(_.platform)
+                      .toSeq
+                  ) {
+                    <h5>@platform:</h5>
+                    @for(binaryVersion <- binaryVersions) { 
+                      <a href="/@project.reference/artifacts/@artifactName/@version?binary-version=@binaryVersion.encode" class="scala-version">
+                        @binaryVersion.language.label
+                      </a>
+                    }
+                    <br>
+                  }
+                </div>
+              }
             }
           </div>
         }
