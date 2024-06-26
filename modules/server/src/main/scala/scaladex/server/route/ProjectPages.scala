@@ -124,20 +124,14 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
               // Group by artifact name
               val artifactsByName = allArtifacts.groupBy(_.artifactName)
 
-              // Get latest version for each artifact name 
-              val latestArtifacts = artifactsByName.flatMap {
-                case (artifactName, artifacts) =>
-                  val latestVersion = artifacts.maxBy(_.version).version
-                  artifacts.filter(_.version == latestVersion)
-              }.toSeq
-
-              // Group by version and then by artifact name
-              val groupedArtifacts: Map[SemanticVersion, Map[Artifact.Name, Seq[Artifact]]] = latestArtifacts
-                .groupBy(_.version)
-                .map {
-                  case (version, artifacts) =>
-                    version -> artifacts.groupBy(_.artifactName)
+              val groupedArtifacts = artifactsByName
+                .groupBy { case (artifactName, artifacts) =>  
+                  artifacts.maxBy(_.version).version 
                 }
+                .map { case (latestVersion, artifactsByName) =>
+                  latestVersion -> artifactsByName.map { case (name, artifacts) => name -> artifacts.filter(_.version == latestVersion)
+                }
+              }
 
               val page = html.artifacts(env, user, project, header, groupedArtifacts)
               complete(page)
@@ -147,7 +141,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
 
         }
       },
-      
+
       get {
         path(projectM / "version-matrix") { ref =>
           getProjectOrRedirect(ref, user) { project =>
