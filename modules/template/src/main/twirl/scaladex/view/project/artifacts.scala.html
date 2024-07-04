@@ -37,25 +37,41 @@
             @for((version, artifactsByName) <- groupedArtifacts.toSeq.sortBy(_._1).reverse) {
               <h3>Version @version</h3>
               @for((artifactName, artifacts) <- artifactsByName.toSeq.sortBy(_._1)) {
-                <h4>@artifactName</h4>
-                <div class="artifact-content">
-                  @for(
-                    (platform, binaryVersions) <- artifacts
-                      .map(_.binaryVersion)
-                      .distinct
-                      .sorted
-                      .reverse
-                      .groupBy(_.platform)
-                      .toSeq
-                  ) {
-                    <h5>@platform:</h5>
-                    @for(binaryVersion <- binaryVersions) { 
-                      <a href="/@project.reference/artifacts/@artifactName/@version?binary-version=@binaryVersion.encode" class="scala-version">
-                        @binaryVersion.language.label
-                      </a>
-                    }
-                    <br>
-                  }
+                <div class="panel">
+                  <div class="artifact-row panel-body center">
+                    <div class="col-md-3 center">
+                      <a class="artifact-version" href="/@project.reference/artifacts/@artifactName/@version">@artifactName</a>
+                    </div>
+                    <div class="col-md-9">
+                      <div class="artifact-info">
+                        <a data-toggle="tooltip" data-placement="top" title="@formatInstant(artifacts.head.releaseDate)">
+                          @TimeUtils.toFiniteDuration(artifacts.head.releaseDate, Instant.now()).prettyPrint
+                          ago<i class="fa-solid fa-calendar-days"></i>
+                        </a>
+                        <br>
+                        @artifacts.head.licenses.map { license =>
+                          <a href="@license.url.getOrElse("#")">@license.shortName<i class="fa-solid fa-scale-balanced"></i></a>
+                        }
+                      </div>
+                      <div class="artifact-content">
+                        @for(
+                          (platform, binaryVersions) <- artifacts
+                            .groupBy(_.platform)
+                            .toSeq
+                            .sortBy(_._1)
+                            .reverse
+                        ) {
+                          <h5>@platform:</h5>
+                          @for(binaryVersion <- binaryVersions.map(_.binaryVersion).distinct.sorted.reverse) { 
+                            <a href="/@project.reference/artifacts/@artifactName/@version?binary-version=@binaryVersion.encode" class="scala-version">
+                              @binaryVersion.language.label
+                            </a>
+                          }
+                          <br>
+                        }
+                      </div>
+                    </div>
+                  </div>
                 </div>
               }
             }
