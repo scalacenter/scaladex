@@ -27,7 +27,7 @@
       data-repository="@project.reference.repository">
         <div class="artifacts-filter">
           <div class="result-count">
-            <b>@groupedArtifacts.values.flatten.map(_._1).size</b> @Formats.wordPlural(groupedArtifacts.values.flatten.map(_._1).size, "artifact") found
+            <b>@groupedArtifacts.values.flatten.size</b> @Formats.wordPlural(groupedArtifacts.values.flatten.size, "artifact") found
           </div>
         </div>
         @if(groupedArtifacts.isEmpty) {
