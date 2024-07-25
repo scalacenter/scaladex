@@ -201,7 +201,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
       "com.typesafe.play" %%% "play-json" % V.playJson,
       "org.endpoints4s" %%% "algebra" % "1.11.1",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
-      "org.jsoup" % "jsoup" % "1.17.2"
+      "org.jsoup" % "jsoup" % "1.18.1"
     ) ++ Seq(
       "io.circe" %%% "circe-core",
       "io.circe" %%% "circe-generic",
@@ -221,7 +221,7 @@ lazy val data = project
       "org.apache.pekko" %% "pekko-serialization-jackson" % V.pekko,
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
       "org.apache.maven" % "maven-model-builder" % "3.9.5",
-      "org.jsoup" % "jsoup" % "1.17.2",
+      "org.jsoup" % "jsoup" % "1.18.1",
       "org.apache.ivy" % "ivy" % "2.5.2",
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
       "org.json4s" %% "json4s-native" % V.json4s,
@@ -237,12 +237,12 @@ lazy val data = project
 lazy val V = new {
   val doobie = "0.13.4"
   val playJson = "2.9.4"
-  val pekko = "1.0.2"
+  val pekko = "1.0.3"
   val pekkoHttp = "1.0.1"
-  val elastic4s = "8.13.0"
+  val elastic4s = "8.13.1"
   val nscalaTime = "2.32.0"
-  val scalatest = "3.2.18"
-  val circe = "0.14.7"
+  val scalatest = "3.2.19"
+  val circe = "0.14.9"
   val json4s = "4.0.7"
   val coursier = "2.1.6"
 }
