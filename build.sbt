@@ -220,7 +220,7 @@ lazy val data = project
       "org.apache.pekko" %% "pekko-actor-typed" % V.pekko,
       "org.apache.pekko" %% "pekko-serialization-jackson" % V.pekko,
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
-      "org.apache.maven" % "maven-model-builder" % "3.9.5",
+      "org.apache.maven" % "maven-model-builder" % "3.9.8",
       "org.jsoup" % "jsoup" % "1.18.1",
       "org.apache.ivy" % "ivy" % "2.5.2",
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
