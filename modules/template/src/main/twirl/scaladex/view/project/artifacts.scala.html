@@ -26,6 +26,7 @@
       <div class="content-project artifacts box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">
         <div class="artifacts-filter">
+          @filters()
           <div class="result-count">
             <b>@groupedArtifacts.values.flatten.size</b> @Formats.wordPlural(groupedArtifacts.values.flatten.size, "artifact") found
           </div>
@@ -40,7 +41,7 @@
                 <div class="panel">
                   <div class="artifact-row panel-body center">
                     <div class="col-md-3 center">
-                      <a class="artifact-version" href="/@project.reference/artifacts/@artifactName/@version">@artifactName</a>
+                      <a class="artifact-version" href="/@project.reference/artifacts/@artifactName">@artifactName</a>
                     </div>
                     <div class="col-md-9">
                       <div class="artifact-info">
@@ -80,4 +81,21 @@
       </div>
     </div>
   </main>
+}
+@filters() = {
+  <form action="#" action="GET"> 
+    <select class="selectpicker" name="binary-versions" 
+      title="Scala Versions" multiple data-style="btn-primary" data-actions-box="true" data-selected-text-format="static"
+      onchange="this.form.submit()">
+      @for((platform, binaryVersions) <- groupedArtifacts.values.flatten.flatMap(_._2).map(_.binaryVersion).toSeq.distinct.groupBy(_.platform).toSeq.sortBy(_._1).reverse) {
+        <optgroup label="@platform">
+          @for(binaryVersion <- binaryVersions) {
+            <option value="@binaryVersion.label">
+              @binaryVersion.language.label
+            </option>
+          }
+        </optgroup>
+      }
+    </select>
+  </form>
 }
