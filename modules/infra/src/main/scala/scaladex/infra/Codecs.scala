@@ -1,5 +1,7 @@
 package scaladex.infra
 
+import java.time.Instant
+
 import io.circe._
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
@@ -8,8 +10,6 @@ import scaladex.core.model._
 import scaladex.core.model.search.GithubInfoDocument
 import scaladex.core.util.Secret
 import scaladex.infra.github.GithubModel
-
-import java.time.Instant
 
 object Codecs {
   implicit val organization: Codec[Project.Organization] = fromString(_.value, Project.Organization.apply)
