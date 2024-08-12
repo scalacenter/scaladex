@@ -23,7 +23,6 @@ import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
-import scaladex.core.web.ArtifactsPageParams
 import scaladex.infra.sql.ArtifactDependencyTable
 import scaladex.infra.sql.ArtifactTable
 import scaladex.infra.sql.DoobieUtils
@@ -235,13 +234,9 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getArtifacts(
       ref: Project.Reference,
       artifactName: Artifact.Name,
-      params: ArtifactsPageParams
+      preReleases: Boolean
   ): Future[Seq[Artifact]] =
-    run(
-      ArtifactTable
-        .selectArtifactByParams(params.binaryVersions, params.preReleases)
-        .to[Seq](ref, artifactName)
-    )
+    run(ArtifactTable.selectArtifactByParams(preReleases).to[Seq](ref, artifactName))
 
   override def countVersions(ref: Project.Reference): Future[Long] =
     run(ArtifactTable.countVersionsByProject.unique(ref))
