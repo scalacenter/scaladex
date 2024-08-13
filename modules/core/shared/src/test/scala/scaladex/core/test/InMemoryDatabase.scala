@@ -19,7 +19,6 @@ import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
-import scaladex.core.web.ArtifactsPageParams
 
 class InMemoryDatabase extends SchedulerDatabase {
   private val allProjects = mutable.Map[Project.Reference, Project]()
@@ -161,9 +160,9 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getArtifacts(
       ref: Project.Reference,
       artifactName: Artifact.Name,
-      params: ArtifactsPageParams
+      preReleases: Boolean
   ): Future[Seq[Artifact]] =
-    // does not filter with params
+    // TODO: use preReleases to filter
     Future.successful(allArtifacts.getOrElse(ref, Seq.empty).filter(_.artifactName == artifactName))
   override def getProjectDependencies(
       ref: Project.Reference,

@@ -5,7 +5,6 @@ import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.Jvm
 import scaladex.core.model.Scala
 import scaladex.core.model.ScalaJs
-import scaladex.core.test.Values._
 import scaladex.infra.BaseDatabaseSuite
 
 class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
@@ -29,9 +28,8 @@ class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers
   it("check getReleasesFromArtifacts")(check(getReleasesFromArtifacts))
   it("check countVersionsByProject")(check(countVersionsByProject))
   it("check selectArtifactByParams") {
-    check(selectArtifactByParams(Seq.empty, false))
-    check(selectArtifactByParams(Seq.empty, true))
-    check(selectArtifactByParams(Seq(`_sjs0.6_2.13`), false))
+    check(selectArtifactByParams(false))
+    check(selectArtifactByParams(true))
   }
   it("check selectMavenReferenceWithNoReleaseDate")(check(selectMavenReferenceWithNoReleaseDate))
   it("check selectLatestArtifacts") {

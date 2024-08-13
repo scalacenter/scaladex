@@ -6,7 +6,6 @@ import java.util.UUID
 import scala.concurrent.Future
 
 import scaladex.core.model._
-import scaladex.core.web.ArtifactsPageParams
 
 trait WebDatabase {
   // artifacts
@@ -14,11 +13,7 @@ trait WebDatabase {
   def insertArtifact(artifact: Artifact, dependencies: Seq[ArtifactDependency], time: Instant): Future[Boolean]
   def getArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]]
   def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]]
-  def getArtifacts(
-      ref: Project.Reference,
-      artifactName: Artifact.Name,
-      params: ArtifactsPageParams
-  ): Future[Seq[Artifact]]
+  def getArtifacts(ref: Project.Reference, artifactName: Artifact.Name, preReleases: Boolean): Future[Seq[Artifact]]
   def getArtifacts(ref: Project.Reference, artifactName: Artifact.Name, version: SemanticVersion): Future[Seq[Artifact]]
   def getArtifactsByName(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]]
   def getLatestArtifacts(ref: Project.Reference, preferStableVersions: Boolean): Future[Seq[Artifact]]

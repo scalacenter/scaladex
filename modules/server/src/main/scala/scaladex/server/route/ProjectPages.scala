@@ -41,7 +41,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         path(projectM / "artifacts" / artifactNameM) { (ref, artifactName) =>
           artifactsParams { params =>
             getProjectOrRedirect(ref, user) { project =>
-              val artifactsF = database.getArtifacts(ref, artifactName, params)
+              val artifactsF = database.getArtifacts(ref, artifactName, params.preReleases)
               val headerF = service.getProjectHeader(project).map(_.get)
               for (artifacts <- artifactsF; header <- headerF) yield {
                 val binaryVersions = artifacts
