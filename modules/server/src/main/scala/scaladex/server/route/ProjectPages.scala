@@ -37,46 +37,46 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
       routes = get {
         path(projectM)(getProjectPage(_, user))
       },
-      // get {
-      //   path(projectM / "artifacts" / artifactNameM) { (ref, artifactName) =>
-      //     artifactsParams { params =>
-      //       getProjectOrRedirect(ref, user) { project =>
-      //         val artifactsF = database.getArtifacts(ref, artifactName, params)
-      //         val headerF = service.getProjectHeader(project).map(_.get)
-      //         for (artifacts <- artifactsF; header <- headerF) yield {
-      //           val binaryVersions = artifacts
-      //             .map(_.binaryVersion)
-      //             .distinct
-      //             .sorted(BinaryVersion.ordering.reverse)
+      get {
+        path(projectM / "artifacts" / artifactNameM) { (ref, artifactName) =>
+          artifactsParams { params =>
+            getProjectOrRedirect(ref, user) { project =>
+              val artifactsF = database.getArtifacts(ref, artifactName, params)
+              val headerF = service.getProjectHeader(project).map(_.get)
+              for (artifacts <- artifactsF; header <- headerF) yield {
+                val binaryVersions = artifacts
+                  .map(_.binaryVersion)
+                  .distinct
+                  .sorted(BinaryVersion.ordering.reverse)
 
-      //           val artifactsByVersion =
-      //             artifacts
-      //               .groupBy(_.version)
-      //               .filter {
-      //                 case (_, artifacts) =>
-      //                   params.binaryVersions
-      //                     .forall(binaryVersion => artifacts.exists(_.binaryVersion == binaryVersion))
-      //               }
-      //               .map { case (version, artifacts) => (artifacts.map(_.releaseDate).min, version) -> artifacts }
-      //           val sortedArtifactsByVersion = SortedMap.from(artifactsByVersion)(
-      //             Ordering.Tuple2(Ordering[Instant].reverse, Ordering[SemanticVersion].reverse)
-      //           )
-      //           val page = html.artifacts(
-      //             env,
-      //             user,
-      //             project,
-      //             header,
-      //             artifactName,
-      //             binaryVersions,
-      //             sortedArtifactsByVersion,
-      //             params
-      //           )
-      //           complete(page)
-      //         }
-      //       }
-      //     }
-      //   }
-      // },
+                val artifactsByVersion =
+                  artifacts
+                    .groupBy(_.version)
+                    .filter {
+                      case (_, artifacts) =>
+                        params.binaryVersions
+                          .forall(binaryVersion => artifacts.exists(_.binaryVersion == binaryVersion))
+                    }
+                    .map { case (version, artifacts) => (artifacts.map(_.releaseDate).min, version) -> artifacts }
+                val sortedArtifactsByVersion = SortedMap.from(artifactsByVersion)(
+                  Ordering.Tuple2(Ordering[Instant].reverse, Ordering[SemanticVersion].reverse)
+                )
+                val page = html.versions(
+                  env,
+                  user,
+                  project,
+                  header,
+                  artifactName,
+                  binaryVersions,
+                  sortedArtifactsByVersion,
+                  params
+                )
+                complete(page)
+              }
+            }
+          }
+        }
+      },
       get {
         path(projectM / "artifacts" / artifactNameM / versionM) { (ref, artifactName, artifactVersion) =>
           artifactParams { params =>
@@ -113,32 +113,38 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
       },
 
       get {
-        path(projectM / "artifacts" ) { ref => 
-          getProjectOrRedirect(ref,user) { project => 
-            val headerF = service.getProjectHeader(project)
-            for {
-              header <- headerF
-            } yield {
-              val allArtifacts = header.toSeq.flatMap(_.artifacts)
+        path(projectM / "artifacts" ) { ref =>
+          artifactsParams { params =>  
+            getProjectOrRedirect(ref,user) { project => 
+              val headerF = service.getProjectHeader(project)
+              for {
+                header <- headerF
+              } yield {
+                val allArtifacts = header.toSeq.flatMap(_.artifacts)
 
-              // Group by artifact name
-              val artifactsByName = allArtifacts.groupBy(_.artifactName)
+                // Group by artifact name
+                val artifactsByName = allArtifacts.groupBy(_.artifactName)
 
-              val groupedArtifacts = artifactsByName
-                .groupBy { case (artifactName, artifacts) =>  
-                  artifacts.maxBy(_.version).version 
+                val groupedArtifacts = artifactsByName
+                  .groupBy { case (artifactName, artifacts) =>  
+                    artifacts.maxBy(_.version).version 
+                  }
+                  .map { case (latestVersion, artifactsByName) =>
+                    latestVersion -> artifactsByName
+                      .map { case (name, artifacts) => name -> artifacts
+                        .filter(_.version == latestVersion)
+                      }
+                      .filter { case(_, artifacts) =>
+                        params.binaryVersions.forall( binaryVersion => artifacts
+                          .exists(_.binaryVersion == binaryVersion))
+                      }
                 }
-                .map { case (latestVersion, artifactsByName) =>
-                  latestVersion -> artifactsByName.map { case (name, artifacts) => name -> artifacts.filter(_.version == latestVersion)
-                }
+
+                val page = html.artifacts(env, user, project, header, groupedArtifacts,params)
+                complete(page)
               }
-
-              val page = html.artifacts(env, user, project, header, groupedArtifacts)
-              complete(page)
             }
-
           }
-
         }
       },
 

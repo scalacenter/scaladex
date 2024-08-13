@@ -16,7 +16,8 @@
     user: Option[UserState],
     project: Project,
     header: Option[ProjectHeader],
-    groupedArtifacts: Map[SemanticVersion, Map[Artifact.Name, Seq[Artifact]]]
+    groupedArtifacts: Map[SemanticVersion, Map[Artifact.Name, Seq[Artifact]]],
+    params: ArtifactsPageParams
 )
 
 @main(env, title = project.repository.toString, user) {
@@ -97,5 +98,37 @@
         </optgroup>
       }
     </select>
+    <label class="filter btn btn-default">
+      <input type="checkbox"  @if(params.preReleases) { checked } name="pre-releases" value="true" onclick="this.form.submit()">
+      Show pre-release versions
+    </label>
   </form>
+  <div class="options-checked">
+    <ul class="list-inline">
+      @for(binaryVersion <- params.binaryVersions) {
+        <li>
+          <a href="@artifactsUri(project.reference, params.remove(binaryVersion))" class="label label-default">
+            <i class="fa-solid fa-xmark"></i>
+            @binaryVersion
+          </a>
+        </li>
+      }
+      @if(params.preReleases) {
+        <li>
+          <a class="label label-info" href="@artifactsUri(project.reference, params.withPreReleases(false))">
+            <i class="fa-solid fa-xmark"></i>
+            Show pre-release versions
+          </a>
+        </li>
+      }
+      @if(params.binaryVersions.nonEmpty || params.preReleases) {
+        <li>
+          <a href="@artifactsUri(project.reference, ArtifactsPageParams.empty)" class="label label-warning clear-all">
+            <i class="fa-solid fa-xmark"></i>
+            Clear all filters
+          </a>
+        </li>
+      }
+    </ul>
+  </div>
 }

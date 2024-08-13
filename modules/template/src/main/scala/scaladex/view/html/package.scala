@@ -91,6 +91,15 @@ package object html {
     Uri(s"/$ref/artifacts/$artifactName")
       .appendQuery("binary-versions", binaryVersion.map(_.label))
 
+  def artifactsUri(ref: Project.Reference, params: ArtifactsPageParams): Uri =
+    Uri(s"/$ref/artifacts")
+      .appendQuery("binary-versions", params.binaryVersions.map(_.label))
+      .appendQuery(("pre-releases", params.preReleases.toString))
+
+  def artifactsUri(ref: Project.Reference, binaryVersion: Option[BinaryVersion]): Uri =
+    Uri(s"/$ref/artifacts")
+      .appendQuery("binary-versions", binaryVersion.map(_.label))
+
   // https://www.reddit.com/r/scala/comments/4n73zz/scala_puzzle_gooooooogle_pagination/d41jor5
   def paginationRender(selected: Int, max: Int, toShow: Int = 10): (Option[Int], List[Int], Option[Int]) = {
     val min = 1
