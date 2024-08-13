@@ -49,9 +49,6 @@ case class Artifact(
 
   val mavenReference: Artifact.MavenReference = Artifact.MavenReference(groupId.value, artifactId, version.encode)
 
-  def release: Release =
-    Release(projectRef.organization, projectRef.repository, platform, language, version, releaseDate)
-
   def releaseDateFormat: String = Artifact.dateFormatter.format(releaseDate)
 
   def fullHttpUrl(env: Env): String =
