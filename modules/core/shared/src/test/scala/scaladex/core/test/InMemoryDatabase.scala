@@ -14,7 +14,6 @@ import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
-import scaladex.core.model.ReleaseDependency
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
@@ -124,7 +123,6 @@ class InMemoryDatabase extends SchedulerDatabase {
       ref: Project.Reference,
       version: SemanticVersion
   ): Future[Seq[ProjectDependency]] = ???
-  override def computeReleaseDependencies(): Future[Seq[ReleaseDependency]] = ???
 
   override def computeAllProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]] = ???
 
@@ -132,8 +130,6 @@ class InMemoryDatabase extends SchedulerDatabase {
     Future.successful(allProjects.update(ref, allProjects(ref).copy(creationDate = Some(creationDate))))
 
   override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] = ???
-
-  override def insertReleaseDependencies(releaseDependency: Seq[ReleaseDependency]): Future[Int] = ???
 
   override def countProjectDependents(ref: Project.Reference): Future[Long] =
     Future.successful(0)

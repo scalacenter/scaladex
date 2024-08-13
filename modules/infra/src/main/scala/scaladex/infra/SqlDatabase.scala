@@ -18,7 +18,6 @@ import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
-import scaladex.core.model.ReleaseDependency
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
@@ -30,13 +29,14 @@ import scaladex.infra.sql.GithubInfoTable
 import scaladex.infra.sql.ProjectDependenciesTable
 import scaladex.infra.sql.ProjectSettingsTable
 import scaladex.infra.sql.ProjectTable
-import scaladex.infra.sql.ReleaseDependenciesTable
-import scaladex.infra.sql.ReleaseTable
 import scaladex.infra.sql.UserSessionsTable
 
 class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
   private val flyway = DoobieUtils.flyway(datasource)
-  def migrate: IO[Unit] = IO(flyway.migrate())
+  def migrate: IO[Unit] = IO {
+    flyway.repair()
+    flyway.migrate()
+  }
   def dropTables: IO[Unit] = IO(flyway.clean())
 
   override def insertArtifact(
@@ -48,7 +48,6 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
     for {
       isNewProject <- insertProjectRef(artifact.projectRef, unknownStatus)
       _ <- run(ArtifactTable.insertIfNotExist(artifact))
-      _ <- run(ReleaseTable.insertIfNotExists.run(artifact.release))
       _ <- insertDependencies(dependencies)
     } yield isNewProject
   }
@@ -179,18 +178,12 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   ): Future[Seq[ProjectDependency]] =
     run(ArtifactDependencyTable.computeProjectDependencies.to[Seq]((ref, version)))
 
-  override def computeReleaseDependencies(): Future[Seq[ReleaseDependency]] =
-    run(ArtifactDependencyTable.computeReleaseDependency.to[Seq])
-
   override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] =
     if (projectDependencies.isEmpty) Future.successful(0)
     else run(ProjectDependenciesTable.insertOrUpdate.updateMany(projectDependencies))
 
   override def deleteProjectDependencies(ref: Project.Reference): Future[Int] =
     run(ProjectDependenciesTable.deleteBySource.run(ref))
-
-  override def insertReleaseDependencies(releaseDependency: Seq[ReleaseDependency]): Future[Int] =
-    run(ReleaseDependenciesTable.insertIfNotExists.updateMany(releaseDependency))
 
   override def countProjectDependents(projectRef: Project.Reference): Future[Long] =
     run(ProjectDependenciesTable.countDependents.unique(projectRef))

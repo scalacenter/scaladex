@@ -9,7 +9,6 @@ import scaladex.core.model.Artifact.MavenReference
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
-import scaladex.core.model.ReleaseDependency
 import scaladex.core.model.SemanticVersion
 
 trait SchedulerDatabase extends WebDatabase {
@@ -18,11 +17,9 @@ trait SchedulerDatabase extends WebDatabase {
   def updateProjectCreationDate(ref: Project.Reference, creationDate: Instant): Future[Unit]
   def computeAllProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]]
 
-  // project dependencies (and release dependencies)
+  // project dependencies
   def computeProjectDependencies(reference: Project.Reference, version: SemanticVersion): Future[Seq[ProjectDependency]]
-  def computeReleaseDependencies(): Future[Seq[ReleaseDependency]]
   def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int]
-  def insertReleaseDependencies(projectDependencies: Seq[ReleaseDependency]): Future[Int]
   def deleteProjectDependencies(ref: Project.Reference): Future[Int]
 
   // artifacts and its dependencies

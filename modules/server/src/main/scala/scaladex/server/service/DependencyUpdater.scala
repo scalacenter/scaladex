@@ -15,7 +15,6 @@ class DependencyUpdater(database: SchedulerDatabase)(implicit ec: ExecutionConte
   def updateAll(): Future[String] =
     for {
       status <- updateProjectDependencyTable()
-      _ <- updateReleaseDependencyTable()
     } yield status
 
   def updateProjectDependencyTable(): Future[String] =
@@ -50,29 +49,4 @@ class DependencyUpdater(database: SchedulerDatabase)(implicit ec: ExecutionConte
         logger.error(s"Failed to update dependencies of ${project.reference} of status ${project.githubStatus}", cause)
     }
   }
-
-  def updateReleaseDependencyTable(): Future[Unit] =
-    for {
-      releaseDependencies <- database
-        .computeReleaseDependencies()
-        .mapFailure(e =>
-          new Exception(
-            s"Failed to compute release dependencies because of ${e.getMessage}"
-          )
-        )
-      _ = logger.info(s"will try to insert ${releaseDependencies.size} releaseDependencies")
-      _ <- releaseDependencies
-        .grouped(10000)
-        .map(releaseDependencies =>
-          database
-            .insertReleaseDependencies(releaseDependencies)
-            .mapFailure(e =>
-              new Exception(
-                s"Failed to insert release dependencies because of ${e.getMessage}"
-              )
-            )
-        )
-        .sequence
-
-    } yield ()
 }
