@@ -25,7 +25,8 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach {
 
   private def insertPlayJsonExtra(): Future[Unit] =
     for {
-      _ <- database.insertArtifact(PlayJsonExtra.artifact, Seq.empty, Values.now)
+      _ <- database.insertProjectRef(PlayJsonExtra.reference, unknown)
+      _ <- database.insertArtifact(PlayJsonExtra.artifact)
       _ <- database.updateProjectCreationDate(PlayJsonExtra.reference, PlayJsonExtra.creationDate)
       _ <- database.updateGithubInfoAndStatus(PlayJsonExtra.reference, PlayJsonExtra.githubInfo, ok)
     } yield ()

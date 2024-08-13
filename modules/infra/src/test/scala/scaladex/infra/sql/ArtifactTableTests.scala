@@ -31,8 +31,7 @@ class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers
     check(selectArtifactByParams(true))
   }
   it("check selectMavenReferenceWithNoReleaseDate")(check(selectMavenReferenceWithNoReleaseDate))
-  it("check selectLatestArtifacts") {
-    check(selectLatestArtifacts(true))
-    check(selectLatestArtifacts(false))
-  }
+  it("check selectLatestArtifacts")(check(selectLatestArtifacts))
+  it("check setLatestVersion")(check(setLatestVersion))
+  it("check unsetOthersLatestVersion")(check(unsetOthersLatestVersion))
 }

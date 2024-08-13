@@ -39,7 +39,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
 
         val projectService = new ProjectService(database)
         val searchSync = new SearchSynchronizer(database, projectService, searchEngine)
-        val projectDependenciesUpdater = new DependencyUpdater(database)
+        val projectDependenciesUpdater = new DependencyUpdater(database, projectService)
 
         IO.fromFuture(IO {
           for {

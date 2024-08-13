@@ -6,11 +6,12 @@ import scala.util.control.NonFatal
 
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Project
-import scaladex.core.model.ProjectHeader
+import scaladex.core.service.ProjectService
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions._
 
-class DependencyUpdater(database: SchedulerDatabase)(implicit ec: ExecutionContext) extends LazyLogging {
+class DependencyUpdater(database: SchedulerDatabase, projectService: ProjectService)(implicit ec: ExecutionContext)
+    extends LazyLogging {
 
   def updateAll(): Future[String] =
     for {
@@ -30,14 +31,7 @@ class DependencyUpdater(database: SchedulerDatabase)(implicit ec: ExecutionConte
         database.deleteProjectDependencies(project.reference).map(_ => ())
       else
         for {
-          latestArtifacts <- database.getLatestArtifacts(project.reference, project.settings.preferStableVersion)
-          header = ProjectHeader(
-            project.reference,
-            latestArtifacts,
-            0,
-            project.settings.defaultArtifact,
-            project.settings.preferStableVersion
-          )
+          header <- projectService.getProjectHeader(project)
           dependencies <- header
             .map(h => database.computeProjectDependencies(project.reference, h.latestVersion))
             .getOrElse(Future.successful(Seq.empty))
