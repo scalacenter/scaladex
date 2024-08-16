@@ -136,6 +136,13 @@ class AdminService(
     tasks = tasks :+ task
   }
 
+  def updateMavenArtifacts(user: UserState): Unit = {
+    val task = TaskRunner.run(Task.updateMavenArtifacts, user.info.login, input = Seq.empty) { () =>
+      sonatypeSynchronizer.updateAllArtifacts()
+    }
+    tasks = tasks :+ task
+  }
+
   private def updateProjectCreationDate(): Future[String] =
     for {
       creationDates <- database.computeAllProjectsCreationDates()

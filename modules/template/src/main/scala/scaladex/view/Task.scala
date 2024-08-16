@@ -24,6 +24,11 @@ object Task {
     "Update the Github info of an existing project"
   )
 
+  val updateMavenArtifacts: Task = Task(
+    "update-maven-artifact",
+    "Update existing artifacts with new fields"
+  )
+
   case class Status(name: String, user: String, start: Instant, input: Seq[(String, String)], state: State) {
     def fromNow: FiniteDuration = TimeUtils.toFiniteDuration(start, Instant.now())
   }

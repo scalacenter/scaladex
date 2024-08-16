@@ -33,34 +33,6 @@ class SonatypeService(
     } yield s"Inserted ${result.sum} missing poms"
   }
 
-  def findMissing(): Future[String] =
-    for {
-      mavenReferenceFromDatabase <- database.getAllMavenReferences().map(_.toSet)
-      groupIds = mavenReferenceFromDatabase.map(_.groupId).toSeq.sorted.map(Artifact.GroupId)
-      // we sort just to estimate through the logs the percentage of progress
-      result <- groupIds.mapSync(g => findAndIndexMissingArtifacts(g, None, mavenReferenceFromDatabase))
-    } yield s"Inserted ${result.sum} missing poms"
-
-  def syncOne(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): Future[String] =
-    for {
-      mavenReferenceFromDatabase <- database.getAllMavenReferences()
-      result <- findAndIndexMissingArtifacts(groupId, artifactNameOpt, mavenReferenceFromDatabase.toSet)
-    } yield s"Inserted ${result} poms"
-
-  private def findAndIndexMissingArtifacts(
-      groupId: GroupId,
-      artifactNameOpt: Option[Artifact.Name],
-      knownRefs: Set[MavenReference]
-  ): Future[Int] =
-    for {
-      artifactIds <- sonatypeService.getAllArtifactIds(groupId)
-      scalaArtifactIds = artifactIds.filter(artifact =>
-        artifactNameOpt.forall(_ == artifact.name) && artifact.isScala && artifact.binaryVersion.isValid
-      )
-      result <- scalaArtifactIds
-        .mapSync(id => findAndIndexMissingArtifacts(groupId, id, knownRefs))
-    } yield result.sum
-
   private def findAndIndexMissingArtifacts(
       groupId: GroupId,
       artifactId: ArtifactId,
@@ -77,10 +49,50 @@ class SonatypeService(
       missingPomFiles <- missingVersions.map(ref => sonatypeService.getPomFile(ref).map(_.map(ref -> _))).sequence
       publishResult <- missingPomFiles.flatten.mapSync {
         case (mavenRef, (pomFile, creationDate)) =>
-          publishProcess.publishPom(mavenRef.toString, pomFile, creationDate, None)
+          publishProcess.publishPom(mavenRef.toString(), pomFile, creationDate, None)
       }
     } yield publishResult.count {
       case PublishResult.Success => true
       case _                     => false
     }
+
+  def findMissing(): Future[String] =
+    for {
+      mavenReferenceFromDatabase <- database.getAllMavenReferences().map(_.toSet)
+      groupIds = mavenReferenceFromDatabase.map(_.groupId).toSeq.sorted.map(Artifact.GroupId)
+      // we sort just to estimate through the logs the percentage of progress
+      result <- groupIds.mapSync(g => findAndIndexMissingArtifacts(g, None, mavenReferenceFromDatabase))
+    } yield s"Inserted ${result.sum} missing poms"
+
+  private def findAndIndexMissingArtifacts(
+      groupId: GroupId,
+      artifactNameOpt: Option[Artifact.Name],
+      knownRefs: Set[MavenReference]
+  ): Future[Int] =
+    for {
+      artifactIds <- sonatypeService.getAllArtifactIds(groupId)
+      scalaArtifactIds = artifactIds.filter(artifact =>
+        artifactNameOpt.forall(_ == artifact.name) && artifact.isScala && artifact.binaryVersion.isValid
+      )
+      result <- scalaArtifactIds
+        .mapSync(id => findAndIndexMissingArtifacts(groupId, id, knownRefs))
+    } yield result.sum
+
+  def syncOne(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): Future[String] =
+    for {
+      mavenReferenceFromDatabase <- database.getAllMavenReferences()
+      result <- findAndIndexMissingArtifacts(groupId, artifactNameOpt, mavenReferenceFromDatabase.toSet)
+    } yield s"Inserted $result poms"
+
+  def updateAllArtifacts(): Future[String] =
+    for {
+      mavenReferences <- database.getAllMavenReferences()
+      _ = logger.info(s"${mavenReferences.size} artifacts will be synced for new metadata.")
+      poms <- mavenReferences.map(ref => sonatypeService.getPomFile(ref).map(_.map(ref -> _))).sequence
+      _ = logger.info(s"publishing poms now")
+      publishResult <- poms.flatten.mapSync {
+        case (mavenRef, (pomFile, creationDate)) =>
+          publishProcess.publishPom(mavenRef.toString(), pomFile, creationDate, None)
+      }
+    } yield s"Updated ${publishResult.size} poms"
 }
