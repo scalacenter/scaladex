@@ -8,11 +8,11 @@ import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.model.search.ProjectDocument
 import scaladex.core.service.ProjectService
+import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
-import scaladex.core.service.WebDatabase
 import scaladex.core.util.ScalaExtensions._
 
-class SearchSynchronizer(database: WebDatabase, service: ProjectService, searchEngine: SearchEngine)(
+class SearchSynchronizer(database: SchedulerDatabase, service: ProjectService, searchEngine: SearchEngine)(
     implicit ec: ExecutionContext
 ) extends LazyLogging {
   def syncAll(): Future[String] =

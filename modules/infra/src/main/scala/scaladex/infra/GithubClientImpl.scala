@@ -143,14 +143,15 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
       .flatMap {
         case (headers, entity) =>
           val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
+          val contributors = Unmarshal(entity).to[List[GithubModel.Contributor]]
           lastPage match {
             case Some(lastPage) if lastPage > 1 =>
               for {
-                page1 <- Unmarshal(entity).to[List[GithubModel.Contributor]]
+                page1 <- contributors
                 nextPages <- (2 to lastPage).mapSync(getContributionPage).map(_.flatten)
               } yield page1 ++ nextPages
 
-            case _ => Unmarshal(entity).to[List[GithubModel.Contributor]]
+            case _ => contributors
           }
       }
       .fallbackTo(Future.successful(List.empty))
@@ -180,14 +181,15 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
       .flatMap {
         case (headers, entity) =>
           val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
+          val issues = Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]]
           lastPage match {
             case Some(lastPage) if lastPage > 1 =>
               for {
-                page1 <- Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]]
+                page1 <- issues
                 nextPages <- (2 to lastPage).mapSync(getOpenIssuePage).map(_.flatten)
               } yield page1.flatten ++ nextPages
 
-            case _ => Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]].map(_.flatten)
+            case _ => issues.map(_.flatten)
           }
       }
       .fallbackTo(Future.successful(Seq.empty))

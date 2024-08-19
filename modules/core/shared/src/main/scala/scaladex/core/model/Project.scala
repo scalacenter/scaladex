@@ -93,6 +93,9 @@ object Project {
       settings = settings.getOrElse(Settings.empty)
     )
 
+  def default(ref: Project.Reference, githubStatus: GithubStatus): Project =
+    Project(ref.organization, ref.repository, None, githubStatus, None, Settings.empty)
+
   case class Settings(
       preferStableVersion: Boolean,
       defaultArtifact: Option[Artifact.Name],
