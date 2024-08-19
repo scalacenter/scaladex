@@ -152,7 +152,6 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
         "scalatest/scalatest",
         "scala-js/scala-js",
         "typelevel/scalacheck",
-        "lampepfl/dotty",
         "typelevel/cats"
       )
         .map(Project.Reference.from)
