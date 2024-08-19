@@ -48,9 +48,6 @@ case class Artifact(
     s"$groupId$sep$artifactName"
   }
 
-  def release: Release =
-    Release(projectRef.organization, projectRef.repository, platform, language, version, releaseDate)
-
   def releaseDateFormat: String = Artifact.dateFormatter.format(releaseDate)
 
   def httpUrl: String = {
@@ -301,5 +298,10 @@ object Artifact {
 
     def repoUrl: String =
       s"https://repo1.maven.org/maven2/${groupId.replace('.', '/')}/$artifactId/$version/"
+  }
+
+  object MavenReference {
+    def apply(groupId: GroupId, artifactId: String, version: SemanticVersion): MavenReference =
+      MavenReference(groupId.value, artifactId, version.encode)
   }
 }

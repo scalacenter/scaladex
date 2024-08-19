@@ -24,10 +24,6 @@ case class Project(
       settings.chatroom.map(LabeledLink("Chatroom", _)) ++
       githubInfo.flatMap(_.contributingGuide).map(l => l.labeled("Contributing Guide"))
 
-  private def globalDocumentation: Seq[LabeledLink] =
-    settings.customScalaDoc.flatMap(DocumentationPattern("Scaladoc", _).asGlobal).toSeq ++
-      settings.documentationLinks.flatMap(_.asGlobal)
-
   /**
    * This is used in twitter to render the card of a scaladex project link.
    */
@@ -48,20 +44,39 @@ case class Project(
     image = githubInfo.flatMap(_.logo).orElse(Some(Url("https://index.scala-lang.org/assets/img/scaladex-brand.svg")))
   )
 
+  def scaladoc(artifact: Artifact): Option[LabeledLink] =
+    settings.customScalaDoc
+      .map(DocumentationPattern("Scaladoc", _).eval(artifact))
+      .orElse(artifact.defaultScaladoc.map(LabeledLink("Scaladoc", _)))
+
+  private def globalDocumentation: Seq[LabeledLink] =
+    settings.customScalaDoc.flatMap(DocumentationPattern("Scaladoc", _).asGlobal).toSeq ++
+      settings.documentationLinks.flatMap(_.asGlobal)
+
   def artifactDocumentation(artifact: Artifact): Seq[LabeledLink] =
     scaladoc(artifact).toSeq ++ settings.documentationLinks.map(_.eval(artifact))
-
-  def scaladoc(artifact: Artifact): Option[LabeledLink] = artifact.scaladocUrl
-    .map(_.labeled("Scaladoc"))
-    .orElse(
-      settings.customScalaDoc
-        .map(DocumentationPattern("Scaladoc", _).eval(artifact))
-        .orElse(artifact.defaultScaladoc.map(LabeledLink("Scaladoc", _)))
-    )
 }
 
 object Project {
 
+  case class Reference(organization: Organization, repository: Repository) extends Ordered[Reference] {
+    override def toString: String = s"$organization/$repository"
+
+    override def compare(that: Reference): Int =
+      Reference.ordering.compare(this, that)
+  }
+  object Reference {
+    def from(org: String, repo: String): Reference =
+      Reference(Organization(org), Repository(repo))
+
+    def from(string: String): Reference =
+      string.split('/') match {
+        case Array(org, repo) => from(org, repo)
+      }
+
+    implicit val ordering: Ordering[Reference] =
+      Ordering.by(ref => (ref.organization.value, ref.repository.value))
+  }
   def default(
       ref: Project.Reference,
       creationDate: Option[Instant] = None,
@@ -78,12 +93,8 @@ object Project {
       settings = settings.getOrElse(Settings.empty)
     )
 
-  case class Reference(organization: Organization, repository: Repository) extends Ordered[Reference] {
-    override def toString: String = s"$organization/$repository"
-
-    override def compare(that: Reference): Int =
-      Reference.ordering.compare(this, that)
-  }
+  def default(ref: Project.Reference, githubStatus: GithubStatus): Project =
+    Project(ref.organization, ref.repository, None, githubStatus, None, Settings.empty)
 
   case class Settings(
       preferStableVersion: Boolean,
@@ -101,26 +112,10 @@ object Project {
     override def toString(): String = value
     def isEmpty(): Boolean = value.isEmpty
   }
-
   case class Repository private (value: String) extends AnyVal {
     override def toString(): String = value
     def isEmpty(): Boolean = value.isEmpty
   }
-
-  object Reference {
-
-    def from(string: String): Reference =
-      string.split('/') match {
-        case Array(org, repo) => from(org, repo)
-      }
-
-    def from(org: String, repo: String): Reference =
-      Reference(Organization(org), Repository(repo))
-
-    implicit val ordering: Ordering[Reference] =
-      Ordering.by(ref => (ref.organization.value, ref.repository.value))
-  }
-
   object Organization {
     def apply(v: String): Organization = new Organization(v.toLowerCase())
   }

@@ -32,6 +32,7 @@ import scaladex.core.model.search.ProjectDocument
 object Values {
   val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
   val ok: GithubStatus = GithubStatus.Ok(now)
+  val unknown: GithubStatus = GithubStatus.Unknown(now)
 
   val `2.6.1` = PatchVersion(2, 6, 1)
   val `4`: SemanticVersion = MajorVersion(4)
