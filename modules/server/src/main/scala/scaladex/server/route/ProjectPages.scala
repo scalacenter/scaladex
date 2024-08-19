@@ -122,6 +122,9 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
               } yield {
                 val allArtifacts = header.toSeq.flatMap(_.artifacts)
 
+                val binaryVersions = allArtifacts
+                  .map(_.binaryVersion).distinct.sorted(BinaryVersion.ordering.reverse)
+
                 // Group by artifact name
                 val artifactsByName = allArtifacts.groupBy(_.artifactName)
 
@@ -138,9 +141,11 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
                         params.binaryVersions.forall( binaryVersion => artifacts
                           .exists(_.binaryVersion == binaryVersion))
                       }
-                }
+                }.filter { case (_, artifactsByName) =>
+                    artifactsByName.nonEmpty
+                  }
 
-                val page = html.artifacts(env, user, project, header, groupedArtifacts,params)
+                val page = html.artifacts(env, user, project, header, groupedArtifacts,params, binaryVersions)
                 complete(page)
               }
             }

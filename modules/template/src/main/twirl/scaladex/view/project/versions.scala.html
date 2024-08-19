@@ -27,17 +27,15 @@
     <div class="container">
       <div class="content-project artifacts box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">
-      <div class="float-right">
-        <div class="artifacts-filter">
-          @filters()
-          <div class="result-count">
-            <b>@artifactByVersions.size</b>
-            @Formats.wordPlural(artifactByVersions.size, "version") found for
-            <b>@artifactName</b>
+      <div class="clearfix">
+        <div class="float-right">
+          <div class="artifacts-filter">
+            @artifactsfilters(params,allBinaryVersions)
           </div>
         </div>
+        <h3 class="artifact-version">@artifactName</h3>
       </div>
-      <h3 class="artifact-version">@artifactName</h3>
+      
         <div class="options-checked">
           <ul class="list-inline">
             @for(binaryVersion <- params.binaryVersions) {
@@ -65,6 +63,15 @@
               </li>
             }
           </ul>
+        </div>
+        <div class="clearfix">
+          <div class="float-right">
+            <div class="result-count">
+              <b>@artifactByVersions.size</b>
+              @Formats.wordPlural(artifactByVersions.size, "version") found for
+              <b>@artifactName</b>
+            </div>
+          </div>
         </div>
         <br>
         
@@ -117,27 +124,4 @@
       </div>
     </div>
   </main>
-}
-
-@filters() = {
-  <form action="#" action="GET">
-    <select class="selectpicker" name="binary-versions" 
-      title= "Scala Versions" multiple data-style="btn-primary" data-actions-box="true" data-selected-text-format="static"
-      onchange="this.form.submit()">
-      @for((platform, binaryVersions) <- allBinaryVersions.sorted.groupBy(_.platform)) {
-        <optgroup label="@platform">
-          @for(binaryVersion <- binaryVersions.reverse) {
-            <option value="@binaryVersion.label"
-            @if(params.binaryVersions.contains(binaryVersion)) {selected}>
-            @binaryVersion.language.label
-            </option>
-          }
-        </optgroup>
-      }
-    </select>
-    <label class="filter btn btn-default">
-      <input type="checkbox"  @if(params.preReleases) { checked } name="pre-releases" value="true" onclick="this.form.submit()">
-      Show pre-release versions
-    </label>
-  </form>
 }

@@ -17,7 +17,8 @@
     project: Project,
     header: Option[ProjectHeader],
     groupedArtifacts: Map[SemanticVersion, Map[Artifact.Name, Seq[Artifact]]],
-    params: ArtifactsPageParams
+    params: ArtifactsPageParams,
+    allBinaryVersions: Seq[BinaryVersion]
 )
 
 @main(env, title = project.repository.toString, user) {
@@ -27,6 +28,7 @@
       <div class="content-project artifacts box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">
         <div class="artifacts-filter">
+          @artifactsfilters(params,allBinaryVersions)
           @filters()
           <div class="result-count">
             <b>@groupedArtifacts.values.flatten.size</b> @Formats.wordPlural(groupedArtifacts.values.flatten.size, "artifact") found
@@ -37,7 +39,6 @@
         } else {
           <div>
             @for((version, artifactsByName) <- groupedArtifacts.toSeq.sortBy(_._1).reverse) {
-              @if(!artifactsByName.isEmpty){
                 <h3>Version @version</h3>
                 @for((artifactName, artifacts) <- artifactsByName.toSeq.sortBy(_._1)) {
                   <div class="panel">
@@ -77,7 +78,6 @@
                     </div>
                   </div>
                 }
-              }
             }
           </div>
         }
@@ -86,25 +86,6 @@
   </main>
 }
 @filters() = {
-  <form action="#" action="GET"> 
-    <select class="selectpicker" name="binary-versions" 
-      title="Scala Versions" multiple data-style="btn-primary" data-actions-box="true" data-selected-text-format="static"
-      onchange="this.form.submit()">
-      @for((platform, binaryVersions) <- groupedArtifacts.values.flatten.flatMap(_._2).map(_.binaryVersion).toSeq.distinct.groupBy(_.platform).toSeq.sortBy(_._1).reverse) {
-        <optgroup label="@platform">
-          @for(binaryVersion <- binaryVersions) {
-            <option value="@binaryVersion.label">
-              @binaryVersion.language.label
-            </option>
-          }
-        </optgroup>
-      }
-    </select>
-    <label class="filter btn btn-default">
-      <input type="checkbox"  @if(params.preReleases) { checked } name="pre-releases" value="true" onclick="this.form.submit()">
-      Show pre-release versions
-    </label>
-  </form>
   <div class="options-checked">
     <ul class="list-inline">
       @for(binaryVersion <- params.binaryVersions) {
