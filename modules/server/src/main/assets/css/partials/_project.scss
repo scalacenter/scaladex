@@ -433,16 +433,13 @@
   }
 
   .developers {
-      h4 {
-          margin-bottom: 16px
-          }
-          a {
-                  color: $gray;
-                  &:hover,
-                  &:focus {
-                    color: $brand-primary;
-                    text-decoration: none;
-                  }
-                }
+    a {
+      color: $gray;
+      &:hover,
+      &:focus {
+        color: $brand-primary;
+        text-decoration: none;
       }
+    }
+  }
 }
