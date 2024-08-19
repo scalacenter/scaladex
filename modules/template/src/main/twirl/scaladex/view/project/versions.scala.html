@@ -27,6 +27,7 @@
     <div class="container">
       <div class="content-project artifacts box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">
+      <div class="float-right">
         <div class="artifacts-filter">
           @filters()
           <div class="result-count">
@@ -35,6 +36,38 @@
             <b>@artifactName</b>
           </div>
         </div>
+      </div>
+      <h3 class="artifact-version">@artifactName</h3>
+        <div class="options-checked">
+          <ul class="list-inline">
+            @for(binaryVersion <- params.binaryVersions) {
+              <li>
+                <a href="@artifactsUri(project.reference, artifactName, params.remove(binaryVersion))" class="label label-default">
+                  <i class="fa-solid fa-xmark"></i>
+                  @binaryVersion
+                </a>
+              </li>
+            }
+            @if(params.preReleases) {
+              <li>
+                <a class="label label-info" href="@artifactsUri(project.reference, artifactName, params.withPreReleases(false))">
+                  <i class="fa-solid fa-xmark"></i>
+                  Show pre-release versions
+                </a>
+              </li>
+            }
+            @if(params.binaryVersions.nonEmpty || params.preReleases) {
+              <li>
+                <a href="@artifactsUri(project.reference, artifactName, ArtifactsPageParams.empty)" class="label label-warning clear-all">
+                  <i class="fa-solid fa-xmark"></i>
+                  Clear all filters
+                </a>
+              </li>
+            }
+          </ul>
+        </div>
+        <br>
+        
         @if(artifactByVersions.isEmpty) {
           <div>We can't find any release that matches all you criteria</div>
         } else {
@@ -94,10 +127,10 @@
       @for((platform, binaryVersions) <- allBinaryVersions.sorted.groupBy(_.platform)) {
         <optgroup label="@platform">
           @for(binaryVersion <- binaryVersions.reverse) {
-              <option value="@binaryVersion.label"
-              @if(params.binaryVersions.contains(binaryVersion)) {selected}>
-              @binaryVersion.language.label
-              </option>
+            <option value="@binaryVersion.label"
+            @if(params.binaryVersions.contains(binaryVersion)) {selected}>
+            @binaryVersion.language.label
+            </option>
           }
         </optgroup>
       }
@@ -107,33 +140,4 @@
       Show pre-release versions
     </label>
   </form>
-  <div class="options-checked">
-    <ul class="list-inline">
-      @for(binaryVersion <- params.binaryVersions) {
-        <li>
-          <a href="@artifactsUri(project.reference, artifactName, params.remove(binaryVersion))" class="label label-default">
-            <i class="fa-solid fa-xmark"></i>
-            @binaryVersion
-          </a>
-        </li>
-      }
-      @if(params.preReleases) {
-        <li>
-          <a class="label label-info" href="@artifactsUri(project.reference, artifactName, params.withPreReleases(false))">
-            <i class="fa-solid fa-xmark"></i>
-            Show pre-release versions
-          </a>
-        </li>
-      }
-      @if(params.binaryVersions.nonEmpty || params.preReleases) {
-        <li>
-          <a href="@artifactsUri(project.reference, artifactName, ArtifactsPageParams.empty)" class="label label-warning clear-all">
-            <i class="fa-solid fa-xmark"></i>
-            Clear all filters
-          </a>
-        </li>
-      }
-    </ul>
-    
-  </div>
 }
