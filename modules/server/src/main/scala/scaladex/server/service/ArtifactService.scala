@@ -11,7 +11,7 @@ import scaladex.core.model._
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions._
 
-class ArtifactsService(database: SchedulerDatabase)(implicit ec: ExecutionContext) extends LazyLogging {
+class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext) extends LazyLogging {
   def insertArtifact(artifact: Artifact, dependencies: Seq[ArtifactDependency]): Future[Boolean] = {
     val unknownStatus = GithubStatus.Unknown(Instant.now)
     for {
@@ -40,6 +40,7 @@ class ArtifactsService(database: SchedulerDatabase)(implicit ec: ExecutionContex
     for {
       projectStatuses <- database.getAllProjectsStatuses()
       refs = projectStatuses.collect { case (ref, status) if status.isOk || status.isUnknown || status.isFailed => ref }
+      _ = logger.info(s"Updating latest versions of ${refs.size} projects")
       total <- refs.mapSync(updateLatestVersions).map(_.sum)
     } yield s"Updated $total artifacts in ${refs.size} projects"
 

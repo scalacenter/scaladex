@@ -21,7 +21,7 @@ import scaladex.core.service.SearchEngine
 import scaladex.core.web.ArtifactPageParams
 import scaladex.core.web.ArtifactsPageParams
 import scaladex.server.TwirlSupport._
-import scaladex.server.service.ArtifactsService
+import scaladex.server.service.ArtifactService
 import scaladex.server.service.SearchSynchronizer
 import scaladex.view.html.forbidden
 import scaladex.view.html.notfound
@@ -31,7 +31,7 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
     implicit executionContext: ExecutionContext
 ) extends LazyLogging {
   private val projectService = new ProjectService(database)
-  private val artifactsService = new ArtifactsService(database)
+  private val artifactService = new ArtifactService(database)
   private val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)
 
   def route(user: Option[UserState]): Route =
@@ -158,7 +158,7 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
           editForm { form =>
             val updateF = for {
               _ <- database.updateProjectSettings(projectRef, form)
-              _ <- artifactsService.updateLatestVersions(projectRef, form.preferStableVersion)
+              _ <- artifactService.updateLatestVersions(projectRef, form.preferStableVersion)
               _ <- searchSynchronizer.syncProject(projectRef)
             } yield ()
             onComplete(updateF) {

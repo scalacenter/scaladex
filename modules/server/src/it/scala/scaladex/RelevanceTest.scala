@@ -20,6 +20,7 @@ import scaladex.server.service.SearchSynchronizer
 import scaladex.core.model.search.PageParams
 import scaladex.server.service.DependencyUpdater
 import scaladex.core.service.ProjectService
+import scaladex.server.service.ArtifactService
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 
@@ -40,12 +41,13 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
         val projectService = new ProjectService(database)
         val searchSync = new SearchSynchronizer(database, projectService, searchEngine)
         val projectDependenciesUpdater = new DependencyUpdater(database, projectService)
+        val artifactService = new ArtifactService(database)
 
         IO.fromFuture(IO {
           for {
             _ <- Init.run(database, filesystem)
             _ <- searchEngine.init(true)
-            _ <- projectDependenciesUpdater.updateAll()
+            _ <- artifactService.updateAllLatestVersions().zip(projectDependenciesUpdater.updateAll())
             _ <- searchSync.syncAll()
             _ <- searchEngine.refresh()
           } yield ()

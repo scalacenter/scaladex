@@ -35,7 +35,7 @@ class PublishProcess(
     githubExtractor: GithubRepoExtractor,
     converter: ArtifactConverter,
     database: WebDatabase,
-    artifactsService: ArtifactsService,
+    artifactService: ArtifactService,
     pomsReader: PomsReader,
     env: Env
 )(implicit system: ActorSystem)
@@ -78,7 +78,7 @@ class PublishProcess(
           converter.convert(pom, repo, creationDate) match {
             case Some((artifact, deps)) =>
               for {
-                isNewProject <- artifactsService.insertArtifact(artifact, deps)
+                isNewProject <- artifactService.insertArtifact(artifact, deps)
                 _ <-
                   if (isNewProject && userState.nonEmpty) {
                     val githubUpdater = new GithubUpdater(database, new GithubClientImpl(userState.get.info.token))
@@ -108,7 +108,7 @@ object PublishProcess {
     val githubExtractor = new GithubRepoExtractor(paths)
     val converter = new ArtifactConverter(paths)
     val pomsReader = new PomsReader(new CoursierResolver)
-    val artifactsService = new ArtifactsService(database)
-    new PublishProcess(filesystem, githubExtractor, converter, database, artifactsService, pomsReader, env)
+    val artifactService = new ArtifactService(database)
+    new PublishProcess(filesystem, githubExtractor, converter, database, artifactService, pomsReader, env)
   }
 }
