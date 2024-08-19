@@ -4,24 +4,7 @@ import java.time.Instant
 
 import io.circe._
 import io.circe.generic.semiauto._
-import scaladex.core.model.Artifact
-import scaladex.core.model.ArtifactDependency
-import scaladex.core.model.Category
-import scaladex.core.model.DocumentationPattern
-import scaladex.core.model.GithubCommitActivity
-import scaladex.core.model.GithubContributor
-import scaladex.core.model.GithubInfo
-import scaladex.core.model.GithubIssue
-import scaladex.core.model.GithubStatus
-import scaladex.core.model.Language
-import scaladex.core.model.License
-import scaladex.core.model.Platform
-import scaladex.core.model.Project
-import scaladex.core.model.Resolver
-import scaladex.core.model.SemanticVersion
-import scaladex.core.model.Url
-import scaladex.core.model.UserInfo
-import scaladex.core.model.UserState
+import scaladex.core.model._
 import scaladex.core.model.search.GithubInfoDocument
 import scaladex.core.util.Secret
 import scaladex.infra.github.GithubModel
@@ -71,6 +54,8 @@ object Codecs {
   implicit val userInfoCodec: Codec[GithubModel.UserInfo] = deriveCodec
   implicit val coreUserInfoCodec: Codec[UserInfo] = deriveCodec
   implicit val secretCodec: Codec[Secret] = fromString(_.decode, Secret.apply)
+
+  implicit val developerCodec: Codec[Contributor] = deriveCodec
 
   private def fromLong[A](encode: A => Long, decode: Long => A): Codec[A] =
     Codec.from(Decoder[Long].map(decode), Encoder[Long].contramap(encode))

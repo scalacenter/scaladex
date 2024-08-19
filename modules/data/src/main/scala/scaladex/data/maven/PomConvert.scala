@@ -1,6 +1,9 @@
 package scaladex.data
 package maven
 
+import scaladex.core.model.Contributor
+import scaladex.core.model.Url
+
 private[maven] object PomConvert {
   def apply(model: org.apache.maven.model.Model): ArtifactModel = {
     import model._
@@ -125,7 +128,9 @@ private[maven] object PomConvert {
           scalaVersion <- properties.get("scalaVersion")
           sbtVersion <- properties.get("sbtVersion")
         } yield SbtPluginTarget(scalaVersion, sbtVersion)
-      }
+      },
+      Option(getProperties).flatMap(_.asScala.toMap.get("info.apiURL")).map(Url),
+      Option(getProperties).flatMap(_.asScala.toMap.get("info.versionScheme"))
     )
   }
 }
