@@ -14,12 +14,10 @@ import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
-import scaladex.core.model.ReleaseDependency
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
-import scaladex.core.web.ArtifactsPageParams
 
 class InMemoryDatabase extends SchedulerDatabase {
   private val allProjects = mutable.Map[Project.Reference, Project]()
@@ -125,7 +123,6 @@ class InMemoryDatabase extends SchedulerDatabase {
       ref: Project.Reference,
       version: SemanticVersion
   ): Future[Seq[ProjectDependency]] = ???
-  override def computeReleaseDependencies(): Future[Seq[ReleaseDependency]] = ???
 
   override def computeAllProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]] = ???
 
@@ -133,8 +130,6 @@ class InMemoryDatabase extends SchedulerDatabase {
     Future.successful(allProjects.update(ref, allProjects(ref).copy(creationDate = Some(creationDate))))
 
   override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] = ???
-
-  override def insertReleaseDependencies(releaseDependency: Seq[ReleaseDependency]): Future[Int] = ???
 
   override def countProjectDependents(ref: Project.Reference): Future[Long] =
     Future.successful(0)
@@ -161,9 +156,9 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getArtifacts(
       ref: Project.Reference,
       artifactName: Artifact.Name,
-      params: ArtifactsPageParams
+      preReleases: Boolean
   ): Future[Seq[Artifact]] =
-    // does not filter with params
+    // TODO: use preReleases to filter
     Future.successful(allArtifacts.getOrElse(ref, Seq.empty).filter(_.artifactName == artifactName))
   override def getProjectDependencies(
       ref: Project.Reference,

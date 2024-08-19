@@ -48,9 +48,6 @@ case class Artifact(
     s"$groupId$sep$artifactName"
   }
 
-  def release: Release =
-    Release(projectRef.organization, projectRef.repository, platform, language, version, releaseDate)
-
   def releaseDateFormat: String = Artifact.dateFormatter.format(releaseDate)
 
   def httpUrl: String = {

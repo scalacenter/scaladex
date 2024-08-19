@@ -5,11 +5,9 @@ import java.time.Instant
 import doobie._
 import doobie.util.update.Update
 import scaladex.core.model.Artifact
-import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
-import scaladex.core.model.Release
 import scaladex.core.model.SemanticVersion
 import scaladex.infra.sql.DoobieUtils.Mappings._
 import scaladex.infra.sql.DoobieUtils._
@@ -86,21 +84,12 @@ object ArtifactTable {
       where = Seq("organization=?", "repository=?", "artifact_name=?", "version=?")
     )
 
-  def selectArtifactByParams(
-      binaryVersions: Seq[BinaryVersion],
-      preReleases: Boolean
-  ): Query[(Project.Reference, Artifact.Name), Artifact] = {
-    val binaryVersionFilter =
-      if (binaryVersions.isEmpty) "true"
-      else
-        binaryVersions
-          .map(bv => s"(platform='${bv.platform.label}' AND language_version='${bv.language.label}')")
-          .mkString("(", " OR ", ")")
-    val preReleaseFilter = if (preReleases) s"true" else "is_prerelease=false"
+  def selectArtifactByParams(preReleases: Boolean): Query[(Project.Reference, Artifact.Name), Artifact] = {
+    val preReleaseFilter = if (preReleases) "true" else "is_prerelease=false"
     Query[(Project.Reference, Artifact.Name), Artifact](
       s"""|SELECT ${fields.mkString(", ")}
-          |FROM $table WHERE
-          |organization=? AND repository=? AND artifact_name=? AND $binaryVersionFilter AND $preReleaseFilter
+          |FROM $table
+          |WHERE organization=? AND repository=? AND artifact_name=? AND $preReleaseFilter
           |""".stripMargin
     )
   }
@@ -126,13 +115,6 @@ object ArtifactTable {
       Seq("MIN(release_date)", "organization", "repository"),
       where = Seq("release_date IS NOT NULL"),
       groupBy = projectReferenceFields
-    )
-
-  val getReleasesFromArtifacts: Query0[Release] =
-    selectRequest(
-      table,
-      Seq("organization", "repository", "platform", "language_version", "version", "MIN(release_date)"),
-      groupBy = Seq("organization", "repository ", "platform ", "language_version", "version")
     )
 
   def selectLatestArtifacts(stableOnly: Boolean): Query[Project.Reference, Artifact] =
