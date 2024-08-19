@@ -1,5 +1,8 @@
 package scaladex.core.test
 
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+
 import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact._
 import scaladex.core.model.ArtifactDependency
@@ -25,9 +28,6 @@ import scaladex.core.model.ScalaNative
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.Url
 import scaladex.core.model.search.ProjectDocument
-
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 
 object Values {
   val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
