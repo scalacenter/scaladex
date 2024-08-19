@@ -88,11 +88,15 @@ class SonatypeService(
     for {
       mavenReferences <- database.getAllMavenReferences()
       _ = logger.info(s"${mavenReferences.size} artifacts will be synced for new metadata.")
-      poms <- mavenReferences.map(ref => sonatypeService.getPomFile(ref).map(_.map(ref -> _))).sequence
-      _ = logger.info(s"publishing poms now")
-      publishResult <- poms.flatten.mapSync {
-        case (mavenRef, (pomFile, creationDate)) =>
-          publishProcess.publishPom(mavenRef.toString(), pomFile, creationDate, None)
-      }
-    } yield s"Updated ${publishResult.size} poms"
+      publishResult <- mavenReferences.mapSync(updateArtifact)
+      successCount = publishResult.count(_ == PublishResult.Success)
+      failedCount = publishResult.size - successCount
+    } yield s"Synced $successCount poms, while $failedCount poms failed to update."
+
+  private def updateArtifact(ref: MavenReference): Future[PublishResult] =
+    sonatypeService.getPomFile(ref).map(ref -> _).flatMap {
+      case (mavenRef, Some((pomFile, creationDate))) =>
+        publishProcess.publishPom(mavenRef.toString(), pomFile, creationDate, None)
+      case _ => Future.successful(PublishResult.InvalidPom)
+    }
 }
