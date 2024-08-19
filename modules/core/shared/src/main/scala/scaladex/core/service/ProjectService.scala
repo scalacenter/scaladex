@@ -9,7 +9,7 @@ class ProjectService(database: WebDatabase)(implicit context: ExecutionContext) 
   def getProjectHeader(project: Project): Future[Option[ProjectHeader]] = {
     val ref = project.reference
     for {
-      latestArtifacts <- database.getLatestArtifacts(ref, project.settings.preferStableVersion)
+      latestArtifacts <- database.getLatestArtifacts(ref)
       versionCount <- database.countVersions(ref)
     } yield ProjectHeader(
       project.reference,

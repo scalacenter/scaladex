@@ -13,17 +13,19 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.Scala._
 import scaladex.core.test.Values._
-import scaladex.core.util.ScalaExtensions._
 import scaladex.server.route.Badges.summaryOfLatestVersions
 
 class BadgesTests extends ControllerBaseSuite with BeforeAndAfterAll {
 
   val badgesRoute: Route = new Badges(database).route
 
-  override protected def beforeAll(): Unit = Await.result(insertCats(), Duration.Inf)
+  override protected def beforeAll(): Unit = Await.result(insertCatsArtifacts(), Duration.Inf)
 
-  def insertCats(): Future[Unit] =
-    Cats.allArtifacts.map(database.insertArtifact(_, Seq.empty, now)).sequence.map(_ => ())
+  def insertCatsArtifacts(): Future[Unit] =
+    for {
+      _ <- database.insertProjectRef(Cats.reference, unknown)
+      _ <- Future.traverse(Cats.allArtifacts)(database.insertArtifact(_))
+    } yield ()
 
   it("should fallback to JVM artifacts") {
     Get(s"/${Cats.reference}/cats-core/latest-by-scala-version.svg") ~> badgesRoute ~> check {

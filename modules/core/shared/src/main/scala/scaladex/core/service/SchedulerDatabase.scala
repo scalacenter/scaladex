@@ -13,6 +13,7 @@ import scaladex.core.model.SemanticVersion
 
 trait SchedulerDatabase extends WebDatabase {
   // project and github
+  def getAllProjects(): Future[Seq[Project]]
   def insertProject(project: Project): Future[Unit]
   def updateProjectCreationDate(ref: Project.Reference, creationDate: Instant): Future[Unit]
   def computeAllProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]]
@@ -28,6 +29,8 @@ trait SchedulerDatabase extends WebDatabase {
   def updateArtifacts(artifacts: Seq[Artifact], newRef: Project.Reference): Future[Int]
   def updateArtifactReleaseDate(reference: MavenReference, releaseDate: Instant): Future[Int]
   def getAllGroupIds(): Future[Seq[Artifact.GroupId]]
+  def getAllArtifactIds(ref: Project.Reference): Future[Seq[(Artifact.GroupId, String)]]
   def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]]
   def getDependencies(projectRef: Project.Reference): Future[Seq[ArtifactDependency]]
+  def updateLatestVersion(ref: MavenReference): Future[Unit]
 }

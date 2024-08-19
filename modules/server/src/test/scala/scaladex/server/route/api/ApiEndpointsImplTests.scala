@@ -20,8 +20,11 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach 
   import endpoints._
 
   override protected def beforeAll(): Unit = {
-    val insertCatsArtifacts = Future.traverse(Cats.allArtifacts)(database.insertArtifact(_, Seq.empty, now))
-    Await.result(insertCatsArtifacts, Duration.Inf)
+    val insertions = for {
+      _ <- database.insertProjectRef(Cats.reference, unknown)
+      _ <- Future.traverse(Cats.allArtifacts)(database.insertArtifact(_))
+    } yield ()
+    Await.result(insertions, Duration.Inf)
   }
 
   implicit def jsonCodecToUnmarshaller[T: JsonCodec]: FromEntityUnmarshaller[T] =

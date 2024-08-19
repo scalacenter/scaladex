@@ -77,6 +77,12 @@ object DoobieUtils {
     Update(s"UPDATE $table SET $fieldsStr WHERE $keysStr")
   }
 
+  def updateRequest0[T: Write](table: String, set: Seq[String], where: Seq[String]): Update[T] = {
+    val setStr = set.mkString(", ")
+    val whereStr = where.mkString(" AND ")
+    Update(s"UPDATE $table SET $setStr WHERE $whereStr")
+  }
+
   def selectRequest[A: Read](table: String, fields: Seq[String]): Query0[A] = {
     val fieldsStr = fields.mkString(", ")
     Query0(s"SELECT $fieldsStr FROM $table")

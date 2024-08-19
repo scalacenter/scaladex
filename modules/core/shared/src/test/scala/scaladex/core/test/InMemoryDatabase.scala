@@ -30,16 +30,15 @@ class InMemoryDatabase extends SchedulerDatabase {
     allDependencies.clear()
   }
 
-  override def insertArtifact(
-      artifact: Artifact,
-      dependencies: Seq[ArtifactDependency],
-      now: Instant
-  ): Future[Boolean] = {
-    val ref = artifact.projectRef
+  override def insertArtifact(artifact: Artifact): Future[Boolean] = {
+    val isNewArtifact = !allArtifacts.values.flatten.exists(a => a.mavenReference == artifact.mavenReference)
+    allArtifacts.addOne(artifact.projectRef -> (allArtifacts.getOrElse(artifact.projectRef, Seq.empty) :+ artifact))
+    Future.successful(isNewArtifact)
+  }
+
+  override def insertProjectRef(ref: Project.Reference, status: GithubStatus): Future[Boolean] = {
     val isNewProject = !allProjects.contains(ref)
-    if (isNewProject) allProjects.addOne(ref -> Project.default(ref, now = now))
-    allArtifacts.addOne(ref -> (allArtifacts.getOrElse(ref, Seq.empty) :+ artifact))
-    dependencies.appendedAll(dependencies)
+    if (isNewProject) allProjects.addOne(ref -> Project.default(ref, status))
     Future.successful(isNewProject)
   }
 
@@ -47,7 +46,10 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   override def insertArtifacts(allArtifacts: Seq[Artifact]): Future[Unit] = ???
 
-  override def insertDependencies(dependencies: Seq[ArtifactDependency]): Future[Unit] = ???
+  override def insertDependencies(dependencies: Seq[ArtifactDependency]): Future[Unit] = {
+    allDependencies ++= dependencies
+    Future.successful(())
+  }
 
   override def deleteProjectDependencies(ref: Project.Reference): Future[Int] = ???
 
@@ -59,10 +61,10 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getProject(projectRef: Project.Reference): Future[Option[Project]] =
     Future.successful(allProjects.get(projectRef))
 
-  override def getArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]] =
+  override def getArtifacts(groupId: Artifact.GroupId, artifactId: String): Future[Seq[Artifact]] =
     Future.successful {
       allArtifacts.values.flatten.filter { artifact: Artifact =>
-        artifact.groupId == groupId && artifact.artifactId == artifactId.value
+        artifact.groupId == groupId && artifact.artifactId == artifactId
       }.toSeq
     }
 
@@ -197,7 +199,7 @@ class InMemoryDatabase extends SchedulerDatabase {
     Future.successful(())
   }
 
-  override def getLatestArtifacts(ref: Project.Reference, preferStableVersion: Boolean): Future[Seq[Artifact]] = {
+  override def getLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]] = {
     val res = allArtifacts(ref)
       .groupBy(a => (a.groupId, a.artifactId))
       .values
@@ -205,4 +207,10 @@ class InMemoryDatabase extends SchedulerDatabase {
       .toSeq
     Future.successful(res)
   }
+
+  override def getAllArtifactIds(ref: Project.Reference): Future[Seq[(Artifact.GroupId, String)]] =
+    Future.successful(allArtifacts(ref).map(a => (a.groupId, a.artifactId)).toSeq)
+
+  override def updateLatestVersion(ref: Artifact.MavenReference): Future[Unit] =
+    Future.successful(())
 }

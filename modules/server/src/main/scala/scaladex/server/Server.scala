@@ -14,7 +14,6 @@ import org.apache.pekko.http.scaladsl._
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
-import scaladex.core.service.WebDatabase
 import scaladex.data.util.PidLock
 import scaladex.infra.DataPaths
 import scaladex.infra.ElasticsearchEngine
@@ -128,7 +127,7 @@ object Server extends LazyLogging {
   private def configureRoutes(
       config: ServerConfig,
       searchEngine: ElasticsearchEngine,
-      webDatabase: WebDatabase,
+      webDatabase: SqlDatabase,
       adminService: AdminService,
       publishProcess: PublishProcess
   )(

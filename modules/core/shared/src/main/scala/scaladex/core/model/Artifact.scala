@@ -299,4 +299,9 @@ object Artifact {
     def repoUrl: String =
       s"https://repo1.maven.org/maven2/${groupId.replace('.', '/')}/$artifactId/$version/"
   }
+
+  object MavenReference {
+    def apply(groupId: GroupId, artifactId: String, version: SemanticVersion): MavenReference =
+      MavenReference(groupId.value, artifactId, version.encode)
+  }
 }
