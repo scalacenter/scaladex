@@ -26,7 +26,7 @@ object Task {
 
   val updateMavenArtifacts: Task = Task(
     "update-maven-artifact",
-    "Update existing artifacts with new fields"
+    "Download all pom files to update existing artifacts with new fields"
   )
 
   case class Status(name: String, user: String, start: Instant, input: Seq[(String, String)], state: State) {
