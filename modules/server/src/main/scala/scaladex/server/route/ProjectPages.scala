@@ -29,8 +29,8 @@ import scaladex.view.project.html
 class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
     implicit executionContext: ExecutionContext
 ) extends LazyLogging {
-  private val service = new ProjectService(database)
-  private val searchSynchronizer = new SearchSynchronizer(database, service, searchEngine)
+  private val projectService = new ProjectService(database)
+  private val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)
 
   def route(user: Option[UserState]): Route =
     concat(
@@ -42,7 +42,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           artifactsParams { params =>
             getProjectOrRedirect(ref, user) { project =>
               val artifactsF = database.getArtifacts(ref, artifactName, params)
-              val headerF = service.getProjectHeader(project).map(_.get)
+              val headerF = projectService.getProjectHeader(project).map(_.get)
               for (artifacts <- artifactsF; header <- headerF) yield {
                 val binaryVersions = artifacts
                   .map(_.binaryVersion)
@@ -81,7 +81,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         path(projectM / "artifacts" / artifactNameM / versionM) { (ref, artifactName, artifactVersion) =>
           artifactParams { params =>
             getProjectOrRedirect(ref, user) { project =>
-              val headerF = service.getProjectHeader(project)
+              val headerF = projectService.getProjectHeader(project)
               val artifactsF = database.getArtifacts(ref, artifactName, artifactVersion)
               for {
                 artifacts <- artifactsF
@@ -116,7 +116,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         path(projectM / "artifacts" ) { ref =>
           artifactsParams { params =>  
             getProjectOrRedirect(ref,user) { project => 
-              val headerF = service.getProjectHeader(project)
+              val headerF = projectService.getProjectHeader(project)
               for {
                 header <- headerF
               } yield {
@@ -158,7 +158,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           getProjectOrRedirect(ref, user) { project =>
             for {
               artifacts <- database.getArtifacts(project.reference)
-              header <- service.getProjectHeader(project)
+              header <- projectService.getProjectHeader(project)
             } yield {
               val binaryVersionByPlatforms = artifacts
                 .map(_.binaryVersion)
@@ -276,7 +276,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
     getProjectOrRedirect(ref, Some(user)) { project =>
       for {
         artifacts <- database.getArtifacts(ref)
-        header <- service.getProjectHeader(project)
+        header <- projectService.getProjectHeader(project)
       } yield {
         val page = html.editproject(env, user, project, header, artifacts)
         complete(page)
@@ -286,7 +286,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
   private def getProjectPage(ref: Project.Reference, user: Option[UserState]): Route =
     getProjectOrRedirect(ref, user) { project =>
       for {
-        header <- service.getProjectHeader(project)
+        header <- projectService.getProjectHeader(project)
         directDependencies <-
           header
             .map(h => database.getProjectDependencies(ref, h.latestVersion))
@@ -317,7 +317,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
 
   private def getBadges(ref: Project.Reference, user: Option[UserState]): Route =
     getProjectOrRedirect(ref, user) { project =>
-      for (header <- service.getProjectHeader(project).map(_.get)) yield {
+      for (header <- projectService.getProjectHeader(project).map(_.get)) yield {
         val artifact = header.getDefaultArtifact(None, None)
         val page = html.badges(env, user, project, header, artifact)
         complete(StatusCodes.OK, page)
