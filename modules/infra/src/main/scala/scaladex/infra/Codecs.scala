@@ -3,6 +3,8 @@ package scaladex.infra
 import java.time.Instant
 
 import io.circe._
+import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import io.circe.generic.semiauto._
 import scaladex.core.model._
 import scaladex.core.model.search.GithubInfoDocument
@@ -44,7 +46,8 @@ object Codecs {
   implicit val languageCodec: Codec[Language] = fromString(_.label, Language.fromLabel(_).get)
   implicit val resolverCodec: Codec[Resolver] = deriveCodec
   implicit val licenseCodec: Codec[License] = fromString(_.shortName, License.allByShortName.apply)
-  implicit val artifactCodec: Codec[Artifact] = deriveCodec
+  implicit val customConfig: Configuration = Configuration.default.withDefaults
+  implicit val artifactCodec: Codec[Artifact] = deriveConfiguredCodec[Artifact]
   implicit val scopeCodec: Codec[ArtifactDependency.Scope] = fromString(_.value, ArtifactDependency.Scope.apply)
 
   implicit val mavenRefCodec: Codec[Artifact.MavenReference] = deriveCodec
@@ -62,4 +65,5 @@ object Codecs {
 
   private def fromString[A](encode: A => String, decode: String => A): Codec[A] =
     Codec.from(Decoder[String].map(decode), Encoder[String].contramap(encode))
+
 }
