@@ -52,6 +52,13 @@
               @info("Group ID") { @artifact.groupId }
               @info("Artifact ID") { @artifact.artifactId }
               @info("Version") { @artifact.version }
+              @artifact.versionScheme.map { scheme =>
+                @info("Version Scheme"){
+                  <a href="https://www.scala-sbt.org/1.x/docs/Publishing.html#Version+scheme" rel="nofollow">
+                    @scheme
+                  </a>
+                }
+              }
               @info("Release Date") { @artifact.releaseDateFormat }
               @info("Licenses") {
                 @for(license <- artifact.licenses) {
@@ -62,6 +69,7 @@
                 @info("Files") { <a href="@artifact.mavenReference.repoUrl">View all</a> }
               }
               @artifact.fullScalaVersion.map{ version => @info("Full Scala Version") { @version.toString }}
+              @developers
             </div>
             @installBox(InstallTab.allOf(artifact, project.settings.cliArtifacts))
           </div>
@@ -97,7 +105,21 @@
     </div>
   }
 }
-
+@developers = {
+  @if(artifact.developers.nonEmpty){
+    @info("Developers"){
+      <div class="developers">
+        @for(developer <- artifact.developers) {
+          <span>
+            <a href="@developer.url">
+              @developer.name
+            </a> |
+          </span>
+        }
+      </div>
+    }
+  }
+}
 @scastieBox = {
   @if(artifact.scastieURL.nonEmpty) {
     <div class="box">

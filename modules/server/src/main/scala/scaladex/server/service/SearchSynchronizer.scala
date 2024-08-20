@@ -8,11 +8,11 @@ import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.model.search.ProjectDocument
 import scaladex.core.service.ProjectService
+import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
-import scaladex.core.service.WebDatabase
 import scaladex.core.util.ScalaExtensions._
 
-class SearchSynchronizer(database: WebDatabase, service: ProjectService, searchEngine: SearchEngine)(
+class SearchSynchronizer(database: SchedulerDatabase, service: ProjectService, searchEngine: SearchEngine)(
     implicit ec: ExecutionContext
 ) extends LazyLogging {
   def syncAll(): Future[String] =
@@ -30,7 +30,7 @@ class SearchSynchronizer(database: WebDatabase, service: ProjectService, searchE
       projectsToDelete =
         allProjectsAndStatus.collect { case (p, GithubStatus.NotFound(_)) => p.reference }
       projectsToSync = allProjectsAndStatus
-        .collect { case (p, GithubStatus.Ok(_) | GithubStatus.Unknown(_) | GithubStatus.Failed(_, _, _)) => p }
+        .collect { case (p, status) if status.isOk || status.isUnknown || status.isFailed => p }
 
       _ = logger.info(s"${movedProjects.size} projects were moved")
       _ = logger.info(s"Deleting ${projectsToDelete.size} projects from search engine")

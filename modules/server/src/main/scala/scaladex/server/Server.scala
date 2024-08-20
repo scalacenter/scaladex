@@ -14,7 +14,6 @@ import org.apache.pekko.http.scaladsl._
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
-import scaladex.core.service.WebDatabase
 import scaladex.data.util.PidLock
 import scaladex.infra.DataPaths
 import scaladex.infra.ElasticsearchEngine
@@ -128,7 +127,7 @@ object Server extends LazyLogging {
   private def configureRoutes(
       config: ServerConfig,
       searchEngine: ElasticsearchEngine,
-      webDatabase: WebDatabase,
+      webDatabase: SqlDatabase,
       adminService: AdminService,
       publishProcess: PublishProcess
   )(
@@ -145,8 +144,7 @@ object Server extends LazyLogging {
     val artifactPages = new ArtifactPages(config.env, webDatabase)
     val awesomePages = new AwesomePages(config.env, searchEngine)
     val publishApi = new PublishApi(githubAuth, publishProcess)
-    val searchApi = new SearchApi(searchEngine)
-    val artifactApi = ArtifactApi(webDatabase)
+    val apiEndpoints = new ApiEndpointsImpl(webDatabase, searchEngine)
     val oldSearchApi = new OldSearchApi(searchEngine, webDatabase)
     val badges = new Badges(webDatabase)
     val authentication = new AuthenticationApi(config.oAuth2.clientId, config.session, githubAuth, webDatabase)
@@ -155,13 +153,12 @@ object Server extends LazyLogging {
       authentication.optionalUser { user =>
         val apiRoute = concat(
           publishApi.routes,
-          searchApi.route(user),
-          artifactApi.routes,
+          apiEndpoints.routes(user),
           oldSearchApi.routes,
           Assets.routes,
           badges.route,
           authentication.routes,
-          DocumentationRoutes.routes
+          DocumentationRoute.route
         )
 
         concat(

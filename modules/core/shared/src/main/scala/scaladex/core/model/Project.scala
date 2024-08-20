@@ -44,10 +44,13 @@ case class Project(
     image = githubInfo.flatMap(_.logo).orElse(Some(Url("https://index.scala-lang.org/assets/img/scaladex-brand.svg")))
   )
 
-  def scaladoc(artifact: Artifact): Option[LabeledLink] =
-    settings.customScalaDoc
-      .map(DocumentationPattern("Scaladoc", _).eval(artifact))
-      .orElse(artifact.defaultScaladoc.map(LabeledLink("Scaladoc", _)))
+  def scaladoc(artifact: Artifact): Option[LabeledLink] = artifact.scaladocUrl
+    .map(_.labeled("Scaladoc"))
+    .orElse(
+      settings.customScalaDoc
+        .map(DocumentationPattern("Scaladoc", _).eval(artifact))
+        .orElse(artifact.defaultScaladoc.map(LabeledLink("Scaladoc", _)))
+    )
 
   private def globalDocumentation: Seq[LabeledLink] =
     settings.customScalaDoc.flatMap(DocumentationPattern("Scaladoc", _).asGlobal).toSeq ++
@@ -92,6 +95,9 @@ object Project {
       creationDate = creationDate,
       settings = settings.getOrElse(Settings.empty)
     )
+
+  def default(ref: Project.Reference, githubStatus: GithubStatus): Project =
+    Project(ref.organization, ref.repository, None, githubStatus, None, Settings.empty)
 
   case class Settings(
       preferStableVersion: Boolean,

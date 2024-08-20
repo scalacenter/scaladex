@@ -16,20 +16,22 @@ import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
 import scaladex.core.model._
 import scaladex.core.service.ProjectService
+import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
-import scaladex.core.service.WebDatabase
 import scaladex.core.web.ArtifactPageParams
 import scaladex.core.web.ArtifactsPageParams
 import scaladex.server.TwirlSupport._
+import scaladex.server.service.ArtifactService
 import scaladex.server.service.SearchSynchronizer
 import scaladex.view.html.forbidden
 import scaladex.view.html.notfound
 import scaladex.view.project.html
 
-class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
+class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEngine)(
     implicit executionContext: ExecutionContext
 ) extends LazyLogging {
   private val projectService = new ProjectService(database)
+  private val artifactService = new ArtifactService(database)
   private val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)
 
   def route(user: Option[UserState]): Route =
@@ -41,7 +43,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
         path(projectM / "artifacts" / artifactNameM) { (ref, artifactName) =>
           artifactsParams { params =>
             getProjectOrRedirect(ref, user) { project =>
-              val artifactsF = database.getArtifacts(ref, artifactName, params)
+              val artifactsF = database.getArtifacts(ref, artifactName, params.preReleases)
               val headerF = projectService.getProjectHeader(project).map(_.get)
               for (artifacts <- artifactsF; header <- headerF) yield {
                 val binaryVersions = artifacts
@@ -198,6 +200,7 @@ class ProjectPages(env: Env, database: WebDatabase, searchEngine: SearchEngine)(
           editForm { form =>
             val updateF = for {
               _ <- database.updateProjectSettings(projectRef, form)
+              _ <- artifactService.updateLatestVersions(projectRef, form.preferStableVersion)
               _ <- searchSynchronizer.syncProject(projectRef)
             } yield ()
             onComplete(updateF) {

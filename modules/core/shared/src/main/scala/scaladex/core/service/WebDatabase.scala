@@ -1,27 +1,20 @@
 package scaladex.core.service
 
-import java.time.Instant
 import java.util.UUID
 
 import scala.concurrent.Future
 
 import scaladex.core.model._
-import scaladex.core.web.ArtifactsPageParams
 
 trait WebDatabase {
   // artifacts
-  // insertArtifact return a boolean. It's true if a new project is inserted, false otherwise
-  def insertArtifact(artifact: Artifact, dependencies: Seq[ArtifactDependency], time: Instant): Future[Boolean]
-  def getArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]]
+  def insertArtifact(artifact: Artifact): Future[Boolean]
+  def getArtifacts(groupId: Artifact.GroupId, artifactId: String): Future[Seq[Artifact]]
   def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]]
-  def getArtifacts(
-      ref: Project.Reference,
-      artifactName: Artifact.Name,
-      params: ArtifactsPageParams
-  ): Future[Seq[Artifact]]
+  def getArtifacts(ref: Project.Reference, artifactName: Artifact.Name, preReleases: Boolean): Future[Seq[Artifact]]
   def getArtifacts(ref: Project.Reference, artifactName: Artifact.Name, version: SemanticVersion): Future[Seq[Artifact]]
   def getArtifactsByName(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]]
-  def getLatestArtifacts(ref: Project.Reference, preferStableVersions: Boolean): Future[Seq[Artifact]]
+  def getLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]]
   def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]]
   def getAllArtifacts(language: Option[Language], platform: Option[Platform]): Future[Seq[Artifact]]
   def countArtifacts(): Future[Long]
@@ -31,8 +24,8 @@ trait WebDatabase {
   def getReverseDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Reverse]]
 
   // projects
+  def insertProjectRef(ref: Project.Reference, status: GithubStatus): Future[Boolean]
   def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit]
-  def getAllProjects(): Future[Seq[Project]]
   def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]]
   def getProject(projectRef: Project.Reference): Future[Option[Project]]
   def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]]

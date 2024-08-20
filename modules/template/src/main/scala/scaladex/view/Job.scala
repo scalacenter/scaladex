@@ -49,6 +49,11 @@ object Job {
     "Find missing non-standard artifacts from Maven Central",
     2.hours
   )
+  val latestArtifacts: Job = Job(
+    "latest-artifacts",
+    "Update latest version of artifacts",
+    24.hours
+  )
 
   case class Status(state: State, results: Seq[Result], progress: Option[Progress]) {
     def isStarted: Boolean = state.isInstanceOf[Started]

@@ -204,7 +204,10 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       binaryVersion: BinaryVersion,
       artifactName: Option[Artifact.Name] = None,
       resolver: Option[Resolver] = None,
-      projectRef: Option[Project.Reference] = None
+      projectRef: Option[Project.Reference] = None,
+      developers: Seq[Contributor] = Nil,
+      scaladocUrl: Option[Url] = None,
+      versionScheme: Option[String] = None
   ) = {
     // An artifact always have an artifactId that can be parsed, but in the case we don't really care about if it can
     // be parsed or not, we just want to test methods in artifacts like sbtInstall
@@ -224,7 +227,10 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       resolver = resolver,
       licenses = Set(),
       isNonStandardLib = false,
-      fullScalaVersion = None
+      fullScalaVersion = None,
+      developers = developers,
+      scaladocUrl = scaladocUrl,
+      versionScheme = versionScheme
     )
   }
 }

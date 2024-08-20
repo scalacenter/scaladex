@@ -18,12 +18,10 @@ import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
-import scaladex.core.model.ReleaseDependency
 import scaladex.core.model.SemanticVersion
 import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
-import scaladex.core.web.ArtifactsPageParams
 import scaladex.infra.sql.ArtifactDependencyTable
 import scaladex.infra.sql.ArtifactTable
 import scaladex.infra.sql.DoobieUtils
@@ -31,8 +29,6 @@ import scaladex.infra.sql.GithubInfoTable
 import scaladex.infra.sql.ProjectDependenciesTable
 import scaladex.infra.sql.ProjectSettingsTable
 import scaladex.infra.sql.ProjectTable
-import scaladex.infra.sql.ReleaseDependenciesTable
-import scaladex.infra.sql.ReleaseTable
 import scaladex.infra.sql.UserSessionsTable
 
 class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
@@ -40,19 +36,8 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   def migrate: IO[Unit] = IO(flyway.migrate())
   def dropTables: IO[Unit] = IO(flyway.clean())
 
-  override def insertArtifact(
-      artifact: Artifact,
-      dependencies: Seq[ArtifactDependency],
-      time: Instant
-  ): Future[Boolean] = {
-    val unknownStatus = GithubStatus.Unknown(time)
-    for {
-      isNewProject <- insertProjectRef(artifact.projectRef, unknownStatus)
-      _ <- run(ArtifactTable.insertIfNotExist(artifact))
-      _ <- run(ReleaseTable.insertIfNotExists.run(artifact.release))
-      _ <- insertDependencies(dependencies)
-    } yield isNewProject
-  }
+  override def insertArtifact(artifact: Artifact): Future[Boolean] =
+    run(ArtifactTable.insertIfNotExist(artifact)).map(_ >= 1)
 
   override def insertArtifacts(artifacts: Seq[Artifact]): Future[Unit] =
     run(ArtifactTable.insertIfNotExist(artifacts)).map(_ => ())
@@ -65,7 +50,7 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def updateArtifactReleaseDate(reference: Artifact.MavenReference, releaseDate: Instant): Future[Int] =
     run(ArtifactTable.updateReleaseDate.run((releaseDate, reference)))
 
-  override def getArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]] =
+  override def getArtifacts(groupId: Artifact.GroupId, artifactId: String): Future[Seq[Artifact]] =
     run(ArtifactTable.selectArtifactByGroupIdAndArtifactId.to[Seq](groupId, artifactId))
 
   override def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]] =
@@ -81,21 +66,8 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getArtifactsByName(ref: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]] =
     run(ArtifactTable.selectArtifactByProjectAndName.to[Seq]((ref, artifactName)))
 
-  override def getLatestArtifacts(ref: Project.Reference, preferStableVersions: Boolean): Future[Seq[Artifact]] = {
-    val latestArtifactsF = run(ArtifactTable.selectLatestArtifacts(stableOnly = false).to[Seq](ref))
-    if (preferStableVersions) {
-      for {
-        latestStableArtifacts <- run(ArtifactTable.selectLatestArtifacts(stableOnly = true).to[Seq](ref))
-        latestArtifacts <- latestArtifactsF
-      } yield
-      // override non-stable version with the latest stable version
-      (latestStableArtifacts ++ latestArtifacts)
-        .groupBy(a => (a.groupId, a.artifactId))
-        .valuesIterator
-        .map(_.head)
-        .toSeq
-    } else latestArtifactsF
-  }
+  override def getLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectLatestArtifacts.to[Seq](ref))
 
   override def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]] =
     run(ArtifactTable.selectByMavenReference.option(mavenRef))
@@ -122,7 +94,7 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
     run(ArtifactDependencyTable.insertIfNotExist.updateMany(dependencies)).map(_ => ())
 
   // return true if inserted, false if it already existed
-  private def insertProjectRef(ref: Project.Reference, status: GithubStatus): Future[Boolean] =
+  override def insertProjectRef(ref: Project.Reference, status: GithubStatus): Future[Boolean] =
     run(ProjectTable.insertIfNotExists.run((ref, status))).map(x => x >= 1)
 
   override def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]] =
@@ -180,18 +152,12 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   ): Future[Seq[ProjectDependency]] =
     run(ArtifactDependencyTable.computeProjectDependencies.to[Seq]((ref, version)))
 
-  override def computeReleaseDependencies(): Future[Seq[ReleaseDependency]] =
-    run(ArtifactDependencyTable.computeReleaseDependency.to[Seq])
-
   override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] =
     if (projectDependencies.isEmpty) Future.successful(0)
     else run(ProjectDependenciesTable.insertOrUpdate.updateMany(projectDependencies))
 
   override def deleteProjectDependencies(ref: Project.Reference): Future[Int] =
     run(ProjectDependenciesTable.deleteBySource.run(ref))
-
-  override def insertReleaseDependencies(releaseDependency: Seq[ReleaseDependency]): Future[Int] =
-    run(ReleaseDependenciesTable.insertIfNotExists.updateMany(releaseDependency))
 
   override def countProjectDependents(projectRef: Project.Reference): Future[Long] =
     run(ProjectDependenciesTable.countDependents.unique(projectRef))
@@ -214,6 +180,9 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getAllGroupIds(): Future[Seq[Artifact.GroupId]] =
     run(ArtifactTable.selectGroupIds.to[Seq])
 
+  override def getAllArtifactIds(ref: Project.Reference): Future[Seq[(Artifact.GroupId, String)]] =
+    run(ArtifactTable.selectArtifactIds.to[Seq](ref))
+
   override def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]] =
     run(ArtifactTable.selectMavenReference.to[Seq])
 
@@ -235,13 +204,17 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getArtifacts(
       ref: Project.Reference,
       artifactName: Artifact.Name,
-      params: ArtifactsPageParams
+      preReleases: Boolean
   ): Future[Seq[Artifact]] =
-    run(
-      ArtifactTable
-        .selectArtifactByParams(params.binaryVersions, params.preReleases)
-        .to[Seq](ref, artifactName)
-    )
+    run(ArtifactTable.selectArtifactByParams(preReleases).to[Seq](ref, artifactName))
+
+  override def updateLatestVersion(ref: Artifact.MavenReference): Future[Unit] = {
+    val transaction = for {
+      _ <- ArtifactTable.setLatestVersion.run(ref)
+      _ <- ArtifactTable.unsetOthersLatestVersion.run(ref)
+    } yield ()
+    run(transaction)
+  }
 
   override def countVersions(ref: Project.Reference): Future[Long] =
     run(ArtifactTable.countVersionsByProject.unique(ref))

@@ -15,25 +15,8 @@ import doobie._
 import doobie.hikari.HikariTransactor
 import io.circe._
 import org.flywaydb.core.Flyway
-import scaladex.core.model.Artifact
-import scaladex.core.model.ArtifactDependency
-import scaladex.core.model.BinaryVersion
-import scaladex.core.model.Category
-import scaladex.core.model.DocumentationPattern
-import scaladex.core.model.GithubCommitActivity
-import scaladex.core.model.GithubContributor
-import scaladex.core.model.GithubInfo
-import scaladex.core.model.GithubIssue
-import scaladex.core.model.GithubStatus
-import scaladex.core.model.Language
-import scaladex.core.model.License
-import scaladex.core.model.Platform
-import scaladex.core.model.Project
 import scaladex.core.model.Project._
-import scaladex.core.model.Resolver
-import scaladex.core.model.SemanticVersion
-import scaladex.core.model.UserInfo
-import scaladex.core.model.UserState
+import scaladex.core.model._
 import scaladex.core.util.Secret
 import scaladex.infra.Codecs._
 import scaladex.infra.config.PostgreSQLConfig
@@ -47,18 +30,13 @@ object DoobieUtils {
     val datasource = getHikariDataSource(conf)
     flyway(datasource)
   }
+
   def flyway(datasource: HikariDataSource): Flyway =
     Flyway
       .configure()
       .dataSource(datasource)
       .locations("migrations", "scaladex/infra/migrations")
       .load()
-
-  def transactor(datasource: HikariDataSource): Resource[IO, HikariTransactor[IO]] =
-    for {
-      ce <- ExecutionContexts.fixedThreadPool[IO](32) // our connect EC
-      be <- Blocker[IO] // our blocking EC
-    } yield Transactor.fromDataSource[IO](datasource, ce, be)
 
   def getHikariDataSource(conf: PostgreSQLConfig): HikariDataSource = {
     val config: HikariConfig = new HikariConfig()
@@ -68,6 +46,12 @@ object DoobieUtils {
     config.setPassword(conf.pass.decode)
     new HikariDataSource(config)
   }
+
+  def transactor(datasource: HikariDataSource): Resource[IO, HikariTransactor[IO]] =
+    for {
+      ce <- ExecutionContexts.fixedThreadPool[IO](32) // our connect EC
+      be <- Blocker[IO] // our blocking EC
+    } yield Transactor.fromDataSource[IO](datasource, ce, be)
 
   def insertOrUpdateRequest[T: Write](
       table: String,
@@ -91,6 +75,12 @@ object DoobieUtils {
     val fieldsStr = fields.map(f => s"$f=?").mkString(", ")
     val keysStr = keys.map(k => s"$k=?").mkString(" AND ")
     Update(s"UPDATE $table SET $fieldsStr WHERE $keysStr")
+  }
+
+  def updateRequest0[T: Write](table: String, set: Seq[String], where: Seq[String]): Update[T] = {
+    val setStr = set.mkString(", ")
+    val whereStr = where.mkString(" AND ")
+    Update(s"UPDATE $table SET $setStr WHERE $whereStr")
   }
 
   def selectRequest[A: Read](table: String, fields: Seq[String]): Query0[A] = {
@@ -261,6 +251,8 @@ object DoobieUtils {
       Read[(Set[Project.Reference], Set[Project.Organization], UserInfo)].map {
         case (repos, orgs, info) => UserState(repos, orgs, info)
       }
+    implicit val developerMeta: Meta[Seq[Contributor]] =
+      Meta[String].timap(fromJson[Seq[Contributor]](_).get)(toJson(_))
 
     private def toJson[A](v: A)(implicit e: Encoder[A]): String =
       e.apply(v).noSpaces

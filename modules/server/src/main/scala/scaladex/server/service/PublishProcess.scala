@@ -11,6 +11,7 @@ import scaladex.core.model.Env
 import scaladex.core.model.Project
 import scaladex.core.model.Sha1
 import scaladex.core.model.UserState
+import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.Storage
 import scaladex.core.service.WebDatabase
 import scaladex.data.cleanup.GithubRepoExtractor
@@ -34,6 +35,7 @@ class PublishProcess(
     githubExtractor: GithubRepoExtractor,
     converter: ArtifactConverter,
     database: WebDatabase,
+    artifactService: ArtifactService,
     pomsReader: PomsReader,
     env: Env
 )(implicit system: ActorSystem)
@@ -76,7 +78,7 @@ class PublishProcess(
           converter.convert(pom, repo, creationDate) match {
             case Some((artifact, deps)) =>
               for {
-                isNewProject <- database.insertArtifact(artifact, deps, Instant.now)
+                isNewProject <- artifactService.insertArtifact(artifact, deps)
                 _ <-
                   if (isNewProject && userState.nonEmpty) {
                     val githubUpdater = new GithubUpdater(database, new GithubClientImpl(userState.get.info.token))
@@ -99,13 +101,14 @@ class PublishProcess(
 }
 
 object PublishProcess {
-  def apply(paths: DataPaths, filesystem: Storage, database: WebDatabase, env: Env)(
+  def apply(paths: DataPaths, filesystem: Storage, database: SchedulerDatabase, env: Env)(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem
   ): PublishProcess = {
     val githubExtractor = new GithubRepoExtractor(paths)
     val converter = new ArtifactConverter(paths)
     val pomsReader = new PomsReader(new CoursierResolver)
-    new PublishProcess(filesystem, githubExtractor, converter, database, pomsReader, env)
+    val artifactService = new ArtifactService(database)
+    new PublishProcess(filesystem, githubExtractor, converter, database, artifactService, pomsReader, env)
   }
 }

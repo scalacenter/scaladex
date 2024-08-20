@@ -23,7 +23,7 @@ lazy val loggingSettings = Seq(
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
   ),
   // Drop and replace commons-logging with slf4j
-  libraryDependencies += "org.slf4j" % "jcl-over-slf4j" % "2.0.13",
+  libraryDependencies += "org.slf4j" % "jcl-over-slf4j" % "2.0.16",
   excludeDependencies += ExclusionRule("commons-logging", "commons-logging")
 )
 
@@ -83,7 +83,9 @@ lazy val infra = project
       "io.circe" %% "circe-core",
       "io.circe" %% "circe-generic",
       "io.circe" %% "circe-parser"
-    ).map(_ % V.circe),
+    ).map(_ % V.circe) ++ Seq(
+      "io.circe" %% "circe-generic-extras"
+    ).map(_ % V.circeGenericExtra),
     Elasticsearch.settings(defaultPort = 9200),
     Postgres.settings(Compile, defaultPort = 5432, database = "scaladex"),
     javaOptions ++= {
@@ -197,12 +199,11 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
     scalacOptionsSettings,
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "fastparse" % "2.3.3",
-      "io.github.cquiroz" %%% "scala-java-time" % "2.5.0",
+      "io.github.cquiroz" %%% "scala-java-time" % "2.6.0",
       "com.typesafe.play" %%% "play-json" % V.playJson,
       "org.endpoints4s" %%% "algebra" % "1.11.1",
-      "org.endpoints4s" %% "json-schema-playjson" % "1.11.1" % Test,
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
-      "org.jsoup" % "jsoup" % "1.17.2"
+      "org.jsoup" % "jsoup" % "1.18.1"
     ) ++ Seq(
       "io.circe" %%% "circe-core",
       "io.circe" %%% "circe-generic",
@@ -222,7 +223,7 @@ lazy val data = project
       "org.apache.pekko" %% "pekko-serialization-jackson" % V.pekko,
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
       "org.apache.maven" % "maven-model-builder" % "3.9.5",
-      "org.jsoup" % "jsoup" % "1.17.2",
+      "org.jsoup" % "jsoup" % "1.18.1",
       "org.apache.ivy" % "ivy" % "2.5.2",
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
       "org.json4s" %% "json4s-native" % V.json4s,
@@ -238,12 +239,13 @@ lazy val data = project
 lazy val V = new {
   val doobie = "0.13.4"
   val playJson = "2.9.4"
-  val pekko = "1.0.2"
+  val pekko = "1.0.3"
   val pekkoHttp = "1.0.1"
-  val elastic4s = "8.13.0"
+  val elastic4s = "8.13.1"
   val nscalaTime = "2.32.0"
-  val scalatest = "3.2.18"
-  val circe = "0.14.7"
+  val scalatest = "3.2.19"
+  val circe = "0.14.9"
+  val circeGenericExtra = "0.14.4"
   val json4s = "4.0.7"
   val coursier = "2.1.6"
 }

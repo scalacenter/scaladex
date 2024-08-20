@@ -3,25 +3,10 @@ package scaladex.infra
 import java.time.Instant
 
 import io.circe._
+import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import io.circe.generic.semiauto._
-import scaladex.core.model.Artifact
-import scaladex.core.model.ArtifactDependency
-import scaladex.core.model.Category
-import scaladex.core.model.DocumentationPattern
-import scaladex.core.model.GithubCommitActivity
-import scaladex.core.model.GithubContributor
-import scaladex.core.model.GithubInfo
-import scaladex.core.model.GithubIssue
-import scaladex.core.model.GithubStatus
-import scaladex.core.model.Language
-import scaladex.core.model.License
-import scaladex.core.model.Platform
-import scaladex.core.model.Project
-import scaladex.core.model.Resolver
-import scaladex.core.model.SemanticVersion
-import scaladex.core.model.Url
-import scaladex.core.model.UserInfo
-import scaladex.core.model.UserState
+import scaladex.core.model._
 import scaladex.core.model.search.GithubInfoDocument
 import scaladex.core.util.Secret
 import scaladex.infra.github.GithubModel
@@ -56,12 +41,13 @@ object Codecs {
   implicit val projectCodec: Codec[Project] = deriveCodec
 
   implicit val groupIdCodec: Codec[Artifact.GroupId] = fromString(_.value, Artifact.GroupId.apply)
-  implicit val semanticVersionCodec: Codec[SemanticVersion] = fromString(_.encode, SemanticVersion.parse(_).get)
+  implicit val semanticVersionCodec: Codec[SemanticVersion] = fromString(_.encode, SemanticVersion.from)
   implicit val platformCodec: Codec[Platform] = fromString(_.label, Platform.fromLabel(_).get)
   implicit val languageCodec: Codec[Language] = fromString(_.label, Language.fromLabel(_).get)
   implicit val resolverCodec: Codec[Resolver] = deriveCodec
   implicit val licenseCodec: Codec[License] = fromString(_.shortName, License.allByShortName.apply)
-  implicit val artifactCodec: Codec[Artifact] = deriveCodec
+  implicit val customConfig: Configuration = Configuration.default.withDefaults
+  implicit val artifactCodec: Codec[Artifact] = deriveConfiguredCodec[Artifact]
   implicit val scopeCodec: Codec[ArtifactDependency.Scope] = fromString(_.value, ArtifactDependency.Scope.apply)
 
   implicit val mavenRefCodec: Codec[Artifact.MavenReference] = deriveCodec
@@ -72,9 +58,12 @@ object Codecs {
   implicit val coreUserInfoCodec: Codec[UserInfo] = deriveCodec
   implicit val secretCodec: Codec[Secret] = fromString(_.decode, Secret.apply)
 
+  implicit val developerCodec: Codec[Contributor] = deriveCodec
+
   private def fromLong[A](encode: A => Long, decode: Long => A): Codec[A] =
     Codec.from(Decoder[Long].map(decode), Encoder[Long].contramap(encode))
 
   private def fromString[A](encode: A => String, decode: String => A): Codec[A] =
     Codec.from(Decoder[String].map(decode), Encoder[String].contramap(encode))
+
 }

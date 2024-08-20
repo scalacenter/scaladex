@@ -431,4 +431,15 @@
       display: block;
     }
   }
+
+  .developers {
+    a {
+      color: $gray;
+      &:hover,
+      &:focus {
+        color: $brand-primary;
+        text-decoration: none;
+      }
+    }
+  }
 }

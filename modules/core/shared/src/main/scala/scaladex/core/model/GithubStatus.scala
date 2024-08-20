@@ -6,13 +6,18 @@ sealed trait GithubStatus extends Ordered[GithubStatus] {
   val updateDate: Instant
 
   def isOk: Boolean = this match {
-    case GithubStatus.Ok(_) => true
+    case _: GithubStatus.Ok => true
     case _                  => false
   }
 
   def isMoved: Boolean = this match {
-    case GithubStatus.Moved(_, _) => true
-    case _                        => false
+    case _: GithubStatus.Moved => true
+    case _                     => false
+  }
+
+  def isUnknown: Boolean = this match {
+    case _: GithubStatus.Unknown => true
+    case _                       => false
   }
 
   def isNotFound: Boolean = this match {
@@ -21,8 +26,8 @@ sealed trait GithubStatus extends Ordered[GithubStatus] {
   }
 
   def isFailed: Boolean = this match {
-    case GithubStatus.Failed(_, _, _) => true
-    case _                            => false
+    case _: GithubStatus.Failed => true
+    case _                      => false
   }
 
   override def compare(that: GithubStatus): Int =

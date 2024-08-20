@@ -30,9 +30,9 @@ class AdminService(
 
   val projectService = new ProjectService(database)
   val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)
-  val projectDependenciesUpdater = new DependencyUpdater(database)
+  val projectDependenciesUpdater = new DependencyUpdater(database, projectService)
   val userSessionService = new UserSessionService(database)
-  val artifactsService = new ArtifactsService(database)
+  val artifactService = new ArtifactService(database)
   val githubUpdaterOpt: Option[GithubUpdater] = githubClientOpt.map(client => new GithubUpdater(database, client))
 
   private val jobs: Map[String, JobScheduler] = {
@@ -40,8 +40,9 @@ class AdminService(
       new JobScheduler(Job.syncSearch, searchSynchronizer.syncAll),
       new JobScheduler(Job.projectDependencies, projectDependenciesUpdater.updateAll),
       new JobScheduler(Job.projectCreationDates, updateProjectCreationDate),
-      new JobScheduler(Job.moveArtifacts, artifactsService.moveAll),
-      new JobScheduler(Job.userSessions, userSessionService.updateAll)
+      new JobScheduler(Job.moveArtifacts, artifactService.moveAll),
+      new JobScheduler(Job.userSessions, userSessionService.updateAll),
+      new JobScheduler(Job.latestArtifacts, artifactService.updateAllLatestVersions)
     ) ++
       githubClientOpt.map { client =>
         val githubUpdater = new GithubUpdater(database, client)
@@ -132,6 +133,13 @@ class AdminService(
       githubUpdaterOpt.fold(throw new Exception("No configured Github token")) { githubUpdater =>
         githubUpdater.update(reference).map(_.toString)
       }
+    }
+    tasks = tasks :+ task
+  }
+
+  def updateMavenArtifacts(user: UserState): Unit = {
+    val task = TaskRunner.run(Task.updateMavenArtifacts, user.info.login, input = Seq.empty) { () =>
+      sonatypeSynchronizer.updateAllArtifacts()
     }
     tasks = tasks :+ task
   }

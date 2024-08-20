@@ -8,7 +8,6 @@ import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Jvm
 import scaladex.core.model.Scala
 import scaladex.core.test.Values
-import scaladex.core.util.ScalaExtensions._
 import scaladex.server.route.ControllerBaseSuite
 
 class OldSearchApiTests extends ControllerBaseSuite with PlayJsonSupport {
@@ -33,7 +32,10 @@ class OldSearchApiTests extends ControllerBaseSuite with PlayJsonSupport {
   }
 
   def insertAllCatsArtifacts(): Future[Unit] =
-    Cats.allArtifacts.map(database.insertArtifact(_, Seq.empty, now)).sequence.map(_ => ())
+    for {
+      _ <- database.insertProjectRef(Cats.reference, unknown)
+      _ <- Future.traverse(Cats.allArtifacts)(database.insertArtifact(_))
+    } yield ()
 
   describe("route") {
     it("should find project") {

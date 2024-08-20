@@ -128,7 +128,7 @@ foundweekends/giter8
 cb372/scalacache
 blemale/scaffeine
 scala/scala
-lampepfl/dotty
+scala/scala3
 sbt/zinc
 scala-js/scala-js
 scala-native/scala-native

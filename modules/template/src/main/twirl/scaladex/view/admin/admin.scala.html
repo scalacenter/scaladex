@@ -22,7 +22,7 @@
       <tbody>
         @jobs.map { case (job, status) =>
           <tr>
-            <td>
+            <th>
               <h5>@job.name <small>every @job.frequency.shortPrint</small></h5>
               <p>@job.description</p>
             </th>
@@ -117,6 +117,16 @@
                 <input type="text" class="form-control" name="repository" placeholder="Ex: bloop">
               </div>
             </td>
+            <td><button type="submit" class="btn btn-primary">Submit</button></td>
+          </form>
+        </tr>
+        <tr>
+          <td>
+            <h5>@Task.updateMavenArtifacts.name</h5>
+            <p>@Task.updateMavenArtifacts.description</p>
+          </td>
+          <td></td>
+          <form action="/admin/tasks/@Task.updateMavenArtifacts.name" method="POST">
             <td><button type="submit" class="btn btn-primary">Submit</button></td>
           </form>
         </tr>
