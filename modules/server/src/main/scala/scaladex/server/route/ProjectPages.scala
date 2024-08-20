@@ -131,7 +131,7 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
                 val artifactsByName = allArtifacts.groupBy(_.artifactName)
 
                 val groupedArtifacts = artifactsByName
-                  .groupBy { case (artifactName, artifacts) =>  
+                  .groupBy { case (_, artifacts) =>  
                     artifacts.maxBy(_.version).version 
                   }
                   .map { case (latestVersion, artifactsByName) =>
