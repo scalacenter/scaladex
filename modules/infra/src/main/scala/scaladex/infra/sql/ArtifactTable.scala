@@ -41,13 +41,13 @@ object ArtifactTable {
   val isLatestVersion: String = "is_latest_version"
 
   def insertIfNotExist(artifact: Artifact): ConnectionIO[Int] =
-    insertIfNotExist.run((artifact, artifact.version.isSemantic, artifact.version.isPreRelease))
+    insertIfNotExist.run((artifact, artifact.version.isSemantic, artifact.version.isPreRelease, artifact))
 
   def insertIfNotExist(artifacts: Seq[Artifact]): ConnectionIO[Int] =
-    insertIfNotExist.updateMany(artifacts.map(a => (a, a.version.isSemantic, a.version.isPreRelease)))
+    insertIfNotExist.updateMany(artifacts.map(a => (a, a.version.isSemantic, a.version.isPreRelease, a)))
 
-  private[sql] val insertIfNotExist: Update[(Artifact, Boolean, Boolean)] =
-    insertOrUpdateRequest(table, fields ++ versionFields, mavenReferenceFields)
+  private[sql] val insertIfNotExist: Update[(Artifact, Boolean, Boolean, Artifact)] =
+    insertOrUpdateRequest(table, fields ++ versionFields, mavenReferenceFields, fields)
 
   val count: Query0[Long] =
     selectRequest(table, Seq("COUNT(*)"))

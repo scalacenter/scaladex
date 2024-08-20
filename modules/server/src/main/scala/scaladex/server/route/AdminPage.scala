@@ -65,7 +65,14 @@ class AdminPage(env: Env, adminService: AdminService) {
                   redirect(Uri("/admin"), StatusCodes.SeeOther)
                 }
               }
+            } ~
+            post {
+              path("tasks" / Task.updateMavenArtifacts.name) {
+                adminService.updateMavenArtifacts(user)
+                redirect(Uri("/admin"), StatusCodes.SeeOther)
+              }
             }
+
         case _ =>
           complete(StatusCodes.Forbidden, view.html.forbidden(env, user))
       }

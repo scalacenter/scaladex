@@ -83,7 +83,9 @@ lazy val infra = project
       "io.circe" %% "circe-core",
       "io.circe" %% "circe-generic",
       "io.circe" %% "circe-parser"
-    ).map(_ % V.circe),
+    ).map(_ % V.circe) ++ Seq(
+      "io.circe" %% "circe-generic-extras"
+    ).map(_ % V.circeGenericExtra),
     Elasticsearch.settings(defaultPort = 9200),
     Postgres.settings(Compile, defaultPort = 5432, database = "scaladex"),
     javaOptions ++= {
@@ -243,6 +245,7 @@ lazy val V = new {
   val nscalaTime = "2.32.0"
   val scalatest = "3.2.19"
   val circe = "0.14.9"
+  val circeGenericExtra = "0.14.4"
   val json4s = "4.0.7"
   val coursier = "2.1.6"
 }
