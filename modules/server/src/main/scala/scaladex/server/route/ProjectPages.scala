@@ -113,11 +113,10 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
           }
         }
       },
-
       get {
-        path(projectM / "artifacts" ) { ref =>
-          artifactsParams { params =>  
-            getProjectOrRedirect(ref,user) { project => 
+        path(projectM / "artifacts") { ref =>
+          artifactsParams { params =>
+            getProjectOrRedirect(ref, user) { project =>
               val headerF = projectService.getProjectHeader(project)
               for {
                 header <- headerF
@@ -125,36 +124,46 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
                 val allArtifacts = header.toSeq.flatMap(_.artifacts)
 
                 val binaryVersions = allArtifacts
-                  .map(_.binaryVersion).distinct.sorted(BinaryVersion.ordering.reverse)
+                  .map(_.binaryVersion)
+                  .distinct
+                  .sorted(BinaryVersion.ordering.reverse)
 
                 // Group by artifact name
                 val artifactsByName = allArtifacts.groupBy(_.artifactName)
 
                 val groupedArtifacts = artifactsByName
-                  .groupBy { case (_, artifacts) =>  
-                    artifacts.maxBy(_.version).version 
+                  .groupBy {
+                    case (_, artifacts) =>
+                      artifacts.maxBy(_.version).version
                   }
-                  .map { case (latestVersion, artifactsByName) =>
-                    latestVersion -> artifactsByName
-                      .map { case (name, artifacts) => name -> artifacts
-                        .filter(_.version == latestVersion)
-                      }
-                      .filter { case(_, artifacts) =>
-                        params.binaryVersions.forall( binaryVersion => artifacts
-                          .exists(_.binaryVersion == binaryVersion))
-                      }
-                }.filter { case (_, artifactsByName) =>
-                    artifactsByName.nonEmpty
+                  .map {
+                    case (latestVersion, artifactsByName) =>
+                      latestVersion -> artifactsByName
+                        .map {
+                          case (name, artifacts) =>
+                            name -> artifacts
+                              .filter(_.version == latestVersion)
+                        }
+                        .filter {
+                          case (_, artifacts) =>
+                            params.binaryVersions.forall(binaryVersion =>
+                              artifacts
+                                .exists(_.binaryVersion == binaryVersion)
+                            )
+                        }
+                  }
+                  .filter {
+                    case (_, artifactsByName) =>
+                      artifactsByName.nonEmpty
                   }
 
-                val page = html.artifacts(env, user, project, header, groupedArtifacts,params, binaryVersions)
+                val page = html.artifacts(env, user, project, header, groupedArtifacts, params, binaryVersions)
                 complete(page)
               }
             }
           }
         }
       },
-
       get {
         path(projectM / "version-matrix") { ref =>
           getProjectOrRedirect(ref, user) { project =>
