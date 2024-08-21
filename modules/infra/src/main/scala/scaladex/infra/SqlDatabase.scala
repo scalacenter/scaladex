@@ -180,12 +180,14 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getAllGroupIds(): Future[Seq[Artifact.GroupId]] =
     run(ArtifactTable.selectGroupIds.to[Seq])
 
-  override def getAllArtifactIds(ref: Project.Reference): Future[Seq[(Artifact.GroupId, String)]] =
+  override def getArtifactIds(ref: Project.Reference): Future[Seq[(Artifact.GroupId, String)]] =
     run(ArtifactTable.selectArtifactIds.to[Seq](ref))
 
   override def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]] =
-    run(ArtifactTable.selectMavenReference.to[Seq])
+    run(ArtifactTable.selectAllMavenReferences.to[Seq])
 
+  override def getMavenReferences(ref: Project.Reference): Future[Seq[Artifact.MavenReference]] =
+    run(ArtifactTable.selectMavenReferences.to[Seq](ref))
   override def insertUser(userId: UUID, userInfo: UserInfo): Future[Unit] =
     run(UserSessionsTable.insert.run((userId, userInfo)).map(_ => ()))
 

@@ -107,8 +107,11 @@ object ArtifactTable {
   val selectArtifactIds: Query[Project.Reference, (Artifact.GroupId, String)] =
     selectRequest(table, Seq("DISTINCT group_id", "artifact_id"), keys = projectReferenceFields)
 
-  val selectMavenReference: Query0[Artifact.MavenReference] =
+  val selectAllMavenReferences: Query0[Artifact.MavenReference] =
     selectRequest(table, Seq("DISTINCT group_id", "artifact_id", "\"version\""))
+
+  val selectMavenReferences: Query[Project.Reference, Artifact.MavenReference] =
+    selectRequest(table, Seq("DISTINCT group_id", "artifact_id", "\"version\""), keys = projectReferenceFields)
 
   val selectMavenReferenceWithNoReleaseDate: Query0[Artifact.MavenReference] =
     selectRequest(table, Seq("group_id", "artifact_id", "\"version\""), where = Seq("release_date is NULL"))

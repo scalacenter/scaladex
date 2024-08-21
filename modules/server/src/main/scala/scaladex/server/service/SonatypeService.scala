@@ -6,6 +6,7 @@ import scala.concurrent.Future
 import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact._
+import scaladex.core.model.Project
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SonatypeClient
 import scaladex.core.util.ScalaExtensions._
@@ -84,19 +85,31 @@ class SonatypeService(
       result <- findAndIndexMissingArtifacts(groupId, artifactNameOpt, mavenReferenceFromDatabase.toSet)
     } yield s"Inserted $result poms"
 
-  def updateAllArtifacts(): Future[String] =
+  def republishArtifacts(): Future[String] =
     for {
-      mavenReferences <- database.getAllMavenReferences()
-      _ = logger.info(s"${mavenReferences.size} artifacts will be synced for new metadata.")
-      publishResult <- mavenReferences.mapSync(updateArtifact)
-      successCount = publishResult.count(_ == PublishResult.Success)
-      failedCount = publishResult.size - successCount
-    } yield s"Synced $successCount poms, while $failedCount poms failed to update."
+      projectStatuses <- database.getAllProjectsStatuses()
+      refs = projectStatuses.collect { case (ref, status) if status.isOk || status.isUnknown || status.isFailed => ref }
+      counts <- refs.mapSync(republishArtifacts)
+    } yield {
+      val successes = counts.map(_._1).sum
+      val failures = counts.map(_._2).sum
+      s"Re-published $successes artifacts ($failures failures)."
+    }
 
-  private def updateArtifact(ref: MavenReference): Future[PublishResult] =
-    sonatypeService.getPomFile(ref).map(ref -> _).flatMap {
-      case (mavenRef, Some((pomFile, creationDate))) =>
-        publishProcess.publishPom(mavenRef.toString(), pomFile, creationDate, None)
-      case _ => Future.successful(PublishResult.InvalidPom)
+  private def republishArtifacts(projectRef: Project.Reference): Future[(Int, Int)] =
+    for {
+      mavenReferences <- database.getMavenReferences(projectRef)
+      publishResult <- mavenReferences.mapSync(republishArtifact(projectRef, _))
+    } yield {
+      val successes = publishResult.count(_ == PublishResult.Success)
+      val failures = publishResult.size - successes
+      logger.info(s"Re-published $successes artifacts of $projectRef ($failures failures)")
+      (successes, failures)
+    }
+
+  private def republishArtifact(projectRef: Project.Reference, ref: MavenReference): Future[PublishResult] =
+    sonatypeService.getPomFile(ref).flatMap {
+      case Some((pomFile, creationDate)) => publishProcess.republishPom(projectRef, ref, pomFile, creationDate)
+      case _                             => Future.successful(PublishResult.InvalidPom)
     }
 }

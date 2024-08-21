@@ -137,9 +137,9 @@ class AdminService(
     tasks = tasks :+ task
   }
 
-  def updateMavenArtifacts(user: UserState): Unit = {
-    val task = TaskRunner.run(Task.updateMavenArtifacts, user.info.login, input = Seq.empty) { () =>
-      sonatypeSynchronizer.updateAllArtifacts()
+  def republishArtifacts(user: UserState): Unit = {
+    val task = TaskRunner.run(Task.republishArtifacts, user.info.login, input = Seq.empty) { () =>
+      sonatypeSynchronizer.republishArtifacts()
     }
     tasks = tasks :+ task
   }

@@ -4,9 +4,11 @@ import java.time.Instant
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Try
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.ActorSystem
+import scaladex.core.model.Artifact
 import scaladex.core.model.Env
 import scaladex.core.model.Project
 import scaladex.core.model.Sha1
@@ -49,17 +51,12 @@ class PublishProcess(
       userState: Option[UserState]
   ): Future[PublishResult] = {
     logger.info(s"Publishing POM $path")
-    val sha1 = Sha1(data)
-    val tempFile = filesystem.createTempFile(data, sha1, ".pom")
-    val future =
-      Future(pomsReader.loadOne(tempFile).get)
-        .flatMap { case (pom, _) => publishPom(pom, creationDate, userState) }
-        .recover { cause =>
-          logger.error(s"Invalid POM $path", cause)
-          PublishResult.InvalidPom
-        }
-    future.onComplete(_ => filesystem.deleteTempFile(tempFile))
-    future
+    Future(loadPom(data).get)
+      .flatMap(publishPom(_, creationDate, userState))
+      .recover { cause =>
+        logger.error(s"Invalid POM $path", cause)
+        PublishResult.InvalidPom
+      }
   }
 
   private def publishPom(
@@ -74,7 +71,7 @@ class PublishProcess(
         Future.successful(PublishResult.NoGithubRepo)
       case Some(repo) =>
         // userState can be empty when the request of publish is done through the scheduler
-        if (userState.isEmpty || userState.get.hasPublishingAuthority(env) || userState.get.repos.contains(repo)) {
+        if (userState.forall(userState => userState.hasPublishingAuthority(env) || userState.repos.contains(repo))) {
           converter.convert(pom, repo, creationDate) match {
             case Some((artifact, deps)) =>
               for {
@@ -97,6 +94,38 @@ class PublishProcess(
           Future.successful(PublishResult.Forbidden(userState.get.info.login, repo))
         }
     }
+  }
+
+  def republishPom(
+      repo: Project.Reference,
+      ref: Artifact.MavenReference,
+      data: String,
+      creationDate: Instant
+  ): Future[PublishResult] =
+    Future(loadPom(data).get)
+      .flatMap { pom =>
+        converter.convert(pom, repo, creationDate).map(_._1) match {
+          case Some(artifact) if artifact.mavenReference == ref =>
+            database.insertArtifact(artifact).map(_ => PublishResult.Success)
+          case Some(artifact) =>
+            logger.error(s"Unexpected ref ${artifact.mavenReference}")
+            Future.successful(PublishResult.InvalidPom)
+          case None =>
+            logger.warn(s"Cannot convert $ref to valid Scala artifact.")
+            Future.successful(PublishResult.InvalidPom)
+        }
+      }
+      .recover { cause =>
+        logger.warn(s"Invalid POM $ref", cause)
+        PublishResult.InvalidPom
+      }
+
+  private def loadPom(data: String): Try[ArtifactModel] = {
+    val sha1 = Sha1(data)
+    val tempFile = filesystem.createTempFile(data, sha1, ".pom")
+    val res = pomsReader.loadOne(tempFile)
+    filesystem.deleteTempFile(tempFile)
+    res
   }
 }
 

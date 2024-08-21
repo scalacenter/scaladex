@@ -52,7 +52,7 @@ class GithubUpdater(database: WebDatabase, github: GithubClient)(implicit ec: Ex
 
       case GithubResponse.MovedPermanently((destination, info)) =>
         val status = GithubStatus.Moved(now, destination)
-        logger.info(s"$repo moved to $status")
+        logger.info(s"$repo moved to $destination")
         database.moveProject(repo, info, status).map(_ => status)
 
       case GithubResponse.Failed(code, reason) =>
