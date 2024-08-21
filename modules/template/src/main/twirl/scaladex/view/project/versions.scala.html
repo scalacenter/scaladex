@@ -28,8 +28,10 @@
     <div class="container">
       <div class="content-project artifacts box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">
-        <div class="artifacts-header">
-          <select class="other-artifacts selectpicker" title="Other Artifacts"
+        @artifactsFilters(project.reference, params, allBinaryVersions)
+        <h2>
+          @artifactName
+          <select class="selectpicker" title="Other Artifacts"
             data-style="btn-default" data-selected-text-format="static" 
             onchange="window.location=this.value">
             @for(name <- header.allArtifactNames) {
@@ -38,13 +40,9 @@
               </option>
             }
           </select>
-          <h2>@artifactName</h2>
-          @artifactsFilters(project.reference, params, allBinaryVersions)
-          <div class="result-count">
-            <b>@artifactByVersions.size</b>
-            @Formats.wordPlural(artifactByVersions.size, "version") found for
-            <b>@artifactName</b>
-          </div>
+        </h2>
+        <div class="result-count">
+          Found <b>@artifactByVersions.size</b> @Formats.wordPlural(artifactByVersions.size, "version")
         </div>
         @if(artifactByVersions.isEmpty) {
           <div>We can't find any release that matches all you criteria</div>

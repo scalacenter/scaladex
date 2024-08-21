@@ -274,21 +274,29 @@
     }
   }
 
-  .artifacts-header {
-    margin-bottom: 50px;
-    
-    .other-artifacts {
-      float: right;
-    }
-
+  .artifacts {
     h2 {
       margin-top: 0;
       margin-bottom: 24px;
       color: $brand-secondary;
+      .bootstrap-select {
+        margin-left: 7px;
+        width: 150px;
+      }
+      .btn {
+        padding: 10px 10px 6px 10px;
+      }
+      .btn-default {
+        color: $gray-light;
+      }
+      .filter-option {
+        padding-right: 4px;
+      }
+      .caret {
+        top: 55%;
+      }
     }
-  }
-
-  .artifacts {
+    
     .center {
       @media (min-width: $screen-md-min) {
         display: flex;
@@ -330,9 +338,12 @@
         display: inline;
       }
     }
-    .btn-primary {
+    .btn-secondary {
       .filter-option-inner-inner {
-        color: white;
+        color: $headings-color;
+      }
+      .caret {
+        color: $headings-color;
       }
     }
     .dropdown {
@@ -350,7 +361,6 @@
       }
     }
     .result-count {
-      float: right;
       font-size: 16px;
     }
   }

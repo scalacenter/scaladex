@@ -40,10 +40,61 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
         path(projectM)(getProjectPage(_, user))
       },
       get {
+        path(projectM / "artifacts") { ref =>
+          artifactsParams { params =>
+            getProjectOrRedirect(ref, user) { project =>
+              val headerF = projectService.getProjectHeader(project)
+              for {
+                header <- headerF
+              } yield {
+                val allArtifacts = header.toSeq.flatMap(_.artifacts)
+
+                val binaryVersions = allArtifacts
+                  .map(_.binaryVersion)
+                  .distinct
+                  .sorted(BinaryVersion.ordering.reverse)
+
+                // Group by artifact name
+                val artifactsByName = allArtifacts.groupBy(_.artifactName)
+
+                val groupedArtifacts = artifactsByName
+                  .groupBy {
+                    case (_, artifacts) =>
+                      artifacts.maxBy(_.version).version
+                  }
+                  .map {
+                    case (latestVersion, artifactsByName) =>
+                      latestVersion -> artifactsByName
+                        .map {
+                          case (name, artifacts) =>
+                            name -> artifacts
+                              .filter(_.version == latestVersion)
+                        }
+                        .filter {
+                          case (_, artifacts) =>
+                            params.binaryVersions.forall(binaryVersion =>
+                              artifacts
+                                .exists(_.binaryVersion == binaryVersion)
+                            )
+                        }
+                  }
+                  .filter {
+                    case (_, artifactsByName) =>
+                      artifactsByName.nonEmpty
+                  }
+
+                val page = html.artifacts(env, user, project, header, groupedArtifacts, params, binaryVersions)
+                complete(page)
+              }
+            }
+          }
+        }
+      },
+      get {
         path(projectM / "artifacts" / artifactNameM) { (ref, artifactName) =>
           artifactsParams { params =>
             getProjectOrRedirect(ref, user) { project =>
-              val artifactsF = database.getArtifacts(ref, artifactName, params.preReleases)
+              val artifactsF = database.getArtifacts(ref, artifactName, params.stableOnly)
               val headerF = projectService.getProjectHeader(project).map(_.get)
               for (artifacts <- artifactsF; header <- headerF) yield {
                 val binaryVersions = artifacts
@@ -107,57 +158,6 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
                   directDeps,
                   reverseDeps
                 )
-                complete(page)
-              }
-            }
-          }
-        }
-      },
-      get {
-        path(projectM / "artifacts") { ref =>
-          artifactsParams { params =>
-            getProjectOrRedirect(ref, user) { project =>
-              val headerF = projectService.getProjectHeader(project)
-              for {
-                header <- headerF
-              } yield {
-                val allArtifacts = header.toSeq.flatMap(_.artifacts)
-
-                val binaryVersions = allArtifacts
-                  .map(_.binaryVersion)
-                  .distinct
-                  .sorted(BinaryVersion.ordering.reverse)
-
-                // Group by artifact name
-                val artifactsByName = allArtifacts.groupBy(_.artifactName)
-
-                val groupedArtifacts = artifactsByName
-                  .groupBy {
-                    case (_, artifacts) =>
-                      artifacts.maxBy(_.version).version
-                  }
-                  .map {
-                    case (latestVersion, artifactsByName) =>
-                      latestVersion -> artifactsByName
-                        .map {
-                          case (name, artifacts) =>
-                            name -> artifacts
-                              .filter(_.version == latestVersion)
-                        }
-                        .filter {
-                          case (_, artifacts) =>
-                            params.binaryVersions.forall(binaryVersion =>
-                              artifacts
-                                .exists(_.binaryVersion == binaryVersion)
-                            )
-                        }
-                  }
-                  .filter {
-                    case (_, artifactsByName) =>
-                      artifactsByName.nonEmpty
-                  }
-
-                val page = html.artifacts(env, user, project, header, groupedArtifacts, params, binaryVersions)
                 complete(page)
               }
             }
@@ -264,7 +264,7 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
   private val artifactsParams: Directive1[ArtifactsPageParams] =
     parameters(
       "binary-versions".repeated,
-      "pre-releases".as[Boolean].withDefault(false)
+      "stable-only".as[Boolean].withDefault(false)
     ).tmap {
       case (rawbinaryVersions, preReleases) =>
         val binaryVersions = rawbinaryVersions

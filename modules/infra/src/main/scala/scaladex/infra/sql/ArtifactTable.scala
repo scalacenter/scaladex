@@ -85,8 +85,8 @@ object ArtifactTable {
       where = Seq("organization=?", "repository=?", "artifact_name=?", "version=?")
     )
 
-  def selectArtifactByParams(preReleases: Boolean): Query[(Project.Reference, Artifact.Name), Artifact] = {
-    val preReleaseFilter = if (preReleases) "true" else "is_prerelease=false"
+  def selectArtifactByParams(stableOnly: Boolean): Query[(Project.Reference, Artifact.Name), Artifact] = {
+    val preReleaseFilter = if (stableOnly) "is_prerelease=false" else "true"
     Query[(Project.Reference, Artifact.Name), Artifact](
       s"""|SELECT ${fields.mkString(", ")}
           |FROM $table

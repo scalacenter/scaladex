@@ -4,9 +4,9 @@ import scaladex.core.model.BinaryVersion
 
 case class ArtifactsPageParams(
     binaryVersions: Seq[BinaryVersion],
-    preReleases: Boolean
+    stableOnly: Boolean
 ) {
-  def binaryVersionsSummary: Option[String] = 
+  def binaryVersionsSummary: Option[String] =
     Option.when(binaryVersions.nonEmpty)(binaryVersions.mkString(", "))
 }
 

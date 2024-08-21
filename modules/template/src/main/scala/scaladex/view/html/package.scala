@@ -85,7 +85,7 @@ package object html {
   def versionsUri(ref: Project.Reference, artifactName: Artifact.Name, params: ArtifactsPageParams): Uri =
     Uri(s"/$ref/artifacts/$artifactName")
       .appendQuery("binary-versions", params.binaryVersions.map(_.label))
-      .appendQuery(("pre-releases", params.preReleases.toString))
+      .appendQuery(("stable-only", params.stableOnly.toString))
 
   def versionsUri(ref: Project.Reference, artifactName: Artifact.Name, binaryVersion: Option[BinaryVersion]): Uri =
     Uri(s"/$ref/artifacts/$artifactName")
@@ -94,7 +94,7 @@ package object html {
   def artifactsUri(ref: Project.Reference, params: ArtifactsPageParams): Uri =
     Uri(s"/$ref/artifacts")
       .appendQuery("binary-versions", params.binaryVersions.map(_.label))
-      .appendQuery(("pre-releases", params.preReleases.toString))
+      .appendQuery(("stable-only", params.stableOnly.toString))
 
   def artifactsUri(ref: Project.Reference, binaryVersion: Option[BinaryVersion]): Uri =
     Uri(s"/$ref/artifacts")

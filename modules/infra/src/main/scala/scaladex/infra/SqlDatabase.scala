@@ -206,9 +206,9 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getArtifacts(
       ref: Project.Reference,
       artifactName: Artifact.Name,
-      preReleases: Boolean
+      stableOnly: Boolean
   ): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifactByParams(preReleases).to[Seq](ref, artifactName))
+    run(ArtifactTable.selectArtifactByParams(stableOnly).to[Seq](ref, artifactName))
 
   override def updateLatestVersion(ref: Artifact.MavenReference): Future[Unit] = {
     val transaction = for {

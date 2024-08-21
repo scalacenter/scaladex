@@ -176,6 +176,15 @@
           $(".js-keywords-multiple").select2({tags: true});
           $(".js-stackoverflowtags-multiple").select2({tags: true});
           $('.edit-project input[type="checkbox"]').bootstrapSwitch();
+          $('#stable-only').bootstrapSwitch({
+            handleWidth: 30,
+            labelWidth: 78,
+            labelText: 'Stable Only',
+            onSwitchChange: function(event, state){
+              console.log(event)
+              event.target.form.submit()
+            }
+          });
         });
 
         // Run client scalajs code (for instance, autocomplete)

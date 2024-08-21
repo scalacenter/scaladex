@@ -6,9 +6,9 @@
 
 @(ref: Project.Reference, params: ArtifactsPageParams, allBinaryVersions: Seq[BinaryVersion])
 
-<form action="#" action="GET">
+<form class="float-right" action="#" action="GET">
   <select class="selectpicker" name="binary-versions" 
-    title= "@params.binaryVersionsSummary.getOrElse("Scala Versions")" multiple data-style="btn-primary" data-actions-box="true" data-selected-text-format="static"
+    title= "@params.binaryVersionsSummary.getOrElse("Scala Versions")" multiple data-style="btn-secondary" data-actions-box="true" data-selected-text-format="static"
     onchange="this.form.submit()">
     @for((platform, binaryVersions) <- allBinaryVersions.sorted.groupBy(_.platform)) {
       <optgroup label="@platform">
@@ -21,8 +21,5 @@
       </optgroup>
     }
   </select>
-  <label class="filter btn btn-default">
-    <input type="checkbox"  @if(params.preReleases) { checked } name="pre-releases" value="true" onclick="this.form.submit()">
-    Show pre-release versions
-  </label>
+  <input type="checkbox" id="stable-only" name="stable-only" value="true" @if(params.stableOnly) { checked }>
 </form>

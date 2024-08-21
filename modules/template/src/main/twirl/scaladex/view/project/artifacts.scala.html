@@ -28,12 +28,11 @@
     <div class="container">
       <div class="content-project artifacts box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">
-        <div class="artifacts-header">
-          @artifactsFilters(project.reference, params, allBinaryVersions)
-          <div class="result-count">
-            <b>@groupedArtifacts.values.flatten.size</b>
-            @Formats.wordPlural(groupedArtifacts.values.flatten.size, "artifact") found
-          </div>
+        @artifactsFilters(project.reference, params, allBinaryVersions)
+        <h2 style="visibility:hidden;">Artifacts</h2>
+        <div class="result-count">
+          Found <b>@groupedArtifacts.values.flatten.size</b>
+          @Formats.wordPlural(groupedArtifacts.values.flatten.size, "artifact")
         </div>
         @if(groupedArtifacts.isEmpty) {
           <div>We can't find any artifacts for this project.</div>
