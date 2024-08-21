@@ -25,15 +25,15 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact.MavenReference
 import scaladex.core.model.SbtPlugin
 import scaladex.core.model.SemanticVersion
-import scaladex.core.service.SonatypeClient
+import scaladex.core.service.MavenCentralClient
 import scaladex.core.util.JsoupUtils
 
-class SonatypeClientImpl()(implicit val system: ActorSystem)
+class MavenCentralClientImpl()(implicit val system: ActorSystem)
     extends CommonAkkaHttpClient
-    with SonatypeClient
+    with MavenCentralClient
     with LazyLogging {
   private implicit val ec: ExecutionContextExecutor = system.dispatcher
-  private val sonatypeUri = "https://repo1.maven.org/maven2"
+  private val baseUri = "https://repo1.maven.org/maven2"
   lazy val poolClientFlow: Flow[
     (HttpRequest, Promise[HttpResponse]),
     (Try[HttpResponse], Promise[HttpResponse]),
@@ -46,7 +46,7 @@ class SonatypeClientImpl()(implicit val system: ActorSystem)
       )
 
   def getAllArtifactIds(groupId: Artifact.GroupId): Future[Seq[Artifact.ArtifactId]] = {
-    val uri = s"$sonatypeUri/${groupId.mavenUrl}/"
+    val uri = s"$baseUri/${groupId.mavenUrl}/"
     val request =
       HttpRequest(uri = uri)
 
@@ -60,7 +60,7 @@ class SonatypeClientImpl()(implicit val system: ActorSystem)
   }
 
   def getAllVersions(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[SemanticVersion]] = {
-    val uri = s"$sonatypeUri/${groupId.mavenUrl}/${artifactId.value}/"
+    val uri = s"$baseUri/${groupId.mavenUrl}/${artifactId.value}/"
     val request = HttpRequest(uri = uri)
 
     val future = for {
@@ -104,7 +104,7 @@ class SonatypeClientImpl()(implicit val system: ActorSystem)
       .parse(mavenReference.artifactId)
       .map { artifactId =>
         val pomUrl = getPomUrl(artifactId, mavenReference.version)
-        val uri = s"$sonatypeUri/${groupIdUrl}/${mavenReference.artifactId}/${mavenReference.version}/$pomUrl"
+        val uri = s"$baseUri/${groupIdUrl}/${mavenReference.artifactId}/${mavenReference.version}/$pomUrl"
         val request = HttpRequest(uri = uri)
         queueRequest(request).map(Option.apply)
       }
