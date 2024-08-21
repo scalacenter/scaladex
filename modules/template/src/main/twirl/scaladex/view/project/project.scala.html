@@ -1,5 +1,6 @@
 @import scaladex.core.model._
 @import scaladex.view.Formats
+@import scaladex.view.ProjectTab
 @import scaladex.view.html.main
 
 
@@ -13,7 +14,7 @@
 )
 @main(env, title = project.repository.value, user, extraMeta = project.twitterCard.toHeadMeta, extraMetaProperty = project.ogp.toHeadMetaProperty) {
   <main id="container-project">
-    @headproject(env, user, project, header, "Project")
+    @headproject(env, user, project, header, ProjectTab.Main)
     <div class="container">
       <div class="row">
         <div class="col-md-8">

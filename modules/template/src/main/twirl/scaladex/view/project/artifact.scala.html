@@ -4,6 +4,7 @@
 @import scaladex.view.Formats
 @import scaladex.view.html._
 @import scaladex.view.InstallTab
+@import scaladex.view.ProjectTab
 
 @(
     env: Env,
@@ -18,7 +19,7 @@
 )
 @main(env, title = project.repository.toString, user) {
   <main id="container-project">
-    @headproject(env, user, project, header, "Artifacts")
+    @headproject(env, user, project, header, ProjectTab.Versions)
     <div class="container">
       <div class="row">
         <div class="col-md-8">

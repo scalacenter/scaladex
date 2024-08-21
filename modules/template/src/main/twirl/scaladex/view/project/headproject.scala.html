@@ -3,13 +3,14 @@
 @import scaladex.core.model.UserState
 @import scaladex.core.model.Env
 @import scaladex.view.Formats._
+@import scaladex.view.ProjectTab
 @import scaladex.view.html.ensureUri
 
 
-@(env: Env, user: Option[UserState], project: Project, header: Option[ProjectHeader], activeTab: String)
+@(env: Env, user: Option[UserState], project: Project, header: Option[ProjectHeader], activeTab: ProjectTab)
 
 @canEdit = @{user.exists(_.canEdit(project.reference, env))}
-@isActive(nameTab: String) = @{if(nameTab == activeTab) "active" else ""}
+@isActive(tab: ProjectTab) = @{if(tab == activeTab) "active" else ""}
 <div class="head-project">
   <div class="container">
     <div class="info-project">
@@ -19,7 +20,7 @@
           <a href="/@project.reference">@project.repository</a>
           @for(header <- header) {
             <span class="head-last-version">&nbsp;&nbsp;@header.latestVersion.encode</span>
-          } 
+          }
         </h1>
 
         @if(project.settings.contributorsWanted) {
@@ -62,7 +63,7 @@
             <div>
               Scala versions:
               @for(scalaVersion <- header.latestScalaVersions.sorted.reverse) {
-                <a href="@header.artifactsUrl(scalaVersion)" class="targets">@scalaVersion.version</a>
+                <a href="@header.versionsUrl(scalaVersion)" class="targets">@scalaVersion.version</a>
               }
             </div>
           }
@@ -71,7 +72,7 @@
             <div>
               Scala.js versions:
               @for(platform <- header.latestScalaJsVersions.sorted.reverse) {
-                <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
+                <a href="@header.versionsUrl(platform)" class="targets">@platform.version</a>
               }
             </div>
           }
@@ -80,7 +81,7 @@
             <div>
               Scala Native versions:
               @for(platform <- header.latestScalaNativeVersions.sorted.reverse) {
-                <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
+                <a href="@header.versionsUrl(platform)" class="targets">@platform.version</a>
               }
             </div>
           }
@@ -89,7 +90,7 @@
             <div>
               sbt plugins:
               @for(platform <- header.latestSbtVersions.sorted.reverse) {
-                <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
+                <a href="@header.versionsUrl(platform)" class="targets">@platform.version</a>
               }
             </div>
           }
@@ -98,7 +99,7 @@
             <div>{Artifact, BinaryVersion, Project, SemanticVersion, UserState, Env}
               Mill plugins:
               @for(platform <- header.latestMillVersions.sorted.reverse) {
-                <a href="@header.artifactsUrl(platform)" class="targets">@platform.version</a>
+                <a href="@header.versionsUrl(platform)" class="targets">@platform.version</a>
               }
             </div>
           }
@@ -109,15 +110,15 @@
       <div class="col-md-12">
         <div class="project-nav-bar">
           <ul class="nav nav-tabs">
-            <li role="project" class="@isActive("Project")"><a href="/@project.reference">Project</a></li>
+            <li role="project" class="@isActive(ProjectTab.Main)"><a href="/@project.reference">Project</a></li>
             @for(header <- header) {
-              <!-- <li role="artifacts" class="@isActive("Artifacts")"><a href="@header.artifactsUrl">@plural(header.versionCount, "Version")</a></li> -->
-              <li role="artifacts" class="@isActive("Artifacts")"><a href="/@project.reference/artifacts">Artifacts</a></li>
-              <!-- <li role="version-matrix" class="@isActive("Version Matrix")"><a href="/@project.reference/version-matrix">Version Matrix</a></li> -->
-              <li role="badges" class="@isActive("Badges")"><a href="/@project.reference/badges">Badges</a></li>
+              <li role="versions" class="@isActive(ProjectTab.Versions)"><a href="@header.versionsUrl">@plural(header.versionCount, "Version")</a></li>
+              <li role="artifacts" class="@isActive(ProjectTab.Artifacts)"><a href="/@project.reference/artifacts">Artifacts</a></li>
+              <!-- <li role="version-matrix" class="@isActive(ProjectTab.VersionMatrix)"><a href="/@project.reference/version-matrix">Version Matrix</a></li> -->
+              <li role="badges" class="@isActive(ProjectTab.Badges)"><a href="/@project.reference/badges">Badges</a></li>
             }
             @if(canEdit) {
-              <li role="settings" class="@isActive("Settings")">
+              <li role="settings" class="@isActive(ProjectTab.Settings)">
                 <a data-toggle="tooltip" data-placement="bottom" title="edit project's settings" href="/@project.reference/settings">
                   <i class="fa-solid fa-gear"></i>
                   Settings
