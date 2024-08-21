@@ -82,12 +82,12 @@ package object html {
       .appendQuery("languages", params.languages.map(_.label))
       .appendQuery("platforms", params.platforms.map(_.label))
 
-  def artifactsUri(ref: Project.Reference, artifactName: Artifact.Name, params: ArtifactsPageParams): Uri =
+  def versionsUri(ref: Project.Reference, artifactName: Artifact.Name, params: ArtifactsPageParams): Uri =
     Uri(s"/$ref/artifacts/$artifactName")
       .appendQuery("binary-versions", params.binaryVersions.map(_.label))
       .appendQuery(("pre-releases", params.preReleases.toString))
 
-  def artifactsUri(ref: Project.Reference, artifactName: Artifact.Name, binaryVersion: Option[BinaryVersion]): Uri =
+  def versionsUri(ref: Project.Reference, artifactName: Artifact.Name, binaryVersion: Option[BinaryVersion]): Uri =
     Uri(s"/$ref/artifacts/$artifactName")
       .appendQuery("binary-versions", binaryVersion.map(_.label))
 

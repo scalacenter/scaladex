@@ -28,54 +28,14 @@
     <div class="container">
       <div class="content-project artifacts box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">
-      <div class="clearfix">
-        <div class="float-right">
-          <div class="artifacts-filter">
-            @artifactsfilters(params,allBinaryVersions)
+        <div class="artifacts-filter">
+          @filters()
+          <div class="result-count">
+            <b>@artifactByVersions.size</b>
+            @Formats.wordPlural(artifactByVersions.size, "version") found for
+            <b>@artifactName</b>
           </div>
         </div>
-        <h3 class="artifact-version">@artifactName</h3>
-      </div>
-      
-        <div class="options-checked">
-          <ul class="list-inline">
-            @for(binaryVersion <- params.binaryVersions) {
-              <li>
-                <a href="@artifactsUri(project.reference, artifactName, params.remove(binaryVersion))" class="label label-default">
-                  <i class="fa-solid fa-xmark"></i>
-                  @binaryVersion
-                </a>
-              </li>
-            }
-            @if(params.preReleases) {
-              <li>
-                <a class="label label-info" href="@artifactsUri(project.reference, artifactName, params.withPreReleases(false))">
-                  <i class="fa-solid fa-xmark"></i>
-                  Show pre-release versions
-                </a>
-              </li>
-            }
-            @if(params.binaryVersions.nonEmpty || params.preReleases) {
-              <li>
-                <a href="@artifactsUri(project.reference, artifactName, ArtifactsPageParams.empty)" class="label label-warning clear-all">
-                  <i class="fa-solid fa-xmark"></i>
-                  Clear all filters
-                </a>
-              </li>
-            }
-          </ul>
-        </div>
-        <div class="clearfix">
-          <div class="float-right">
-            <div class="result-count">
-              <b>@artifactByVersions.size</b>
-              @Formats.wordPlural(artifactByVersions.size, "version") found for
-              <b>@artifactName</b>
-            </div>
-          </div>
-        </div>
-        <br>
-        
         @if(artifactByVersions.isEmpty) {
           <div>We can't find any release that matches all you criteria</div>
         } else {
@@ -125,4 +85,64 @@
       </div>
     </div>
   </main>
+}
+
+@filters() = {
+  <form action="#" action="GET">
+    <select class="selectpicker" data-style="btn-primary" onchange="window.location=this.value">
+      @for(name <- header.allArtifactNames) {
+        <option value="@versionsUri(project.reference, name, params)" @if(name == artifactName) {selected}>
+          @name
+        </option>
+      }
+    </select>
+
+    <select class="selectpicker" name="binary-versions" 
+      title= "Scala Versions" multiple data-style="btn-primary" data-actions-box="true" data-selected-text-format="static"
+      onchange="this.form.submit()">
+      @for((platform, binaryVersions) <- allBinaryVersions.sorted.groupBy(_.platform)) {
+        <optgroup label="@platform">
+          @for(binaryVersion <- binaryVersions.reverse) {
+              <option value="@binaryVersion.label"
+              @if(params.binaryVersions.contains(binaryVersion)) {selected}>
+              @binaryVersion.language.label
+              </option>
+          }
+        </optgroup>
+      }
+    </select>
+    <label class="filter btn btn-default">
+      <input type="checkbox"  @if(params.preReleases) { checked } name="pre-releases" value="true" onclick="this.form.submit()">
+      Show pre-release versions
+    </label>
+  </form>
+  <div class="options-checked">
+    <ul class="list-inline">
+      @for(binaryVersion <- params.binaryVersions) {
+        <li>
+          <a href="@versionsUri(project.reference, artifactName, params.remove(binaryVersion))" class="label label-default">
+            <i class="fa-solid fa-xmark"></i>
+            @binaryVersion
+          </a>
+        </li>
+      }
+      @if(params.preReleases) {
+        <li>
+          <a class="label label-info" href="@versionsUri(project.reference, artifactName, params.withPreReleases(false))">
+            <i class="fa-solid fa-xmark"></i>
+            Show pre-release versions
+          </a>
+        </li>
+      }
+      @if(params.binaryVersions.nonEmpty || params.preReleases) {
+        <li>
+          <a href="@versionsUri(project.reference, artifactName, ArtifactsPageParams.empty)" class="label label-warning clear-all">
+            <i class="fa-solid fa-xmark"></i>
+            Clear all filters
+          </a>
+        </li>
+      }
+    </ul>
+    
+  </div>
 }
