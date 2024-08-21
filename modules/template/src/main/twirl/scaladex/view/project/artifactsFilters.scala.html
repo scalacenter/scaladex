@@ -1,0 +1,28 @@
+@import scaladex.core.model._
+@import scaladex.core.web.ArtifactsPageParams
+@import scaladex.view.html._
+
+@import java.time.Instant
+
+@(ref: Project.Reference, params: ArtifactsPageParams, allBinaryVersions: Seq[BinaryVersion])
+
+<form action="#" action="GET">
+  <select class="selectpicker" name="binary-versions" 
+    title= "@params.binaryVersionsSummary.getOrElse("Scala Versions")" multiple data-style="btn-primary" data-actions-box="true" data-selected-text-format="static"
+    onchange="this.form.submit()">
+    @for((platform, binaryVersions) <- allBinaryVersions.sorted.groupBy(_.platform)) {
+      <optgroup label="@platform">
+        @for(binaryVersion <- binaryVersions.reverse) {
+            <option value="@binaryVersion.label"
+            @if(params.binaryVersions.contains(binaryVersion)) {selected}>
+            @binaryVersion.language.label
+            </option>
+        }
+      </optgroup>
+    }
+  </select>
+  <label class="filter btn btn-default">
+    <input type="checkbox"  @if(params.preReleases) { checked } name="pre-releases" value="true" onclick="this.form.submit()">
+    Show pre-release versions
+  </label>
+</form>

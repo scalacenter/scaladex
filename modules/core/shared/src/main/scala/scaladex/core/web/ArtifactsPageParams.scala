@@ -6,8 +6,8 @@ case class ArtifactsPageParams(
     binaryVersions: Seq[BinaryVersion],
     preReleases: Boolean
 ) {
-  def remove(b: BinaryVersion): ArtifactsPageParams = copy(binaryVersions = binaryVersions.filterNot(_ == b))
-  def withPreReleases(preReleases: Boolean): ArtifactsPageParams = copy(preReleases = preReleases)
+  def binaryVersionsSummary: Option[String] = 
+    Option.when(binaryVersions.nonEmpty)(binaryVersions.mkString(", "))
 }
 
 object ArtifactsPageParams {
