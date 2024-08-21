@@ -28,7 +28,17 @@
     <div class="container">
       <div class="content-project artifacts box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">
-        <div class="artifacts-filter">
+        <div class="artifacts-header">
+          <select class="other-artifacts selectpicker" title="Other Artifacts"
+            data-style="btn-default" data-selected-text-format="static" 
+            onchange="window.location=this.value">
+            @for(name <- header.allArtifactNames) {
+              <option value="@versionsUri(project.reference, name, params)" @if(name == artifactName) {selected}>
+                @name
+              </option>
+            }
+          </select>
+          <h2>@artifactName</h2>
           @filters()
           <div class="result-count">
             <b>@artifactByVersions.size</b>
@@ -89,14 +99,6 @@
 
 @filters() = {
   <form action="#" action="GET">
-    <select class="selectpicker" data-style="btn-primary" onchange="window.location=this.value">
-      @for(name <- header.allArtifactNames) {
-        <option value="@versionsUri(project.reference, name, params)" @if(name == artifactName) {selected}>
-          @name
-        </option>
-      }
-    </select>
-
     <select class="selectpicker" name="binary-versions" 
       title= "Scala Versions" multiple data-style="btn-primary" data-actions-box="true" data-selected-text-format="static"
       onchange="this.form.submit()">

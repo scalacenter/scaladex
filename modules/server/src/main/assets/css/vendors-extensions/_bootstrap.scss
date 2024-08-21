@@ -42,7 +42,6 @@ body {
 // Buttons
 //------------------------------------------------------------------------------
 .btn {
-    border: none;
     @include button-size(($padding-base-vertical + 1), ($padding-base-horizontal + 8), $font-size-base, $line-height-base, $btn-border-radius-base);
     &:active,
     &.active {

@@ -273,12 +273,22 @@
       }
     }
   }
-  
-  .artifacts {
-    .artifacts-filter {
-      margin-top: -10px;
-      margin-bottom: 50px;
+
+  .artifacts-header {
+    margin-bottom: 50px;
+    
+    .other-artifacts {
+      float: right;
     }
+
+    h2 {
+      margin-top: 0;
+      margin-bottom: 24px;
+      color: $brand-secondary;
+    }
+  }
+
+  .artifacts {
     .center {
       @media (min-width: $screen-md-min) {
         display: flex;
@@ -320,8 +330,10 @@
         display: inline;
       }
     }
-    .filter-option-inner-inner {
-      color: white;
+    .btn-primary {
+      .filter-option-inner-inner {
+        color: white;
+      }
     }
     .dropdown {
       margin-right: 15px;
@@ -343,10 +355,8 @@
     }
   }
   .artifact {
-    h3 {
+    h2 {
       margin-top: 0;
-      font-size: 2em;
-      display: inline;
       color: $brand-secondary;
       a {
         color: inherit;

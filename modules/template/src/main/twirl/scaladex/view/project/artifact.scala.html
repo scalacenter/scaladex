@@ -42,13 +42,13 @@
                   </select>
                 </form>
               </div>
-              <h3>
+              <h2>
                 <a href="@versionsUri(project.reference, artifact.artifactName, params.binaryVersion)">@artifact.artifactName</a>
                 <span class="artifact-version">@artifact.version</span>
                 @if(project.settings.deprecatedArtifacts.contains(artifact.artifactName)) {
                   <span class="label label-warning">Deprecated</span>
                 }
-              </h3>
+              </h2>
               <hr>
               @info("Group ID") { @artifact.groupId }
               @info("Artifact ID") { @artifact.artifactId }
