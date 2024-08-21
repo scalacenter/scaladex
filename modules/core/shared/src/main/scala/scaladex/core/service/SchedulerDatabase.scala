@@ -29,8 +29,9 @@ trait SchedulerDatabase extends WebDatabase {
   def updateArtifacts(artifacts: Seq[Artifact], newRef: Project.Reference): Future[Int]
   def updateArtifactReleaseDate(reference: MavenReference, releaseDate: Instant): Future[Int]
   def getAllGroupIds(): Future[Seq[Artifact.GroupId]]
-  def getAllArtifactIds(ref: Project.Reference): Future[Seq[(Artifact.GroupId, String)]]
+  def getArtifactIds(ref: Project.Reference): Future[Seq[(Artifact.GroupId, String)]]
   def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]]
+  def getMavenReferences(ref: Project.Reference): Future[Seq[Artifact.MavenReference]]
   def getDependencies(projectRef: Project.Reference): Future[Seq[ArtifactDependency]]
   def updateLatestVersion(ref: MavenReference): Future[Unit]
 }

@@ -139,6 +139,8 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def updateArtifacts(allArtifacts: Seq[Artifact], newRef: Project.Reference): Future[Int] = ???
   override def getAllGroupIds(): Future[Seq[Artifact.GroupId]] = ???
   override def getAllMavenReferences(): Future[Seq[Artifact.MavenReference]] = ???
+
+  override def getMavenReferences(ref: Project.Reference): Future[Seq[Artifact.MavenReference]] = ???
   override def insertUser(userId: UUID, userInfo: UserInfo): Future[Unit] = ???
   override def updateUser(userId: UUID, userInfo: UserState): Future[Unit] = ???
   override def getUser(userId: UUID): Future[Option[UserState]] = ???
@@ -208,7 +210,7 @@ class InMemoryDatabase extends SchedulerDatabase {
     Future.successful(res)
   }
 
-  override def getAllArtifactIds(ref: Project.Reference): Future[Seq[(Artifact.GroupId, String)]] =
+  override def getArtifactIds(ref: Project.Reference): Future[Seq[(Artifact.GroupId, String)]] =
     Future.successful(allArtifacts(ref).map(a => (a.groupId, a.artifactId)).toSeq)
 
   override def updateLatestVersion(ref: Artifact.MavenReference): Future[Unit] =

@@ -23,7 +23,7 @@ class AdminService(
     database: SchedulerDatabase,
     searchEngine: SearchEngine,
     githubClientOpt: Option[GithubClient],
-    sonatypeSynchronizer: SonatypeService
+    mavenCentralService: MavenCentralService
 )(implicit actorSystem: ActorSystem)
     extends LazyLogging {
   import actorSystem.dispatcher
@@ -50,8 +50,8 @@ class AdminService(
       } ++ (
         if (!env.isLocal) {
           Seq(
-            new JobScheduler(Job.missingMavenArtifacts, sonatypeSynchronizer.findMissing),
-            new JobScheduler(Job.nonStandardArtifacts, sonatypeSynchronizer.findNonStandard)
+            new JobScheduler(Job.missingMavenArtifacts, mavenCentralService.findMissing),
+            new JobScheduler(Job.nonStandardArtifacts, mavenCentralService.findNonStandard)
           )
         } else Seq.empty
       )
@@ -80,7 +80,7 @@ class AdminService(
     val input = Seq("Group ID" -> groupId.value) ++
       artifactNameOpt.map(name => "Artifact Name" -> name.value)
     val task = TaskRunner.run(Task.findMissingArtifacts, user.info.login, input) { () =>
-      sonatypeSynchronizer.syncOne(groupId, artifactNameOpt)
+      mavenCentralService.syncOne(groupId, artifactNameOpt)
     }
     tasks = tasks :+ task
   }
@@ -137,9 +137,9 @@ class AdminService(
     tasks = tasks :+ task
   }
 
-  def updateMavenArtifacts(user: UserState): Unit = {
-    val task = TaskRunner.run(Task.updateMavenArtifacts, user.info.login, input = Seq.empty) { () =>
-      sonatypeSynchronizer.updateAllArtifacts()
+  def republishArtifacts(user: UserState): Unit = {
+    val task = TaskRunner.run(Task.republishArtifacts, user.info.login, input = Seq.empty) { () =>
+      mavenCentralService.republishArtifacts()
     }
     tasks = tasks :+ task
   }

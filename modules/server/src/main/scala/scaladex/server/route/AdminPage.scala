@@ -67,8 +67,8 @@ class AdminPage(env: Env, adminService: AdminService) {
               }
             } ~
             post {
-              path("tasks" / Task.updateMavenArtifacts.name) {
-                adminService.updateMavenArtifacts(user)
+              path("tasks" / Task.republishArtifacts.name) {
+                adminService.republishArtifacts(user)
                 redirect(Uri("/admin"), StatusCodes.SeeOther)
               }
             }

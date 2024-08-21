@@ -24,9 +24,9 @@ object Task {
     "Update the Github info of an existing project"
   )
 
-  val updateMavenArtifacts: Task = Task(
-    "update-maven-artifact",
-    "Download all pom files to update existing artifacts with new fields"
+  val republishArtifacts: Task = Task(
+    "republish-maven-artifact",
+    "Re-download pom files of known artifacts to extract new fields"
   )
 
   case class Status(name: String, user: String, start: Instant, input: Seq[(String, String)], state: State) {

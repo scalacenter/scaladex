@@ -19,7 +19,7 @@ import scaladex.infra.DataPaths
 import scaladex.infra.ElasticsearchEngine
 import scaladex.infra.FilesystemStorage
 import scaladex.infra.GithubClientImpl
-import scaladex.infra.SonatypeClientImpl
+import scaladex.infra.MavenCentralClientImpl
 import scaladex.infra.SqlDatabase
 import scaladex.infra.sql.DoobieUtils
 import scaladex.server.config.ServerConfig
@@ -27,8 +27,8 @@ import scaladex.server.route.AuthenticationApi
 import scaladex.server.route._
 import scaladex.server.route.api._
 import scaladex.server.service.AdminService
+import scaladex.server.service.MavenCentralService
 import scaladex.server.service.PublishProcess
-import scaladex.server.service.SonatypeService
 import scaladex.view.html.notfound
 object Server extends LazyLogging {
 
@@ -67,10 +67,11 @@ object Server extends LazyLogging {
             val paths = DataPaths.from(config.filesystem)
             val filesystem = FilesystemStorage(config.filesystem)
             val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(publishPool, system)
-            val sonatypeClient = new SonatypeClientImpl()
-            val sonatypeSynchronizer = new SonatypeService(paths, schedulerDatabase, sonatypeClient, publishProcess)
+            val mavenCentralClient = new MavenCentralClientImpl()
+            val mavenCentralService =
+              new MavenCentralService(paths, schedulerDatabase, mavenCentralClient, publishProcess)
             val adminService =
-              new AdminService(config.env, schedulerDatabase, searchEngine, githubClient, sonatypeSynchronizer)
+              new AdminService(config.env, schedulerDatabase, searchEngine, githubClient, mavenCentralService)
 
             for {
               _ <- init(webDatabase, adminService, searchEngine, config.elasticsearch.reset)

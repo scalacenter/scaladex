@@ -52,7 +52,7 @@ class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext
 
   def updateLatestVersions(ref: Project.Reference, preferStableVersion: Boolean): Future[Int] =
     for {
-      artifactIds <- database.getAllArtifactIds(ref)
+      artifactIds <- database.getArtifactIds(ref)
       _ <- artifactIds.mapSync {
         case (groupId, artifactId) => updateLatestVersion(groupId, artifactId, preferStableVersion)
       }
