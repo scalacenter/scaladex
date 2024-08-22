@@ -4,7 +4,12 @@
 
 @import java.time.Instant
 
-@(ref: Project.Reference, params: ArtifactsPageParams, allBinaryVersions: Seq[BinaryVersion])
+@(
+  ref: Project.Reference,
+  params: ArtifactsPageParams,
+  allBinaryVersions: Seq[BinaryVersion],
+  withStableOnly: Boolean = true
+)
 
 <form class="float-right" action="#" action="GET">
   <select class="selectpicker" name="binary-versions" 
@@ -21,5 +26,7 @@
       </optgroup>
     }
   </select>
-  <input type="checkbox" id="stable-only" name="stable-only" value="true" @if(params.stableOnly) { checked }>
+  @if(withStableOnly) {
+    <input type="checkbox" id="stable-only" name="stable-only" value="true" @if(params.stableOnly) { checked }>
+  }
 </form>

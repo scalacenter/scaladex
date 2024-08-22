@@ -28,7 +28,7 @@
     <div class="container">
       <div class="content-project artifacts box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">
-        @artifactsFilters(project.reference, params, allBinaryVersions)
+        @artifactsFilters(project.reference, params, allBinaryVersions, withStableOnly = false)
         <div class="result-count">
           Found <b>@artifacts.size</b> @Formats.wordPlural(artifacts.size, "artifact")
         </div>
