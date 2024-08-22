@@ -26,7 +26,7 @@
   <main id="container-project">
     @headproject(env, user, project, Some(header), ProjectTab.Versions)
     <div class="container">
-      <div class="content-project artifacts box" data-organization="@project.reference.organization"
+      <div class="content-project versions box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">
         @artifactsFilters(project.reference, params, allBinaryVersions)
         <h2>
@@ -45,7 +45,7 @@
           Found <b>@artifactByVersions.size</b> @Formats.wordPlural(artifactByVersions.size, "version")
         </div>
         @if(artifactByVersions.isEmpty) {
-          <div>We can't find any release that matches all you criteria</div>
+          <div>We can't find any version that matches all criteria</div>
         } else {
         <div>
           @artifactByVersions.map { case ((releaseDate, version), artifacts) =>

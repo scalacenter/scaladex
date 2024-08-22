@@ -274,29 +274,7 @@
     }
   }
 
-  .artifacts {
-    h2 {
-      margin-top: 0;
-      margin-bottom: 24px;
-      color: $brand-secondary;
-      .bootstrap-select {
-        margin-left: 7px;
-        width: 150px;
-      }
-      .btn {
-        padding: 10px 10px 6px 10px;
-      }
-      .btn-default {
-        color: $gray-light;
-      }
-      .filter-option {
-        padding-right: 4px;
-      }
-      .caret {
-        top: 55%;
-      }
-    }
-    
+  .artifacts, .versions {
     .center {
       @media (min-width: $screen-md-min) {
         display: flex;
@@ -304,15 +282,15 @@
         align-items: center;
       }
     }
-    .artifact-version {
-      font-size: 30px;
-      color: $brand-secondary;
-      &:active,
-      &:focus,
-      &:hover {
-        text-decoration: none;
-        color: $brand-primary;
-      }
+    .result-count {
+      margin-top: 24px;
+      font-size: 16px;
+    }
+    .panel {
+      margin-bottom: 12px
+    }
+    .panel-content {
+      padding: 0 0 6px 0;
     }
     .artifact-info {
       @media (min-width: 600px) {
@@ -360,10 +338,63 @@
         margin-right: 20px;
       }
     }
-    .result-count {
-      font-size: 16px;
+  }
+
+  .artifacts {
+    .artifact-name, .artifact-version {
+      color: $brand-secondary;
+      &:active, &:focus, &:hover {
+        text-decoration: none;
+        color: $brand-primary;
+      }
+    }
+
+    .artifact-name {
+      font-size: 24px;
+    }
+
+    .artifact-version {
+      color: $headings-color;
+      font-size: 20px;
+      margin-left: 12px;
     }
   }
+
+  .versions {
+    h2 {
+      margin-top: 0;
+      margin-bottom: 24px;
+      color: $brand-secondary;
+      .bootstrap-select {
+        margin-left: 7px;
+        width: 150px;
+      }
+      .btn {
+        padding: 10px 10px 6px 10px;
+      }
+      .btn-default {
+        color: $gray-light;
+      }
+      .filter-option {
+        padding-right: 4px;
+      }
+      .caret {
+        top: 55%;
+      }
+    }
+
+    .artifact-version {
+      font-size: 30px;
+      color: $brand-secondary;
+      &:active,
+      &:focus,
+      &:hover {
+        text-decoration: none;
+        color: $brand-primary;
+      }
+    }
+  }
+
   .artifact {
     h2 {
       margin-top: 0;
