@@ -53,14 +53,16 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
 
                 val groupedArtifacts = allArtifacts
                   .groupBy(_.artifactName)
-                  .map { case (name, artifacts) =>
-                    val latestVersion = artifacts.maxBy(_.version).version
-                    val filteredArtifacts = artifacts.filter(_.version == latestVersion)
-                    (name, latestVersion, filteredArtifacts)
+                  .map {
+                    case (name, artifacts) =>
+                      val latestVersion = artifacts.maxBy(_.version).version
+                      val filteredArtifacts = artifacts.filter(_.version == latestVersion)
+                      (name, latestVersion, filteredArtifacts)
                   }
-                  .filter { case (_, _, artifacts) =>
-                    params.binaryVersions
-                      .forall(binaryVersion => artifacts.exists(_.binaryVersion == binaryVersion))
+                  .filter {
+                    case (_, _, artifacts) =>
+                      params.binaryVersions
+                        .forall(binaryVersion => artifacts.exists(_.binaryVersion == binaryVersion))
                   }
                   .toSeq
                   .sortBy { case (name, version, _) => (version, name) }(
