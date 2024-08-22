@@ -80,7 +80,7 @@ class BadgesUnitTests extends AnyFunSpec with Matchers {
     ) shouldBe "7.3.0 (Scala 3.x, 2.13), 7.2.0 (Scala 2.12), 7.1.0 (Scala 2.11)"
   }
 
-  it("should prefer releases to pre-releases if both are available") {
+  it("should prefer stable to pre-releases if both are available") {
     summaryOfLatestVersions(Map(`2.13` -> Seq(`7.0.0`, `7.1.0`, `7.2.0-PREVIEW.1`))) shouldBe "7.1.0 (Scala 2.13)"
   }
 

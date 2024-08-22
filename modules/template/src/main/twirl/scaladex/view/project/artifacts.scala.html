@@ -8,6 +8,7 @@
 @import scaladex.core.util.ScalaExtensions._
 @import scaladex.core.util.TimeUtils
 @import scaladex.view.Formats
+@import scaladex.view.ProjectTab
 
 @import java.time.Instant
 
@@ -16,102 +17,67 @@
     user: Option[UserState],
     project: Project,
     header: Option[ProjectHeader],
-    groupedArtifacts: Map[SemanticVersion, Map[Artifact.Name, Seq[Artifact]]],
+    artifacts: Seq[(Artifact.Name, SemanticVersion, Seq[Artifact])],
     params: ArtifactsPageParams,
     allBinaryVersions: Seq[BinaryVersion]
 )
 
 @main(env, title = project.repository.toString, user) {
   <main id="container-project">
-    @headproject(env, user, project, header, "Artifacts")
+    @headproject(env, user, project, header, ProjectTab.Artifacts)
     <div class="container">
       <div class="content-project artifacts box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">
-        <div class="artifacts-filter">
-          @artifactsfilters(params,allBinaryVersions)
-          @filters()
-          <div class="result-count">
-            <b>@groupedArtifacts.values.flatten.size</b> @Formats.wordPlural(groupedArtifacts.values.flatten.size, "artifact") found
-          </div>
+        @artifactsFilters(project.reference, params, allBinaryVersions, withStableOnly = false)
+        <div class="result-count">
+          Found <b>@artifacts.size</b> @Formats.wordPlural(artifacts.size, "artifact")
         </div>
-        @if(groupedArtifacts.isEmpty) {
-          <div>We can't find any artifacts for this project.</div>
+        @if(artifacts.isEmpty) {
+          <div>We can't find any artifact for this project.</div>
         } else {
           <div>
-            @for((version, artifactsByName) <- groupedArtifacts.toSeq.sortBy(_._1).reverse) {
-                <h3>Version @version</h3>
-                @for((artifactName, artifacts) <- artifactsByName.toSeq.sortBy(_._1)) {
-                  <div class="panel">
-                    <div class="artifact-row panel-body center">
-                      <div class="col-md-3 center">
-                        <a class="artifact-version" href="/@project.reference/artifacts/@artifactName">@artifactName</a>
-                      </div>
-                      <div class="col-md-9">
-                        <div class="artifact-info">
-                          <a data-toggle="tooltip" data-placement="top" title="@formatInstant(artifacts.head.releaseDate)">
-                            @TimeUtils.toFiniteDuration(artifacts.head.releaseDate, Instant.now()).prettyPrint
-                            ago<i class="fa-solid fa-calendar-days"></i>
+            @for((name, version, artifacts) <- artifacts) {
+              <div class="panel">
+                <div class="artifact-row panel-body center">
+                  <div class="col-md-4">
+                    <a class="artifact-name" href="/@project.reference/artifacts/@name">@name</a>
+                    <a class="artifact-version" href="/@project.reference/artifacts/@name/@version">@version</a>
+                  </div>
+                  <div class="col-md-8">
+                    <div class="artifact-info">
+                      <a data-toggle="tooltip" data-placement="top" title="@formatInstant(artifacts.head.releaseDate)">
+                        @TimeUtils.toFiniteDuration(artifacts.head.releaseDate, Instant.now()).prettyPrint
+                        ago<i class="fa-solid fa-calendar-days"></i>
+                      </a>
+                      <br>
+                      @artifacts.head.licenses.map { license =>
+                        <a href="@license.url.getOrElse("#")">@license.shortName<i class="fa-solid fa-scale-balanced"></i></a>
+                      }
+                    </div>
+                    <div class="artifact-content">
+                      @for(
+                        (platform, binaryVersions) <- artifacts
+                          .groupBy(_.platform)
+                          .toSeq
+                          .sortBy(_._1)
+                          .reverse
+                      ) {
+                        <h5>@platform:</h5>
+                        @for(binaryVersion <- binaryVersions.map(_.binaryVersion).distinct.sorted.reverse) { 
+                          <a href="/@project.reference/artifacts/@name/@version?binary-version=@binaryVersion.encode" class="scala-version">
+                            @binaryVersion.language.label
                           </a>
-                          <br>
-                          @artifacts.head.licenses.map { license =>
-                            <a href="@license.url.getOrElse("#")">@license.shortName<i class="fa-solid fa-scale-balanced"></i></a>
-                          }
-                        </div>
-                        <div class="artifact-content">
-                          @for(
-                            (platform, binaryVersions) <- artifacts
-                              .groupBy(_.platform)
-                              .toSeq
-                              .sortBy(_._1)
-                              .reverse
-                          ) {
-                            <h5>@platform:</h5>
-                            @for(binaryVersion <- binaryVersions.map(_.binaryVersion).distinct.sorted.reverse) { 
-                              <a href="/@project.reference/artifacts/@artifactName/@version?binary-version=@binaryVersion.encode" class="scala-version">
-                                @binaryVersion.language.label
-                              </a>
-                            }
-                            <br>
-                          }
-                        </div>
-                      </div>
+                        }
+                        <br>
+                      }
                     </div>
                   </div>
-                }
+                </div>
+              </div>
             }
           </div>
         }
       </div>
     </div>
   </main>
-}
-@filters() = {
-  <div class="options-checked">
-    <ul class="list-inline">
-      @for(binaryVersion <- params.binaryVersions) {
-        <li>
-          <a href="@artifactsUri(project.reference, params.remove(binaryVersion))" class="label label-default">
-            <i class="fa-solid fa-xmark"></i>
-            @binaryVersion
-          </a>
-        </li>
-      }
-      @if(params.preReleases) {
-        <li>
-          <a class="label label-info" href="@artifactsUri(project.reference, params.withPreReleases(false))">
-            <i class="fa-solid fa-xmark"></i>
-            Show pre-release versions
-          </a>
-        </li>
-      }
-      @if(params.binaryVersions.nonEmpty || params.preReleases) {
-        <li>
-          <a href="@artifactsUri(project.reference, ArtifactsPageParams.empty)" class="label label-warning clear-all">
-            <i class="fa-solid fa-xmark"></i>
-            Clear all filters
-          </a>
-        </li>
-      }
-    </ul>
-  </div>
 }

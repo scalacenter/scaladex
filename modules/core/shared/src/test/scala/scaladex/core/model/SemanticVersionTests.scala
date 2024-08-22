@@ -41,7 +41,7 @@ class SemanticVersionTests extends AsyncFunSpec with Matchers with TableDrivenPr
     forAll(inputs)((lower, higher) => lower shouldBe <(higher))
   }
 
-  it("should allow us to prefer releases over pre-releases") {
+  it("should allow us to prefer stable over pre-releases") {
     val versions = Seq(`7.0.0`, `7.1.0`, `7.2.0-PREVIEW.1`)
     versions.max shouldBe `7.2.0-PREVIEW.1`
     versions.max(PreferStable) shouldBe `7.1.0`

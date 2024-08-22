@@ -160,9 +160,9 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getArtifacts(
       ref: Project.Reference,
       artifactName: Artifact.Name,
-      preReleases: Boolean
+      stableOnly: Boolean
   ): Future[Seq[Artifact]] =
-    // TODO: use preReleases to filter
+    // TODO: use stableOnly to filter
     Future.successful(allArtifacts.getOrElse(ref, Seq.empty).filter(_.artifactName == artifactName))
   override def getProjectDependencies(
       ref: Project.Reference,

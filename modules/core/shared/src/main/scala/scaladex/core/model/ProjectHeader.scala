@@ -32,14 +32,14 @@ final case class ProjectHeader(
   def platforms(artifactName: Artifact.Name): Seq[Platform] =
     artifacts.filter(_.artifactName == artifactName).map(_.platform).distinct.sorted(Platform.ordering.reverse)
 
-  def artifactsUrl: String = artifactsUrl(getDefaultArtifact(None, None), withBinaryVersion = false)
+  def versionsUrl: String = artifactsUrl(getDefaultArtifact(None, None), withBinaryVersion = false)
 
-  def artifactsUrl(language: Language): String = artifactsUrl(getDefaultArtifact(Some(language), None))
+  def versionsUrl(language: Language): String = artifactsUrl(getDefaultArtifact(Some(language), None))
 
-  def artifactsUrl(platform: Platform): String = artifactsUrl(getDefaultArtifact(None, Some(platform)))
+  def versionsUrl(platform: Platform): String = artifactsUrl(getDefaultArtifact(None, Some(platform)))
 
   private def artifactsUrl(defaultArtifact: Artifact, withBinaryVersion: Boolean = true): String = {
-    val preReleaseFilter = Option.when(!preferStableVersion || !defaultArtifact.version.isStable)("pre-releases=true")
+    val preReleaseFilter = Option.when(preferStableVersion && defaultArtifact.version.isStable)("stable-only=true")
     val binaryVersionFilter = Option.when(withBinaryVersion)(s"binary-versions=${defaultArtifact.binaryVersion.label}")
     val filters = preReleaseFilter.toSeq ++ binaryVersionFilter
     val queryParams = if (filters.nonEmpty) "?" + filters.mkString("&") else ""

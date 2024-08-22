@@ -1,5 +1,6 @@
 @import scaladex.core.model._
 @import scaladex.view.html.main
+@import scaladex.view.ProjectTab
 
 @(
         env: Env,
@@ -14,7 +15,7 @@
 }
 @main(env, title = project.repository.toString, user, showSearch = true) {
   <main id="container-project">
-    @headproject(env, user, project, header, "Version Matrix")
+    @headproject(env, user, project, header, ProjectTab.VersionMatrix)
     <div class="container">
       <div class="content-project version-matrix box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">

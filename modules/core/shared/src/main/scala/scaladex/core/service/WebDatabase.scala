@@ -11,7 +11,7 @@ trait WebDatabase {
   def insertArtifact(artifact: Artifact): Future[Boolean]
   def getArtifacts(groupId: Artifact.GroupId, artifactId: String): Future[Seq[Artifact]]
   def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]]
-  def getArtifacts(ref: Project.Reference, artifactName: Artifact.Name, preReleases: Boolean): Future[Seq[Artifact]]
+  def getArtifacts(ref: Project.Reference, artifactName: Artifact.Name, stableOnly: Boolean): Future[Seq[Artifact]]
   def getArtifacts(ref: Project.Reference, artifactName: Artifact.Name, version: SemanticVersion): Future[Seq[Artifact]]
   def getArtifactsByName(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]]
   def getLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]]

@@ -4,6 +4,7 @@
 @import scaladex.view.Formats
 @import scaladex.view.html._
 @import scaladex.view.InstallTab
+@import scaladex.view.ProjectTab
 
 @(
     env: Env,
@@ -18,7 +19,7 @@
 )
 @main(env, title = project.repository.toString, user) {
   <main id="container-project">
-    @headproject(env, user, project, header, "Artifacts")
+    @headproject(env, user, project, header, ProjectTab.Versions)
     <div class="container">
       <div class="row">
         <div class="col-md-8">
@@ -41,13 +42,13 @@
                   </select>
                 </form>
               </div>
-              <h3>
-                <a href="@artifactsUri(project.reference, artifact.artifactName, params.binaryVersion)">@artifact.artifactName</a>
+              <h2>
+                <a href="@versionsUri(project.reference, artifact.artifactName, params.binaryVersion)">@artifact.artifactName</a>
                 <span class="artifact-version">@artifact.version</span>
                 @if(project.settings.deprecatedArtifacts.contains(artifact.artifactName)) {
                   <span class="label label-warning">Deprecated</span>
                 }
-              </h3>
+              </h2>
               <hr>
               @info("Group ID") { @artifact.groupId }
               @info("Artifact ID") { @artifact.artifactId }

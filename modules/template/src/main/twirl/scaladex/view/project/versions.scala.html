@@ -8,6 +8,7 @@
 @import scaladex.core.util.ScalaExtensions._
 @import scaladex.core.util.TimeUtils
 @import scaladex.view.Formats
+@import scaladex.view.ProjectTab
 
 @import java.time.Instant
 @(
@@ -23,60 +24,28 @@
 
 @main(env, title = project.repository.toString, user) {
   <main id="container-project">
-    @headproject(env, user, project, Some(header), "Artifacts")
+    @headproject(env, user, project, Some(header), ProjectTab.Versions)
     <div class="container">
-      <div class="content-project artifacts box" data-organization="@project.reference.organization"
+      <div class="content-project versions box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">
-      <div class="clearfix">
-        <div class="float-right">
-          <div class="artifacts-filter">
-            @artifactsfilters(params,allBinaryVersions)
-          </div>
-        </div>
-        <h3 class="artifact-version">@artifactName</h3>
-      </div>
-      
-        <div class="options-checked">
-          <ul class="list-inline">
-            @for(binaryVersion <- params.binaryVersions) {
-              <li>
-                <a href="@artifactsUri(project.reference, artifactName, params.remove(binaryVersion))" class="label label-default">
-                  <i class="fa-solid fa-xmark"></i>
-                  @binaryVersion
-                </a>
-              </li>
+        @artifactsFilters(project.reference, params, allBinaryVersions)
+        <h2>
+          @artifactName
+          <select class="selectpicker" title="Other Artifacts"
+            data-style="btn-default" data-selected-text-format="static" 
+            onchange="window.location=this.value">
+            @for(name <- header.allArtifactNames) {
+              <option value="@versionsUri(project.reference, name, params)" @if(name == artifactName) {selected}>
+                @name
+              </option>
             }
-            @if(params.preReleases) {
-              <li>
-                <a class="label label-info" href="@artifactsUri(project.reference, artifactName, params.withPreReleases(false))">
-                  <i class="fa-solid fa-xmark"></i>
-                  Show pre-release versions
-                </a>
-              </li>
-            }
-            @if(params.binaryVersions.nonEmpty || params.preReleases) {
-              <li>
-                <a href="@artifactsUri(project.reference, artifactName, ArtifactsPageParams.empty)" class="label label-warning clear-all">
-                  <i class="fa-solid fa-xmark"></i>
-                  Clear all filters
-                </a>
-              </li>
-            }
-          </ul>
+          </select>
+        </h2>
+        <div class="result-count">
+          Found <b>@artifactByVersions.size</b> @Formats.wordPlural(artifactByVersions.size, "version")
         </div>
-        <div class="clearfix">
-          <div class="float-right">
-            <div class="result-count">
-              <b>@artifactByVersions.size</b>
-              @Formats.wordPlural(artifactByVersions.size, "version") found for
-              <b>@artifactName</b>
-            </div>
-          </div>
-        </div>
-        <br>
-        
         @if(artifactByVersions.isEmpty) {
-          <div>We can't find any release that matches all you criteria</div>
+          <div>We can't find any version that matches all criteria</div>
         } else {
         <div>
           @artifactByVersions.map { case ((releaseDate, version), artifacts) =>

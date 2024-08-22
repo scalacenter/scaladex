@@ -180,9 +180,7 @@ lazy val server = project
       "org.webjars.bower" % "select2" % "4.0.13"
     ),
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
-    Compile / resourceGenerators += Def.task(
-      Seq((Assets / WebKeys.assets).value)
-    ),
+    Compile / resourceGenerators += (Assets / WebKeys.assets).map(Seq(_)),
     fork := true,
     Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value,
     reStart / javaOptions ++= (infra / Compile / run / javaOptions).value,
