@@ -168,7 +168,7 @@ lazy val server = project
       "org.apache.pekko" %% "pekko-http-cors" % V.pekkoHttp,
       "com.softwaremill.pekko-http-session" %% "core" % "0.7.1",
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
-      "org.endpoints4s" %% "pekko-http-server" % "1.0.1",
+      "org.endpoints4s" %% "pekko-http-server" % "2.0.1",
       "org.webjars" % "bootstrap-sass" % "3.4.1",
       "org.webjars" % "bootstrap-switch" % "3.3.4",
       "org.webjars" % "bootstrap-select" % "1.13.18",
