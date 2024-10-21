@@ -98,17 +98,17 @@ class PublishProcess(
 
   def republishPom(
       repo: Project.Reference,
-      ref: Artifact.MavenReference,
+      ref: Artifact.Reference,
       data: String,
       creationDate: Instant
   ): Future[PublishResult] =
     Future(loadPom(data).get)
       .flatMap { pom =>
         converter.convert(pom, repo, creationDate).map(_._1) match {
-          case Some(artifact) if artifact.mavenReference == ref =>
+          case Some(artifact) if artifact.reference == ref =>
             database.insertArtifact(artifact).map(_ => PublishResult.Success)
           case Some(artifact) =>
-            logger.error(s"Unexpected ref ${artifact.mavenReference}")
+            logger.error(s"Unexpected ref ${artifact.reference}")
             Future.successful(PublishResult.InvalidPom)
           case None =>
             logger.warn(s"Cannot convert $ref to valid Scala artifact.")

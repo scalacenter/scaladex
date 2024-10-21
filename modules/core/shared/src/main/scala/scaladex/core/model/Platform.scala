@@ -1,19 +1,19 @@
 package scaladex.core.model
 
 sealed trait Platform {
-  def label: String
+  def value: String
   def isValid: Boolean
 }
 
 case object Jvm extends Platform {
   override def toString: String = "JVM"
-  override def label: String = "jvm"
+  override def value: String = "jvm"
   override def isValid: Boolean = true
 }
 
 case class ScalaJs(version: SemanticVersion) extends Platform {
   override def toString: String = s"Scala.js $version"
-  override def label: String = s"sjs${version.encode}"
+  override def value: String = s"sjs${version.value}"
   override def isValid: Boolean = ScalaJs.stableVersions.contains(this)
 }
 
@@ -32,7 +32,7 @@ case class SbtPlugin(version: SemanticVersion) extends Platform {
       case MinorVersion(1, 0) => s"sbt 1.x"
       case _                  => s"sbt $version"
     }
-  override def label: String = s"sbt${version.encode}"
+  override def value: String = s"sbt${version.value}"
   override def isValid: Boolean = SbtPlugin.stableVersions.contains(this)
 }
 
@@ -46,7 +46,7 @@ object SbtPlugin {
 
 case class ScalaNative(version: SemanticVersion) extends Platform {
   override def toString: String = s"Scala Native $version"
-  override def label: String = s"native${version.encode}"
+  override def value: String = s"native${version.value}"
   override def isValid: Boolean = ScalaNative.stableVersions.contains(this)
 }
 
@@ -63,7 +63,7 @@ object ScalaNative {
 case class MillPlugin(version: SemanticVersion) extends Platform {
   override def toString: String = s"Mill $version"
 
-  override def label: String = s"mill${version.encode}"
+  override def value: String = s"mill${version.value}"
 
   override def isValid: Boolean = version match {
     case MinorVersion(_, _) => true
@@ -86,7 +86,7 @@ object Platform {
     case MillPlugin(version)  => (1, Some(version))
   }
 
-  def fromLabel(input: String): Option[Platform] =
+  def parse(input: String): Option[Platform] =
     input match {
       case "jvm"             => Some(Jvm)
       case s"sjs$version"    => SemanticVersion.parse(version).map(ScalaJs.apply)

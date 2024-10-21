@@ -22,10 +22,7 @@ class SearchSynchronizer(database: SchedulerDatabase, service: ProjectService, s
 
       // Create a map of project reference to their old references
       movedProjects = allProjectsAndStatus
-        .collect {
-          case (p, GithubStatus.Moved(_, newRef)) =>
-            newRef -> p.reference
-        }
+        .collect { case (p, GithubStatus.Moved(_, newRef)) => newRef -> p.reference }
         .groupMap { case (newRef, _) => newRef } { case (_, ref) => ref }
       projectsToDelete =
         allProjectsAndStatus.collect { case (p, GithubStatus.NotFound(_)) => p.reference }
@@ -57,7 +54,7 @@ class SearchSynchronizer(database: SchedulerDatabase, service: ProjectService, s
 
   private def insertDocument(project: Project, formerReferences: Seq[Project.Reference]): Future[Unit] =
     for {
-      header <- service.getProjectHeader(project)
+      header <- service.getHeader(project)
       dependents <- database.countProjectDependents(project.reference)
       document = ProjectDocument(project, header, dependents, formerReferences)
       _ <- searchEngine.insert(document)

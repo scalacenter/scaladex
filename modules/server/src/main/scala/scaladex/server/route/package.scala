@@ -3,9 +3,7 @@ package scaladex.server
 import java.time.Instant
 
 import org.apache.pekko.http.scaladsl.server.Directive1
-import org.apache.pekko.http.scaladsl.server.Directives.Segment
 import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.PathMatcher
 import org.apache.pekko.http.scaladsl.server.PathMatcher1
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import scaladex.core.model.Artifact
@@ -24,8 +22,9 @@ package object route {
   val artifactNameM: PathMatcher1[Artifact.Name] = Segment.map(Artifact.Name.apply)
   val versionM: PathMatcher1[SemanticVersion] = Segment.flatMap(SemanticVersion.parse)
 
-  val mavenReferenceM: PathMatcher[Tuple1[Artifact.MavenReference]] = (Segment / Segment / Segment).tmap {
-    case (groupId, artifactId, version) => Tuple1(Artifact.MavenReference(groupId, artifactId, version))
+  val artifactRefM: PathMatcher1[Artifact.Reference] = (Segment / Segment / Segment).tflatMap {
+    case (groupId, artifactId, version) =>
+      Artifact.Reference.parse(groupId, artifactId, version).map(Tuple1.apply)
   }
 
   val instantUnmarshaller: Unmarshaller[String, Instant] =

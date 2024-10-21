@@ -28,9 +28,9 @@ final case class ProjectHeader(
   lazy val latestLanguages: Seq[Language] = latestArtifacts.map(_.language).distinct.sorted
   lazy val latestPlatforms: Seq[Platform] = latestArtifacts.map(_.platform).distinct.sorted
 
-  def allArtifactNames: Seq[Artifact.Name] = artifacts.map(_.artifactName).distinct.sorted
+  def allArtifactNames: Seq[Artifact.Name] = artifacts.map(_.name).distinct.sorted
   def platforms(artifactName: Artifact.Name): Seq[Platform] =
-    artifacts.filter(_.artifactName == artifactName).map(_.platform).distinct.sorted(Platform.ordering.reverse)
+    artifacts.filter(_.name == artifactName).map(_.platform).distinct.sorted(Platform.ordering.reverse)
 
   def versionsUrl: String = artifactsUrl(getDefaultArtifact(None, None), withBinaryVersion = false)
 
@@ -39,11 +39,11 @@ final case class ProjectHeader(
   def versionsUrl(platform: Platform): String = artifactsUrl(getDefaultArtifact(None, Some(platform)))
 
   private def artifactsUrl(defaultArtifact: Artifact, withBinaryVersion: Boolean = true): String = {
-    val preReleaseFilter = Option.when(preferStableVersion && defaultArtifact.version.isStable)("stable-only=true")
-    val binaryVersionFilter = Option.when(withBinaryVersion)(s"binary-versions=${defaultArtifact.binaryVersion.label}")
+    val preReleaseFilter = Option.when(preferStableVersion && defaultArtifact.version.isStable)("stableOnly=true")
+    val binaryVersionFilter = Option.when(withBinaryVersion)(s"binary-version=${defaultArtifact.binaryVersion.value}")
     val filters = preReleaseFilter.toSeq ++ binaryVersionFilter
     val queryParams = if (filters.nonEmpty) "?" + filters.mkString("&") else ""
-    s"/$ref/artifacts/${defaultArtifact.artifactName}$queryParams"
+    s"/$ref/artifacts/${defaultArtifact.name}$queryParams"
   }
 
   def getDefaultArtifact(language: Option[Language], platform: Option[Platform]): Artifact = {
@@ -53,13 +53,13 @@ final case class ProjectHeader(
 
     def byName(artifacts: Seq[Artifact]): Option[Artifact] =
       defaultArtifactName.toSeq
-        .flatMap(defaultName => artifacts.filter(a => defaultName == a.artifactName))
+        .flatMap(defaultName => artifacts.filter(a => defaultName == a.name))
         .maxByOption(a => (a.binaryVersion, a.releaseDate))
 
     def ofVersion(version: SemanticVersion): Artifact =
       filteredArtifacts
         .filter(_.version == version)
-        .maxBy(a => (a.binaryVersion, a.artifactName, a.releaseDate))(
+        .maxBy(a => (a.binaryVersion, a.name, a.releaseDate))(
           Ordering.Tuple3(Ordering[BinaryVersion], Ordering[Artifact.Name].reverse, Ordering[Instant])
         )
 

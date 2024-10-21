@@ -41,42 +41,42 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
         "Scala",
         languages.collect {
           case (sv @ Scala.`3`, count) =>
-            EcosystemVersion(Scala.`3`.version, count, Url(s"search?languages=${sv.label}"))
+            EcosystemVersion(Scala.`3`.version, count, Url(s"search?language=${sv.value}"))
         }
       )
       val scala2Ecosystem = EcosystemHighlight(
         "Scala",
         languages.collect {
           case (sv: Scala, count) if sv.version < Scala.`3`.version =>
-            EcosystemVersion(sv.version, count, Url(s"search?languages=${sv.label}"))
+            EcosystemVersion(sv.version, count, Url(s"search?language=${sv.value}"))
         }
       )
       val scalajsEcosystem = EcosystemHighlight(
         "Scala.js",
         platforms.collect {
           case (sjs: ScalaJs, count) =>
-            EcosystemVersion(sjs.version, count, search = Url(s"search?platforms=${sjs.label}"))
+            EcosystemVersion(sjs.version, count, search = Url(s"search?platform=${sjs.value}"))
         }
       )
       val scalaNativeEcosystem = EcosystemHighlight(
         "Scala Native",
         platforms.collect {
           case (sn: ScalaNative, count) =>
-            EcosystemVersion(sn.version, count, search = Url(s"search?platforms=${sn.label}"))
+            EcosystemVersion(sn.version, count, search = Url(s"search?platform=${sn.value}"))
         }
       )
       val sbtPluginEcosystem = EcosystemHighlight(
         "sbt",
         platforms.collect {
           case (sbtP: SbtPlugin, count) =>
-            EcosystemVersion(sbtP.version, count, search = Url(s"search?platforms=${sbtP.label}"))
+            EcosystemVersion(sbtP.version, count, search = Url(s"search?platform=${sbtP.value}"))
         }
       )
       val millPluginEcosystem = EcosystemHighlight(
         "Mill",
         platforms.collect {
           case (millP: MillPlugin, count) =>
-            EcosystemVersion(millP.version, count, search = Url(s"search?platforms=${millP.label}"))
+            EcosystemVersion(millP.version, count, search = Url(s"search?platform=${millP.value}"))
         }
       )
 

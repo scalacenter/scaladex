@@ -2,8 +2,6 @@
 @import scaladex.core.web.ArtifactsPageParams
 @import scaladex.view.html._
 
-@import java.time.Instant
-
 @(
   ref: Project.Reference,
   params: ArtifactsPageParams,
@@ -12,13 +10,13 @@
 )
 
 <form class="float-right" action="#" action="GET">
-  <select class="selectpicker" name="binary-versions" 
+  <select class="selectpicker" name="binary-version" 
     title= "@params.binaryVersionsSummary.getOrElse("Scala Versions")" multiple data-style="btn-secondary" data-actions-box="true" data-selected-text-format="static"
     onchange="this.form.submit()">
-    @for((platform, binaryVersions) <- allBinaryVersions.sorted.groupBy(_.platform)) {
+    @for((platform, binaryVersions) <- allBinaryVersions.groupBy(_.platform).toSeq.sortBy(_._1).reverse) {
       <optgroup label="@platform">
-        @for(binaryVersion <- binaryVersions.reverse) {
-            <option value="@binaryVersion.label"
+        @for(binaryVersion <- binaryVersions.sorted.reverse) {
+            <option value="@binaryVersion.value"
             @if(params.binaryVersions.contains(binaryVersion)) {selected}>
             @binaryVersion.language.label
             </option>

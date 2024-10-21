@@ -8,7 +8,7 @@
         project: Project,
         header: Option[ProjectHeader],
         binaryVersionsByPlatforms: Seq[(Platform, Seq[BinaryVersion])],
-        artifactsByVersions: Seq[(SemanticVersion, Seq[(Artifact.Name, Seq[Artifact])])]
+        artifactsByVersions: Seq[(SemanticVersion, Seq[(Artifact.Name, Seq[BinaryVersion])])]
 )
 @allBinaryVersions = @{
   binaryVersionsByPlatforms.flatMap(_._2)
@@ -30,7 +30,7 @@
                 binaryVersions.size
               }">
                 <label>
-                  <input type="checkbox" name="platform" value="@platform.label"
+                  <input type="checkbox" name="platform" value="@platform.value"
                   onclick="ScaladexClient.updateVisibleArtifactsInGrid()">
                   @platform
               </label>
@@ -41,7 +41,7 @@
             @allBinaryVersions.map { binaryVersion =>
               <th class="binaryVersion">
                 <label>
-                  <input type="checkbox" name="binary-version" value="@binaryVersion.label"
+                  <input type="checkbox" name="binary-version" value="@binaryVersion.value"
                   onclick="ScaladexClient.updateVisibleArtifactsInGrid()">
                   @binaryVersion.language.label
                 </label>
@@ -59,22 +59,19 @@
               @version
               </td>
             </tr>
-            @artifactsByNames.map { case (artifactName, artifacts) =>
-              @defining(artifacts.map(a => a.binaryVersion -> a).toMap) { binaryVersionToArtifact =>
-                <tr class="artifact-line artifact-line-visible @({
-                  binaryVersionToArtifact.keySet.map(_.platform.label).mkString(" ") + " " +
-                          binaryVersionToArtifact.keySet.map(_.label).mkString(" ")
-                })">
-                  <td class="artifact">@artifactName</td>
-                  @allBinaryVersions.map { binaryVersion =>
-                    <td class="binary-version" title="@version">
-                    @if(binaryVersionToArtifact.contains(binaryVersion)) {
-                      <a href="@binaryVersionToArtifact(binaryVersion).httpUrl" class="supported"></a>
-                    }
-                    </td>
+            @artifactsByNames.map { case (artifactName, binaryVersions) =>
+              <tr class="artifact-line artifact-line-visible @{
+                (binaryVersions.map(_.platform.value) ++ binaryVersions.map(_.value)).mkString(" ")
+              }">
+                <td class="artifact">@artifactName</td>
+                @allBinaryVersions.map { binaryVersion =>
+                  <td class="binary-version" title="@version">
+                  @if(binaryVersions.contains(binaryVersion)) {
+                    <a href="/@project.reference/@artifactName/@version.value?binary-version=@binaryVersion.value" class="supported"></a>
                   }
-                </tr>
-              }
+                  </td>
+                }
+              </tr>
             }
           </tbody>
           }

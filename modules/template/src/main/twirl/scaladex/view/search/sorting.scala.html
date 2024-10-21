@@ -11,15 +11,15 @@
     }
 
     @for(topic <- params.topics){
-      <input type="hidden" name="topics" value="@topic">
+      <input type="hidden" name="topic" value="@topic">
     }
 
     @for(language <- params.languages){
-      <input type="hidden" name="languages" value="@language">
+      <input type="hidden" name="language" value="@language">
     }
 
     @for(platform <- params.platforms){
-      <input type="hidden" name="platforms" value="@platform">
+      <input type="hidden" name="platform" value="@platform">
     }
 
     @if(params.contributingSearch){

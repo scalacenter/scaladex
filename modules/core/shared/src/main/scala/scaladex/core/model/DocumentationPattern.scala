@@ -14,11 +14,11 @@ final case class DocumentationPattern(label: String, pattern: String) {
   def eval(artifact: Artifact): LabeledLink = {
     val link = pattern
       .replace("[groupId]", artifact.groupId.value)
-      .replace("[artifactId]", artifact.artifactId)
-      .replace("[version]", artifact.version.toString)
+      .replace("[artifactId]", artifact.artifactId.value)
+      .replace("[version]", artifact.version.value)
       .replace("[major]", artifact.version.major.toString)
       .replace("[minor]", artifact.version.minor.toString)
-      .replace("[name]", artifact.artifactName.value)
+      .replace("[name]", artifact.name.value)
     LabeledLink(label, link)
   }
 }

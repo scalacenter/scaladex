@@ -77,7 +77,7 @@
                   ) {
                     <h5>@platform:</h5>
                     @for(binaryVersion <- binaryVersions) { 
-                      <a href="/@project.reference/artifacts/@artifactName/@version?binary-version=@binaryVersion.encode" class="scala-version">
+                      <a href="/@project.reference/artifacts/@artifactName/@version?binary-version=@binaryVersion.value" class="scala-version">
                         @binaryVersion.language.label
                       </a>
                     }

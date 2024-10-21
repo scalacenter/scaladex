@@ -11,10 +11,10 @@ import scaladex.core.model.ScalaNative
 
 class PlatformTests extends AnyFunSpec with Matchers {
   it("should yield a Platform from its label") {
-    Platform.fromLabel("sjs1").get shouldBe ScalaJs.`1.x`
-    Platform.fromLabel("jvm").get shouldBe Jvm
-    Platform.fromLabel("native0.4").get shouldBe ScalaNative.`0.4`
-    Platform.fromLabel("sbt1.0").get shouldBe SbtPlugin.`1.0`
-    Platform.fromLabel("mill0.10").get shouldBe MillPlugin.`0.10`
+    Platform.parse("sjs1").get shouldBe ScalaJs.`1.x`
+    Platform.parse("jvm").get shouldBe Jvm
+    Platform.parse("native0.4").get shouldBe ScalaNative.`0.4`
+    Platform.parse("sbt1.0").get shouldBe SbtPlugin.`1.0`
+    Platform.parse("mill0.10").get shouldBe MillPlugin.`0.10`
   }
 }

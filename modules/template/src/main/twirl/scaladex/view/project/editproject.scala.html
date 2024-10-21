@@ -10,9 +10,8 @@
 @import scaladex.view.ProjectTab
 
 
-@(env: Env, user: UserState, project: Project, header: Option[ProjectHeader], artifacts: Seq[Artifact])
+@(env: Env, user: UserState, project: Project, header: Option[ProjectHeader], artifactNames: Seq[Artifact.Name])
 
-@artifactNames = @{ artifacts.map(_.artifactName).distinct }
 @main(env, title = s"Edit ${project.repository}", Some(user)) {
   <main id="container-project">
     @headproject(env, Some(user), project, header, ProjectTab.Settings)

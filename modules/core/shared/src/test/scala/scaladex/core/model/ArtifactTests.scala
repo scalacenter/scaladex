@@ -213,14 +213,11 @@ class ArtifactTests extends AnyFunSpec with Matchers {
     // be parsed or not, we just want to test methods in artifacts like sbtInstall
     // in fact those tests don't make sense, since it's not supposed to happen except if an Artifact is created without parsing.
     val artifactIdResult =
-      artifactName.map(name => ArtifactId(name, binaryVersion)).orElse(Artifact.ArtifactId.parse(artifactId)).get
+      artifactName.map(name => ArtifactId(name, binaryVersion)).getOrElse(Artifact.ArtifactId(artifactId))
     Artifact(
       groupId = GroupId(groupId),
-      artifactId = artifactId,
+      artifactId = artifactIdResult,
       version = SemanticVersion.parse(version).get,
-      artifactName = artifactIdResult.name,
-      platform = artifactIdResult.binaryVersion.platform,
-      language = artifactIdResult.binaryVersion.language,
       projectRef = projectRef.getOrElse(Project.Reference.from("", "")),
       description = None,
       releaseDate = Instant.now(),

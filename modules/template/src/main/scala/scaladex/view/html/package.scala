@@ -54,9 +54,9 @@ package object html {
 
     val newUri = uri
       .appendQuery("sort" -> params.sorting.label)
-      .appendQuery("topics", params.topics)
-      .appendQuery("languages", params.languages)
-      .appendQuery("platforms", params.platforms)
+      .appendQuery("topic", params.topics)
+      .appendQuery("language", params.languages.map(_.value))
+      .appendQuery("platform", params.platforms.map(_.value))
       .appendQuery("you", you)
       .appendQuery("q" -> params.queryString)
       .appendQuery("page" -> page.toString)
@@ -72,33 +72,33 @@ package object html {
   def paginationUri(category: Category, params: AwesomeParams)(page: Int): Uri =
     Uri(s"/awesome/${category.label}")
       .appendQuery("sort" -> params.sorting.label)
-      .appendQuery("languages", params.languages.map(_.label))
-      .appendQuery("platforms", params.platforms.map(_.label))
+      .appendQuery("language", params.languages.map(_.value))
+      .appendQuery("platform", params.platforms.map(_.value))
       .appendQuery("page" -> page.toString)
 
   def awesomeCategoryUri(category: Category, params: AwesomeParams): Uri =
     Uri(s"/awesome/${category.label}")
       .appendQuery("sort" -> params.sorting.label)
-      .appendQuery("languages", params.languages.map(_.label))
-      .appendQuery("platforms", params.platforms.map(_.label))
+      .appendQuery("language", params.languages.map(_.value))
+      .appendQuery("platform", params.platforms.map(_.value))
 
   def versionsUri(ref: Project.Reference, artifactName: Artifact.Name, params: ArtifactsPageParams): Uri =
     Uri(s"/$ref/artifacts/$artifactName")
-      .appendQuery("binary-versions", params.binaryVersions.map(_.label))
+      .appendQuery("binary-version", params.binaryVersions.map(_.value))
       .appendQuery(("stable-only", params.stableOnly.toString))
 
   def versionsUri(ref: Project.Reference, artifactName: Artifact.Name, binaryVersion: Option[BinaryVersion]): Uri =
     Uri(s"/$ref/artifacts/$artifactName")
-      .appendQuery("binary-versions", binaryVersion.map(_.label))
+      .appendQuery("binary-version", binaryVersion.map(_.value))
 
   def artifactsUri(ref: Project.Reference, params: ArtifactsPageParams): Uri =
     Uri(s"/$ref/artifacts")
-      .appendQuery("binary-versions", params.binaryVersions.map(_.label))
+      .appendQuery("binary-version", params.binaryVersions.map(_.value))
       .appendQuery(("stable-only", params.stableOnly.toString))
 
   def artifactsUri(ref: Project.Reference, binaryVersion: Option[BinaryVersion]): Uri =
     Uri(s"/$ref/artifacts")
-      .appendQuery("binary-versions", binaryVersion.map(_.label))
+      .appendQuery("binary-version", binaryVersion.map(_.value))
 
   // https://www.reddit.com/r/scala/comments/4n73zz/scala_puzzle_gooooooogle_pagination/d41jor5
   def paginationRender(selected: Int, max: Int, toShow: Int = 10): (Option[Int], List[Int], Option[Int]) = {

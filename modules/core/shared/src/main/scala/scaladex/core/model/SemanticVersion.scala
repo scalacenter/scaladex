@@ -36,10 +36,10 @@ case class SemanticVersion(
 
   override def toString: String = this match {
     case MajorVersion(major) => s"$major.x"
-    case _                   => encode
+    case _                   => value
   }
 
-  def encode: String = {
+  def value: String = {
     val minorPart = minor.map(m => s".$m").getOrElse("")
     val patchPart = patch.map(p => s".$p").getOrElse("")
     val patch2Part = patch2.map(p2 => s".$p2").getOrElse("")
@@ -131,5 +131,5 @@ object SemanticVersion {
       case _                    => None
     }
 
-  def from(version: String): SemanticVersion = parse(version).get
+  def unsafe(version: String): SemanticVersion = parse(version).get
 }

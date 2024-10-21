@@ -96,7 +96,7 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
         val res = database.getProject(ref).flatMap {
           case None => Future.successful(error("project not found"))
           case Some(project) =>
-            val bv = binaryVersion.flatMap(BinaryVersion.fromLabel)
+            val bv = binaryVersion.flatMap(BinaryVersion.parse)
             getDefaultArtifact(project, bv, artifactName).map {
               case None => error("no published artifacts")
               case Some(artifact) =>
@@ -116,11 +116,12 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
     // in case targetType is defined we choose the most recent corresponding platform
     parameters("targetType".?, "platform".?) { (targetTypeParam, platformParam) =>
       shields { (color, style, logo, logoWidth) =>
-        val artifactsF = database.getArtifactsByName(reference, artifactName)
+        // TODO use projectHeader
+        val artifactsF = database.getProjectArtifactRefs(reference, artifactName)
         onSuccess(artifactsF) { artifacts =>
           val availablePlatforms = artifacts.map(_.binaryVersion.platform).distinct
           val platform = platformParam
-            .flatMap(Platform.fromLabel)
+            .flatMap(Platform.parse)
             .orElse {
               targetTypeParam.map(_.toUpperCase).flatMap {
                 case "JVM" => Some(Jvm)
@@ -153,9 +154,10 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
       project: Project,
       binaryVersion: Option[BinaryVersion],
       artifact: Option[Artifact.Name]
-  ): Future[Option[Artifact]] = {
+  ): Future[Option[Artifact.Reference]] = {
     val artifactSelection = ArtifactSelection(binaryVersion, artifact)
-    database.getArtifacts(project.reference).map { artifacts =>
+    // TODO use projectHeader
+    database.getProjectArtifactRefs(project.reference, stableOnly = false).map { artifacts =>
       val (stableArtifacts, nonStableArtifacts) = artifacts.partition(_.version.isStable)
       artifactSelection
         .defaultArtifact(stableArtifacts, project)
@@ -165,7 +167,7 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
 }
 
 object Badges {
-  private def summaryOfLatestVersions(artifacts: Seq[Artifact]): String = {
+  private def summaryOfLatestVersions(artifacts: Seq[Artifact.Reference]): String = {
     val versionsByScalaVersions = artifacts
       .groupMap(_.binaryVersion.language)(_.version)
       .collect { case (Scala(v), version) => Scala(v) -> version }

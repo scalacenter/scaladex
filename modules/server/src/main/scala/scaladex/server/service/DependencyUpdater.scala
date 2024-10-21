@@ -31,7 +31,7 @@ class DependencyUpdater(database: SchedulerDatabase, projectService: ProjectServ
         database.deleteProjectDependencies(project.reference).map(_ => ())
       else
         for {
-          header <- projectService.getProjectHeader(project)
+          header <- projectService.getHeader(project)
           dependencies <- header
             .map(h => database.computeProjectDependencies(project.reference, h.latestVersion))
             .getOrElse(Future.successful(Seq.empty))

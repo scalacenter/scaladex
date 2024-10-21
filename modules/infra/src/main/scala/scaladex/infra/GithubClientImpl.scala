@@ -221,7 +221,7 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
         val filtered =
           if (filterPermissions.isEmpty) repos
           else repos.filter(repo => filterPermissions.contains(repo.viewerPermission))
-        filtered.map(repo => Project.Reference.from(repo.nameWithOwner))
+        filtered.map(repo => Project.Reference.unsafe(repo.nameWithOwner))
       }
 
   def getOrganizationRepositories(
@@ -234,7 +234,7 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
         val filtered =
           if (filterPermissions.isEmpty) repos
           else repos.filter(repo => filterPermissions.contains(repo.viewerPermission))
-        filtered.map(repo => Project.Reference.from(repo.nameWithOwner))
+        filtered.map(repo => Project.Reference.unsafe(repo.nameWithOwner))
       }
 
   private def getUserOrganizationsPage(

@@ -64,7 +64,7 @@
                       ) {
                         <h5>@platform:</h5>
                         @for(binaryVersion <- binaryVersions.map(_.binaryVersion).distinct.sorted.reverse) { 
-                          <a href="/@project.reference/artifacts/@name/@version?binary-version=@binaryVersion.encode" class="scala-version">
+                          <a href="/@project.reference/artifacts/@name/@version?binary-version=@binaryVersion.value" class="scala-version">
                             @binaryVersion.language.label
                           </a>
                         }

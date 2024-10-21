@@ -22,7 +22,6 @@ import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.util.ByteString
 import scaladex.core.model.Artifact
-import scaladex.core.model.Artifact.MavenReference
 import scaladex.core.model.SbtPlugin
 import scaladex.core.model.SemanticVersion
 import scaladex.core.service.MavenCentralClient
@@ -55,7 +54,7 @@ class MavenCentralClientImpl()(implicit val system: ActorSystem)
       page <- responseFuture.entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String)
     } yield {
       val artifactIds = JsoupUtils.listDirectories(uri, page)
-      artifactIds.flatMap(Artifact.ArtifactId.parse)
+      artifactIds.map(Artifact.ArtifactId.apply)
     }
   }
 
@@ -76,14 +75,14 @@ class MavenCentralClientImpl()(implicit val system: ActorSystem)
     }
   }
 
-  override def getPomFile(mavenReference: Artifact.MavenReference): Future[Option[(String, Instant)]] = {
+  override def getPomFile(ref: Artifact.Reference): Future[Option[(String, Instant)]] = {
     val future = for {
-      responseOpt <- getHttpResponse(mavenReference)
-      res <- responseOpt.map(getPomFileWithLastModifiedTime).getOrElse(Future.successful(None))
+      response <- getHttpResponse(ref)
+      res <- getPomFileWithLastModifiedTime(response)
     } yield res
     future.recoverWith {
       case NonFatal(exception) =>
-        logger.warn(s"Could not get pom file of $mavenReference because of $exception")
+        logger.warn(s"Could not get pom file of $ref because of $exception")
         Future.successful(None)
     }
   }
@@ -98,29 +97,21 @@ class MavenCentralClientImpl()(implicit val system: ActorSystem)
       case _ => Future.successful(None)
     }
 
-  private def getHttpResponse(mavenReference: MavenReference): Future[Option[HttpResponse]] = {
-    val groupIdUrl: String = mavenReference.groupId.replace('.', '/')
-    Artifact.ArtifactId
-      .parse(mavenReference.artifactId)
-      .map { artifactId =>
-        val pomUrl = getPomUrl(artifactId, mavenReference.version)
-        val uri = s"$baseUri/${groupIdUrl}/${mavenReference.artifactId}/${mavenReference.version}/$pomUrl"
-        val request = HttpRequest(uri = uri)
-        queueRequest(request).map(Option.apply)
-      }
-      .getOrElse {
-        logger.info(s"not able to parse ${mavenReference.artifactId} as ArtifactId")
-        Future.successful(None)
-      }
+  private def getHttpResponse(ref: Artifact.Reference): Future[HttpResponse] = {
+    val groupIdUrl: String = ref.groupId.value.replace('.', '/')
+    val pomUrl = getPomFileName(ref.artifactId, ref.version)
+    val uri = s"$baseUri/${groupIdUrl}/${ref.artifactId.value}/${ref.version.value}/$pomUrl"
+    val request = HttpRequest(uri = uri)
+    queueRequest(request)
   }
 
   // Wed, 04 Nov 2020 23:36:02 GMT
   private val dateFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
   private[infra] def parseDate(dateStr: String): Instant = ZonedDateTime.parse(dateStr, dateFormatter).toInstant
 
-  private def getPomUrl(artifactId: Artifact.ArtifactId, version: String): String =
+  private def getPomFileName(artifactId: Artifact.ArtifactId, version: SemanticVersion): String =
     artifactId.binaryVersion.platform match {
-      case SbtPlugin(_) => s"${artifactId.name.value}-$version.pom"
-      case _            => s"${artifactId.value}-${version}.pom"
+      case SbtPlugin(_) => s"${artifactId.name.value}-${version.value}.pom"
+      case _            => s"${artifactId.value}-${version.value}.pom"
     }
 }

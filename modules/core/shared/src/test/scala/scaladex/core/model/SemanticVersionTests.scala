@@ -55,6 +55,6 @@ class SemanticVersionTests extends AsyncFunSpec with Matchers with TableDrivenPr
       SemanticVersion(1, Some(2), Some(3), Some(4))
     )
 
-    forAll(inputs)(v => SemanticVersion.parse(v.encode).get shouldBe v)
+    forAll(inputs)(v => SemanticVersion.unsafe(v.value) shouldBe v)
   }
 }

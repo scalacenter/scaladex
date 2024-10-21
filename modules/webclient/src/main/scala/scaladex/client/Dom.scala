@@ -5,15 +5,16 @@ import org.scalajs.dom.HTMLInputElement
 import org.scalajs.dom.Node
 import org.scalajs.dom.document
 import scaladex.core.api.AutocompletionParams
+import scaladex.core.model._
 
 object Dom {
   def getSearchRequest: Option[AutocompletionParams] =
     for (query <- getSearchQuery)
       yield AutocompletionParams(
         query = query,
-        topics = getSearchFilter("topics"),
-        languages = getSearchFilter("languages"),
-        platforms = getSearchFilter("platforms"),
+        topics = getSearchFilter("topic"),
+        languages = getSearchFilter("language").flatMap(Language.parse),
+        platforms = getSearchFilter("platform").flatMap(Platform.parse),
         contributingSearch = getById[HTMLInputElement]("contributing-search").map(_.value).contains("true"),
         you = getById[HTMLInputElement]("you").map(_.value).contains("✓")
       )

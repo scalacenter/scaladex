@@ -24,8 +24,8 @@
       @for((language, count) <- languages) {
         <li>
           <label>
-            <input type="checkbox" @if(params.languages.contains(language.label)) { checked }
-                    name="languages" value="@language.label" onclick="this.form.submit()">
+            <input type="checkbox" @if(params.languages.contains(language)) { checked }
+                    name="language" value="@language.value" onclick="this.form.submit()">
             @language (@count)
           </label>
         </li>
@@ -38,8 +38,8 @@
       @for((platform, count) <- platforms) {
         <li>
           <label>
-            <input type="checkbox" @if(params.platforms.contains(platform.label)) { checked }
-                    name="platforms" value="@platform.label" onclick="this.form.submit()">
+            <input type="checkbox" @if(params.platforms.contains(platform)) { checked }
+                    name="platform" value="@platform.value" onclick="this.form.submit()">
             @platform (@count)
           </label>
         </li>
@@ -53,7 +53,7 @@
         <li>
           <label>
             <input type="checkbox" @if(params.topics.contains(topic)) { checked }
-                   name="topics" value="@topic" onclick="this.form.submit()">
+                   name="topic" value="@topic" onclick="this.form.submit()">
             @topic (@count)
           </label>
         </li>

@@ -32,7 +32,7 @@
                   @for((platform, binaryVersions) <- binaryVersions.groupBy(_.platform)) {
                     <optgroup label="@platform">
                       @for(binaryVersion <- binaryVersions.sortBy(_.language)(Language.ordering.reverse)) {
-                        <option value="@binaryVersion.label"
+                        <option value="@binaryVersion.value"
                           @if(params.binaryVersion.contains(binaryVersion) || artifact.binaryVersion == binaryVersion) {selected}>
                           @binaryVersion
                         </option>
@@ -43,9 +43,9 @@
                 </form>
               </div>
               <h2>
-                <a href="@versionsUri(project.reference, artifact.artifactName, params.binaryVersion)">@artifact.artifactName</a>
+                <a href="@versionsUri(project.reference, artifact.name, params.binaryVersion)">@artifact.name</a>
                 <span class="artifact-version">@artifact.version</span>
-                @if(project.settings.deprecatedArtifacts.contains(artifact.artifactName)) {
+                @if(project.settings.deprecatedArtifacts.contains(artifact.name)) {
                   <span class="label label-warning">Deprecated</span>
                 }
               </h2>
@@ -67,9 +67,9 @@
                 }
               }
               @if(artifact.resolver.isEmpty) {
-                @info("Files") { <a href="@artifact.mavenReference.repoUrl">View all</a> }
+                @info("Files") { <a href="@artifact.reference.repoUrl">View all</a> }
               }
-              @artifact.fullScalaVersion.map{ version => @info("Full Scala Version") { @version.toString }}
+              @artifact.fullScalaVersion.map{ version => @info("Full Scala Version") { @version }}
               @developers
             </div>
             @installBox(InstallTab.allOf(artifact, project.settings.cliArtifacts))

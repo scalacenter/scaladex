@@ -29,9 +29,9 @@ class CoursierResolver(implicit val ec: ExecutionContext) extends PomResolver wi
     .withArtifactTypes(Set(Type.pom))
     .withRepositories(repositories)
 
-  def resolveSync(ref: Artifact.MavenReference): Path = {
-    val dep = Dependency(Module(Organization(ref.groupId), ModuleName(ref.artifactId)), ref.version)
-      .withPublication(ref.artifactId, Type.pom)
+  def resolveSync(ref: Artifact.Reference): Path = {
+    val dep = Dependency(Module(Organization(ref.groupId.value), ModuleName(ref.artifactId.value)), ref.version.value)
+      .withPublication(ref.artifactId.value, Type.pom)
     fetchPoms
       .addDependencies(dep)
       .run()

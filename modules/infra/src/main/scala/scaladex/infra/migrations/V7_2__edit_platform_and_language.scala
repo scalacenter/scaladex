@@ -9,7 +9,6 @@ import doobie.implicits._
 import doobie.util.update.Update
 import org.flywaydb.core.api.migration.BaseJavaMigration
 import org.flywaydb.core.api.migration.Context
-import scaladex.core.model.Artifact.MavenReference
 import scaladex.core.model._
 import scaladex.infra.sql.DoobieUtils.Mappings._
 import scaladex.infra.sql.DoobieUtils.selectRequest
@@ -39,7 +38,7 @@ class V7_2__edit_platform_and_language extends BaseJavaMigration with ScaladexBa
 
   val selectArtifact: Query0[OldArtifact] = selectRequest("artifacts", Seq("*"))
 
-  val updatePlatformAndLanguage: Update[(Platform, Language, MavenReference)] =
+  val updatePlatformAndLanguage: Update[(Platform, Language, Artifact.Reference)] =
     updateRequest("artifacts", Seq("platform", "language_version"), Seq("group_id", "artifact_id", "version"))
 
 }
@@ -57,8 +56,8 @@ object V7_2__edit_platform_and_language {
       licenses: Set[License],
       isNonStandardLib: Boolean
   ) {
-    def update: (Platform, Language, MavenReference) = {
-      val mavenRef = MavenReference(groupId = groupId.value, artifactId = artifactId, version = version.toString)
+    def update: (Platform, Language, Artifact.Reference) = {
+      val mavenRef = Artifact.Reference(groupId, Artifact.ArtifactId(artifactId), version)
       (binaryVersion.platform, binaryVersion.language, mavenRef)
     }
   }

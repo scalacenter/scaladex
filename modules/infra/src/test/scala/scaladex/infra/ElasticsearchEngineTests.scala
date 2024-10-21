@@ -174,7 +174,7 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
 
   private def projectDocument(ref: String, stars: Int, scalaPercentage: Int): ProjectDocument = {
     val githubInfo = GithubInfoDocument.empty.copy(stars = Some(stars), scalaPercentage = Some(scalaPercentage))
-    ProjectDocument.default(Project.Reference.from(ref)).copy(githubInfo = Some(githubInfo))
+    ProjectDocument.default(Project.Reference.unsafe(ref)).copy(githubInfo = Some(githubInfo))
   }
 
 }

@@ -257,11 +257,11 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
 
   override def countByLanguages(params: SearchParams): Future[Seq[(Language, Int)]] =
     languageAggregation(filteredSearchQuery(params))
-      .map(addMissing(params.languages.flatMap(Language.fromLabel)))
+      .map(addMissing(params.languages))
 
   override def countByPlatforms(params: SearchParams): Future[Seq[(Platform, Int)]] =
     platformAggregations(filteredSearchQuery(params))
-      .map(addMissing(params.platforms.flatMap(Platform.fromLabel)))
+      .map(addMissing(params.platforms))
 
   override def find(
       category: Category,
@@ -270,7 +270,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
   ): Future[Page[ProjectDocument]] = {
     val query = must(
       termQuery("category", category.label),
-      binaryVersionQuery(params.languages.map(_.label), params.platforms.map(_.label))
+      binaryVersionQuery(params.languages, params.platforms)
     )
     val request = searchRequest(query, params.sorting)
 
@@ -289,7 +289,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       .map { versionAgg =>
         for {
           (version, count) <- versionAgg.toList
-          language <- Language.fromLabel(version)
+          language <- Language.parse(version)
         } yield (language, count)
       }
       .map(_.sortBy(_._1)(Language.ordering.reverse))
@@ -299,7 +299,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       .map { versionAgg =>
         for {
           (version, count) <- versionAgg.toList
-          platform <- Platform.fromLabel(version)
+          platform <- Platform.parse(version)
         } yield (platform, count)
       }
       .map(_.sortBy(_._1)(Platform.ordering.reverse))
@@ -330,7 +330,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
   private def awesomeQuery(category: Category, params: AwesomeParams): Query =
     must(
       termQuery("category", category.label),
-      binaryVersionQuery(params.languages.map(_.label), params.platforms.map(_.label))
+      binaryVersionQuery(params.languages, params.platforms)
     )
 
   private def filteredSearchQuery(params: SearchParams): Query =
@@ -431,13 +431,13 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       termQuery("repository.keyword", repo.repository.value)
     )
 
-  private def binaryVersionQuery(languages: Seq[String], platforms: Seq[String]): Query =
-    must(languages.map(termQuery("languages", _)) ++ platforms.map(termQuery("platforms", _)))
+  private def binaryVersionQuery(languages: Seq[Language], platforms: Seq[Platform]): Query =
+    must(languages.map(l => termQuery("languages", l.value)) ++ platforms.map(p => termQuery("platforms", p.value)))
 
   private def binaryVersionQuery(binaryVersion: BinaryVersion): Query =
     must(
-      termQuery("platforms", binaryVersion.platform.label),
-      termQuery("languages", binaryVersion.language.label)
+      termQuery("platforms", binaryVersion.platform.value),
+      termQuery("languages", binaryVersion.language.value)
     )
 
   private val contributingQuery = boolQuery().must(

@@ -12,6 +12,19 @@ import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions._
 
 class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext) extends LazyLogging {
+  def getVersions(
+      groupId: Artifact.GroupId,
+      artifactId: Artifact.ArtifactId,
+      stableOnly: Boolean
+  ): Future[Seq[SemanticVersion]] =
+    database.getArtifactVersions(groupId, artifactId, stableOnly)
+
+  def getLatestArtifact(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Option[Artifact]] =
+    database.getLatestArtifact(groupId, artifactId)
+
+  def getArtifact(ref: Artifact.Reference): Future[Option[Artifact]] =
+    database.getArtifact(ref)
+
   def insertArtifact(artifact: Artifact, dependencies: Seq[ArtifactDependency]): Future[Boolean] = {
     val unknownStatus = GithubStatus.Unknown(Instant.now)
     for {
@@ -30,7 +43,9 @@ class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext
       total <- moved
         .map {
           case (source, dest) =>
-            database.getArtifacts(source).flatMap(artifacts => database.updateArtifacts(artifacts, dest))
+            database
+              .getProjectArtifactRefs(source, stableOnly = false)
+              .flatMap(artifacts => database.updateArtifacts(artifacts, dest))
         }
         .sequence
         .map(_.sum)
@@ -58,11 +73,15 @@ class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext
       }
     } yield artifactIds.size
 
-  def updateLatestVersion(groupId: Artifact.GroupId, artifactId: String, preferStableVersion: Boolean): Future[Unit] =
+  def updateLatestVersion(
+      groupId: Artifact.GroupId,
+      artifactId: Artifact.ArtifactId,
+      preferStableVersion: Boolean
+  ): Future[Unit] =
     for {
       artifacts <- database.getArtifacts(groupId, artifactId)
       latestVersion = computeLatestVersion(artifacts.map(_.version), preferStableVersion)
-      _ <- database.updateLatestVersion(Artifact.MavenReference(groupId, artifactId, latestVersion))
+      _ <- database.updateLatestVersion(Artifact.Reference(groupId, artifactId, latestVersion))
     } yield ()
 
   def computeLatestVersion(versions: Seq[SemanticVersion], preferStableVersion: Boolean): SemanticVersion = {

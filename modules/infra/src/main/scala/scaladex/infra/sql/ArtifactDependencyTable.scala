@@ -38,8 +38,7 @@ object ArtifactDependencyTable {
       s"d.target_version = t.version)"
 
   private val dependencyAndArtifactFields =
-    fields.map("d." + _) ++
-      ArtifactTable.fields.map("a." + _)
+    fields.map("d." + _) ++ ArtifactTable.mainFields.map("a." + _)
 
   val insertIfNotExist: Update[ArtifactDependency] =
     insertOrUpdateRequest(table, fields, fields)
@@ -47,17 +46,17 @@ object ArtifactDependencyTable {
   val count: doobie.Query0[Long] =
     selectRequest(table, Seq("COUNT(*)"))
 
-  val select: Query[Artifact.MavenReference, ArtifactDependency] =
+  val select: Query[Artifact.Reference, ArtifactDependency] =
     selectRequest(table, fields, sourceFields)
 
-  val selectDirectDependency: doobie.Query[Artifact.MavenReference, ArtifactDependency.Direct] =
+  val selectDirectDependency: doobie.Query[Artifact.Reference, ArtifactDependency.Direct] =
     selectRequest(
       tableWithTargetArtifact,
       dependencyAndArtifactFields,
       sourceFields.map(f => s"d.$f")
     )
 
-  val selectReverseDependency: Query[Artifact.MavenReference, ArtifactDependency.Reverse] =
+  val selectReverseDependency: Query[Artifact.Reference, ArtifactDependency.Reverse] =
     selectRequest(
       tableWithSourceArtifact,
       dependencyAndArtifactFields,

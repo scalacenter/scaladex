@@ -2,35 +2,17 @@ package scaladex.core.api
 
 import java.time.Instant
 
-import scaladex.core.model.Artifact
-import scaladex.core.model.Language
-import scaladex.core.model.License
-import scaladex.core.model.Platform
-import scaladex.core.model.Project
-import scaladex.core.model.SemanticVersion
+import scaladex.core.model._
 
 final case class ArtifactResponse(
     groupId: Artifact.GroupId,
-    artifactId: String,
+    artifactId: Artifact.ArtifactId,
     version: SemanticVersion,
     artifactName: Artifact.Name,
+    binaryVersion: BinaryVersion,
+    language: Language,
+    platform: Platform,
     project: Project.Reference,
     releaseDate: Instant,
-    licenses: Seq[License],
-    language: Language,
-    platform: Platform
+    licenses: Seq[License]
 )
-
-object ArtifactResponse {
-  def apply(artifact: Artifact): ArtifactResponse = ArtifactResponse(
-    artifact.groupId,
-    artifact.artifactId,
-    artifact.version,
-    artifact.artifactName,
-    artifact.projectRef,
-    artifact.releaseDate,
-    artifact.licenses.toSeq,
-    artifact.language,
-    artifact.platform
-  )
-}

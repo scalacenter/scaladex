@@ -31,7 +31,7 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach {
       _ <- database.updateGithubInfoAndStatus(PlayJsonExtra.reference, PlayJsonExtra.githubInfo, ok)
     } yield ()
 
-  val projectPages = new ProjectPages(config.env, database, searchEngine)
+  val projectPages = new ProjectPages(config.env, projectService, artifactService, database, searchEngine)
   val artifactPages = new ArtifactPages(config.env, database)
   val route: Route = projectPages.route(None) ~ artifactPages.route(None)
 
@@ -60,10 +60,10 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach {
     val destination = PlayJsonExtra.reference.copy(repository = Project.Repository("play-json-extra-2"))
     val moved = GithubStatus.Moved(now, destination)
     Await.result(database.moveProject(PlayJsonExtra.reference, PlayJsonExtra.githubInfo, moved), Duration.Inf)
-    Get(s"/${PlayJsonExtra.reference}/artifacts/play-json-extra?binary-versions=_2.13") ~> route ~> check {
+    Get(s"/${PlayJsonExtra.reference}/artifacts/play-json-extra?binary-version=_2.13") ~> route ~> check {
       status shouldEqual StatusCodes.MovedPermanently
       val location = headers.collectFirst { case Location(uri) => uri }
-      location should contain(Uri(s"http://example.com/$destination/artifacts/play-json-extra?binary-versions=_2.13"))
+      location should contain(Uri(s"http://example.com/$destination/artifacts/play-json-extra?binary-version=_2.13"))
     }
   }
 

@@ -33,12 +33,10 @@ object Main extends LazyLogging {
     }
 
   /**
-   * Update data:
-   *  - pull the latest data from the 'contrib' repository
-   *  - download data from Bintray and update the ElasticSearch index
-   *  - commit the new state of the 'index' repository
+   * - subIndex: dump the database to JSON files under scaladex-index or scaladex-small-index
+   * - init: load the JSON files to the database
    *
-   * @param args: "central" or "init"
+   * @param args: "subIndex" or "init"
    */
   def run(args: Array[String]): Unit = {
     val config = IndexConfig.load()
@@ -104,7 +102,6 @@ object Main extends LazyLogging {
     logger.info(s"Executing $name")
     val (_, duration) = TimeUtils.measure(run())
     logger.info(s"$name done in ${duration.prettyPrint}")
-    system.terminate()
   }
 }
 

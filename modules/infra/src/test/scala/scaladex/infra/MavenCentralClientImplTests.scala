@@ -13,7 +13,7 @@ class MavenCentralClientImplTests extends AsyncFunSpec with Matchers {
   implicit val system: ActorSystem = ActorSystem("maven-central-client-tests")
   val client = new MavenCentralClientImpl()
   val groupId: GroupId = GroupId("ch.epfl.scala")
-  val artifactId: ArtifactId = ArtifactId.parse("sbt-scalafix_2.12_1.0").get
+  val artifactId: ArtifactId = ArtifactId("sbt-scalafix_2.12_1.0")
   val version: SemanticVersion = SemanticVersion.parse("0.9.23").get
 
   it(s"retrieve artifactIds for ${groupId.value}") {
@@ -32,34 +32,32 @@ class MavenCentralClientImplTests extends AsyncFunSpec with Matchers {
     for {
       res <- client.getAllVersions(
         GroupId("ru.tinkoff"),
-        ArtifactId.parse("typed-schema-swagger-typesafe_2.12").get
+        ArtifactId("typed-schema-swagger-typesafe_2.12")
       )
     } yield res should contain(SemanticVersion.parse("0.15.2").get)
   }
 
   it(s"retrieve pomfile for maven reference of sbt plugin") {
     for {
-      res <- client.getPomFile(Artifact.MavenReference("ch.epfl.scala", "sbt-scalafix_2.12_1.0", "0.9.23"))
+      res <- client.getPomFile(Artifact.Reference.unsafe("ch.epfl.scala", "sbt-scalafix_2.12_1.0", "0.9.23"))
     } yield res.get._1.startsWith("<?xml") shouldBe true
   }
 
   it(s"retrieve pomfile for maven reference of jvm") {
     for {
-      res <- client.getPomFile(Artifact.MavenReference("ch.epfl.scala", "scalafix-core_2.13", "0.9.23"))
+      res <- client.getPomFile(Artifact.Reference.unsafe("ch.epfl.scala", "scalafix-core_2.13", "0.9.23"))
     } yield res.get._1.startsWith("<?xml") shouldBe true
   }
 
   it(s"retrieve pomfile for maven reference of ScalaJs") {
     for {
-      res <- client.getPomFile(Artifact.MavenReference("ch.epfl.scala", "bloop-config_sjs1_2.13", "1.4.11"))
+      res <- client.getPomFile(Artifact.Reference.unsafe("ch.epfl.scala", "bloop-config_sjs1_2.13", "1.4.11"))
     } yield res.get._1.startsWith("<?xml") shouldBe true
   }
 
   it(s"retrieve pomfile for maven reference of Scala Native") {
     for {
-      res <- client.getPomFile(
-        Artifact.MavenReference("ch.epfl.scala", "bloop-native-bridge-0-4_2.12", "1.3.4")
-      )
+      res <- client.getPomFile(Artifact.Reference.unsafe("ch.epfl.scala", "bloop-native-bridge-0-4_2.12", "1.3.4"))
     } yield res.get._1.startsWith("<?xml") shouldBe true
   }
 

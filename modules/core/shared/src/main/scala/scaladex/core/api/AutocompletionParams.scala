@@ -1,15 +1,14 @@
 package scaladex.core.api
 
-import scaladex.core.model.Project
-import scaladex.core.model.UserState
+import scaladex.core.model._
 import scaladex.core.model.search.SearchParams
 import scaladex.core.model.search.Sorting
 
 case class AutocompletionParams(
     query: String,
     topics: Seq[String],
-    languages: Seq[String],
-    platforms: Seq[String],
+    languages: Seq[Language],
+    platforms: Seq[Platform],
     contributingSearch: Boolean,
     you: Boolean
 ) {

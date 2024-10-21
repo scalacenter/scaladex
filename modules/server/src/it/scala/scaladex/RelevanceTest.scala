@@ -12,15 +12,14 @@ import cats.effect.IO
 import cats.effect.ContextShift
 
 import scala.concurrent.ExecutionContext
-import scaladex.core.model.Project
-import scaladex.core.model.search.SearchParams
+import scaladex.core.model.search._
 import scaladex.infra.{ElasticsearchEngine, FilesystemStorage, SqlDatabase}
 import scaladex.infra.sql.DoobieUtils
 import scaladex.server.service.SearchSynchronizer
-import scaladex.core.model.search.PageParams
 import scaladex.server.service.DependencyUpdater
 import scaladex.core.service.ProjectService
 import scaladex.server.service.ArtifactService
+import scaladex.core.model._
 
 class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
 
@@ -38,7 +37,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
         val database = new SqlDatabase(datasource, xa)
         val filesystem = FilesystemStorage(config.filesystem)
 
-        val projectService = new ProjectService(database)
+        val projectService = new ProjectService(database, searchEngine)
         val searchSync = new SearchSynchronizer(database, projectService, searchEngine)
         val projectDependenciesUpdater = new DependencyUpdater(database, projectService)
         val artifactService = new ArtifactService(database)
@@ -108,7 +107,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
 
   test("Scala.js targetTypes") {
     top(
-      SearchParams(platforms = List("sjs1")),
+      SearchParams(platforms = Seq(ScalaJs.`1.x`)),
       List(
         "scala-js" -> "scala-js"
       )
@@ -117,7 +116,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
 
   test("filter _sjs1_2.13") {
     top(
-      SearchParams(languages = Seq("2.13"), platforms = Seq("sjs1")),
+      SearchParams(languages = Seq(Scala.`2.13`), platforms = Seq(ScalaJs.`1.x`)),
       List(
         "scala-js" -> "scala-js"
       )
@@ -126,7 +125,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
 
   test("filter Scala Native 0.4 platform") {
     top(
-      SearchParams(platforms = List("native0.4")),
+      SearchParams(platforms = List(ScalaNative.`0.4`)),
       List(
         ("scalaz", "scalaz"),
         ("scopt", "scopt"),
@@ -137,7 +136,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
 
   test("filter _native0.4_2.13") {
     top(
-      SearchParams(languages = Seq("2.13"), platforms = Seq("native0.4")),
+      SearchParams(languages = Seq(Scala.`2.13`), platforms = Seq(ScalaNative.`0.4`)),
       List(
         ("scalaz", "scalaz"),
         ("scopt", "scopt"),
@@ -156,7 +155,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
         "typelevel/scalacheck",
         "typelevel/cats"
       )
-        .map(Project.Reference.from)
+        .map(Project.Reference.unsafe)
       val missing = expected.filter(ref => !mostDependedRefs.contains(ref))
       assert(missing.isEmpty)
     }

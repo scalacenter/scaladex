@@ -27,11 +27,16 @@ import scaladex.view.html.forbidden
 import scaladex.view.html.notfound
 import scaladex.view.project.html
 
-class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEngine)(
+class ProjectPages(
+    env: Env,
+    projectService: ProjectService,
+    artifactService: ArtifactService,
+    database: SchedulerDatabase,
+    searchEngine: SearchEngine
+)(
     implicit executionContext: ExecutionContext
 ) extends LazyLogging {
-  private val projectService = new ProjectService(database)
-  private val artifactService = new ArtifactService(database)
+
   private val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)
 
   def route(user: Option[UserState]): Route =
@@ -43,7 +48,7 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
         path(projectM / "artifacts") { ref =>
           artifactsParams { params =>
             getProjectOrRedirect(ref, user) { project =>
-              for (header <- projectService.getProjectHeader(project)) yield {
+              for (header <- projectService.getHeader(project)) yield {
                 val allArtifacts = header.toSeq.flatMap(_.artifacts)
 
                 val binaryVersions = allArtifacts
@@ -52,7 +57,7 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
                   .sorted(BinaryVersion.ordering.reverse)
 
                 val groupedArtifacts = allArtifacts
-                  .groupBy(_.artifactName)
+                  .groupBy(_.name)
                   .map {
                     case (name, artifacts) =>
                       val latestVersion = artifacts.maxBy(_.version).version
@@ -79,23 +84,21 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
         path(projectM / "artifacts" / artifactNameM) { (ref, artifactName) =>
           artifactsParams { params =>
             getProjectOrRedirect(ref, user) { project =>
-              val artifactsF = database.getArtifacts(ref, artifactName, params.stableOnly)
-              val headerF = projectService.getProjectHeader(project).map(_.get)
+              val artifactsF = database.getProjectArtifacts(ref, artifactName, params.stableOnly)
+              val headerF = projectService.getHeader(project).map(_.get)
               for (artifacts <- artifactsF; header <- headerF) yield {
                 val binaryVersions = artifacts
                   .map(_.binaryVersion)
                   .distinct
                   .sorted(BinaryVersion.ordering.reverse)
 
-                val artifactsByVersion =
-                  artifacts
-                    .groupBy(_.version)
-                    .filter {
-                      case (_, artifacts) =>
-                        params.binaryVersions
-                          .forall(binaryVersion => artifacts.exists(_.binaryVersion == binaryVersion))
-                    }
-                    .map { case (version, artifacts) => (artifacts.map(_.releaseDate).min, version) -> artifacts }
+                val artifactsByVersion = artifacts
+                  .groupBy(_.version)
+                  .filter {
+                    case (_, artifacts) =>
+                      params.binaryVersions.forall(binaryVersion => artifacts.exists(_.binaryVersion == binaryVersion))
+                  }
+                  .map { case (version, artifacts) => (artifacts.map(_.releaseDate).min, version) -> artifacts }
                 val sortedArtifactsByVersion = SortedMap.from(artifactsByVersion)(
                   Ordering.Tuple2(Ordering[Instant].reverse, Ordering[SemanticVersion].reverse)
                 )
@@ -119,8 +122,8 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
         path(projectM / "artifacts" / artifactNameM / versionM) { (ref, artifactName, artifactVersion) =>
           artifactParams { params =>
             getProjectOrRedirect(ref, user) { project =>
-              val headerF = projectService.getProjectHeader(project)
-              val artifactsF = database.getArtifacts(ref, artifactName, artifactVersion)
+              val headerF = projectService.getHeader(project)
+              val artifactsF = database.getProjectArtifacts(ref, artifactName, artifactVersion)
               for {
                 artifacts <- artifactsF
                 header <- headerF
@@ -153,8 +156,8 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
         path(projectM / "version-matrix") { ref =>
           getProjectOrRedirect(ref, user) { project =>
             for {
-              artifacts <- database.getArtifacts(project.reference)
-              header <- projectService.getProjectHeader(project)
+              artifacts <- projectService.getArtifactRefs(project.reference, None, None, false)
+              header <- projectService.getHeader(project)
             } yield {
               val binaryVersionByPlatforms = artifacts
                 .map(_.binaryVersion)
@@ -167,7 +170,8 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
 
               val artifactsByVersions = artifacts
                 .groupBy(_.version)
-                .map { case (version, artifacts) => (version, artifacts.groupBy(_.artifactName).toSeq.sortBy(_._1)) }
+                .view
+                .mapValues(artifacts => artifacts.groupMap(_.name)(_.binaryVersion).toSeq.sortBy(_._1))
                 .toSeq
                 .sortBy(_._1)(SemanticVersion.ordering.reverse)
               val page = html.versionMatrix(env, user, project, header, binaryVersionByPlatforms, artifactsByVersions)
@@ -210,7 +214,7 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
         // redirect to new artifacts page
         path(projectM / artifactNameM)((projectRef, artifactName) =>
           parameter("binaryVersion".?) { binaryVersion =>
-            val filter = binaryVersion.map(bv => s"?binary-versions=$bv").getOrElse("")
+            val filter = binaryVersion.map(bv => s"?binary-version=$bv").getOrElse("")
             redirect(s"/$projectRef/artifacts/$artifactName$filter", StatusCodes.MovedPermanently)
           }
         )
@@ -248,7 +252,7 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
 
   private val artifactsParams: Directive1[ArtifactsPageParams] =
     parameters(
-      "binary-versions".repeated,
+      "binary-version".repeated,
       "stable-only".as[Boolean].withDefault(false)
     ).tmap {
       case (rawbinaryVersions, preReleases) =>
@@ -272,10 +276,10 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
   ): Route =
     getProjectOrRedirect(ref, Some(user)) { project =>
       for {
-        artifacts <- database.getArtifacts(ref)
-        header <- projectService.getProjectHeader(project)
+        artifacts <- projectService.getArtifactRefs(ref, None, None, false)
+        header <- projectService.getHeader(project)
       } yield {
-        val page = html.editproject(env, user, project, header, artifacts)
+        val page = html.editproject(env, user, project, header, artifacts.map(_.name).distinct)
         complete(page)
       }
     }
@@ -283,7 +287,7 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
   private def getProjectPage(ref: Project.Reference, user: Option[UserState]): Route =
     getProjectOrRedirect(ref, user) { project =>
       for {
-        header <- projectService.getProjectHeader(project)
+        header <- projectService.getHeader(project)
         directDependencies <-
           header
             .map(h => database.getProjectDependencies(ref, h.latestVersion))
@@ -314,7 +318,7 @@ class ProjectPages(env: Env, database: SchedulerDatabase, searchEngine: SearchEn
 
   private def getBadges(ref: Project.Reference, user: Option[UserState]): Route =
     getProjectOrRedirect(ref, user) { project =>
-      for (header <- projectService.getProjectHeader(project).map(_.get)) yield {
+      for (header <- projectService.getHeader(project).map(_.get)) yield {
         val artifact = header.getDefaultArtifact(None, None)
         val page = html.badges(env, user, project, header, artifact)
         complete(StatusCodes.OK, page)

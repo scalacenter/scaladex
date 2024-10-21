@@ -186,14 +186,15 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(
     )
     for {
       projectOpt <- database.getProject(projectRef)
-      artifacts <- database.getArtifacts(projectRef)
+      stableOnly = projectOpt.map(_.settings.preferStableVersion).getOrElse(false)
+      artifacts <- database.getProjectArtifactRefs(projectRef, stableOnly)
     } yield for {
       project <- projectOpt
       filteredArtifacts = selection.filterArtifacts(artifacts, project)
       selected <- filteredArtifacts.headOption
     } yield {
       val (deprecatedArtifacts, artifacts) = filteredArtifacts
-        .map(_.artifactName)
+        .map(_.name)
         .distinct
         .partition(project.settings.deprecatedArtifacts.contains)
       // Sort semantic versions by descending order
@@ -203,8 +204,8 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(
         deprecatedArtifacts = deprecatedArtifacts.map(_.value),
         versions.map(_.toString),
         selected.groupId.value,
-        selected.artifactId,
-        selected.version.toString
+        selected.artifactId.value,
+        selected.version.value
       )
     }
   }

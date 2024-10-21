@@ -11,13 +11,7 @@ import scaladex.data.maven.Dependency
 import scaladex.data.maven.SbtPluginTarget
 import scaladex.infra.DataPaths
 
-private case class ArtifactMeta(
-    artifactName: String,
-    binaryVersion: BinaryVersion,
-    isNonStandard: Boolean
-) {
-  def artifactId: String = if (isNonStandard) artifactName else s"$artifactName${binaryVersion.label}"
-}
+private case class ArtifactMeta(artifactId: Artifact.ArtifactId, isNonStandard: Boolean)
 
 class ArtifactConverter(paths: DataPaths) extends LazyLogging {
   private val nonStandardLibs = NonStandardLib.load(paths)
@@ -35,26 +29,21 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
         Artifact.GroupId(pom.groupId),
         meta.artifactId,
         version,
-        Artifact.Name(meta.artifactName),
         projectRef,
         pom.description,
         creationDate,
         None,
         pom.licenses.flatMap(l => License.get(l.name)).toSet,
         meta.isNonStandard,
-        meta.binaryVersion.platform,
-        meta.binaryVersion.language,
         extractScalaVersion(pom),
         pom.scaladocUrl,
         pom.versionScheme,
         pom.developers.distinct
       )
-      val dependencies = pom.dependencies.map { dep =>
-        ArtifactDependency(
-          artifact.mavenReference,
-          dep.mavenRef,
-          dep.scope.map(Scope.apply).getOrElse(Scope.compile)
-        )
+      val dependencies = pom.dependencies.flatMap { dep =>
+        dep.reference.map { target =>
+          ArtifactDependency(artifact.reference, target, dep.scope.map(Scope.apply).getOrElse(Scope.compile))
+        }
       }.distinct
       (artifact, dependencies)
     }
@@ -90,35 +79,24 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
           // This is a usual Scala library (whose artifact name is suffixed by the Scala binary version)
           // For example: akka-actors_2.12
           case None =>
-            Artifact.ArtifactId.parse(pom.artifactId).map {
-              case Artifact.ArtifactId(artifactName, binaryVersion) =>
-                ArtifactMeta(
-                  artifactName = artifactName.value,
-                  binaryVersion = binaryVersion,
-                  isNonStandard = false
-                )
-            }
+            Some(ArtifactMeta(Artifact.ArtifactId(pom.artifactId), isNonStandard = false))
 
           // Or it can be an sbt-plugin published as a maven style. In such a case the Scala target
           // is not suffixed to the artifact name but can be found in the model’s `sbtPluginTarget` member.
           case Some(SbtPluginTarget(rawScalaVersion, rawSbtVersion)) =>
             SemanticVersion
               .parse(rawScalaVersion)
-              .zip(SemanticVersion.parse(rawSbtVersion)) match {
-              case Some((scalaVersion, sbtVersion)) =>
-                Some(
-                  ArtifactMeta(
-                    artifactName = pom.artifactId.stripSuffix(s"_${rawScalaVersion}_$rawSbtVersion"),
-                    binaryVersion = BinaryVersion(SbtPlugin(sbtVersion), Scala(scalaVersion)),
-                    isNonStandard = false
-                  )
-                )
-              case _ =>
-                logger.error(
-                  s"Unable to decode the Scala target: $rawScalaVersion $rawSbtVersion"
-                )
+              .zip(SemanticVersion.parse(rawSbtVersion))
+              .map {
+                case (scalaVersion, sbtVersion) =>
+                  val name = Artifact.Name(pom.artifactId.stripSuffix(s"_${rawScalaVersion}_$rawSbtVersion"))
+                  val binaryVersion = BinaryVersion(SbtPlugin(sbtVersion), Scala(scalaVersion))
+                  ArtifactMeta(Artifact.ArtifactId(name, binaryVersion), isNonStandard = false)
+              }
+              .orElse {
+                logger.error(s"Unable to decode the Scala target: $rawScalaVersion $rawSbtVersion")
                 None
-            }
+              }
         }
 
       // For example: io.gatling
@@ -129,19 +107,16 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
             (dep.artifactId == "scala-library" || dep.artifactId == "scala3-library_3")
           }
           version <- SemanticVersion.parse(dep.version)
-        } yield
-        // we assume binary compatibility
-        ArtifactMeta(
-          artifactName = pom.artifactId,
-          binaryVersion = BinaryVersion(Jvm, Scala.fromFullVersion(version)),
-          isNonStandard = true
-        )
+        } yield {
+          val name = Artifact.Name(pom.artifactId)
+          val binaryVersion = BinaryVersion(Jvm, Scala.fromFullVersion(version))
+          ArtifactMeta(Artifact.ArtifactId(name, binaryVersion), isNonStandard = true)
+        }
       // For example: typesafe config
       case Some(BinaryVersionLookup.Java) =>
         Some(
           ArtifactMeta(
-            artifactName = pom.artifactId,
-            binaryVersion = BinaryVersion(Jvm, Java),
+            Artifact.ArtifactId(Artifact.Name(pom.artifactId), BinaryVersion(Jvm, Java)),
             isNonStandard = true
           )
         )
@@ -150,12 +125,11 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
       case Some(BinaryVersionLookup.FromArtifactVersion) =>
         for (version <- SemanticVersion.parse(pom.version))
           yield ArtifactMeta(
-            artifactName = pom.artifactId,
-            binaryVersion = BinaryVersion(Jvm, Scala.fromFullVersion(version)),
+            Artifact.ArtifactId(Artifact.Name(pom.artifactId), BinaryVersion(Jvm, Scala.fromFullVersion(version))),
             isNonStandard = true
           )
     }
     // we need to filter out binary versions that are not valid
-    artifactMetaOption.filter(_.binaryVersion.isValid)
+    artifactMetaOption.filter(_.artifactId.binaryVersion.isValid)
   }
 }

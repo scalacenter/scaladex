@@ -39,7 +39,7 @@ class GithubClientImplTests extends AsyncFunSpec with Matchers {
       yield response should matchPattern { case GithubResponse.Ok(_) => () }
   }
   it("getRepository with no license") {
-    for (response <- client.getRepository(Project.Reference.from("mainstreethub/sbt-parent-plugin")))
+    for (response <- client.getRepository(Project.Reference.unsafe("mainstreethub/sbt-parent-plugin")))
       yield response match {
         case GithubResponse.Ok(repo) => repo.licenseName shouldBe empty
         case _                       => fail()

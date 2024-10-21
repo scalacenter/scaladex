@@ -8,19 +8,8 @@ import scala.concurrent.ExecutionContext
 
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model.Artifact
-import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.ArtifactDependency.Scope
-import scaladex.core.model.GithubStatus
-import scaladex.core.model.Jvm
-import scaladex.core.model.Project
-import scaladex.core.model.Project.Organization
-import scaladex.core.model.ProjectDependency
-import scaladex.core.model.Scala
-import scaladex.core.model.ScalaJs
-import scaladex.core.model.SemanticVersion
-import scaladex.core.model.UserInfo
-import scaladex.core.model.UserState
+import scaladex.core.model._
 import scaladex.core.util.ScalaExtensions._
 import scaladex.core.util.Secret
 
@@ -32,14 +21,14 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
 
   import scaladex.core.test.Values._
 
-  it("insert artifact and its dependencies") {
+  it("insert artifact") {
     for {
       _ <- database.insertArtifact(Cats.`core_3:2.6.1`)
-      artifacts <- database.getArtifacts(Cats.reference)
-    } yield artifacts should contain theSameElementsAs Seq(Cats.`core_3:2.6.1`)
+      artifacts <- database.getArtifact(Cats.`core_3:2.6.1`.reference)
+    } yield artifacts should contain(Cats.`core_3:2.6.1`)
   }
 
-  it("should get all project statuses") {
+  it("get all project statuses") {
     for {
       _ <- database.insertProjectRef(Cats.reference, unknown)
       _ <- database.insertProjectRef(PlayJsonExtra.reference, unknown)
@@ -47,7 +36,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     } yield projectStatuses.keys should contain theSameElementsAs Seq(PlayJsonExtra.reference, Cats.reference)
   }
 
-  it("should update project settings") {
+  it("update project settings") {
     for {
       _ <- database.insertProjectRef(Scalafix.reference, unknown)
       _ <- database.updateGithubInfoAndStatus(Scalafix.reference, Scalafix.githubInfo, ok)
@@ -56,24 +45,24 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     } yield scalafix.get shouldBe Scalafix.project
   }
 
-  it("should update artifacts") {
+  it("update artifacts") {
     val newRef = Project.Reference.from("kindlevel", "dogs")
     for {
       _ <- database.insertArtifact(Cats.`core_3:2.6.1`)
       _ <- database.insertArtifact(Cats.`core_sjs1_3:2.6.1`)
-      _ <- database.updateArtifacts(Seq(Cats.`core_3:2.6.1`, Cats.`core_sjs1_3:2.6.1`), newRef)
-      oldArtifacts <- database.getArtifacts(Cats.reference)
-      newArtifacts <- database.getArtifacts(newRef)
+      _ <- database.updateArtifacts(Seq(Cats.`core_3:2.6.1`.reference, Cats.`core_sjs1_3:2.6.1`.reference), newRef)
+      obtained1 <- database.getProjectArtifactRefs(Cats.reference, stableOnly = false)
+      obtained2 <- database.getProjectArtifactRefs(newRef, stableOnly = false)
     } yield {
-      oldArtifacts shouldBe empty
-      newArtifacts should contain theSameElementsAs Seq(
-        Cats.`core_3:2.6.1`.copy(projectRef = newRef),
-        Cats.`core_sjs1_3:2.6.1`.copy(projectRef = newRef)
+      obtained1 shouldBe empty
+      obtained2 should contain theSameElementsAs Seq(
+        Cats.`core_3:2.6.1`.reference,
+        Cats.`core_sjs1_3:2.6.1`.reference
       )
     }
   }
 
-  it("should update github status") {
+  it("update github status") {
     val failed = GithubStatus.Failed(now, 405, "Unauthorized")
     for {
       _ <- database.insertProjectRef(Scalafix.reference, unknown)
@@ -83,20 +72,39 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     } yield scalafix.get.githubStatus shouldBe failed
   }
 
-  it("should find artifacts by name") {
+  it("get artifacts by project and name") {
+    val artifacts = Seq(Cats.`core_3:2.6.1`, Cats.`core_sjs1_3:2.6.1`, Cats.`kernel_2.13:2.6.1`)
     for {
-      _ <- database.insertArtifact(Cats.`core_3:2.6.1`)
-      _ <- database.insertArtifact(Cats.`core_sjs1_3:2.6.1`)
-      artifacts <- database.getArtifactsByName(Cats.reference, Cats.`core_3:2.6.1`.artifactName)
-    } yield artifacts should contain theSameElementsAs Seq(Cats.`core_3:2.6.1`, Cats.`core_sjs1_3:2.6.1`)
+      _ <- database.insertArtifacts(artifacts)
+      obtained1 <- database.getProjectArtifactRefs(Cats.reference, stableOnly = false)
+      obtained2 <- database.getProjectArtifactRefs(Cats.reference, Artifact.Name("cats-core"))
+    } yield {
+      obtained1 should contain theSameElementsAs artifacts.map(_.reference)
+      obtained2 should contain theSameElementsAs Seq(Cats.`core_3:2.6.1`, Cats.`core_sjs1_3:2.6.1`).map(_.reference)
+    }
+  }
+
+  it("get artifacts by project and version") {
+    val artifacts = Seq(Cats.`core_3:2.6.1`, Cats.`core_sjs1_3:2.6.1`, Cats.`kernel_2.13:2.6.1`, Cats.`core_3:2.7.0`)
+    for {
+      _ <- database.insertArtifacts(artifacts)
+      obtained1 <- database.getProjectArtifactRefs(Cats.reference, `2.6.1`)
+      obtained2 <- database.getProjectArtifactRefs(Cats.reference, `2.7.0`)
+    } yield {
+      obtained1 should contain theSameElementsAs Seq(
+        Cats.`core_3:2.6.1`,
+        Cats.`core_sjs1_3:2.6.1`,
+        Cats.`kernel_2.13:2.6.1`
+      ).map(_.reference)
+      obtained2 should contain theSameElementsAs Seq(Cats.`core_3:2.7.0`).map(_.reference)
+    }
   }
 
   it("should count projects, artifacts, dependencies, github infos and data forms") {
     for {
       _ <- database.insertProjectRef(Cats.reference, unknown)
-      _ <- database.insertArtifact(Cats.`core_3:2.6.1`)
+      _ <- database.insertArtifacts(Seq(Cats.`core_3:2.6.1`, Cats.`core_sjs1_3:2.6.1`))
       _ <- database.insertDependencies(Cats.dependencies)
-      _ <- database.insertArtifact(Cats.`core_sjs1_3:2.6.1`)
       _ <- database.insertProjectRef(Scalafix.reference, unknown)
       _ <- database.insertArtifact(Scalafix.artifact)
       _ <- database.insertProjectRef(PlayJsonExtra.reference, unknown)
@@ -119,9 +127,8 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
 
   it("should find directDependencies") {
     for {
-      _ <- database.insertArtifact(Cats.`core_3:2.6.1`)
+      _ <- database.insertArtifacts(Seq(Cats.`core_3:2.6.1`, Cats.`kernel_3:2.6.1`))
       _ <- database.insertDependencies(Cats.dependencies)
-      _ <- database.insertArtifact(Cats.`kernel_3:2.6.1`)
       directDependencies <- database.getDirectDependencies(Cats.`core_3:2.6.1`)
     } yield {
       val targets = directDependencies.map(_.target)
@@ -131,29 +138,26 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
 
   it("should find reverseDependencies") {
     for {
-      _ <- database.insertArtifact(Cats.`core_3:2.6.1`)
+      _ <- database.insertArtifacts(Seq(Cats.`core_3:2.6.1`, Cats.`kernel_3:2.6.1`))
       _ <- database.insertDependencies(Cats.dependencies)
-      _ <- database.insertArtifact(Cats.`kernel_3:2.6.1`)
       reverseDependencies <- database.getReverseDependencies(Cats.`kernel_3:2.6.1`)
-    } yield reverseDependencies.map(_.source) should contain theSameElementsAs List(Cats.`core_3:2.6.1`)
+    } yield {
+      val sources = reverseDependencies.map(_.source)
+      sources should contain theSameElementsAs List(Cats.`core_3:2.6.1`)
+    }
   }
 
   it("should compute project dependencies") {
     for {
       _ <- database.insertProjectRef(Cats.reference, unknown)
-      _ <- database.insertArtifact(Cats.`core_2.13:2.6.1`)
-      _ <- database.insertArtifact(Cats.`kernel_2.13`)
+      _ <- database.insertArtifacts(Seq(Cats.`core_2.13:2.6.1`, Cats.`kernel_2.13:2.6.1`))
       _ <- database.insertDependencies(
-        Seq(
-          ArtifactDependency(Cats.`kernel_2.13`.mavenReference, Cats.`core_2.13:2.6.1`.mavenReference, Scope("compile"))
-        )
+        Seq(ArtifactDependency(Cats.`kernel_2.13:2.6.1`.reference, Cats.`core_2.13:2.6.1`.reference, Scope("compile")))
       )
       _ <- database.insertProjectRef(Scalafix.reference, unknown)
       _ <- database.insertArtifact(Scalafix.artifact)
       _ <- database.insertDependencies(
-        Seq(
-          ArtifactDependency(Scalafix.artifact.mavenReference, Cats.`core_2.13:2.6.1`.mavenReference, Scope("compile"))
-        )
+        Seq(ArtifactDependency(Scalafix.artifact.reference, Cats.`core_2.13:2.6.1`.reference, Scope("compile")))
       )
       scalafixDependencies <- database.computeProjectDependencies(Scalafix.reference, Scalafix.artifact.version)
       catsDependencies <- database.computeProjectDependencies(Cats.reference, Cats.`core_2.13:2.6.1`.version)
@@ -171,7 +175,6 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       )
       catsDependencies shouldBe empty
       catsDependents shouldBe 1
-      succeed
     }
   }
   it("should update creation date") {
@@ -182,7 +185,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       _ <- database.insertArtifact(Cats.`core_3:2.6.1`)
       _ <- database.insertProjectRef(PlayJsonExtra.reference, unknown)
       _ <- database.insertArtifact(PlayJsonExtra.artifact)
-      creationDates <- database.computeAllProjectsCreationDates()
+      creationDates <- database.computeProjectsCreationDates()
       _ <- creationDates.mapSync { case (creationDate, ref) => database.updateProjectCreationDate(ref, creationDate) }
       projects <- database.getAllProjects()
     } yield {
@@ -232,7 +235,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
   it("should insert, update and get user session from id") {
     val userId = UUID.randomUUID()
     val userInfo = UserInfo("login", Some("name"), "", Secret("token"))
-    val userState = UserState(Set(Scalafix.reference), Set(Organization("scalacenter")), userInfo)
+    val userState = UserState(Set(Scalafix.reference), Set(Project.Organization("scalacenter")), userInfo)
     for {
       _ <- database.insertUser(userId, userInfo)
       state1 <- database.getUser(userId)
@@ -264,91 +267,44 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     } yield obtained shouldBe None
   }
 
-  it("get artifact from maven reference") {
+  it("get artifact by ref") {
     for {
-      _ <- database.insertArtifact(Cats.`core_3:2.6.1`)
-      catsCore <- database.getArtifactByMavenReference(Cats.`core_3:2.6.1`.mavenReference)
-    } yield catsCore should contain(Cats.`core_3:2.6.1`)
-  }
-
-  it("get artifact from maven reference if version is only major") {
-    for {
-      _ <- database.insertArtifact(Cats.`core_3:4`)
-      catsCore <- database.getArtifactByMavenReference(Cats.`core_3:4`.mavenReference)
-    } yield catsCore should contain(Cats.`core_3:4`)
-  }
-
-  it("get all artifacts given no language or platform") {
-    val testArtifacts = Seq(Scalafix.artifact, Cats.`core_3:4`, PlayJsonExtra.artifact)
-    for {
-      _ <- database.insertArtifacts(testArtifacts)
-      storedArtifacts <- database.getAllArtifacts(None, None)
-    } yield storedArtifacts.forall(testArtifacts.contains) shouldBe true
-  }
-
-  it("should return no artifacts given a language that has no artifacts stored") {
-    for {
-      _ <- database.insertArtifact(Scalafix.artifact) // Scalafix has Scala version 2.13
-      storedArtifacts <- database.getAllArtifacts(Some(Scala.`3`), None)
-    } yield storedArtifacts.size shouldBe 0
-  }
-
-  it("should return no artifacts given a platform that has no artifacts stored") {
-    for {
-      _ <- database.insertArtifact(Scalafix.artifact) // Scalafix is a JVM-platform artifact
-      storedArtifacts <- database.getAllArtifacts(None, Some(ScalaJs.`1.x`))
-    } yield storedArtifacts.size shouldBe 0
-  }
-
-  it("should return artifacts that conform to the given language and platform") {
-    val testArtifacts = Seq(
-      Cats.`core_3:4`,
-      Scalafix.artifact.copy(version = SemanticVersion(3))
-    )
-    for {
-      _ <- database.insertArtifacts(testArtifacts)
-      storedArtifacts <- database.getAllArtifacts(Some(Scala.`3`), Some(Jvm))
-    } yield storedArtifacts.forall(testArtifacts.contains) shouldBe true
-  }
-
-  it(
-    "should not return artifacts given both language and platform, and the database contains no artifacts that conform"
-  ) {
-    val testArtifacts = Seq(
-      Cats.`core_3:4`,
-      Scalafix.artifact.copy(version = SemanticVersion(3))
-    )
-    for {
-      _ <- database.insertArtifacts(testArtifacts)
-      storedArtifacts <- database.getAllArtifacts(Some(Scala.`3`), Some(ScalaJs(SemanticVersion(3))))
-    } yield storedArtifacts.size shouldBe 0
-  }
-
-  it("should not return any artifacts when the database is empty, given a group id and artifact id") {
-    for {
-      retrievedArtifacts <- database.getArtifacts(Cats.`core_3:4`.groupId, Cats.`core_3:4`.artifactId)
-    } yield retrievedArtifacts.size shouldBe 0
-  }
-
-  it("get an artifact from its group id and artifact id") {
-    for {
-      isStoredSuccessfully <- database.insertArtifact(Cats.`core_3:4`)
-      retrievedArtifacts <- database.getArtifacts(Cats.`core_3:4`.groupId, Cats.`core_3:4`.artifactId)
+      _ <- database.insertArtifacts(Seq(Cats.`core_3:2.6.1`, Cats.`core_3:4`))
+      obtained1 <- database.getArtifact(Cats.`core_3:2.6.1`.reference)
+      obtained2 <- database.getArtifact(Cats.`core_3:4`.reference)
     } yield {
-      isStoredSuccessfully shouldBe true
-      retrievedArtifacts.size shouldBe 1
-      retrievedArtifacts.headOption shouldBe Some(Cats.`core_3:4`)
+      obtained1 should contain(Cats.`core_3:2.6.1`)
+      obtained2 should contain(Cats.`core_3:4`)
     }
   }
 
-  it("get all artifacts from group id and artifact id") {
-    val testArtifacts = Seq(Cats.`core_3:4`, Cats.`core_3:2.7.0`)
+  it("get all artifacts by language and platform") {
+    val artifacts = Seq(Scalafix.artifact, Cats.`core_sjs1_3:2.6.1`, PlayJsonExtra.artifact)
     for {
-      _ <- database.insertArtifacts(testArtifacts)
-      retrievedArtifacts <- database.getArtifacts(Artifact.GroupId("org.typelevel"), "cats-core_3")
+      _ <- database.insertArtifacts(artifacts)
+      obtained1 <- database.getAllArtifacts(None, None)
+      obtained2 <- database.getAllArtifacts(Some(Scala.`3`), None)
+      obtained3 <- database.getAllArtifacts(None, Some(ScalaJs.`1.x`))
+      obtained4 <- database.getAllArtifacts(Some(Scala.`2.13`), Some(Jvm))
+      obtained5 <- database.getAllArtifacts(Some(Scala.`3`), Some(ScalaJs.`0.6`))
     } yield {
-      retrievedArtifacts.size shouldBe 2
-      retrievedArtifacts should contain theSameElementsAs testArtifacts
+      obtained1 should contain theSameElementsAs artifacts
+      obtained2 should contain theSameElementsAs Seq(Cats.`core_sjs1_3:2.6.1`)
+      obtained3 should contain theSameElementsAs Seq(Cats.`core_sjs1_3:2.6.1`)
+      obtained4 should contain theSameElementsAs Seq(Scalafix.artifact)
+      obtained5 shouldBe empty
+    }
+  }
+
+  it("getArtifact by groupId and artifactId") {
+    val artifacts = Seq(Cats.`core_3:2.7.0`, Cats.`core_3:2.6.1`)
+    for {
+      _ <- database.insertArtifacts(artifacts)
+      obtained1 <- database.getArtifacts(Cats.groupId, Artifact.ArtifactId("cats-core_3"))
+      obtained2 <- database.getArtifacts(Cats.groupId, Artifact.ArtifactId("cats-core_2.13"))
+    } yield {
+      obtained1 should contain theSameElementsAs artifacts
+      obtained2 shouldBe empty
     }
   }
 }

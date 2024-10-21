@@ -19,7 +19,7 @@
           <a href="/@project.organization">@project.organization</a> /
           <a href="/@project.reference">@project.repository</a>
           @for(header <- header) {
-            <span class="head-last-version">&nbsp;&nbsp;@header.latestVersion.encode</span>
+            <span class="head-last-version">&nbsp;&nbsp;@header.latestVersion.value</span>
           }
         </h1>
 
@@ -53,7 +53,7 @@
         }
         <ul class="list-inline">
         @for(topic <- github.topics) {
-          <li><a href="/search?topics=@topic" class="label label-default">@topic</a></li>
+          <li><a href="/search?topic=@topic" class="label label-default">@topic</a></li>
         }
         </ul>
       }

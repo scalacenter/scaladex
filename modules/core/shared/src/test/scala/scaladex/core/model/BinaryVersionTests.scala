@@ -51,7 +51,7 @@ class BinaryVersionTests extends AnyFunSpec with Matchers with OptionValues with
 
     forAll(cases) { (input, expected) =>
       BinaryVersion.parse(input) should contain(expected)
-      expected.encode shouldBe input
+      expected.value shouldBe input
     }
   }
 }

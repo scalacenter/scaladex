@@ -72,7 +72,7 @@ object Project {
     def from(org: String, repo: String): Reference =
       Reference(Organization(org), Repository(repo))
 
-    def from(string: String): Reference =
+    def unsafe(string: String): Reference =
       string.split('/') match {
         case Array(org, repo) => from(org, repo)
       }

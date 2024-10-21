@@ -25,7 +25,7 @@
                 <h4>
                   @project.reference
                   @for(latestVersion <- project.latestVersion){
-                    <span class="latest-version">&nbsp;&nbsp;@latestVersion.encode</span>
+                    <span class="latest-version">&nbsp;&nbsp;@latestVersion.value</span>
                   }
                 </h4>
               </div>
@@ -88,7 +88,7 @@
               @if(github.topics.nonEmpty) {
                 @for(topic <- github.topics) {
                   <span class="item-filter-tag">
-                    <a href="/search?topics=@topic">
+                    <a href="/search?topic=@topic">
                       @topic
                     </a>
                   </span>

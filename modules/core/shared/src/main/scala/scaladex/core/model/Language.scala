@@ -1,6 +1,9 @@
 package scaladex.core.model
 
 sealed trait Language {
+  // a string value for serialization/deserialization
+  def value: String
+  // a short version of toString
   def label: String
   def isValid: Boolean
   def isJava: Boolean = this match {
@@ -19,19 +22,20 @@ object Language {
     case Scala(v) => v
   }
 
-  def fromLabel(label: String): Option[Language] = label match {
-    case "Java"   => Some(Java)
-    case s"$sv.x" => SemanticVersion.parse(sv).map(Scala.apply)
-    case sv       => SemanticVersion.parse(sv).map(Scala.apply)
+  def parse(value: String): Option[Language] = value match {
+    case "java" => Some(Java)
+    case sv     => SemanticVersion.parse(sv).map(Scala.apply)
   }
 }
 
 case object Java extends Language {
+  override def value: String = "java"
   override def label: String = toString
   override def isValid: Boolean = true
 }
 
 final case class Scala(version: SemanticVersion) extends Language {
+  override def value: String = version.value
   override def label: String = version.toString
   override def isValid: Boolean = Scala.stableVersions.contains(this)
   override def toString: String = s"Scala $version"

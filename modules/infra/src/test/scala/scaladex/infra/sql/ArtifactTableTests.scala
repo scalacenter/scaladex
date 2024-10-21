@@ -2,14 +2,18 @@ package scaladex.infra.sql
 
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model.Jvm
-import scaladex.core.model.Scala
-import scaladex.core.model.ScalaJs
+import scaladex.core.model._
 import scaladex.infra.BaseDatabaseSuite
 
 class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
   import ArtifactTable._
   it("check insertIfNotExist")(check(insertIfNotExist))
+  it("check selectArtifactRefByProject") {
+    check(selectArtifactRefByProject(true))
+    check(selectArtifactRefByProject(true))
+  }
+  it("check selectArtifactRefByProjectAndName")(check(selectArtifactRefByProjectAndName))
+  it("check selectArtifactRefByProjectAndVersion")(check(selectArtifactRefByProjectAndVersion))
   it("check selectAllArtifacts") {
     check(selectAllArtifacts(None, None))
     check(selectAllArtifacts(Some(Scala.`2.13`), None))
@@ -18,20 +22,24 @@ class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers
   }
   it("check selectArtifactByGroupIdAndArtifactId")(check(selectArtifactByGroupIdAndArtifactId))
   it("check selectArtifactByProject")(check(selectArtifactByProject))
-  it("check selectArtifactByProjectAndName")(check(selectArtifactByProjectAndName))
+  it("check selectArtifactByProjectAndName") {
+    check(selectArtifactByProjectAndName(stableOnly = true))
+    check(selectArtifactByProjectAndName(stableOnly = false))
+  }
   it("check selectOldestByProject")(check(selectOldestByProject))
   it("check updateProjectRef")(check(updateProjectRef))
   it("check selectGroupIds")(check(selectGroupIds))
-  it("check selectAllMavenReferences")(check(selectAllMavenReferences))
-  it("check selectMavenReferences")(check(selectMavenReferences))
+  it("check selectReferences")(check(selectReferences))
+  it("check selectReferencesByProject")(check(selectReferencesByProject))
   it("check updateReleaseDate")(check(updateReleaseDate))
-  it("check selectByMavenReference")(check(selectByMavenReference))
+  it("check selectByReference")(check(selectByReference))
   it("check countVersionsByProject")(check(countVersionsByProject))
-  it("check selectArtifactByParams") {
-    check(selectArtifactByParams(false))
-    check(selectArtifactByParams(true))
-  }
   it("check selectMavenReferenceWithNoReleaseDate")(check(selectMavenReferenceWithNoReleaseDate))
+  it("check selectVersionByGroupIdAndArtifactId") {
+    check(selectVersionByGroupIdAndArtifactId(false))
+    check(selectVersionByGroupIdAndArtifactId(true))
+  }
+  it("check selectLatestArtifact")(check(selectLatestArtifact))
   it("check selectLatestArtifacts")(check(selectLatestArtifacts))
   it("check setLatestVersion")(check(setLatestVersion))
   it("check unsetOthersLatestVersion")(check(unsetOthersLatestVersion))

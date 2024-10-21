@@ -58,15 +58,12 @@ object Values {
 
   object Scalafix {
     val reference: Project.Reference = Project.Reference.from("scalacenter", "scalafix")
+
     val creationDate: Instant = Instant.ofEpochMilli(1475505237265L)
-    val artifactId: ArtifactId = ArtifactId.parse("scalafix-core_2.13").get
     val artifact: Artifact = Artifact(
       groupId = GroupId("ch.epfl.scala"),
-      artifactId = artifactId.value,
+      artifactId = ArtifactId("scalafix-core_2.13"),
       version = SemanticVersion.parse("0.9.30").get,
-      artifactName = artifactId.name,
-      platform = artifactId.binaryVersion.platform,
-      language = artifactId.binaryVersion.language,
       projectRef = reference,
       description = None,
       releaseDate = creationDate,
@@ -119,14 +116,10 @@ object Values {
   object PlayJsonExtra {
     val reference: Project.Reference = Project.Reference.from("xuwei-k", "play-json-extra")
     val creationDate: Instant = Instant.ofEpochMilli(1411736618000L)
-    val artifactId: ArtifactId = ArtifactId.parse("play-json-extra_2.11").get
     val artifact: Artifact = Artifact(
       groupId = GroupId("com.github.xuwei-k"),
-      artifactId = artifactId.value,
-      version = SemanticVersion.parse("0.1.1-play2.3-M1").get,
-      artifactName = artifactId.name,
-      platform = artifactId.binaryVersion.platform,
-      language = artifactId.binaryVersion.language,
+      artifactId = ArtifactId("play-json-extra_2.11"),
+      version = SemanticVersion.unsafe("0.1.1-play2.3-M1"),
       projectRef = reference,
       description = None,
       releaseDate = creationDate,
@@ -140,13 +133,13 @@ object Values {
     )
     val dependency: ArtifactDependency =
       ArtifactDependency(
-        source = Cats.`core_3:2.6.1`.mavenReference,
-        target = artifact.mavenReference,
+        source = Cats.`core_3:2.6.1`.reference,
+        target = artifact.reference,
         Scope("compile")
       )
     val githubInfo: GithubInfo = GithubInfo.empty
     val settings: Project.Settings = Project.Settings.empty.copy(
-      defaultArtifact = Some(artifact.artifactName),
+      defaultArtifact = Some(artifact.name),
       category = Some(Category.Json)
     )
   }
@@ -193,7 +186,8 @@ object Values {
       fullScalaVersion = SemanticVersion.parse("3.0.2"),
       scaladocUrl = Some(Url("http://typelevel.org/cats/api/")),
       versionScheme = Some("semver-spec"),
-      developers = developers("org.typelevel:cats-core_3:jar:2.7.0")
+      developers = developers("org.typelevel:cats-core_3:jar:2.7.0"),
+      creationDelta = 10 // created later
     )
     val `core_sjs1_3:2.6.1`: Artifact = getArtifact(
       "cats-core",
@@ -208,37 +202,31 @@ object Values {
       getArtifact("cats-core", `_sjs0.6_2.13`, `2.6.1`, description = Some("Cats core"))
     val `core_native04_2.13:2.6.1`: Artifact =
       getArtifact("cats-core", `_native0.4_2.13`, `2.6.1`, description = Some("Cats core"))
-    val `kernel_2.13`: Artifact = getArtifact("cats-kernel", `_2.13`, `2.6.1`)
+    val `kernel_2.13:2.6.1`: Artifact = getArtifact("cats-kernel", `_2.13`, `2.6.1`)
     val `kernel_3:2.6.1`: Artifact = getArtifact("cats-kernel", `_3`, `2.6.1`)
     val `laws_3:2.6.1`: Artifact = getArtifact("cats-laws", `_3`, `2.6.1`)
-    val allArtifacts: Seq[Artifact] =
-      Seq(
-        `core_3:2.6.1`,
-        `core_3:2.7.0`,
-        `core_sjs1_3:2.6.1`,
-        `core_sjs06_2.13:2.6.1`,
-        `core_native04_2.13:2.6.1`,
-        `kernel_3:2.6.1`,
-        `laws_3:2.6.1`
-      )
+    val coreArtifacts: Seq[Artifact] = Seq(
+      `core_3:2.6.1`,
+      `core_3:2.7.0`,
+      `core_sjs1_3:2.6.1`,
+      `core_sjs06_2.13:2.6.1`,
+      `core_native04_2.13:2.6.1`
+    )
+    val allArtifacts: Seq[Artifact] = coreArtifacts ++ Seq(`kernel_3:2.6.1`, `laws_3:2.6.1`)
     val dependencies: Seq[ArtifactDependency] = Seq(
       ArtifactDependency(
-        source = `core_3:2.6.1`.mavenReference,
-        target = `kernel_3:2.6.1`.mavenReference,
+        source = `core_3:2.6.1`.reference,
+        target = `kernel_3:2.6.1`.reference,
         Scope("compile")
       ),
       ArtifactDependency(
-        source = `core_3:2.6.1`.mavenReference,
-        target = `laws_3:2.6.1`.mavenReference,
+        source = `core_3:2.6.1`.reference,
+        target = `laws_3:2.6.1`.reference,
         Scope("compile")
       ),
       ArtifactDependency(
-        source = `core_3:2.6.1`.mavenReference,
-        target = MavenReference(
-          "com.gu",
-          "ztmp-scala-automation_2.10",
-          "1.9"
-        ), // dependency with a corresponding getArtifact
+        source = `core_3:2.6.1`.reference,
+        target = Artifact.Reference.unsafe("com.gu", "ztmp-scala-automation_2.10", "1.9"),
         Scope("compile")
       )
     )
@@ -278,19 +266,16 @@ object Values {
         fullScalaVersion: Option[SemanticVersion] = None,
         developers: Seq[Contributor] = Nil,
         scaladocUrl: Option[Url] = None,
-        versionScheme: Option[String] = None
-    ): Artifact = {
-      val artifactId = ArtifactId(Name(name), binaryVersion)
+        versionScheme: Option[String] = None,
+        creationDelta: Long = 0
+    ): Artifact =
       Artifact(
         groupId = groupId,
-        artifactId = artifactId.value,
+        artifactId = ArtifactId(Name(name), binaryVersion),
         version = version,
-        artifactName = artifactId.name,
-        platform = binaryVersion.platform,
-        language = binaryVersion.language,
         projectRef = reference,
         description = description,
-        releaseDate = Instant.ofEpochMilli(1620911032000L),
+        releaseDate = Instant.ofEpochMilli(1620911032000L + creationDelta),
         resolver = None,
         licenses = Set(license),
         isNonStandardLib = false,
@@ -299,41 +284,32 @@ object Values {
         scaladocUrl = scaladocUrl,
         versionScheme = versionScheme
       )
-    }
   }
 
   object CatsEffect {
     val dependency: ArtifactDependency = ArtifactDependency(
-      source = MavenReference(
-        "cats-effect",
-        "cats-effect-kernel_3",
-        "3.2.3"
-      ),
-      target = Cats.`core_3:2.6.1`.mavenReference,
+      source = Artifact.Reference.unsafe("typelevel", "cats-effect-kernel_3", "3.2.3"),
+      target = Cats.`core_3:2.6.1`.reference,
       Scope("compile")
     )
 
     val testDependency: ArtifactDependency = ArtifactDependency(
-      source = MavenReference(
-        "cats-effect",
-        "cats-effect-kernel_3",
-        "3.2.3"
-      ),
-      target = MavenReference("typelevel", "scalacheck_3", "1.15.4"),
+      source = Artifact.Reference.unsafe("typelevel", "cats-effect-kernel_3", "3.2.3"),
+      target = Artifact.Reference.unsafe("typelevel", "scalacheck_3", "1.15.4"),
       Scope("test")
     )
   }
 
   object SbtCrossProject {
     val reference: Project.Reference = Project.Reference.from("portable-scala", "sbt-crossproject")
-    val mavenReference: MavenReference =
-      MavenReference("org.portable-scala", "sbt-scalajs-crossproject_2.12_1.0", "1.3.2")
+    val artifactRef: Artifact.Reference =
+      Artifact.Reference.unsafe("org.portable-scala", "sbt-scalajs-crossproject_2.12_1.0", "1.3.2")
     val creationDate: Instant = Instant.ofEpochSecond(1688667180L)
   }
 
   object Scala3 {
     val organization: Project.Organization = Project.Organization("scala")
-    val reference: Project.Reference = Project.Reference.from("scala/scala3")
+    val reference: Project.Reference = Project.Reference.unsafe("scala/scala3")
   }
 
 }
