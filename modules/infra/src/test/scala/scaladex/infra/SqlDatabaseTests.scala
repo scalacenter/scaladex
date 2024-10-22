@@ -85,18 +85,18 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
   }
 
   it("get artifacts by project and version") {
-    val artifacts = Seq(Cats.`core_3:2.6.1`, Cats.`core_sjs1_3:2.6.1`, Cats.`kernel_2.13:2.6.1`, Cats.`core_3:2.7.0`)
+    val artifacts = Seq(Cats.`core_3:2.6.1`, Cats.`core_sjs1_3:2.6.1`, Cats.`kernel_2.13:2.6.1`, Cats.`core_2.13:2.5.0`)
     for {
       _ <- database.insertArtifacts(artifacts)
       obtained1 <- database.getProjectArtifactRefs(Cats.reference, `2.6.1`)
-      obtained2 <- database.getProjectArtifactRefs(Cats.reference, `2.7.0`)
+      obtained2 <- database.getProjectArtifactRefs(Cats.reference, `2.5.0`)
     } yield {
       obtained1 should contain theSameElementsAs Seq(
         Cats.`core_3:2.6.1`,
         Cats.`core_sjs1_3:2.6.1`,
         Cats.`kernel_2.13:2.6.1`
       ).map(_.reference)
-      obtained2 should contain theSameElementsAs Seq(Cats.`core_3:2.7.0`).map(_.reference)
+      obtained2 should contain theSameElementsAs Seq(Cats.`core_2.13:2.5.0`).map(_.reference)
     }
   }
 
@@ -297,14 +297,14 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
   }
 
   it("getArtifact by groupId and artifactId") {
-    val artifacts = Seq(Cats.`core_3:2.7.0`, Cats.`core_3:2.6.1`)
+    val artifacts = Seq(Cats.`core_2.13:2.5.0`, Cats.`core_3:2.6.1`)
     for {
       _ <- database.insertArtifacts(artifacts)
       obtained1 <- database.getArtifacts(Cats.groupId, Artifact.ArtifactId("cats-core_3"))
       obtained2 <- database.getArtifacts(Cats.groupId, Artifact.ArtifactId("cats-core_2.13"))
     } yield {
-      obtained1 should contain theSameElementsAs artifacts
-      obtained2 shouldBe empty
+      obtained1 should contain theSameElementsAs Seq(Cats.`core_3:2.6.1`)
+      obtained2 should contain theSameElementsAs Seq(Cats.`core_2.13:2.5.0`)
     }
   }
 }

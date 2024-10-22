@@ -19,25 +19,22 @@ class BadgesTests extends ControllerBaseSuite with BeforeAndAfterAll {
 
   val badgesRoute: Route = new Badges(database).route
 
-  override protected def beforeAll(): Unit = Await.result(insertCatsArtifacts(), Duration.Inf)
+  override protected def beforeAll(): Unit = {
+    val f = Future.traverse(Cats.allArtifacts)(artifactService.insertArtifact(_, Seq.empty))
+    Await.result(f, Duration.Inf)
+  }
 
-  def insertCatsArtifacts(): Future[Unit] =
-    for {
-      _ <- database.insertProjectRef(Cats.reference, unknown)
-      _ <- Future.traverse(Cats.allArtifacts)(database.insertArtifact(_))
-    } yield ()
-
-  it("should fallback to JVM artifacts") {
+  it("fallback to JVM artifacts") {
     Get(s"/${Cats.reference}/cats-core/latest-by-scala-version.svg") ~> badgesRoute ~> check {
       status shouldEqual StatusCodes.TemporaryRedirect
       val redirection = headers.collectFirst { case Location(uri) => uri }
       redirection should contain(
-        Uri("https://img.shields.io/badge/cats--core_--_JVM-2.7.0_(Scala_3.x)-green.svg?")
+        Uri("https://img.shields.io/badge/cats--core_--_JVM-2.6.1_(Scala_3.x),_2.5.0_(Scala_2.13)-green.svg?")
       )
     }
   }
 
-  it("should fallback to sjs1 when targetType is js") {
+  it("fallback to sjs1 when targetType is js") {
     Get(s"/${Cats.reference}/cats-core/latest-by-scala-version.svg?targetType=js") ~> badgesRoute ~> check {
       status shouldEqual StatusCodes.TemporaryRedirect
       val redirection = headers.collectFirst { case Location(uri) => uri }
@@ -47,7 +44,7 @@ class BadgesTests extends ControllerBaseSuite with BeforeAndAfterAll {
     }
   }
 
-  it("should return latest version for Scala.js 0.6") {
+  it("latest version for Scala.js 0.6") {
     Get(s"/${Cats.reference}/cats-core/latest-by-scala-version.svg?platform=sjs0.6") ~> badgesRoute ~> check {
       status shouldEqual StatusCodes.TemporaryRedirect
       val redirection = headers.collectFirst { case Location(uri) => uri }
@@ -57,7 +54,7 @@ class BadgesTests extends ControllerBaseSuite with BeforeAndAfterAll {
     }
   }
 
-  it("should return latest version for Scala native 0.4") {
+  it("latest version for Scala native 0.4") {
     Get(s"/${Cats.reference}/cats-core/latest-by-scala-version.svg?platform=native0.4") ~> badgesRoute ~> check {
       status shouldEqual StatusCodes.TemporaryRedirect
       val redirection = headers.collectFirst { case Location(uri) => uri }

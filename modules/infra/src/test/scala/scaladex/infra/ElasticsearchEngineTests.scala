@@ -160,13 +160,13 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
     }
   }
 
-  "should evaluate to field access syntax of the given field" in {
+  "field access syntax of the given field" in {
     val field = "githubInfo.stars"
     val accessExpr = ElasticsearchEngine.fieldAccess(field)
     accessExpr shouldBe "doc['githubInfo.stars'].value"
   }
 
-  "should evaluate to a field access that checks for nullability, and provides a default value" in {
+  "field access that checks for nullability, and provides a default value" in {
     val field = "githubInfo.stars"
     val accessExpr = ElasticsearchEngine.fieldAccess(field, default = "0")
     accessExpr shouldBe "(doc['githubInfo.stars'].size() != 0 ? doc['githubInfo.stars'].value : 0)"

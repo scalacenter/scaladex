@@ -42,16 +42,16 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
   }
 
   it("admin should publish any artifact") {
-    val pomFile = pomResolver.resolveSync(Cats.`core_3:2.7.0`.reference)
-    val creationDate = Cats.`core_3:2.7.0`.releaseDate.getEpochSecond
+    val pomFile = pomResolver.resolveSync(Cats.`core_2.13:2.5.0`.reference)
+    val creationDate = Cats.`core_2.13:2.5.0`.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
     val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity)
       .addCredentials(admin)
 
     request ~> publishApi.routes ~> check {
       status shouldBe StatusCodes.Created
-      for (artifacts <- database.getArtifact(Cats.`core_3:2.7.0`.reference))
-        yield artifacts should contain(Cats.`core_3:2.7.0`)
+      for (artifacts <- database.getArtifact(Cats.`core_2.13:2.5.0`.reference))
+        yield artifacts should contain(Cats.`core_2.13:2.5.0`)
     }
   }
 

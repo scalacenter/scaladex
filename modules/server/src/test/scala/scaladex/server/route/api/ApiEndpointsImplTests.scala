@@ -95,7 +95,7 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach 
 
     testGet(s"/api/v1/projects/${Cats.reference}/versions") {
       status shouldBe StatusCodes.OK
-      responseAs[Seq[Version]] should contain theSameElementsAs Seq(`2.6.1`, `2.7.0`)
+      responseAs[Seq[Version]] should contain theSameElementsAs Seq(`2.6.1`, `2.5.0`)
     }
 
     testGet(s"/api/v1/projects/${Cats.reference}/versions?binary-version=_sjs1_3") {
@@ -129,7 +129,16 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach 
 
     testGet(s"/api/v1/projects/${Cats.reference}/versions/latest") {
       status shouldBe StatusCodes.OK
-      responseAs[Seq[Artifact.Reference]] should contain theSameElementsAs Seq(Cats.`core_3:2.7.0`.reference)
+      import Cats._
+      val expected = Seq(
+        `core_3:2.6.1`,
+        `core_sjs1_3:2.6.1`,
+        `core_sjs06_2.13:2.6.1`,
+        `core_native04_2.13:2.6.1`,
+        `kernel_3:2.6.1`,
+        `laws_3:2.6.1`
+      ).map(_.reference)
+      responseAs[Seq[Artifact.Reference]] should contain theSameElementsAs expected
     }
 
     testGet(s"/api/v1/projects/${Cats.reference}/versions/2.6.1") {
@@ -146,7 +155,7 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach 
     testGet(s"/api/v1/projects/${Cats.reference}/artifacts?binary-version=_3") {
       status shouldBe StatusCodes.OK
       import Cats._
-      val expected = Seq(`core_3:2.6.1`, `core_3:2.7.0`, `kernel_3:2.6.1`, `laws_3:2.6.1`).map(_.reference)
+      val expected = Seq(`core_3:2.6.1`, `kernel_3:2.6.1`, `laws_3:2.6.1`).map(_.reference)
       responseAs[Seq[Artifact.Reference]] should contain theSameElementsAs expected
     }
 
@@ -159,7 +168,7 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach 
     testGet(s"/api/v1/projects/${Cats.reference}/artifacts?artifact-name=cats-core&binary-version=_3") {
       status shouldBe StatusCodes.OK
       import Cats._
-      val expected = Seq(`core_3:2.6.1`, `core_3:2.7.0`).map(_.reference)
+      val expected = Seq(`core_3:2.6.1`).map(_.reference)
       responseAs[Seq[Artifact.Reference]] should contain theSameElementsAs expected
     }
 
@@ -175,17 +184,17 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach 
 
     testGet("/api/v1/artifacts/org.typelevel/cats-core_3") {
       status shouldBe StatusCodes.OK
-      responseAs[Seq[Version]] should contain theSameElementsAs Seq(`2.6.1`, `2.7.0`)
+      responseAs[Seq[Version]] should contain theSameElementsAs Seq(`2.6.1`)
     }
 
     testGet("/api/v1/artifacts/org.typelevel/cats-core_3/latest") {
       status shouldBe StatusCodes.OK
-      responseAs[ArtifactResponse] shouldBe Cats.`core_3:2.7.0`.toResponse
+      responseAs[ArtifactResponse] shouldBe Cats.`core_3:2.6.1`.toResponse
     }
 
-    testGet("/api/v1/artifacts/org.typelevel/cats-core_3/2.6.1") {
+    testGet("/api/v1/artifacts/org.typelevel/cats-core_2.13/2.5.0") {
       status shouldBe StatusCodes.OK
-      responseAs[ArtifactResponse] shouldBe Cats.`core_3:2.6.1`.toResponse
+      responseAs[ArtifactResponse] shouldBe Cats.`core_2.13:2.5.0`.toResponse
     }
 
     testGet("/api/v1/artifacts/unknown/unknown_3/1.0.0") {

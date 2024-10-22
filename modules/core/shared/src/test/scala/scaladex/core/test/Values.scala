@@ -16,7 +16,7 @@ object Values {
 
   val `2.6.1` = Version(2, 6, 1)
   val `4`: Version = Version(4)
-  val `2.7.0` = Version(2, 7, 0)
+  val `2.5.0` = Version(2, 5, 0)
   val `7.0.0` = Version(7, 0, 0)
   val `7.1.0` = Version(7, 1, 0)
   val `7.2.0-PREVIEW.1` = Version("7.2.0-PREVIEW.1")
@@ -158,16 +158,16 @@ object Values {
     )
     val `core_2.13:2.6.1`: Artifact = getArtifact("cats-core", `_2.13`, `2.6.1`, description = Some("Cats core"))
     val `core_3:4`: Artifact = getArtifact("cats-core", `_3`, `4`, description = Some("Cats core"))
-    val `core_3:2.7.0`: Artifact = getArtifact(
+    val `core_2.13:2.5.0`: Artifact = getArtifact(
       "cats-core",
-      `_3`,
-      `2.7.0`,
+      `_2.13`,
+      `2.5.0`,
       description = Some("Cats core"),
-      fullScalaVersion = Some(Version("3.0.2")),
+      fullScalaVersion = Some(Version(2, 13, 5)),
       scaladocUrl = Some(Url("http://typelevel.org/cats/api/")),
       versionScheme = Some("semver-spec"),
-      developers = developers("org.typelevel:cats-core_3:jar:2.7.0"),
-      creationDelta = 10 // created later
+      developers = developers("org.typelevel:cats-core_2.13:jar:2.5.0"),
+      creationDelta = -1 // created earlier
     )
     val `core_sjs1_3:2.6.1`: Artifact = getArtifact(
       "cats-core",
@@ -187,7 +187,7 @@ object Values {
     val `laws_3:2.6.1`: Artifact = getArtifact("cats-laws", `_3`, `2.6.1`)
     val coreArtifacts: Seq[Artifact] = Seq(
       `core_3:2.6.1`,
-      `core_3:2.7.0`,
+      `core_2.13:2.5.0`,
       `core_sjs1_3:2.6.1`,
       `core_sjs06_2.13:2.6.1`,
       `core_native04_2.13:2.6.1`
@@ -247,7 +247,7 @@ object Values {
         developers: Seq[Contributor] = Nil,
         scaladocUrl: Option[Url] = None,
         versionScheme: Option[String] = None,
-        creationDelta: Long = 0
+        creationDelta: Int = 0
     ): Artifact =
       Artifact(
         groupId = groupId,
@@ -255,7 +255,7 @@ object Values {
         version = version,
         projectRef = reference,
         description = description,
-        releaseDate = Instant.ofEpochMilli(1620911032000L + creationDelta),
+        releaseDate = Instant.ofEpochMilli(1620911032000L + 1000L * creationDelta),
         resolver = None,
         licenses = Set(license),
         isNonStandardLib = false,

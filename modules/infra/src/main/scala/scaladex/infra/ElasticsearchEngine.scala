@@ -256,12 +256,10 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       .map(addMissing(params.topics))
 
   override def countByLanguages(params: SearchParams): Future[Seq[(Language, Int)]] =
-    languageAggregation(filteredSearchQuery(params))
-      .map(addMissing(params.languages))
+    languageAggregation(filteredSearchQuery(params)).map(addMissing(params.languages))
 
   override def countByPlatforms(params: SearchParams): Future[Seq[(Platform, Int)]] =
-    platformAggregations(filteredSearchQuery(params))
-      .map(addMissing(params.platforms))
+    platformAggregations(filteredSearchQuery(params)).map(addMissing(params.platforms))
 
   override def find(
       category: Category,
