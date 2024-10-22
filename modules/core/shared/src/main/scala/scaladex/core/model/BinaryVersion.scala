@@ -31,10 +31,10 @@ final case class BinaryVersion(platform: Platform, language: Language) {
 object BinaryVersion {
   implicit val ordering: Ordering[BinaryVersion] = Ordering.by(v => (v.platform, v.language))
 
-  def IntermediateParser[A: P]: P[(String, Option[SemanticVersion], Option[SemanticVersion])] =
-    ("_sjs" | "_native" | "_mill" | "_" | "").! ~ (SemanticVersion.Parser.?) ~ ("_" ~ SemanticVersion.Parser).?
+  def IntermediateParser[A: P]: P[(String, Option[Version], Option[Version])] =
+    ("_sjs" | "_native" | "_mill" | "_" | "").! ~ (Version.SemanticParser.?) ~ ("_" ~ Version.SemanticParser).?
 
-  def IntermediateParserButNotInvalidSbt[A: P]: P[(String, Option[SemanticVersion], Option[SemanticVersion])] =
+  def IntermediateParserButNotInvalidSbt[A: P]: P[(String, Option[Version], Option[Version])] =
     IntermediateParser.filter {
       case ("_", Some(scalaV), Some(sbtV)) => BinaryVersion(SbtPlugin(sbtV), Scala(scalaV)).isValid
       case _                               => true

@@ -15,9 +15,7 @@ trait JsonSchemas extends endpoints4s.algebra.JsonSchemas {
   implicit val repositorySchema: JsonSchema[Project.Repository] = stringJson.xmap(Project.Repository(_))(_.value)
   implicit val groupIdSchema: JsonSchema[Artifact.GroupId] = stringJson.xmap(Artifact.GroupId(_))(_.value)
   implicit val artifactIdSchema: JsonSchema[Artifact.ArtifactId] = stringJson.xmap(Artifact.ArtifactId(_))(_.value)
-  implicit val versionSchema: JsonSchema[SemanticVersion] =
-    stringJson
-      .xmapPartial(v => Validated.fromOption(SemanticVersion.parse(v))(s"Cannot parse $v as version"))(_.value)
+  implicit val versionSchema: JsonSchema[Version] = stringJson.xmap(Version(_))(_.value)
   implicit val urlSchema: JsonSchema[Url] = stringJson.xmap(Url(_))(_.target)
   implicit val licenseSchema: JsonSchema[License] = stringJson
     .xmapPartial(l => Validated.fromOption(License.get(l))(s"Unknown license $l"))(_.shortName)
@@ -39,7 +37,7 @@ trait JsonSchemas extends endpoints4s.algebra.JsonSchemas {
   implicit val artifactReferenceSchema: JsonSchema[Artifact.Reference] =
     field[Artifact.GroupId]("groupId")
       .zip(field[Artifact.ArtifactId]("artifactId"))
-      .zip(field[SemanticVersion]("version"))
+      .zip(field[Version]("version"))
       .xmap((Artifact.Reference.apply _).tupled)(Function.unlift(Artifact.Reference.unapply))
 
   implicit val documentationPatternSchema: JsonSchema[DocumentationPattern] =
@@ -72,7 +70,7 @@ trait JsonSchemas extends endpoints4s.algebra.JsonSchemas {
   implicit val artifactResponseSchema: JsonSchema[ArtifactResponse] =
     field[Artifact.GroupId]("groupId")
       .zip(field[Artifact.ArtifactId]("artifactId"))
-      .zip(field[SemanticVersion]("version"))
+      .zip(field[Version]("version"))
       .zip(field[Artifact.Name]("name"))
       .zip(field[BinaryVersion]("binaryVersion"))
       .zip(field[Language]("language"))

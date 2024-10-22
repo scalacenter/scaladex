@@ -11,11 +11,11 @@ class LanguageTests extends AsyncFunSpec with Matchers {
     }
 
     it("should not accept minor versions") {
-      Scala(MinorVersion(3, 0)).isValid shouldBe false
+      Scala(Version(3, 0)).isValid shouldBe false
     }
 
     it("should not accept patch versions") {
-      Scala(PatchVersion(3, 0, 1)).isValid shouldBe false
+      Scala(Version("3.0.1")).isValid shouldBe false
     }
   }
 }

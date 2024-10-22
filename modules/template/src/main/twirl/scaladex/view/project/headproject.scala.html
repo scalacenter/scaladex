@@ -96,7 +96,7 @@
           }
     
           @if(header.latestMillVersions.nonEmpty){
-            <div>{Artifact, BinaryVersion, Project, SemanticVersion, UserState, Env}
+            <div>{Artifact, BinaryVersion, Project, Version, UserState, Env}
               Mill plugins:
               @for(platform <- header.latestMillVersions.sorted.reverse) {
                 <a href="@header.versionsUrl(platform)" class="targets">@platform.version</a>

@@ -24,10 +24,7 @@ trait Endpoints
     segment[Artifact.GroupId]("groupId")(stringSegment.xmap(Artifact.GroupId(_))(_.value))
   private val artifactIdSegment: Path[Artifact.ArtifactId] =
     segment[Artifact.ArtifactId]("artifactId")(stringSegment.xmap(Artifact.ArtifactId(_))(_.value))
-  private val versionSegment: Path[SemanticVersion] =
-    segment[SemanticVersion]("version")(
-      stringSegment.xmapPartial(v => Validated.fromOption(SemanticVersion.parse(v))(s"Cannot parse $v"))(_.value)
-    )
+  private val versionSegment: Path[Version] = segment[Version]("version")(stringSegment.xmap(Version(_))(_.value))
 
   private val projectPath: Path[Project.Reference] =
     (projectsPath / organizationSegment / repositorySegment)
@@ -113,13 +110,13 @@ trait Endpoints
   val getProjectV1: Endpoint[Project.Reference, Option[ProjectResponse]] =
     endpoint(get(api(v1) / projectPath), ok(jsonResponse[ProjectResponse]).orNotFound())
 
-  val getProjectVersionsV1: Endpoint[(Project.Reference, ProjectVersionsParams), Seq[SemanticVersion]] =
-    endpoint(get(api(v1) / projectVersionsPath /? projectVersionsParams), ok(jsonResponse[Seq[SemanticVersion]]))
+  val getProjectVersionsV1: Endpoint[(Project.Reference, ProjectVersionsParams), Seq[Version]] =
+    endpoint(get(api(v1) / projectVersionsPath /? projectVersionsParams), ok(jsonResponse[Seq[Version]]))
 
   val getLatestProjectVersionV1: Endpoint[Project.Reference, Seq[Artifact.Reference]] =
     endpoint(get(api(v1) / projectVersionsPath / "latest"), ok(jsonResponse[Seq[Artifact.Reference]]))
 
-  val getProjectVersionV1: Endpoint[(Project.Reference, SemanticVersion), Seq[Artifact.Reference]] =
+  val getProjectVersionV1: Endpoint[(Project.Reference, Version), Seq[Artifact.Reference]] =
     endpoint(get(api(v1) / projectVersionsPath / versionSegment), ok(jsonResponse[Seq[Artifact.Reference]]))
 
   def getProjectArtifacts(
@@ -132,10 +129,10 @@ trait Endpoints
 
   def getArtifactVersions(
       v: Option[String]
-  ): Endpoint[(Artifact.GroupId, Artifact.ArtifactId, Boolean), Seq[SemanticVersion]] =
+  ): Endpoint[(Artifact.GroupId, Artifact.ArtifactId, Boolean), Seq[Version]] =
     endpoint(
       get(api(v) / artifactsPath / groupIdSegment / artifactIdSegment /? stableOnlyFilter),
-      ok(jsonResponse[Seq[SemanticVersion]])
+      ok(jsonResponse[Seq[Version]])
     )
 
   def getLatestArtifactV1: Endpoint[(Artifact.GroupId, Artifact.ArtifactId), Option[ArtifactResponse]] =

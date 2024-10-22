@@ -21,14 +21,11 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
       projectRef: Project.Reference,
       creationDate: Instant
   ): Option[(Artifact, Seq[ArtifactDependency])] =
-    for {
-      version <- SemanticVersion.parse(pom.version)
-      meta <- extractMeta(pom)
-    } yield {
+    extractMeta(pom).map { meta =>
       val artifact = Artifact(
         Artifact.GroupId(pom.groupId),
         meta.artifactId,
-        version,
+        Version(pom.version),
         projectRef,
         pom.description,
         creationDate,
@@ -40,23 +37,20 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
         pom.versionScheme,
         pom.developers.distinct
       )
-      val dependencies = pom.dependencies.flatMap { dep =>
-        dep.reference.map { target =>
-          ArtifactDependency(artifact.reference, target, dep.scope.map(Scope.apply).getOrElse(Scope.compile))
-        }
+      val dependencies = pom.dependencies.map { dep =>
+        val scope = dep.scope.map(Scope.apply).getOrElse(Scope.compile)
+        ArtifactDependency(artifact.reference, dep.reference, scope)
       }.distinct
       (artifact, dependencies)
     }
 
-  private def extractScalaVersion(pom: ArtifactModel): Option[SemanticVersion] = {
+  private def extractScalaVersion(pom: ArtifactModel): Option[Version] = {
     val scalaDependencies = pom.dependencies.filter { dep =>
       dep.groupId == "org.scala-lang" &&
       (dep.artifactId == "scala-library" || dep.artifactId == "scala3-library_3")
     }
-
     val fullScalaVersion = scalaDependencies.sortBy(_.artifactId).lastOption.map(_.version)
-
-    fullScalaVersion.flatMap(SemanticVersion.parse)
+    fullScalaVersion.flatMap(Version.parseSemantically)
   }
 
   /**
@@ -84,9 +78,9 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
           // Or it can be an sbt-plugin published as a maven style. In such a case the Scala target
           // is not suffixed to the artifact name but can be found in the model’s `sbtPluginTarget` member.
           case Some(SbtPluginTarget(rawScalaVersion, rawSbtVersion)) =>
-            SemanticVersion
-              .parse(rawScalaVersion)
-              .zip(SemanticVersion.parse(rawSbtVersion))
+            Version
+              .parseSemantically(rawScalaVersion)
+              .zip(Version.parseSemantically(rawSbtVersion))
               .map {
                 case (scalaVersion, sbtVersion) =>
                   val name = Artifact.Name(pom.artifactId.stripSuffix(s"_${rawScalaVersion}_$rawSbtVersion"))
@@ -106,7 +100,7 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
             dep.groupId == "org.scala-lang" &&
             (dep.artifactId == "scala-library" || dep.artifactId == "scala3-library_3")
           }
-          version <- SemanticVersion.parse(dep.version)
+          version <- Version.parseSemantically(dep.version)
         } yield {
           val name = Artifact.Name(pom.artifactId)
           val binaryVersion = BinaryVersion(Jvm, Scala.fromFullVersion(version))
@@ -123,7 +117,7 @@ class ArtifactConverter(paths: DataPaths) extends LazyLogging {
 
       // For example: scala-compiler
       case Some(BinaryVersionLookup.FromArtifactVersion) =>
-        for (version <- SemanticVersion.parse(pom.version))
+        for (version <- Version.parseSemantically(pom.version))
           yield ArtifactMeta(
             Artifact.ArtifactId(Artifact.Name(pom.artifactId), BinaryVersion(Jvm, Scala.fromFullVersion(version))),
             isNonStandard = true

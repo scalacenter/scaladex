@@ -9,8 +9,8 @@
   user: Option[UserState],
   project: Project,
   header: Option[ProjectHeader],
-  directDependencies: Map[Project.Reference, (ArtifactDependency.Scope, Seq[SemanticVersion])],
-  reverseDependency: Map[Project.Reference, (ArtifactDependency.Scope, SemanticVersion)],
+  directDependencies: Map[Project.Reference, (ArtifactDependency.Scope, Seq[Version])],
+  reverseDependency: Map[Project.Reference, (ArtifactDependency.Scope, Version)],
 )
 @main(env, title = project.repository.value, user, extraMeta = project.twitterCard.toHeadMeta, extraMetaProperty = project.ogp.toHeadMetaProperty) {
   <main id="container-project">
@@ -106,7 +106,7 @@
   }
 }
 
-@directDependenciesBox(dependencies: Map[Project.Reference, (ArtifactDependency.Scope, Seq[SemanticVersion])]) = {
+@directDependenciesBox(dependencies: Map[Project.Reference, (ArtifactDependency.Scope, Seq[Version])]) = {
   <div class="dependencies box">
     <h4>@Formats.plural(dependencies.size, "Dependency")</h4>
     <ul>
@@ -122,7 +122,7 @@
   </div>
 }
 
-@reverseDependenciesBox(dependencies: Map[Project.Reference, (ArtifactDependency.Scope, SemanticVersion)]) = {
+@reverseDependenciesBox(dependencies: Map[Project.Reference, (ArtifactDependency.Scope, Version)]) = {
   <section class="dependencies box" id="dependents">
     <h4>@Formats.plural(dependencies.size, "Dependent")</h4>
     <ul>

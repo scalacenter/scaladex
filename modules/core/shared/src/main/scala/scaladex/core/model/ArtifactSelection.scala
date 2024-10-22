@@ -21,7 +21,7 @@ case class ArtifactSelection(
         // alphabetically
         artifact.name,
         // stable version first
-        project.settings.preferStableVersion && artifact.version.preRelease.isDefined,
+        project.settings.preferStableVersion && !artifact.version.isStable,
         artifact.version,
         artifact.binaryVersion
       )
@@ -32,7 +32,7 @@ case class ArtifactSelection(
         Ordering[Boolean],
         Ordering[Artifact.Name].reverse,
         Ordering[Boolean].reverse,
-        Ordering[SemanticVersion],
+        Ordering[Version],
         Ordering[BinaryVersion]
       )
     )
@@ -52,7 +52,7 @@ case class ArtifactSelection(
           // alphabetically
           artifact.name,
           // stable version first
-          project.settings.preferStableVersion && artifact.version.preRelease.isDefined,
+          project.settings.preferStableVersion && !artifact.version.isStable,
           artifact.version,
           artifact.binaryVersion
         )
@@ -64,7 +64,7 @@ case class ArtifactSelection(
             Ordering[Boolean],
             Ordering[Artifact.Name].reverse,
             Ordering[Boolean].reverse,
-            Ordering[SemanticVersion],
+            Ordering[Version],
             Ordering[BinaryVersion]
           )
           .reverse

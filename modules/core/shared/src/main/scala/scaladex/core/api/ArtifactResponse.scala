@@ -7,7 +7,7 @@ import scaladex.core.model._
 final case class ArtifactResponse(
     groupId: Artifact.GroupId,
     artifactId: Artifact.ArtifactId,
-    version: SemanticVersion,
+    version: Version,
     artifactName: Artifact.Name,
     binaryVersion: BinaryVersion,
     language: Language,

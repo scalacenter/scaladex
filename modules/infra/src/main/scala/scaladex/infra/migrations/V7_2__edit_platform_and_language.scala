@@ -46,7 +46,7 @@ object V7_2__edit_platform_and_language {
   case class OldArtifact(
       groupId: Artifact.GroupId,
       artifactId: String,
-      version: SemanticVersion,
+      version: Version,
       artifactName: Artifact.Name,
       binaryVersion: BinaryVersion,
       projectRef: Project.Reference,

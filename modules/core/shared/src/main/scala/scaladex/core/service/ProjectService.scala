@@ -25,7 +25,7 @@ class ProjectService(database: WebDatabase, searchEngine: SearchEngine)(implicit
       binaryVersions: Seq[BinaryVersion],
       artifactNames: Seq[Artifact.Name],
       stableOnly: Boolean
-  ): Future[Seq[SemanticVersion]] =
+  ): Future[Seq[Version]] =
     for (artifacts <- getArtifactRefs(ref, binaryVersions.toSet, artifactNames.toSet, stableOnly = stableOnly))
       yield artifacts
         .groupBy(_.version)
@@ -36,7 +36,7 @@ class ProjectService(database: WebDatabase, searchEngine: SearchEngine)(implicit
         }
         .keys
         .toSeq
-        .sorted(Ordering[SemanticVersion].reverse)
+        .sorted(Ordering[Version].reverse)
 
   def getLatestProjectVersion(ref: Project.Reference): Future[Seq[Artifact.Reference]] =
     getHeader(ref).flatMap {
@@ -44,7 +44,7 @@ class ProjectService(database: WebDatabase, searchEngine: SearchEngine)(implicit
       case Some(header) => getProjectVersion(ref, header.latestVersion)
     }
 
-  def getProjectVersion(ref: Project.Reference, version: SemanticVersion): Future[Seq[Artifact.Reference]] =
+  def getProjectVersion(ref: Project.Reference, version: Version): Future[Seq[Artifact.Reference]] =
     database.getProjectArtifactRefs(ref, version)
 
   def getArtifactRefs(

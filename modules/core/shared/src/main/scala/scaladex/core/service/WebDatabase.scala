@@ -13,7 +13,7 @@ trait WebDatabase {
       groupId: Artifact.GroupId,
       artifactId: Artifact.ArtifactId,
       stableOnly: Boolean
-  ): Future[Seq[SemanticVersion]]
+  ): Future[Seq[Version]]
   def getArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]]
   def getArtifact(ref: Artifact.Reference): Future[Option[Artifact]]
   def getLatestArtifact(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Option[Artifact]]
@@ -31,7 +31,7 @@ trait WebDatabase {
   def getProject(projectRef: Project.Reference): Future[Option[Project]]
   def getProjectArtifactRefs(ref: Project.Reference, stableOnly: Boolean): Future[Seq[Artifact.Reference]]
   def getProjectArtifactRefs(ref: Project.Reference, name: Artifact.Name): Future[Seq[Artifact.Reference]]
-  def getProjectArtifactRefs(ref: Project.Reference, version: SemanticVersion): Future[Seq[Artifact.Reference]]
+  def getProjectArtifactRefs(ref: Project.Reference, version: Version): Future[Seq[Artifact.Reference]]
   def getProjectArtifacts(
       ref: Project.Reference,
       artifactName: Artifact.Name,
@@ -40,7 +40,7 @@ trait WebDatabase {
   def getProjectArtifacts(
       ref: Project.Reference,
       artifactName: Artifact.Name,
-      version: SemanticVersion
+      version: Version
   ): Future[Seq[Artifact]]
   def getProjectLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]]
   def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]]
@@ -53,7 +53,7 @@ trait WebDatabase {
 
   // project dependencies
   def countProjectDependents(projectRef: Project.Reference): Future[Long]
-  def getProjectDependencies(ref: Project.Reference, version: SemanticVersion): Future[Seq[ProjectDependency]]
+  def getProjectDependencies(ref: Project.Reference, version: Version): Future[Seq[ProjectDependency]]
   def getProjectDependents(ref: Project.Reference): Future[Seq[ProjectDependency]]
 
   // users

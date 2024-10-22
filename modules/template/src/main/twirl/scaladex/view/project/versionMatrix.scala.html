@@ -8,7 +8,7 @@
         project: Project,
         header: Option[ProjectHeader],
         binaryVersionsByPlatforms: Seq[(Platform, Seq[BinaryVersion])],
-        artifactsByVersions: Seq[(SemanticVersion, Seq[(Artifact.Name, Seq[BinaryVersion])])]
+        artifactsByVersions: Seq[(Version, Seq[(Artifact.Name, Seq[BinaryVersion])])]
 )
 @allBinaryVersions = @{
   binaryVersionsByPlatforms.flatMap(_._2)

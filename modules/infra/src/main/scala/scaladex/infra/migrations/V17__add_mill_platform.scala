@@ -31,8 +31,8 @@ class V17__add_mill_platform extends BaseJavaMigration with ScaladexBaseMigratio
 
   private def isValidMillPlugin(artifact: Artifact): Boolean =
     artifact.platform match {
-      case MillPlugin(MinorVersion(_, _)) => true
-      case MillPlugin(v @ MajorVersion(_)) =>
+      case MillPlugin(Version.Minor(_, _)) => true
+      case MillPlugin(v @ Version.Major(_)) =>
         throw new Exception(s"Unexpected artifact with Mill version $v in ${artifact.artifactId}")
       case MillPlugin(_) => false
       case p             => throw new Exception(s"Unexpected platform $p in ${artifact.artifactId}")

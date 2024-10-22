@@ -16,7 +16,7 @@ class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext
       groupId: Artifact.GroupId,
       artifactId: Artifact.ArtifactId,
       stableOnly: Boolean
-  ): Future[Seq[SemanticVersion]] =
+  ): Future[Seq[Version]] =
     database.getArtifactVersions(groupId, artifactId, stableOnly)
 
   def getLatestArtifact(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Option[Artifact]] =
@@ -84,7 +84,7 @@ class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext
       _ <- database.updateLatestVersion(Artifact.Reference(groupId, artifactId, latestVersion))
     } yield ()
 
-  def computeLatestVersion(versions: Seq[SemanticVersion], preferStableVersion: Boolean): SemanticVersion = {
+  def computeLatestVersion(versions: Seq[Version], preferStableVersion: Boolean): Version = {
     def maxStable = versions.filter(_.isStable).maxOption
     def max = versions.max
     if (preferStableVersion) maxStable.getOrElse(max) else max

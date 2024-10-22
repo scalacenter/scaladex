@@ -44,7 +44,7 @@ object Codecs {
 
   implicit val groupIdCodec: Codec[Artifact.GroupId] = fromString(_.value, Artifact.GroupId.apply)
   implicit val artifactIdCodec: Codec[Artifact.ArtifactId] = fromString(_.value, Artifact.ArtifactId.apply)
-  implicit val semanticVersionCodec: Codec[SemanticVersion] = fromString(_.value, SemanticVersion.unsafe)
+  implicit val semanticVersionCodec: Codec[Version] = fromString(_.value, Version.apply)
   implicit val platformCodec: Codec[Platform] = fromString(_.value, Platform.parse(_).get)
   implicit val languageCodec: Codec[Language] = fromString(_.value, Language.parse(_).get)
   implicit val resolverCodec: Codec[Resolver] = deriveCodec

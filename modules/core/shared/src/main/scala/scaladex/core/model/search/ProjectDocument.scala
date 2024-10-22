@@ -16,7 +16,7 @@ final case class ProjectDocument(
     updateDate: Option[Instant],
     languages: Seq[Language],
     platforms: Seq[Platform],
-    latestVersion: Option[SemanticVersion],
+    latestVersion: Option[Version],
     dependents: Long,
     category: Option[Category],
     formerReferences: Seq[Project.Reference],

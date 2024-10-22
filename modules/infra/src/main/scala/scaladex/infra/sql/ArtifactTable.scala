@@ -60,7 +60,7 @@ object ArtifactTable {
   val selectArtifactByGroupIdAndArtifactId: Query[(GroupId, ArtifactId), Artifact] =
     selectRequest(table, mainFields, Seq("group_id", "artifact_id"))
 
-  def selectVersionByGroupIdAndArtifactId(stableOnly: Boolean): Query[(GroupId, ArtifactId), SemanticVersion] =
+  def selectVersionByGroupIdAndArtifactId(stableOnly: Boolean): Query[(GroupId, ArtifactId), Version] =
     selectRequest1(
       table,
       Seq("version"),
@@ -97,7 +97,7 @@ object ArtifactTable {
       keys = projectReferenceFields ++ Seq("artifact_name")
     )
 
-  def selectArtifactRefByProjectAndVersion: Query[(Project.Reference, SemanticVersion), Reference] =
+  def selectArtifactRefByProjectAndVersion: Query[(Project.Reference, Version), Reference] =
     selectRequest1(
       table,
       referenceFields,
@@ -112,7 +112,7 @@ object ArtifactTable {
       where = stableOnlyFilter(stableOnly).toSeq
     )
 
-  val selectArtifactByProjectAndNameAndVersion: Query[(Project.Reference, Name, SemanticVersion), Artifact] =
+  val selectArtifactByProjectAndNameAndVersion: Query[(Project.Reference, Name, Version), Artifact] =
     selectRequest1(
       table,
       mainFields,

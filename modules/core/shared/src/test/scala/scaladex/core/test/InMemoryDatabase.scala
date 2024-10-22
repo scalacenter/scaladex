@@ -6,17 +6,7 @@ import java.util.UUID
 import scala.collection.mutable
 import scala.concurrent.Future
 
-import scaladex.core.model.Artifact
-import scaladex.core.model.ArtifactDependency
-import scaladex.core.model.GithubInfo
-import scaladex.core.model.GithubStatus
-import scaladex.core.model.Language
-import scaladex.core.model.Platform
-import scaladex.core.model.Project
-import scaladex.core.model.ProjectDependency
-import scaladex.core.model.SemanticVersion
-import scaladex.core.model.UserInfo
-import scaladex.core.model.UserState
+import scaladex.core.model._
 import scaladex.core.service.SchedulerDatabase
 
 class InMemoryDatabase extends SchedulerDatabase {
@@ -91,7 +81,7 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   override def getProjectArtifactRefs(
       ref: Project.Reference,
-      version: SemanticVersion
+      version: Version
   ): Future[Seq[Artifact.Reference]] =
     Future.successful(getProjectArtifactsSync(ref).map(_.reference).filter(_.version == version))
 
@@ -109,15 +99,15 @@ class InMemoryDatabase extends SchedulerDatabase {
       ref: Project.Reference,
       artifactName: Artifact.Name,
       stableOnly: Boolean
-  ): Future[Seq[Artifact]] =
-    Future.successful(
-      getProjectArtifactsSync(ref).filter(a => a.name == artifactName && (!stableOnly || !a.version.isPreRelease))
-    )
+  ): Future[Seq[Artifact]] = {
+    val res = getProjectArtifactsSync(ref).filter(a => a.name == artifactName && (!stableOnly || a.version.isStable))
+    Future.successful(res)
+  }
 
   override def getProjectArtifacts(
       ref: Project.Reference,
       artifactName: Artifact.Name,
-      version: SemanticVersion
+      version: Version
   ): Future[Seq[Artifact]] =
     Future.successful(
       getProjectArtifactsSync(ref).filter(a => a.name == artifactName && a.version == version)
@@ -157,7 +147,7 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   override def computeProjectDependencies(
       ref: Project.Reference,
-      version: SemanticVersion
+      version: Version
   ): Future[Seq[ProjectDependency]] = ???
 
   override def computeProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]] = ???
@@ -191,7 +181,7 @@ class InMemoryDatabase extends SchedulerDatabase {
 
   override def getProjectDependencies(
       ref: Project.Reference,
-      version: SemanticVersion
+      version: Version
   ): Future[Seq[ProjectDependency]] =
     Future.successful(Seq.empty)
   override def getProjectDependents(ref: Project.Reference): Future[Seq[ProjectDependency]] =
@@ -235,7 +225,7 @@ class InMemoryDatabase extends SchedulerDatabase {
       groupId: Artifact.GroupId,
       artifactId: Artifact.ArtifactId,
       stableOnly: Boolean
-  ): Future[Seq[SemanticVersion]] = {
+  ): Future[Seq[Version]] = {
     val res = allArtifacts.keys.collect {
       case Artifact.Reference(g, a, version) if g == groupId && a == artifactId => version
     }.toSeq

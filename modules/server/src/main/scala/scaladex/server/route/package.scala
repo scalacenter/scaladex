@@ -8,7 +8,7 @@ import org.apache.pekko.http.scaladsl.server.PathMatcher1
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import scaladex.core.model.Artifact
 import scaladex.core.model.Project
-import scaladex.core.model.SemanticVersion
+import scaladex.core.model.Version
 import scaladex.core.model.search.PageParams
 
 package object route {
@@ -20,11 +20,10 @@ package object route {
   }
 
   val artifactNameM: PathMatcher1[Artifact.Name] = Segment.map(Artifact.Name.apply)
-  val versionM: PathMatcher1[SemanticVersion] = Segment.flatMap(SemanticVersion.parse)
+  val versionM: PathMatcher1[Version] = Segment.map(Version.apply)
 
-  val artifactRefM: PathMatcher1[Artifact.Reference] = (Segment / Segment / Segment).tflatMap {
-    case (groupId, artifactId, version) =>
-      Artifact.Reference.parse(groupId, artifactId, version).map(Tuple1.apply)
+  val artifactRefM: PathMatcher1[Artifact.Reference] = (Segment / Segment / Segment).tmap {
+    case (groupId, artifactId, version) => Tuple1(Artifact.Reference.from(groupId, artifactId, version))
   }
 
   val instantUnmarshaller: Unmarshaller[String, Instant] =

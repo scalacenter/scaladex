@@ -20,8 +20,8 @@ import scaladex.core.model.SbtPlugin
 import scaladex.core.model.Scala
 import scaladex.core.model.ScalaJs
 import scaladex.core.model.ScalaNative
-import scaladex.core.model.SemanticVersion
-import scaladex.core.model.SemanticVersion.PreferStable
+import scaladex.core.model.Version
+import scaladex.core.model.Version.PreferStable
 import scaladex.core.service.WebDatabase
 
 class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext) {
@@ -174,16 +174,16 @@ object Badges {
     summaryOfLatestVersions(versionsByScalaVersions)
   }
 
-  private[route] def summaryOfLatestVersions(versionsByScalaVersions: Map[Scala, Seq[SemanticVersion]]): String =
+  private[route] def summaryOfLatestVersions(versionsByScalaVersions: Map[Scala, Seq[Version]]): String =
     versionsByScalaVersions.view
       .mapValues(_.max(PreferStable))
       .groupMap { case (_, latestVersion) => latestVersion } { case (scalaVersion, _) => scalaVersion }
       .toSeq
-      .sortBy(_._1)(SemanticVersion.ordering.reverse)
+      .sortBy(_._1)(Version.ordering.reverse)
       .map {
         case (latestVersion, scalaVersions) =>
           val scalaVersionsStr =
-            scalaVersions.map(_.version).toSeq.sorted(SemanticVersion.ordering.reverse).mkString(", ")
+            scalaVersions.map(_.version).toSeq.sorted(Version.ordering.reverse).mkString(", ")
           s"$latestVersion (Scala $scalaVersionsStr)"
       }
       .mkString(", ")

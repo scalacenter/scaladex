@@ -10,26 +10,9 @@ import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import com.zaxxer.hikari.HikariDataSource
 import doobie.implicits._
-import scaladex.core.model.Artifact
-import scaladex.core.model.ArtifactDependency
-import scaladex.core.model.GithubInfo
-import scaladex.core.model.GithubStatus
-import scaladex.core.model.Language
-import scaladex.core.model.Platform
-import scaladex.core.model.Project
-import scaladex.core.model.ProjectDependency
-import scaladex.core.model.SemanticVersion
-import scaladex.core.model.UserInfo
-import scaladex.core.model.UserState
+import scaladex.core.model._
 import scaladex.core.service.SchedulerDatabase
-import scaladex.infra.sql.ArtifactDependencyTable
-import scaladex.infra.sql.ArtifactTable
-import scaladex.infra.sql.DoobieUtils
-import scaladex.infra.sql.GithubInfoTable
-import scaladex.infra.sql.ProjectDependenciesTable
-import scaladex.infra.sql.ProjectSettingsTable
-import scaladex.infra.sql.ProjectTable
-import scaladex.infra.sql.UserSessionsTable
+import scaladex.infra.sql._
 
 class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
   private val flyway = DoobieUtils.flyway(datasource)
@@ -43,7 +26,7 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
       groupId: Artifact.GroupId,
       artifactId: Artifact.ArtifactId,
       stableOnly: Boolean
-  ): Future[Seq[SemanticVersion]] =
+  ): Future[Seq[Version]] =
     run(ArtifactTable.selectVersionByGroupIdAndArtifactId(stableOnly).to[Seq]((groupId, artifactId)))
 
   override def getLatestArtifact(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Option[Artifact]] =
@@ -121,7 +104,7 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   override def getProjectArtifactRefs(
       ref: Project.Reference,
-      version: SemanticVersion
+      version: Version
   ): Future[Seq[Artifact.Reference]] =
     run(ArtifactTable.selectArtifactRefByProjectAndVersion.to[Seq]((ref, version)))
 
@@ -138,7 +121,7 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getProjectArtifacts(
       ref: Project.Reference,
       name: Artifact.Name,
-      version: SemanticVersion
+      version: Version
   ): Future[Seq[Artifact]] =
     run(ArtifactTable.selectArtifactByProjectAndNameAndVersion.to[Seq](ref, name, version))
 
@@ -150,7 +133,7 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   override def getProjectDependencies(
       ref: Project.Reference,
-      version: SemanticVersion
+      version: Version
   ): Future[Seq[ProjectDependency]] =
     run(ProjectDependenciesTable.getDependencies.to[Seq]((ref, version)))
 
@@ -180,7 +163,7 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   override def computeProjectDependencies(
       ref: Project.Reference,
-      version: SemanticVersion
+      version: Version
   ): Future[Seq[ProjectDependency]] =
     run(ArtifactDependencyTable.computeProjectDependencies.to[Seq]((ref, version)))
 

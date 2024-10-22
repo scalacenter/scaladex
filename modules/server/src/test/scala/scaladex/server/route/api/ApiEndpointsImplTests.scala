@@ -95,36 +95,36 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach 
 
     testGet(s"/api/v1/projects/${Cats.reference}/versions") {
       status shouldBe StatusCodes.OK
-      responseAs[Seq[SemanticVersion]] should contain theSameElementsAs Seq(`2.6.1`, `2.7.0`)
+      responseAs[Seq[Version]] should contain theSameElementsAs Seq(`2.6.1`, `2.7.0`)
     }
 
     testGet(s"/api/v1/projects/${Cats.reference}/versions?binary-version=_sjs1_3") {
       status shouldBe StatusCodes.OK
-      responseAs[Seq[SemanticVersion]] should contain theSameElementsAs Seq(`2.6.1`)
+      responseAs[Seq[Version]] should contain theSameElementsAs Seq(`2.6.1`)
     }
 
     testGet(s"/api/v1/projects/${Cats.reference}/versions?artifact-name=cats-kernel") {
       status shouldBe StatusCodes.OK
-      responseAs[Seq[SemanticVersion]] should contain theSameElementsAs Seq(`2.6.1`)
+      responseAs[Seq[Version]] should contain theSameElementsAs Seq(`2.6.1`)
     }
 
     testGet(
       s"/api/v1/projects/${Cats.reference}/versions?binary-version=_3&binary-version=_sjs1_3&artifact-name=cats-core"
     ) {
       status shouldBe StatusCodes.OK
-      responseAs[Seq[SemanticVersion]] should contain theSameElementsAs Seq(`2.6.1`)
+      responseAs[Seq[Version]] should contain theSameElementsAs Seq(`2.6.1`)
     }
 
     testGet(
       s"/api/v1/projects/${Cats.reference}/versions?binary-version=_3&artifact-name=cats-kernel&artifact-name=cats-core"
     ) {
       status shouldBe StatusCodes.OK
-      responseAs[Seq[SemanticVersion]] should contain theSameElementsAs Seq(`2.6.1`)
+      responseAs[Seq[Version]] should contain theSameElementsAs Seq(`2.6.1`)
     }
 
     testGet("/api/v1/projects/unknown/unknown/versions") {
       status shouldBe StatusCodes.OK // TODO this should be not found
-      responseAs[Seq[SemanticVersion]] shouldBe empty
+      responseAs[Seq[Version]] shouldBe empty
     }
 
     testGet(s"/api/v1/projects/${Cats.reference}/versions/latest") {
@@ -175,7 +175,7 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach 
 
     testGet("/api/v1/artifacts/org.typelevel/cats-core_3") {
       status shouldBe StatusCodes.OK
-      responseAs[Seq[SemanticVersion]] should contain theSameElementsAs Seq(`2.6.1`, `2.7.0`)
+      responseAs[Seq[Version]] should contain theSameElementsAs Seq(`2.6.1`, `2.7.0`)
     }
 
     testGet("/api/v1/artifacts/org.typelevel/cats-core_3/latest") {

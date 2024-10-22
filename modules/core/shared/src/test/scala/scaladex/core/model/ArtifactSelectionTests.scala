@@ -4,14 +4,6 @@ import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 
 class ArtifactSelectionTests extends AsyncFunSpec with Matchers {
-
-  def artifactRef(groupdId: String, artifactId: String, version: String): Artifact.Reference =
-    Artifact.Reference(
-      Artifact.GroupId(groupdId),
-      Artifact.ArtifactId(artifactId),
-      SemanticVersion.parse(version).get
-    )
-
   it("latest version pre release scala") {
     val project = Project.default(Project.Reference.from("typelevel", "cats"))
     val artifactIds = Seq("cats-core_2.11", "cats-core_2.10", "cats-core_sjs0.6_2.11", "cats-core_sjs0.6_2.10")
@@ -19,7 +11,7 @@ class ArtifactSelectionTests extends AsyncFunSpec with Matchers {
     val artifacts = for {
       artifactId <- artifactIds
       version <- versions
-    } yield artifactRef("org.typelevel", artifactId, version)
+    } yield Artifact.Reference.from("org.typelevel", artifactId, version)
     val result = ArtifactSelection.empty.defaultArtifact(artifacts, project)
     result should contain(artifacts.head)
   }
@@ -28,8 +20,8 @@ class ArtifactSelectionTests extends AsyncFunSpec with Matchers {
     val project = Project.default(Project.Reference.from("akka", "akka"))
     val groupdId = "com.typesafe.akka"
     val artifacts = Seq(
-      artifactRef(groupdId, "akka-distributed-data-experimental_2.11", "2.4.8"),
-      artifactRef(groupdId, "akka-actors_2.11", "2.4.8")
+      Artifact.Reference.from(groupdId, "akka-distributed-data-experimental_2.11", "2.4.8"),
+      Artifact.Reference.from(groupdId, "akka-actors_2.11", "2.4.8")
     )
     val selection = ArtifactSelection(None, Some(Artifact.Name("akka-distributed-data-experimental")))
     val result = selection.defaultArtifact(artifacts, project)

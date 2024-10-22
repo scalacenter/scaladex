@@ -3,7 +3,7 @@ package scaladex.infra.sql
 import doobie._
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
-import scaladex.core.model.SemanticVersion
+import scaladex.core.model.Version
 import scaladex.infra.sql.DoobieUtils.Mappings._
 import scaladex.infra.sql.DoobieUtils._
 
@@ -27,7 +27,7 @@ object ProjectDependenciesTable {
   val getDependents: Query[Project.Reference, ProjectDependency] =
     selectRequest(table, allFields, Seq("target_organization", "target_repository"))
 
-  val getDependencies: Query[(Project.Reference, SemanticVersion), ProjectDependency] =
+  val getDependencies: Query[(Project.Reference, Version), ProjectDependency] =
     selectRequest(table, allFields, sourceFields)
 
   val deleteBySource: Update[Project.Reference] =

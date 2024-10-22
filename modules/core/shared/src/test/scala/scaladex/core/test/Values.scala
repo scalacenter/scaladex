@@ -3,30 +3,10 @@ package scaladex.core.test
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact._
-import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.ArtifactDependency.Scope
-import scaladex.core.model.BinaryVersion
-import scaladex.core.model.Category
-import scaladex.core.model.Contributor
-import scaladex.core.model.GithubCommitActivity
-import scaladex.core.model.GithubContributor
-import scaladex.core.model.GithubInfo
-import scaladex.core.model.GithubIssue
-import scaladex.core.model.GithubStatus
-import scaladex.core.model.Jvm
-import scaladex.core.model.License
-import scaladex.core.model.MajorVersion
-import scaladex.core.model.PatchVersion
-import scaladex.core.model.Project
 import scaladex.core.model.Project.Settings
-import scaladex.core.model.ProjectHeader
-import scaladex.core.model.Scala
-import scaladex.core.model.ScalaJs
-import scaladex.core.model.ScalaNative
-import scaladex.core.model.SemanticVersion
-import scaladex.core.model.Url
+import scaladex.core.model._
 import scaladex.core.model.search.ProjectDocument
 
 object Values {
@@ -34,15 +14,15 @@ object Values {
   val ok: GithubStatus = GithubStatus.Ok(now)
   val unknown: GithubStatus = GithubStatus.Unknown(now)
 
-  val `2.6.1` = PatchVersion(2, 6, 1)
-  val `4`: SemanticVersion = MajorVersion(4)
-  val `2.7.0` = PatchVersion(2, 7, 0)
-  val `7.0.0` = PatchVersion(7, 0, 0)
-  val `7.1.0` = PatchVersion(7, 1, 0)
-  val `7.2.0-PREVIEW.1` = SemanticVersion.parse("7.2.0-PREVIEW.1").get
-  val `7.2.0-PREVIEW.2` = SemanticVersion.parse("7.2.0-PREVIEW.2").get
-  val `7.2.0` = PatchVersion(7, 2, 0)
-  val `7.3.0` = PatchVersion(7, 3, 0)
+  val `2.6.1` = Version(2, 6, 1)
+  val `4`: Version = Version(4)
+  val `2.7.0` = Version(2, 7, 0)
+  val `7.0.0` = Version(7, 0, 0)
+  val `7.1.0` = Version(7, 1, 0)
+  val `7.2.0-PREVIEW.1` = Version("7.2.0-PREVIEW.1")
+  val `7.2.0-PREVIEW.2` = Version("7.2.0-PREVIEW.2")
+  val `7.2.0` = Version(7, 2, 0)
+  val `7.3.0` = Version(7, 3, 0)
 
   val `_2.13`: BinaryVersion = BinaryVersion(Jvm, Scala.`2.13`)
   val `_3`: BinaryVersion = BinaryVersion(Jvm, Scala.`3`)
@@ -63,7 +43,7 @@ object Values {
     val artifact: Artifact = Artifact(
       groupId = GroupId("ch.epfl.scala"),
       artifactId = ArtifactId("scalafix-core_2.13"),
-      version = SemanticVersion.parse("0.9.30").get,
+      version = Version("0.9.30"),
       projectRef = reference,
       description = None,
       releaseDate = creationDate,
@@ -119,7 +99,7 @@ object Values {
     val artifact: Artifact = Artifact(
       groupId = GroupId("com.github.xuwei-k"),
       artifactId = ArtifactId("play-json-extra_2.11"),
-      version = SemanticVersion.unsafe("0.1.1-play2.3-M1"),
+      version = Version("0.1.1-play2.3-M1"),
       projectRef = reference,
       description = None,
       releaseDate = creationDate,
@@ -171,7 +151,7 @@ object Values {
       `_3`,
       `2.6.1`,
       description = Some("Cats core"),
-      fullScalaVersion = SemanticVersion.parse("3.0.0"),
+      fullScalaVersion = Some(Version("3.0.0")),
       scaladocUrl = Some(Url("http://typelevel.org/cats/api/")),
       versionScheme = Some("semver-spec"),
       developers = developers("org.typelevel:cats-core_3:jar:2.6.1")
@@ -183,7 +163,7 @@ object Values {
       `_3`,
       `2.7.0`,
       description = Some("Cats core"),
-      fullScalaVersion = SemanticVersion.parse("3.0.2"),
+      fullScalaVersion = Some(Version("3.0.2")),
       scaladocUrl = Some(Url("http://typelevel.org/cats/api/")),
       versionScheme = Some("semver-spec"),
       developers = developers("org.typelevel:cats-core_3:jar:2.7.0"),
@@ -226,7 +206,7 @@ object Values {
       ),
       ArtifactDependency(
         source = `core_3:2.6.1`.reference,
-        target = Artifact.Reference.unsafe("com.gu", "ztmp-scala-automation_2.10", "1.9"),
+        target = Artifact.Reference.from("com.gu", "ztmp-scala-automation_2.10", "1.9"),
         Scope("compile")
       )
     )
@@ -261,9 +241,9 @@ object Values {
     private def getArtifact(
         name: String,
         binaryVersion: BinaryVersion,
-        version: SemanticVersion,
+        version: Version,
         description: Option[String] = None,
-        fullScalaVersion: Option[SemanticVersion] = None,
+        fullScalaVersion: Option[Version] = None,
         developers: Seq[Contributor] = Nil,
         scaladocUrl: Option[Url] = None,
         versionScheme: Option[String] = None,
@@ -288,14 +268,14 @@ object Values {
 
   object CatsEffect {
     val dependency: ArtifactDependency = ArtifactDependency(
-      source = Artifact.Reference.unsafe("typelevel", "cats-effect-kernel_3", "3.2.3"),
+      source = Artifact.Reference.from("typelevel", "cats-effect-kernel_3", "3.2.3"),
       target = Cats.`core_3:2.6.1`.reference,
       Scope("compile")
     )
 
     val testDependency: ArtifactDependency = ArtifactDependency(
-      source = Artifact.Reference.unsafe("typelevel", "cats-effect-kernel_3", "3.2.3"),
-      target = Artifact.Reference.unsafe("typelevel", "scalacheck_3", "1.15.4"),
+      source = Artifact.Reference.from("typelevel", "cats-effect-kernel_3", "3.2.3"),
+      target = Artifact.Reference.from("typelevel", "scalacheck_3", "1.15.4"),
       Scope("test")
     )
   }
@@ -303,7 +283,7 @@ object Values {
   object SbtCrossProject {
     val reference: Project.Reference = Project.Reference.from("portable-scala", "sbt-crossproject")
     val artifactRef: Artifact.Reference =
-      Artifact.Reference.unsafe("org.portable-scala", "sbt-scalajs-crossproject_2.12_1.0", "1.3.2")
+      Artifact.Reference.from("org.portable-scala", "sbt-scalajs-crossproject_2.12_1.0", "1.3.2")
     val creationDate: Instant = Instant.ofEpochSecond(1688667180L)
   }
 

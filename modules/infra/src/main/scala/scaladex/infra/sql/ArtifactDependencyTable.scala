@@ -6,7 +6,7 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
-import scaladex.core.model.SemanticVersion
+import scaladex.core.model.Version
 import scaladex.infra.sql.DoobieUtils.Mappings._
 import scaladex.infra.sql.DoobieUtils._
 
@@ -63,8 +63,8 @@ object ArtifactDependencyTable {
       targetFields.map(f => s"d.$f")
     )
 
-  val computeProjectDependencies: Query[(Project.Reference, SemanticVersion), ProjectDependency] =
-    selectRequest1[(Project.Reference, SemanticVersion, Project.Reference), ProjectDependency](
+  val computeProjectDependencies: Query[(Project.Reference, Version), ProjectDependency] =
+    selectRequest1[(Project.Reference, Version, Project.Reference), ProjectDependency](
       fullJoin,
       Seq("d.organization", "d.repository", "d.version", "t.organization", "t.repository", "t.version", "d.scope"),
       where = Seq("d.organization=?", "d.repository=?", "d.version=?", "(t.organization<>? OR t.repository<>?)"),

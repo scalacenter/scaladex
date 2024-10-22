@@ -12,12 +12,20 @@ final case class DocumentationPattern(label: String, pattern: String) {
    * https://playframework.com/documentation/[major].[minor].x/Home
    */
   def eval(artifact: Artifact): LabeledLink = {
+    def major: String = artifact.version match {
+      case v: Version.SemanticLike => v.major.toString
+      case v: Version.Custom       => v.value.toString
+    }
+    def minor: String = artifact.version match {
+      case Version.SemanticLike(_, Some(v), _, _, _, _) => v.toString
+      case _                                            => ""
+    }
     val link = pattern
       .replace("[groupId]", artifact.groupId.value)
       .replace("[artifactId]", artifact.artifactId.value)
       .replace("[version]", artifact.version.value)
-      .replace("[major]", artifact.version.major.toString)
-      .replace("[minor]", artifact.version.minor.toString)
+      .replace("[major]", major)
+      .replace("[minor]", minor)
       .replace("[name]", artifact.name.value)
     LabeledLink(label, link)
   }

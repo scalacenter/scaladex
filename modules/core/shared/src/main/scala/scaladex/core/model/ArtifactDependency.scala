@@ -24,7 +24,7 @@ object ArtifactDependency {
       case None           => s"${artifactDep.target.groupId}:${artifactDep.target.artifactId}"
     }
 
-    val version: SemanticVersion = artifactDep.target.version
+    val version: Version = artifactDep.target.version
 
     def isInternal(ref: Project.Reference): Boolean =
       target.exists(_.projectRef == ref)
@@ -40,7 +40,7 @@ object ArtifactDependency {
   ) {
     def url: String = source.httpUrl
     def groupIdAndName: String = source.groupIdAndName
-    def version: SemanticVersion = source.version
+    def version: Version = source.version
   }
 
   object Reverse {

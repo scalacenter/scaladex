@@ -1,9 +1,9 @@
 package scaladex.view.model
 
-import scaladex.core.model.SemanticVersion
 import scaladex.core.model.Url
+import scaladex.core.model.Version
 
-final case class EcosystemVersion(version: SemanticVersion, libraryCount: Int, search: Url)
+final case class EcosystemVersion(version: Version, libraryCount: Int, search: Url)
 
 object EcosystemVersion {
   val ordering: Ordering[EcosystemVersion] = Ordering.by(_.version)

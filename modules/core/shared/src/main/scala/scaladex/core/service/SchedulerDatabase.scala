@@ -8,7 +8,7 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
-import scaladex.core.model.SemanticVersion
+import scaladex.core.model.Version
 
 trait SchedulerDatabase extends WebDatabase {
   // project and github
@@ -20,7 +20,7 @@ trait SchedulerDatabase extends WebDatabase {
   def getProjectDependencies(projectRef: Project.Reference): Future[Seq[ArtifactDependency]]
 
   // project dependencies
-  def computeProjectDependencies(reference: Project.Reference, version: SemanticVersion): Future[Seq[ProjectDependency]]
+  def computeProjectDependencies(reference: Project.Reference, version: Version): Future[Seq[ProjectDependency]]
   def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int]
   def deleteProjectDependencies(ref: Project.Reference): Future[Int]
 

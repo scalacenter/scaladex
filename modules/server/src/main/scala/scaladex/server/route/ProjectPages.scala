@@ -71,7 +71,7 @@ class ProjectPages(
                   }
                   .toSeq
                   .sortBy { case (name, version, _) => (version, name) }(
-                    Ordering.Tuple2(SemanticVersion.ordering.reverse, Artifact.Name.ordering)
+                    Ordering.Tuple2(Version.ordering.reverse, Artifact.Name.ordering)
                   )
                 val page = html.artifacts(env, user, project, header, groupedArtifacts, params, binaryVersions)
                 complete(page)
@@ -100,7 +100,7 @@ class ProjectPages(
                   }
                   .map { case (version, artifacts) => (artifacts.map(_.releaseDate).min, version) -> artifacts }
                 val sortedArtifactsByVersion = SortedMap.from(artifactsByVersion)(
-                  Ordering.Tuple2(Ordering[Instant].reverse, Ordering[SemanticVersion].reverse)
+                  Ordering.Tuple2(Ordering[Instant].reverse, Ordering[Version].reverse)
                 )
                 val page = html.versions(
                   env,
@@ -173,7 +173,7 @@ class ProjectPages(
                 .view
                 .mapValues(artifacts => artifacts.groupMap(_.name)(_.binaryVersion).toSeq.sortBy(_._1))
                 .toSeq
-                .sortBy(_._1)(SemanticVersion.ordering.reverse)
+                .sortBy(_._1)(Version.ordering.reverse)
               val page = html.versionMatrix(env, user, project, header, binaryVersionByPlatforms, artifactsByVersions)
               complete(page)
             }

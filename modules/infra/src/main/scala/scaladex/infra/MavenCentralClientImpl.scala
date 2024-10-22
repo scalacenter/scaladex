@@ -23,7 +23,7 @@ import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.util.ByteString
 import scaladex.core.model.Artifact
 import scaladex.core.model.SbtPlugin
-import scaladex.core.model.SemanticVersion
+import scaladex.core.model.Version
 import scaladex.core.service.MavenCentralClient
 import scaladex.core.util.JsoupUtils
 
@@ -58,7 +58,7 @@ class MavenCentralClientImpl()(implicit val system: ActorSystem)
     }
   }
 
-  def getAllVersions(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[SemanticVersion]] = {
+  def getAllVersions(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Version]] = {
     val uri = s"$baseUri/${groupId.mavenUrl}/${artifactId.value}/"
     val request = HttpRequest(uri = uri)
 
@@ -66,7 +66,7 @@ class MavenCentralClientImpl()(implicit val system: ActorSystem)
       responseFuture <- queueRequest(request)
       page <- Unmarshaller.stringUnmarshaller(responseFuture.entity)
       versions = JsoupUtils.listDirectories(uri, page)
-      versionParsed = versions.flatMap(SemanticVersion.parse)
+      versionParsed = versions.map(Version.apply)
     } yield versionParsed
     future.recoverWith {
       case NonFatal(exception) =>
@@ -109,7 +109,7 @@ class MavenCentralClientImpl()(implicit val system: ActorSystem)
   private val dateFormatter = DateTimeFormatter.RFC_1123_DATE_TIME
   private[infra] def parseDate(dateStr: String): Instant = ZonedDateTime.parse(dateStr, dateFormatter).toInstant
 
-  private def getPomFileName(artifactId: Artifact.ArtifactId, version: SemanticVersion): String =
+  private def getPomFileName(artifactId: Artifact.ArtifactId, version: Version): String =
     artifactId.binaryVersion.platform match {
       case SbtPlugin(_) => s"${artifactId.name.value}-${version.value}.pom"
       case _            => s"${artifactId.value}-${version.value}.pom"

@@ -15,14 +15,14 @@ import scaladex.core.util.Parsers._
 case class Artifact(
     groupId: GroupId,
     artifactId: ArtifactId,
-    version: SemanticVersion,
+    version: Version,
     projectRef: Project.Reference,
     description: Option[String],
     releaseDate: Instant,
     resolver: Option[Resolver],
     licenses: Set[License],
     isNonStandardLib: Boolean,
-    fullScalaVersion: Option[SemanticVersion],
+    fullScalaVersion: Option[Version],
     scaladocUrl: Option[Url],
     versionScheme: Option[String],
     developers: Seq[Contributor] = Seq.empty
@@ -76,7 +76,7 @@ case class Artifact(
       case Jvm =>
         language match {
           case Java => Some(s"""libraryDependencies += "$groupId" % "$name" % "$version"""")
-          case Scala(PatchVersion(_, _, _)) =>
+          case Scala(Version.Patch(_, _, _)) =>
             Some(s"""libraryDependencies += "$groupId" % "$name" % "$version" cross CrossVersion.full""")
           case _ => Some(s"""libraryDependencies += "$groupId" %% "$name" % "$version"""")
         }
@@ -111,10 +111,10 @@ case class Artifact(
       case MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
       case Jvm =>
         language match {
-          case _ if isNonStandardLib        => Some(s"import $$ivy.`$groupId:$artifactId:$version`")
-          case Java                         => Some(s"import $$ivy.`$groupId:$artifactId:$version`")
-          case Scala(PatchVersion(_, _, _)) => Some(s"import $$ivy.`$groupId:::$name:$version`")
-          case _                            => Some(s"import $$ivy.`$groupId::$name:$version`")
+          case _ if isNonStandardLib         => Some(s"import $$ivy.`$groupId:$artifactId:$version`")
+          case Java                          => Some(s"import $$ivy.`$groupId:$artifactId:$version`")
+          case Scala(Version.Patch(_, _, _)) => Some(s"import $$ivy.`$groupId:::$name:$version`")
+          case _                             => Some(s"import $$ivy.`$groupId::$name:$version`")
         }
     }
 
@@ -163,10 +163,10 @@ case class Artifact(
       case ScalaNative(_) | ScalaJs(_) => Some(s"""ivy"$groupId::$name::$version"""")
       case Jvm =>
         language match {
-          case _ if isNonStandardLib        => Some(s"""ivy"$groupId:$artifactId:$version"""")
-          case Java                         => Some(s"""ivy"$groupId:$artifactId:$version"""")
-          case Scala(PatchVersion(_, _, _)) => Some(s"""ivy"$groupId:::$name:$version"""")
-          case _                            => Some(s"""ivy"$groupId::$name:$version"""")
+          case _ if isNonStandardLib         => Some(s"""ivy"$groupId:$artifactId:$version"""")
+          case Java                          => Some(s"""ivy"$groupId:$artifactId:$version"""")
+          case Scala(Version.Patch(_, _, _)) => Some(s"""ivy"$groupId:::$name:$version"""")
+          case _                             => Some(s"""ivy"$groupId::$name:$version"""")
         }
     }
     (install, resolver.flatMap(_.url)) match {
@@ -186,10 +186,10 @@ case class Artifact(
       case ScalaNative(_) | ScalaJs(_)  => Some(s"""//> using dep "$groupId::$name::$version"""")
       case Jvm =>
         language match {
-          case _ if isNonStandardLib        => Some(s"""//> using dep "$groupId:$artifactId:$version"""")
-          case Java                         => Some(s"""//> using dep "$groupId:$artifactId:$version"""")
-          case Scala(PatchVersion(_, _, _)) => Some(s"""//> using dep "$groupId:::$name:$version"""")
-          case _                            => Some(s"""//> using dep "$groupId::$name:$version"""")
+          case _ if isNonStandardLib         => Some(s"""//> using dep "$groupId:$artifactId:$version"""")
+          case Java                          => Some(s"""//> using dep "$groupId:$artifactId:$version"""")
+          case Scala(Version.Patch(_, _, _)) => Some(s"""//> using dep "$groupId:::$name:$version"""")
+          case _                             => Some(s"""//> using dep "$groupId::$name:$version"""")
         }
     }
 
@@ -199,10 +199,10 @@ case class Artifact(
       case ScalaNative(_) | ScalaJs(_)  => Some(s"cs launch $groupId::$name::$version")
       case Jvm =>
         language match {
-          case _ if isNonStandardLib        => Some(s"cs launch $groupId:$artifactId:$version")
-          case Java                         => Some(s"cs launch $groupId:$artifactId:$version")
-          case Scala(PatchVersion(_, _, _)) => Some(s"cs launch $groupId:::$name:$version")
-          case _                            => Some(s"cs launch $groupId::$name:$version")
+          case _ if isNonStandardLib         => Some(s"cs launch $groupId:$artifactId:$version")
+          case Java                          => Some(s"cs launch $groupId:$artifactId:$version")
+          case Scala(Version.Patch(_, _, _)) => Some(s"cs launch $groupId:::$name:$version")
+          case _                             => Some(s"cs launch $groupId::$name:$version")
         }
     }
 
@@ -300,7 +300,7 @@ object Artifact {
       tryParse(artifactId, x => FullParser(x)).getOrElse(ArtifactId(Name(artifactId), BinaryVersion(Jvm, Java)))
   }
 
-  case class Reference(groupId: GroupId, artifactId: ArtifactId, version: SemanticVersion) {
+  case class Reference(groupId: GroupId, artifactId: ArtifactId, version: Version) {
     override def toString(): String = s"$groupId:$artifactId:$version"
 
     def name: Name = artifactId.name
@@ -314,11 +314,7 @@ object Artifact {
   }
 
   object Reference {
-    def unsafe(groupId: String, artifactId: String, version: String): Reference =
-      parse(groupId, artifactId, version).get
-
-    // TODO remove Option, deal with custom version
-    def parse(groupId: String, artifactId: String, version: String): Option[Reference] =
-      SemanticVersion.parse(version).map(v => Reference(GroupId(groupId), ArtifactId(artifactId), v))
+    def from(groupId: String, artifactId: String, version: String): Reference =
+      Reference(GroupId(groupId), ArtifactId(artifactId), Version(version))
   }
 }

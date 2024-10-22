@@ -18,7 +18,7 @@ import scaladex.core.model.SbtPlugin
 import scaladex.core.model.Scala
 import scaladex.core.model.ScalaJs
 import scaladex.core.model.ScalaNative
-import scaladex.core.model.SemanticVersion
+import scaladex.core.model.Version
 import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.ProjectDocument
 import scaladex.core.service.SearchEngine
@@ -56,24 +56,24 @@ object OldSearchApi {
   ): Option[BinaryVersion] = {
     val binaryVersion = (targetType, scalaVersion, scalaJsVersion, scalaNativeVersion, sbtVersion) match {
       case (Some("JVM"), Some(sv), _, _, _) =>
-        SemanticVersion.parse(sv).map(sv => BinaryVersion(Jvm, Scala(sv)))
+        Version.parseSemantically(sv).map(sv => BinaryVersion(Jvm, Scala(sv)))
 
       case (Some("JS"), Some(sv), Some(jsv), _, _) =>
         for {
-          sv <- SemanticVersion.parse(sv)
-          jsv <- SemanticVersion.parse(jsv)
+          sv <- Version.parseSemantically(sv)
+          jsv <- Version.parseSemantically(jsv)
         } yield BinaryVersion(ScalaJs(jsv), Scala(sv))
 
       case (Some("NATIVE"), Some(sv), _, Some(snv), _) =>
         for {
-          sv <- SemanticVersion.parse(sv)
-          snv <- SemanticVersion.parse(snv)
+          sv <- Version.parseSemantically(sv)
+          snv <- Version.parseSemantically(snv)
         } yield BinaryVersion(ScalaNative(snv), Scala(sv))
 
       case (Some("SBT"), Some(sv), _, _, Some(sbtv)) =>
         for {
-          sv <- SemanticVersion.parse(sv)
-          sbtv <- SemanticVersion.parse(sbtv)
+          sv <- Version.parseSemantically(sv)
+          sbtv <- Version.parseSemantically(sbtv)
         } yield BinaryVersion(SbtPlugin(sbtv), Scala(sv))
 
       case (Some("JVM"), None, None, None, None) => Some(BinaryVersion(Jvm, Java))
@@ -198,7 +198,7 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(
         .distinct
         .partition(project.settings.deprecatedArtifacts.contains)
       // Sort semantic versions by descending order
-      val versions = filteredArtifacts.map(_.version).distinct.sorted(Ordering[SemanticVersion].reverse)
+      val versions = filteredArtifacts.map(_.version).distinct.sorted(Ordering[Version].reverse)
       OldSearchApi.ArtifactOptions(
         artifacts = artifacts.map(_.value),
         deprecatedArtifacts = deprecatedArtifacts.map(_.value),

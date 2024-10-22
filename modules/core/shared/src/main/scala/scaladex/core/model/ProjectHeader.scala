@@ -23,7 +23,7 @@ final case class ProjectHeader(
     preferStableVersion: Boolean
 ) {
   lazy val defaultArtifact: Artifact = getDefaultArtifact(None, None)
-  lazy val latestVersion: SemanticVersion = defaultArtifact.version
+  lazy val latestVersion: Version = defaultArtifact.version
   lazy val latestArtifacts: Seq[Artifact] = artifacts.filter(_.version == latestVersion)
   lazy val latestLanguages: Seq[Language] = latestArtifacts.map(_.language).distinct.sorted
   lazy val latestPlatforms: Seq[Platform] = latestArtifacts.map(_.platform).distinct.sorted
@@ -56,7 +56,7 @@ final case class ProjectHeader(
         .flatMap(defaultName => artifacts.filter(a => defaultName == a.name))
         .maxByOption(a => (a.binaryVersion, a.releaseDate))
 
-    def ofVersion(version: SemanticVersion): Artifact =
+    def ofVersion(version: Version): Artifact =
       filteredArtifacts
         .filter(_.version == version)
         .maxBy(a => (a.binaryVersion, a.name, a.releaseDate))(

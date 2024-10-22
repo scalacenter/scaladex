@@ -14,7 +14,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
           groupId = "org.scalamacros",
           artifactId = "paradise_2.12.3",
           version = "2.1.1",
-          binaryVersion = BinaryVersion(Jvm, Scala(PatchVersion(2, 12, 3))),
+          binaryVersion = BinaryVersion(Jvm, Scala(Version("2.12.3"))),
           artifactName = Some(Name("paradise"))
         ).sbtInstall
 
@@ -30,7 +30,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
           groupId = "org.scalaz",
           artifactId = "scalaz-core_2.13.0-M1",
           version = "7.2.14",
-          binaryVersion = BinaryVersion(Jvm, Scala(PreReleaseVersion(2, 13, 0, Milestone(1)))),
+          binaryVersion = BinaryVersion(Jvm, Scala(Version("2.13.0-M1"))),
           artifactName = Some(Name("scalaz-core"))
         ).sbtInstall
 
@@ -115,7 +115,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
           groupId = "org.http4s",
           version = "0.18.12",
           artifactId = "http4s-core_2.12",
-          binaryVersion = BinaryVersion(Jvm, Scala(PatchVersion(2, 12, 3)))
+          binaryVersion = BinaryVersion(Jvm, Scala(Version("2.12.3")))
         ).millInstall
 
       val expected =
@@ -217,7 +217,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
     Artifact(
       groupId = GroupId(groupId),
       artifactId = artifactIdResult,
-      version = SemanticVersion.parse(version).get,
+      version = Version(version),
       projectRef = projectRef.getOrElse(Project.Reference.from("", "")),
       description = None,
       releaseDate = Instant.now(),
