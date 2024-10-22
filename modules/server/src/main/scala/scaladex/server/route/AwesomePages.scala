@@ -39,13 +39,13 @@ class AwesomePages(env: Env, searchEngine: SearchEngine)(implicit ec: ExecutionC
 
   private val awesomeParams: Directive1[AwesomeParams] =
     parameters(
-      "languages".repeated,
-      "platforms".repeated,
+      "language".repeated,
+      "platform".repeated,
       "sort".?
     ).tmap {
       case (languageParams, platformParams, sortParam) =>
-        val scalaVersions = languageParams.flatMap(Language.fromLabel).collect { case v: Scala => v }.toSeq
-        val platforms = platformParams.flatMap(Platform.fromLabel).toSeq
+        val scalaVersions = languageParams.flatMap(Language.parse).collect { case v: Scala => v }.toSeq
+        val platforms = platformParams.flatMap(Platform.parse).toSeq
         val sorting = sortParam.flatMap(Sorting.byLabel.get).getOrElse(Sorting.Stars)
         Tuple1(AwesomeParams(scalaVersions, platforms, sorting))
     }

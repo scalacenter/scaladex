@@ -7,8 +7,8 @@ package scaladex.core.model
  * @param target the maven reference of one of the dependant libraries of the source, ex: doobie
  */
 case class ArtifactDependency(
-    source: Artifact.MavenReference,
-    target: Artifact.MavenReference,
+    source: Artifact.Reference,
+    target: Artifact.Reference,
     scope: ArtifactDependency.Scope
 )
 
@@ -24,7 +24,7 @@ object ArtifactDependency {
       case None           => s"${artifactDep.target.groupId}:${artifactDep.target.artifactId}"
     }
 
-    val version: String = artifactDep.target.version
+    val version: Version = artifactDep.target.version
 
     def isInternal(ref: Project.Reference): Boolean =
       target.exists(_.projectRef == ref)
@@ -40,7 +40,7 @@ object ArtifactDependency {
   ) {
     def url: String = source.httpUrl
     def groupIdAndName: String = source.groupIdAndName
-    def version: SemanticVersion = source.version
+    def version: Version = source.version
   }
 
   object Reverse {

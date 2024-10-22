@@ -6,17 +6,21 @@ import scaladex.core.util.Parsers
 
 final case class BinaryVersion(platform: Platform, language: Language) {
   def isValid: Boolean = platform.isValid && language.isValid
-  def encode: String = (platform, language) match {
-    case (Jvm, Java)                  => ""
-    case (Jvm, Scala(sv))             => s"_${sv.encode}"
-    case (SbtPlugin(sbtV), Scala(sv)) => s"_${sv.encode}_${sbtV.encode}"
-    case (platform, Scala(sv))        => s"_${platform.label}_${sv.encode}"
-    case (platform, Java)             => s"_${platform.label}"
+
+  // possibly empty
+  def asSuffix: String = (platform, language) match {
+    case (Jvm, Java) => ""
+    case _           => value
   }
-  def label: String = (platform, language) match {
-    case (Jvm, Java) => "Java"
-    case _           => encode
+
+  // non-empty
+  def value: String = (platform, language) match {
+    case (Jvm, Java)                  => language.value
+    case (Jvm, Scala(sv))             => s"_${sv.value}"
+    case (SbtPlugin(sbtV), Scala(sv)) => s"_${sv.value}_${sbtV.value}"
+    case (platform, language)         => s"_${platform.value}_${language.value}"
   }
+
   override def toString: String = (platform, language) match {
     case (Jvm, Java)           => "Java"
     case (Jvm, Scala(version)) => s"Scala $version"
@@ -27,10 +31,10 @@ final case class BinaryVersion(platform: Platform, language: Language) {
 object BinaryVersion {
   implicit val ordering: Ordering[BinaryVersion] = Ordering.by(v => (v.platform, v.language))
 
-  def IntermediateParser[A: P]: P[(String, Option[SemanticVersion], Option[SemanticVersion])] =
-    ("_sjs" | "_native" | "_mill" | "_" | "").! ~ (SemanticVersion.Parser.?) ~ ("_" ~ SemanticVersion.Parser).?
+  def IntermediateParser[A: P]: P[(String, Option[Version], Option[Version])] =
+    ("_sjs" | "_native" | "_mill" | "_" | "").! ~ (Version.SemanticParser.?) ~ ("_" ~ Version.SemanticParser).?
 
-  def IntermediateParserButNotInvalidSbt[A: P]: P[(String, Option[SemanticVersion], Option[SemanticVersion])] =
+  def IntermediateParserButNotInvalidSbt[A: P]: P[(String, Option[Version], Option[Version])] =
     IntermediateParser.filter {
       case ("_", Some(scalaV), Some(sbtV)) => BinaryVersion(SbtPlugin(sbtV), Scala(scalaV)).isValid
       case _                               => true
@@ -54,10 +58,9 @@ object BinaryVersion {
   def FullParser[A: P]: P[BinaryVersion] =
     Parser ~ End
 
-  def parse(input: String): Option[BinaryVersion] = Parsers.tryParse(input, x => FullParser(x))
-
-  def fromLabel(label: String): Option[BinaryVersion] = label match {
-    case "Java" => Some(BinaryVersion(Jvm, Java))
-    case _      => parse(label)
-  }
+  def parse(input: String): Option[BinaryVersion] =
+    input match {
+      case "java" => Some(BinaryVersion(Jvm, Java))
+      case _      => Parsers.tryParse(input, x => FullParser(x))
+    }
 }

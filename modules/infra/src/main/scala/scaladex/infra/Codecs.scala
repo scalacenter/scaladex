@@ -12,6 +12,8 @@ import scaladex.core.util.Secret
 import scaladex.infra.github.GithubModel
 
 object Codecs {
+  implicit val customConfig: Configuration = Configuration.default.withDefaults
+
   implicit val organization: Codec[Project.Organization] = fromString(_.value, Project.Organization.apply)
   implicit val repository: Codec[Project.Repository] = fromString(_.value, Project.Repository.apply)
   implicit val reference: Codec[Project.Reference] = deriveCodec
@@ -41,16 +43,16 @@ object Codecs {
   implicit val projectCodec: Codec[Project] = deriveCodec
 
   implicit val groupIdCodec: Codec[Artifact.GroupId] = fromString(_.value, Artifact.GroupId.apply)
-  implicit val semanticVersionCodec: Codec[SemanticVersion] = fromString(_.encode, SemanticVersion.from)
-  implicit val platformCodec: Codec[Platform] = fromString(_.label, Platform.fromLabel(_).get)
-  implicit val languageCodec: Codec[Language] = fromString(_.label, Language.fromLabel(_).get)
+  implicit val artifactIdCodec: Codec[Artifact.ArtifactId] = fromString(_.value, Artifact.ArtifactId.apply)
+  implicit val semanticVersionCodec: Codec[Version] = fromString(_.value, Version.apply)
+  implicit val platformCodec: Codec[Platform] = fromString(_.value, Platform.parse(_).get)
+  implicit val languageCodec: Codec[Language] = fromString(_.value, Language.parse(_).get)
   implicit val resolverCodec: Codec[Resolver] = deriveCodec
   implicit val licenseCodec: Codec[License] = fromString(_.shortName, License.allByShortName.apply)
-  implicit val customConfig: Configuration = Configuration.default.withDefaults
+  implicit val artifactRefCodec: Codec[Artifact.Reference] = deriveCodec
   implicit val artifactCodec: Codec[Artifact] = deriveConfiguredCodec[Artifact]
   implicit val scopeCodec: Codec[ArtifactDependency.Scope] = fromString(_.value, ArtifactDependency.Scope.apply)
 
-  implicit val mavenRefCodec: Codec[Artifact.MavenReference] = deriveCodec
   implicit val dependenciesCodec: Codec[ArtifactDependency] = deriveCodec
 
   implicit val userStateCodec: Codec[UserState] = deriveCodec

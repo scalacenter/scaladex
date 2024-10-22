@@ -2,8 +2,8 @@ package scaladex.core.model
 
 case class ProjectDependency(
     source: Project.Reference,
-    sourceVersion: SemanticVersion,
+    sourceVersion: Version,
     target: Project.Reference,
-    targetVersion: SemanticVersion,
+    targetVersion: Version,
     scope: ArtifactDependency.Scope
 )

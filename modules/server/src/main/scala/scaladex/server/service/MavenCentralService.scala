@@ -24,12 +24,12 @@ class MavenCentralService(
   def findNonStandard(): Future[String] = {
     val nonStandardLibs = NonStandardLib.load(dataPaths)
     for {
-      mavenReferenceFromDatabase <- database.getAllMavenReferences()
+      knownRefs <- database.getArtifactRefs()
       result <- nonStandardLibs.mapSync { lib =>
         val groupId = Artifact.GroupId(lib.groupId)
         // get should not throw: it is a fixed set of artifactIds
-        val artifactId = Artifact.ArtifactId.parse(lib.artifactId).get
-        findAndIndexMissingArtifacts(groupId, artifactId, mavenReferenceFromDatabase.toSet)
+        val artifactId = Artifact.ArtifactId(lib.artifactId)
+        findAndIndexMissingArtifacts(groupId, artifactId, knownRefs.toSet)
       }
     } yield s"Inserted ${result.sum} missing poms"
   }
@@ -37,14 +37,11 @@ class MavenCentralService(
   private def findAndIndexMissingArtifacts(
       groupId: GroupId,
       artifactId: ArtifactId,
-      knownRefs: Set[MavenReference]
+      knownRefs: Set[Artifact.Reference]
   ): Future[Int] =
     for {
       versions <- mavenCentralClient.getAllVersions(groupId, artifactId)
-      mavenReferences = versions.map(v =>
-        MavenReference(groupId = groupId.value, artifactId = artifactId.value, version = v.toString)
-      )
-      missingVersions = mavenReferences.filterNot(knownRefs)
+      missingVersions = versions.map(Artifact.Reference(groupId, artifactId, _)).filterNot(knownRefs)
       _ = if (missingVersions.nonEmpty)
         logger.warn(s"${missingVersions.size} artifacts are missing for ${groupId.value}:${artifactId.value}")
       missingPomFiles <- missingVersions.map(ref => mavenCentralClient.getPomFile(ref).map(_.map(ref -> _))).sequence
@@ -59,16 +56,16 @@ class MavenCentralService(
 
   def findMissing(): Future[String] =
     for {
-      mavenReferenceFromDatabase <- database.getAllMavenReferences().map(_.toSet)
-      groupIds = mavenReferenceFromDatabase.map(_.groupId).toSeq.sorted.map(Artifact.GroupId)
+      knownRefs <- database.getArtifactRefs().map(_.toSet)
+      groupIds = knownRefs.map(_.groupId).toSeq.sorted
       // we sort just to estimate through the logs the percentage of progress
-      result <- groupIds.mapSync(g => findAndIndexMissingArtifacts(g, None, mavenReferenceFromDatabase))
+      result <- groupIds.mapSync(g => findAndIndexMissingArtifacts(g, None, knownRefs))
     } yield s"Inserted ${result.sum} missing poms"
 
   private def findAndIndexMissingArtifacts(
       groupId: GroupId,
       artifactNameOpt: Option[Artifact.Name],
-      knownRefs: Set[MavenReference]
+      knownRefs: Set[Artifact.Reference]
   ): Future[Int] =
     for {
       artifactIds <- mavenCentralClient.getAllArtifactIds(groupId)
@@ -81,8 +78,8 @@ class MavenCentralService(
 
   def syncOne(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): Future[String] =
     for {
-      mavenReferenceFromDatabase <- database.getAllMavenReferences()
-      result <- findAndIndexMissingArtifacts(groupId, artifactNameOpt, mavenReferenceFromDatabase.toSet)
+      knownRefs <- database.getArtifactRefs()
+      result <- findAndIndexMissingArtifacts(groupId, artifactNameOpt, knownRefs.toSet)
     } yield s"Inserted $result poms"
 
   def republishArtifacts(): Future[String] =
@@ -98,8 +95,8 @@ class MavenCentralService(
 
   private def republishArtifacts(projectRef: Project.Reference): Future[(Int, Int)] =
     for {
-      mavenReferences <- database.getMavenReferences(projectRef)
-      publishResult <- mavenReferences.mapSync(republishArtifact(projectRef, _))
+      refs <- database.getProjectArtifactRefs(projectRef, stableOnly = false)
+      publishResult <- refs.mapSync(republishArtifact(projectRef, _))
     } yield {
       val successes = publishResult.count(_ == PublishResult.Success)
       val failures = publishResult.size - successes
@@ -107,7 +104,7 @@ class MavenCentralService(
       (successes, failures)
     }
 
-  private def republishArtifact(projectRef: Project.Reference, ref: MavenReference): Future[PublishResult] =
+  private def republishArtifact(projectRef: Project.Reference, ref: Artifact.Reference): Future[PublishResult] =
     mavenCentralClient.getPomFile(ref).flatMap {
       case Some((pomFile, creationDate)) => publishProcess.republishPom(projectRef, ref, pomFile, creationDate)
       case _                             => Future.successful(PublishResult.InvalidPom)

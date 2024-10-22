@@ -9,7 +9,7 @@ case class InstallTab(ref: String, title: String, install: String, description: 
 object InstallTab {
   def allOf(artifact: Artifact, cliArtifacts: Set[Artifact.Name]): Seq[InstallTab] = {
     val coursierTab =
-      if (cliArtifacts.contains(artifact.artifactName))
+      if (cliArtifacts.contains(artifact.name))
         artifact.csLaunch.map(
           InstallTab(
             "coursier",

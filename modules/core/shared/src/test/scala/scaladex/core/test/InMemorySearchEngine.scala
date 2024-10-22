@@ -9,12 +9,8 @@ import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.TopicCount
-import scaladex.core.model.search.AwesomeParams
-import scaladex.core.model.search.Page
-import scaladex.core.model.search.PageParams
-import scaladex.core.model.search.ProjectDocument
-import scaladex.core.model.search.ProjectHit
-import scaladex.core.model.search.SearchParams
+import scaladex.core.model.search.Pagination
+import scaladex.core.model.search._
 import scaladex.core.service.SearchEngine
 
 class InMemorySearchEngine extends SearchEngine {
@@ -47,7 +43,15 @@ class InMemorySearchEngine extends SearchEngine {
       page: PageParams
   ): Future[Page[ProjectDocument]] = ???
 
-  override def find(params: SearchParams, page: PageParams): Future[Page[ProjectHit]] = ???
+  override def find(params: SearchParams, page: PageParams): Future[Page[ProjectHit]] =
+    Future.successful {
+      val hits = allDocuments.values
+        .filter(doc => (params.languages.toSet -- doc.languages).isEmpty)
+        .filter(doc => (params.platforms.toSet -- doc.platforms).isEmpty)
+        .toSeq
+        .map(ProjectHit(_, Seq.empty))
+      Page(Pagination(1, 1, hits.size), hits)
+    }
 
   override def autocomplete(params: SearchParams, limit: Int): Future[Seq[ProjectDocument]] = ???
 

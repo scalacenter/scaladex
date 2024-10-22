@@ -5,12 +5,8 @@ import scala.concurrent.ExecutionContext
 import org.apache.pekko.http.scaladsl.model.Uri._
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server._
-import scaladex.core.model.Env
-import scaladex.core.model.UserState
-import scaladex.core.model.search.Page
-import scaladex.core.model.search.PageParams
-import scaladex.core.model.search.SearchParams
-import scaladex.core.model.search.Sorting
+import scaladex.core.model._
+import scaladex.core.model.search._
 import scaladex.core.service.SearchEngine
 import scaladex.server.TwirlSupport._
 import scaladex.view.search.html.searchresult
@@ -37,9 +33,9 @@ class SearchPages(env: Env, searchEngine: SearchEngine)(
     parameters(
       "q" ? "*",
       "sort".?,
-      "topics".as[String].*,
-      "languages".as[String].*,
-      "platforms".as[String].*,
+      "topic".as[String].*,
+      "language".as[String].*,
+      "platform".as[String].*,
       "you".?,
       "contributingSearch".as[Boolean] ? false
     ).tmap {
@@ -51,8 +47,8 @@ class SearchPages(env: Env, searchEngine: SearchEngine)(
           sorting,
           userRepos,
           topics = topics.toSeq,
-          languages = languages.toSeq,
-          platforms = platforms.toSeq,
+          languages = languages.flatMap(Language.parse).toSeq,
+          platforms = platforms.flatMap(Platform.parse).toSeq,
           contributingSearch = contributingSearch
         )
     }

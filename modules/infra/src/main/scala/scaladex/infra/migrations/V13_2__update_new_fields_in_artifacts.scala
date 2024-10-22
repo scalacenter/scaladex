@@ -6,10 +6,8 @@ import doobie.util.update.Update
 import org.flywaydb.core.api.migration.BaseJavaMigration
 import org.flywaydb.core.api.migration.Context
 import scaladex.core.model.Artifact
-import scaladex.core.model.Artifact.MavenReference
 import scaladex.infra.sql.DoobieUtils.Mappings._
-import scaladex.infra.sql.DoobieUtils.selectRequest
-import scaladex.infra.sql.DoobieUtils.updateRequest
+import scaladex.infra.sql.DoobieUtils._
 
 class V13_2__update_new_fields_in_artifacts extends BaseJavaMigration with ScaladexBaseMigration with LazyLogging {
   override def migrate(context: Context): Unit =
@@ -30,9 +28,9 @@ class V13_2__update_new_fields_in_artifacts extends BaseJavaMigration with Scala
     }
 
   val selectArtifact: Query0[Artifact] = selectRequest("artifacts", Seq("*"))
-  val updateNewFields: Update[(Boolean, Boolean, MavenReference)] =
+  val updateNewFields: Update[(Boolean, Boolean, Artifact.Reference)] =
     updateRequest("artifacts", Seq("is_semantic", "is_prerelease"), Seq("group_id", "artifact_id", "version"))
 
-  private def update(artifact: Artifact): (Boolean, Boolean, MavenReference) =
-    (artifact.version.isSemantic, artifact.version.isPreRelease, artifact.mavenReference)
+  private def update(artifact: Artifact): (Boolean, Boolean, Artifact.Reference) =
+    (artifact.version.isSemantic, artifact.version.isPreRelease, artifact.reference)
 }

@@ -28,7 +28,7 @@ class AdminService(
     extends LazyLogging {
   import actorSystem.dispatcher
 
-  val projectService = new ProjectService(database)
+  val projectService = new ProjectService(database, searchEngine)
   val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)
   val projectDependenciesUpdater = new DependencyUpdater(database, projectService)
   val userSessionService = new UserSessionService(database)
@@ -146,7 +146,7 @@ class AdminService(
 
   private def updateProjectCreationDate(): Future[String] =
     for {
-      creationDates <- database.computeAllProjectsCreationDates()
+      creationDates <- database.computeProjectsCreationDates()
       _ <- creationDates.mapSync { case (creationDate, ref) => database.updateProjectCreationDate(ref, creationDate) }
     } yield s"Updated ${creationDates.size} creation dates"
 }

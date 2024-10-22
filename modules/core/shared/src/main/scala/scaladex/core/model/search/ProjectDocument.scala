@@ -2,6 +2,7 @@ package scaladex.core.model.search
 
 import java.time.Instant
 
+import scaladex.core.api.AutocompletionResponse
 import scaladex.core.model._
 
 // Project document indexed by the search engine
@@ -15,7 +16,7 @@ final case class ProjectDocument(
     updateDate: Option[Instant],
     languages: Seq[Language],
     platforms: Seq[Platform],
-    latestVersion: Option[SemanticVersion],
+    latestVersion: Option[Version],
     dependents: Long,
     category: Option[Category],
     formerReferences: Seq[Project.Reference],
@@ -28,6 +29,9 @@ final case class ProjectDocument(
   def scalaNativeVersions: Seq[ScalaNative] = platforms.collect { case v: ScalaNative => v }
   def sbtVersions: Seq[SbtPlugin] = platforms.collect { case v: SbtPlugin => v }
   def millVersions: Seq[MillPlugin] = platforms.collect { case v: MillPlugin => v }
+
+  def toAutocompletion: AutocompletionResponse =
+    AutocompletionResponse(organization.value, repository.value, githubInfo.flatMap(_.description).getOrElse(""))
 }
 
 object ProjectDocument {

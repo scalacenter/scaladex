@@ -13,6 +13,8 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import doobie._
 import doobie.hikari.HikariTransactor
+import doobie.postgres.Instances
+import doobie.postgres.JavaTimeInstances
 import io.circe._
 import org.flywaydb.core.Flyway
 import scaladex.core.model.Project._
@@ -113,13 +115,15 @@ object DoobieUtils {
   def selectRequest1[A: Write, B: Read](
       table: String,
       fields: Seq[String],
+      keys: Seq[String] = Seq.empty,
       where: Seq[String] = Seq.empty,
       groupBy: Seq[String] = Seq.empty,
       orderBy: Option[String] = None,
       limit: Option[Long] = None
   ): Query[A, B] = {
     val fieldsStr = fields.mkString(", ")
-    val whereStr = if (where.nonEmpty) where.mkString(" WHERE ", " AND ", "") else ""
+    val allWhere = keys.map(k => s"$k=?") ++ where
+    val whereStr = if (allWhere.nonEmpty) allWhere.mkString(" WHERE ", " AND ", "") else ""
     val groupByStr = if (groupBy.nonEmpty) groupBy.mkString(" GROUP BY ", ", ", "") else ""
     val orderByStr = orderBy.map(o => s" ORDER BY $o").getOrElse("")
     val limitStr = limit.map(l => s" LIMIT $l").getOrElse("")
@@ -131,7 +135,7 @@ object DoobieUtils {
     Update(s"DELETE FROM $table WHERE $whereK")
   }
 
-  object Mappings {
+  object Mappings extends Instances with JavaTimeInstances {
     implicit val contributorMeta: Meta[Seq[GithubContributor]] =
       Meta[String].timap(fromJson[Seq[GithubContributor]](_).get)(toJson(_))
     implicit val githubIssuesMeta: Meta[Seq[GithubIssue]] =
@@ -146,28 +150,26 @@ object DoobieUtils {
       )
     implicit val artifactNamesMeta: Meta[Set[Artifact.Name]] =
       Meta[String].timap(_.split(",").filter(_.nonEmpty).map(Artifact.Name.apply).toSet)(_.mkString(","))
-    implicit val semanticVersionMeta: Meta[SemanticVersion] =
-      Meta[String].timap(SemanticVersion.parse(_).get)(_.encode)
-    implicit val artifactIdMeta: Meta[Artifact.ArtifactId] =
-      Meta[String].timap(Artifact.ArtifactId.parse(_).get)(_.value)
+    implicit val semanticVersionMeta: Meta[Version] = Meta[String].timap(Version(_))(_.value)
+    implicit val artifactIdMeta: Meta[Artifact.ArtifactId] = Meta[String].timap(Artifact.ArtifactId(_))(_.value)
     implicit val binaryVersionMeta: Meta[BinaryVersion] =
       Meta[String].timap { x =>
         BinaryVersion
           .parse(x)
           .getOrElse(throw new Exception(s"Failed to parse $x as BinaryVersion"))
-      }(_.encode)
+      }(_.value)
     implicit val platformMeta: Meta[Platform] =
       Meta[String].timap { x =>
         Platform
-          .fromLabel(x)
+          .parse(x)
           .getOrElse(throw new Exception(s"Failed to parse $x as Platform"))
-      }(_.label)
+      }(_.value)
     implicit val languageVersionMeta: Meta[Language] =
       Meta[String].timap { x =>
         Language
-          .fromLabel(x)
+          .parse(x)
           .getOrElse(throw new Exception(s"Failed to parse $x as Language"))
-      }(_.label)
+      }(_.value)
     implicit val scopeMeta: Meta[ArtifactDependency.Scope] =
       Meta[String].timap(ArtifactDependency.Scope.apply)(_.value)
     implicit val licenseMeta: Meta[License] =
@@ -180,15 +182,15 @@ object DoobieUtils {
       Meta[String].timap(fromJson[Seq[License]](_).get.toSet)(toJson(_))
     implicit val resolverMeta: Meta[Resolver] =
       Meta[String].timap(Resolver.from(_).get)(_.name)
-    implicit val instantMeta: Meta[Instant] = doobie.postgres.implicits.JavaTimeInstantMeta
+    implicit val developerMeta: Meta[Seq[Contributor]] =
+      Meta[String].timap(fromJson[Seq[Contributor]](_).get)(toJson(_))
 
     implicit val secretMeta: Meta[Secret] = Meta[String].imap[Secret](Secret.apply)(_.decode)
     implicit val uuidMeta: Meta[UUID] = Meta[String].imap[UUID](UUID.fromString)(_.toString)
     implicit val projectReferenceMeta: Meta[Set[Project.Reference]] =
-      Meta[String].timap(_.split(",").filter(_.nonEmpty).map(Project.Reference.from).toSet)(_.mkString(","))
+      Meta[String].timap(_.split(",").filter(_.nonEmpty).map(Project.Reference.unsafe).toSet)(_.mkString(","))
     implicit val projectOrganizationMeta: Meta[Set[Project.Organization]] =
       Meta[String].timap(_.split(",").filter(_.nonEmpty).map(Project.Organization.apply).toSet)(_.mkString(","))
-
     implicit val categoryMeta: Meta[Category] = Meta[String].timap(Category.byLabel)(_.label)
 
     implicit val projectReferenceRead: Read[Project.Reference] =
@@ -221,7 +223,7 @@ object DoobieUtils {
             ("Failed", updateDate, None, None, Some(errorCode), Some(errorMessage))
         }
 
-    implicit val projectReader: Read[Project] =
+    implicit val projectRead: Read[Project] =
       Read[(Organization, Repository, Option[Instant], GithubStatus, Option[GithubInfo], Option[Project.Settings])]
         .map {
           case (organization, repository, creationDate, githubStatus, githubInfo, settings) =>
@@ -251,8 +253,6 @@ object DoobieUtils {
       Read[(Set[Project.Reference], Set[Project.Organization], UserInfo)].map {
         case (repos, orgs, info) => UserState(repos, orgs, info)
       }
-    implicit val developerMeta: Meta[Seq[Contributor]] =
-      Meta[String].timap(fromJson[Seq[Contributor]](_).get)(toJson(_))
 
     private def toJson[A](v: A)(implicit e: Encoder[A]): String =
       e.apply(v).noSpaces

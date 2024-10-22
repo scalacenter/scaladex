@@ -31,9 +31,9 @@
         <form action="/awesome" action="GET">
           <div class="filter">
             <label for="select-platform"><h3>Platform:</h3></label>
-            <select id="select-platform" name="platforms" class="selectpicker" multiple data-max-options="1" onchange="this.form.submit()">
+            <select id="select-platform" name="platform" class="selectpicker" multiple data-max-options="1" onchange="this.form.submit()">
               @for(platform <- platforms) {
-                <option value="@platform.label" @if(params.platforms.contains(platform)){selected}>
+                <option value="@platform.value" @if(params.platforms.contains(platform)){selected}>
                   @platform
                 </option>
               }
@@ -42,9 +42,9 @@
           
           <div class="filter">
             <label for="select-language"><h3>Scala Version:</h3></label>
-            <select id="select-language" name="languages" class="selectpicker" multiple data-max-options="1" onchange="this.form.submit()">
+            <select id="select-language" name="language" class="selectpicker" multiple data-max-options="1" onchange="this.form.submit()">
               @for(language <- languages) {
-                <option value="@language.label" @if(params.languages.contains(language)){selected}>
+                <option value="@language.value" @if(params.languages.contains(language)){selected}>
                   @language
                 </option>
               }

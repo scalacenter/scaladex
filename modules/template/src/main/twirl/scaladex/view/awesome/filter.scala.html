@@ -22,7 +22,7 @@
         <li>
           <label>
             <input type="checkbox" @if(params.languages.contains(language)) { checked }
-                    name="languages" value="@language.label" onclick="this.form.submit()">
+                    name="language" value="@language.value" onclick="this.form.submit()">
             @language (@count)
           </label>
         </li>
@@ -36,7 +36,7 @@
         <li>
           <label>
             <input type="checkbox" @if(params.platforms.contains(platform)) { checked }
-                    name="platforms" value="@platform.label" onclick="this.form.submit()">
+                    name="platform" value="@platform.value" onclick="this.form.submit()">
             @platform (@count)
           </label>
         </li>

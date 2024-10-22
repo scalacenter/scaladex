@@ -9,10 +9,22 @@ import scaladex.core.api.Endpoints
  * Documentation of the public HTTP API of Scaladex
  */
 object ApiDocumentation extends Endpoints with openapi.Endpoints with openapi.JsonEntitiesFromSchemas {
-  val api: OpenApi = openApi(Info(title = "Scaladex API", version = "0.1.0"))(
-    listProjects,
-    listProjectArtifacts,
-    getArtifact,
-    autocomplete
+  val apiV0: OpenApi = openApi(Info(title = "Scaladex API", version = "v0"))(
+    getProjects(v0),
+    getProjectArtifacts(v0),
+    getArtifactVersions(v0),
+    getArtifact(v0)
+  )
+
+  val apiV1: OpenApi = openApi(Info(title = "Scaladex API", version = "v1"))(
+    getProjects(v1),
+    getProjectV1,
+    getProjectVersionsV1,
+    getLatestProjectVersionV1,
+    getProjectVersionV1,
+    getProjectArtifacts(v1),
+    getArtifactVersions(v1),
+    getLatestArtifactV1,
+    getArtifact(v1)
   )
 }

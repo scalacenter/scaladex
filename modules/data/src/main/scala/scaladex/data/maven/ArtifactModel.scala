@@ -83,7 +83,7 @@ case class Dependency(
     exclusions: Set[Exclusion] = Set(),
     optional: Boolean = false
 ) {
-  val mavenRef: Artifact.MavenReference = Artifact.MavenReference(groupId, artifactId, version)
+  val reference: Artifact.Reference = Artifact.Reference.from(groupId, artifactId, version)
   override def toString: String = s"$groupId $artifactId $version"
 }
 

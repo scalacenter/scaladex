@@ -7,9 +7,9 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 
 class BinaryVersionTests extends AnyFunSpec with Matchers with OptionValues with TableDrivenPropertyChecks {
   it("should be ordered") {
-    val `0.6.7` = PatchVersion(0, 6, 7)
-    val `0.6.18` = PatchVersion(0, 6, 18)
-    val `0.3.0` = PatchVersion(0, 3, 0)
+    val `0.6.7` = Version("0.6.7")
+    val `0.6.18` = Version("0.6.18")
+    val `0.3.0` = Version("0.3.0")
 
     val obtained = List(
       BinaryVersion(ScalaJs(`0.6.7`), Scala.`2.10`),
@@ -51,7 +51,7 @@ class BinaryVersionTests extends AnyFunSpec with Matchers with OptionValues with
 
     forAll(cases) { (input, expected) =>
       BinaryVersion.parse(input) should contain(expected)
-      expected.encode shouldBe input
+      expected.value shouldBe input
     }
   }
 }

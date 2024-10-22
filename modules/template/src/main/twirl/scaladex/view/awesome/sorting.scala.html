@@ -9,11 +9,11 @@
 <div class="order-by">
   <form action="/awesome/@category.label" action="GET">
     @for(language <- params.languages){
-      <input type="hidden" name="languages" value="@language.label">
+      <input type="hidden" name="language" value="@language.value">
     }
 
     @for(platform <- params.platforms){
-      <input type="hidden" name="platforms" value="@platform.label">
+      <input type="hidden" name="platform" value="@platform.value">
     }
 
     <div class="btn-group" role="group" aria-label="sorting">

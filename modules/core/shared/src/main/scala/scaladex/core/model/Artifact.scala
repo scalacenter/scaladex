@@ -4,38 +4,34 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-import fastparse.P
-import fastparse.Start
 import fastparse._
+import scaladex.core.api.ArtifactResponse
+import scaladex.core.model.Artifact._
 import scaladex.core.util.Parsers._
 
 /**
- * @param isNonStandardLib if not using artifactName_scalaVersion convention
+ * @param isNonStandardLib if not using name_scalaVersion convention
  */
 case class Artifact(
-    groupId: Artifact.GroupId,
-    // artifactId is redundant with ArtifactName + platform
-    // it's kept because we need to do joins with ArtifactDependency on MavenReference
-    // It's also possible to create a new key for Artifact: ArtifactReference(GroupId, ArtifactId, SemanticVersion)
-    // and keep untyped MavenReference ArtifactDependency.
-    artifactId: String,
-    version: SemanticVersion,
-    artifactName: Artifact.Name,
+    groupId: GroupId,
+    artifactId: ArtifactId,
+    version: Version,
     projectRef: Project.Reference,
     description: Option[String],
     releaseDate: Instant,
     resolver: Option[Resolver],
     licenses: Set[License],
     isNonStandardLib: Boolean,
-    platform: Platform,
-    language: Language,
-    fullScalaVersion: Option[SemanticVersion],
+    fullScalaVersion: Option[Version],
     scaladocUrl: Option[Url],
     versionScheme: Option[String],
     developers: Seq[Contributor] = Seq.empty
 ) {
-  val binaryVersion: BinaryVersion = BinaryVersion(platform, language)
-  val mavenReference: Artifact.MavenReference = Artifact.MavenReference(groupId.value, artifactId, version.encode)
+  val reference: Reference = Reference(groupId, artifactId, version)
+  def binaryVersion: BinaryVersion = artifactId.binaryVersion
+  def language: Language = binaryVersion.language
+  def platform: Platform = binaryVersion.platform
+  def name: Artifact.Name = artifactId.name
 
   def isValid: Boolean = binaryVersion.isValid
 
@@ -45,19 +41,17 @@ case class Artifact(
       case BinaryVersion(ScalaJs(_) | ScalaNative(_), _)             => ":::"
       case _                                                         => "::"
     }
-    s"$groupId$sep$artifactName"
+    s"$groupId$sep$name"
   }
 
   def releaseDateFormat: String = Artifact.dateFormatter.format(releaseDate)
 
-  def httpUrl: String = {
-    val binaryVersionQuery = s"?binaryVersion=${binaryVersion.encode}"
-    s"$artifactHttpPath/$version$binaryVersionQuery"
-  }
+  def httpUrl: String = s"$artifactHttpPath/$version?binary-version=${binaryVersion.value}"
 
   def badgeUrl(env: Env, platform: Option[Platform] = None): String =
-    s"${fullHttpUrl(env)}/latest-by-scala-version.svg?platform=${platform.map(_.label).getOrElse(binaryVersion.platform.label)}"
+    s"${fullHttpUrl(env)}/latest-by-scala-version.svg?platform=${platform.map(_.value).getOrElse(this.platform.value)}"
 
+  // TODO move this out
   def fullHttpUrl(env: Env): String =
     env match {
       case Env.Prod => s"https://index.scala-lang.org$artifactHttpPath"
@@ -67,24 +61,24 @@ case class Artifact(
         s"http://localhost:8080$artifactHttpPath" // todo: fix locally
     }
 
-  private def artifactHttpPath: String = s"/${projectRef.organization}/${projectRef.repository}/$artifactName"
+  private def artifactHttpPath: String = s"/${projectRef.organization}/${projectRef.repository}/$name"
 
   def latestBadgeUrl(env: Env): String =
     s"${fullHttpUrl(env)}/latest.svg"
 
   def sbtInstall: Option[String] = {
-    val install = binaryVersion.platform match {
-      case SbtPlugin(_)          => Some(s"""addSbtPlugin("$groupId" % "$artifactName" % "$version")""")
+    val install = platform match {
+      case SbtPlugin(_)          => Some(s"""addSbtPlugin("$groupId" % "$name" % "$version")""")
       case MillPlugin(_)         => None
       case _ if isNonStandardLib => Some(s"""libraryDependencies += "$groupId" % "$artifactId" % "$version"""")
       case ScalaJs(_) | ScalaNative(_) =>
-        Some(s"""libraryDependencies += "$groupId" %%% "$artifactName" % "$version"""")
+        Some(s"""libraryDependencies += "$groupId" %%% "$name" % "$version"""")
       case Jvm =>
-        binaryVersion.language match {
-          case Java => Some(s"""libraryDependencies += "$groupId" % "$artifactName" % "$version"""")
-          case Scala(PatchVersion(_, _, _)) =>
-            Some(s"""libraryDependencies += "$groupId" % "$artifactName" % "$version" cross CrossVersion.full""")
-          case _ => Some(s"""libraryDependencies += "$groupId" %% "$artifactName" % "$version"""")
+        language match {
+          case Java => Some(s"""libraryDependencies += "$groupId" % "$name" % "$version"""")
+          case Scala(Version.Patch(_, _, _)) =>
+            Some(s"""libraryDependencies += "$groupId" % "$name" % "$version" cross CrossVersion.full""")
+          case _ => Some(s"""libraryDependencies += "$groupId" %% "$name" % "$version"""")
         }
     }
 
@@ -113,14 +107,14 @@ case class Artifact(
           |  false)
           |interp.resolvers() = interp.resolvers() :+ res""".stripMargin
 
-    val install = binaryVersion.platform match {
+    val install = platform match {
       case MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
       case Jvm =>
-        binaryVersion.language match {
-          case _ if isNonStandardLib        => Some(s"import $$ivy.`$groupId:$artifactId:$version`")
-          case Java                         => Some(s"import $$ivy.`$groupId:$artifactId:$version`")
-          case Scala(PatchVersion(_, _, _)) => Some(s"import $$ivy.`$groupId:::$artifactName:$version`")
-          case _                            => Some(s"import $$ivy.`$groupId::$artifactName:$version`")
+        language match {
+          case _ if isNonStandardLib         => Some(s"import $$ivy.`$groupId:$artifactId:$version`")
+          case Java                          => Some(s"import $$ivy.`$groupId:$artifactId:$version`")
+          case Scala(Version.Patch(_, _, _)) => Some(s"import $$ivy.`$groupId:::$name:$version`")
+          case _                             => Some(s"import $$ivy.`$groupId::$name:$version`")
         }
     }
 
@@ -136,7 +130,7 @@ case class Artifact(
    * @return
    */
   def mavenInstall: Option[String] =
-    binaryVersion.platform match {
+    platform match {
       case MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
       case Jvm =>
         Some(
@@ -153,7 +147,7 @@ case class Artifact(
    * @return
    */
   def gradleInstall: Option[String] =
-    binaryVersion.platform match {
+    platform match {
       case MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
       case Jvm => Some(s"compile group: '$groupId', name: '$artifactId', version: '$version'")
     }
@@ -163,16 +157,16 @@ case class Artifact(
    * @return
    */
   def millInstall: Option[String] = {
-    val install = binaryVersion.platform match {
-      case MillPlugin(_)               => Some(s"import $$ivy.`$groupId::$artifactName::$version`")
+    val install = platform match {
+      case MillPlugin(_)               => Some(s"import $$ivy.`$groupId::$name::$version`")
       case SbtPlugin(_)                => None
-      case ScalaNative(_) | ScalaJs(_) => Some(s"""ivy"$groupId::$artifactName::$version"""")
+      case ScalaNative(_) | ScalaJs(_) => Some(s"""ivy"$groupId::$name::$version"""")
       case Jvm =>
-        binaryVersion.language match {
-          case _ if isNonStandardLib        => Some(s"""ivy"$groupId:$artifactId:$version"""")
-          case Java                         => Some(s"""ivy"$groupId:$artifactId:$version"""")
-          case Scala(PatchVersion(_, _, _)) => Some(s"""ivy"$groupId:::$artifactName:$version"""")
-          case _                            => Some(s"""ivy"$groupId::$artifactName:$version"""")
+        language match {
+          case _ if isNonStandardLib         => Some(s"""ivy"$groupId:$artifactId:$version"""")
+          case Java                          => Some(s"""ivy"$groupId:$artifactId:$version"""")
+          case Scala(Version.Patch(_, _, _)) => Some(s"""ivy"$groupId:::$name:$version"""")
+          case _                             => Some(s"""ivy"$groupId::$name:$version"""")
         }
     }
     (install, resolver.flatMap(_.url)) match {
@@ -189,26 +183,26 @@ case class Artifact(
   def scalaCliInstall: Option[String] =
     binaryVersion.platform match {
       case MillPlugin(_) | SbtPlugin(_) => None
-      case ScalaNative(_) | ScalaJs(_)  => Some(s"""//> using dep "$groupId::$artifactName::$version"""")
+      case ScalaNative(_) | ScalaJs(_)  => Some(s"""//> using dep "$groupId::$name::$version"""")
       case Jvm =>
-        binaryVersion.language match {
-          case _ if isNonStandardLib        => Some(s"""//> using dep "$groupId:$artifactId:$version"""")
-          case Java                         => Some(s"""//> using dep "$groupId:$artifactId:$version"""")
-          case Scala(PatchVersion(_, _, _)) => Some(s"""//> using dep "$groupId:::$artifactName:$version"""")
-          case _                            => Some(s"""//> using dep "$groupId::$artifactName:$version"""")
+        language match {
+          case _ if isNonStandardLib         => Some(s"""//> using dep "$groupId:$artifactId:$version"""")
+          case Java                          => Some(s"""//> using dep "$groupId:$artifactId:$version"""")
+          case Scala(Version.Patch(_, _, _)) => Some(s"""//> using dep "$groupId:::$name:$version"""")
+          case _                             => Some(s"""//> using dep "$groupId::$name:$version"""")
         }
     }
 
   def csLaunch: Option[String] =
-    binaryVersion.platform match {
+    platform match {
       case MillPlugin(_) | SbtPlugin(_) => None
-      case ScalaNative(_) | ScalaJs(_)  => Some(s"cs launch $groupId::$artifactName::$version")
+      case ScalaNative(_) | ScalaJs(_)  => Some(s"cs launch $groupId::$name::$version")
       case Jvm =>
-        binaryVersion.language match {
-          case _ if isNonStandardLib        => Some(s"cs launch $groupId:$artifactId:$version")
-          case Java                         => Some(s"cs launch $groupId:$artifactId:$version")
-          case Scala(PatchVersion(_, _, _)) => Some(s"cs launch $groupId:::$artifactName:$version")
-          case _                            => Some(s"cs launch $groupId::$artifactName:$version")
+        language match {
+          case _ if isNonStandardLib         => Some(s"cs launch $groupId:$artifactId:$version")
+          case Java                          => Some(s"cs launch $groupId:$artifactId:$version")
+          case Scala(Version.Patch(_, _, _)) => Some(s"cs launch $groupId:::$name:$version")
+          case _                             => Some(s"cs launch $groupId::$name:$version")
         }
     }
 
@@ -221,13 +215,13 @@ case class Artifact(
   def scastieURL: Option[String] = {
     val tryBaseUrl = "https://scastie.scala-lang.org/try"
 
-    val targetParam = binaryVersion.platform match {
+    val targetParam = platform match {
       case ScalaJs(_) => Some("t" -> "JS")
       case Jvm        => Some("t" -> "JVM")
       case _          => None
     }
 
-    val scalaVersionParam = binaryVersion.language match {
+    val scalaVersionParam = language match {
       case Scala(v) => Some("sv" -> v.toString)
       case _        => None
     }
@@ -238,8 +232,8 @@ case class Artifact(
     } yield {
       val params: List[(String, String)] = List(
         "g" -> groupId.value,
-        "a" -> artifactName.value,
-        "v" -> version.toString,
+        "a" -> name.value,
+        "v" -> version.value,
         "o" -> projectRef.organization.toString,
         "r" -> projectRef.repository.toString,
         target,
@@ -249,6 +243,20 @@ case class Artifact(
 
     }
   }
+
+  def toResponse: ArtifactResponse =
+    ArtifactResponse(
+      groupId,
+      artifactId,
+      version,
+      name,
+      binaryVersion,
+      language,
+      platform,
+      projectRef,
+      releaseDate,
+      licenses.toSeq
+    )
 }
 
 object Artifact {
@@ -265,8 +273,13 @@ object Artifact {
     override def toString: String = value
     def mavenUrl: String = value.replace('.', '/')
   }
+  object GroupId {
+    implicit val groupIdOrdering: Ordering[GroupId] = Ordering.by(_.value)
+  }
+
   case class ArtifactId(name: Name, binaryVersion: BinaryVersion) {
-    def value: String = s"$name${binaryVersion.encode}"
+    override def toString = value
+    def value: String = s"$name${binaryVersion.asSuffix}"
     def isScala: Boolean = binaryVersion.language.isScala
   }
 
@@ -283,25 +296,25 @@ object Artifact {
         ArtifactId(Name(name), binaryVersion)
     }
 
-    def parse(artifactId: String): Option[ArtifactId] =
-      tryParse(artifactId, x => FullParser(x))
+    def apply(artifactId: String): ArtifactId =
+      tryParse(artifactId, x => FullParser(x)).getOrElse(ArtifactId(Name(artifactId), BinaryVersion(Jvm, Java)))
   }
 
-  case class MavenReference(groupId: String, artifactId: String, version: String) {
+  case class Reference(groupId: GroupId, artifactId: ArtifactId, version: Version) {
     override def toString(): String = s"$groupId:$artifactId:$version"
 
-    /**
-     * url to maven page with related information to this reference
-     */
+    def name: Name = artifactId.name
+    def binaryVersion: BinaryVersion = artifactId.binaryVersion
+
     def searchUrl: String =
       s"https://search.maven.org/#artifactdetails|$groupId|$artifactId|$version|jar"
 
     def repoUrl: String =
-      s"https://repo1.maven.org/maven2/${groupId.replace('.', '/')}/$artifactId/$version/"
+      s"https://repo1.maven.org/maven2/${groupId.value.replace('.', '/')}/$artifactId/$version/"
   }
 
-  object MavenReference {
-    def apply(groupId: GroupId, artifactId: String, version: SemanticVersion): MavenReference =
-      MavenReference(groupId.value, artifactId, version.encode)
+  object Reference {
+    def from(groupId: String, artifactId: String, version: String): Reference =
+      Reference(GroupId(groupId), ArtifactId(artifactId), Version(version))
   }
 }

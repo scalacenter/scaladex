@@ -1,6 +1,9 @@
 package scaladex.core.model
 
 sealed trait Language {
+  // a string value for serialization/deserialization
+  def value: String
+  // a short version of toString
   def label: String
   def isValid: Boolean
   def isJava: Boolean = this match {
@@ -15,41 +18,42 @@ sealed trait Language {
 
 object Language {
   implicit val ordering: Ordering[Language] = Ordering.by {
-    case Java     => MajorVersion(Int.MinValue)
+    case Java     => Version(Int.MinValue)
     case Scala(v) => v
   }
 
-  def fromLabel(label: String): Option[Language] = label match {
-    case "Java"   => Some(Java)
-    case s"$sv.x" => SemanticVersion.parse(sv).map(Scala.apply)
-    case sv       => SemanticVersion.parse(sv).map(Scala.apply)
+  def parse(value: String): Option[Language] = value match {
+    case "java" => Some(Java)
+    case sv     => Version.parseSemantically(sv).map(Scala.apply)
   }
 }
 
 case object Java extends Language {
+  override def value: String = "java"
   override def label: String = toString
   override def isValid: Boolean = true
 }
 
-final case class Scala(version: SemanticVersion) extends Language {
+final case class Scala(version: Version) extends Language {
+  override def value: String = version.value
   override def label: String = version.toString
   override def isValid: Boolean = Scala.stableVersions.contains(this)
   override def toString: String = s"Scala $version"
 }
 
 object Scala {
-  val `2.10`: Scala = Scala(MinorVersion(2, 10))
-  val `2.11`: Scala = Scala(MinorVersion(2, 11))
-  val `2.12`: Scala = Scala(MinorVersion(2, 12))
-  val `2.13`: Scala = Scala(MinorVersion(2, 13))
-  val `3`: Scala = Scala(MajorVersion(3))
+  val `2.10`: Scala = Scala(Version(2, 10))
+  val `2.11`: Scala = Scala(Version(2, 11))
+  val `2.12`: Scala = Scala(Version(2, 12))
+  val `2.13`: Scala = Scala(Version(2, 13))
+  val `3`: Scala = Scala(Version(3))
 
   val stableVersions: Set[Scala] = Set(`2.10`, `2.11`, `2.12`, `2.13`, `3`)
 
-  def fromFullVersion(fullVersion: SemanticVersion): Scala = {
+  def fromFullVersion(fullVersion: Version): Scala = {
     val binaryVersion = fullVersion match {
-      case SemanticVersion(major, Some(minor), _, _, _, _) =>
-        if (major > 3) MajorVersion(major) else MinorVersion(major, minor)
+      case Version.SemanticLike(major, Some(minor), _, _, _, _) =>
+        if (major > 3) Version(major) else Version(major, minor)
       case _ => fullVersion
     }
     Scala(binaryVersion)

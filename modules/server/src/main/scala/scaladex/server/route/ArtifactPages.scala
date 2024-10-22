@@ -18,9 +18,9 @@ class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: 
   def route(user: Option[UserState]): Route =
     concat(
       get {
-        path("artifacts" / mavenReferenceM / "scaladoc" ~ RemainingPath) { (mavenRef, dri) =>
+        path("artifacts" / artifactRefM / "scaladoc" ~ RemainingPath) { (ref, dri) =>
           val scaladocUriF = for {
-            artifact <- database.getArtifactByMavenReference(mavenRef).map(_.get)
+            artifact <- database.getArtifact(ref).map(_.get)
             project <- database.getProject(artifact.projectRef)
           } yield project.flatMap(_.scaladoc(artifact).map(doc => Uri(doc.link)))
 

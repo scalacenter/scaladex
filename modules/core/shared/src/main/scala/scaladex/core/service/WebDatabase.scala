@@ -9,13 +9,14 @@ import scaladex.core.model._
 trait WebDatabase {
   // artifacts
   def insertArtifact(artifact: Artifact): Future[Boolean]
-  def getArtifacts(groupId: Artifact.GroupId, artifactId: String): Future[Seq[Artifact]]
-  def getArtifacts(projectRef: Project.Reference): Future[Seq[Artifact]]
-  def getArtifacts(ref: Project.Reference, artifactName: Artifact.Name, stableOnly: Boolean): Future[Seq[Artifact]]
-  def getArtifacts(ref: Project.Reference, artifactName: Artifact.Name, version: SemanticVersion): Future[Seq[Artifact]]
-  def getArtifactsByName(projectRef: Project.Reference, artifactName: Artifact.Name): Future[Seq[Artifact]]
-  def getLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]]
-  def getArtifactByMavenReference(mavenRef: Artifact.MavenReference): Future[Option[Artifact]]
+  def getArtifactVersions(
+      groupId: Artifact.GroupId,
+      artifactId: Artifact.ArtifactId,
+      stableOnly: Boolean
+  ): Future[Seq[Version]]
+  def getArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]]
+  def getArtifact(ref: Artifact.Reference): Future[Option[Artifact]]
+  def getLatestArtifact(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Option[Artifact]]
   def getAllArtifacts(language: Option[Language], platform: Option[Platform]): Future[Seq[Artifact]]
   def countArtifacts(): Future[Long]
 
@@ -28,6 +29,20 @@ trait WebDatabase {
   def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit]
   def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]]
   def getProject(projectRef: Project.Reference): Future[Option[Project]]
+  def getProjectArtifactRefs(ref: Project.Reference, stableOnly: Boolean): Future[Seq[Artifact.Reference]]
+  def getProjectArtifactRefs(ref: Project.Reference, name: Artifact.Name): Future[Seq[Artifact.Reference]]
+  def getProjectArtifactRefs(ref: Project.Reference, version: Version): Future[Seq[Artifact.Reference]]
+  def getProjectArtifacts(
+      ref: Project.Reference,
+      artifactName: Artifact.Name,
+      stableOnly: Boolean
+  ): Future[Seq[Artifact]]
+  def getProjectArtifacts(
+      ref: Project.Reference,
+      artifactName: Artifact.Name,
+      version: Version
+  ): Future[Seq[Artifact]]
+  def getProjectLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]]
   def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]]
   def countVersions(ref: Project.Reference): Future[Long]
 
@@ -38,7 +53,7 @@ trait WebDatabase {
 
   // project dependencies
   def countProjectDependents(projectRef: Project.Reference): Future[Long]
-  def getProjectDependencies(ref: Project.Reference, version: SemanticVersion): Future[Seq[ProjectDependency]]
+  def getProjectDependencies(ref: Project.Reference, version: Version): Future[Seq[ProjectDependency]]
   def getProjectDependents(ref: Project.Reference): Future[Seq[ProjectDependency]]
 
   // users

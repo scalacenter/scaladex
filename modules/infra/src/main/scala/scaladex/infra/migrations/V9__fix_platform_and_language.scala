@@ -4,7 +4,6 @@ import doobie.Query0
 import doobie.util.update.Update
 import org.flywaydb.core.api.migration.BaseJavaMigration
 import org.flywaydb.core.api.migration.Context
-import scaladex.core.model.Artifact.MavenReference
 import scaladex.core.model._
 import scaladex.infra.sql.DoobieUtils.Mappings._
 import scaladex.infra.sql.DoobieUtils.selectRequest
@@ -13,16 +12,13 @@ import scaladex.infra.sql.DoobieUtils.updateRequest
 class V9__fix_platform_and_language extends BaseJavaMigration with ScaladexBaseMigration with LazyLogging {
   override def migrate(context: Context): Unit =
     try {
-      (for {
-        artifactToFix <- run(xa)(selectArtifact.to[Seq])
-        artifactToFixWithIds = artifactToFix.flatMap(a => Artifact.ArtifactId.parse(a.artifactId).map(a -> _))
-        _ <- run(xa) {
-          updatePlatformAndLanguage.updateMany(artifactToFixWithIds.map {
-            case (artifact, id) => (id.binaryVersion.platform, id.binaryVersion.language, artifact.mavenReference)
-          })
-        }
-      } yield ())
-        .unsafeRunSync()
+      val request =
+        for {
+          artifacts0 <- run(xa)(selectArtifact.to[Seq])
+          artifacts1 = artifacts0.map(a => (a.platform, a.language, a.reference))
+          _ <- run(xa)(updatePlatformAndLanguage.updateMany(artifacts1))
+        } yield ()
+      request.unsafeRunSync()
 
     } catch {
       case e: Throwable =>
@@ -33,7 +29,7 @@ class V9__fix_platform_and_language extends BaseJavaMigration with ScaladexBaseM
   val selectArtifact: Query0[Artifact] =
     selectRequest("artifacts", Seq("*"), where = Seq("language_version = 'Java'", "version ~ '^[^.]*$'"))
 
-  val updatePlatformAndLanguage: Update[(Platform, Language, MavenReference)] =
+  val updatePlatformAndLanguage: Update[(Platform, Language, Artifact.Reference)] =
     updateRequest("artifacts", Seq("platform", "language_version"), Seq("group_id", "artifact_id", "version"))
 
 }

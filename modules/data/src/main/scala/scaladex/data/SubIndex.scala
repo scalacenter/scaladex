@@ -15,7 +15,7 @@ class SubIndex(filesystem: Storage, database: SchedulerDatabase)(implicit ec: Ex
   def run(): Future[Unit] = {
     val projectSelection =
       Using.resource(Source.fromResource("subindex.txt", getClass.getClassLoader)) { source =>
-        source.getLines().map(Project.Reference.from).toSet
+        source.getLines().map(Project.Reference.unsafe).toSet
       }
 
     for {
@@ -29,9 +29,10 @@ class SubIndex(filesystem: Storage, database: SchedulerDatabase)(implicit ec: Ex
   }
 
   private def saveProject(project: Project): Future[Unit] = {
-    logger.info(s"Saving ${project.reference}")
-    val artifactsF = database.getArtifacts(project.reference)
-    val dependenciesF = database.getDependencies(project.reference)
+    val ref = project.reference
+    logger.info(s"Saving $ref")
+    val artifactsF = database.getAllProjectArtifacts(ref)
+    val dependenciesF = database.getProjectDependencies(ref)
     for {
       artifacts <- artifactsF
       dependencies <- dependenciesF

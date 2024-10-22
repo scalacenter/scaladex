@@ -6,7 +6,7 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
-import scaladex.core.model.SemanticVersion
+import scaladex.core.model.Version
 import scaladex.infra.sql.DoobieUtils.Mappings._
 import scaladex.infra.sql.DoobieUtils._
 
@@ -38,8 +38,7 @@ object ArtifactDependencyTable {
       s"d.target_version = t.version)"
 
   private val dependencyAndArtifactFields =
-    fields.map("d." + _) ++
-      ArtifactTable.fields.map("a." + _)
+    fields.map("d." + _) ++ ArtifactTable.mainFields.map("a." + _)
 
   val insertIfNotExist: Update[ArtifactDependency] =
     insertOrUpdateRequest(table, fields, fields)
@@ -47,25 +46,25 @@ object ArtifactDependencyTable {
   val count: doobie.Query0[Long] =
     selectRequest(table, Seq("COUNT(*)"))
 
-  val select: Query[Artifact.MavenReference, ArtifactDependency] =
+  val select: Query[Artifact.Reference, ArtifactDependency] =
     selectRequest(table, fields, sourceFields)
 
-  val selectDirectDependency: doobie.Query[Artifact.MavenReference, ArtifactDependency.Direct] =
+  val selectDirectDependency: doobie.Query[Artifact.Reference, ArtifactDependency.Direct] =
     selectRequest(
       tableWithTargetArtifact,
       dependencyAndArtifactFields,
       sourceFields.map(f => s"d.$f")
     )
 
-  val selectReverseDependency: Query[Artifact.MavenReference, ArtifactDependency.Reverse] =
+  val selectReverseDependency: Query[Artifact.Reference, ArtifactDependency.Reverse] =
     selectRequest(
       tableWithSourceArtifact,
       dependencyAndArtifactFields,
       targetFields.map(f => s"d.$f")
     )
 
-  val computeProjectDependencies: Query[(Project.Reference, SemanticVersion), ProjectDependency] =
-    selectRequest1[(Project.Reference, SemanticVersion, Project.Reference), ProjectDependency](
+  val computeProjectDependencies: Query[(Project.Reference, Version), ProjectDependency] =
+    selectRequest1[(Project.Reference, Version, Project.Reference), ProjectDependency](
       fullJoin,
       Seq("d.organization", "d.repository", "d.version", "t.organization", "t.repository", "t.version", "d.scope"),
       where = Seq("d.organization=?", "d.repository=?", "d.version=?", "(t.organization<>? OR t.repository<>?)"),
