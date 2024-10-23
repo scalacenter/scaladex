@@ -52,14 +52,7 @@ case class Artifact(
     s"${fullHttpUrl(env)}/latest-by-scala-version.svg?platform=${platform.map(_.value).getOrElse(this.platform.value)}"
 
   // TODO move this out
-  def fullHttpUrl(env: Env): String =
-    env match {
-      case Env.Prod => s"https://index.scala-lang.org$artifactHttpPath"
-      case Env.Dev =>
-        s"https://index-dev.scala-lang.org$artifactHttpPath" // todo: fix locally
-      case Env.Local =>
-        s"http://localhost:8080$artifactHttpPath" // todo: fix locally
-    }
+  def fullHttpUrl(env: Env): String = env.rootUrl + artifactHttpPath
 
   private def artifactHttpPath: String = s"/${projectRef.organization}/${projectRef.repository}/$name"
 
