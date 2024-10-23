@@ -54,19 +54,15 @@
 
         .logo {
             margin-bottom: 15px;
+            margin-left: 10px;
 
             @media screen and (min-width: $screen-md-min) {
                 margin-bottom: 0;
             }
         }
 
-        .awesome {
-          font-family: Caveat;
-          font-size: 21px;
-          padding: 3px 10px;
-        }
-
         .btn-default {
+          padding: 7px 8px;
           background-color: #224951;
           color: white;
           &:hover, &:focus {
@@ -75,8 +71,14 @@
           }
         }
 
+        .awesome {
+          padding: 3px 8px;
+          font-family: Caveat;
+          font-size: 21px;
+        }
+
         .btn {
-          margin-left: 16px;
+          margin-right: 8px;
           min-height: 39px;
           i {
               margin-right: 8px;

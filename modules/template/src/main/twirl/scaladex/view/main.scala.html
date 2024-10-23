@@ -62,46 +62,45 @@
     <!-- Start coding here -->
     <header id="top">
         <nav>
-            <div class="container">
 
-                <div class="row">
-                    <div class="col-md-3">
-                        <a href="/">
-                            <img src="/assets/img/scaladex-brand.svg" alt="scaladex logo" class="logo">
-                        </a>
-                    </div>
-                    <div class="col-md-5">
-                        @if(showSearch) {
-                            @searchinput(params, you, totalProjects, totalArtifacts)
-                        }
-                    </div>
-                    <div class="col-md-4">
-                      <div class="pull-right">
-                        <a class="btn btn-default awesome" href="/awesome">Awesome Scala</a>
-                        @user.map{ u =>
-                          <button class="btn btn-default dropdown-toggle you"
-                          type="button" id="userLogging"
-                          data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                              <img src="@u.info.sizedAvatarUrl(38)" alt="Your Avatar - @u.info.login">
-                              <span style="vertical-align: middle">@u.info.login</span>
-                              <span class="caret"></span>
-                          </button>
-                          <ul class="dropdown-menu" aria-labelledby="userLogging">
-                              <li><a href="/search?q=@params.queryString@if(!you){&you=✓}">My projects</a></li>
-                              @if(u.isAdmin(env)) {
-                                  <li><a href="/admin">Admin</a></li>
-                              } else ()
-                              <li role="separator" class="divider"></li>
-                              <li><a href="/logout">Logout</a></li>
-                          </ul>
-                        }.getOrElse {
-                            <a class="btn btn-primary pull-right" href="/login">
-                                <i class="fa-brands fa-github fa-lg" aria-hidden="true"></i> Login
-                            </a>
-                        }
-                      </div>
-                    </div>
+          <div class="row">
+            <div class="col-md-2">
+                  <a href="/">
+                      <img src="/assets/img/scaladex-brand.svg" alt="scaladex logo" class="logo">
+                  </a>
+              </div>
+              <div class="col-md-5">
+                @if(showSearch) {
+                  @searchinput(params, you, totalProjects, totalArtifacts)
+                }
+              </div>
+              <div class="col-md-5">
+                <div class="pull-right">
+                  <a class="btn btn-default" href="/api/doc/">API Doc</a>
+                  <a class="btn btn-default awesome" href="/awesome">Awesome Scala</a>
+                  @user.map{ u =>
+                    <button class="btn btn-default dropdown-toggle you"
+                    type="button" id="userLogging"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
+                        <img src="@u.info.sizedAvatarUrl(38)" alt="Your Avatar - @u.info.login">
+                        <span style="vertical-align: middle">@u.info.login</span>
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="userLogging">
+                        <li><a href="/search?q=@params.queryString@if(!you){&you=✓}">My projects</a></li>
+                        @if(u.isAdmin(env)) {
+                            <li><a href="/admin">Admin</a></li>
+                        } else ()
+                        <li role="separator" class="divider"></li>
+                        <li><a href="/logout">Logout</a></li>
+                    </ul>
+                  }.getOrElse {
+                      <a class="btn btn-primary pull-right" href="/login">
+                          <i class="fa-brands fa-github fa-lg" aria-hidden="true"></i> Login
+                      </a>
+                  }
                 </div>
+              </div>
             </div>
         </nav>
     </header>

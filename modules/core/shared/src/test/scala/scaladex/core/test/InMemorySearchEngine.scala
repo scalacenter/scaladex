@@ -43,15 +43,24 @@ class InMemorySearchEngine extends SearchEngine {
       page: PageParams
   ): Future[Page[ProjectDocument]] = ???
 
-  override def find(params: SearchParams, page: PageParams): Future[Page[ProjectHit]] =
-    Future.successful {
-      val hits = allDocuments.values
-        .filter(doc => (params.languages.toSet -- doc.languages).isEmpty)
-        .filter(doc => (params.platforms.toSet -- doc.platforms).isEmpty)
-        .toSeq
-        .map(ProjectHit(_, Seq.empty))
-      Page(Pagination(1, 1, hits.size), hits)
-    }
+  override def find(params: SearchParams, page: PageParams): Future[Page[ProjectHit]] = {
+    val hits = allDocuments.values
+      .filter(doc => (params.languages.toSet -- doc.languages).isEmpty)
+      .filter(doc => (params.platforms.toSet -- doc.platforms).isEmpty)
+      .toSeq
+      .map(ProjectHit(_, Seq.empty))
+    val res = Page(Pagination(1, 1, hits.size), hits)
+    Future.successful(res)
+  }
+
+  override def findRefs(params: SearchParams): Future[Seq[Project.Reference]] = {
+    val res = allDocuments.values
+      .filter(doc => (params.languages.toSet -- doc.languages).isEmpty)
+      .filter(doc => (params.platforms.toSet -- doc.platforms).isEmpty)
+      .toSeq
+      .map(_.reference)
+    Future.successful(res)
+  }
 
   override def autocomplete(params: SearchParams, limit: Int): Future[Seq[ProjectDocument]] = ???
 

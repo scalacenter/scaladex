@@ -1,5 +1,6 @@
 package scaladex.server.route
 
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
 
@@ -8,10 +9,12 @@ object Assets {
     pathPrefix("assets") {
       get(
         concat(
-          path("lib" / Remaining)(path => getFromResource("lib/" + path)),
-          path("img" / Remaining)(path => getFromResource("img/" + path)),
-          path("css" / Remaining)(path => getFromResource("css/" + path)),
-          path("js" / Remaining)(path => getFromResource("js/" + path)),
+          pathPrefix("lib" / "swagger-ui")(redirect("/api/doc", StatusCodes.PermanentRedirect)),
+          // be explicit on what we can get to avoid security leak
+          pathPrefix("lib")(getFromResourceDirectory("lib")),
+          pathPrefix("img")(getFromResourceDirectory("img")),
+          pathPrefix("css")(getFromResourceDirectory("css")),
+          pathPrefix("js")(getFromResourceDirectory("js")),
           path("webclient-opt.js")(
             getFromResource("webclient-opt.js")
           ),
