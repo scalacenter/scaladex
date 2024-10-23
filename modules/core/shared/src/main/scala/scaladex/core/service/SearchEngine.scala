@@ -28,14 +28,6 @@ trait SearchEngine {
   def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]]
   def getLatest(limit: Int): Future[Seq[ProjectDocument]]
 
-  // Old Search API
-  def find(
-      query: String,
-      binaryVersion: Option[BinaryVersion],
-      cli: Boolean,
-      page: PageParams
-  ): Future[Page[ProjectDocument]]
-
   // Search Page
   def find(params: SearchParams, page: PageParams): Future[Page[ProjectHit]]
   def autocomplete(params: SearchParams, limit: Int): Future[Seq[ProjectDocument]]
@@ -47,4 +39,15 @@ trait SearchEngine {
   def find(category: Category, params: AwesomeParams, page: PageParams): Future[Page[ProjectDocument]]
   def countByLanguages(category: Category, params: AwesomeParams): Future[Seq[(Language, Int)]]
   def countByPlatforms(category: Category, params: AwesomeParams): Future[Seq[(Platform, Int)]]
+
+  // Old Search API
+  def find(
+      query: String,
+      binaryVersion: Option[BinaryVersion],
+      cli: Boolean,
+      page: PageParams
+  ): Future[Page[ProjectDocument]]
+
+  // API
+  def findRefs(params: SearchParams): Future[Seq[Project.Reference]]
 }

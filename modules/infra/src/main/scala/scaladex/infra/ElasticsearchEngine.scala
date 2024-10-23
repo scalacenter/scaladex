@@ -5,10 +5,12 @@ import java.io.Closeable
 import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 import com.sksamuel.elastic4s.ElasticClient
 import com.sksamuel.elastic4s.ElasticDsl._
 import com.sksamuel.elastic4s.ElasticProperties
+import com.sksamuel.elastic4s.Hit
 import com.sksamuel.elastic4s.Response
 import com.sksamuel.elastic4s.analysis.Analysis
 import com.sksamuel.elastic4s.http.JavaClient
@@ -173,6 +175,30 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     findPage(request, page).map(_.flatMap(toProjectHit))
   }
 
+  override def findRefs(params: SearchParams): Future[Seq[Project.Reference]] = {
+    val request = searchRequest(filteredSearchQuery(params), params.sorting)
+      .sourceInclude("organization", "repository")
+      .limit(10000)
+    scroll(request, 30.seconds).map(_.flatMap(hit => Project.Reference.parse(hit.id)))
+  }
+
+  private def scroll(request: SearchRequest, timeout: FiniteDuration): Future[Seq[Hit]] = {
+    val r0 = request.keepAlive(timeout)
+    val keepAlive = r0.keepAlive.get
+    def recur(resp: Response[SearchResponse]): Future[Seq[Hit]] = {
+      val hits = resp.result.hits.hits.toSeq
+      resp.result.scrollId match {
+        case None => Future.successful(hits)
+        case Some(id) =>
+          for {
+            r <- esClient.execute(searchScroll(id, keepAlive))
+            nextHits <- recur(r)
+          } yield hits ++ nextHits
+      }
+    }
+    esClient.execute(request).flatMap(recur)
+  }
+
   private def findPage(request: SearchRequest, page: PageParams): Future[Page[SearchHit]] = {
     val clamp = if (page.page <= 0) 1 else page.page
     val pagedRequest = request.from(page.size * (clamp - 1)).size(page.size)
@@ -212,7 +238,10 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       case _               => scoreSort().order(SortOrder.Desc)
     }
 
-    search(index).query(scoringQuery).sortBy(sortQuery)
+    search(index)
+      .sourceExclude("githubInfo.readme")
+      .query(scoringQuery)
+      .sortBy(sortQuery)
   }
 
   private def extractDocuments(response: Response[SearchResponse]): Seq[ProjectDocument] =

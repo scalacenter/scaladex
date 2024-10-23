@@ -4,18 +4,12 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import scaladex.core.model._
-import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.SearchParams
-import scaladex.core.util.ScalaExtensions._
 
 class ProjectService(database: WebDatabase, searchEngine: SearchEngine)(implicit context: ExecutionContext) {
   def getProjects(languages: Seq[Language], platforms: Seq[Platform]): Future[Seq[Project.Reference]] = {
     val searchParams = SearchParams(languages = languages, platforms = platforms)
-    for {
-      firstPage <- searchEngine.find(searchParams, PageParams(0, 10000))
-      p = firstPage.pagination
-      otherPages <- 1.until(p.pageCount).map(PageParams(_, 10000)).mapSync(p => searchEngine.find(searchParams, p))
-    } yield (firstPage +: otherPages).flatMap(_.items).map(_.document.reference)
+    searchEngine.findRefs(searchParams)
   }
 
   def getProject(ref: Project.Reference): Future[Option[Project]] = database.getProject(ref)

@@ -72,10 +72,13 @@ object Project {
     def from(org: String, repo: String): Reference =
       Reference(Organization(org), Repository(repo))
 
-    def unsafe(string: String): Reference =
-      string.split('/') match {
-        case Array(org, repo) => from(org, repo)
+    def parse(value: String): Option[Reference] =
+      value.split('/') match {
+        case Array(org, repo) => Some(from(org, repo))
+        case _                => None
       }
+
+    def unsafe(value: String): Reference = parse(value).get
 
     implicit val ordering: Ordering[Reference] =
       Ordering.by(ref => (ref.organization.value, ref.repository.value))
