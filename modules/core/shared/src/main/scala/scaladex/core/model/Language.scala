@@ -32,6 +32,7 @@ case object Java extends Language {
   override def value: String = "java"
   override def label: String = toString
   override def isValid: Boolean = true
+  override def toString: String = "Java"
 }
 
 final case class Scala(version: Version) extends Language {

@@ -41,7 +41,7 @@ class ArtifactIdTests extends AsyncFunSpec with Matchers {
     it("parses sbt") {
       val artifactId = "sbt-microsites_2.12_1.0"
       val expected =
-        ArtifactId(Name("sbt-microsites"), BinaryVersion(SbtPlugin.`1.0`, Scala.`2.12`))
+        ArtifactId(Name("sbt-microsites"), BinaryVersion(SbtPlugin.`1.x`, Scala.`2.12`))
       val result = ArtifactId(artifactId)
       result shouldBe expected
       result.value shouldBe artifactId

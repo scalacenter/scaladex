@@ -15,16 +15,22 @@ final case class BinaryVersion(platform: Platform, language: Language) {
 
   // non-empty
   def value: String = (platform, language) match {
-    case (Jvm, Java)                  => language.value
-    case (Jvm, Scala(sv))             => s"_${sv.value}"
-    case (SbtPlugin(sbtV), Scala(sv)) => s"_${sv.value}_${sbtV.value}"
-    case (platform, language)         => s"_${platform.value}_${language.value}"
+    case (Jvm, Java)      => language.value
+    case (Jvm, Scala(sv)) => s"_${sv.value}"
+    case (SbtPlugin(sbtV), Scala(sv)) =>
+      sbtV match {
+        case Version.Major(1)     => s"_${sv.value}_1.0"
+        case Version.Minor(0, 13) => s"_${sv.value}_0.13"
+        case sbtV                 => s"_sbt${sbtV.value}_${sv.value}"
+      }
+    case (platform, language) => s"_${platform.value}_${language.value}"
   }
 
-  override def toString: String = (platform, language) match {
-    case (Jvm, Java)           => "Java"
-    case (Jvm, Scala(version)) => s"Scala $version"
-    case (_, _)                => s"$platform ($language)"
+  override def toString: String = platform match {
+    case Jvm           => language.toString
+    case p: SbtPlugin  => p.toString
+    case p: MillPlugin => p.toString
+    case _             => s"$platform ($language)"
   }
 }
 
@@ -32,7 +38,7 @@ object BinaryVersion {
   implicit val ordering: Ordering[BinaryVersion] = Ordering.by(v => (v.platform, v.language))
 
   def IntermediateParser[A: P]: P[(String, Option[Version], Option[Version])] =
-    ("_sjs" | "_native" | "_mill" | "_" | "").! ~ (Version.SemanticParser.?) ~ ("_" ~ Version.SemanticParser).?
+    ("_sjs" | "_native" | "_mill" | "_sbt" | "_" | "").! ~ (Version.SemanticParser.?) ~ ("_" ~ Version.SemanticParser).?
 
   def IntermediateParserButNotInvalidSbt[A: P]: P[(String, Option[Version], Option[Version])] =
     IntermediateParser.filter {
@@ -46,6 +52,7 @@ object BinaryVersion {
         case ("_sjs", Some(jsV), Some(scalaV))        => Some(BinaryVersion(ScalaJs(jsV), Scala(scalaV)))
         case ("_native", Some(nativeV), Some(scalaV)) => Some(BinaryVersion(ScalaNative(nativeV), Scala(scalaV)))
         case ("_mill", Some(millV), Some(scalaV))     => Some(BinaryVersion(MillPlugin(millV), Scala(scalaV)))
+        case ("_sbt", Some(sbtV), Some(scalaV))       => Some(BinaryVersion(SbtPlugin(sbtV), Scala(scalaV)))
         case ("_", Some(scalaV), Some(sbtV))          => Some(BinaryVersion(SbtPlugin(sbtV), Scala(scalaV)))
         case ("_", Some(scalaV), None)                => Some(BinaryVersion(Jvm, Scala(scalaV)))
         case ("", None, None)                         => Some(BinaryVersion(Jvm, Java))

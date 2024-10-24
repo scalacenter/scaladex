@@ -34,7 +34,7 @@ object Version {
 
   // We prefer the latest stable artifact.
   val PreferStable: Ordering[Version] =
-    Ordering.by[Version, Boolean](_.isStable).orElse(ordering)
+    Ordering.by((v: Version) => v.isStable).orElse(ordering)
 
   final case class SemanticLike(
       major: Int,
@@ -44,8 +44,7 @@ object Version {
       preRelease: Option[PreRelease] = None,
       metadata: Option[String] = None
   ) extends Version {
-    override def isSemantic: Boolean =
-      patch.isDefined && patch2.isEmpty && preRelease.forall(_.isSemantic)
+    override def isSemantic: Boolean = patch2.isEmpty && preRelease.forall(_.isSemantic)
 
     override def isPreRelease: Boolean = preRelease.isDefined || metadata.isDefined
 

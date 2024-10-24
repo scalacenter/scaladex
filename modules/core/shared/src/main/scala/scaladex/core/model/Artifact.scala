@@ -298,6 +298,8 @@ object Artifact {
 
     def name: Name = artifactId.name
     def binaryVersion: BinaryVersion = artifactId.binaryVersion
+    def platform: Platform = binaryVersion.platform
+    def language: Language = binaryVersion.language
 
     def searchUrl: String =
       s"https://search.maven.org/#artifactdetails|$groupId|$artifactId|$version|jar"
