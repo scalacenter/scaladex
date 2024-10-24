@@ -28,17 +28,17 @@
               <div class="float-right">
                 <form>
                   <select name="binary-version" class="selectpicker"
-                  data-style="btn-primary" onchange="this.form.submit()">
-                  @for((platform, binaryVersions) <- binaryVersions.groupBy(_.platform)) {
-                    <optgroup label="@platform">
-                      @for(binaryVersion <- binaryVersions.sortBy(_.language)(Language.ordering.reverse)) {
-                        <option value="@binaryVersion.value"
-                          @if(params.binaryVersion.contains(binaryVersion) || artifact.binaryVersion == binaryVersion) {selected}>
-                          @binaryVersion
-                        </option>
-                      }
-                    </optgroup>
-                  }
+                          title="@artifact.binaryVersion" data-selected-text-format="static" data-style="btn-primary" onchange="this.form.submit()">
+                    @for((platform, binaryVersions) <- binaryVersions.groupBy(_.platform).toSeq.sortBy(_._1).reverse) {
+                      <optgroup label="@platform">
+                        @for(binaryVersion <- binaryVersions.sorted.reverse) {
+                          <option value="@binaryVersion.value"
+                            @if(params.binaryVersion.contains(binaryVersion) || artifact.binaryVersion == binaryVersion) {selected}>
+                            @binaryVersion.language.label
+                          </option>
+                        }
+                      </optgroup>
+                    }
                   </select>
                 </form>
               </div>

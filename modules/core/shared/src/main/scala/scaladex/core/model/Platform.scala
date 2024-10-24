@@ -27,19 +27,27 @@ object ScalaJs {
 }
 
 case class SbtPlugin(version: Version) extends Platform {
-  override def toString: String =
-    version match {
-      case Version.Minor(1, 0) => s"sbt 1.x"
-      case _                   => s"sbt $version"
-    }
+  override def toString: String = s"sbt $version"
   override def value: String = s"sbt${version.value}"
-  override def isValid: Boolean = SbtPlugin.stableVersions.contains(this)
+  override def isValid: Boolean = SbtPlugin.stableVersions.contains(this) || isSbt2PreRelease
+
+  private def isSbt2PreRelease: Boolean = version match {
+    case Version.SemanticLike(2, Some(0), Some(0), None, Some(_), None) => true
+    case _                                                              => false
+  }
 }
 
 object SbtPlugin {
   val `0.13`: SbtPlugin = SbtPlugin(Version(0, 13))
-  val `1.0`: SbtPlugin = SbtPlugin(Version(1, 0))
-  val stableVersions: Set[SbtPlugin] = Set(`0.13`, `1.0`)
+  val `1.x`: SbtPlugin = SbtPlugin(Version(1))
+  val `2.x`: SbtPlugin = SbtPlugin(Version(2))
+
+  def apply(version: Version): SbtPlugin = version match {
+    case Version.Minor(1, 0) => `1.x`
+    case _                   => new SbtPlugin(version)
+  }
+
+  val stableVersions: Set[SbtPlugin] = Set(`0.13`, `1.x`, `2.x`)
 
   implicit val ordering: Ordering[SbtPlugin] = Ordering.by(p => p.asInstanceOf[Platform])
 }

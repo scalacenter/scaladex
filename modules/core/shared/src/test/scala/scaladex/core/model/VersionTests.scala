@@ -5,7 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import scaladex.core.test.Values._
 
-class SemanticVersionTests extends AsyncFunSpec with Matchers with TableDrivenPropertyChecks {
+class VersionTests extends AsyncFunSpec with Matchers with TableDrivenPropertyChecks {
   it("should parse any version") {
     val inputs = Table(
       ("input", "output"),
