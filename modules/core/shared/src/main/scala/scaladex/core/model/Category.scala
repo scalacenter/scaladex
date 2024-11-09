@@ -73,7 +73,9 @@ object Category {
   case object Compilers extends Category
   case object CodeGeneration extends Category
   case object DependencyInjection extends Category
-  case object FunctionnalProgrammingAndCategoryTheory extends Category
+  case object FunctionnalProgrammingAndCategoryTheory extends Category {
+    override val title: String = "Functional Programming and Category Theory"
+  }
   case object LogicProgrammingAndTypeConstraints extends Category
   case object MiscellaneousUtils extends Category
   case object Parsing extends Category
