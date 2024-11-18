@@ -2,7 +2,6 @@ package scaladex.infra
 
 import java.io.Closeable
 
-import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -271,7 +270,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       .toSeq
       .flatMap(_.hits)
       .flatMap { hit =>
-        val source = SourceAsContentBuilder(hit.source).string: @nowarn("cat=deprecation")
+        val source = SourceAsContentBuilder(hit.source).string
         parser.decode[GithubIssue](source) match {
           case Right(issue) => Some(issue)
           case Left(_) =>
