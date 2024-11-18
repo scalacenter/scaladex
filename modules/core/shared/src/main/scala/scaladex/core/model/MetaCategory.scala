@@ -70,7 +70,7 @@ object MetaCategory {
       Category.CodeGeneration,
       Category.Compilers,
       Category.DependencyInjection,
-      Category.FunctionnalProgrammingAndCategoryTheory,
+      Category.FunctionalProgrammingAndCategoryTheory,
       Category.LogicProgrammingAndTypeConstraints,
       Category.MiscellaneousUtils,
       Category.Parsing,
