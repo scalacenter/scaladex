@@ -72,6 +72,7 @@ lazy val infra = project
       "com.github.pjfanning" %% "pekko-http-circe" % "2.8.0",
       "io.get-coursier" %% "coursier" % V.coursier,
       "io.get-coursier" %% "coursier-sbt-maven-repository" % V.coursier,
+      "com.github.blemale" %% "scaffeine" % "5.3.0",
       "org.tpolecat" %% "doobie-scalatest" % V.doobie % Test,
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it"
     ) ++ Seq(

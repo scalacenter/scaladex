@@ -13,6 +13,8 @@ import doobie.implicits._
 import scaladex.core.model._
 import scaladex.core.service.SchedulerDatabase
 import scaladex.infra.sql._
+import com.github.blemale.scaffeine.Scaffeine
+import scala.concurrent.duration._
 
 class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
   private val flyway = DoobieUtils.flyway(datasource)
@@ -143,8 +145,10 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   def countProjects(): Future[Long] =
     run(ProjectTable.countProjects.unique)
 
-  override def countArtifacts(): Future[Long] =
-    run(ArtifactTable.count.unique)
+  private val countArtifactsCache = Scaffeine()
+    .refreshAfterWrite(5.minutes)
+    .buildAsyncFuture[Unit, Long](_ => run(ArtifactTable.count.unique))
+  override def countArtifacts(): Future[Long] = countArtifactsCache.get(())
 
   def countDependencies(): Future[Long] =
     run(ArtifactDependencyTable.count.unique)
