@@ -24,7 +24,7 @@ jobs:
           submodules: true
       - uses: coursier/setup-action@v1
         with:
-          jvm: "adopt:1.8"
+          jvm: "adoptium:1.17"
       - uses: coursier/cache-action@v6
       - name: Unit tests
         run: sbt test
@@ -40,7 +40,7 @@ jobs:
           submodules: true
       - uses: coursier/setup-action@v1
         with:
-          jvm: "adopt:1.8"
+          jvm: "adoptium:1.17"
       - name: Integration tests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

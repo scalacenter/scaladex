@@ -25,7 +25,7 @@ For development you only need to clone [scaladex]:
 You will need the following tools installed:
 
 * git
-* Java 1.8
+* Java 1.17
 * the [sbt](https://www.scala-sbt.org/) build tool
 * a Scala code editor:
   * [VSCode](https://code.visualstudio.com/) with [Metals](https://scalameta.org/metals/)
