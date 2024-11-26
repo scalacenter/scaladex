@@ -216,8 +216,8 @@ class InMemoryDatabase extends SchedulerDatabase {
   override def getArtifactIds(ref: Project.Reference): Future[Seq[(Artifact.GroupId, Artifact.ArtifactId)]] =
     Future.successful(getProjectArtifactsSync(ref).map(a => (a.groupId, a.artifactId)).distinct.toSeq)
 
-  override def updateLatestVersion(ref: Artifact.Reference): Future[Unit] = {
-    latestArtifacts += (ref.groupId, ref.artifactId) -> ref
+  override def updateLatestVersion(ref: Project.Reference, artifact: Artifact.Reference): Future[Unit] = {
+    latestArtifacts += (artifact.groupId, artifact.artifactId) -> artifact
     Future.unit
   }
 
