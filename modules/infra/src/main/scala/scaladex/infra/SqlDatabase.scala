@@ -5,8 +5,11 @@ import java.util.UUID
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 import cats.effect.IO
+import com.github.blemale.scaffeine.AsyncLoadingCache
+import com.github.blemale.scaffeine.Scaffeine
 import com.typesafe.scalalogging.LazyLogging
 import com.zaxxer.hikari.HikariDataSource
 import doobie.implicits._
@@ -125,8 +128,10 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   ): Future[Seq[Artifact]] =
     run(ArtifactTable.selectArtifactByProjectAndNameAndVersion.to[Seq](ref, name, version))
 
+  private val projectLatestArtifactsCache: AsyncLoadingCache[Project.Reference, Seq[Artifact]] =
+    Scaffeine().buildAsyncFuture(ref => run(ArtifactTable.selectLatestArtifacts.to[Seq](ref)))
   override def getProjectLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectLatestArtifacts.to[Seq](ref))
+    projectLatestArtifactsCache.get(ref)
 
   override def getProjectDependencies(projectRef: Project.Reference): Future[Seq[ArtifactDependency]] =
     run(ArtifactDependencyTable.selectDependencyFromProject.to[Seq](projectRef))
@@ -143,8 +148,9 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   def countProjects(): Future[Long] =
     run(ProjectTable.countProjects.unique)
 
-  override def countArtifacts(): Future[Long] =
-    run(ArtifactTable.count.unique)
+  private val countArtifactsCache: AsyncLoadingCache[Unit, Long] =
+    Scaffeine().refreshAfterWrite(5.minutes).buildAsyncFuture[Unit, Long](_ => run(ArtifactTable.count.unique))
+  override def countArtifacts(): Future[Long] = countArtifactsCache.get(())
 
   def countDependencies(): Future[Long] =
     run(ArtifactDependencyTable.count.unique)
@@ -210,12 +216,12 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def deleteUser(userId: UUID): Future[Unit] =
     run(UserSessionsTable.deleteById.run(userId).map(_ => ()))
 
-  override def updateLatestVersion(ref: Artifact.Reference): Future[Unit] = {
+  override def updateLatestVersion(ref: Project.Reference, artifact: Artifact.Reference): Future[Unit] = {
     val transaction = for {
-      _ <- ArtifactTable.setLatestVersion.run(ref)
-      _ <- ArtifactTable.unsetOthersLatestVersion.run(ref)
+      _ <- ArtifactTable.setLatestVersion.run(artifact)
+      _ <- ArtifactTable.unsetOthersLatestVersion.run(artifact)
     } yield ()
-    run(transaction)
+    run(transaction).map(_ => projectLatestArtifactsCache.underlying.synchronous().invalidate(ref))
   }
 
   override def countVersions(ref: Project.Reference): Future[Long] =

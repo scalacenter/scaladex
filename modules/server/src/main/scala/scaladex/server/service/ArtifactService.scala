@@ -32,7 +32,12 @@ class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext
       project <- database.getProject(artifact.projectRef).map(_.get)
       _ <- database.insertArtifact(artifact)
       _ <- database.insertDependencies(dependencies)
-      _ <- updateLatestVersion(artifact.groupId, artifact.artifactId, project.settings.preferStableVersion)
+      _ <- updateLatestVersion(
+        project.reference,
+        artifact.groupId,
+        artifact.artifactId,
+        project.settings.preferStableVersion
+      )
     } yield isNewProject
   }
 
@@ -69,11 +74,12 @@ class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext
     for {
       artifactIds <- database.getArtifactIds(ref)
       _ <- artifactIds.mapSync {
-        case (groupId, artifactId) => updateLatestVersion(groupId, artifactId, preferStableVersion)
+        case (groupId, artifactId) => updateLatestVersion(ref, groupId, artifactId, preferStableVersion)
       }
     } yield artifactIds.size
 
   def updateLatestVersion(
+      ref: Project.Reference,
       groupId: Artifact.GroupId,
       artifactId: Artifact.ArtifactId,
       preferStableVersion: Boolean
@@ -81,7 +87,7 @@ class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext
     for {
       artifacts <- database.getArtifacts(groupId, artifactId)
       latestVersion = computeLatestVersion(artifacts.map(_.version), preferStableVersion)
-      _ <- database.updateLatestVersion(Artifact.Reference(groupId, artifactId, latestVersion))
+      _ <- database.updateLatestVersion(ref, Artifact.Reference(groupId, artifactId, latestVersion))
     } yield ()
 
   def computeLatestVersion(versions: Seq[Version], preferStableVersion: Boolean): Version = {

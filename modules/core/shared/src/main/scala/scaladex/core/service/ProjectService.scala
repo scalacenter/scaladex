@@ -67,15 +67,12 @@ class ProjectService(database: WebDatabase, searchEngine: SearchEngine)(implicit
 
   def getHeader(project: Project): Future[Option[ProjectHeader]] = {
     val ref = project.reference
-    for {
-      latestArtifacts <- database.getProjectLatestArtifacts(ref)
-      versionCount <- database.countVersions(ref)
-    } yield ProjectHeader(
-      ref,
-      latestArtifacts,
-      versionCount,
-      project.settings.defaultArtifact,
-      project.settings.preferStableVersion
-    )
+    for (latestArtifacts <- database.getProjectLatestArtifacts(ref))
+      yield ProjectHeader(
+        ref,
+        latestArtifacts,
+        project.settings.defaultArtifact,
+        project.settings.preferStableVersion
+      )
   }
 }

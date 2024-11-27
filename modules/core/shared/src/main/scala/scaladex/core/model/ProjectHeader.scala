@@ -6,19 +6,17 @@ object ProjectHeader {
   def apply(
       ref: Project.Reference,
       artifacts: Seq[Artifact],
-      versionCount: Long,
       defaultArtifactName: Option[Artifact.Name],
       preferStableVersion: Boolean
   ): Option[ProjectHeader] =
     Option.when(artifacts.nonEmpty) {
-      new ProjectHeader(ref, artifacts, versionCount, defaultArtifactName, preferStableVersion)
+      new ProjectHeader(ref, artifacts, defaultArtifactName, preferStableVersion)
     }
 }
 
 final case class ProjectHeader(
     ref: Project.Reference,
     artifacts: Seq[Artifact],
-    versionCount: Long,
     defaultArtifactName: Option[Artifact.Name],
     preferStableVersion: Boolean
 ) {

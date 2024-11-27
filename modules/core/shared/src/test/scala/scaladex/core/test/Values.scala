@@ -80,7 +80,6 @@ object Values {
     val projectHeader: ProjectHeader = ProjectHeader(
       reference,
       Seq(artifact),
-      1,
       settings.defaultArtifact,
       settings.preferStableVersion
     ).get
@@ -210,8 +209,7 @@ object Values {
         Scope("compile")
       )
     )
-    val versionCount: Int = allArtifacts.map(_.version).distinct.size
-    val projectHeader: ProjectHeader = ProjectHeader(reference, allArtifacts, versionCount, None, true).get
+    val projectHeader: ProjectHeader = ProjectHeader(reference, allArtifacts, None, true).get
     val projectDocument: ProjectDocument =
       ProjectDocument(
         project.copy(creationDate = Some(now.minus(10, ChronoUnit.MINUTES))),
