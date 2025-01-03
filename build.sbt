@@ -134,8 +134,8 @@ lazy val webclient = project
     scalacOptions -= "-Wunused", // don't report unused params
     scalacOptions += "-Wunused:imports",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "scalatags" % "0.11.1",
-      "org.endpoints4s" %%% "fetch-client" % "3.2.1"
+      "com.lihaoyi" %%% "scalatags" % "0.13.1",
+      "org.endpoints4s" %%% "fetch-client" % "4.0.1"
     )
   )
   .enablePlugins(ScalaJSPlugin)
@@ -168,7 +168,7 @@ lazy val server = project
       "org.apache.pekko" %% "pekko-http-cors" % V.pekkoHttp,
       "com.softwaremill.pekko-http-session" %% "core" % "0.7.1",
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
-      "org.endpoints4s" %% "pekko-http-server" % "1.0.1",
+      "org.endpoints4s" %% "pekko-http-server" % "2.0.1",
       "org.webjars" % "bootstrap-sass" % "3.4.1",
       "org.webjars" % "bootstrap-switch" % "3.3.4",
       "org.webjars" % "bootstrap-select" % "1.13.18",
@@ -197,7 +197,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
   .settings(
     scalacOptionsSettings,
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "fastparse" % "2.3.3",
+      "com.lihaoyi" %%% "fastparse" % "3.0.0",
       "io.github.cquiroz" %%% "scala-java-time" % "2.6.0",
       "org.endpoints4s" %%% "algebra" % "1.12.1",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
