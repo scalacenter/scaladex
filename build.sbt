@@ -157,7 +157,7 @@ lazy val server = project
       "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044"
     ),
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-parallel-collections" % "1.0.4",
+      "org.scala-lang.modules" %% "scala-parallel-collections" % "1.1.0",
       "com.typesafe.play" %%% "play-json" % V.playJson,
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it",
       "org.apache.pekko" %% "pekko-testkit" % V.pekko % "test,it",
