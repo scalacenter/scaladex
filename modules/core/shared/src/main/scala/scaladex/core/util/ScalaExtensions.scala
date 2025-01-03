@@ -50,6 +50,18 @@ object ScalaExtensions {
           } yield builder.addOne(b)
         }
         .map(_.result())
+
+    def flatMapSync[B](
+        f: A => Future[IterableOnce[B]]
+    )(implicit ec: ExecutionContext, bf: BuildFrom[CC[A], B, CC[B]]): Future[CC[B]] =
+      in.iterator
+        .foldLeft(Future.successful(bf.newBuilder(in))) { (builderF, a) =>
+          for {
+            builder <- builderF
+            bs <- f(a)
+          } yield builder.addAll(bs)
+        }
+        .map(_.result())
   }
 
   implicit class IteratorExtension[A](iterator: Iterator[A]) {

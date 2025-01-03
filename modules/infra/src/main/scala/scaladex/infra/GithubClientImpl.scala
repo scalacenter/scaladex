@@ -6,7 +6,6 @@ import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
 import scala.util.Try
 
-import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import io.circe.syntax._
@@ -335,9 +334,7 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
     val permissions = Seq("WRITE", "MAINTAIN", "ADMIN")
     for {
       organizations <- getUserOrganizations(userInfo.login)
-      organizationRepos <- organizations.flatTraverse { org =>
-        getOrganizationRepositories(userInfo.login, org, permissions)
-      }
+      organizationRepos <- organizations.flatMapSync(getOrganizationRepositories(userInfo.login, _, permissions))
       userRepos <- getUserRepositories(userInfo.login, permissions)
     } yield UserState(repos = organizationRepos.toSet ++ userRepos, orgs = organizations.toSet, info = userInfo)
   }
