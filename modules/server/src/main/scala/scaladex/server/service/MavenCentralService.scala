@@ -44,7 +44,7 @@ class MavenCentralService(
       missingVersions = versions.map(Artifact.Reference(groupId, artifactId, _)).filterNot(knownRefs)
       _ = if (missingVersions.nonEmpty)
         logger.warn(s"${missingVersions.size} artifacts are missing for ${groupId.value}:${artifactId.value}")
-      missingPomFiles <- missingVersions.map(ref => mavenCentralClient.getPomFile(ref).map(_.map(ref -> _))).sequence
+      missingPomFiles <- missingVersions.mapSync(ref => mavenCentralClient.getPomFile(ref).map(_.map(ref -> _)))
       publishResult <- missingPomFiles.flatten.mapSync {
         case (mavenRef, (pomFile, creationDate)) =>
           publishProcess.publishPom(mavenRef.toString(), pomFile, creationDate, None)
