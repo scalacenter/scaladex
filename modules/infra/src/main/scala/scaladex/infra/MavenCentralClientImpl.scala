@@ -76,9 +76,10 @@ class MavenCentralClientImpl()(implicit val system: ActorSystem)
   }
 
   override def getPomFile(ref: Artifact.Reference): Future[Option[(String, Instant)]] = {
+    val pomUri = getPomUri(ref)
     val future = for {
-      response <- getHttpResponse(ref)
-      res <- getPomFileWithLastModifiedTime(response)
+      response <- queueRequest(HttpRequest(uri = pomUri))
+      res <- getPomFileWithLastModifiedTime(response, pomUri)
     } yield res
     future.recoverWith {
       case NonFatal(exception) =>
@@ -87,22 +88,22 @@ class MavenCentralClientImpl()(implicit val system: ActorSystem)
     }
   }
 
-  private def getPomFileWithLastModifiedTime(response: HttpResponse): Future[Option[(String, Instant)]] =
+  private def getPomFileWithLastModifiedTime(response: HttpResponse, uri: String): Future[Option[(String, Instant)]] =
     response match {
       case _ @HttpResponse(StatusCodes.OK, headers: Seq[model.HttpHeader], entity, _) =>
         val lastModified = headers.find(_.is("last-modified")).map(header => parseDate(header.value))
         Unmarshaller
           .stringUnmarshaller(entity)
           .map(page => lastModified.map(page -> _))
-      case _ => Future.successful(None)
+      case _ =>
+        logger.warn(s"Cannot get $uri: ${response.status}")
+        Future.successful(None)
     }
 
-  private def getHttpResponse(ref: Artifact.Reference): Future[HttpResponse] = {
+  private def getPomUri(ref: Artifact.Reference): String = {
     val groupIdUrl: String = ref.groupId.value.replace('.', '/')
-    val pomUrl = getPomFileName(ref.artifactId, ref.version)
-    val uri = s"$baseUri/${groupIdUrl}/${ref.artifactId.value}/${ref.version.value}/$pomUrl"
-    val request = HttpRequest(uri = uri)
-    queueRequest(request)
+    val pomFileName = getPomFileName(ref.artifactId, ref.version)
+    s"$baseUri/${groupIdUrl}/${ref.artifactId.value}/${ref.version.value}/$pomFileName"
   }
 
   // Wed, 04 Nov 2020 23:36:02 GMT
@@ -111,7 +112,7 @@ class MavenCentralClientImpl()(implicit val system: ActorSystem)
 
   private def getPomFileName(artifactId: Artifact.ArtifactId, version: Version): String =
     artifactId.binaryVersion.platform match {
-      case SbtPlugin(_) => s"${artifactId.name.value}-${version.value}.pom"
-      case _            => s"${artifactId.value}-${version.value}.pom"
+      case SbtPlugin(Version.Major(1) | Version.Minor(0, 13)) => s"${artifactId.name.value}-${version.value}.pom"
+      case _                                                  => s"${artifactId.value}-${version.value}.pom"
     }
 }
