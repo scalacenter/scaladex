@@ -44,36 +44,49 @@ final case class ProjectHeader(
     s"/$ref/artifacts/${defaultArtifact.name}$queryParams"
   }
 
+  /** getDefaultArtifact is split in two steps: first we get the default artifact name and then,
+   *  the latest version.
+   *  The reason is, we cannot use the latest version of all artifacts to get the default artifact
+   *  if they don't share the same versioning. Instead we use the latest release date. But once we
+   *  have the artifact with the latest release date, we really want to get the latest version of
+   *  that artifact, which is not necessarily the latest one released because of back-publishing.
+   */
   def getDefaultArtifact(language: Option[Language], platform: Option[Platform]): Artifact = {
-    val filteredArtifacts = artifacts
-      .filter(artifact => language.forall(_ == artifact.language) && platform.forall(_ == artifact.platform))
+    val artifactName = getDefaultArtifactName(language, platform)
+    val filteredArtifacts = artifacts.filter { a =>
+      a.name == artifactName && language.forall(_ == a.language) && platform.forall(_ == a.platform)
+    }
+    if (preferStableVersion) filteredArtifacts.maxBy(a => (a.version.isStable, a.version))
+    else filteredArtifacts.maxBy(_.version)
+  }
+
+  private def getDefaultArtifactName(language: Option[Language], platform: Option[Platform]): Artifact.Name = {
+    val filteredArtifacts = artifacts.filter(a => language.forall(_ == a.language) && platform.forall(_ == a.platform))
     val stableArtifacts = filteredArtifacts.filter(_.version.isStable)
 
-    def byName(artifacts: Seq[Artifact]): Option[Artifact] =
-      defaultArtifactName.toSeq
-        .flatMap(defaultName => artifacts.filter(a => defaultName == a.name))
-        .maxByOption(a => (a.binaryVersion, a.releaseDate))
-
-    def ofVersion(version: Version): Artifact =
+    def ofVersion(version: Version): Artifact.Name =
       filteredArtifacts
         .filter(_.version == version)
         .maxBy(a => (a.binaryVersion, a.name, a.releaseDate))(
           Ordering.Tuple3(Ordering[BinaryVersion], Ordering[Artifact.Name].reverse, Ordering[Instant])
         )
+        .name
 
-    // find version of latest stable artifact then default artifact of that version
-    def byLatestVersion(artifacts: Seq[Artifact]): Option[Artifact] =
+    // find version of latest artifact then default artifact of that version
+    def byLatestDate(artifacts: Seq[Artifact]): Option[Artifact.Name] =
       artifacts.maxByOption(_.releaseDate).map(a => ofVersion(a.version))
 
-    if (preferStableVersion) {
-      byName(stableArtifacts)
-        .orElse(byName(filteredArtifacts))
-        .orElse(byLatestVersion(stableArtifacts))
-        .orElse(byLatestVersion(filteredArtifacts))
+    if (preferStableVersion)
+      defaultArtifactName
+        .filter(name => filteredArtifacts.exists(_.name == name))
+        .orElse(byLatestDate(stableArtifacts))
+        .orElse(byLatestDate(filteredArtifacts))
         .get
-    } else {
-      byName(filteredArtifacts).orElse(byLatestVersion(filteredArtifacts)).get
-    }
+    else
+      defaultArtifactName
+        .filter(name => filteredArtifacts.exists(_.name == name))
+        .orElse(byLatestDate(filteredArtifacts))
+        .get
   }
 
   def latestScalaVersions: Seq[Scala] = latestLanguages.collect { case v: Scala => v }

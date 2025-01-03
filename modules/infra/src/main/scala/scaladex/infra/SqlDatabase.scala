@@ -129,6 +129,7 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
     run(ArtifactTable.selectArtifactByProjectAndNameAndVersion.to[Seq](ref, name, version))
 
   private val projectLatestArtifactsCache: AsyncLoadingCache[Project.Reference, Seq[Artifact]] =
+    // invalidated manually by updateLatestVersion
     Scaffeine().buildAsyncFuture(ref => run(ArtifactTable.selectLatestArtifacts.to[Seq](ref)))
   override def getProjectLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]] =
     projectLatestArtifactsCache.get(ref)
