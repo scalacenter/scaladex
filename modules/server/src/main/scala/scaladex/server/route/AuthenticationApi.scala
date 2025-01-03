@@ -2,6 +2,7 @@ package scaladex.server.route
 
 import java.util.UUID
 
+import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
@@ -92,6 +93,10 @@ class AuthenticationApi(clientId: String, sessionConfig: SessionConfig, githubAu
                   // Update user state lazily
                   githubAuth.getUserState(token).andThen {
                     case Success(Some(userState)) => database.updateUser(userId, userState)
+                    case Failure(cause) =>
+                      logger.warn(
+                        s"Failed to update user state of ${user.login} ($userId) because of: ${cause.getMessage}"
+                      )
                   }
 
                   setSession(refreshable, usingCookies, userId)(
