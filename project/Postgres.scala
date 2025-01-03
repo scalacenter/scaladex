@@ -24,40 +24,43 @@ object Postgres extends AutoPlugin {
 
   import autoImport._
 
-  def settings(config: Configuration, defaultPort: Int, database: String): Seq[Setting[_]] = Seq(
-    config / startPostgres := {
-      import sbt.util.CacheImplicits._
-      val dataFolder = Keys.baseDirectory.value / s".postgresql-${config.name}"
-      val streams = Keys.streams.value
-      val logger = streams.log
+  def settings(config: Configuration, defaultPort: Int, database: String): Seq[Setting[_]] = inConfig(config)(
+    Seq(
+      startPostgres := {
+        import sbt.util.CacheImplicits._
+        val dataFolder = Keys.baseDirectory.value / s".postgresql-${config.name}"
+        val streams = Keys.streams.value
+        val logger = streams.log
 
-      if (canConnect(defaultPort, database)) {
-        logger.info(s"Postgres is available on port $defaultPort")
-        defaultPort
-      } else {
-        // we cache the container to reuse it after a reload
-        val store = streams.cacheStoreFactory.make("container")
-        val tracker = util.Tracked.lastOutput[Unit, (String, Int)](store) {
-          case (_, None) =>
-            startContainer(dataFolder, database, logger)
-          case (_, Some((containerId, port))) =>
-            if (canConnect(port, database)) {
-              logger.info(s"Postgres container already started on port $port")
-              (containerId, port)
-            } else {
-              Docker.kill(containerId)
+        if (canConnect(defaultPort, database)) {
+          logger.info(s"Postgres is available on port $defaultPort")
+          defaultPort
+        } else {
+          // we cache the container to reuse it after a reload
+          val store = streams.cacheStoreFactory.make(s"container-${config.id}")
+          val tracker = util.Tracked.lastOutput[Unit, (String, Int)](store) {
+            case (_, None) =>
               startContainer(dataFolder, database, logger)
-            }
+            case (_, Some((containerId, port))) =>
+              if (canConnect(port, database)) {
+                logger.info(s"Postgres container already started on port $port")
+                (containerId, port)
+              } else {
+                logger.info(s"Cannot connect to Postgres on port $port")
+                Docker.kill(containerId)
+                startContainer(dataFolder, database, logger)
+              }
+          }
+          tracker(())._2
         }
-        tracker(())._2
+      },
+      Keys.clean := {
+        Keys.clean.value
+        val dataFolder = Keys.baseDirectory.value / s".postgresql-${config.name}"
+        containers.get(dataFolder.toPath).foreach(_.close())
+        containers.remove(dataFolder.toPath)
       }
-    },
-    Keys.clean := {
-      Keys.clean.value
-      val dataFolder = Keys.baseDirectory.value / s".postgresql-${config.name}"
-      containers.get(dataFolder.toPath).foreach(_.close())
-      containers.remove(dataFolder.toPath)
-    }
+    )
   )
 
   private def startContainer(dataFolder: File, database: String, logger: Logger): (String, Int) = {
