@@ -158,7 +158,6 @@ lazy val server = project
     ),
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-parallel-collections" % "1.1.0",
-      "com.typesafe.play" %%% "play-json" % V.playJson,
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it",
       "org.apache.pekko" %% "pekko-testkit" % V.pekko % "test,it",
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
@@ -200,7 +199,6 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "fastparse" % "2.3.3",
       "io.github.cquiroz" %%% "scala-java-time" % "2.6.0",
-      "com.typesafe.play" %%% "play-json" % V.playJson,
       "org.endpoints4s" %%% "algebra" % "1.12.1",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
       "org.jsoup" % "jsoup" % "1.18.2"
@@ -238,7 +236,6 @@ lazy val data = project
 
 lazy val V = new {
   val doobie = "0.13.4"
-  val playJson = "2.9.4"
   val pekko = "1.1.2"
   val pekkoHttp = "1.1.0"
   val elastic4s = "8.16.0"

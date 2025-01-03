@@ -3,33 +3,22 @@ package scaladex.server.route.api
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
+import io.circe._
+import io.circe.generic.semiauto
 import org.apache.pekko.http.cors.scaladsl.CorsDirectives._
 import org.apache.pekko.http.scaladsl.model.StatusCodes._
 import org.apache.pekko.http.scaladsl.server.Directives._
 import org.apache.pekko.http.scaladsl.server.Route
-import play.api.libs.json._
-import scaladex.core.model.Artifact
-import scaladex.core.model.ArtifactSelection
-import scaladex.core.model.BinaryVersion
-import scaladex.core.model.Java
-import scaladex.core.model.Jvm
-import scaladex.core.model.Project
-import scaladex.core.model.SbtPlugin
-import scaladex.core.model.Scala
-import scaladex.core.model.ScalaJs
-import scaladex.core.model.ScalaNative
-import scaladex.core.model.Version
+import scaladex.core.model._
 import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.ProjectDocument
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 
 object OldSearchApi {
-  implicit val formatProject: OFormat[Project] =
-    Json.format[Project]
-
-  implicit val formatArtifactOptions: OFormat[ArtifactOptions] =
-    Json.format[ArtifactOptions]
+  implicit val formatProject: Codec[Project] = semiauto.deriveCodec
+  implicit val formatArtifactOptions: Codec[ArtifactOptions] = semiauto.deriveCodec
 
   case class Project(
       organization: String,
@@ -85,7 +74,7 @@ object OldSearchApi {
 
 class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(
     implicit val executionContext: ExecutionContext
-) extends PlayJsonSupport {
+) extends FailFastCirceSupport {
   val routes: Route =
     pathPrefix("api") {
       cors() {
