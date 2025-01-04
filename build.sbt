@@ -203,7 +203,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
       "com.typesafe.play" %%% "play-json" % V.playJson,
       "org.endpoints4s" %%% "algebra" % "1.12.1",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
-      "org.jsoup" % "jsoup" % "1.18.2"
+      "org.jsoup" % "jsoup" % "1.18.3"
     ) ++ Seq(
       "io.circe" %%% "circe-core",
       "io.circe" %%% "circe-generic",
@@ -223,7 +223,7 @@ lazy val data = project
       "org.apache.pekko" %% "pekko-serialization-jackson" % V.pekko,
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
       "org.apache.maven" % "maven-model-builder" % "3.9.5",
-      "org.jsoup" % "jsoup" % "1.18.2",
+      "org.jsoup" % "jsoup" % "1.18.3",
       "org.apache.ivy" % "ivy" % "2.5.3",
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
       "org.json4s" %% "json4s-native" % V.json4s,
