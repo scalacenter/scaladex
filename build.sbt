@@ -70,19 +70,33 @@ lazy val infra = project
       "org.apache.pekko" %% "pekko-stream" % V.pekko,
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
       "com.github.pjfanning" %% "pekko-http-circe" % "2.8.0",
-      "io.get-coursier" %% "coursier" % V.coursier,
-      "io.get-coursier" %% "coursier-sbt-maven-repository" % V.coursier,
+      ("io.get-coursier" %% "coursier" % V.coursier).cross(CrossVersion.for3Use2_13),
+      ("io.get-coursier" %% "coursier-sbt-maven-repository" % V.coursier).cross(CrossVersion.for3Use2_13),
       "com.github.blemale" %% "scaffeine" % "5.3.0",
       "org.tpolecat" %% "doobie-core" % V.doobie,
       "org.tpolecat" %% "doobie-h2" % V.doobie,
       "org.tpolecat" %% "doobie-postgres" % V.doobie,
       "org.tpolecat" %% "doobie-hikari" % V.doobie,
-      "org.tpolecat" %% "doobie-scalatest" % V.doobie % Test,
+      ("org.tpolecat" %% "doobie-scalatest" % V.doobie % Test).cross(CrossVersion.for3Use2_13),
       "io.circe" %% "circe-core" % V.circe,
       "io.circe" %% "circe-generic" % V.circe,
       "io.circe" %% "circe-parser" % V.circe,
-      "org.scalatest" %% "scalatest" % V.scalatest % "test,it",
+      "org.scalatest" %% "scalatest" % V.scalatest % "test,it"
     ),
+    excludeDependencies ++= {
+      scalaBinaryVersion.value match {
+        case "3" =>
+          Seq(
+            // from Coursier
+            ExclusionRule("org.scala-lang.modules", "scala-collection-compat_2.13"),
+            ExclusionRule("org.scala-lang.modules", "scala-xml_2.13"),
+            // from doobie-scalatest
+            ExclusionRule("org.scalatest", "scalatest_2.13"),
+            ExclusionRule("org.tpolecat", "doobie-core_2.13")
+          )
+        case _ => Seq.empty
+      }
+    },
     Elasticsearch.settings(defaultPort = 9200),
     Postgres.settings(Compile, defaultPort = 5432, database = "scaladex"),
     javaOptions ++= {
