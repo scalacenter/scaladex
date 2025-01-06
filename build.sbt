@@ -81,7 +81,6 @@ lazy val infra = project
       "io.circe" %% "circe-core" % V.circe,
       "io.circe" %% "circe-generic" % V.circe,
       "io.circe" %% "circe-parser" % V.circe,
-      "io.circe" %% "circe-generic-extras" % V.circeGenericExtra,
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it",
     ),
     Elasticsearch.settings(defaultPort = 9200),
@@ -238,7 +237,6 @@ lazy val V = new {
   val nscalaTime = "2.34.0"
   val scalatest = "3.2.19"
   val circe = "0.14.10"
-  val circeGenericExtra = "0.14.4"
   val json4s = "4.0.7"
   val coursier = "2.1.6"
 }
