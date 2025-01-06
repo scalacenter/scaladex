@@ -73,20 +73,17 @@ lazy val infra = project
       "io.get-coursier" %% "coursier" % V.coursier,
       "io.get-coursier" %% "coursier-sbt-maven-repository" % V.coursier,
       "com.github.blemale" %% "scaffeine" % "5.3.0",
+      "org.tpolecat" %% "doobie-core" % V.doobie,
+      "org.tpolecat" %% "doobie-h2" % V.doobie,
+      "org.tpolecat" %% "doobie-postgres" % V.doobie,
+      "org.tpolecat" %% "doobie-hikari" % V.doobie,
       "org.tpolecat" %% "doobie-scalatest" % V.doobie % Test,
-      "org.scalatest" %% "scalatest" % V.scalatest % "test,it"
-    ) ++ Seq(
-      "org.tpolecat" %% "doobie-core",
-      "org.tpolecat" %% "doobie-h2",
-      "org.tpolecat" %% "doobie-postgres",
-      "org.tpolecat" %% "doobie-hikari"
-    ).map(_ % V.doobie) ++ Seq(
-      "io.circe" %% "circe-core",
-      "io.circe" %% "circe-generic",
-      "io.circe" %% "circe-parser"
-    ).map(_ % V.circe) ++ Seq(
-      "io.circe" %% "circe-generic-extras"
-    ).map(_ % V.circeGenericExtra),
+      "io.circe" %% "circe-core" % V.circe,
+      "io.circe" %% "circe-generic" % V.circe,
+      "io.circe" %% "circe-parser" % V.circe,
+      "io.circe" %% "circe-generic-extras" % V.circeGenericExtra,
+      "org.scalatest" %% "scalatest" % V.scalatest % "test,it",
+    ),
     Elasticsearch.settings(defaultPort = 9200),
     Postgres.settings(Compile, defaultPort = 5432, database = "scaladex"),
     javaOptions ++= {
@@ -201,12 +198,11 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
       "io.github.cquiroz" %%% "scala-java-time" % "2.6.0",
       "org.endpoints4s" %%% "algebra" % "1.12.1",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
-      "org.jsoup" % "jsoup" % "1.18.2"
-    ) ++ Seq(
-      "io.circe" %%% "circe-core",
-      "io.circe" %%% "circe-generic",
-      "io.circe" %%% "circe-parser"
-    ).map(_ % V.circe)
+      "org.jsoup" % "jsoup" % "1.18.2",
+      "io.circe" %%% "circe-core" % V.circe,
+      "io.circe" %%% "circe-generic" % V.circe,
+      "io.circe" %%% "circe-parser" % V.circe
+    )
   )
 
 lazy val data = project
