@@ -5,7 +5,7 @@ lazy val isCI: Boolean = System.getenv("CI") != null
 
 inThisBuild(
   List(
-    scalaVersion := "2.13.15",
+    scalaVersion := "3.3.4",
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     scalafixScalaBinaryVersion := "2.13",
@@ -34,7 +34,7 @@ lazy val scalacOptionsSettings = Def.settings(
     "UTF-8",
     "-feature",
     "-unchecked",
-    "-Wunused"
+    "-Wunused:all"
   ) ++ { if (isCI) Some("-Xfatal-warnings") else None }
 )
 
