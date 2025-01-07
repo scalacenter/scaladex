@@ -246,7 +246,7 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
           |        hasNextPage
           |      }
           |      nodes {
-          |				 login
+          |        login
           |      }
           |    }
           |  }
