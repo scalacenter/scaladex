@@ -9,7 +9,7 @@ import doobie.util.transactor.Transactor
 import scaladex.infra.config.PostgreSQLConfig
 
 trait ScaladexBaseMigration:
-  private implicit val cs: ContextShift[IO] =
+  private given ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
   private val config = PostgreSQLConfig.load().get

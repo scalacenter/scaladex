@@ -19,7 +19,7 @@ import scaladex.infra.sql.DoobieUtils
 trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach:
   self: Assertions with Suite =>
 
-  private implicit val cs: ContextShift[IO] =
+  private given ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
   private val config: PostgreSQLConfig = PostgreSQLConfig

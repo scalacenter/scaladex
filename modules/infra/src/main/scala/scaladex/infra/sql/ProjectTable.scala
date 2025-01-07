@@ -6,7 +6,7 @@ import doobie.*
 import doobie.util.update.Update
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
-import scaladex.infra.sql.DoobieMappings.*
+import scaladex.infra.sql.DoobieMappings.given
 import scaladex.infra.sql.DoobieUtils.*
 
 object ProjectTable:

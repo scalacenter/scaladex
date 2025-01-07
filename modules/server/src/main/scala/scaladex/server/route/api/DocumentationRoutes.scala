@@ -12,10 +12,10 @@ import org.apache.pekko.http.scaladsl.server.Route
 /** Akka-Http routes serving the documentation of the public HTTP API of Scaladex
   */
 object DocumentationRoute:
-  implicit def marshallerFromEncoder[T](implicit encoder: Encoder[T, String]): ToEntityMarshaller[T] =
+  given [T](using e: Encoder[T, String]): ToEntityMarshaller[T] =
     Marshaller
       .stringMarshaller(MediaTypes.`application/json`)
-      .compose(c => encoder.encode(c))
+      .compose(c => e.encode(c))
 
   val route: Route = cors() {
     get {

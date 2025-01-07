@@ -19,7 +19,7 @@ import coursier.maven.SbtMavenRepository
 import scaladex.core.model.Artifact
 import scaladex.core.service.PomResolver
 
-class CoursierResolver(implicit val ec: ExecutionContext) extends PomResolver with LazyLogging:
+class CoursierResolver(using ExecutionContext) extends PomResolver with LazyLogging:
   private val repositories = Seq(
     SbtMavenRepository(Repositories.central),
     SbtMavenRepository(Repositories.jcenter),

@@ -2,6 +2,7 @@ package scaladex.server.route
 
 import java.util.UUID
 
+import scala.concurrent.ExecutionContext
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
@@ -29,14 +30,14 @@ import scaladex.core.service.GithubAuth
 import scaladex.core.service.WebDatabase
 
 class AuthenticationApi(clientId: String, sessionConfig: SessionConfig, githubAuth: GithubAuth, database: WebDatabase)(
-    implicit system: ActorSystem
+    using system: ActorSystem
 ) extends LazyLogging:
 
-  import system.dispatcher
-  implicit val serializer: SessionSerializer[UUID, String] =
+  given ExecutionContext = system.dispatcher
+  given SessionSerializer[UUID, String] =
     new SingleValueSessionSerializer(_.toString(), (id: String) => Try(UUID.fromString(id)))
-  implicit val sessionManager: SessionManager[UUID] = new SessionManager[UUID](sessionConfig)
-  implicit val refreshTokenStorage: InMemoryRefreshTokenStorage[UUID] =
+  given SessionManager[UUID] = new SessionManager[UUID](sessionConfig)
+  given InMemoryRefreshTokenStorage[UUID] =
     (msg: String) =>
       if msg.startsWith("Looking up token for selector") then () // borring
       else logger.info(msg)

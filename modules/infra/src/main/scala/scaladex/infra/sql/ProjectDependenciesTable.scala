@@ -4,7 +4,7 @@ import doobie.*
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.model.Version
-import scaladex.infra.sql.DoobieMappings.*
+import scaladex.infra.sql.DoobieMappings.given
 import scaladex.infra.sql.DoobieUtils.*
 
 object ProjectDependenciesTable:

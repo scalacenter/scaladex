@@ -16,7 +16,7 @@ import scaladex.infra.DataPaths
 
 class GithubRepoExtractor(paths: DataPaths):
   object ClaimSerializer extends CustomSerializer[Claims](_ => (serialize, deserialize))
-  implicit val formats: Formats = DefaultFormats ++ Seq(ClaimSerializer)
+  given Formats = DefaultFormats ++ Seq(ClaimSerializer)
 
   case class Claim(pattern: String, repo: String)
   case class Claims(claims: Seq[Claim])

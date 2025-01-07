@@ -6,7 +6,7 @@ import doobie.*
 import doobie.util.update.Update
 import scaladex.core.model.Artifact.*
 import scaladex.core.model.*
-import scaladex.infra.sql.DoobieMappings.*
+import scaladex.infra.sql.DoobieMappings.given
 import scaladex.infra.sql.DoobieUtils.*
 
 object ArtifactTable:

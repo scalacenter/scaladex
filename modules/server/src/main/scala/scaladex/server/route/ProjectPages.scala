@@ -20,7 +20,7 @@ import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
 import scaladex.core.web.ArtifactPageParams
 import scaladex.core.web.ArtifactsPageParams
-import scaladex.server.TwirlSupport.*
+import scaladex.server.TwirlSupport.given
 import scaladex.server.service.ArtifactService
 import scaladex.server.service.SearchSynchronizer
 import scaladex.view.html.forbidden
@@ -34,7 +34,7 @@ class ProjectPages(
     database: SchedulerDatabase,
     searchEngine: SearchEngine
 )(
-    implicit executionContext: ExecutionContext
+    using ExecutionContext
 ) extends LazyLogging:
 
   private val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)

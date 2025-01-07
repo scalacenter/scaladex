@@ -10,31 +10,31 @@ import scala.util.Try
 import scala.util.control.NonFatal
 
 object ScalaExtensions:
-  implicit class IterableOnceFutureExtension[A, CC[X] <: IterableOnce[X], To](val in: CC[Future[A]]) extends AnyVal:
-    def sequence(implicit bf: BuildFrom[CC[Future[A]], A, To], executor: ExecutionContext): Future[To] =
+  extension [A, CC[X] <: IterableOnce[X], To](in: CC[Future[A]])
+    def sequence(using BuildFrom[CC[Future[A]], A, To], ExecutionContext): Future[To] =
       Future.sequence(in)
 
-  implicit class TryExtension[A](val in: Try[A]) extends AnyVal:
+  extension [A](in: Try[A])
     def toFuture: Future[A] = in match
       case Failure(exception) => Future.failed(exception)
       case Success(value) => Future.successful(value)
 
-  implicit class OptionExtension[A](val in: Option[A]) extends AnyVal:
+  extension [A](in: Option[A])
     def toFuture: Future[A] = in match
       case None => Future.failed(new NoSuchElementException("None.get"))
       case Some(value) => Future.successful(value)
 
-  implicit class FutureExtension[A](val in: Future[A]) extends AnyVal:
-    def mapFailure(f: Throwable => Throwable)(implicit ec: ExecutionContext): Future[A] =
+  extension [A](in: Future[A])
+    def mapFailure(f: Throwable => Throwable)(using ExecutionContext): Future[A] =
       in.recoverWith { case NonFatal(e) => Future.failed(f(e)) }
 
-    def failWithTry(implicit ec: ExecutionContext): Future[Try[A]] =
+    def failWithTry(using ExecutionContext): Future[Try[A]] =
       in.map(Success(_)).recover { case NonFatal(e) => Failure(e) }
 
   /** Warning: it is not lazy on lazy collections
     */
-  implicit class IterableOnceExtension[A, CC[X] <: IterableOnce[X]](val in: CC[A]) extends AnyVal:
-    def mapSync[B](f: A => Future[B])(implicit ec: ExecutionContext, bf: BuildFrom[CC[A], B, CC[B]]): Future[CC[B]] =
+  extension [A, CC[X] <: IterableOnce[X]](in: CC[A])
+    def mapSync[B](f: A => Future[B])(using bf: BuildFrom[CC[A], B, CC[B]])(using ExecutionContext): Future[CC[B]] =
       in.iterator
         .foldLeft(Future.successful(bf.newBuilder(in))) { (builderF, a) =>
           for
@@ -46,7 +46,7 @@ object ScalaExtensions:
 
     def flatMapSync[B](
         f: A => Future[IterableOnce[B]]
-    )(implicit ec: ExecutionContext, bf: BuildFrom[CC[A], B, CC[B]]): Future[CC[B]] =
+    )(using bf: BuildFrom[CC[A], B, CC[B]])(using ExecutionContext): Future[CC[B]] =
       in.iterator
         .foldLeft(Future.successful(bf.newBuilder(in))) { (builderF, a) =>
           for
@@ -55,14 +55,14 @@ object ScalaExtensions:
           yield builder.addAll(bs)
         }
         .map(_.result())
-  end IterableOnceExtension
+  end extension
 
-  implicit class IteratorExtension[A](iterator: Iterator[A]):
-    def foreachSync(f: A => Future[Unit])(implicit ec: ExecutionContext): Future[Unit] =
+  extension [A](iterator: Iterator[A])
+    def foreachSync(f: A => Future[Unit])(using ExecutionContext): Future[Unit] =
       if iterator.hasNext then f(iterator.next()).flatMap(_ => iterator.foreachSync(f))
       else Future.successful(())
 
-  implicit class FiniteDurationExtension(duration: FiniteDuration):
+  extension (duration: FiniteDuration)
     def prettyPrint: String =
       def plural(n: Long, word: String): String = if n == 1 then s"1 $word" else s"$n ${word}s"
 
@@ -90,5 +90,5 @@ object ScalaExtensions:
         case duration if duration.toDays > 365 => plural(duration.toDays / 365, "year")
         case _ => duration.toString()
     end shortPrint
-  end FiniteDurationExtension
+  end extension
 end ScalaExtensions

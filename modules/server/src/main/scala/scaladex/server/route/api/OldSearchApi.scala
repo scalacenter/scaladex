@@ -17,8 +17,8 @@ import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 
 object OldSearchApi:
-  implicit val formatProject: Codec[OldSearchApi.Project] = semiauto.deriveCodec
-  implicit val formatArtifactOptions: Codec[ArtifactOptions] = semiauto.deriveCodec
+  given Codec[OldSearchApi.Project] = semiauto.deriveCodec
+  given Codec[ArtifactOptions] = semiauto.deriveCodec
 
   case class Project(
       organization: String,
@@ -71,9 +71,8 @@ object OldSearchApi:
   end parseBinaryVersion
 end OldSearchApi
 
-class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(
-    implicit val executionContext: ExecutionContext
-) extends FailFastCirceSupport:
+class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(using ExecutionContext)
+    extends FailFastCirceSupport:
   val routes: Route =
     pathPrefix("api") {
       cors() {

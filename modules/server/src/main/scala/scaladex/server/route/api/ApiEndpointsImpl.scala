@@ -14,7 +14,7 @@ import scaladex.core.service.SearchEngine
 import scaladex.server.service.ArtifactService
 
 class ApiEndpointsImpl(projectService: ProjectService, artifactService: ArtifactService, searchEngine: SearchEngine)(
-    implicit ec: ExecutionContext
+    using ExecutionContext
 ) extends Endpoints
     with server.Endpoints
     with server.JsonEntitiesFromSchemas:

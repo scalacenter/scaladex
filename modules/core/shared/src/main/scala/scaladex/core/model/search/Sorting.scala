@@ -5,7 +5,7 @@ sealed trait Sorting:
   def label: String
 
 object Sorting:
-  implicit val ordering: Ordering[Sorting] = Ordering.by {
+  given ordering: Ordering[Sorting] = Ordering.by {
     case Stars => 1
     case Created => 2
     case CommitActivity => 3

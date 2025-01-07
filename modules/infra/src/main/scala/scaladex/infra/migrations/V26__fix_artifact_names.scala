@@ -5,7 +5,7 @@ import doobie.util.update.Update
 import org.flywaydb.core.api.migration.BaseJavaMigration
 import org.flywaydb.core.api.migration.Context
 import scaladex.core.model.*
-import scaladex.infra.sql.DoobieMappings.*
+import scaladex.infra.sql.DoobieMappings.given
 import scaladex.infra.sql.DoobieUtils.selectRequest
 import scaladex.infra.sql.DoobieUtils.updateRequest
 

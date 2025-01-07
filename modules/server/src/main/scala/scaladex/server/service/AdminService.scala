@@ -1,4 +1,5 @@
 package scaladex.server.service
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import com.typesafe.scalalogging.LazyLogging
@@ -24,9 +25,9 @@ class AdminService(
     searchEngine: SearchEngine,
     githubClientOpt: Option[GithubClient],
     mavenCentralService: MavenCentralService
-)(implicit actorSystem: ActorSystem)
+)(using system: ActorSystem)
     extends LazyLogging:
-  import actorSystem.dispatcher
+  private given ExecutionContext = system.dispatcher
 
   val projectService = new ProjectService(database, searchEngine)
   val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)

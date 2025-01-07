@@ -27,11 +27,11 @@ import scaladex.core.model.Version
 import scaladex.core.service.MavenCentralClient
 import scaladex.core.util.JsoupUtils
 
-class MavenCentralClientImpl()(implicit val system: ActorSystem)
+class MavenCentralClientImpl()(using system: ActorSystem)
     extends CommonAkkaHttpClient
     with MavenCentralClient
     with LazyLogging:
-  private implicit val ec: ExecutionContextExecutor = system.dispatcher
+  private given ExecutionContextExecutor = system.dispatcher
   private val baseUri = "https://repo1.maven.org/maven2"
   override def initPoolClientFlow: Flow[
     (HttpRequest, Promise[HttpResponse]),

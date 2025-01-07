@@ -10,10 +10,10 @@ import org.apache.pekko.http.scaladsl.server.Route
 import scaladex.core.model.Env
 import scaladex.core.model.UserState
 import scaladex.core.service.WebDatabase
-import scaladex.server.TwirlSupport.*
+import scaladex.server.TwirlSupport.given
 import scaladex.view.html
 
-class ArtifactPages(env: Env, database: WebDatabase)(implicit executionContext: ExecutionContext) extends LazyLogging:
+class ArtifactPages(env: Env, database: WebDatabase)(using ExecutionContext) extends LazyLogging:
   def route(user: Option[UserState]): Route =
     concat(
       get {

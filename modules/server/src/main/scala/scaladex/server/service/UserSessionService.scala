@@ -2,6 +2,7 @@ package scaladex.server.service
 
 import java.util.UUID
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import com.typesafe.scalalogging.LazyLogging
@@ -14,8 +15,8 @@ import scaladex.core.util.ScalaExtensions.*
 import scaladex.core.util.Secret
 import scaladex.infra.GithubClientImpl
 
-class UserSessionService(database: SchedulerDatabase)(implicit system: ActorSystem) extends LazyLogging:
-  import system.dispatcher
+class UserSessionService(database: SchedulerDatabase)(using system: ActorSystem) extends LazyLogging:
+  private given ExecutionContext = system.dispatcher
 
   def updateAll(): Future[String] =
     for

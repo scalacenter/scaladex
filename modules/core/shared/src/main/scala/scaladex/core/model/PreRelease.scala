@@ -15,7 +15,7 @@ case class OtherPreRelease(o: String) extends PreRelease:
   override def toString: String = o
 
 object PreRelease extends Parsers:
-  implicit val preReleaseOrdering: Ordering[Option[PreRelease]] =
+  given ordering: Ordering[Option[PreRelease]] =
     Ordering.by[Option[PreRelease], (Int, Option[Int], Option[String])] {
       case None => (3, None, None)
       case Some(ReleaseCandidate(rc)) => (2, Some(rc), None)

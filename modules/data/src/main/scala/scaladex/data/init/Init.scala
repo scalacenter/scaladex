@@ -10,11 +10,7 @@ import scaladex.core.service.Storage
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.infra.SqlDatabase
 
-class Init(
-    database: SqlDatabase,
-    localStorage: Storage
-)(implicit val ec: ExecutionContext)
-    extends LazyLogging:
+class Init(database: SqlDatabase, localStorage: Storage)(using ExecutionContext) extends LazyLogging:
 
   def run(): Future[Unit] =
     logger.info("Dropping tables")
@@ -56,7 +52,7 @@ end Init
 
 object Init:
   def run(database: SqlDatabase, localStorage: Storage)(
-      implicit ex: ExecutionContext
+      using ExecutionContext
   ): Future[Unit] =
     val init = new Init(database, localStorage)
     init.run()

@@ -15,7 +15,7 @@ sealed trait Language:
 end Language
 
 object Language:
-  implicit val ordering: Ordering[Language] = Ordering.by {
+  given ordering: Ordering[Language] = Ordering.by {
     case Java => Version(Int.MinValue)
     case Scala(v) => v
   }
@@ -52,5 +52,5 @@ object Scala:
       case _ => fullVersion
     Scala(binaryVersion)
 
-  implicit val ordering: Ordering[Scala] = Ordering.by(_.version)
+  given ordering: Ordering[Scala] = Ordering.by(_.version)
 end Scala

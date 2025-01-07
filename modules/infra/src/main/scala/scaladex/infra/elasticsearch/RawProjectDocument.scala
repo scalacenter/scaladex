@@ -52,10 +52,10 @@ case class RawProjectDocument(
 end RawProjectDocument
 
 object RawProjectDocument:
-  import scaladex.infra.Codecs.*
+  import scaladex.infra.Codecs.given
   import io.circe.syntax.*
-  implicit val codec: Codec[RawProjectDocument] = semiauto.deriveCodec
-  implicit val indexable: Indexable[RawProjectDocument] = rawDocument => Printer.noSpaces.print(rawDocument.asJson)
+  given Codec[RawProjectDocument] = semiauto.deriveCodec
+  given Indexable[RawProjectDocument] = rawDocument => Printer.noSpaces.print(rawDocument.asJson)
 
   def from(project: ProjectDocument): RawProjectDocument =
     import project.*

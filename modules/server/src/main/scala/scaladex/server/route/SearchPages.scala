@@ -8,11 +8,11 @@ import org.apache.pekko.http.scaladsl.server.*
 import scaladex.core.model.*
 import scaladex.core.model.search.*
 import scaladex.core.service.SearchEngine
-import scaladex.server.TwirlSupport.*
+import scaladex.server.TwirlSupport.given
 import scaladex.view.search.html.searchresult
 
 class SearchPages(env: Env, searchEngine: SearchEngine)(
-    implicit ec: ExecutionContext
+    using ExecutionContext
 ):
   def route(user: Option[UserState]): Route =
     get(

@@ -1,6 +1,7 @@
 package scaladex.server
 
 import scala.collection.concurrent.TrieMap
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
@@ -22,11 +23,11 @@ import scaladex.core.util.Secret
 import scaladex.infra.GithubClientImpl
 import scaladex.server.config.OAuth2Config
 
-private class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri: String)(implicit sys: ActorSystem)
+private class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri: String)(using sys: ActorSystem)
     extends GithubAuth
     with FailFastCirceSupport
     with LazyLogging:
-  import sys.dispatcher
+  private given ExecutionContext = sys.dispatcher
 
   private val githubClients: TrieMap[Secret, GithubClient] = TrieMap()
 
@@ -75,5 +76,5 @@ private class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri
 end GithubAuthImpl
 
 object GithubAuthImpl:
-  def apply(config: OAuth2Config)(implicit sys: ActorSystem): GithubAuth =
+  def apply(config: OAuth2Config)(using ActorSystem): GithubAuth =
     new GithubAuthImpl(config.clientId, config.clientSecret, config.redirectUri)

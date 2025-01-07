@@ -34,11 +34,11 @@ trait Endpoints extends JsonSchemas with endpoints4s.algebra.Endpoints with endp
     (artifactsPath / groupIdSegment / artifactIdSegment / versionSegment)
       .xmap((Artifact.Reference.apply _).tupled)(Tuple.fromProductTyped)
 
-  private implicit val platformQueryString: QueryStringParam[Platform] = stringQueryString
+  private given QueryStringParam[Platform] = stringQueryString
     .xmapPartial(v => Validated.fromOption(Platform.parse(v))(s"Cannot parse $v"))(_.value)
-  private implicit val languageQueryString: QueryStringParam[Language] = stringQueryString
+  private given QueryStringParam[Language] = stringQueryString
     .xmapPartial(v => Validated.fromOption(Language.parse(v))(s"Cannot parse $v"))(_.value)
-  private implicit val binaryVersionQueryString: QueryStringParam[BinaryVersion] = stringQueryString
+  private given QueryStringParam[BinaryVersion] = stringQueryString
     .xmapPartial(v => Validated.fromOption(BinaryVersion.parse(v))(s"Cannot parse $v"))(_.value)
 
   private val languageFilters = qs[Seq[Language]](

@@ -13,7 +13,7 @@ import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions.*
 
 class SearchSynchronizer(database: SchedulerDatabase, service: ProjectService, searchEngine: SearchEngine)(
-    implicit ec: ExecutionContext
+    using ExecutionContext
 ) extends LazyLogging:
   def syncAll(): Future[String] =
     for

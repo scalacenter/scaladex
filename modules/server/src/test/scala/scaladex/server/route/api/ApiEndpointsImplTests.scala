@@ -27,7 +27,7 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach:
     yield ()
     Await.result(insertions, Duration.Inf)
 
-  implicit def jsonCodecToUnmarshaller[T: JsonCodec]: FromEntityUnmarshaller[T] =
+  given [T: JsonCodec]: FromEntityUnmarshaller[T] =
     Unmarshaller.stringUnmarshaller
       .forContentTypes(MediaTypes.`application/json`)
       .map(data => stringCodec[T].decode(data).toEither.toOption.get)

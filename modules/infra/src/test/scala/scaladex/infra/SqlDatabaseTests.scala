@@ -14,10 +14,8 @@ import scaladex.core.util.ScalaExtensions.*
 import scaladex.core.util.Secret
 
 class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers:
-
-  val executorService: ExecutorService = Executors.newFixedThreadPool(1)
-  override implicit val executionContext: ExecutionContext =
-    ExecutionContext.fromExecutorService(executorService)
+  given ec: ExecutionContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(1))
+  override def executionContext: ExecutionContext = ec
 
   import scaladex.core.test.Values.*
 

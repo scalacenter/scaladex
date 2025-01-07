@@ -15,7 +15,7 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
 import scaladex.core.service.Storage
-import scaladex.infra.Codecs.*
+import scaladex.infra.Codecs.given
 import scaladex.infra.config.FilesystemConfig
 
 class FilesystemStorage(projects: Path, temp: Path) extends Storage with LazyLogging:

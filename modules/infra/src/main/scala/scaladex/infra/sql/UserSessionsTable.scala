@@ -7,7 +7,7 @@ import doobie.util.query.Query
 import doobie.util.update.Update
 import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
-import scaladex.infra.sql.DoobieMappings.*
+import scaladex.infra.sql.DoobieMappings.given
 import scaladex.infra.sql.DoobieUtils.*
 
 object UserSessionsTable:

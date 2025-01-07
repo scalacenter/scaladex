@@ -30,7 +30,7 @@ object ArtifactDependency:
       target.exists(_.projectRef == ref)
   end Direct
   object Direct:
-    implicit val order: Ordering[Direct] =
+    given ordering: Ordering[Direct] =
       Ordering.by(d => (d.artifactDep.scope, d.groupIdAndName))
 
   final case class Reverse(
@@ -42,7 +42,7 @@ object ArtifactDependency:
     def version: Version = source.version
 
   object Reverse:
-    implicit val order: Ordering[Reverse] =
+    given ordering: Ordering[Reverse] =
       Ordering.by(d => (d.dependency.scope, d.groupIdAndName))
     def sample(deps: Seq[Reverse], sampleSize: Int): Seq[Reverse] =
       deps
@@ -58,16 +58,15 @@ object ArtifactDependency:
   // current values in the database: optional, macro, runtime, compile, provided, test
   case class Scope(value: String) extends AnyVal with Ordered[Scope]:
     override def toString: String = value
-    override def compare(that: Scope): Int =
-      Scope.ordering.compare(this, that)
+    override def compare(that: Scope): Int = Scope.ordering.compare(this, that)
+
   object Scope:
-    implicit val ordering: Ordering[Scope] = Ordering.by {
+    given ordering: Ordering[Scope] = Ordering.by:
       case Scope("compile") => 0
       case Scope("provided") => 1
       case Scope("runtime") => 2
       case Scope("test") => 3
       case _ => 4
-    }
 
     val compile: Scope = Scope("compile")
   end Scope

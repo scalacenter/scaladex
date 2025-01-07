@@ -44,7 +44,7 @@ import scaladex.core.model.search.ProjectHit
 import scaladex.core.model.search.SearchParams
 import scaladex.core.model.search.Sorting
 import scaladex.core.service.SearchEngine
-import scaladex.infra.Codecs.*
+import scaladex.infra.Codecs.given
 import scaladex.infra.config.ElasticsearchConfig
 import scaladex.infra.elasticsearch.ElasticsearchMapping.*
 import scaladex.infra.elasticsearch.RawProjectDocument
@@ -52,7 +52,7 @@ import scaladex.infra.elasticsearch.RawProjectDocument
 /** @param esClient
   *   TCP client of the elasticsearch server
   */
-class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: ExecutionContext)
+class ElasticsearchEngine(esClient: ElasticClient, index: String)(using ExecutionContext)
     extends SearchEngine
     with LazyLogging
     with Closeable:
@@ -494,7 +494,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
 end ElasticsearchEngine
 
 object ElasticsearchEngine extends LazyLogging:
-  def open(config: ElasticsearchConfig)(implicit ec: ExecutionContext): ElasticsearchEngine =
+  def open(config: ElasticsearchConfig)(using ExecutionContext): ElasticsearchEngine =
     logger.info(s"Using elasticsearch index: ${config.index}")
 
     val props = ElasticProperties(s"http://localhost:${config.port}")

@@ -10,7 +10,7 @@ import scaladex.core.model.Artifact.*
 import scaladex.core.model.Version
 
 class MavenCentralClientImplTests extends AsyncFunSpec with Matchers:
-  implicit val system: ActorSystem = ActorSystem("maven-central-client-tests")
+  given ActorSystem = ActorSystem("maven-central-client-tests")
   val client = new MavenCentralClientImpl()
   val groupId: GroupId = GroupId("ch.epfl.scala")
   val artifactId: ArtifactId = ArtifactId("sbt-scalafix_2.12_1.0")

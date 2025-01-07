@@ -12,7 +12,7 @@ import scaladex.infra.config.PostgreSQLConfig
 
 object DoobieUtils:
 
-  private implicit val cs: ContextShift[IO] =
+  private given ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
   def flyway(conf: PostgreSQLConfig): Flyway =

@@ -233,13 +233,13 @@ object Artifact:
   case class Name(value: String) extends AnyVal:
     override def toString: String = value
   object Name:
-    implicit val ordering: Ordering[Name] = Ordering.by(_.value)
+    given ordering: Ordering[Name] = Ordering.by(_.value)
 
   case class GroupId(value: String) extends AnyVal:
     override def toString: String = value
     def mavenUrl: String = value.replace('.', '/')
   object GroupId:
-    implicit val groupIdOrdering: Ordering[GroupId] = Ordering.by(_.value)
+    given ordering: Ordering[GroupId] = Ordering.by(_.value)
 
   case class ArtifactId(name: Name, binaryVersion: BinaryVersion):
     override def toString = value

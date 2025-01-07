@@ -25,8 +25,8 @@ import scaladex.core.util.ScalaExtensions.*
 import scaladex.infra.config.ElasticsearchConfig
 
 class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAndAfterAll with BeforeAndAfterEach:
-  implicit override val executionContext: ExecutionContext =
-    ExecutionContext.global
+  given ec: ExecutionContext = ExecutionContext.global
+  override def executionContext: ExecutionContext = ec
 
   val config: ElasticsearchConfig = ElasticsearchConfig.load()
   val searchEngine: ElasticsearchEngine = ElasticsearchEngine.open(config)

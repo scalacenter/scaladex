@@ -29,7 +29,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
   private val searchEngine = ElasticsearchEngine.open(config.elasticsearch)
 
   override def beforeAll(): Unit =
-    implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+    given ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     val datasource = DoobieUtils.getHikariDataSource(config.database)
     val transactor = DoobieUtils.transactor(datasource)
     transactor

@@ -16,7 +16,7 @@ import scaladex.core.test.Values.*
 import scaladex.infra.config.GithubConfig
 
 class GithubClientImplTests extends AsyncFunSpec with Matchers:
-  implicit val system: ActorSystem = ActorSystem("github-client-tests")
+  given ActorSystem = ActorSystem("github-client-tests")
   val config: GithubConfig = GithubConfig.load()
   val isCI = System.getenv("CI") != null
   val token = config.token.getOrElse(throw new Exception(s"Missing GITHUB_TOKEN"))

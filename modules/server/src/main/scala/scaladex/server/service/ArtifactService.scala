@@ -10,7 +10,7 @@ import scaladex.core.model.*
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions.*
 
-class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext) extends LazyLogging:
+class ArtifactService(database: SchedulerDatabase)(using ExecutionContext) extends LazyLogging:
   def getVersions(
       groupId: Artifact.GroupId,
       artifactId: Artifact.ArtifactId,

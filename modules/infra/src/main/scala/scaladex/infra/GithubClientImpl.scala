@@ -38,10 +38,11 @@ import scaladex.core.model.UserState
 import scaladex.core.service.GithubClient
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.core.util.Secret
+import scaladex.infra.Codecs.given
 import scaladex.infra.github.GithubModel
-import scaladex.infra.github.GithubModel.*
+import scaladex.infra.github.GithubModel.{*, given}
 
-class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
+class GithubClientImpl(token: Secret)(using system: ActorSystem)
     extends CommonAkkaHttpClient
     with GithubClient
     with LazyLogging:
@@ -49,7 +50,7 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
   private val acceptJson = RawHeader("Accept", "application/vnd.github.v3+json")
   private val acceptHtmlVersion = RawHeader("Accept", "application/vnd.github.VERSION.html")
 
-  private implicit val ec: ExecutionContextExecutor = system.dispatcher
+  private given ExecutionContextExecutor = system.dispatcher
   override def initPoolClientFlow: Flow[
     (HttpRequest, Promise[HttpResponse]),
     (Try[HttpResponse], Promise[HttpResponse]),
@@ -244,11 +245,9 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
           |  }
           }""".stripMargin
     val request = graphqlRequest(query)
-    get[GraphQLPage[Project.Organization]](request)(
-      graphqlPageDecoder("data", "user", "organizations") { d =>
-        d.downField("login").as[String].map(Project.Organization.apply)
-      }
-    )
+    get[GraphQLPage[Project.Organization]](request)(using graphqlPageDecoder("data", "user", "organizations") { d =>
+      d.downField("login").as[String].map(Project.Organization.apply)
+    })
   end getUserOrganizationsPage
 
   private def getUserRepositoriesPage(
@@ -272,7 +271,7 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
           |}
           |""".stripMargin
     val request = graphqlRequest(query)
-    get[GraphQLPage[RepoWithPermission]](request)(graphqlPageDecoder("data", "user", "repositories"))
+    get[GraphQLPage[RepoWithPermission]](request)(using graphqlPageDecoder("data", "user", "repositories"))
   end getUserRepositoriesPage
 
   private def getOrganizationProjectsPage(user: String, organization: Project.Organization)(
@@ -298,7 +297,9 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
           |}
           |""".stripMargin
     val request = graphqlRequest(query)
-    get[GraphQLPage[RepoWithPermission]](request)(graphqlPageDecoder("data", "user", "organization", "repositories"))
+    get[GraphQLPage[RepoWithPermission]](request)(
+      using graphqlPageDecoder("data", "user", "organization", "repositories")
+    )
   end getOrganizationProjectsPage
 
   private def getAllRecursively[T](f: Option[String] => Future[GraphQLPage[T]]): Future[Seq[T]] =
@@ -363,7 +364,7 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
 
   private def get[A](
       request: HttpRequest
-  )(implicit decoder: io.circe.Decoder[A]): Future[A] =
+  )(using io.circe.Decoder[A]): Future[A] =
     getRaw(request).flatMap { case (_, entity) => Unmarshal(entity).to[A] }
 
   private def getRaw(request: HttpRequest): Future[(Seq[HttpHeader], ResponseEntity)] =

@@ -25,8 +25,7 @@ sealed trait GithubStatus extends Ordered[GithubStatus]:
     case _: GithubStatus.Failed => true
     case _ => false
 
-  override def compare(that: GithubStatus): Int =
-    GithubStatus.ordering.compare(this, that)
+  override def compare(that: GithubStatus): Int = Ordering[GithubStatus].compare(this, that)
 end GithubStatus
 
 object GithubStatus:
@@ -36,8 +35,8 @@ object GithubStatus:
   case class NotFound(updateDate: Instant) extends GithubStatus
   case class Failed(updateDate: Instant, errorCode: Int, errorMessage: String) extends GithubStatus
 
-  implicit val ordering: Ordering[GithubStatus] = Ordering.by {
+  given ordering: Ordering[GithubStatus] = Ordering.by:
     case GithubStatus.Unknown(_) => Instant.MIN
     case githubStatus: GithubStatus => githubStatus.updateDate
-  }
+
 end GithubStatus

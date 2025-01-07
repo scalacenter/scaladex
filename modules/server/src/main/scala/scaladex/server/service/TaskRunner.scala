@@ -11,7 +11,7 @@ import scaladex.core.util.ScalaExtensions.*
 import scaladex.view.Task
 
 class TaskRunner private (val task: Task, user: String, input: Seq[(String, String)], run: () => Future[String])(
-    implicit ec: ExecutionContext
+    using ExecutionContext
 ):
   private val start = Instant.now()
   private var state: Task.State = Task.Running(start)
@@ -28,6 +28,6 @@ end TaskRunner
 
 object TaskRunner:
   def run(task: Task, user: String, input: Seq[(String, String)])(run: () => Future[String])(
-      implicit ec: ExecutionContext
+      using ExecutionContext
   ) =
     new TaskRunner(task, user, input, run)

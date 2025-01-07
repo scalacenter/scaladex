@@ -43,7 +43,7 @@ object GithubModel:
     def ref: Project.Reference = Project.Reference.from(owner, name)
   end Repository
 
-  implicit val repositoryDecoder: Decoder[Repository] = new Decoder[Repository]:
+  given Decoder[Repository] = new Decoder[Repository]:
     final def apply(cursor: HCursor): Decoder.Result[Repository] =
       val c = cursor.withFocus(json => json.dropNullValues)
       for
@@ -90,7 +90,7 @@ object GithubModel:
 
   case class Topic(value: String) extends AnyVal
 
-  implicit val TopicDecoder: Decoder[List[Topic]] = new Decoder[List[Topic]]:
+  given Decoder[List[Topic]] = new Decoder[List[Topic]]:
     final def apply(c: HCursor): Decoder.Result[List[Topic]] =
       for value <- c.downField("names").as[List[String]]
       yield value.map(Topic.apply)
@@ -104,7 +104,7 @@ object GithubModel:
     def toGithubContributor: GithubContributor =
       GithubContributor(login, avatar_url, Url(html_url), contributions)
 
-  implicit val ContributorDecoder: Decoder[Contributor] = deriveDecoder
+  given Decoder[Contributor] = deriveDecoder
 
   case class CommunityProfile(
       contributingFile: Option[String],
@@ -112,7 +112,7 @@ object GithubModel:
       licenceFile: Option[String]
   )
 
-  implicit val communityProfileDecoder: Decoder[CommunityProfile] = new Decoder[CommunityProfile]:
+  given Decoder[CommunityProfile] = new Decoder[CommunityProfile]:
     final def apply(c: HCursor): Decoder.Result[CommunityProfile] =
       for
         contributingFile <- c.downField("files").downField("contributing").downField("html_url").as[Option[String]]
@@ -129,7 +129,7 @@ object GithubModel:
     def toGithubIssue: GithubIssue =
       GithubIssue(number = number, title = title, url = Url(url))
 
-  implicit val openIssueDecoder: Decoder[Option[OpenIssue]] = new Decoder[Option[OpenIssue]]:
+  given Decoder[Option[OpenIssue]] = new Decoder[Option[OpenIssue]]:
     final def apply(c: HCursor): Decoder.Result[Option[OpenIssue]] =
       for
         isPullrequest <- c.downField("pull_request").as[Option[Json]]
@@ -143,7 +143,7 @@ object GithubModel:
   case class GraphQLPage[T](endCursor: Option[String], hasNextPage: Boolean, nodes: Seq[T])
   case class RepoWithPermission(nameWithOwner: String, viewerPermission: String)
 
-  implicit val repoWithPermissionDecoder: Decoder[RepoWithPermission] = deriveDecoder
+  given Decoder[RepoWithPermission] = deriveDecoder
 
   def graphqlPageDecoder[T: Decoder](downFields: String*): Decoder[GraphQLPage[T]] =
     (c: HCursor) =>
@@ -159,10 +159,11 @@ object GithubModel:
       model.UserInfo(login, name, avatarUrl, token)
 
   val userInfoCaseClassDecoder: Decoder[UserInfo] = deriveDecoder
-  implicit val userInfoDecoder: Decoder[UserInfo] =
+
+  given Decoder[UserInfo] =
     (c: HCursor) => c.downField("data").downField("viewer").as[UserInfo](userInfoCaseClassDecoder)
 
-  implicit val githubCommitActivityDecoder: Decoder[GithubCommitActivity] = new Decoder[GithubCommitActivity]:
+  given Decoder[GithubCommitActivity] = new Decoder[GithubCommitActivity]:
     final def apply(c: HCursor): Decoder.Result[GithubCommitActivity] =
       for
         week <- c.downField("week").as[Long].map(Instant.ofEpochSecond)

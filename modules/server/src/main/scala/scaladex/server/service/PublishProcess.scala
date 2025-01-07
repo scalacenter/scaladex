@@ -38,9 +38,9 @@ class PublishProcess(
     artifactService: ArtifactService,
     pomsReader: PomsReader,
     env: Env
-)(implicit system: ActorSystem)
+)(using system: ActorSystem)
     extends LazyLogging:
-  import system.dispatcher
+  private given ExecutionContext = system.dispatcher
 
   def publishPom(
       path: String,
@@ -124,8 +124,8 @@ end PublishProcess
 
 object PublishProcess:
   def apply(paths: DataPaths, filesystem: Storage, database: SchedulerDatabase, env: Env)(
-      implicit ec: ExecutionContext,
-      actorSystem: ActorSystem
+      using ExecutionContext,
+      ActorSystem
   ): PublishProcess =
     val githubExtractor = new GithubRepoExtractor(paths)
     val converter = new ArtifactConverter(paths)

@@ -11,7 +11,7 @@ import org.scalajs.dom.Node
 import scaladex.core.api.AutocompletionResponse
 import scalatags.JsDom.all.*
 
-class Autocompletion(implicit ec: ExecutionContext):
+class Autocompletion(using ExecutionContext):
   case class CompletionSelection(
       selected: Option[Int],
       choices: Seq[AutocompletionResponse]

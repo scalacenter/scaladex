@@ -7,7 +7,7 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.Env
 import scaladex.core.model.Project
 import scaladex.core.model.UserState
-import scaladex.server.TwirlSupport.*
+import scaladex.server.TwirlSupport.given
 import scaladex.server.service.AdminService
 import scaladex.view
 import scaladex.view.Task

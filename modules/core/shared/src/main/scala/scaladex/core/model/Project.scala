@@ -62,9 +62,8 @@ object Project:
 
   case class Reference(organization: Organization, repository: Repository) extends Ordered[Reference]:
     override def toString: String = s"$organization/$repository"
+    override def compare(that: Reference): Int = Reference.ordering.compare(this, that)
 
-    override def compare(that: Reference): Int =
-      Reference.ordering.compare(this, that)
   object Reference:
     def from(org: String, repo: String): Reference =
       Reference(Organization(org), Repository(repo))
@@ -76,9 +75,9 @@ object Project:
 
     def unsafe(value: String): Reference = parse(value).get
 
-    implicit val ordering: Ordering[Reference] =
-      Ordering.by(ref => (ref.organization.value, ref.repository.value))
+    given ordering: Ordering[Reference] = Ordering.by(ref => (ref.organization.value, ref.repository.value))
   end Reference
+
   def default(
       ref: Project.Reference,
       creationDate: Option[Instant] = None,

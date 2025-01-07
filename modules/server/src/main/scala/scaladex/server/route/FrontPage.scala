@@ -9,12 +9,12 @@ import play.twirl.api.HtmlFormat
 import scaladex.core.model.*
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
-import scaladex.server.TwirlSupport.*
+import scaladex.server.TwirlSupport.given
 import scaladex.view.html.frontpage
 import scaladex.view.model.EcosystemHighlight
 import scaladex.view.model.EcosystemVersion
 
-class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(implicit ec: ExecutionContext):
+class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(using ExecutionContext):
   val limitOfProjects = 12
 
   def route(userState: Option[UserState]): Route = pathSingleSlash(complete(frontPage(userState)))

@@ -8,8 +8,6 @@ import scala.sys.process.Process
 
 import cats.effect.*
 import com.typesafe.scalalogging.LazyLogging
-import doobie.hikari.*
-import org.apache.pekko.actor.ActorSystem
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.core.util.TimeUtils
 import scaladex.data.init.Init
@@ -43,18 +41,16 @@ object Main extends LazyLogging:
 
     logger.info("input: " + args.toList.toString)
 
-    implicit val system: ActorSystem = ActorSystem()
-    implicit val ec: ExecutionContext = system.dispatcher
+    given ec: ExecutionContext = ExecutionContext.global
 
     val dataPaths = DataPaths.from(config.filesystem)
     val localStorage = FilesystemStorage(config.filesystem)
     val datasource = DoobieUtils.getHikariDataSource(config.database)
 
     def usingDatabase(f: SqlDatabase => Future[Unit]): Unit =
-      implicit val cs = IO.contextShift(system.dispatcher)
-      val transactor: Resource[IO, HikariTransactor[IO]] =
-        DoobieUtils.transactor(datasource)
-      transactor
+      given ContextShift[IO] = IO.contextShift(ec)
+      DoobieUtils
+        .transactor(datasource)
         .use { xa =>
           val database = new SqlDatabase(datasource, xa)
           IO.fromFuture(IO(f(database)))

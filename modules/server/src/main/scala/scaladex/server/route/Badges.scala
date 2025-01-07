@@ -24,7 +24,7 @@ import scaladex.core.model.Version
 import scaladex.core.model.Version.PreferStable
 import scaladex.core.service.WebDatabase
 
-class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext):
+class Badges(database: WebDatabase)(using ExecutionContext):
 
   private val shields =
     parameters("color".?, "style".?, "logo".?, "logoWidth".as[Int].?)

@@ -1,5 +1,6 @@
 package scaladex.server
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.*
 import scala.util.Failure
 import scala.util.Success
@@ -41,9 +42,9 @@ object Server extends LazyLogging:
       logger.info(config.filesystem.toString)
 
       if config.env.isDev || config.env.isProd then PidLock.create("SERVER")
-      implicit val system: ActorSystem = ActorSystem("scaladex")
-      import system.dispatcher
-      implicit val cs = IO.contextShift(system.dispatcher)
+      given system: ActorSystem = ActorSystem("scaladex")
+      given ExecutionContext = system.dispatcher
+      given ContextShift[IO] = IO.contextShift(system.dispatcher)
 
       // the ESRepo will not be closed until the end of the process,
       // because of the sbtResolver mode
@@ -65,7 +66,7 @@ object Server extends LazyLogging:
             val githubClient = config.github.token.map(new GithubClientImpl(_))
             val paths = DataPaths.from(config.filesystem)
             val filesystem = FilesystemStorage(config.filesystem)
-            val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(publishPool, system)
+            val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(using publishPool, system)
             val mavenCentralClient = new MavenCentralClientImpl()
             val mavenCentralService =
               new MavenCentralService(paths, schedulerDatabase, mavenCentralClient, publishProcess)
@@ -113,7 +114,7 @@ object Server extends LazyLogging:
       searchEngine: ElasticsearchEngine,
       resetElastic: Boolean
   )(
-      implicit cs: ContextShift[IO]
+      using ContextShift[IO]
   ): IO[Unit] =
     logger.info("Applying flyway migration to database")
     for
@@ -131,9 +132,9 @@ object Server extends LazyLogging:
       adminService: AdminService,
       publishProcess: PublishProcess
   )(
-      implicit actor: ActorSystem
+      using system: ActorSystem
   ): Route =
-    import actor.dispatcher
+    given ExecutionContext = system.dispatcher
 
     val githubAuth = GithubAuthImpl(config.oAuth2)
 
@@ -177,7 +178,7 @@ object Server extends LazyLogging:
     val exceptionHandler = ExceptionHandler {
       case NonFatal(cause) =>
         extractUri { uri =>
-          import scaladex.server.TwirlSupport.*
+          import scaladex.server.TwirlSupport.given
           logger.error(s"Unhandled exception in $uri", cause)
           complete(StatusCodes.InternalServerError, notfound(config.env, None))
         }

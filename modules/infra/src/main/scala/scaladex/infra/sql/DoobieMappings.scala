@@ -12,62 +12,62 @@ import io.circe.*
 import scaladex.core.model.Project.*
 import scaladex.core.model.*
 import scaladex.core.util.Secret
-import scaladex.infra.Codecs.*
+import scaladex.infra.Codecs.given
 
 object DoobieMappings extends Instances with JavaTimeInstances:
-  implicit val contributorMeta: Meta[Seq[GithubContributor]] =
+  given given_Meta_Seq_GithubContributor: Meta[Seq[GithubContributor]] =
     Meta[String].timap(fromJson[Seq[GithubContributor]](_).get)(toJson(_))
-  implicit val githubIssuesMeta: Meta[Seq[GithubIssue]] =
+  given given_Meta_Seq_GithubIssue: Meta[Seq[GithubIssue]] =
     Meta[String].timap(fromJson[Seq[GithubIssue]](_).get)(toJson(_))
-  implicit val documentationPattern: Meta[Seq[DocumentationPattern]] =
+  given given_Meta_Seq_DocumentationPattern: Meta[Seq[DocumentationPattern]] =
     Meta[String].timap(fromJson[Seq[DocumentationPattern]](_).get)(toJson(_))
-  implicit val githubCommitActivityMeta: Meta[Seq[GithubCommitActivity]] =
+  given given_Meta_Seq_GithubCommitActivity: Meta[Seq[GithubCommitActivity]] =
     Meta[String].timap(fromJson[Seq[GithubCommitActivity]](_).get)(toJson(_))
-  implicit val topicsMeta: Meta[Set[String]] =
+  given given_Meta_Set_String: Meta[Set[String]] =
     Meta[String].timap(_.split(",").filter(_.nonEmpty).toSet)(_.mkString(","))
-  implicit val artifactNamesMeta: Meta[Set[Artifact.Name]] =
+  given given_Meta_Set_Artifact_Name: Meta[Set[Artifact.Name]] =
     Meta[String].timap(_.split(",").filter(_.nonEmpty).map(Artifact.Name.apply).toSet)(_.mkString(","))
-  implicit val versionMeta: Meta[Version] = Meta[String].timap(Version(_))(_.value)
-  implicit val groupIdMeta: Meta[Artifact.GroupId] = Meta[String].timap(Artifact.GroupId(_))(_.value)
-  implicit val artifactIdMeta: Meta[Artifact.ArtifactId] = Meta[String].timap(Artifact.ArtifactId(_))(_.value)
-  implicit val artifactNameMeta: Meta[Artifact.Name] = Meta[String].timap(Artifact.Name(_))(_.value)
-  implicit val binaryVersionMeta: Meta[BinaryVersion] =
+  given Meta[Version] = Meta[String].timap(Version(_))(_.value)
+  given Meta[Artifact.GroupId] = Meta[String].timap(Artifact.GroupId(_))(_.value)
+  given Meta[Artifact.ArtifactId] = Meta[String].timap(Artifact.ArtifactId(_))(_.value)
+  given Meta[Artifact.Name] = Meta[String].timap(Artifact.Name(_))(_.value)
+  given Meta[BinaryVersion] =
     Meta[String].timap { x =>
       BinaryVersion.parse(x).getOrElse(throw new Exception(s"Failed to parse $x as BinaryVersion"))
     }(_.value)
-  implicit val platformMeta: Meta[Platform] =
+  given Meta[Platform] =
     Meta[String]
       .timap(x => Platform.parse(x).getOrElse(throw new Exception(s"Failed to parse $x as Platform")))(_.value)
-  implicit val languageVersionMeta: Meta[Language] =
+  given Meta[Language] =
     Meta[String]
       .timap(x => Language.parse(x).getOrElse(throw new Exception(s"Failed to parse $x as Language")))(_.value)
-  implicit val scopeMeta: Meta[ArtifactDependency.Scope] = Meta[String].timap(ArtifactDependency.Scope.apply)(_.value)
-  implicit val licenseMeta: Meta[License] =
+  given Meta[ArtifactDependency.Scope] = Meta[String].timap(ArtifactDependency.Scope.apply)(_.value)
+  given Meta[License] =
     Meta[String]
       .timap(x => License.get(x).getOrElse(throw new Exception(s"Failed to parse $x as License")))(_.shortName)
-  implicit val licensesMeta: Meta[Set[License]] = Meta[String].timap(fromJson[Seq[License]](_).get.toSet)(toJson(_))
-  implicit val resolverMeta: Meta[Resolver] = Meta[String].timap(Resolver.from(_).get)(_.name)
-  implicit val developerMeta: Meta[Seq[Contributor]] = Meta[String].timap(fromJson[Seq[Contributor]](_).get)(toJson(_))
-  implicit val urlMeta: Meta[Url] = Meta[String].timap(Url(_))(_.target)
+  given given_Meta_Set_License: Meta[Set[License]] = Meta[String].timap(fromJson[Seq[License]](_).get.toSet)(toJson(_))
+  given Meta[Resolver] = Meta[String].timap(Resolver.from(_).get)(_.name)
+  given Meta[Seq[Contributor]] = Meta[String].timap(fromJson[Seq[Contributor]](_).get)(toJson(_))
+  given Meta[Url] = Meta[String].timap(Url(_))(_.target)
 
-  implicit val secretMeta: Meta[Secret] = Meta[String].imap[Secret](Secret.apply)(_.decode)
-  implicit val uuidMeta: Meta[UUID] = Meta[String].imap[UUID](UUID.fromString)(_.toString)
+  given Meta[Secret] = Meta[String].imap[Secret](Secret.apply)(_.decode)
+  given Meta[UUID] = Meta[String].imap[UUID](UUID.fromString)(_.toString)
 
-  implicit val projectRepositoryMeta: Meta[Project.Repository] = Meta[String].timap(Project.Repository.apply)(_.value)
-  implicit val projectOrganizationMeta: Meta[Project.Organization] =
+  given Meta[Project.Repository] = Meta[String].timap(Project.Repository.apply)(_.value)
+  given Meta[Project.Organization] =
     Meta[String].timap(Project.Organization.apply)(_.value)
-  implicit val projectReferencesMeta: Meta[Set[Project.Reference]] =
+  given given_Meta_Set_Project_Reference: Meta[Set[Project.Reference]] =
     Meta[String].timap(_.split(",").filter(_.nonEmpty).map(Project.Reference.unsafe).toSet)(_.mkString(","))
-  implicit val projectOrganizationsMeta: Meta[Set[Project.Organization]] =
+  given given_Meta_Set_Project_Organization: Meta[Set[Project.Organization]] =
     Meta[String].timap(_.split(",").filter(_.nonEmpty).map(Project.Organization.apply).toSet)(_.mkString(","))
-  implicit val categoryMeta: Meta[Category] = Meta[String].timap(Category.byLabel)(_.label)
+  given Meta[Category] = Meta[String].timap(Category.byLabel)(_.label)
 
-  implicit val projectReferenceRead: Read[Project.Reference] =
+  given Read[Project.Reference] =
     Read[(Organization, Repository)].map { case (org, repo) => Project.Reference(org, repo) }
-  implicit val projectReferenceWrite: Write[Project.Reference] =
+  given Write[Project.Reference] =
     Write[(String, String)].contramap(p => (p.organization.value, p.repository.value))
 
-  implicit val githubStatusRead: Read[GithubStatus] =
+  given Read[GithubStatus] =
     Read[(String, Instant, Option[Organization], Option[Repository], Option[Int], Option[String])]
       .map {
         case ("Unknown", updateDate, _, _, _, _) => GithubStatus.Unknown(updateDate)
@@ -80,7 +80,7 @@ object DoobieMappings extends Instances with JavaTimeInstances:
         case invalid =>
           throw new Exception(s"Cannot read github status from database: $invalid")
       }
-  implicit val githubStatusWrite: Write[GithubStatus] =
+  given Write[GithubStatus] =
     Write[(String, Instant, Option[Organization], Option[Repository], Option[Int], Option[String])]
       .contramap {
         case GithubStatus.Unknown(updateDate) => ("Unknown", updateDate, None, None, None, None)
@@ -92,7 +92,7 @@ object DoobieMappings extends Instances with JavaTimeInstances:
           ("Failed", updateDate, None, None, Some(errorCode), Some(errorMessage))
       }
 
-  implicit val projectRead: Read[Project] =
+  given Read[Project] =
     Read[(Organization, Repository, Option[Instant], GithubStatus, Option[GithubInfo], Option[Project.Settings])]
       .map {
         case (organization, repository, creationDate, githubStatus, githubInfo, settings) =>
@@ -106,28 +106,28 @@ object DoobieMappings extends Instances with JavaTimeInstances:
           )
       }
 
-  implicit val writeUserInfo: Write[UserInfo] =
+  given Write[UserInfo] =
     Write[(String, Option[String], String, Secret)].contramap {
       case UserInfo(login, name, avatarUrl, token) => (login, name, avatarUrl, token)
     }
-  implicit val readUserInfo: Read[UserInfo] =
+  given Read[UserInfo] =
     Read[(String, Option[String], String, Secret)].map {
       case (login, name, avatarUrl, token) => UserInfo(login, name, avatarUrl, token)
     }
-  implicit val writeUserState: Write[UserState] =
+  given Write[UserState] =
     Write[(Set[Project.Reference], Set[Project.Organization], UserInfo)].contramap {
       case UserState(repos, orgs, info) => (repos, orgs, info)
     }
-  implicit val readUserState: Read[UserState] =
+  given Read[UserState] =
     Read[(Set[Project.Reference], Set[Project.Organization], UserInfo)].map {
       case (repos, orgs, info) => UserState(repos, orgs, info)
     }
   // not strictly needed, but keeping it to speed compilation up
-  implicit val readArtifact: Read[Artifact] = Read.given_Read_P
+  given Read[Artifact] = Read.given_Read_P
 
-  private def toJson[A](v: A)(implicit e: Encoder[A]): String =
-    e.apply(v).noSpaces
+  private def toJson[A](v: A)(using Encoder[A]): String =
+    Encoder[A].apply(v).noSpaces
 
-  private def fromJson[A](s: String)(implicit d: Decoder[A]): Try[A] =
-    parser.parse(s).flatMap(d.decodeJson).toTry
+  private def fromJson[A](s: String)(using Decoder[A]): Try[A] =
+    parser.parse(s).flatMap(Decoder[A].decodeJson).toTry
 end DoobieMappings

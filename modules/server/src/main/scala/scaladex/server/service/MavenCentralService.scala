@@ -18,7 +18,7 @@ class MavenCentralService(
     database: SchedulerDatabase,
     mavenCentralClient: MavenCentralClient,
     publishProcess: PublishProcess
-)(implicit ec: ExecutionContext)
+)(using ExecutionContext)
     extends LazyLogging:
 
   def findNonStandard(): Future[String] =

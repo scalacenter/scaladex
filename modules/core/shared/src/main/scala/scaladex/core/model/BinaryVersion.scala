@@ -31,7 +31,7 @@ final case class BinaryVersion(platform: Platform, language: Language):
 end BinaryVersion
 
 object BinaryVersion:
-  implicit val ordering: Ordering[BinaryVersion] = Ordering.by(v => (v.platform, v.language))
+  given ordering: Ordering[BinaryVersion] = Ordering.by(v => (v.platform, v.language))
 
   def IntermediateParser[A: P]: P[(String, Option[Version], Option[Version])] =
     ("_sjs" | "_native" | "_mill" | "_sbt" | "_" | "").! ~ (Version.SemanticParser.?) ~ ("_" ~ Version.SemanticParser).?

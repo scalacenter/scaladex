@@ -5,7 +5,7 @@ import doobie.*
 import org.flywaydb.core.api.migration.BaseJavaMigration
 import org.flywaydb.core.api.migration.Context
 import scaladex.core.model.*
-import scaladex.infra.sql.DoobieMappings.*
+import scaladex.infra.sql.DoobieMappings.given
 import scaladex.infra.sql.DoobieUtils.*
 
 class V17__add_mill_platform extends BaseJavaMigration with ScaladexBaseMigration with LazyLogging:

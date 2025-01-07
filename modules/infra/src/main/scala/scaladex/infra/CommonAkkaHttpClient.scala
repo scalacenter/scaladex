@@ -21,7 +21,7 @@ import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.stream.scaladsl.SourceQueueWithComplete
 
-abstract class CommonAkkaHttpClient(implicit system: ActorSystem) extends FailFastCirceSupport:
+abstract class CommonAkkaHttpClient(using ActorSystem) extends FailFastCirceSupport:
 
   def initPoolClientFlow: Flow[
     (HttpRequest, Promise[HttpResponse]),
@@ -41,7 +41,7 @@ abstract class CommonAkkaHttpClient(implicit system: ActorSystem) extends FailFa
 
   def queueRequest(
       request: HttpRequest
-  )(implicit ec: ExecutionContextExecutor): Future[HttpResponse] =
+  )(using ExecutionContextExecutor): Future[HttpResponse] =
     val responsePromise = Promise[HttpResponse]()
     queue.offer(request -> responsePromise).flatMap {
       case QueueOfferResult.Enqueued => responsePromise.future

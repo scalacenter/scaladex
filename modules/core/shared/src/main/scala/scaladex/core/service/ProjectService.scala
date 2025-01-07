@@ -6,7 +6,7 @@ import scala.concurrent.Future
 import scaladex.core.model.*
 import scaladex.core.model.search.SearchParams
 
-class ProjectService(database: WebDatabase, searchEngine: SearchEngine)(implicit context: ExecutionContext):
+class ProjectService(database: WebDatabase, searchEngine: SearchEngine)(using ExecutionContext):
   def getProjects(languages: Seq[Language], platforms: Seq[Platform]): Future[Seq[Project.Reference]] =
     val searchParams = SearchParams(languages = languages, platforms = platforms)
     searchEngine.findRefs(searchParams)

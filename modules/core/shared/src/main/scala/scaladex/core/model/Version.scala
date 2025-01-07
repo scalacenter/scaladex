@@ -23,11 +23,10 @@ sealed trait Version extends Ordered[Version]:
 end Version
 
 object Version:
-  implicit val ordering: Ordering[Version] = Ordering.by {
+  given ordering: Ordering[Version] = Ordering.by:
     case Custom(value) => (Int.MinValue, Int.MinValue, Int.MinValue, Int.MinValue, None, Some(value))
     case SemanticLike(maj, min, p, p2, pr, m) =>
       (maj, min.getOrElse(Int.MaxValue), p.getOrElse(Int.MaxValue), p2.getOrElse(Int.MaxValue), pr, m)
-  }
 
   // We prefer the latest stable artifact.
   val PreferStable: Ordering[Version] =

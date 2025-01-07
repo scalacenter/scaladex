@@ -20,10 +20,10 @@ import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.Sorting
 import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions.*
-import scaladex.server.TwirlSupport.*
+import scaladex.server.TwirlSupport.given
 import scaladex.view.awesome.html
 
-class AwesomePages(env: Env, searchEngine: SearchEngine)(implicit ec: ExecutionContext):
+class AwesomePages(env: Env, searchEngine: SearchEngine)(using ExecutionContext):
 
   private val categoryM: PathMatcher1[Category] = Segment.flatMap(Category.byLabel.get)
 

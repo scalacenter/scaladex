@@ -11,7 +11,7 @@ import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.Storage
 import scaladex.core.util.ScalaExtensions.*
 
-class SubIndex(filesystem: Storage, database: SchedulerDatabase)(implicit ec: ExecutionContext) extends LazyLogging:
+class SubIndex(filesystem: Storage, database: SchedulerDatabase)(using ExecutionContext) extends LazyLogging:
   def run(): Future[Unit] =
     val projectSelection =
       Using.resource(Source.fromResource("subindex.txt", getClass.getClassLoader)) { source =>
@@ -40,6 +40,6 @@ class SubIndex(filesystem: Storage, database: SchedulerDatabase)(implicit ec: Ex
 end SubIndex
 
 object SubIndex:
-  def run(filesystem: Storage, database: SchedulerDatabase)(implicit ec: ExecutionContext): Future[Unit] =
+  def run(filesystem: Storage, database: SchedulerDatabase)(using ExecutionContext): Future[Unit] =
     val subIndex = new SubIndex(filesystem, database)
     subIndex.run()

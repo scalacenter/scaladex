@@ -20,7 +20,7 @@ object ScalaJs:
 
   val stableVersions: Set[ScalaJs] = Set(`0.6`, `1.x`)
 
-  implicit val ordering: Ordering[ScalaJs] = Ordering.by(p => p.asInstanceOf[Platform])
+  given ordering: Ordering[ScalaJs] = Ordering.by(p => p.asInstanceOf[Platform])
 
 case class SbtPlugin(version: Version) extends Platform:
   override def toString: String = s"sbt $version"
@@ -42,7 +42,7 @@ object SbtPlugin:
 
   val stableVersions: Set[SbtPlugin] = Set(`0.13`, `1.x`, `2.x`)
 
-  implicit val ordering: Ordering[SbtPlugin] = Ordering.by(p => p.asInstanceOf[Platform])
+  given ordering: Ordering[SbtPlugin] = Ordering.by(p => p.asInstanceOf[Platform])
 end SbtPlugin
 
 case class ScalaNative(version: Version) extends Platform:
@@ -57,7 +57,7 @@ object ScalaNative:
 
   val stableVersions: Set[ScalaNative] = Set(`0.3`, `0.4`, `0.5`)
 
-  implicit val ordering: Ordering[ScalaNative] = Ordering.by(p => p.asInstanceOf[Platform])
+  given ordering: Ordering[ScalaNative] = Ordering.by(p => p.asInstanceOf[Platform])
 
 case class MillPlugin(version: Version) extends Platform:
   override def toString: String = s"Mill $version"
@@ -71,10 +71,10 @@ case class MillPlugin(version: Version) extends Platform:
 object MillPlugin:
   val `0.10` = MillPlugin(Version(0, 10))
 
-  implicit val ordering: Ordering[MillPlugin] = Ordering.by(p => p.asInstanceOf[Platform])
+  given ordering: Ordering[MillPlugin] = Ordering.by(p => p.asInstanceOf[Platform])
 
 object Platform:
-  implicit val ordering: Ordering[Platform] = Ordering.by {
+  given ordering: Ordering[Platform] = Ordering.by {
     case Jvm => (5, None)
     case ScalaJs(version) => (4, Some(version))
     case ScalaNative(version) => (3, Some(version))

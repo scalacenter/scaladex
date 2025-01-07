@@ -17,40 +17,28 @@ import scaladex.core.web.ArtifactsPageParams
 
 package object html:
 
-  implicit class QueryAppend(uri: Uri):
+  extension (uri: Uri)
 
-    def appendQuery(kv: (String, String)): Uri = uri.withQuery(
-      Query(
-        (uri
-          .query(java.nio.charset.Charset.forName("UTF-8")) ++ Vector(kv))*
-      )
-    )
+    def appendQuery(kv: (String, String)): Uri =
+      uri.withQuery(Query((uri.query(java.nio.charset.Charset.forName("UTF-8")) ++ Vector(kv))*))
 
-    def appendQuery(k: String, on: Boolean): Uri =
-      if on then uri.appendQuery(k -> "✓")
-      else uri
-    def appendQuery(k: String, vs: Seq[String]): Uri =
-      vs.foldLeft(uri) {
-        case (acc, v) =>
-          acc.appendQuery(k -> v)
-      }
-    def appendQuery(k: String, vs: Set[String]): Uri =
-      vs.foldLeft(uri) {
-        case (acc, v) =>
-          acc.appendQuery(k -> v)
-      }
+    def appendQuery(k: String, on: Boolean): Uri = if on then uri.appendQuery(k -> "✓") else uri
+
+    def appendQuery(k: String, vs: Seq[String]): Uri = vs.foldLeft(uri) { case (acc, v) => acc.appendQuery(k -> v) }
+
+    def appendQuery(k: String, vs: Set[String]): Uri = vs.foldLeft(uri) { case (acc, v) => acc.appendQuery(k -> v) }
+
     def appendQuery(k: String, ov: Option[String]): Uri =
       ov match
         case Some(v) => appendQuery(k -> v)
         case None => uri
-  end QueryAppend
+  end extension
 
   def ensureUri(in: String): String =
     if in.startsWith("https://") || in.startsWith("http://") then in
     else "http://" + in
 
   def paginationUri(params: SearchParams, uri: Uri, you: Boolean)(page: Int): Uri =
-
     val newUri = uri
       .appendQuery("sort" -> params.sorting.label)
       .appendQuery("topic", params.topics)

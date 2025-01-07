@@ -14,7 +14,7 @@ import scaladex.core.service.GithubClient
 import scaladex.core.service.WebDatabase
 import scaladex.core.util.ScalaExtensions.*
 
-class GithubUpdater(database: WebDatabase, github: GithubClient)(implicit ec: ExecutionContext) extends LazyLogging:
+class GithubUpdater(database: WebDatabase, github: GithubClient)(using ExecutionContext) extends LazyLogging:
   def updateAll(): Future[String] =
     database.getAllProjectsStatuses().flatMap { projectStatuses =>
       val projectToUpdate =
