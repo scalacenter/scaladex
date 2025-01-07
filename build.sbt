@@ -11,20 +11,14 @@ inThisBuild(
     // scalafixScalaBinaryVersion := "3",
     organization := "ch.epfl.scala",
     version := s"0.2.0+${githash()}",
-    excludeDependencies ++= {
-      scalaBinaryVersion.value match {
-        case "3" =>
-          Seq(
-            // from Coursier
-            ExclusionRule("org.scala-lang.modules", "scala-collection-compat_2.13"),
-            ExclusionRule("org.scala-lang.modules", "scala-xml_2.13"),
-            // from doobie-scalatest
-            ExclusionRule("org.scalatest", "scalatest_2.13"),
-            ExclusionRule("org.tpolecat", "doobie-core_2.13")
-          )
-        case _ => Seq.empty
-      }
-    }
+    excludeDependencies ++= Seq(
+      // from Coursier
+      ExclusionRule("org.scala-lang.modules", "scala-collection-compat_2.13"),
+      ExclusionRule("org.scala-lang.modules", "scala-xml_2.13"),
+      // from doobie-scalatest
+      ExclusionRule("org.scalatest", "scalatest_2.13"),
+      ExclusionRule("org.tpolecat", "doobie-core_2.13")
+    )
   )
 )
 
