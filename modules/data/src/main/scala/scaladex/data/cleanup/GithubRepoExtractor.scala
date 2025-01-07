@@ -6,14 +6,11 @@ import scala.io.Source
 import scala.util.Using
 import scala.util.matching.Regex
 
-import org.json4s.CustomSerializer
-import org.json4s.DefaultFormats
-import org.json4s.Formats
-import org.json4s.JValue
 import org.json4s.JsonAST.JField
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonAST.JString
-import org.json4s.native.Serialization.read
+import org.json4s._
+import org.json4s.native.Serialization
 import scaladex.core.model.Project
 import scaladex.infra.DataPaths
 
@@ -31,10 +28,8 @@ class GithubRepoExtractor(paths: DataPaths) {
   @nowarn("cat=deprecation")
   private val claims =
     Using.resource(Source.fromFile(paths.claims.toFile)) { source =>
-      read[Claims](source.mkString).claims
-        .filter(
-          _.repo != void
-        ) // when the repository is void, the project is not claimed
+      // when the repository is void, the project is not claimed
+      Serialization.read[Claims](source.mkString).claims.filter(_.repo != void)
     }
 
   private val claimedRepos = claims
