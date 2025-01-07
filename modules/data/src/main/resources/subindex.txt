@@ -38,7 +38,7 @@ lightbend/config
 pureconfig/pureconfig
 lambdista/config
 travisbrown/dhallj
-lightbend/scala-logging
+lightbend-labs/scala-logging
 outr/scribe
 tinylog-org/tinylog
 typelevel/log4cats
@@ -55,6 +55,7 @@ scalatest/scalatest
 holdenk/spark-testing-base
 playframework/anorm
 tpolecat/doobie
+typelevel/doobie
 zio/zio-quill
 sangria-graphql/sangria
 slick/slick
@@ -62,6 +63,7 @@ netflix/atlas
 flyway/flyway
 neo4j/neo4j
 sksamuel/elastic4s
+philippus/elastic4s
 outr/lucene4s
 elastic/elasticsearch-hadoop
 microsoft/hyperspace
@@ -76,7 +78,7 @@ karols/units
 typelevel/squants
 orkestra-tech/orkestra
 lightbend/sbt-google-cloud-storage
-heroku/sbt-heroku
+heroku/heroku-sbt-plugin
 verizon/helm
 akka/akka-management
 djspiewak/sbt-github-packages
@@ -96,6 +98,7 @@ rtimush/sbt-updates
 yoshiyoshifujii/sbt-aws-serverless
 cloudstateio/cloudstate
 dwijnand/sbt-dynver
+sbt/sbt-dynver
 gitbucket/gitbucket
 testcontainers/testcontainers-scala
 scalacenter/bloop
@@ -103,7 +106,7 @@ sbt/sbt
 pantsbuild/pants
 com-lihaoyi/mill
 build-server-protocol/build-server-protocol
-lightbend/mima
+lightbend-labs/mima
 scalameta/scalameta
 virtuslab/graphbuddy
 scoverage/sbt-scoverage
@@ -150,7 +153,7 @@ typelevel/cats
 scalaz/scalaz
 precog/matryoshka
 atnos-org/eff
-julien-truffaut/monocle
+optics-dev/monocle
 tofu-tf/tofu
 fthomas/refined
 epfl-lara/inox
@@ -165,7 +168,7 @@ scala/scala-parser-combinators
 sirthias/parboiled
 typelevel/cats-parse
 com-lihaoyi/fastparse
-shadaj/scalapy
+scalapy/scalapy
 scala-native/scala-native-bindgen
 projectglow/glow
 wavesplatform/waves
@@ -181,7 +184,6 @@ apache/predictionio
 scalanlp/nak
 spotify/featran
 eclipse/deeplearning4j
-deeplearning4j/deeplearning4j
 johnsnowlabs/spark-nlp
 scalanlp/chalk
 scalanlp/breeze
@@ -194,7 +196,7 @@ purplekingdomgames/indigo
 creativescala/doodle
 scalafx/scalafx
 chipsalliance/rocket-chip
-chipsalliance/chisel3
+chipsalliance/chisel
 pathikrit/better-files
 com-lihaoyi/os-lib
 zio/zio-process
@@ -241,7 +243,7 @@ vmunier/sbt-web-scalajs
 scalacenter/scalajs-bundler
 softwaremill/akka-http-session
 guardian/play-googleauth
-wix/accord
+wix-incubator/accord
 outr/mailgun4s
 akka/akka-http
 http4s/http4s
@@ -273,3 +275,5 @@ raquo/laminar
 outwatch/outwatch
 udashframework/udash-core
 banana-rdf/banana-rdf
+alexarchambault/mill-native-image
+ckipp01/mill-ci-release
