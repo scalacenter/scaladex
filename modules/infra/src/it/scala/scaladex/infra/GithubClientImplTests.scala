@@ -131,8 +131,6 @@ class GithubClientImplTests extends AsyncFunSpec with Matchers {
       yield repos should contain(Scala3.reference)
   }
 
-  private def testOrIgnore(name: String, ignored: Boolean = userState.isEmpty)(testFun: => Future[Assertion])(
-      implicit pos: Position
-  ): Unit =
-    if (ignored) ignore(name)(testFun)(pos) else it(name)(testFun)(pos)
+  private def testOrIgnore(name: String, ignored: Boolean = userState.isEmpty)(testFun: => Future[Assertion]): Unit =
+    if (ignored) ignore(name)(testFun) else it(name)(testFun)
 }
