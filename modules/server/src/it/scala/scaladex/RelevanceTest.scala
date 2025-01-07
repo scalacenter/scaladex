@@ -153,10 +153,9 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
       val mostDependedRefs = mostDepended.map(_.reference).toSet
       val expected = Seq(
         "scala/scala",
-        "scalatest/scalatest",
         "scala-js/scala-js",
-        "typelevel/scalacheck",
-        "typelevel/cats"
+        "scalatest/scalatest",
+        "scala/scala3"
       )
         .map(Project.Reference.unsafe)
       val missing = expected.filter(ref => !mostDependedRefs.contains(ref))
