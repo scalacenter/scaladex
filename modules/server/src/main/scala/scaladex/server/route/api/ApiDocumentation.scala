@@ -1,9 +1,10 @@
 package scaladex.server.route.api
 
+import scaladex.core.api.Endpoints
+
 import endpoints4s.openapi
 import endpoints4s.openapi.model.Info
 import endpoints4s.openapi.model.OpenApi
-import scaladex.core.api.Endpoints
 
 /** Documentation of the public HTTP API of Scaladex
   */

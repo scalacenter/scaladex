@@ -1,11 +1,12 @@
 package scaladex.client
 
+import scaladex.core.api.AutocompletionParams
+import scaladex.core.model.*
+
 import org.scalajs.dom.Element
 import org.scalajs.dom.HTMLInputElement
 import org.scalajs.dom.Node
 import org.scalajs.dom.document
-import scaladex.core.api.AutocompletionParams
-import scaladex.core.model.*
 
 object Dom:
   def getSearchRequest: Option[AutocompletionParams] =

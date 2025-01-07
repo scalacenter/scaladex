@@ -6,15 +6,6 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.control.NonFatal
 
-import cats.effect.ContextShift
-import cats.effect.IO
-import com.typesafe.scalalogging.LazyLogging
-import doobie.util.ExecutionContexts
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.http.scaladsl.*
-import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.server.Directives.*
-import org.apache.pekko.http.scaladsl.server.*
 import scaladex.core.service.ProjectService
 import scaladex.data.util.PidLock
 import scaladex.infra.DataPaths
@@ -32,6 +23,16 @@ import scaladex.server.service.ArtifactService
 import scaladex.server.service.MavenCentralService
 import scaladex.server.service.PublishProcess
 import scaladex.view.html.notfound
+
+import cats.effect.ContextShift
+import cats.effect.IO
+import com.typesafe.scalalogging.LazyLogging
+import doobie.util.ExecutionContexts
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.*
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.*
 
 object Server extends LazyLogging:
 

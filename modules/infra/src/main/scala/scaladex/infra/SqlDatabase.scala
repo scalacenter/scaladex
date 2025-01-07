@@ -7,15 +7,16 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.*
 
+import scaladex.core.model.*
+import scaladex.core.service.SchedulerDatabase
+import scaladex.infra.sql.*
+
 import cats.effect.IO
 import com.github.blemale.scaffeine.AsyncLoadingCache
 import com.github.blemale.scaffeine.Scaffeine
 import com.typesafe.scalalogging.LazyLogging
 import com.zaxxer.hikari.HikariDataSource
 import doobie.implicits.*
-import scaladex.core.model.*
-import scaladex.core.service.SchedulerDatabase
-import scaladex.infra.sql.*
 
 class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging:
   private val flyway = DoobieUtils.flyway(datasource)

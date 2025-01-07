@@ -1,8 +1,9 @@
 package scaladex.core.model
 
+import scaladex.core.util.Parsers
+
 import fastparse.NoWhitespace.*
 import fastparse.*
-import scaladex.core.util.Parsers
 
 final case class BinaryVersion(platform: Platform, language: Language):
   def isValid: Boolean = platform.isValid && language.isValid

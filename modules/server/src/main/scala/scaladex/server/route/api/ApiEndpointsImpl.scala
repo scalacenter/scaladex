@@ -2,16 +2,17 @@ package scaladex.server.route.api
 
 import scala.concurrent.ExecutionContext
 
-import endpoints4s.pekkohttp.server
-import org.apache.pekko.http.cors.scaladsl.CorsDirectives.cors
-import org.apache.pekko.http.scaladsl.server.Directives.*
-import org.apache.pekko.http.scaladsl.server.Route
 import scaladex.core.api.Endpoints
 import scaladex.core.api.ProjectResponse
 import scaladex.core.model.*
 import scaladex.core.service.ProjectService
 import scaladex.core.service.SearchEngine
 import scaladex.server.service.ArtifactService
+
+import endpoints4s.pekkohttp.server
+import org.apache.pekko.http.cors.scaladsl.CorsDirectives.cors
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.Route
 
 class ApiEndpointsImpl(projectService: ProjectService, artifactService: ArtifactService, searchEngine: SearchEngine)(
     using ExecutionContext

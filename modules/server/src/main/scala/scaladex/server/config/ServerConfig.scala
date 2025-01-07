@@ -1,13 +1,14 @@
 package scaladex.server.config
 
-import com.softwaremill.pekkohttpsession.SessionConfig
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import scaladex.core.model.Env
 import scaladex.infra.config.ElasticsearchConfig
 import scaladex.infra.config.FilesystemConfig
 import scaladex.infra.config.GithubConfig
 import scaladex.infra.config.PostgreSQLConfig
+
+import com.softwaremill.pekkohttpsession.SessionConfig
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 
 case class ServerConfig(
     env: Env,

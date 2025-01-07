@@ -4,11 +4,12 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Project
 import scaladex.core.service.ProjectService
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions.*
+
+import com.typesafe.scalalogging.LazyLogging
 
 class DependencyUpdater(database: SchedulerDatabase, projectService: ProjectService)(using ExecutionContext)
     extends LazyLogging:

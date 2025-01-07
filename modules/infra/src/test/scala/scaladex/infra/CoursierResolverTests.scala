@@ -2,9 +2,10 @@ package scaladex.infra
 
 import java.nio.file.Paths
 
+import scaladex.core.util.ScalaExtensions.*
+
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.util.ScalaExtensions.*
 
 class CoursierResolverTests extends AsyncFunSpec with Matchers:
   val resolver = new CoursierResolver

@@ -5,7 +5,6 @@ import java.time.Instant
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubResponse
 import scaladex.core.model.GithubStatus
@@ -13,6 +12,8 @@ import scaladex.core.model.Project
 import scaladex.core.service.GithubClient
 import scaladex.core.service.WebDatabase
 import scaladex.core.util.ScalaExtensions.*
+
+import com.typesafe.scalalogging.LazyLogging
 
 class GithubUpdater(database: WebDatabase, github: GithubClient)(using ExecutionContext) extends LazyLogging:
   def updateAll(): Future[String] =

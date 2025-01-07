@@ -2,10 +2,11 @@ package scaladex.client
 
 import scala.scalajs.js.timers
 
+import scaladex.dom.IntersectionObserver
+
 import org.scalajs.dom.document
 import org.scalajs.dom.html.Element
 import org.scalajs.dom.html.Link
-import scaladex.dom.IntersectionObserver
 
 /** Find all visible sections and add the "active" class in their corresponding list items in nav.
   */

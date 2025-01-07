@@ -1,18 +1,19 @@
 package scaladex.server.route.api
 import scala.concurrent.duration.*
 
-import org.apache.pekko.http.scaladsl.model.ContentTypes
-import org.apache.pekko.http.scaladsl.model.HttpEntity
-import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
-import org.apache.pekko.http.scaladsl.testkit.RouteTestTimeout
-import org.scalatest.BeforeAndAfterEach
 import scaladex.core.model.Env
 import scaladex.core.test.MockGithubAuth
 import scaladex.core.test.Values.*
 import scaladex.infra.CoursierResolver
 import scaladex.server.route.ControllerBaseSuite
 import scaladex.server.service.PublishProcess
+
+import org.apache.pekko.http.scaladsl.model.ContentTypes
+import org.apache.pekko.http.scaladsl.model.HttpEntity
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.headers.BasicHttpCredentials
+import org.apache.pekko.http.scaladsl.testkit.RouteTestTimeout
+import org.scalatest.BeforeAndAfterEach
 
 class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach:
   val pomResolver = new CoursierResolver

@@ -2,12 +2,13 @@ package scaladex.infra
 
 import java.time.Instant
 
-import io.circe.*
-import io.circe.generic.semiauto.*
 import scaladex.core.model.*
 import scaladex.core.model.search.GithubInfoDocument
 import scaladex.core.util.Secret
 import scaladex.infra.github.GithubModel
+
+import io.circe.*
+import io.circe.generic.semiauto.*
 
 object Codecs:
   given Codec[Project.Organization] = fromString(_.value, Project.Organization.apply)

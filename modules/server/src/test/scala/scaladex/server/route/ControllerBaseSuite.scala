@@ -3,9 +3,6 @@ package scaladex.server.route
 import java.nio.file.Files
 import java.nio.file.Path
 
-import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
-import org.scalatest.funspec.AsyncFunSpec
-import org.scalatest.matchers.should.Matchers
 import scaladex.core.service.ProjectService
 import scaladex.core.service.SearchEngine
 import scaladex.core.test.InMemoryDatabase
@@ -16,6 +13,10 @@ import scaladex.infra.FilesystemStorage
 import scaladex.server.config.ServerConfig
 import scaladex.server.service.ArtifactService
 import scaladex.server.service.SearchSynchronizer
+
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.matchers.should.Matchers
 
 trait ControllerBaseSuite extends AsyncFunSpec with Matchers with ScalatestRouteTest:
   val index: Path = Files.createTempDirectory("scaladex-index")

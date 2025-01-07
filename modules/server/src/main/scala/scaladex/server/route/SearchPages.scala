@@ -2,14 +2,15 @@ package scaladex.server.route
 
 import scala.concurrent.ExecutionContext
 
-import org.apache.pekko.http.scaladsl.model.Uri.*
-import org.apache.pekko.http.scaladsl.server.Directives.*
-import org.apache.pekko.http.scaladsl.server.*
 import scaladex.core.model.*
 import scaladex.core.model.search.*
 import scaladex.core.service.SearchEngine
 import scaladex.server.TwirlSupport.given
 import scaladex.view.search.html.searchresult
+
+import org.apache.pekko.http.scaladsl.model.Uri.*
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.*
 
 class SearchPages(env: Env, searchEngine: SearchEngine)(
     using ExecutionContext

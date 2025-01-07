@@ -2,9 +2,10 @@ package scaladex.infra
 
 import java.time.Instant
 
+import scaladex.infra.github.GithubModel
+
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.infra.github.GithubModel
 
 class GithubModelTests extends AnyFunSpec with Matchers:
   describe("GithubModel") {

@@ -4,9 +4,10 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
+import scaladex.core.util.Secret
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import scaladex.core.util.Secret
 
 final case class PostgreSQLConfig(url: String, user: String, pass: Secret):
   val driver = "org.postgresql.Driver"

@@ -2,13 +2,14 @@ package scaladex.data.init
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
 import scaladex.core.service.Storage
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.infra.SqlDatabase
+
+import com.typesafe.scalalogging.LazyLogging
 
 class Init(database: SqlDatabase, localStorage: Storage)(using ExecutionContext) extends LazyLogging:
 

@@ -9,6 +9,8 @@ import scala.concurrent.Await
 import scala.concurrent.duration.*
 import scala.util.Try
 
+import scaladex.core.service.PomResolver
+
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.maven.model
 import org.apache.maven.model.Parent
@@ -19,7 +21,6 @@ import org.apache.maven.model.building.FileModelSource
 import org.apache.maven.model.building.ModelSource2
 import org.apache.maven.model.io.DefaultModelReader
 import org.apache.maven.model.resolution.ModelResolver
-import scaladex.core.service.PomResolver
 
 case class MissingParentPom(dep: String) extends Exception
 

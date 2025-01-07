@@ -5,9 +5,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
-import org.scalatest.*
-import org.scalatest.freespec.AsyncFreeSpec
-import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Jvm
 import scaladex.core.model.Project
@@ -23,6 +20,10 @@ import scaladex.core.model.search.Sorting
 import scaladex.core.test.Values.*
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.infra.config.ElasticsearchConfig
+
+import org.scalatest.*
+import org.scalatest.freespec.AsyncFreeSpec
+import org.scalatest.matchers.should.Matchers
 
 class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAndAfterAll with BeforeAndAfterEach:
   given ec: ExecutionContext = ExecutionContext.global

@@ -3,9 +3,6 @@ package scaladex.server.route
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import org.apache.pekko.http.scaladsl.server.Directives.*
-import org.apache.pekko.http.scaladsl.server.Route
-import play.twirl.api.HtmlFormat
 import scaladex.core.model.*
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
@@ -13,6 +10,10 @@ import scaladex.server.TwirlSupport.given
 import scaladex.view.html.frontpage
 import scaladex.view.model.EcosystemHighlight
 import scaladex.view.model.EcosystemVersion
+
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.Route
+import play.twirl.api.HtmlFormat
 
 class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(using ExecutionContext):
   val limitOfProjects = 12

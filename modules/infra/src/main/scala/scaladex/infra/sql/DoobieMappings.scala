@@ -5,14 +5,15 @@ import java.util.UUID
 
 import scala.util.Try
 
-import doobie.*
-import doobie.postgres.Instances
-import doobie.postgres.JavaTimeInstances
-import io.circe.*
 import scaladex.core.model.Project.*
 import scaladex.core.model.*
 import scaladex.core.util.Secret
 import scaladex.infra.Codecs.given
+
+import doobie.*
+import doobie.postgres.Instances
+import doobie.postgres.JavaTimeInstances
+import io.circe.*
 
 object DoobieMappings extends Instances with JavaTimeInstances:
   given given_Meta_Seq_GithubContributor: Meta[Seq[GithubContributor]] =

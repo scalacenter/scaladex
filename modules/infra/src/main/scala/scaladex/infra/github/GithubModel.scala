@@ -4,9 +4,6 @@ import java.time.Instant
 
 import scala.util.Try
 
-import cats.implicits.toTraverseOps
-import io.circe.*
-import io.circe.generic.semiauto.*
 import scaladex.core.model
 import scaladex.core.model.GithubCommitActivity
 import scaladex.core.model.GithubContributor
@@ -14,6 +11,10 @@ import scaladex.core.model.GithubIssue
 import scaladex.core.model.Project
 import scaladex.core.model.Url
 import scaladex.core.util.Secret
+
+import cats.implicits.toTraverseOps
+import io.circe.*
+import io.circe.generic.semiauto.*
 
 object GithubModel:
 

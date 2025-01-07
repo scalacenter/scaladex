@@ -1,11 +1,12 @@
 package scaladex.infra.sql
 
-import doobie.*
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.model.Version
 import scaladex.infra.sql.DoobieMappings.given
 import scaladex.infra.sql.DoobieUtils.*
+
+import doobie.*
 
 object ProjectDependenciesTable:
   val table: String = "project_dependencies"

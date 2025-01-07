@@ -5,10 +5,11 @@ import java.time.Instant
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.*
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions.*
+
+import com.typesafe.scalalogging.LazyLogging
 
 class ArtifactService(database: SchedulerDatabase)(using ExecutionContext) extends LazyLogging:
   def getVersions(

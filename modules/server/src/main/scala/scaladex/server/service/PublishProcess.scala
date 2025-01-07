@@ -6,8 +6,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.Try
 
-import com.typesafe.scalalogging.LazyLogging
-import org.apache.pekko.actor.ActorSystem
 import scaladex.core.model.Artifact
 import scaladex.core.model.Env
 import scaladex.core.model.Project
@@ -22,6 +20,9 @@ import scaladex.data.maven.PomsReader
 import scaladex.infra.CoursierResolver
 import scaladex.infra.DataPaths
 import scaladex.infra.GithubClientImpl
+
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.actor.ActorSystem
 
 sealed trait PublishResult
 object PublishResult:

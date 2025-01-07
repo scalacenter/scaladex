@@ -2,14 +2,15 @@ package scaladex.server
 
 import java.time.Instant
 
-import org.apache.pekko.http.scaladsl.server.Directive1
-import org.apache.pekko.http.scaladsl.server.Directives.*
-import org.apache.pekko.http.scaladsl.server.PathMatcher1
-import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import scaladex.core.model.Artifact
 import scaladex.core.model.Project
 import scaladex.core.model.Version
 import scaladex.core.model.search.PageParams
+
+import org.apache.pekko.http.scaladsl.server.Directive1
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.PathMatcher1
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 
 package object route:
 

@@ -6,12 +6,13 @@ import java.util.concurrent.Executors
 
 import scala.concurrent.ExecutionContext
 
-import org.scalatest.funspec.AsyncFunSpec
-import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model.*
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.core.util.Secret
+
+import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.matchers.should.Matchers
 
 class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers:
   given ec: ExecutionContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(1))

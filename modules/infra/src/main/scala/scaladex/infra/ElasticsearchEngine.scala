@@ -6,6 +6,27 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.*
 
+import scaladex.core.model.BinaryVersion
+import scaladex.core.model.Category
+import scaladex.core.model.GithubIssue
+import scaladex.core.model.Language
+import scaladex.core.model.Platform
+import scaladex.core.model.Project
+import scaladex.core.model.TopicCount
+import scaladex.core.model.search.AwesomeParams
+import scaladex.core.model.search.Page
+import scaladex.core.model.search.PageParams
+import scaladex.core.model.search.Pagination
+import scaladex.core.model.search.ProjectDocument
+import scaladex.core.model.search.ProjectHit
+import scaladex.core.model.search.SearchParams
+import scaladex.core.model.search.Sorting
+import scaladex.core.service.SearchEngine
+import scaladex.infra.Codecs.given
+import scaladex.infra.config.ElasticsearchConfig
+import scaladex.infra.elasticsearch.ElasticsearchMapping.*
+import scaladex.infra.elasticsearch.RawProjectDocument
+
 import com.sksamuel.elastic4s.ElasticClient
 import com.sksamuel.elastic4s.ElasticDsl.*
 import com.sksamuel.elastic4s.ElasticProperties
@@ -28,26 +49,6 @@ import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.ScoreFunction
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.*
-import scaladex.core.model.BinaryVersion
-import scaladex.core.model.Category
-import scaladex.core.model.GithubIssue
-import scaladex.core.model.Language
-import scaladex.core.model.Platform
-import scaladex.core.model.Project
-import scaladex.core.model.TopicCount
-import scaladex.core.model.search.AwesomeParams
-import scaladex.core.model.search.Page
-import scaladex.core.model.search.PageParams
-import scaladex.core.model.search.Pagination
-import scaladex.core.model.search.ProjectDocument
-import scaladex.core.model.search.ProjectHit
-import scaladex.core.model.search.SearchParams
-import scaladex.core.model.search.Sorting
-import scaladex.core.service.SearchEngine
-import scaladex.infra.Codecs.given
-import scaladex.infra.config.ElasticsearchConfig
-import scaladex.infra.elasticsearch.ElasticsearchMapping.*
-import scaladex.infra.elasticsearch.RawProjectDocument
 
 /** @param esClient
   *   TCP client of the elasticsearch server

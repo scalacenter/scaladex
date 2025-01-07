@@ -2,6 +2,11 @@ package scaladex.infra.migrations
 
 import java.time.Instant
 
+import scaladex.core.model.*
+import scaladex.infra.sql.DoobieMappings.given
+import scaladex.infra.sql.DoobieUtils.selectRequest
+import scaladex.infra.sql.DoobieUtils.updateRequest
+
 import cats.implicits.*
 import com.typesafe.scalalogging.LazyLogging
 import doobie.Query0
@@ -9,10 +14,6 @@ import doobie.implicits.*
 import doobie.util.update.Update
 import org.flywaydb.core.api.migration.BaseJavaMigration
 import org.flywaydb.core.api.migration.Context
-import scaladex.core.model.*
-import scaladex.infra.sql.DoobieMappings.given
-import scaladex.infra.sql.DoobieUtils.selectRequest
-import scaladex.infra.sql.DoobieUtils.updateRequest
 
 class V7_2__edit_platform_and_language extends BaseJavaMigration with ScaladexBaseMigration with LazyLogging:
 

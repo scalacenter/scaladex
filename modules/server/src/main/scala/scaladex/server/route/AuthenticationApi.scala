@@ -7,6 +7,10 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
+import scaladex.core.model.UserState
+import scaladex.core.service.GithubAuth
+import scaladex.core.service.WebDatabase
+
 import com.softwaremill.pekkohttpsession.CsrfDirectives.*
 import com.softwaremill.pekkohttpsession.CsrfOptions.*
 import com.softwaremill.pekkohttpsession.SessionConfig
@@ -25,9 +29,6 @@ import org.apache.pekko.http.scaladsl.model.headers.Referer
 import org.apache.pekko.http.scaladsl.server.Directive1
 import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.Route
-import scaladex.core.model.UserState
-import scaladex.core.service.GithubAuth
-import scaladex.core.service.WebDatabase
 
 class AuthenticationApi(clientId: String, sessionConfig: SessionConfig, githubAuth: GithubAuth, database: WebDatabase)(
     using system: ActorSystem

@@ -6,8 +6,9 @@ import java.nio.file.*
 import scala.io.Source
 import scala.util.Using
 
-import io.circe.parser.*
 import scaladex.infra.DataPaths
+
+import io.circe.parser.*
 
 /** Non standard published lib which misses the scala version in the artifact name ex: scala-library
   *

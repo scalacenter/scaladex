@@ -4,10 +4,11 @@ import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-import fastparse.*
 import scaladex.core.api.ArtifactResponse
 import scaladex.core.model.Artifact.*
 import scaladex.core.util.Parsers.*
+
+import fastparse.*
 
 /** @param isNonStandardLib
   *   if not using artifact-name_binaryVersion convention

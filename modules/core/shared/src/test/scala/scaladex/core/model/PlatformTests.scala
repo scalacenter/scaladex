@@ -1,8 +1,9 @@
 package scaladex.core
 
+import scaladex.core.model.*
+
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model.*
 
 class PlatformTests extends AnyFunSpec with Matchers:
   it("should parse a Platform from its value") {

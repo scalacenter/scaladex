@@ -3,7 +3,6 @@ package scaladex.server.service
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact.*
 import scaladex.core.model.Project
@@ -12,6 +11,8 @@ import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.data.cleanup.NonStandardLib
 import scaladex.infra.DataPaths
+
+import com.typesafe.scalalogging.LazyLogging
 
 class MavenCentralService(
     dataPaths: DataPaths,

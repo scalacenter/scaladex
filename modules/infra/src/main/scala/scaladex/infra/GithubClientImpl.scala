@@ -6,6 +6,21 @@ import scala.concurrent.Promise
 import scala.concurrent.duration.DurationInt
 import scala.util.Try
 
+import scaladex.core.model.GithubCommitActivity
+import scaladex.core.model.GithubInfo
+import scaladex.core.model.GithubResponse
+import scaladex.core.model.License
+import scaladex.core.model.Project
+import scaladex.core.model.Url
+import scaladex.core.model.UserInfo
+import scaladex.core.model.UserState
+import scaladex.core.service.GithubClient
+import scaladex.core.util.ScalaExtensions.*
+import scaladex.core.util.Secret
+import scaladex.infra.Codecs.given
+import scaladex.infra.github.GithubModel
+import scaladex.infra.github.GithubModel.{*, given}
+
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import io.circe.syntax.*
@@ -27,20 +42,6 @@ import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.util.ByteString
-import scaladex.core.model.GithubCommitActivity
-import scaladex.core.model.GithubInfo
-import scaladex.core.model.GithubResponse
-import scaladex.core.model.License
-import scaladex.core.model.Project
-import scaladex.core.model.Url
-import scaladex.core.model.UserInfo
-import scaladex.core.model.UserState
-import scaladex.core.service.GithubClient
-import scaladex.core.util.ScalaExtensions.*
-import scaladex.core.util.Secret
-import scaladex.infra.Codecs.given
-import scaladex.infra.github.GithubModel
-import scaladex.infra.github.GithubModel.{*, given}
 
 class GithubClientImpl(token: Secret)(using system: ActorSystem)
     extends CommonAkkaHttpClient

@@ -2,8 +2,6 @@ package scaladex.server.service
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import com.typesafe.scalalogging.LazyLogging
-import org.apache.pekko.actor.ActorSystem
 import scaladex.core.model.Artifact
 import scaladex.core.model.Env
 import scaladex.core.model.GithubResponse
@@ -18,6 +16,9 @@ import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.view.Job
 import scaladex.view.Task
+
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.actor.ActorSystem
 
 class AdminService(
     env: Env,

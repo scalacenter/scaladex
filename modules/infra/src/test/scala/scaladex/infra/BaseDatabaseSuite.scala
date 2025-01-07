@@ -5,6 +5,9 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
+import scaladex.infra.config.PostgreSQLConfig
+import scaladex.infra.sql.DoobieUtils
+
 import cats.effect.ContextShift
 import cats.effect.IO
 import com.zaxxer.hikari.HikariDataSource
@@ -13,8 +16,6 @@ import doobie.util.transactor.Transactor
 import org.scalatest.Assertions
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.Suite
-import scaladex.infra.config.PostgreSQLConfig
-import scaladex.infra.sql.DoobieUtils
 
 trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach:
   self: Assertions with Suite =>

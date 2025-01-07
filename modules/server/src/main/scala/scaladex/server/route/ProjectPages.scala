@@ -9,11 +9,6 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-import com.typesafe.scalalogging.LazyLogging
-import org.apache.pekko.http.scaladsl.model.Uri.*
-import org.apache.pekko.http.scaladsl.model.*
-import org.apache.pekko.http.scaladsl.server.Directives.*
-import org.apache.pekko.http.scaladsl.server.*
 import scaladex.core.model.*
 import scaladex.core.service.ProjectService
 import scaladex.core.service.SchedulerDatabase
@@ -26,6 +21,12 @@ import scaladex.server.service.SearchSynchronizer
 import scaladex.view.html.forbidden
 import scaladex.view.html.notfound
 import scaladex.view.project.html
+
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.http.scaladsl.model.Uri.*
+import org.apache.pekko.http.scaladsl.model.*
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.*
 
 class ProjectPages(
     env: Env,

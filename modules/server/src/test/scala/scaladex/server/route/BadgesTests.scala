@@ -4,6 +4,10 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
+import scaladex.core.model.Scala.*
+import scaladex.core.test.Values.*
+import scaladex.server.route.Badges.summaryOfLatestVersions
+
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.http.scaladsl.model.headers.Location
@@ -11,9 +15,6 @@ import org.apache.pekko.http.scaladsl.server.Route
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model.Scala.*
-import scaladex.core.test.Values.*
-import scaladex.server.route.Badges.summaryOfLatestVersions
 
 class BadgesTests extends ControllerBaseSuite with BeforeAndAfterAll:
 

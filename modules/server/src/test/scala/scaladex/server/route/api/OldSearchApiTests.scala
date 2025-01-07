@@ -4,12 +4,13 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
-import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Jvm
 import scaladex.core.model.Scala
 import scaladex.core.test.Values
 import scaladex.server.route.ControllerBaseSuite
+
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 
 class OldSearchApiTests extends ControllerBaseSuite with FailFastCirceSupport:
   import Values.*

@@ -3,6 +3,12 @@ package scaladex.server.route.api
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import scaladex.core.model.*
+import scaladex.core.model.search.PageParams
+import scaladex.core.model.search.ProjectDocument
+import scaladex.core.service.SearchEngine
+import scaladex.core.service.WebDatabase
+
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.*
 import io.circe.generic.semiauto
@@ -10,11 +16,6 @@ import org.apache.pekko.http.cors.scaladsl.CorsDirectives.*
 import org.apache.pekko.http.scaladsl.model.StatusCodes.*
 import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.Route
-import scaladex.core.model.*
-import scaladex.core.model.search.PageParams
-import scaladex.core.model.search.ProjectDocument
-import scaladex.core.service.SearchEngine
-import scaladex.core.service.WebDatabase
 
 object OldSearchApi:
   given Codec[OldSearchApi.Project] = semiauto.deriveCodec

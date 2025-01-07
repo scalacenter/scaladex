@@ -6,6 +6,9 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
+import scaladex.core.model.Artifact
+import scaladex.core.service.PomResolver
+
 import com.typesafe.scalalogging.LazyLogging
 import coursier.Dependency
 import coursier.Fetch
@@ -16,8 +19,6 @@ import coursier.Repositories
 import coursier.core.Type
 import coursier.error.ResolutionError
 import coursier.maven.SbtMavenRepository
-import scaladex.core.model.Artifact
-import scaladex.core.service.PomResolver
 
 class CoursierResolver(using ExecutionContext) extends PomResolver with LazyLogging:
   private val repositories = Seq(

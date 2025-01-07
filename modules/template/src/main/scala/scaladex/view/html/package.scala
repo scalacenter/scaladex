@@ -5,8 +5,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-import org.apache.pekko.http.scaladsl.model.Uri
-import org.apache.pekko.http.scaladsl.model.Uri.Query
 import scaladex.core.model.Artifact
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
@@ -14,6 +12,9 @@ import scaladex.core.model.Project
 import scaladex.core.model.search.AwesomeParams
 import scaladex.core.model.search.SearchParams
 import scaladex.core.web.ArtifactsPageParams
+
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.model.Uri.Query
 
 package object html:
 

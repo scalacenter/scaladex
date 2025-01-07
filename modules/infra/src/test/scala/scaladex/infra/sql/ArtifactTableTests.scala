@@ -1,9 +1,10 @@
 package scaladex.infra.sql
 
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.*
 import scaladex.infra.BaseDatabaseSuite
+
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 
 class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers:
   import ArtifactTable.*

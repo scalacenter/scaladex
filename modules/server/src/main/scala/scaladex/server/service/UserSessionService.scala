@@ -5,15 +5,16 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import com.typesafe.scalalogging.LazyLogging
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.http.scaladsl.model.StatusCodes
 import scaladex.core.model.GithubResponse
 import scaladex.core.model.UserState
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.core.util.Secret
 import scaladex.infra.GithubClientImpl
+
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.StatusCodes
 
 class UserSessionService(database: SchedulerDatabase)(using system: ActorSystem) extends LazyLogging:
   private given ExecutionContext = system.dispatcher

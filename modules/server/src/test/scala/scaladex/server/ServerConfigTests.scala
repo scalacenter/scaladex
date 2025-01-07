@@ -3,9 +3,10 @@ package scaladex.server
 import scala.util.Success
 import scala.util.Try
 
+import scaladex.server.config.ServerConfig
+
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.server.config.ServerConfig
 
 class ServerConfigTests extends AnyFunSpec with Matchers:
   describe("AppConf") {

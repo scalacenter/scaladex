@@ -1,8 +1,9 @@
 package scaladex.core.model
 
+import scaladex.core.model.Artifact.*
+
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model.Artifact.*
 
 class ArtifactIdTests extends AsyncFunSpec with Matchers:
   describe("parsing artifacts") {

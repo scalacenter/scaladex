@@ -5,6 +5,13 @@ import java.time.Instant
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext
 
+import scaladex.core.model.UserState
+import scaladex.core.service.GithubAuth
+import scaladex.core.util.Secret
+import scaladex.server.route.*
+import scaladex.server.service.PublishProcess
+import scaladex.server.service.PublishResult
+
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.model.headers.*
@@ -12,12 +19,6 @@ import org.apache.pekko.http.scaladsl.server.AuthorizationFailedRejection
 import org.apache.pekko.http.scaladsl.server.Directive1
 import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.Route
-import scaladex.core.model.UserState
-import scaladex.core.service.GithubAuth
-import scaladex.core.util.Secret
-import scaladex.server.route.*
-import scaladex.server.service.PublishProcess
-import scaladex.server.service.PublishResult
 
 class PublishApi(githubAuth: GithubAuth, publishProcess: PublishProcess)(using ExecutionContext) extends LazyLogging:
 

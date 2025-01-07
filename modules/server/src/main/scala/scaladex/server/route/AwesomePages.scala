@@ -3,11 +3,6 @@ package scaladex.server.route
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import org.apache.pekko.http.scaladsl.server.Directive1
-import org.apache.pekko.http.scaladsl.server.Directives.*
-import org.apache.pekko.http.scaladsl.server.PathMatcher1
-import org.apache.pekko.http.scaladsl.server.Route
-import play.twirl.api.Html
 import scaladex.core.model.Category
 import scaladex.core.model.Env
 import scaladex.core.model.Language
@@ -22,6 +17,12 @@ import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.server.TwirlSupport.given
 import scaladex.view.awesome.html
+
+import org.apache.pekko.http.scaladsl.server.Directive1
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.PathMatcher1
+import org.apache.pekko.http.scaladsl.server.Route
+import play.twirl.api.Html
 
 class AwesomePages(env: Env, searchEngine: SearchEngine)(using ExecutionContext):
 

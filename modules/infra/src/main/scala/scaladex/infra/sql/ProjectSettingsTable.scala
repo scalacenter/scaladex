@@ -1,9 +1,10 @@
 package scaladex.infra.sql
 
-import doobie.*
 import scaladex.core.model.Project
 import scaladex.infra.sql.DoobieMappings.given
 import scaladex.infra.sql.DoobieUtils.*
+
+import doobie.*
 
 object ProjectSettingsTable:
   val table: String = "project_settings"

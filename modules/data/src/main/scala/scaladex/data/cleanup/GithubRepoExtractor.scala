@@ -6,13 +6,14 @@ import scala.io.Source
 import scala.util.Using
 import scala.util.matching.Regex
 
+import scaladex.core.model.Project
+import scaladex.infra.DataPaths
+
 import org.json4s.JsonAST.JField
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonAST.JString
 import org.json4s.*
 import org.json4s.native.Serialization
-import scaladex.core.model.Project
-import scaladex.infra.DataPaths
 
 class GithubRepoExtractor(paths: DataPaths):
   object ClaimSerializer extends CustomSerializer[Claims](_ => (serialize, deserialize))

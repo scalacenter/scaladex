@@ -4,6 +4,10 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
+import scaladex.core.model.GithubStatus
+import scaladex.core.model.Project
+import scaladex.core.test.Values
+
 import org.apache.pekko.http.scaladsl.model.FormData
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.model.Uri
@@ -11,9 +15,6 @@ import org.apache.pekko.http.scaladsl.model.headers.Location
 import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.Route
 import org.scalatest.BeforeAndAfterEach
-import scaladex.core.model.GithubStatus
-import scaladex.core.model.Project
-import scaladex.core.test.Values
 
 class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach:
   import Values.*

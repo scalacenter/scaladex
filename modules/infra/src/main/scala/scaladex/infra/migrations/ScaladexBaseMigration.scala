@@ -2,11 +2,12 @@ package scaladex.infra.migrations
 
 import scala.concurrent.ExecutionContext
 
+import scaladex.infra.config.PostgreSQLConfig
+
 import cats.effect.ContextShift
 import cats.effect.IO
 import doobie.implicits.*
 import doobie.util.transactor.Transactor
-import scaladex.infra.config.PostgreSQLConfig
 
 trait ScaladexBaseMigration:
   private given ContextShift[IO] =

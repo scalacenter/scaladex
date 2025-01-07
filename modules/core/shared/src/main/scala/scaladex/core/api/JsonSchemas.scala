@@ -2,8 +2,9 @@ package scaladex.core.api
 
 import java.time.Instant
 
-import endpoints4s.Validated
 import scaladex.core.model.*
+
+import endpoints4s.Validated
 
 /** The Json schema of the Scaladex API
   */

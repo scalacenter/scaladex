@@ -3,7 +3,6 @@ package scaladex.server.service
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.model.search.ProjectDocument
@@ -11,6 +10,8 @@ import scaladex.core.service.ProjectService
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions.*
+
+import com.typesafe.scalalogging.LazyLogging
 
 class SearchSynchronizer(database: SchedulerDatabase, service: ProjectService, searchEngine: SearchEngine)(
     using ExecutionContext

@@ -2,13 +2,14 @@ package scaladex.infra.sql
 
 import scala.concurrent.ExecutionContext
 
+import scaladex.infra.config.PostgreSQLConfig
+
 import cats.effect.*
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import doobie.*
 import doobie.hikari.HikariTransactor
 import org.flywaydb.core.Flyway
-import scaladex.infra.config.PostgreSQLConfig
 
 object DoobieUtils:
 

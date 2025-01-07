@@ -2,7 +2,6 @@ package scaladex.server.service
 
 import java.time.Instant
 
-import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model.*
 import scaladex.data.cleanup.*
@@ -10,6 +9,8 @@ import scaladex.data.maven.ArtifactModel
 import scaladex.data.maven.Dependency
 import scaladex.data.maven.SbtPluginTarget
 import scaladex.infra.DataPaths
+
+import com.typesafe.scalalogging.LazyLogging
 
 private case class ArtifactMeta(artifactId: Artifact.ArtifactId, isNonStandard: Boolean)
 

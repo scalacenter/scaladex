@@ -1,7 +1,8 @@
 package scaladex.core.api
 
-import endpoints4s.Validated
 import scaladex.core.model.*
+
+import endpoints4s.Validated
 
 trait Endpoints extends JsonSchemas with endpoints4s.algebra.Endpoints with endpoints4s.algebra.JsonEntitiesFromSchemas:
 

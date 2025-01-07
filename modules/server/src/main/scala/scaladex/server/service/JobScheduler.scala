@@ -8,11 +8,12 @@ import scala.concurrent.Future
 import scala.concurrent.duration.*
 import scala.util.control.NonFatal
 
+import scaladex.core.model.UserState
+import scaladex.view.Job
+
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.actor.Cancellable
-import scaladex.core.model.UserState
-import scaladex.view.Job
 
 class JobScheduler(val job: Job, run: () => Future[String])(using system: ActorSystem) extends LazyLogging:
   private given ExecutionContext = system.dispatcher

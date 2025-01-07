@@ -4,6 +4,15 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
+import scaladex.core.model.GithubResponse
+import scaladex.core.model.UserInfo
+import scaladex.core.model.UserState
+import scaladex.core.service.GithubAuth
+import scaladex.core.service.GithubClient
+import scaladex.core.util.Secret
+import scaladex.infra.GithubClientImpl
+import scaladex.server.config.OAuth2Config
+
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
@@ -14,14 +23,6 @@ import org.apache.pekko.http.scaladsl.model.Uri.*
 import org.apache.pekko.http.scaladsl.model.*
 import org.apache.pekko.http.scaladsl.model.headers.*
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
-import scaladex.core.model.GithubResponse
-import scaladex.core.model.UserInfo
-import scaladex.core.model.UserState
-import scaladex.core.service.GithubAuth
-import scaladex.core.service.GithubClient
-import scaladex.core.util.Secret
-import scaladex.infra.GithubClientImpl
-import scaladex.server.config.OAuth2Config
 
 private class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri: String)(using sys: ActorSystem)
     extends GithubAuth

@@ -3,6 +3,12 @@ package scaladex.server.route.api
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
+import scaladex.core.api.ArtifactResponse
+import scaladex.core.model.*
+import scaladex.core.test.Values.*
+import scaladex.core.util.ScalaExtensions.*
+import scaladex.server.route.ControllerBaseSuite
+
 import org.apache.pekko.http.scaladsl.model.MediaTypes
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.unmarshalling.FromEntityUnmarshaller
@@ -10,11 +16,6 @@ import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import org.scalactic.source.Position
 import org.scalatest.Assertion
 import org.scalatest.BeforeAndAfterEach
-import scaladex.core.api.ArtifactResponse
-import scaladex.core.model.*
-import scaladex.core.test.Values.*
-import scaladex.core.util.ScalaExtensions.*
-import scaladex.server.route.ControllerBaseSuite
 
 class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach:
   val endpoints: ApiEndpointsImpl = new ApiEndpointsImpl(projectService, artifactService, searchEngine)

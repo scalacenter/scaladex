@@ -10,6 +10,12 @@ import scala.concurrent.Promise
 import scala.util.Try
 import scala.util.control.NonFatal
 
+import scaladex.core.model.Artifact
+import scaladex.core.model.SbtPlugin
+import scaladex.core.model.Version
+import scaladex.core.service.MavenCentralClient
+import scaladex.core.util.JsoupUtils
+
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.Http
@@ -21,11 +27,6 @@ import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.util.ByteString
-import scaladex.core.model.Artifact
-import scaladex.core.model.SbtPlugin
-import scaladex.core.model.Version
-import scaladex.core.service.MavenCentralClient
-import scaladex.core.util.JsoupUtils
 
 class MavenCentralClientImpl()(using system: ActorSystem)
     extends CommonAkkaHttpClient

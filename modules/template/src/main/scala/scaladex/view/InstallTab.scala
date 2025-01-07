@@ -1,8 +1,9 @@
 package scaladex.view
 
+import scaladex.core.model.Artifact
+
 import play.twirl.api.Html
 import play.twirl.api.StringInterpolation
-import scaladex.core.model.Artifact
 
 case class InstallTab(ref: String, title: String, install: String, description: Html)
 

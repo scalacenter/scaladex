@@ -1,8 +1,4 @@
 package scaladex.server.route
-import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.model.Uri
-import org.apache.pekko.http.scaladsl.server.Directives.*
-import org.apache.pekko.http.scaladsl.server.Route
 import scaladex.core.model.Artifact
 import scaladex.core.model.Env
 import scaladex.core.model.Project
@@ -11,6 +7,11 @@ import scaladex.server.TwirlSupport.given
 import scaladex.server.service.AdminService
 import scaladex.view
 import scaladex.view.Task
+
+import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.model.Uri
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.Route
 
 class AdminPage(env: Env, adminService: AdminService):
 

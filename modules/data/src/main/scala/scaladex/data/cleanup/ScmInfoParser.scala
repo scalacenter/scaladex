@@ -1,9 +1,10 @@
 package scaladex.data
 package cleanup
 
-import fastparse.*
 import scaladex.core.model.Project
 import scaladex.core.util.Parsers
+
+import fastparse.*
 
 object ScmInfoParser extends Parsers:
   import fastparse.NoWhitespace.*

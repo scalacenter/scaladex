@@ -1,8 +1,9 @@
 package scaladex.core.model
 
+import scaladex.core.model.ArtifactDependency.Scope
+
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model.ArtifactDependency.Scope
 
 class ArtifactDependencyTests extends AnyFunSpec with Matchers:
   describe("ordering") {

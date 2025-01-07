@@ -2,13 +2,14 @@ package scaladex.client
 
 import scala.concurrent.ExecutionContext
 
+import scaladex.core.api.AutocompletionResponse
+
 import org.scalajs.dom
 import org.scalajs.dom.Element
 import org.scalajs.dom.HTMLUListElement
 import org.scalajs.dom.KeyCode
 import org.scalajs.dom.KeyboardEvent
 import org.scalajs.dom.Node
-import scaladex.core.api.AutocompletionResponse
 import scalatags.JsDom.all.*
 
 class Autocompletion(using ExecutionContext):

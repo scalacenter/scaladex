@@ -3,13 +3,6 @@ package scaladex.server.route
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import org.apache.pekko.http.scaladsl.model.StatusCodes.*
-import org.apache.pekko.http.scaladsl.model.headers.CacheDirectives.*
-import org.apache.pekko.http.scaladsl.model.headers.*
-import org.apache.pekko.http.scaladsl.server.Directives.*
-import org.apache.pekko.http.scaladsl.server.RequestContext
-import org.apache.pekko.http.scaladsl.server.Route
-import org.apache.pekko.http.scaladsl.server.RouteResult
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactSelection
 import scaladex.core.model.BinaryVersion
@@ -23,6 +16,14 @@ import scaladex.core.model.ScalaNative
 import scaladex.core.model.Version
 import scaladex.core.model.Version.PreferStable
 import scaladex.core.service.WebDatabase
+
+import org.apache.pekko.http.scaladsl.model.StatusCodes.*
+import org.apache.pekko.http.scaladsl.model.headers.CacheDirectives.*
+import org.apache.pekko.http.scaladsl.model.headers.*
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.RequestContext
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.http.scaladsl.server.RouteResult
 
 class Badges(database: WebDatabase)(using ExecutionContext):
 

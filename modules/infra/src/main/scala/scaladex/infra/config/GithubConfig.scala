@@ -1,8 +1,9 @@
 package scaladex.infra.config
 
+import scaladex.core.util.Secret
+
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import scaladex.core.util.Secret
 
 case class GithubConfig(token: Option[Secret])
 

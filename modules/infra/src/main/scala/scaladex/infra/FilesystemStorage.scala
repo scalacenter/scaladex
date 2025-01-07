@@ -8,15 +8,16 @@ import scala.io.Source
 import scala.jdk.CollectionConverters.*
 import scala.util.Using
 
-import com.typesafe.scalalogging.LazyLogging
-import io.circe.*
-import io.circe.syntax.*
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
 import scaladex.core.service.Storage
 import scaladex.infra.Codecs.given
 import scaladex.infra.config.FilesystemConfig
+
+import com.typesafe.scalalogging.LazyLogging
+import io.circe.*
+import io.circe.syntax.*
 
 class FilesystemStorage(projects: Path, temp: Path) extends Storage with LazyLogging:
   override def createTempFile(content: String, prefix: String, suffix: String): Path =

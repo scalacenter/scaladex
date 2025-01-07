@@ -2,12 +2,13 @@ package scaladex.infra
 
 import java.time.Instant
 
-import org.apache.pekko.actor.ActorSystem
-import org.scalatest.funspec.AsyncFunSpec
-import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact.*
 import scaladex.core.model.Version
+
+import org.apache.pekko.actor.ActorSystem
+import org.scalatest.funspec.AsyncFunSpec
+import org.scalatest.matchers.should.Matchers
 
 class MavenCentralClientImplTests extends AsyncFunSpec with Matchers:
   given ActorSystem = ActorSystem("maven-central-client-tests")

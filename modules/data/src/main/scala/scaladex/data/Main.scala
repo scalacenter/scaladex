@@ -6,8 +6,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.sys.process.Process
 
-import cats.effect.*
-import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.core.util.TimeUtils
 import scaladex.data.init.Init
@@ -16,6 +14,9 @@ import scaladex.infra.DataPaths
 import scaladex.infra.FilesystemStorage
 import scaladex.infra.SqlDatabase
 import scaladex.infra.sql.DoobieUtils
+
+import cats.effect.*
+import com.typesafe.scalalogging.LazyLogging
 
 /** This application manages indexed POMs.
   */

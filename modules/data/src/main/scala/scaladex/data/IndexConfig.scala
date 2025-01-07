@@ -1,9 +1,10 @@
 package scaladex.data
 
-import com.typesafe.config.ConfigFactory
 import scaladex.core.model.Env
 import scaladex.infra.config.FilesystemConfig
 import scaladex.infra.config.PostgreSQLConfig
+
+import com.typesafe.config.ConfigFactory
 
 case class IndexConfig(env: Env, database: PostgreSQLConfig, filesystem: FilesystemConfig)
 

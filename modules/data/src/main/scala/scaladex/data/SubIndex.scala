@@ -5,11 +5,12 @@ import scala.concurrent.Future
 import scala.io.Source
 import scala.util.Using
 
-import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Project
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.Storage
 import scaladex.core.util.ScalaExtensions.*
+
+import com.typesafe.scalalogging.LazyLogging
 
 class SubIndex(filesystem: Storage, database: SchedulerDatabase)(using ExecutionContext) extends LazyLogging:
   def run(): Future[Unit] =

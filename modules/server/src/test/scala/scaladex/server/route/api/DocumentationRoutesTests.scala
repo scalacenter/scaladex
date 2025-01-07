@@ -1,9 +1,10 @@
 package scaladex.server.route.api
 
+import scaladex.server.route.ControllerBaseSuite
+
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.Json
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import scaladex.server.route.ControllerBaseSuite
 
 class DocumentationRoutesTests extends ControllerBaseSuite with FailFastCirceSupport:
   describe("route") {

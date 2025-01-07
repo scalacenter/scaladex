@@ -1,8 +1,9 @@
 package scaladex.view.model
 
+import scaladex.core.model.*
+
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model.*
 
 class EcosystemHighlightTest extends AnyFunSpec with Matchers:
   it("ordering") {

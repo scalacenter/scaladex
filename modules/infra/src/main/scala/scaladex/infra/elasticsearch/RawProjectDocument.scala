@@ -2,10 +2,6 @@ package scaladex.infra.elasticsearch
 
 import java.time.Instant
 
-import com.sksamuel.elastic4s.Indexable
-import io.circe.Codec
-import io.circe.Printer
-import io.circe.generic.semiauto
 import scaladex.core.model.Artifact
 import scaladex.core.model.Category
 import scaladex.core.model.Language
@@ -14,6 +10,11 @@ import scaladex.core.model.Project
 import scaladex.core.model.Version
 import scaladex.core.model.search.GithubInfoDocument
 import scaladex.core.model.search.ProjectDocument
+
+import com.sksamuel.elastic4s.Indexable
+import io.circe.Codec
+import io.circe.Printer
+import io.circe.generic.semiauto
 
 // A RawProjectDocument is a ProjectDocument where values are not yet validated.
 // It can contain invalid values that will be filtered when converting to ProjectDocument.

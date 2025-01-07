@@ -1,13 +1,14 @@
 package scaladex.infra.migrations
+import scaladex.core.model.Artifact
+import scaladex.infra.sql.DoobieMappings.given
+import scaladex.infra.sql.DoobieUtils.*
+
 import cats.implicits.*
 import com.typesafe.scalalogging.LazyLogging
 import doobie.Query0
 import doobie.util.update.Update
 import org.flywaydb.core.api.migration.BaseJavaMigration
 import org.flywaydb.core.api.migration.Context
-import scaladex.core.model.Artifact
-import scaladex.infra.sql.DoobieMappings.given
-import scaladex.infra.sql.DoobieUtils.*
 
 class V13_2__update_new_fields_in_artifacts extends BaseJavaMigration with ScaladexBaseMigration with LazyLogging:
   override def migrate(context: Context): Unit =

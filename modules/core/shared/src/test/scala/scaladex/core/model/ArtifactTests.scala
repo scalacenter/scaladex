@@ -2,9 +2,10 @@ package scaladex.core.model
 
 import java.time.Instant
 
+import scaladex.core.model.Artifact.*
+
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model.Artifact.*
 
 class ArtifactTests extends AnyFunSpec with Matchers:
   describe("sbtInstall") {
