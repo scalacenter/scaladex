@@ -1,5 +1,5 @@
 package scaladex.server.route.api
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration._
 
 import org.apache.pekko.http.scaladsl.model.ContentTypes
 import org.apache.pekko.http.scaladsl.model.HttpEntity
@@ -12,7 +12,6 @@ import scaladex.core.test.MockGithubAuth
 import scaladex.core.test.Values._
 import scaladex.infra.CoursierResolver
 import scaladex.server.route.ControllerBaseSuite
-import scaladex.server.route.api.PublishApi
 import scaladex.server.service.PublishProcess
 
 class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
@@ -27,7 +26,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
   override protected def beforeEach(): Unit = database.reset()
 
   it("sonatype should publish any artifact") {
-    implicit val customTimeout = RouteTestTimeout(8.seconds)
+    implicit val customTimeout: RouteTestTimeout = RouteTestTimeout(8.seconds)
     val pomFile = pomResolver.resolveSync(Cats.`core_3:2.6.1`.reference)
     val creationDate = Cats.`core_3:2.6.1`.releaseDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
@@ -84,7 +83,7 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
   }
 
   it("publish sbt plugin with cross version") {
-    implicit val customTimeout = RouteTestTimeout(2.minutes)
+    implicit val customTimeout: RouteTestTimeout = RouteTestTimeout(2.minutes)
     val pomFile = pomResolver.resolveSync(SbtCrossProject.artifactRef)
     val creationDate = SbtCrossProject.creationDate.getEpochSecond
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)

@@ -22,7 +22,6 @@ import scaladex.data.maven.PomsReader
 import scaladex.infra.CoursierResolver
 import scaladex.infra.DataPaths
 import scaladex.infra.GithubClientImpl
-import scaladex.server.service.ArtifactConverter
 
 sealed trait PublishResult
 object PublishResult {

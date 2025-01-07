@@ -17,7 +17,7 @@ import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 
 object OldSearchApi {
-  implicit val formatProject: Codec[Project] = semiauto.deriveCodec
+  implicit val formatProject: Codec[OldSearchApi.Project] = semiauto.deriveCodec
   implicit val formatArtifactOptions: Codec[ArtifactOptions] = semiauto.deriveCodec
 
   case class Project(
