@@ -1,2 +1,4 @@
 # Scala Steward: Reformat with scalafmt 3.8.1
 5e582217ef0137a17afedde0fa7bd9236932ecad
+# Migration to Scala 3 syntax
+66bce51f1e752d12253eaeeaab675a1ce5729cd8
