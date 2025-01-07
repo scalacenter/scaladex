@@ -129,7 +129,7 @@ private[maven] object PomConvert {
           sbtVersion <- properties.get("sbtVersion")
         } yield SbtPluginTarget(scalaVersion, sbtVersion)
       },
-      Option(getProperties).flatMap(_.asScala.toMap.get("info.apiURL")).map(Url),
+      Option(getProperties).flatMap(_.asScala.toMap.get("info.apiURL")).map(Url.apply),
       Option(getProperties).flatMap(_.asScala.toMap.get("info.versionScheme"))
     )
   }

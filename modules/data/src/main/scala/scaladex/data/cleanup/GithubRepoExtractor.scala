@@ -1,6 +1,7 @@
 package scaladex.data
 package cleanup
 
+import scala.annotation.nowarn
 import scala.io.Source
 import scala.util.Using
 import scala.util.matching.Regex
@@ -27,6 +28,7 @@ class GithubRepoExtractor(paths: DataPaths) {
   private final val void = "scalacenter/scaladex-void"
 
   private def matches(m: Regex, s: String): Boolean = m.unapplySeq(s).isDefined
+  @nowarn("cat=deprecation")
   private val claims =
     Using.resource(Source.fromFile(paths.claims.toFile)) { source =>
       read[Claims](source.mkString).claims
@@ -84,6 +86,7 @@ class GithubRepoExtractor(paths: DataPaths) {
     }
   }
 
+  @nowarn("cat=deprecation")
   private def serialize: PartialFunction[JValue, Claims] = {
     case JObject(obj) =>
       val claims = obj.map { case (k, v) => Claim(k, v.extract[String]) }
