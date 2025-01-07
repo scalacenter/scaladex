@@ -5,6 +5,7 @@ import java.io.File
 import java.nio.file.*
 import java.util.Properties
 
+import scala.annotation.nowarn
 import scala.concurrent.Await
 import scala.concurrent.duration.*
 import scala.util.Try
@@ -16,10 +17,8 @@ import org.apache.maven.model
 import org.apache.maven.model.Parent
 import org.apache.maven.model.building.DefaultModelBuilderFactory
 import org.apache.maven.model.building.DefaultModelBuildingRequest
-import org.apache.maven.model.building.DefaultModelProcessor
 import org.apache.maven.model.building.FileModelSource
 import org.apache.maven.model.building.ModelSource2
-import org.apache.maven.model.io.DefaultModelReader
 import org.apache.maven.model.resolution.ModelResolver
 
 case class MissingParentPom(dep: String) extends Exception
@@ -34,11 +33,10 @@ object PomsReader:
       artifactId + "-" + version + ".pom"
     ).mkString(File.separator)
 
+// TODO fix deprecations
+@nowarn("cat=deprecation")
 class PomsReader(resolver: PomResolver) extends LazyLogging:
   private val builder = (new DefaultModelBuilderFactory).newInstance
-  private val processor = new DefaultModelProcessor
-  processor.setModelReader(new DefaultModelReader)
-
   private val modelResolver = new ScaladexModelResolver
 
   class ScaladexModelResolver extends ModelResolver:

@@ -220,7 +220,7 @@ lazy val data = project
       "org.apache.pekko" %% "pekko-actor-typed" % V.pekko,
       "org.apache.pekko" %% "pekko-serialization-jackson" % V.pekko,
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
-      "org.apache.maven" % "maven-model-builder" % "3.9.5",
+      "org.apache.maven" % "maven-model-builder" % "4.0.0-rc-2",
       "org.jsoup" % "jsoup" % "1.18.3",
       "org.apache.ivy" % "ivy" % "2.5.3",
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
@@ -243,5 +243,5 @@ lazy val V = new {
   val scalatest = "3.2.19"
   val circe = "0.14.10"
   val json4s = "4.0.7"
-  val coursier = "2.1.6"
+  val coursier = "2.1.23"
 }
