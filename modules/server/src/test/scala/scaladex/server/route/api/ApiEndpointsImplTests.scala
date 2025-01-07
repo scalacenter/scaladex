@@ -17,7 +17,7 @@ import scaladex.core.util.ScalaExtensions._
 import scaladex.server.route.ControllerBaseSuite
 
 class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach {
-  val endpoints = new ApiEndpointsImpl(projectService, artifactService, searchEngine)
+  val endpoints: ApiEndpointsImpl = new ApiEndpointsImpl(projectService, artifactService, searchEngine)
   import endpoints._
 
   override protected def beforeAll(): Unit = {
@@ -202,6 +202,6 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach 
     }
   }
 
-  private def testGet(route: String)(body: => Assertion)(implicit pos: Position): Unit =
+  private def testGet(route: String)(body: => Assertion): Unit =
     it(route)(Get(route) ~> routes(None) ~> check(body))
 }

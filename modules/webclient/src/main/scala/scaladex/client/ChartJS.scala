@@ -1,5 +1,6 @@
 package scaladex.client
 
+import scala.annotation.nowarn
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 
@@ -238,6 +239,7 @@ object FontOptions {
 // define a class to access the Chart.js component
 @js.native
 @js.annotation.JSGlobal
+@nowarn("msg=unused explicit parameter")
 class Chart(ctx: dom.CanvasRenderingContext2D, config: ChartConfig) extends js.Object
 
 object Chart {

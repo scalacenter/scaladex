@@ -28,14 +28,14 @@ trait Endpoints
 
   private val projectPath: Path[Project.Reference] =
     (projectsPath / organizationSegment / repositorySegment)
-      .xmap((Project.Reference.apply _).tupled)(Function.unlift(Project.Reference.unapply))
+      .xmap((Project.Reference.apply _).tupled)(Tuple.fromProductTyped)
 
   private val projectVersionsPath: Path[Project.Reference] = projectPath / "versions"
   private val projectArtifactsPath: Path[Project.Reference] = projectPath / "artifacts"
 
   private val artifactPath: Path[Artifact.Reference] =
     (artifactsPath / groupIdSegment / artifactIdSegment / versionSegment)
-      .xmap((Artifact.Reference.apply _).tupled)(Function.unlift(Artifact.Reference.unapply))
+      .xmap((Artifact.Reference.apply _).tupled)(Tuple.fromProductTyped)
 
   private implicit val platformQueryString: QueryStringParam[Platform] = stringQueryString
     .xmapPartial(v => Validated.fromOption(Platform.parse(v))(s"Cannot parse $v"))(_.value)
@@ -82,15 +82,15 @@ trait Endpoints
 
   private val projectsParams: QueryString[ProjectsParams] =
     (languageFilters & platformFilters)
-      .xmap((ProjectsParams.apply _).tupled)(Function.unlift(ProjectsParams.unapply))
+      .xmap((ProjectsParams.apply _).tupled)(Tuple.fromProductTyped)
 
   private val projectVersionsParams: QueryString[ProjectVersionsParams] =
     (binaryVersionFilters & artifactNameFilters & stableOnlyFilter)
-      .xmap((ProjectVersionsParams.apply _).tupled)(Function.unlift(ProjectVersionsParams.unapply))
+      .xmap((ProjectVersionsParams.apply _).tupled)(Tuple.fromProductTyped)
 
   private val projectArtifactsParams: QueryString[ProjectArtifactsParams] =
     (binaryVersionFilter & artifactNameFilter & stableOnlyFilter)
-      .xmap((ProjectArtifactsParams.apply _).tupled)(Function.unlift(ProjectArtifactsParams.unapply))
+      .xmap((ProjectArtifactsParams.apply _).tupled)(Tuple.fromProductTyped)
 
   private val autocompletionParams: QueryString[AutocompletionParams] = (
     qs[String]("q", docs = Some("Main query (e.g., 'json', 'testing', etc.)")) &
@@ -99,7 +99,7 @@ trait Endpoints
       platformFilters &
       qs[Option[Boolean]]("contributingSearch").xmap(_.getOrElse(false))(Option.when(_)(true)) &
       qs[Option[String]]("you", docs = Some("internal usage")).xmap[Boolean](_.contains("✓"))(Option.when(_)("✓"))
-  ).xmap((AutocompletionParams.apply _).tupled)(Function.unlift(AutocompletionParams.unapply))
+  ).xmap((AutocompletionParams.apply _).tupled)(Tuple.fromProductTyped)
 
   def getProjects(v: Option[String]): Endpoint[ProjectsParams, Seq[Project.Reference]] =
     endpoint(

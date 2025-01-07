@@ -24,7 +24,6 @@ import scaladex.infra.MavenCentralClientImpl
 import scaladex.infra.SqlDatabase
 import scaladex.infra.sql.DoobieUtils
 import scaladex.server.config.ServerConfig
-import scaladex.server.route.AuthenticationApi
 import scaladex.server.route._
 import scaladex.server.route.api._
 import scaladex.server.service.AdminService

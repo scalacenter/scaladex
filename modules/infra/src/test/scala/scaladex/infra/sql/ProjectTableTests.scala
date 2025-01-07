@@ -3,7 +3,6 @@ package scaladex.infra.sql
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import scaladex.infra.BaseDatabaseSuite
-import scaladex.infra.sql.ProjectTable
 
 class ProjectTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
   it("check insertIfNotExists")(check(ProjectTable.insertIfNotExists))

@@ -2,7 +2,6 @@ package scaladex.core.model
 
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model.Artifact
 import scaladex.core.test.Values._
 
 class ProjectHeaderTests extends AnyFunSpec with Matchers {

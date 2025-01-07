@@ -3,7 +3,7 @@ package scaladex.infra.sql
 import doobie._
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.Project
-import scaladex.infra.sql.DoobieUtils.Mappings._
+import scaladex.infra.sql.DoobieMappings._
 import scaladex.infra.sql.DoobieUtils._
 
 object GithubInfoTable {

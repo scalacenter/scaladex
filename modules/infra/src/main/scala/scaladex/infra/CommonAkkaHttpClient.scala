@@ -23,7 +23,7 @@ import org.apache.pekko.stream.scaladsl.SourceQueueWithComplete
 
 abstract class CommonAkkaHttpClient(implicit system: ActorSystem) extends FailFastCirceSupport {
 
-  val poolClientFlow: Flow[
+  def initPoolClientFlow: Flow[
     (HttpRequest, Promise[HttpResponse]),
     (Try[HttpResponse], Promise[HttpResponse]),
     Http.HostConnectionPool
@@ -32,7 +32,7 @@ abstract class CommonAkkaHttpClient(implicit system: ActorSystem) extends FailFa
   val queue: SourceQueueWithComplete[(HttpRequest, Promise[HttpResponse])] =
     Source
       .queue[(HttpRequest, Promise[HttpResponse])](10000, OverflowStrategy.dropNew: @nowarn)
-      .via(poolClientFlow)
+      .via(initPoolClientFlow)
       .toMat(Sink.foreach {
         case (Success(resp), p) => p.success(resp)
         case (Failure(e), p)    => p.failure(e)

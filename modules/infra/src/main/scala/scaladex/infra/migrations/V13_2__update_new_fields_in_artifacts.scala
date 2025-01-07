@@ -6,7 +6,7 @@ import doobie.util.update.Update
 import org.flywaydb.core.api.migration.BaseJavaMigration
 import org.flywaydb.core.api.migration.Context
 import scaladex.core.model.Artifact
-import scaladex.infra.sql.DoobieUtils.Mappings._
+import scaladex.infra.sql.DoobieMappings._
 import scaladex.infra.sql.DoobieUtils._
 
 class V13_2__update_new_fields_in_artifacts extends BaseJavaMigration with ScaladexBaseMigration with LazyLogging {
