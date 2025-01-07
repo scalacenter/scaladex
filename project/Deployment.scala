@@ -10,7 +10,7 @@ import java.nio.file.attribute._
 import scala.sys.process._
 
 object Deployment {
-  def apply(data: Project, server: Project): Seq[Def.Setting[_]] = Seq(
+  def apply(data: Project, server: Project): Seq[Def.Setting[?]] = Seq(
     deployServer := deployTask(server, prodUserName, prodHostname).value,
     deployIndex := indexTask(data, prodUserName, prodHostname).value,
     deployDevServer := deployTask(server, devUserName, devHostname).value,

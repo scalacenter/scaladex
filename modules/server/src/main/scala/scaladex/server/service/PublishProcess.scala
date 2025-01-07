@@ -24,12 +24,11 @@ import scaladex.infra.DataPaths
 import scaladex.infra.GithubClientImpl
 
 sealed trait PublishResult
-object PublishResult {
+object PublishResult:
   object InvalidPom extends PublishResult
   object NoGithubRepo extends PublishResult
   object Success extends PublishResult
   case class Forbidden(login: String, repo: Project.Reference) extends PublishResult
-}
 
 class PublishProcess(
     filesystem: Storage,
@@ -40,7 +39,7 @@ class PublishProcess(
     pomsReader: PomsReader,
     env: Env
 )(implicit system: ActorSystem)
-    extends LazyLogging {
+    extends LazyLogging:
   import system.dispatcher
 
   def publishPom(
@@ -48,7 +47,7 @@ class PublishProcess(
       data: String,
       creationDate: Instant,
       userState: Option[UserState]
-  ): Future[PublishResult] = {
+  ): Future[PublishResult] =
     logger.info(s"Publishing POM $path")
     Future(loadPom(data).get)
       .flatMap(publishPom(_, creationDate, userState))
@@ -56,44 +55,41 @@ class PublishProcess(
         logger.error(s"Invalid POM $path", cause)
         PublishResult.InvalidPom
       }
-  }
+  end publishPom
 
   private def publishPom(
       pom: ArtifactModel,
       creationDate: Instant,
       userState: Option[UserState]
-  ): Future[PublishResult] = {
+  ): Future[PublishResult] =
     val pomRef = s"${pom.groupId}:${pom.artifactId}:${pom.version}"
-    githubExtractor.extract(pom) match {
+    githubExtractor.extract(pom) match
       case None =>
         // TODO: save artifact with no github information
         Future.successful(PublishResult.NoGithubRepo)
       case Some(repo) =>
         // userState can be empty when the request of publish is done through the scheduler
-        if (userState.forall(userState => userState.hasPublishingAuthority(env) || userState.repos.contains(repo))) {
-          converter.convert(pom, repo, creationDate) match {
+        if userState.forall(userState => userState.hasPublishingAuthority(env) || userState.repos.contains(repo)) then
+          converter.convert(pom, repo, creationDate) match
             case Some((artifact, deps)) =>
-              for {
+              for
                 isNewProject <- artifactService.insertArtifact(artifact, deps)
                 _ <-
-                  if (isNewProject && userState.nonEmpty) {
+                  if isNewProject && userState.nonEmpty then
                     val githubUpdater = new GithubUpdater(database, new GithubClientImpl(userState.get.info.token))
                     githubUpdater.update(repo).map(_ => ())
-                  } else Future.successful(())
-              } yield {
+                  else Future.successful(())
+              yield
                 logger.info(s"Published $pomRef")
                 PublishResult.Success
-              }
             case None =>
               logger.warn(s"Cannot convert $pomRef to valid Scala artifact.")
               Future.successful(PublishResult.InvalidPom)
-          }
-        } else {
+        else
           logger.warn(s"User ${userState.get.info.login} attempted to publish to $repo")
           Future.successful(PublishResult.Forbidden(userState.get.info.login, repo))
-        }
-    }
-  }
+    end match
+  end publishPom
 
   def republishPom(
       repo: Project.Reference,
@@ -103,7 +99,7 @@ class PublishProcess(
   ): Future[PublishResult] =
     Future(loadPom(data).get)
       .flatMap { pom =>
-        converter.convert(pom, repo, creationDate).map(_._1) match {
+        converter.convert(pom, repo, creationDate).map(_._1) match
           case Some(artifact) if artifact.reference == ref =>
             database.insertArtifact(artifact).map(_ => PublishResult.Success)
           case Some(artifact) =>
@@ -112,31 +108,28 @@ class PublishProcess(
           case None =>
             logger.warn(s"Cannot convert $ref to valid Scala artifact.")
             Future.successful(PublishResult.InvalidPom)
-        }
       }
       .recover { cause =>
         logger.warn(s"Invalid POM $ref", cause)
         PublishResult.InvalidPom
       }
 
-  private def loadPom(data: String): Try[ArtifactModel] = {
+  private def loadPom(data: String): Try[ArtifactModel] =
     val sha1 = Sha1(data)
     val tempFile = filesystem.createTempFile(data, sha1, ".pom")
     val res = pomsReader.loadOne(tempFile)
     filesystem.deleteTempFile(tempFile)
     res
-  }
-}
+end PublishProcess
 
-object PublishProcess {
+object PublishProcess:
   def apply(paths: DataPaths, filesystem: Storage, database: SchedulerDatabase, env: Env)(
       implicit ec: ExecutionContext,
       actorSystem: ActorSystem
-  ): PublishProcess = {
+  ): PublishProcess =
     val githubExtractor = new GithubRepoExtractor(paths)
     val converter = new ArtifactConverter(paths)
     val pomsReader = new PomsReader(new CoursierResolver)
     val artifactService = new ArtifactService(database)
     new PublishProcess(filesystem, githubExtractor, converter, database, artifactService, pomsReader, env)
-  }
-}
+end PublishProcess

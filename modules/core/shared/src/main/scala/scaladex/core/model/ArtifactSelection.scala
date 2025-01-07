@@ -3,11 +3,11 @@ package scaladex.core.model
 case class ArtifactSelection(
     binaryVersion: Option[BinaryVersion],
     artifactNames: Option[Artifact.Name]
-) {
+):
   private def filterAll(artifact: Artifact.Reference): Boolean =
     binaryVersion.forall(_ == artifact.binaryVersion) && artifactNames.forall(_ == artifact.name)
 
-  def defaultArtifact(artifacts: Seq[Artifact.Reference], project: Project): Option[Artifact.Reference] = {
+  def defaultArtifact(artifacts: Seq[Artifact.Reference], project: Project): Option[Artifact.Reference] =
     val filteredArtifacts = artifacts.view.filter(filterAll)
 
     filteredArtifacts.maxByOption { artifact =>
@@ -36,7 +36,7 @@ case class ArtifactSelection(
         Ordering[BinaryVersion]
       )
     )
-  }
+  end defaultArtifact
 
   def filterArtifacts(artifacts: Seq[Artifact.Reference], project: Project): Seq[Artifact.Reference] =
     artifacts
@@ -69,9 +69,7 @@ case class ArtifactSelection(
           )
           .reverse
       )
+end ArtifactSelection
 
-}
-
-object ArtifactSelection {
+object ArtifactSelection:
   def empty = new ArtifactSelection(None, None)
-}

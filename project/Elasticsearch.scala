@@ -22,7 +22,7 @@ object Elasticsearch extends AutoPlugin {
 
   import autoImport._
 
-  def settings(defaultPort: Int): Seq[Setting[_]] = Seq(
+  def settings(defaultPort: Int): Seq[Setting[?]] = Seq(
     startElasticsearch := {
       import sbt.util.CacheImplicits._
       val dataFolder = Keys.baseDirectory.value / ".esdata"

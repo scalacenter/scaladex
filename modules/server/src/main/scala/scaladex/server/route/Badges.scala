@@ -3,10 +3,10 @@ package scaladex.server.route
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import org.apache.pekko.http.scaladsl.model.StatusCodes._
-import org.apache.pekko.http.scaladsl.model.headers.CacheDirectives._
-import org.apache.pekko.http.scaladsl.model.headers._
-import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.model.StatusCodes.*
+import org.apache.pekko.http.scaladsl.model.headers.CacheDirectives.*
+import org.apache.pekko.http.scaladsl.model.headers.*
+import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.RequestContext
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.server.RouteResult
@@ -24,7 +24,7 @@ import scaladex.core.model.Version
 import scaladex.core.model.Version.PreferStable
 import scaladex.core.service.WebDatabase
 
-class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext) {
+class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext):
 
   private val shields =
     parameters("color".?, "style".?, "logo".?, "logoWidth".as[Int].?)
@@ -49,7 +49,7 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
       style: Option[String],
       logo: Option[String],
       logoWidth: Option[Int]
-  ) = {
+  ) =
 
     def shieldEscape(in: String): String =
       in.replace("-", "--")
@@ -81,7 +81,7 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
         TemporaryRedirect
       )
     }
-  }
+  end shieldsSvg
 
   def latest(
       ref: Project.Reference,
@@ -154,7 +154,7 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
       project: Project,
       binaryVersion: Option[BinaryVersion],
       artifact: Option[Artifact.Name]
-  ): Future[Option[Artifact.Reference]] = {
+  ): Future[Option[Artifact.Reference]] =
     val artifactSelection = ArtifactSelection(binaryVersion, artifact)
     // TODO use projectHeader
     database.getProjectArtifactRefs(project.reference, stableOnly = false).map { artifacts =>
@@ -163,16 +163,15 @@ class Badges(database: WebDatabase)(implicit executionContext: ExecutionContext)
         .defaultArtifact(stableArtifacts, project)
         .orElse(artifactSelection.defaultArtifact(nonStableArtifacts, project))
     }
-  }
-}
+  end getDefaultArtifact
+end Badges
 
-object Badges {
-  private def summaryOfLatestVersions(artifacts: Seq[Artifact.Reference]): String = {
+object Badges:
+  private def summaryOfLatestVersions(artifacts: Seq[Artifact.Reference]): String =
     val versionsByScalaVersions = artifacts
       .groupMap(_.binaryVersion.language)(_.version)
       .collect { case (Scala(v), version) => Scala(v) -> version }
     summaryOfLatestVersions(versionsByScalaVersions)
-  }
 
   private[route] def summaryOfLatestVersions(versionsByScalaVersions: Map[Scala, Seq[Version]]): String =
     versionsByScalaVersions.view
@@ -187,4 +186,4 @@ object Badges {
           s"$latestVersion (Scala $scalaVersionsStr)"
       }
       .mkString(", ")
-}
+end Badges

@@ -2,34 +2,31 @@ package scaladex.client
 
 import scala.concurrent.Future
 import scala.scalajs.js
-import scala.scalajs.js.JSConverters._
+import scala.scalajs.js.JSConverters.*
 import scala.scalajs.js.UndefOr
 import scala.scalajs.js.annotation.JSExport
 import scala.scalajs.js.annotation.JSExportTopLevel
 
-import org.scalajs.dom._
+import org.scalajs.dom.*
 import org.scalajs.dom.document
 
 @JSExportTopLevel("ScaladexClient")
-object Client {
+object Client:
   import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 
   private def jumpToSearchInput(event: KeyboardEvent): Unit =
-    if (event.ctrlKey && event.keyCode == KeyCode.S) {
+    if event.ctrlKey && event.keyCode == KeyCode.S then
       Dom.getSearchInput.foreach { input =>
-        if (event.target != input) {
+        if event.target != input then
           input.focus()
           event.preventDefault()
-        }
       }
-    }
 
   @js.native
-  trait Repo extends js.Object {
+  trait Repo extends js.Object:
     val default_branch: String = js.native
-  }
 
-  private def fetchAndReplaceReadme(element: Element, token: Option[String]): Unit = {
+  private def fetchAndReplaceReadme(element: Element, token: Option[String]): Unit =
 
     val organization = element.attributes.getNamedItem("data-organization").value
     val repository = element.attributes.getNamedItem("data-repository").value
@@ -40,30 +37,26 @@ object Client {
         .map(t => headers + ("Authorization" -> s"bearer $t"))
         .getOrElse(headers)
 
-    def setReadme(): Future[Unit] = {
+    def setReadme(): Future[Unit] =
       val readmeRequest: Request = new Request(
         s"https://api.github.com/repos/$organization/$repository/readme",
-        new RequestInit {
+        new RequestInit:
           this.headers = headersWithCreds.toJSDictionary
-        }
       )
 
       fetch(readmeRequest).toFuture
         .flatMap { res =>
-          if (res.status == 200) {
-            res.text().toFuture
-          } else {
-            Future.successful("No README found for this project, please check the repository")
-          }
+          if res.status == 200 then res.text().toFuture
+          else Future.successful("No README found for this project, please check the repository")
         }
         .map(res => element.innerHTML = res)
-    }
+    end setReadme
 
-    def getDefaultBranchAndFixImages(): Future[Unit] = {
+    def getDefaultBranchAndFixImages(): Future[Unit] =
       def extractDefaultBranch(text: String): String =
         js.JSON.parse(text).asInstanceOf[Repo].default_branch
 
-      def fixImages(branch: String, organization: String, repository: String): Unit = {
+      def fixImages(branch: String, organization: String, repository: String): Unit =
         val root = s"https://github.com/$organization/$repository"
         val raw = s"$root/raw/$branch"
         val blob = s"$root/blob/$branch"
@@ -73,52 +66,48 @@ object Client {
           .filter(e => !Seq("href", "src").flatMap(a => Option(e.getAttribute(a))).head.startsWith("http"))
           .foreach { e =>
             val (at, newBase) =
-              if (e.tagName == "A") {
+              if e.tagName == "A" then
                 val attr = "href"
                 val href =
-                  if (e.getAttribute(attr).startsWith("#")) root
+                  if e.getAttribute(attr).startsWith("#") then root
                   else blob
 
                 e.setAttribute("target", "_blank")
                 (attr, href)
-              } else ("src", raw)
+              else ("src", raw)
 
             Option(e.getAttribute(at))
               .foreach { oldUrl =>
-                if (oldUrl.nonEmpty) {
+                if oldUrl.nonEmpty then
                   val newUrl =
-                    if (!oldUrl.startsWith("/")) s"$newBase/$oldUrl"
+                    if !oldUrl.startsWith("/") then s"$newBase/$oldUrl"
                     else s"$newBase$oldUrl"
                   e.setAttribute(at, newUrl)
-                }
               }
           }
-      }
+      end fixImages
 
       val repoRequest: Request = new Request(
         s"https://api.github.com/repos/$organization/$repository",
-        new RequestInit {
+        new RequestInit:
           this.headers = headersWithCreds.toJSDictionary
-        }
       )
       fetch(repoRequest).toFuture
         .flatMap { res =>
-          if (res.status == 200) {
-            res.text().toFuture.map(extractDefaultBranch)
-          } else { Future.successful("master") }
+          if res.status == 200 then res.text().toFuture.map(extractDefaultBranch)
+          else Future.successful("master")
         }
         .map(branch => fixImages(branch, organization, repository))
-    }
+    end getDefaultBranchAndFixImages
 
-    for {
+    for
       _ <- setReadme()
       _ <- getDefaultBranchAndFixImages()
-    } yield ()
-
-  }
+    yield ()
+  end fetchAndReplaceReadme
 
   @JSExport
-  def main(token: UndefOr[String]): Unit = {
+  def main(token: UndefOr[String]): Unit =
     document.addEventListener[KeyboardEvent]("keydown", jumpToSearchInput _)
 
     val autocompletion = new Autocompletion()
@@ -139,13 +128,13 @@ object Client {
     CopyToClipboard.addCopyListenersOnClass("btn-copy")
 
     ActiveNavObserver.start()
-  }
+  end main
 
   @JSExport
   def createSparkline(): Unit = Sparkline.createCommitActivity()
 
   @JSExport
-  def updateVisibleArtifactsInGrid(): Unit = {
+  def updateVisibleArtifactsInGrid(): Unit =
     def valuesOfCheckedInputsWithName(name: String): Set[String] =
       Dom
         .getAllBySelectors[HTMLInputElement](s"input[name='$name']")
@@ -159,13 +148,12 @@ object Client {
 
     Dom.getAllByClassNames[Element]("artifact-line").foreach { e =>
       val supported = allRequiredClasses.forall(e.classList.contains(_))
-      if (supported) {
+      if supported then
         e.classList.remove("artifact-line-hidden")
         e.classList.add("artifact-line-visible")
-      } else {
+      else
         e.classList.remove("artifact-line-visible")
         e.classList.add("artifact-line-hidden")
-      }
     }
 
     Dom.getAllByClassNames[Element]("version-line").foreach { e =>
@@ -174,14 +162,12 @@ object Client {
       val versionCell = e.querySelector("td.version").asInstanceOf[HTMLTableCellElement]
       versionCell.rowSpan = supportedCount + 1
 
-      if (supportedCount != 0) {
+      if supportedCount != 0 then
         e.classList.remove("version-line-hidden")
         e.classList.add("version-line-visible")
-      } else {
+      else
         e.classList.remove("version-line-visible")
         e.classList.add("version-line-hidden")
-      }
     }
-  }
-
-}
+  end updateVisibleArtifactsInGrid
+end Client

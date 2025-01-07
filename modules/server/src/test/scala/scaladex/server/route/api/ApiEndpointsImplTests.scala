@@ -11,22 +11,21 @@ import org.scalactic.source.Position
 import org.scalatest.Assertion
 import org.scalatest.BeforeAndAfterEach
 import scaladex.core.api.ArtifactResponse
-import scaladex.core.model._
-import scaladex.core.test.Values._
-import scaladex.core.util.ScalaExtensions._
+import scaladex.core.model.*
+import scaladex.core.test.Values.*
+import scaladex.core.util.ScalaExtensions.*
 import scaladex.server.route.ControllerBaseSuite
 
-class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach {
+class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach:
   val endpoints: ApiEndpointsImpl = new ApiEndpointsImpl(projectService, artifactService, searchEngine)
-  import endpoints._
+  import endpoints.*
 
-  override protected def beforeAll(): Unit = {
-    val insertions = for {
+  override protected def beforeAll(): Unit =
+    val insertions = for
       _ <- Cats.allArtifacts.mapSync(artifactService.insertArtifact(_, Seq.empty))
       _ <- searchSync.syncAll()
-    } yield ()
+    yield ()
     Await.result(insertions, Duration.Inf)
-  }
 
   implicit def jsonCodecToUnmarshaller[T: JsonCodec]: FromEntityUnmarshaller[T] =
     Unmarshaller.stringUnmarshaller
@@ -129,7 +128,7 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach 
 
     testGet(s"/api/v1/projects/${Cats.reference}/versions/latest") {
       status shouldBe StatusCodes.OK
-      import Cats._
+      import Cats.*
       val expected = Seq(
         `core_3:2.6.1`,
         `core_sjs1_3:2.6.1`,
@@ -154,7 +153,7 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach 
 
     testGet(s"/api/v1/projects/${Cats.reference}/artifacts?binary-version=_3") {
       status shouldBe StatusCodes.OK
-      import Cats._
+      import Cats.*
       val expected = Seq(`core_3:2.6.1`, `kernel_3:2.6.1`, `laws_3:2.6.1`).map(_.reference)
       responseAs[Seq[Artifact.Reference]] should contain theSameElementsAs expected
     }
@@ -167,7 +166,7 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach 
 
     testGet(s"/api/v1/projects/${Cats.reference}/artifacts?artifact-name=cats-core&binary-version=_3") {
       status shouldBe StatusCodes.OK
-      import Cats._
+      import Cats.*
       val expected = Seq(`core_3:2.6.1`).map(_.reference)
       responseAs[Seq[Artifact.Reference]] should contain theSameElementsAs expected
     }
@@ -204,4 +203,4 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach 
 
   private def testGet(route: String)(body: => Assertion): Unit =
     it(route)(Get(route) ~> routes(None) ~> check(body))
-}
+end ApiEndpointsImplTests

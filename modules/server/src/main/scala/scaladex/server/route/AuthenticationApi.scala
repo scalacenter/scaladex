@@ -6,12 +6,12 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-import com.softwaremill.pekkohttpsession.CsrfDirectives._
-import com.softwaremill.pekkohttpsession.CsrfOptions._
+import com.softwaremill.pekkohttpsession.CsrfDirectives.*
+import com.softwaremill.pekkohttpsession.CsrfOptions.*
 import com.softwaremill.pekkohttpsession.SessionConfig
-import com.softwaremill.pekkohttpsession.SessionDirectives._
+import com.softwaremill.pekkohttpsession.SessionDirectives.*
 import com.softwaremill.pekkohttpsession.SessionManager
-import com.softwaremill.pekkohttpsession.SessionOptions._
+import com.softwaremill.pekkohttpsession.SessionOptions.*
 import com.softwaremill.pekkohttpsession.SessionSerializer
 import com.softwaremill.pekkohttpsession.SingleValueSessionSerializer
 import com.softwaremill.pekkohttpsession.javadsl.InMemoryRefreshTokenStorage
@@ -19,10 +19,10 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.model.StatusCodes.TemporaryRedirect
 import org.apache.pekko.http.scaladsl.model.Uri.Query
-import org.apache.pekko.http.scaladsl.model._
+import org.apache.pekko.http.scaladsl.model.*
 import org.apache.pekko.http.scaladsl.model.headers.Referer
 import org.apache.pekko.http.scaladsl.server.Directive1
-import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.Route
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubAuth
@@ -30,7 +30,7 @@ import scaladex.core.service.WebDatabase
 
 class AuthenticationApi(clientId: String, sessionConfig: SessionConfig, githubAuth: GithubAuth, database: WebDatabase)(
     implicit system: ActorSystem
-) extends LazyLogging {
+) extends LazyLogging:
 
   import system.dispatcher
   implicit val serializer: SessionSerializer[UUID, String] =
@@ -38,12 +38,12 @@ class AuthenticationApi(clientId: String, sessionConfig: SessionConfig, githubAu
   implicit val sessionManager: SessionManager[UUID] = new SessionManager[UUID](sessionConfig)
   implicit val refreshTokenStorage: InMemoryRefreshTokenStorage[UUID] =
     (msg: String) =>
-      if (msg.startsWith("Looking up token for selector")) () // borring
+      if msg.startsWith("Looking up token for selector") then () // borring
       else logger.info(msg)
 
   def optionalUser: Directive1[Option[UserState]] =
     optionalSession(refreshable, usingCookies).flatMap {
-      case None         => provide(None)
+      case None => provide(None)
       case Some(userId) => onSuccess(database.getUser(userId))
     }
 
@@ -84,12 +84,12 @@ class AuthenticationApi(clientId: String, sessionConfig: SessionConfig, githubAu
             path("done")(complete("OK")),
             pathEnd(
               parameters("code", "state".?) { (code, state) =>
-                val future = for {
+                val future = for
                   token <- githubAuth.getToken(code)
                   user <- githubAuth.getUser(token)
                   userId = UUID.randomUUID()
                   _ <- database.insertUser(userId, user)
-                } yield {
+                yield
                   // Update user state lazily
                   githubAuth.getUserState(token).andThen {
                     case Success(Some(userState)) => database.updateUser(userId, userState)
@@ -110,7 +110,6 @@ class AuthenticationApi(clientId: String, sessionConfig: SessionConfig, githubAu
                       )
                     }
                   )
-                }
                 onSuccess(future)(identity)
               }
             )
@@ -118,4 +117,4 @@ class AuthenticationApi(clientId: String, sessionConfig: SessionConfig, githubAu
         )
       )
     )
-}
+end AuthenticationApi

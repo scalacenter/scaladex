@@ -1,26 +1,24 @@
 package scaladex.core.model
 
-sealed trait Category {
-  val label: String = {
+sealed trait Category:
+  val label: String =
     val name = getClass.getSimpleName.stripSuffix("$")
     val builder = name.foldLeft(new StringBuilder) { (builder, char) =>
-      if (char.isUpper && builder.nonEmpty) builder += '-'
+      if char.isUpper && builder.nonEmpty then builder += '-'
       builder += char.toLower
     }
     builder.toString
-  }
 
-  val title: String = {
+  val title: String =
     val name = getClass.getSimpleName.stripSuffix("$")
     val builder = name.foldLeft(new StringBuilder) { (builder, char) =>
-      if (char.isUpper && builder.nonEmpty) builder += ' '
+      if char.isUpper && builder.nonEmpty then builder += ' '
       builder += char
     }
     builder.toString.replaceAll(" And ", " and ")
-  }
-}
+end Category
 
-object Category {
+object Category:
   implicit val ordering: Ordering[Category] = Ordering.by(_.label)
   val all: Seq[Category] = MetaCategory.all.flatMap(_.categories).distinct
   val byLabel: Map[String, Category] = all.map(category => category.label -> category).toMap
@@ -62,9 +60,8 @@ object Category {
   case object PrintingAndDebugging extends Category
   case object CodeEditorsAndNotebooks extends Category
   case object CodeFormatting extends Category
-  case object ScriptingAndRepls extends Category {
+  case object ScriptingAndRepls extends Category:
     override val title: String = "Scripting and REPLs"
-  }
   case object StaticSitesAndDocumentation extends Category
   case object MiscellaneousTools extends Category
 
@@ -82,12 +79,10 @@ object Category {
 
   case object Bioinformatics extends Category
   case object CryptographyAndHashing extends Category
-  case object EconomyFinanceAndCryptocurrencies extends Category {
+  case object EconomyFinanceAndCryptocurrencies extends Category:
     override val title: String = "Economy, Finance and Cryptocurrencies"
-  }
-  case object ProbabilityStatisticsAndMachineLearning extends Category {
+  case object ProbabilityStatisticsAndMachineLearning extends Category:
     override val title: String = "Probability, Statistics and Machine Learning"
-  }
   case object NaturalLanguageProcessing extends Category
   case object NumericalAndSymbolicComputing extends Category
 
@@ -99,41 +94,33 @@ object Category {
   case object Network extends Category
 
   case object ArchivesAndCompression extends Category
-  case object Csv extends Category {
+  case object Csv extends Category:
     override val title: String = "CSV"
-  }
-  case object Json extends Category {
+  case object Json extends Category:
     override val title: String = "JSON"
-  }
   case object Markdown extends Category
-  case object Pdf extends Category {
+  case object Pdf extends Category:
     override val title: String = "PDF"
-  }
   case object Serialization extends Category
   case object Templating extends Category
   case object TextManipulation extends Category
   case object OtherDocumentFormats extends Category
-  case object Yaml extends Category {
+  case object Yaml extends Category:
     override val title: String = "YAML"
-  }
-  case object XmlHtmlAndDom extends Category {
+  case object XmlHtmlAndDom extends Category:
     override val title: String = "XML/HTML and DOM"
-  }
 
   case object AssetManagementAndBundlers extends Category
   case object AuthenticationAndPermissions extends Category
   case object Emailing extends Category
   case object FormsAndValidation extends Category
-  case object HttpServersAndClients extends Category {
+  case object HttpServersAndClients extends Category:
     override val title: String = "HTTP Servers and Clients"
-  }
   case object Internationalization extends Category
-  case object ThirdPartyApis extends Category {
+  case object ThirdPartyApis extends Category:
     override val title: String = "Third-Party APIs"
-  }
-  case object UrlsAndRouting extends Category {
+  case object UrlsAndRouting extends Category:
     override val title: String = "URLs and Routing"
-  }
   case object WebFrontend extends Category
   case object SemanticWeb extends Category
-}
+end Category

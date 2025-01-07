@@ -1,7 +1,7 @@
 package scaladex.core.model.search
 
 import scaladex.core.api.AutocompletionParams
-import scaladex.core.model._
+import scaladex.core.model.*
 
 case class SearchParams(
     queryString: String = "",
@@ -11,7 +11,7 @@ case class SearchParams(
     languages: Seq[Language] = Nil,
     platforms: Seq[Platform] = Nil,
     contributingSearch: Boolean = false
-) {
+):
   def toAutocomplete: AutocompletionParams = AutocompletionParams(
     queryString,
     topics,
@@ -20,4 +20,4 @@ case class SearchParams(
     contributingSearch,
     userRepos.nonEmpty
   )
-}
+end SearchParams

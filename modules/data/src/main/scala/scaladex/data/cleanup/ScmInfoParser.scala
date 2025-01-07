@@ -1,12 +1,12 @@
 package scaladex.data
 package cleanup
 
-import fastparse._
+import fastparse.*
 import scaladex.core.model.Project
 import scaladex.core.util.Parsers
 
-object ScmInfoParser extends Parsers {
-  import fastparse.NoWhitespace._
+object ScmInfoParser extends Parsers:
+  import fastparse.NoWhitespace.*
 
   // More info in Rfc3986
   private def Unreserved[A: P] =
@@ -15,7 +15,7 @@ object ScmInfoParser extends Parsers {
   private def SubDelims[A: P] = CharIn("!$&'()*+,;=").!
 
   private def removeDotGit(v: String) =
-    if (v.endsWith(".git")) v.dropRight(".git".length)
+    if v.endsWith(".git") then v.dropRight(".git".length)
     else v
 
   private def ScmUrl[A: P] = P(
@@ -26,10 +26,8 @@ object ScmInfoParser extends Parsers {
   )
 
   def parse(scmInfo: String): Option[Project.Reference] =
-    fastparse.parse(scmInfo, x => ScmUrl(x)) match {
+    fastparse.parse(scmInfo, x => ScmUrl(x)) match
       case Parsed.Success((organization, repo), _) =>
         Some(Project.Reference.from(organization, repo))
       case _ => None
-    }
-
-}
+end ScmInfoParser

@@ -19,23 +19,20 @@ scaladex-contrib
 scaladex-credentials (optionnal)
 └── search-credential
  */
-object DataPaths {
+object DataPaths:
   def from(config: FilesystemConfig): DataPaths =
     DataPaths(config.contrib)
-}
 
-case class DataPaths(contrib: Path) {
+case class DataPaths(contrib: Path):
   assert(Files.isDirectory(contrib))
 
   val claims: Path = initJsonFile(contrib, "claims.json")
   val nonStandard: Path = initJsonFile(contrib, "non-standard.json")
 
-  private def initJsonFile(parent: Path, name: String): Path = {
+  private def initJsonFile(parent: Path, name: String): Path =
     val file = parent.resolve(name)
-    if (!Files.exists(file)) {
+    if !Files.exists(file) then
       Files.createFile(file)
       Files.write(file, "{}".getBytes(StandardCharsets.UTF_8))
-    }
     file
-  }
-}
+end DataPaths

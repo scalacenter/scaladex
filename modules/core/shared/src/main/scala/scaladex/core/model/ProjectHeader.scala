@@ -2,7 +2,7 @@ package scaladex.core.model
 
 import java.time.Instant
 
-object ProjectHeader {
+object ProjectHeader:
   def apply(
       ref: Project.Reference,
       artifacts: Seq[Artifact],
@@ -12,14 +12,14 @@ object ProjectHeader {
     Option.when(artifacts.nonEmpty) {
       new ProjectHeader(ref, artifacts, defaultArtifactName, preferStableVersion)
     }
-}
+end ProjectHeader
 
 final case class ProjectHeader(
     ref: Project.Reference,
     artifacts: Seq[Artifact],
     defaultArtifactName: Option[Artifact.Name],
     preferStableVersion: Boolean
-) {
+):
   lazy val defaultArtifact: Artifact = getDefaultArtifact(None, None)
   lazy val latestVersion: Version = defaultArtifact.version
   lazy val latestArtifacts: Seq[Artifact] = artifacts.filter(_.version == latestVersion)
@@ -36,31 +36,28 @@ final case class ProjectHeader(
 
   def versionsUrl(platform: Platform): String = artifactsUrl(getDefaultArtifact(None, Some(platform)))
 
-  private def artifactsUrl(defaultArtifact: Artifact, withBinaryVersion: Boolean = true): String = {
+  private def artifactsUrl(defaultArtifact: Artifact, withBinaryVersion: Boolean = true): String =
     val preReleaseFilter = Option.when(preferStableVersion && defaultArtifact.version.isStable)("stableOnly=true")
     val binaryVersionFilter = Option.when(withBinaryVersion)(s"binary-version=${defaultArtifact.binaryVersion.value}")
     val filters = preReleaseFilter.toSeq ++ binaryVersionFilter
-    val queryParams = if (filters.nonEmpty) "?" + filters.mkString("&") else ""
+    val queryParams = if filters.nonEmpty then "?" + filters.mkString("&") else ""
     s"/$ref/artifacts/${defaultArtifact.name}$queryParams"
-  }
 
-  /** getDefaultArtifact is split in two steps: first we get the default artifact name and then,
-   *  the latest version.
-   *  The reason is, we cannot use the latest version of all artifacts to get the default artifact
-   *  if they don't share the same versioning. Instead we use the latest release date. But once we
-   *  have the artifact with the latest release date, we really want to get the latest version of
-   *  that artifact, which is not necessarily the latest one released because of back-publishing.
-   */
-  def getDefaultArtifact(language: Option[Language], platform: Option[Platform]): Artifact = {
+  /** getDefaultArtifact is split in two steps: first we get the default artifact name and then, the latest version. The
+    * reason is, we cannot use the latest version of all artifacts to get the default artifact if they don't share the
+    * same versioning. Instead we use the latest release date. But once we have the artifact with the latest release
+    * date, we really want to get the latest version of that artifact, which is not necessarily the latest one released
+    * because of back-publishing.
+    */
+  def getDefaultArtifact(language: Option[Language], platform: Option[Platform]): Artifact =
     val artifactName = getDefaultArtifactName(language, platform)
     val filteredArtifacts = artifacts.filter { a =>
       a.name == artifactName && language.forall(_ == a.language) && platform.forall(_ == a.platform)
     }
-    if (preferStableVersion) filteredArtifacts.maxBy(a => (a.version.isStable, a.version))
+    if preferStableVersion then filteredArtifacts.maxBy(a => (a.version.isStable, a.version))
     else filteredArtifacts.maxBy(_.version)
-  }
 
-  private def getDefaultArtifactName(language: Option[Language], platform: Option[Platform]): Artifact.Name = {
+  private def getDefaultArtifactName(language: Option[Language], platform: Option[Platform]): Artifact.Name =
     val filteredArtifacts = artifacts.filter(a => language.forall(_ == a.language) && platform.forall(_ == a.platform))
     val stableArtifacts = filteredArtifacts.filter(_.version.isStable)
 
@@ -76,7 +73,7 @@ final case class ProjectHeader(
     def byLatestDate(artifacts: Seq[Artifact]): Option[Artifact.Name] =
       artifacts.maxByOption(_.releaseDate).map(a => ofVersion(a.version))
 
-    if (preferStableVersion)
+    if preferStableVersion then
       defaultArtifactName
         .filter(name => filteredArtifacts.exists(_.name == name))
         .orElse(byLatestDate(stableArtifacts))
@@ -87,11 +84,12 @@ final case class ProjectHeader(
         .filter(name => filteredArtifacts.exists(_.name == name))
         .orElse(byLatestDate(filteredArtifacts))
         .get
-  }
+    end if
+  end getDefaultArtifactName
 
   def latestScalaVersions: Seq[Scala] = latestLanguages.collect { case v: Scala => v }
   def latestScalaJsVersions: Seq[ScalaJs] = latestPlatforms.collect { case v: ScalaJs => v }
   def latestScalaNativeVersions: Seq[ScalaNative] = latestPlatforms.collect { case v: ScalaNative => v }
   def latestSbtVersions: Seq[SbtPlugin] = latestPlatforms.collect { case v: SbtPlugin => v }
   def latestMillVersions: Seq[MillPlugin] = latestPlatforms.collect { case v: MillPlugin => v }
-}
+end ProjectHeader

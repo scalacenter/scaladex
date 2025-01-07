@@ -1,5 +1,5 @@
 package scaladex.server.route.api
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 import org.apache.pekko.http.scaladsl.model.ContentTypes
 import org.apache.pekko.http.scaladsl.model.HttpEntity
@@ -9,12 +9,12 @@ import org.apache.pekko.http.scaladsl.testkit.RouteTestTimeout
 import org.scalatest.BeforeAndAfterEach
 import scaladex.core.model.Env
 import scaladex.core.test.MockGithubAuth
-import scaladex.core.test.Values._
+import scaladex.core.test.Values.*
 import scaladex.infra.CoursierResolver
 import scaladex.server.route.ControllerBaseSuite
 import scaladex.server.service.PublishProcess
 
-class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
+class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach:
   val pomResolver = new CoursierResolver
   val publishProcess: PublishProcess = PublishProcess(dataPaths, localStorage, database, Env.Dev)
   val publishApi = new PublishApi(githubAuth, publishProcess)
@@ -35,8 +35,8 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
 
     request ~> publishApi.routes ~> check {
       status shouldBe StatusCodes.Created
-      for (artifact <- database.getArtifact(Cats.`core_3:2.6.1`.reference))
-        yield artifact should contain(Cats.`core_3:2.6.1`)
+      for artifact <- database.getArtifact(Cats.`core_3:2.6.1`.reference)
+      yield artifact should contain(Cats.`core_3:2.6.1`)
     }
   }
 
@@ -49,8 +49,8 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
 
     request ~> publishApi.routes ~> check {
       status shouldBe StatusCodes.Created
-      for (artifacts <- database.getArtifact(Cats.`core_2.13:2.5.0`.reference))
-        yield artifacts should contain(Cats.`core_2.13:2.5.0`)
+      for artifacts <- database.getArtifact(Cats.`core_2.13:2.5.0`.reference)
+      yield artifacts should contain(Cats.`core_2.13:2.5.0`)
     }
   }
 
@@ -63,8 +63,8 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
 
     request ~> publishApi.routes ~> check {
       status shouldBe StatusCodes.Created
-      for (artifacts <- database.getArtifact(Cats.`core_sjs1_3:2.6.1`.reference))
-        yield artifacts should contain(Cats.`core_sjs1_3:2.6.1`)
+      for artifacts <- database.getArtifact(Cats.`core_sjs1_3:2.6.1`.reference)
+      yield artifacts should contain(Cats.`core_sjs1_3:2.6.1`)
     }
   }
 
@@ -77,8 +77,8 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
 
     request ~> publishApi.routes ~> check {
       // status shouldBe StatusCodes.Forbidden
-      for (artifacts <- database.getArtifact(Scalafix.artifact.reference))
-        yield artifacts shouldBe empty
+      for artifacts <- database.getArtifact(Scalafix.artifact.reference)
+      yield artifacts shouldBe empty
     }
   }
 
@@ -89,8 +89,8 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach {
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
     val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity).addCredentials(admin)
     request ~> publishApi.routes ~> check {
-      for (artifacts <- database.getProjectArtifactRefs(SbtCrossProject.reference, stableOnly = false))
-        yield artifacts should contain theSameElementsAs Seq(SbtCrossProject.artifactRef)
+      for artifacts <- database.getProjectArtifactRefs(SbtCrossProject.reference, stableOnly = false)
+      yield artifacts should contain theSameElementsAs Seq(SbtCrossProject.artifactRef)
     }
   }
-}
+end PublishApiTests

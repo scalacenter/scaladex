@@ -4,10 +4,10 @@ import java.io.Closeable
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 import com.sksamuel.elastic4s.ElasticClient
-import com.sksamuel.elastic4s.ElasticDsl._
+import com.sksamuel.elastic4s.ElasticDsl.*
 import com.sksamuel.elastic4s.ElasticProperties
 import com.sksamuel.elastic4s.Hit
 import com.sksamuel.elastic4s.Response
@@ -27,7 +27,7 @@ import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.FieldValueFac
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.ScoreFunction
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import com.typesafe.scalalogging.LazyLogging
-import io.circe._
+import io.circe.*
 import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Category
 import scaladex.core.model.GithubIssue
@@ -44,27 +44,27 @@ import scaladex.core.model.search.ProjectHit
 import scaladex.core.model.search.SearchParams
 import scaladex.core.model.search.Sorting
 import scaladex.core.service.SearchEngine
-import scaladex.infra.Codecs._
+import scaladex.infra.Codecs.*
 import scaladex.infra.config.ElasticsearchConfig
-import scaladex.infra.elasticsearch.ElasticsearchMapping._
+import scaladex.infra.elasticsearch.ElasticsearchMapping.*
 import scaladex.infra.elasticsearch.RawProjectDocument
 
-/**
- * @param esClient TCP client of the elasticsearch server
- */
+/** @param esClient
+  *   TCP client of the elasticsearch server
+  */
 class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: ExecutionContext)
     extends SearchEngine
     with LazyLogging
-    with Closeable {
-  import ElasticsearchEngine._
+    with Closeable:
+  import ElasticsearchEngine.*
 
   private val maxLanguagesOrPlatforms = 20
 
   private def waitUntilReady(): Future[Unit] = Future {
     var backoff = 0
     var done = false
-    while (backoff <= 128 && !done) {
-      if (backoff > 0) Thread.sleep(200L * backoff)
+    while backoff <= 128 && !done do
+      if backoff > 0 then Thread.sleep(200L * backoff)
       backoff = backoff + 1
 
       val waitForYellowStatus =
@@ -72,24 +72,22 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       // TODO: rewrite without await
       val response = esClient.execute(waitForYellowStatus).await
       done = response.isSuccess
-    }
     require(done, s"Failed waiting on: Expected cluster to have yellow status")
   }
 
   def close(): Unit = esClient.close()
 
   def init(reset: Boolean): Future[Unit] =
-    for {
+    for
       _ <- waitUntilReady()
       indexExists <- esClient.execute(indexExists(index)).map(_.result.isExists)
       _ <-
-        if (!indexExists) create()
-        else if (reset)
-          esClient.execute(deleteIndex(index)).flatMap(_ => create())
+        if !indexExists then create()
+        else if reset then esClient.execute(deleteIndex(index)).flatMap(_ => create())
         else Future.unit
-    } yield ()
+    yield ()
 
-  private def create(): Future[Unit] = {
+  private def create(): Future[Unit] =
     val createProject = createIndex(index)
       .analysis(
         Analysis(
@@ -105,30 +103,27 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     esClient
       .execute(createProject)
       .map { resp =>
-        if (resp.isError) logger.info(resp.error.reason)
+        if resp.isError then logger.info(resp.error.reason)
         else ()
       }
-  }
+  end create
 
-  override def insert(project: ProjectDocument): Future[Unit] = {
+  override def insert(project: ProjectDocument): Future[Unit] =
     val rawDocument = RawProjectDocument.from(project)
     val insertion = indexInto(index).withId(project.id).source(rawDocument)
     esClient.execute(insertion).map(_ => ())
-  }
 
-  override def delete(reference: Project.Reference): Future[Unit] = {
+  override def delete(reference: Project.Reference): Future[Unit] =
     val deletion = deleteById(index, reference.toString)
     esClient.execute(deletion).map(_ => ())
-  }
 
   def refresh(): Future[Unit] =
     esClient.execute(refreshIndex(index)).map(_ => ())
 
-  override def count(): Future[Int] = {
+  override def count(): Future[Int] =
     val query = must(matchAllQuery())
     val request = search(index).query(query).size(0)
     esClient.execute(request).map(_.result.totalHits.toInt)
-  }
 
   override def countByTopics(limit: Int): Future[Seq[TopicCount]] =
     countAllUnique("githubInfo.topics.keyword", matchAllQuery(), limit)
@@ -140,27 +135,24 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
   def countByPlatforms(): Future[Seq[(Platform, Int)]] =
     platformAggregations(matchAllQuery())
 
-  override def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]] = {
+  override def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]] =
     val request = searchRequest(matchAllQuery(), Sorting.Dependent).limit(limit)
     esClient.execute(request).map(extractDocuments)
-  }
 
-  override def getLatest(limit: Int): Future[Seq[ProjectDocument]] = {
+  override def getLatest(limit: Int): Future[Seq[ProjectDocument]] =
     val request = searchRequest(matchAllQuery(), Sorting.Created).limit(limit)
     esClient.execute(request).map(extractDocuments)
-  }
 
-  override def autocomplete(params: SearchParams, limit: Int): Future[Seq[ProjectDocument]] = {
+  override def autocomplete(params: SearchParams, limit: Int): Future[Seq[ProjectDocument]] =
     val request = searchRequest(filteredSearchQuery(params), params.sorting).limit(limit)
     esClient.execute(request).map(extractDocuments)
-  }
 
   override def find(
       queryString: String,
       binaryVersion: Option[BinaryVersion],
       cli: Boolean,
       page: PageParams
-  ): Future[Page[ProjectDocument]] = {
+  ): Future[Page[ProjectDocument]] =
     val query = must(
       optionalQuery(cli, cliQuery),
       optionalQuery(binaryVersion)(binaryVersionQuery),
@@ -168,38 +160,34 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     )
     val request = searchRequest(query, Sorting.Stars)
     findPage(request, page).map(_.flatMap(toProjectDocument))
-  }
-  override def find(params: SearchParams, page: PageParams): Future[Page[ProjectHit]] = {
+  end find
+  override def find(params: SearchParams, page: PageParams): Future[Page[ProjectHit]] =
     val request = searchRequest(filteredSearchQuery(params), params.sorting)
     findPage(request, page).map(_.flatMap(toProjectHit))
-  }
 
-  override def findRefs(params: SearchParams): Future[Seq[Project.Reference]] = {
+  override def findRefs(params: SearchParams): Future[Seq[Project.Reference]] =
     val request = searchRequest(filteredSearchQuery(params), params.sorting)
       .sourceInclude("organization", "repository")
       .limit(10000)
     scroll(request, 30.seconds).map(_.flatMap(hit => Project.Reference.parse(hit.id)))
-  }
 
-  private def scroll(request: SearchRequest, timeout: FiniteDuration): Future[Seq[Hit]] = {
+  private def scroll(request: SearchRequest, timeout: FiniteDuration): Future[Seq[Hit]] =
     val r0 = request.keepAlive(timeout)
     val keepAlive = r0.keepAlive.get
-    def recur(resp: Response[SearchResponse]): Future[Seq[Hit]] = {
+    def recur(resp: Response[SearchResponse]): Future[Seq[Hit]] =
       val hits = resp.result.hits.hits.toSeq
-      resp.result.scrollId match {
+      resp.result.scrollId match
         case None => Future.successful(hits)
         case Some(id) =>
-          for {
+          for
             r <- esClient.execute(searchScroll(id, keepAlive))
             nextHits <- recur(r)
-          } yield hits ++ nextHits
-      }
-    }
+          yield hits ++ nextHits
     esClient.execute(request).flatMap(recur)
-  }
+  end scroll
 
-  private def findPage(request: SearchRequest, page: PageParams): Future[Page[SearchHit]] = {
-    val clamp = if (page.page <= 0) 1 else page.page
+  private def findPage(request: SearchRequest, page: PageParams): Future[Page[SearchHit]] =
+    val clamp = if page.page <= 0 then 1 else page.page
     val pagedRequest = request.from(page.size * (clamp - 1)).size(page.size)
     esClient
       .execute(pagedRequest)
@@ -215,39 +203,36 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
           response.result.hits.hits.toSeq
         )
       }
-  }
+  end findPage
 
-  private def searchRequest(query: Query, sorting: Sorting): SearchRequest = {
-    val scorer = sorting match {
-      case Sorting.Stars          => Some(combinedWithPercentage("githubInfo.stars"))
-      case Sorting.Created        => None
+  private def searchRequest(query: Query, sorting: Sorting): SearchRequest =
+    val scorer = sorting match
+      case Sorting.Stars => Some(combinedWithPercentage("githubInfo.stars"))
+      case Sorting.Created => None
       case Sorting.CommitActivity => Some(combinedWithPercentage("githubInfo.commitsPerYear"))
-      case Sorting.Contributors   => Some(combinedWithPercentage("githubInfo.contributorCount"))
+      case Sorting.Contributors => Some(combinedWithPercentage("githubInfo.contributorCount"))
       case Sorting.Dependent =>
         Some(fieldFactorScore("dependents").missing(0).modifier(FieldValueFactorFunctionModifier.LOG1P))
-    }
 
-    val scoringQuery = scorer match {
+    val scoringQuery = scorer match
       case Some(scorer) => functionScoreQuery().query(query).functions(scorer).boostMode(CombineFunction.Multiply)
-      case None         => query
-    }
+      case None => query
 
-    val sortQuery = sorting match {
+    val sortQuery = sorting match
       case Sorting.Created => fieldSort("creationDate").desc()
-      case _               => scoreSort().order(SortOrder.Desc)
-    }
+      case _ => scoreSort().order(SortOrder.Desc)
 
     search(index)
       .sourceExclude("githubInfo.readme")
       .query(scoringQuery)
       .sortBy(sortQuery)
-  }
+  end searchRequest
 
   private def extractDocuments(response: Response[SearchResponse]): Seq[ProjectDocument] =
     response.result.hits.hits.toSeq.flatMap(toProjectDocument)
 
   private def toProjectDocument(hit: SearchHit): Option[ProjectDocument] =
-    parser.decode[RawProjectDocument](hit.sourceAsString) match {
+    parser.decode[RawProjectDocument](hit.sourceAsString) match
       case Right(rawDocument) =>
         Some(rawDocument.toProjectDocument)
       case Left(error) =>
@@ -256,12 +241,10 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
         val repository = source.getOrElse("repository", "unknown")
         logger.warn(s"cannot decode project document of $organization/$repository: ${error.getMessage}")
         None
-    }
 
-  private def toProjectHit(hit: SearchHit): Option[ProjectHit] = {
+  private def toProjectHit(hit: SearchHit): Option[ProjectHit] =
     val openIssueHits = getOpenIssueHits(hit)
     toProjectDocument(hit).map(ProjectHit(_, openIssueHits))
-  }
 
   private def getOpenIssueHits(hit: SearchHit): Seq[GithubIssue] =
     hit.innerHits
@@ -271,12 +254,11 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       .flatMap(_.hits)
       .flatMap { hit =>
         val source = SourceAsContentBuilder(hit.source).string
-        parser.decode[GithubIssue](source) match {
+        parser.decode[GithubIssue](source) match
           case Right(issue) => Some(issue)
           case Left(_) =>
             logger.warn("cannot parse beginner issue: ")
             None
-        }
       }
 
   override def countByTopics(params: SearchParams, limit: Int): Future[Seq[(String, Int)]] =
@@ -293,7 +275,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
       category: Category,
       params: AwesomeParams,
       page: PageParams
-  ): Future[Page[ProjectDocument]] = {
+  ): Future[Page[ProjectDocument]] =
     val query = must(
       termQuery("category", category.label),
       binaryVersionQuery(params.languages, params.platforms)
@@ -302,7 +284,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
 
     findPage(request, page)
       .map(p => p.flatMap(toProjectDocument))
-  }
+  end find
 
   def countByLanguages(category: Category, params: AwesomeParams): Future[Seq[(Language, Int)]] =
     languageAggregation(awesomeQuery(category, params)).map(addMissing(params.languages))
@@ -313,37 +295,36 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
   private def languageAggregation(query: Query): Future[Seq[(Language, Int)]] =
     countAllUnique("languages", query, maxLanguagesOrPlatforms)
       .map { versionAgg =>
-        for {
+        for
           (version, count) <- versionAgg.toList
           language <- Language.parse(version)
-        } yield (language, count)
+        yield (language, count)
       }
       .map(_.sortBy(_._1)(Language.ordering.reverse))
 
   private def platformAggregations(query: Query): Future[Seq[(Platform, Int)]] =
     countAllUnique("platforms", query, maxLanguagesOrPlatforms)
       .map { versionAgg =>
-        for {
+        for
           (version, count) <- versionAgg.toList
           platform <- Platform.parse(version)
-        } yield (platform, count)
+        yield (platform, count)
       }
       .map(_.sortBy(_._1)(Platform.ordering.reverse))
 
   private def countAllUnique(field: String, query: Query, limit: Int): Future[Seq[(String, Int)]] =
     aggregation(field, query, limit).map(_.buckets.map(b => b.key -> b.docCount.toInt))
 
-  private def aggregation(field: String, query: Query, limit: Int): Future[Terms] = {
+  private def aggregation(field: String, query: Query, limit: Int): Future[Terms] =
     val aggName = s"${field}_count"
     val aggregation = termsAgg(aggName, field).size(limit)
 
     val request = search(index).query(query).aggregations(aggregation)
-    for (response <- esClient.execute(request))
-      yield response.result.aggregations
-        .result[Terms](aggName)
-  }
+    for response <- esClient.execute(request)
+    yield response.result.aggregations
+      .result[Terms](aggName)
 
-  private def combinedWithPercentage(sortingField: String): ScoreFunction = {
+  private def combinedWithPercentage(sortingField: String): ScoreFunction =
     val sortingFieldAccess = fieldAccess(sortingField, default = "0")
     val scalaPercentageField = fieldAccess("githubInfo.scalaPercentage", default = "100")
     scriptScore(
@@ -351,7 +332,6 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
         script = s"Math.log($sortingFieldAccess * $scalaPercentageField + 1)"
       )
     )
-  }
 
   private def awesomeQuery(category: Category, params: AwesomeParams): Query =
     must(
@@ -371,15 +351,14 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
   private def searchQuery(
       queryString: String,
       contributingSearch: Boolean
-  ): Query = {
+  ): Query =
     val (filters, plainText) =
       queryString
         .replace("/", "\\/")
         .split(" AND ")
-        .partition(_.contains(":")) match {
+        .partition(_.contains(":")) match
         case (luceneQueries, plainTerms) =>
           (luceneQueries.mkString(" AND "), plainTerms.mkString(" "))
-      }
 
     val filterQuery = optionalQuery(
       filters.nonEmpty,
@@ -387,8 +366,8 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     )
 
     val plainTextQuery =
-      if (plainText.isEmpty || plainText == "*") matchAllQuery()
-      else {
+      if plainText.isEmpty || plainText == "*" then matchAllQuery()
+      else
         val multiMatch = multiMatchQuery(plainText)
           .field("repository", 6)
           .field("primaryTopic", 5)
@@ -402,13 +381,13 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
         val readmeMatch = matchQuery("githubInfo.readme", plainText).boost(0.5)
 
         val contributingQuery =
-          if (contributingSearch) {
+          if contributingSearch then
             nestedQuery(
               "githubInfo.openIssues",
               matchQuery("githubInfo.openIssues.title", plainText)
             ).inner(innerHits("openIssues").size(7))
               .boost(4)
-          } else matchNoneQuery()
+          else matchNoneQuery()
 
         val autocompleteQuery = plainText
           .split(" ")
@@ -433,10 +412,9 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
           autocompleteQuery,
           contributingQuery
         )
-      }
 
     must(filterQuery, plainTextQuery)
-  }
+  end searchQuery
 
   private def topicsQuery(topics: Seq[String]): Query =
     must(topics.map(topicQuery))
@@ -476,12 +454,13 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
     )
   )
 
-  /**
-   * Treats the query inputted by a user as a lucene query
-   *
-   * @param queryString the query inputted by user
-   * @return the elastic query definition
-   */
+  /** Treats the query inputted by a user as a lucene query
+    *
+    * @param queryString
+    *   the query inputted by user
+    * @return
+    *   the elastic query definition
+    */
   private def luceneQuery(queryString: String): Query =
     stringQuery(
       replaceFields(queryString)
@@ -502,31 +481,29 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(implicit ec: E
         regex.replaceAllIn(query, s"$$1$replacement:")
     }
 
-  private def addMissing[T: Ordering](required: Seq[T])(result: Seq[(T, Int)]): Seq[(T, Int)] = {
+  private def addMissing[T: Ordering](required: Seq[T])(result: Seq[(T, Int)]): Seq[(T, Int)] =
     val missingLabels = required.toSet -- result.map(_._1)
     val toAdd = missingLabels.map(label => (label, 0))
     (result ++ toAdd).sortBy(_._1)(implicitly[Ordering[T]].reverse)
-  }
 
   private def optionalQuery(condition: Boolean, query: Query): Query =
-    if (condition) query else matchAllQuery()
+    if condition then query else matchAllQuery()
 
   private def optionalQuery[P](param: Option[P])(query: P => Query): Query =
     param.map(query).getOrElse(matchAllQuery())
-}
+end ElasticsearchEngine
 
-object ElasticsearchEngine extends LazyLogging {
-  def open(config: ElasticsearchConfig)(implicit ec: ExecutionContext): ElasticsearchEngine = {
+object ElasticsearchEngine extends LazyLogging:
+  def open(config: ElasticsearchConfig)(implicit ec: ExecutionContext): ElasticsearchEngine =
     logger.info(s"Using elasticsearch index: ${config.index}")
 
     val props = ElasticProperties(s"http://localhost:${config.port}")
     val esClient = ElasticClient(JavaClient(props))
     new ElasticsearchEngine(esClient, config.index)
-  }
 
   def fieldAccess(name: String): String =
     s"doc['$name'].value"
 
   def fieldAccess(name: String, default: String): String =
     s"(doc['$name'].size() != 0 ? doc['$name'].value : $default)"
-}
+end ElasticsearchEngine

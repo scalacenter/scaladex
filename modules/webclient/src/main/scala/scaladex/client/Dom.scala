@@ -5,19 +5,19 @@ import org.scalajs.dom.HTMLInputElement
 import org.scalajs.dom.Node
 import org.scalajs.dom.document
 import scaladex.core.api.AutocompletionParams
-import scaladex.core.model._
+import scaladex.core.model.*
 
-object Dom {
+object Dom:
   def getSearchRequest: Option[AutocompletionParams] =
-    for (query <- getSearchQuery)
-      yield AutocompletionParams(
-        query = query,
-        topics = getSearchFilter("topic"),
-        languages = getSearchFilter("language").flatMap(Language.parse),
-        platforms = getSearchFilter("platform").flatMap(Platform.parse),
-        contributingSearch = getById[HTMLInputElement]("contributing-search").map(_.value).contains("true"),
-        you = getById[HTMLInputElement]("you").map(_.value).contains("✓")
-      )
+    for query <- getSearchQuery
+    yield AutocompletionParams(
+      query = query,
+      topics = getSearchFilter("topic"),
+      languages = getSearchFilter("language").flatMap(Language.parse),
+      platforms = getSearchFilter("platform").flatMap(Platform.parse),
+      contributingSearch = getById[HTMLInputElement]("contributing-search").map(_.value).contains("true"),
+      you = getById[HTMLInputElement]("you").map(_.value).contains("✓")
+    )
 
   def getSearchQuery: Option[String] =
     getSearchInput.map(_.value).filter(_.length > 0)
@@ -43,4 +43,4 @@ object Dom {
 
   def getAllBySelectors[E <: Element](selectors: String): Seq[E] =
     document.querySelectorAll(selectors).toSeq.map(_.asInstanceOf[E])
-}
+end Dom

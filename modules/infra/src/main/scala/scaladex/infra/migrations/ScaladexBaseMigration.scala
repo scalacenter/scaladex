@@ -4,11 +4,11 @@ import scala.concurrent.ExecutionContext
 
 import cats.effect.ContextShift
 import cats.effect.IO
-import doobie.implicits._
+import doobie.implicits.*
 import doobie.util.transactor.Transactor
 import scaladex.infra.config.PostgreSQLConfig
 
-trait ScaladexBaseMigration {
+trait ScaladexBaseMigration:
   private implicit val cs: ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
@@ -24,4 +24,4 @@ trait ScaladexBaseMigration {
 
   def run[A](xa: doobie.Transactor[IO])(v: doobie.ConnectionIO[A]): IO[A] =
     v.transact(xa)
-}
+end ScaladexBaseMigration

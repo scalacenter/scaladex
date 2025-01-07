@@ -32,7 +32,7 @@ case class RawProjectDocument(
     category: Option[String],
     formerReferences: Seq[Project.Reference],
     githubInfo: Option[GithubInfoDocument]
-) {
+):
   def toProjectDocument: ProjectDocument = ProjectDocument(
     organization,
     repository,
@@ -49,16 +49,16 @@ case class RawProjectDocument(
     formerReferences,
     githubInfo
   )
-}
+end RawProjectDocument
 
-object RawProjectDocument {
-  import scaladex.infra.Codecs._
-  import io.circe.syntax._
+object RawProjectDocument:
+  import scaladex.infra.Codecs.*
+  import io.circe.syntax.*
   implicit val codec: Codec[RawProjectDocument] = semiauto.deriveCodec
   implicit val indexable: Indexable[RawProjectDocument] = rawDocument => Printer.noSpaces.print(rawDocument.asJson)
 
-  def from(project: ProjectDocument): RawProjectDocument = {
-    import project._
+  def from(project: ProjectDocument): RawProjectDocument =
+    import project.*
     RawProjectDocument(
       organization,
       repository,
@@ -75,5 +75,5 @@ object RawProjectDocument {
       formerReferences,
       githubInfo
     )
-  }
-}
+  end from
+end RawProjectDocument

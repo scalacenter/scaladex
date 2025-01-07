@@ -5,7 +5,9 @@ import scaladex.core.model.Artifact
 import scaladex.core.model.Contributor
 import scaladex.core.model.Url
 
-/** Abstract model of a released artifact. Initially modeled after the POM model. Tweaked to fit with ivy.xml descriptors */
+/** Abstract model of a released artifact. Initially modeled after the POM model. Tweaked to fit with ivy.xml
+  * descriptors
+  */
 // POM Model
 // https://maven.apache.org/pom.html
 // javadoc: https://maven.apache.org/ref/3.3.9/maven-model/apidocs/org/apache/maven/model/Model.html
@@ -35,10 +37,10 @@ case class ArtifactModel(
       None, // Information on the target scala and sbt versions, in case this artifact is an sbt plugin
     scaladocUrl: Option[Url] = None,
     versionScheme: Option[String] = None
-) {
+):
   private val packagingOfInterest = Set("aar", "jar", "bundle", "pom")
   val isPackagingOfInterest: Boolean = packagingOfInterest.contains(packaging)
-}
+end ArtifactModel
 
 case class SbtPluginTarget(scalaVersion: String, sbtVersion: String)
 
@@ -82,10 +84,10 @@ case class Dependency(
     scope: Option[String] = None,
     exclusions: Set[Exclusion] = Set(),
     optional: Boolean = false
-) {
+):
   val reference: Artifact.Reference = Artifact.Reference.from(groupId, artifactId, version)
   override def toString: String = s"$groupId $artifactId $version"
-}
+end Dependency
 
 case class Exclusion(groupId: String, artifactId: String)
 

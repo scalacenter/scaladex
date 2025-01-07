@@ -5,7 +5,7 @@ import io.circe.Json
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import scaladex.server.route.ControllerBaseSuite
 
-class DocumentationRoutesTests extends ControllerBaseSuite with FailFastCirceSupport {
+class DocumentationRoutesTests extends ControllerBaseSuite with FailFastCirceSupport:
   describe("route") {
     it("should serve OpenAPI documentation") {
       Get("/api/open-api.json") ~> DocumentationRoute.route ~> check {
@@ -14,4 +14,3 @@ class DocumentationRoutesTests extends ControllerBaseSuite with FailFastCirceSup
       }
     }
   }
-}

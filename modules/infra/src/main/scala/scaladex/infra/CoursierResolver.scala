@@ -19,7 +19,7 @@ import coursier.maven.SbtMavenRepository
 import scaladex.core.model.Artifact
 import scaladex.core.service.PomResolver
 
-class CoursierResolver(implicit val ec: ExecutionContext) extends PomResolver with LazyLogging {
+class CoursierResolver(implicit val ec: ExecutionContext) extends PomResolver with LazyLogging:
   private val repositories = Seq(
     SbtMavenRepository(Repositories.central),
     SbtMavenRepository(Repositories.jcenter),
@@ -29,7 +29,7 @@ class CoursierResolver(implicit val ec: ExecutionContext) extends PomResolver wi
     .withArtifactTypes(Set(Type.pom))
     .withRepositories(repositories)
 
-  def resolveSync(ref: Artifact.Reference): Path = {
+  def resolveSync(ref: Artifact.Reference): Path =
     val dep = Dependency(Module(Organization(ref.groupId.value), ModuleName(ref.artifactId.value)), ref.version.value)
       .withPublication(ref.artifactId.value, Type.pom)
     fetchPoms
@@ -37,9 +37,8 @@ class CoursierResolver(implicit val ec: ExecutionContext) extends PomResolver wi
       .run()
       .head
       .toPath
-  }
 
-  def resolve(groupId: String, artifactId: String, version: String): Future[Option[Path]] = {
+  def resolve(groupId: String, artifactId: String, version: String): Future[Option[Path]] =
     val dep = Dependency(Module(Organization(groupId), ModuleName(artifactId)), version)
       .withPublication(artifactId, Type.pom)
 
@@ -53,16 +52,16 @@ class CoursierResolver(implicit val ec: ExecutionContext) extends PomResolver wi
         .recoverWith {
           case cause: ResolutionError.CantDownloadModule if isConcurrentDownload(cause) =>
             logger.warn(s"Concurrent download of pom $groupId:$artifactId:$version")
-            if (count < 10) {
+            if count < 10 then
               Thread.sleep(10)
               retry(count + 1)
-            } else Future.failed(cause)
+            else Future.failed(cause)
           case NonFatal(_) => Future(None)
         }
 
     retry(0)
-  }
+  end resolve
 
   private def isConcurrentDownload(cause: ResolutionError.CantDownloadModule): Boolean =
     cause.getMessage.contains("concurrent download")
-}
+end CoursierResolver

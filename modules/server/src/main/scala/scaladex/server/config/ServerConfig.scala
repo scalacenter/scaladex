@@ -21,8 +21,8 @@ case class ServerConfig(
     github: GithubConfig
 )
 
-object ServerConfig {
-  def load(): ServerConfig = {
+object ServerConfig:
+  def load(): ServerConfig =
     val config: Config = ConfigFactory.load()
 
     val env = Env.from(config.getString("scaladex.env"))
@@ -38,5 +38,5 @@ object ServerConfig {
     val github = GithubConfig.from(config)
 
     ServerConfig(env, session, endpoint, port, oauth2, database, elasticsearch, filesystem, github)
-  }
-}
+  end load
+end ServerConfig

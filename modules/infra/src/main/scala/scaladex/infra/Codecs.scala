@@ -2,14 +2,14 @@ package scaladex.infra
 
 import java.time.Instant
 
-import io.circe._
-import io.circe.generic.semiauto._
-import scaladex.core.model._
+import io.circe.*
+import io.circe.generic.semiauto.*
+import scaladex.core.model.*
 import scaladex.core.model.search.GithubInfoDocument
 import scaladex.core.util.Secret
 import scaladex.infra.github.GithubModel
 
-object Codecs {
+object Codecs:
   implicit val organization: Codec[Project.Organization] = fromString(_.value, Project.Organization.apply)
   implicit val repository: Codec[Project.Repository] = fromString(_.value, Project.Repository.apply)
   implicit val reference: Codec[Project.Reference] = deriveCodec
@@ -23,10 +23,9 @@ object Codecs {
   implicit val documentation: Codec[DocumentationPattern] =
     Codec.from(
       Decoder[Map[String, String]].emap { map =>
-        map.toList match {
+        map.toList match
           case (key -> value) :: Nil => Right(DocumentationPattern(key, value))
-          case _                     => Left(s"Cannot decode json to DocumentationLink: $map")
-        }
+          case _ => Left(s"Cannot decode json to DocumentationLink: $map")
       },
       Encoder[Map[String, String]].contramap(doc => Map(doc.label -> doc.pattern))
     )
@@ -63,5 +62,4 @@ object Codecs {
 
   private def fromString[A](encode: A => String, decode: String => A): Codec[A] =
     Codec.from(Decoder[String].map(decode), Encoder[String].contramap(encode))
-
-}
+end Codecs

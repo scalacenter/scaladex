@@ -5,7 +5,7 @@ import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 
-class BinaryVersionTests extends AnyFunSpec with Matchers with OptionValues with TableDrivenPropertyChecks {
+class BinaryVersionTests extends AnyFunSpec with Matchers with OptionValues with TableDrivenPropertyChecks:
   it("should be ordered") {
     val `0.6.7` = Version("0.6.7")
     val `0.6.18` = Version("0.6.18")
@@ -54,4 +54,4 @@ class BinaryVersionTests extends AnyFunSpec with Matchers with OptionValues with
       expected.value shouldBe input
     }
   }
-}
+end BinaryVersionTests

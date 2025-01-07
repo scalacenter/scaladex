@@ -2,7 +2,7 @@ package scaladex.view.html
 
 import org.scalatest.funspec.AnyFunSpec
 
-class PackageTests extends AnyFunSpec {
+class PackageTests extends AnyFunSpec:
   describe("pagination") {
     it("base case") {
       // *1*
@@ -62,4 +62,4 @@ class PackageTests extends AnyFunSpec {
       )
     }
   }
-}
+end PackageTests

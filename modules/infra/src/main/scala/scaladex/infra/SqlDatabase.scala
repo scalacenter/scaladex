@@ -5,19 +5,19 @@ import java.util.UUID
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 import cats.effect.IO
 import com.github.blemale.scaffeine.AsyncLoadingCache
 import com.github.blemale.scaffeine.Scaffeine
 import com.typesafe.scalalogging.LazyLogging
 import com.zaxxer.hikari.HikariDataSource
-import doobie.implicits._
-import scaladex.core.model._
+import doobie.implicits.*
+import scaladex.core.model.*
 import scaladex.core.service.SchedulerDatabase
-import scaladex.infra.sql._
+import scaladex.infra.sql.*
 
-class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging {
+class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging:
   private val flyway = DoobieUtils.flyway(datasource)
   def migrate: IO[Unit] = IO(flyway.migrate())
   def dropTables: IO[Unit] = IO(flyway.clean())
@@ -38,10 +38,9 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def insertArtifacts(artifacts: Seq[Artifact]): Future[Unit] =
     run(ArtifactTable.insertIfNotExist.updateMany(artifacts)).map(_ => ())
 
-  override def updateArtifacts(artifacts: Seq[Artifact.Reference], newRef: Project.Reference): Future[Int] = {
+  override def updateArtifacts(artifacts: Seq[Artifact.Reference], newRef: Project.Reference): Future[Int] =
     val references = artifacts.map(newRef -> _)
     run(ArtifactTable.updateProjectRef.updateMany(references))
-  }
 
   override def updateArtifactReleaseDate(ref: Artifact.Reference, releaseDate: Instant): Future[Int] =
     run(ArtifactTable.updateReleaseDate.run((releaseDate, ref)))
@@ -56,19 +55,18 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
     run(ArtifactTable.selectAllArtifacts(language, platform).to[Seq])
 
   override def insertProject(project: Project): Future[Unit] =
-    for {
+    for
       updated <- insertProjectRef(project.reference, project.githubStatus)
       _ <-
-        if (updated) {
+        if updated then
           project.githubInfo
             .map(updateGithubInfoAndStatus(project.reference, _, project.githubStatus))
             .getOrElse(Future.successful(()))
             .flatMap(_ => updateProjectSettings(project.reference, project.settings))
-        } else {
+        else
           logger.warn(s"${project.reference} already inserted")
           Future.successful(())
-        }
-    } yield ()
+    yield ()
 
   override def insertDependencies(dependencies: Seq[ArtifactDependency]): Future[Unit] =
     run(ArtifactDependencyTable.insertIfNotExist.updateMany(dependencies)).map(_ => ())
@@ -88,10 +86,10 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
       githubInfo: GithubInfo,
       githubStatus: GithubStatus
   ): Future[Unit] =
-    for {
+    for
       _ <- updateGithubStatus(ref, githubStatus)
       _ <- run(GithubInfoTable.insertOrUpdate.run((ref, githubInfo, githubInfo)))
-    } yield ()
+    yield ()
 
   override def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit] =
     run(ProjectSettingsTable.insertOrUpdate.run((ref, settings, settings))).map(_ => ())
@@ -175,7 +173,7 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
     run(ArtifactDependencyTable.computeProjectDependencies.to[Seq]((ref, version)))
 
   override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] =
-    if (projectDependencies.isEmpty) Future.successful(0)
+    if projectDependencies.isEmpty then Future.successful(0)
     else run(ProjectDependenciesTable.insertOrUpdate.updateMany(projectDependencies))
 
   override def deleteProjectDependencies(ref: Project.Reference): Future[Int] =
@@ -217,13 +215,12 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def deleteUser(userId: UUID): Future[Unit] =
     run(UserSessionsTable.deleteById.run(userId).map(_ => ()))
 
-  override def updateLatestVersion(ref: Project.Reference, artifact: Artifact.Reference): Future[Unit] = {
-    val transaction = for {
+  override def updateLatestVersion(ref: Project.Reference, artifact: Artifact.Reference): Future[Unit] =
+    val transaction = for
       _ <- ArtifactTable.setLatestVersion.run(artifact)
       _ <- ArtifactTable.unsetOthersLatestVersion.run(artifact)
-    } yield ()
+    yield ()
     run(transaction).map(_ => projectLatestArtifactsCache.underlying.synchronous().invalidate(ref))
-  }
 
   override def countVersions(ref: Project.Reference): Future[Long] =
     run(ArtifactTable.countVersionsByProject.unique(ref))
@@ -233,17 +230,17 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
       githubInfo: GithubInfo,
       status: GithubStatus.Moved
   ): Future[Unit] =
-    for {
+    for
       oldProject <- getProject(ref)
       _ <- updateGithubStatus(ref, status)
       _ <- run(ProjectTable.insertIfNotExists.run((status.destination, GithubStatus.Ok(status.updateDate))))
       _ <- updateProjectSettings(status.destination, oldProject.map(_.settings).getOrElse(Project.Settings.empty))
       _ <- run(GithubInfoTable.insertOrUpdate.run(status.destination, githubInfo, githubInfo))
-    } yield ()
+    yield ()
 
   def updateGithubStatus(ref: Project.Reference, githubStatus: GithubStatus): Future[Unit] =
     run(ProjectTable.updateGithubStatus.run(githubStatus, ref)).map(_ => ())
 
   private def run[A](v: doobie.ConnectionIO[A]): Future[A] =
     v.transact(xa).unsafeToFuture()
-}
+end SqlDatabase

@@ -10,17 +10,17 @@ import scala.util.Failure
 import scala.util.Success
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.pekko.http.scaladsl.model.Uri._
-import org.apache.pekko.http.scaladsl.model._
-import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server._
-import scaladex.core.model._
+import org.apache.pekko.http.scaladsl.model.Uri.*
+import org.apache.pekko.http.scaladsl.model.*
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.*
+import scaladex.core.model.*
 import scaladex.core.service.ProjectService
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
 import scaladex.core.web.ArtifactPageParams
 import scaladex.core.web.ArtifactsPageParams
-import scaladex.server.TwirlSupport._
+import scaladex.server.TwirlSupport.*
 import scaladex.server.service.ArtifactService
 import scaladex.server.service.SearchSynchronizer
 import scaladex.view.html.forbidden
@@ -35,7 +35,7 @@ class ProjectPages(
     searchEngine: SearchEngine
 )(
     implicit executionContext: ExecutionContext
-) extends LazyLogging {
+) extends LazyLogging:
 
   private val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)
 
@@ -48,7 +48,7 @@ class ProjectPages(
         path(projectM / "artifacts") { ref =>
           artifactsParams { params =>
             getProjectOrRedirect(ref, user) { project =>
-              for (header <- projectService.getHeader(project)) yield {
+              for header <- projectService.getHeader(project) yield
                 val allArtifacts = header.toSeq.flatMap(_.artifacts)
 
                 val binaryVersions = allArtifacts
@@ -75,7 +75,6 @@ class ProjectPages(
                   )
                 val page = html.artifacts(env, user, project, header, groupedArtifacts, params, binaryVersions)
                 complete(page)
-              }
             }
           }
         }
@@ -86,7 +85,7 @@ class ProjectPages(
             getProjectOrRedirect(ref, user) { project =>
               val artifactsF = database.getProjectArtifacts(ref, artifactName, params.stableOnly)
               val headerF = projectService.getHeader(project).map(_.get)
-              for (artifacts <- artifactsF; header <- headerF) yield {
+              for artifacts <- artifactsF; header <- headerF yield
                 val binaryVersions = artifacts
                   .map(_.binaryVersion)
                   .distinct
@@ -113,7 +112,7 @@ class ProjectPages(
                   params
                 )
                 complete(page)
-              }
+              end for
             }
           }
         }
@@ -124,7 +123,7 @@ class ProjectPages(
             getProjectOrRedirect(ref, user) { project =>
               val headerF = projectService.getHeader(project)
               val artifactsF = database.getProjectArtifacts(ref, artifactName, artifactVersion)
-              for {
+              for
                 artifacts <- artifactsF
                 header <- headerF
                 binaryVersions = artifacts.map(_.binaryVersion).distinct.sorted(BinaryVersion.ordering.reverse)
@@ -134,7 +133,7 @@ class ProjectPages(
                 reverseDepsF = database.getReverseDependencies(artifact)
                 directDeps <- directDepsF
                 reverseDeps <- reverseDepsF
-              } yield {
+              yield
                 val page = html.artifact(
                   env,
                   user,
@@ -147,7 +146,7 @@ class ProjectPages(
                   reverseDeps
                 )
                 complete(page)
-              }
+              end for
             }
           }
         }
@@ -155,10 +154,10 @@ class ProjectPages(
       get {
         path(projectM / "version-matrix") { ref =>
           getProjectOrRedirect(ref, user) { project =>
-            for {
+            for
               artifacts <- projectService.getArtifactRefs(project.reference, None, None, false)
               header <- projectService.getHeader(project)
-            } yield {
+            yield
               val binaryVersionByPlatforms = artifacts
                 .map(_.binaryVersion)
                 .distinct
@@ -176,7 +175,6 @@ class ProjectPages(
                 .sortBy(_._1)(Version.ordering.reverse)
               val page = html.versionMatrix(env, user, project, header, binaryVersionByPlatforms, artifactsByVersions)
               complete(page)
-            }
           }
         }
       },
@@ -185,22 +183,21 @@ class ProjectPages(
       },
       get {
         path(projectM / "settings") { projectRef =>
-          user match {
+          user match
             case Some(userState) if userState.canEdit(projectRef, env) =>
               getEditPage(projectRef, userState)
             case _ =>
               complete((StatusCodes.Forbidden, forbidden(env, user)))
-          }
         }
       },
       post {
         path(projectM / "settings") { projectRef =>
           editForm { form =>
-            val updateF = for {
+            val updateF = for
               _ <- database.updateProjectSettings(projectRef, form)
               _ <- artifactService.updateLatestVersions(projectRef, form.preferStableVersion)
               _ <- searchSynchronizer.syncProject(projectRef)
-            } yield ()
+            yield ()
             onComplete(updateF) {
               case Success(()) => redirect(Uri(s"/$projectRef"), StatusCodes.SeeOther)
               case Failure(e) =>
@@ -275,25 +272,24 @@ class ProjectPages(
       user: UserState
   ): Route =
     getProjectOrRedirect(ref, Some(user)) { project =>
-      for {
+      for
         artifacts <- projectService.getArtifactRefs(ref, None, None, false)
         header <- projectService.getHeader(project)
-      } yield {
+      yield
         val page = html.editproject(env, user, project, header, artifacts.map(_.name).distinct)
         complete(page)
-      }
     }
 
   private def getProjectPage(ref: Project.Reference, user: Option[UserState]): Route =
     getProjectOrRedirect(ref, user) { project =>
-      for {
+      for
         header <- projectService.getHeader(project)
         directDependencies <-
           header
             .map(h => database.getProjectDependencies(ref, h.latestVersion))
             .getOrElse(Future.successful(Seq.empty))
         reverseDependencies <- database.getProjectDependents(ref)
-      } yield {
+      yield
         val groupedDirectDependencies = directDependencies
           .groupBy(_.target)
           .view
@@ -313,16 +309,14 @@ class ProjectPages(
         val page =
           html.project(env, user, project, header, groupedDirectDependencies.toMap, groupedReverseDependencies.toMap)
         complete(page)
-      }
     }
 
   private def getBadges(ref: Project.Reference, user: Option[UserState]): Route =
     getProjectOrRedirect(ref, user) { project =>
-      for (header <- projectService.getHeader(project).map(_.get)) yield {
+      for header <- projectService.getHeader(project).map(_.get) yield
         val artifact = header.getDefaultArtifact(None, None)
         val page = html.badges(env, user, project, header, artifact)
         complete(StatusCodes.OK, page)
-      }
     }
 
   private val editForm: Directive1[Project.Settings] =
@@ -355,12 +349,12 @@ class ProjectPages(
                   key.drop("documentationLinks[".length).takeWhile(_ != ']')
               }
               .values
-              .map { case Seq((a, b), (_, d)) => if (a.contains("label")) (b, d) else (d, b) }
+              .map { case Seq((a, b), (_, d)) => if a.contains("label") then (b, d) else (d, b) }
               .flatMap { case (label, link) => DocumentationPattern.validated(label, link) }
               .toSeq
 
           def noneIfEmpty(value: String): Option[String] =
-            if (value.isEmpty) None else Some(value)
+            if value.isEmpty then None else Some(value)
 
           val settings: Project.Settings = Project.Settings(
             preferStableVersion,
@@ -376,4 +370,4 @@ class ProjectPages(
           Tuple1(settings)
       }
     )
-}
+end ProjectPages

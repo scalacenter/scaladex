@@ -7,12 +7,12 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
-import scaladex.core.util.ScalaExtensions._
+import scaladex.core.util.ScalaExtensions.*
 import scaladex.view.Task
 
 class TaskRunner private (val task: Task, user: String, input: Seq[(String, String)], run: () => Future[String])(
     implicit ec: ExecutionContext
-) {
+):
   private val start = Instant.now()
   private var state: Task.State = Task.Running(start)
 
@@ -24,11 +24,10 @@ class TaskRunner private (val task: Task, user: String, input: Seq[(String, Stri
     case Failure(cause) =>
       state = Task.Failure(start, Instant.now(), cause)
   }
-}
+end TaskRunner
 
-object TaskRunner {
+object TaskRunner:
   def run(task: Task, user: String, input: Seq[(String, String)])(run: () => Future[String])(
       implicit ec: ExecutionContext
   ) =
     new TaskRunner(task, user, input, run)
-}

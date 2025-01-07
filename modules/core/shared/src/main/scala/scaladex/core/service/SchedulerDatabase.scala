@@ -10,7 +10,7 @@ import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.model.Version
 
-trait SchedulerDatabase extends WebDatabase {
+trait SchedulerDatabase extends WebDatabase:
   // project and github
   def getAllProjects(): Future[Seq[Project]]
   def getAllProjectArtifacts(ref: Project.Reference): Future[Seq[Artifact]]
@@ -33,4 +33,4 @@ trait SchedulerDatabase extends WebDatabase {
   def getArtifactIds(ref: Project.Reference): Future[Seq[(Artifact.GroupId, Artifact.ArtifactId)]]
   def getArtifactRefs(): Future[Seq[Artifact.Reference]]
   def updateLatestVersion(ref: Project.Reference, artifact: Artifact.Reference): Future[Unit]
-}
+end SchedulerDatabase

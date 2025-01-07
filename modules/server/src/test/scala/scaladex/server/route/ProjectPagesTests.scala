@@ -8,27 +8,26 @@ import org.apache.pekko.http.scaladsl.model.FormData
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.model.Uri
 import org.apache.pekko.http.scaladsl.model.headers.Location
-import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.Route
 import org.scalatest.BeforeAndAfterEach
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.test.Values
 
-class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach {
-  import Values._
+class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach:
+  import Values.*
 
-  override def beforeEach(): Unit = {
+  override def beforeEach(): Unit =
     database.reset()
     Await.result(insertPlayJsonExtra(), Duration.Inf)
-  }
 
   private def insertPlayJsonExtra(): Future[Unit] =
-    for {
+    for
       _ <- artifactService.insertArtifact(PlayJsonExtra.artifact, Seq.empty)
       _ <- database.updateProjectCreationDate(PlayJsonExtra.reference, PlayJsonExtra.creationDate)
       _ <- database.updateGithubInfoAndStatus(PlayJsonExtra.reference, PlayJsonExtra.githubInfo, ok)
-    } yield ()
+    yield ()
 
   val projectPages = new ProjectPages(config.env, projectService, artifactService, database, searchEngine)
   val artifactPages = new ArtifactPages(config.env, database)
@@ -81,11 +80,10 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach {
       )
       Post(s"/${PlayJsonExtra.reference}/settings", formData) ~> route ~> check {
         status shouldBe StatusCodes.SeeOther
-        for (project <- database.getProject(PlayJsonExtra.reference)) yield {
+        for project <- database.getProject(PlayJsonExtra.reference) yield
           val settings = project.get.settings
           settings shouldBe PlayJsonExtra.settings
-        }
       }
     }
   }
-}
+end ProjectPagesTests

@@ -3,12 +3,11 @@ package scaladex.core.api
 import java.time.Instant
 
 import endpoints4s.Validated
-import scaladex.core.model._
+import scaladex.core.model.*
 
-/**
- * The Json schema of the Scaladex API
- */
-trait JsonSchemas extends endpoints4s.algebra.JsonSchemas {
+/** The Json schema of the Scaladex API
+  */
+trait JsonSchemas extends endpoints4s.algebra.JsonSchemas:
   private val stringJson = stringJsonSchema(None)
 
   implicit val organizationSchema: JsonSchema[Project.Organization] = stringJson.xmap(Project.Organization(_))(_.value)
@@ -89,4 +88,4 @@ trait JsonSchemas extends endpoints4s.algebra.JsonSchemas {
       } { autocompletionResponse =>
         (autocompletionResponse.organization, autocompletionResponse.repository, autocompletionResponse.description)
       }
-}
+end JsonSchemas

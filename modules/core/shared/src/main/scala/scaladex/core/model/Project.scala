@@ -2,7 +2,7 @@ package scaladex.core.model
 
 import java.time.Instant
 
-import scaladex.core.model.Project._
+import scaladex.core.model.Project.*
 // TODO: document NewProject fields
 case class Project(
     organization: Organization,
@@ -11,7 +11,7 @@ case class Project(
     githubStatus: GithubStatus,
     githubInfo: Option[GithubInfo],
     settings: Settings
-) {
+):
 
   val reference: Reference = Reference(organization, repository)
   def hasCli: Boolean = settings.cliArtifacts.nonEmpty
@@ -24,9 +24,8 @@ case class Project(
       settings.chatroom.map(LabeledLink("Chatroom", _)) ++
       githubInfo.flatMap(_.contributingGuide).map(l => l.labeled("Contributing Guide"))
 
-  /**
-   * This is used in twitter to render the card of a scaladex project link.
-   */
+  /** This is used in twitter to render the card of a scaladex project link.
+    */
   def twitterCard: TwitterSummaryCard = TwitterSummaryCard(
     "@scala_lang",
     repository.toString(),
@@ -34,8 +33,7 @@ case class Project(
     githubInfo.flatMap(_.logo)
   )
 
-  /**
-    * This is used in embedding to another website to render the card of a scaladex project link.
+  /** This is used in embedding to another website to render the card of a scaladex project link.
     */
   def ogp: OGP = OGP(
     title = s"Scaladex - ${organization.toString()} / ${repository.toString()}",
@@ -58,31 +56,29 @@ case class Project(
 
   def artifactDocumentation(artifact: Artifact): Seq[LabeledLink] =
     scaladoc(artifact).toSeq ++ settings.documentationLinks.map(_.eval(artifact))
-}
+end Project
 
-object Project {
+object Project:
 
-  case class Reference(organization: Organization, repository: Repository) extends Ordered[Reference] {
+  case class Reference(organization: Organization, repository: Repository) extends Ordered[Reference]:
     override def toString: String = s"$organization/$repository"
 
     override def compare(that: Reference): Int =
       Reference.ordering.compare(this, that)
-  }
-  object Reference {
+  object Reference:
     def from(org: String, repo: String): Reference =
       Reference(Organization(org), Repository(repo))
 
     def parse(value: String): Option[Reference] =
-      value.split('/') match {
+      value.split('/') match
         case Array(org, repo) => Some(from(org, repo))
-        case _                => None
-      }
+        case _ => None
 
     def unsafe(value: String): Reference = parse(value).get
 
     implicit val ordering: Ordering[Reference] =
       Ordering.by(ref => (ref.organization.value, ref.repository.value))
-  }
+  end Reference
   def default(
       ref: Project.Reference,
       creationDate: Option[Instant] = None,
@@ -114,22 +110,18 @@ object Project {
       chatroom: Option[String]
   )
 
-  case class Organization private (value: String) extends AnyVal {
+  case class Organization private (value: String) extends AnyVal:
     override def toString(): String = value
     def isEmpty(): Boolean = value.isEmpty
-  }
-  case class Repository private (value: String) extends AnyVal {
+  case class Repository private (value: String) extends AnyVal:
     override def toString(): String = value
     def isEmpty(): Boolean = value.isEmpty
-  }
-  object Organization {
+  object Organization:
     def apply(v: String): Organization = new Organization(v.toLowerCase())
-  }
-  object Repository {
+  object Repository:
     def apply(v: String): Repository = new Repository(v.toLowerCase())
-  }
 
-  object Settings {
+  object Settings:
     val empty: Settings = Settings(
       preferStableVersion = true,
       defaultArtifact = None,
@@ -141,5 +133,5 @@ object Project {
       category = None,
       chatroom = None
     )
-  }
-}
+  end Settings
+end Project

@@ -11,9 +11,7 @@ final case class EcosystemHighlight(
     otherVersions: Seq[EcosystemVersion]
 )
 
-object EcosystemHighlight {
-  def apply(ecosystem: String, allVersions: Seq[EcosystemVersion]): Option[EcosystemHighlight] = {
+object EcosystemHighlight:
+  def apply(ecosystem: String, allVersions: Seq[EcosystemVersion]): Option[EcosystemHighlight] =
     val sortedVersions = allVersions.sortBy(_.version)(Version.PreferStable).reverse
     sortedVersions.headOption.map(EcosystemHighlight(ecosystem, _, sortedVersions.tail))
-  }
-}

@@ -7,10 +7,10 @@ import doobie.util.query.Query
 import doobie.util.update.Update
 import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
-import scaladex.infra.sql.DoobieMappings._
-import scaladex.infra.sql.DoobieUtils._
+import scaladex.infra.sql.DoobieMappings.*
+import scaladex.infra.sql.DoobieUtils.*
 
-object UserSessionsTable {
+object UserSessionsTable:
 
   private[sql] val table = "user_sessions"
   private val userId = "user_id"
@@ -31,4 +31,4 @@ object UserSessionsTable {
 
   val deleteById: Update[UUID] =
     deleteRequest(table, Seq(userId))
-}
+end UserSessionsTable

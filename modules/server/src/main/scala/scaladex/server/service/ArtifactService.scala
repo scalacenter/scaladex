@@ -6,11 +6,11 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import com.typesafe.scalalogging.LazyLogging
-import scaladex.core.model._
+import scaladex.core.model.*
 import scaladex.core.service.SchedulerDatabase
-import scaladex.core.util.ScalaExtensions._
+import scaladex.core.util.ScalaExtensions.*
 
-class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext) extends LazyLogging {
+class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext) extends LazyLogging:
   def getVersions(
       groupId: Artifact.GroupId,
       artifactId: Artifact.ArtifactId,
@@ -24,9 +24,9 @@ class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext
   def getArtifact(ref: Artifact.Reference): Future[Option[Artifact]] =
     database.getArtifact(ref)
 
-  def insertArtifact(artifact: Artifact, dependencies: Seq[ArtifactDependency]): Future[Boolean] = {
+  def insertArtifact(artifact: Artifact, dependencies: Seq[ArtifactDependency]): Future[Boolean] =
     val unknownStatus = GithubStatus.Unknown(Instant.now)
-    for {
+    for
       isNewProject <- database.insertProjectRef(artifact.projectRef, unknownStatus)
       project <- database.getProject(artifact.projectRef).map(_.get)
       _ <- database.insertArtifact(artifact)
@@ -37,11 +37,12 @@ class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext
         artifact.artifactId,
         project.settings.preferStableVersion
       )
-    } yield isNewProject
-  }
+    yield isNewProject
+    end for
+  end insertArtifact
 
   def moveAll(): Future[String] =
-    for {
+    for
       projectStatuses <- database.getAllProjectsStatuses()
       moved = projectStatuses.collect { case (ref, GithubStatus.Moved(_, dest)) => ref -> dest }
       total <- moved
@@ -53,29 +54,29 @@ class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext
         }
         .sequence
         .map(_.sum)
-    } yield s"Moved $total artifacts"
+    yield s"Moved $total artifacts"
 
   def updateAllLatestVersions(): Future[String] =
-    for {
+    for
       projectStatuses <- database.getAllProjectsStatuses()
       refs = projectStatuses.collect { case (ref, status) if status.isOk || status.isUnknown || status.isFailed => ref }
       _ = logger.info(s"Updating latest versions of ${refs.size} projects")
       total <- refs.mapSync(updateLatestVersions).map(_.sum)
-    } yield s"Updated $total artifacts in ${refs.size} projects"
+    yield s"Updated $total artifacts in ${refs.size} projects"
 
   def updateLatestVersions(ref: Project.Reference): Future[Int] =
-    for {
+    for
       project <- database.getProject(ref).map(_.get)
       total <- updateLatestVersions(ref, project.settings.preferStableVersion)
-    } yield total
+    yield total
 
   def updateLatestVersions(ref: Project.Reference, preferStableVersion: Boolean): Future[Int] =
-    for {
+    for
       artifactIds <- database.getArtifactIds(ref)
       _ <- artifactIds.mapSync {
         case (groupId, artifactId) => updateLatestVersion(ref, groupId, artifactId, preferStableVersion)
       }
-    } yield artifactIds.size
+    yield artifactIds.size
 
   def updateLatestVersion(
       ref: Project.Reference,
@@ -83,15 +84,14 @@ class ArtifactService(database: SchedulerDatabase)(implicit ec: ExecutionContext
       artifactId: Artifact.ArtifactId,
       preferStableVersion: Boolean
   ): Future[Unit] =
-    for {
+    for
       artifacts <- database.getArtifacts(groupId, artifactId)
       latestVersion = computeLatestVersion(artifacts.map(_.version), preferStableVersion)
       _ <- database.updateLatestVersion(ref, Artifact.Reference(groupId, artifactId, latestVersion))
-    } yield ()
+    yield ()
 
-  def computeLatestVersion(versions: Seq[Version], preferStableVersion: Boolean): Version = {
+  def computeLatestVersion(versions: Seq[Version], preferStableVersion: Boolean): Version =
     def maxStable = versions.filter(_.isStable).maxOption
     def max = versions.max
-    if (preferStableVersion) maxStable.getOrElse(max) else max
-  }
-}
+    if preferStableVersion then maxStable.getOrElse(max) else max
+end ArtifactService

@@ -10,13 +10,13 @@ import scaladex.core.model.search.ProjectDocument
 import scaladex.core.service.ProjectService
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
-import scaladex.core.util.ScalaExtensions._
+import scaladex.core.util.ScalaExtensions.*
 
 class SearchSynchronizer(database: SchedulerDatabase, service: ProjectService, searchEngine: SearchEngine)(
     implicit ec: ExecutionContext
-) extends LazyLogging {
+) extends LazyLogging:
   def syncAll(): Future[String] =
-    for {
+    for
       allProjects <- database.getAllProjects()
       allProjectsAndStatus = allProjects.map(p => (p, p.githubStatus))
 
@@ -38,26 +38,25 @@ class SearchSynchronizer(database: SchedulerDatabase, service: ProjectService, s
         val formerReferences = movedProjects.getOrElse(project.reference, Seq.empty)
         insertDocument(project, formerReferences)
       }
-    } yield s"Updated ${projectsToSync.size} projects and removed ${projectsToDelete.size} projects"
+    yield s"Updated ${projectsToSync.size} projects and removed ${projectsToDelete.size} projects"
 
   def syncProject(ref: Project.Reference): Future[Unit] =
-    for {
+    for
       projectOpt <- database.getProject(ref)
       formerReferences <- database.getFormerReferences(ref)
-      _ <- projectOpt match {
+      _ <- projectOpt match
         case Some(project) => insertDocument(project, formerReferences)
         case None =>
           logger.error(s"Cannot update project document of $ref because: project not found")
           Future.successful(())
-      }
-    } yield ()
+    yield ()
 
   private def insertDocument(project: Project, formerReferences: Seq[Project.Reference]): Future[Unit] =
-    for {
+    for
       header <- service.getHeader(project)
       dependents <- database.countProjectDependents(project.reference)
       document = ProjectDocument(project, header, dependents, formerReferences)
       _ <- searchEngine.insert(document)
       _ <- formerReferences.mapSync(searchEngine.delete)
-    } yield ()
-}
+    yield ()
+end SearchSynchronizer

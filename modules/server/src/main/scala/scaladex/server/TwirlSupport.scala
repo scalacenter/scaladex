@@ -5,14 +5,14 @@ package scaladex.server
 import org.apache.pekko.http.scaladsl.marshalling.Marshaller
 import org.apache.pekko.http.scaladsl.marshalling.ToEntityMarshaller
 import org.apache.pekko.http.scaladsl.model.MediaType
-import org.apache.pekko.http.scaladsl.model.MediaTypes._
+import org.apache.pekko.http.scaladsl.model.MediaTypes.*
 import play.twirl.api.Html
 import play.twirl.api.Txt
 import play.twirl.api.Xml
 
 object TwirlSupport extends TwirlSupport
 
-trait TwirlSupport {
+trait TwirlSupport:
 
   /** Serialize Twirl `Html` to `text/html`. */
   implicit val twirlHtmlMarshaller: ToEntityMarshaller[Html] =
@@ -31,5 +31,4 @@ trait TwirlSupport {
       contentType: MediaType
   ): ToEntityMarshaller[A] =
     Marshaller.StringMarshaller.wrap(contentType)(_.toString)
-
-}
+end TwirlSupport

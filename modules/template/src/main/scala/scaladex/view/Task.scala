@@ -8,7 +8,7 @@ import scaladex.core.util.TimeUtils
 
 final case class Task(name: String, description: String)
 
-object Task {
+object Task:
   val findMissingArtifacts: Task = Task(
     "find-missing-artifacts",
     "Find all missing artifacts from Maven Central."
@@ -29,20 +29,16 @@ object Task {
     "Re-download pom files of known artifacts to extract new fields"
   )
 
-  case class Status(name: String, user: String, start: Instant, input: Seq[(String, String)], state: State) {
+  case class Status(name: String, user: String, start: Instant, input: Seq[(String, String)], state: State):
     def fromNow: FiniteDuration = TimeUtils.toFiniteDuration(start, Instant.now())
-  }
 
   sealed trait State
-  case class Running(start: Instant) extends State {
+  case class Running(start: Instant) extends State:
     def fromNow: FiniteDuration = TimeUtils.toFiniteDuration(start, Instant.now())
-  }
 
-  case class Success(start: Instant, end: Instant, message: String) extends State {
+  case class Success(start: Instant, end: Instant, message: String) extends State:
     def duration: FiniteDuration = TimeUtils.toFiniteDuration(start, end)
-  }
 
-  case class Failure(start: Instant, end: Instant, cause: Throwable) extends State {
+  case class Failure(start: Instant, end: Instant, cause: Throwable) extends State:
     def duration: FiniteDuration = TimeUtils.toFiniteDuration(start, end)
-  }
-}
+end Task

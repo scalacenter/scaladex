@@ -21,7 +21,7 @@ import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.stream.scaladsl.Source
 import org.apache.pekko.stream.scaladsl.SourceQueueWithComplete
 
-abstract class CommonAkkaHttpClient(implicit system: ActorSystem) extends FailFastCirceSupport {
+abstract class CommonAkkaHttpClient(implicit system: ActorSystem) extends FailFastCirceSupport:
 
   def initPoolClientFlow: Flow[
     (HttpRequest, Promise[HttpResponse]),
@@ -35,22 +35,22 @@ abstract class CommonAkkaHttpClient(implicit system: ActorSystem) extends FailFa
       .via(initPoolClientFlow)
       .toMat(Sink.foreach {
         case (Success(resp), p) => p.success(resp)
-        case (Failure(e), p)    => p.failure(e)
+        case (Failure(e), p) => p.failure(e)
       })(Keep.left)
       .run()
 
   def queueRequest(
       request: HttpRequest
-  )(implicit ec: ExecutionContextExecutor): Future[HttpResponse] = {
+  )(implicit ec: ExecutionContextExecutor): Future[HttpResponse] =
     val responsePromise = Promise[HttpResponse]()
     queue.offer(request -> responsePromise).flatMap {
-      case QueueOfferResult.Enqueued    => responsePromise.future
-      case QueueOfferResult.Dropped     => Future.failed(new RuntimeException("Queue overflowed. Try again later."))
+      case QueueOfferResult.Enqueued => responsePromise.future
+      case QueueOfferResult.Dropped => Future.failed(new RuntimeException("Queue overflowed. Try again later."))
       case QueueOfferResult.Failure(ex) => Future.failed(ex)
       case QueueOfferResult.QueueClosed =>
         Future.failed(
           new RuntimeException("Queue was closed (pool shut down) while running the request. Try again later.")
         )
     }
-  }
-}
+  end queueRequest
+end CommonAkkaHttpClient

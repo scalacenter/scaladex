@@ -6,10 +6,10 @@ import scaladex.core.model.Artifact
 
 case class InstallTab(ref: String, title: String, install: String, description: Html)
 
-object InstallTab {
-  def allOf(artifact: Artifact, cliArtifacts: Set[Artifact.Name]): Seq[InstallTab] = {
+object InstallTab:
+  def allOf(artifact: Artifact, cliArtifacts: Set[Artifact.Name]): Seq[InstallTab] =
     val coursierTab =
-      if (cliArtifacts.contains(artifact.name))
+      if cliArtifacts.contains(artifact.name) then
         artifact.csLaunch.map(
           InstallTab(
             "coursier",
@@ -48,5 +48,5 @@ object InstallTab {
     val gradleTab = artifact.gradleInstall.map(InstallTab("gradle", "Gradle", _, html""))
 
     coursierTab.toSeq ++ sbtTab ++ millTab ++ scalaCliTab ++ ammoniteTab ++ mavenTab ++ gradleTab
-  }
-}
+  end allOf
+end InstallTab

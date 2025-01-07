@@ -6,8 +6,8 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 
-object PidLock {
-  def create(prefix: String): Unit = {
+object PidLock:
+  def create(prefix: String): Unit =
     val pid = ManagementFactory.getRuntimeMXBean().getName().split("@").head
     val pidFile = Paths.get(s"$prefix-PID")
     Files.write(pidFile, pid.getBytes(StandardCharsets.UTF_8))
@@ -16,5 +16,4 @@ object PidLock {
     }
 
     ()
-  }
-}
+end PidLock

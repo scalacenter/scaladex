@@ -2,9 +2,9 @@ package scaladex.core
 
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model._
+import scaladex.core.model.*
 
-class PlatformTests extends AnyFunSpec with Matchers {
+class PlatformTests extends AnyFunSpec with Matchers:
   it("should parse a Platform from its value") {
     Platform.parse("sjs1").get shouldBe ScalaJs.`1.x`
     Platform.parse("jvm").get shouldBe Jvm
@@ -16,4 +16,4 @@ class PlatformTests extends AnyFunSpec with Matchers {
     )
     Platform.parse("mill0.10").get shouldBe MillPlugin.`0.10`
   }
-}
+end PlatformTests

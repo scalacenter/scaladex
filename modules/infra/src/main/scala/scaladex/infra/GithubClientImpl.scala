@@ -8,7 +8,7 @@ import scala.util.Try
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
-import io.circe.syntax._
+import io.circe.syntax.*
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.Http
 import org.apache.pekko.http.scaladsl.model.ContentTypes
@@ -36,15 +36,15 @@ import scaladex.core.model.Url
 import scaladex.core.model.UserInfo
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubClient
-import scaladex.core.util.ScalaExtensions._
+import scaladex.core.util.ScalaExtensions.*
 import scaladex.core.util.Secret
 import scaladex.infra.github.GithubModel
-import scaladex.infra.github.GithubModel._
+import scaladex.infra.github.GithubModel.*
 
 class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
     extends CommonAkkaHttpClient
     with GithubClient
-    with LazyLogging {
+    with LazyLogging:
   private val credentials: OAuth2BearerToken = OAuth2BearerToken(token.decode)
   private val acceptJson = RawHeader("Accept", "application/vnd.github.v3+json")
   private val acceptHtmlVersion = RawHeader("Accept", "application/vnd.github.VERSION.html")
@@ -76,14 +76,14 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
     }
 
   private def getRepoInfo(repo: GithubModel.Repository): Future[GithubInfo] =
-    for {
+    for
       readme <- getReadme(repo.ref)
       communityProfile <- getCommunityProfile(repo.ref)
       contributors <- getContributors(repo.ref)
       openIssues <- getOpenIssues(repo.ref)
       scalaPercentage <- getPercentageOfLanguage(repo.ref, language = "Scala")
       commitActivity <- getCommitActivity(repo.ref)
-    } yield GithubInfo(
+    yield GithubInfo(
       homepage = repo.homepage.map(Url.apply),
       description = repo.description,
       logo = Option(repo.avatartUrl).map(Url.apply),
@@ -104,7 +104,7 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
       commitActivity = commitActivity
     )
 
-  def getReadme(ref: Project.Reference): Future[Option[String]] = {
+  def getReadme(ref: Project.Reference): Future[Option[String]] =
     val request = HttpRequest(uri = s"${repoUrl(ref)}/readme")
       .addCredentials(credentials)
       .addHeader(acceptHtmlVersion)
@@ -115,18 +115,17 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
           entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String).map(Option.apply)
       }
       .fallbackTo(Future.successful(None))
-  }
+  end getReadme
 
-  def getCommunityProfile(ref: Project.Reference): Future[Option[GithubModel.CommunityProfile]] = {
+  def getCommunityProfile(ref: Project.Reference): Future[Option[GithubModel.CommunityProfile]] =
     val request = HttpRequest(uri = s"${repoUrl(ref)}/community/profile")
       .addCredentials(credentials)
       .addHeader(RawHeader("Accept", "application/vnd.github.black-panther-preview+json"))
     get[GithubModel.CommunityProfile](request)
       .map(Some.apply)
       .fallbackTo(Future.successful(None))
-  }
 
-  def getContributors(ref: Project.Reference): Future[List[GithubModel.Contributor]] = {
+  def getContributors(ref: Project.Reference): Future[List[GithubModel.Contributor]] =
     def request(page: Int) =
       HttpRequest(uri = s"${repoUrl(ref)}/contributors?${perPage()}&page=$page")
         .addHeader(acceptJson)
@@ -140,20 +139,19 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
         case (headers, entity) =>
           val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
           val contributors = Unmarshal(entity).to[List[GithubModel.Contributor]]
-          lastPage match {
+          lastPage match
             case Some(lastPage) if lastPage > 1 =>
-              for {
+              for
                 page1 <- contributors
                 nextPages <- (2 to lastPage).mapSync(getContributionPage).map(_.flatten)
-              } yield page1 ++ nextPages
+              yield page1 ++ nextPages
 
             case _ => contributors
-          }
       }
       .fallbackTo(Future.successful(List.empty))
-  }
+  end getContributors
 
-  def getRepository(ref: Project.Reference): Future[GithubResponse[GithubModel.Repository]] = {
+  def getRepository(ref: Project.Reference): Future[GithubResponse[GithubModel.Repository]] =
     val request = HttpRequest(uri = s"${repoUrl(ref)}").addHeader(acceptJson).addCredentials(credentials)
     process(request).flatMap {
       case GithubResponse.Ok((_, entity)) =>
@@ -162,9 +160,8 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
         Unmarshal(entity).to[GithubModel.Repository].map(GithubResponse.MovedPermanently(_))
       case GithubResponse.Failed(code, reason) => Future.successful(GithubResponse.Failed(code, reason))
     }
-  }
 
-  def getOpenIssues(ref: Project.Reference): Future[Seq[GithubModel.OpenIssue]] = {
+  def getOpenIssues(ref: Project.Reference): Future[Seq[GithubModel.OpenIssue]] =
     def request(page: Int) =
       HttpRequest(uri = s"${repoUrl(ref)}/issues?${perPage()}&page=$page")
         .addHeader(acceptJson)
@@ -178,20 +175,19 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
         case (headers, entity) =>
           val lastPage = headers.find(_.is("link")).map(_.value()).flatMap(extractLastPage)
           val issues = Unmarshal(entity).to[Seq[Option[GithubModel.OpenIssue]]]
-          lastPage match {
+          lastPage match
             case Some(lastPage) if lastPage > 1 =>
-              for {
+              for
                 page1 <- issues
                 nextPages <- (2 to lastPage).mapSync(getOpenIssuePage).map(_.flatten)
-              } yield page1.flatten ++ nextPages
+              yield page1.flatten ++ nextPages
 
             case _ => issues.map(_.flatten)
-          }
       }
       .fallbackTo(Future.successful(Seq.empty))
-  }
+  end getOpenIssues
 
-  def getPercentageOfLanguage(ref: Project.Reference, language: String): Future[Int] = {
+  def getPercentageOfLanguage(ref: Project.Reference, language: String): Future[Int] =
     def toPercentage(portion: Int, total: Int): Int =
       ((portion.toFloat / total) * 100).toInt
     val request =
@@ -200,42 +196,38 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
       val totalNumBytes = response.values.sum
       response.get(language).fold(0)(toPercentage(_, totalNumBytes))
     }
-  }
 
-  def getCommitActivity(ref: Project.Reference): Future[Seq[GithubCommitActivity]] = {
+  def getCommitActivity(ref: Project.Reference): Future[Seq[GithubCommitActivity]] =
     val request =
       HttpRequest(uri = s"${repoUrl(ref)}/stats/commit_activity").addHeader(acceptJson).addCredentials(credentials)
     get[Seq[GithubCommitActivity]](request).fallbackTo(Future.successful(Seq.empty))
-  }
 
   def getUserOrganizations(user: String): Future[Seq[Project.Organization]] =
     getAllRecursively(getUserOrganizationsPage(user))
 
   def getUserRepositories(user: String, filterPermissions: Seq[String]): Future[Seq[Project.Reference]] =
-    for (repos <- getAllRecursively(getUserRepositoriesPage(user)))
-      yield {
-        val filtered =
-          if (filterPermissions.isEmpty) repos
-          else repos.filter(repo => filterPermissions.contains(repo.viewerPermission))
-        filtered.map(repo => Project.Reference.unsafe(repo.nameWithOwner))
-      }
+    for repos <- getAllRecursively(getUserRepositoriesPage(user))
+    yield
+      val filtered =
+        if filterPermissions.isEmpty then repos
+        else repos.filter(repo => filterPermissions.contains(repo.viewerPermission))
+      filtered.map(repo => Project.Reference.unsafe(repo.nameWithOwner))
 
   def getOrganizationRepositories(
       user: String,
       organization: Project.Organization,
       filterPermissions: Seq[String]
   ): Future[Seq[Project.Reference]] =
-    for (repos <- getAllRecursively(getOrganizationProjectsPage(user, organization)))
-      yield {
-        val filtered =
-          if (filterPermissions.isEmpty) repos
-          else repos.filter(repo => filterPermissions.contains(repo.viewerPermission))
-        filtered.map(repo => Project.Reference.unsafe(repo.nameWithOwner))
-      }
+    for repos <- getAllRecursively(getOrganizationProjectsPage(user, organization))
+    yield
+      val filtered =
+        if filterPermissions.isEmpty then repos
+        else repos.filter(repo => filterPermissions.contains(repo.viewerPermission))
+      filtered.map(repo => Project.Reference.unsafe(repo.nameWithOwner))
 
   private def getUserOrganizationsPage(
       user: String
-  )(cursor: Option[String]): Future[GraphQLPage[Project.Organization]] = {
+  )(cursor: Option[String]): Future[GraphQLPage[Project.Organization]] =
     val after = cursor.map(c => s"""after: "$c"""").getOrElse("")
     val query =
       s"""|query { 
@@ -257,11 +249,11 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
         d.downField("login").as[String].map(Project.Organization.apply)
       }
     )
-  }
+  end getUserOrganizationsPage
 
   private def getUserRepositoriesPage(
       login: String
-  )(cursor: Option[String]): Future[GraphQLPage[RepoWithPermission]] = {
+  )(cursor: Option[String]): Future[GraphQLPage[RepoWithPermission]] =
     val after = cursor.map(c => s"""after: "$c"""").getOrElse("")
     val query =
       s"""|query {
@@ -281,11 +273,11 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
           |""".stripMargin
     val request = graphqlRequest(query)
     get[GraphQLPage[RepoWithPermission]](request)(graphqlPageDecoder("data", "user", "repositories"))
-  }
+  end getUserRepositoriesPage
 
   private def getOrganizationProjectsPage(user: String, organization: Project.Organization)(
       cursor: Option[String]
-  ): Future[GraphQLPage[RepoWithPermission]] = {
+  ): Future[GraphQLPage[RepoWithPermission]] =
     val after = cursor.map(c => s"""after: "$c"""").getOrElse("")
     val query =
       s"""|query {
@@ -307,36 +299,34 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
           |""".stripMargin
     val request = graphqlRequest(query)
     get[GraphQLPage[RepoWithPermission]](request)(graphqlPageDecoder("data", "user", "organization", "repositories"))
-  }
+  end getOrganizationProjectsPage
 
-  private def getAllRecursively[T](f: Option[String] => Future[GraphQLPage[T]]): Future[Seq[T]] = {
+  private def getAllRecursively[T](f: Option[String] => Future[GraphQLPage[T]]): Future[Seq[T]] =
     def recurse(cursor: Option[String], acc: Seq[T]): Future[Seq[T]] =
-      for {
+      for
         currentPage <- f(cursor)
         all <-
-          if (currentPage.hasNextPage) recurse(currentPage.endCursor, acc ++ currentPage.nodes)
+          if currentPage.hasNextPage then recurse(currentPage.endCursor, acc ++ currentPage.nodes)
           else Future.successful(acc ++ currentPage.nodes)
-      } yield all
+      yield all
     recurse(None, Nil)
-  }
 
   override def getUserState(): Future[GithubResponse[UserState]] =
     getUserInfo().flatMap {
-      case GithubResponse.Ok(info)               => getUserState(info).map(GithubResponse.Ok.apply)
+      case GithubResponse.Ok(info) => getUserState(info).map(GithubResponse.Ok.apply)
       case GithubResponse.MovedPermanently(info) => getUserState(info).map(GithubResponse.MovedPermanently.apply)
-      case failed: GithubResponse.Failed         => Future.successful(failed)
+      case failed: GithubResponse.Failed => Future.successful(failed)
     }
 
-  private def getUserState(userInfo: UserInfo): Future[UserState] = {
+  private def getUserState(userInfo: UserInfo): Future[UserState] =
     val permissions = Seq("WRITE", "MAINTAIN", "ADMIN")
-    for {
+    for
       organizations <- getUserOrganizations(userInfo.login)
       organizationRepos <- organizations.flatMapSync(getOrganizationRepositories(userInfo.login, _, permissions))
       userRepos <- getUserRepositories(userInfo.login, permissions)
-    } yield UserState(repos = organizationRepos.toSet ++ userRepos, orgs = organizations.toSet, info = userInfo)
-  }
+    yield UserState(repos = organizationRepos.toSet ++ userRepos, orgs = organizations.toSet, info = userInfo)
 
-  def getUserInfo(): Future[GithubResponse[UserInfo]] = {
+  def getUserInfo(): Future[GithubResponse[UserInfo]] =
     val query =
       """|query {
          |  viewer {
@@ -354,16 +344,15 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
       case GithubResponse.Failed(code, errorMessage) =>
         Future.successful(GithubResponse.Failed(code, errorMessage))
     }
-  }
+  end getUserInfo
 
-  private def extractLastPage(links: String): Option[Int] = {
+  private def extractLastPage(links: String): Option[Int] =
     val pattern = """page=([0-9]+)>; rel="?last"?""".r
     pattern
       .findFirstMatchIn(links)
       .flatMap(mtch => Try(mtch.group(1).toInt).toOption)
-  }
 
-  private def graphqlRequest(query: String): HttpRequest = {
+  private def graphqlRequest(query: String): HttpRequest =
     val json = Map("query" -> query.asJson).asJson
     HttpRequest(
       method = HttpMethods.POST,
@@ -371,7 +360,6 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
       entity = HttpEntity(ContentTypes.`application/json`, json.toString()),
       headers = List(Authorization(credentials))
     )
-  }
 
   private def get[A](
       request: HttpRequest
@@ -380,12 +368,12 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
 
   private def getRaw(request: HttpRequest): Future[(Seq[HttpHeader], ResponseEntity)] =
     process(request).map {
-      case GithubResponse.Ok((headers, entity))               => (headers, entity)
+      case GithubResponse.Ok((headers, entity)) => (headers, entity)
       case GithubResponse.MovedPermanently((headers, entity)) => (headers, entity)
-      case GithubResponse.Failed(code, reason)                => throw new Exception(s"$code: $reason")
+      case GithubResponse.Failed(code, reason) => throw new Exception(s"$code: $reason")
     }
 
-  private def process(request: HttpRequest): Future[GithubResponse[(Seq[HttpHeader], ResponseEntity)]] = {
+  private def process(request: HttpRequest): Future[GithubResponse[(Seq[HttpHeader], ResponseEntity)]] =
     assert(request.headers.contains(Authorization(credentials)))
     queueRequest(request).flatMap {
       case HttpResponse(StatusCodes.OK, headers, entity, _) =>
@@ -395,17 +383,18 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
         val newRequest = HttpRequest(uri = headers.find(_.is("location")).get.value()).withHeaders(request.headers)
         process(newRequest).map {
           case GithubResponse.Ok(res) => GithubResponse.MovedPermanently(res)
-          case other                  => other
+          case other => other
         }
       case _ @HttpResponse(code, _, entity, _) =>
-        if (entity.contentType.mediaType.isApplication) { // we need to parse as json when the mediaType is application/json
+        if entity.contentType.mediaType.isApplication
+        then // we need to parse as json when the mediaType is application/json
           Unmarshal(entity).to[Json].map(errorMessage => GithubResponse.Failed(code.intValue, errorMessage.toString()))
-        } else Unmarshal(entity).to[String].map(errorMessage => GithubResponse.Failed(code.intValue, errorMessage))
+        else Unmarshal(entity).to[String].map(errorMessage => GithubResponse.Failed(code.intValue, errorMessage))
     }
-  }
+  end process
 
   private def repoUrl(ref: Project.Reference): String =
     s"https://api.github.com/repos/$ref"
 
   private def perPage(value: Int = 100) = s"per_page=$value"
-}
+end GithubClientImpl

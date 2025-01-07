@@ -5,10 +5,9 @@ import endpoints4s.openapi.model.Info
 import endpoints4s.openapi.model.OpenApi
 import scaladex.core.api.Endpoints
 
-/**
- * Documentation of the public HTTP API of Scaladex
- */
-object ApiDocumentation extends Endpoints with openapi.Endpoints with openapi.JsonEntitiesFromSchemas {
+/** Documentation of the public HTTP API of Scaladex
+  */
+object ApiDocumentation extends Endpoints with openapi.Endpoints with openapi.JsonEntitiesFromSchemas:
   val apiV0: OpenApi = openApi(Info(title = "Scaladex API", version = "v0"))(
     getProjects(v0),
     getProjectArtifacts(v0),
@@ -27,4 +26,4 @@ object ApiDocumentation extends Endpoints with openapi.Endpoints with openapi.Js
     getLatestArtifactV1,
     getArtifact(v1)
   )
-}
+end ApiDocumentation

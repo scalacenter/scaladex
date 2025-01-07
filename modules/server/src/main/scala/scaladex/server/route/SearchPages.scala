@@ -2,18 +2,18 @@ package scaladex.server.route
 
 import scala.concurrent.ExecutionContext
 
-import org.apache.pekko.http.scaladsl.model.Uri._
-import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server._
-import scaladex.core.model._
-import scaladex.core.model.search._
+import org.apache.pekko.http.scaladsl.model.Uri.*
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.*
+import scaladex.core.model.*
+import scaladex.core.model.search.*
 import scaladex.core.service.SearchEngine
-import scaladex.server.TwirlSupport._
+import scaladex.server.TwirlSupport.*
 import scaladex.view.search.html.searchresult
 
 class SearchPages(env: Env, searchEngine: SearchEngine)(
     implicit ec: ExecutionContext
-) {
+):
   def route(user: Option[UserState]): Route =
     get(
       concat(
@@ -60,12 +60,12 @@ class SearchPages(env: Env, searchEngine: SearchEngine)(
       val platformsF = searchEngine.countByPlatforms(params)
       val languagesF = searchEngine.countByLanguages(params)
 
-      for {
+      for
         Page(pagination, projects) <- resultsF
         topics <- topicsF
         languages <- languagesF
         platforms <- platformsF
-      } yield searchresult(
+      yield searchresult(
         env,
         params,
         uri,
@@ -77,5 +77,6 @@ class SearchPages(env: Env, searchEngine: SearchEngine)(
         languages,
         platforms
       )
+      end for
     }
-}
+end SearchPages

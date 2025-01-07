@@ -1,12 +1,9 @@
 package scaladex.core.api
 
 import endpoints4s.Validated
-import scaladex.core.model._
+import scaladex.core.model.*
 
-trait Endpoints
-    extends JsonSchemas
-    with endpoints4s.algebra.Endpoints
-    with endpoints4s.algebra.JsonEntitiesFromSchemas {
+trait Endpoints extends JsonSchemas with endpoints4s.algebra.Endpoints with endpoints4s.algebra.JsonEntitiesFromSchemas:
 
   val v0 = None
   val v1: Some[String] = Some("v1")
@@ -152,4 +149,4 @@ trait Endpoints
       s"""|$desc.
           |Examples: ${examples.mkString(", ")}""".stripMargin
     )
-}
+end Endpoints

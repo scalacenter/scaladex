@@ -2,14 +2,14 @@ package scaladex.infra.sql
 
 import java.time.Instant
 
-import doobie._
+import doobie.*
 import doobie.util.update.Update
-import scaladex.core.model.Artifact._
-import scaladex.core.model._
-import scaladex.infra.sql.DoobieMappings._
-import scaladex.infra.sql.DoobieUtils._
+import scaladex.core.model.Artifact.*
+import scaladex.core.model.*
+import scaladex.infra.sql.DoobieMappings.*
+import scaladex.infra.sql.DoobieUtils.*
 
-object ArtifactTable {
+object ArtifactTable:
   private[sql] val table = "artifacts"
 
   val referenceFields: Seq[String] = Seq("group_id", "artifact_id", "version")
@@ -34,11 +34,10 @@ object ArtifactTable {
   val extraFields: Seq[String] = Seq("artifact_name", "platform", "language_version", "is_prerelease")
   val isLatestVersion: String = "is_latest_version"
 
-  val insertIfNotExist: Update[Artifact] = {
+  val insertIfNotExist: Update[Artifact] =
     type T = (Artifact, Name, Platform, Language, Boolean, Artifact)
     insertOrUpdateRequest[T](table, mainFields ++ extraFields, referenceFields, mainFields)
       .contramap[Artifact](a => (a, a.name, a.platform, a.language, a.version.isPreRelease, a))
-  }
 
   val count: Query0[Long] =
     selectRequest(table, Seq("COUNT(*)"))
@@ -52,10 +51,9 @@ object ArtifactTable {
   val updateReleaseDate: Update[(Instant, Reference)] =
     updateRequest(table, Seq("release_date"), referenceFields)
 
-  def selectAllArtifacts(language: Option[Language], platform: Option[Platform]): Query0[Artifact] = {
+  def selectAllArtifacts(language: Option[Language], platform: Option[Platform]): Query0[Artifact] =
     val where = language.map(v => s"language_version='${v.value}'").toSeq ++ platform.map(p => s"platform='${p.value}'")
     selectRequest(table, mainFields, where = where)
-  }
 
   val selectArtifactByGroupIdAndArtifactId: Query[(GroupId, ArtifactId), Artifact] =
     selectRequest(table, mainFields, Seq("group_id", "artifact_id"))
@@ -120,7 +118,7 @@ object ArtifactTable {
     )
 
   private def stableOnlyFilter(stableOnly: Boolean): Seq[String] =
-    if (stableOnly) Seq("is_prerelease=false") else Seq.empty
+    if stableOnly then Seq("is_prerelease=false") else Seq.empty
 
   val selectByReference: Query[Reference, Artifact] =
     selectRequest(table, mainFields, referenceFields)
@@ -160,4 +158,4 @@ object ArtifactTable {
       set = Seq("is_latest_version=false"),
       where = Seq("group_id=?", "artifact_id=?", "version<>?")
     )
-}
+end ArtifactTable

@@ -3,13 +3,13 @@ package scaladex.core.test
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-import scaladex.core.model.Artifact._
+import scaladex.core.model.Artifact.*
 import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model.Project.Settings
-import scaladex.core.model._
+import scaladex.core.model.*
 import scaladex.core.model.search.ProjectDocument
 
-object Values {
+object Values:
   val now: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
   val ok: GithubStatus = GithubStatus.Ok(now)
   val unknown: GithubStatus = GithubStatus.Unknown(now)
@@ -36,7 +36,7 @@ object Values {
   private def developer(name: String, url: String, id: String) =
     Contributor(Some(name), None, Some(url), None, None, List(), None, Map(), Some(id))
 
-  object Scalafix {
+  object Scalafix:
     val reference: Project.Reference = Project.Reference.from("scalacenter", "scalafix")
 
     val creationDate: Instant = Instant.ofEpochMilli(1475505237265L)
@@ -90,9 +90,9 @@ object Values {
         0,
         Seq.empty
       )
-  }
+  end Scalafix
 
-  object PlayJsonExtra {
+  object PlayJsonExtra:
     val reference: Project.Reference = Project.Reference.from("xuwei-k", "play-json-extra")
     val creationDate: Instant = Instant.ofEpochMilli(1411736618000L)
     val artifact: Artifact = Artifact(
@@ -121,9 +121,9 @@ object Values {
       defaultArtifact = Some(artifact.name),
       category = Some(Category.Json)
     )
-  }
+  end PlayJsonExtra
 
-  object Cats {
+  object Cats:
     val reference: Project.Reference = Project.Reference.from("typelevel", "cats")
     val issueAboutFoo: GithubIssue =
       GithubIssue(1, "Issue about foo", Url("https://github.com/typelevel/cats/pull/1"))
@@ -262,9 +262,9 @@ object Values {
         scaladocUrl = scaladocUrl,
         versionScheme = versionScheme
       )
-  }
+  end Cats
 
-  object CatsEffect {
+  object CatsEffect:
     val dependency: ArtifactDependency = ArtifactDependency(
       source = Artifact.Reference.from("typelevel", "cats-effect-kernel_3", "3.2.3"),
       target = Cats.`core_3:2.6.1`.reference,
@@ -276,18 +276,15 @@ object Values {
       target = Artifact.Reference.from("typelevel", "scalacheck_3", "1.15.4"),
       Scope("test")
     )
-  }
+  end CatsEffect
 
-  object SbtCrossProject {
+  object SbtCrossProject:
     val reference: Project.Reference = Project.Reference.from("portable-scala", "sbt-crossproject")
     val artifactRef: Artifact.Reference =
       Artifact.Reference.from("org.portable-scala", "sbt-scalajs-crossproject_2.12_1.0", "1.3.2")
     val creationDate: Instant = Instant.ofEpochSecond(1688667180L)
-  }
 
-  object Scala3 {
+  object Scala3:
     val organization: Project.Organization = Project.Organization("scala")
     val reference: Project.Reference = Project.Reference.unsafe("scala/scala3")
-  }
-
-}
+end Values

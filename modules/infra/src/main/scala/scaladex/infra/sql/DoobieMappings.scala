@@ -5,16 +5,16 @@ import java.util.UUID
 
 import scala.util.Try
 
-import doobie._
+import doobie.*
 import doobie.postgres.Instances
 import doobie.postgres.JavaTimeInstances
-import io.circe._
-import scaladex.core.model.Project._
-import scaladex.core.model._
+import io.circe.*
+import scaladex.core.model.Project.*
+import scaladex.core.model.*
 import scaladex.core.util.Secret
-import scaladex.infra.Codecs._
+import scaladex.infra.Codecs.*
 
-object DoobieMappings extends Instances with JavaTimeInstances {
+object DoobieMappings extends Instances with JavaTimeInstances:
   implicit val contributorMeta: Meta[Seq[GithubContributor]] =
     Meta[String].timap(fromJson[Seq[GithubContributor]](_).get)(toJson(_))
   implicit val githubIssuesMeta: Meta[Seq[GithubIssue]] =
@@ -70,8 +70,8 @@ object DoobieMappings extends Instances with JavaTimeInstances {
   implicit val githubStatusRead: Read[GithubStatus] =
     Read[(String, Instant, Option[Organization], Option[Repository], Option[Int], Option[String])]
       .map {
-        case ("Unknown", updateDate, _, _, _, _)  => GithubStatus.Unknown(updateDate)
-        case ("Ok", updateDate, _, _, _, _)       => GithubStatus.Ok(updateDate)
+        case ("Unknown", updateDate, _, _, _, _) => GithubStatus.Unknown(updateDate)
+        case ("Ok", updateDate, _, _, _, _) => GithubStatus.Ok(updateDate)
         case ("NotFound", updateDate, _, _, _, _) => GithubStatus.NotFound(updateDate)
         case ("Moved", updateDate, Some(organization), Some(repository), _, _) =>
           GithubStatus.Moved(updateDate, Project.Reference(organization, repository))
@@ -83,8 +83,8 @@ object DoobieMappings extends Instances with JavaTimeInstances {
   implicit val githubStatusWrite: Write[GithubStatus] =
     Write[(String, Instant, Option[Organization], Option[Repository], Option[Int], Option[String])]
       .contramap {
-        case GithubStatus.Unknown(updateDate)  => ("Unknown", updateDate, None, None, None, None)
-        case GithubStatus.Ok(updateDate)       => ("Ok", updateDate, None, None, None, None)
+        case GithubStatus.Unknown(updateDate) => ("Unknown", updateDate, None, None, None, None)
+        case GithubStatus.Ok(updateDate) => ("Ok", updateDate, None, None, None, None)
         case GithubStatus.NotFound(updateDate) => ("NotFound", updateDate, None, None, None, None)
         case GithubStatus.Moved(updateDate, projectRef) =>
           ("Moved", updateDate, Some(projectRef.organization), Some(projectRef.repository), None, None)
@@ -130,4 +130,4 @@ object DoobieMappings extends Instances with JavaTimeInstances {
 
   private def fromJson[A](s: String)(implicit d: Decoder[A]): Try[A] =
     parser.parse(s).flatMap(d.decodeJson).toTry
-}
+end DoobieMappings

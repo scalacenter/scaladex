@@ -4,9 +4,9 @@ import java.time.Instant
 
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model.Artifact._
+import scaladex.core.model.Artifact.*
 
-class ArtifactTests extends AnyFunSpec with Matchers {
+class ArtifactTests extends AnyFunSpec with Matchers:
   describe("sbtInstall") {
     it("crossFull") {
       val obtained =
@@ -208,7 +208,7 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       developers: Seq[Contributor] = Nil,
       scaladocUrl: Option[Url] = None,
       versionScheme: Option[String] = None
-  ) = {
+  ) =
     // An artifact always have an artifactId that can be parsed, but in the case we don't really care about if it can
     // be parsed or not, we just want to test methods in artifacts like sbtInstall
     // in fact those tests don't make sense, since it's not supposed to happen except if an Artifact is created without parsing.
@@ -229,5 +229,5 @@ class ArtifactTests extends AnyFunSpec with Matchers {
       scaladocUrl = scaladocUrl,
       versionScheme = versionScheme
     )
-  }
-}
+  end createArtifact
+end ArtifactTests

@@ -2,11 +2,11 @@ package scaladex.data
 package maven
 
 import java.io.File
-import java.nio.file._
+import java.nio.file.*
 import java.util.Properties
 
 import scala.concurrent.Await
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.util.Try
 
 import com.typesafe.scalalogging.LazyLogging
@@ -23,26 +23,24 @@ import scaladex.core.service.PomResolver
 
 case class MissingParentPom(dep: String) extends Exception
 
-object PomsReader {
-  def path(dep: maven.Dependency): String = {
-    import dep._
+object PomsReader:
+  def path(dep: maven.Dependency): String =
+    import dep.*
     List(
       groupId.replace(".", "/"),
       artifactId,
       version,
       artifactId + "-" + version + ".pom"
     ).mkString(File.separator)
-  }
-}
 
-class PomsReader(resolver: PomResolver) extends LazyLogging {
+class PomsReader(resolver: PomResolver) extends LazyLogging:
   private val builder = (new DefaultModelBuilderFactory).newInstance
   private val processor = new DefaultModelProcessor
   processor.setModelReader(new DefaultModelReader)
 
   private val modelResolver = new ScaladexModelResolver
 
-  class ScaladexModelResolver extends ModelResolver {
+  class ScaladexModelResolver extends ModelResolver:
 
     override def addRepository(repo: model.Repository, replace: Boolean): Unit = ()
     override def addRepository(repo: model.Repository): Unit = ()
@@ -57,7 +55,7 @@ class PomsReader(resolver: PomResolver) extends LazyLogging {
         groupId: String,
         artifactId: String,
         version: String
-    ): ModelSource2 = {
+    ): ModelSource2 =
       val future = resolver.resolve(groupId, artifactId, version)
       // await result from coursier
       // could block if we are short on threads
@@ -70,8 +68,8 @@ class PomsReader(resolver: PomResolver) extends LazyLogging {
         }
 
       new FileModelSource(pom.toFile)
-    }
-  }
+    end resolveModel
+  end ScaladexModelResolver
 
   // TODO: Try to remove
   private val jdk = new Properties
@@ -85,4 +83,4 @@ class PomsReader(resolver: PomResolver) extends LazyLogging {
 
     builder.build(request).getEffectiveModel
   }.map(pom => PomConvert(pom))
-}
+end PomsReader
