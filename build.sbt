@@ -5,15 +5,20 @@ lazy val isCI: Boolean = System.getenv("CI") != null
 
 inThisBuild(
   List(
-    scalaVersion := "2.13.10",
+    scalaVersion := "3.3.4",
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
-    scalafixScalaBinaryVersion := "2.13",
-    scalafixDependencies ++= List(
-      "com.github.liancheng" %% "organize-imports" % "0.6.0"
-    ),
+    // scalafixScalaBinaryVersion := "3",
     organization := "ch.epfl.scala",
-    version := s"0.2.0+${githash()}"
+    version := s"0.2.0+${githash()}",
+    excludeDependencies ++= Seq(
+      // from Coursier
+      ExclusionRule("org.scala-lang.modules", "scala-collection-compat_2.13"),
+      ExclusionRule("org.scala-lang.modules", "scala-xml_2.13"),
+      // from doobie-scalatest
+      ExclusionRule("org.scalatest", "scalatest_2.13"),
+      ExclusionRule("org.tpolecat", "doobie-core_2.13")
+    )
   )
 )
 
@@ -34,7 +39,7 @@ lazy val scalacOptionsSettings = Def.settings(
     "UTF-8",
     "-feature",
     "-unchecked",
-    "-Wunused"
+    "-Wunused:all"
   ) ++ { if (isCI) Some("-Xfatal-warnings") else None }
 )
 
@@ -70,23 +75,19 @@ lazy val infra = project
       "org.apache.pekko" %% "pekko-stream" % V.pekko,
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
       "com.github.pjfanning" %% "pekko-http-circe" % "2.8.0",
-      "io.get-coursier" %% "coursier" % V.coursier,
-      "io.get-coursier" %% "coursier-sbt-maven-repository" % V.coursier,
+      ("io.get-coursier" %% "coursier" % V.coursier).cross(CrossVersion.for3Use2_13),
+      ("io.get-coursier" %% "coursier-sbt-maven-repository" % V.coursier).cross(CrossVersion.for3Use2_13),
       "com.github.blemale" %% "scaffeine" % "5.3.0",
-      "org.tpolecat" %% "doobie-scalatest" % V.doobie % Test,
+      "org.tpolecat" %% "doobie-core" % V.doobie,
+      "org.tpolecat" %% "doobie-h2" % V.doobie,
+      "org.tpolecat" %% "doobie-postgres" % V.doobie,
+      "org.tpolecat" %% "doobie-hikari" % V.doobie,
+      ("org.tpolecat" %% "doobie-scalatest" % V.doobie % Test).cross(CrossVersion.for3Use2_13),
+      "io.circe" %% "circe-core" % V.circe,
+      "io.circe" %% "circe-generic" % V.circe,
+      "io.circe" %% "circe-parser" % V.circe,
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it"
-    ) ++ Seq(
-      "org.tpolecat" %% "doobie-core",
-      "org.tpolecat" %% "doobie-h2",
-      "org.tpolecat" %% "doobie-postgres",
-      "org.tpolecat" %% "doobie-hikari"
-    ).map(_ % V.doobie) ++ Seq(
-      "io.circe" %% "circe-core",
-      "io.circe" %% "circe-generic",
-      "io.circe" %% "circe-parser"
-    ).map(_ % V.circe) ++ Seq(
-      "io.circe" %% "circe-generic-extras"
-    ).map(_ % V.circeGenericExtra),
+    ),
     Elasticsearch.settings(defaultPort = 9200),
     Postgres.settings(Compile, defaultPort = 5432, database = "scaladex"),
     javaOptions ++= {
@@ -134,8 +135,8 @@ lazy val webclient = project
     scalacOptions -= "-Wunused", // don't report unused params
     scalacOptions += "-Wunused:imports",
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "scalatags" % "0.11.1",
-      "org.endpoints4s" %%% "fetch-client" % "3.2.1"
+      "com.lihaoyi" %%% "scalatags" % "0.13.1",
+      "org.endpoints4s" %%% "fetch-client" % "4.0.1"
     )
   )
   .enablePlugins(ScalaJSPlugin)
@@ -158,7 +159,6 @@ lazy val server = project
     ),
     libraryDependencies ++= Seq(
       "org.scala-lang.modules" %% "scala-parallel-collections" % "1.1.0",
-      "com.typesafe.play" %%% "play-json" % V.playJson,
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it",
       "org.apache.pekko" %% "pekko-testkit" % V.pekko % "test,it",
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
@@ -169,7 +169,7 @@ lazy val server = project
       "org.apache.pekko" %% "pekko-http-cors" % V.pekkoHttp,
       "com.softwaremill.pekko-http-session" %% "core" % "0.7.1",
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
-      "org.endpoints4s" %% "pekko-http-server" % "1.0.1",
+      "org.endpoints4s" %% "pekko-http-server" % "2.0.1",
       "org.webjars" % "bootstrap-sass" % "3.4.1",
       "org.webjars" % "bootstrap-switch" % "3.3.4",
       "org.webjars" % "bootstrap-select" % "1.13.18",
@@ -198,17 +198,15 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
   .settings(
     scalacOptionsSettings,
     libraryDependencies ++= Seq(
-      "com.lihaoyi" %%% "fastparse" % "2.3.3",
+      "com.lihaoyi" %%% "fastparse" % "3.0.0",
       "io.github.cquiroz" %%% "scala-java-time" % "2.6.0",
-      "com.typesafe.play" %%% "play-json" % V.playJson,
       "org.endpoints4s" %%% "algebra" % "1.12.1",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
-      "org.jsoup" % "jsoup" % "1.18.2"
-    ) ++ Seq(
-      "io.circe" %%% "circe-core",
-      "io.circe" %%% "circe-generic",
-      "io.circe" %%% "circe-parser"
-    ).map(_ % V.circe)
+      "org.jsoup" % "jsoup" % "1.18.2",
+      "io.circe" %%% "circe-core" % V.circe,
+      "io.circe" %%% "circe-generic" % V.circe,
+      "io.circe" %%% "circe-parser" % V.circe
+    )
   )
 
 lazy val data = project
@@ -238,14 +236,12 @@ lazy val data = project
 
 lazy val V = new {
   val doobie = "0.13.4"
-  val playJson = "2.9.4"
   val pekko = "1.1.2"
   val pekkoHttp = "1.1.0"
   val elastic4s = "8.16.0"
   val nscalaTime = "2.34.0"
   val scalatest = "3.2.19"
   val circe = "0.14.10"
-  val circeGenericExtra = "0.14.4"
   val json4s = "4.0.7"
   val coursier = "2.1.6"
 }

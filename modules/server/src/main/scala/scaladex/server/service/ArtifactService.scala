@@ -6,7 +6,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import com.typesafe.scalalogging.LazyLogging
-import scaladex.core.model.GithubStatus
 import scaladex.core.model._
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions._

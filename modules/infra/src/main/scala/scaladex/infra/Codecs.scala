@@ -3,8 +3,6 @@ package scaladex.infra
 import java.time.Instant
 
 import io.circe._
-import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import io.circe.generic.semiauto._
 import scaladex.core.model._
 import scaladex.core.model.search.GithubInfoDocument
@@ -12,15 +10,13 @@ import scaladex.core.util.Secret
 import scaladex.infra.github.GithubModel
 
 object Codecs {
-  implicit val customConfig: Configuration = Configuration.default.withDefaults
-
   implicit val organization: Codec[Project.Organization] = fromString(_.value, Project.Organization.apply)
   implicit val repository: Codec[Project.Repository] = fromString(_.value, Project.Repository.apply)
   implicit val reference: Codec[Project.Reference] = deriveCodec
   implicit val artifactName: Codec[Artifact.Name] = fromString(_.value, Artifact.Name.apply)
   implicit val instant: Codec[Instant] = fromLong[Instant](_.toEpochMilli, Instant.ofEpochMilli)
 
-  implicit val urlCodec: Codec[Url] = fromString(_.target, Url)
+  implicit val urlCodec: Codec[Url] = fromString(_.target, Url.apply)
   implicit val contributor: Codec[GithubContributor] = deriveCodec
   implicit val githubIssue: Codec[GithubIssue] = deriveCodec
   implicit val githubCommitActivity: Codec[GithubCommitActivity] = deriveCodec
@@ -50,7 +46,7 @@ object Codecs {
   implicit val resolverCodec: Codec[Resolver] = deriveCodec
   implicit val licenseCodec: Codec[License] = fromString(_.shortName, License.allByShortName.apply)
   implicit val artifactRefCodec: Codec[Artifact.Reference] = deriveCodec
-  implicit val artifactCodec: Codec[Artifact] = deriveConfiguredCodec[Artifact]
+  implicit val artifactCodec: Codec[Artifact] = deriveCodec
   implicit val scopeCodec: Codec[ArtifactDependency.Scope] = fromString(_.value, ArtifactDependency.Scope.apply)
 
   implicit val dependenciesCodec: Codec[ArtifactDependency] = deriveCodec

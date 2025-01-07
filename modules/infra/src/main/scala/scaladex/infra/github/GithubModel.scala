@@ -94,7 +94,7 @@ object GithubModel {
     final def apply(c: HCursor): Decoder.Result[List[Topic]] =
       for {
         value <- c.downField("names").as[List[String]]
-      } yield value.map(Topic)
+      } yield value.map(Topic.apply)
   }
 
   case class Contributor(

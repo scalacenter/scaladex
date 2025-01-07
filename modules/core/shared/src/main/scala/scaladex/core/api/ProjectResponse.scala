@@ -1,7 +1,6 @@
 package scaladex.core.api
 
 import scaladex.core.model.Project._
-import scaladex.core.model.Url
 import scaladex.core.model._
 
 case class ProjectResponse(

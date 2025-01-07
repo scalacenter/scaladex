@@ -38,7 +38,7 @@ trait JsonSchemas extends endpoints4s.algebra.JsonSchemas {
     field[Artifact.GroupId]("groupId")
       .zip(field[Artifact.ArtifactId]("artifactId"))
       .zip(field[Version]("version"))
-      .xmap((Artifact.Reference.apply _).tupled)(Function.unlift(Artifact.Reference.unapply))
+      .xmap((Artifact.Reference.apply _).tupled)(Tuple.fromProductTyped)
 
   implicit val documentationPatternSchema: JsonSchema[DocumentationPattern] =
     field[String]("label")
@@ -65,7 +65,7 @@ trait JsonSchemas extends endpoints4s.algebra.JsonSchemas {
       .zip(field[Set[Artifact.Name]]("cliArtifacts"))
       .zip(optField[Category]("category"))
       .zip(optField[String]("chatroom"))
-      .xmap((ProjectResponse.apply _).tupled)(Function.unlift(ProjectResponse.unapply))
+      .xmap((ProjectResponse.apply _).tupled)(Tuple.fromProductTyped)
 
   implicit val artifactResponseSchema: JsonSchema[ArtifactResponse] =
     field[Artifact.GroupId]("groupId")
@@ -78,7 +78,7 @@ trait JsonSchemas extends endpoints4s.algebra.JsonSchemas {
       .zip(field[Project.Reference]("project"))
       .zip(field[Instant]("releaseDate"))
       .zip(field[Seq[License]]("licenses"))
-      .xmap((ArtifactResponse.apply _).tupled)(Function.unlift(ArtifactResponse.unapply))
+      .xmap((ArtifactResponse.apply _).tupled)(Tuple.fromProductTyped)
 
   implicit val autocompletionResponseSchema: JsonSchema[AutocompletionResponse] =
     field[String]("organization")

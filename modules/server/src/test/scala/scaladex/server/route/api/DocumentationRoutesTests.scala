@@ -1,15 +1,16 @@
 package scaladex.server.route.api
 
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
+import io.circe.Json
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import play.api.libs.json.JsValue
 import scaladex.server.route.ControllerBaseSuite
 
-class DocumentationRoutesTests extends ControllerBaseSuite with PlayJsonSupport {
+class DocumentationRoutesTests extends ControllerBaseSuite with FailFastCirceSupport {
   describe("route") {
     it("should serve OpenAPI documentation") {
       Get("/api/open-api.json") ~> DocumentationRoute.route ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[JsValue] shouldNot be(null)
+        responseAs[Json] shouldNot be(null)
       }
     }
   }

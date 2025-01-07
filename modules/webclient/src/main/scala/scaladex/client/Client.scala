@@ -9,7 +9,6 @@ import scala.scalajs.js.annotation.JSExportTopLevel
 
 import org.scalajs.dom._
 import org.scalajs.dom.document
-import org.scalajs.dom.ext.KeyCode
 
 @JSExportTopLevel("ScaladexClient")
 object Client {
@@ -45,7 +44,7 @@ object Client {
       val readmeRequest: Request = new Request(
         s"https://api.github.com/repos/$organization/$repository/readme",
         new RequestInit {
-          headers = headersWithCreds.toJSDictionary
+          this.headers = headersWithCreds.toJSDictionary
         }
       )
 
@@ -99,7 +98,7 @@ object Client {
       val repoRequest: Request = new Request(
         s"https://api.github.com/repos/$organization/$repository",
         new RequestInit {
-          headers = headersWithCreds.toJSDictionary
+          this.headers = headersWithCreds.toJSDictionary
         }
       )
       fetch(repoRequest).toFuture

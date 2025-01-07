@@ -5,10 +5,9 @@ import scala.concurrent.ExecutionContext
 import org.scalajs.dom
 import org.scalajs.dom.Element
 import org.scalajs.dom.HTMLUListElement
+import org.scalajs.dom.KeyCode
 import org.scalajs.dom.KeyboardEvent
 import org.scalajs.dom.Node
-import org.scalajs.dom.ext.KeyCode
-import scaladex.client.RPC
 import scaladex.core.api.AutocompletionResponse
 import scalatags.JsDom.all._
 

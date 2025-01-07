@@ -21,7 +21,7 @@ class GithubClientImplTests extends AsyncFunSpec with Matchers {
   val isCI = System.getenv("CI") != null
   val token = config.token.getOrElse(throw new Exception(s"Missing GITHUB_TOKEN"))
   val client = new GithubClientImpl(token)
-  val userState =
+  val userStateOpt =
     if (isCI) None
     else
       Await.result(client.getUserState(), 30.seconds) match {
@@ -114,25 +114,25 @@ class GithubClientImplTests extends AsyncFunSpec with Matchers {
       yield commitActivities shouldBe empty
   }
 
-  testOrIgnore("getUserRepositories") {
-    for (repos <- client.getUserRepositories("atry", Nil))
-      yield repos should not be empty
-  }
-  testOrIgnore("getUserOrganizations when empty") {
-    for (orgs <- client.getUserOrganizations("central-ossrh"))
-      yield orgs shouldBe empty
-  }
-  testOrIgnore("getUserOrganizations") {
-    for (orgs <- client.getUserOrganizations("atry"))
-      yield orgs should not be empty
-  }
-  testOrIgnore("getOrganizationRepositories", ignored = !userState.exists(_.orgs.contains(Scala3.organization))) {
-    for (repos <- client.getOrganizationRepositories("atry", Scala3.organization, Nil))
-      yield repos should contain(Scala3.reference)
-  }
+  userStateOpt.foreach { userState =>
+    it("getUserRepositories") {
+      for (repos <- client.getUserRepositories("atry", Nil))
+        yield repos should not be empty
+    }
+    it("getUserOrganizations when empty") {
+      for (orgs <- client.getUserOrganizations("central-ossrh"))
+        yield orgs shouldBe empty
+    }
+    it("getUserOrganizations") {
+      for (orgs <- client.getUserOrganizations("atry"))
+        yield orgs should not be empty
+    }
 
-  private def testOrIgnore(name: String, ignored: Boolean = userState.isEmpty)(testFun: => Future[Assertion])(
-      implicit pos: Position
-  ): Unit =
-    if (ignored) ignore(name)(testFun)(pos) else it(name)(testFun)(pos)
+    if (userState.orgs.contains(Scala3.organization)) {
+      it("getOrganizationRepositories") {
+        for (repos <- client.getOrganizationRepositories(userState.info.login, Scala3.organization, Nil))
+          yield repos should contain(Scala3.reference)
+      }
+    }
+  }
 }

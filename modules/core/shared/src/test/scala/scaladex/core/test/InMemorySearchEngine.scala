@@ -9,7 +9,6 @@ import scaladex.core.model.Language
 import scaladex.core.model.Platform
 import scaladex.core.model.Project
 import scaladex.core.model.TopicCount
-import scaladex.core.model.search.Pagination
 import scaladex.core.model.search._
 import scaladex.core.service.SearchEngine
 

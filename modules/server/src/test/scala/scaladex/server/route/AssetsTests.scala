@@ -4,7 +4,6 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.server.route.Assets
 
 class AssetsTests extends AnyFunSpec with ScalatestRouteTest with Matchers {
   it("should return web-client script") {
