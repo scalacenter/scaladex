@@ -1,7 +1,6 @@
 package scaladex.infra
 
 import java.util.UUID
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 import scala.concurrent.ExecutionContext

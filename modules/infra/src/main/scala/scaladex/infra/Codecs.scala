@@ -5,7 +5,6 @@ import java.time.Instant
 import scaladex.core.model.*
 import scaladex.core.model.search.GithubInfoDocument
 import scaladex.core.util.Secret
-import scaladex.infra.github.GithubModel
 
 import io.circe.*
 import io.circe.generic.semiauto.*
