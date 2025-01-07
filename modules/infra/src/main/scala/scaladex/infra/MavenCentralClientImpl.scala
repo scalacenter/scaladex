@@ -33,7 +33,7 @@ class MavenCentralClientImpl()(implicit val system: ActorSystem)
     with LazyLogging {
   private implicit val ec: ExecutionContextExecutor = system.dispatcher
   private val baseUri = "https://repo1.maven.org/maven2"
-  lazy val poolClientFlow: Flow[
+  override def initPoolClientFlow: Flow[
     (HttpRequest, Promise[HttpResponse]),
     (Try[HttpResponse], Promise[HttpResponse]),
     Http.HostConnectionPool

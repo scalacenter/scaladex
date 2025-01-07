@@ -50,7 +50,7 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
   private val acceptHtmlVersion = RawHeader("Accept", "application/vnd.github.VERSION.html")
 
   private implicit val ec: ExecutionContextExecutor = system.dispatcher
-  lazy val poolClientFlow: Flow[
+  override def initPoolClientFlow: Flow[
     (HttpRequest, Promise[HttpResponse]),
     (Try[HttpResponse], Promise[HttpResponse]),
     Http.HostConnectionPool
@@ -60,14 +60,11 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
         "api.github.com",
         // in recursive functions, we have timeouts, and I didn't know how to fix the issue so I increased the timeout
         // Maybe put this configuration in a configuration file
-        settings = ConnectionPoolSettings(
-          "akka.http.host-connection-pool.response-entity-subscription-timeout = 10.seconds"
-        ).copy(maxConnections = 10)
+        settings =
+          ConnectionPoolSettings("akka.http.host-connection-pool.response-entity-subscription-timeout = 10.seconds")
+            .copy(maxConnections = 10)
       )
-      .throttle(
-        elements = 5000,
-        per = 1.hour
-      )
+      .throttle(elements = 5000, per = 1.hour)
 
   override def getProjectInfo(ref: Project.Reference): Future[GithubResponse[(Project.Reference, GithubInfo)]] =
     getRepository(ref).flatMap {
@@ -87,9 +84,9 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
       scalaPercentage <- getPercentageOfLanguage(repo.ref, language = "Scala")
       commitActivity <- getCommitActivity(repo.ref)
     } yield GithubInfo(
-      homepage = repo.homepage.map(Url),
+      homepage = repo.homepage.map(Url.apply),
       description = repo.description,
-      logo = Option(repo.avatartUrl).map(Url),
+      logo = Option(repo.avatartUrl).map(Url.apply),
       stars = Option(repo.stargazers_count),
       forks = Option(repo.forks),
       watchers = Option(repo.subscribers_count),
@@ -99,8 +96,8 @@ class GithubClientImpl(token: Secret)(implicit val system: ActorSystem)
       contributors = contributors.map(_.toGithubContributor),
       commits = Some(contributors.foldLeft(0)(_ + _.contributions)),
       topics = repo.topics.toSet,
-      contributingGuide = communityProfile.flatMap(_.contributingFile).map(Url),
-      codeOfConduct = communityProfile.flatMap(_.codeOfConductFile).map(Url),
+      contributingGuide = communityProfile.flatMap(_.contributingFile).map(Url.apply),
+      codeOfConduct = communityProfile.flatMap(_.codeOfConductFile).map(Url.apply),
       openIssues = openIssues.map(_.toGithubIssue).toList,
       scalaPercentage = Option(scalaPercentage),
       license = repo.licenseName.flatMap(License.get),

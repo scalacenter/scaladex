@@ -16,7 +16,7 @@ object Codecs {
   implicit val artifactName: Codec[Artifact.Name] = fromString(_.value, Artifact.Name.apply)
   implicit val instant: Codec[Instant] = fromLong[Instant](_.toEpochMilli, Instant.ofEpochMilli)
 
-  implicit val urlCodec: Codec[Url] = fromString(_.target, Url)
+  implicit val urlCodec: Codec[Url] = fromString(_.target, Url.apply)
   implicit val contributor: Codec[GithubContributor] = deriveCodec
   implicit val githubIssue: Codec[GithubIssue] = deriveCodec
   implicit val githubCommitActivity: Codec[GithubCommitActivity] = deriveCodec
