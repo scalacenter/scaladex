@@ -14,6 +14,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: coursier/setup-action@v1
+        with:
+          apps: sbt
       - run: sbt "scalafixAll --check"
       - run: ./bin/scalafmt --test
   unit:
@@ -24,6 +26,7 @@ jobs:
           submodules: true
       - uses: coursier/setup-action@v1
         with:
+          apps: sbt
           jvm: "adoptium:1.17"
       - uses: coursier/cache-action@v6
       - name: Unit tests
@@ -41,6 +44,7 @@ jobs:
       - uses: coursier/setup-action@v1
         with:
           jvm: "adoptium:1.17"
+          apps: sbt
       - name: Integration tests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
