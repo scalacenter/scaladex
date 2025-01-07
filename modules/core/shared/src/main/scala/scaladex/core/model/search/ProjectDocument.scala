@@ -3,7 +3,7 @@ package scaladex.core.model.search
 import java.time.Instant
 
 import scaladex.core.api.AutocompletionResponse
-import scaladex.core.model._
+import scaladex.core.model.*
 
 // Project document indexed by the search engine
 final case class ProjectDocument(
@@ -21,7 +21,7 @@ final case class ProjectDocument(
     category: Option[Category],
     formerReferences: Seq[Project.Reference],
     githubInfo: Option[GithubInfoDocument]
-) {
+):
   def reference: Project.Reference = Project.Reference(organization, repository)
   def id: String = reference.toString
   def scalaVersions: Seq[Scala] = languages.collect { case v: Scala => v }
@@ -32,9 +32,9 @@ final case class ProjectDocument(
 
   def toAutocompletion: AutocompletionResponse =
     AutocompletionResponse(organization.value, repository.value, githubInfo.flatMap(_.description).getOrElse(""))
-}
+end ProjectDocument
 
-object ProjectDocument {
+object ProjectDocument:
   def default(reference: Project.Reference): ProjectDocument =
     ProjectDocument(
       reference.organization,
@@ -58,7 +58,7 @@ object ProjectDocument {
       header: Option[ProjectHeader],
       dependents: Long,
       formerReferences: Seq[Project.Reference]
-  ): ProjectDocument = {
+  ): ProjectDocument =
     val (deprecatedArtifactNames, artifactNames) =
       header.toSeq.flatMap(_.allArtifactNames).partition(project.settings.deprecatedArtifacts.contains)
     ProjectDocument(
@@ -77,6 +77,5 @@ object ProjectDocument {
       formerReferences,
       project.githubInfo.map(_.toDocument)
     )
-  }
-
-}
+  end apply
+end ProjectDocument

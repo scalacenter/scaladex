@@ -2,14 +2,15 @@ package scaladex.infra.sql
 
 import java.time.Instant
 
-import doobie._
-import doobie.util.update.Update
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
-import scaladex.infra.sql.DoobieMappings._
-import scaladex.infra.sql.DoobieUtils._
+import scaladex.infra.sql.DoobieMappings.given
+import scaladex.infra.sql.DoobieUtils.*
 
-object ProjectTable {
+import doobie.*
+import doobie.util.update.Update
+
+object ProjectTable:
   private val table: String = "projects"
 
   private val referenceFields = Seq("organization", "repository")
@@ -59,4 +60,4 @@ object ProjectTable {
 
   val selectProjectByGithubStatus: Query[String, Project.Reference] =
     selectRequest(table, referenceFields, Seq("github_status"))
-}
+end ProjectTable

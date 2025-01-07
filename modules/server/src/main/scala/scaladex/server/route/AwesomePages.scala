@@ -3,11 +3,6 @@ package scaladex.server.route
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import org.apache.pekko.http.scaladsl.server.Directive1
-import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.PathMatcher1
-import org.apache.pekko.http.scaladsl.server.Route
-import play.twirl.api.Html
 import scaladex.core.model.Category
 import scaladex.core.model.Env
 import scaladex.core.model.Language
@@ -19,11 +14,17 @@ import scaladex.core.model.search.AwesomeParams
 import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.Sorting
 import scaladex.core.service.SearchEngine
-import scaladex.core.util.ScalaExtensions._
-import scaladex.server.TwirlSupport._
+import scaladex.core.util.ScalaExtensions.*
+import scaladex.server.TwirlSupport.given
 import scaladex.view.awesome.html
 
-class AwesomePages(env: Env, searchEngine: SearchEngine)(implicit ec: ExecutionContext) {
+import org.apache.pekko.http.scaladsl.server.Directive1
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.PathMatcher1
+import org.apache.pekko.http.scaladsl.server.Route
+import play.twirl.api.Html
+
+class AwesomePages(env: Env, searchEngine: SearchEngine)(using ExecutionContext):
 
   private val categoryM: PathMatcher1[Category] = Segment.flatMap(Category.byLabel.get)
 
@@ -50,7 +51,7 @@ class AwesomePages(env: Env, searchEngine: SearchEngine)(implicit ec: ExecutionC
         Tuple1(AwesomeParams(scalaVersions, platforms, sorting))
     }
 
-  private def awesomeScala(user: Option[UserState], params: AwesomeParams): Future[Html] = {
+  private def awesomeScala(user: Option[UserState], params: AwesomeParams): Future[Html] =
     val allByCategoriesF = Category.all
       .map(c =>
         searchEngine
@@ -60,11 +61,11 @@ class AwesomePages(env: Env, searchEngine: SearchEngine)(implicit ec: ExecutionC
       .sequence
     val languagesCountF = searchEngine.countByLanguages()
     val platformsCountF = searchEngine.countByPlatforms()
-    for {
+    for
       allByCategories <- allByCategoriesF
       languagesCount <- languagesCountF
       platformsCount <- platformsCountF
-    } yield {
+    yield
       val projectsByCategory = allByCategories.filter { case (_, projects) => projects.nonEmpty }.toMap
       val categoriesByMetaCategory = MetaCategory.all
         .map(m => m -> m.categories.filter(projectsByCategory.contains))
@@ -72,25 +73,24 @@ class AwesomePages(env: Env, searchEngine: SearchEngine)(implicit ec: ExecutionC
       val scalaVersions = languagesCount.collect { case (v: Scala, _) => v }
       val platforms = platformsCount.map { case (p, _) => p }
       html.awesomeScala(env, user, categoriesByMetaCategory, projectsByCategory, scalaVersions, platforms, params)
-    }
-  }
+    end for
+  end awesomeScala
 
   private def awesome(
       user: Option[UserState],
       category: Category,
       params: AwesomeParams,
       page: PageParams
-  ): Future[Html] = {
+  ): Future[Html] =
     val languagesF = searchEngine.countByLanguages(category, params)
     val platformsF = searchEngine.countByPlatforms(category, params)
     val projectsF = searchEngine.find(category, params, page)
-    for {
+    for
       projects <- projectsF
       languages <- languagesF
       platforms <- platformsF
-    } yield {
+    yield
       val scalaVersions = languages.collect { case (v: Scala, c) => (v, c) }
       html.awesomeCategory(env, user, category, projects, scalaVersions, platforms, params)
-    }
-  }
-}
+  end awesome
+end AwesomePages

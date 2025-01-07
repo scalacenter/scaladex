@@ -15,7 +15,7 @@ import scaladex.core.model.search.ProjectDocument
 import scaladex.core.model.search.ProjectHit
 import scaladex.core.model.search.SearchParams
 
-trait SearchEngine {
+trait SearchEngine:
   // Synchronizer
   def insert(project: ProjectDocument): Future[Unit]
   def delete(reference: Project.Reference): Future[Unit]
@@ -50,4 +50,4 @@ trait SearchEngine {
 
   // API
   def findRefs(params: SearchParams): Future[Seq[Project.Reference]]
-}
+end SearchEngine

@@ -6,17 +6,16 @@ import org.apache.pekko.http.scaladsl.marshalling.Marshaller
 import org.apache.pekko.http.scaladsl.marshalling.ToEntityMarshaller
 import org.apache.pekko.http.scaladsl.model.MediaTypes
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.Route
 
-/**
- * Akka-Http routes serving the documentation of the public HTTP API of Scaladex
- */
-object DocumentationRoute {
-  implicit def marshallerFromEncoder[T](implicit encoder: Encoder[T, String]): ToEntityMarshaller[T] =
+/** Akka-Http routes serving the documentation of the public HTTP API of Scaladex
+  */
+object DocumentationRoute:
+  given [T](using e: Encoder[T, String]): ToEntityMarshaller[T] =
     Marshaller
       .stringMarshaller(MediaTypes.`application/json`)
-      .compose(c => encoder.encode(c))
+      .compose(c => e.encode(c))
 
   val route: Route = cors() {
     get {
@@ -33,4 +32,4 @@ object DocumentationRoute {
       )
     }
   }
-}
+end DocumentationRoute

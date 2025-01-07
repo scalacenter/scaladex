@@ -24,7 +24,7 @@ object Postgres extends AutoPlugin {
 
   import autoImport._
 
-  def settings(config: Configuration, defaultPort: Int, database: String): Seq[Setting[_]] = inConfig(config)(
+  def settings(config: Configuration, defaultPort: Int, database: String): Seq[Setting[?]] = inConfig(config)(
     Seq(
       startPostgres := {
         import sbt.util.CacheImplicits._

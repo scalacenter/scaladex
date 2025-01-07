@@ -3,7 +3,7 @@ import Keys._
 import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport._
 
 object ScalaJSHelper {
-  def packageScalaJS(client: Project): Seq[Setting[_]] = Seq(
+  def packageScalaJS(client: Project): Seq[Setting[?]] = Seq(
     watchSources ++= (client / watchSources).value,
     // Pick fastOpt when developing and fullOpt when publishing
     Compile / resourceGenerators += Def.task {

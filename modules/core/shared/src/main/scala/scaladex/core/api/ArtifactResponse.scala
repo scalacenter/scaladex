@@ -2,7 +2,7 @@ package scaladex.core.api
 
 import java.time.Instant
 
-import scaladex.core.model._
+import scaladex.core.model.*
 
 final case class ArtifactResponse(
     groupId: Artifact.GroupId,

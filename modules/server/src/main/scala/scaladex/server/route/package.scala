@@ -2,16 +2,17 @@ package scaladex.server
 
 import java.time.Instant
 
-import org.apache.pekko.http.scaladsl.server.Directive1
-import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.PathMatcher1
-import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import scaladex.core.model.Artifact
 import scaladex.core.model.Project
 import scaladex.core.model.Version
 import scaladex.core.model.search.PageParams
 
-package object route {
+import org.apache.pekko.http.scaladsl.server.Directive1
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.PathMatcher1
+import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
+
+package object route:
 
   val organizationM: PathMatcher1[Project.Organization] = Segment.map(Project.Organization.apply)
   val repositoryM: PathMatcher1[Project.Repository] = Segment.map(Project.Repository.apply)
@@ -32,4 +33,4 @@ package object route {
 
   def paging(size: Int): Directive1[PageParams] =
     parameter("page".as[Int].withDefault(1)).map(PageParams(_, size))
-}
+end route

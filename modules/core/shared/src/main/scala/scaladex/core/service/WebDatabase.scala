@@ -4,9 +4,9 @@ import java.util.UUID
 
 import scala.concurrent.Future
 
-import scaladex.core.model._
+import scaladex.core.model.*
 
-trait WebDatabase {
+trait WebDatabase:
   // artifacts
   def insertArtifact(artifact: Artifact): Future[Boolean]
   def getArtifactVersions(
@@ -62,4 +62,4 @@ trait WebDatabase {
   def getUser(userId: UUID): Future[Option[UserState]]
   def getAllUsers(): Future[Seq[(UUID, UserInfo)]]
   def deleteUser(userId: UUID): Future[Unit]
-}
+end WebDatabase

@@ -8,11 +8,9 @@ case class OAuth2Config(
     redirectUri: String
 )
 
-object OAuth2Config {
-  def from(config: Config): OAuth2Config = {
+object OAuth2Config:
+  def from(config: Config): OAuth2Config =
     val clientId = config.getString("scaladex.oauth2.client-id")
     val clientSecret = config.getString("scaladex.oauth2.client-secret")
     val redirectUri = config.getString("scaladex.oauth2.redirect-uri")
     OAuth2Config(clientId, clientSecret, redirectUri)
-  }
-}

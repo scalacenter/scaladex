@@ -6,17 +6,18 @@ import scala.io.Source
 import scala.util.Using
 import scala.util.matching.Regex
 
-import org.json4s.JsonAST.JField
-import org.json4s.JsonAST.JObject
-import org.json4s.JsonAST.JString
-import org.json4s._
-import org.json4s.native.Serialization
 import scaladex.core.model.Project
 import scaladex.infra.DataPaths
 
-class GithubRepoExtractor(paths: DataPaths) {
+import org.json4s.JsonAST.JField
+import org.json4s.JsonAST.JObject
+import org.json4s.JsonAST.JString
+import org.json4s.*
+import org.json4s.native.Serialization
+
+class GithubRepoExtractor(paths: DataPaths):
   object ClaimSerializer extends CustomSerializer[Claims](_ => (serialize, deserialize))
-  implicit val formats: Formats = DefaultFormats ++ Seq(ClaimSerializer)
+  given Formats = DefaultFormats ++ Seq(ClaimSerializer)
 
   case class Claim(pattern: String, repo: String)
   case class Claims(claims: Seq[Claim])
@@ -37,7 +38,7 @@ class GithubRepoExtractor(paths: DataPaths) {
       val List(groupId, artifactIdRawRegex) = claim.pattern.split(" ").toList
       val artifactIdRegex =
         artifactIdRawRegex.replace("*", "(.*)").r
-      val matcher: maven.ArtifactModel => Boolean = pom => {
+      val matcher: maven.ArtifactModel => Boolean = pom =>
         def artifactMatches =
           artifactIdRawRegex == "*" ||
             matches(artifactIdRegex, pom.artifactId)
@@ -45,21 +46,19 @@ class GithubRepoExtractor(paths: DataPaths) {
         def groupIdMaches = groupId == pom.groupId
 
         groupIdMaches && artifactMatches
-      }
 
       val List(organization, repo) = claim.repo.split('/').toList
 
       (matcher, Project.Reference.from(organization, repo))
     }
 
-  def extract(pom: maven.ArtifactModel): Option[Project.Reference] = {
-    val fromPoms = pom.scm match {
+  def extract(pom: maven.ArtifactModel): Option[Project.Reference] =
+    val fromPoms = pom.scm match
       case Some(scm) =>
         List(scm.connection, scm.developerConnection, scm.url).flatten
           .flatMap(ScmInfoParser.parse)
           .filter(g => !g.organization.isEmpty() && !g.repository.isEmpty())
       case None => List()
-    }
 
     val fromClaims =
       claimedRepos.find { case (matcher, _) => matcher(pom) }.map { case (_, repo) => repo }
@@ -70,7 +69,7 @@ class GithubRepoExtractor(paths: DataPaths) {
     // scala xml interpolation is <url>{someVar}<url> and it's often wrong like <url>${someVar}<url>
     // after interpolation it look like <url>$thevalue<url>
     def fixInterpolationIssue(s: String): String =
-      if (s.startsWith("$")) s.drop(1) else s
+      if s.startsWith("$") then s.drop(1) else s
 
     repo.map {
       case Project.Reference(organization, repo) =>
@@ -79,7 +78,7 @@ class GithubRepoExtractor(paths: DataPaths) {
           fixInterpolationIssue(repo.value)
         )
     }
-  }
+  end extract
 
   @nowarn("cat=deprecation")
   private def serialize: PartialFunction[JValue, Claims] = {
@@ -93,4 +92,4 @@ class GithubRepoExtractor(paths: DataPaths) {
       val fields = claims.sortBy(_.pattern).map(claim => JField(claim.pattern, JString(claim.repo)))
       JObject(fields.toList)
   }
-}
+end GithubRepoExtractor

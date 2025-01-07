@@ -1,16 +1,17 @@
 package scaladex.infra.sql
 
-import doobie._
-import doobie.util.update.Update
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.model.Version
-import scaladex.infra.sql.DoobieMappings._
-import scaladex.infra.sql.DoobieUtils._
+import scaladex.infra.sql.DoobieMappings.given
+import scaladex.infra.sql.DoobieUtils.*
 
-object ArtifactDependencyTable {
+import doobie.*
+import doobie.util.update.Update
+
+object ArtifactDependencyTable:
   val table = "artifact_dependencies"
   val sourceFields: Seq[String] = Seq("source_group_id", "source_artifact_id", "source_version")
   val targetFields: Seq[String] = Seq("target_group_id", "target_artifact_id", "target_version")
@@ -78,4 +79,4 @@ object ArtifactDependencyTable {
       fields,
       Seq("a.organization", "a.repository")
     )
-}
+end ArtifactDependencyTable

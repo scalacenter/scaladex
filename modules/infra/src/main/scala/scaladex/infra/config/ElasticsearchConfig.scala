@@ -5,7 +5,7 @@ import com.typesafe.config.ConfigFactory
 
 final case class ElasticsearchConfig(port: Int, index: String, reset: Boolean)
 
-object ElasticsearchConfig {
+object ElasticsearchConfig:
   def load(): ElasticsearchConfig =
     from(ConfigFactory.load())
 
@@ -15,4 +15,4 @@ object ElasticsearchConfig {
       config.getString("scaladex.elasticsearch.index"),
       config.getBoolean("scaladex.elasticsearch.reset")
     )
-}
+end ElasticsearchConfig

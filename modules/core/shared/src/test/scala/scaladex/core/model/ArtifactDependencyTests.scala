@@ -1,10 +1,11 @@
 package scaladex.core.model
 
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.ArtifactDependency.Scope
 
-class ArtifactDependencyTests extends AnyFunSpec with Matchers {
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+
+class ArtifactDependencyTests extends AnyFunSpec with Matchers:
   describe("ordering") {
     it("should order correctly 1") {
       val dep1 = dep(Artifact.Reference.from("org.specs2", "specs2-junit", "4.8.3"), Scope("test"))
@@ -27,4 +28,4 @@ class ArtifactDependencyTests extends AnyFunSpec with Matchers {
   private val source = Artifact.Reference.from("org.typelevel", "cats-core_3", "2.6.1")
   private def dep(target: Artifact.Reference, scope: Scope): ArtifactDependency.Direct =
     ArtifactDependency.Direct(ArtifactDependency(source, target, scope), None)
-}
+end ArtifactDependencyTests

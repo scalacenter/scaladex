@@ -1,11 +1,12 @@
 package scaladex.core.model
 
+import scaladex.core.test.Values.*
+
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import scaladex.core.test.Values._
 
-class VersionTests extends AsyncFunSpec with Matchers with TableDrivenPropertyChecks {
+class VersionTests extends AsyncFunSpec with Matchers with TableDrivenPropertyChecks:
   it("should parse any version") {
     val inputs = Table(
       ("input", "output"),
@@ -57,4 +58,4 @@ class VersionTests extends AsyncFunSpec with Matchers with TableDrivenPropertyCh
 
     forAll(inputs)(v => Version(v.value) shouldBe v)
   }
-}
+end VersionTests

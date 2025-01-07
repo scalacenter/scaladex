@@ -1,7 +1,7 @@
 package scaladex.core.api
 
-import scaladex.core.model.Project._
-import scaladex.core.model._
+import scaladex.core.model.Project.*
+import scaladex.core.model.*
 
 case class ProjectResponse(
     organization: Organization,

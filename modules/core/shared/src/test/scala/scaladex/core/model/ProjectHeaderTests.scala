@@ -1,11 +1,12 @@
 package scaladex.core.model
 
+import scaladex.core.test.Values.*
+
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.test.Values._
 
-class ProjectHeaderTests extends AnyFunSpec with Matchers {
-  import Cats._
+class ProjectHeaderTests extends AnyFunSpec with Matchers:
+  import Cats.*
 
   describe("default artifact") {
     it("should prefer JVM") {
@@ -19,8 +20,7 @@ class ProjectHeaderTests extends AnyFunSpec with Matchers {
     }
   }
 
-  private def getDefaultArtifact(artifacts: Artifact*): Artifact = {
+  private def getDefaultArtifact(artifacts: Artifact*): Artifact =
     val header = ProjectHeader(reference, artifacts, None, false).get
     header.getDefaultArtifact(None, None)
-  }
-}
+end ProjectHeaderTests

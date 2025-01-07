@@ -3,22 +3,23 @@ package scaladex.server.route.api
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
-import io.circe._
-import io.circe.generic.semiauto
-import org.apache.pekko.http.cors.scaladsl.CorsDirectives._
-import org.apache.pekko.http.scaladsl.model.StatusCodes._
-import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.Route
-import scaladex.core.model._
+import scaladex.core.model.*
 import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.ProjectDocument
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 
-object OldSearchApi {
-  implicit val formatProject: Codec[OldSearchApi.Project] = semiauto.deriveCodec
-  implicit val formatArtifactOptions: Codec[ArtifactOptions] = semiauto.deriveCodec
+import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
+import io.circe.*
+import io.circe.generic.semiauto
+import org.apache.pekko.http.cors.scaladsl.CorsDirectives.*
+import org.apache.pekko.http.scaladsl.model.StatusCodes.*
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.Route
+
+object OldSearchApi:
+  given Codec[OldSearchApi.Project] = semiauto.deriveCodec
+  given Codec[ArtifactOptions] = semiauto.deriveCodec
 
   case class Project(
       organization: String,
@@ -42,39 +43,37 @@ object OldSearchApi {
       scalaJsVersion: Option[String],
       scalaNativeVersion: Option[String],
       sbtVersion: Option[String]
-  ): Option[BinaryVersion] = {
-    val binaryVersion = (targetType, scalaVersion, scalaJsVersion, scalaNativeVersion, sbtVersion) match {
+  ): Option[BinaryVersion] =
+    val binaryVersion = (targetType, scalaVersion, scalaJsVersion, scalaNativeVersion, sbtVersion) match
       case (Some("JVM"), Some(sv), _, _, _) =>
         Version.parseSemantically(sv).map(sv => BinaryVersion(Jvm, Scala(sv)))
 
       case (Some("JS"), Some(sv), Some(jsv), _, _) =>
-        for {
+        for
           sv <- Version.parseSemantically(sv)
           jsv <- Version.parseSemantically(jsv)
-        } yield BinaryVersion(ScalaJs(jsv), Scala(sv))
+        yield BinaryVersion(ScalaJs(jsv), Scala(sv))
 
       case (Some("NATIVE"), Some(sv), _, Some(snv), _) =>
-        for {
+        for
           sv <- Version.parseSemantically(sv)
           snv <- Version.parseSemantically(snv)
-        } yield BinaryVersion(ScalaNative(snv), Scala(sv))
+        yield BinaryVersion(ScalaNative(snv), Scala(sv))
 
       case (Some("SBT"), Some(sv), _, _, Some(sbtv)) =>
-        for {
+        for
           sv <- Version.parseSemantically(sv)
           sbtv <- Version.parseSemantically(sbtv)
-        } yield BinaryVersion(SbtPlugin(sbtv), Scala(sv))
+        yield BinaryVersion(SbtPlugin(sbtv), Scala(sv))
 
       case (Some("JVM"), None, None, None, None) => Some(BinaryVersion(Jvm, Java))
-      case _                                     => None
-    }
+      case _ => None
     binaryVersion.filter(_.isValid)
-  }
-}
+  end parseBinaryVersion
+end OldSearchApi
 
-class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(
-    implicit val executionContext: ExecutionContext
-) extends FailFastCirceSupport {
+class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(using ExecutionContext)
+    extends FailFastCirceSupport:
   val routes: Route =
     pathPrefix("api") {
       cors() {
@@ -109,7 +108,7 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(
                   project.deprecatedArtifactNames.map(_.value)
                 )
 
-              binaryVersion match {
+              binaryVersion match
                 case Some(_) =>
                   val result = searchEngine
                     .find(q, binaryVersion, cli, pageParams)
@@ -120,7 +119,7 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(
                   val errorMessage =
                     s"something is wrong: $targetType $scalaVersion $scalaJsVersion $scalaNativeVersion $sbtVersion"
                   complete(BadRequest, errorMessage)
-              }
+              end match
             }
           }
         } ~
@@ -168,20 +167,20 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(
       projectRef: Project.Reference,
       binaryVersion: Option[BinaryVersion],
       artifact: Option[String]
-  ): Future[Option[OldSearchApi.ArtifactOptions]] = {
+  ): Future[Option[OldSearchApi.ArtifactOptions]] =
     val selection = new ArtifactSelection(
       binaryVersion = binaryVersion,
       artifactNames = artifact.map(Artifact.Name.apply)
     )
-    for {
+    for
       projectOpt <- database.getProject(projectRef)
       stableOnly = projectOpt.map(_.settings.preferStableVersion).getOrElse(false)
       artifacts <- database.getProjectArtifactRefs(projectRef, stableOnly)
-    } yield for {
+    yield for
       project <- projectOpt
       filteredArtifacts = selection.filterArtifacts(artifacts, project)
       selected <- filteredArtifacts.headOption
-    } yield {
+    yield
       val (deprecatedArtifacts, artifacts) = filteredArtifacts
         .map(_.name)
         .distinct
@@ -196,7 +195,6 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(
         selected.artifactId.value,
         selected.version.value
       )
-    }
-  }
-
-}
+    end for
+  end getArtifactOptions
+end OldSearchApi

@@ -1,15 +1,17 @@
 package scaladex.core.model
 
-/**
- * Licence representation
- *
- * @param name the licence name
- * @param shortName the short name
- * @param url the url for further reading
- */
+/** Licence representation
+  *
+  * @param name
+  *   the licence name
+  * @param shortName
+  *   the short name
+  * @param url
+  *   the url for further reading
+  */
 case class License(name: String, shortName: String, url: Option[String])
 
-object License {
+object License:
   def get(shortName: String): Option[License] = allByShortName.get(shortName)
 
   /** inspired by: https://github.com/NixOS/nixpkgs/blob/master/lib/licenses.nix#L1 */
@@ -264,4 +266,4 @@ object License {
 
   private def spdx(shortName: String, name: String): License =
     License(name, shortName, Some(s"https://spdx.org/licenses/$shortName.html"))
-}
+end License

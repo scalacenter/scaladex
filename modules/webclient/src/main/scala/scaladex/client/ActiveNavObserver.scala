@@ -2,17 +2,16 @@ package scaladex.client
 
 import scala.scalajs.js.timers
 
+import scaladex.dom.IntersectionObserver
+
 import org.scalajs.dom.document
 import org.scalajs.dom.html.Element
 import org.scalajs.dom.html.Link
-import scaladex.dom.IntersectionObserver
 
-/**
-  * Find all visible sections and add the "active" class in their corresponding
-  * list items in nav.
+/** Find all visible sections and add the "active" class in their corresponding list items in nav.
   */
-object ActiveNavObserver {
-  def start(): Unit = {
+object ActiveNavObserver:
+  def start(): Unit =
     val sectionsAndNavItem =
       document
         .querySelectorAll("section[id]")
@@ -29,22 +28,20 @@ object ActiveNavObserver {
       timers.clearTimeout(debounceUpdate)
       // ignore the observed entry and update all sections instead
       debounceUpdate = timers.setTimeout(150) {
-        for ((section, navItem) <- sectionsAndNavItem)
-          if (isInViewport(section)) {
+        for (section, navItem) <- sectionsAndNavItem do
+          if isInViewport(section) then
             navItem.classList.add("active")
             println(s"Section ${section.getAttribute("id")} is in viewport")
-          } else {
+          else
             navItem.classList.remove("active")
             println(s"Section ${section.getAttribute("id")} is out of viewport")
-          }
       }
     }
 
-    for ((section, _) <- sectionsAndNavItem) observer.observe(section)
-  }
+    for (section, _) <- sectionsAndNavItem do observer.observe(section)
+  end start
 
-  private def isInViewport(element: Element): Boolean = {
+  private def isInViewport(element: Element): Boolean =
     val rect = element.getBoundingClientRect()
     rect.top < document.documentElement.clientHeight && rect.bottom > 0
-  }
-}
+end ActiveNavObserver

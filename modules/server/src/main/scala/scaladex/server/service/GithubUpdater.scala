@@ -5,16 +5,17 @@ import java.time.Instant
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubResponse
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.service.GithubClient
 import scaladex.core.service.WebDatabase
-import scaladex.core.util.ScalaExtensions._
+import scaladex.core.util.ScalaExtensions.*
 
-class GithubUpdater(database: WebDatabase, github: GithubClient)(implicit ec: ExecutionContext) extends LazyLogging {
+import com.typesafe.scalalogging.LazyLogging
+
+class GithubUpdater(database: WebDatabase, github: GithubClient)(using ExecutionContext) extends LazyLogging:
   def updateAll(): Future[String] =
     database.getAllProjectsStatuses().flatMap { projectStatuses =>
       val projectToUpdate =
@@ -35,17 +36,17 @@ class GithubUpdater(database: WebDatabase, github: GithubClient)(implicit ec: Ex
     }
 
   def update(ref: Project.Reference): Future[GithubStatus] =
-    for {
+    for
       response <- github.getProjectInfo(ref)
       status <- updateGithubInfo(ref, response)
-    } yield status
+    yield status
 
   private def updateGithubInfo(
       repo: Project.Reference,
       response: GithubResponse[(Project.Reference, GithubInfo)]
-  ): Future[GithubStatus] = {
+  ): Future[GithubStatus] =
     val now = Instant.now()
-    response match {
+    response match
       case GithubResponse.Ok((_, info)) =>
         val status = GithubStatus.Ok(now)
         database.updateGithubInfoAndStatus(repo, info, status).map(_ => status)
@@ -57,9 +58,9 @@ class GithubUpdater(database: WebDatabase, github: GithubClient)(implicit ec: Ex
 
       case GithubResponse.Failed(code, reason) =>
         val status =
-          if (code == 404) GithubStatus.NotFound(now) else GithubStatus.Failed(now, code, reason)
+          if code == 404 then GithubStatus.NotFound(now) else GithubStatus.Failed(now, code, reason)
         logger.info(s"Failed to download github info for $repo because of $status")
         database.updateGithubStatus(repo, status).map(_ => status)
-    }
-  }
-}
+    end match
+  end updateGithubInfo
+end GithubUpdater

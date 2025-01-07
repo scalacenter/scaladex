@@ -4,10 +4,10 @@ package maven
 import scaladex.core.model.Contributor
 import scaladex.core.model.Url
 
-private[maven] object PomConvert {
-  def apply(model: org.apache.maven.model.Model): ArtifactModel = {
-    import model._
-    import scala.jdk.CollectionConverters._
+private[maven] object PomConvert:
+  def apply(model: org.apache.maven.model.Model): ArtifactModel =
+    import model.*
+    import scala.jdk.CollectionConverters.*
     import scala.util.Try
 
     def list[T](l: java.util.List[T]): List[T] =
@@ -18,8 +18,8 @@ private[maven] object PomConvert {
 
     def convert(
         contributor: org.apache.maven.model.Contributor
-    ): Contributor = {
-      import contributor._
+    ): Contributor =
+      import contributor.*
       Contributor(
         Option(getName),
         Option(getEmail),
@@ -31,7 +31,7 @@ private[maven] object PomConvert {
         map(getProperties),
         Option(getId)
       )
-    }
+    end convert
 
     ArtifactModel(
       getGroupId,
@@ -43,7 +43,7 @@ private[maven] object PomConvert {
       Try(getInceptionYear).flatMap(y => Try(y.toInt)).toOption,
       Option(getUrl),
       Option(getScm).map { scm =>
-        import scm._
+        import scm.*
         SourceCodeManagment(
           Option(getConnection),
           Option(getDeveloperConnection),
@@ -52,14 +52,14 @@ private[maven] object PomConvert {
         )
       },
       Option(getIssueManagement).map { im =>
-        import im._
+        import im.*
         IssueManagement(
           getSystem,
           Option(getUrl)
         )
       },
       list(getMailingLists).map { ml =>
-        import ml._
+        import ml.*
         MailingList(
           getName,
           Option(getSubscribe),
@@ -72,7 +72,7 @@ private[maven] object PomConvert {
       list(getContributors).map(convert),
       list(getDevelopers).map(convert),
       list(getLicenses).map { l =>
-        import l._
+        import l.*
         License(
           getName,
           Option(getUrl),
@@ -81,7 +81,7 @@ private[maven] object PomConvert {
         )
       },
       list(getDependencies).map { d =>
-        import d._
+        import d.*
         Dependency(
           getGroupId,
           getArtifactId,
@@ -94,10 +94,10 @@ private[maven] object PomConvert {
         )
       },
       list(getRepositories).map { r =>
-        import r._
+        import r.*
 
         def bool(v: String) =
-          if (v == null) false
+          if v == null then false
           else v.toBoolean
 
         def convert(policy: org.apache.maven.model.RepositoryPolicy) =
@@ -117,20 +117,20 @@ private[maven] object PomConvert {
         )
       },
       Option(getOrganization).map { o =>
-        import o._
+        import o.*
         Organization(
           getName,
           Option(getUrl)
         )
       }, {
         val properties = getProperties.asScala.toMap
-        for {
+        for
           scalaVersion <- properties.get("scalaVersion")
           sbtVersion <- properties.get("sbtVersion")
-        } yield SbtPluginTarget(scalaVersion, sbtVersion)
+        yield SbtPluginTarget(scalaVersion, sbtVersion)
       },
       Option(getProperties).flatMap(_.asScala.toMap.get("info.apiURL")).map(Url.apply),
       Option(getProperties).flatMap(_.asScala.toMap.get("info.versionScheme"))
     )
-  }
-}
+  end apply
+end PomConvert

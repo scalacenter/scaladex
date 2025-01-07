@@ -2,20 +2,19 @@ package scaladex.client
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-import org.scalajs.dom._
+import org.scalajs.dom.*
 
-/**
- * Create the ChartJS line chart with the commit activity
+/** Create the ChartJS line chart with the commit activity
   */
-object Sparkline {
+object Sparkline:
 
   def createCommitActivity(): Unit =
     Dom.getById[HTMLCanvasElement]("commit-activity").foreach(createSparkline)
 
-  def createSparkline(canvas: HTMLCanvasElement): Unit = {
+  def createSparkline(canvas: HTMLCanvasElement): Unit =
     val commits = canvas.getAttribute("data-commit-activity-count").split(",").map(_.toDouble).toSeq
     val startingDay = canvas.getAttribute("data-commit-activity-starting-day")
-    if (startingDay.nonEmpty) {
+    if startingDay.nonEmpty then
       val startDate = Instant.ofEpochSecond(startingDay.toLong)
       val data = commits.zipWithIndex.map {
         case (commit, index) => DataPoint(startDate.plus(index * 7, ChronoUnit.DAYS).toEpochMilli.toDouble, commit)
@@ -40,10 +39,9 @@ object Sparkline {
             borderWidth = 1,
             fill = "origin"
           ),
-          point = new PointOptions {
+          point = new PointOptions:
             radius = 0
             hitRadius = 10
-          }
         ),
         scales = ScaleOptions(
           x = AxisTimeOptions(
@@ -64,6 +62,6 @@ object Sparkline {
           chartOptions
         )
       )
-    }
-  }
-}
+    end if
+  end createSparkline
+end Sparkline

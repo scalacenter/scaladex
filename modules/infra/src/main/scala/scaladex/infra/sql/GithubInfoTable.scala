@@ -1,12 +1,13 @@
 package scaladex.infra.sql
 
-import doobie._
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.Project
-import scaladex.infra.sql.DoobieMappings._
-import scaladex.infra.sql.DoobieUtils._
+import scaladex.infra.sql.DoobieMappings.given
+import scaladex.infra.sql.DoobieUtils.*
 
-object GithubInfoTable {
+import doobie.*
+
+object GithubInfoTable:
   val table: String = "github_info"
   val referenceFields: Seq[String] = Seq("organization", "repository")
   val infoFields: Seq[String] = Seq(
@@ -37,4 +38,4 @@ object GithubInfoTable {
     insertOrUpdateRequest(table, referenceFields ++ infoFields, referenceFields, infoFields)
 
   val count: Query0[Long] = selectRequest(table, Seq("COUNT(*)"))
-}
+end GithubInfoTable

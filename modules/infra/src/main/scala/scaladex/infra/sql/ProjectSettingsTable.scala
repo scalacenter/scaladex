@@ -1,11 +1,12 @@
 package scaladex.infra.sql
 
-import doobie._
 import scaladex.core.model.Project
-import scaladex.infra.sql.DoobieMappings._
-import scaladex.infra.sql.DoobieUtils._
+import scaladex.infra.sql.DoobieMappings.given
+import scaladex.infra.sql.DoobieUtils.*
 
-object ProjectSettingsTable {
+import doobie.*
+
+object ProjectSettingsTable:
   val table: String = "project_settings"
 
   val referenceFields: Seq[String] = Seq("organization", "repository")
@@ -26,4 +27,4 @@ object ProjectSettingsTable {
 
   val count: Query0[Long] =
     selectRequest(table, Seq("COUNT(*)"))
-}
+end ProjectSettingsTable

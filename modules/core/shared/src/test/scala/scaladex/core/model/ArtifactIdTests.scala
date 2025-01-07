@@ -1,10 +1,11 @@
 package scaladex.core.model
 
+import scaladex.core.model.Artifact.*
+
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model.Artifact._
 
-class ArtifactIdTests extends AsyncFunSpec with Matchers {
+class ArtifactIdTests extends AsyncFunSpec with Matchers:
   describe("parsing artifacts") {
     it("parses scalajs") {
       val artifactId = "cats-core_sjs0.6_2.11"
@@ -95,4 +96,4 @@ class ArtifactIdTests extends AsyncFunSpec with Matchers {
       result.value shouldBe artifactId
     }
   }
-}
+end ArtifactIdTests

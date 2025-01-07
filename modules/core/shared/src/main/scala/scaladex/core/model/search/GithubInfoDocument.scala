@@ -20,7 +20,6 @@ case class GithubInfoDocument(
     commitsPerYear: Option[Int]
 )
 
-object GithubInfoDocument {
+object GithubInfoDocument:
   def empty: GithubInfoDocument =
     GithubInfoDocument(None, None, None, Seq.empty, Seq.empty, None, None, None, None, 0, None, None, None)
-}

@@ -2,13 +2,13 @@ package scaladex.view
 
 import java.time.Instant
 
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 
 import scaladex.core.util.TimeUtils
 
 case class Job(name: String, description: String, frequency: FiniteDuration)
 
-object Job {
+object Job:
   val syncSearch: Job = Job(
     "sync-search",
     "Synchronize the search engine with the database.",
@@ -55,28 +55,24 @@ object Job {
     24.hours
   )
 
-  case class Status(state: State, results: Seq[Result], progress: Option[Progress]) {
+  case class Status(state: State, results: Seq[Result], progress: Option[Progress]):
     def isStarted: Boolean = state.isInstanceOf[Started]
-  }
 
-  sealed trait State {
+  sealed trait State:
     def when: Instant
     def fromNow: FiniteDuration = TimeUtils.toFiniteDuration(when, Instant.now())
-  }
   case class Stopped(when: Instant, user: Option[String]) extends State
   case class Started(when: Instant, user: Option[String]) extends State
 
-  sealed trait Result {
+  sealed trait Result:
     def start: Instant
     def end: Instant
     def duration: FiniteDuration = TimeUtils.toFiniteDuration(start, end)
     def fromNow: FiniteDuration = TimeUtils.toFiniteDuration(end, Instant.now())
-  }
   case class Success(start: Instant, end: Instant, message: String) extends Result
   case class Failure(start: Instant, end: Instant, cause: Throwable) extends Result
 
-  case class Progress(start: Instant, expectedDuration: Option[FiniteDuration]) {
+  case class Progress(start: Instant, expectedDuration: Option[FiniteDuration]):
     def duration: FiniteDuration = TimeUtils.toFiniteDuration(start, Instant.now())
     def percentage: Double = expectedDuration.map(TimeUtils.percentage(duration, _)).getOrElse(100d)
-  }
-}
+end Job

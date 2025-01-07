@@ -1,10 +1,10 @@
 package scaladex.server.route
 
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.Route
 
-object Assets {
+object Assets:
   val routes: Route =
     pathPrefix("assets") {
       get(
@@ -33,4 +33,4 @@ object Assets {
         )
       )
     }
-}
+end Assets

@@ -2,29 +2,30 @@ package scaladex.server.route.api
 
 import scala.concurrent.ExecutionContext
 
-import endpoints4s.pekkohttp.server
-import org.apache.pekko.http.cors.scaladsl.CorsDirectives.cors
-import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.Route
 import scaladex.core.api.Endpoints
 import scaladex.core.api.ProjectResponse
-import scaladex.core.model._
+import scaladex.core.model.*
 import scaladex.core.service.ProjectService
 import scaladex.core.service.SearchEngine
 import scaladex.server.service.ArtifactService
 
+import endpoints4s.pekkohttp.server
+import org.apache.pekko.http.cors.scaladsl.CorsDirectives.cors
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.Route
+
 class ApiEndpointsImpl(projectService: ProjectService, artifactService: ArtifactService, searchEngine: SearchEngine)(
-    implicit ec: ExecutionContext
+    using ExecutionContext
 ) extends Endpoints
     with server.Endpoints
-    with server.JsonEntitiesFromSchemas {
+    with server.JsonEntitiesFromSchemas:
 
   def routes(user: Option[UserState]): Route = cors()(concat(webApi(user), v0Api, v1Api))
 
   private def webApi(user: Option[UserState]): Route =
     autocomplete.implementedByAsync { params =>
       val searchParams = params.withUser(user)
-      for (projects <- searchEngine.autocomplete(searchParams, 5)) yield projects.map(_.toAutocompletion)
+      for projects <- searchEngine.autocomplete(searchParams, 5) yield projects.map(_.toAutocompletion)
     }
 
   private def v0Api: Route = concat(
@@ -38,15 +39,13 @@ class ApiEndpointsImpl(projectService: ProjectService, artifactService: Artifact
         artifactService.getVersions(groupId, artifactId, stableOnly)
     },
     getArtifact(v0).implementedByAsync { mavenRef =>
-      for (artifact <- artifactService.getArtifact(mavenRef)) yield artifact.map(_.toResponse)
+      for artifact <- artifactService.getArtifact(mavenRef) yield artifact.map(_.toResponse)
     }
   )
 
   private def v1Api: Route = concat(
     getProjects(v1).implementedByAsync(params => projectService.getProjects(params.languages, params.platforms)),
-    getProjectV1.implementedByAsync(ref =>
-      for (project <- projectService.getProject(ref)) yield project.map(toResponse)
-    ),
+    getProjectV1.implementedByAsync(ref => for project <- projectService.getProject(ref) yield project.map(toResponse)),
     getProjectVersionsV1.implementedByAsync {
       case (ref, params) =>
         projectService.getVersions(ref, params.binaryVersions, params.artifactNames, params.stableOnly)
@@ -59,20 +58,20 @@ class ApiEndpointsImpl(projectService: ProjectService, artifactService: Artifact
     },
     getLatestArtifactV1.implementedByAsync {
       case (groupId, artifactId) =>
-        for (artifact <- artifactService.getLatestArtifact(groupId, artifactId)) yield artifact.map(_.toResponse)
+        for artifact <- artifactService.getLatestArtifact(groupId, artifactId) yield artifact.map(_.toResponse)
     },
     getArtifactVersions(v1).implementedByAsync {
       case (groupId, artifactId, stableOnly) =>
         artifactService.getVersions(groupId, artifactId, stableOnly)
     },
     getArtifact(v1).implementedByAsync { mavenRef =>
-      for (artifact <- artifactService.getArtifact(mavenRef)) yield artifact.map(_.toResponse)
+      for artifact <- artifactService.getArtifact(mavenRef) yield artifact.map(_.toResponse)
     }
   )
 
-  private def toResponse(project: Project): ProjectResponse = {
-    import project._
-    import settings._
+  private def toResponse(project: Project): ProjectResponse =
+    import project.*
+    import settings.*
     ProjectResponse(
       organization,
       repository,
@@ -94,5 +93,5 @@ class ApiEndpointsImpl(projectService: ProjectService, artifactService: Artifact
       category,
       chatroom
     )
-  }
-}
+  end toResponse
+end ApiEndpointsImpl

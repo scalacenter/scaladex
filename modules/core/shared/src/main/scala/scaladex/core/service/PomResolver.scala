@@ -4,6 +4,5 @@ import java.nio.file.Path
 
 import scala.concurrent.Future
 
-trait PomResolver {
+trait PomResolver:
   def resolve(groupId: String, artifactId: String, version: String): Future[Option[Path]]
-}

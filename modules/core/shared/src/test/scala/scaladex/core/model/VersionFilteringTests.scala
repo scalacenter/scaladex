@@ -2,7 +2,7 @@ package scaladex.core.model
 
 import org.scalatest.funsuite.AnyFunSuite
 
-class VersionFilteringTests extends AnyFunSuite {
+class VersionFilteringTests extends AnyFunSuite:
   test("GeoTrellis") {
     val versions = List(
       "1.2.0-astraea.9",
@@ -99,4 +99,4 @@ class VersionFilteringTests extends AnyFunSuite {
     assert((obtained.toSet -- expected.toSet).isEmpty)
     assert((expected.toSet -- obtained.toSet).isEmpty)
   }
-}
+end VersionFilteringTests

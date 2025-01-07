@@ -2,23 +2,20 @@ package scaladex.data.init
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import com.typesafe.scalalogging.LazyLogging
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
 import scaladex.core.service.Storage
-import scaladex.core.util.ScalaExtensions._
+import scaladex.core.util.ScalaExtensions.*
 import scaladex.infra.SqlDatabase
 
-class Init(
-    database: SqlDatabase,
-    localStorage: Storage
-)(implicit val ec: ExecutionContext)
-    extends LazyLogging {
+import com.typesafe.scalalogging.LazyLogging
 
-  def run(): Future[Unit] = {
+class Init(database: SqlDatabase, localStorage: Storage)(using ExecutionContext) extends LazyLogging:
+
+  def run(): Future[Unit] =
     logger.info("Dropping tables")
-    for {
+    for
       _ <- database.dropTables.unsafeToFuture()
       _ = logger.info("Creating tables")
       _ <- database.migrate.unsafeToFuture()
@@ -32,33 +29,31 @@ class Init(
       settingsCount <- database.countProjectSettings()
       artifactCount <- database.countArtifacts()
       dependencyCount <- database.countDependencies()
-    } yield {
+    yield
       logger.info(s"$projectCount projects are inserted")
       logger.info(s"$settingsCount project settings are inserted")
       logger.info(s"$artifactCount artifacts are inserted")
       logger.info(s"$dependencyCount dependencies are inserted")
-    }
-  }
+    end for
+  end run
 
   private def insertProject(
       project: Project,
       artifacts: Seq[Artifact],
       dependencies: Seq[ArtifactDependency]
-  ): Future[Unit] = {
+  ): Future[Unit] =
     logger.info(s"Inserting project ${project.reference}")
-    for {
+    for
       _ <- database.insertProject(project)
       _ <- database.insertArtifacts(artifacts)
       _ <- database.insertDependencies(dependencies)
-    } yield ()
-  }
-}
+    yield ()
+  end insertProject
+end Init
 
-object Init {
+object Init:
   def run(database: SqlDatabase, localStorage: Storage)(
-      implicit ex: ExecutionContext
-  ): Future[Unit] = {
+      using ExecutionContext
+  ): Future[Unit] =
     val init = new Init(database, localStorage)
     init.run()
-  }
-}

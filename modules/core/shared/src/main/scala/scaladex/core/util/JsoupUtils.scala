@@ -1,10 +1,10 @@
 package scaladex.core.util
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.jsoup.Jsoup
 
-object JsoupUtils {
+object JsoupUtils:
   def listDirectories(url: String, page: String): Seq[String] =
     listElements(url, page)
       .filter(_.endsWith("/"))
@@ -33,4 +33,4 @@ object JsoupUtils {
       .asScala
       .toSeq
       .map(_.attr("href"))
-}
+end JsoupUtils

@@ -5,7 +5,7 @@ import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
-class AssetsTests extends AnyFunSpec with ScalatestRouteTest with Matchers {
+class AssetsTests extends AnyFunSpec with ScalatestRouteTest with Matchers:
   it("should return web-client script") {
     Get("/assets/webclient-fastopt.js") ~> Assets.routes ~> check {
       status shouldBe StatusCodes.OK
@@ -19,4 +19,4 @@ class AssetsTests extends AnyFunSpec with ScalatestRouteTest with Matchers {
       responseAs[String] should not be empty
     }
   }
-}
+end AssetsTests

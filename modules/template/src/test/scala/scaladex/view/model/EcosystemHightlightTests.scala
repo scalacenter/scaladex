@@ -1,10 +1,11 @@
 package scaladex.view.model
 
+import scaladex.core.model.*
+
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import scaladex.core.model._
 
-class EcosystemHighlightTest extends AnyFunSpec with Matchers {
+class EcosystemHighlightTest extends AnyFunSpec with Matchers:
   it("ordering") {
     val `1.x` = EcosystemVersion(Version(1), 0, Url(""))
     val `0.13` = EcosystemVersion(Version(0, 13), 0, Url(""))
@@ -15,4 +16,4 @@ class EcosystemHighlightTest extends AnyFunSpec with Matchers {
     highlight.currentVersion shouldBe `1.x`
     (highlight.otherVersions should contain).theSameElementsInOrderAs(Seq(`0.13`, `2.0.0-M2`))
   }
-}
+end EcosystemHighlightTest

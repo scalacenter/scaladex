@@ -12,24 +12,24 @@ import cats.effect.IO
 import cats.effect.ContextShift
 
 import scala.concurrent.ExecutionContext
-import scaladex.core.model.search._
+import scaladex.core.model.search.*
 import scaladex.infra.{ElasticsearchEngine, FilesystemStorage, SqlDatabase}
 import scaladex.infra.sql.DoobieUtils
 import scaladex.server.service.SearchSynchronizer
 import scaladex.server.service.DependencyUpdater
 import scaladex.core.service.ProjectService
 import scaladex.server.service.ArtifactService
-import scaladex.core.model._
+import scaladex.core.model.*
 
-class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll {
+class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSuiteLike with BeforeAndAfterAll:
 
   import system.dispatcher
 
   private val config = ServerConfig.load()
   private val searchEngine = ElasticsearchEngine.open(config.elasticsearch)
 
-  override def beforeAll(): Unit = {
-    implicit val cs: ContextShift[IO] = IO.contextShift(ExecutionContext.global)
+  override def beforeAll(): Unit =
+    given ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     val datasource = DoobieUtils.getHikariDataSource(config.database)
     val transactor = DoobieUtils.transactor(datasource)
     transactor
@@ -43,22 +43,21 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
         val artifactService = new ArtifactService(database)
 
         IO.fromFuture(IO {
-          for {
+          for
             _ <- Init.run(database, filesystem)
             _ <- searchEngine.init(true)
             _ <- artifactService.updateAllLatestVersions().zip(projectDependenciesUpdater.updateAll())
             _ <- searchSync.syncAll()
             _ <- searchEngine.refresh()
-          } yield ()
+          yield ()
         })
       }
       .unsafeRunSync()
-  }
+  end beforeAll
 
-  override def afterAll(): Unit = {
+  override def afterAll(): Unit =
     TestKit.shutdownActorSystem(system)
     searchEngine.close()
-  }
 
   // sometimes shows synsys/spark
   test("match for spark") {
@@ -149,7 +148,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
   }
 
   test("most-depended upon") {
-    for (mostDepended <- searchEngine.getMostDependedUpon(10)) yield {
+    for mostDepended <- searchEngine.getMostDependedUpon(10) yield
       val mostDependedRefs = mostDepended.map(_.reference).toSet
       val expected = Seq(
         "scala/scala",
@@ -160,10 +159,9 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
         .map(Project.Reference.unsafe)
       val missing = expected.filter(ref => !mostDependedRefs.contains(ref))
       assert(missing.isEmpty)
-    }
   }
 
-  private def first(query: String)(org: String, repo: String): Future[Assertion] = {
+  private def first(query: String)(org: String, repo: String): Future[Assertion] =
     val params = SearchParams(queryString = query)
     searchEngine.find(params, PageParams(1, 20)).map { page =>
       assert {
@@ -172,22 +170,19 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
           .contains(Project.Reference.from(org, repo))
       }
     }
-  }
 
   private def top(params: SearchParams, tops: List[(String, String)]): Future[Assertion] =
     compare(
       params,
       tops,
-      (expected, obtained) => {
+      (expected, obtained) =>
         val missing = expected.toSet -- obtained.toSet
         assert(missing.isEmpty)
-      }
     )
 
-  private def top(query: String, tops: List[(String, String)]): Future[Assertion] = {
+  private def top(query: String, tops: List[(String, String)]): Future[Assertion] =
     val params = SearchParams(queryString = query)
     top(params, tops)
-  }
 
   private def compare(
       params: SearchParams,
@@ -196,7 +191,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
           Seq[Project.Reference],
           Seq[Project.Reference]
       ) => Assertion
-  ): Future[Assertion] = {
+  ): Future[Assertion] =
     val expectedRefs = expected.map {
       case (org, repo) =>
         Project.Reference.from(org, repo)
@@ -206,5 +201,5 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
       val obtainedRefs = page.items.map(_.document.reference)
       assertFun(expectedRefs, obtainedRefs)
     }
-  }
-}
+  end compare
+end RelevanceTest

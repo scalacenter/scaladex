@@ -1,7 +1,6 @@
 package scaladex.core.model
 
-/**
-  * Open Graph Protocol, see https://ogp.me/
+/** Open Graph Protocol, see https://ogp.me/
   *
   * @param title
   * @param url
@@ -15,7 +14,7 @@ case class OGP(
     description: String,
     image: Option[Url] = None,
     imageAlt: Option[String] = None
-) {
+):
   val `type`: String = "article"
   val siteName: String = "Scaladex"
   def toHeadMetaProperty: Seq[HeadMetaProperty] = Seq(
@@ -27,4 +26,4 @@ case class OGP(
   ) ++ image.map(c => HeadMetaProperty(property = "og:image", content = c.target)) ++ imageAlt.map(c =>
     HeadMetaProperty(property = "og:image:alt", c)
   )
-}
+end OGP

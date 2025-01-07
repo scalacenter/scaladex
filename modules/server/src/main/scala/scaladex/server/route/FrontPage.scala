@@ -3,23 +3,24 @@ package scaladex.server.route
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import org.apache.pekko.http.scaladsl.server.Directives._
-import org.apache.pekko.http.scaladsl.server.Route
-import play.twirl.api.HtmlFormat
-import scaladex.core.model._
+import scaladex.core.model.*
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
-import scaladex.server.TwirlSupport._
+import scaladex.server.TwirlSupport.given
 import scaladex.view.html.frontpage
 import scaladex.view.model.EcosystemHighlight
 import scaladex.view.model.EcosystemVersion
 
-class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(implicit ec: ExecutionContext) {
+import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.server.Route
+import play.twirl.api.HtmlFormat
+
+class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(using ExecutionContext):
   val limitOfProjects = 12
 
   def route(userState: Option[UserState]): Route = pathSingleSlash(complete(frontPage(userState)))
 
-  private def frontPage(userInfo: Option[UserState]): Future[HtmlFormat.Appendable] = {
+  private def frontPage(userInfo: Option[UserState]): Future[HtmlFormat.Appendable] =
     val totalProjectsF = searchEngine.count()
     val totalArtifactsF = database.countArtifacts()
     val topicsF = searchEngine.countByTopics(50)
@@ -27,7 +28,7 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
     val platformsF = searchEngine.countByPlatforms()
     val mostDependedUponF = searchEngine.getMostDependedUpon(limitOfProjects)
     val latestProjectsF = searchEngine.getLatest(limitOfProjects)
-    for {
+    for
       totalProjects <- totalProjectsF
       totalArtifacts <- totalArtifactsF
       topics <- topicsF
@@ -35,7 +36,7 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
       languages <- languagesF
       mostDependedUpon <- mostDependedUponF
       latestProjects <- latestProjectsF
-    } yield {
+    yield
 
       val scala3Ecosystem = EcosystemHighlight(
         "Scala",
@@ -92,6 +93,6 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(imp
         totalProjects,
         totalArtifacts
       )
-    }
-  }
-}
+    end for
+  end frontPage
+end FrontPage

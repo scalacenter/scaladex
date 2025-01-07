@@ -1,8 +1,7 @@
 package scaladex.server.service
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-import com.typesafe.scalalogging.LazyLogging
-import org.apache.pekko.actor.ActorSystem
 import scaladex.core.model.Artifact
 import scaladex.core.model.Env
 import scaladex.core.model.GithubResponse
@@ -14,9 +13,12 @@ import scaladex.core.service.GithubClient
 import scaladex.core.service.ProjectService
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
-import scaladex.core.util.ScalaExtensions._
+import scaladex.core.util.ScalaExtensions.*
 import scaladex.view.Job
 import scaladex.view.Task
+
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.actor.ActorSystem
 
 class AdminService(
     env: Env,
@@ -24,9 +26,9 @@ class AdminService(
     searchEngine: SearchEngine,
     githubClientOpt: Option[GithubClient],
     mavenCentralService: MavenCentralService
-)(implicit actorSystem: ActorSystem)
-    extends LazyLogging {
-  import actorSystem.dispatcher
+)(using system: ActorSystem)
+    extends LazyLogging:
+  private given ExecutionContext = system.dispatcher
 
   val projectService = new ProjectService(database, searchEngine)
   val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)
@@ -35,7 +37,7 @@ class AdminService(
   val artifactService = new ArtifactService(database)
   val githubUpdaterOpt: Option[GithubUpdater] = githubClientOpt.map(client => new GithubUpdater(database, client))
 
-  private val jobs: Map[String, JobScheduler] = {
+  private val jobs: Map[String, JobScheduler] =
     val seq = Seq(
       new JobScheduler(Job.syncSearch, searchSynchronizer.syncAll),
       new JobScheduler(Job.projectDependencies, projectDependenciesUpdater.updateAll),
@@ -48,15 +50,15 @@ class AdminService(
         val githubUpdater = new GithubUpdater(database, client)
         new JobScheduler(Job.githubInfo, githubUpdater.updateAll)
       } ++ (
-        if (!env.isLocal) {
+        if !env.isLocal then
           Seq(
             new JobScheduler(Job.missingMavenArtifacts, mavenCentralService.findMissing),
             new JobScheduler(Job.nonStandardArtifacts, mavenCentralService.findNonStandard)
           )
-        } else Seq.empty
+        else Seq.empty
       )
     seq.map(s => s.job.name -> s).toMap
-  }
+  end jobs
 
   private var tasks = Seq.empty[TaskRunner]
 
@@ -76,18 +78,18 @@ class AdminService(
       groupId: Artifact.GroupId,
       artifactNameOpt: Option[Artifact.Name],
       user: UserState
-  ): Unit = {
+  ): Unit =
     val input = Seq("Group ID" -> groupId.value) ++
       artifactNameOpt.map(name => "Artifact Name" -> name.value)
     val task = TaskRunner.run(Task.findMissingArtifacts, user.info.login, input) { () =>
       mavenCentralService.syncOne(groupId, artifactNameOpt)
     }
     tasks = tasks :+ task
-  }
+  end findMissingArtifacts
 
   def allTaskStatuses: Seq[Task.Status] = tasks.map(_.status)
 
-  def addEmptyProject(reference: Project.Reference, user: UserState): Unit = {
+  def addEmptyProject(reference: Project.Reference, user: UserState): Unit =
 
     val input = Seq("Organization" -> reference.organization.value, "Repository" -> reference.repository.value)
 
@@ -102,9 +104,8 @@ class AdminService(
             info.scalaPercentage.fold {
               throw new Exception(s"Failed to add project. Could not obtain percentage of Scala for this project.")
             } { percentage =>
-              if (percentage <= 0) {
-                throw new Exception(s"Failed to add project. Project seems not a Scala one.")
-              } else {
+              if percentage <= 0 then throw new Exception(s"Failed to add project. Project seems not a Scala one.")
+              else
                 val project =
                   new Project(
                     organization = reference.organization,
@@ -118,15 +119,14 @@ class AdminService(
                   .insertProject(project)
                   .flatMap(_ => searchSynchronizer.syncProject(reference))
                   .map(_ => "success")
-              }
             }
         }
       }
     }
     tasks = tasks :+ task
-  }
+  end addEmptyProject
 
-  def updateGithubInfo(reference: Project.Reference, user: UserState): Unit = {
+  def updateGithubInfo(reference: Project.Reference, user: UserState): Unit =
     val input = Seq("Organization" -> reference.organization.value, "Repository" -> reference.repository.value)
 
     val task = TaskRunner.run(Task.updateGithubInfo, user.info.login, input) { () =>
@@ -135,18 +135,16 @@ class AdminService(
       }
     }
     tasks = tasks :+ task
-  }
 
-  def republishArtifacts(user: UserState): Unit = {
+  def republishArtifacts(user: UserState): Unit =
     val task = TaskRunner.run(Task.republishArtifacts, user.info.login, input = Seq.empty) { () =>
       mavenCentralService.republishArtifacts()
     }
     tasks = tasks :+ task
-  }
 
   private def updateProjectCreationDate(): Future[String] =
-    for {
+    for
       creationDates <- database.computeProjectsCreationDates()
       _ <- creationDates.mapSync { case (creationDate, ref) => database.updateProjectCreationDate(ref, creationDate) }
-    } yield s"Updated ${creationDates.size} creation dates"
-}
+    yield s"Updated ${creationDates.size} creation dates"
+end AdminService

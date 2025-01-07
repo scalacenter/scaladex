@@ -1,12 +1,13 @@
 package scaladex.infra.sql
 
-import org.scalatest.funspec.AnyFunSpec
-import org.scalatest.matchers.should.Matchers
-import scaladex.core.model._
+import scaladex.core.model.*
 import scaladex.infra.BaseDatabaseSuite
 
-class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers {
-  import ArtifactTable._
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+
+class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers:
+  import ArtifactTable.*
   it("check insertIfNotExist")(check(insertIfNotExist))
   it("check selectArtifactRefByProject") {
     check(selectArtifactRefByProject(true))
@@ -43,4 +44,4 @@ class ArtifactTableTests extends AnyFunSpec with BaseDatabaseSuite with Matchers
   it("check selectLatestArtifacts")(check(selectLatestArtifacts))
   it("check setLatestVersion")(check(setLatestVersion))
   it("check unsetOthersLatestVersion")(check(unsetOthersLatestVersion))
-}
+end ArtifactTableTests

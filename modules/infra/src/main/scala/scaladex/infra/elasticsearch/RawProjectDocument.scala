@@ -2,10 +2,6 @@ package scaladex.infra.elasticsearch
 
 import java.time.Instant
 
-import com.sksamuel.elastic4s.Indexable
-import io.circe.Codec
-import io.circe.Printer
-import io.circe.generic.semiauto
 import scaladex.core.model.Artifact
 import scaladex.core.model.Category
 import scaladex.core.model.Language
@@ -14,6 +10,11 @@ import scaladex.core.model.Project
 import scaladex.core.model.Version
 import scaladex.core.model.search.GithubInfoDocument
 import scaladex.core.model.search.ProjectDocument
+
+import com.sksamuel.elastic4s.Indexable
+import io.circe.Codec
+import io.circe.Printer
+import io.circe.generic.semiauto
 
 // A RawProjectDocument is a ProjectDocument where values are not yet validated.
 // It can contain invalid values that will be filtered when converting to ProjectDocument.
@@ -32,7 +33,7 @@ case class RawProjectDocument(
     category: Option[String],
     formerReferences: Seq[Project.Reference],
     githubInfo: Option[GithubInfoDocument]
-) {
+):
   def toProjectDocument: ProjectDocument = ProjectDocument(
     organization,
     repository,
@@ -49,16 +50,16 @@ case class RawProjectDocument(
     formerReferences,
     githubInfo
   )
-}
+end RawProjectDocument
 
-object RawProjectDocument {
-  import scaladex.infra.Codecs._
-  import io.circe.syntax._
-  implicit val codec: Codec[RawProjectDocument] = semiauto.deriveCodec
-  implicit val indexable: Indexable[RawProjectDocument] = rawDocument => Printer.noSpaces.print(rawDocument.asJson)
+object RawProjectDocument:
+  import scaladex.infra.Codecs.given
+  import io.circe.syntax.*
+  given Codec[RawProjectDocument] = semiauto.deriveCodec
+  given Indexable[RawProjectDocument] = rawDocument => Printer.noSpaces.print(rawDocument.asJson)
 
-  def from(project: ProjectDocument): RawProjectDocument = {
-    import project._
+  def from(project: ProjectDocument): RawProjectDocument =
+    import project.*
     RawProjectDocument(
       organization,
       repository,
@@ -75,5 +76,5 @@ object RawProjectDocument {
       formerReferences,
       githubInfo
     )
-  }
-}
+  end from
+end RawProjectDocument

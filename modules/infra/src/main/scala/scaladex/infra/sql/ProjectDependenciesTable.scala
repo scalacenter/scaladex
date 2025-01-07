@@ -1,13 +1,14 @@
 package scaladex.infra.sql
 
-import doobie._
 import scaladex.core.model.Project
 import scaladex.core.model.ProjectDependency
 import scaladex.core.model.Version
-import scaladex.infra.sql.DoobieMappings._
-import scaladex.infra.sql.DoobieUtils._
+import scaladex.infra.sql.DoobieMappings.given
+import scaladex.infra.sql.DoobieUtils.*
 
-object ProjectDependenciesTable {
+import doobie.*
+
+object ProjectDependenciesTable:
   val table: String = "project_dependencies"
 
   val sourceFields: Seq[String] = Seq("source_organization", "source_repository", "source_version")
@@ -32,4 +33,4 @@ object ProjectDependenciesTable {
 
   val deleteBySource: Update[Project.Reference] =
     deleteRequest(table, Seq("source_organization", "source_repository"))
-}
+end ProjectDependenciesTable
