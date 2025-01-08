@@ -3,10 +3,10 @@ package scaladex.core.test
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
+import scaladex.core.model.*
 import scaladex.core.model.Artifact.*
 import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model.Project.Settings
-import scaladex.core.model.*
 import scaladex.core.model.search.ProjectDocument
 
 object Values:

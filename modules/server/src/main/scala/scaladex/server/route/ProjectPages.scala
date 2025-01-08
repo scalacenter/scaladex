@@ -23,10 +23,10 @@ import scaladex.view.html.notfound
 import scaladex.view.project.html
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.pekko.http.scaladsl.model.Uri.*
 import org.apache.pekko.http.scaladsl.model.*
-import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.apache.pekko.http.scaladsl.model.Uri.*
 import org.apache.pekko.http.scaladsl.server.*
+import org.apache.pekko.http.scaladsl.server.Directives.*
 
 class ProjectPages(
     env: Env,

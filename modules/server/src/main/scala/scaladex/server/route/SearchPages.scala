@@ -9,8 +9,8 @@ import scaladex.server.TwirlSupport.given
 import scaladex.view.search.html.searchresult
 
 import org.apache.pekko.http.scaladsl.model.Uri.*
-import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.*
+import org.apache.pekko.http.scaladsl.server.Directives.*
 
 class SearchPages(env: Env, searchEngine: SearchEngine)(
     using ExecutionContext

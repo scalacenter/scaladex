@@ -5,8 +5,8 @@ import java.util.concurrent.Executors
 
 import scala.concurrent.ExecutionContext
 
-import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model.*
+import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.core.util.Secret
 

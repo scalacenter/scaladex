@@ -18,9 +18,9 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.*
+import org.apache.pekko.http.scaladsl.model.*
 import org.apache.pekko.http.scaladsl.model.HttpMethods.POST
 import org.apache.pekko.http.scaladsl.model.Uri.*
-import org.apache.pekko.http.scaladsl.model.*
 import org.apache.pekko.http.scaladsl.model.headers.*
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 

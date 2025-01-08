@@ -22,9 +22,9 @@ import com.softwaremill.pekkohttpsession.SingleValueSessionSerializer
 import com.softwaremill.pekkohttpsession.javadsl.InMemoryRefreshTokenStorage
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.*
 import org.apache.pekko.http.scaladsl.model.StatusCodes.TemporaryRedirect
 import org.apache.pekko.http.scaladsl.model.Uri.Query
-import org.apache.pekko.http.scaladsl.model.*
 import org.apache.pekko.http.scaladsl.model.headers.Referer
 import org.apache.pekko.http.scaladsl.server.Directive1
 import org.apache.pekko.http.scaladsl.server.Directives.*

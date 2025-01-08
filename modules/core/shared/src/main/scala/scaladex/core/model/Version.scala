@@ -2,8 +2,8 @@ package scaladex.core.model
 
 import scaladex.core.util.Parsers.*
 
-import fastparse.NoWhitespace.*
 import fastparse.*
+import fastparse.NoWhitespace.*
 
 sealed trait Version extends Ordered[Version]:
   def value: String

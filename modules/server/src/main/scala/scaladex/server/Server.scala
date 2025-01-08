@@ -31,8 +31,8 @@ import doobie.util.ExecutionContexts
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.*
 import org.apache.pekko.http.scaladsl.model.StatusCodes
-import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.*
+import org.apache.pekko.http.scaladsl.server.Directives.*
 
 object Server extends LazyLogging:
 
