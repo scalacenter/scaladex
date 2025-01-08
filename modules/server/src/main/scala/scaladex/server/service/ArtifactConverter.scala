@@ -2,8 +2,8 @@ package scaladex.server.service
 
 import java.time.Instant
 
-import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model.*
+import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.data.cleanup.*
 import scaladex.data.maven.ArtifactModel
 import scaladex.data.maven.Dependency

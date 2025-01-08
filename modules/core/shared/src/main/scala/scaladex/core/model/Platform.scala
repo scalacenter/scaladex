@@ -69,7 +69,7 @@ case class MillPlugin(version: Version) extends Platform:
     case _ => false
 
 object MillPlugin:
-  val `0.10` = MillPlugin(Version(0, 10))
+  val `0.10`: MillPlugin = MillPlugin(Version(0, 10))
 
   given ordering: Ordering[MillPlugin] = Ordering.by(p => p.asInstanceOf[Platform])
 

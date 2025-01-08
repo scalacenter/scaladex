@@ -3,10 +3,10 @@ package scaladex.core.test
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
+import scaladex.core.model.*
 import scaladex.core.model.Artifact.*
 import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.model.Project.Settings
-import scaladex.core.model.*
 import scaladex.core.model.search.ProjectDocument
 
 object Values:
@@ -14,21 +14,21 @@ object Values:
   val ok: GithubStatus = GithubStatus.Ok(now)
   val unknown: GithubStatus = GithubStatus.Unknown(now)
 
-  val `2.6.1` = Version(2, 6, 1)
+  val `2.6.1`: Version = Version(2, 6, 1)
   val `4`: Version = Version(4)
-  val `2.5.0` = Version(2, 5, 0)
-  val `7.0.0` = Version(7, 0, 0)
-  val `7.1.0` = Version(7, 1, 0)
-  val `7.2.0-PREVIEW.1` = Version("7.2.0-PREVIEW.1")
-  val `7.2.0-PREVIEW.2` = Version("7.2.0-PREVIEW.2")
-  val `7.2.0` = Version(7, 2, 0)
-  val `7.3.0` = Version(7, 3, 0)
+  val `2.5.0`: Version = Version(2, 5, 0)
+  val `7.0.0`: Version = Version(7, 0, 0)
+  val `7.1.0`: Version = Version(7, 1, 0)
+  val `7.2.0-PREVIEW.1`: Version = Version("7.2.0-PREVIEW.1")
+  val `7.2.0-PREVIEW.2`: Version = Version("7.2.0-PREVIEW.2")
+  val `7.2.0`: Version = Version(7, 2, 0)
+  val `7.3.0`: Version = Version(7, 3, 0)
 
   val `_2.13`: BinaryVersion = BinaryVersion(Jvm, Scala.`2.13`)
   val `_3`: BinaryVersion = BinaryVersion(Jvm, Scala.`3`)
   val `_sjs1_3`: BinaryVersion = BinaryVersion(ScalaJs.`1.x`, Scala.`3`)
-  val `_sjs0.6_2.13` = BinaryVersion(ScalaJs.`0.6`, Scala.`2.13`)
-  val `_native0.4_2.13` = BinaryVersion(ScalaNative.`0.4`, Scala.`2.13`)
+  val `_sjs0.6_2.13`: BinaryVersion = BinaryVersion(ScalaJs.`0.6`, Scala.`2.13`)
+  val `_native0.4_2.13`: BinaryVersion = BinaryVersion(ScalaNative.`0.4`, Scala.`2.13`)
 
   private def contributor(login: String): GithubContributor =
     GithubContributor(login, "", Url(""), 1)

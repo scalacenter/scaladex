@@ -2,8 +2,8 @@ package scaladex.infra.sql
 
 import java.time.Instant
 
-import scaladex.core.model.Artifact.*
 import scaladex.core.model.*
+import scaladex.core.model.Artifact.*
 import scaladex.infra.sql.DoobieMappings.given
 import scaladex.infra.sql.DoobieUtils.*
 
