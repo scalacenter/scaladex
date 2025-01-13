@@ -29,6 +29,8 @@ final case class ProjectHeader(
   def allArtifactNames: Seq[Artifact.Name] = artifacts.map(_.name).distinct.sorted
   def platforms(artifactName: Artifact.Name): Seq[Platform] =
     artifacts.filter(_.name == artifactName).map(_.platform).distinct.sorted(Platform.ordering.reverse)
+  def artifacts(artifactName: Artifact.Name, platform: Platform): Seq[Artifact] =
+    artifacts.filter(a => a.name == artifactName && a.platform == platform)
 
   def versionsUrl: String = artifactsUrl(getDefaultArtifact(None, None), withBinaryVersion = false)
 
@@ -43,19 +45,30 @@ final case class ProjectHeader(
     val queryParams = if filters.nonEmpty then "?" + filters.mkString("&") else ""
     s"/$ref/artifacts/${defaultArtifact.name}$queryParams"
 
+  def getDefaultArtifact0(binaryVersion: Option[BinaryVersion], artifactName: Option[Artifact.Name]): Artifact =
+    getDefaultArtifact(binaryVersion.map(_.language), binaryVersion.map(_.platform), artifactName)
+
+  def getDefaultArtifact(language: Option[Language], platform: Option[Platform]): Artifact =
+    getDefaultArtifact(language, platform, None)
+
   /** getDefaultArtifact is split in two steps: first we get the default artifact name and then, the latest version. The
     * reason is, we cannot use the latest version of all artifacts to get the default artifact if they don't share the
     * same versioning. Instead we use the latest release date. But once we have the artifact with the latest release
     * date, we really want to get the latest version of that artifact, which is not necessarily the latest one released
     * because of back-publishing.
     */
-  def getDefaultArtifact(language: Option[Language], platform: Option[Platform]): Artifact =
-    val artifactName = getDefaultArtifactName(language, platform)
+  def getDefaultArtifact(
+      language: Option[Language],
+      platform: Option[Platform],
+      artifactName: Option[Artifact.Name]
+  ): Artifact =
+    val defaultArtifactName = artifactName.getOrElse(getDefaultArtifactName(language, platform))
     val filteredArtifacts = artifacts.filter { a =>
-      a.name == artifactName && language.forall(_ == a.language) && platform.forall(_ == a.platform)
+      a.name == defaultArtifactName && language.forall(_ == a.language) && platform.forall(_ == a.platform)
     }
     if preferStableVersion then filteredArtifacts.maxBy(a => (a.version.isStable, a.version))
     else filteredArtifacts.maxBy(_.version)
+  end getDefaultArtifact
 
   private def getDefaultArtifactName(language: Option[Language], platform: Option[Platform]): Artifact.Name =
     val filteredArtifacts = artifacts.filter(a => language.forall(_ == a.language) && platform.forall(_ == a.platform))

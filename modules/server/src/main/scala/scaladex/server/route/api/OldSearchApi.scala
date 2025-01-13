@@ -168,10 +168,8 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(using Exec
       binaryVersion: Option[BinaryVersion],
       artifact: Option[String]
   ): Future[Option[OldSearchApi.ArtifactOptions]] =
-    val selection = new ArtifactSelection(
-      binaryVersion = binaryVersion,
-      artifactNames = artifact.map(Artifact.Name.apply)
-    )
+    val selection =
+      new ArtifactSelection(binaryVersion = binaryVersion, artifactNames = artifact.map(Artifact.Name.apply))
     for
       projectOpt <- database.getProject(projectRef)
       stableOnly = projectOpt.map(_.settings.preferStableVersion).getOrElse(false)
