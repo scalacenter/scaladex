@@ -150,7 +150,7 @@ object Server extends LazyLogging:
     val publishApi = new PublishApi(githubAuth, publishProcess)
     val apiEndpoints = new ApiEndpointsImpl(projectService, artifactService, searchEngine)
     val oldSearchApi = new OldSearchApi(searchEngine, webDatabase)
-    val badges = new Badges(webDatabase)
+    val badges = new Badges(projectService)
     val authentication = new AuthenticationApi(config.oAuth2.clientId, config.session, githubAuth, webDatabase)
 
     val route: Route =
