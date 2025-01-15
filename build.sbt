@@ -158,7 +158,7 @@ lazy val server = project
       "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=1044"
     ),
     libraryDependencies ++= Seq(
-      "org.scala-lang.modules" %% "scala-parallel-collections" % "1.1.0",
+      "org.scala-lang.modules" %% "scala-parallel-collections" % "1.2.0",
       "org.scalatest" %% "scalatest" % V.scalatest % "test,it",
       "org.apache.pekko" %% "pekko-testkit" % V.pekko % "test,it",
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
