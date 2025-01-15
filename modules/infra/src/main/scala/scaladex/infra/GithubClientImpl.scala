@@ -247,8 +247,8 @@ class GithubClientImpl(token: Secret)(using system: ActorSystem)
           }""".stripMargin
     val request = graphqlRequest(query)
     get[GraphQLPage[Project.Organization]](request)(using graphqlPageDecoder("data", "user", "organizations") { d =>
-      d.downField("login").as[String].map(Project.Organization.apply)
-    })
+        d.downField("login").as[String].map(Project.Organization.apply)
+      })
   end getUserOrganizationsPage
 
   private def getUserRepositoriesPage(
