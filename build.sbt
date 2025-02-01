@@ -5,7 +5,7 @@ lazy val isCI: Boolean = System.getenv("CI") != null
 
 inThisBuild(
   List(
-    scalaVersion := "3.3.4",
+    scalaVersion := "3.3.5",
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     // scalafixScalaBinaryVersion := "3",
