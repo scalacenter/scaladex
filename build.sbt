@@ -179,7 +179,7 @@ lazy val server = project
       "org.webjars" % "font-awesome" % "6.7.1",
       "org.webjars" % "jquery" % "3.7.1",
       "org.webjars.bower" % "select2" % "4.0.13",
-      "org.webjars" % "swagger-ui" % "5.18.2"
+      "org.webjars" % "swagger-ui" % "5.18.3"
     ),
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
     Compile / resourceGenerators += (Assets / WebKeys.assets).map(Seq(_)),
