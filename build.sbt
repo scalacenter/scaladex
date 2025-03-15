@@ -202,7 +202,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
       "io.github.cquiroz" %%% "scala-java-time" % "2.6.0",
       "org.endpoints4s" %%% "algebra" % "1.12.1",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
-      "org.jsoup" % "jsoup" % "1.18.3",
+      "org.jsoup" % "jsoup" % "1.19.1",
       "io.circe" %%% "circe-core" % V.circe,
       "io.circe" %%% "circe-generic" % V.circe,
       "io.circe" %%% "circe-parser" % V.circe
@@ -221,7 +221,7 @@ lazy val data = project
       "org.apache.pekko" %% "pekko-serialization-jackson" % V.pekko,
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
       "org.apache.maven" % "maven-model-builder" % "4.0.0-rc-2",
-      "org.jsoup" % "jsoup" % "1.18.3",
+      "org.jsoup" % "jsoup" % "1.19.1",
       "org.apache.ivy" % "ivy" % "2.5.3",
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
       "org.json4s" %% "json4s-native" % V.json4s,
