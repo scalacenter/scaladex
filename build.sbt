@@ -74,7 +74,7 @@ lazy val infra = project
       "org.flywaydb" % "flyway-core" % "8.5.13", // for database migration
       "org.apache.pekko" %% "pekko-stream" % V.pekko,
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
-      "com.github.pjfanning" %% "pekko-http-circe" % "3.0.0",
+      "com.github.pjfanning" %% "pekko-http-circe" % "3.0.1",
       ("io.get-coursier" %% "coursier" % V.coursier).cross(CrossVersion.for3Use2_13),
       ("io.get-coursier" %% "coursier-sbt-maven-repository" % V.coursier).cross(CrossVersion.for3Use2_13),
       "com.github.blemale" %% "scaffeine" % "5.3.0",
@@ -220,7 +220,7 @@ lazy val data = project
       "org.apache.pekko" %% "pekko-actor-typed" % V.pekko,
       "org.apache.pekko" %% "pekko-serialization-jackson" % V.pekko,
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
-      "org.apache.maven" % "maven-model-builder" % "4.0.0-rc-2",
+      "org.apache.maven" % "maven-model-builder" % "4.0.0-rc-3",
       "org.jsoup" % "jsoup" % "1.19.1",
       "org.apache.ivy" % "ivy" % "2.5.3",
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
@@ -238,7 +238,7 @@ lazy val V = new {
   val doobie = "0.13.4"
   val pekko = "1.1.3"
   val pekkoHttp = "1.1.0"
-  val elastic4s = "8.16.0"
+  val elastic4s = "8.17.0"
   val nscalaTime = "3.0.0"
   val scalatest = "3.2.19"
   val circe = "0.14.10"
