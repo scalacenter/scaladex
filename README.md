@@ -145,8 +145,8 @@ This project is participating in **Google Summer of Code (GSoC) 2025**! If you'r
 
 ### 🛠️ [Scaladex – Support for Compiler Plugins](https://summerofcode.withgoogle.com/programs/2025/projects/D71ZWImy)
 
-* **Contributor**: [Vidisha Gawas](https://github.com/vidishagawas)
-  🔗 [LinkedIn](https://www.linkedin.com/in/vidisha-gawas)
+* **Contributor**: [Vidisha Gawas](hhttps://github.com/vidishagawas121)
+  🔗 [LinkedIn](https://in.linkedin.com/in/vidisha-gawas-146348364)
 * **Mentors**:
   * [Adrien Piquerez](https://github.com/adpi2)
   * [Kannupriya Kalra](https://github.com/kannupriyakalra)
