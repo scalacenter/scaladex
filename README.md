@@ -162,7 +162,7 @@ This project is participating in **Google Summer of Code (GSoC) 2025**! If you'r
 Want to connect with maintainers? The Scaladex project is maintained by:
 
 * **Adrien Piquerez**
-  [LinkedIn](https://ch.linkedin.com/in/adrien-piquerez-22b478177) | ✉️ [adrien.piquerez@epfl.ch](mailto:adrien.piquerez@epfl.ch) | [GitHub](https://github.com/adpi2)
+  [LinkedIn](https://ch.linkedin.com/in/adrien-piquerez-22b478177) | [GitHub](https://github.com/adpi2)
 
 * **Kannupriya Kalra**
   [LinkedIn](https://www.linkedin.com/in/kannupriyakalra/) | ✉️ [kannupriyakalra@gmail.com](mailto:kannupriyakalra@gmail.com) | 💬 Discord: `kannupriyakalra_46520` | [GitHub](https://github.com/kannupriyakalra) 
