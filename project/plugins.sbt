@@ -1,5 +1,5 @@
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.10.0")
-addSbtPlugin("org.playframework.twirl" % "sbt-twirl" % "2.0.8")
+addSbtPlugin("org.playframework.twirl" % "sbt-twirl" % "2.0.9")
 addSbtPlugin("io.github.irundaia" % "sbt-sassify" % "1.5.2")
 addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.11.1")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.18.2")
