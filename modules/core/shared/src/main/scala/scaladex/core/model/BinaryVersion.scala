@@ -5,6 +5,23 @@ import scaladex.core.util.Parsers
 import fastparse.*
 import fastparse.NoWhitespace.*
 
+/** Represents a binary version of a Scala artifact.
+  * 
+  * The binary version consists of two parts:
+  * 1. platform: The runtime platform (JVM, Scala.js, Scala Native, SBT plugin, Mill plugin)
+  * 2. language: The programming language (Java, Scala with version)
+  * 
+  * Examples:
+  * - JVM Scala 2.13: BinaryVersion(Jvm, Scala(Version(2, 13, 0)))
+  * - Scala.js 1.0 with Scala 2.13: BinaryVersion(ScalaJs(Version(1, 0, 0)), Scala(Version(2, 13, 0)))
+  * - SBT plugin 1.0 with Scala 2.13: BinaryVersion(SbtPlugin(Version(1, 0, 0)), Scala(Version(2, 13, 0)))
+  * 
+  * TODO: Add support for compiler plugins which use full Scala versions (e.g., 2.13.10)
+  * This will require:
+  * 1. Extending the Platform type to include CompilerPlugin
+  * 2. Updating the Parser to handle full version numbers
+  * 3. Modifying the artifact indexing logic to recognize compiler plugin artifacts
+  */
 final case class BinaryVersion(platform: Platform, language: Language):
   def isValid: Boolean = platform.isValid && language.isValid
 
