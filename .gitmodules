@@ -1,6 +1,6 @@
 [submodule "small-index"]
 	path = small-index
-	url = https://github.com/scalacenter/scaladex-small-index.git
+	url = git@github.com:scalacenter/scaladex-small-index.git
 [submodule "contrib"]
 	path = contrib
-	url = https://github.com/scalacenter/scaladex-contrib.git
+	url = git@github.com:scalacenter/scaladex-contrib.git
