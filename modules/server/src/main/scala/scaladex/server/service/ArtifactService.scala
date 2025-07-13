@@ -19,8 +19,17 @@ class ArtifactService(database: SchedulerDatabase)(using ExecutionContext) exten
   ): Future[Seq[Version]] =
     database.getArtifactVersions(groupId, artifactId, stableOnly)
 
+  def getLatestArtifact(
+      ref: Project.Reference,
+      groupId: Artifact.GroupId,
+      artifactId: Artifact.ArtifactId
+  ): Future[Option[Artifact]] =
+    database.getLatestArtifact(ref, groupId, artifactId)
+
   def getLatestArtifact(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Option[Artifact]] =
-    database.getLatestArtifact(groupId, artifactId)
+    database
+      .getLatestArtifacts(groupId, artifactId)
+      .map(artifacts => artifacts.maxOption(using Ordering.by(_.releaseDate)))
 
   def getArtifact(ref: Artifact.Reference): Future[Option[Artifact]] =
     database.getArtifact(ref)
@@ -86,7 +95,7 @@ class ArtifactService(database: SchedulerDatabase)(using ExecutionContext) exten
       preferStableVersion: Boolean
   ): Future[Unit] =
     for
-      artifacts <- database.getArtifacts(groupId, artifactId)
+      artifacts <- database.getArtifacts(ref, groupId, artifactId)
       latestVersion = computeLatestVersion(artifacts.map(_.version), preferStableVersion)
       _ <- database.updateLatestVersion(ref, Artifact.Reference(groupId, artifactId, latestVersion))
     yield ()
