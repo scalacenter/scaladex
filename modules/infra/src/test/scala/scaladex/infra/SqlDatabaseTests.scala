@@ -291,8 +291,8 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     val artifacts = Seq(Cats.`core_2.13:2.5.0`, Cats.`core_3:2.6.1`)
     for
       _ <- database.insertArtifacts(artifacts)
-      obtained1 <- database.getArtifacts(Cats.groupId, Artifact.ArtifactId("cats-core_3"))
-      obtained2 <- database.getArtifacts(Cats.groupId, Artifact.ArtifactId("cats-core_2.13"))
+      obtained1 <- database.getArtifacts(Cats.reference, Cats.groupId, Artifact.ArtifactId("cats-core_3"))
+      obtained2 <- database.getArtifacts(Cats.reference, Cats.groupId, Artifact.ArtifactId("cats-core_2.13"))
     yield
       obtained1 should contain theSameElementsAs Seq(Cats.`core_3:2.6.1`)
       obtained2 should contain theSameElementsAs Seq(Cats.`core_2.13:2.5.0`)
