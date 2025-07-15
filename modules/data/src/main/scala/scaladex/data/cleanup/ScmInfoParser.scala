@@ -20,7 +20,7 @@ object ScmInfoParser extends Parsers:
     else v
 
   private def ScmUrl[A: P] = P(
-    "scm:".? ~ "git:".? ~ ("git@" | "https://" | "git://" | "//") ~
+    "scm:".? ~ "git:".? ~ ("git@" | "https://" | "git://" | ("ssh://" ~ "git@".?) | "//") ~
       "github.com" ~ (":" | "/") ~ Segment
         .rep(1)
         .! ~ "/" ~ Segment.rep(1).!.map(removeDotGit)
