@@ -86,3 +86,84 @@ for  Scala JS or Scala Native, add a `targetType=...` query-string parameter:
 [![Latest version](https://index.scala-lang.org/akka/akka/akka-http-core/latest.svg?color=blue)](https://index.scala-lang.org/akka/akka/akka-http-core)
 
 For more information read the [shields.io API](http://shields.io/)
+
+## 🚀Google Summer of Code (GSoC)
+![Google Summer of Code (GSoC)](doc/img/gsoc-scaladex.png)
+
+
+
+This project is participating in **Google Summer of Code (GSoC) 2025**! If you're interested in contributing to Scaladex as a future contributor, check out the resources below:
+
+---
+
+### 📌 GSoC Resources
+
+👉 **Scala Center GSoC Ideas**: [https://github.com/scalacenter/GoogleSummerOfCode](https://github.com/scalacenter/GoogleSummerOfCode)
+📚 **Explore Past GSoC Projects with Scala Center**: [https://www.gsocorganizations.dev/organization/scala-center/](https://www.gsocorganizations.dev/organization/scala-center/)
+
+---
+
+### 🎥 Learn About GSoC
+
+🎥 **GSoC Process Explained**: [https://www.youtube.com/live/G_rjI9PDMl8](https://www.youtube.com/live/G_rjI9PDMl8)
+
+---
+
+## 🌟 GSoC 2024: Funded Scaladex Projects
+
+---
+
+### 🛠️ [Scaladex – Display Information from POM File](https://summerofcode.withgoogle.com/archive/2024/projects/4nuShODP)
+
+* **Contributor**: [Siddharth Ingle](https://github.com/skingle)
+  🔗 [LinkedIn](https://in.linkedin.com/in/skingle)
+* **Mentors**:
+  * [Adrien Piquerez](https://github.com/adpi2)
+  * [Kannupriya Kalra](https://github.com/kannupriyakalra)
+* **Proposal**: [GSoC 2024 Proposal](https://github.com/user-attachments/files/16697199/proposal.pdf)
+* **Blog**: 📌 [How I Started My GSoC Journey](https://www.linkedin.com/pulse/how-i-started-my-gsoc24-journey-scala-center-siddharth-ingle-sdf5e/)
+* **Work Log**: 📌 [GitHub Project Board](https://github.com/users/skingle/projects/2)
+
+---
+
+### 🛠️ [Scaladex – New Artifact Page](https://summerofcode.withgoogle.com/archive/2024/projects/AMrkEU3Z)
+
+* **Contributor**: [Ayush Koli](https://github.com/ayushkoli772)
+  🔗 [LinkedIn](https://www.linkedin.com/in/ayush-koli/)
+* **Mentors**:
+  * [Adrien Piquerez](https://github.com/adpi2)
+  * [Kannupriya Kalra](https://github.com/kannupriyakalra)
+* **Blog**: 📌 [Final Report](https://ayushkoli772.github.io/blog/gsoc-final-report/)
+* **Technologies**: Bootstrap, HTML, CSS, SQL, Scala, Akka HTTP, Doobie
+* **Topics**: Web, UI, UX
+
+---
+
+## 🌟 GSoC 2025: Funded Scaladex Project
+
+---
+
+### 🛠️ [Scaladex – Support for Compiler Plugins](https://summerofcode.withgoogle.com/programs/2025/projects/D71ZWImy)
+
+* **Contributor**: [Vidisha Gawas](hhttps://github.com/vidishagawas121)
+  🔗 [LinkedIn](https://in.linkedin.com/in/vidisha-gawas-146348364)
+* **Mentors**:
+  * [Adrien Piquerez](https://github.com/adpi2)
+  * [Kannupriya Kalra](https://github.com/kannupriyakalra)
+* **Blog**: [Building with GSoC](https://opensourcegirl.hashnode.dev/)
+* **Work Log**:[https://github.com/users/vidishagawas121/projects/2](https://github.com/users/vidishagawas121/projects/2)
+* **Technologies**: Scala, SBT, Play Framework, Elasticsearch, GitHub Actions, JavaScript, HTML/CSS
+* **Topics**: Compilers, Open Source, Plugin Systems
+
+---
+
+## 🧑‍💼 Maintainers
+
+Want to connect with maintainers? The Scaladex project is maintained by:
+
+* **Adrien Piquerez**
+  [LinkedIn](https://ch.linkedin.com/in/adrien-piquerez-22b478177) | [GitHub](https://github.com/adpi2)
+
+* **Kannupriya Kalra**
+  [LinkedIn](https://www.linkedin.com/in/kannupriyakalra/) | ✉️ [kannupriyakalra@gmail.com](mailto:kannupriyakalra@gmail.com) | 💬 Discord: `kannupriyakalra_46520` | [GitHub](https://github.com/kannupriyakalra) 
+

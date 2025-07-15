@@ -33,8 +33,15 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   ): Future[Seq[Version]] =
     run(ArtifactTable.selectVersionByGroupIdAndArtifactId(stableOnly).to[Seq]((groupId, artifactId)))
 
-  override def getLatestArtifact(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Option[Artifact]] =
-    run(ArtifactTable.selectLatestArtifact.option((groupId, artifactId)))
+  override def getLatestArtifact(
+      ref: Project.Reference,
+      groupId: Artifact.GroupId,
+      artifactId: Artifact.ArtifactId
+  ): Future[Option[Artifact]] =
+    run(ArtifactTable.selectLatestArtifact.option((ref, groupId, artifactId)))
+
+  override def getLatestArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectLatestArtifacts.to[Seq]((groupId, artifactId)))
 
   override def insertArtifacts(artifacts: Seq[Artifact]): Future[Unit] =
     run(ArtifactTable.insertIfNotExist.updateMany(artifacts)).map(_ => ())
@@ -46,8 +53,12 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def updateArtifactReleaseDate(ref: Artifact.Reference, releaseDate: Instant): Future[Int] =
     run(ArtifactTable.updateReleaseDate.run((releaseDate, ref)))
 
-  override def getArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifactByGroupIdAndArtifactId.to[Seq](groupId, artifactId))
+  override def getArtifacts(
+      ref: Project.Reference,
+      groupId: Artifact.GroupId,
+      artifactId: Artifact.ArtifactId
+  ): Future[Seq[Artifact]] =
+    run(ArtifactTable.selectArtifactByGroupIdAndArtifactId.to[Seq]((ref, groupId, artifactId)))
 
   override def getArtifact(ref: Artifact.Reference): Future[Option[Artifact]] =
     run(ArtifactTable.selectByReference.option(ref))
@@ -129,7 +140,7 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   private val projectLatestArtifactsCache: AsyncLoadingCache[Project.Reference, Seq[Artifact]] =
     // invalidated manually by updateLatestVersion
-    Scaffeine().buildAsyncFuture(ref => run(ArtifactTable.selectLatestArtifacts.to[Seq](ref)))
+    Scaffeine().buildAsyncFuture(ref => run(ArtifactTable.selectProjectLatestArtifacts.to[Seq](ref)))
   override def getProjectLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]] =
     projectLatestArtifactsCache.get(ref)
 
@@ -218,8 +229,8 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   override def updateLatestVersion(ref: Project.Reference, artifact: Artifact.Reference): Future[Unit] =
     val transaction = for
-      _ <- ArtifactTable.setLatestVersion.run(artifact)
-      _ <- ArtifactTable.unsetOthersLatestVersion.run(artifact)
+      _ <- ArtifactTable.setLatestVersion.run((ref, artifact))
+      _ <- ArtifactTable.unsetOthersLatestVersion.run((ref, artifact))
     yield ()
     run(transaction).map(_ => projectLatestArtifactsCache.underlying.synchronous().invalidate(ref))
 

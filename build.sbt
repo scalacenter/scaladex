@@ -24,7 +24,7 @@ inThisBuild(
 
 lazy val loggingSettings = Seq(
   libraryDependencies ++= Seq(
-    "ch.qos.logback" % "logback-classic" % "1.5.17",
+    "ch.qos.logback" % "logback-classic" % "1.5.18",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
   ),
   // Drop and replace commons-logging with slf4j
@@ -179,7 +179,7 @@ lazy val server = project
       "org.webjars" % "font-awesome" % "6.7.2",
       "org.webjars" % "jquery" % "3.7.1",
       "org.webjars.bower" % "select2" % "4.0.13",
-      "org.webjars" % "swagger-ui" % "5.20.0"
+      "org.webjars" % "swagger-ui" % "5.20.7"
     ),
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
     Compile / resourceGenerators += (Assets / WebKeys.assets).map(Seq(_)),
@@ -220,7 +220,7 @@ lazy val data = project
       "org.apache.pekko" %% "pekko-actor-typed" % V.pekko,
       "org.apache.pekko" %% "pekko-serialization-jackson" % V.pekko,
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
-      "org.apache.maven" % "maven-model-builder" % "4.0.0-rc-3",
+      "org.apache.maven" % "maven-model-builder" % "4.0.0-rc-4",
       "org.jsoup" % "jsoup" % "1.21.1",
       "org.apache.ivy" % "ivy" % "2.5.3",
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
@@ -237,11 +237,11 @@ lazy val data = project
 lazy val V = new {
   val doobie = "0.13.4"
   val pekko = "1.1.3"
-  val pekkoHttp = "1.1.0"
+  val pekkoHttp = "1.2.0"
   val elastic4s = "8.17.0"
   val nscalaTime = "3.0.0"
   val scalatest = "3.2.19"
-  val circe = "0.14.10"
+  val circe = "0.14.12"
   val json4s = "4.0.7"
   val coursier = "2.1.24"
 }
