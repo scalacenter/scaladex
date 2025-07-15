@@ -56,8 +56,8 @@ object ArtifactTable:
     val where = language.map(v => s"language_version='${v.value}'").toSeq ++ platform.map(p => s"platform='${p.value}'")
     selectRequest(table, mainFields, where = where)
 
-  val selectArtifactByGroupIdAndArtifactId: Query[(GroupId, ArtifactId), Artifact] =
-    selectRequest(table, mainFields, Seq("group_id", "artifact_id"))
+  val selectArtifactByGroupIdAndArtifactId: Query[(Project.Reference, GroupId, ArtifactId), Artifact] =
+    selectRequest(table, mainFields, Seq("organization", "repository", "group_id", "artifact_id"))
 
   def selectVersionByGroupIdAndArtifactId(stableOnly: Boolean): Query[(GroupId, ArtifactId), Version] =
     selectRequest1(
@@ -67,8 +67,21 @@ object ArtifactTable:
       where = stableOnlyFilter(stableOnly).toSeq
     )
 
-  val selectLatestArtifact: Query[(GroupId, ArtifactId), Artifact] =
-    selectRequest1(table, mainFields, keys = Seq("group_id", "artifact_id"), where = Seq("is_latest_version"))
+  val selectLatestArtifact: Query[(Project.Reference, GroupId, ArtifactId), Artifact] =
+    selectRequest1(
+      table,
+      mainFields,
+      keys = Seq("organization", "repository", "group_id", "artifact_id"),
+      where = Seq("is_latest_version")
+    )
+
+  val selectLatestArtifacts: Query[(GroupId, ArtifactId), Artifact] =
+    selectRequest1(
+      table,
+      mainFields,
+      keys = Seq("group_id", "artifact_id"),
+      where = Seq("is_latest_version")
+    )
 
   val selectArtifactByProject: Query[Project.Reference, Artifact] =
     selectRequest1(
@@ -147,16 +160,20 @@ object ArtifactTable:
       groupBy = projectReferenceFields
     )
 
-  def selectLatestArtifacts: Query[Project.Reference, Artifact] =
+  def selectProjectLatestArtifacts: Query[Project.Reference, Artifact] =
     selectRequest1(table, mainFields, where = Seq("organization=?", "repository=?", "is_latest_version=true"))
 
-  def setLatestVersion: Update[Reference] =
-    updateRequest0(table, set = Seq("is_latest_version=true"), where = Seq("group_id=?", "artifact_id=?", "version=?"))
+  def setLatestVersion: Update[(Project.Reference, Reference)] =
+    updateRequest0(
+      table,
+      set = Seq("is_latest_version=true"),
+      where = Seq("organization=?", "repository=?", "group_id=?", "artifact_id=?", "version=?")
+    )
 
-  def unsetOthersLatestVersion: Update[Reference] =
+  def unsetOthersLatestVersion: Update[(Project.Reference, Reference)] =
     updateRequest0(
       table,
       set = Seq("is_latest_version=false"),
-      where = Seq("group_id=?", "artifact_id=?", "version<>?")
+      where = Seq("organization=?", "repository=?", "group_id=?", "artifact_id=?", "version<>?")
     )
 end ArtifactTable

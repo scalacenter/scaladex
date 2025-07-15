@@ -14,9 +14,19 @@ trait WebDatabase:
       artifactId: Artifact.ArtifactId,
       stableOnly: Boolean
   ): Future[Seq[Version]]
-  def getArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]]
+  def getArtifacts(
+      ref: Project.Reference,
+      groupId: Artifact.GroupId,
+      artifactId: Artifact.ArtifactId
+  ): Future[Seq[Artifact]]
   def getArtifact(ref: Artifact.Reference): Future[Option[Artifact]]
-  def getLatestArtifact(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Option[Artifact]]
+  def getLatestArtifact(
+      ref: Project.Reference,
+      groupId: Artifact.GroupId,
+      artifactId: Artifact.ArtifactId
+  ): Future[Option[Artifact]]
+  // can return more than one artifact, if artifacts are split in several projects
+  def getLatestArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]]
   def getAllArtifacts(language: Option[Language], platform: Option[Platform]): Future[Seq[Artifact]]
   def countArtifacts(): Future[Long]
 

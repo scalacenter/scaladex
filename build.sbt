@@ -24,7 +24,7 @@ inThisBuild(
 
 lazy val loggingSettings = Seq(
   libraryDependencies ++= Seq(
-    "ch.qos.logback" % "logback-classic" % "1.5.17",
+    "ch.qos.logback" % "logback-classic" % "1.5.18",
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
   ),
   // Drop and replace commons-logging with slf4j
@@ -241,7 +241,7 @@ lazy val V = new {
   val elastic4s = "8.17.0"
   val nscalaTime = "3.0.0"
   val scalatest = "3.2.19"
-  val circe = "0.14.10"
+  val circe = "0.14.12"
   val json4s = "4.0.7"
   val coursier = "2.1.24"
 }
