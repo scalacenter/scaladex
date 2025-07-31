@@ -62,7 +62,7 @@ object Deployment {
   private val prodUserName = "scaladex"
 
   private val devHostname = "scalagesrv1.epfl.ch"
-  private val prodHostname = "icvm0042.epfl.ch"
+  private val prodHostname = "icvm0032.epfl.ch"
 }
 
 class Deployment(

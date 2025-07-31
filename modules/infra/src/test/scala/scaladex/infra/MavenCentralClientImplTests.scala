@@ -36,7 +36,7 @@ class MavenCentralClientImplTests extends AsyncFunSpec with Matchers:
   }
 
   it(s"retrieve pomfile for maven reference of sbt plugin") {
-    for res <- client.getPomFile(Artifact.Reference.from("ch.epfl.scala", "sbt-scalafix_2.12_1.0", "0.9.23"))
+    for res <- client.getPomFile(Artifact.Reference.from("org.jetbrains.scala", "sbt-idea-plugin_2.12_1.0", "5.0.6"))
     yield res.get._1.startsWith("<?xml") shouldBe true
   }
 
