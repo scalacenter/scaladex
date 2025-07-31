@@ -110,6 +110,6 @@ class MavenCentralClientImpl()(using system: ActorSystem)
 
   private def getPomFileName(artifactId: Artifact.ArtifactId, version: Version): String =
     artifactId.binaryVersion.platform match
-      case SbtPlugin(Version.Major(1) | Version.Minor(0, 13)) => s"${artifactId.name.value}-${version.value}.pom"
+      case SbtPlugin(Version.Minor(0, 13)) => s"${artifactId.name.value}-${version.value}.pom"
       case _ => s"${artifactId.value}-${version.value}.pom"
 end MavenCentralClientImpl
