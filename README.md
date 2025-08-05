@@ -45,7 +45,15 @@ If your artifact does not have any binary version it is considered a Java artifa
 Yet some Java artifact are closely related to Scala.
 In that case you can force its indexing by updating the [non-standard.json](https://github.com/scalacenter/scaladex-contrib/blob/master/non-standard.json) file in the [scaladex-contrib](https://github.com/scalacenter/scaladex-contrib) repository.
 
-At the moment we don't support full Scala binary versions, that are often used in Scala compiler plugins.
+Scaladex supports various binary version formats:
+- Standard Scala versions: `_2.13`, `_3`, `_2.12`
+- Scala.js versions: `_sjs1_2.13`, `_sjs1_3`
+- Scala Native versions: `_native0.4_2.13`
+- SBT plugin versions: `_2.13_1.0`, `_2.12_0.13`
+- Mill plugin versions: `_mill0.9_2.13`
+
+Compiler plugins are currently being added to Scaladex. They typically use full Scala binary versions (e.g., `_2.13.10`). 
+If you have a compiler plugin that needs to be indexed, please open an issue in the [scaladex-contrib](https://github.com/scalacenter/scaladex-contrib) repository.
 
 #### Does the pom file contain the `scm` attribute and does it points to a public Github repository?
 
@@ -88,7 +96,7 @@ for  Scala JS or Scala Native, add a `targetType=...` query-string parameter:
 For more information read the [shields.io API](http://shields.io/)
 
 ## 🚀Google Summer of Code (GSoC)
-![Google Summer of Code (GSoC)](doc/img/gsoc-scaladex.png)
+![Google Summer of Code (GSoC)](doc/assets/Scaladex.png)
 
 
 
@@ -99,6 +107,7 @@ This project is participating in **Google Summer of Code (GSoC) 2025**! If you'r
 ### 📌 GSoC Resources
 
 👉 **Scala Center GSoC Ideas**: [https://github.com/scalacenter/GoogleSummerOfCode](https://github.com/scalacenter/GoogleSummerOfCode)
+
 📚 **Explore Past GSoC Projects with Scala Center**: [https://www.gsocorganizations.dev/organization/scala-center/](https://www.gsocorganizations.dev/organization/scala-center/)
 
 ---
@@ -121,6 +130,7 @@ This project is participating in **Google Summer of Code (GSoC) 2025**! If you'r
   * [Adrien Piquerez](https://github.com/adpi2)
   * [Kannupriya Kalra](https://github.com/kannupriyakalra)
 * **Proposal**: [GSoC 2024 Proposal](https://github.com/user-attachments/files/16697199/proposal.pdf)
+* **Announcement**: [Official Acceptance Post](https://www.linkedin.com/posts/skingle_scala-scalacenter-gsoc2024-activity-7192214506901504000-HBGc) | [Midterm evaluation post](https://www.linkedin.com/posts/skingle_scala-gsoc-gsoc2024-activity-7218525241944215552-1tpn?utm_source=share&utm_medium=member_android&rcm=ACoAAFp2nsYBNBsrS0fo8jK1QyeRCdtOBCWgUuQ) | [Final evalution post](https://www.linkedin.com/posts/skingle_certificate-activity-7236760686373007362-R1NW?utm_source=share&utm_medium=member_android&rcm=ACoAAFp2nsYBNBsrS0fo8jK1QyeRCdtOBCWgUuQ)
 * **Blog**: 📌 [How I Started My GSoC Journey](https://www.linkedin.com/pulse/how-i-started-my-gsoc24-journey-scala-center-siddharth-ingle-sdf5e/)
 * **Work Log**: 📌 [GitHub Project Board](https://github.com/users/skingle/projects/2)
 
@@ -150,8 +160,9 @@ This project is participating in **Google Summer of Code (GSoC) 2025**! If you'r
 * **Mentors**:
   * [Adrien Piquerez](https://github.com/adpi2)
   * [Kannupriya Kalra](https://github.com/kannupriyakalra)
+* **Announcement**: [Official Acceptance Post](https://www.linkedin.com/posts/vidisha-gawas-146348364_gsoc-gsoc2025-scalacenter-activity-7326793814331871232-0hGz?utm_source=share&utm_medium=member_android&rcm=ACoAAFp2nsYBNBsrS0fo8jK1QyeRCdtOBCWgUuQ) | [Midterm evaluation post](https://www.linkedin.com/posts/vidisha-gawas-146348364_gsoc2025-scalacenter-scaladex-activity-7352311549400662016-zvpl?utm_source=share&utm_medium=member_android&rcm=ACoAAFp2nsYBNBsrS0fo8jK1QyeRCdtOBCWgUuQ)
 * **Blog**: [Building with GSoC](https://opensourcegirl.hashnode.dev/)
-* **Work Log**:[https://github.com/users/vidishagawas121/projects/2](https://github.com/users/vidishagawas121/projects/2)
+* **Work Log**:[GSoC Progress Tracker](https://github.com/users/vidishagawas121/projects/2)
 * **Technologies**: Scala, SBT, Play Framework, Elasticsearch, GitHub Actions, JavaScript, HTML/CSS
 * **Topics**: Compilers, Open Source, Plugin Systems
 
