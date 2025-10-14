@@ -71,6 +71,7 @@ case class Artifact(
           case Scala(Version.Patch(_, _, _)) =>
             Some(s"""libraryDependencies += "$groupId" % "$name" % "$version" cross CrossVersion.full""")
           case _ => Some(s"""libraryDependencies += "$groupId" %% "$name" % "$version"""")
+        case CompilerPlugin => throw new UnsupportedOperationException("CompilerPlugin not supported in sbtInstall")
 
     (install, resolver.flatMap(_.sbt)) match
       case (None, _) => None
@@ -103,6 +104,7 @@ case class Artifact(
           case Java => Some(s"import $$ivy.`$groupId:$artifactId:$version`")
           case Scala(Version.Patch(_, _, _)) => Some(s"import $$ivy.`$groupId:::$name:$version`")
           case _ => Some(s"import $$ivy.`$groupId::$name:$version`")
+        case CompilerPlugin => throw new UnsupportedOperationException("CompilerPlugin not supported in ammInstall")
 
     (install, resolver.map(addResolver)) match
       case (None, _) => None
@@ -124,6 +126,7 @@ case class Artifact(
               |  <version>$version</version>
               |</dependency>""".stripMargin
         )
+        case CompilerPlugin => throw new UnsupportedOperationException("CompilerPlugin not supported in mavenInstall")
 
   /** string representation for gradle dependency
     * @return
@@ -132,6 +135,7 @@ case class Artifact(
     platform match
       case MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
       case Jvm => Some(s"compile group: '$groupId', name: '$artifactId', version: '$version'")
+        case CompilerPlugin => throw new UnsupportedOperationException("CompilerPlugin not supported in gradleInstall")
 
   /** string representation for mill dependency
     * @return
@@ -147,6 +151,7 @@ case class Artifact(
           case Java => Some(s"""ivy"$groupId:$artifactId:$version"""")
           case Scala(Version.Patch(_, _, _)) => Some(s"""ivy"$groupId:::$name:$version"""")
           case _ => Some(s"""ivy"$groupId::$name:$version"""")
+        case CompilerPlugin => throw new UnsupportedOperationException("CompilerPlugin not supported in millInstall")
     (install, resolver.flatMap(_.url)) match
       case (None, _) => None
       case (Some(install), None) => Some(install)
@@ -167,6 +172,7 @@ case class Artifact(
           case Java => Some(s"""//> using dep "$groupId:$artifactId:$version"""")
           case Scala(Version.Patch(_, _, _)) => Some(s"""//> using dep "$groupId:::$name:$version"""")
           case _ => Some(s"""//> using dep "$groupId::$name:$version"""")
+        case CompilerPlugin => throw new UnsupportedOperationException("CompilerPlugin not supported in scalaCliInstall")
 
   def csLaunch: Option[String] =
     platform match
@@ -178,6 +184,7 @@ case class Artifact(
           case Java => Some(s"cs launch $groupId:$artifactId:$version")
           case Scala(Version.Patch(_, _, _)) => Some(s"cs launch $groupId:::$name:$version")
           case _ => Some(s"cs launch $groupId::$name:$version")
+        case CompilerPlugin => throw new UnsupportedOperationException("CompilerPlugin not supported in csLaunch")
 
   def defaultScaladoc: Option[String] =
     resolver match
