@@ -118,14 +118,21 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
       Jvm -> 1L,
       ScalaJs.`1.x` -> 1L,
       ScalaJs.`0.6` -> 1L,
-      ScalaNative.`0.4` -> 1L,
-      CompilerPlugin -> 1L
+      ScalaNative.`0.4` -> 1L
     )
     val params = SearchParams(queryString = "cats")
     for
       _ <- insertAll(projects)
       scalaJsVersions <- searchEngine.countByPlatforms(params)
     yield (scalaJsVersions should contain).theSameElementsInOrderAs(expected)
+  }
+
+  "count by platforms includes compiler plugin" in {
+    val params = SearchParams(queryString = "*")
+    for
+      _ <- insertAll(projects)
+      platforms <- searchEngine.countByPlatforms(params)
+    yield platforms should contain (CompilerPlugin -> 1L)
   }
 
   "remove missing document should not fail" in {
