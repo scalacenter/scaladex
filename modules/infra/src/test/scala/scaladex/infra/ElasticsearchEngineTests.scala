@@ -35,7 +35,8 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
   val searchEngine: ElasticsearchEngine = ElasticsearchEngine.open(config)
   val pageParams: PageParams = PageParams(1, 20)
 
-  val projects: Seq[ProjectDocument] = Seq(Cats.projectDocument, Scalafix.projectDocument, Values.CompilerPluginProj.projectDocument)
+  val projects: Seq[ProjectDocument] =
+    Seq(Cats.projectDocument, Scalafix.projectDocument, Values.CompilerPluginProj.projectDocument)
 
   private def insertAll(projects: Seq[ProjectDocument]): Future[Unit] =
     for
@@ -132,7 +133,7 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
     for
       _ <- insertAll(projects)
       platforms <- searchEngine.countByPlatforms(params)
-    yield platforms should contain (CompilerPlugin -> 1L)
+    yield platforms should contain(CompilerPlugin -> 1L)
   }
 
   "remove missing document should not fail" in {
