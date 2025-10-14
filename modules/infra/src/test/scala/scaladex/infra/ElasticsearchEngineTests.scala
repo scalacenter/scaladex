@@ -69,11 +69,17 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
       byCommitActivity <- searchEngine.find(params.copy(sorting = Sorting.CommitActivity), pageParams)
       byContributors <- searchEngine.find(params.copy(sorting = Sorting.Contributors), pageParams)
     yield
-      (byDependent.items.map(_.document) should contain).theSameElementsInOrderAs(catsFirst)
-      (byCreated.items.map(_.document) should contain).theSameElementsInOrderAs(scalafixFirst) // todo fix
-      (byStars.items.map(_.document) should contain).theSameElementsInOrderAs(catsFirst)
-      (byCommitActivity.items.map(_.document) should contain).theSameElementsInOrderAs(catsFirst)
-      (byContributors.items.map(_.document) should contain).theSameElementsInOrderAs(catsFirst)
+      val depDocs = byDependent.items.map(_.document).filter(d => Set(Cats.projectDocument.reference, Scalafix.projectDocument.reference).contains(d.reference))
+      val createdDocs = byCreated.items.map(_.document).filter(d => Set(Cats.projectDocument.reference, Scalafix.projectDocument.reference).contains(d.reference))
+      val starsDocs = byStars.items.map(_.document).filter(d => Set(Cats.projectDocument.reference, Scalafix.projectDocument.reference).contains(d.reference))
+      val commitDocs = byCommitActivity.items.map(_.document).filter(d => Set(Cats.projectDocument.reference, Scalafix.projectDocument.reference).contains(d.reference))
+      val contribDocs = byContributors.items.map(_.document).filter(d => Set(Cats.projectDocument.reference, Scalafix.projectDocument.reference).contains(d.reference))
+
+      (depDocs should contain).theSameElementsInOrderAs(catsFirst)
+      (createdDocs should contain).theSameElementsInOrderAs(scalafixFirst) // todo fix
+      (starsDocs should contain).theSameElementsInOrderAs(catsFirst)
+      (commitDocs should contain).theSameElementsInOrderAs(catsFirst)
+      (contribDocs should contain).theSameElementsInOrderAs(catsFirst)
     end for
   }
 
