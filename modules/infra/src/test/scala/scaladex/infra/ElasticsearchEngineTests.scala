@@ -18,8 +18,8 @@ import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.ProjectDocument
 import scaladex.core.model.search.SearchParams
 import scaladex.core.model.search.Sorting
-import scaladex.core.test.Values.*
 import scaladex.core.test.Values
+import scaladex.core.test.Values.*
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.infra.config.ElasticsearchConfig
 
