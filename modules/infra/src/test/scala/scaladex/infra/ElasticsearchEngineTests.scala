@@ -6,6 +6,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 import scaladex.core.model.BinaryVersion
+import scaladex.core.model.CompilerPlugin
 import scaladex.core.model.Jvm
 import scaladex.core.model.Project
 import scaladex.core.model.Scala
@@ -18,6 +19,7 @@ import scaladex.core.model.search.ProjectDocument
 import scaladex.core.model.search.SearchParams
 import scaladex.core.model.search.Sorting
 import scaladex.core.test.Values.*
+import scaladex.core.test.Values
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.infra.config.ElasticsearchConfig
 
