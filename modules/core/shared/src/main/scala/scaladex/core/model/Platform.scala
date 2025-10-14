@@ -95,5 +95,6 @@ object Platform:
       case s"native$version" => Version.parseSemantically(version).map(ScalaNative.apply)
       case s"sbt$version" => Version.parseSemantically(version).map(SbtPlugin.apply)
       case s"mill$version" => Version.parseSemantically(version).map(MillPlugin.apply)
+      case "compiler-plugin" => Some(CompilerPlugin)
       case _ => None
 end Platform

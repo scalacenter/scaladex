@@ -33,7 +33,7 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
   val searchEngine: ElasticsearchEngine = ElasticsearchEngine.open(config)
   val pageParams: PageParams = PageParams(1, 20)
 
-  val projects: Seq[ProjectDocument] = Seq(Cats.projectDocument, Scalafix.projectDocument)
+  val projects: Seq[ProjectDocument] = Seq(Cats.projectDocument, Scalafix.projectDocument, Values.CompilerPluginProj.projectDocument)
 
   private def insertAll(projects: Seq[ProjectDocument]): Future[Unit] =
     for
@@ -116,7 +116,8 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
       Jvm -> 1L,
       ScalaJs.`1.x` -> 1L,
       ScalaJs.`0.6` -> 1L,
-      ScalaNative.`0.4` -> 1L
+      ScalaNative.`0.4` -> 1L,
+      CompilerPlugin -> 1L
     )
     val params = SearchParams(queryString = "cats")
     for
