@@ -231,21 +231,18 @@ end Artifact
 object Artifact:
   val dateFormatter = DateTimeFormatter.ofPattern("MMM d, uuuu").withZone(ZoneOffset.UTC)
 
-  type Name = Artifact.Name
-  type Reference = Artifact.Reference
-
-  case class Name(value: String) extends AnyVal:
+  final case class Name(value: String) extends AnyVal:
     override def toString: String = value
   object Name:
     given ordering: Ordering[Name] = Ordering.by(_.value)
 
-  case class GroupId(value: String) extends AnyVal:
+  final case class GroupId(value: String) extends AnyVal:
     override def toString: String = value
     def mavenUrl: String = value.replace('.', '/')
   object GroupId:
     given ordering: Ordering[GroupId] = Ordering.by(_.value)
 
-  case class ArtifactId(name: Name, binaryVersion: BinaryVersion):
+  final case class ArtifactId(name: Name, binaryVersion: BinaryVersion):
     override def toString = value
     def value: String = s"$name${binaryVersion.asSuffix}"
     def isScala: Boolean = binaryVersion.language.isScala
@@ -267,7 +264,7 @@ object Artifact:
       tryParse(artifactId, x => FullParser(x)).getOrElse(ArtifactId(Name(artifactId), BinaryVersion(Jvm, Java)))
   end ArtifactId
 
-  case class Reference(groupId: GroupId, artifactId: ArtifactId, version: Version):
+  final case class Reference(groupId: GroupId, artifactId: ArtifactId, version: Version):
     override def toString(): String = s"$groupId:$artifactId:$version"
 
     def name: Name = artifactId.name
