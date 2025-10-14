@@ -229,7 +229,10 @@ case class Artifact(
 end Artifact
 
 object Artifact:
-  private val dateFormatter = DateTimeFormatter.ofPattern("MMM d, uuuu").withZone(ZoneOffset.UTC)
+  val dateFormatter = DateTimeFormatter.ofPattern("MMM d, uuuu").withZone(ZoneOffset.UTC)
+
+  type Name = Artifact.Name
+  type Reference = Artifact.Reference
 
   case class Name(value: String) extends AnyVal:
     override def toString: String = value
