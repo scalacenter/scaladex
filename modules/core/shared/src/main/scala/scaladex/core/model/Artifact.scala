@@ -60,18 +60,21 @@ case class Artifact(
 
   def sbtInstall: Option[String] =
     val install = platform match
-      case SbtPlugin(_) => Some(s"""addSbtPlugin("$groupId" % "$name" % "$version")""")
-      case MillPlugin(_) => None
-      case _ if isNonStandardLib => Some(s"""libraryDependencies += "$groupId" % "$artifactId" % "$version"""")
-      case ScalaJs(_) | ScalaNative(_) =>
-        Some(s"""libraryDependencies += "$groupId" %%% "$name" % "$version"""")
-      case Jvm =>
-        language match
-          case Java => Some(s"""libraryDependencies += "$groupId" % "$name" % "$version"""")
-          case Scala(Version.Patch(_, _, _)) =>
-            Some(s"""libraryDependencies += "$groupId" % "$name" % "$version" cross CrossVersion.full""")
-          case _ => Some(s"""libraryDependencies += "$groupId" %% "$name" % "$version"""")
+      val install = platform match {
+        case SbtPlugin(_) => Some(s"""addSbtPlugin("$groupId" % "$name" % "$version")""")
+        case MillPlugin(_) => None
+        case _ if isNonStandardLib => Some(s"""libraryDependencies += "$groupId" % "$artifactId" % "$version"""")
+        case ScalaJs(_) | ScalaNative(_) =>
+          Some(s"""libraryDependencies += "$groupId" %%% "$name" % "$version"""")
+        case Jvm =>
+          language match {
+            case Java => Some(s"""libraryDependencies += "$groupId" % "$name" % "$version"""")
+            case Scala(Version.Patch(_, _, _)) =>
+              Some(s"""libraryDependencies += "$groupId" % "$name" % "$version" cross CrossVersion.full""")
+            case _ => Some(s"""libraryDependencies += "$groupId" %% "$name" % "$version"""")
+          }
         case CompilerPlugin => throw new UnsupportedOperationException("CompilerPlugin not supported in sbtInstall")
+      }
 
     (install, resolver.flatMap(_.sbt)) match
       case (None, _) => None
@@ -97,14 +100,17 @@ case class Artifact(
           |interp.resolvers() = interp.resolvers() :+ res""".stripMargin
 
     val install = platform match
-      case MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
-      case Jvm =>
-        language match
-          case _ if isNonStandardLib => Some(s"import $$ivy.`$groupId:$artifactId:$version`")
-          case Java => Some(s"import $$ivy.`$groupId:$artifactId:$version`")
-          case Scala(Version.Patch(_, _, _)) => Some(s"import $$ivy.`$groupId:::$name:$version`")
-          case _ => Some(s"import $$ivy.`$groupId::$name:$version`")
+      val install = platform match {
+        case MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
+        case Jvm =>
+          language match {
+            case _ if isNonStandardLib => Some(s"import $$ivy.`$groupId:$artifactId:$version`")
+            case Java => Some(s"import $$ivy.`$groupId:$artifactId:$version`")
+            case Scala(Version.Patch(_, _, _)) => Some(s"import $$ivy.`$groupId:::$name:$version`")
+            case _ => Some(s"import $$ivy.`$groupId::$name:$version`")
+          }
         case CompilerPlugin => throw new UnsupportedOperationException("CompilerPlugin not supported in ammInstall")
+      }
 
     (install, resolver.map(addResolver)) match
       case (None, _) => None
@@ -117,41 +123,48 @@ case class Artifact(
     */
   def mavenInstall: Option[String] =
     platform match
-      case MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
-      case Jvm =>
-        Some(
-          s"""|<dependency>
-              |  <groupId>$groupId</groupId>
-              |  <artifactId>$artifactId</artifactId>
-              |  <version>$version</version>
-              |</dependency>""".stripMargin
-        )
+      platform match {
+        case MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
+        case Jvm =>
+          Some(
+            s"""|<dependency>
+                |  <groupId>$groupId</groupId>
+                |  <artifactId>$artifactId</artifactId>
+                |  <version>$version</version>
+                |</dependency>""".stripMargin
+          )
         case CompilerPlugin => throw new UnsupportedOperationException("CompilerPlugin not supported in mavenInstall")
+      }
 
   /** string representation for gradle dependency
     * @return
     */
   def gradleInstall: Option[String] =
     platform match
-      case MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
-      case Jvm => Some(s"compile group: '$groupId', name: '$artifactId', version: '$version'")
+      platform match {
+        case MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
+        case Jvm => Some(s"compile group: '$groupId', name: '$artifactId', version: '$version'")
         case CompilerPlugin => throw new UnsupportedOperationException("CompilerPlugin not supported in gradleInstall")
+      }
 
   /** string representation for mill dependency
     * @return
     */
   def millInstall: Option[String] =
     val install = platform match
-      case MillPlugin(_) => Some(s"import $$ivy.`$groupId::$name::$version`")
-      case SbtPlugin(_) => None
-      case ScalaNative(_) | ScalaJs(_) => Some(s"""ivy"$groupId::$name::$version"""")
-      case Jvm =>
-        language match
-          case _ if isNonStandardLib => Some(s"""ivy"$groupId:$artifactId:$version"""")
-          case Java => Some(s"""ivy"$groupId:$artifactId:$version"""")
-          case Scala(Version.Patch(_, _, _)) => Some(s"""ivy"$groupId:::$name:$version"""")
-          case _ => Some(s"""ivy"$groupId::$name:$version"""")
+      val install = platform match {
+        case MillPlugin(_) => Some(s"import $$ivy.`$groupId::$name::$version`")
+        case SbtPlugin(_) => None
+        case ScalaNative(_) | ScalaJs(_) => Some(s"""ivy"$groupId::$name::$version"""")
+        case Jvm =>
+          language match {
+            case _ if isNonStandardLib => Some(s"""ivy"$groupId:$artifactId:$version"""")
+            case Java => Some(s"""ivy"$groupId:$artifactId:$version"""")
+            case Scala(Version.Patch(_, _, _)) => Some(s"""ivy"$groupId:::$name:$version"""")
+            case _ => Some(s"""ivy"$groupId::$name:$version"""")
+          }
         case CompilerPlugin => throw new UnsupportedOperationException("CompilerPlugin not supported in millInstall")
+      }
     (install, resolver.flatMap(_.url)) match
       case (None, _) => None
       case (Some(install), None) => Some(install)
@@ -164,27 +177,33 @@ case class Artifact(
 
   def scalaCliInstall: Option[String] =
     binaryVersion.platform match
-      case MillPlugin(_) | SbtPlugin(_) => None
-      case ScalaNative(_) | ScalaJs(_) => Some(s"""//> using dep "$groupId::$name::$version"""")
-      case Jvm =>
-        language match
-          case _ if isNonStandardLib => Some(s"""//> using dep "$groupId:$artifactId:$version"""")
-          case Java => Some(s"""//> using dep "$groupId:$artifactId:$version"""")
-          case Scala(Version.Patch(_, _, _)) => Some(s"""//> using dep "$groupId:::$name:$version"""")
-          case _ => Some(s"""//> using dep "$groupId::$name:$version"""")
+      binaryVersion.platform match {
+        case MillPlugin(_) | SbtPlugin(_) => None
+        case ScalaNative(_) | ScalaJs(_) => Some(s"""//> using dep "$groupId::$name::$version"""")
+        case Jvm =>
+          language match {
+            case _ if isNonStandardLib => Some(s"""//> using dep "$groupId:$artifactId:$version"""")
+            case Java => Some(s"""//> using dep "$groupId:$artifactId:$version"""")
+            case Scala(Version.Patch(_, _, _)) => Some(s"""//> using dep "$groupId:::$name:$version"""")
+            case _ => Some(s"""//> using dep "$groupId::$name:$version"""")
+          }
         case CompilerPlugin => throw new UnsupportedOperationException("CompilerPlugin not supported in scalaCliInstall")
+      }
 
   def csLaunch: Option[String] =
     platform match
-      case MillPlugin(_) | SbtPlugin(_) => None
-      case ScalaNative(_) | ScalaJs(_) => Some(s"cs launch $groupId::$name::$version")
-      case Jvm =>
-        language match
-          case _ if isNonStandardLib => Some(s"cs launch $groupId:$artifactId:$version")
-          case Java => Some(s"cs launch $groupId:$artifactId:$version")
-          case Scala(Version.Patch(_, _, _)) => Some(s"cs launch $groupId:::$name:$version")
-          case _ => Some(s"cs launch $groupId::$name:$version")
+      platform match {
+        case MillPlugin(_) | SbtPlugin(_) => None
+        case ScalaNative(_) | ScalaJs(_) => Some(s"cs launch $groupId::$name::$version")
+        case Jvm =>
+          language match {
+            case _ if isNonStandardLib => Some(s"cs launch $groupId:$artifactId:$version")
+            case Java => Some(s"cs launch $groupId:$artifactId:$version")
+            case Scala(Version.Patch(_, _, _)) => Some(s"cs launch $groupId:::$name:$version")
+            case _ => Some(s"cs launch $groupId::$name:$version")
+          }
         case CompilerPlugin => throw new UnsupportedOperationException("CompilerPlugin not supported in csLaunch")
+      }
 
   def defaultScaladoc: Option[String] =
     resolver match
