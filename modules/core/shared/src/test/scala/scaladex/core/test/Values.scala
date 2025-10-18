@@ -290,6 +290,32 @@ object Values:
 
   object CompilerPluginProj:
     val reference: Project.Reference = Project.Reference.unsafe("org/example-compiler-plugin")
+    val artifact: Artifact = Artifact(
+      groupId = GroupId("org"),
+      artifactId = ArtifactId("example-compiler-plugin_2.13"),
+      version = Version("1.0.0"),
+      projectRef = reference,
+      description = Some("Example compiler plugin"),
+      binaryVersion = BinaryVersion(CompilerPlugin, Scala.`2.13`),
+      fullScalaVersion = Some(Scala.`2.13`.version),
+      developers = Seq.empty,
+      scaladocUrl = None,
+      versionScheme = None,
+      creationDate = now.minus(5, ChronoUnit.MINUTES)
+    )
+    val creationDate: Instant = now.minus(5, ChronoUnit.MINUTES)
+    val githubInfo: GithubInfo = GithubInfo(
+      description = Some("Example compiler plugin for testing"),
+      homepage = None,
+      logo = None,
+      stars = 10,
+      forks = 2,
+      watchers = 5,
+      issues = 0,
+      language = Some("Scala"),
+      topics = Seq("compiler-plugin", "scala"),
+      defaultBranch = "main"
+    )
     val projectDocument: ProjectDocument =
       ProjectDocument
         .default(reference)
