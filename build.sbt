@@ -224,7 +224,7 @@ lazy val data = project
       "org.jsoup" % "jsoup" % "1.21.1",
       "org.apache.ivy" % "ivy" % "2.5.3",
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
-      "org.json4s" %% "json4s-native" % V.json4s,
+      "io.github.json4s" %% "json4s-native" % V.json4s,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     ),
     run / fork := true,
@@ -242,6 +242,6 @@ lazy val V = new {
   val nscalaTime = "3.0.0"
   val scalatest = "3.2.19"
   val circe = "0.14.12"
-  val json4s = "4.0.7"
+  val json4s = "4.1.0"
   val coursier = "2.1.24"
 }
