@@ -65,7 +65,7 @@ case class MillPlugin(version: Version) extends Platform:
   override def value: String = s"mill${version.value}"
 
   override def isValid: Boolean = version match
-    case Version.Minor(_, _) => true
+    case Version.Major(_) | Version.Minor(_, _) => true
     case _ => false
 
 object MillPlugin:
