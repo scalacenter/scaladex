@@ -22,13 +22,14 @@ final case class BinaryVersion(platform: Platform, language: Language):
         case Version.Major(1) => s"_${sv.value}_1.0"
         case Version.Minor(0, 13) => s"_${sv.value}_0.13"
         case sbtV => s"_sbt${sbtV.value}_${sv.value}"
+    case (CompilerPlugin(fullScalaVersion), _) => s"_${fullScalaVersion.value}"
     case (platform, language) => s"_${platform.value}_${language.value}"
 
   override def toString: String = platform match
     case Jvm => language.toString
     case p: SbtPlugin => p.toString
     case p: MillPlugin => p.toString
-    case CompilerPlugin => s"CompilerPlugin ($language)"
+    case p: CompilerPlugin => s"CompilerPlugin (${p.scalaVersion})"
     case _ => s"$platform ($language)"
 end BinaryVersion
 
@@ -52,6 +53,9 @@ object BinaryVersion:
         case ("_mill", Some(millV), Some(scalaV)) => Some(BinaryVersion(MillPlugin(millV), Scala(scalaV)))
         case ("_sbt", Some(sbtV), Some(scalaV)) => Some(BinaryVersion(SbtPlugin(sbtV), Scala(scalaV)))
         case ("_", Some(scalaV), Some(sbtV)) => Some(BinaryVersion(SbtPlugin(sbtV), Scala(scalaV)))
+        case ("_", Some(fullScalaV @ Version.SemanticLike(_, Some(_), Some(_), None, _, _)), None) =>
+          // Full Scala version (major.minor.patch) indicates a compiler plugin
+          Some(BinaryVersion(CompilerPlugin(fullScalaV), Scala.fromFullVersion(fullScalaV)))
         case ("_", Some(scalaV), None) => Some(BinaryVersion(Jvm, Scala(scalaV)))
         case ("", None, None) => Some(BinaryVersion(Jvm, Java))
         case _ => None
