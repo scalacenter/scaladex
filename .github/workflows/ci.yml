@@ -28,7 +28,7 @@ jobs:
         with:
           apps: sbt
           jvm: "adoptium:1.17"
-      - uses: coursier/cache-action@v6
+      - uses: coursier/cache-action@v7
       - name: Unit tests
         run: sbt test
         shell: bash
