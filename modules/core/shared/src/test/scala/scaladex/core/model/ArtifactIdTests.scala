@@ -95,5 +95,14 @@ class ArtifactIdTests extends AsyncFunSpec with Matchers:
       result shouldBe expected
       result.value shouldBe artifactId
     }
+
+    it("parses compiler plugin with full Scala version") {
+      val artifactId = "kind-projector_2.13.16"
+      val fullScalaVersion = Version(2, 13, 16)
+      val expected = ArtifactId(Name("kind-projector"), BinaryVersion(CompilerPlugin(fullScalaVersion), Scala.`2.13`))
+      val result = ArtifactId(artifactId)
+      result shouldBe expected
+      result.value shouldBe artifactId
+    }
   }
 end ArtifactIdTests
