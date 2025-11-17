@@ -9,10 +9,15 @@ case object Jvm extends Platform:
   override def value: String = "jvm"
   override def isValid: Boolean = true
 
-case object CompilerPlugin extends Platform:
-  override def toString: String = "CompilerPlugin"
-  override def value: String = "compiler-plugin"
-  override def isValid: Boolean = true
+case class CompilerPlugin(scalaVersion: Version) extends Platform:
+  override def toString: String = s"Compiler Plugin (Scala $scalaVersion)"
+  override def value: String = s"compiler-plugin_${scalaVersion.value}"
+  override def isValid: Boolean = scalaVersion match
+    case Version.SemanticLike(major, Some(minor), Some(patch), None, _, _) if major >= 2 => true
+    case _ => false
+
+object CompilerPlugin:
+  given ordering: Ordering[CompilerPlugin] = Ordering.by(p => p.asInstanceOf[Platform])
 
 case class ScalaJs(version: Version) extends Platform:
   override def toString: String = s"Scala.js $version"
@@ -85,7 +90,7 @@ object Platform:
     case ScalaNative(version) => (3, Some(version))
     case SbtPlugin(version) => (2, Some(version))
     case MillPlugin(version) => (1, Some(version))
-    case CompilerPlugin => (0, None)
+    case CompilerPlugin(version) => (0, Some(version))
   }
 
   def parse(input: String): Option[Platform] =
@@ -95,6 +100,6 @@ object Platform:
       case s"native$version" => Version.parseSemantically(version).map(ScalaNative.apply)
       case s"sbt$version" => Version.parseSemantically(version).map(SbtPlugin.apply)
       case s"mill$version" => Version.parseSemantically(version).map(MillPlugin.apply)
-      case "compiler-plugin" => Some(CompilerPlugin)
+      case s"compiler-plugin_$version" => Version.parseSemantically(version).map(CompilerPlugin.apply)
       case _ => None
 end Platform
