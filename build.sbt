@@ -25,7 +25,7 @@ inThisBuild(
 lazy val loggingSettings = Seq(
   libraryDependencies ++= Seq(
     "ch.qos.logback" % "logback-classic" % "1.5.21",
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.6"
   ),
   // Drop and replace commons-logging with slf4j
   libraryDependencies += "org.slf4j" % "jcl-over-slf4j" % "2.0.17",
