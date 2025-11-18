@@ -241,7 +241,7 @@ lazy val V = new {
   val elastic4s = "8.17.0"
   val nscalaTime = "3.0.0"
   val scalatest = "3.2.19"
-  val circe = "0.14.12"
+  val circe = "0.14.15"
   val json4s = "4.1.0"
   val coursier = "2.1.24"
 }
