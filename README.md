@@ -147,12 +147,12 @@ This project is participating in **Google Summer of Code (GSoC) 2025**! If you'r
 
 ### 🛠️ [Scaladex – Support for Compiler Plugins](https://summerofcode.withgoogle.com/programs/2025/projects/D71ZWImy)
 
-* **Contributor**: [Vidisha Gawas](hhttps://github.com/vidishagawas121)
+* **Contributor**: [Vidisha Gawas](https://github.com/vidishagawas121)
   🔗 [LinkedIn](https://in.linkedin.com/in/vidisha-gawas-146348364)
 * **Mentors**:
   * [Adrien Piquerez](https://github.com/adpi2)
   * [Kannupriya Kalra](https://github.com/kannupriyakalra)
-* **Announcement**: [Official Acceptance Post](https://www.linkedin.com/posts/vidisha-gawas-146348364_gsoc-gsoc2025-scalacenter-activity-7326793814331871232-0hGz?utm_source=share&utm_medium=member_android&rcm=ACoAAFp2nsYBNBsrS0fo8jK1QyeRCdtOBCWgUuQ) | [Midterm evaluation post](https://www.linkedin.com/posts/vidisha-gawas-146348364_gsoc2025-scalacenter-scaladex-activity-7352311549400662016-zvpl?utm_source=share&utm_medium=member_android&rcm=ACoAAFp2nsYBNBsrS0fo8jK1QyeRCdtOBCWgUuQ)
+* **Announcement**: [Official Acceptance Post](https://www.linkedin.com/posts/vidisha-gawas-146348364_gsoc-gsoc2025-scalacenter-activity-7326793814331871232-0hGz?utm_source=share&utm_medium=member_android&rcm=ACoAAFp2nsYBNBsrS0fo8jK1QyeRCdtOBCWgUuQ) | [Midterm evaluation post](https://www.linkedin.com/posts/vidisha-gawas-146348364_gsoc2025-scalacenter-scaladex-activity-7352311549400662016-zvpl?utm_source=share&utm_medium=member_android&rcm=ACoAAFp2nsYBNBsrS0fo8jK1QyeRCdtOBCWgUuQ) | [GSoC Final Report URL](https://opensourcegirl.hashnode.dev/gsoc-2025-scaladex-project-review)
 * **Blog**: [Building with GSoC](https://opensourcegirl.hashnode.dev/)
 * **Work Log**:[GSoC Progress Tracker](https://github.com/users/vidishagawas121/projects/2)
 * **Technologies**: Scala, SBT, Play Framework, Elasticsearch, GitHub Actions, JavaScript, HTML/CSS
