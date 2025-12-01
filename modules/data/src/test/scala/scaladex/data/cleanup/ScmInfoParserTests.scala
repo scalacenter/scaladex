@@ -9,36 +9,40 @@ class ScmInfoParserTests extends AnyFunSpec with Matchers:
     it("correctly parse valid SCM strings") {
       // Implicit protocol
       ScmInfoParser
-        .parse("scm:git:git@github.com:foobarbuz/example.git")
+        .parseRawConnection("scm:git:git@github.com:foobarbuz/example.git")
         .map(_.toString) shouldBe Some("foobarbuz/example")
       // HTTPS
       ScmInfoParser
-        .parse("scm:https://github.com/foobarbuz/example.git")
+        .parseRawConnection("scm:https://github.com/foobarbuz/example.git")
         .map(_.toString) shouldBe Some("foobarbuz/example")
       ScmInfoParser
-        .parse("scm:https://github.com/foobarbuz/example")
+        .parseRawConnection("scm:https://github.com/foobarbuz/example")
         .map(_.toString) shouldBe Some("foobarbuz/example")
       // Git
       ScmInfoParser
-        .parse("scm:git:git://github.com:foobarbuz/example.git")
+        .parseRawConnection("scm:git:git://github.com:foobarbuz/example.git")
         .map(_.toString) shouldBe Some("foobarbuz/example")
       ScmInfoParser
-        .parse("scm:git://github.com:foobarbuz/example.git")
+        .parseRawConnection("scm:git://github.com:foobarbuz/example.git")
         .map(_.toString) shouldBe Some("foobarbuz/example")
       // SSH
       ScmInfoParser
-        .parse("scm:git:ssh://git@github.com:foobarbuz/example.git")
+        .parseRawConnection("scm:git:ssh://git@github.com:foobarbuz/example.git")
         .map(_.toString) shouldBe Some("foobarbuz/example")
       ScmInfoParser
-        .parse("scm:git:ssh://github.com:foobarbuz/example.git")
+        .parseRawConnection("scm:git:ssh://github.com:foobarbuz/example.git")
         .map(_.toString) shouldBe Some("foobarbuz/example")
       // Unknown protocol
       ScmInfoParser
-        .parse("scm:git:unknown://git@github.com:foobarbuz/example.git")
+        .parseRawConnection("scm:git:unknown://git@github.com:foobarbuz/example.git")
         .map(_.toString) shouldBe None
       ScmInfoParser
-        .parse("scm:git:unknown://github.com:foobarbuz/example.git")
+        .parseRawConnection("scm:git:unknown://github.com:foobarbuz/example.git")
         .map(_.toString) shouldBe None
+      
+      ScmInfoParser
+        .parseRawConnection("scm:git@github.com:mghmay/play-json-shaper.git")
+        .map(_.toString) shouldBe Some("mghmay/play-json-shaper")
     }
   }
 end ScmInfoParserTests

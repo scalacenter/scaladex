@@ -20,13 +20,14 @@ object ScmInfoParser extends Parsers:
     else v
 
   private def ScmUrl[A: P] = P(
+    // "git:" is optional to handle "scm:git@github.com:..." format
     "scm:".? ~ "git:".? ~ ("git@" | "https://" | "git://" | ("ssh://" ~ "git@".?) | "//") ~
       "github.com" ~ (":" | "/") ~ Segment
         .rep(1)
         .! ~ "/" ~ Segment.rep(1).!.map(removeDotGit)
   )
 
-  def parse(scmInfo: String): Option[Project.Reference] =
+  def parseRawConnection(scmInfo: String): Option[Project.Reference] =
     fastparse.parse(scmInfo, x => ScmUrl(x)) match
       case Parsed.Success((organization, repo), _) =>
         Some(Project.Reference.from(organization, repo))
