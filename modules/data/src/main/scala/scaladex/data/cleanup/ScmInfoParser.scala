@@ -9,7 +9,6 @@ import fastparse.*
 object ScmInfoParser extends Parsers:
   import fastparse.NoWhitespace.*
 
-  // More info in Rfc3986
   private def Unreserved[A: P] =
     P(Alpha | Digit | "-".! | ".".! | "_".! | "~".!).!
   private def Segment[A: P] = P(Unreserved | SubDelims | ":" | "@").!
@@ -20,7 +19,6 @@ object ScmInfoParser extends Parsers:
     else v
 
   private def ScmUrl[A: P] = P(
-    // "git:" is optional to handle "scm:git@github.com:..." format
     "scm:".? ~ "git:".? ~ ("git@" | "https://" | "git://" | ("ssh://" ~ "git@".?) | "//") ~
       "github.com" ~ (":" | "/") ~ Segment
         .rep(1)
