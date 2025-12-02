@@ -9,7 +9,6 @@ import fastparse.*
 object ScmInfoParser extends Parsers:
   import fastparse.NoWhitespace.*
 
-  // More info in Rfc3986
   private def Unreserved[A: P] =
     P(Alpha | Digit | "-".! | ".".! | "_".! | "~".!).!
   private def Segment[A: P] = P(Unreserved | SubDelims | ":" | "@").!
@@ -26,7 +25,7 @@ object ScmInfoParser extends Parsers:
         .! ~ "/" ~ Segment.rep(1).!.map(removeDotGit)
   )
 
-  def parse(scmInfo: String): Option[Project.Reference] =
+  def parseRawConnection(scmInfo: String): Option[Project.Reference] =
     fastparse.parse(scmInfo, x => ScmUrl(x)) match
       case Parsed.Success((organization, repo), _) =>
         Some(Project.Reference.from(organization, repo))
