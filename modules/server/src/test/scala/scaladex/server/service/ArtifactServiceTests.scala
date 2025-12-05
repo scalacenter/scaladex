@@ -2,6 +2,7 @@ package scaladex.server.service
 
 import scaladex.core.model.Version
 import scaladex.core.test.InMemoryDatabase
+
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 
