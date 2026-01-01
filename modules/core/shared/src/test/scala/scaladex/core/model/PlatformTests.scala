@@ -16,5 +16,6 @@ class PlatformTests extends AnyFunSpec with Matchers:
       Version.SemanticLike(2, Some(0), Some(0), preRelease = Some(Milestone(2)))
     )
     Platform.parse("mill0.10").get shouldBe MillPlugin.`0.10`
+    Platform.parse("compiler-plugin").get shouldBe CompilerPlugin
   }
 end PlatformTests

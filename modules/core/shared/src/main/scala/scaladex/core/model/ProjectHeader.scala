@@ -105,4 +105,5 @@ final case class ProjectHeader(
   def latestScalaNativeVersions: Seq[ScalaNative] = latestPlatforms.collect { case v: ScalaNative => v }
   def latestSbtVersions: Seq[SbtPlugin] = latestPlatforms.collect { case v: SbtPlugin => v }
   def latestMillVersions: Seq[MillPlugin] = latestPlatforms.collect { case v: MillPlugin => v }
+  def latestCompilerPluginVersions: Seq[CompilerPlugin] = latestPlatforms.collect { case v: CompilerPlugin => v }
 end ProjectHeader

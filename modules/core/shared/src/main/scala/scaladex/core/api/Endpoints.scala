@@ -49,7 +49,7 @@ trait Endpoints extends JsonSchemas with endpoints4s.algebra.Endpoints with endp
 
   private val platformFilters = qs[Seq[Platform]](
     "platform",
-    qsDoc("Filter on platform versions", Seq("jvm", "sjs1", "native0.5", "sbt1", "mill0.11"))
+  qsDoc("Filter on platform versions", Seq("jvm", "sjs1", "native0.5", "sbt1", "mill0.11", "compiler-plugin"))
   )
 
   private val binaryVersionFilters: QueryString[Seq[BinaryVersion]] =
