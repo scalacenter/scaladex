@@ -16,10 +16,10 @@ case class ArtifactSelection(
           project.settings.defaultArtifact.contains(artifact.name),
           // not deprecated
           !project.settings.deprecatedArtifacts.contains(artifact.name),
-          // project repository (ex: shapeless)
-          project.repository.value == artifact.name.value,
+          // project repository (ex: shapeless) - case insensitive
+          project.repository.value.equalsIgnoreCase(artifact.name.value),
           // alphabetically
-          artifact.name,
+          artifact.name.value.toLowerCase,
           // stable version first
           project.settings.preferStableVersion && !artifact.version.isStable,
           artifact.version,
@@ -31,7 +31,7 @@ case class ArtifactSelection(
             Ordering[Boolean],
             Ordering[Boolean],
             Ordering[Boolean],
-            Ordering[Artifact.Name].reverse,
+            Ordering[String].reverse,
             Ordering[Boolean].reverse,
             Ordering[Version],
             Ordering[BinaryVersion]
