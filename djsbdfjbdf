@@ -1,0 +1,87 @@
+[33mf049b7f0[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32madd-compiler-plugin-model[m[33m, [m[1;31morigin/add-compiler-plugin-model[m[33m)[m Handle CompilerPlugin in all pattern matches in Artifact.scalaaaa
+[33m6201ba08[m Handle CompilerPlugin in all pattern matches in Artifact.scalaA
+[33m1a915bd5[m Handle CompilerPlugin in all pattern matches in Artifact.scala
+[33m8658787e[m Add CompilerPlugin to Platform model and update filters
+[33ma64b54c3[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m, [m[1;32madd-compiler-plugin-fix[m[33m)[m Merge pull request #1605 from vidishagawas121/making-changes
+[33m58d678ca[m docs: add GSoC midterm evaluation post to README
+[33md4e3a3ff[m Merge pull request #1604 from adpi2/fix-jetbrains-org
+[33m163cebe0[m Fix test
+[33m272518a4[m Switch prod to icvm0032
+[33m10a92951[m Fix indexing of sbt plugin
+[33m39743fbf[m Merge pull request #1588 from JD557/support-ssh-scm-urls
+[33m9b4484af[m Merge pull request #1591 from scalacenter/update/pekko-actor-typed-1.1.4
+[33m9292260b[m Merge pull request #1599 from scalacenter/update/jsoup-1.21.1
+[33m6f503f78[m Merge pull request #1601 from scalacenter/update/elasticsearch-1.21.3
+[33mfd43ecbd[m Merge pull request #1600 from scalacenter/update/sbt-twirl-2.0.9
+[33mc89619a3[m[33m ([m[1;31morigin/update/jsoup-1.21.1[m[33m)[m Merge branch 'main' into update/jsoup-1.21.1
+[33m26b68d2d[m Merge pull request #1597 from scalacenter/update/maven-model-builder-4.0.0-rc-4
+[33m856007af[m[33m ([m[1;31morigin/update/pekko-actor-typed-1.1.4[m[33m)[m Merge branch 'main' into update/pekko-actor-typed-1.1.4
+[33md940c19c[m Merge pull request #1586 from scalacenter/update/pekko-http-1.2.0
+[33mb0751924[m Merge pull request #1581 from scalacenter/update/sbt-scalajs-1.19.0
+[33mea0d3074[m Merge pull request #1575 from scalacenter/update/swagger-ui-5.20.7
+[33me974d021[m Merge pull request #1570 from scalacenter/update/sbt-1.10.11
+[33m9be52119[m Merge pull request #1567 from scalacenter/update/circe-core-0.14.12
+[33md27496ac[m Merge pull request #1565 from scalacenter/update/logback-classic-1.5.18
+[33m67ddfbe2[m Merge pull request #1602 from adpi2/fix-1593
+[33m4212eb11[m Split by Project ref to compute latest artifacts
+[33me8ea26de[m Merge pull request #1595 from vidishagawas121/add-gsoc-section
+[33mae47c246[m Remove outdated email
+[33md2f1c982[m[33m ([m[1;31morigin/update/elasticsearch-1.21.3[m[33m)[m Update elasticsearch, postgresql to 1.21.3
+[33m17baae9d[m[33m ([m[1;31morigin/update/sbt-twirl-2.0.9[m[33m)[m Update sbt-twirl, twirl-api to 2.0.9
+[33mea8b74d7[m Update jsoup to 1.21.1
+[33m13e7129d[m[33m ([m[1;31morigin/update/maven-model-builder-4.0.0-rc-4[m[33m)[m Update maven-model-builder to 4.0.0-rc-4
+[33m72c72887[m Fixed the typo of the link
+[33m53354c79[m Few changes made
+[33mdedf0498[m Add GSoC 2024 & 2025 section with contributor and blog links
+[33md31085b2[m Update pekko-actor-typed, ... to 1.1.4
+[33mc37bcd41[m Add support for explicit SSH connections in SCM URLs
+[33mfb361b0c[m[33m ([m[1;31morigin/update/pekko-http-1.2.0[m[33m)[m Update pekko-http, pekko-http-core, ... to 1.2.0
+[33m20890962[m[33m ([m[1;31morigin/update/sbt-scalajs-1.19.0[m[33m)[m Update sbt-scalajs, scalajs-library_2.13, ... to 1.19.0
+[33me202a050[m[33m ([m[1;31morigin/update/swagger-ui-5.20.7[m[33m)[m Update swagger-ui to 5.20.7
+[33m6a05c39c[m[33m ([m[1;31morigin/update/sbt-1.10.11[m[33m)[m Update sbt, scripted-plugin to 1.10.11
+[33mf4b654c9[m[33m ([m[1;31morigin/update/circe-core-0.14.12[m[33m)[m Update circe-core, circe-generic, ... to 0.14.12
+[33m36ddbf36[m[33m ([m[1;31morigin/update/logback-classic-1.5.18[m[33m)[m Update logback-classic to 1.5.18
+[33m85fd08b3[m Merge pull request #1560 from scalacenter/update/jsoup-1.19.1
+[33md8496049[m Merge pull request #1563 from scalacenter/update/elasticsearch-1.20.6
+[33m92a44444[m Merge pull request #1562 from scalacenter/update/scalafmt-core-3.9.4
+[33m1db7c009[m Merge pull request #1561 from scalacenter/update/sbt-1.10.10
+[33mfc7b0ba1[m[33m ([m[1;31morigin/update/jsoup-1.19.1[m[33m)[m Merge branch 'main' into update/jsoup-1.19.1
+[33m2a0e5843[m Merge pull request #1558 from scalacenter/update/maven-model-builder-4.0.0-rc-3
+[33m459770bd[m Merge pull request #1557 from scalacenter/update/elastic4s-client-esjava-8.17.0
+[33me6ac81c9[m Merge pull request #1556 from scalacenter/update/pekko-http-circe-3.0.1
+[33m23e83659[m[33m ([m[1;31morigin/update/elasticsearch-1.20.6[m[33m)[m Update elasticsearch, postgresql to 1.20.6
+[33m9edd14db[m[33m ([m[1;31morigin/update/scalafmt-core-3.9.4[m[33m)[m Update scalafmt-core to 3.9.4
+[33mdfbab4c2[m[33m ([m[1;31morigin/update/sbt-1.10.10[m[33m)[m Update sbt, scripted-plugin to 1.10.10
+[33mf72620b4[m Update jsoup to 1.19.1
+[33m0b1fe3a8[m[33m ([m[1;31morigin/update/maven-model-builder-4.0.0-rc-3[m[33m)[m Update maven-model-builder to 4.0.0-rc-3
+[33m516999ed[m[33m ([m[1;31morigin/update/elastic4s-client-esjava-8.17.0[m[33m)[m Update elastic4s-client-esjava to 8.17.0
+[33m5cf9f47f[m[33m ([m[1;31morigin/update/pekko-http-circe-3.0.1[m[33m)[m Update pekko-http-circe to 3.0.1
+[33m9eb2c213[m Merge pull request #1553 from scalacenter/update/swagger-ui-5.20.0
+[33mc6ebcc45[m Merge pull request #1552 from scalacenter/update/elasticsearch-1.20.5
+[33mc3dce9bc[m Merge pull request #1551 from scalacenter/update/jcl-over-slf4j-2.0.17
+[33mcec9351f[m Merge pull request #1550 from scalacenter/update/scalafmt-core-3.9.2
+[33m98c97c6c[m Merge pull request #1549 from scalacenter/update/sbt-twirl-2.0.8
+[33m5cc9734d[m Merge pull request #1547 from scalacenter/update/logback-classic-1.5.17
+[33mf43a14dd[m Merge pull request #1546 from scalacenter/update/sbt-scalafix-0.14.2
+[33mdae432c8[m[33m ([m[1;31morigin/update/swagger-ui-5.20.0[m[33m)[m Update swagger-ui to 5.20.0
+[33m7bff5996[m[33m ([m[1;31morigin/update/elasticsearch-1.20.5[m[33m)[m Update elasticsearch, postgresql to 1.20.5
+[33mf83b2cc8[m[33m ([m[1;31morigin/update/jcl-over-slf4j-2.0.17[m[33m)[m Update jcl-over-slf4j to 2.0.17
+[33mb8c004d9[m[33m ([m[1;31morigin/update/scalafmt-core-3.9.2[m[33m)[m Update scalafmt-core to 3.9.2
+[33m97325c5f[m[33m ([m[1;31morigin/update/sbt-twirl-2.0.8[m[33m)[m Update sbt-twirl, twirl-api to 2.0.8
+[33m8d08dc9a[m[33m ([m[1;31morigin/update/logback-classic-1.5.17[m[33m)[m Update logback-classic to 1.5.17
+[33m4b990dfd[m[33m ([m[1;31morigin/update/sbt-scalafix-0.14.2[m[33m)[m Update sbt-scalafix to 0.14.2
+[33m99844118[m Merge pull request #1544 from scalacenter/update/sbt-native-packager-1.11.1
+[33mf6e12cfb[m[33m ([m[1;31morigin/update/sbt-native-packager-1.11.1[m[33m)[m Update sbt-native-packager to 1.11.1
+[33m8348a00b[m Merge pull request #1542 from scalacenter/update/swagger-ui-5.18.3
+[33m15aaf3b4[m Merge pull request #1541 from scalacenter/update/font-awesome-6.7.2
+[33md80029d6[m Merge pull request #1540 from scalacenter/update/scalafmt-core-3.8.6
+[33m6553715a[m Merge pull request #1539 from scalacenter/update/scala3-library-3.3.5
+[33m25fff1d6[m Merge pull request #1538 from scalacenter/update/sbt-scalajs-1.18.2
+[33m24bd13ea[m[33m ([m[1;31morigin/update/swagger-ui-5.18.3[m[33m)[m Update swagger-ui to 5.18.3
+[33m18a8062c[m[33m ([m[1;31morigin/update/font-awesome-6.7.2[m[33m)[m Update font-awesome to 6.7.2
+[33mc99f4294[m[33m ([m[1;31morigin/update/scalafmt-core-3.8.6[m[33m)[m Update scalafmt-core to 3.8.6
+[33m0349f2b5[m[33m ([m[1;31morigin/update/scala3-library-3.3.5[m[33m)[m Update scala3-library, ... to 3.3.5
+[33ma0aa7f3e[m[33m ([m[1;31morigin/update/sbt-scalajs-1.18.2[m[33m)[m Update sbt-scalajs, scalajs-library_2.13, ... to 1.18.2
+[33m0c4ee715[m Merge pull request #1527 from scalacenter/update/sbt-scalafix-0.14.0
+[33mfce77bc0[m Merge pull request #1536 from scalacenter/update/scalafmt-core-3.8.4
+[33m72a6a128[m Merge pull request #1535 from scalacenter/update/scala-parallel-collections-1.2

@@ -73,13 +73,19 @@ object MillPlugin:
 
   given ordering: Ordering[MillPlugin] = Ordering.by(p => p.asInstanceOf[Platform])
 
+case object CompilerPlugin extends Platform:
+  override def toString: String = "Compiler Plugin"
+  override def value: String = "compiler-plugin"
+  override def isValid: Boolean = true
+
 object Platform:
   given ordering: Ordering[Platform] = Ordering.by {
-    case Jvm => (5, None)
-    case ScalaJs(version) => (4, Some(version))
-    case ScalaNative(version) => (3, Some(version))
-    case SbtPlugin(version) => (2, Some(version))
-    case MillPlugin(version) => (1, Some(version))
+    case Jvm => (6, None)
+    case ScalaJs(version) => (5, Some(version))
+    case ScalaNative(version) => (4, Some(version))
+    case SbtPlugin(version) => (3, Some(version))
+    case MillPlugin(version) => (2, Some(version))
+    case CompilerPlugin => (1, None)
   }
 
   def parse(input: String): Option[Platform] =
@@ -89,5 +95,6 @@ object Platform:
       case s"native$version" => Version.parseSemantically(version).map(ScalaNative.apply)
       case s"sbt$version" => Version.parseSemantically(version).map(SbtPlugin.apply)
       case s"mill$version" => Version.parseSemantically(version).map(MillPlugin.apply)
+      case "compiler-plugin" => Some(CompilerPlugin)
       case _ => None
 end Platform
