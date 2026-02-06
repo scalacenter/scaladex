@@ -23,8 +23,9 @@ final case class ProjectHeader(
   lazy val defaultArtifact: Artifact = getDefaultArtifact(None, None)
   lazy val latestVersion: Version = defaultArtifact.version
   lazy val latestArtifacts: Seq[Artifact] = artifacts.filter(_.version == latestVersion)
-  lazy val latestLanguages: Seq[Language] = latestArtifacts.map(_.language).distinct.sorted
-  lazy val latestPlatforms: Seq[Platform] = latestArtifacts.map(_.platform).distinct.sorted
+  
+  lazy val aggregatedLanguages: Seq[Language] = artifacts.map(_.language).distinct.sorted
+  lazy val aggregatedPlatforms: Seq[Platform] = artifacts.map(_.platform).distinct.sorted
 
   def allArtifactNames: Seq[Artifact.Name] = artifacts.map(_.name).distinct.sorted
   def platforms(artifactName: Artifact.Name): Seq[Platform] =
@@ -100,9 +101,9 @@ final case class ProjectHeader(
     end if
   end getDefaultArtifactName
 
-  def latestScalaVersions: Seq[Scala] = latestLanguages.collect { case v: Scala => v }
-  def latestScalaJsVersions: Seq[ScalaJs] = latestPlatforms.collect { case v: ScalaJs => v }
-  def latestScalaNativeVersions: Seq[ScalaNative] = latestPlatforms.collect { case v: ScalaNative => v }
-  def latestSbtVersions: Seq[SbtPlugin] = latestPlatforms.collect { case v: SbtPlugin => v }
-  def latestMillVersions: Seq[MillPlugin] = latestPlatforms.collect { case v: MillPlugin => v }
+  def allScalaVersions: Seq[Scala] = aggregatedLanguages.collect { case v: Scala => v }
+  def allScalaJsVersions: Seq[ScalaJs] = aggregatedPlatforms.collect { case v: ScalaJs => v }
+  def allScalaNativeVersions: Seq[ScalaNative] = aggregatedPlatforms.collect { case v: ScalaNative => v }
+  def allSbtVersions: Seq[SbtPlugin] = aggregatedPlatforms.collect { case v: SbtPlugin => v }
+  def allMillVersions: Seq[MillPlugin] = aggregatedPlatforms.collect { case v: MillPlugin => v }
 end ProjectHeader
