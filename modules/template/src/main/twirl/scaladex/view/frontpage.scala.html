@@ -9,6 +9,7 @@
   scalaVersions: Seq[EcosystemHighlight],
   platforms: Seq[EcosystemHighlight],
   buildToolPlugins: Seq[EcosystemHighlight],
+  compilerPlugins: Seq[EcosystemHighlight],
   latestProjects: Seq[ProjectDocument],
   mostDependedUpon: Seq[ProjectDocument],
   user: Option[UserState],
@@ -28,6 +29,7 @@
           @ecosystemHighlights("Scala Versions", scalaVersions)
           @ecosystemHighlights("Platforms", platforms)
           @ecosystemHighlights("Build Tool Plugins", buildToolPlugins)
+          @ecosystemHighlights("Compiler Plugins", compilerPlugins)
         </div>
       </div>
     </div>
