@@ -51,6 +51,10 @@
     nav {
         background: $gray-darker;
         padding: 30px 0;
+        
+        .row {
+            margin: 0;
+        }
 
         .logo {
             margin-bottom: 15px;
