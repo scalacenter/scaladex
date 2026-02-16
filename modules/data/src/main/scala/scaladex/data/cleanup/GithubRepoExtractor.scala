@@ -56,7 +56,7 @@ class GithubRepoExtractor(paths: DataPaths):
     val fromPoms = pom.scm match
       case Some(scm) =>
         List(scm.connection, scm.developerConnection, scm.url).flatten
-          .flatMap(ScmInfoParser.parse)
+          .flatMap(ScmInfoParser.parseRawConnection)
           .filter(g => !g.organization.isEmpty() && !g.repository.isEmpty())
       case None => List()
 
