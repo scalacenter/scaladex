@@ -64,7 +64,7 @@ object Elasticsearch extends AutoPlugin {
     CurrentThread.setContextClassLoader[DockerClientProviderStrategy]
     val image = DockerImageName
       .parse("docker.elastic.co/elasticsearch/elasticsearch")
-      .withTag("7.16.1")
+      .withTag("7.17.27")
     val container = new ElasticsearchContainer(image)
     container
       .withEnv("discovery.type", "single-node")
