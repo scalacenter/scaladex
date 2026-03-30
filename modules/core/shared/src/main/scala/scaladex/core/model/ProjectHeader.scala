@@ -23,7 +23,7 @@ final case class ProjectHeader(
   lazy val defaultArtifact: Artifact = getDefaultArtifact(None, None)
   lazy val latestVersion: Version = defaultArtifact.version
   lazy val latestArtifacts: Seq[Artifact] = artifacts.filter(_.version == latestVersion)
-  
+
   lazy val aggregatedLanguages: Seq[Language] = artifacts.map(_.language).distinct.sorted
   lazy val aggregatedPlatforms: Seq[Platform] = artifacts.map(_.platform).distinct.sorted
 
