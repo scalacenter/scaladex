@@ -174,25 +174,26 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(using Exec
       projectOpt <- database.getProject(projectRef)
       stableOnly = projectOpt.map(_.settings.preferStableVersion).getOrElse(false)
       artifacts <- database.getProjectArtifactRefs(projectRef, stableOnly)
-    yield for
-      project <- projectOpt
-      filteredArtifacts = selection.filterArtifacts(artifacts, project)
-      selected <- filteredArtifacts.headOption
     yield
-      val (deprecatedArtifacts, artifacts) = filteredArtifacts
-        .map(_.name)
-        .distinct
-        .partition(project.settings.deprecatedArtifacts.contains)
-      // Sort semantic versions by descending order
-      val versions = filteredArtifacts.map(_.version).distinct.sorted(Ordering[Version].reverse)
-      OldSearchApi.ArtifactOptions(
-        artifacts = artifacts.map(_.value),
-        deprecatedArtifacts = deprecatedArtifacts.map(_.value),
-        versions.map(_.toString),
-        selected.groupId.value,
-        selected.artifactId.value,
-        selected.version.value
-      )
+      for
+        project <- projectOpt
+        filteredArtifacts = selection.filterArtifacts(artifacts, project)
+        selected <- filteredArtifacts.headOption
+      yield
+        val (deprecatedArtifacts, artifacts) = filteredArtifacts
+          .map(_.name)
+          .distinct
+          .partition(project.settings.deprecatedArtifacts.contains)
+        // Sort semantic versions by descending order
+        val versions = filteredArtifacts.map(_.version).distinct.sorted(Ordering[Version].reverse)
+        OldSearchApi.ArtifactOptions(
+          artifacts = artifacts.map(_.value),
+          deprecatedArtifacts = deprecatedArtifacts.map(_.value),
+          versions.map(_.toString),
+          selected.groupId.value,
+          selected.artifactId.value,
+          selected.version.value
+        )
     end for
   end getArtifactOptions
 end OldSearchApi
