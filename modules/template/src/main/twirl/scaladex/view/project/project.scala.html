@@ -64,7 +64,7 @@
 }
 
 @commitActivities = @{project.githubInfo.map(_.commitActivity).getOrElse(Seq.empty).sortBy(_.week)}
-@startingDay = @{commitActivities.headOption.map(_.week.getEpochSecond)}
+@startingDay = @{commitActivities.headOption.map(_.week.toEpochMilli)}
 @commitActivityBox = {
   @if(commitActivities.nonEmpty){
     <div class="box commit-activities">
