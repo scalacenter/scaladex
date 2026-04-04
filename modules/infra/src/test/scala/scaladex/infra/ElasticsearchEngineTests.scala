@@ -6,6 +6,7 @@ import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 import scaladex.core.model.BinaryVersion
+import scaladex.core.model.CompilerPlugin
 import scaladex.core.model.Jvm
 import scaladex.core.model.Project
 import scaladex.core.model.Scala
@@ -17,6 +18,7 @@ import scaladex.core.model.search.PageParams
 import scaladex.core.model.search.ProjectDocument
 import scaladex.core.model.search.SearchParams
 import scaladex.core.model.search.Sorting
+import scaladex.core.test.Values
 import scaladex.core.test.Values.*
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.infra.config.ElasticsearchConfig
@@ -33,7 +35,8 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
   val searchEngine: ElasticsearchEngine = ElasticsearchEngine.open(config)
   val pageParams: PageParams = PageParams(1, 20)
 
-  val projects: Seq[ProjectDocument] = Seq(Cats.projectDocument, Scalafix.projectDocument)
+  val projects: Seq[ProjectDocument] =
+    Seq(Cats.projectDocument, Scalafix.projectDocument, Values.CompilerPluginProj.projectDocument)
 
   private def insertAll(projects: Seq[ProjectDocument]): Future[Unit] =
     for
@@ -56,8 +59,8 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
 
   "sort by dependent, created, stars, forks, and contributors" in {
     val params = SearchParams(queryString = "*")
-    val catsFirst = Seq(Cats.projectDocument, Scalafix.projectDocument)
-    val scalafixFirst = Seq(Scalafix.projectDocument, Cats.projectDocument)
+    val catsFirst = Seq(Cats.projectDocument, Scalafix.projectDocument, Values.CompilerPluginProj.projectDocument)
+    val scalafixFirst = Seq(Scalafix.projectDocument, Cats.projectDocument, Values.CompilerPluginProj.projectDocument)
     for
       _ <- insertAll(projects)
       byDependent <- searchEngine.find(params.copy(sorting = Sorting.Dependent), pageParams)
@@ -66,11 +69,17 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
       byCommitActivity <- searchEngine.find(params.copy(sorting = Sorting.CommitActivity), pageParams)
       byContributors <- searchEngine.find(params.copy(sorting = Sorting.Contributors), pageParams)
     yield
-      (byDependent.items.map(_.document) should contain).theSameElementsInOrderAs(catsFirst)
-      (byCreated.items.map(_.document) should contain).theSameElementsInOrderAs(scalafixFirst) // todo fix
-      (byStars.items.map(_.document) should contain).theSameElementsInOrderAs(catsFirst)
-      (byCommitActivity.items.map(_.document) should contain).theSameElementsInOrderAs(catsFirst)
-      (byContributors.items.map(_.document) should contain).theSameElementsInOrderAs(catsFirst)
+      val depDocs = byDependent.items.map(_.document)
+      val createdDocs = byCreated.items.map(_.document)
+      val starsDocs = byStars.items.map(_.document)
+      val commitDocs = byCommitActivity.items.map(_.document)
+      val contribDocs = byContributors.items.map(_.document)
+
+      (depDocs should contain).theSameElementsInOrderAs(catsFirst)
+      (createdDocs should contain).theSameElementsInOrderAs(scalafixFirst) // todo fix
+      (starsDocs should contain).theSameElementsInOrderAs(catsFirst)
+      (commitDocs should contain).theSameElementsInOrderAs(catsFirst)
+      (contribDocs should contain).theSameElementsInOrderAs(catsFirst)
     end for
   }
 
@@ -123,6 +132,14 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
       _ <- insertAll(projects)
       scalaJsVersions <- searchEngine.countByPlatforms(params)
     yield (scalaJsVersions should contain).theSameElementsInOrderAs(expected)
+  }
+
+  "count by platforms includes compiler plugin" in {
+    val params = SearchParams(queryString = "*")
+    for
+      _ <- insertAll(projects)
+      platforms <- searchEngine.countByPlatforms(params)
+    yield platforms should contain(CompilerPlugin -> 1L)
   }
 
   "remove missing document should not fail" in {
