@@ -196,6 +196,20 @@ class ArtifactTests extends AnyFunSpec with Matchers:
         )
       )
     }
+
+    it("should allow creating Artifact with CompilerPlugin platform without exceptions") {
+      val artifact = createArtifact(
+        groupId = "org.example",
+        artifactId = "myplugin_2.13",
+        version = "1.0.0",
+        binaryVersion = BinaryVersion(CompilerPlugin, Scala.`2.13`),
+        artifactName = Some(Name("myplugin"))
+      )
+
+      artifact.platform shouldBe CompilerPlugin
+      artifact.language shouldBe Scala.`2.13`
+      artifact.binaryVersion.isValid shouldBe true
+    }
   }
 
   private def createArtifact(
