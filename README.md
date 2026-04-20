@@ -45,7 +45,15 @@ If your artifact does not have any binary version it is considered a Java artifa
 Yet some Java artifact are closely related to Scala.
 In that case you can force its indexing by updating the [non-standard.json](https://github.com/scalacenter/scaladex-contrib/blob/master/non-standard.json) file in the [scaladex-contrib](https://github.com/scalacenter/scaladex-contrib) repository.
 
-At the moment we don't support full Scala binary versions, that are often used in Scala compiler plugins.
+Scaladex supports various binary version formats:
+- Standard Scala versions: `_2.13`, `_3`, `_2.12`
+- Scala.js versions: `_sjs1_2.13`, `_sjs1_3`
+- Scala Native versions: `_native0.4_2.13`
+- SBT plugin versions: `_2.13_1.0`, `_2.12_0.13`
+- Mill plugin versions: `_mill0.9_2.13`
+
+Compiler plugins are currently being added to Scaladex. They typically use full Scala binary versions (e.g., `_2.13.10`). 
+If you have a compiler plugin that needs to be indexed, please open an issue in the [scaladex-contrib](https://github.com/scalacenter/scaladex-contrib) repository.
 
 #### Does the pom file contain the `scm` attribute and does it points to a public Github repository?
 
