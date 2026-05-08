@@ -29,6 +29,9 @@ class ScmInfoParserTests extends AnyFunSpec with Matchers:
       ScmInfoParser
         .parse("scm:git://github.com:foobarbuz/example.git")
         .map(_.toString) shouldBe Some("foobarbuz/example")
+      ScmInfoParser
+        .parse("scm:git:https://github.com/foobarbuz/example.git")
+        .map(_.toString) shouldBe Some("foobarbuz/example")
       // SSH
       ScmInfoParser
         .parse("scm:git:ssh://git@github.com:foobarbuz/example.git")
