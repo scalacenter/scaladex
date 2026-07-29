@@ -152,7 +152,7 @@ object GithubModel:
       for
         endCursor <- cursor.downField("pageInfo").downField("endCursor").as[Option[String]]
         hasNextPage <- cursor.downField("pageInfo").downField("hasNextPage").as[Boolean]
-        nodes <- cursor.downField("nodes").as[Seq[T]]
+        nodes <- cursor.downField("nodes").as[Seq[Option[T]]].map(_.flatten)
       yield GraphQLPage(endCursor, hasNextPage, nodes)
 
   case class UserInfo(login: String, name: Option[String], avatarUrl: String):

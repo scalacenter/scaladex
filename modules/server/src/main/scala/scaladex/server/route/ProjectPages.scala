@@ -85,7 +85,7 @@ class ProjectPages(
           artifactsParams { params =>
             getProjectOrRedirect(ref, user) { project =>
               val artifactsF = database.getProjectArtifacts(ref, artifactName, params.stableOnly)
-              val headerF = projectService.getHeader(project).map(_.get)
+              val headerF = projectService.getHeader(project)
               for artifacts <- artifactsF; header <- headerF yield
                 val binaryVersions = artifacts
                   .map(_.binaryVersion)
@@ -314,10 +314,12 @@ class ProjectPages(
 
   private def getBadges(ref: Project.Reference, user: Option[UserState]): Route =
     getProjectOrRedirect(ref, user) { project =>
-      for header <- projectService.getHeader(project).map(_.get) yield
-        val artifact = header.getDefaultArtifact(None, None)
-        val page = html.badges(env, user, project, header, artifact)
-        complete(StatusCodes.OK, page)
+      for header <- projectService.getHeader(project) yield header.map(_.getDefaultArtifact(None, None)) match
+        case Some(artifact) =>
+          val page = html.badges(env, user, project, header, artifact)
+          complete(StatusCodes.OK, page)
+        case None =>
+          complete(StatusCodes.NotFound)
     }
 
   private val editForm: Directive1[Project.Settings] =
