@@ -5,6 +5,9 @@ import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.Route
 
 object Assets:
+  val robotsTxt: Route =
+    path("robots.txt")(get(getFromResource("robots.txt")))
+
   val routes: Route =
     pathPrefix("assets") {
       get(

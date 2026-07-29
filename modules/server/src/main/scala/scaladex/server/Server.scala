@@ -166,6 +166,7 @@ object Server extends LazyLogging:
         )
 
         concat(
+          Assets.robotsTxt,
           apiRoute,
           frontPage.route(user),
           adminPages.route(user),
