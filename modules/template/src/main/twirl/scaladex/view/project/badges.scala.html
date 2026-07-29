@@ -13,12 +13,12 @@
   env: Env,
   user: Option[UserState],
   project: Project,
-  header: ProjectHeader,
+  header: Option[ProjectHeader],
   artifact: Artifact
 )
 @main(env, title = project.repository.value, user, extraMeta = project.twitterCard.toHeadMeta, extraMetaProperty = project.ogp.toHeadMetaProperty) {
   <main id="container-project">
-    @headproject(env, user, project, Some(header), ProjectTab.Badges)
+    @headproject(env, user, project, header, ProjectTab.Badges)
     <div class="container">
       <div class="content-project box project-badges">
         <section class="badge-section" id="latest">
@@ -27,7 +27,7 @@
           <pre aria-label="Badge markdown" id="badge-markdown">[![@artifact.name Scala version support](@artifact.latestBadgeUrl(env))](@artifact.fullHttpUrl(env))</pre>
           <button class="btn btn-primary btn-copy pull-right" data-clipboard-target="badge-markdown">Copy Markdown</button>
         </section>
-        @header.platforms(artifact.name).map { platform =>
+        @header.toSeq.flatMap(_.platforms(artifact.name)).map { platform =>
           <section class="badge-section" id="@platform">
             <h2>@platform badge</h2>
             <img src="@artifact.badgeUrl(env, Some(platform))" />

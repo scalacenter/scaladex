@@ -15,7 +15,7 @@
     env: Env,
     user: Option[UserState],
     project: Project,
-    header: ProjectHeader,
+    header: Option[ProjectHeader],
     artifactName: Artifact.Name,
     allBinaryVersions: Seq[BinaryVersion],
     artifactByVersions: SortedMap[(Instant, Version), Seq[Artifact]],
@@ -24,7 +24,7 @@
 
 @main(env, title = project.repository.toString, user) {
   <main id="container-project">
-    @headproject(env, user, project, Some(header), ProjectTab.Versions)
+    @headproject(env, user, project, header, ProjectTab.Versions)
     <div class="container">
       <div class="content-project versions box" data-organization="@project.reference.organization"
       data-repository="@project.reference.repository">
@@ -34,7 +34,7 @@
           <select class="selectpicker" title="Other Artifacts"
             data-style="btn-default" data-selected-text-format="static" 
             onchange="window.location=this.value">
-            @for(name <- header.allArtifactNames) {
+            @for(name <- header.map(_.allArtifactNames).getOrElse(Seq.empty)) {
               <option value="@versionsUri(project.reference, name, params)" @if(name == artifactName) {selected}>
                 @name
               </option>
