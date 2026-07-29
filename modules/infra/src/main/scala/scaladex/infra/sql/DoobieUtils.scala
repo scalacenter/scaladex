@@ -2,6 +2,7 @@ package scaladex.infra.sql
 
 import scala.concurrent.ExecutionContext
 
+import scaladex.infra.config.DatabasePoolConfig
 import scaladex.infra.config.PostgreSQLConfig
 
 import cats.effect.*
@@ -28,12 +29,22 @@ object DoobieUtils:
       .load()
 
   def getHikariDataSource(conf: PostgreSQLConfig): HikariDataSource =
+    getHikariDataSource(conf, DatabasePoolConfig.load().getOrElse(DatabasePoolConfig.default))
+
+  def getHikariDataSource(conf: PostgreSQLConfig, poolConfig: DatabasePoolConfig): HikariDataSource =
     val config: HikariConfig = new HikariConfig()
     config.setDriverClassName(conf.driver)
     config.setJdbcUrl(conf.url)
     config.setUsername(conf.user)
     config.setPassword(conf.pass.decode)
+    config.setMaximumPoolSize(poolConfig.maximumPoolSize)
+    config.setMinimumIdle(poolConfig.minimumIdle)
+    config.setConnectionTimeout(poolConfig.connectionTimeoutMs)
+    config.setIdleTimeout(poolConfig.idleTimeoutMs)
+    config.setMaxLifetime(poolConfig.maxLifetimeMs)
+    config.setLeakDetectionThreshold(poolConfig.leakDetectionThresholdMs)
     new HikariDataSource(config)
+  end getHikariDataSource
 
   def transactor(datasource: HikariDataSource): Resource[IO, HikariTransactor[IO]] =
     for
