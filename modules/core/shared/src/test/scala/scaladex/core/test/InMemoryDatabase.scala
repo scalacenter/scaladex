@@ -157,8 +157,11 @@ class InMemoryDatabase extends SchedulerDatabase:
 
   override def updateArtifacts(allArtifacts: Seq[Artifact.Reference], newRef: Project.Reference): Future[Int] = ???
   override def getGroupIds(): Future[Seq[Artifact.GroupId]] = ???
+  override def getGroupIds(limit: Int, offset: Int): Future[Seq[Artifact.GroupId]] = ???
   override def getArtifactRefs(): Future[Seq[Artifact.Reference]] = ???
   override def getArtifactRefs(groupId: Artifact.GroupId): Future[Seq[Artifact.Reference]] = ???
+  override def getArtifactRefs(groupId: Artifact.GroupId, limit: Int, offset: Int): Future[Seq[Artifact.Reference]] =
+    ???
   override def insertUser(userId: UUID, userInfo: UserInfo): Future[Unit] = ???
   override def updateUser(userId: UUID, userInfo: UserState): Future[Unit] = ???
   override def getUser(userId: UUID): Future[Option[UserState]] = ???
