@@ -77,7 +77,7 @@ trait PluginOptions extends js.Object:
   def tooltip: TooltipOptions = js.native
   def legend: LegendOptions = js.native
 object PluginOptions:
-  def apply(tooltip: TooltipOptions, legend: LegendOptions): PluginOptions =
+  def apply(legend: LegendOptions): PluginOptions =
     js.Dynamic.literal(legend = legend).asInstanceOf[PluginOptions]
 
 @js.native

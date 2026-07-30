@@ -29,7 +29,6 @@ object Sparkline:
 
       val chartOptions = ChartOptions(
         plugins = PluginOptions(
-          tooltip = TooltipOptions(enabled = false),
           legend = LegendOptions(display = false, FontOptions(size = 10))
         ),
         elements = ElementOptions(

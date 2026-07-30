@@ -1,5 +1,6 @@
 package scaladex.client
 
+import scala.annotation.nowarn
 import scala.concurrent.ExecutionContext
 
 import scaladex.core.api.AutocompletionResponse
@@ -23,6 +24,7 @@ class Autocompletion(using ExecutionContext):
 
   private var completionSelection = CompletionSelection.empty
 
+  @nowarn("msg=unused explicit parameter")
   def run(event: dom.Event): Unit =
     Dom.getSearchRequest match
       case Some(request) =>
