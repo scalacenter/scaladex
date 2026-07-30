@@ -6,7 +6,6 @@ import scala.concurrent.duration.*
 
 import org.apache.pekko.actor.ActorSystem
 import org.scalactic.source.Position
-import org.scalatest.compatible.Assertion
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 import scaladex.core.model.GithubResponse
