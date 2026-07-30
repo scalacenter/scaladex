@@ -1,17 +1,14 @@
 package scaladex.infra
 
 import scala.concurrent.Await
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 import scaladex.infra.config.PostgreSQLConfig
 import scaladex.infra.sql.DoobieUtils
 
-import cats.effect.ContextShift
 import cats.effect.IO
 import com.zaxxer.hikari.HikariDataSource
-import doobie.scalatest.IOChecker
 import doobie.util.transactor.Transactor
 import org.scalatest.Assertions
 import org.scalatest.BeforeAndAfterEach
@@ -20,14 +17,11 @@ import org.scalatest.Suite
 trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach:
   self: Assertions with Suite =>
 
-  private given ContextShift[IO] =
-    IO.contextShift(ExecutionContext.global)
-
   private val config: PostgreSQLConfig = PostgreSQLConfig
     .load()
     .get
 
-  override val transactor: Transactor.Aux[IO, Unit] =
+  override val transactor: Transactor[IO] =
     Transactor
       .fromDriverManager[IO](
         config.driver,
@@ -48,6 +42,7 @@ trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach:
     yield ()
     reset.unsafeToFuture()
 end BaseDatabaseSuite
+
 object BaseDatabaseSuite:
   private val config: PostgreSQLConfig = PostgreSQLConfig
     .load()

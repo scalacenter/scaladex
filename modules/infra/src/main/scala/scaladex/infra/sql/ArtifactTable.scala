@@ -141,7 +141,7 @@ object ArtifactTable:
     selectRequest(table, Seq("DISTINCT group_id"))
 
   /** Paged group IDs: params are (limit, offset). */
-  val selectGroupIdsPage: Query[(Int, Int), GroupId] =
+  val selectGroupIdsPage: Query[(Long, Long), GroupId] =
     Query(s"SELECT DISTINCT group_id FROM $table ORDER BY group_id LIMIT ? OFFSET ?")
 
   val selectArtifactIds: Query[Project.Reference, (GroupId, ArtifactId)] =
