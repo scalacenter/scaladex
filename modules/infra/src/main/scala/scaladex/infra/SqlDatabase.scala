@@ -212,6 +212,9 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   override def getArtifactRefs(): Future[Seq[Artifact.Reference]] =
     run(ArtifactTable.selectReferences.to[Seq])
 
+  override def getArtifactRefs(groupId: Artifact.GroupId): Future[Seq[Artifact.Reference]] =
+    run(ArtifactTable.selectReferencesByGroupId.to[Seq](groupId))
+
   override def insertUser(userId: UUID, userInfo: UserInfo): Future[Unit] =
     run(UserSessionsTable.insert.run((userId, userInfo)).map(_ => ()))
 

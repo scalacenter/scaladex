@@ -32,5 +32,6 @@ trait SchedulerDatabase extends WebDatabase:
   def getGroupIds(): Future[Seq[Artifact.GroupId]]
   def getArtifactIds(ref: Project.Reference): Future[Seq[(Artifact.GroupId, Artifact.ArtifactId)]]
   def getArtifactRefs(): Future[Seq[Artifact.Reference]]
+  def getArtifactRefs(groupId: Artifact.GroupId): Future[Seq[Artifact.Reference]]
   def updateLatestVersion(ref: Project.Reference, artifact: Artifact.Reference): Future[Unit]
 end SchedulerDatabase

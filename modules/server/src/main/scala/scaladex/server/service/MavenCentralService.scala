@@ -2,6 +2,7 @@ package scaladex.server.service
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.concurrent.duration.*
 
 import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact.*
@@ -13,24 +14,28 @@ import scaladex.data.cleanup.NonStandardLib
 import scaladex.infra.DataPaths
 
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.pattern.after
 
 class MavenCentralService(
     dataPaths: DataPaths,
     database: SchedulerDatabase,
     mavenCentralClient: MavenCentralClient,
     publishProcess: PublishProcess
-)(using ExecutionContext)
+)(using ExecutionContext, ActorSystem)
     extends LazyLogging:
+  private val system = summon[ActorSystem]
 
   def findNonStandard(): Future[String] =
     val nonStandardLibs = NonStandardLib.load(dataPaths)
-    for
-      knownRefs <- database.getArtifactRefs()
-      result <- nonStandardLibs.mapSync { lib =>
+    for result <- nonStandardLibs.mapSync { lib =>
         val groupId = Artifact.GroupId(lib.groupId)
         // get should not throw: it is a fixed set of artifactIds
         val artifactId = Artifact.ArtifactId(lib.artifactId)
-        findAndIndexMissingArtifacts(groupId, artifactId, knownRefs.toSet)
+        for
+          knownRefs <- database.getArtifactRefs(groupId)
+          inserted <- findAndIndexMissingArtifacts(groupId, artifactId, knownRefs.toSet)
+        yield inserted
       }
     yield s"Inserted ${result.sum} missing poms"
   end findNonStandard
@@ -44,31 +49,39 @@ class MavenCentralService(
       versions <- mavenCentralClient.getAllVersions(groupId, artifactId)
       missingVersions = versions.map(Artifact.Reference(groupId, artifactId, _)).filterNot(knownRefs)
       _ = if missingVersions.nonEmpty then
-        logger.warn(s"${missingVersions.size} artifacts are missing for ${groupId.value}:${artifactId.value}")
+        logger.info(s"${missingVersions.size} artifacts are missing for ${groupId.value}:${artifactId.value}")
       missingPomFiles <- missingVersions.mapSync(ref => mavenCentralClient.getPomFile(ref).map(_.map(ref -> _)))
       publishResult <- missingPomFiles.flatten.mapSync {
         case (mavenRef, (pomFile, creationDate)) =>
-          publishProcess.publishPom(mavenRef.toString(), pomFile, creationDate, None)
+          // Add a small delay between publishes to avoid overwhelming the database connection pool
+          for
+            _ <- delayBetweenPublishes()
+            result <- publishProcess.publishPom(mavenRef.toString(), pomFile, creationDate, None)
+          yield result
       }
     yield publishResult.count {
       case PublishResult.Success => true
       case _ => false
     }
 
+  private def delayBetweenPublishes(): Future[Unit] =
+    // Small delay between publishes to avoid overwhelming the database connection pool
+    after(100.millis, system.scheduler)(Future.successful(()))
+
   def findMissing(): Future[String] =
     for
-      knownRefs <- database.getArtifactRefs().map(_.toSet)
-      groupIds = knownRefs.map(_.groupId).toSeq.sorted
+      // Load group IDs only, then known refs per group — avoid loading the entire artifacts table
+      groupIds <- database.getGroupIds().map(_.sorted)
       // we sort just to estimate through the logs the percentage of progress
-      result <- groupIds.mapSync(g => findAndIndexMissingArtifacts(g, None, knownRefs))
+      result <- groupIds.mapSync(findAndIndexMissingArtifacts(_, None))
     yield s"Inserted ${result.sum} missing poms"
 
   private def findAndIndexMissingArtifacts(
       groupId: GroupId,
-      artifactNameOpt: Option[Artifact.Name],
-      knownRefs: Set[Artifact.Reference]
+      artifactNameOpt: Option[Artifact.Name]
   ): Future[Int] =
     for
+      knownRefs <- database.getArtifactRefs(groupId).map(_.toSet)
       artifactIds <- mavenCentralClient.getAllArtifactIds(groupId)
       scalaArtifactIds = artifactIds.filter(artifact =>
         artifactNameOpt.forall(_ == artifact.name) && artifact.isScala && artifact.binaryVersion.isValid
@@ -78,9 +91,7 @@ class MavenCentralService(
     yield result.sum
 
   def syncOne(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): Future[String] =
-    for
-      knownRefs <- database.getArtifactRefs()
-      result <- findAndIndexMissingArtifacts(groupId, artifactNameOpt, knownRefs.toSet)
+    for result <- findAndIndexMissingArtifacts(groupId, artifactNameOpt)
     yield s"Inserted $result poms"
 
   def republishArtifacts(): Future[String] =

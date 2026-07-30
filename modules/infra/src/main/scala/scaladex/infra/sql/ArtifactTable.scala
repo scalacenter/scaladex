@@ -146,6 +146,9 @@ object ArtifactTable:
   val selectReferences: Query0[Reference] =
     selectRequest(table, Seq("DISTINCT group_id", "artifact_id", "\"version\""))
 
+  val selectReferencesByGroupId: Query[GroupId, Reference] =
+    selectRequest(table, Seq("DISTINCT group_id", "artifact_id", "\"version\""), keys = Seq("group_id"))
+
   val selectReferencesByProject: Query[Project.Reference, Reference] =
     selectRequest(table, Seq("DISTINCT group_id", "artifact_id", "\"version\""), keys = projectReferenceFields)
 
