@@ -82,6 +82,7 @@ class MavenCentralService(
       yield result
 
     loop(0, 0).map(n => s"Inserted $n missing poms")
+  end findMissing
 
   private def findAndIndexMissingArtifacts(
       groupId: GroupId,
@@ -113,6 +114,7 @@ class MavenCentralService(
           else Future.successful(next)
       yield result
     loop(0, Set.empty)
+  end loadKnownRefs
 
   /** Process items in pages, with a short delay between full pages. */
   private def processPages[A](items: Seq[A], pageSize: Int)(process: Seq[A] => Future[Int]): Future[Int] =
@@ -127,7 +129,9 @@ class MavenCentralService(
             if batch.size == pageSize then delay(pageDelay).flatMap(_ => loop(page + 1, next))
             else Future.successful(next)
         yield result
+    end loop
     loop(0, 0)
+  end processPages
 
   private def delay(duration: FiniteDuration): Future[Unit] =
     after(duration, system.scheduler)(Future.successful(()))
