@@ -14,10 +14,7 @@ inThisBuild(
     excludeDependencies ++= Seq(
       // from Coursier
       ExclusionRule("org.scala-lang.modules", "scala-collection-compat_2.13"),
-      ExclusionRule("org.scala-lang.modules", "scala-xml_2.13"),
-      // from doobie-scalatest
-      ExclusionRule("org.scalatest", "scalatest_2.13"),
-      ExclusionRule("org.tpolecat", "doobie-core_2.13")
+      ExclusionRule("org.scala-lang.modules", "scala-xml_2.13")
     )
   )
 )
@@ -82,7 +79,6 @@ lazy val infra = project
       "org.tpolecat" %% "doobie-h2" % V.doobie,
       "org.tpolecat" %% "doobie-postgres" % V.doobie,
       "org.tpolecat" %% "doobie-hikari" % V.doobie,
-      ("org.tpolecat" %% "doobie-scalatest" % V.doobie % Test).cross(CrossVersion.for3Use2_13),
       "io.circe" %% "circe-core" % V.circe,
       "io.circe" %% "circe-generic" % V.circe,
       "io.circe" %% "circe-parser" % V.circe,

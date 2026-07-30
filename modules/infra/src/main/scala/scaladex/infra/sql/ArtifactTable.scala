@@ -140,11 +140,25 @@ object ArtifactTable:
   val selectGroupIds: Query0[GroupId] =
     selectRequest(table, Seq("DISTINCT group_id"))
 
+  /** Paged group IDs: params are (limit, offset). */
+  val selectGroupIdsPage: Query[(Long, Long), GroupId] =
+    Query(s"SELECT DISTINCT group_id FROM $table ORDER BY group_id LIMIT ? OFFSET ?")
+
   val selectArtifactIds: Query[Project.Reference, (GroupId, ArtifactId)] =
     selectRequest(table, Seq("DISTINCT group_id", "artifact_id"), keys = projectReferenceFields)
 
   val selectReferences: Query0[Reference] =
     selectRequest(table, Seq("DISTINCT group_id", "artifact_id", "\"version\""))
+
+  val selectReferencesByGroupId: Query[GroupId, Reference] =
+    selectRequest(table, Seq("DISTINCT group_id", "artifact_id", "\"version\""), keys = Seq("group_id"))
+
+  /** Paged refs for a group: params are (groupId, limit, offset). */
+  val selectReferencesByGroupIdPage: Query[(GroupId, Long, Long), Reference] =
+    Query(
+      s"""SELECT DISTINCT group_id, artifact_id, "version" FROM $table
+         |WHERE group_id = ? ORDER BY artifact_id, "version" LIMIT ? OFFSET ?""".stripMargin
+    )
 
   val selectReferencesByProject: Query[Project.Reference, Reference] =
     selectRequest(table, Seq("DISTINCT group_id", "artifact_id", "\"version\""), keys = projectReferenceFields)

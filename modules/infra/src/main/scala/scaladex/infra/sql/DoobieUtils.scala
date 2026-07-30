@@ -34,6 +34,7 @@ object DoobieUtils:
     config.setUsername(conf.user)
     config.setPassword(conf.pass.decode)
     new HikariDataSource(config)
+  end getHikariDataSource
 
   def transactor(datasource: HikariDataSource): Resource[IO, HikariTransactor[IO]] =
     for

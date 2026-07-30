@@ -67,10 +67,17 @@ object Server extends LazyLogging:
             val githubClient = config.github.token.map(new GithubClientImpl(_))
             val paths = DataPaths.from(config.filesystem)
             val filesystem = FilesystemStorage(config.filesystem)
+            // Web publishes (sbt/coursier) use the web pool; batch jobs use the scheduler pool
+            // so Find Missing Artifacts cannot starve HTTP request connections.
             val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(using publishPool, system)
+            val schedulerPublishProcess =
+              PublishProcess(paths, filesystem, schedulerDatabase, config.env)(using publishPool, system)
             val mavenCentralClient = new MavenCentralClientImpl()
             val mavenCentralService =
-              new MavenCentralService(paths, schedulerDatabase, mavenCentralClient, publishProcess)
+              new MavenCentralService(paths, schedulerDatabase, mavenCentralClient, schedulerPublishProcess)(
+                using system.dispatcher,
+                system
+              )
             val adminService =
               new AdminService(config.env, schedulerDatabase, searchEngine, githubClient, mavenCentralService)
 
