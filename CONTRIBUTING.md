@@ -34,6 +34,30 @@ You will need the following tools installed:
 
 If you cannot install docker, alternatively you can run [PostgreSQL](https://www.postgresql.org/) on port 5432 and [Elasticsearch](https://www.elastic.co/fr/elasticsearch/) on port 9200.
 
+### Docker on macOS with Colima
+
+If you're using [Colima](https://github.com/abiosoft/colima) as your Docker runtime on macOS, you need to configure Testcontainers to find the Docker socket.
+
+1. Start Colima:
+```bash
+colima start
+```
+
+2. Create a `~/.testcontainers.properties` file with the following content:
+```
+docker.host=unix:///Users/<your-username>/.colima/default/docker.sock
+```
+
+Or run this command (replacing the path automatically):
+```bash
+echo "docker.host=unix://$HOME/.colima/default/docker.sock" > ~/.testcontainers.properties
+```
+
+3. If you're using sbt server (`sbtn`), make sure to restart it after creating the configuration file:
+```bash
+sbtn shutdown
+```
+
 ### Github token (optional)
 
 So that Scaladex can collect information about Scala projects from Github you need to configure a GITHUB_TOKEN environment variable.
