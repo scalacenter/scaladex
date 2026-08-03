@@ -10,6 +10,7 @@ import scaladex.core.model.Project
 import scaladex.core.service.MavenCentralClient
 import scaladex.core.service.SchedulerDatabase
 import scaladex.core.util.ScalaExtensions.*
+import scaladex.data.cleanup.NewGroupId
 import scaladex.data.cleanup.NonStandardLib
 import scaladex.infra.DataPaths
 
@@ -45,6 +46,37 @@ class MavenCentralService(
       }
     yield s"Inserted ${result.sum} missing poms"
   end findNonStandard
+
+  /** Discover and index artifacts from new group IDs submitted by the community.
+    *
+    * This addresses the gap where artifacts published via Sonatype Central Portal don't trigger the legacy webhook, and
+    * the scheduled backfill job only scans group IDs already in the database.
+    *
+    * Library authors can submit their group IDs to new-groups.json in scaladex-contrib to have their artifacts
+    * discovered.
+    */
+  def findNewGroups(): Future[String] =
+    val newGroupIds = NewGroupId.load(dataPaths)
+    if newGroupIds.isEmpty then Future.successful("No new group IDs to discover")
+    else
+      for
+        knownRefs <- database.getArtifactRefs()
+        knownGroupIds = knownRefs.map(_.groupId).toSet
+        // Filter to only process group IDs not already in the database
+        newGroups = newGroupIds.filterNot(ng => knownGroupIds.contains(Artifact.GroupId(ng.groupId)))
+        _ = if newGroups.nonEmpty then
+          logger.info(s"Discovering ${newGroups.size} new group IDs: ${newGroups.map(_.groupId).mkString(", ")}")
+        result <- newGroups.mapSync { ng =>
+          val groupId = Artifact.GroupId(ng.groupId)
+          findAndIndexMissingArtifacts(groupId, None, knownRefs.toSet)
+        }
+      yield
+        val totalInserted = result.sum
+        if totalInserted > 0 then s"Discovered ${newGroups.size} new group IDs, inserted $totalInserted poms"
+        else if newGroups.isEmpty then s"All ${newGroupIds.size} group IDs from new-groups.json are already known"
+        else s"Checked ${newGroups.size} new group IDs, no new artifacts found"
+    end if
+  end findNewGroups
 
   private def findAndIndexMissingArtifacts(
       groupId: GroupId,
