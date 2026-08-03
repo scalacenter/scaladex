@@ -80,6 +80,13 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(usi
             EcosystemVersion(millP.version, count, search = Url(s"search?platform=${millP.value}"))
         }
       )
+      val compilerPluginEcosystem = EcosystemHighlight(
+        "Compiler Plugin",
+        platforms.collect {
+          case (CompilerPlugin, count) =>
+            EcosystemVersion(Version(1), count, search = Url(s"search?platform=${CompilerPlugin.value}"))
+        }
+      )
 
       frontpage(
         env,
@@ -87,6 +94,7 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(usi
         Seq(scala3Ecosystem, scala2Ecosystem).flatten,
         Seq(scalajsEcosystem, scalaNativeEcosystem).flatten,
         Seq(sbtPluginEcosystem, millPluginEcosystem).flatten,
+        Seq(compilerPluginEcosystem).flatten,
         latestProjects,
         mostDependedUpon,
         userInfo,
