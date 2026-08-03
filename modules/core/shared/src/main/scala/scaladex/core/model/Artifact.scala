@@ -40,6 +40,7 @@ case class Artifact(
     val sep = binaryVersion match
       case BinaryVersion(Jvm, Java) | BinaryVersion(SbtPlugin(_), _) => ":"
       case BinaryVersion(ScalaJs(_) | ScalaNative(_), _) => ":::"
+      case BinaryVersion(CompilerPlugin(_), _) => "::"
       case _ => "::"
     s"$groupId$sep$name"
 
@@ -60,6 +61,7 @@ case class Artifact(
 
   def sbtInstall: Option[String] =
     val install = platform match
+      case CompilerPlugin(_) => Some(s"""addCompilerPlugin("$groupId" % "$artifactId" % "$version")""")
       case SbtPlugin(_) => Some(s"""addSbtPlugin("$groupId" % "$name" % "$version")""")
       case MillPlugin(_) => None
       case _ if isNonStandardLib => Some(s"""libraryDependencies += "$groupId" % "$artifactId" % "$version"""")
@@ -96,7 +98,7 @@ case class Artifact(
           |interp.resolvers() = interp.resolvers() :+ res""".stripMargin
 
     val install = platform match
-      case MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
+      case CompilerPlugin(_) | MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
       case Jvm =>
         language match
           case _ if isNonStandardLib => Some(s"import $$ivy.`$groupId:$artifactId:$version`")
@@ -115,7 +117,7 @@ case class Artifact(
     */
   def mavenInstall: Option[String] =
     platform match
-      case MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
+      case CompilerPlugin(_) | MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
       case Jvm =>
         Some(
           s"""|<dependency>
@@ -130,7 +132,7 @@ case class Artifact(
     */
   def gradleInstall: Option[String] =
     platform match
-      case MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
+      case CompilerPlugin(_) | MillPlugin(_) | SbtPlugin(_) | ScalaNative(_) | ScalaJs(_) => None
       case Jvm => Some(s"compile group: '$groupId', name: '$artifactId', version: '$version'")
 
   /** string representation for mill dependency
@@ -138,8 +140,8 @@ case class Artifact(
     */
   def millInstall: Option[String] =
     val install = platform match
+      case CompilerPlugin(_) | SbtPlugin(_) => None
       case MillPlugin(_) => Some(s"import $$ivy.`$groupId::$name::$version`")
-      case SbtPlugin(_) => None
       case ScalaNative(_) | ScalaJs(_) => Some(s"""ivy"$groupId::$name::$version"""")
       case Jvm =>
         language match
@@ -159,7 +161,7 @@ case class Artifact(
 
   def scalaCliInstall: Option[String] =
     binaryVersion.platform match
-      case MillPlugin(_) | SbtPlugin(_) => None
+      case CompilerPlugin(_) | MillPlugin(_) | SbtPlugin(_) => None
       case ScalaNative(_) | ScalaJs(_) => Some(s"""//> using dep "$groupId::$name::$version"""")
       case Jvm =>
         language match
@@ -170,7 +172,7 @@ case class Artifact(
 
   def csLaunch: Option[String] =
     platform match
-      case MillPlugin(_) | SbtPlugin(_) => None
+      case CompilerPlugin(_) | MillPlugin(_) | SbtPlugin(_) => None
       case ScalaNative(_) | ScalaJs(_) => Some(s"cs launch $groupId::$name::$version")
       case Jvm =>
         language match
@@ -190,6 +192,7 @@ case class Artifact(
     val targetParam = platform match
       case ScalaJs(_) => Some("t" -> "JS")
       case Jvm => Some("t" -> "JVM")
+      case CompilerPlugin(_) => None
       case _ => None
 
     val scalaVersionParam = language match
