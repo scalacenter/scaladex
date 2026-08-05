@@ -1,7 +1,8 @@
 package scaladex.server.route.api
 
 import scala.concurrent.Await
-import scala.concurrent.duration.Duration
+import scala.concurrent.Promise
+import scala.concurrent.duration.*
 
 import scaladex.core.api.ArtifactResponse
 import scaladex.core.model.*
@@ -9,8 +10,13 @@ import scaladex.core.test.Values.*
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.server.route.ControllerBaseSuite
 
+import org.apache.pekko.http.scaladsl.model.HttpEntity
+import org.apache.pekko.http.scaladsl.model.HttpRequest
 import org.apache.pekko.http.scaladsl.model.MediaTypes
 import org.apache.pekko.http.scaladsl.model.StatusCodes
+import org.apache.pekko.http.scaladsl.server.Directives.`complete` as completeRoute
+import org.apache.pekko.http.scaladsl.server.Directives.withRequestTimeout
+import org.apache.pekko.http.scaladsl.server.Directives.withRequestTimeoutResponse
 import org.apache.pekko.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import org.scalactic.source.Position
@@ -199,6 +205,32 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach:
 
     testGet("/api/v1/artifacts/unknown/unknown_3/1.0.0") {
       status shouldBe StatusCodes.NotFound
+    }
+  }
+
+  describe("request timeout") {
+    it("returns endpoints.Errors JSON body") {
+      val response = ApiEndpointsImpl.requestTimeoutResponse(HttpRequest())
+      response.status shouldBe StatusCodes.ServiceUnavailable
+      response.entity.contentType.mediaType shouldBe MediaTypes.`application/json`
+      response.entity shouldBe a[HttpEntity.Strict]
+      response.entity.asInstanceOf[HttpEntity.Strict].data.utf8String shouldBe
+        ApiEndpointsImpl.requestTimeoutErrorJson
+    }
+
+    it("uses JSON timeout response when request times out") {
+      val neverCompleting = Promise[String]().future
+      val route =
+        withRequestTimeout(50.millis) {
+          withRequestTimeoutResponse(ApiEndpointsImpl.requestTimeoutResponse) {
+            completeRoute(neverCompleting)
+          }
+        }
+      // ~!> runs against a real server so request-timeout handling is exercised
+      Get("/") ~!> route ~> check {
+        status shouldBe StatusCodes.ServiceUnavailable
+        contentType.mediaType shouldBe MediaTypes.`application/json`
+      }
     }
   }
 
