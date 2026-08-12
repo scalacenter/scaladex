@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%-5level %logger{15} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Set to DEBUG or TRACE to dump Gatling HTTP requests/responses when debugging a simulation -->
+    <logger name="io.gatling.http.engine.response" level="INFO"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>

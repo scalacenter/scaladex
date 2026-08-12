@@ -42,7 +42,7 @@ lazy val scalacOptionsSettings = Def.settings(
 
 lazy val scaladex = project
   .in(file("."))
-  .aggregate(webclient, data, core.jvm, core.js, infra, server, template)
+  .aggregate(webclient, data, core.jvm, core.js, infra, server, template, loadtest)
   .settings(Deployment(data, server))
 
 lazy val template = project
@@ -225,10 +225,25 @@ lazy val data = project
     ),
     run / fork := true,
     Compile / run / javaOptions ++= (infra / Compile / run / javaOptions).value,
+    Compile / run / javaOptions += {
+      val root = (ThisBuild / baseDirectory).value
+      s"-Dscaladex.loadtest.output=${root / "modules" / "loadtest" / "src" / "test" / "resources" / "data"}"
+    },
     Test / javaOptions ++= (infra / javaOptions).value
   )
   .enablePlugins(JavaAppPackaging)
   .dependsOn(core.jvm % "compile->compile;test->test", infra)
+
+lazy val loadtest = project
+  .in(file("modules/loadtest"))
+  .enablePlugins(GatlingPlugin)
+  .settings(
+    scalacOptionsSettings,
+    libraryDependencies ++= Seq(
+      "io.gatling.highcharts" % "gatling-charts-highcharts" % V.gatling % Test,
+      "io.gatling" % "gatling-test-framework" % V.gatling % Test
+    )
+  )
 
 lazy val V = new {
   val doobie = "0.13.4"
@@ -240,4 +255,6 @@ lazy val V = new {
   val circe = "0.14.12"
   val json4s = "4.1.0"
   val coursier = "2.1.24"
+  val otel = "1.64.0"
+  val gatling = "3.15.1"
 }

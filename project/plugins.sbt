@@ -5,6 +5,7 @@ addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.11.7")
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.21.0")
 addSbtPlugin("org.portable-scala" % "sbt-scalajs-crossproject" % "1.3.2")
 addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.4")
+addSbtPlugin("io.gatling" % "gatling-sbt" % "4.19.1")
 
 libraryDependencies ++= Seq(
   "org.testcontainers" % "postgresql" % "1.21.3",
