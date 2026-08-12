@@ -255,6 +255,5 @@ lazy val V = new {
   val circe = "0.14.12"
   val json4s = "4.1.0"
   val coursier = "2.1.24"
-  val otel = "1.64.0"
   val gatling = "3.15.1"
 }
