@@ -46,7 +46,8 @@ object Main extends LazyLogging:
 
     val dataPaths = DataPaths.from(config.filesystem)
     val localStorage = FilesystemStorage(config.filesystem)
-    val datasource = DoobieUtils.getHikariDataSource(config.database)
+    // lazy so steps that don't touch the database (e.g. generateFeeders) don't open a pool
+    lazy val datasource = DoobieUtils.getHikariDataSource(config.database)
 
     def usingDatabase(f: SqlDatabase => Future[Unit]): Unit =
       given ContextShift[IO] = IO.contextShift(ec)
@@ -66,11 +67,17 @@ object Main extends LazyLogging:
       val storage = FilesystemStorage(config.filesystem)
       usingDatabase(database => SubIndex.run(storage, database))
 
+    def generateFeeders(): Unit =
+      val outputDir =
+        Path.of(sys.props.getOrElse("scaladex.loadtest.output", "modules/loadtest/src/test/resources/data"))
+      GenerateFeeders.run(localStorage, outputDir)
+
     val steps = Map(
       // Populate the database with poms and data from an index repo:
       // scaladex-small-index or scaladex-index
       "init" -> { () => init() },
-      "subIndex" -> { () => subIndex() }
+      "subIndex" -> { () => subIndex() },
+      "generateFeeders" -> { () => generateFeeders() }
     )
 
     val name = args.headOption
