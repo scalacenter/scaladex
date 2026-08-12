@@ -49,6 +49,9 @@ import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.ScoreFunction
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.*
+import org.apache.http.client.config.RequestConfig
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder
+import org.elasticsearch.client.RestClientBuilder
 
 /** @param esClient
   *   TCP client of the elasticsearch server
@@ -499,8 +502,22 @@ object ElasticsearchEngine extends LazyLogging:
     logger.info(s"Using elasticsearch index: ${config.index}")
 
     val props = ElasticProperties(s"http://localhost:${config.port}")
-    val esClient = ElasticClient(JavaClient(props))
+    val esClient = ElasticClient(JavaClient(props, requestConfigCallback(config), httpClientConfigCallback(config)))
     new ElasticsearchEngine(esClient, config.index)
+
+  // Bounded timeouts so a request can never hang indefinitely (e.g. waiting to lease a connection).
+  private def requestConfigCallback(config: ElasticsearchConfig): RestClientBuilder.RequestConfigCallback =
+    (builder: RequestConfig.Builder) =>
+      builder
+        .setConnectTimeout(config.connectTimeoutMs)
+        .setSocketTimeout(config.socketTimeoutMs)
+        .setConnectionRequestTimeout(config.connectionRequestTimeoutMs)
+
+  private def httpClientConfigCallback(config: ElasticsearchConfig): RestClientBuilder.HttpClientConfigCallback =
+    (builder: HttpAsyncClientBuilder) =>
+      builder
+        .setMaxConnPerRoute(config.maxConnections)
+        .setMaxConnTotal(config.maxConnections)
 
   def fieldAccess(name: String): String =
     s"doc['$name'].value"
