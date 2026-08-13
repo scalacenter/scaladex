@@ -55,7 +55,9 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach:
     }
   }
   it("should return NotFound for an artifact version with a non-existing binary-version") {
-    Get(s"/${PlayJsonExtra.reference}/artifacts/play-json-extra/0.1.1-play2.3-M1?binary-version=java") ~> route ~> check {
+    Get(
+      s"/${PlayJsonExtra.reference}/artifacts/play-json-extra/0.1.1-play2.3-M1?binary-version=java"
+    ) ~> route ~> check {
       status shouldEqual StatusCodes.NotFound
     }
   }
