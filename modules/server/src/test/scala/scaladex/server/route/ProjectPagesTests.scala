@@ -54,6 +54,13 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach:
       status shouldEqual StatusCodes.OK
     }
   }
+  it("should return NotFound for an artifact version with a non-existing binary-version") {
+    Get(
+      s"/${PlayJsonExtra.reference}/artifacts/play-json-extra/0.1.1-play2.3-M1?binary-version=java"
+    ) ~> route ~> check {
+      status shouldEqual StatusCodes.NotFound
+    }
+  }
 
   it("should redirect on moved project") {
     val destination = PlayJsonExtra.reference.copy(repository = Project.Repository("play-json-extra-2"))
