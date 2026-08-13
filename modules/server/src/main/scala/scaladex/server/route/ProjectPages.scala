@@ -128,25 +128,30 @@ class ProjectPages(
                 artifacts <- artifactsF
                 header <- headerF
                 binaryVersions = artifacts.map(_.binaryVersion).distinct.sorted(BinaryVersion.ordering.reverse)
-                binaryVersion = params.binaryVersion.getOrElse(binaryVersions.head)
-                artifact = artifacts.find(_.binaryVersion == binaryVersion).get
-                directDepsF = database.getDirectDependencies(artifact)
-                reverseDepsF = database.getReverseDependencies(artifact)
-                directDeps <- directDepsF
-                reverseDeps <- reverseDepsF
-              yield
-                val page = html.artifact(
-                  env,
-                  user,
-                  project,
-                  header,
-                  artifact,
-                  binaryVersions,
-                  params,
-                  directDeps,
-                  reverseDeps
-                )
-                complete(page)
+                selectedArtifact = params.binaryVersion
+                  .orElse(binaryVersions.headOption)
+                  .flatMap(bv => artifacts.find(_.binaryVersion == bv))
+                route <- selectedArtifact match
+                  case None =>
+                    Future.successful(complete(StatusCodes.NotFound, notfound(env, user)))
+                  case Some(artifact) =>
+                    for
+                      directDeps <- database.getDirectDependencies(artifact)
+                      reverseDeps <- database.getReverseDependencies(artifact)
+                    yield
+                      val page = html.artifact(
+                        env,
+                        user,
+                        project,
+                        header,
+                        artifact,
+                        binaryVersions,
+                        params,
+                        directDeps,
+                        reverseDeps
+                      )
+                      complete(page)
+              yield route
               end for
             }
           }
