@@ -204,11 +204,12 @@ class ProjectPages(
               _ <- artifactService.updateLatestVersions(projectRef, form.preferStableVersion)
               _ <- searchSynchronizer.syncProject(projectRef)
             yield ()
+            val projectUri = Uri((Path.Empty / projectRef.organization.value / projectRef.repository.value).toString)
             onComplete(updateF) {
-              case Success(()) => redirect(Uri(s"/$projectRef"), StatusCodes.SeeOther)
+              case Success(()) => redirect(projectUri, StatusCodes.SeeOther)
               case Failure(e) =>
                 logger.error(s"Cannot save settings of project $projectRef", e)
-                redirect(Uri(s"/$projectRef"), StatusCodes.SeeOther) // maybe we can print that it wasn't saved
+                redirect(projectUri, StatusCodes.SeeOther) // maybe we can print that it wasn't saved
             }
           }
         }
@@ -217,8 +218,10 @@ class ProjectPages(
         // redirect to new artifacts page
         path(projectM / artifactNameM)((projectRef, artifactName) =>
           parameter("binaryVersion".?) { binaryVersion =>
-            val filter = binaryVersion.map(bv => s"?binary-version=$bv").getOrElse("")
-            redirect(s"/$projectRef/artifacts/$artifactName$filter", StatusCodes.MovedPermanently)
+            val path = Path.Empty / projectRef.organization.value /
+              projectRef.repository.value / "artifacts" / artifactName.value
+            val query = binaryVersion.map(bv => Query("binary-version" -> bv)).getOrElse(Query.Empty)
+            redirect(Uri(path.toString).withQuery(query), StatusCodes.MovedPermanently)
           }
         )
       },
@@ -226,8 +229,10 @@ class ProjectPages(
         // redirect to new artifact page
         path(projectM / artifactNameM / versionM)((projectRef, artifactName, version) =>
           parameter("binaryVersion".?) { binaryVersion =>
-            val filter = binaryVersion.map(bv => s"binary-version=$bv").getOrElse("")
-            redirect(s"/$projectRef/artifacts/$artifactName/$version?$filter", StatusCodes.MovedPermanently)
+            val path = Path.Empty / projectRef.organization.value /
+              projectRef.repository.value / "artifacts" / artifactName.value / version.value
+            val query = binaryVersion.map(bv => Query("binary-version" -> bv)).getOrElse(Query.Empty)
+            redirect(Uri(path.toString).withQuery(query), StatusCodes.MovedPermanently)
           }
         )
       }

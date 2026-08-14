@@ -73,6 +73,16 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach:
     }
   }
 
+  it("should redirect legacy artifact url with special characters in the name") {
+    Get("/some-org/some-repo/Feathr%20Feature%20Store%20Talk.pdf") ~> route ~> check {
+      status shouldEqual StatusCodes.MovedPermanently
+      val location = headers.collectFirst { case Location(uri) => uri }
+      location.map(_.toString) should contain(
+        "/some-org/some-repo/artifacts/Feathr%20Feature%20Store%20Talk.pdf"
+      )
+    }
+  }
+
   describe("POST /<orga/repo>/settings") {
     it("should replace empty customScalaDoc with None") {
       val formData = FormData(
