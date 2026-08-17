@@ -4,6 +4,7 @@ import scala.concurrent.Await
 import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
+import scaladex.infra.config.CacheConfig
 import scaladex.infra.config.PostgreSQLConfig
 import scaladex.infra.sql.DoobieUtils
 
@@ -21,6 +22,8 @@ trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach:
     .load()
     .get
 
+  private val cacheConfig: CacheConfig = CacheConfig.load()
+
   override val transactor: Transactor[IO] =
     Transactor
       .fromDriverManager[IO](
@@ -30,7 +33,7 @@ trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach:
         config.pass.decode
       )
 
-  lazy val database = new SqlDatabase(BaseDatabaseSuite.datasource, transactor)
+  lazy val database = new SqlDatabase(BaseDatabaseSuite.datasource, transactor, cacheConfig)
 
   override def beforeEach(): Unit =
     Await.result(cleanTables(), Duration.Inf)
