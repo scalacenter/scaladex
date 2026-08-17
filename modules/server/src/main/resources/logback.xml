@@ -14,6 +14,7 @@
     <logger name="org.flywaydb" level="INFO"/>
 <!--   TODO: implement authentication instead of silencing the log https://github.com/scalacenter/scaladex/issues/755-->
     <logger name="org.elasticsearch.client.RestClient" level="ERROR"/>
+    <logger name="scaladex.server.http-access" level="INFO" />
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
