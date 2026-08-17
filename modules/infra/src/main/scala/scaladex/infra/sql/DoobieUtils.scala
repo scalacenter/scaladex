@@ -33,6 +33,7 @@ object DoobieUtils:
     config.setJdbcUrl(conf.url)
     config.setUsername(conf.user)
     config.setPassword(conf.pass.decode)
+    config.setMaximumPoolSize(conf.poolSize)
     new HikariDataSource(config)
   end getHikariDataSource
 
