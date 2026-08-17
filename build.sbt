@@ -218,7 +218,7 @@ lazy val data = project
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
       "org.apache.maven" % "maven-model-builder" % "4.0.0-rc-5",
       "org.jsoup" % "jsoup" % "1.22.2",
-      "org.apache.ivy" % "ivy" % "2.5.3",
+      "org.apache.ivy" % "ivy" % "2.6.0",
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
       "io.github.json4s" %% "json4s-native" % V.json4s,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
