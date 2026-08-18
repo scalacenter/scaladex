@@ -31,4 +31,5 @@ object ElasticsearchConfig:
       duration("socket-timeout"),
       duration("connection-request-timeout")
     )
+  end from
 end ElasticsearchConfig
