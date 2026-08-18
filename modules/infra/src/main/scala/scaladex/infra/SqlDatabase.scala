@@ -26,7 +26,8 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO], cache
 
   private def buildCache[K, V](loader: K => Future[V]): AsyncLoadingCache[K, V] =
     Scaffeine()
-      .expireAfterWrite(cacheConfig.ttl)
+      .refreshAfterWrite(cacheConfig.refreshAfter)
+      .expireAfterWrite(cacheConfig.expireAfter)
       .maximumSize(cacheConfig.maxSize)
       .buildAsyncFuture(loader)
 
