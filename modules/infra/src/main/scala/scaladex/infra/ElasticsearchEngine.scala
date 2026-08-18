@@ -196,16 +196,20 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(using Executio
     esClient
       .execute(pagedRequest)
       .map { response =>
-        Page(
-          Pagination(
-            current = clamp,
-            pageCount = Math
-              .ceil(response.result.totalHits / page.size.toDouble)
-              .toInt,
-            totalSize = response.result.totalHits
-          ),
-          response.result.hits.hits.toSeq
-        )
+        if response.isError then
+          logger.warn(s"Search request failed: ${response.error.reason}")
+          Page.empty[SearchHit]
+        else
+          Page(
+            Pagination(
+              current = clamp,
+              pageCount = Math
+                .ceil(response.result.totalHits / page.size.toDouble)
+                .toInt,
+              totalSize = response.result.totalHits
+            ),
+            response.result.hits.hits.toSeq
+          )
       }
   end findPage
 
