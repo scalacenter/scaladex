@@ -54,7 +54,7 @@ object Main extends LazyLogging:
       DoobieUtils
         .transactor(datasource)
         .use { xa =>
-          val database = new SqlDatabase(datasource, xa)
+          val database = new SqlDatabase(datasource, xa, config.caching)
           IO.fromFuture(IO(f(database)))
         }
         .unsafeRunSync()

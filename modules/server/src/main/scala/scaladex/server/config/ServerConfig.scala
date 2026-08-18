@@ -1,6 +1,7 @@
 package scaladex.server.config
 
 import scaladex.core.model.Env
+import scaladex.infra.config.CacheConfig
 import scaladex.infra.config.ElasticsearchConfig
 import scaladex.infra.config.FilesystemConfig
 import scaladex.infra.config.GithubConfig
@@ -19,7 +20,8 @@ case class ServerConfig(
     database: PostgreSQLConfig,
     elasticsearch: ElasticsearchConfig,
     filesystem: FilesystemConfig,
-    github: GithubConfig
+    github: GithubConfig,
+    caching: CacheConfig
 )
 
 object ServerConfig:
@@ -37,7 +39,8 @@ object ServerConfig:
 
     val filesystem = FilesystemConfig.from(config)
     val github = GithubConfig.from(config)
+    val caching = CacheConfig.from(config)
 
-    ServerConfig(env, session, endpoint, port, oauth2, database, elasticsearch, filesystem, github)
+    ServerConfig(env, session, endpoint, port, oauth2, database, elasticsearch, filesystem, github, caching)
   end load
 end ServerConfig
