@@ -5,8 +5,8 @@ import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.RouteResult
 import org.slf4j.LoggerFactory
 
-/** One line per HTTP request, emitted at DEBUG to the dedicated `scaladex.server.http-access`
-  * logger (set that logger to DEBUG to enable it).
+/** One line per HTTP request, emitted at DEBUG to the dedicated `scaladex.server.http-access` logger (set that logger
+  * to DEBUG to enable it).
   */
 object HttpRequestLogging:
   private val log = LoggerFactory.getLogger("scaladex.server.http-access")
