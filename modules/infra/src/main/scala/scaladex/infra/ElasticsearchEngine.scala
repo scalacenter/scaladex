@@ -127,7 +127,7 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(using Executio
   override def count(): Future[Int] =
     val query = must(matchAllQuery())
     val request = search(index).query(query).size(0)
-    esClient.execute(request).map(_.result.totalHits.toInt)
+    executeOrEmpty(esClient.execute(request), 0)(_.totalHits.toInt)
 
   override def countByTopics(limit: Int): Future[Seq[TopicCount]] =
     countAllUnique("githubInfo.topics.keyword", matchAllQuery(), limit)
@@ -141,15 +141,15 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(using Executio
 
   override def getMostDependedUpon(limit: Int): Future[Seq[ProjectDocument]] =
     val request = searchRequest(matchAllQuery(), Sorting.Dependent).limit(limit)
-    esClient.execute(request).map(extractDocuments)
+    executeOrEmpty(esClient.execute(request), Seq.empty[ProjectDocument])(extractDocuments)
 
   override def getLatest(limit: Int): Future[Seq[ProjectDocument]] =
     val request = searchRequest(matchAllQuery(), Sorting.Created).limit(limit)
-    esClient.execute(request).map(extractDocuments)
+    executeOrEmpty(esClient.execute(request), Seq.empty[ProjectDocument])(extractDocuments)
 
   override def autocomplete(params: SearchParams, limit: Int): Future[Seq[ProjectDocument]] =
     val request = searchRequest(filteredSearchQuery(params), params.sorting).limit(limit)
-    esClient.execute(request).map(extractDocuments)
+    executeOrEmpty(esClient.execute(request), Seq.empty[ProjectDocument])(extractDocuments)
 
   override def find(
       queryString: String,
@@ -178,39 +178,44 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(using Executio
   private def scroll(request: SearchRequest, timeout: FiniteDuration): Future[Seq[Hit]] =
     val r0 = request.keepAlive(timeout)
     val keepAlive = r0.keepAlive.get
-    def recur(resp: Response[SearchResponse]): Future[Seq[Hit]] =
-      val hits = resp.result.hits.hits.toSeq
-      resp.result.scrollId match
-        case None => Future.successful(hits)
-        case Some(id) =>
-          for
-            r <- esClient.execute(searchScroll(id, keepAlive))
-            nextHits <- recur(r)
-          yield hits ++ nextHits
+    def recur(response: Response[SearchResponse]): Future[Seq[Hit]] =
+      if response.isError then
+        logger.warn(s"Elasticsearch request failed: ${response.error.reason}")
+        Future.successful(Seq.empty)
+      else
+        val result = response.result
+        val hits = result.hits.hits.toSeq
+        result.scrollId match
+          case None => Future.successful(hits)
+          case Some(id) =>
+            for
+              r <- esClient.execute(searchScroll(id, keepAlive))
+              nextHits <- recur(r)
+            yield hits ++ nextHits
     esClient.execute(request).flatMap(recur)
   end scroll
+
+  private def executeOrEmpty[U, B](execution: => Future[Response[U]], empty: => B)(onSuccess: U => B): Future[B] =
+    execution.map { response =>
+      if response.isError then
+        logger.warn(s"Elasticsearch request failed: ${response.error.reason}")
+        empty
+      else onSuccess(response.result)
+    }
 
   private def findPage(request: SearchRequest, page: PageParams): Future[Page[SearchHit]] =
     val clamp = if page.page <= 0 then 1 else page.page
     val pagedRequest = request.from(page.size * (clamp - 1)).size(page.size)
-    esClient
-      .execute(pagedRequest)
-      .map { response =>
-        if response.isError then
-          logger.warn(s"Search request failed: ${response.error.reason}")
-          Page.empty[SearchHit]
-        else
-          Page(
-            Pagination(
-              current = clamp,
-              pageCount = Math
-                .ceil(response.result.totalHits / page.size.toDouble)
-                .toInt,
-              totalSize = response.result.totalHits
-            ),
-            response.result.hits.hits.toSeq
-          )
-      }
+    executeOrEmpty(esClient.execute(pagedRequest), Page.empty[SearchHit]) { result =>
+      Page(
+        Pagination(
+          current = clamp,
+          pageCount = Math.ceil(result.totalHits / page.size.toDouble).toInt,
+          totalSize = result.totalHits
+        ),
+        result.hits.hits.toSeq
+      )
+    }
   end findPage
 
   private def searchRequest(query: Query, sorting: Sorting): SearchRequest =
@@ -236,8 +241,8 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(using Executio
       .sortBy(sortQuery)
   end searchRequest
 
-  private def extractDocuments(response: Response[SearchResponse]): Seq[ProjectDocument] =
-    response.result.hits.hits.toSeq.flatMap(toProjectDocument)
+  private def extractDocuments(response: SearchResponse): Seq[ProjectDocument] =
+    response.hits.hits.toSeq.flatMap(toProjectDocument)
 
   private def toProjectDocument(hit: SearchHit): Option[ProjectDocument] =
     parser.decode[RawProjectDocument](hit.sourceAsString) match
@@ -321,16 +326,14 @@ class ElasticsearchEngine(esClient: ElasticClient, index: String)(using Executio
       .map(_.sortBy(_._1)(Platform.ordering.reverse))
 
   private def countAllUnique(field: String, query: Query, limit: Int): Future[Seq[(String, Int)]] =
-    aggregation(field, query, limit).map(_.buckets.map(b => b.key -> b.docCount.toInt))
+    aggregation(field, query, limit).map(_.map(b => b.key -> b.docCount.toInt))
 
-  private def aggregation(field: String, query: Query, limit: Int): Future[Terms] =
+  private def aggregation(field: String, query: Query, limit: Int) =
     val aggName = s"${field}_count"
     val aggregation = termsAgg(aggName, field).size(limit)
 
     val request = search(index).query(query).aggregations(aggregation)
-    for response <- esClient.execute(request)
-    yield response.result.aggregations
-      .result[Terms](aggName)
+    executeOrEmpty(esClient.execute(request), Seq.empty)(_.aggregations.result[Terms](aggName).buckets)
 
   private def combinedWithPercentage(sortingField: String): ScoreFunction =
     val sortingFieldAccess = fieldAccess(sortingField, default = "0")

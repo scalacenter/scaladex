@@ -61,6 +61,17 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
     yield page.items shouldBe empty
   }
 
+  "return empty facet counts for a malformed query instead of failing" in {
+    val params = SearchParams(queryString = ":https://tinyurl.com/txy3b83h")
+    for
+      _ <- insertAll(projects)
+      languages <- searchEngine.countByLanguages(params)
+      platforms <- searchEngine.countByPlatforms(params)
+    yield
+      languages shouldBe empty
+      platforms shouldBe empty
+  }
+
   "sort by dependent, created, stars, forks, and contributors" in {
     val params = SearchParams(queryString = "*")
     val catsFirst = Seq(Cats.projectDocument, Scalafix.projectDocument)
