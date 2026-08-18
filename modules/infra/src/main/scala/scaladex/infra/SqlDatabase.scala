@@ -9,6 +9,7 @@ import scala.concurrent.duration.*
 
 import scaladex.core.model.*
 import scaladex.core.service.SchedulerDatabase
+import scaladex.infra.config.CacheConfig
 import scaladex.infra.sql.*
 
 import cats.effect.IO
@@ -18,8 +19,46 @@ import com.typesafe.scalalogging.LazyLogging
 import com.zaxxer.hikari.HikariDataSource
 import doobie.implicits.*
 
-class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) extends SchedulerDatabase with LazyLogging:
+class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO], cacheConfig: CacheConfig)
+    extends SchedulerDatabase
+    with LazyLogging:
   private val flyway = DoobieUtils.flyway(datasource)
+
+  private def buildCache[K, V](loader: K => Future[V]): AsyncLoadingCache[K, V] =
+    Scaffeine()
+      .expireAfterWrite(cacheConfig.ttl)
+      .maximumSize(cacheConfig.maxSize)
+      .buildAsyncFuture(loader)
+
+  private val projectCache: AsyncLoadingCache[Project.Reference, Option[Project]] =
+    buildCache(ref => run(ProjectTable.selectByReference.option(ref)))
+
+  private val projectArtifactsByNameCache
+      : AsyncLoadingCache[(Project.Reference, Artifact.Name, Boolean), Seq[Artifact]] =
+    buildCache {
+      case (ref, name, stableOnly) =>
+        run(ArtifactTable.selectArtifactByProjectAndName(stableOnly).to[Seq](ref, name))
+    }
+
+  private val projectArtifactsByVersionCache
+      : AsyncLoadingCache[(Project.Reference, Artifact.Name, Version), Seq[Artifact]] =
+    buildCache {
+      case (ref, name, version) =>
+        run(ArtifactTable.selectArtifactByProjectAndNameAndVersion.to[Seq](ref, name, version))
+    }
+
+  private val projectLatestArtifactsCache: AsyncLoadingCache[Project.Reference, Seq[Artifact]] =
+    buildCache(ref => run(ArtifactTable.selectProjectLatestArtifacts.to[Seq](ref)))
+
+  private val countArtifactsCache: AsyncLoadingCache[Unit, Long] =
+    Scaffeine().refreshAfterWrite(5.minutes).buildAsyncFuture[Unit, Long](_ => run(ArtifactTable.count.unique))
+
+  private val directDependenciesCache: AsyncLoadingCache[Artifact.Reference, Seq[ArtifactDependency.Direct]] =
+    buildCache(ref => run(ArtifactDependencyTable.selectDirectDependency.to[Seq](ref)))
+
+  private val reverseDependenciesCache: AsyncLoadingCache[Artifact.Reference, Seq[ArtifactDependency.Reverse]] =
+    buildCache(ref => run(ArtifactDependencyTable.selectReverseDependency.to[Seq](ref)))
+
   def migrate: IO[Unit] = IO(flyway.migrate())
   def dropTables: IO[Unit] = IO(flyway.clean())
 
@@ -85,7 +124,10 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
 
   // return true if inserted, false if it already existed
   override def insertProjectRef(ref: Project.Reference, status: GithubStatus): Future[Boolean] =
-    run(ProjectTable.insertIfNotExists.run((ref, status))).map(x => x >= 1)
+    run(ProjectTable.insertIfNotExists.run((ref, status))).map { inserted =>
+      invalidateProject(ref)
+      inserted >= 1
+    }
 
   override def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]] =
     run(ProjectTable.selectReferenceAndStatus.to[Seq]).map(_.toMap)
@@ -101,13 +143,15 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
     for
       _ <- updateGithubStatus(ref, githubStatus)
       _ <- run(GithubInfoTable.insertOrUpdate.run((ref, githubInfo, githubInfo)))
-    yield ()
+    yield invalidateProject(ref)
 
   override def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit] =
-    run(ProjectSettingsTable.insertOrUpdate.run((ref, settings, settings))).map(_ => ())
+    run(ProjectSettingsTable.insertOrUpdate.run((ref, settings, settings))).map(_ => invalidateProject(ref))
 
   override def getProject(ref: Project.Reference): Future[Option[Project]] =
-    run(ProjectTable.selectByReference.option(ref))
+    projectCache.get(ref)
+  private def invalidateProject(ref: Project.Reference): Unit =
+    projectCache.underlying.synchronous().invalidate(ref)
 
   override def getProjectArtifactRefs(ref: Project.Reference, stableOnly: Boolean): Future[Seq[Artifact.Reference]] =
     run(ArtifactTable.selectArtifactRefByProject(stableOnly).to[Seq](ref))
@@ -129,18 +173,15 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
       name: Artifact.Name,
       stableOnly: Boolean
   ): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifactByProjectAndName(stableOnly).to[Seq](ref, name))
+    projectArtifactsByNameCache.get((ref, name, stableOnly))
 
   override def getProjectArtifacts(
       ref: Project.Reference,
       name: Artifact.Name,
       version: Version
   ): Future[Seq[Artifact]] =
-    run(ArtifactTable.selectArtifactByProjectAndNameAndVersion.to[Seq](ref, name, version))
+    projectArtifactsByVersionCache.get((ref, name, version))
 
-  private val projectLatestArtifactsCache: AsyncLoadingCache[Project.Reference, Seq[Artifact]] =
-    // invalidated manually by updateLatestVersion
-    Scaffeine().buildAsyncFuture(ref => run(ArtifactTable.selectProjectLatestArtifacts.to[Seq](ref)))
   override def getProjectLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]] =
     projectLatestArtifactsCache.get(ref)
 
@@ -159,18 +200,16 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
   def countProjects(): Future[Long] =
     run(ProjectTable.countProjects.unique)
 
-  private val countArtifactsCache: AsyncLoadingCache[Unit, Long] =
-    Scaffeine().refreshAfterWrite(5.minutes).buildAsyncFuture[Unit, Long](_ => run(ArtifactTable.count.unique))
   override def countArtifacts(): Future[Long] = countArtifactsCache.get(())
 
   def countDependencies(): Future[Long] =
     run(ArtifactDependencyTable.count.unique)
 
   override def getDirectDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Direct]] =
-    run(ArtifactDependencyTable.selectDirectDependency.to[Seq](artifact.reference))
+    directDependenciesCache.get(artifact.reference)
 
   override def getReverseDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Reverse]] =
-    run(ArtifactDependencyTable.selectReverseDependency.to[Seq](artifact.reference))
+    reverseDependenciesCache.get(artifact.reference)
 
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.count.unique)
@@ -201,7 +240,7 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
     run(ArtifactTable.selectOldestByProject.to[Seq])
 
   override def updateProjectCreationDate(ref: Project.Reference, creationDate: Instant): Future[Unit] =
-    run(ProjectTable.updateCreationDate.run((creationDate, ref))).map(_ => ())
+    run(ProjectTable.updateCreationDate.run((creationDate, ref))).map(_ => invalidateProject(ref))
 
   override def getGroupIds(): Future[Seq[Artifact.GroupId]] =
     run(ArtifactTable.selectGroupIds.to[Seq])
@@ -257,10 +296,12 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO]) exten
       _ <- run(ProjectTable.insertIfNotExists.run((status.destination, GithubStatus.Ok(status.updateDate))))
       _ <- updateProjectSettings(status.destination, oldProject.map(_.settings).getOrElse(Project.Settings.empty))
       _ <- run(GithubInfoTable.insertOrUpdate.run(status.destination, githubInfo, githubInfo))
-    yield ()
+    yield
+      invalidateProject(ref)
+      invalidateProject(status.destination)
 
   def updateGithubStatus(ref: Project.Reference, githubStatus: GithubStatus): Future[Unit] =
-    run(ProjectTable.updateGithubStatus.run(githubStatus, ref)).map(_ => ())
+    run(ProjectTable.updateGithubStatus.run(githubStatus, ref)).map(_ => invalidateProject(ref))
 
   private def run[A](v: doobie.ConnectionIO[A]): Future[A] =
     v.transact(xa).unsafeToFuture()

@@ -21,8 +21,8 @@ inThisBuild(
 
 lazy val loggingSettings = Seq(
   libraryDependencies ++= Seq(
-    "ch.qos.logback" % "logback-classic" % "1.5.33",
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.5"
+    "ch.qos.logback" % "logback-classic" % "1.5.38",
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.6"
   ),
   // Drop and replace commons-logging with slf4j
   libraryDependencies += "org.slf4j" % "jcl-over-slf4j" % "2.0.18",
@@ -52,7 +52,7 @@ lazy val template = project
     scalacOptions -= "-Xfatal-warnings",
     libraryDependencies ++= Seq(
       "com.github.nscala-time" %% "nscala-time" % V.nscalaTime,
-      "com.typesafe" % "config" % "1.4.8",
+      "com.typesafe" % "config" % "1.4.9",
       "org.apache.pekko" %% "pekko-http-core" % V.pekkoHttp,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
     )
@@ -71,7 +71,7 @@ lazy val infra = project
       "org.flywaydb" % "flyway-core" % "8.5.13", // for database migration
       "org.apache.pekko" %% "pekko-stream" % V.pekko,
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
-      "com.github.pjfanning" %% "pekko-http-circe" % "3.9.1",
+      "com.github.pjfanning" %% "pekko-http-circe" % "3.9.2",
       ("io.get-coursier" %% "coursier" % V.coursier).cross(CrossVersion.for3Use2_13),
       ("io.get-coursier" %% "coursier-sbt-maven-repository" % V.coursier).cross(CrossVersion.for3Use2_13),
       "com.github.blemale" %% "scaffeine" % "5.3.0",
@@ -170,12 +170,12 @@ lazy val server = project
       "org.webjars" % "bootstrap-switch" % "3.3.4",
       "org.webjars" % "bootstrap-select" % "1.13.18",
       "org.webjars" % "chartjs" % "3.9.1",
-      "org.webjars.npm" % "date-fns" % "4.1.0",
+      "org.webjars.npm" % "date-fns" % "4.4.0",
       "org.webjars.npm" % "chartjs-adapter-date-fns" % "3.0.0",
       "org.webjars" % "font-awesome" % "6.7.2",
       "org.webjars" % "jquery" % "3.7.1",
       "org.webjars.bower" % "select2" % "4.0.13",
-      "org.webjars" % "swagger-ui" % "5.20.7"
+      "org.webjars" % "swagger-ui" % "5.20.8"
     ),
     Compile / unmanagedResourceDirectories += (Assets / WebKeys.public).value,
     Compile / resourceGenerators += (Assets / WebKeys.assets).map(Seq(_)),
@@ -195,7 +195,7 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
     scalacOptionsSettings,
     libraryDependencies ++= Seq(
       "com.lihaoyi" %%% "fastparse" % "3.1.1",
-      "io.github.cquiroz" %%% "scala-java-time" % "2.6.0",
+      "io.github.cquiroz" %%% "scala-java-time" % "2.7.0",
       "org.endpoints4s" %%% "algebra" % "1.12.1",
       "org.scalatest" %%% "scalatest" % V.scalatest % Test,
       "org.jsoup" % "jsoup" % "1.23.1",
@@ -216,9 +216,9 @@ lazy val data = project
       "org.apache.pekko" %% "pekko-actor-typed" % V.pekko,
       "org.apache.pekko" %% "pekko-serialization-jackson" % V.pekko,
       "org.apache.pekko" %% "pekko-slf4j" % V.pekko,
-      "org.apache.maven" % "maven-model-builder" % "4.0.0-rc-5",
+      "org.apache.maven" % "maven-model-builder" % "4.0.0-rc-6",
       "org.jsoup" % "jsoup" % "1.23.1",
-      "org.apache.ivy" % "ivy" % "2.5.3",
+      "org.apache.ivy" % "ivy" % "2.6.0",
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
       "io.github.json4s" %% "json4s-native" % V.json4s,
       "org.scalatest" %% "scalatest" % V.scalatest % Test
@@ -247,13 +247,13 @@ lazy val loadtest = project
 
 lazy val V = new {
   val doobie = "0.13.4"
-  val pekko = "1.1.4"
-  val pekkoHttp = "1.3.0"
+  val pekko = "1.1.5"
+  val pekkoHttp = "1.4.0"
   val elastic4s = "8.17.0"
   val nscalaTime = "3.0.0"
   val scalatest = "3.2.20"
-  val circe = "0.14.12"
-  val json4s = "4.1.0"
+  val circe = "0.14.16"
+  val json4s = "4.1.1"
   val coursier = "2.1.24"
   val gatling = "3.15.1"
 }
