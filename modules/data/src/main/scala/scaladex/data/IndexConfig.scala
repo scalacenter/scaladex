@@ -1,12 +1,13 @@
 package scaladex.data
 
 import scaladex.core.model.Env
+import scaladex.infra.config.CacheConfig
 import scaladex.infra.config.FilesystemConfig
 import scaladex.infra.config.PostgreSQLConfig
 
 import com.typesafe.config.ConfigFactory
 
-case class IndexConfig(env: Env, database: PostgreSQLConfig, filesystem: FilesystemConfig)
+case class IndexConfig(env: Env, database: PostgreSQLConfig, filesystem: FilesystemConfig, caching: CacheConfig)
 
 object IndexConfig:
 
@@ -16,6 +17,7 @@ object IndexConfig:
     IndexConfig(
       env = env,
       database = PostgreSQLConfig.from(config).get,
-      filesystem = FilesystemConfig.from(config)
+      filesystem = FilesystemConfig.from(config),
+      caching = CacheConfig.from(config)
     )
 end IndexConfig

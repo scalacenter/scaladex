@@ -62,8 +62,8 @@ object Server extends LazyLogging:
       resources
         .use {
           case (webPool, schedulerPool, publishPool, datasourceForFlyway) =>
-            val webDatabase = new SqlDatabase(datasourceForFlyway, webPool)
-            val schedulerDatabase = new SqlDatabase(datasourceForFlyway, schedulerPool)
+            val webDatabase = new SqlDatabase(datasourceForFlyway, webPool, config.caching)
+            val schedulerDatabase = new SqlDatabase(datasourceForFlyway, schedulerPool, config.caching)
             val githubClient = config.github.token.map(new GithubClientImpl(_))
             val paths = DataPaths.from(config.filesystem)
             val filesystem = FilesystemStorage(config.filesystem)
