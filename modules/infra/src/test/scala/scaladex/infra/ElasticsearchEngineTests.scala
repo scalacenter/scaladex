@@ -54,6 +54,13 @@ class ElasticsearchEngineTests extends AsyncFreeSpec with Matchers with BeforeAn
     yield page.items.map(_.document) should contain theSameElementsAs List(Cats.projectDocument)
   }
 
+  "return an empty page for a malformed query instead of failing" in {
+    for
+      _ <- insertAll(projects)
+      page <- searchEngine.find(SearchParams(queryString = ":https://tinyurl.com/txy3b83h"), pageParams)
+    yield page.items shouldBe empty
+  }
+
   "sort by dependent, created, stars, forks, and contributors" in {
     val params = SearchParams(queryString = "*")
     val catsFirst = Seq(Cats.projectDocument, Scalafix.projectDocument)
