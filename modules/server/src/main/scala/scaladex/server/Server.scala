@@ -192,6 +192,12 @@ object Server extends LazyLogging:
           complete(StatusCodes.InternalServerError, notfound(config.env, None))
         }
     }
-    handleExceptions(exceptionHandler)(route)
+    HttpRequestLogging.logAccess {
+      handleExceptions(exceptionHandler) {
+        handleRejections(RejectionHandler.default) {
+          route
+        }
+      }
+    }
   end configureRoutes
 end Server

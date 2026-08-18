@@ -15,6 +15,9 @@
 <!--   TODO: implement authentication instead of silencing the log https://github.com/scalacenter/scaladex/issues/755-->
     <logger name="org.elasticsearch.client.RestClient" level="ERROR"/>
 
+    <!-- Uncomment to log one line per HTTP request (method, path, status, duration). -->
+    <!-- <logger name="scaladex.server.http-access" level="DEBUG"/> -->
+
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
     </root>
