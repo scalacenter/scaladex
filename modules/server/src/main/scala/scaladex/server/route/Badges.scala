@@ -84,7 +84,8 @@ class Badges(projectService: ProjectService)(using ExecutionContext):
     // in case targetType is defined we choose the most recent corresponding platform
     parameters("targetType".?, "platform".?) { (targetTypeParam, platformParam) =>
       shields { (color, style, logo, logoWidth) =>
-        def error(msg: String) = shieldsSvg(artifactName.value, msg, color.orElse(Some("lightgrey")), style, logo, logoWidth)
+        def error(msg: String) =
+          shieldsSvg(artifactName.value, msg, color.orElse(Some("lightgrey")), style, logo, logoWidth)
 
         val res = projectService.getHeader(ref).map {
           case None => error("project not found")
