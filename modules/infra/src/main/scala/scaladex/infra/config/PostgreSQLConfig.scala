@@ -9,7 +9,7 @@ import scaladex.core.util.Secret
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 
-final case class PostgreSQLConfig(url: String, user: String, pass: Secret):
+final case class PostgreSQLConfig(url: String, user: String, pass: Secret, poolSize: Int):
   val driver = "org.postgresql.Driver"
 
 object PostgreSQLConfig:
@@ -21,10 +21,10 @@ object PostgreSQLConfig:
     from(config)
 
   def from(config: Config): Try[PostgreSQLConfig] =
-    from(config.getString("scaladex.database.url"))
+    from(config.getString("scaladex.database.url"), config.getInt("scaladex.database.pool-size"))
 
-  private def from(url: String): Try[PostgreSQLConfig] = url match
+  private def from(url: String, poolSize: Int): Try[PostgreSQLConfig] = url match
     case postgreSQLRegex(login, pass, url) =>
-      Success(PostgreSQLConfig(s"jdbc:postgresql://$url", login, Secret(pass)))
+      Success(PostgreSQLConfig(s"jdbc:postgresql://$url", login, Secret(pass), poolSize))
     case _ => Failure(new Exception(s"Unknown database url: $url"))
 end PostgreSQLConfig
