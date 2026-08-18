@@ -47,6 +47,26 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO], cache
         run(ArtifactTable.selectArtifactByProjectAndNameAndVersion.to[Seq](ref, name, version))
     }
 
+  private val projectArtifactRefsCache: AsyncLoadingCache[(Project.Reference, Boolean), Seq[Artifact.Reference]] =
+    buildCache {
+      case (ref, stableOnly) =>
+        run(ArtifactTable.selectArtifactRefByProject(stableOnly).to[Seq](ref))
+    }
+
+  private val projectArtifactRefsByNameCache
+      : AsyncLoadingCache[(Project.Reference, Artifact.Name), Seq[Artifact.Reference]] =
+    buildCache {
+      case (ref, name) =>
+        run(ArtifactTable.selectArtifactRefByProjectAndName.to[Seq]((ref, name)))
+    }
+
+  private val projectArtifactRefsByVersionCache
+      : AsyncLoadingCache[(Project.Reference, Version), Seq[Artifact.Reference]] =
+    buildCache {
+      case (ref, version) =>
+        run(ArtifactTable.selectArtifactRefByProjectAndVersion.to[Seq]((ref, version)))
+    }
+
   private val projectLatestArtifactsCache: AsyncLoadingCache[Project.Reference, Seq[Artifact]] =
     buildCache(ref => run(ArtifactTable.selectProjectLatestArtifacts.to[Seq](ref)))
 
@@ -63,7 +83,10 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO], cache
   def dropTables: IO[Unit] = IO(flyway.clean())
 
   override def insertArtifact(artifact: Artifact): Future[Boolean] =
-    run(ArtifactTable.insertIfNotExist.run(artifact)).map(_ >= 1)
+    run(ArtifactTable.insertIfNotExist.run(artifact)).map { inserted =>
+      invalidateArtifactRefs(artifact)
+      inserted >= 1
+    }
 
   override def getArtifactVersions(
       groupId: Artifact.GroupId,
@@ -83,11 +106,15 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO], cache
     run(ArtifactTable.selectLatestArtifacts.to[Seq]((groupId, artifactId)))
 
   override def insertArtifacts(artifacts: Seq[Artifact]): Future[Unit] =
-    run(ArtifactTable.insertIfNotExist.updateMany(artifacts)).map(_ => ())
+    run(ArtifactTable.insertIfNotExist.updateMany(artifacts))
+      .map(_ => artifacts.foreach(invalidateArtifactRefs))
 
   override def updateArtifacts(artifacts: Seq[Artifact.Reference], newRef: Project.Reference): Future[Int] =
     val references = artifacts.map(newRef -> _)
-    run(ArtifactTable.updateProjectRef.updateMany(references))
+    run(ArtifactTable.updateProjectRef.updateMany(references)).map { updated =>
+      invalidateAllArtifactRefs()
+      updated
+    }
 
   override def updateArtifactReleaseDate(ref: Artifact.Reference, releaseDate: Instant): Future[Int] =
     run(ArtifactTable.updateReleaseDate.run((releaseDate, ref)))
@@ -154,16 +181,29 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO], cache
     projectCache.underlying.synchronous().invalidate(ref)
 
   override def getProjectArtifactRefs(ref: Project.Reference, stableOnly: Boolean): Future[Seq[Artifact.Reference]] =
-    run(ArtifactTable.selectArtifactRefByProject(stableOnly).to[Seq](ref))
+    projectArtifactRefsCache.get((ref, stableOnly))
 
   override def getProjectArtifactRefs(ref: Project.Reference, name: Artifact.Name): Future[Seq[Artifact.Reference]] =
-    run(ArtifactTable.selectArtifactRefByProjectAndName.to[Seq]((ref, name)))
+    projectArtifactRefsByNameCache.get((ref, name))
 
   override def getProjectArtifactRefs(
       ref: Project.Reference,
       version: Version
   ): Future[Seq[Artifact.Reference]] =
-    run(ArtifactTable.selectArtifactRefByProjectAndVersion.to[Seq]((ref, version)))
+    projectArtifactRefsByVersionCache.get((ref, version))
+
+  private def invalidateArtifactRefs(artifact: Artifact): Unit =
+    val ref = artifact.projectRef
+    val byProject = projectArtifactRefsCache.underlying.synchronous()
+    byProject.invalidate((ref, true))
+    byProject.invalidate((ref, false))
+    projectArtifactRefsByNameCache.underlying.synchronous().invalidate((ref, artifact.name))
+    projectArtifactRefsByVersionCache.underlying.synchronous().invalidate((ref, artifact.version))
+
+  private def invalidateAllArtifactRefs(): Unit =
+    projectArtifactRefsCache.underlying.synchronous().invalidateAll()
+    projectArtifactRefsByNameCache.underlying.synchronous().invalidateAll()
+    projectArtifactRefsByVersionCache.underlying.synchronous().invalidateAll()
 
   override def getAllProjectArtifacts(ref: Project.Reference): Future[Seq[Artifact]] =
     run(ArtifactTable.selectArtifactByProject.to[Seq](ref))
