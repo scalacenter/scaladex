@@ -513,9 +513,9 @@ object ElasticsearchEngine extends LazyLogging:
   private def requestConfigCallback(config: ElasticsearchConfig): RestClientBuilder.RequestConfigCallback =
     (builder: RequestConfig.Builder) =>
       builder
-        .setConnectTimeout(config.connectTimeoutMs)
-        .setSocketTimeout(config.socketTimeoutMs)
-        .setConnectionRequestTimeout(config.connectionRequestTimeoutMs)
+        .setConnectTimeout(config.connectTimeout.toMillis.toInt)
+        .setSocketTimeout(config.socketTimeout.toMillis.toInt)
+        .setConnectionRequestTimeout(config.connectionRequestTimeout.toMillis.toInt)
 
   private def httpClientConfigCallback(config: ElasticsearchConfig): RestClientBuilder.HttpClientConfigCallback =
     (builder: HttpAsyncClientBuilder) =>
