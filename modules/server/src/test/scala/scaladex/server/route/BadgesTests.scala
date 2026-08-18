@@ -63,6 +63,26 @@ class BadgesTests extends ControllerBaseSuite with BeforeAndAfterAll:
       )
     }
   }
+
+  it("error badge instead of crashing for an unknown project") {
+    Get("/nebula-contrib/zio-nebula/zio-nebula/latest-by-scala-version.svg?platform=jvm") ~> route ~> check {
+      status shouldEqual StatusCodes.TemporaryRedirect
+      val redirection = headers.collectFirst { case Location(uri) => uri }
+      redirection should contain(
+        Uri("https://img.shields.io/badge/zio--nebula-project_not_found-lightgrey.svg?")
+      )
+    }
+  }
+
+  it("error badge instead of crashing for an unknown artifact of a known project") {
+    Get(s"/${Cats.reference}/does-not-exist/latest-by-scala-version.svg") ~> route ~> check {
+      status shouldEqual StatusCodes.TemporaryRedirect
+      val redirection = headers.collectFirst { case Location(uri) => uri }
+      redirection should contain(
+        Uri("https://img.shields.io/badge/does--not--exist-no_published_artifacts-lightgrey.svg?")
+      )
+    }
+  }
 end BadgesTests
 
 class BadgesUnitTests extends AnyFunSpec with Matchers:

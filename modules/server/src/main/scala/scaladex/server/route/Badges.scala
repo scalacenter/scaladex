@@ -84,17 +84,24 @@ class Badges(projectService: ProjectService)(using ExecutionContext):
     // in case targetType is defined we choose the most recent corresponding platform
     parameters("targetType".?, "platform".?) { (targetTypeParam, platformParam) =>
       shields { (color, style, logo, logoWidth) =>
-        val headerF = projectService.getHeader(ref).map(_.get)
-        onSuccess(headerF) { header =>
-          val platforms = header.platforms(artifactName)
-          val platform = platformParam
-            .flatMap(Platform.parse)
-            .orElse(targetTypeParam.flatMap(selectPlatformFromTargetType(_, platforms)))
-            .getOrElse(platforms.max)
-          val artifacts = header.artifacts(artifactName, platform)
-          val summary = Badges.summaryOfLatestVersions(artifacts.map(_.reference), platform)
-          shieldsSvg(s"$artifactName - $platform", summary, color, style, logo, logoWidth)
+        def error(msg: String) =
+          shieldsSvg(artifactName.value, msg, color.orElse(Some("lightgrey")), style, logo, logoWidth)
+
+        val res = projectService.getHeader(ref).map {
+          case None => error("project not found")
+          case Some(header) =>
+            val platforms = header.platforms(artifactName)
+            if platforms.isEmpty then error("no published artifacts")
+            else
+              val platform = platformParam
+                .flatMap(Platform.parse)
+                .orElse(targetTypeParam.flatMap(selectPlatformFromTargetType(_, platforms)))
+                .getOrElse(platforms.max)
+              val artifacts = header.artifacts(artifactName, platform)
+              val summary = Badges.summaryOfLatestVersions(artifacts.map(_.reference), platform)
+              shieldsSvg(s"$artifactName - $platform", summary, color, style, logo, logoWidth)
         }
+        onSuccess(res)(identity)
       }
     }
 
