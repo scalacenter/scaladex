@@ -17,7 +17,6 @@ import scaladex.core.model.UserState
 import scaladex.core.service.GithubClient
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.core.util.Secret
-import scaladex.infra.Codecs.given
 import scaladex.infra.github.GithubModel
 import scaladex.infra.github.GithubModel.{*, given}
 
