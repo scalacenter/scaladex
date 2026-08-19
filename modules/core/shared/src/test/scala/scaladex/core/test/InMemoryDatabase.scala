@@ -128,8 +128,15 @@ class InMemoryDatabase extends SchedulerDatabase:
   override def getDirectDependencies(artifact: Artifact): Future[List[ArtifactDependency.Direct]] =
     Future.successful(Nil)
 
-  override def getReverseDependencies(artifact: Artifact): Future[List[ArtifactDependency.Reverse]] =
+  override def getReverseDependencies(
+      artifact: Artifact,
+      limit: Int,
+      offset: Int
+  ): Future[List[ArtifactDependency.Reverse]] =
     Future.successful(Nil)
+
+  override def countReverseDependencies(artifact: Artifact): Future[Long] =
+    Future.successful(0L)
 
   override def countArtifacts(): Future[Long] =
     Future.successful(allArtifacts.size)

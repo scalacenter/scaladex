@@ -32,7 +32,8 @@ trait WebDatabase:
 
   // artifact dependencies
   def getDirectDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Direct]]
-  def getReverseDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Reverse]]
+  def getReverseDependencies(artifact: Artifact, limit: Int, offset: Int): Future[Seq[ArtifactDependency.Reverse]]
+  def countReverseDependencies(artifact: Artifact): Future[Long]
 
   // projects
   def insertProjectRef(ref: Project.Reference, status: GithubStatus): Future[Boolean]

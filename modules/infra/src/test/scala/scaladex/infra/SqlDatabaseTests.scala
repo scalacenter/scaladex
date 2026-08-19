@@ -135,10 +135,25 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
     for
       _ <- database.insertArtifacts(Seq(Cats.`core_3:2.6.1`, Cats.`kernel_3:2.6.1`))
       _ <- database.insertDependencies(Cats.dependencies)
-      reverseDependencies <- database.getReverseDependencies(Cats.`kernel_3:2.6.1`)
+      reverseDependencies <- database.getReverseDependencies(Cats.`kernel_3:2.6.1`, limit = 100, offset = 0)
     yield
       val sources = reverseDependencies.map(_.source)
       sources should contain theSameElementsAs List(Cats.`core_3:2.6.1`)
+  }
+
+  it("should dedup reverse dependencies but count all of them") {
+    val deps = Seq(
+      ArtifactDependency(Cats.`core_3:2.6.1`.reference, Cats.`laws_3:2.6.1`.reference, Scope("compile")),
+      ArtifactDependency(Cats.`core_3:4`.reference, Cats.`laws_3:2.6.1`.reference, Scope("compile"))
+    )
+    for
+      _ <- database.insertArtifacts(Seq(Cats.`core_3:2.6.1`, Cats.`core_3:4`, Cats.`laws_3:2.6.1`))
+      _ <- database.insertDependencies(deps)
+      reverseDependencies <- database.getReverseDependencies(Cats.`laws_3:2.6.1`, limit = 100, offset = 0)
+      count <- database.countReverseDependencies(Cats.`laws_3:2.6.1`)
+    yield
+      reverseDependencies should have size 1
+      count shouldBe 2L
   }
 
   it("should compute project dependencies") {

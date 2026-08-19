@@ -44,15 +44,6 @@ object ArtifactDependency:
   object Reverse:
     given ordering: Ordering[Reverse] =
       Ordering.by(d => (d.dependency.scope, d.groupIdAndName))
-    def sample(deps: Seq[Reverse], sampleSize: Int): Seq[Reverse] =
-      deps
-        .groupBy(r => (r.source.projectRef, r.source.artifactId))
-        .values
-        .map(_.sortBy(_.source.version))
-        .map(_.head)
-        .toSeq
-        .sorted
-        .take(sampleSize)
   end Reverse
 
   // current values in the database: optional, macro, runtime, compile, provided, test

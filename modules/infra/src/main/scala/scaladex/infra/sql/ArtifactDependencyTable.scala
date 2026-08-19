@@ -64,6 +64,27 @@ object ArtifactDependencyTable:
       targetFields.map(f => s"d.$f")
     )
 
+  // deduped and limited before the artifacts join, so the join runs only for the kept rows
+  val selectReverseDependencyPage: Query[(Artifact.Reference, Long, Long), ArtifactDependency.Reverse] =
+    val depFields = fields.mkString(", ")
+    val outFields = dependencyAndArtifactFields.mkString(", ")
+    Query(
+      s"""|SELECT $outFields
+          |FROM (
+          |  SELECT DISTINCT ON (source_group_id, source_artifact_id) $depFields
+          |  FROM $table
+          |  WHERE target_group_id = ? AND target_artifact_id = ? AND target_version = ?
+          |  ORDER BY source_group_id, source_artifact_id, source_version
+          |  LIMIT ? OFFSET ?
+          |) d
+          |INNER JOIN ${ArtifactTable.table} a
+          |  ON d.source_group_id = a.group_id AND d.source_artifact_id = a.artifact_id AND d.source_version = a.version""".stripMargin
+    )
+  end selectReverseDependencyPage
+
+  val countReverseDependency: Query[Artifact.Reference, Long] =
+    selectRequest1[Artifact.Reference, Long](table, Seq("COUNT(*)"), keys = targetFields)
+
   val computeProjectDependencies: Query[(Project.Reference, Version), ProjectDependency] =
     selectRequest1[(Project.Reference, Version, Project.Reference), ProjectDependency](
       fullJoin,

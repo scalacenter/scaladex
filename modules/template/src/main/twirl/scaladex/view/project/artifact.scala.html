@@ -15,7 +15,8 @@
     binaryVersions: Seq[BinaryVersion],
     params: ArtifactPageParams,
     directDeps: Seq[ArtifactDependency.Direct],
-    reverseDeps: Seq[ArtifactDependency.Reverse]
+    reverseDeps: Seq[ArtifactDependency.Reverse],
+    reverseDependencyCount: Long
 )
 @main(env, title = project.repository.toString, user) {
   <main id="container-project">
@@ -155,13 +156,12 @@
   </div>
 }
 
-@sample = @{ArtifactDependency.Reverse.sample(reverseDeps, 100)}
 @dependentsBox = {
   <div class="dependents box">
-    <h4>@Formats.plural(reverseDeps.size, "Dependent")</h4>
+    <h4>@Formats.plural(reverseDependencyCount, "Dependent")</h4>
     <hr>
     <ul>
-      @for(dep <- sample){
+      @for(dep <- reverseDeps){
         <li>
           <div class="row">
             <div class="col-xs-9">
@@ -174,8 +174,8 @@
           </div>
         </li>
       }
-      @if(reverseDeps.size > 100) {
-        <p>and @{reverseDeps.size - 100} more</p>
+      @if(reverseDependencyCount > 100) {
+        <p>and @{reverseDependencyCount - 100} more</p>
       }
     </ul>
   </div>
