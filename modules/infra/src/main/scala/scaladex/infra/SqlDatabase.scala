@@ -77,8 +77,16 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO], cache
   private val directDependenciesCache: AsyncLoadingCache[Artifact.Reference, Seq[ArtifactDependency.Direct]] =
     buildCache(ref => run(ArtifactDependencyTable.selectDirectDependency.to[Seq](ref)))
 
-  private val reverseDependenciesCache: AsyncLoadingCache[Artifact.Reference, Seq[ArtifactDependency.Reverse]] =
-    buildCache(ref => run(ArtifactDependencyTable.selectReverseDependency.to[Seq](ref)))
+  private val reverseDependenciesCache
+      : AsyncLoadingCache[(Artifact.Reference, Int, Int), Seq[ArtifactDependency.Reverse]] =
+    buildCache {
+      case (ref, limit, offset) =>
+        run(ArtifactDependencyTable.selectReverseDependencyPage.to[Seq]((ref, limit.toLong, offset.toLong)))
+          .map(_.sorted)
+    }
+
+  private val reverseDependencyCountCache: AsyncLoadingCache[Artifact.Reference, Long] =
+    buildCache(ref => run(ArtifactDependencyTable.countReverseDependency.unique(ref)))
 
   def migrate: IO[Unit] = IO(flyway.migrate())
   def dropTables: IO[Unit] = IO(flyway.clean())
@@ -249,8 +257,15 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO], cache
   override def getDirectDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Direct]] =
     directDependenciesCache.get(artifact.reference)
 
-  override def getReverseDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Reverse]] =
-    reverseDependenciesCache.get(artifact.reference)
+  override def getReverseDependencies(
+      artifact: Artifact,
+      limit: Int,
+      offset: Int
+  ): Future[Seq[ArtifactDependency.Reverse]] =
+    reverseDependenciesCache.get((artifact.reference, limit, offset))
+
+  override def countReverseDependencies(artifact: Artifact): Future[Long] =
+    reverseDependencyCountCache.get(artifact.reference)
 
   def countGithubInfo(): Future[Long] =
     run(GithubInfoTable.count.unique)

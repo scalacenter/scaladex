@@ -137,7 +137,8 @@ class ProjectPages(
                   case Some(artifact) =>
                     for
                       directDeps <- database.getDirectDependencies(artifact)
-                      reverseDeps <- database.getReverseDependencies(artifact)
+                      reverseDeps <- database.getReverseDependencies(artifact, limit = 100, offset = 0)
+                      reverseDepCount <- database.countReverseDependencies(artifact)
                     yield
                       val page = html.artifact(
                         env,
@@ -148,7 +149,8 @@ class ProjectPages(
                         binaryVersions,
                         params,
                         directDeps,
-                        reverseDeps
+                        reverseDeps,
+                        reverseDepCount
                       )
                       complete(page)
               yield route
