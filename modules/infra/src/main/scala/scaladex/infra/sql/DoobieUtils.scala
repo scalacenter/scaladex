@@ -16,15 +16,12 @@ object DoobieUtils:
   private given ContextShift[IO] =
     IO.contextShift(ExecutionContext.global)
 
-  def flyway(conf: PostgreSQLConfig): Flyway =
-    val datasource = getHikariDataSource(conf)
-    flyway(datasource)
-
-  def flyway(datasource: HikariDataSource): Flyway =
+  def flyway(datasource: HikariDataSource, cleanDisabled: Boolean): Flyway =
     Flyway
       .configure()
       .dataSource(datasource)
       .locations("migrations", "scaladex/infra/migrations")
+      .cleanDisabled(cleanDisabled)
       .load()
 
   def getHikariDataSource(conf: PostgreSQLConfig): HikariDataSource =
@@ -34,12 +31,14 @@ object DoobieUtils:
     config.setUsername(conf.user)
     config.setPassword(conf.pass.decode)
     config.setMaximumPoolSize(conf.poolSize)
+    if conf.statementTimeout.toMillis > 0 then
+      config.setConnectionInitSql(s"SET statement_timeout = ${conf.statementTimeout.toMillis}")
     new HikariDataSource(config)
   end getHikariDataSource
 
   def transactor(datasource: HikariDataSource): Resource[IO, HikariTransactor[IO]] =
     for
-      ce <- ExecutionContexts.fixedThreadPool[IO](32) // our connect EC
+      ce <- ExecutionContexts.fixedThreadPool[IO](datasource.getMaximumPoolSize) // our connect EC
       be <- Blocker[IO] // our blocking EC
     yield Transactor.fromDataSource[IO](datasource, ce, be)
 

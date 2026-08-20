@@ -31,10 +31,11 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
   override def beforeAll(): Unit =
     given ContextShift[IO] = IO.contextShift(ExecutionContext.global)
     val datasource = DoobieUtils.getHikariDataSource(config.database)
+    val flyway = DoobieUtils.flyway(datasource, cleanDisabled = config.env.isProd)
     val transactor = DoobieUtils.transactor(datasource)
     transactor
       .use { xa =>
-        val database = new SqlDatabase(datasource, xa, config.caching)
+        val database = new SqlDatabase(xa, config.caching)
         val filesystem = FilesystemStorage(config.filesystem)
 
         val projectService = new ProjectService(database, searchEngine)
@@ -44,7 +45,7 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
 
         IO.fromFuture(IO {
           for
-            _ <- Init.run(database, filesystem)
+            _ <- Init.run(flyway, database, filesystem)
             _ <- searchEngine.init(true)
             _ <- artifactService.updateAllLatestVersions().zip(projectDependenciesUpdater.updateAll())
             _ <- searchSync.syncAll()

@@ -33,6 +33,7 @@ import org.apache.pekko.http.scaladsl.*
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.server.*
 import org.apache.pekko.http.scaladsl.server.Directives.*
+import org.flywaydb.core.Flyway
 
 object Server extends LazyLogging:
 
@@ -53,17 +54,19 @@ object Server extends LazyLogging:
 
       val resources =
         val datasourceWeb = DoobieUtils.getHikariDataSource(config.database)
-        val datasourceScheduler = DoobieUtils.getHikariDataSource(config.database)
+        val datasourceScheduler =
+          DoobieUtils.getHikariDataSource(config.database.copy(statementTimeout = Duration.Zero, poolSize = 10))
         for
           webPool <- DoobieUtils.transactor(datasourceWeb)
           schedulerPool <- DoobieUtils.transactor(datasourceScheduler)
           publishPool <- ExecutionContexts.fixedThreadPool[IO](8)
-        yield (webPool, schedulerPool, publishPool, datasourceWeb)
+        yield (webPool, schedulerPool, publishPool, datasourceScheduler)
       resources
         .use {
-          case (webPool, schedulerPool, publishPool, datasourceForFlyway) =>
-            val webDatabase = new SqlDatabase(datasourceForFlyway, webPool, config.caching)
-            val schedulerDatabase = new SqlDatabase(datasourceForFlyway, schedulerPool, config.caching)
+          case (webPool, schedulerPool, publishPool, migrationDatasource) =>
+            val webDatabase = new SqlDatabase(webPool, config.caching)
+            val schedulerDatabase = new SqlDatabase(schedulerPool, config.caching)
+            val flyway = DoobieUtils.flyway(migrationDatasource, cleanDisabled = true)
             val githubClient = config.github.token.map(new GithubClientImpl(_))
             val paths = DataPaths.from(config.filesystem)
             val filesystem = FilesystemStorage(config.filesystem)
@@ -82,7 +85,7 @@ object Server extends LazyLogging:
               new AdminService(config.env, schedulerDatabase, searchEngine, githubClient, mavenCentralService)
 
             for
-              _ <- init(webDatabase, adminService, searchEngine, config.elasticsearch.reset)
+              _ <- init(flyway, adminService, searchEngine, config.elasticsearch.reset)
               routes = configureRoutes(
                 config,
                 searchEngine,
@@ -117,7 +120,7 @@ object Server extends LazyLogging:
         sys.exit(1)
 
   private def init(
-      database: SqlDatabase,
+      flyway: Flyway,
       adminService: AdminService,
       searchEngine: ElasticsearchEngine,
       resetElastic: Boolean
@@ -126,7 +129,7 @@ object Server extends LazyLogging:
   ): IO[Unit] =
     logger.info("Applying flyway migration to database")
     for
-      _ <- database.migrate
+      _ <- IO(flyway.migrate())
       _ = logger.info("Waiting for ElasticSearch to start")
       _ <- IO.fromFuture(IO(searchEngine.init(resetElastic)))
       _ = logger.info("Starting all schedulers")
@@ -193,9 +196,11 @@ object Server extends LazyLogging:
         }
     }
     HttpRequestLogging.logAccess {
-      handleExceptions(exceptionHandler) {
-        handleRejections(RejectionHandler.default) {
-          route
+      withRequestTimeout(config.requestTimeout) {
+        handleExceptions(exceptionHandler) {
+          handleRejections(RejectionHandler.default) {
+            route
+          }
         }
       }
     }

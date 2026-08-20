@@ -33,15 +33,16 @@ trait BaseDatabaseSuite extends IOChecker with BeforeAndAfterEach:
         config.pass.decode
       )
 
-  lazy val database = new SqlDatabase(BaseDatabaseSuite.datasource, transactor, cacheConfig)
+  lazy val database = new SqlDatabase(transactor, cacheConfig)
 
   override def beforeEach(): Unit =
     Await.result(cleanTables(), Duration.Inf)
 
   private def cleanTables(): Future[Unit] =
+    val flyway = DoobieUtils.flyway(BaseDatabaseSuite.datasource, cleanDisabled = false)
     val reset = for
-      _ <- database.dropTables
-      _ <- database.migrate
+      _ <- IO(flyway.clean())
+      _ <- IO(flyway.migrate())
     yield ()
     reset.unsafeToFuture()
 end BaseDatabaseSuite
