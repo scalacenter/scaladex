@@ -10,15 +10,16 @@ import scaladex.core.util.ScalaExtensions.*
 import scaladex.infra.SqlDatabase
 
 import com.typesafe.scalalogging.LazyLogging
+import org.flywaydb.core.Flyway
 
-class Init(database: SqlDatabase, localStorage: Storage)(using ExecutionContext) extends LazyLogging:
+class Init(flyway: Flyway, database: SqlDatabase, localStorage: Storage)(using ExecutionContext) extends LazyLogging:
 
   def run(): Future[Unit] =
     logger.info("Dropping tables")
     for
-      _ <- database.dropTables.unsafeToFuture()
+      _ <- Future(flyway.clean())
       _ = logger.info("Creating tables")
-      _ <- database.migrate.unsafeToFuture()
+      _ <- Future(flyway.migrate())
       _ = logger.info("Inserting all projects from local storage...")
       projectIterator = localStorage.loadAllProjects()
       _ <- projectIterator.foreachSync {
@@ -52,8 +53,8 @@ class Init(database: SqlDatabase, localStorage: Storage)(using ExecutionContext)
 end Init
 
 object Init:
-  def run(database: SqlDatabase, localStorage: Storage)(
+  def run(flyway: Flyway, database: SqlDatabase, localStorage: Storage)(
       using ExecutionContext
   ): Future[Unit] =
-    val init = new Init(database, localStorage)
+    val init = new Init(flyway, database, localStorage)
     init.run()

@@ -1,5 +1,7 @@
 package scaladex.server.config
 
+import scala.concurrent.duration.*
+
 import scaladex.core.model.Env
 import scaladex.infra.config.CacheConfig
 import scaladex.infra.config.ElasticsearchConfig
@@ -16,6 +18,7 @@ case class ServerConfig(
     session: SessionConfig,
     endpoint: String,
     port: Int,
+    requestTimeout: FiniteDuration,
     oAuth2: OAuth2Config,
     database: PostgreSQLConfig,
     elasticsearch: ElasticsearchConfig,
@@ -33,6 +36,8 @@ object ServerConfig:
 
     val endpoint = config.getString("scaladex.server.endpoint")
     val port = config.getInt("scaladex.server.port")
+    val requestTimeout =
+      FiniteDuration(config.getDuration("scaladex.server.request-timeout").toNanos, NANOSECONDS)
     val oauth2 = OAuth2Config.from(config)
     val database = PostgreSQLConfig.from(config).get
     val elasticsearch = ElasticsearchConfig.from(config)
@@ -41,6 +46,18 @@ object ServerConfig:
     val github = GithubConfig.from(config)
     val caching = CacheConfig.from(config)
 
-    ServerConfig(env, session, endpoint, port, oauth2, database, elasticsearch, filesystem, github, caching)
+    ServerConfig(
+      env,
+      session,
+      endpoint,
+      port,
+      requestTimeout,
+      oauth2,
+      database,
+      elasticsearch,
+      filesystem,
+      github,
+      caching
+    )
   end load
 end ServerConfig

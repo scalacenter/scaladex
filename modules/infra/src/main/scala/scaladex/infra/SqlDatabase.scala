@@ -16,13 +16,9 @@ import cats.effect.IO
 import com.github.blemale.scaffeine.AsyncLoadingCache
 import com.github.blemale.scaffeine.Scaffeine
 import com.typesafe.scalalogging.LazyLogging
-import com.zaxxer.hikari.HikariDataSource
 import doobie.implicits.*
 
-class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO], cacheConfig: CacheConfig)
-    extends SchedulerDatabase
-    with LazyLogging:
-  private val flyway = DoobieUtils.flyway(datasource)
+class SqlDatabase(xa: doobie.Transactor[IO], cacheConfig: CacheConfig) extends SchedulerDatabase with LazyLogging:
 
   private def buildCache[K, V](loader: K => Future[V]): AsyncLoadingCache[K, V] =
     Scaffeine()
@@ -87,9 +83,6 @@ class SqlDatabase(datasource: HikariDataSource, xa: doobie.Transactor[IO], cache
 
   private val reverseDependencyCountCache: AsyncLoadingCache[Artifact.Reference, Long] =
     buildCache(ref => run(ArtifactDependencyTable.countReverseDependency.unique(ref)))
-
-  def migrate: IO[Unit] = IO(flyway.migrate())
-  def dropTables: IO[Unit] = IO(flyway.clean())
 
   override def insertArtifact(artifact: Artifact): Future[Boolean] =
     run(ArtifactTable.insertIfNotExist.run(artifact)).map { inserted =>

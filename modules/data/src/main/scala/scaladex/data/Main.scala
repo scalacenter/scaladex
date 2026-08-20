@@ -54,14 +54,15 @@ object Main extends LazyLogging:
       DoobieUtils
         .transactor(datasource)
         .use { xa =>
-          val database = new SqlDatabase(datasource, xa, config.caching)
+          val database = new SqlDatabase(xa, config.caching)
           IO.fromFuture(IO(f(database)))
         }
         .unsafeRunSync()
     end usingDatabase
 
     def init(): Unit =
-      usingDatabase(database => Init.run(database, localStorage))
+      val flyway = DoobieUtils.flyway(datasource, cleanDisabled = config.env.isProd)
+      usingDatabase(database => Init.run(flyway, database, localStorage))
 
     def subIndex(): Unit =
       val storage = FilesystemStorage(config.filesystem)
