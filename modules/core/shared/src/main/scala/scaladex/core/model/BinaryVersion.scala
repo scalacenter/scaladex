@@ -28,6 +28,7 @@ final case class BinaryVersion(platform: Platform, language: Language):
     case Jvm => language.toString
     case p: SbtPlugin => p.toString
     case p: MillPlugin => p.toString
+    case CompilerPlugin => s"CompilerPlugin ($language)"
     case _ => s"$platform ($language)"
 end BinaryVersion
 
