@@ -17,20 +17,34 @@ object Deployment {
     deployDevIndex := indexTask(data, devUserName, devHostname, None).value
   )
 
-  def deployTask(server: Project, userName: String, hostname: String, jumpHost: Option[String]): Def.Initialize[Task[Unit]] = Def.task {
+  def deployTask(
+      server: Project,
+      userName: String,
+      hostname: String,
+      jumpHost: Option[String]
+  ): Def.Initialize[Task[Unit]] = Def.task {
     val serverZip = (server / Universal / packageBin).value.toPath
     val deployment = deploymentTask(userName, hostname, jumpHost).value
     deployment.deploy(serverZip)
   }
 
-  def indexTask(data: Project, userName: String, hostname: String, jumpHost: Option[String]): Def.Initialize[Task[Unit]] =
+  def indexTask(
+      data: Project,
+      userName: String,
+      hostname: String,
+      jumpHost: Option[String]
+  ): Def.Initialize[Task[Unit]] =
     Def.task {
       val dataZip = (data / Universal / packageBin).value.toPath
       val deployment = deploymentTask(userName, hostname, jumpHost).value
       deployment.index(dataZip)
     }
 
-  private def deploymentTask(userName: String, hostname: String, jumpHost: Option[String]): Def.Initialize[Task[Deployment]] =
+  private def deploymentTask(
+      userName: String,
+      hostname: String,
+      jumpHost: Option[String]
+  ): Def.Initialize[Task[Deployment]] =
     Def.task {
       new Deployment(
         rootFolder = (ThisBuild / baseDirectory).value,
@@ -117,21 +131,27 @@ class Deployment(
 
     val serverScriptFileName = serverScript.getFileName
     val uri = userName + "@" + hostname
-    
+
     jumpHost match {
       case Some(jump) =>
         // Two-phase deployment: first to jump host, then to target
-        Process(Seq("rsync", "-av", "--progress", serverZip.toString, s"$jump:$serverZipFileName")) ! logger
-        Process(Seq("rsync", "-av", "--progress", serverScript.toString, s"$jump:$serverScriptFileName")) ! logger
-        
-        // From jump host: rsync to target, then execute script
+        Process(Seq("ssh", jump, s"mkdir -p $jumpStagingDir")) ! logger
+        Process(
+          Seq("rsync", "-av", "--progress", serverZip.toString, s"$jump:$jumpStagingDir/$serverZipFileName")
+        ) ! logger
+        Process(
+          Seq("rsync", "-av", "--progress", serverScript.toString, s"$jump:$jumpStagingDir/$serverScriptFileName")
+        ) ! logger
+
+        // From jump host: rsync staged files to target, execute the script, then remove the staging directory
         val remoteCommands = s"""
-          |rsync -av --progress ~/$serverZipFileName $uri:$serverZipFileName
-          |rsync -av --progress ~/$serverScriptFileName $uri:$serverScriptFileName
-          |ssh $uri ./$serverScriptFileName
-          |""".stripMargin
+                                |rsync -av --progress ~/$jumpStagingDir/$serverZipFileName $uri:$serverZipFileName
+                                |rsync -av --progress ~/$jumpStagingDir/$serverScriptFileName $uri:$serverScriptFileName
+                                |ssh $uri ./$serverScriptFileName
+                                |rm -rf ~/$jumpStagingDir
+                                |""".stripMargin
         Process(Seq("ssh", jump, remoteCommands)) ! logger
-        
+
       case None =>
         rsync(serverZip)
         rsync(serverScript)
@@ -210,17 +230,20 @@ class Deployment(
     val fileName = file.getFileName
     Process(Seq("rsync", "-av", "--progress", file.toString, s"$uri:$fileName")) ! logger
   }
-  
+
   private def rsyncViaJumpHost(file: Path, jump: String): Unit = {
     val uri = userName + "@" + hostname
     val fileName = file.getFileName
     // First: local -> jump host
-    Process(Seq("rsync", "-av", "--progress", file.toString, s"$jump:$fileName")) ! logger
-    // Second: jump host -> target (and cleanup)
-    val remoteCommands = s"rsync -av --progress ~/$fileName $uri:$fileName && rm -f ~/$fileName"
+    Process(Seq("ssh", jump, s"mkdir -p $jumpStagingDir")) ! logger
+    Process(Seq("rsync", "-av", "--progress", file.toString, s"$jump:$jumpStagingDir/$fileName")) ! logger
+    val remoteCommands =
+      s"rsync -av --progress ~/$jumpStagingDir/$fileName $uri:$fileName && rm -f ~/$jumpStagingDir/$fileName"
     Process(Seq("ssh", jump, remoteCommands)) ! logger
   }
 
   private val executablePermissions =
     PosixFilePermissions.fromString("rwxr-xr-x")
+
+  private val jumpStagingDir = "scaladex-prod-deploy"
 }
