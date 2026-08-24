@@ -51,23 +51,18 @@ class MavenCentralClientImpl()(using system: ActorSystem)
       HttpRequest(uri = uri)
 
     for
-      responseFuture <- queueRequest(request)
-      page <- responseFuture.entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String)
-    yield
-      val artifactIds = JsoupUtils.listDirectories(uri, page)
-      artifactIds.map(Artifact.ArtifactId.apply)
+      response <- queueRequest(request)
+      page <- response.entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String)
+    yield listDirectories(uri, response.status, page).map(Artifact.ArtifactId.apply)
   end getAllArtifactIds
 
   def getAllVersions(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Version]] =
     val uri = s"$baseUri/${groupId.mavenUrl}/${artifactId.value}/"
     val request = HttpRequest(uri = uri)
-
     val future = for
-      responseFuture <- queueRequest(request)
-      page <- Unmarshaller.stringUnmarshaller(responseFuture.entity)
-      versions = JsoupUtils.listDirectories(uri, page)
-      versionParsed = versions.map(Version.apply)
-    yield versionParsed
+      response <- queueRequest(request)
+      page <- Unmarshaller.stringUnmarshaller(response.entity)
+    yield listDirectories(uri, response.status, page).map(Version.apply)
     future.recoverWith {
       case NonFatal(exception) =>
         logger.warn(s"failed to retrieve versions from $uri because ${exception.getMessage}")
@@ -98,6 +93,18 @@ class MavenCentralClientImpl()(using system: ActorSystem)
       case _ =>
         logger.warn(s"Cannot get $uri: ${response.status}")
         Future.successful(None)
+
+  private def listDirectories(uri: String, status: model.StatusCode, page: String): Seq[String] =
+    if status != StatusCodes.OK then
+      logger.warn(s"Cannot list $uri: $status")
+      Seq.empty
+    else
+      val directories = JsoupUtils.listDirectories(uri, page)
+      if directories.isEmpty then logger.warn(s"No directories parsed from $uri (HTTP $status): ${preview(page)}")
+      directories
+
+  private def preview(page: String): String =
+    page.iterator.take(200).mkString.replaceAll("\\s+", " ")
 
   private def getPomUri(ref: Artifact.Reference): String =
     val groupIdUrl: String = ref.groupId.value.replace('.', '/')

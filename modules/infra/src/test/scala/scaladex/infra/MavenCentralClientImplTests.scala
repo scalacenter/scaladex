@@ -17,6 +17,11 @@ class MavenCentralClientImplTests extends AsyncFunSpec with Matchers:
   val artifactId: ArtifactId = ArtifactId("sbt-scalafix_2.12_1.0")
   val version: Version = Version("0.9.23")
 
+  it("retrieve versions for org.vastblue:uni_3") {
+    for res <- client.getAllVersions(GroupId("org.vastblue"), ArtifactId("uni_3"))
+    yield res should contain(Version("0.18.0"))
+  }
+
   it(s"retrieve artifactIds for ${groupId.value}") {
     for res <- client.getAllArtifactIds(groupId)
     yield res should contain(artifactId)
