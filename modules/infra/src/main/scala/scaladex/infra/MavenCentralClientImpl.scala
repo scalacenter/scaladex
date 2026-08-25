@@ -26,7 +26,6 @@ import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import org.apache.pekko.stream.scaladsl.Flow
-import org.apache.pekko.util.ByteString
 
 class MavenCentralClientImpl()(using system: ActorSystem)
     extends CommonAkkaHttpClient
@@ -52,8 +51,8 @@ class MavenCentralClientImpl()(using system: ActorSystem)
 
     for
       response <- queueRequest(request)
-      page <- response.entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String)
-    yield listDirectories(uri, response.status, page).map(Artifact.ArtifactId.apply)
+      directories <- listDirectories(uri, response)
+    yield directories.map(Artifact.ArtifactId.apply)
   end getAllArtifactIds
 
   def getAllVersions(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Version]] =
@@ -61,8 +60,8 @@ class MavenCentralClientImpl()(using system: ActorSystem)
     val request = HttpRequest(uri = uri)
     val future = for
       response <- queueRequest(request)
-      page <- Unmarshaller.stringUnmarshaller(response.entity)
-    yield listDirectories(uri, response.status, page).map(Version.apply)
+      directories <- listDirectories(uri, response)
+    yield directories.map(Version.apply)
     future.recoverWith {
       case NonFatal(exception) =>
         logger.warn(s"failed to retrieve versions from $uri because ${exception.getMessage}")
@@ -94,14 +93,22 @@ class MavenCentralClientImpl()(using system: ActorSystem)
         logger.warn(s"Cannot get $uri: ${response.status}")
         Future.successful(None)
 
-  private def listDirectories(uri: String, status: model.StatusCode, page: String): Seq[String] =
-    if status != StatusCodes.OK then
-      logger.warn(s"Cannot list $uri: $status")
-      Seq.empty
+  private def listDirectories(uri: String, response: HttpResponse) =
+    if response.status != StatusCodes.OK
+    then
+      logger.warn(s"Cannot list $uri: ${response.status}")
+      response.discardEntityBytes()
+      Future.successful(Seq.empty)
     else
-      val directories = JsoupUtils.listDirectories(uri, page)
-      if directories.isEmpty then logger.warn(s"No directories parsed from $uri (HTTP $status): ${preview(page)}")
-      directories
+      Unmarshaller
+        .stringUnmarshaller(response.entity)
+        .map(page =>
+          val directories = JsoupUtils.listDirectories(uri, page)
+          if directories.isEmpty then
+            logger.warn(s"No directories parsed from $uri (HTTP ${response.status}): ${preview(page)}")
+          directories
+        )
+  end listDirectories
 
   private def preview(page: String): String =
     page.iterator.take(200).mkString.replaceAll("\\s+", " ")
