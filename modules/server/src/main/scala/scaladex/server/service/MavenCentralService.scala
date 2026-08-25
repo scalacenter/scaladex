@@ -54,8 +54,10 @@ class MavenCentralService(
     for
       versions <- mavenCentralClient.getAllVersions(groupId, artifactId)
       missingVersions = versions.map(Artifact.Reference(groupId, artifactId, _)).filterNot(knownRefs)
-      _ = if missingVersions.nonEmpty then
-        logger.info(s"${missingVersions.size} artifacts are missing for ${groupId.value}:${artifactId.value}")
+      _ =
+        if missingVersions.nonEmpty then
+          logger.info(s"${missingVersions.size} artifacts are missing for ${groupId.value}:${artifactId.value}")
+        else if versions.isEmpty then logger.warn(s"No versions listed for ${groupId.value}:${artifactId.value}")
       missingPomFiles <- missingVersions.mapSync(ref => mavenCentralClient.getPomFile(ref).map(_.map(ref -> _)))
       publishResult <- missingPomFiles.flatten.mapSync {
         case (mavenRef, (pomFile, creationDate)) =>
@@ -94,14 +96,27 @@ class MavenCentralService(
       scalaArtifactIds = artifactIds.filter(artifact =>
         artifactNameOpt.forall(_ == artifact.name) && artifact.isScala && artifact.binaryVersion.isValid
       )
+      _ = logger.info(
+        s"Looking up ${groupId.value}${artifactNameOpt.fold("")(name => s":${name.value}")}: " +
+          s"${knownRefs.size} known refs, ${artifactIds.size} Maven artifact IDs, " +
+          s"${scalaArtifactIds.size} Scala artifacts to check"
+      )
+      _ = if artifactIds.nonEmpty && scalaArtifactIds.isEmpty then
+        logger.warn(
+          s"All artifact IDs for ${groupId.value} were filtered out: ${artifactIds.map(_.value).mkString(", ")}"
+        )
       result <- processPages(scalaArtifactIds, artifactIdPageSize) { batch =>
         batch.mapSync(id => findAndIndexMissingArtifacts(groupId, id, knownRefs)).map(_.sum)
       }
     yield result
 
   def syncOne(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): Future[String] =
+    val label = artifactNameOpt.fold(groupId.value)(name => s"${groupId.value}:${name.value}")
+    logger.info(s"Starting missing-artifact sync for $label")
     for result <- findAndIndexMissingArtifacts(groupId, artifactNameOpt)
-    yield s"Inserted $result poms"
+    yield
+      logger.info(s"Finished missing-artifact sync for $label: inserted $result poms")
+      s"Inserted $result poms"
 
   /** Load known refs for a group in pages to keep each DB query small. */
   private def loadKnownRefs(groupId: GroupId): Future[Set[Artifact.Reference]] =
