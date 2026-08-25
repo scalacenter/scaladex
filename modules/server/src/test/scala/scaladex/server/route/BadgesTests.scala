@@ -1,11 +1,11 @@
 package scaladex.server.route
 
 import scala.concurrent.Await
-import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 import scaladex.core.model.*
 import scaladex.core.test.Values.*
+import scaladex.core.util.ScalaExtensions.*
 import scaladex.server.route.Badges.*
 
 import org.apache.pekko.http.scaladsl.model.StatusCodes
@@ -21,7 +21,7 @@ class BadgesTests extends ControllerBaseSuite with BeforeAndAfterAll:
   val route: Route = new Badges(projectService).route
 
   override protected def beforeAll(): Unit =
-    val f = Future.traverse(Cats.allArtifacts)(artifactService.insertArtifact(_, Seq.empty))
+    val f = Cats.allArtifacts.mapIO(artifactService.insertArtifact(_, Seq.empty)).unsafeToFuture()
     Await.result(f, Duration.Inf)
 
   it("fallback to JVM artifacts") {

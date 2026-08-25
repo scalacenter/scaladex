@@ -1,7 +1,6 @@
 package scaladex.server.service
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
@@ -11,12 +10,16 @@ import scaladex.core.service.SchedulerDatabase
 import scaladex.core.service.SearchEngine
 import scaladex.core.util.ScalaExtensions.*
 
+import cats.effect.ContextShift
+import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 
 class SearchSynchronizer(database: SchedulerDatabase, service: ProjectService, searchEngine: SearchEngine)(
     using ExecutionContext
 ) extends LazyLogging:
-  def syncAll(): Future[String] =
+  private given ContextShift[IO] = IO.contextShift(summon[ExecutionContext])
+
+  def syncAll(): IO[String] =
     for
       allProjects <- database.getAllProjects()
       allProjectsAndStatus = allProjects.map(p => (p, p.githubStatus))
@@ -34,14 +37,14 @@ class SearchSynchronizer(database: SchedulerDatabase, service: ProjectService, s
       _ = logger.info(s"Deleting ${projectsToDelete.size} projects from search engine")
       _ = logger.info(s"Syncing ${projectsToSync.size} projects in search engine")
 
-      _ <- projectsToDelete.mapSync(searchEngine.delete)
-      _ <- projectsToSync.mapSync { project =>
+      _ <- projectsToDelete.mapIO(ref => searchEngine.delete(ref).toIO)
+      _ <- projectsToSync.mapIO { project =>
         val formerReferences = movedProjects.getOrElse(project.reference, Seq.empty)
         insertDocument(project, formerReferences)
       }
     yield s"Updated ${projectsToSync.size} projects and removed ${projectsToDelete.size} projects"
 
-  def syncProject(ref: Project.Reference): Future[Unit] =
+  def syncProject(ref: Project.Reference): IO[Unit] =
     for
       projectOpt <- database.getProject(ref)
       formerReferences <- database.getFormerReferences(ref)
@@ -49,15 +52,15 @@ class SearchSynchronizer(database: SchedulerDatabase, service: ProjectService, s
         case Some(project) => insertDocument(project, formerReferences)
         case None =>
           logger.error(s"Cannot update project document of $ref because: project not found")
-          Future.successful(())
+          IO.unit
     yield ()
 
-  private def insertDocument(project: Project, formerReferences: Seq[Project.Reference]): Future[Unit] =
+  private def insertDocument(project: Project, formerReferences: Seq[Project.Reference]): IO[Unit] =
     for
       header <- service.getHeader(project)
       dependents <- database.countProjectDependents(project.reference)
       document = ProjectDocument(project, header, dependents, formerReferences)
-      _ <- searchEngine.insert(document)
-      _ <- formerReferences.mapSync(searchEngine.delete)
+      _ <- searchEngine.insert(document).toIO
+      _ <- formerReferences.mapIO(ref => searchEngine.delete(ref).toIO)
     yield ()
 end SearchSynchronizer

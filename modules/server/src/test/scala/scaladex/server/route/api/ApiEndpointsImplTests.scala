@@ -23,10 +23,10 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach:
 
   override protected def beforeAll(): Unit =
     val insertions = for
-      _ <- Cats.allArtifacts.mapSync(artifactService.insertArtifact(_, Seq.empty))
+      _ <- Cats.allArtifacts.mapIO(artifactService.insertArtifact(_, Seq.empty))
       _ <- searchSync.syncAll()
     yield ()
-    Await.result(insertions, Duration.Inf)
+    Await.result(insertions.unsafeToFuture(), Duration.Inf)
 
   given [T: JsonCodec]: FromEntityUnmarshaller[T] =
     Unmarshaller.stringUnmarshaller

@@ -4,18 +4,22 @@ import java.util.UUID
 import java.util.concurrent.Executors
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.language.implicitConversions
 
 import scaladex.core.model.*
 import scaladex.core.model.ArtifactDependency.Scope
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.core.util.Secret
 
+import cats.effect.IO
 import org.scalatest.funspec.AsyncFunSpec
 import org.scalatest.matchers.should.Matchers
 
 class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers:
   given ec: ExecutionContext = ExecutionContext.fromExecutorService(Executors.newFixedThreadPool(1))
   override def executionContext: ExecutionContext = ec
+  given [A]: Conversion[IO[A], Future[A]] = _.unsafeToFuture()
 
   import scaladex.core.test.Values.*
 
@@ -194,7 +198,7 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       _ <- database.insertProjectRef(PlayJsonExtra.reference, unknown)
       _ <- database.insertArtifact(PlayJsonExtra.artifact)
       creationDates <- database.computeProjectsCreationDates()
-      _ <- creationDates.mapSync { case (creationDate, ref) => database.updateProjectCreationDate(ref, creationDate) }
+      _ <- creationDates.mapIO { case (creationDate, ref) => database.updateProjectCreationDate(ref, creationDate) }
       projects <- database.getAllProjects()
     yield
       val creationDates = projects.map(p => p.reference -> p.creationDate.get)

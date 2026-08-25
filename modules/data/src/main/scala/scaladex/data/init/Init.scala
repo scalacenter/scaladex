@@ -1,7 +1,4 @@
 package scaladex.data.init
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-
 import scaladex.core.model.Artifact
 import scaladex.core.model.ArtifactDependency
 import scaladex.core.model.Project
@@ -9,20 +6,21 @@ import scaladex.core.service.Storage
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.infra.SqlDatabase
 
+import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import org.flywaydb.core.Flyway
 
-class Init(flyway: Flyway, database: SqlDatabase, localStorage: Storage)(using ExecutionContext) extends LazyLogging:
+class Init(flyway: Flyway, database: SqlDatabase, localStorage: Storage) extends LazyLogging:
 
-  def run(): Future[Unit] =
+  def run(): IO[Unit] =
     logger.info("Dropping tables")
     for
-      _ <- Future(flyway.clean())
+      _ <- IO(flyway.clean())
       _ = logger.info("Creating tables")
-      _ <- Future(flyway.migrate())
+      _ <- IO(flyway.migrate())
       _ = logger.info("Inserting all projects from local storage...")
       projectIterator = localStorage.loadAllProjects()
-      _ <- projectIterator.foreachSync {
+      _ <- projectIterator.foreachIO {
         case (project, artifacts, dependencies) => insertProject(project, artifacts, dependencies)
       }
       // counting what have been inserted
@@ -42,7 +40,7 @@ class Init(flyway: Flyway, database: SqlDatabase, localStorage: Storage)(using E
       project: Project,
       artifacts: Seq[Artifact],
       dependencies: Seq[ArtifactDependency]
-  ): Future[Unit] =
+  ): IO[Unit] =
     logger.info(s"Inserting project ${project.reference}")
     for
       _ <- database.insertProject(project)
@@ -53,8 +51,6 @@ class Init(flyway: Flyway, database: SqlDatabase, localStorage: Storage)(using E
 end Init
 
 object Init:
-  def run(flyway: Flyway, database: SqlDatabase, localStorage: Storage)(
-      using ExecutionContext
-  ): Future[Unit] =
+  def run(flyway: Flyway, database: SqlDatabase, localStorage: Storage): IO[Unit] =
     val init = new Init(flyway, database, localStorage)
     init.run()

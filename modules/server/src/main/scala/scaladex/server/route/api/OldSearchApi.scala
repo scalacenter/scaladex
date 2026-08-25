@@ -1,7 +1,6 @@
 package scaladex.server.route.api
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 import scaladex.core.model.*
 import scaladex.core.model.search.PageParams
@@ -9,6 +8,7 @@ import scaladex.core.model.search.ProjectDocument
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
 
+import cats.effect.IO
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
 import io.circe.*
 import io.circe.generic.semiauto
@@ -155,7 +155,7 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(using Exec
                     sbtVersion
                   )
                   complete {
-                    getArtifactOptions(reference, binaryVersion, artifact)
+                    getArtifactOptions(reference, binaryVersion, artifact).unsafeToFuture()
                   }
               }
             }
@@ -167,7 +167,7 @@ class OldSearchApi(searchEngine: SearchEngine, database: WebDatabase)(using Exec
       projectRef: Project.Reference,
       binaryVersion: Option[BinaryVersion],
       artifact: Option[String]
-  ): Future[Option[OldSearchApi.ArtifactOptions]] =
+  ): IO[Option[OldSearchApi.ArtifactOptions]] =
     val selection =
       new ArtifactSelection(binaryVersion = binaryVersion, artifactNames = artifact.map(Artifact.Name.apply))
     for

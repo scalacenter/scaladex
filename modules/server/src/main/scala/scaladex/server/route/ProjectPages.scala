@@ -5,7 +5,6 @@ import java.util.regex.Pattern
 
 import scala.collection.SortedMap
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
@@ -22,6 +21,7 @@ import scaladex.view.html.forbidden
 import scaladex.view.html.notfound
 import scaladex.view.project.html
 
+import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.http.scaladsl.model.*
 import org.apache.pekko.http.scaladsl.model.Uri.*
@@ -133,7 +133,7 @@ class ProjectPages(
                   .flatMap(bv => artifacts.find(_.binaryVersion == bv))
                 route <- selectedArtifact match
                   case None =>
-                    Future.successful(complete(StatusCodes.NotFound, notfound(env, user)))
+                    IO.pure(complete(StatusCodes.NotFound, notfound(env, user)))
                   case Some(artifact) =>
                     for
                       directDeps <- database.getDirectDependencies(artifact)
@@ -207,7 +207,7 @@ class ProjectPages(
               _ <- searchSynchronizer.syncProject(projectRef)
             yield ()
             val projectUri = Uri((Path.Empty / projectRef.organization.value / projectRef.repository.value).toString)
-            onComplete(updateF) {
+            updateF.onCompleteIO {
               case Success(()) => redirect(projectUri, StatusCodes.SeeOther)
               case Failure(e) =>
                 logger.error(s"Cannot save settings of project $projectRef", e)
@@ -241,23 +241,23 @@ class ProjectPages(
     )
 
   private def getProjectOrRedirect(ref: Project.Reference, user: Option[UserState])(
-      f: Project => Future[Route]
+      f: Project => IO[Route]
   ): Route =
     extractUri { uri =>
-      val future = database.getProject(ref).flatMap {
+      val io = database.getProject(ref).flatMap {
         case Some(project) if project.githubStatus.isMoved =>
           val destination = project.githubStatus.asInstanceOf[GithubStatus.Moved].destination
           val redirectUri = uri.toString.replaceFirst(
             Pattern.quote(ref.toString),
             Matcher.quoteReplacement(destination.toString)
           )
-          Future.successful(redirect(redirectUri, StatusCodes.MovedPermanently))
+          IO.pure(redirect(redirectUri, StatusCodes.MovedPermanently))
         case Some(project) => f(project)
         case None =>
           logger.warn(s"Project $ref not found")
-          Future.successful(complete(StatusCodes.NotFound, notfound(env, user)))
+          IO.pure(complete(StatusCodes.NotFound, notfound(env, user)))
       }
-      onSuccess(future)(identity)
+      io.onSuccessIO(identity)
     }
 
   private val artifactsParams: Directive1[ArtifactsPageParams] =
@@ -300,7 +300,7 @@ class ProjectPages(
         directDependencies <-
           header
             .map(h => database.getProjectDependencies(ref, h.latestVersion))
-            .getOrElse(Future.successful(Seq.empty))
+            .getOrElse(IO.pure(Seq.empty))
         reverseDependencies <- database.getProjectDependents(ref)
       yield
         val groupedDirectDependencies = directDependencies

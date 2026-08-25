@@ -36,8 +36,10 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach:
 
     request ~> publishApi.routes ~> check {
       status shouldBe StatusCodes.Created
-      for artifact <- database.getArtifact(Cats.`core_3:2.6.1`.reference)
-      yield artifact should contain(Cats.`core_3:2.6.1`)
+      database
+        .getArtifact(Cats.`core_3:2.6.1`.reference)
+        .map(artifact => artifact should contain(Cats.`core_3:2.6.1`))
+        .unsafeToFuture()
     }
   }
 
@@ -50,8 +52,10 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach:
 
     request ~> publishApi.routes ~> check {
       status shouldBe StatusCodes.Created
-      for artifacts <- database.getArtifact(Cats.`core_2.13:2.5.0`.reference)
-      yield artifacts should contain(Cats.`core_2.13:2.5.0`)
+      database
+        .getArtifact(Cats.`core_2.13:2.5.0`.reference)
+        .map(artifacts => artifacts should contain(Cats.`core_2.13:2.5.0`))
+        .unsafeToFuture()
     }
   }
 
@@ -64,8 +68,10 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach:
 
     request ~> publishApi.routes ~> check {
       status shouldBe StatusCodes.Created
-      for artifacts <- database.getArtifact(Cats.`core_sjs1_3:2.6.1`.reference)
-      yield artifacts should contain(Cats.`core_sjs1_3:2.6.1`)
+      database
+        .getArtifact(Cats.`core_sjs1_3:2.6.1`.reference)
+        .map(artifacts => artifacts should contain(Cats.`core_sjs1_3:2.6.1`))
+        .unsafeToFuture()
     }
   }
 
@@ -78,8 +84,10 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach:
 
     request ~> publishApi.routes ~> check {
       // status shouldBe StatusCodes.Forbidden
-      for artifacts <- database.getArtifact(Scalafix.artifact.reference)
-      yield artifacts shouldBe empty
+      database
+        .getArtifact(Scalafix.artifact.reference)
+        .map(artifacts => artifacts shouldBe empty)
+        .unsafeToFuture()
     }
   }
 
@@ -90,8 +98,10 @@ class PublishApiTests extends ControllerBaseSuite with BeforeAndAfterEach:
     val entity = HttpEntity.fromPath(ContentTypes.`application/octet-stream`, pomFile)
     val request = Put(s"/publish?created=$creationDate&path=$pomFile", entity).addCredentials(admin)
     request ~> publishApi.routes ~> check {
-      for artifacts <- database.getProjectArtifactRefs(SbtCrossProject.reference, stableOnly = false)
-      yield artifacts should contain theSameElementsAs Seq(SbtCrossProject.artifactRef)
+      database
+        .getProjectArtifactRefs(SbtCrossProject.reference, stableOnly = false)
+        .map(artifacts => artifacts should contain theSameElementsAs Seq(SbtCrossProject.artifactRef))
+        .unsafeToFuture()
     }
   }
 end PublishApiTests

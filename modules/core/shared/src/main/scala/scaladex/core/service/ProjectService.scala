@@ -1,24 +1,29 @@
 package scaladex.core.service
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 import scaladex.core.model.*
 import scaladex.core.model.search.SearchParams
+import scaladex.core.util.ScalaExtensions.*
+
+import cats.effect.ContextShift
+import cats.effect.IO
 
 class ProjectService(database: WebDatabase, searchEngine: SearchEngine)(using ExecutionContext):
-  def getProjects(languages: Seq[Language], platforms: Seq[Platform]): Future[Seq[Project.Reference]] =
-    val searchParams = SearchParams(languages = languages, platforms = platforms)
-    searchEngine.findRefs(searchParams)
+  private given ContextShift[IO] = IO.contextShift(summon[ExecutionContext])
 
-  def getProject(ref: Project.Reference): Future[Option[Project]] = database.getProject(ref)
+  def getProjects(languages: Seq[Language], platforms: Seq[Platform]): IO[Seq[Project.Reference]] =
+    val searchParams = SearchParams(languages = languages, platforms = platforms)
+    searchEngine.findRefs(searchParams).toIO
+
+  def getProject(ref: Project.Reference): IO[Option[Project]] = database.getProject(ref)
 
   def getVersions(
       ref: Project.Reference,
       binaryVersions: Seq[BinaryVersion],
       artifactNames: Seq[Artifact.Name],
       stableOnly: Boolean
-  ): Future[Seq[Version]] =
+  ): IO[Seq[Version]] =
     for artifacts <- getArtifactRefs(ref, binaryVersions.toSet, artifactNames.toSet, stableOnly = stableOnly)
     yield artifacts
       .groupBy(_.version)
@@ -31,13 +36,13 @@ class ProjectService(database: WebDatabase, searchEngine: SearchEngine)(using Ex
       .toSeq
       .sorted(Ordering[Version].reverse)
 
-  def getLatestProjectVersion(ref: Project.Reference): Future[Seq[Artifact.Reference]] =
+  def getLatestProjectVersion(ref: Project.Reference): IO[Seq[Artifact.Reference]] =
     getHeader(ref).flatMap {
-      case None => Future.successful(Seq.empty)
+      case None => IO.pure(Seq.empty)
       case Some(header) => getProjectVersion(ref, header.latestVersion)
     }
 
-  def getProjectVersion(ref: Project.Reference, version: Version): Future[Seq[Artifact.Reference]] =
+  def getProjectVersion(ref: Project.Reference, version: Version): IO[Seq[Artifact.Reference]] =
     database.getProjectArtifactRefs(ref, version)
 
   def getArtifactRefs(
@@ -45,26 +50,26 @@ class ProjectService(database: WebDatabase, searchEngine: SearchEngine)(using Ex
       binaryVersion: Option[BinaryVersion],
       artifactName: Option[Artifact.Name],
       stableOnly: Boolean
-  ): Future[Seq[Artifact.Reference]] = getArtifactRefs(ref, binaryVersion.toSet, artifactName.toSet, stableOnly)
+  ): IO[Seq[Artifact.Reference]] = getArtifactRefs(ref, binaryVersion.toSet, artifactName.toSet, stableOnly)
 
   private def getArtifactRefs(
       ref: Project.Reference,
       binaryVersions: Set[BinaryVersion],
       artifactNames: Set[Artifact.Name],
       stableOnly: Boolean
-  ): Future[Seq[Artifact.Reference]] =
+  ): IO[Seq[Artifact.Reference]] =
     for artifacts <- database.getProjectArtifactRefs(ref, stableOnly) yield artifacts.filter { a =>
       (binaryVersions.isEmpty || binaryVersions.contains(a.binaryVersion)) &&
       (artifactNames.isEmpty || artifactNames.contains(a.name))
     }
 
-  def getHeader(ref: Project.Reference): Future[Option[ProjectHeader]] =
+  def getHeader(ref: Project.Reference): IO[Option[ProjectHeader]] =
     database.getProject(ref).flatMap {
-      case None => Future.successful(None)
+      case None => IO.pure(None)
       case Some(p) => getHeader(p)
     }
 
-  def getHeader(project: Project): Future[Option[ProjectHeader]] =
+  def getHeader(project: Project): IO[Option[ProjectHeader]] =
     val ref = project.reference
     for latestArtifacts <- database.getProjectLatestArtifacts(ref)
     yield ProjectHeader(

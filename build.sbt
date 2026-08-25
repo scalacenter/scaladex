@@ -201,7 +201,8 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
       "org.jsoup" % "jsoup" % "1.23.1",
       "io.circe" %%% "circe-core" % V.circe,
       "io.circe" %%% "circe-generic" % V.circe,
-      "io.circe" %%% "circe-parser" % V.circe
+      "io.circe" %%% "circe-parser" % V.circe,
+      "org.typelevel" %%% "cats-effect" % V.catsEffect
     )
   )
 
@@ -246,6 +247,7 @@ lazy val loadtest = project
   )
 
 lazy val V = new {
+  val catsEffect = "2.5.5"
   val doobie = "0.13.4"
   val pekko = "1.1.5"
   val pekkoHttp = "1.4.0"

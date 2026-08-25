@@ -3,7 +3,6 @@ package scaladex.server.route.api
 import java.time.Instant
 
 import scala.collection.concurrent.TrieMap
-import scala.concurrent.ExecutionContext
 
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubAuth
@@ -20,7 +19,7 @@ import org.apache.pekko.http.scaladsl.server.Directive1
 import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.Route
 
-class PublishApi(githubAuth: GithubAuth, publishProcess: PublishProcess)(using ExecutionContext) extends LazyLogging:
+class PublishApi(githubAuth: GithubAuth, publishProcess: PublishProcess) extends LazyLogging:
 
   private val credentialsCache: TrieMap[Secret, UserState] =
     TrieMap.empty[Secret, UserState]
@@ -73,13 +72,15 @@ class PublishApi(githubAuth: GithubAuth, publishProcess: PublishProcess)(using E
                 val result = publishProcess.publishPom(path, data, created, Some(userState))
 
                 complete(
-                  result.map {
-                    case PublishResult.InvalidPom => (StatusCodes.BadRequest, "pom is invalid")
-                    case PublishResult.NoGithubRepo => (StatusCodes.NoContent, "github repository not found")
-                    case PublishResult.Success => (StatusCodes.Created, "pom published successfully")
-                    case PublishResult.Forbidden(login, repo) =>
-                      (StatusCodes.Forbidden, s"$login cannot publish to $repo")
-                  }
+                  result
+                    .map {
+                      case PublishResult.InvalidPom => (StatusCodes.BadRequest, "pom is invalid")
+                      case PublishResult.NoGithubRepo => (StatusCodes.NoContent, "github repository not found")
+                      case PublishResult.Success => (StatusCodes.Created, "pom published successfully")
+                      case PublishResult.Forbidden(login, repo) =>
+                        (StatusCodes.Forbidden, s"$login cannot publish to $repo")
+                    }
+                    .unsafeToFuture()
                 )
               }
             }

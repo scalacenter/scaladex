@@ -1,7 +1,6 @@
 package scaladex.server.service
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.concurrent.duration.*
 
 import scaladex.core.model.Artifact
@@ -13,18 +12,20 @@ import scaladex.core.util.ScalaExtensions.*
 import scaladex.data.cleanup.NonStandardLib
 import scaladex.infra.DataPaths
 
+import cats.effect.ContextShift
+import cats.effect.IO
+import cats.effect.Timer
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.pattern.after
 
 class MavenCentralService(
     dataPaths: DataPaths,
     database: SchedulerDatabase,
     mavenCentralClient: MavenCentralClient,
     publishProcess: PublishProcess
-)(using ExecutionContext, ActorSystem)
+)(using ExecutionContext)
     extends LazyLogging:
-  private val system = summon[ActorSystem]
+  private given ContextShift[IO] = IO.contextShift(summon[ExecutionContext])
+  private given Timer[IO] = IO.timer(summon[ExecutionContext])
 
   private val groupIdPageSize = 50
   private val artifactRefPageSize = 1000
@@ -32,9 +33,9 @@ class MavenCentralService(
   private val pageDelay = 500.millis
   private val publishDelay = 100.millis
 
-  def findNonStandard(): Future[String] =
+  def findNonStandard(): IO[String] =
     val nonStandardLibs = NonStandardLib.load(dataPaths)
-    for result <- nonStandardLibs.mapSync { lib =>
+    for result <- nonStandardLibs.mapIO { lib =>
         val groupId = Artifact.GroupId(lib.groupId)
         // get should not throw: it is a fixed set of artifactIds
         val artifactId = Artifact.ArtifactId(lib.artifactId)
@@ -50,17 +51,17 @@ class MavenCentralService(
       groupId: GroupId,
       artifactId: ArtifactId,
       knownRefs: Set[Artifact.Reference]
-  ): Future[Int] =
+  ): IO[Int] =
     for
-      versions <- mavenCentralClient.getAllVersions(groupId, artifactId)
+      versions <- mavenCentralClient.getAllVersions(groupId, artifactId).toIO
       missingVersions = versions.map(Artifact.Reference(groupId, artifactId, _)).filterNot(knownRefs)
       _ = if missingVersions.nonEmpty then
         logger.info(s"${missingVersions.size} artifacts are missing for ${groupId.value}:${artifactId.value}")
-      missingPomFiles <- missingVersions.mapSync(ref => mavenCentralClient.getPomFile(ref).map(_.map(ref -> _)))
-      publishResult <- missingPomFiles.flatten.mapSync {
+      missingPomFiles <- missingVersions.mapIO(ref => mavenCentralClient.getPomFile(ref).toIO.map(_.map(ref -> _)))
+      publishResult <- missingPomFiles.flatten.mapIO {
         case (mavenRef, (pomFile, creationDate)) =>
           for
-            _ <- delay(publishDelay)
+            _ <- IO.sleep(publishDelay)
             result <- publishProcess.publishPom(mavenRef.toString(), pomFile, creationDate, None)
           yield result
       }
@@ -69,16 +70,16 @@ class MavenCentralService(
       case _ => false
     }
 
-  def findMissing(): Future[String] =
-    def loop(page: Int, totalInserted: Int): Future[Int] =
+  def findMissing(): IO[String] =
+    def loop(page: Int, totalInserted: Int): IO[Int] =
       for
         batch <- database.getGroupIds(limit = groupIdPageSize, offset = page * groupIdPageSize)
         _ = logger.info(s"Processing group ID page $page (${batch.size} groups)")
-        inserted <- batch.mapSync(g => findAndIndexMissingArtifacts(g, None)).map(_.sum)
+        inserted <- batch.mapIO(g => findAndIndexMissingArtifacts(g, None)).map(_.sum)
         total = totalInserted + inserted
         result <-
-          if batch.size == groupIdPageSize then delay(pageDelay).flatMap(_ => loop(page + 1, total))
-          else Future.successful(total)
+          if batch.size == groupIdPageSize then IO.sleep(pageDelay).flatMap(_ => loop(page + 1, total))
+          else IO.pure(total)
       yield result
 
     loop(0, 0).map(n => s"Inserted $n missing poms")
@@ -87,78 +88,75 @@ class MavenCentralService(
   private def findAndIndexMissingArtifacts(
       groupId: GroupId,
       artifactNameOpt: Option[Artifact.Name]
-  ): Future[Int] =
+  ): IO[Int] =
     for
       knownRefs <- loadKnownRefs(groupId)
-      artifactIds <- mavenCentralClient.getAllArtifactIds(groupId)
+      artifactIds <- mavenCentralClient.getAllArtifactIds(groupId).toIO
       scalaArtifactIds = artifactIds.filter(artifact =>
         artifactNameOpt.forall(_ == artifact.name) && artifact.isScala && artifact.binaryVersion.isValid
       )
       result <- processPages(scalaArtifactIds, artifactIdPageSize) { batch =>
-        batch.mapSync(id => findAndIndexMissingArtifacts(groupId, id, knownRefs)).map(_.sum)
+        batch.mapIO(id => findAndIndexMissingArtifacts(groupId, id, knownRefs)).map(_.sum)
       }
     yield result
 
-  def syncOne(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): Future[String] =
+  def syncOne(groupId: GroupId, artifactNameOpt: Option[Artifact.Name]): IO[String] =
     for result <- findAndIndexMissingArtifacts(groupId, artifactNameOpt)
     yield s"Inserted $result poms"
 
   /** Load known refs for a group in pages to keep each DB query small. */
-  private def loadKnownRefs(groupId: GroupId): Future[Set[Artifact.Reference]] =
-    def loop(page: Int, acc: Set[Artifact.Reference]): Future[Set[Artifact.Reference]] =
+  private def loadKnownRefs(groupId: GroupId): IO[Set[Artifact.Reference]] =
+    def loop(page: Int, acc: Set[Artifact.Reference]): IO[Set[Artifact.Reference]] =
       for
         batch <- database.getArtifactRefs(groupId, limit = artifactRefPageSize, offset = page * artifactRefPageSize)
         next = acc ++ batch
         result <-
           if batch.size == artifactRefPageSize then loop(page + 1, next)
-          else Future.successful(next)
+          else IO.pure(next)
       yield result
     loop(0, Set.empty)
   end loadKnownRefs
 
   /** Process items in pages, with a short delay between full pages. */
-  private def processPages[A](items: Seq[A], pageSize: Int)(process: Seq[A] => Future[Int]): Future[Int] =
-    def loop(page: Int, total: Int): Future[Int] =
+  private def processPages[A](items: Seq[A], pageSize: Int)(process: Seq[A] => IO[Int]): IO[Int] =
+    def loop(page: Int, total: Int): IO[Int] =
       val batch = items.slice(page * pageSize, (page + 1) * pageSize)
-      if batch.isEmpty then Future.successful(total)
+      if batch.isEmpty then IO.pure(total)
       else
         for
           inserted <- process(batch)
           next = total + inserted
           result <-
-            if batch.size == pageSize then delay(pageDelay).flatMap(_ => loop(page + 1, next))
-            else Future.successful(next)
+            if batch.size == pageSize then IO.sleep(pageDelay).flatMap(_ => loop(page + 1, next))
+            else IO.pure(next)
         yield result
     end loop
     loop(0, 0)
   end processPages
 
-  private def delay(duration: FiniteDuration): Future[Unit] =
-    after(duration, system.scheduler)(Future.successful(()))
-
-  def republishArtifacts(): Future[String] =
+  def republishArtifacts(): IO[String] =
     for
       projectStatuses <- database.getAllProjectsStatuses()
       refs = projectStatuses.collect { case (ref, status) if status.isOk || status.isUnknown || status.isFailed => ref }
-      counts <- refs.mapSync(republishArtifacts)
+      counts <- refs.mapIO(republishArtifacts)
     yield
       val successes = counts.map(_._1).sum
       val failures = counts.map(_._2).sum
       s"Re-published $successes artifacts ($failures failures)."
 
-  private def republishArtifacts(projectRef: Project.Reference): Future[(Int, Int)] =
+  private def republishArtifacts(projectRef: Project.Reference): IO[(Int, Int)] =
     for
       refs <- database.getProjectArtifactRefs(projectRef, stableOnly = false)
-      publishResult <- refs.mapSync(republishArtifact(projectRef, _))
+      publishResult <- refs.mapIO(republishArtifact(projectRef, _))
     yield
       val successes = publishResult.count(_ == PublishResult.Success)
       val failures = publishResult.size - successes
       logger.info(s"Re-published $successes artifacts of $projectRef ($failures failures)")
       (successes, failures)
 
-  private def republishArtifact(projectRef: Project.Reference, ref: Artifact.Reference): Future[PublishResult] =
-    mavenCentralClient.getPomFile(ref).flatMap {
+  private def republishArtifact(projectRef: Project.Reference, ref: Artifact.Reference): IO[PublishResult] =
+    mavenCentralClient.getPomFile(ref).toIO.flatMap {
       case Some((pomFile, creationDate)) => publishProcess.republishPom(projectRef, ref, pomFile, creationDate)
-      case _ => Future.successful(PublishResult.InvalidPom)
+      case _ => IO.pure(PublishResult.InvalidPom)
     }
 end MavenCentralService

@@ -10,7 +10,10 @@ import scala.util.Try
 import scaladex.core.model.UserState
 import scaladex.core.service.GithubAuth
 import scaladex.core.service.WebDatabase
+import scaladex.core.util.ScalaExtensions.*
 
+import cats.effect.ContextShift
+import cats.effect.IO
 import com.softwaremill.pekkohttpsession.CsrfDirectives.*
 import com.softwaremill.pekkohttpsession.CsrfOptions.*
 import com.softwaremill.pekkohttpsession.SessionConfig
@@ -35,6 +38,7 @@ class AuthenticationApi(clientId: String, sessionConfig: SessionConfig, githubAu
 ) extends LazyLogging:
 
   given ExecutionContext = system.dispatcher
+  private given ContextShift[IO] = IO.contextShift(system.dispatcher)
   given SessionSerializer[UUID, String] =
     new SingleValueSessionSerializer(_.toString(), (id: String) => Try(UUID.fromString(id)))
   given SessionManager[UUID] = new SessionManager[UUID](sessionConfig)
@@ -46,7 +50,7 @@ class AuthenticationApi(clientId: String, sessionConfig: SessionConfig, githubAu
   def optionalUser: Directive1[Option[UserState]] =
     optionalSession(refreshable, usingCookies).flatMap {
       case None => provide(None)
-      case Some(userId) => onSuccess(database.getUser(userId))
+      case Some(userId) => database.getUser(userId).onSuccessIO
     }
 
   val routes: Route =
@@ -86,15 +90,15 @@ class AuthenticationApi(clientId: String, sessionConfig: SessionConfig, githubAu
             path("done")(complete("OK")),
             pathEnd(
               parameters("code", "state".?) { (code, state) =>
-                val future = for
-                  token <- githubAuth.getToken(code)
-                  user <- githubAuth.getUser(token)
+                val io = for
+                  token <- githubAuth.getToken(code).toIO
+                  user <- githubAuth.getUser(token).toIO
                   userId = UUID.randomUUID()
                   _ <- database.insertUser(userId, user)
                 yield
                   // Update user state lazily
                   githubAuth.getUserState(token).andThen {
-                    case Success(Some(userState)) => database.updateUser(userId, userState)
+                    case Success(Some(userState)) => database.updateUser(userId, userState).unsafeRunAsyncAndForget()
                     case Failure(cause) =>
                       logger.warn(
                         s"Failed to update user state of ${user.login} ($userId) because of: ${cause.getMessage}"
@@ -112,7 +116,7 @@ class AuthenticationApi(clientId: String, sessionConfig: SessionConfig, githubAu
                       )
                     }
                   )
-                onSuccess(future)(identity)
+                io.onSuccessIO(identity)
               }
             )
           )
