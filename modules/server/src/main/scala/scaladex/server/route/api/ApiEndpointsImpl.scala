@@ -29,43 +29,56 @@ class ApiEndpointsImpl(projectService: ProjectService, artifactService: Artifact
     }
 
   private def v0Api: Route = concat(
-    getProjects(v0).implementedByAsync(params => projectService.getProjects(params.languages, params.platforms)),
+    getProjects(v0).implementedByAsync(params =>
+      projectService.getProjects(params.languages, params.platforms).unsafeToFuture()
+    ),
     getProjectArtifacts(v0).implementedByAsync {
       case (ref, params) =>
-        projectService.getArtifactRefs(ref, params.binaryVersion, params.artifactName, params.stableOnly)
+        projectService
+          .getArtifactRefs(ref, params.binaryVersion, params.artifactName, params.stableOnly)
+          .unsafeToFuture()
     },
     getArtifactVersions(v0).implementedByAsync {
       case (groupId, artifactId, stableOnly) =>
-        artifactService.getVersions(groupId, artifactId, stableOnly)
+        artifactService.getVersions(groupId, artifactId, stableOnly).unsafeToFuture()
     },
     getArtifact(v0).implementedByAsync { mavenRef =>
-      for artifact <- artifactService.getArtifact(mavenRef) yield artifact.map(_.toResponse)
+      artifactService.getArtifact(mavenRef).map(_.map(_.toResponse)).unsafeToFuture()
     }
   )
 
   private def v1Api: Route = concat(
-    getProjects(v1).implementedByAsync(params => projectService.getProjects(params.languages, params.platforms)),
-    getProjectV1.implementedByAsync(ref => for project <- projectService.getProject(ref) yield project.map(toResponse)),
+    getProjects(v1).implementedByAsync(params =>
+      projectService.getProjects(params.languages, params.platforms).unsafeToFuture()
+    ),
+    getProjectV1.implementedByAsync(ref => projectService.getProject(ref).map(_.map(toResponse)).unsafeToFuture()),
     getProjectVersionsV1.implementedByAsync {
       case (ref, params) =>
-        projectService.getVersions(ref, params.binaryVersions, params.artifactNames, params.stableOnly)
+        projectService
+          .getVersions(ref, params.binaryVersions, params.artifactNames, params.stableOnly)
+          .unsafeToFuture()
     },
-    getLatestProjectVersionV1.implementedByAsync(ref => projectService.getLatestProjectVersion(ref)),
-    getProjectVersionV1.implementedByAsync { case (ref, version) => projectService.getProjectVersion(ref, version) },
+    getLatestProjectVersionV1.implementedByAsync(ref => projectService.getLatestProjectVersion(ref).unsafeToFuture()),
+    getProjectVersionV1.implementedByAsync {
+      case (ref, version) =>
+        projectService.getProjectVersion(ref, version).unsafeToFuture()
+    },
     getProjectArtifacts(v1).implementedByAsync {
       case (ref, params) =>
-        projectService.getArtifactRefs(ref, params.binaryVersion, params.artifactName, params.stableOnly)
+        projectService
+          .getArtifactRefs(ref, params.binaryVersion, params.artifactName, params.stableOnly)
+          .unsafeToFuture()
     },
     getLatestArtifactV1.implementedByAsync {
       case (groupId, artifactId) =>
-        for artifact <- artifactService.getLatestArtifact(groupId, artifactId) yield artifact.map(_.toResponse)
+        artifactService.getLatestArtifact(groupId, artifactId).map(_.map(_.toResponse)).unsafeToFuture()
     },
     getArtifactVersions(v1).implementedByAsync {
       case (groupId, artifactId, stableOnly) =>
-        artifactService.getVersions(groupId, artifactId, stableOnly)
+        artifactService.getVersions(groupId, artifactId, stableOnly).unsafeToFuture()
     },
     getArtifact(v1).implementedByAsync { mavenRef =>
-      for artifact <- artifactService.getArtifact(mavenRef) yield artifact.map(_.toResponse)
+      artifactService.getArtifact(mavenRef).map(_.map(_.toResponse)).unsafeToFuture()
     }
   )
 

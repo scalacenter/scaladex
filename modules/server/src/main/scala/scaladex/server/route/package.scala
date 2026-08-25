@@ -2,14 +2,19 @@ package scaladex.server
 
 import java.time.Instant
 
+import scala.util.Try
+
 import scaladex.core.model.Artifact
 import scaladex.core.model.Project
 import scaladex.core.model.Version
 import scaladex.core.model.search.PageParams
 
+import cats.effect.IO
+import org.apache.pekko.http.scaladsl.marshalling.ToResponseMarshaller
 import org.apache.pekko.http.scaladsl.server.Directive1
 import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.PathMatcher1
+import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 
 package object route:
@@ -33,4 +38,9 @@ package object route:
 
   def paging(size: Int): Directive1[PageParams] =
     parameter("page".as[Int].withDefault(1)).map(PageParams(_, size))
+
+  extension [A](io: IO[A])
+    def completeIO(using ToResponseMarshaller[A]): Route = complete(io.unsafeToFuture())
+    def onSuccessIO: Directive1[A] = onSuccess(io.unsafeToFuture())
+    def onCompleteIO: Directive1[Try[A]] = onComplete(io.unsafeToFuture())
 end route

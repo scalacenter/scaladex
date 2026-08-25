@@ -78,8 +78,7 @@ object Server extends LazyLogging:
             val mavenCentralClient = new MavenCentralClientImpl()
             val mavenCentralService =
               new MavenCentralService(paths, schedulerDatabase, mavenCentralClient, schedulerPublishProcess)(
-                using system.dispatcher,
-                system
+                using system.dispatcher
               )
             val adminService =
               new AdminService(config.env, schedulerDatabase, searchEngine, githubClient, mavenCentralService)

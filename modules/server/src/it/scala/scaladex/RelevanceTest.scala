@@ -43,15 +43,14 @@ class RelevanceTest extends TestKit(ActorSystem("SbtActorTest")) with AsyncFunSu
         val projectDependenciesUpdater = new DependencyUpdater(database, projectService)
         val artifactService = new ArtifactService(database)
 
-        IO.fromFuture(IO {
-          for
-            _ <- Init.run(flyway, database, filesystem)
-            _ <- searchEngine.init(true)
-            _ <- artifactService.updateAllLatestVersions().zip(projectDependenciesUpdater.updateAll())
-            _ <- searchSync.syncAll()
-            _ <- searchEngine.refresh()
-          yield ()
-        })
+        for
+          _ <- Init.run(flyway, database, filesystem)
+          _ <- IO.fromFuture(IO(searchEngine.init(true)))
+          _ <- artifactService.updateAllLatestVersions()
+          _ <- projectDependenciesUpdater.updateAll()
+          _ <- searchSync.syncAll()
+          _ <- IO.fromFuture(IO(searchEngine.refresh()))
+        yield ()
       }
       .unsafeRunSync()
   end beforeAll

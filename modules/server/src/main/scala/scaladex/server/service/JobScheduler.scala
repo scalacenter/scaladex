@@ -2,20 +2,19 @@ package scaladex.server.service
 
 import java.time.Instant
 
-import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.concurrent.duration.*
 import scala.util.control.NonFatal
 
 import scaladex.core.model.UserState
 import scaladex.view.Job
 
+import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.actor.Cancellable
 
-class JobScheduler(val job: Job, run: () => Future[String])(using system: ActorSystem) extends LazyLogging:
+class JobScheduler(val job: Job, run: () => IO[String])(using system: ActorSystem) extends LazyLogging:
   private given ExecutionContext = system.dispatcher
   private var cancellable = Option.empty[Cancellable]
   private var state: Job.State = Job.Stopped(Instant.now, None)
@@ -47,7 +46,7 @@ class JobScheduler(val job: Job, run: () => Future[String])(using system: ActorS
       logger.info(s"Job ${job.name} starting")
       val result =
         try
-          val message = Await.result(JobScheduler.this.run(), Duration.Inf)
+          val message = JobScheduler.this.run().unsafeRunSync()
           logger.info(s"Job ${job.name} succeeded: $message")
           val end = Instant.now()
           Job.Success(start, end, message)

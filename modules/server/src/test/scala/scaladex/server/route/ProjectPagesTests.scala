@@ -1,13 +1,13 @@
 package scaladex.server.route
 
 import scala.concurrent.Await
-import scala.concurrent.Future
 import scala.concurrent.duration.Duration
 
 import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.test.Values
 
+import cats.effect.IO
 import org.apache.pekko.http.scaladsl.model.FormData
 import org.apache.pekko.http.scaladsl.model.StatusCodes
 import org.apache.pekko.http.scaladsl.model.Uri
@@ -21,9 +21,9 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach:
 
   override def beforeEach(): Unit =
     database.reset()
-    Await.result(insertPlayJsonExtra(), Duration.Inf)
+    Await.result(insertPlayJsonExtra().unsafeToFuture(), Duration.Inf)
 
-  private def insertPlayJsonExtra(): Future[Unit] =
+  private def insertPlayJsonExtra(): IO[Unit] =
     for
       _ <- artifactService.insertArtifact(PlayJsonExtra.artifact, Seq.empty)
       _ <- database.updateProjectCreationDate(PlayJsonExtra.reference, PlayJsonExtra.creationDate)
@@ -65,7 +65,10 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach:
   it("should redirect on moved project") {
     val destination = PlayJsonExtra.reference.copy(repository = Project.Repository("play-json-extra-2"))
     val moved = GithubStatus.Moved(now, destination)
-    Await.result(database.moveProject(PlayJsonExtra.reference, PlayJsonExtra.githubInfo, moved), Duration.Inf)
+    Await.result(
+      database.moveProject(PlayJsonExtra.reference, PlayJsonExtra.githubInfo, moved).unsafeToFuture(),
+      Duration.Inf
+    )
     Get(s"/${PlayJsonExtra.reference}/artifacts/play-json-extra?binary-version=_2.13") ~> route ~> check {
       status shouldEqual StatusCodes.MovedPermanently
       val location = headers.collectFirst { case Location(uri) => uri }
@@ -98,9 +101,13 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach:
       )
       Post(s"/${PlayJsonExtra.reference}/settings", formData) ~> route ~> check {
         status shouldBe StatusCodes.SeeOther
-        for project <- database.getProject(PlayJsonExtra.reference) yield
-          val settings = project.get.settings
-          settings shouldBe PlayJsonExtra.settings
+        database
+          .getProject(PlayJsonExtra.reference)
+          .map { project =>
+            val settings = project.get.settings
+            settings shouldBe PlayJsonExtra.settings
+          }
+          .unsafeToFuture()
       }
     }
   }

@@ -1,7 +1,4 @@
 package scaladex.server.service
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-
 import scaladex.core.model.Artifact
 import scaladex.core.model.Env
 import scaladex.core.model.GithubResponse
@@ -17,6 +14,8 @@ import scaladex.core.util.ScalaExtensions.*
 import scaladex.view.Job
 import scaladex.view.Task
 
+import cats.effect.ContextShift
+import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.ActorSystem
 
@@ -28,7 +27,8 @@ class AdminService(
     mavenCentralService: MavenCentralService
 )(using system: ActorSystem)
     extends LazyLogging:
-  private given ExecutionContext = system.dispatcher
+  private given scala.concurrent.ExecutionContext = system.dispatcher
+  private given ContextShift[IO] = IO.contextShift(system.dispatcher)
 
   val projectService = new ProjectService(database, searchEngine)
   val searchSynchronizer = new SearchSynchronizer(database, projectService, searchEngine)
@@ -94,17 +94,20 @@ class AdminService(
     val input = Seq("Organization" -> reference.organization.value, "Repository" -> reference.repository.value)
 
     val task = TaskRunner.run(Task.addEmptyProject, user.info.login, input) { () =>
-      githubClientOpt.fold(throw new Exception("No configured Github token")) { githubClient =>
-        githubClient.getProjectInfo(reference).flatMap {
+      githubClientOpt.fold(IO.raiseError(new Exception("No configured Github token"))) { githubClient =>
+        githubClient.getProjectInfo(reference).toIO.flatMap {
           case GithubResponse.Failed(code, errorMessage) =>
-            throw new Exception(s"Failed to add project due to GitHub error $code : $errorMessage")
+            IO.raiseError(new Exception(s"Failed to add project due to GitHub error $code : $errorMessage"))
           case GithubResponse.MovedPermanently(res) =>
-            throw new Exception(s"Failed to add project. Project moved to ${res._1.repository}")
+            IO.raiseError(new Exception(s"Failed to add project. Project moved to ${res._1.repository}"))
           case GithubResponse.Ok((_, info)) =>
             info.scalaPercentage.fold {
-              throw new Exception(s"Failed to add project. Could not obtain percentage of Scala for this project.")
+              IO.raiseError(
+                new Exception(s"Failed to add project. Could not obtain percentage of Scala for this project.")
+              )
             } { percentage =>
-              if percentage <= 0 then throw new Exception(s"Failed to add project. Project seems not a Scala one.")
+              if percentage <= 0 then
+                IO.raiseError(new Exception(s"Failed to add project. Project seems not a Scala one."))
               else
                 val project =
                   new Project(
@@ -118,7 +121,7 @@ class AdminService(
                 database
                   .insertProject(project)
                   .flatMap(_ => searchSynchronizer.syncProject(reference))
-                  .map(_ => "success")
+                  .as("success")
             }
         }
       }
@@ -130,7 +133,7 @@ class AdminService(
     val input = Seq("Organization" -> reference.organization.value, "Repository" -> reference.repository.value)
 
     val task = TaskRunner.run(Task.updateGithubInfo, user.info.login, input) { () =>
-      githubUpdaterOpt.fold(throw new Exception("No configured Github token")) { githubUpdater =>
+      githubUpdaterOpt.fold(IO.raiseError(new Exception("No configured Github token"))) { githubUpdater =>
         githubUpdater.update(reference).map(_.toString)
       }
     }
@@ -142,9 +145,9 @@ class AdminService(
     }
     tasks = tasks :+ task
 
-  private def updateProjectCreationDate(): Future[String] =
+  private def updateProjectCreationDate(): IO[String] =
     for
       creationDates <- database.computeProjectsCreationDates()
-      _ <- creationDates.mapSync { case (creationDate, ref) => database.updateProjectCreationDate(ref, creationDate) }
+      _ <- creationDates.mapIO { case (creationDate, ref) => database.updateProjectCreationDate(ref, creationDate) }
     yield s"Updated ${creationDates.size} creation dates"
 end AdminService

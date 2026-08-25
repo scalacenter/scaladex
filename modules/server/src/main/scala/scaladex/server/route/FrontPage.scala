@@ -1,43 +1,39 @@
 package scaladex.server.route
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 import scaladex.core.model.*
 import scaladex.core.service.SearchEngine
 import scaladex.core.service.WebDatabase
+import scaladex.core.util.ScalaExtensions.*
 import scaladex.server.TwirlSupport.given
 import scaladex.view.html.frontpage
 import scaladex.view.model.EcosystemHighlight
 import scaladex.view.model.EcosystemVersion
 
+import cats.effect.ContextShift
+import cats.effect.IO
+import cats.syntax.parallel.*
 import org.apache.pekko.http.scaladsl.server.Directives.*
 import org.apache.pekko.http.scaladsl.server.Route
 import play.twirl.api.HtmlFormat
 
 class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(using ExecutionContext):
+  private given ContextShift[IO] = IO.contextShift(summon[ExecutionContext])
   val limitOfProjects = 12
 
-  def route(userState: Option[UserState]): Route = pathSingleSlash(complete(frontPage(userState)))
+  def route(userState: Option[UserState]): Route = pathSingleSlash(frontPage(userState).completeIO)
 
-  private def frontPage(userInfo: Option[UserState]): Future[HtmlFormat.Appendable] =
-    val totalProjectsF = searchEngine.count()
-    val totalArtifactsF = database.countArtifacts()
-    val topicsF = searchEngine.countByTopics(50)
-    val languagesF = searchEngine.countByLanguages()
-    val platformsF = searchEngine.countByPlatforms()
-    val mostDependedUponF = searchEngine.getMostDependedUpon(limitOfProjects)
-    val latestProjectsF = searchEngine.getLatest(limitOfProjects)
-    for
-      totalProjects <- totalProjectsF
-      totalArtifacts <- totalArtifactsF
-      topics <- topicsF
-      platforms <- platformsF
-      languages <- languagesF
-      mostDependedUpon <- mostDependedUponF
-      latestProjects <- latestProjectsF
-    yield
-
+  private def frontPage(userInfo: Option[UserState]): IO[HtmlFormat.Appendable] =
+    (
+      searchEngine.count().toIO,
+      database.countArtifacts(),
+      searchEngine.countByTopics(50).toIO,
+      searchEngine.countByLanguages().toIO,
+      searchEngine.countByPlatforms().toIO,
+      searchEngine.getMostDependedUpon(limitOfProjects).toIO,
+      searchEngine.getLatest(limitOfProjects).toIO
+    ).parMapN { (totalProjects, totalArtifacts, topics, languages, platforms, mostDependedUpon, latestProjects) =>
       val scala3Ecosystem = EcosystemHighlight(
         "Scala",
         languages.collect {
@@ -93,6 +89,5 @@ class FrontPage(env: Env, database: WebDatabase, searchEngine: SearchEngine)(usi
         totalProjects,
         totalArtifacts
       )
-    end for
-  end frontPage
+    }
 end FrontPage

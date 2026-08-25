@@ -3,8 +3,6 @@ package scaladex.infra
 import java.time.Instant
 import java.util.UUID
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.duration.*
 
 import scaladex.core.model.*
@@ -13,78 +11,64 @@ import scaladex.infra.config.CacheConfig
 import scaladex.infra.sql.*
 
 import cats.effect.IO
-import com.github.blemale.scaffeine.AsyncLoadingCache
+import com.github.blemale.scaffeine.Cache
 import com.github.blemale.scaffeine.Scaffeine
 import com.typesafe.scalalogging.LazyLogging
 import doobie.implicits.*
 
 class SqlDatabase(xa: doobie.Transactor[IO], cacheConfig: CacheConfig) extends SchedulerDatabase with LazyLogging:
 
-  private def buildCache[K, V](loader: K => Future[V]): AsyncLoadingCache[K, V] =
+  // Sync values only: a miss runs `load` on the caller's IO so Doobie can cancel it.
+  // refreshAfterWrite is omitted because Caffeine's refresh is Future-based and uncancellable.
+  private def buildCache[K, V](): Cache[K, V] =
     Scaffeine()
-      .refreshAfterWrite(cacheConfig.refreshAfter)
       .expireAfterWrite(cacheConfig.expireAfter)
       .maximumSize(cacheConfig.maxSize)
-      .buildAsyncFuture(loader)
+      .build[K, V]()
 
-  private val projectCache: AsyncLoadingCache[Project.Reference, Option[Project]] =
-    buildCache(ref => run(ProjectTable.selectByReference.option(ref)))
-
-  private val projectArtifactsByNameCache
-      : AsyncLoadingCache[(Project.Reference, Artifact.Name, Boolean), Seq[Artifact]] =
-    buildCache {
-      case (ref, name, stableOnly) =>
-        run(ArtifactTable.selectArtifactByProjectAndName(stableOnly).to[Seq](ref, name))
+  private def getCached[K, V](cache: Cache[K, V], key: K)(load: => IO[V]): IO[V] =
+    IO(cache.getIfPresent(key)).flatMap {
+      case Some(value) => IO.pure(value)
+      case None =>
+        load.map { value =>
+          cache.put(key, value)
+          value
+        }
     }
 
-  private val projectArtifactsByVersionCache
-      : AsyncLoadingCache[(Project.Reference, Artifact.Name, Version), Seq[Artifact]] =
-    buildCache {
-      case (ref, name, version) =>
-        run(ArtifactTable.selectArtifactByProjectAndNameAndVersion.to[Seq](ref, name, version))
-    }
+  private val projectCache: Cache[Project.Reference, Option[Project]] = buildCache()
 
-  private val projectArtifactRefsCache: AsyncLoadingCache[(Project.Reference, Boolean), Seq[Artifact.Reference]] =
-    buildCache {
-      case (ref, stableOnly) =>
-        run(ArtifactTable.selectArtifactRefByProject(stableOnly).to[Seq](ref))
-    }
+  private val projectArtifactsByNameCache: Cache[(Project.Reference, Artifact.Name, Boolean), Seq[Artifact]] =
+    buildCache()
 
-  private val projectArtifactRefsByNameCache
-      : AsyncLoadingCache[(Project.Reference, Artifact.Name), Seq[Artifact.Reference]] =
-    buildCache {
-      case (ref, name) =>
-        run(ArtifactTable.selectArtifactRefByProjectAndName.to[Seq]((ref, name)))
-    }
+  private val projectArtifactsByVersionCache: Cache[(Project.Reference, Artifact.Name, Version), Seq[Artifact]] =
+    buildCache()
 
-  private val projectArtifactRefsByVersionCache
-      : AsyncLoadingCache[(Project.Reference, Version), Seq[Artifact.Reference]] =
-    buildCache {
-      case (ref, version) =>
-        run(ArtifactTable.selectArtifactRefByProjectAndVersion.to[Seq]((ref, version)))
-    }
+  private val projectArtifactRefsCache: Cache[(Project.Reference, Boolean), Seq[Artifact.Reference]] =
+    buildCache()
 
-  private val projectLatestArtifactsCache: AsyncLoadingCache[Project.Reference, Seq[Artifact]] =
-    buildCache(ref => run(ArtifactTable.selectProjectLatestArtifacts.to[Seq](ref)))
+  private val projectArtifactRefsByNameCache: Cache[(Project.Reference, Artifact.Name), Seq[Artifact.Reference]] =
+    buildCache()
 
-  private val countArtifactsCache: AsyncLoadingCache[Unit, Long] =
-    Scaffeine().refreshAfterWrite(5.minutes).buildAsyncFuture[Unit, Long](_ => run(ArtifactTable.count.unique))
+  private val projectArtifactRefsByVersionCache: Cache[(Project.Reference, Version), Seq[Artifact.Reference]] =
+    buildCache()
 
-  private val directDependenciesCache: AsyncLoadingCache[Artifact.Reference, Seq[ArtifactDependency.Direct]] =
-    buildCache(ref => run(ArtifactDependencyTable.selectDirectDependency.to[Seq](ref)))
+  private val projectLatestArtifactsCache: Cache[Project.Reference, Seq[Artifact]] = buildCache()
 
-  private val reverseDependenciesCache
-      : AsyncLoadingCache[(Artifact.Reference, Int, Int), Seq[ArtifactDependency.Reverse]] =
-    buildCache {
-      case (ref, limit, offset) =>
-        run(ArtifactDependencyTable.selectReverseDependencyPage.to[Seq]((ref, limit.toLong, offset.toLong)))
-          .map(_.sorted)
-    }
+  private val countArtifactsCache: Cache[Unit, Long] =
+    Scaffeine()
+      .expireAfterWrite(5.minutes)
+      .build[Unit, Long]()
 
-  private val reverseDependencyCountCache: AsyncLoadingCache[Artifact.Reference, Long] =
-    buildCache(ref => run(ArtifactDependencyTable.countReverseDependency.unique(ref)))
+  private val directDependenciesCache: Cache[Artifact.Reference, Seq[ArtifactDependency.Direct]] =
+    buildCache()
 
-  override def insertArtifact(artifact: Artifact): Future[Boolean] =
+  private val reverseDependenciesCache: Cache[(Artifact.Reference, Int, Int), Seq[ArtifactDependency.Reverse]] =
+    buildCache()
+
+  private val reverseDependencyCountCache: Cache[Artifact.Reference, Long] = buildCache()
+
+  override def insertArtifact(artifact: Artifact): IO[Boolean] =
     run(ArtifactTable.insertIfNotExist.run(artifact)).map { inserted =>
       invalidateArtifactRefs(artifact)
       inserted >= 1
@@ -94,251 +78,271 @@ class SqlDatabase(xa: doobie.Transactor[IO], cacheConfig: CacheConfig) extends S
       groupId: Artifact.GroupId,
       artifactId: Artifact.ArtifactId,
       stableOnly: Boolean
-  ): Future[Seq[Version]] =
+  ): IO[Seq[Version]] =
     run(ArtifactTable.selectVersionByGroupIdAndArtifactId(stableOnly).to[Seq]((groupId, artifactId)))
 
   override def getLatestArtifact(
       ref: Project.Reference,
       groupId: Artifact.GroupId,
       artifactId: Artifact.ArtifactId
-  ): Future[Option[Artifact]] =
+  ): IO[Option[Artifact]] =
     run(ArtifactTable.selectLatestArtifact.option((ref, groupId, artifactId)))
 
-  override def getLatestArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): Future[Seq[Artifact]] =
+  override def getLatestArtifacts(groupId: Artifact.GroupId, artifactId: Artifact.ArtifactId): IO[Seq[Artifact]] =
     run(ArtifactTable.selectLatestArtifacts.to[Seq]((groupId, artifactId)))
 
-  override def insertArtifacts(artifacts: Seq[Artifact]): Future[Unit] =
+  override def insertArtifacts(artifacts: Seq[Artifact]): IO[Unit] =
     run(ArtifactTable.insertIfNotExist.updateMany(artifacts))
       .map(_ => artifacts.foreach(invalidateArtifactRefs))
+      .void
 
-  override def updateArtifacts(artifacts: Seq[Artifact.Reference], newRef: Project.Reference): Future[Int] =
+  override def updateArtifacts(artifacts: Seq[Artifact.Reference], newRef: Project.Reference): IO[Int] =
     val references = artifacts.map(newRef -> _)
     run(ArtifactTable.updateProjectRef.updateMany(references)).map { updated =>
       invalidateAllArtifactRefs()
       updated
     }
 
-  override def updateArtifactReleaseDate(ref: Artifact.Reference, releaseDate: Instant): Future[Int] =
+  override def updateArtifactReleaseDate(ref: Artifact.Reference, releaseDate: Instant): IO[Int] =
     run(ArtifactTable.updateReleaseDate.run((releaseDate, ref)))
 
   override def getArtifacts(
       ref: Project.Reference,
       groupId: Artifact.GroupId,
       artifactId: Artifact.ArtifactId
-  ): Future[Seq[Artifact]] =
+  ): IO[Seq[Artifact]] =
     run(ArtifactTable.selectArtifactByGroupIdAndArtifactId.to[Seq]((ref, groupId, artifactId)))
 
-  override def getArtifact(ref: Artifact.Reference): Future[Option[Artifact]] =
+  override def getArtifact(ref: Artifact.Reference): IO[Option[Artifact]] =
     run(ArtifactTable.selectByReference.option(ref))
 
-  override def getAllArtifacts(language: Option[Language], platform: Option[Platform]): Future[Seq[Artifact]] =
+  override def getAllArtifacts(language: Option[Language], platform: Option[Platform]): IO[Seq[Artifact]] =
     run(ArtifactTable.selectAllArtifacts(language, platform).to[Seq])
 
-  override def insertProject(project: Project): Future[Unit] =
+  override def insertProject(project: Project): IO[Unit] =
     for
       updated <- insertProjectRef(project.reference, project.githubStatus)
       _ <-
         if updated then
           project.githubInfo
             .map(updateGithubInfoAndStatus(project.reference, _, project.githubStatus))
-            .getOrElse(Future.successful(()))
+            .getOrElse(IO.unit)
             .flatMap(_ => updateProjectSettings(project.reference, project.settings))
         else
           logger.warn(s"${project.reference} already inserted")
-          Future.successful(())
+          IO.unit
     yield ()
 
-  override def insertDependencies(dependencies: Seq[ArtifactDependency]): Future[Unit] =
-    run(ArtifactDependencyTable.insertIfNotExist.updateMany(dependencies)).map(_ => ())
+  override def insertDependencies(dependencies: Seq[ArtifactDependency]): IO[Unit] =
+    run(ArtifactDependencyTable.insertIfNotExist.updateMany(dependencies)).void
 
   // return true if inserted, false if it already existed
-  override def insertProjectRef(ref: Project.Reference, status: GithubStatus): Future[Boolean] =
+  override def insertProjectRef(ref: Project.Reference, status: GithubStatus): IO[Boolean] =
     run(ProjectTable.insertIfNotExists.run((ref, status))).map { inserted =>
       invalidateProject(ref)
       inserted >= 1
     }
 
-  override def getAllProjectsStatuses(): Future[Map[Project.Reference, GithubStatus]] =
+  override def getAllProjectsStatuses(): IO[Map[Project.Reference, GithubStatus]] =
     run(ProjectTable.selectReferenceAndStatus.to[Seq]).map(_.toMap)
 
-  override def getAllProjects(): Future[Seq[Project]] =
+  override def getAllProjects(): IO[Seq[Project]] =
     run(ProjectTable.selectProject.to[Seq])
 
   override def updateGithubInfoAndStatus(
       ref: Project.Reference,
       githubInfo: GithubInfo,
       githubStatus: GithubStatus
-  ): Future[Unit] =
+  ): IO[Unit] =
     for
       _ <- updateGithubStatus(ref, githubStatus)
       _ <- run(GithubInfoTable.insertOrUpdate.run((ref, githubInfo, githubInfo)))
     yield invalidateProject(ref)
 
-  override def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): Future[Unit] =
+  override def updateProjectSettings(ref: Project.Reference, settings: Project.Settings): IO[Unit] =
     run(ProjectSettingsTable.insertOrUpdate.run((ref, settings, settings))).map(_ => invalidateProject(ref))
 
-  override def getProject(ref: Project.Reference): Future[Option[Project]] =
-    projectCache.get(ref)
+  override def getProject(ref: Project.Reference): IO[Option[Project]] =
+    getCached(projectCache, ref)(run(ProjectTable.selectByReference.option(ref)))
   private def invalidateProject(ref: Project.Reference): Unit =
-    projectCache.underlying.synchronous().invalidate(ref)
+    projectCache.invalidate(ref)
 
-  override def getProjectArtifactRefs(ref: Project.Reference, stableOnly: Boolean): Future[Seq[Artifact.Reference]] =
-    projectArtifactRefsCache.get((ref, stableOnly))
+  override def getProjectArtifactRefs(ref: Project.Reference, stableOnly: Boolean): IO[Seq[Artifact.Reference]] =
+    getCached(projectArtifactRefsCache, (ref, stableOnly))(
+      run(ArtifactTable.selectArtifactRefByProject(stableOnly).to[Seq](ref))
+    )
 
-  override def getProjectArtifactRefs(ref: Project.Reference, name: Artifact.Name): Future[Seq[Artifact.Reference]] =
-    projectArtifactRefsByNameCache.get((ref, name))
+  override def getProjectArtifactRefs(ref: Project.Reference, name: Artifact.Name): IO[Seq[Artifact.Reference]] =
+    getCached(projectArtifactRefsByNameCache, (ref, name))(
+      run(ArtifactTable.selectArtifactRefByProjectAndName.to[Seq]((ref, name)))
+    )
 
   override def getProjectArtifactRefs(
       ref: Project.Reference,
       version: Version
-  ): Future[Seq[Artifact.Reference]] =
-    projectArtifactRefsByVersionCache.get((ref, version))
+  ): IO[Seq[Artifact.Reference]] =
+    getCached(projectArtifactRefsByVersionCache, (ref, version))(
+      run(ArtifactTable.selectArtifactRefByProjectAndVersion.to[Seq]((ref, version)))
+    )
 
   private def invalidateArtifactRefs(artifact: Artifact): Unit =
     val ref = artifact.projectRef
-    val byProject = projectArtifactRefsCache.underlying.synchronous()
-    byProject.invalidate((ref, true))
-    byProject.invalidate((ref, false))
-    projectArtifactRefsByNameCache.underlying.synchronous().invalidate((ref, artifact.name))
-    projectArtifactRefsByVersionCache.underlying.synchronous().invalidate((ref, artifact.version))
+    projectArtifactRefsCache.invalidate((ref, true))
+    projectArtifactRefsCache.invalidate((ref, false))
+    projectArtifactRefsByNameCache.invalidate((ref, artifact.name))
+    projectArtifactRefsByVersionCache.invalidate((ref, artifact.version))
 
   private def invalidateAllArtifactRefs(): Unit =
-    projectArtifactRefsCache.underlying.synchronous().invalidateAll()
-    projectArtifactRefsByNameCache.underlying.synchronous().invalidateAll()
-    projectArtifactRefsByVersionCache.underlying.synchronous().invalidateAll()
+    projectArtifactRefsCache.invalidateAll()
+    projectArtifactRefsByNameCache.invalidateAll()
+    projectArtifactRefsByVersionCache.invalidateAll()
 
-  override def getAllProjectArtifacts(ref: Project.Reference): Future[Seq[Artifact]] =
+  override def getAllProjectArtifacts(ref: Project.Reference): IO[Seq[Artifact]] =
     run(ArtifactTable.selectArtifactByProject.to[Seq](ref))
 
   override def getProjectArtifacts(
       ref: Project.Reference,
       name: Artifact.Name,
       stableOnly: Boolean
-  ): Future[Seq[Artifact]] =
-    projectArtifactsByNameCache.get((ref, name, stableOnly))
+  ): IO[Seq[Artifact]] =
+    getCached(projectArtifactsByNameCache, (ref, name, stableOnly))(
+      run(ArtifactTable.selectArtifactByProjectAndName(stableOnly).to[Seq](ref, name))
+    )
 
   override def getProjectArtifacts(
       ref: Project.Reference,
       name: Artifact.Name,
       version: Version
-  ): Future[Seq[Artifact]] =
-    projectArtifactsByVersionCache.get((ref, name, version))
+  ): IO[Seq[Artifact]] =
+    getCached(projectArtifactsByVersionCache, (ref, name, version))(
+      run(ArtifactTable.selectArtifactByProjectAndNameAndVersion.to[Seq](ref, name, version))
+    )
 
-  override def getProjectLatestArtifacts(ref: Project.Reference): Future[Seq[Artifact]] =
-    projectLatestArtifactsCache.get(ref)
+  override def getProjectLatestArtifacts(ref: Project.Reference): IO[Seq[Artifact]] =
+    getCached(projectLatestArtifactsCache, ref)(run(ArtifactTable.selectProjectLatestArtifacts.to[Seq](ref)))
 
-  override def getProjectDependencies(projectRef: Project.Reference): Future[Seq[ArtifactDependency]] =
+  override def getProjectDependencies(projectRef: Project.Reference): IO[Seq[ArtifactDependency]] =
     run(ArtifactDependencyTable.selectDependencyFromProject.to[Seq](projectRef))
 
   override def getProjectDependencies(
       ref: Project.Reference,
       version: Version
-  ): Future[Seq[ProjectDependency]] =
+  ): IO[Seq[ProjectDependency]] =
     run(ProjectDependenciesTable.getDependencies.to[Seq]((ref, version)))
 
-  override def getFormerReferences(projectRef: Project.Reference): Future[Seq[Project.Reference]] =
+  override def getFormerReferences(projectRef: Project.Reference): IO[Seq[Project.Reference]] =
     run(ProjectTable.selectByNewReference.to[Seq](projectRef))
 
-  def countProjects(): Future[Long] =
+  def countProjects(): IO[Long] =
     run(ProjectTable.countProjects.unique)
 
-  override def countArtifacts(): Future[Long] = countArtifactsCache.get(())
+  override def countArtifacts(): IO[Long] =
+    getCached(countArtifactsCache, ())(run(ArtifactTable.count.unique))
 
-  def countDependencies(): Future[Long] =
+  def countDependencies(): IO[Long] =
     run(ArtifactDependencyTable.count.unique)
 
-  override def getDirectDependencies(artifact: Artifact): Future[Seq[ArtifactDependency.Direct]] =
-    directDependenciesCache.get(artifact.reference)
+  override def getDirectDependencies(artifact: Artifact): IO[Seq[ArtifactDependency.Direct]] =
+    getCached(directDependenciesCache, artifact.reference)(
+      run(ArtifactDependencyTable.selectDirectDependency.to[Seq](artifact.reference))
+    )
 
   override def getReverseDependencies(
       artifact: Artifact,
       limit: Int,
       offset: Int
-  ): Future[Seq[ArtifactDependency.Reverse]] =
-    reverseDependenciesCache.get((artifact.reference, limit, offset))
+  ): IO[Seq[ArtifactDependency.Reverse]] =
+    getCached(reverseDependenciesCache, (artifact.reference, limit, offset))(
+      run(
+        ArtifactDependencyTable.selectReverseDependencyPage.to[Seq]((artifact.reference, limit.toLong, offset.toLong))
+      )
+        .map(_.sorted)
+    )
 
-  override def countReverseDependencies(artifact: Artifact): Future[Long] =
-    reverseDependencyCountCache.get(artifact.reference)
+  override def countReverseDependencies(artifact: Artifact): IO[Long] =
+    getCached(reverseDependencyCountCache, artifact.reference)(
+      run(ArtifactDependencyTable.countReverseDependency.unique(artifact.reference))
+    )
 
-  def countGithubInfo(): Future[Long] =
+  def countGithubInfo(): IO[Long] =
     run(GithubInfoTable.count.unique)
 
-  def countProjectSettings(): Future[Long] =
+  def countProjectSettings(): IO[Long] =
     run(ProjectSettingsTable.count.unique)
 
   override def computeProjectDependencies(
       ref: Project.Reference,
       version: Version
-  ): Future[Seq[ProjectDependency]] =
+  ): IO[Seq[ProjectDependency]] =
     run(ArtifactDependencyTable.computeProjectDependencies.to[Seq]((ref, version)))
 
-  override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): Future[Int] =
-    if projectDependencies.isEmpty then Future.successful(0)
+  override def insertProjectDependencies(projectDependencies: Seq[ProjectDependency]): IO[Int] =
+    if projectDependencies.isEmpty then IO.pure(0)
     else run(ProjectDependenciesTable.insertOrUpdate.updateMany(projectDependencies))
 
-  override def deleteProjectDependencies(ref: Project.Reference): Future[Int] =
+  override def deleteProjectDependencies(ref: Project.Reference): IO[Int] =
     run(ProjectDependenciesTable.deleteBySource.run(ref))
 
-  override def countProjectDependents(projectRef: Project.Reference): Future[Long] =
+  override def countProjectDependents(projectRef: Project.Reference): IO[Long] =
     run(ProjectDependenciesTable.countDependents.unique(projectRef))
 
-  override def getProjectDependents(ref: Project.Reference): Future[Seq[ProjectDependency]] =
+  override def getProjectDependents(ref: Project.Reference): IO[Seq[ProjectDependency]] =
     run(ProjectDependenciesTable.getDependents.to[Seq](ref))
 
-  override def computeProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]] =
+  override def computeProjectsCreationDates(): IO[Seq[(Instant, Project.Reference)]] =
     run(ArtifactTable.selectOldestByProject.to[Seq])
 
-  override def updateProjectCreationDate(ref: Project.Reference, creationDate: Instant): Future[Unit] =
+  override def updateProjectCreationDate(ref: Project.Reference, creationDate: Instant): IO[Unit] =
     run(ProjectTable.updateCreationDate.run((creationDate, ref))).map(_ => invalidateProject(ref))
 
-  override def getGroupIds(): Future[Seq[Artifact.GroupId]] =
+  override def getGroupIds(): IO[Seq[Artifact.GroupId]] =
     run(ArtifactTable.selectGroupIds.to[Seq])
 
-  override def getGroupIds(limit: Int, offset: Int): Future[Seq[Artifact.GroupId]] =
+  override def getGroupIds(limit: Int, offset: Int): IO[Seq[Artifact.GroupId]] =
     run(ArtifactTable.selectGroupIdsPage.to[Seq]((limit.toLong, offset.toLong)))
 
-  override def getArtifactIds(ref: Project.Reference): Future[Seq[(Artifact.GroupId, Artifact.ArtifactId)]] =
+  override def getArtifactIds(ref: Project.Reference): IO[Seq[(Artifact.GroupId, Artifact.ArtifactId)]] =
     run(ArtifactTable.selectArtifactIds.to[Seq](ref))
 
-  override def getArtifactRefs(): Future[Seq[Artifact.Reference]] =
+  override def getArtifactRefs(): IO[Seq[Artifact.Reference]] =
     run(ArtifactTable.selectReferences.to[Seq])
 
-  override def getArtifactRefs(groupId: Artifact.GroupId): Future[Seq[Artifact.Reference]] =
+  override def getArtifactRefs(groupId: Artifact.GroupId): IO[Seq[Artifact.Reference]] =
     run(ArtifactTable.selectReferencesByGroupId.to[Seq](groupId))
 
-  override def getArtifactRefs(groupId: Artifact.GroupId, limit: Int, offset: Int): Future[Seq[Artifact.Reference]] =
+  override def getArtifactRefs(groupId: Artifact.GroupId, limit: Int, offset: Int): IO[Seq[Artifact.Reference]] =
     run(ArtifactTable.selectReferencesByGroupIdPage.to[Seq]((groupId, limit.toLong, offset.toLong)))
 
-  override def insertUser(userId: UUID, userInfo: UserInfo): Future[Unit] =
+  override def insertUser(userId: UUID, userInfo: UserInfo): IO[Unit] =
     run(UserSessionsTable.insert.run((userId, userInfo)).map(_ => ()))
 
-  override def updateUser(userId: UUID, userState: UserState): Future[Unit] =
+  override def updateUser(userId: UUID, userState: UserState): IO[Unit] =
     run(UserSessionsTable.update.run((userState, userId)).map(_ => ()))
 
-  override def getUser(userId: UUID): Future[Option[UserState]] =
+  override def getUser(userId: UUID): IO[Option[UserState]] =
     run(UserSessionsTable.selectById.option(userId))
 
-  override def getAllUsers(): Future[Seq[(UUID, UserInfo)]] =
+  override def getAllUsers(): IO[Seq[(UUID, UserInfo)]] =
     run(UserSessionsTable.selectAll.to[Seq])
 
-  override def deleteUser(userId: UUID): Future[Unit] =
+  override def deleteUser(userId: UUID): IO[Unit] =
     run(UserSessionsTable.deleteById.run(userId).map(_ => ()))
 
-  override def updateLatestVersion(ref: Project.Reference, artifact: Artifact.Reference): Future[Unit] =
+  override def updateLatestVersion(ref: Project.Reference, artifact: Artifact.Reference): IO[Unit] =
     val transaction = for
       _ <- ArtifactTable.setLatestVersion.run((ref, artifact))
       _ <- ArtifactTable.unsetOthersLatestVersion.run((ref, artifact))
     yield ()
-    run(transaction).map(_ => projectLatestArtifactsCache.underlying.synchronous().invalidate(ref))
+    run(transaction).map(_ => projectLatestArtifactsCache.invalidate(ref))
 
-  override def countVersions(ref: Project.Reference): Future[Long] =
+  override def countVersions(ref: Project.Reference): IO[Long] =
     run(ArtifactTable.countVersionsByProject.unique(ref))
 
   override def moveProject(
       ref: Project.Reference,
       githubInfo: GithubInfo,
       status: GithubStatus.Moved
-  ): Future[Unit] =
+  ): IO[Unit] =
     for
       oldProject <- getProject(ref)
       _ <- updateGithubStatus(ref, status)
@@ -349,9 +353,9 @@ class SqlDatabase(xa: doobie.Transactor[IO], cacheConfig: CacheConfig) extends S
       invalidateProject(ref)
       invalidateProject(status.destination)
 
-  def updateGithubStatus(ref: Project.Reference, githubStatus: GithubStatus): Future[Unit] =
+  def updateGithubStatus(ref: Project.Reference, githubStatus: GithubStatus): IO[Unit] =
     run(ProjectTable.updateGithubStatus.run(githubStatus, ref)).map(_ => invalidateProject(ref))
 
-  private def run[A](v: doobie.ConnectionIO[A]): Future[A] =
-    v.transact(xa).unsafeToFuture()
+  private def run[A](v: doobie.ConnectionIO[A]): IO[A] =
+    v.transact(xa)
 end SqlDatabase

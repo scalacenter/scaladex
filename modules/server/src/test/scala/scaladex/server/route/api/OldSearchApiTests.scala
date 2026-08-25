@@ -8,6 +8,7 @@ import scaladex.core.model.BinaryVersion
 import scaladex.core.model.Jvm
 import scaladex.core.model.Scala
 import scaladex.core.test.Values
+import scaladex.core.util.ScalaExtensions.*
 import scaladex.server.route.ControllerBaseSuite
 
 import com.github.pjfanning.pekkohttpcirce.FailFastCirceSupport
@@ -34,7 +35,7 @@ class OldSearchApiTests extends ControllerBaseSuite with FailFastCirceSupport:
   }
 
   def insertAllCatsArtifacts(): Future[Unit] =
-    Future.traverse(Cats.allArtifacts)(artifactService.insertArtifact(_, Seq.empty)).map(_ => ())
+    Cats.allArtifacts.mapIO(artifactService.insertArtifact(_, Seq.empty)).void.unsafeToFuture()
 
   describe("route") {
     it("should find project") {

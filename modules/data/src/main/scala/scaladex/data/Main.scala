@@ -3,7 +3,6 @@ package scaladex.data
 import java.nio.file.Path
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import scala.sys.process.Process
 
 import scaladex.core.util.ScalaExtensions.*
@@ -49,13 +48,13 @@ object Main extends LazyLogging:
     // lazy so steps that don't touch the database (e.g. generateFeeders) don't open a pool
     lazy val datasource = DoobieUtils.getHikariDataSource(config.database)
 
-    def usingDatabase(f: SqlDatabase => Future[Unit]): Unit =
+    def usingDatabase(f: SqlDatabase => IO[Unit]): Unit =
       given ContextShift[IO] = IO.contextShift(ec)
       DoobieUtils
         .transactor(datasource)
         .use { xa =>
           val database = new SqlDatabase(xa, config.caching)
-          IO.fromFuture(IO(f(database)))
+          f(database)
         }
         .unsafeRunSync()
     end usingDatabase

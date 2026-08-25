@@ -1,11 +1,11 @@
 package scaladex.server.route
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
 import scaladex.core.model.*
 import scaladex.core.service.ProjectService
 
+import cats.effect.IO
 import org.apache.pekko.http.scaladsl.model.StatusCodes.*
 import org.apache.pekko.http.scaladsl.model.headers
 import org.apache.pekko.http.scaladsl.model.headers.CacheDirectives.*
@@ -14,7 +14,7 @@ import org.apache.pekko.http.scaladsl.server.RequestContext
 import org.apache.pekko.http.scaladsl.server.Route
 import org.apache.pekko.http.scaladsl.server.RouteResult
 
-class Badges(projectService: ProjectService)(using ExecutionContext):
+class Badges(projectService: ProjectService):
 
   private val shields =
     parameters("color".?, "style".?, "logo".?, "logoWidth".as[Int].?)
@@ -66,7 +66,7 @@ class Badges(projectService: ProjectService)(using ExecutionContext):
         def error(msg: String) = shieldsSvg(subject, msg, color.orElse(Some("lightgrey")), style, logo, logoWidth)
 
         val res = projectService.getProject(ref).flatMap {
-          case None => Future.successful(error("project not found"))
+          case None => IO.pure(error("project not found"))
           case Some(project) =>
             val bv = binaryVersion.flatMap(BinaryVersion.parse)
             getDefaultArtifact(project, bv, artifactName).map {
@@ -75,7 +75,7 @@ class Badges(projectService: ProjectService)(using ExecutionContext):
             }
 
         }
-        onSuccess(res)(identity)
+        res.onSuccessIO(identity)
       }
     }
 
@@ -101,7 +101,7 @@ class Badges(projectService: ProjectService)(using ExecutionContext):
               val summary = Badges.summaryOfLatestVersions(artifacts.map(_.reference), platform)
               shieldsSvg(s"$artifactName - $platform", summary, color, style, logo, logoWidth)
         }
-        onSuccess(res)(identity)
+        res.onSuccessIO(identity)
       }
     }
 
@@ -117,7 +117,7 @@ class Badges(projectService: ProjectService)(using ExecutionContext):
       project: Project,
       binaryVersion: Option[BinaryVersion],
       artifact: Option[Artifact.Name]
-  ): Future[Option[Artifact.Reference]] =
+  ): IO[Option[Artifact.Reference]] =
     projectService.getHeader(project.reference).map(_.map(_.getDefaultArtifact0(binaryVersion, artifact).reference))
 end Badges
 
