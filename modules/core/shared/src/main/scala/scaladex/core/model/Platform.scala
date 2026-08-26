@@ -9,6 +9,11 @@ case object Jvm extends Platform:
   override def value: String = "jvm"
   override def isValid: Boolean = true
 
+case object CompilerPlugin extends Platform:
+  override def toString: String = "CompilerPlugin"
+  override def value: String = "compiler-plugin"
+  override def isValid: Boolean = true
+
 case class ScalaJs(version: Version) extends Platform:
   override def toString: String = s"Scala.js $version"
   override def value: String = s"sjs${version.value}"
@@ -80,6 +85,7 @@ object Platform:
     case ScalaNative(version) => (3, Some(version))
     case SbtPlugin(version) => (2, Some(version))
     case MillPlugin(version) => (1, Some(version))
+    case CompilerPlugin => (0, None)
   }
 
   def parse(input: String): Option[Platform] =
