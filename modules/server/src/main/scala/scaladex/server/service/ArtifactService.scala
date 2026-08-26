@@ -96,12 +96,17 @@ class ArtifactService(database: SchedulerDatabase)(using ExecutionContext) exten
   ): Future[Unit] =
     for
       artifacts <- database.getArtifacts(ref, groupId, artifactId)
-      latestVersion = computeLatestVersion(artifacts.map(_.version), preferStableVersion)
-      _ <- database.updateLatestVersion(ref, Artifact.Reference(groupId, artifactId, latestVersion))
+      latestVersionOpt = computeLatestVersion(artifacts.map(_.version), preferStableVersion)
+      _ <- latestVersionOpt match
+        case Some(latestVersion) =>
+          database.updateLatestVersion(ref, Artifact.Reference(groupId, artifactId, latestVersion))
+        case None =>
+          logger.warn(s"No versions found for artifact $groupId:$artifactId in project $ref")
+          Future.successful(())
     yield ()
 
-  def computeLatestVersion(versions: Seq[Version], preferStableVersion: Boolean): Version =
+  def computeLatestVersion(versions: Seq[Version], preferStableVersion: Boolean): Option[Version] =
     def maxStable = versions.filter(_.isStable).maxOption
-    def max = versions.max
-    if preferStableVersion then maxStable.getOrElse(max) else max
+    def max = versions.maxOption
+    if preferStableVersion then maxStable.orElse(max) else max
 end ArtifactService
