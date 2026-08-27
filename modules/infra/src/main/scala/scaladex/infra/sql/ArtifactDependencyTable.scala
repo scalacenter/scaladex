@@ -83,7 +83,11 @@ object ArtifactDependencyTable:
   end selectReverseDependencyPage
 
   val countReverseDependency: Query[Artifact.Reference, Long] =
-    selectRequest1[Artifact.Reference, Long](table, Seq("COUNT(*)"), keys = targetFields)
+    selectRequest[Artifact.Reference, Long](
+      table,
+      Seq("COUNT(DISTINCT (source_group_id, source_artifact_id))"),
+      targetFields
+    )
 
   val computeProjectDependencies: Query[(Project.Reference, Version), ProjectDependency] =
     selectRequest1[(Project.Reference, Version, Project.Reference), ProjectDependency](
