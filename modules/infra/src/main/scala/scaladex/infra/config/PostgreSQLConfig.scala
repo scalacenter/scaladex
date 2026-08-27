@@ -15,7 +15,8 @@ final case class PostgreSQLConfig(
     user: String,
     pass: Secret,
     poolSize: Int,
-    statementTimeout: FiniteDuration
+    statementTimeout: FiniteDuration,
+    maxConcurrentQueries: Int
 ):
   val driver = "org.postgresql.Driver"
 
@@ -30,10 +31,29 @@ object PostgreSQLConfig:
   def from(config: Config): Try[PostgreSQLConfig] =
     val statementTimeout =
       FiniteDuration(config.getDuration("scaladex.database.statement-timeout").toNanos, NANOSECONDS)
-    from(config.getString("scaladex.database.url"), config.getInt("scaladex.database.pool-size"), statementTimeout)
+    from(
+      config.getString("scaladex.database.url"),
+      config.getInt("scaladex.database.pool-size"),
+      statementTimeout,
+      config.getInt("scaladex.database.max-concurrent-queries")
+    )
 
-  private def from(url: String, poolSize: Int, statementTimeout: FiniteDuration): Try[PostgreSQLConfig] = url match
+  private def from(
+      url: String,
+      poolSize: Int,
+      statementTimeout: FiniteDuration,
+      maxConcurrentQueries: Int
+  ): Try[PostgreSQLConfig] = url match
     case postgreSQLRegex(login, pass, url) =>
-      Success(PostgreSQLConfig(s"jdbc:postgresql://$url", login, Secret(pass), poolSize, statementTimeout))
+      Success(
+        PostgreSQLConfig(
+          s"jdbc:postgresql://$url",
+          login,
+          Secret(pass),
+          poolSize,
+          statementTimeout,
+          maxConcurrentQueries
+        )
+      )
     case _ => Failure(new Exception(s"Unknown database url: $url"))
 end PostgreSQLConfig

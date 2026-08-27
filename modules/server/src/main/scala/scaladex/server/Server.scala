@@ -9,6 +9,7 @@ import scala.util.control.NonFatal
 import scaladex.core.service.ProjectService
 import scaladex.data.util.PidLock
 import scaladex.infra.DataPaths
+import scaladex.infra.DatabaseOverloadedException
 import scaladex.infra.ElasticsearchEngine
 import scaladex.infra.FilesystemStorage
 import scaladex.infra.GithubClientImpl
@@ -64,7 +65,7 @@ object Server extends LazyLogging:
       resources
         .use {
           case (webPool, schedulerPool, publishPool, migrationDatasource) =>
-            val webDatabase = new SqlDatabase(webPool, config.caching)
+            val webDatabase = new SqlDatabase(webPool, config.caching, Some(config.database.maxConcurrentQueries))
             val schedulerDatabase = new SqlDatabase(schedulerPool, config.caching)
             val flyway = DoobieUtils.flyway(migrationDatasource, cleanDisabled = true)
             val githubClient = config.github.token.map(new GithubClientImpl(_))
@@ -188,6 +189,8 @@ object Server extends LazyLogging:
         )
       }
     val exceptionHandler = ExceptionHandler {
+      case DatabaseOverloadedException =>
+        complete(StatusCodes.ServiceUnavailable, "Server is overloaded, please retry later")
       case NonFatal(cause) =>
         extractUri { uri =>
           import scaladex.server.TwirlSupport.given

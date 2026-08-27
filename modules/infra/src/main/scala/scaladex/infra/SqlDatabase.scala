@@ -2,6 +2,7 @@ package scaladex.infra
 
 import java.time.Instant
 import java.util.UUID
+import java.util.concurrent.Semaphore
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -18,7 +19,14 @@ import com.github.blemale.scaffeine.Scaffeine
 import com.typesafe.scalalogging.LazyLogging
 import doobie.implicits.*
 
-class SqlDatabase(xa: doobie.Transactor[IO], cacheConfig: CacheConfig) extends SchedulerDatabase with LazyLogging:
+class SqlDatabase(
+    xa: doobie.Transactor[IO],
+    cacheConfig: CacheConfig,
+    maxConcurrentQueries: Option[Int] = None
+) extends SchedulerDatabase
+    with LazyLogging:
+
+  private val queryPermits: Option[Semaphore] = maxConcurrentQueries.map(new Semaphore(_))
 
   private def buildCache[K, V](loader: K => Future[V]): AsyncLoadingCache[K, V] =
     Scaffeine()
@@ -364,5 +372,14 @@ class SqlDatabase(xa: doobie.Transactor[IO], cacheConfig: CacheConfig) extends S
     run(ProjectTable.updateGithubStatus.run(githubStatus, ref)).map(_ => invalidateProject(ref))
 
   private def run[A](v: doobie.ConnectionIO[A]): Future[A] =
-    v.transact(xa).unsafeToFuture()
+    queryPermits match
+      case None => v.transact(xa).unsafeToFuture()
+      case Some(permits) =>
+        if !permits.tryAcquire() then Future.failed(DatabaseOverloadedException)
+        else
+          val future = v.transact(xa).unsafeToFuture()
+          future.onComplete(_ => permits.release())
+          future
 end SqlDatabase
+
+object DatabaseOverloadedException extends RuntimeException("database overloaded")
