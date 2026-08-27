@@ -25,8 +25,24 @@ object ProjectDependenciesTable:
       Seq("target_organization", "target_repository")
     )
 
-  val getDependents: Query[Project.Reference, ProjectDependency] =
-    selectRequest(table, allFields, Seq("target_organization", "target_repository"))
+  // the first N distinct source projects are selected before fetching their rows
+  val getReverseDependenciesPage: Query[(Project.Reference, Long, Long), ProjectDependency] =
+    val outFields = allFields.map(f => s"d.$f").mkString(", ")
+    Query[(Project.Reference, Long, Long, Project.Reference), ProjectDependency](
+      s"""|SELECT $outFields
+          |FROM (
+          |  SELECT DISTINCT source_organization, source_repository
+          |  FROM $table
+          |  WHERE target_organization = ? AND target_repository = ?
+          |  ORDER BY source_organization, source_repository
+          |  LIMIT ? OFFSET ?
+          |) s
+          |INNER JOIN $table d
+          |  ON d.source_organization = s.source_organization
+          |  AND d.source_repository = s.source_repository
+          |  AND d.target_organization = ? AND d.target_repository = ?""".stripMargin
+    ).contramap { case (ref, limit, offset) => (ref, limit, offset, ref) }
+  end getReverseDependenciesPage
 
   val getDependencies: Query[(Project.Reference, Version), ProjectDependency] =
     selectRequest(table, allFields, sourceFields)

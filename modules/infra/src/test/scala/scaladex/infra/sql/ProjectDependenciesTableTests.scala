@@ -9,5 +9,5 @@ class ProjectDependenciesTableTests extends AnyFunSpec with BaseDatabaseSuite wi
   it("check insertOrUpdate")(check(ProjectDependenciesTable.insertOrUpdate))
   it("check deleteBySource")(check(ProjectDependenciesTable.deleteBySource))
   it("check getDependencies")(check(ProjectDependenciesTable.getDependencies))
-  it("check getDependents")(check(ProjectDependenciesTable.getDependents))
+  it("check getReverseDependenciesPage")(check(ProjectDependenciesTable.getReverseDependenciesPage))
   it("check countDependents")(check(ProjectDependenciesTable.countDependents))

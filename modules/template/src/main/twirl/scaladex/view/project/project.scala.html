@@ -11,6 +11,7 @@
   header: Option[ProjectHeader],
   directDependencies: Map[Project.Reference, (ArtifactDependency.Scope, Seq[Version])],
   reverseDependency: Map[Project.Reference, (ArtifactDependency.Scope, Version)],
+  reverseDependencyCount: Long,
 )
 @main(env, title = project.repository.value, user, extraMeta = project.twitterCard.toHeadMeta, extraMetaProperty = project.ogp.toHeadMetaProperty) {
   <main id="container-project">
@@ -28,10 +29,10 @@
         <div class="col-md-4">
           <div class="sidebar-project">
             @communityBox
-            @project.githubInfo.map(gh => statisticsBox(gh, project.reference, reverseDependency.size))
+            @project.githubInfo.map(gh => statisticsBox(gh, project.reference, reverseDependencyCount))
             @commitActivityBox
             @directDependenciesBox(directDependencies)
-            @reverseDependenciesBox(reverseDependency)
+            @reverseDependenciesBox(reverseDependency, reverseDependencyCount)
           </div>
         </div>
       </div>
@@ -44,7 +45,7 @@
   </script>
 }
 
-@statisticsBox(github: GithubInfo, ref: Project.Reference, dependentsCount: Int) = {
+@statisticsBox(github: GithubInfo, ref: Project.Reference, dependentsCount: Long) = {
   <div class="statistic box">
     <h4>Statistics</h4>
     <div class="row">
@@ -122,11 +123,11 @@
   </div>
 }
 
-@reverseDependenciesBox(dependencies: Map[Project.Reference, (ArtifactDependency.Scope, Version)]) = {
+@reverseDependenciesBox(dependencies: Map[Project.Reference, (ArtifactDependency.Scope, Version)], count: Long) = {
   <section class="dependencies box" id="dependents">
-    <h4>@Formats.plural(dependencies.size, "Dependent")</h4>
+    <h4>@Formats.plural(count, "Dependent")</h4>
     <ul>
-      @for((ref, (scope, version)) <- dependencies.take(100).toSeq.sortBy { case (ref, _) => ref }){
+      @for((ref, (scope, version)) <- dependencies.toSeq.sortBy { case (ref, _) => ref }){
         <li>
           <div class="row">
             <div class="col-xs-8"><a href="/@ref">@ref</a> @scopeSpan(scope)</div>
@@ -134,8 +135,8 @@
           </div>
         </li>
       }
-      @if(dependencies.size > 100) {
-        <p>and @{dependencies.size - 100} more</p>
+      @if(count > 100) {
+        <p>and @{count - 100} more</p>
       }
     </ul>
   </section>
