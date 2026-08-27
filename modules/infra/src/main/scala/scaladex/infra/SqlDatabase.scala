@@ -84,6 +84,13 @@ class SqlDatabase(xa: doobie.Transactor[IO], cacheConfig: CacheConfig) extends S
   private val reverseDependencyCountCache: AsyncLoadingCache[Artifact.Reference, Long] =
     buildCache(ref => run(ArtifactDependencyTable.countReverseDependency.unique(ref)))
 
+  private val projectReverseDependenciesCache
+      : AsyncLoadingCache[(Project.Reference, Int, Int), Seq[ProjectDependency]] =
+    buildCache {
+      case (ref, limit, offset) =>
+        run(ProjectDependenciesTable.getReverseDependenciesPage.to[Seq]((ref, limit.toLong, offset.toLong)))
+    }
+
   override def insertArtifact(artifact: Artifact): Future[Boolean] =
     run(ArtifactTable.insertIfNotExist.run(artifact)).map { inserted =>
       invalidateArtifactRefs(artifact)
@@ -282,8 +289,12 @@ class SqlDatabase(xa: doobie.Transactor[IO], cacheConfig: CacheConfig) extends S
   override def countProjectDependents(projectRef: Project.Reference): Future[Long] =
     run(ProjectDependenciesTable.countDependents.unique(projectRef))
 
-  override def getProjectDependents(ref: Project.Reference): Future[Seq[ProjectDependency]] =
-    run(ProjectDependenciesTable.getDependents.to[Seq](ref))
+  override def getProjectReverseDependencies(
+      ref: Project.Reference,
+      limit: Int,
+      offset: Int
+  ): Future[Seq[ProjectDependency]] =
+    projectReverseDependenciesCache.get((ref, limit, offset))
 
   override def computeProjectsCreationDates(): Future[Seq[(Instant, Project.Reference)]] =
     run(ArtifactTable.selectOldestByProject.to[Seq])

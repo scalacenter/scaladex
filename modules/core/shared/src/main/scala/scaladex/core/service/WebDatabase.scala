@@ -65,7 +65,7 @@ trait WebDatabase:
   // project dependencies
   def countProjectDependents(projectRef: Project.Reference): Future[Long]
   def getProjectDependencies(ref: Project.Reference, version: Version): Future[Seq[ProjectDependency]]
-  def getProjectDependents(ref: Project.Reference): Future[Seq[ProjectDependency]]
+  def getProjectReverseDependencies(ref: Project.Reference, limit: Int, offset: Int): Future[Seq[ProjectDependency]]
 
   // users
   def insertUser(userId: UUID, user: UserInfo): Future[Unit]

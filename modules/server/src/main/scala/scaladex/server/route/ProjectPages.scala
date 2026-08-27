@@ -301,7 +301,8 @@ class ProjectPages(
           header
             .map(h => database.getProjectDependencies(ref, h.latestVersion))
             .getOrElse(Future.successful(Seq.empty))
-        reverseDependencies <- database.getProjectDependents(ref)
+        reverseDependencies <- database.getProjectReverseDependencies(ref, limit = 100, offset = 0)
+        reverseDependencyCount <- database.countProjectDependents(ref)
       yield
         val groupedDirectDependencies = directDependencies
           .groupBy(_.target)
@@ -320,7 +321,15 @@ class ProjectPages(
             (scope, version)
           }
         val page =
-          html.project(env, user, project, header, groupedDirectDependencies.toMap, groupedReverseDependencies.toMap)
+          html.project(
+            env,
+            user,
+            project,
+            header,
+            groupedDirectDependencies.toMap,
+            groupedReverseDependencies.toMap,
+            reverseDependencyCount
+          )
         complete(page)
     }
 

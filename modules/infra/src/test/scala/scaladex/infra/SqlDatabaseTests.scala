@@ -172,18 +172,19 @@ class SqlDatabaseTests extends AsyncFunSpec with BaseDatabaseSuite with Matchers
       catsDependencies <- database.computeProjectDependencies(Cats.reference, Cats.`core_2.13:2.6.1`.version)
       _ <- database.insertProjectDependencies(scalafixDependencies ++ catsDependencies)
       catsDependents <- database.countProjectDependents(Cats.reference)
+      catsReverseDependencies <- database.getProjectReverseDependencies(Cats.reference, limit = 100, offset = 0)
     yield
-      scalafixDependencies shouldBe Seq(
-        ProjectDependency(
-          Scalafix.reference,
-          Scalafix.artifact.version,
-          Cats.reference,
-          Cats.`core_2.13:2.6.1`.version,
-          Scope("compile")
-        )
+      val expectedDependency = ProjectDependency(
+        Scalafix.reference,
+        Scalafix.artifact.version,
+        Cats.reference,
+        Cats.`core_2.13:2.6.1`.version,
+        Scope("compile")
       )
+      scalafixDependencies shouldBe Seq(expectedDependency)
       catsDependencies shouldBe empty
       catsDependents shouldBe 1
+      catsReverseDependencies shouldBe Seq(expectedDependency)
   }
   it("should update creation date") {
     for
