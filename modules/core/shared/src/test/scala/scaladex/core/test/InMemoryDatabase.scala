@@ -3,6 +3,7 @@ package scaladex.core.test
 import java.time.Instant
 import java.util.UUID
 
+import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 import scala.concurrent.Future
 
@@ -11,16 +12,16 @@ import scaladex.core.service.SchedulerDatabase
 
 class InMemoryDatabase extends SchedulerDatabase:
 
-  private val allProjects = mutable.Map[Project.Reference, Project]()
-  private val allArtifacts = mutable.Map[Artifact.Reference, Artifact]()
+  private val allProjects = TrieMap[Project.Reference, Project]()
+  private val allArtifacts = TrieMap[Artifact.Reference, Artifact]()
   private val allDependencies = mutable.Buffer[ArtifactDependency]()
   private val latestArtifacts =
-    mutable.Map[(Project.Reference, Artifact.GroupId, Artifact.ArtifactId), Artifact.Reference]()
+    TrieMap[(Project.Reference, Artifact.GroupId, Artifact.ArtifactId), Artifact.Reference]()
 
   def reset(): Unit =
     allProjects.clear()
     allArtifacts.clear()
-    allDependencies.clear()
+    allDependencies.synchronized(allDependencies.clear())
 
   override def insertArtifact(artifact: Artifact): Future[Boolean] =
     val isNewArtifact = !allArtifacts.contains(artifact.reference)
@@ -41,7 +42,7 @@ class InMemoryDatabase extends SchedulerDatabase:
     Future.unit
 
   override def insertDependencies(dependencies: Seq[ArtifactDependency]): Future[Unit] =
-    allDependencies ++= dependencies
+    allDependencies.synchronized(allDependencies ++= dependencies)
     Future.unit
 
   override def deleteProjectDependencies(ref: Project.Reference): Future[Int] = ???
