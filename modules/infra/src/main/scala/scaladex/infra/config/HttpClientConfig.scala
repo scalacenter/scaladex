@@ -25,8 +25,7 @@ object HttpClientConfig:
     def duration(key: String): FiniteDuration =
       FiniteDuration(config.getDuration(key).toNanos, NANOSECONDS)
     val throttle =
-      if config.hasPath("throttle") then
-        Some(Throttle(config.getInt("throttle.requests"), duration("throttle.per")))
+      if config.hasPath("throttle") then Some(Throttle(config.getInt("throttle.requests"), duration("throttle.per")))
       else None
     val retry =
       if config.hasPath("retry") then
