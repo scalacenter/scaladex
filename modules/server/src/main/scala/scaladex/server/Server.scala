@@ -68,7 +68,7 @@ object Server extends LazyLogging:
             val webDatabase = new SqlDatabase(webPool, config.caching, Some(config.database.maxConcurrentQueries))
             val schedulerDatabase = new SqlDatabase(schedulerPool, config.caching)
             val flyway = DoobieUtils.flyway(migrationDatasource, cleanDisabled = true)
-            val githubClient = config.github.token.map(new GithubClientImpl(_))
+            val githubClient = config.github.token.map(new GithubClientImpl(_, config.github.httpClient))
             val paths = DataPaths.from(config.filesystem)
             val filesystem = FilesystemStorage(config.filesystem)
             // Web publishes (sbt/coursier) use the web pool; batch jobs use the scheduler pool
@@ -76,7 +76,7 @@ object Server extends LazyLogging:
             val publishProcess = PublishProcess(paths, filesystem, webDatabase, config.env)(using publishPool, system)
             val schedulerPublishProcess =
               PublishProcess(paths, filesystem, schedulerDatabase, config.env)(using publishPool, system)
-            val mavenCentralClient = new MavenCentralClientImpl()
+            val mavenCentralClient = new MavenCentralClientImpl(config.mavenCentral.httpClient)
             val mavenCentralService =
               new MavenCentralService(paths, schedulerDatabase, mavenCentralClient, schedulerPublishProcess)(
                 using system.dispatcher,

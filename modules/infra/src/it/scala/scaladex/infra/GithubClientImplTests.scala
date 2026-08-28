@@ -19,7 +19,7 @@ class GithubClientImplTests extends AsyncFunSpec with Matchers:
   val config: GithubConfig = GithubConfig.load()
   val isCI = System.getenv("CI") != null
   val token = config.token.getOrElse(throw new Exception(s"Missing GITHUB_TOKEN"))
-  val client = new GithubClientImpl(token)
+  val client = new GithubClientImpl(token, config.httpClient)
   val userStateOpt =
     if isCI then None
     else
