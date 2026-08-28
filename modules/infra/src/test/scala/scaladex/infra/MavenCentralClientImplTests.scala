@@ -5,6 +5,7 @@ import java.time.Instant
 import scaladex.core.model.Artifact
 import scaladex.core.model.Artifact.*
 import scaladex.core.model.Version
+import scaladex.infra.config.MavenCentralConfig
 
 import org.apache.pekko.actor.ActorSystem
 import org.scalatest.funspec.AsyncFunSpec
@@ -12,7 +13,7 @@ import org.scalatest.matchers.should.Matchers
 
 class MavenCentralClientImplTests extends AsyncFunSpec with Matchers:
   given ActorSystem = ActorSystem("maven-central-client-tests")
-  val client = new MavenCentralClientImpl()
+  val client = new MavenCentralClientImpl(MavenCentralConfig.load().httpClient)
   val groupId: GroupId = GroupId("ch.epfl.scala")
   val artifactId: ArtifactId = ArtifactId("sbt-scalafix_2.12_1.0")
   val version: Version = Version("0.9.23")

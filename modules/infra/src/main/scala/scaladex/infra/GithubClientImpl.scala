@@ -3,7 +3,6 @@ package scaladex.infra
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.concurrent.Promise
-import scala.concurrent.duration.DurationInt
 import scala.util.Try
 
 import scaladex.core.model.GithubCommitActivity
@@ -17,6 +16,7 @@ import scaladex.core.model.UserState
 import scaladex.core.service.GithubClient
 import scaladex.core.util.ScalaExtensions.*
 import scaladex.core.util.Secret
+import scaladex.infra.config.HttpClientConfig
 import scaladex.infra.github.GithubModel
 import scaladex.infra.github.GithubModel.{*, given}
 
@@ -42,8 +42,8 @@ import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.util.ByteString
 
-class GithubClientImpl(token: Secret)(using system: ActorSystem)
-    extends CommonAkkaHttpClient
+class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfig.default)(using system: ActorSystem)
+    extends CommonAkkaHttpClient(config)
     with GithubClient
     with LazyLogging:
   private val credentials: OAuth2BearerToken = OAuth2BearerToken(token.decode)
@@ -65,7 +65,6 @@ class GithubClientImpl(token: Secret)(using system: ActorSystem)
           ConnectionPoolSettings("akka.http.host-connection-pool.response-entity-subscription-timeout = 10.seconds")
             .copy(maxConnections = 10)
       )
-      .throttle(elements = 5000, per = 1.hour)
 
   override def getProjectInfo(ref: Project.Reference): Future[GithubResponse[(Project.Reference, GithubInfo)]] =
     getRepository(ref).flatMap {
@@ -376,7 +375,7 @@ class GithubClientImpl(token: Secret)(using system: ActorSystem)
 
   private def process(request: HttpRequest): Future[GithubResponse[(Seq[HttpHeader], ResponseEntity)]] =
     assert(request.headers.contains(Authorization(credentials)))
-    queueRequest(request).flatMap {
+    queueRequestWithRetry(request).flatMap {
       case HttpResponse(StatusCodes.OK, headers, entity, _) =>
         Future.successful(GithubResponse.Ok((headers, entity)))
       case HttpResponse(StatusCodes.MovedPermanently, headers, entity, _) =>

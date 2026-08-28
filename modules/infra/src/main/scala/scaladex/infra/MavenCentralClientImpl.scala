@@ -15,6 +15,7 @@ import scaladex.core.model.SbtPlugin
 import scaladex.core.model.Version
 import scaladex.core.service.MavenCentralClient
 import scaladex.core.util.JsoupUtils
+import scaladex.infra.config.HttpClientConfig
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.pekko.actor.ActorSystem
@@ -27,8 +28,8 @@ import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshaller
 import org.apache.pekko.stream.scaladsl.Flow
 
-class MavenCentralClientImpl()(using system: ActorSystem)
-    extends CommonAkkaHttpClient
+class MavenCentralClientImpl(config: HttpClientConfig = HttpClientConfig.default)(using system: ActorSystem)
+    extends CommonAkkaHttpClient(config)
     with MavenCentralClient
     with LazyLogging:
   private given ExecutionContextExecutor = system.dispatcher
@@ -50,7 +51,7 @@ class MavenCentralClientImpl()(using system: ActorSystem)
       HttpRequest(uri = uri)
 
     for
-      response <- queueRequest(request)
+      response <- queueRequestWithRetry(request)
       directories <- listDirectories(uri, response)
     yield directories.map(Artifact.ArtifactId.apply)
   end getAllArtifactIds
@@ -59,7 +60,7 @@ class MavenCentralClientImpl()(using system: ActorSystem)
     val uri = s"$baseUri/${groupId.mavenUrl}/${artifactId.value}/"
     val request = HttpRequest(uri = uri)
     val future = for
-      response <- queueRequest(request)
+      response <- queueRequestWithRetry(request)
       directories <- listDirectories(uri, response)
     yield directories.map(Version.apply)
     future.recoverWith {
@@ -72,7 +73,7 @@ class MavenCentralClientImpl()(using system: ActorSystem)
   override def getPomFile(ref: Artifact.Reference): Future[Option[(String, Instant)]] =
     val pomUri = getPomUri(ref)
     val future = for
-      response <- queueRequest(HttpRequest(uri = pomUri))
+      response <- queueRequestWithRetry(HttpRequest(uri = pomUri))
       res <- getPomFileWithLastModifiedTime(response, pomUri)
     yield res
     future.recoverWith {
