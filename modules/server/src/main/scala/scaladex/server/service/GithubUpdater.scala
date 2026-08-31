@@ -4,6 +4,9 @@ import java.time.Instant
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.util.control.NonFatal
 
 import scaladex.core.model.GithubInfo
 import scaladex.core.model.GithubResponse
@@ -11,9 +14,10 @@ import scaladex.core.model.GithubStatus
 import scaladex.core.model.Project
 import scaladex.core.service.GithubClient
 import scaladex.core.service.WebDatabase
-import scaladex.core.util.ScalaExtensions.*
+import scaladex.infra.GithubException
 
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.pekko.pattern.CircuitBreakerOpenException
 
 class GithubUpdater(database: WebDatabase, github: GithubClient)(using ExecutionContext) extends LazyLogging:
   def updateAll(): Future[String] =
@@ -26,14 +30,45 @@ class GithubUpdater(database: WebDatabase, github: GithubClient)(using Execution
           .map(_._1)
 
       logger.info(s"Updating github info of ${projectToUpdate.size} projects")
-      projectToUpdate.mapSync(update).map { statuses =>
-        val totalOk = statuses.count(_.isOk)
-        val totalNotFound = statuses.count(_.isNotFound)
-        val totalFailed = statuses.count(_.isFailed)
-        val totalMoved = statuses.count(_.isMoved)
-        s"Updated ${projectToUpdate.size} projects: $totalOk OK, $totalNotFound Not Found, $totalFailed Failed, $totalMoved Moved"
-      }
+      updateSequentially(projectToUpdate.toList, Nil)
     }
+
+  /** Update projects one by one, tolerating single-item failures and stopping early when the GitHub circuit breaker
+    * opens (GitHub is rate limiting us or is down), so we don't fire thousands of doomed requests.
+    */
+  private def updateSequentially(remaining: List[Project.Reference], done: List[GithubStatus]): Future[String] =
+    remaining match
+      case Nil => Future.successful(summary(done, stoppedEarly = 0))
+      case ref :: rest =>
+        update(ref).transformWith {
+          case Success(status) => updateSequentially(rest, status :: done)
+          case Failure(_: CircuitBreakerOpenException) =>
+            val notProcessed = remaining.size
+            logger.error(
+              s"GitHub circuit breaker is open (rate limited or unavailable): stopping github-info early, " +
+                s"$notProcessed of ${done.size + notProcessed} projects not processed"
+            )
+            Future.successful(summary(done, stoppedEarly = notProcessed))
+          case Failure(NonFatal(cause)) =>
+            logger.warn(s"Failed to update github info for $ref, skipping", cause)
+            val status = failedStatus(cause)
+            database.updateGithubStatus(ref, status).transformWith(_ => updateSequentially(rest, status :: done))
+        }
+
+  private def failedStatus(cause: Throwable): GithubStatus =
+    val now = Instant.now()
+    cause match
+      case e: GithubException => GithubStatus.Failed(now, e.code, e.errorMessage)
+      case e => GithubStatus.Failed(now, -1, e.getMessage)
+
+  private def summary(statuses: List[GithubStatus], stoppedEarly: Int): String =
+    val totalOk = statuses.count(_.isOk)
+    val totalNotFound = statuses.count(_.isNotFound)
+    val totalFailed = statuses.count(_.isFailed)
+    val totalMoved = statuses.count(_.isMoved)
+    val base =
+      s"Updated ${statuses.size} projects: $totalOk OK, $totalNotFound Not Found, $totalFailed Failed, $totalMoved Moved"
+    if stoppedEarly > 0 then s"$base (stopped early, $stoppedEarly not processed)" else base
 
   def update(ref: Project.Reference): Future[GithubStatus] =
     for

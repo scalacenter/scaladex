@@ -3,6 +3,8 @@ package scaladex.infra
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 import scala.concurrent.Promise
+import scala.util.Failure
+import scala.util.Success
 import scala.util.Try
 
 import scaladex.core.model.GithubCommitActivity
@@ -39,8 +41,16 @@ import org.apache.pekko.http.scaladsl.model.headers.OAuth2BearerToken
 import org.apache.pekko.http.scaladsl.model.headers.RawHeader
 import org.apache.pekko.http.scaladsl.settings.ConnectionPoolSettings
 import org.apache.pekko.http.scaladsl.unmarshalling.Unmarshal
+import org.apache.pekko.pattern.CircuitBreaker
 import org.apache.pekko.stream.scaladsl.Flow
 import org.apache.pekko.util.ByteString
+
+/** Thrown by the low-level GitHub HTTP helpers when GitHub returns a non-success status. */
+final case class GithubException(code: Int, errorMessage: String) extends Exception(s"$code: $errorMessage"):
+  def isRateLimited: Boolean = code == 429 || (code == 403 && errorMessage.toLowerCase.contains("rate limit"))
+  def isServerError: Boolean = code >= 500
+  // Outcomes that legitimately mean "no data" and may safely become an empty value.
+  def isNoData: Boolean = Set(404, 410, 202, 204).contains(code) || (code == 403 && !isRateLimited)
 
 class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfig.default)(using system: ActorSystem)
     extends CommonAkkaHttpClient(config)
@@ -65,6 +75,11 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
           ConnectionPoolSettings("akka.http.host-connection-pool.response-entity-subscription-timeout = 10.seconds")
             .copy(maxConnections = 10)
       )
+
+  private val breaker: Option[CircuitBreaker] =
+    config.circuitBreaker.map(cb =>
+      CircuitBreaker(system.scheduler, cb.maxFailures, callTimeout = cb.callTimeout, resetTimeout = cb.resetTimeout)
+    )
 
   override def getProjectInfo(ref: Project.Reference): Future[GithubResponse[(Project.Reference, GithubInfo)]] =
     getRepository(ref).flatMap {
@@ -114,7 +129,7 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
         case (_, entity) =>
           entity.dataBytes.runFold(ByteString(""))(_ ++ _).map(_.utf8String).map(Option.apply)
       }
-      .fallbackTo(Future.successful(None))
+      .recover { case e: GithubException if e.isNoData => None }
   end getReadme
 
   def getCommunityProfile(ref: Project.Reference): Future[Option[GithubModel.CommunityProfile]] =
@@ -123,7 +138,7 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
       .addHeader(RawHeader("Accept", "application/vnd.github.black-panther-preview+json"))
     get[GithubModel.CommunityProfile](request)
       .map(Some.apply)
-      .fallbackTo(Future.successful(None))
+      .recover { case e: GithubException if e.isNoData => None }
 
   def getContributors(ref: Project.Reference): Future[List[GithubModel.Contributor]] =
     def request(page: Int) =
@@ -148,7 +163,7 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
 
             case _ => contributors
       }
-      .fallbackTo(Future.successful(List.empty))
+      .recover { case e: GithubException if e.isNoData => List.empty }
   end getContributors
 
   def getRepository(ref: Project.Reference): Future[GithubResponse[GithubModel.Repository]] =
@@ -184,7 +199,7 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
 
             case _ => issues.map(_.flatten)
       }
-      .fallbackTo(Future.successful(Seq.empty))
+      .recover { case e: GithubException if e.isNoData => Seq.empty }
   end getOpenIssues
 
   def getPercentageOfLanguage(ref: Project.Reference, language: String): Future[Int] =
@@ -192,15 +207,17 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
       ((portion.toFloat / total) * 100).toInt
     val request =
       HttpRequest(uri = s"${repoUrl(ref)}/languages").addHeader(acceptJson).addCredentials(credentials)
-    get[Map[String, Int]](request).map { response =>
-      val totalNumBytes = response.values.sum
-      response.get(language).fold(0)(toPercentage(_, totalNumBytes))
-    }
+    get[Map[String, Int]](request)
+      .map { response =>
+        val totalNumBytes = response.values.sum
+        response.get(language).fold(0)(toPercentage(_, totalNumBytes))
+      }
+      .recover { case e: GithubException if e.isNoData => 0 }
 
   def getCommitActivity(ref: Project.Reference): Future[Seq[GithubCommitActivity]] =
     val request =
       HttpRequest(uri = s"${repoUrl(ref)}/stats/commit_activity").addHeader(acceptJson).addCredentials(credentials)
-    get[Seq[GithubCommitActivity]](request).fallbackTo(Future.successful(Seq.empty))
+    get[Seq[GithubCommitActivity]](request).recover { case e: GithubException if e.isNoData => Seq.empty }
 
   def getUserOrganizations(user: String): Future[Seq[Project.Organization]] =
     getAllRecursively(getUserOrganizationsPage(user))
@@ -370,12 +387,15 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
     process(request).map {
       case GithubResponse.Ok((headers, entity)) => (headers, entity)
       case GithubResponse.MovedPermanently((headers, entity)) => (headers, entity)
-      case GithubResponse.Failed(code, reason) => throw new Exception(s"$code: $reason")
+      case GithubResponse.Failed(code, reason) => throw GithubException(code, reason)
     }
 
   private def process(request: HttpRequest): Future[GithubResponse[(Seq[HttpHeader], ResponseEntity)]] =
     assert(request.headers.contains(Authorization(credentials)))
-    queueRequestWithRetry(request).flatMap {
+    val response = breaker match
+      case Some(cb) => cb.withCircuitBreaker(queueRequestWithRetry(request), GithubClientImpl.isBreakerFailure)
+      case None => queueRequestWithRetry(request)
+    response.flatMap {
       case HttpResponse(StatusCodes.OK, headers, entity, _) =>
         Future.successful(GithubResponse.Ok((headers, entity)))
       case HttpResponse(StatusCodes.MovedPermanently, headers, entity, _) =>
@@ -397,4 +417,16 @@ class GithubClientImpl(token: Secret, config: HttpClientConfig = HttpClientConfi
     s"https://api.github.com/repos/$ref"
 
   private def perPage(value: Int = 100) = s"per_page=$value"
+end GithubClientImpl
+
+object GithubClientImpl:
+  /** A response meaning GitHub is unavailable or rate limiting us — counts towards opening the breaker. */
+  private[infra] def isBreakerFailure(result: Try[HttpResponse]): Boolean = result match
+    case Success(response) =>
+      val code = response.status.intValue
+      def rateLimited =
+        response.headers.exists(h => h.is("x-ratelimit-remaining") && h.value == "0") ||
+          response.headers.exists(_.is("retry-after"))
+      code == 429 || (code == 403 && rateLimited) || code >= 500
+    case Failure(_) => true
 end GithubClientImpl
