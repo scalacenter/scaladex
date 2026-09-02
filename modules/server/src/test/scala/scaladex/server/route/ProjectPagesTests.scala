@@ -30,7 +30,7 @@ class ProjectPagesTests extends ControllerBaseSuite with BeforeAndAfterEach:
       _ <- database.updateGithubInfoAndStatus(PlayJsonExtra.reference, PlayJsonExtra.githubInfo, ok)
     yield ()
 
-  val projectPages = new ProjectPages(config.env, projectService, artifactService, database, searchEngine)
+  val projectPages = new ProjectPages(config.env, projectService, settingsService, database, searchEngine)
   val artifactPages = new ArtifactPages(config.env, database)
   val route: Route = projectPages.route(None) ~ artifactPages.route(None)
 

@@ -22,6 +22,7 @@ import scaladex.server.route.api.*
 import scaladex.server.service.AdminService
 import scaladex.server.service.ArtifactService
 import scaladex.server.service.MavenCentralService
+import scaladex.server.service.ProjectSettingsService
 import scaladex.server.service.PublishProcess
 import scaladex.view.html.notfound
 
@@ -152,14 +153,16 @@ object Server extends LazyLogging:
 
     val projectService = new ProjectService(webDatabase, searchEngine)
     val artifactService = new ArtifactService(webDatabase)
+    val settingsService = new ProjectSettingsService(webDatabase, projectService, artifactService, searchEngine)
     val searchPages = new SearchPages(config.env, searchEngine)
     val frontPage = new FrontPage(config.env, webDatabase, searchEngine)
     val adminPages = new AdminPage(config.env, adminService)
-    val projectPages = new ProjectPages(config.env, projectService, artifactService, webDatabase, searchEngine)
+    val projectPages = new ProjectPages(config.env, projectService, settingsService, webDatabase, searchEngine)
     val artifactPages = new ArtifactPages(config.env, webDatabase)
     val awesomePages = new AwesomePages(config.env, searchEngine)
     val publishApi = new PublishApi(githubAuth, publishProcess)
-    val apiEndpoints = new ApiEndpointsImpl(projectService, artifactService, searchEngine)
+    val apiEndpoints =
+      new ApiEndpointsImpl(config.env, projectService, artifactService, settingsService, searchEngine, githubAuth)
     val oldSearchApi = new OldSearchApi(searchEngine, webDatabase)
     val badges = new Badges(projectService)
     val authentication = new AuthenticationApi(config.oAuth2.clientId, config.session, githubAuth, webDatabase)
