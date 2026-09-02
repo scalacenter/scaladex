@@ -371,6 +371,49 @@ class SqlDatabase(
   def updateGithubStatus(ref: Project.Reference, githubStatus: GithubStatus): Future[Unit] =
     run(ProjectTable.updateGithubStatus.run(githubStatus, ref)).map(_ => invalidateProject(ref))
 
+  override def insertDiscoveredGroupIds(discovered: Seq[DiscoveredGroupId]): Future[Int] =
+    run(DiscoveredGroupIdTable.insertIfNotExists.updateMany(discovered.toList))
+
+  override def getAllDiscoveredGroupIds(): Future[Seq[DiscoveredGroupId]] =
+    run(DiscoveredGroupIdTable.selectAll.to[Seq])
+
+  override def getDiscoveredGroupIds(status: DiscoveredGroupId.Status): Future[Seq[DiscoveredGroupId]] =
+    run(DiscoveredGroupIdTable.selectByStatus.to[Seq](status))
+
+  override def getPendingDiscoveredGroupIdsToSync(limit: Int): Future[Seq[DiscoveredGroupId]] =
+    run(DiscoveredGroupIdTable.selectPendingToSync.to[Seq](limit.toLong))
+
+  override def getPendingDiscoveredGroupIdsToReview(limit: Int): Future[Seq[DiscoveredGroupId]] =
+    run(DiscoveredGroupIdTable.selectPendingToReview.to[Seq](limit.toLong))
+
+  override def updateDiscoveredGroupIdError(groupId: Artifact.GroupId, syncSummary: String): Future[Unit] =
+    run(DiscoveredGroupIdTable.updateError.run((syncSummary, groupId))).map(_ => ())
+
+  override def updateDiscoveredGroupIdSync(
+      groupId: Artifact.GroupId,
+      lastSyncedAt: Instant,
+      syncSummary: String,
+      projectRefs: Seq[Project.Reference]
+  ): Future[Unit] =
+    run(DiscoveredGroupIdTable.updateSync.run((lastSyncedAt, syncSummary, projectRefs, groupId))).map(_ => ())
+
+  override def updateDiscoveredGroupIdStatus(
+      groupId: Artifact.GroupId,
+      status: DiscoveredGroupId.Status,
+      reviewedBy: String,
+      reviewedAt: Instant
+  ): Future[Unit] =
+    run(DiscoveredGroupIdTable.updateStatus.run((status, reviewedBy, reviewedAt, groupId))).map(_ => ())
+
+  override def getProjectRefsByGroupId(groupId: Artifact.GroupId): Future[Seq[Project.Reference]] =
+    run(ArtifactTable.selectProjectRefsByGroupId.to[Seq](groupId))
+
+  override def getMavenIndexCursor(): Future[Option[IndexCursor]] =
+    run(DiscoveredIndexCursorTable.select.option)
+
+  override def setMavenIndexCursor(cursor: IndexCursor): Future[Unit] =
+    run(DiscoveredIndexCursorTable.upsert.run((cursor.chainId, cursor.lastIncremental, Instant.now))).map(_ => ())
+
   private def run[A](v: doobie.ConnectionIO[A]): Future[A] =
     queryPermits match
       case None => v.transact(xa).unsafeToFuture()

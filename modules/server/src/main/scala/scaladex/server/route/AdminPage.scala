@@ -23,8 +23,9 @@ class AdminPage(env: Env, adminService: AdminService):
             pathEnd {
               val jobs = adminService.allJobStatuses
               val tasks = adminService.allTaskStatuses
-              val html = view.admin.html.admin(env, user, jobs, tasks)
-              complete(html)
+              onSuccess(adminService.discoveredProjectsToReview()) { discovered =>
+                complete(view.admin.html.admin(env, user, jobs, tasks, discovered))
+              }
             }
           } ~
             post {
@@ -71,6 +72,15 @@ class AdminPage(env: Env, adminService: AdminService):
               path("tasks" / Task.republishArtifacts.name) {
                 adminService.republishArtifacts(user)
                 redirect(Uri("/admin"), StatusCodes.SeeOther)
+              }
+            } ~
+            post {
+              path("discovered" / Segment / "review") { rawGroupId =>
+                formField("decision") { decision =>
+                  onSuccess(adminService.reviewDiscoveredGroupId(Artifact.GroupId(rawGroupId), decision, user)) {
+                    redirect(Uri("/admin"), StatusCodes.SeeOther)
+                  }
+                }
               }
             }
 
