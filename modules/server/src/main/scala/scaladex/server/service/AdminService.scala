@@ -180,6 +180,13 @@ class AdminService(
     }
     tasks = tasks :+ task
 
+  def rewindDiscoveryCursor(chunksBack: Int, user: UserState): Unit =
+    val input = Seq("Chunks back" -> chunksBack.toString)
+    val task = TaskRunner.run(Task.rewindDiscoveryCursor, user.info.login, input) { () =>
+      discoveryService.rewindCursor(chunksBack)
+    }
+    tasks = tasks :+ task
+
   private def updateProjectCreationDate(): Future[String] =
     for
       creationDates <- database.computeProjectsCreationDates()

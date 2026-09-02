@@ -117,4 +117,18 @@ class DiscoveryServiceTests extends AsyncFunSpec with Matchers:
       discovered.head.status shouldBe DiscoveredGroupId.Status.Pending
       pending.map(_.groupId.value) shouldBe Seq("dev.flaky") // still in the sync queue
   }
+
+  it("rewindCursor sets the cursor back by N chunks (clamped at 0)") {
+    val db = new InMemoryDatabase
+    val client = new StubIndexClient(IndexCursor("chain-1", 100), Nil)
+    val svc = service(db, client, collection.mutable.Buffer.empty[String])
+    for
+      _ <- svc.rewindCursor(8)
+      after8 <- db.getMavenIndexCursor()
+      _ <- svc.rewindCursor(500)
+      afterClamp <- db.getMavenIndexCursor()
+    yield
+      after8 shouldBe Some(IndexCursor("chain-1", 92))
+      afterClamp shouldBe Some(IndexCursor("chain-1", 0))
+  }
 end DiscoveryServiceTests

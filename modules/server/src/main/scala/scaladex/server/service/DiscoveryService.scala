@@ -49,6 +49,20 @@ class DiscoveryService(
     synced <- syncPending()
   yield s"Discovered $inserted new group IDs from ${result.records.size} Scala records; synced $synced"
 
+  /** Rewind the cursor so the next `discover()` re-scans the last `chunksBack` chunks (capped at `maxChunksPerRun`).
+    * Admin action for backfilling after a deploy or a missed chunk.
+    */
+  def rewindCursor(chunksBack: Int): Future[String] =
+    indexClient
+      .fetchRemoteCursor()
+      .flatMap: remote =>
+        val target = IndexCursor(remote.chainId, math.max(0, remote.lastIncremental - chunksBack))
+        database
+          .setMavenIndexCursor(target)
+          .map: _ =>
+            s"Cursor set to chunk ${target.lastIncremental} (remote is ${remote.lastIncremental}); " +
+              s"the next discovery run will re-scan up to $maxChunksPerRun chunks"
+
   /** If the remote chain was rebuilt, or we have no cursor yet, start from "now" (remote.lastIncremental - 1) rather
     * than downloading the 3.2 GB full index.
     */

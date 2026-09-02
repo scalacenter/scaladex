@@ -131,6 +131,21 @@
             <td><button type="submit" class="btn btn-primary">Submit</button></td>
           </form>
         </tr>
+        <tr>
+          <td>
+            <h5>@Task.rewindDiscoveryCursor.name</h5>
+            <p>@Task.rewindDiscoveryCursor.description</p>
+          </td>
+          <form action="/admin/tasks/@Task.rewindDiscoveryCursor.name" method="POST">
+            <td>
+              <div class="input-group">
+                <span class="input-group-addon" id="chunks-back">Chunks back</span>
+                <input type="number" class="form-control" name="chunks-back" min="0" max="8" value="8">
+              </div>
+            </td>
+            <td><button type="submit" class="btn btn-primary">Submit</button></td>
+          </form>
+        </tr>
       </tbody>
     </table>
     <h2>Discovered projects (review queue)</h2>
