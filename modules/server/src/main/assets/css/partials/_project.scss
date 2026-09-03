@@ -39,30 +39,6 @@
   }
 
   .content-main {
-    .markdown-body {
-      .anchor {
-        display: inline-block;
-        padding-right: 2px;
-        margin-left: -18px;
-      }
-      h1,
-      h2,
-      h3,
-      h4,
-      h5,
-      h6 {
-        &:hover {
-          .octicon-link {
-            visibility: visible;
-          }
-        }
-        .octicon-link {
-          vertical-align: middle;
-          visibility: hidden;
-        }
-      }
-    }
-
     h3 {
       margin-top: ($line-height-computed / 1.7);
       margin-bottom: $line-height-computed;
