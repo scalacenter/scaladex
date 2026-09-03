@@ -320,13 +320,18 @@ main {
         padding-left: 22px;
         margin-top: 12px;
         span {
-          margin-left: 20px;
           a {
             &:hover,
             &:focus {
               text-decoration: none;
             }
           }
+        }
+        > div:first-child {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+          gap: 6px;
         }
         .item-filter-tag {
           color: $gray-light;
