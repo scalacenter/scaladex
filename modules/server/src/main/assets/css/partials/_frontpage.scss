@@ -201,42 +201,68 @@
         text-decoration: none;
         h4 {
           color: $brand-primary;
-          text-decoration: underline;
         }
       }
     }
   }
   .content-project {
     &.box {
-      padding: 10px;
+      padding: 22px;
     }
-    height: 186px;
-    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: auto;
+    min-height: 168px;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgba($gray-dark, 0.08);
+    @include box-shadow(0 1px 3px rgba(0, 0, 0, 0.05));
+    transition: $base-transition;
     .content-project-header {
-      & > img,
-      & > h4 {
-        display: inline-block;
-        vertical-align: middle;
-      }
-      border-bottom: 1px solid rgba($gray-dark, 0.12);
-      padding-bottom: 20px;
-      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid rgba($gray-dark, 0.1);
+      padding-bottom: 16px;
+      margin-bottom: 16px;
       h4 {
         margin: 0;
-        display: inline-block;
-        padding-left: 15px;
-        width: 90%;
+        padding-left: 12px;
+        width: auto;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        font-weight: 700;
+        color: $gray-darker;
       }
       img {
-        width: 28px;
-        height: auto;
-        float: left;
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        @include border-top-radius(4px);
+        @include border-bottom-radius(4px);
       }
     }
-    .content-project-body {}
+    .content-project-body {
+      flex: 1;
+      min-width: 0;
+      color: $gray-light;
+      font-size: 13px;
+      .description {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        color: $gray;
+        font-size: $font-size-base;
+        margin-bottom: 8px;
+      }
+    }
     &:hover,
     &:focus {
-      @include box-shadow(0 1px 15px rgba(0, 0, 0, 0.15));
+      border-color: transparent;
+      @include box-shadow(0 10px 24px rgba(0, 0, 0, 0.12));
     }
   }
 }
