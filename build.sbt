@@ -74,7 +74,7 @@ lazy val infra = project
       "com.github.pjfanning" %% "pekko-http-circe" % "3.9.2",
       ("io.get-coursier" %% "coursier" % V.coursier).cross(CrossVersion.for3Use2_13),
       ("io.get-coursier" %% "coursier-sbt-maven-repository" % V.coursier).cross(CrossVersion.for3Use2_13),
-      "com.github.blemale" %% "scaffeine" % "5.3.0",
+      "com.github.blemale" %% "scaffeine" % V.scaffeine,
       "org.tpolecat" %% "doobie-core" % V.doobie,
       "org.tpolecat" %% "doobie-h2" % V.doobie,
       "org.tpolecat" %% "doobie-postgres" % V.doobie,
@@ -164,7 +164,7 @@ lazy val server = project
       "org.apache.pekko" %% "pekko-http-testkit" % V.pekkoHttp % Test,
       "org.apache.pekko" %% "pekko-http-cors" % V.pekkoHttp,
       "com.softwaremill.pekko-http-session" %% "core" % "0.7.1",
-      "com.github.blemale" %% "scaffeine" % "5.3.0",
+      "com.github.blemale" %% "scaffeine" % V.scaffeine,
       "org.apache.pekko" %% "pekko-http" % V.pekkoHttp,
       "org.endpoints4s" %% "pekko-http-server" % "2.0.1",
       "org.webjars" % "bootstrap-sass" % "3.4.1",
@@ -257,4 +257,5 @@ lazy val V = new {
   val json4s = "4.1.1"
   val coursier = "2.1.24"
   val gatling = "3.15.1"
+  val scaffeine = "5.3.0"
 }

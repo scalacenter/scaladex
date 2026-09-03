@@ -4,6 +4,8 @@ import scaladex.core.model.*
 import scaladex.core.model.search.Page
 import scaladex.core.model.search.PageParams
 
+import endpoints4s.Invalid
+import endpoints4s.Valid
 import endpoints4s.Validated
 import endpoints4s.algebra.BasicAuthentication
 import endpoints4s.algebra.BasicAuthentication.Credentials
@@ -108,10 +110,19 @@ trait Endpoints
 
   private val pageParams: QueryString[PageParams] =
     (qs[Option[Int]]("page", Some("Page number, starting at 1. (Default is 1)")) &
-      qs[Option[Int]]("size", Some(s"Number of items per page, 1 to ${PageParams.MaxSize}. (Default is 20)")))
-      .xmap { case (page, size) => PageParams.bounded(page.getOrElse(1), size.getOrElse(20)) } { params =>
-        (Some(params.page), Some(params.size))
-      }
+      qs[Option[Int]](
+        "size",
+        Some(
+          s"Number of items per page, one of ${PageParams.AllowedSizes.mkString(", ")}. (Default is ${PageParams.DefaultSize})"
+        )
+      ))
+      .xmapPartial {
+        case (page, size) =>
+          val resolvedSize = size.getOrElse(PageParams.DefaultSize)
+          if PageParams.AllowedSizes.contains(resolvedSize) then
+            Valid(PageParams(page.getOrElse(1).max(1), resolvedSize))
+          else Invalid(s"size must be one of ${PageParams.AllowedSizes.mkString(", ")}")
+      } { params => (Some(params.page), Some(params.size)) }
 
   private val projectSearchParams: QueryString[ProjectSearchParams] = (
     qs[Option[String]]("q", Some("Main query (e.g., 'json', 'testing', etc.)")).xmap(_.getOrElse("*"))(Some(_)) &
@@ -195,26 +206,14 @@ trait Endpoints
       ok(jsonResponse[Page[ProjectDependency]]).orNotFound()
     )
 
-  /** `GET /api/v1/users/me` — information about the user authenticated by the
-    * `Authorization: Basic token:<github-token>` header. Returns 401 if no credentials are provided, 403 if the token
-    * is invalid.
-    */
   val getAuthenticatedUserV1: Endpoint[Credentials, Option[UserResponse]] =
     authenticatedEndpoint(Get, api(v1) / usersPath / "me", ok(jsonResponse[UserResponse]))
 
-  /** `GET /api/v1/projects/{org}/{repo}/settings` — current settings of the project. Requires edit permission on the
-    * project (403 otherwise), 404 if the project is unknown.
-    */
   val getProjectSettingsV1: Endpoint[(Project.Reference, Credentials), Option[Option[Project.Settings]]] =
     authenticatedEndpoint(Get, api(v1) / projectSettingsPath, ok(jsonResponse[Project.Settings]).orNotFound())
 
-  /** `PATCH /api/v1/projects/{org}/{repo}/settings` — partial update of the project settings. Requires edit permission
-    * on the project (403 otherwise), 404 if the project is unknown.
-    *
-    * The update is read-modify-write with no optimistic locking, so two patches racing on the same project can lose an
-    * update. This matches the web settings form and is acceptable given how rarely a single project is edited
-    * concurrently.
-    */
+  // Read-modify-write with no optimistic locking: two patches racing on the same project can lose an update, same as
+  // the web settings form.
   val patchProjectSettingsV1: Endpoint[(Project.Reference, ProjectSettingsPatch, Credentials), Option[Option[Unit]]] =
     authenticatedEndpoint(
       Patch,

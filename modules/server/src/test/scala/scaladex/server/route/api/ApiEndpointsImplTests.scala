@@ -9,6 +9,7 @@ import scaladex.core.api.SearchResult
 import scaladex.core.api.UserResponse
 import scaladex.core.model.*
 import scaladex.core.model.search.Page
+import scaladex.core.model.search.PageParams
 import scaladex.core.service.GithubAuth
 import scaladex.core.test.MockGithubAuth
 import scaladex.core.test.Values.*
@@ -222,7 +223,7 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach:
       status shouldBe StatusCodes.NotFound
     }
 
-    testGet(s"/api/v1/projects/${Cats.reference}/dependencies?page=1&size=5") {
+    testGet(s"/api/v1/projects/${Cats.reference}/dependencies?page=1&size=20") {
       status shouldBe StatusCodes.OK
       val page = responseAs[Page[ProjectDependency]]
       page.pagination.current shouldBe 1
@@ -248,23 +249,28 @@ class ApiEndpointsImplTests extends ControllerBaseSuite with BeforeAndAfterEach:
       page.items.map(_.repository) should contain(Cats.reference.repository)
     }
 
-    testGet("/api/v1/search?q=*&sort=stars&page=1&size=1") {
+    testGet("/api/v1/search?q=*&sort=stars&page=1&size=50") {
       status shouldBe StatusCodes.OK
-      responseAs[Page[SearchResult]].items.size should be <= 1
+      responseAs[Page[SearchResult]].items.size should be <= 50
     }
 
     testGet("/api/v1/search?q=cats&sort=not-a-sort") {
       status shouldBe StatusCodes.OK // an unknown sort falls back to the default rather than failing
     }
 
-    testGet(s"/api/v1/projects/${Cats.reference}/dependents?size=-5") {
-      status shouldBe StatusCodes.OK // negative size is clamped, not passed through to SQL LIMIT
-      responseAs[Page[ProjectDependency]].pagination.current shouldBe 1
-    }
+    for size <- PageParams.AllowedSizes do
+      testGet(s"/api/v1/projects/${Cats.reference}/dependents?size=$size") {
+        status shouldBe StatusCodes.OK
+      }
 
-    testGet(s"/api/v1/projects/${Cats.reference}/dependents?page=0&size=100000") {
+    for size <- Seq(-5, 0, 5, 30, 100000) do
+      testGet(s"/api/v1/projects/${Cats.reference}/dependents?size=$size") {
+        status shouldBe StatusCodes.BadRequest // only PageParams.AllowedSizes is accepted
+      }
+
+    testGet(s"/api/v1/projects/${Cats.reference}/dependents?page=0") {
       status shouldBe StatusCodes.OK
-      responseAs[Page[ProjectDependency]].pagination.current shouldBe 1 // page and size are clamped
+      responseAs[Page[ProjectDependency]].pagination.current shouldBe 1 // page is clamped to at least 1
     }
   }
 

@@ -12,7 +12,6 @@ import scala.util.Success
 import scaladex.core.model.*
 import scaladex.core.service.ProjectService
 import scaladex.core.service.SchedulerDatabase
-import scaladex.core.service.SearchEngine
 import scaladex.core.web.ArtifactPageParams
 import scaladex.core.web.ArtifactsPageParams
 import scaladex.server.TwirlSupport.given
@@ -31,8 +30,7 @@ class ProjectPages(
     env: Env,
     projectService: ProjectService,
     settingsService: ProjectSettingsService,
-    database: SchedulerDatabase,
-    searchEngine: SearchEngine
+    database: SchedulerDatabase
 )(
     using ExecutionContext
 ) extends LazyLogging:
@@ -292,7 +290,7 @@ class ProjectPages(
         header <- projectService.getHeader(project)
         directDependencies <-
           header
-            .map(h => database.getProjectDependencies(ref, h.latestVersion))
+            .map(h => database.getProjectDependencies(ref, h.latestVersion, limit = 1000, offset = 0))
             .getOrElse(Future.successful(Seq.empty))
         reverseDependencies <- database.getProjectReverseDependencies(ref, limit = 100, offset = 0)
         reverseDependencyCount <- database.countProjectDependents(ref)

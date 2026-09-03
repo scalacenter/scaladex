@@ -70,9 +70,8 @@ private class GithubAuthImpl(clientId: String, clientSecret: String, redirectUri
     githubClient.getUserState().map {
       case GithubResponse.Ok(userState) => Some(userState)
       case GithubResponse.MovedPermanently(userState) => Some(userState)
-      // 401 means the token itself is invalid; any other failure (rate-limit, 5xx, network) is transient and must not be
-      // reported as "unauthenticated", otherwise callers would see a misleading 403.
-      case GithubResponse.Failed(401, errorMessage) =>
+      // Any other failure (rate-limit, 5xx, network) is transient and must not be reported as "unauthenticated".
+      case GithubResponse.Failed(StatusCodes.Unauthorized.intValue, errorMessage) =>
         logger.warn(s"Rejected invalid GitHub token: $errorMessage")
         None
       case GithubResponse.Failed(errorCode, errorMessage) =>

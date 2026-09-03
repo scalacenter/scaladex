@@ -157,7 +157,7 @@ object Server extends LazyLogging:
     val searchPages = new SearchPages(config.env, searchEngine)
     val frontPage = new FrontPage(config.env, webDatabase, searchEngine)
     val adminPages = new AdminPage(config.env, adminService)
-    val projectPages = new ProjectPages(config.env, projectService, settingsService, webDatabase, searchEngine)
+    val projectPages = new ProjectPages(config.env, projectService, settingsService, webDatabase)
     val artifactPages = new ArtifactPages(config.env, webDatabase)
     val awesomePages = new AwesomePages(config.env, searchEngine)
     val publishApi = new PublishApi(githubAuth, publishProcess)

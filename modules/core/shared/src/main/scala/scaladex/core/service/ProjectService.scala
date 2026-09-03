@@ -64,40 +64,35 @@ class ProjectService(database: WebDatabase, searchEngine: SearchEngine)(using Ex
   def getSettings(ref: Project.Reference): Future[Option[Project.Settings]] =
     database.getProject(ref).map(_.map(_.settings))
 
-  /** Direct dependencies of the project at the given version (latest release if not specified), one entry per
-    * depended-on project. Returns `None` if the project is unknown.
-    */
+  /** Direct dependencies at the given version (latest release if not specified), one entry per depended-on project. */
   def getDependencies(
       ref: Project.Reference,
       version: Option[Version],
-      rawPage: PageParams
+      page: PageParams
   ): Future[Option[Page[ProjectDependency]]] =
-    val page = PageParams.bounded(rawPage.page, rawPage.size)
     database.getProject(ref).flatMap {
       case None => Future.successful(None)
       case Some(project) =>
         val resolvedVersion = version match
-          case some: Some[Version] => Future.successful(some)
+          case some @ Some(_) => Future.successful(some)
           case None => getHeader(project).map(_.map(_.latestVersion))
         resolvedVersion.flatMap {
           case None => Future.successful(Some(Page.empty[ProjectDependency]))
           case Some(v) =>
-            for dependencies <- database.getProjectDependencies(ref, v)
-            yield Some(paginate(ProjectDependency.collapseByProject(dependencies, _.target), page))
+            val offset = (page.page - 1) * page.size
+            for
+              dependencies <- database.getProjectDependencies(ref, v, page.size, offset)
+              total <- database.countProjectDependencies(ref, v)
+            yield Some(Page(pagination(page, total), ProjectDependency.collapseByProject(dependencies, _.target)))
         }
     }
   end getDependencies
 
-  /** Reverse dependencies (dependents) of the project, one entry per dependent project. Returns `None` if the project
-    * is unknown.
-    */
-  def getDependents(ref: Project.Reference, rawPage: PageParams): Future[Option[Page[ProjectDependency]]] =
-    val page = PageParams.bounded(rawPage.page, rawPage.size)
+  /** Reverse dependencies (dependents), one entry per dependent project. */
+  def getDependents(ref: Project.Reference, page: PageParams): Future[Option[Page[ProjectDependency]]] =
     database.getProject(ref).flatMap {
       case None => Future.successful(None)
       case Some(_) =>
-        // getProjectReverseDependencies already paginates by distinct source project at the SQL level, so the count of
-        // distinct source projects (countProjectDependents) is the right total for this page shape.
         val offset = (page.page - 1) * page.size
         for
           dependents <- database.getProjectReverseDependencies(ref, limit = page.size, offset = offset)
@@ -105,10 +100,6 @@ class ProjectService(database: WebDatabase, searchEngine: SearchEngine)(using Ex
         yield Some(Page(pagination(page, total), ProjectDependency.collapseByProject(dependents, _.source)))
     }
   end getDependents
-
-  private def paginate[A](items: Seq[A], page: PageParams): Page[A] =
-    val offset = (page.page - 1) * page.size
-    Page(pagination(page, items.size.toLong), items.slice(offset, offset + page.size))
 
   private def pagination(page: PageParams, total: Long): Pagination =
     val pageCount = math.ceil(total.toDouble / page.size).toInt.max(1)

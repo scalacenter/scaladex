@@ -41,25 +41,16 @@ class ApiEndpointsImpl(
 
   def routes(user: Option[UserState]): Route = cors()(concat(webApi(user), v0Api, v1Api, v1AuthApi))
 
-  // Token -> GitHub authorization (repos/orgs). Bounded and expiring so that revoked tokens and permission changes take
-  // effect within the TTL without a restart. A failed lookup (GitHub outage) is not cached, so it is retried.
   private val userStateCache: AsyncLoadingCache[Secret, Option[UserState]] =
     Scaffeine()
       .expireAfterWrite(10.minutes)
       .maximumSize(4096)
       .buildAsyncFuture(token => githubAuth.getUserState(token))
 
-  /** Resolves the GitHub token to a [[UserState]]. `None` means the token is invalid; a GitHub outage or rate-limit
-    * surfaces as a failed `Future` (HTTP 5xx) rather than a misleading `None`.
-    */
   private def resolveUser(credentials: Credentials): Future[Option[UserState]] =
     userStateCache.get(Secret(credentials.password))
 
-  /** Runs `f` with the current settings of `ref` for a caller allowed to edit it. The nested option encodes the HTTP
-    * outcome: `None` -> 403 (missing/invalid token or no edit permission), `Some(None)` -> 404 (unknown project),
-    * `Some(Some(a))` -> 200. Project existence is public, so an unknown project is reported as 404 even to callers
-    * without edit permission.
-    */
+  // None -> 403, Some(None) -> 404 (unknown project, reported even without edit permission), Some(Some(a)) -> 200.
   private def withEditableProject[A](credentials: Credentials, ref: Project.Reference)(
       f: Project.Settings => Future[A]
   ): Future[Option[Option[A]]] =
