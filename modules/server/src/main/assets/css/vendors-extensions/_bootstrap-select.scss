@@ -8,6 +8,17 @@
     }
 }
 
+// bootstrap-sass has no built-in "secondary" button variant, so a
+// data-style="btn-secondary" select would otherwise pick up whatever
+// color the browser/bootstrap-select default happens to be - inconsistent
+// from one page to another. Pin it to the same text color everywhere.
+.btn-secondary {
+    .filter-option-inner-inner,
+    .caret {
+        color: $headings-color;
+    }
+}
+
 .order-by {
     .bootstrap-select {
         &:not([class*="col-"]):not([class*="form-control"]):not(.input-group-btn) {
