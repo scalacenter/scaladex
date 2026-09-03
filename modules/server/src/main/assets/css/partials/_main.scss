@@ -367,6 +367,10 @@ main {
       }
     }
     .contributing-result {
+      ul {
+        list-style: none;
+        padding-left: 0;
+      }
       a {
         display: block;
         padding-bottom: 10px;
