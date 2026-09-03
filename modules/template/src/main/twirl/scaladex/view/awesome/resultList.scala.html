@@ -2,6 +2,15 @@
 @import scaladex.core.model.search.ProjectDocument
 
 @(projects: Seq[ProjectDocument])
+@if(projects.isEmpty) {
+  <div class="list-result box no-results">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <div>
+      <p>No projects match your search.</p>
+      <p class="hint">Try a different query or remove some filters.</p>
+    </div>
+  </div>
+} else {
 <ol class="list-result box">
   @for(project <- projects){
   <li class="item-list">
@@ -112,3 +121,4 @@
   </li>
   }
 </ol>
+}

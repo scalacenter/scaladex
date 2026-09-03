@@ -4,6 +4,19 @@
 @import scaladex.core.model.search.SearchParams
 
 @(projects: Seq[ProjectHit], params: SearchParams)
+@if(projects.isEmpty) {
+  <div class="list-result box no-results">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <div>
+      @if(params.queryString.trim.nonEmpty) {
+        <p>No projects found for &ldquo;@params.queryString&rdquo;.</p>
+      } else {
+        <p>No projects match the selected filters.</p>
+      }
+      <p class="hint">Try a broader search term, check the spelling, or clear some filters.</p>
+    </div>
+  </div>
+} else {
 <ol class="list-result box">
   @for(hit <- projects; project = hit.document){
   <li class="item-list">
@@ -121,3 +134,4 @@
   </li>
   }
 </ol>
+}
