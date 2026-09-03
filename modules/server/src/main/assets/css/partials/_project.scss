@@ -259,7 +259,13 @@
   
   .head-project {
     padding: 20px 0;
-    background: url('/assets/img/head-project-background.png') no-repeat center top #0D343C;
+    background-color: $gray-darker;
+    background-image:
+      linear-gradient(to bottom, rgba($gray-darker, 0.15) 0%, rgba($gray-darker, 0.8) 100%),
+      url('/assets/img/head-project-background.png');
+    background-repeat: no-repeat, no-repeat;
+    background-position: center top, center top;
+    background-size: auto, cover;
     color: #fff;
     .head-last-version {
       color: $gray-lighter;
