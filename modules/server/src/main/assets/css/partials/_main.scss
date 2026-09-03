@@ -66,59 +66,101 @@ main {
 // Common Pop-up
 .overlay {
   position: fixed;
-  z-index: 10;
+  z-index: 1000;
   top: 0;
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.7);
   display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+
+  .overlay-backdrop {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba($gray-darker, 0.7);
+  }
 
   .popup {
-    margin: 70px auto;
-    padding: 40px 20px 20px 20px;
     background: #fff;
-    border-radius: 5px;
-    width: 60%;
-    position: relative;
-    transition: all 5s ease-in-out;
-    max-height: calc(100vh - 100px);
+    @include border-top-radius($border-radius-base * 2);
+    @include border-bottom-radius($border-radius-base * 2);
+    @include box-shadow(0 20px 50px rgba(0, 0, 0, 0.3));
+    padding: 36px;
+    width: 100%;
+    max-width: 520px;
+    max-height: calc(100vh - 40px);
     overflow: auto;
+    position: relative;
+    z-index: 1;
+    transition: transform $base-duration $base-timing, opacity $base-duration $base-timing;
 
     h2 {
       margin-top: 0;
+      font-size: 22px;
+    }
+
+    .intro {
+      color: $gray;
+    }
+
+    .steps {
+      padding-left: 20px;
+      margin-bottom: 0;
+      li {
+        margin-bottom: 10px;
+        padding-left: 6px;
+      }
+      .badge {
+        background: $brand-primary;
+      }
     }
 
     .close {
       position: absolute;
-      top: 20px;
-      right: 30px;
-      transition: all 200ms;
-      font-size: 30px;
-      font-weight: bold;
+      top: 16px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      color: $gray;
+      font-size: 22px;
+      line-height: 1;
       text-decoration: none;
+      transition: $base-transition;
 
       &:hover {
-        color: #06D85F;
+        background: $gray-lighter;
+        color: $gray-darker;
+        text-decoration: none;
       }
-    }
-
-    .content {
-      max-height: 30%;
-      overflow: auto;
     }
   }
 
   &:target {
-    display: block;
+    display: flex;
   }
 }
 
 // Result page
 // -----------------------------------------------------------------------------
 #container-search {
-  background: $gray-lighter;
+  background: $gray-darker;
   padding: 30px 0 40px 0;
+  > .container > h2,
+  > .container > .row > h4 {
+    color: $gray-lighter;
+  }
+  .search-subtitle {
+    min-height: 48px;
+  }
   @media screen and (min-width: $screen-md-min) {
     padding: 60px 0 80px 0;
   }
