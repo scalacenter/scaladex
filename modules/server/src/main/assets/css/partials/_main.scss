@@ -333,10 +333,25 @@ main {
           justify-content: flex-end;
           gap: 6px;
         }
+        // Same pill as the topic tags on the project page (.label.label-default),
+        // but with a solid darker background - the translucent version reads
+        // fine on the dark hero but washes out on these white cards.
         .item-filter-tag {
-          color: $gray-light;
-          font-style: italic;
-          font-weight: 300;
+          display: inline-block;
+          padding: .2em .6em .3em;
+          background-color: $gray-dark;
+          color: #fff;
+          font-style: normal;
+          font-weight: 500;
+          font-size: 75%;
+          line-height: 1;
+          white-space: nowrap;
+          cursor: pointer;
+          border-radius: .25em;
+
+          &:hover {
+            color: #fff;
+          }
         }
         .icons-container{
           display: inline-grid;

@@ -100,11 +100,7 @@
             @for(github <- project.githubInfo) {
               @if(github.topics.nonEmpty) {
                 @for(topic <- github.topics) {
-                  <span class="item-filter-tag">
-                    <a href="/search?topic=@topic">
-                      @topic
-                    </a>
-                  </span>
+                  <span class="item-filter-tag" data-topic-href="/search?topic=@topic">@topic</span>
                 }
               }
             }

@@ -231,6 +231,18 @@
           }
         });
 
+        // Topic tags on result cards: plain elements (not <a>) since each
+        // card is itself one big <a> - a nested <a> would be invalid HTML,
+        // and browsers "fix" that by force-closing the outer link early.
+        document.addEventListener('click', function (event) {
+          var tag = event.target.closest('.item-filter-tag[data-topic-href]');
+          if (tag) {
+            event.preventDefault();
+            event.stopPropagation();
+            window.location = tag.dataset.topicHref;
+          }
+        });
+
         // The "Sorting" control is a button-group form (each button is a
         // submit button carrying name="sort"), not plain links.
         document.addEventListener('submit', function (event) {
