@@ -16,13 +16,23 @@
 }
 
 // bootstrap-sass has no built-in "secondary" button variant, so a
-// data-style="btn-secondary" select would otherwise pick up whatever
-// color the browser/bootstrap-select default happens to be - inconsistent
-// from one page to another. Pin it to the same text color everywhere.
+// data-style="btn-secondary" select would otherwise get no background/
+// border at all (just whatever the browser's native button default is -
+// an ugly gray) and pick up inconsistent text color from one page to
+// another. Give it the same white/bordered look as .btn-default.
 .btn-secondary {
+    background-color: #fff;
+    border-color: $input-border;
+
     .filter-option-inner-inner,
     .caret {
         color: $headings-color;
+        font-weight: 400;
+    }
+
+    &:hover, &:focus, &.focus {
+        background-color: #fff;
+        border-color: $input-border;
     }
 }
 
